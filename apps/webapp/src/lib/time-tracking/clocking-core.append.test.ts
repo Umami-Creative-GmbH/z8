@@ -23,6 +23,8 @@ function harness(
 	const inserted: Record<string, unknown>[] = [];
 	const store = {
 		transaction,
+		acquireAdoptionGate: async () => undefined,
+		readAppendAdmission: async () => "legacy" as const,
 		lockEmployee: vi.fn(async () => undefined),
 		isOrganizationMember: async () => true,
 		getEntryByActionId: async (_employeeId: string, _organizationId: string, actionId?: string) =>

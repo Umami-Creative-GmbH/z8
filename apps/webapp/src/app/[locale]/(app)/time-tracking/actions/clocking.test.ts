@@ -1299,6 +1299,8 @@ describe("clockOut", () => {
 					contextAfterCommit = context;
 					return {
 						transaction: context.db,
+						acquireAdoptionGate: async () => undefined,
+						readAppendAdmission: async () => "legacy" as const,
 						lockEmployee: async () => {
 							throw new Error("Late employee acquisition");
 						},
@@ -1530,6 +1532,8 @@ describe("clockOut", () => {
 				},
 				storeForCoordinatedTransaction: (context) => ({
 					transaction: context.db,
+					acquireAdoptionGate: async () => undefined,
+					readAppendAdmission: async () => "legacy" as const,
 					lockEmployee: async () => {
 						throw new Error("Late employee acquisition");
 					},

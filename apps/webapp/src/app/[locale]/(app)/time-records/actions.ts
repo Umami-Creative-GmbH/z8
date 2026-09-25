@@ -9,7 +9,7 @@ import {
 	TimeRecordService,
 	TimeRecordServiceLive,
 } from "@/lib/effect/services/time-record.service";
-import type { CreateTimeRecordInput, ListTimeRecordsFilters, TimeRecord } from "./types";
+import type { ListTimeRecordsFilters, TimeRecord } from "./types";
 
 const hasElevatedRecordScope = (role: string) => role === "manager" || role === "admin";
 
@@ -58,56 +58,6 @@ async function runTimeRecordEffect<T, E>(
 	}
 
 	return { success: false, error: "Operation failed" };
-}
-
-export async function createTimeRecord(
-	input: CreateTimeRecordInput,
-): Promise<ServerActionResult<TimeRecord>> {
-	try {
-		const authContext = await getAuthContext();
-		if (!authContext?.employee) {
-			return { success: false, error: "Unauthorized" };
-		}
-
-		const currentEmployee = authContext.employee;
-
-		const isElevated = hasElevatedRecordScope(currentEmployee.role);
-		if (!isElevated && input.employeeId !== currentEmployee.id) {
-			return { success: false, error: "Forbidden" };
-		}
-
-		const startAtResult = parseIsoDate(input.startAt, "startAt");
-		if (!startAtResult.success) {
-			return startAtResult;
-		}
-
-		const endAtResult = parseOptionalIsoDate(input.endAt, "endAt");
-		if (!endAtResult.success) {
-			return endAtResult;
-		}
-
-		return await runTimeRecordEffect(
-			Effect.gen(function* (_) {
-				const service = yield* _(TimeRecordService);
-				return yield* _(
-					service.create({
-						organizationId: currentEmployee.organizationId,
-						employeeId: input.employeeId,
-						recordKind: input.recordKind,
-						startAt: startAtResult.data,
-						endAt: endAtResult.data,
-						durationMinutes: input.durationMinutes,
-						approvalState: input.approvalState,
-						origin: input.origin,
-						createdBy: authContext.user.id,
-						updatedBy: authContext.user.id,
-					}),
-				);
-			}),
-		);
-	} catch (_error) {
-		return { success: false, error: "Failed to create time record" };
-	}
 }
 
 export async function listTimeRecords(

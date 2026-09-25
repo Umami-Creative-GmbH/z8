@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
+	ClockingAppendAdoptedError,
 	ClockingConflictError,
 	createClockingService,
 } from "./clocking-service";
@@ -9,6 +10,8 @@ function createHarness(options?: {
 	member?: boolean;
 	failPeriodInsert?: boolean;
 }) {
+	const organization = { admission: "legacy" as "legacy" | "append" };
+	const trace: string[] = [];
 	let active = false;
 	let entries = 0;
 	const actions = new Map<string, { id: string; [key: string]: unknown }>();
@@ -31,7 +34,13 @@ function createHarness(options?: {
 			await wait;
 			try {
 				return await callback({
-					lockEmployee: async () => undefined,
+					acquireAdoptionGate: async (organizationId) => {
+						trace.push(`adoption-gate:${organizationId}`);
+					},
+					readAppendAdmission: async () => organization.admission,
+					lockEmployee: async (employeeId) => {
+						trace.push(`employee:${employeeId}`);
+					},
 					isOrganizationMember: async () => options?.member ?? true,
 					getEntryByActionId: async (_employeeId, _organizationId, actionId) =>
 						actionId ? (actions.get(actionId) ?? null) : null,
@@ -84,7 +93,7 @@ function createHarness(options?: {
 			}
 		},
 	});
-	return { service, entries: () => entries };
+	return { service, entries: () => entries, organization, trace };
 }
 
 const clockIn = {
@@ -107,6 +116,8 @@ describe("clocking service", () => {
 		let openedTransactions = 0;
 		const store = {
 			transaction,
+			acquireAdoptionGate: async () => undefined,
+			readAppendAdmission: async () => "legacy" as const,
 			lockEmployee: async () => undefined,
 			isOrganizationMember: async () => true,
 			getEntryByActionId: async () => null,
@@ -151,6 +162,8 @@ describe("clocking service", () => {
 		const service = createClockingService({
 			transaction: async (callback) =>
 				callback({
+					acquireAdoptionGate: async () => undefined,
+					readAppendAdmission: async () => "legacy" as const,
 					lockEmployee: async () => undefined,
 					isOrganizationMember: async () => true,
 					getEntryByActionId: async () => null,
@@ -181,6 +194,8 @@ describe("clocking service", () => {
 		const service = createClockingService({
 			transaction: async (callback) =>
 				callback({
+					acquireAdoptionGate: async () => undefined,
+					readAppendAdmission: async () => "legacy" as const,
 					lockEmployee: async () => undefined,
 					isOrganizationMember: async () => true,
 					getEntryByActionId: async () => null,
@@ -287,6 +302,8 @@ describe("clocking service", () => {
 				const snapshot = [...inserted];
 				try {
 					return await callback({
+						acquireAdoptionGate: async () => undefined,
+						readAppendAdmission: async () => "legacy" as const,
 						lockEmployee: async () => undefined,
 						isOrganizationMember: async () => true,
 						getEntryByActionId: async () => null,
@@ -312,5 +329,99 @@ describe("clocking service", () => {
 			"period insert failed",
 		);
 		expect(inserted).toEqual([]);
+	});
+});
+
+// #327: a writer outside a work-transaction coordinator (the legacy direct
+// route, the departure clock-out) cannot write fresh entries into an employee
+// graph whose organization has adopted appends.
+describe("uncoordinated writers in an adopted organization", () => {
+	const actionId = "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+
+	it("takes the shared adoption gate before the employee key", async () => {
+		const { service, trace } = createHarness();
+
+		await service.clockIn(clockIn);
+
+		expect(trace).toEqual(["adoption-gate:organization-1", "employee:employee-1"]);
+	});
+
+	it("refuses a fresh clock-in before writing anything", async () => {
+		const { service, entries, organization } = createHarness();
+		organization.admission = "append";
+
+		await expect(service.clockIn({ ...clockIn, actionId })).rejects.toThrow(
+			ClockingAppendAdoptedError,
+		);
+		expect(entries()).toBe(0);
+	});
+
+	it("refuses a fresh clock-out before writing anything", async () => {
+		const { service, entries, organization } = createHarness();
+		await service.clockIn(clockIn);
+		organization.admission = "append";
+
+		await expect(
+			service.clockOut({ ...clockIn, actionId, workPeriodId: "period-1" }),
+		).rejects.toThrow(ClockingAppendAdoptedError);
+		expect(entries()).toBe(1);
+	});
+
+	it("still answers committed clock-in and clock-out replays after adoption", async () => {
+		const { service, entries, organization } = createHarness();
+		const clockOutId = "0b7e1c52-3a4f-4d8e-9b1a-2c3d4e5f6a7b";
+		const first = await service.clockIn({ ...clockIn, actionId });
+		const closed = await service.clockOut({
+			...clockIn,
+			actionId: clockOutId,
+			workPeriodId: "period-1",
+		});
+		organization.admission = "append";
+
+		await expect(service.clockIn({ ...clockIn, actionId })).resolves.toMatchObject({
+			entry: first.entry,
+		});
+		await expect(
+			service.clockOut({ ...clockIn, actionId: clockOutId, workPeriodId: "period-1" }),
+		).resolves.toMatchObject({ entry: closed.entry, disposition: "replayed" });
+		expect(entries()).toBe(2);
+	});
+
+	it("leaves coordinated writers to their coordinator's admission", async () => {
+		const trace: string[] = [];
+		const transaction = { id: "coordinated" };
+		const service = createClockingService({
+			transaction: async () => {
+				throw new Error("coordinated writers never open their own transaction");
+			},
+			storeForCoordinatedTransaction: () => ({
+				transaction,
+				acquireAdoptionGate: async () => {
+					trace.push("adoption-gate");
+				},
+				readAppendAdmission: async () => "append",
+				lockEmployee: async () => {
+					trace.push("employee");
+				},
+				isOrganizationMember: async () => true,
+				getEntryByActionId: async () => null,
+				getActivePeriod: async () => null,
+				getLatestHash: async () => null,
+				insertEntry: async () => ({ id: "entry-1" }),
+				insertActivePeriod: async () => ({ id: "period-1" }),
+				closeActivePeriod: async () => ({ id: "period-1" }),
+			}),
+		});
+
+		await service.clockIn({
+			...clockIn,
+			coordination: {
+				db: transaction,
+				admission: "legacy",
+				assertEmployee: () => undefined,
+			} as never,
+		});
+
+		expect(trace).toEqual([]);
 	});
 });

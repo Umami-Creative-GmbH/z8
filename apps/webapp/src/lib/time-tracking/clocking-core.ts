@@ -21,7 +21,12 @@ import {
 } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import { deriveWorkDurationMinutes } from "./work-duration";
-import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+import {
+	acquireAdoptionGate,
+	readAppendAdmission,
+	type WorkTransactionAdmission,
+	type WorkTransactionScope,
+} from "./work-transaction";
 
 export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 
@@ -36,6 +41,20 @@ export class ClockingOrganizationError extends Error {
 	constructor() {
 		super("Employee does not belong to organization");
 		this.name = "ClockingOrganizationError";
+	}
+}
+
+/**
+ * A writer outside a work-transaction coordinator tried to write fresh entries
+ * into an organization that has adopted appends (#327). Its legacy head
+ * selection would interrupt the employee's append continuity, so it is refused
+ * before any write; an already-committed action still replays.
+ */
+export class ClockingAppendAdoptedError extends Error {
+	readonly code = "append_adopted";
+	constructor() {
+		super("This organization only accepts coordinated clock commands");
+		this.name = "ClockingAppendAdoptedError";
 	}
 }
 
@@ -108,6 +127,10 @@ type CompletedPeriod = {
 
 export type ClockingStore = {
 	transaction?: unknown;
+	/** The shared organization adoption gate (#264 step 1); uncoordinated writers only. */
+	acquireAdoptionGate(organizationId: string): Promise<void>;
+	/** The organization's append admission, read under the adoption gate. */
+	readAppendAdmission(organizationId: string): Promise<WorkTransactionAdmission>;
 	lockEmployee(employeeId: string): Promise<void>;
 	isOrganizationMember(
 		employeeId: string,
@@ -340,6 +363,11 @@ export function createClockingService(deps: ClockingDependencies) {
 					throw new Error("Clocking transaction context changed");
 				}
 			} else {
+				// Uncoordinated writers (the legacy direct route, the departure
+				// clock-out) hold the shared adoption gate, so an exclusive adoption
+				// holder drains them before a mode change becomes visible (#327).
+				// A caller-owned transaction may already hold its own locks.
+				await store.acquireAdoptionGate(input.organizationId);
 				await store.lockEmployee(input.employeeId);
 			}
 			if (
@@ -350,14 +378,22 @@ export function createClockingService(deps: ClockingDependencies) {
 			) {
 				throw new ClockingOrganizationError();
 			}
-			if (deps.assertEmployeeMayClock) {
-				// An already-recorded action replays idempotently; only new writes need access.
-				const replayed = await store.getEntryByActionId(
-					input.employeeId,
-					input.organizationId,
-					input.actionId,
-				);
-				if (!replayed) await deps.assertEmployeeMayClock(store, input);
+			// An already-recorded action replays idempotently; only new writes are
+			// admitted or need access.
+			const replayed = await store.getEntryByActionId(
+				input.employeeId,
+				input.organizationId,
+				input.actionId,
+			);
+			if (
+				!replayed &&
+				!input.coordination &&
+				(await store.readAppendAdmission(input.organizationId)) === "append"
+			) {
+				throw new ClockingAppendAdoptedError();
+			}
+			if (deps.assertEmployeeMayClock && !replayed) {
+				await deps.assertEmployeeMayClock(store, input);
 			}
 			return callback(store);
 		};
@@ -567,6 +603,8 @@ type ClockingStoreClient = Pick<
 export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingStore {
 	return {
 		transaction: tx,
+		acquireAdoptionGate: (organizationId) => acquireAdoptionGate(tx, organizationId),
+		readAppendAdmission: (organizationId) => readAppendAdmission(tx, organizationId),
 		lockEmployee: async (employeeId) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,

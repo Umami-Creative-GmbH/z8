@@ -27,6 +27,7 @@ import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
   ClockingAccessError,
+  ClockingAppendAdoptedError,
   ClockingConflictError,
   clockingService,
 } from "@/lib/time-tracking/clocking-service";
@@ -490,6 +491,11 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
+		// Adopted organizations accept only coordinated writers (#327). 409 is a
+		// status the #266 fence and every current queue reader retain.
+		if (error instanceof ClockingAppendAdoptedError) {
+			return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
 		}
 		if (error instanceof TimeEntryConflictError || error instanceof ClockingConflictError) {
 			return NextResponse.json({ error: error.message }, { status: 409 });

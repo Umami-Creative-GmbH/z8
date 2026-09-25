@@ -9,6 +9,9 @@ const mockState = vi.hoisted(() => {
 		}
 	}
 	class ClockingConflictError extends Error {}
+	class ClockingAppendAdoptedError extends Error {
+		readonly code = "append_adopted";
+	}
 	class ClockingAccessError extends Error {}
 
 	const limit = vi.fn();
@@ -34,6 +37,7 @@ const mockState = vi.hoisted(() => {
 	return {
 		UnsupportedAuthorizationConditionError,
 		ClockingAccessError,
+		ClockingAppendAdoptedError,
 		ClockingConflictError,
 		preserveLateClockEvidence: vi.fn(),
 		accessibleByDrizzle: vi.fn(),
@@ -176,6 +180,7 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	ClockingAccessError: mockState.ClockingAccessError,
+	ClockingAppendAdoptedError: mockState.ClockingAppendAdoptedError,
 	ClockingConflictError: mockState.ClockingConflictError,
 	clockingService: {
 		clockIn: mockState.clockingClockIn,
@@ -453,6 +458,30 @@ describe("POST /api/time-entries", () => {
 		expect(response.status).toBe(409);
 		expect(await response.json()).toEqual({ error: "Active work period already exists" });
 		expect(mockState.clockingClockIn).toHaveBeenCalledTimes(1);
+	});
+
+	it("refuses a fresh legacy write in an adopted organization with a retaining 409", async () => {
+		mockState.clockingClockIn.mockRejectedValueOnce(
+			new mockState.ClockingAppendAdoptedError(
+				"This organization only accepts coordinated clock commands",
+			),
+		);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({
+			error: "This organization only accepts coordinated clock commands",
+			code: "append_adopted",
+		});
 	});
 
 	it("passes offline location to the clocking service", async () => {

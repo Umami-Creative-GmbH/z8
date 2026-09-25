@@ -182,6 +182,7 @@
         "primaryManager": "Primäre Führungskraft",
         "probationOrder": "Das Ende der Probezeit muss nach ihrem Beginn liegen.",
         "reasons": {
+          "appendAdopted": "Der laufende Timer blieb offen, weil diese Organisation nur noch koordinierte Stempelbefehle annimmt. Beende ihn über eine Zeitkorrektur.",
           "clockOutFailed": "Der laufende Timer konnte nicht automatisch beendet werden.",
           "futureAssignments": "Zukünftige Arbeitszeitmodell-Zuweisungen wurden deaktiviert.",
           "futureStage": "Eine spätere Genehmigungsstufe ist nur dieser Person zugewiesen. Weise vor ihrem Beginn eine Vertretung zu, sonst schlägt die Freigabe der vorherigen Stufe fehl.",

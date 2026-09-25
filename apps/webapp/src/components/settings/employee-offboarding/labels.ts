@@ -123,6 +123,11 @@ export function useOffboardingLabels() {
 					"settings.employees.offboarding.reasons.clockOutFailed",
 					"The running timer could not be closed automatically.",
 				);
+			case "append_adopted":
+				return t(
+					"settings.employees.offboarding.reasons.appendAdopted",
+					"The running timer was left open because this organization only accepts coordinated clock commands. Close it with a time correction.",
+				);
 			default:
 				return null;
 		}
