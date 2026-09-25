@@ -1,8 +1,13 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { approvalChainStageInstance, approvalRequest, travelExpenseClaim } from "@/db/schema";
+import {
+	approvalChainStageInstance,
+	approvalRequest,
+	approvalWorkflowRollout,
+	travelExpenseClaim,
+} from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
-import type { ApprovalDatabase } from "../server/types";
+import type { ApprovalAction, ApprovalDatabase } from "../server/types";
 import type { ApprovalWorkflowStatus } from "../workflow/ports";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { ApprovalEvidenceError } from "./errors";
@@ -29,7 +34,27 @@ import { compareTravelExpenseWithSubmittedRevision } from "./travel-expense-subm
 
 const COMMAND_VERSION = "travel-expense-legacy-decision:v1";
 
-type DecisionAction = "approve" | "reject";
+/**
+ * Expense claims have no canonical adapter, so their only authority is legacy.
+ * Bound cards are issued and decided only while no rollout claims canonical
+ * authority for the kind (#384 cutover rule).
+ */
+export async function hasLegacyTravelExpenseAuthority(
+	database: ApprovalDatabase,
+	organizationId: string,
+): Promise<boolean> {
+	const [rollout] = await database
+		.select({ mode: approvalWorkflowRollout.lifecycleMode })
+		.from(approvalWorkflowRollout)
+		.where(
+			and(
+				eq(approvalWorkflowRollout.organizationId, organizationId),
+				eq(approvalWorkflowRollout.workflowType, "travel_expense"),
+			),
+		)
+		.limit(1);
+	return rollout?.mode !== "canonical" && rollout?.mode !== "complete";
+}
 
 function sha256(value: string): string {
 	return createHash("sha256").update(value).digest("hex");
@@ -37,7 +62,7 @@ function sha256(value: string): string {
 
 /** Versioned identity of one decision command; reason text enters as a hash only. */
 export function fingerprintLegacyTravelExpenseDecisionCommand(input: {
-	action: DecisionAction;
+	action: ApprovalAction;
 	approvalRequestId: string;
 	reason: string | undefined;
 }): string {
@@ -54,7 +79,7 @@ export function fingerprintLegacyTravelExpenseDecisionCommand(input: {
 export function travelExpenseDecisionIdempotencyKey(input: {
 	claimId: string;
 	approvalRequestId: string;
-	action: DecisionAction;
+	action: ApprovalAction;
 	reason: string | undefined;
 }): string {
 	return `travel_expense_claim:${input.claimId}:${input.approvalRequestId}:${input.action}:${sha256(input.reason ?? "")}`;
@@ -105,7 +130,7 @@ function incomplete(field: string): never {
  * decision back; nothing is inferred from the requested action.
  */
 export function deriveLegacyTravelExpenseDecisionOutcome(
-	input: { action: DecisionAction; actorEmployeeId: string },
+	input: { action: ApprovalAction; actorEmployeeId: string },
 	rows: LegacyTravelExpenseDecisionRows,
 ): LegacyTravelExpenseDecisionOutcome {
 	const expected = input.action === "approve" ? "approved" : "rejected";
@@ -258,7 +283,7 @@ export async function findLegacyTravelExpenseDecisionReplay(
 		organizationId: string;
 		claimId: string;
 		approvalRequestId: string;
-		action: DecisionAction;
+		action: ApprovalAction;
 		reason: string | undefined;
 		actor: { employeeId: string; userId: string };
 	},
@@ -268,11 +293,9 @@ export async function findLegacyTravelExpenseDecisionReplay(
 		approvalRequestId: input.approvalRequestId,
 	});
 	if (evidence?.operationKind !== "command") return null;
-	const revision = await loadLegacyTravelExpenseSubmittedRevision(database, {
-		organizationId: input.organizationId,
-		claimId: input.claimId,
-	});
-	if (revision?.id !== evidence.submittedRevisionId) return null;
+	// The committed receipt alone decides (its key names the claim and request):
+	// no current revision, claim or assignment state is consulted, so a later
+	// change can never turn an exact retry into a fresh decision.
 	const matches =
 		evidence.receipt.idempotencyKey === travelExpenseDecisionIdempotencyKey(input) &&
 		evidence.receipt.actorFingerprint === employeeActorFingerprint(input.actor) &&
@@ -319,7 +342,7 @@ export async function recordLegacyTravelExpenseDecisionEvidence(
 	input: {
 		organizationId: string;
 		claimId: string;
-		action: DecisionAction;
+		action: ApprovalAction;
 		reason: string | undefined;
 		approvalRequestId: string;
 		idempotencyKey: string;

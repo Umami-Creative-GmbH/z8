@@ -3,7 +3,6 @@ import { Cause, Effect, Exit, Option } from "effect";
 import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
-	approvalWorkflowRollout,
 	employee,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
@@ -30,6 +29,7 @@ import {
 	lockApprovalInvocation,
 	readApprovalPresentationMode,
 	recordApprovalInvocation,
+	requireLegacyInvocationDecision,
 } from "../evidence/invocation";
 import {
 	type LegacyDecisionEvidenceRecord,
@@ -38,6 +38,7 @@ import {
 } from "../evidence/store";
 import {
 	findLegacyTravelExpenseDecisionReplay,
+	hasLegacyTravelExpenseAuthority,
 	prepareLegacyTravelExpenseDecisionEvidence,
 	recordLegacyTravelExpenseDecisionEvidence,
 	travelExpenseDecisionIdempotencyKey,
@@ -548,29 +549,6 @@ async function findPendingTravelExpenseRequestForApprover(
 	return rows[0]?.id;
 }
 
-/**
- * Expense claims have no canonical authority. A card must never decide if a
- * rollout ever claimed one for the kind (#384 cutover rule).
- */
-async function assertLegacyTravelExpenseAuthority(
-	database: ApprovalDatabase,
-	organizationId: string,
-): Promise<void> {
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, organizationId),
-				eq(approvalWorkflowRollout.workflowType, "travel_expense"),
-			),
-		)
-		.limit(1);
-	if (rollout?.mode === "canonical" || rollout?.mode === "complete") {
-		throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
-	}
-}
-
 function failureOf(cause: Cause.Cause<unknown>): unknown {
 	return (
 		Option.getOrNull(Cause.failureOption(cause)) ??
@@ -629,15 +607,11 @@ export async function executeTravelExpenseDecisionInTransaction(
 			command,
 		});
 		if (committed) {
-			if (!("authority" in committed)) {
-				throw new ApprovalEvidenceError("invariant", {
-					field: "invocation_decision",
-				});
-			}
+			const evidence = requireLegacyInvocationDecision(committed);
 			return {
 				kind: "replayed",
-				evidence: committed,
-				approvalRequestId: committed.legacy.approvalRequestId,
+				evidence,
+				approvalRequestId: evidence.legacy.approvalRequestId,
 			};
 		}
 		// A fresh invocation needs current admission, read under the rollout gate:
@@ -650,7 +624,11 @@ export async function executeTravelExpenseDecisionInTransaction(
 		if (presentationMode !== "actionable") {
 			throw new ApprovalInvocationNotAdmittedError();
 		}
-		await assertLegacyTravelExpenseAuthority(database, organizationId);
+		// Expense claims have legacy authority only; a card never decides under
+		// another (#384 cutover rule).
+		if (!(await hasLegacyTravelExpenseAuthority(database, organizationId))) {
+			throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
+		}
 		invocation = { key: approvalInvocationIdempotencyKey(identity), command };
 	}
 
@@ -704,12 +682,12 @@ export async function executeTravelExpenseDecisionInTransaction(
 
 	// The unchanged legacy owner. A card carries no management or
 	// eligible-manager authority: only the exact bound request's approver.
+	const { reviewedBindingId: _validatedAbove, ...callerOptions } = input.options ?? {};
 	const options: ApprovalActionOptions = {
-		...(input.bound ? {} : input.options),
+		...(input.bound ? {} : callerOptions),
 		...(approvalRequestId ? { approvalRequestId } : {}),
 		transactional: true,
 	};
-	delete options.reviewedBindingId;
 	const exit = await Effect.runPromiseExit(
 		processApprovalWithCurrentEmployee(
 			dbService,
@@ -949,12 +927,11 @@ export async function decideBoundTravelExpenseInvocation(input: {
 			},
 		});
 		if (committed) {
-			if (!("authority" in committed)) {
-				throw new ApprovalEvidenceError("invariant", {
-					field: "invocation_decision",
-				});
-			}
-			return { status: "decided", replayed: true, evidence: committed };
+			return {
+				status: "decided",
+				replayed: true,
+				evidence: requireLegacyInvocationDecision(committed),
+			};
 		}
 	} catch (error) {
 		return classifyBoundTravelExpenseError(error);

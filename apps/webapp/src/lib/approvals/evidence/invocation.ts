@@ -332,6 +332,18 @@ export function requireCanonicalInvocationDecision(
 	return evidence;
 }
 
+/** The legacy decision owner's counterpart of the canonical guard above (#296). */
+export function requireLegacyInvocationDecision(
+	evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord,
+): LegacyDecisionEvidenceRecord {
+	if (!("authority" in evidence)) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "invocation_decision",
+		});
+	}
+	return evidence;
+}
+
 /** Written by the decision owner in the transaction that commits the decision. */
 export async function recordApprovalInvocation(
 	database: ApprovalDatabase,

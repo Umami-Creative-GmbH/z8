@@ -2,7 +2,6 @@ import { and, eq } from "drizzle-orm";
 import {
 	type ApprovalPresentationProvider,
 	approvalRequest,
-	approvalWorkflowRollout,
 	travelExpenseClaim,
 } from "@/db/schema";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
@@ -20,6 +19,7 @@ import {
 	loadLegacyTravelExpenseSubmittedRevision,
 	readApprovalEvidenceMode,
 } from "../evidence/store";
+import { hasLegacyTravelExpenseAuthority } from "../evidence/travel-expense-decision";
 import type { TravelExpenseMoney } from "../evidence/travel-expense-facts";
 import { compareTravelExpenseWithSubmittedRevision } from "../evidence/travel-expense-submission";
 import type { ApprovalDatabase } from "../server/types";
@@ -200,18 +200,8 @@ export async function prepareBoundTravelExpenseCard(
 		)
 		.limit(1);
 	if (!request) return null;
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, organizationId),
-				eq(approvalWorkflowRollout.workflowType, "travel_expense"),
-			),
-		)
-		.limit(1);
 	// Expense claims have legacy authority only; never bind under another.
-	if (rollout?.mode === "canonical" || rollout?.mode === "complete") return null;
+	if (!(await hasLegacyTravelExpenseAuthority(database, organizationId))) return null;
 	const [evidenceMode, presentationMode] = await Promise.all([
 		readApprovalEvidenceMode(database, { organizationId, workflowType: "travel_expense" }),
 		readApprovalPresentationMode(database, {
