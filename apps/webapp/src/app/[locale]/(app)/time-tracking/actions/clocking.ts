@@ -43,7 +43,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { ValidationError } from "@/lib/effect/errors";
+import { ConflictError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
@@ -2016,6 +2016,7 @@ function describeBreakFailure(error: unknown): string | null {
 		return "The break overlaps other recorded work.";
 	}
 	if (error instanceof ClockingConflictError) return "You are not currently clocked in.";
+	if (error instanceof ConflictError) return error.message;
 	if (error instanceof WorkIntervalError) {
 		return "Break duration must be shorter than your current session.";
 	}
@@ -2210,10 +2211,10 @@ export async function addBreakToActiveSession(
 				{
 					employeeId: currentEmployee.id,
 					organizationId: currentEmployee.organizationId,
-					dirtyFromDate:
-						DateTime.fromJSDate(activeWorkPeriod.startTime, {
-							zone: "utc",
-						}).toISODate() ?? undefined,
+					dirtyFromDate: instantFromDate(activeWorkPeriod.startTime)
+						.toZonedDateTimeISO("UTC")
+						.toPlainDate()
+						.toString(),
 				},
 				{
 					employeeId: currentEmployee.id,

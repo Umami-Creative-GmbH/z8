@@ -51,7 +51,7 @@ import {
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { planCompletedWorkSplit } from "./split-work-period";
 import { admitTimeEntryAppend, TimeEntryAppendReviewRequiredError } from "./time-entry-append";
-import type { TimeEntryTimezoneSource } from "./timezone-capture";
+import type { TimeEntryTimezoneCapture } from "./timezone-capture";
 import { WorkIntervalError } from "./work-duration";
 import { assertWorkOccupancyFree } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
@@ -112,12 +112,7 @@ export type SplitCompletedWorkResult = {
 	owner: { employeeId: string };
 	actor: { kind: "human"; userId: string };
 	authority: "owner";
-	split: {
-		at: string;
-		utcOffsetMinutes: number;
-		timezone: string;
-		timezoneSource: TimeEntryTimezoneSource;
-	};
+	split: TimeEntryTimezoneCapture & { at: string };
 	/** The source exactly as the operation locked it. */
 	source: SplitSegment & { approvalState: string; recordCreatedBy: string };
 	segments: [
@@ -154,11 +149,7 @@ export type SplitCompletedWorkInput = {
 	command: SplitCompletedWorkCommand;
 	/** The resolved split instant and its capture in the zone it was resolved in. */
 	splitAt: Instant;
-	capture: {
-		utcOffsetMinutes: number;
-		timezone: string;
-		timezoneSource: TimeEntryTimezoneSource;
-	};
+	capture: TimeEntryTimezoneCapture;
 	/**
 	 * The period state the caller validated and showed. The operation re-reads it
 	 * under its locks; any difference is a stale source.
@@ -427,6 +418,13 @@ export async function splitCompletedWork(
 		.orderBy(asc(timeRecordAllocation.id))
 		.for("update");
 	if (!record || !detail) throw new CompletedWorkReviewRequiredError("canonical_record_missing");
+	// A canonical record still under review is review, even when the period lags.
+	if (record.approvalState === "pending") {
+		throw new ConflictError({
+			message: "This work period is awaiting approval and cannot be edited",
+			conflictType: "work_period_pending_approval",
+		});
+	}
 	const projectAllocations = allocations.filter(
 		({ allocationKind }) => allocationKind === "project",
 	);
@@ -496,7 +494,7 @@ export async function splitCompletedWork(
 		throw new TimeEntryAppendReviewRequiredError(admission.requirement);
 	}
 	const append = admission.append;
-	const splitDate = dateFromInstant(input.splitAt);
+	const splitAtDate = dateFromInstant(input.splitAt);
 	const insertEntry = async (
 		type: "clock_out" | "clock_in",
 		notes: string | null,
@@ -508,11 +506,11 @@ export async function splitCompletedWork(
 				employeeId,
 				organizationId,
 				type,
-				timestamp: splitDate,
+				timestamp: splitAtDate,
 				hash: calculateHash({
 					employeeId,
 					type,
-					timestamp: splitDate.toISOString(),
+					timestamp: splitAtDate.toISOString(),
 					previousHash: previous.hash,
 				}),
 				previousHash: previous.hash,
@@ -568,7 +566,7 @@ export async function splitCompletedWork(
 		.update(workPeriod)
 		.set({
 			clockOutId: splitClockOut.id,
-			endTime: splitDate,
+			endTime: splitAtDate,
 			durationMinutes: plan.first.durationMinutes,
 			graphRevision: sourceRevision,
 			updatedAt,
@@ -591,7 +589,7 @@ export async function splitCompletedWork(
 	const updatedRecords = await tx
 		.update(timeRecord)
 		.set({
-			endAt: splitDate,
+			endAt: splitAtDate,
 			durationMinutes: plan.first.durationMinutes,
 			updatedAt,
 			updatedBy: input.actorUserId,
@@ -617,7 +615,7 @@ export async function splitCompletedWork(
 		organizationId,
 		employeeId,
 		recordKind: "work",
-		startAt: splitDate,
+		startAt: splitAtDate,
 		endAt: period.endTime,
 		durationMinutes: plan.second.durationMinutes,
 		approvalState: record.approvalState,
@@ -654,7 +652,7 @@ export async function splitCompletedWork(
 			projectId: period.projectId,
 			workCategoryId: period.workCategoryId,
 			workLocationType: period.workLocationType,
-			startTime: splitDate,
+			startTime: splitAtDate,
 			endTime: period.endTime,
 			durationMinutes: plan.second.durationMinutes,
 			isActive: false,

@@ -86,10 +86,12 @@ The adapter's order:
    current owner authority (the #286 `lockAuthority`).
 2. Locks the period and checks it against what the caller read. A changed period
    is `time_correction_work_period_stale`, and running work is refused.
-3. Runs the unresolved-review guard (`assertNoUnresolvedWorkPeriodReview`).
+3. Runs the unresolved-review guard (`assertNoUnresolvedWorkPeriodReview`), see
+   [Review guard](#review-guard).
 4. Locks the endpoint entries, the canonical record, its work detail and all its
    allocations. A missing or diverging record is `completed_work_review_required`,
-   never repaired inline, as for amendments.
+   never repaired inline, as for amendments. A canonical record still `pending`
+   is review (`work_period_pending_approval`), even when the period status lags.
 5. Plans the segments with `planCompletedWorkSplit`. Each segment rounds its own
    exact UTC elapsed time half up, and a positive segment may store 0 minutes (#252).
 6. Checks symmetric occupancy of the resulting segments against every other work
@@ -136,13 +138,32 @@ stand with the named entries.
 Migration `0103_completed_work_split` adds the kind, the writer and the append
 operation to their CHECK unions and keeps every earlier value.
 
+The generated period is not bound to the source's approval workflow (it is not
+that workflow's source), and it gets no decision rows or auto-adjustment fields of
+its own: its lineage is the receipt's `origin` and `sourceDecisionIds`, as for the
+#303 generated segment. The retained period keeps its own auto-adjustment audit
+fields.
+
 ### Legacy split
 
 The established period-only writes are unchanged. They still supersede the source
 clock-out that the second period uses, still floor both segments and still leave
 the canonical record whole. They now run under the completed-work owner, after a
-locked "period unchanged" check and the review guard. Before this change, a legacy
-split of a period with pending approval or a pending correction went through.
+locked "period unchanged" check and the review guard, and their entry writes are
+now scoped by organization and owner. Before this change, a legacy split of a
+period with pending approval or a pending correction went through.
+
+## Review guard
+
+`assertNoUnresolvedWorkPeriodReview` (`work-period-review.ts`) is shared by every
+structural writer: the web and desktop breaks, both splits and the #286
+amendments. It refuses while the period is `pending`, while any legacy request for
+the period is pending, and now while any canonical workflow for the period is
+pending, whatever its type. Before this slice it only read canonical
+`time_correction` workflows, so a pending ordinary workflow whose period status
+lagged was not review. A pending correction keeps its message
+(`pending_time_correction_approval`); any other pending workflow is
+`work_period_pending_approval`.
 
 ## Evidence (2026-09-25)
 
@@ -176,7 +197,7 @@ verification.
     - period update and period insert;
     - balance intent and receipt.
   - Legacy: established writes, revision 0, no receipt.
-- **`work-period-split.integration.test.ts`, 19/19.** It drives the real `clockIn`
+- **`work-period-split.integration.test.ts`, 20/20.** It drives the real `clockIn`
   and `clockOut` and both `splitWorkPeriod` exports.
   - Adopted split of 08:00:40 to 17:00:31 UTC at Berlin 14:00:
     - the segments are 239 and 301 minutes in both representations;
@@ -190,12 +211,14 @@ verification.
     - the receipt matches exactly.
   - Replay through the other export returns the same periods and writes nothing, and
     a changed request is a collision. The other export then splits the generated
-    segment as fresh work (180 and 121 minutes).
+    segment as fresh work (180 and 121 minutes). The first identity then no longer
+    replays: its committed segments no longer stand, so it is a collision with no
+    writes.
   - A 20-second segment stores 0 minutes.
   - Prior-day work across Berlin midnight splits at 00:30, and the balance
     refresh starts on the first local date.
   - A pending correction request refuses the split with no writes, both adopted and
-    legacy.
+    legacy. So does a canonical record still under review.
   - Overlapping work is refused with no writes, and so is a diverging canonical
     record (held for review).
   - An injected failure at each of eleven writes leaves every row unchanged, and the
@@ -209,6 +232,19 @@ verification.
 - **Mutations** (PostgreSQL, both suites):
   - removing the split's review guard fails the adopted review test;
   - dropping the carried project fails the adopted break test.
+- **Full PostgreSQL runner:** 68 files. 1201 passed and 6 skipped (the Chrome-only
+  browser suite). One test timed out at 5 s while typecheck and lint ran on the
+  same machine: `work-period-approvals` "pages past malformed canonical policy
+  evidence". After the review fixes, that suite and every suite that uses the
+  shared review guard or close/resume passed together, 325/325:
+  - work-period approvals;
+  - active break and split;
+  - #286 amendments;
+  - the #281 command route;
+  - the #301 correction lifecycle.
+- **Write-boundary scanner (Linux `node:24`):** 290/290. The split operation is a
+  canonical owner. The legacy writes are registered under
+  `splitLegacyWorkPeriod` and `addLegacyBreak`.
 - **Unit tests:**
   - `split-work-period.test.ts` covers the planner: rounding, zero minutes and
     out-of-period splits.
@@ -216,6 +252,9 @@ verification.
     inside the owner, the review refusal, the adopted operation call, replay and
     validation.
   - `split-work-period-dialog.test.tsx` covers the split identity across retries.
+  - `tsc` is clean. The full webapp suite was compared with clean `dev`, test by test:
+    139 failures on both sides, all the same tests, so there are no new failures. They
+    are the known Windows, CRLF and date-dependent ones.
 
 ## Not verified and activation blockers
 

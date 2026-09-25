@@ -560,6 +560,12 @@ describeIntegration("calendar splits through the completed-work operation on Pos
 		expect((await segments()).map(({ duration_minutes }) => duration_minutes)).toEqual([
 			239, 180, 121,
 		]);
+		// The first split's committed segments no longer stand as committed.
+		const resplit = await snapshot();
+		await expect(
+			split(period.id, { time: "14:00", before: "Morning", after: "Afternoon" }, submissionId),
+		).resolves.toMatchObject({ success: false, error: collision });
+		expect(await snapshot()).toEqual(resplit);
 	});
 
 	it("keeps a positive segment that rounds to zero minutes", async () => {
@@ -656,6 +662,22 @@ describeIntegration("calendar splits through the completed-work operation on Pos
 			success: false,
 			error: "The time range overlaps other recorded work",
 			code: "work_interval_occupied",
+		});
+		expect(await snapshot()).toEqual(before);
+	});
+
+	it("refuses a split while any canonical review of the period is pending", async () => {
+		const period = await recordWork();
+		// An ordinary workflow still pending although the period status says approved.
+		await admin.query(`update time_record set approval_state = 'pending' where id = $1`, [
+			period.canonical_record_id,
+		]);
+		const before = await snapshot();
+
+		await expect(split(period.id, { time: "14:00" }, randomUUID())).resolves.toEqual({
+			success: false,
+			error: "This work period is awaiting approval and cannot be edited",
+			code: "work_period_pending_approval",
 		});
 		expect(await snapshot()).toEqual(before);
 	});

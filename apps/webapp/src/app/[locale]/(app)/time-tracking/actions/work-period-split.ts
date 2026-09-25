@@ -168,7 +168,7 @@ export async function splitOwnWorkPeriod(
 							: "Split time must be between work period start and end times",
 			};
 		}
-		const splitDate = resolvedSplit.splitTime;
+		const splitAtDate = resolvedSplit.splitTime;
 
 		const validation = await validateTimeEntryRange(
 			organizationId,
@@ -191,7 +191,7 @@ export async function splitOwnWorkPeriod(
 			};
 		}
 		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: splitDate,
+			timestamp: splitAtDate,
 			timezone,
 			timezoneSource: "user_setting",
 		});
@@ -215,7 +215,7 @@ export async function splitOwnWorkPeriod(
 							employeeId: currentEmployee.id,
 							actorUserId,
 							command,
-							splitAt: instantFromDate(splitDate),
+							splitAt: instantFromDate(splitAtDate),
 							capture: splitTimezoneCapture,
 							expectedSource: {
 								clockInId: selectedWorkPeriod.clockInId,
@@ -234,7 +234,7 @@ export async function splitOwnWorkPeriod(
 						employeeId: currentEmployee.id,
 						actorUserId,
 						period: selectedWorkPeriod,
-						splitDate,
+						splitAtDate,
 						splitTimezoneCapture,
 						durations: resolvedSplit,
 						beforeNotes: request.beforeNotes,
@@ -288,7 +288,7 @@ async function splitLegacyWorkPeriod(
 		employeeId: string;
 		actorUserId: string;
 		period: typeof workPeriod.$inferSelect;
-		splitDate: Date;
+		splitAtDate: Date;
 		splitTimezoneCapture: ReturnType<typeof resolveFallbackTimezoneCapture>;
 		durations: { firstDurationMinutes: number; secondDurationMinutes: number };
 		beforeNotes?: string;
@@ -335,7 +335,7 @@ async function splitLegacyWorkPeriod(
 			employeeId,
 			organizationId,
 			type: "clock_out",
-			timestamp: input.splitDate,
+			timestamp: input.splitAtDate,
 			createdBy: input.actorUserId,
 			...input.splitTimezoneCapture,
 			notes: input.beforeNotes,
@@ -347,7 +347,7 @@ async function splitLegacyWorkPeriod(
 			employeeId,
 			organizationId,
 			type: "clock_in",
-			timestamp: input.splitDate,
+			timestamp: input.splitAtDate,
 			createdBy: input.actorUserId,
 			...input.splitTimezoneCapture,
 			notes: input.afterNotes,
@@ -358,13 +358,19 @@ async function splitLegacyWorkPeriod(
 		await tx
 			.update(timeEntry)
 			.set({ isSuperseded: true, supersededById: firstClockOut.id })
-			.where(eq(timeEntry.id, locked.clockOutId));
+			.where(
+				and(
+					eq(timeEntry.id, locked.clockOutId),
+					eq(timeEntry.organizationId, organizationId),
+					eq(timeEntry.employeeId, employeeId),
+				),
+			);
 	}
 	await tx
 		.update(workPeriod)
 		.set({
 			clockOutId: firstClockOut.id,
-			endTime: input.splitDate,
+			endTime: input.splitAtDate,
 			durationMinutes: input.durations.firstDurationMinutes,
 			updatedAt: new Date(),
 		})
@@ -382,7 +388,7 @@ async function splitLegacyWorkPeriod(
 			organizationId,
 			clockInId: secondClockIn.id,
 			clockOutId: locked.clockOutId,
-			startTime: input.splitDate,
+			startTime: input.splitAtDate,
 			endTime: locked.endTime,
 			durationMinutes: input.durations.secondDurationMinutes,
 			isActive: false,
@@ -393,7 +399,13 @@ async function splitLegacyWorkPeriod(
 		await tx
 			.update(timeEntry)
 			.set({ notes: input.afterNotes })
-			.where(eq(timeEntry.id, locked.clockOutId));
+			.where(
+				and(
+					eq(timeEntry.id, locked.clockOutId),
+					eq(timeEntry.organizationId, organizationId),
+					eq(timeEntry.employeeId, employeeId),
+				),
+			);
 	}
 	return { firstPeriodId: locked.id, secondPeriodId: secondWorkPeriod.id };
 }
