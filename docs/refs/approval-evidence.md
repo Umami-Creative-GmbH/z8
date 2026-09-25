@@ -661,3 +661,219 @@ on-behalf roles, coverage, essential gaps), `telegram/bound-approval.test.ts`
 (callback codec, invocation envelope), `bot-platform/bound-decision-notice.test.ts`
 (request versus step outcome wording, replay label, review results),
 `maintenance.test.ts`.
+
+## Manual time submissions and policy clock-outs (#302 / T38)
+
+Manual time submissions and policy clock-outs keep immutable approval evidence
+in the same tables as absences and expenses. Capture follows
+`approval_evidence_control` per organization and kind (`manual_time_submission`,
+`policy_clock_out`). No control row exists anywhere, so capture is
+**inactive for every organization**. No migration is needed: the evidence tables
+and the enum values already exist.
+
+Code: `lib/approvals/evidence/work-period-facts.ts` (facts, fingerprint,
+comparison), `work-period-evidence.ts` (capture, decision checks and records,
+result segments, 409 translation), rows in `store.ts`, whole-history cleanup in
+`maintenance.ts` (`deleteWorkPeriodApprovalEvidence`).
+
+### Who writes what, and when
+
+| Evidence | Written by | When |
+| --- | --- | --- |
+| Submitted revision (`authority` = the deciding authority) | `executeOrdinaryWorkPeriodSubmissionInTransaction`, for every caller: web clock-out through `closeActiveWork` (#274), the unadopted web/mobile closure (#272) and `createManualTimeEntry` | Same transaction. Facts are read from the locked period **before** routing or auto-completion can change it. The row is written once routing has created the lifecycle |
+| Submission activation outcome | Same owner | When routing auto-completes (requester is approver): `system` actor, persisted `approval_request.approved_at` (legacy) or `approval_workflow.completed_at` (canonical) |
+| Decision evidence (canonical) | Work-period adapter hooks in the transition engine (`preflightDecisionEvidence` / `recordDecisionEvidence`, wired by `createProductionApprovalWorkflowRuntime`) | Same transaction as the transition, terminal finalization and command receipt; executed decisions only |
+| Decision evidence (legacy, doubles as the legacy operation receipt) | Legacy branch of `executeOrdinaryWorkPeriodDecisionInTransaction` | Same transaction, after the legacy mutation (and any shadow mirror) |
+
+`closeActiveWork` receipts (#274) also name the submitted revision in
+`result.approval.submittedRevisionId` (`null` while capture is inactive). The
+receipt records the original participation; the current approval state is a
+separate read.
+
+### Submitted facts
+
+- Work period, canonical record, subject employee (owner), requester and the
+  separately evidenced submitting human (`submitterUserId`, defaulting to the
+  requester's user; the manual action passes the session user).
+- The interval: for each endpoint, the entry ID, exact UTC instant, the event's
+  own captured offset, zone and zone source. Endpoints may carry different
+  offsets.
+- The **stored submitted minutes** as persisted, never recomputed, and the UTC
+  elapsed seconds between the endpoints, kept apart.
+- Manual: the surcharge snapshot the submission captured. There is no before
+  state, and none is recorded.
+- Policy clock-out: the captured break-policy snapshot and surcharge snapshot,
+  plus `breakAdjustment: "may_apply" | "not_applicable"`, derived only from the
+  snapshot. No deduction is predicted; the number exists only as result evidence.
+- Attribution (project, category, location) is descriptive and not material.
+- Labels: subject, requester and submitter names at submission time. The
+  submission reason (free text) is never copied.
+- `submitted_at` is the persisted creation of the approval request routing
+  created (legacy) or the workflow's `submitted_at` (canonical).
+- Material fingerprint `work_period:v1:<sha256>` over identity, interval,
+  stored minutes and policy inputs.
+
+Unverifiable evidence (missing or foreign endpoint entry, an endpoint that is
+not the period boundary, an open or deleted period, equal or reversed
+endpoints, a missing break snapshot for a policy clock-out, a requester who is
+not the owner) throws `evidence_incomplete` and rolls the whole submission back:
+for web clock-out, the closure, append position, receipt and approval rows.
+
+### Decision evidence and results
+
+The decision row records the action, the approver's own outcome, the request
+outcome as of the operation (an intermediate chain approval stays `pending`),
+the persisted decision time, the actor and its label. `result` holds:
+
+- `workPeriodStatus`, read from the period as the operation leaves it;
+- legacy: `legacyRequestStatus` and `decidedAtSource`
+  (`approval_request.approved_at`, `approval_request.updated_at` for a
+  rejection, or `approval_chain_stage_instance.decided_at`), and
+  `actorAuthority`. A chain stage persists its decider, which must equal the
+  actor (`decided_stage`). A single-stage request keeps its assigned approver
+  even when an eligible manager or organization-wide approver decides it, so
+  its row cannot name the decider; the evidence records whether the
+  authorized actor was the assigned approver (`assigned_approver`) or not
+  (`other_authorized_approver`) instead of pretending the row confirmed it;
+- `terminal`, when this operation finalized the period: `status`, the committed
+  `adjustment` (`none`, `break_not_required`, or `break_enforced` with the
+  inserted minutes) and **every resulting segment**, each with its period,
+  canonical record, endpoints and captures, its own stored minutes and UTC
+  elapsed seconds, read from the result graph in the same transaction; plus the
+  follow-ups the decision owner runs after commit (work-balance date, surcharge
+  recalculation periods, stale surcharge periods).
+
+The finalizer reports what it did (`WorkPeriodApprovalResult.outcome`, passed
+to the engine as `finalization.workOutcome`); the recorder never reconstructs
+the result from the requested action. The submitted revision stays unchanged
+when a break split moves the original period's end.
+
+The owners' receipt keys embed the decision reason. Evidence stores only
+`receipt-key:sha256:<digest of the exact key>` (`workPeriodReceiptKeyDigest`),
+so reason text stays in workflow events and legacy rows.
+
+### Replay, holds and rollback
+
+- **Receipt before fresh checks.** Canonical: the engine's command receipt
+  replays before any evidence read. Legacy: the owner's established state-based
+  replay matching runs first and returns without evidence reads or writes.
+- **Fresh checks** run only after that. Once a lifecycle has a submitted
+  revision it is always enforced: the live period, its endpoint entries, stored
+  minutes and canonical record must equal the revision, otherwise
+  `material_change`. While capture is active, a lifecycle without a revision is
+  held (`evidence_required`). Supplied reviewed bindings are refused
+  (`binding_mismatch`); time-kind bindings are #325.
+- Holds surface as `ConflictError` with `conflictType: "approval_evidence"` on
+  the inbox (`decideTimeCorrectionWithStableTargetEffect` delegation), the
+  admin/bot path (`decideOrdinaryWorkPeriodWithStableTargetEffect`) and the API
+  routes. Integrity contradictions (`invariant`) stay errors.
+- An evidence write failure rolls back the decision or submission completely.
+- A replayed submission (same submission identity, or a receipt replay in
+  `closeActiveWork`) never recaptures.
+
+### Cleanup participation
+
+- Privileged `deleteApproval` removes exactly one lifecycle's revisions and
+  decision evidence through its verified workflow or legacy request links, as
+  for other kinds, and reports them in the audit.
+- Whole-history paths remove time-kind evidence with the history it describes,
+  before the history and employees are deleted: `clearOrganizationTimeData`
+  and `deleteNonAdminEmployeesData` (every lifecycle naming one of their
+  employees as subject, requester, submitter or deciding actor), organization
+  cleanup (the whole organization). Only organization cleanup runs in one
+  transaction; the two demo paths have never been transactional, so a failure
+  part-way through them can leave history without its evidence. Other kinds
+  are untouched (#306).
+- Organization deletion also cascades through the organization FK.
+
+### Activation
+
+As the authorized adoption writer, under the exclusive rollout lock of the kind
+(`:16:policy_clock_out` or `:22:manual_time_submission`):
+
+```sql
+begin;
+select pg_advisory_xact_lock(hashtextextended(
+  'approval-rollout:' || length(:org) || ':' || :org || ':16:policy_clock_out', 0));
+insert into approval_evidence_control (organization_id, workflow_type, mode)
+values (:org, 'policy_clock_out', 'capture')
+on conflict (organization_id, workflow_type) do update set mode = excluded.mode;
+commit;
+```
+
+No application endpoint changes the mode.
+
+### Activation blockers (#302, unresolved)
+
+1. **In-flight classification.** Enabling capture holds every pending manual or
+   policy clock-out request submitted before capture (`evidence_required`).
+   Drain them or record provenance-bearing reconstructed revisions through a
+   separately authorized step (not implemented).
+2. **Held requests have no resolution path or durable attention.** A materially
+   changed pending entry is refused for approve and reject; ordinary users have
+   no cancel/resubmit path for manual or policy clock-out approvals. It stays
+   pending until privileged cleanup or a separately agreed repair.
+3. **Live clock-out approval stays dormant** (`checkClockOutNeedsApproval` is
+   production-false, #361). This slice changes no approval policy; the policy
+   clock-out path is verified only with that decision forced.
+4. Manual submissions still use the pre-#308 action (caller-side zone
+   interpretation, overlap trimming, age check). The evidence records what that
+   action stored; the strict manual command is #308. That action's own record
+   of the submission (the canonical record's `computationMetadata`) is written
+   before routing and does not name the submitted revision; the revision is
+   reachable through the approval request it references. A manual operation
+   receipt that names it belongs with #308.
+5. Terminal split lineage and the review exemption are #303; this slice
+   records the committed segments but does not change how splits are made
+   (including the second segment's minutes, derived by subtraction).
+6. Presentation of these facts in the inbox and cards is #325; bindings for
+   time kinds do not exist yet.
+7. Not verified on PostgreSQL: mobile and offline clock-out callers (same
+   owner), bots deciding time approvals, multi-stage chains, `shadow`/`ready`
+   modes, concurrent decision races, and old binaries (pre-deployment binaries
+   submit and decide without evidence).
+8. Whole-organization cleanup ordering for other kinds (#306), then the pilot
+   (#329/#330).
+
+### Verification (#302)
+
+PostgreSQL 16 (`time-tracking/actions/clocking.approval-evidence.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+`clockIn`/`clockOut` (adopted through `closeActiveWork`), `createManualTimeEntry`,
+inbox `approveApprovalInboxItem`/`rejectApprovalInboxItem`, `deleteApproval`
+and `clearOrganizationTimeData`. Only session, billing, notification delivery
+and Next cache are replaced; clock-out and manual approval requirements are
+forced. 10/10 passing:
+
+- policy clock-out capture: legacy revision linked to the routed request,
+  endpoint captures, stored 61 minutes versus 3640 elapsed seconds, break
+  disclosure from the snapshot, labels, `submitted_at` from the request; the
+  receipt names the revision; exact retry writes nothing;
+- capture inactive writes nothing and the receipt says so;
+- unroutable approval and an injected revision insert failure leave every row
+  unchanged;
+- approval with a break split: decision time from `approved_at`, actor, and
+  both resulting segments (360 and 31 stored minutes, captures, entry IDs),
+  follow-ups; the submitted revision unchanged; `UPDATE` rejected; replay
+  writes nothing;
+- rejection time from `updated_at`, no reason text in evidence;
+- `evidence_required` and `material_change` holds leave every row unchanged;
+  an injected decision-evidence failure rolls the decision back, which then
+  commits freshly;
+- canonical lifecycle: revision on the workflow, decision with stage,
+  assignment, events and assignment resolution time;
+- manual submission: browser-zone captures (+120), 510 stored minutes, no
+  before state, no reason text; exact retry writes nothing; approval evidence;
+- privileged cleanup removes exactly one lifecycle; time-data cleanup removes
+  the rest.
+- the whole-history helper removes a lifecycle whose deciding approver is
+  deleted while its subject stays. (`deleteNonAdminEmployeesData` itself still
+  cannot delete such an approver: the pre-existing `approval_request.approver_id`
+  FK blocks it, unrelated to evidence.)
+
+Unit seams: `evidence/work-period-facts.test.ts`,
+`domain-adapters/work-period.adapter.test.ts` (hooks, work outcome),
+`server/work-period-approvals.test.ts` (legacy prepare → mutation → record
+ordering, hold before mutation, failure propagation),
+`policy-clock-out-terminal-break.test.ts` (created period reported),
+`jobs/organization-cleanup.test.ts`.
