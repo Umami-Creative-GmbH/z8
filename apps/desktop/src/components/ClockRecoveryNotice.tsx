@@ -33,6 +33,10 @@ function eventTime(command: SavedClockCommand) {
   return `${formatted} (${command.timezone})`;
 }
 
+function isUnresolved(command: SavedClockCommand) {
+  return command.state === "pending" || command.state === "stalled" || command.state === "rejected";
+}
+
 function describeState(command: SavedClockCommand, failure: CommandFailure | null) {
   switch (command.state) {
     case "pending":
@@ -42,7 +46,9 @@ function describeState(command: SavedClockCommand, failure: CommandFailure | nul
     case "stalled":
       return "Not confirmed after repeated attempts. The server may already have it. Retry checks first, then sends the same action again.";
     case "rejected":
-      return `The server did not save this action (${failure?.code ?? "unknown reason"}). Check your time entries in Z8. Archiving keeps this record on the device.`;
+      return command.archivable
+        ? `The server did not save this action (${failure?.code ?? "unknown reason"}). Check your time entries in Z8. Archiving keeps this record on the device.`
+        : `The server already holds other or changed work under this action (${failure?.code ?? "unknown reason"}). Check your time entries in Z8 and arrange a reviewed correction; this record stays here.`;
     case "committed":
       return "Saved by the server.";
     case "archived":
@@ -69,7 +75,7 @@ function SavedCommand({ command, onRetry, onArchive, isUpdating }: {
         {command.state === "stalled" && (
           <button type="button" className="clock-recovery-refresh" disabled={isUpdating} onClick={() => onRetry(command.operationId)}>Retry</button>
         )}
-        {command.state === "rejected" && (
+        {command.archivable && (
           <button type="button" className="clock-recovery-refresh" disabled={isUpdating} onClick={() => onArchive(command.operationId)}>Archive</button>
         )}
         <button type="button" className="clock-recovery-refresh" onClick={copyDetails}>Copy details</button>
@@ -90,9 +96,12 @@ export function ClockRecoveryNotice({
 }: ClockRecoveryNoticeProps) {
   const legacy = journal?.legacy;
   const hasRetainedRecords = !!legacy && legacy.total > 0;
-  const unresolved = journal?.commands.filter((command) => command.state !== "committed" && command.state !== "archived") ?? [];
+  const unresolved = journal?.commands.filter(isUnresolved) ?? [];
+  const resolved = journal?.commands.filter((command) => !isUnresolved(command)) ?? [];
   const otherContexts = journal?.otherContexts ?? 0;
-  if (!hasRetainedRecords && !journalError && !actionError && !needsStatusRefresh && unresolved.length === 0 && otherContexts === 0) {
+  // Archived evidence stays visible; routine committed actions alone do not open the notice.
+  const hasArchived = resolved.some((command) => command.state === "archived");
+  if (!hasRetainedRecords && !journalError && !actionError && !needsStatusRefresh && unresolved.length === 0 && otherContexts === 0 && !hasArchived) {
     return null;
   }
 
@@ -107,6 +116,16 @@ export function ClockRecoveryNotice({
           <summary>{countFormatter.format(unresolved.length)} clock actions saved on this device</summary>
           <ul>
             {unresolved.map((command) => (
+              <SavedCommand key={command.operationId} command={command} onRetry={onRetry} onArchive={onArchive} isUpdating={isUpdating} />
+            ))}
+          </ul>
+        </details>
+      )}
+      {resolved.length > 0 && (
+        <details>
+          <summary>Recently resolved clock actions</summary>
+          <ul>
+            {resolved.map((command) => (
               <SavedCommand key={command.operationId} command={command} onRetry={onRetry} onArchive={onArchive} isUpdating={isUpdating} />
             ))}
           </ul>

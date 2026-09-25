@@ -40,10 +40,16 @@ instant and the device IANA zone (`iana-time-zone`). The caller then:
 
 1. Stops if identity-less legacy rows exist (unchanged #268 rule).
 2. Reads capabilities. When they are fetched, they are cached for this endpoint and session
-   (SHA-256 of the token; the token is not stored again). The command declares `immediate`
-   admission. If the server is unreachable, only capabilities that this session negotiated
-   earlier may be asserted, and the command declares `delayed` admission (seven days past).
-   Without them, or without a device zone, the action uses the legacy transport.
+   (SHA-256 of the token; the token is not stored again). If the server is unreachable, only
+   capabilities that this session negotiated earlier may be asserted. Without either, the
+   action uses the legacy transport. When the context accepts frozen commands but the device
+   zone cannot be read, the action is refused before sending instead of falling back to the
+   legacy writer.
+   Every desktop command declares `delayed` admission (seven days past, five minutes future),
+   online or offline. It is saved before sending and may be delivered late. An `immediate`
+   command whose first send failed would be refused after five minutes, and it cannot be
+   changed without a new identity. Device clock skew is therefore bounded by the delayed
+   window, not by five minutes.
 3. Refuses a new action while a command of this context needs review (`rejected` or `stalled`).
 4. Binds the intended work:
    - A clock-out after an unsent clock-in targets `{ clockInOperationId }`.
@@ -80,9 +86,9 @@ depends on them. Nothing else is deleted: bounded retries stop attempts, never r
 Logout forgets `clock_context` and leaves every command in place.
 
 States: `pending` (sent automatically), `stalled` (the automatic bound of 8 transient
-failures is reached; retried only on request), `rejected` (refused without a write; needs
-review), `committed` (receipt stored), `archived` (a rejected command set aside; evidence
-kept).
+failures is reached; retried only on request), `rejected` (refused; needs review),
+`committed` (receipt stored), `archived` (a command refused without committed work, set
+aside; evidence kept).
 
 ## Sending and recovery
 
@@ -112,25 +118,33 @@ For each command in capture order:
 | `executed` / `replayed` for this operation | `committed`, receipt stored |
 | no answer, `unknown`, 5xx, unreadable 2xx, `approval_policy_unavailable` | transient: same command again |
 | `unauthorized`, `access_denied`, `billing_required`, `context_mismatch`, `not_adopted`, `unsupported_version`, other 4xx | paused: waits, no failure counted |
-| every other typed refusal (`collision`, `target_unknown`, `target_not_active`, `occupancy_conflict`, `admission_window`, `append_review_required`, …) | `rejected` with the server body as evidence |
+| `collision`, `integrity_review_required`, lookup `conflict` | `rejected`, never archivable: committed work exists under the identity |
+| every other typed refusal (`target_unknown`, `target_not_active`, `occupancy_conflict`, `admission_window`, `append_review_required`, …) | `rejected` with the server body as evidence; archivable |
 
 Recovery actions are allowed only for a command whose captured context equals the
 session's current context:
 
 - **Retry** puts a `stalled` command back to `pending`. It keeps the identity and bytes and
   looks the command up first.
-- **Archive** is allowed only for `rejected` commands, which the server refused without
-  writing. Archiving cancels nothing on the server.
+- **Archive** is allowed only for commands the server refused without any committed work
+  under their identity. The store enforces this, not only the UI. A collision, an integrity
+  review or a lookup conflict stays active and keeps blocking new actions in its context
+  until a reviewed correction resolves it. Archiving cancels nothing on the server, and
+  archived commands stay visible.
 - **Copy details** exports the exact command, lifecycle and receipt.
 
 The recovery notice shows each action's time in its captured zone, not the viewer's.
 
-While the server is unreachable, the UI enables clocking from the negotiated context and
-shows the projected state:
+While the server is unreachable, the UI enables clocking from the negotiated context.
+
+Whenever commands of the context are unsent (online too), the clock shows their projected
+state, and the recovery notice lists them:
 
 - An unsent clock-in shows as clocked in.
 - An unsent clock-out shows as clocked out.
-- With nothing unsent, the last status seen for this employee is shown.
+
+The next action then binds the unsent command, not a server period. Offline with nothing
+unsent, the last status seen for this employee is shown.
 
 A committed receipt is the original outcome. Current status is always a separate read.
 
@@ -150,7 +164,7 @@ their missing context cannot be inferred. They remain byte-identical after the u
 
 ## Verification (2026-09-25)
 
-**Desktop core** (`pnpm --filter desktop test:clock`, Windows): **44 passed**. Two
+**Desktop core** (`pnpm --filter desktop test:clock`, Windows): **46 passed**. Two
 subprocess fixtures run through their parent tests. The harness compiles the real
 `clock.rs`, `clock_command.rs`, `offline.rs`, `frozen_command.rs`, `command_store.rs`,
 `command_transport.rs`, `command_sync.rs` and `clock_journal.rs`. It uses real SQLite
@@ -182,8 +196,9 @@ files, triggers and locks, and real HTTP on loopback. Scenarios:
   back off and stall after the bound without changing the command.
 - The journal discloses only the current context. It counts other contexts and projects
   saved work, or the last status offline.
-- The unadopted server keeps the legacy transport and freezes nothing. The #268 legacy
-  scenarios still pass.
+- The unadopted server keeps the legacy transport and freezes nothing. An accepting context
+  with an unreadable device zone refuses before sending, with no legacy request. A collision
+  refusal cannot be archived. The #268 legacy scenarios still pass.
 
 Mutations, each run against the whole suite:
 
@@ -207,7 +222,7 @@ verified): `commands/route.integration.test.ts` **17/17**. This includes a new t
 sends commands built from the desktop fixtures through the real routes:
 
 - lookup `not_committed` before the first send;
-- a delayed start two days back, 201;
+- a start two days back (the fixture's `delayed` admission), 201;
 - lookup `committed` with the verbatim command;
 - an identical resend, 200, with every row unchanged;
 - the dependent clock-out, closing exactly that work (480 minutes).
@@ -237,6 +252,14 @@ This slice closes on implementation (see the #264 decision); these move to #327,
 - **Deployed desktop inventory and old-consumer control (#266, #327).** Old binaries cannot
   see `clock_command`, but they still read and delete the legacy `queue`. Establish deployed
   versions and effective update/disable control before strict admission.
+- **Legacy clock-in/out writer (#327).** The legacy transport stays in use where the server
+  does not offer v2 submission, and offline when this session never negotiated a context
+  (for example, after signing in while offline). Its failures still produce identity-less
+  rows. In an adopted organization that offline case is a non-participating writer until
+  the legacy transport is gated.
+- **Editing saved commands.** The desktop has no editor for saved actions. A new action
+  after archiving gets a new, unlinked identity. #263 §7's linked replacement identity and
+  authorized reconciliation of committed-evidence refusals are not provided here.
 - **Legacy rows.** Identity-less rows still block clocking on the installation. Authorized,
   evidence-based resolution and raw export remain open: ownership cannot be established from
   a current login.

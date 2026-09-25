@@ -67,6 +67,8 @@ export interface SavedClockCommand {
   capturedAtMs: number;
   dependsOn: string | null;
   failure: CommandFailure | null;
+  /** Refused without committed work under its identity, so it may be archived. */
+  archivable: boolean;
   /** The exact command sent on every attempt. */
   command: string;
   /** The server's original receipt; not current status. */

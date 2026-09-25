@@ -175,7 +175,7 @@ fn captured_command_is_immutable_and_unresolved_evidence_cannot_be_deleted() {
             store
                 .record_failure(
                     stored.recovery_id,
-                    &failure(FailureClass::Rejected, "collision"),
+                    &failure(FailureClass::Rejected, "occupancy_conflict"),
                 )
                 .unwrap();
         } else {

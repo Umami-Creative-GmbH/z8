@@ -8,8 +8,7 @@ use crate::clock_command::{
     self, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockDevice,
 };
 use crate::clock_journal::ClockJournal;
-use crate::command_store::{token_fingerprint, CommandStore};
-use crate::command_transport::{Capabilities, CapabilitiesFetch};
+use crate::command_store::CommandStore;
 use crate::offline::RecoverySummary;
 use crate::settings::Settings;
 use crate::startup;
@@ -134,15 +133,9 @@ async fn run_clock_command(
     if webapp_url.is_empty() {
         return Err(ClockCommandError::pre_send("Webapp URL not configured"));
     }
-    let store = command_store(&state).map_err(ClockCommandError::pre_send)?;
     let service = ClockService::new();
-    let device = ClockDevice {
-        service: &service,
-        queue: &state.offline_queue,
-        store,
-        endpoint: &webapp_url,
-        token: &token,
-    };
+    let device = clock_device(&state, &service, &webapp_url, &token)
+        .map_err(ClockCommandError::pre_send)?;
     let mut outcome = clock_command::execute(&device, command, evidence).await?;
     // Do not publish an old context's current-state result into a new session.
     if state.get_session_token().as_deref() == Some(&token) && state.get_webapp_url() == webapp_url
@@ -328,12 +321,8 @@ pub async fn sync_clock_commands(
     let device = clock_device(&state, &service, &webapp_url, &token)?;
     let unreadable = |_| "Cannot read local clock storage. Clock actions are paused.".to_string();
     let Ok(_guard) = state.clock_command_lock.try_lock() else {
-        let context = device
-            .store
-            .lock()
-            .cached_context(&webapp_url, &token_fingerprint(&token))
+        let context = clock_command::cached_capabilities(&device)
             .map_err(unreadable)?
-            .and_then(|cached| Capabilities::parse(&cached.capabilities))
             .and_then(|capabilities| capabilities.command_context());
         let legacy = state.offline_queue.lock().recovery_summary().map_err(unreadable)?;
         return crate::clock_journal::build(
@@ -350,37 +339,19 @@ pub async fn sync_clock_commands(
     clock_command::sync(&device, force).await.map_err(unreadable)
 }
 
-/// The session's context from the server, or else from this session's cache.
-async fn current_context(
-    store: &parking_lot::Mutex<CommandStore>,
-    webapp_url: &str,
-    token: &str,
-) -> Option<crate::frozen_command::CommandContext> {
-    let capabilities = match ClockService::new()
-        .command_capabilities(webapp_url, token)
-        .await
-    {
-        CapabilitiesFetch::Fetched(capabilities) => Some(capabilities),
-        CapabilitiesFetch::Unreachable => store
-            .lock()
-            .cached_context(webapp_url, &token_fingerprint(token))
-            .ok()
-            .flatten()
-            .and_then(|cached| Capabilities::parse(&cached.capabilities)),
-        CapabilitiesFetch::Unauthorized | CapabilitiesFetch::NotOffered => None,
-    };
-    capabilities?.command_context()
-}
-
 /// Only the context that captured a command may act on it.
 async fn owned_command(state: &AppState, operation_id: &str) -> Result<(), String> {
     let token = state.get_session_token().ok_or("Not authenticated")?;
     let webapp_url = state.get_webapp_url();
-    let store = command_store(state)?;
-    let context = current_context(store, &webapp_url, &token)
+    let service = ClockService::new();
+    let device = clock_device(state, &service, &webapp_url, &token)?;
+    let context = clock_command::negotiate(&device)
         .await
+        .ok()
+        .and_then(|negotiated| negotiated.capabilities().and_then(|c| c.command_context()))
         .ok_or("The account and organization for this clock action cannot be confirmed.")?;
-    let command = store
+    let command = device
+        .store
         .lock()
         .get(operation_id)
         .map_err(|_| "Cannot read local clock storage.".to_string())?

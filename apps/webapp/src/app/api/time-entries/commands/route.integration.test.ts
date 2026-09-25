@@ -934,7 +934,6 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		const start: Command = {
 			...desktop("desktop-v2-clock-in.json"),
 			operationId: randomUUID(),
-			admission: "delayed",
 			context: context(),
 			occurredAt: startedAt.toString({ fractionalSecondDigits: 3 }),
 		};

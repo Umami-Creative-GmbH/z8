@@ -105,6 +105,11 @@ pub enum FailureClass {
     Rejected,
 }
 
+/// Refusals that point at existing committed evidence under the identity. They
+/// are reviewed like other refusals but can never be archived.
+pub const COMMITTED_EVIDENCE_CODES: [&str; 3] =
+    ["collision", "integrity_review_required", "conflict"];
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CommandFailure {
@@ -114,6 +119,15 @@ pub struct CommandFailure {
     /// The server's response body, kept as evidence.
     pub response: Option<serde_json::Value>,
     pub at_ms: i64,
+}
+
+impl CommandFailure {
+    /// Whether the server refused the command without any committed work
+    /// under its identity, so that setting it aside hides nothing.
+    pub fn refused_without_commit(&self) -> bool {
+        self.class == FailureClass::Rejected
+            && !COMMITTED_EVIDENCE_CODES.contains(&self.code.as_str())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -379,6 +393,14 @@ impl CommandStore {
     /// Sets aside a command the server refused without writing. The evidence
     /// stays; this cancels nothing on the server.
     pub fn archive(&mut self, operation_id: &str, at_ms: i64) -> Result<()> {
+        let refused = self
+            .get(operation_id)?
+            .and_then(|command| command.failure)
+            .is_some_and(|failure| failure.refused_without_commit());
+        ensure!(
+            refused,
+            "Only a command refused without committed work can be archived"
+        );
         self.update_one(
             "UPDATE clock_command SET state = 'archived', resolved_at_ms = ?
              WHERE operation_id = ? AND state = 'rejected'",

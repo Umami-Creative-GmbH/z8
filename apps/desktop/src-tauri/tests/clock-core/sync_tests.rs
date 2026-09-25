@@ -92,7 +92,10 @@ async fn online_clock_in_is_frozen_and_saved_before_its_first_send() {
     let command = json(&sent);
     assert_eq!(command["version"], 2);
     assert_eq!(command["kind"], "clock_in");
-    assert_eq!(command["admission"], "immediate");
+    assert_eq!(
+        command["admission"], "delayed",
+        "Saved before sending, so it may be delivered late"
+    );
     assert_eq!(command["timezone"], "Europe/Berlin");
     assert_eq!(command["workLocationType"], "home");
     assert_eq!(command["context"]["organizationId"], "org-1");
@@ -607,4 +610,47 @@ async fn offline_after_restart_the_journal_projects_the_last_status_seen() {
         .unwrap();
     assert!(!journal.commands_enabled);
     assert_eq!(journal.projection, None);
+}
+
+#[tokio::test]
+async fn an_accepting_context_never_falls_back_to_the_legacy_writer() {
+    let device = Device::new();
+    let (url, server) = server(vec![Some((200, capabilities("org-1", "available")))]);
+    let error = crate::clock_command::execute(
+        &device.at(&url, crate::support::TOKEN),
+        clock_in(),
+        crate::clock_command::ActionEvidence {
+            occurred_at: chrono::Utc::now(),
+            timezone: None,
+        },
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(server.join().unwrap().len(), 1, "No legacy request");
+    assert!(error.message.contains("time zone"), "{}", error.message);
+    assert!(device.saved().is_empty());
+    assert_eq!(device.queue.lock().count().unwrap(), 0);
+}
+
+#[tokio::test]
+async fn a_refusal_over_committed_evidence_cannot_be_archived() {
+    let device = Device::new();
+    let url = free_endpoint();
+    device.negotiated(&url, "org-1", false);
+    device.act(&url, clock_in()).await.unwrap();
+    let server = serve_on(&url, 2, |index, request| match index {
+        0 => Some((200, not_committed(request))),
+        _ => Some((409, rejection(&operation(request), "collision"))),
+    });
+    device.sync(&url, "org-1", "available").await;
+    server.join().unwrap();
+    let saved = device.saved()[0].clone();
+    assert_eq!(saved.state, CommandState::Rejected);
+    assert!(device.store.lock().archive(&saved.operation_id, 1).is_err());
+    assert_eq!(device.saved()[0].state, CommandState::Rejected);
+
+    let journal = crate::clock_command::sync(&device.at(&url, crate::support::TOKEN), false)
+        .await
+        .unwrap();
+    assert!(!journal.commands[0].archivable);
 }

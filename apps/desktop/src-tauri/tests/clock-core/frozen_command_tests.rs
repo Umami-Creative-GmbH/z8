@@ -53,7 +53,7 @@ fn clock_in_freezes_the_exact_v2_wire_command() {
         context(),
         instant(),
         "Europe/Berlin",
-        Admission::Immediate,
+        Admission::Delayed,
         WorkLocationType::Remote,
         None,
     );

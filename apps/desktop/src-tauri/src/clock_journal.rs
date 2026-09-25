@@ -25,6 +25,8 @@ pub struct CommandView {
     pub captured_at_ms: i64,
     pub depends_on: Option<String>,
     pub failure: Option<CommandFailure>,
+    /// Refused without committed work under its identity, so it may be archived.
+    pub archivable: bool,
     /// The exact frozen command, for inspection and export.
     pub command: String,
     /// The server's original receipt; current status is a separate read.
@@ -42,6 +44,11 @@ impl From<StoredCommand> for CommandView {
             attempts: command.attempts,
             captured_at_ms: command.captured_at_ms,
             depends_on: command.depends_on,
+            archivable: command.state == CommandState::Rejected
+                && command
+                    .failure
+                    .as_ref()
+                    .is_some_and(CommandFailure::refused_without_commit),
             failure: command.failure,
             command: command.command,
             receipt: command.receipt,
