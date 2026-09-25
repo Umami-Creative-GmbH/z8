@@ -86,6 +86,8 @@ acquires an earlier-ranked resource late.
 
 Inside that transaction, `actions/manual-command-submission.ts`:
 
+0. Billing revalidation through the transaction, which never provisions (#317). Denial is
+   `billing_required` with nothing replayed or written.
 1. **Replay first, in every mode.** A receipt with the same organization, employee, writer,
    kind and exact command replays its committed result without any fresh check, repair or
    effect; this also holds after a return to inactive. A different command under the identity,
@@ -212,12 +214,13 @@ This slice closes on implementation. The items below are activation gates for #3
 
 - **Configuration writers** (#311–#318) do not yet take the exclusive configuration and
   user access guards, so the shared guards reserve the protocol without fencing settings,
-  auth/SCIM, project/category and billing mutations. Holiday, blocking-category and
+  auth/SCIM and project/category mutations. Holiday, blocking-category and
   change-policy writers participate since #316
   ([evidence](holiday-change-policy-coordination-316.md)), except the import, demo and
-  cleanup writers left to #318.
-- **Billing** is still checked before the transaction with the provisioning gate; the
-  transaction-bound non-provisioning recheck is #317.
+  cleanup writers left to #318. Billing writers participate since #317.
+- **Billing**: implemented by #317. The transaction now also revalidates billing with a
+  non-provisioning read before replay, and billing writers take exclusive protection. See
+  [billing-revalidation-317.md](billing-revalidation-317.md).
 - **Frozen command recovery** (tab-scoped storage, lookup-only recovery, exact retry after an
   uncertain result) was delivered by #310; see [manual-command-recovery-310.md](manual-command-recovery-310.md).
 - **Other writers** that create intervals (corrections #301/#286, breaks/splits #304, on-behalf

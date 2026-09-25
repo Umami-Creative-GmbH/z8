@@ -8,8 +8,10 @@ import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
 	reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
 } from "@/lib/approvals/server/work-period-approvals";
-import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
+import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import type { BillingSuspensionReason } from "@/lib/effect/services/billing/billing-access";
+import { readBillingAccessInTransaction } from "@/lib/effect/services/billing/billing-configuration";
 import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
@@ -52,13 +54,14 @@ import {
 /**
  * Submission of one strict version-2 manual command (#308 / T44).
  *
- * The action authenticates, checks billing and resolves the currently
- * authorized target, then calls this once. Everything else happens in the
- * manual work transaction: exact receipt replay first (in every mode, before
- * any fresh check), then, only in adopted organizations, one evaluation
- * instant, protected preparation and the completed-work operation. Required
- * notification delivery and best-effort surcharge work run after commit; their
- * failure never turns a committed save into a failure.
+ * The action authenticates, checks billing (provisioning a default trial if
+ * needed) and resolves the currently authorized target, then calls this once.
+ * Everything else happens in the manual work transaction: a non-provisioning
+ * billing revalidation through the transaction (#317), exact receipt replay (in
+ * every mode, before any fresh check), then, only in adopted organizations, one
+ * evaluation instant, protected preparation and the completed-work operation.
+ * Required notification delivery and best-effort surcharge work run after
+ * commit; their failure never turns a committed save into a failure.
  */
 
 export type ManualCommandRejection = ManualPreparationRejection | ManualWorkRejection;
@@ -69,7 +72,9 @@ export type ManualCommandOutcome =
 	/** The organization has not adopted versioned manual commands; nothing was written. */
 	| { kind: "not_adopted" }
 	/** The identity names other committed work or evidence that no longer stands. */
-	| { kind: "collision" };
+	| { kind: "collision" }
+	/** Billing access ended before the protected read; nothing was replayed or written. */
+	| { kind: "billing_required"; reason: BillingSuspensionReason };
 
 export async function submitManualTimeEntryCommand(input: {
 	actor: ManualActor;
@@ -95,6 +100,13 @@ export async function submitManualTimeEntryCommand(input: {
 			createOrdinaryApprovalRuntime,
 			async (context): Promise<ManualCommandOutcome> => {
 				committed.write = null;
+				// Billing writers take exclusive protection; this read never provisions.
+				const billing = await readBillingAccessInTransaction(context.db, actor.organizationId, {
+					now: dateFromInstant(clock.nowInstant()),
+				});
+				if (!billing.canAccess) {
+					return { kind: "billing_required", reason: billing.reason ?? "subscription_required" };
+				}
 				const replayed = await replayManualWork(context, {
 					organizationId: actor.organizationId,
 					employeeId: target.id,
@@ -316,6 +328,8 @@ export async function createManualTimeEntryFromCommand(input: {
 				error: "Manual entry settings changed. Please review the entry and submit it again.",
 				code: MANUAL_ENTRY_NOT_ADOPTED,
 			};
+		case "billing_required":
+			return { success: false, error: "billing_required", code: outcome.reason };
 		case "collision":
 			return {
 				success: false,
