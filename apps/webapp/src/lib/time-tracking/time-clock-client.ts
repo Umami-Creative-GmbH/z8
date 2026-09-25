@@ -22,8 +22,8 @@ type TimeClockRequest =
 	| {
 			action: "clock_out";
 			submissionId: string;
-			projectId?: string;
-			workCategoryId?: string;
+			projectId?: string | null;
+			workCategoryId?: string | null;
 			browserTimezone?: string | null;
 	  };
 
@@ -62,8 +62,8 @@ export function postClockIn(input: {
 
 export function postClockOut(input: {
 	submissionId: string;
-	projectId?: string;
-	workCategoryId?: string;
+	projectId?: string | null;
+	workCategoryId?: string | null;
 	browserTimezone?: string | null;
 }): Promise<WebClockOutResult> {
 	return postTimeClock({ action: "clock_out", ...input });

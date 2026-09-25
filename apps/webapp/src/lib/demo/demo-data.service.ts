@@ -38,6 +38,7 @@ import {
 	team,
 	teamMembership,
 	timeEntry,
+	completedWorkOperation,
 	timeEntryAppendPosition,
 	timeRecord,
 	workCategory,
@@ -3137,6 +3138,15 @@ export async function clearOrganizationTimeData(
 					and(
 						eq(timeEntryAppendPosition.organizationId, organizationId),
 						inArray(timeEntryAppendPosition.employeeId, employeeIds),
+					),
+				);
+			// Operation receipts describe that history by value; remove them with it.
+			await db
+				.delete(completedWorkOperation)
+				.where(
+					and(
+						eq(completedWorkOperation.organizationId, organizationId),
+						inArray(completedWorkOperation.employeeId, employeeIds),
 					),
 				);
 			await db

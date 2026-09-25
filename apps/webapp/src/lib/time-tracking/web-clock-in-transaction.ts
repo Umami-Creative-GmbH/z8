@@ -1,13 +1,12 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { timeEntryAppendControl } from "@/db/schema";
 import {
 	acquireAdoptionGate,
 	acquireEmployeeCoordination,
 	acquireOrganizationConfigurationGuard,
 	acquireUserConfigurationAccessGuards,
+	readAppendAdmission,
 	sealWorkTransactionScope,
 	type WorkTransactionScope,
 } from "./work-transaction";
@@ -31,11 +30,7 @@ export async function withWebClockInTransaction<T>(
 ): Promise<T> {
 	return db.transaction(async (transaction) => {
 		await acquireAdoptionGate(transaction, input.organizationId);
-		const [control] = await transaction
-			.select({ mode: timeEntryAppendControl.mode })
-			.from(timeEntryAppendControl)
-			.where(eq(timeEntryAppendControl.organizationId, input.organizationId))
-			.limit(1);
+		const admission = await readAppendAdmission(transaction, input.organizationId);
 		await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
 		await acquireUserConfigurationAccessGuards(transaction, [input.userId]);
 		await acquireEmployeeCoordination(transaction, [input.employeeId]);
@@ -45,7 +40,7 @@ export async function withWebClockInTransaction<T>(
 			return await operation(
 				sealWorkTransactionScope({
 					db: transaction,
-					admission: control?.mode === "active" ? ("append" as const) : ("legacy" as const),
+					admission,
 					assertEmployee(organizationId: string, employeeId: string) {
 						if (!active) throw new Error("Work transaction is no longer active");
 						if (organizationId !== input.organizationId || employeeId !== input.employeeId) {

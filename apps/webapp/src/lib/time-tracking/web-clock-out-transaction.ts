@@ -19,7 +19,9 @@ import {
 	acquireEmployeeCoordination,
 	acquireOrganizationConfigurationGuard,
 	acquireUserConfigurationAccessGuards,
+	readAppendAdmission,
 	sealWorkTransactionScope,
+	type WorkTransactionAdmission,
 	type WorkTransactionScope,
 } from "./work-transaction";
 
@@ -28,8 +30,13 @@ export type { WorkTransactionClient } from "./work-transaction";
 /** Trusted server composition only; no transaction/savepoint or adoption upgrade capability. */
 export interface WorkTransactionContext extends WorkTransactionScope {
 	readonly approval: ApprovalWorkflowTransactionContext;
-	// Clock-out keeps its legacy head selection until #274 adopts the append collaborator.
-	readonly admission: "legacy";
+	/**
+	 * Read from the organization's append control under the adoption gate. `append`
+	 * is the adopted completed-work contract (#274); `legacy` keeps the prefactor path.
+	 */
+	readonly admission: WorkTransactionAdmission;
+	/** The routed policy clock-out approval decision the participants were scoped for. */
+	readonly requiresApproval: boolean;
 	assertParticipant(organizationId: string, employeeId: string): void;
 	assertApprovalPolicy(
 		organizationId: string,
@@ -46,8 +53,8 @@ export interface WebClockOutTransactionInput {
 	workPeriodId?: string;
 	endTime?: Instant;
 	requiresApproval?: boolean;
-	projectId?: string;
-	workCategoryId?: string;
+	projectId?: string | null;
+	workCategoryId?: string | null;
 }
 
 type ApprovalRuntimeFactory = (database: ApprovalWorkflowDatabase) => {
@@ -92,8 +99,7 @@ async function runAttempt<T>(
 		try {
 			return await runtime.repository.withTransaction(async (approval) => {
 				await acquireAdoptionGate(transaction, input.organizationId);
-				// T08 is a legacy-only prefactor. There is deliberately no activation
-				// setter or new receipt/evidence capture before the parent gates pass.
+				const admission = await readAppendAdmission(transaction, input.organizationId);
 				const authority = await approval.writeGate.acquire({
 					organizationId: input.organizationId,
 					workflowType: "policy_clock_out",
@@ -209,7 +215,8 @@ async function runAttempt<T>(
 							compatibilityWriter:
 								approval.compatibilityWriter.withWriteGate(writeGate),
 						},
-						admission: "legacy" as const,
+						admission,
+						requiresApproval: input.requiresApproval === true,
 						assertParticipant,
 						assertApprovalPolicy,
 						assertEmployee(organizationId: string, employeeId: string) {

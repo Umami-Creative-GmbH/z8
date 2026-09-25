@@ -175,6 +175,9 @@ export const workPeriod = pgTable(
 		// Legacy-to-canonical linkage used during big-bang cutover.
 		canonicalRecordId: uuid("canonical_record_id"),
 		approvalWorkflowId: uuid("approval_workflow_id"),
+		// Explicit work-graph revision (#256 §6). Advanced by completed-work operations;
+		// writers that have not adopted them leave it unchanged (#327).
+		graphRevision: integer("graph_revision").default(0).notNull(),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")

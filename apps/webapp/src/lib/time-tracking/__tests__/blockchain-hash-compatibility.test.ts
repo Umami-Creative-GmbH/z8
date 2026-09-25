@@ -6,9 +6,19 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import type { timeEntry } from "@/db/schema";
-import { calculateHash, validateChain, validateChainDetailed, verifyHash } from "../blockchain";
+import { assessAppendAssurance } from "../append-assurance";
+import { calculateHash, verifyHash } from "../blockchain";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
+
+function assessEntries(entries: TimeEntry[]) {
+	return assessAppendAssurance({
+		scope: { organizationId: "test-organization", employeeId: "test-employee" },
+		entries,
+		position: null,
+		hasWork: false,
+	});
+}
 
 function createEntry(
 	overrides: Pick<TimeEntry, "id" | "employeeId" | "type" | "timestamp" | "hash">,
@@ -107,7 +117,7 @@ describe("Blockchain Hash Compatibility", () => {
 		}
 	});
 
-	it("preserves extended-year Date ISO bytes when validating persisted hashes", async () => {
+	it("preserves extended-year Date ISO bytes when validating persisted hashes", () => {
 		const timestamp = new Date("+010000-01-01T00:00:00.000Z");
 		const timestampText = timestamp.toISOString();
 		const hash = calculateHash({
@@ -126,10 +136,10 @@ describe("Blockchain Hash Compatibility", () => {
 
 		expect(timestampText).toBe("+010000-01-01T00:00:00.000Z");
 		expect(verifyHash(entry)).toEqual({ isValid: true, calculatedHash: hash, storedHash: hash });
-		await expect(validateChain([entry])).resolves.toBe(true);
+		expect(assessEntries([entry]).entries[0]?.hash).toBe("reproduced");
 	});
 
-	it("reports invalid persisted timestamps without throwing", async () => {
+	it("reports invalid persisted timestamps without throwing", () => {
 		const entry = createEntry({
 			id: "invalid-timestamp-entry",
 			employeeId: "test-employee",
@@ -143,10 +153,7 @@ describe("Blockchain Hash Compatibility", () => {
 			calculatedHash: "",
 			storedHash: "stored-hash",
 		});
-		await expect(validateChain([entry])).resolves.toBe(false);
-		expect(validateChainDetailed([entry]).issues).toMatchObject([
-			{ entryId: "invalid-timestamp-entry", type: "invalid_timestamp" },
-		]);
+		expect(assessEntries([entry]).hashes.inputUnavailable).toEqual(["invalid-timestamp-entry"]);
 	});
 
 	it("should maintain hash chain integrity with mixed Date/DateTime operations", () => {

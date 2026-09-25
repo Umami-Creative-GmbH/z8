@@ -580,7 +580,21 @@
       "idx": 82,
       "version": "7",
       "when": 1791388800000,
-      "tag": "0082_approval_delivery",
+      "tag": "0082_audit_pack_append_assurance",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1791475200000,
+      "tag": "0083_completed_work_operation",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791561600000,
+      "tag": "0084_approval_delivery",
       "breakpoints": true
     }
   ]

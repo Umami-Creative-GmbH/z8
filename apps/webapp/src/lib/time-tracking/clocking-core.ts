@@ -20,7 +20,8 @@ import {
 	TimeEntryAppendReviewRequiredError,
 } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import type { WorkTransactionScope } from "./work-transaction";
+import { deriveWorkDurationMinutes } from "./work-duration";
+import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
 
 export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 
@@ -57,7 +58,7 @@ export type ClockingAction = {
 	timezoneSource: TimeEntryTimezoneSource;
 };
 
-type ClockingInput = {
+export type ClockingInput = {
 	employeeId: string;
 	organizationId: string;
 	createdBy: string;
@@ -95,7 +96,7 @@ type ClockOutInput = ClockingInput & {
 };
 
 type ActivePeriod = { id: string; startTime: Date };
-type Entry = { id: string; [key: string]: unknown };
+export type Entry = { id: string; [key: string]: unknown };
 type CompletedPeriod = {
 	id: string;
 	startTime: Date;
@@ -213,6 +214,62 @@ function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link:
 	};
 }
 
+/** How a clock entry was linked: the admission mode and the exact predecessor it follows. */
+export type AppendedClockEntry = {
+	entry: Entry;
+	admission: WorkTransactionAdmission;
+	previousEntryId: string | null;
+	previousHash: string | null;
+};
+
+/**
+ * Inserts one clock entry under the caller's employee coordination. Legacy
+ * admission links the latest-created hash; append admission links the exact
+ * predecessor admitted from evidence and advances the append position.
+ */
+export async function appendClockEntry(
+	store: ClockingStore,
+	input: ClockingInput,
+	type: "clock_in" | "clock_out",
+	admission: WorkTransactionAdmission,
+): Promise<AppendedClockEntry> {
+	if (admission === "append") {
+		if (!store.admitAppend) {
+			throw new Error("Append admission is unavailable");
+		}
+		const appendAdmission = await store.admitAppend(
+			{ organizationId: input.organizationId, employeeId: input.employeeId },
+			type === "clock_in" ? "live_clock_in" : "live_clock_out",
+		);
+		if (appendAdmission.kind === "review_required") {
+			throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
+		}
+		const values = entryValues(input, type, {
+			kind: "admitted",
+			predecessor: appendAdmission.append.predecessor,
+		});
+		const entry = await store.insertEntry(values);
+		const previousEntryId = values.previousEntryId ?? null;
+		await appendAdmission.append.record({
+			id: entry.id,
+			hash: values.hash,
+			previousEntryId,
+			previousHash: values.previousHash,
+		});
+		return { entry, admission, previousEntryId, previousHash: values.previousHash };
+	}
+	const values = entryValues(input, type, {
+		kind: "legacy",
+		previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+	});
+	return {
+		entry: await store.insertEntry(values),
+		admission,
+		previousEntryId: null,
+		previousHash: values.previousHash,
+	};
+}
+
 export function createClockingService(deps: ClockingDependencies) {
 	async function withinEmployeeTransaction<T>(
 		input: ClockingInput,
@@ -306,37 +363,12 @@ export function createClockingService(deps: ClockingDependencies) {
 				) {
 					throw new ClockingConflictError("Active work period already exists");
 				}
-				let entry: Entry;
-				if (input.coordination?.admission === "append") {
-					if (!store.admitAppend) {
-						throw new Error("Append admission is unavailable");
-					}
-					const appendAdmission = await store.admitAppend(
-						{ organizationId: input.organizationId, employeeId: input.employeeId },
-						"live_clock_in",
-					);
-					if (appendAdmission.kind === "review_required") {
-						throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
-					}
-					const values = entryValues(input, "clock_in", {
-						kind: "admitted",
-						predecessor: appendAdmission.append.predecessor,
-					});
-					entry = await store.insertEntry(values);
-					await appendAdmission.append.record({
-						id: entry.id,
-						hash: values.hash,
-						previousEntryId: values.previousEntryId ?? null,
-						previousHash: values.previousHash,
-					});
-				} else {
-					entry = await store.insertEntry(
-						entryValues(input, "clock_in", {
-							kind: "legacy",
-							previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
-						}),
-					);
-				}
+				const { entry } = await appendClockEntry(
+					store,
+					input,
+					"clock_in",
+					input.coordination?.admission ?? "legacy",
+				);
 				const period = await store.insertActivePeriod({
 					employeeId: input.employeeId,
 					organizationId: input.organizationId,
@@ -398,7 +430,16 @@ export function createClockingService(deps: ClockingDependencies) {
 				if (elapsedMinutes < 0) {
 					throw new ClockingConflictError("Clock-out precedes clock-in");
 				}
-				const durationMinutes = Math.round(elapsedMinutes);
+				// Positive intervals use the shared half-up rule (#252, #388). Equal
+				// endpoints keep this closer's legacy zero-minute result for its other
+				// callers until their own adoption (#275-#277).
+				const durationMinutes =
+					elapsedMinutes === 0
+						? 0
+						: deriveWorkDurationMinutes(
+								instantFromDate(activePeriod.startTime),
+								input.action.instant,
+							);
 				if (
 					(input.beforePeriodClose || input.afterPeriodClose) &&
 					!store.transaction

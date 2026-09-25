@@ -44,6 +44,7 @@ import {
 	surchargeRule,
 	team,
 	timeEntry,
+	completedWorkOperation,
 	timeEntryAppendPosition,
 	vacationAllowance,
 	waterIntakeLog,
@@ -178,6 +179,9 @@ async function permanentlyDeleteOrganization(
 			await tx
 				.delete(timeEntryAppendPosition)
 				.where(eq(timeEntryAppendPosition.organizationId, organizationId));
+			await tx
+				.delete(completedWorkOperation)
+				.where(eq(completedWorkOperation.organizationId, organizationId));
 			await tx
 				.delete(timeEntry)
 				.where(inArray(timeEntry.employeeId, employeeIds));
