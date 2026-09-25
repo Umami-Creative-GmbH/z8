@@ -64,10 +64,15 @@ export const CANONICAL_WRITE_OWNERS = {
 	"src/lib/approvals/maintenance.ts": {
 		approval_chain_instance: ["delete"],
 		approval_decision_evidence: ["delete"],
+		approval_invocation: ["delete"],
 		approval_request: ["delete"],
 		approval_review_binding: ["delete"],
 		approval_submitted_revision: ["delete"],
 		approval_workflow: ["delete"],
+	},
+	// Immutable invocation association, inserted by the bound decision owner.
+	"src/lib/approvals/evidence/invocation.ts": {
+		approval_invocation: ["insert"],
 	},
 	// Immutable evidence: submission/decision owners call these inserts only.
 	"src/lib/approvals/evidence/store.ts": {
