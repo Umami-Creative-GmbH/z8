@@ -45,6 +45,14 @@
         "stepRejected": "Rejected by {actor} on {time}. The request is not final yet; review its current status in Z8.",
         "recordedTitle": "Decision recorded",
         "recorded": "Recorded by {actor} on {time}. Review the request's current status in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Request withdrawn",
+        "withdrawn": "This request was withdrawn. No decision is needed from this card.",
+        "inactiveTitle": "No longer actionable",
+        "inactive": "This request no longer needs your decision from this card. No decision was made here. Review its current status in Z8.",
+        "currentApproved": "Current request status: approved.",
+        "currentRejected": "Current request status: rejected."
       }
     },
     "cmd": {

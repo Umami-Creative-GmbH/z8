@@ -45,6 +45,14 @@
         "stepRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch no nöd abgschlosse; prüef sin aktuelle Status in Z8.",
         "recordedTitle": "Entscheid erfasst",
         "recorded": "Erfasst vo {actor} am {time}. Prüef de aktuelle Status vom Aatrag in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Aatrag zruggzoge",
+        "withdrawn": "De Aatrag isch zruggzoge worde. Über die Charte bruchts kei Entscheid meh.",
+        "inactiveTitle": "Nüm entscheidbar",
+        "inactive": "De Aatrag bruucht über die Charte kei Entscheid meh vo dir. Da isch nüt entschide worde. Lueg de aktuell Stand in Z8 aa.",
+        "currentApproved": "Aktuelle Stand vom Aatrag: gnehmigt.",
+        "currentRejected": "Aktuelle Stand vom Aatrag: abglehnt."
       }
     },
     "cmd": {
