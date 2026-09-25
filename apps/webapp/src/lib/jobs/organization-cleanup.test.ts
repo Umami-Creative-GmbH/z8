@@ -1,3 +1,5 @@
+import type { SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import * as schema from "@/db/schema";
@@ -16,8 +18,17 @@ vi.mock("@/lib/logger", () => ({
 
 import { runOrganizationCleanup } from "./organization-cleanup";
 
-function createTransaction(employees: Array<{ userId: string | null }> = []) {
+interface OtherOrganizationRows {
+	members?: Array<{ userId: string }>;
+	employees?: Array<{ userId: string }>;
+}
+
+function createTransaction(
+	employees: Array<{ userId: string | null }> = [],
+	otherOrganizations: OtherOrganizationRows = {},
+) {
 	const events: string[] = [];
+	const deleteWhere = new Map<string, SQL>();
 	const tableName = (table: unknown) => {
 		if (table === authSchema.organization) return "organization";
 		if (table === authSchema.ssoProvider) return "sso_provider";
@@ -27,9 +38,20 @@ function createTransaction(employees: Array<{ userId: string | null }> = []) {
 		return "other";
 	};
 	const deleteFrom = vi.fn((table: unknown) => ({
-		where: vi.fn(async () => {
+		where: vi.fn(async (where: SQL) => {
 			events.push(`delete:${tableName(table)}`);
+			deleteWhere.set(tableName(table), where);
 		}),
+	}));
+	// Memberships and employees of the candidates in other organizations.
+	const select = vi.fn(() => ({
+		from: vi.fn((table: unknown) => ({
+			where: vi.fn(async () =>
+				table === authSchema.member
+					? (otherOrganizations.members ?? [])
+					: (otherOrganizations.employees ?? []),
+			),
+		})),
 	}));
 	const update = vi.fn((table: unknown) => ({
 		set: vi.fn(() => ({
@@ -44,6 +66,7 @@ function createTransaction(employees: Array<{ userId: string | null }> = []) {
 	});
 	const tx = {
 		execute,
+		select,
 		delete: deleteFrom,
 		update,
 		query: {
@@ -51,7 +74,11 @@ function createTransaction(employees: Array<{ userId: string | null }> = []) {
 			member: { findMany: vi.fn().mockResolvedValue([{ userId: "user-2" }]) },
 		},
 	};
-	return { deleteFrom, events, execute, tx };
+	return { deleteFrom, deleteWhere, events, execute, tx };
+}
+
+function deletedUserIds(where: SQL | undefined) {
+	return where ? new PgDialect().sqlToQuery(where).params : undefined;
 }
 
 describe("organization cleanup topology", () => {
@@ -89,7 +116,6 @@ describe("organization cleanup topology", () => {
 			"guard",
 			"guard",
 			"guard",
-			"delete:water_intake_log",
 			"delete:push_subscription",
 			"update:session",
 			"delete:sso_provider",
@@ -98,6 +124,43 @@ describe("organization cleanup topology", () => {
 		expect(deleteFrom).not.toHaveBeenCalledWith(authSchema.member);
 		expect(deleteFrom).not.toHaveBeenCalledWith(schema.employee);
 		expect(deleteFrom).toHaveBeenLastCalledWith(authSchema.organization);
+	});
+
+	it("keeps user-level rows of users who stay in another organization (#437)", async () => {
+		const { deleteFrom, deleteWhere, events, tx } = createTransaction(
+			[{ userId: "user-1" }, { userId: "user-3" }, { userId: "user-4" }],
+			{ members: [{ userId: "user-1" }], employees: [{ userId: "user-3" }] },
+		);
+		mocks.db.transaction.mockImplementation(async (run) => run(tx));
+
+		const result = await runOrganizationCleanup();
+
+		expect(result.success).toBe(true);
+		// user-1 keeps a membership and user-3 an employee elsewhere; only
+		// user-4 leaves every organization and loses their push subscriptions.
+		expect(deletedUserIds(deleteWhere.get("push_subscription"))).toEqual(["user-4"]);
+		// Water intake logs are personal history and outlive every organization.
+		expect(deleteFrom).not.toHaveBeenCalledWith(schema.waterIntakeLog);
+		expect(events.at(-1)).toBe("delete:organization");
+	});
+
+	it("deletes no push subscription when every user stays in another organization", async () => {
+		const { deleteFrom, events, tx } = createTransaction([{ userId: "user-1" }], {
+			members: [{ userId: "user-1" }],
+		});
+		mocks.db.transaction.mockImplementation(async (run) => run(tx));
+
+		await runOrganizationCleanup();
+
+		expect(deleteFrom).not.toHaveBeenCalledWith(schema.pushSubscription);
+		expect(events).toEqual([
+			"guard",
+			"guard",
+			"guard",
+			"update:session",
+			"delete:sso_provider",
+			"delete:organization",
+		]);
 	});
 
 	it("reports a failed deletion without partial success", async () => {

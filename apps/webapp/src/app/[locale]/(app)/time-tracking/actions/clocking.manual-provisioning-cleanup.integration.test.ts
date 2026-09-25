@@ -776,6 +776,42 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 			expect(employees.map((row) => row.id)).toEqual([ids.otherEmployee]);
 		});
 
+		it("keeps user-level rows of a user who stays in another organization (#437)", async () => {
+			await admin.query(
+				"update organization set deleted_at = now() - interval '6 days' where id = $1",
+				[ids.organization],
+			);
+			// The employee user also belongs to the other organization; the manager
+			// user belongs to the deleted one only.
+			await admin.query(
+				`insert into push_subscription (user_id, endpoint, p256dh, auth, updated_at)
+				 select user_id, 'https://push.example.test/' || user_id, 'key', 'secret', now()
+				 from unnest($1::text[]) as user_id`,
+				[[ids.employeeUser, ids.managerUser]],
+			);
+			await admin.query(
+				`insert into water_intake_log (user_id, source)
+				 select user_id, 'manual' from unnest($1::text[]) as user_id`,
+				[[ids.employeeUser, ids.managerUser]],
+			);
+
+			expect(await runOrganizationCleanup()).toMatchObject({
+				success: true,
+				organizationsDeleted: 1,
+			});
+
+			const { rows: subscriptions } = await admin.query(
+				"select user_id from push_subscription where user_id = any($1::text[])",
+				[[ids.employeeUser, ids.managerUser]],
+			);
+			expect(subscriptions.map((row) => row.user_id)).toEqual([ids.employeeUser]);
+			const { rows: intakes } = await admin.query(
+				"select user_id from water_intake_log where user_id = any($1::text[]) order by user_id",
+				[[ids.employeeUser, ids.managerUser]],
+			);
+			expect(intakes.map((row) => row.user_id)).toEqual([ids.employeeUser, ids.managerUser]);
+		});
+
 		it("restarts with a user who joined while it waited, and protects them too", async () => {
 			await admin.query(
 				"update organization set deleted_at = now() - interval '6 days' where id = $1",
