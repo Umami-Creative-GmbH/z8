@@ -156,7 +156,8 @@ whose lock order changed.
 
 ## Remaining activation blockers
 
-1. Better Auth and SCIM membership, role and removal writers (#314) do not yet participate.
+1. ~~Better Auth and SCIM membership, role and removal writers (#314) do not yet participate.~~
+   They participate since #314; see [its evidence](auth-scim-coordination-314.md).
 2. Provisioning, invite-code, onboarding, demo, cleanup and import writers (#318) do not yet
    participate.
 3. User-global `role`, `banned` and `banExpires` writers: the platform-admin ban and unban
