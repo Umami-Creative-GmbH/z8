@@ -1074,12 +1074,14 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 
 		await generateDemoPendingTimeCorrectionApprovals(options);
 
-		// Adoption gate, approval gate, configuration, admin access, requester key (#285).
-		expect(mocks.acquisitions.slice(0, 6)).toEqual([
+		// Adoption gate, approval gate, configuration, sorted admin/requester/approver
+		// access, then the requester key (#285).
+		expect(mocks.acquisitions.slice(0, 7)).toEqual([
 			'shared:["completed-work-adoption","org-1"]',
 			"approval:time_correction",
 			'shared:["work-organization-configuration","org-1"]',
 			'shared:["work-user-configuration-access","user-1"]',
+			'shared:["work-user-configuration-access","user-2"]',
 			"exclusive:20000000-0000-4000-8000-000000000001",
 			"row:employee",
 		]);

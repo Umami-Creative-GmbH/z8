@@ -10,7 +10,7 @@ import {
 	employeeManagers,
 	employeeVacationAllowance,
 } from "@/db/schema";
-import { deleteDemoEmployeeHistory, withDemoWorkTransaction } from "./demo-work";
+import { deleteDemoEmployeeHistories } from "./demo-work";
 
 export interface DeleteNonAdminResult {
 	employeesDeleted: number;
@@ -82,14 +82,13 @@ export async function deleteNonAdminEmployeesData(
 	// Steps 4-5: Delete each employee's time history atomically under its employee
 	// key (position, receipts, periods, canonical work records, entries). Admin
 	// employees' histories are never touched.
-	for (const employeeId of employeeIds) {
-		const deleted = await withDemoWorkTransaction(
-			{ organizationId, triggeringUserId: currentUserId, employeeIds: [employeeId] },
-			(scope) => deleteDemoEmployeeHistory(scope, { organizationId, employeeId }),
-		);
-		result.workPeriodsDeleted += deleted.workPeriodsDeleted;
-		result.timeEntriesDeleted += deleted.timeEntriesDeleted;
-	}
+	const deleted = await deleteDemoEmployeeHistories({
+		organizationId,
+		triggeringUserId: currentUserId,
+		employeeIds,
+	});
+	result.workPeriodsDeleted = deleted.workPeriodsDeleted;
+	result.timeEntriesDeleted = deleted.timeEntriesDeleted;
 
 	// Step 6: Delete employee vacation allowances
 	const allowancesToDelete = await db.query.employeeVacationAllowance.findMany({

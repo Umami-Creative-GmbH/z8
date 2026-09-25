@@ -84,7 +84,7 @@ import {
 	acquireDemoWorkScope,
 	assignDemoWorkCategory,
 	type DemoWorkSession,
-	deleteDemoEmployeeHistory,
+	deleteDemoEmployeeHistories,
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
@@ -872,6 +872,10 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 						organizationId: options.organizationId,
 						triggeringUserId: options.createdBy,
 						employeeIds: [requester.id],
+						// Routing depends on the requester's and approver's access.
+						accessUserIds: [requester.userId, employeesById.get(approverId)?.userId].filter(
+							(userId): userId is string => typeof userId === "string",
+						),
 					},
 					{
 						afterAdoptionGate: async () => {
@@ -2798,15 +2802,14 @@ export async function clearOrganizationTimeData(
 	// Time history goes first, before the categories its periods reference. Each
 	// employee's history is removed atomically under its employee key, so a
 	// concurrent writer never sees a partial graph or a position without its tip.
-	for (const employeeId of employeeIds) {
-		const deleted = await withDemoWorkTransaction(
-			{ organizationId, triggeringUserId, employeeIds: [employeeId] },
-			(scope) => deleteDemoEmployeeHistory(scope, { organizationId, employeeId }),
-		);
-		result.workPeriodsDeleted += deleted.workPeriodsDeleted;
-		result.workCategoryAssignmentsRemoved += deleted.workPeriodsWithCategory;
-		result.timeEntriesDeleted += deleted.timeEntriesDeleted;
-	}
+	const deleted = await deleteDemoEmployeeHistories({
+		organizationId,
+		triggeringUserId,
+		employeeIds,
+	});
+	result.workPeriodsDeleted = deleted.workPeriodsDeleted;
+	result.workCategoryAssignmentsRemoved = deleted.workPeriodsWithCategory;
+	result.timeEntriesDeleted = deleted.timeEntriesDeleted;
 
 	// ============================================
 	// WORK CATEGORY CLEANUP

@@ -32,8 +32,10 @@ Every demo write runs in a transaction that acquires, in order:
 2. For corrections only: the `time_correction` approval write gate (shared). The
    correction submission re-acquires the same gate later in the transaction.
 3. Shared `["work-organization-configuration", organizationId]`.
-4. Shared `["work-user-configuration-access", adminUserId]` for the admin who
-   triggered the operation. There is none for system callers of the cleanup.
+4. Shared `["work-user-configuration-access", userId]`, sorted, for the admin who
+   triggered the operation (none for system callers of the cleanup). Corrections
+   add the requester's and approver's users, because routing depends on their
+   access.
 5. The exclusive employee key `hashtextextended(employeeId, 0)`, which every clocking
    writer shares.
 6. Existing row locks. Corrections keep their employee, manager, team, period,
@@ -78,8 +80,9 @@ transaction through `recordDemoWorkDay`.
 
 A receipt has kind `create_completed_work`, writer `runtime_demo` (version 1) and
 `append_admission = 'append'`. The employee owns the work. The executing actor is
-the demo generator (`actor_kind = 'system'`). `actor_user_id` holds the admin who
-triggered it, and the result records both separately:
+the demo generator: `actor_kind = 'system'`, with `actor_user_id` null. That
+column names human actors only. The result names the process and, separately, the
+admin who triggered it:
 `actors: { executing: { kind: "system", process: "runtime_demo" }, triggeredBy: { kind: "human", userId } }`.
 Entries and canonical records keep the admin as `created_by`, because those columns
 require a user reference.
@@ -141,15 +144,17 @@ detail's category in the same transaction and advances the period's
 
 "Clear time data" and "Delete non-admin data" remove each employee's whole time
 history in one transaction under that employee's key (`deleteDemoEmployeeHistory`):
-append position, receipts, periods, the canonical work records of those periods,
-and entries.
+append position, receipts, periods and entries. In an adopted scope the same
+transaction also removes the canonical work records of those periods and commits
+the work-balance refresh intent from the earliest removed period. Legacy scopes keep
+their established rows; the canonical records of legacy periods are left as before.
 
 - A concurrent writer of the same employee waits, or finishes first. It never sees
   a partial graph, a position without its tip, or periods without entries.
-- This applies in every mode. Before, "Clear time data" left the canonical work
-  records of the cleared periods behind, where payroll readers could still see
-  them. Records that an approval request still references are kept, because that
-  reference would otherwise block the delete.
+- Canonical records that a retained approval request still references are kept,
+  because that reference would otherwise block the delete. "Clear time data" does
+  not remove approval requests (unchanged), so records referenced by demo
+  correction approvals can remain.
 - "Clear time data" now removes history before the demo work categories, so the old
   organization-wide `work_category_id = null` update is gone. The deleted periods
   that had a category are still counted as removed assignments.
@@ -189,7 +194,7 @@ Next cache are replaced. `Math.random` is pinned, so every weekday gets
 08:30–13:00 and 13:45–17:30. Only `Date` is faked, so "last 30 days" is
 2026-06-24..07-24 (23 weekdays).
 
-Verified (11 tests):
+Verified (14 tests):
 
 - **Legacy generation:** 92 entries and 46 periods. No canonical record, receipt,
   position or revision. 92 distinct creation times. Every entry links the
@@ -209,6 +214,9 @@ Verified (11 tests):
   - The balance is dirty from 2026-06-24.
   - The next real clock-in follows the demo tip, not the entry with the latest
     event time.
+- **Concurrent generations:** two simultaneous runs for the same employee write
+  each day once (46 periods in total), with no overlap, one root, no forks, and a
+  position at the explicit tip.
 - **Held for review:** a forked history holds only its employee
   (`employeesHeldForReview: 1`), with that employee's rows unchanged and no
   position. The peer gets `empty_history` and 92 entries.
@@ -227,6 +235,8 @@ Verified (11 tests):
     position +10.
   - After a committed correction is tampered with, the next run is refused by the
     established demo replay check, and no row changes.
+- **Correction rollback:** an approval-request insert failure after the admitted
+  correction entry and position advance leaves the organization's rows unchanged.
 - **Held corrections:** an unexpected write after the recorded tip means no
   correction is created and no row changes.
 - **Rollback to inactive:** legacy corrections link the latest-created row, which is
@@ -239,17 +249,20 @@ Verified (11 tests):
   After release, every entry, period, canonical record, position and receipt of the
   organization is gone, and the other organization is byte-identical. The next real
   clock-in is admitted from `empty_history`.
+- **Clear after corrections:** entries, periods, position and receipts are gone.
+  Only canonical records that a retained approval request references remain. The
+  balance is dirty again from 2026-06-24.
 - **Delete non-admin data:** three employees are removed. The admin's entries,
   records, receipts and position are unchanged, and the other organization is
   unchanged. The admin's next real clock-in advances the admin's position by one.
 
 Mutation: forcing adopted generation onto the legacy writer and skipping the
-employee key failed 7 of 11 tests: every adopted generation, correction and
+employee key failed 7 of the then 11 tests: every adopted generation, correction and
 attribution test, plus the coordinated cleanup test.
 
 Full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
 fresh container, migration recovery check and full chain through 0084): **38 files /
-612 tests passed**, including the #272/#273/#274 clocking suites. The label-owned
+615 tests passed**, including the #272/#273/#274 clocking suites. The label-owned
 container was verified and removed.
 
 ### Database-free
@@ -288,6 +301,13 @@ in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
   not yet take the configuration guards (#308/#327). The demo's configuration
   steps (teams, projects, locations, categories, policies, shifts, managers) are
   among those writers and are not adopted here.
+- **Occupancy scope.** Adopted occupancy reads `work_period`. Canonical-only
+  `time_record` work without a period is not seen. No production creator of such
+  work was found (#259 lists the retained canonical creation action as inventory).
+- **Employee removal.** "Delete non-admin data" removes each history under the
+  employee key, then deletes the employee rows afterwards, outside that
+  coordination. Coordinated employee removal belongs to the lifecycle/offboarding
+  owners.
 - **Canonical-mode correction side effects.** Correction submission is covered in
   the approval-legacy rollout mode. Canonical-mode outbox writes on the demo path
   were not failure-injected here; the approval suites cover that collaborator.

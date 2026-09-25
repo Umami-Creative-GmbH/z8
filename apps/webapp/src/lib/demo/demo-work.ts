@@ -18,13 +18,15 @@ import "server-only";
  * session is persisted as complete work: linked entries, a closed period,
  * canonical base/detail, the committed balance refresh intent and a
  * `completed_work_operation` receipt. The receipt names the demo generator as the
- * executing system actor and the admin who triggered it separately. Demo
+ * executing system actor (no actor user) and records the triggering admin in its
+ * result. Demo
  * generation is unkeyed, so its receipts are evidence, never replay identities.
  */
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, notExists, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
+	approvalRequest,
 	completedWorkOperation,
 	timeEntry,
 	timeEntryAppendPosition,
@@ -36,6 +38,7 @@ import {
 	compareInstants,
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
@@ -70,6 +73,8 @@ export interface DemoWorkCoordinationInput {
 	triggeringUserId: string | null;
 	/** Every employee whose work graph the operation may change. */
 	employeeIds: readonly string[];
+	/** Other users whose access the operation depends on (e.g. requester, approver). */
+	accessUserIds?: readonly string[];
 }
 
 type DemoWorkTransaction = Pick<Transaction, "execute" | "select"> & WorkTransactionClient;
@@ -90,10 +95,10 @@ export async function acquireDemoWorkScope(
 	const admission = await readAppendAdmission(transaction, input.organizationId);
 	await options.afterAdoptionGate?.();
 	await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
-	await acquireUserConfigurationAccessGuards(
-		transaction,
-		input.triggeringUserId ? [input.triggeringUserId] : [],
-	);
+	await acquireUserConfigurationAccessGuards(transaction, [
+		...(input.triggeringUserId ? [input.triggeringUserId] : []),
+		...(input.accessUserIds ?? []),
+	]);
 	await acquireEmployeeCoordination(transaction, input.employeeIds);
 
 	const employees = new Set(input.employeeIds);
@@ -298,9 +303,8 @@ async function recordLegacyDemoWorkDay(
 			clockOutId: clockOut.entry.id,
 			startTime: clockIn.entry.timestamp,
 			endTime: clockOut.entry.timestamp,
-			durationMinutes: Math.round(
-				(clockOut.entry.timestamp.getTime() - clockIn.entry.timestamp.getTime()) / 60_000,
-			),
+			// Demo endpoints are whole minutes, so this equals the established rounding.
+			durationMinutes: deriveWorkDurationMinutes(session.start, session.end),
 			isActive: false,
 		});
 	}
@@ -463,7 +467,8 @@ async function recordAdoptedDemoWorkDay(
 			command,
 			appendAdmission: "append",
 			actorKind: "system",
-			actorUserId: input.triggeringUserId,
+			// The column names a human actor only; the triggering admin is in the result.
+			actorUserId: null,
 			workPeriodId: period.id,
 			resultVersion: DEMO_WORK_RESULT_VERSION,
 			result,
@@ -585,9 +590,10 @@ export type DemoHistoryDeletion = {
 
 /**
  * Removes one employee's whole time history atomically under its employee key:
- * append position, receipts, periods, their canonical work records and entries.
- * No other employee or organization is touched. Canonical records still referenced
- * by a retained approval request stay, as before.
+ * append position, receipts, periods and entries. In an adopted scope it also
+ * removes the periods' canonical work records (except those a retained approval
+ * request references) and commits the balance refresh intent. No other employee or
+ * organization is touched.
  */
 export async function deleteDemoEmployeeHistory(
 	scope: WorkTransactionScope,
@@ -624,22 +630,33 @@ export async function deleteDemoEmployeeHistory(
 		.returning({
 			canonicalRecordId: workPeriod.canonicalRecordId,
 			workCategoryId: workPeriod.workCategoryId,
+			startTime: workPeriod.startTime,
 		});
 	const canonicalRecordIds = periods.flatMap((period) =>
 		period.canonicalRecordId ? [period.canonicalRecordId] : [],
 	);
-	if (canonicalRecordIds.length > 0) {
-		await client
-			.delete(timeRecord)
-			.where(
-				and(
-					eq(timeRecord.organizationId, input.organizationId),
-					eq(timeRecord.employeeId, input.employeeId),
-					eq(timeRecord.recordKind, "work"),
-					inArray(timeRecord.id, canonicalRecordIds),
-					sql`not exists (select 1 from approval_request ar where ar.organization_id = ${timeRecord.organizationId} and ar.canonical_record_id = ${timeRecord.id})`,
+	// Adopted scopes also remove the linked canonical work and commit the balance
+	// refresh intent for it; legacy cleanup keeps its established rows.
+	if (scope.admission === "append" && canonicalRecordIds.length > 0) {
+		await client.delete(timeRecord).where(
+			and(
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.employeeId, input.employeeId),
+				eq(timeRecord.recordKind, "work"),
+				inArray(timeRecord.id, canonicalRecordIds),
+				notExists(
+					client
+						.select({ id: approvalRequest.id })
+						.from(approvalRequest)
+						.where(
+							and(
+								eq(approvalRequest.organizationId, timeRecord.organizationId),
+								eq(approvalRequest.canonicalRecordId, timeRecord.id),
+							),
+						),
 				),
-			);
+			),
+		);
 	}
 	const entries = await client
 		.delete(timeEntry)
@@ -650,9 +667,55 @@ export async function deleteDemoEmployeeHistory(
 			),
 		)
 		.returning({ id: timeEntry.id });
+	const earliestStart = periods.reduce<Date | null>(
+		(earliest, period) =>
+			earliest === null || period.startTime < earliest ? period.startTime : earliest,
+		null,
+	);
+	if (scope.admission === "append" && earliestStart) {
+		await markEmployeeWorkBalanceDirty(
+			{
+				employeeId: input.employeeId,
+				organizationId: input.organizationId,
+				dirtyFromDate: utcDate(instantFromDate(earliestStart)),
+			},
+			client,
+		);
+	}
 	return {
 		workPeriodsDeleted: periods.length,
 		workPeriodsWithCategory: periods.filter((period) => period.workCategoryId !== null).length,
 		timeEntriesDeleted: entries.length,
 	};
+}
+
+/**
+ * Removes the whole time history of each employee, one coordinated transaction per
+ * employee (see `deleteDemoEmployeeHistory`), and sums what was removed.
+ */
+export async function deleteDemoEmployeeHistories(input: {
+	organizationId: string;
+	triggeringUserId: string | null;
+	employeeIds: readonly string[];
+}): Promise<DemoHistoryDeletion> {
+	const total: DemoHistoryDeletion = {
+		workPeriodsDeleted: 0,
+		workPeriodsWithCategory: 0,
+		timeEntriesDeleted: 0,
+	};
+	for (const employeeId of input.employeeIds) {
+		const deleted = await withDemoWorkTransaction(
+			{
+				organizationId: input.organizationId,
+				triggeringUserId: input.triggeringUserId,
+				employeeIds: [employeeId],
+			},
+			(scope) =>
+				deleteDemoEmployeeHistory(scope, { organizationId: input.organizationId, employeeId }),
+		);
+		total.workPeriodsDeleted += deleted.workPeriodsDeleted;
+		total.workPeriodsWithCategory += deleted.workPeriodsWithCategory;
+		total.timeEntriesDeleted += deleted.timeEntriesDeleted;
+	}
+	return total;
 }

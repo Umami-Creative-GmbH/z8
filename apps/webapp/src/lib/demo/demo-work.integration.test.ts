@@ -539,7 +539,7 @@ describeIntegration("runtime demo work on PostgreSQL", () => {
 				   (select count(*)::int from completed_work_operation c
 				      join work_period wp on wp.id = c.work_period_id
 				      where c.employee_id = $1 and c.kind = 'create_completed_work' and c.writer = 'runtime_demo'
-				        and c.actor_kind = 'system' and c.actor_user_id = $2 and c.append_admission = 'append') as receipts,
+				        and c.actor_kind = 'system' and c.actor_user_id is null and c.append_admission = 'append') as receipts,
 				   (select count(*)::int from work_period a join work_period b
 				      on a.employee_id = b.employee_id and a.id < b.id
 				      and a.start_time < b.end_time and b.start_time < a.end_time
@@ -621,6 +621,40 @@ describeIntegration("runtime demo work on PostgreSQL", () => {
 				[ids.requester, ids.requesterUser, fixedNow],
 			);
 			expect(clockInRows).toEqual([{ previous_entry_id: tip.id }]);
+		});
+
+		it("serializes concurrent adopted generations into one lineage without overlap", async () => {
+			await setAdmission("active");
+
+			const [first, second] = await Promise.all([
+				generate([ids.requester]),
+				generate([ids.requester]),
+			]);
+
+			// Each day is written by exactly one run; the other finds it occupied.
+			expect(first.success && second.success).toBe(true);
+			const created =
+				(first.success ? first.data.workPeriodsCreated : 0) +
+				(second.success ? second.data.workPeriodsCreated : 0);
+			expect(created).toBe(weekdays * sessionsPerDay);
+			const { rows } = await admin.query<{ overlapping: number; roots: number; forks: number }>(
+				`select
+				   (select count(*)::int from work_period a join work_period b
+				      on a.employee_id = b.employee_id and a.id < b.id
+				      and a.start_time < b.end_time and b.start_time < a.end_time
+				      where a.employee_id = $1) as overlapping,
+				   (select count(*)::int from time_entry where employee_id = $1 and previous_entry_id is null) as roots,
+				   (select count(*)::int from (select previous_entry_id from time_entry
+				      where employee_id = $1 and previous_entry_id is not null
+				      group by previous_entry_id having count(*) > 1) f) as forks`,
+				[ids.requester],
+			);
+			expect(only(rows)).toEqual({ overlapping: 0, roots: 1, forks: 0 });
+			const tip = await explicitTip(ids.requester);
+			expect(await position(ids.requester)).toMatchObject({
+				tip_entry_id: tip.id,
+				entry_count: weekdays * sessionsPerDay * 2,
+			});
 		});
 
 		it("holds only the employee whose history needs review", async () => {
@@ -843,6 +877,25 @@ describeIntegration("runtime demo work on PostgreSQL", () => {
 			expect(await snapshot()).toEqual(before);
 		});
 
+		it("rolls an admitted correction back with its position when submission fails", async () => {
+			await setAdmission("active");
+			await generate([ids.requester]);
+			await admin.query(`
+				create function t285_fail() returns trigger language plpgsql as $$
+				begin
+				  raise exception 't285 injected approval failure';
+				end $$`);
+			await admin.query(
+				"create trigger t285_fail before insert on approval_request for each row execute function t285_fail()",
+			);
+			const before = await snapshot();
+
+			await expect(generateCorrections()).resolves.toMatchObject({ success: false });
+			// The correction entry and its position advance were written before the
+			// approval insert failed; both roll back.
+			expect(await snapshot()).toEqual(before);
+		});
+
 		it("holds adopted corrections after an unexpected history write", async () => {
 			await setAdmission("active");
 			await generate([ids.requester]);
@@ -1005,6 +1058,50 @@ describeIntegration("runtime demo work on PostgreSQL", () => {
 			expect(await position(ids.requester)).toMatchObject({
 				admission: "empty_history",
 				entry_count: 1,
+			});
+		});
+
+		it("clears adopted history after corrections and commits the balance intent", async () => {
+			await setAdmission("active");
+			await generate([ids.requester]);
+			actAsAdmin();
+			await expect(
+				generatePendingTimeCorrectionApprovalsStepAction(stepInput([ids.requester])),
+			).resolves.toEqual({ success: true, data: { pendingTimeCorrectionApprovalsCreated: 5 } });
+			await admin.query(
+				"update employee_work_balance set is_dirty = false, dirty_from_date = null where employee_id = $1",
+				[ids.requester],
+			);
+
+			actAsAdmin();
+			await expect(clearTimeDataAction(ids.organization)).resolves.toMatchObject({
+				success: true,
+			});
+
+			const { rows } = await admin.query(
+				`select
+				   (select count(*)::int from time_entry where employee_id = $1) as entries,
+				   (select count(*)::int from work_period where employee_id = $1) as periods,
+				   (select count(*)::int from time_entry_append_position where employee_id = $1) as positions,
+				   (select count(*)::int from completed_work_operation where employee_id = $1) as receipts,
+				   (select count(*)::int from time_record where employee_id = $1) as records,
+				   (select count(distinct canonical_record_id)::int from approval_request
+				      where organization_id = $2 and canonical_record_id is not null) as referenced,
+				   (select is_dirty from employee_work_balance where employee_id = $1) as dirty,
+				   (select dirty_from_date::text from employee_work_balance where employee_id = $1) as dirty_from`,
+				[ids.requester, ids.organization],
+			);
+			const result = only(rows) as Record<string, unknown>;
+			// Only canonical records a retained approval request still references remain.
+			expect(result).toEqual({
+				entries: 0,
+				periods: 0,
+				positions: 0,
+				receipts: 0,
+				records: result.referenced,
+				referenced: result.referenced,
+				dirty: true,
+				dirty_from: "2026-06-24",
 			});
 		});
 

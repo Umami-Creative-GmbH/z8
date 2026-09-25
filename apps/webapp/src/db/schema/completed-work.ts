@@ -28,8 +28,9 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // entry ID). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
-// A `system` actor names the executing process in the result; `actor_user_id` then
-// holds the human who triggered it (runtime demo generation, #285), if any.
+// `actor_user_id` names a human actor only. A `system` actor (runtime demo
+// generation, #285) leaves it null; its result names the process and any human
+// who triggered it.
 export const completedWorkOperation = pgTable(
 	"completed_work_operation",
 	{
