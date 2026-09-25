@@ -28,7 +28,22 @@ const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
 	server: "https://app.t275.test" as string | null,
 	notifications: [] as string[],
+	/** Runs once between a submission's replay check and its fresh preflight. */
+	beforeFreshPreflight: null as (() => Promise<void>) | null,
 }));
+
+vi.mock("@/lib/time-tracking/validation", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/time-tracking/validation")>();
+	return {
+		...original,
+		validateTimeEntry: async (...args: Parameters<typeof original.validateTimeEntry>) => {
+			const hook = harness.beforeFreshPreflight;
+			harness.beforeFreshPreflight = null;
+			await hook?.();
+			return original.validateTimeEntry(...args);
+		},
+	};
+});
 
 vi.mock("@/db", async () => {
 	const { Pool } = await import("pg");
@@ -363,6 +378,7 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		harness.now = now;
 		harness.server = server;
 		harness.notifications.length = 0;
+		harness.beforeFreshPreflight = null;
 		actAs(ids.requesterUser);
 		await seed();
 	});
@@ -806,6 +822,55 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			[ids.organization],
 		);
 		expect(only(rows)).toEqual({ receipts: 1 });
+	});
+
+	it("returns the committed clock-out to a retry whose target went stale in a race", async () => {
+		const start = clockInCommand();
+		await submit(start);
+		harness.now = now.add({ hours: 2 });
+		const close = clockOutCommand(
+			{ clockInOperationId: start.operationId },
+			{ occurredAt: harness.now.toString() },
+		);
+		let first: Awaited<ReturnType<typeof submit>> | undefined;
+		// The identical request commits after this retry's replay check, so the
+		// retry's preflight finds its target already closed.
+		harness.beforeFreshPreflight = async () => {
+			first = await submit(close);
+		};
+
+		const retry = await submit(close);
+
+		expect(first?.status).toBe(201);
+		expect(retry).toEqual({
+			status: 200,
+			body: { outcome: "replayed", operationId: close.operationId, receipt: first?.body.receipt },
+		});
+		const { rows } = await admin.query(
+			"select count(*)::int as receipts from completed_work_operation where id = $1",
+			[close.operationId],
+		);
+		expect(only(rows)).toEqual({ receipts: 1 });
+	});
+
+	it("serializes concurrent identical clock-outs into one closure", async () => {
+		const start = clockInCommand();
+		await submit(start);
+		harness.now = now.add({ hours: 2 });
+		const close = clockOutCommand(
+			{ clockInOperationId: start.operationId },
+			{ occurredAt: harness.now.toString() },
+		);
+		const outcomes = await Promise.all([submit(close), submit(close), submit(close)]);
+		expect(outcomes.map(({ status }) => status).sort()).toEqual([200, 200, 201]);
+		for (const { body } of outcomes) expect(body.receipt).toEqual(outcomes[0]?.body.receipt);
+		const { rows } = await admin.query(
+			`select count(*)::int as receipts, count(distinct wp.clock_out_id)::int as closures
+			 from completed_work_operation r join work_period wp on wp.id = r.work_period_id
+			 where r.id = $1`,
+			[close.operationId],
+		);
+		expect(only(rows)).toEqual({ receipts: 1, closures: 1 });
 	});
 
 	it("deletes start receipts with the organization's time history", async () => {

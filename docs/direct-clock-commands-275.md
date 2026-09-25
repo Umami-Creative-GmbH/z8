@@ -71,7 +71,8 @@ collision, never new work.
 - Attribution intent keeps omission (`preserve`), clearing and replacement distinct.
   Replacement keeps the existing employee eligibility validators.
 - The event zone is recorded with the existing `browser` source (captured by the
-  client at event time).
+  client at event time). The command has no finer provenance field yet. Distinguishing
+  device, extension and desktop capture is a client-adoption follow-up (#329).
 
 ## Order of checks
 
@@ -94,6 +95,15 @@ collision, never new work.
    the policy clock-out approval decision (as in #274).
 5. The fresh transaction, through the existing owners: replay again, then refuse with
    `not_adopted` unless the append control is active, then the operation.
+
+If a fresh attempt is refused after step 2, the server repeats the replay check before
+it answers. An identical request may have committed in between, which makes a preflight
+read such as the close target stale. In that case the committed receipt is returned
+(`replayed`), not the late refusal (`target_not_active`).
+
+Committed evidence the operation cannot interpret, such as an unsupported receipt version
+or an active period without its clock-in entry, is `integrity_review_required` (409). It
+is held for review, not resent.
 
 A thrown error returns `{ "outcome": "unknown" }` (500). The client looks the command up
 and, if it is not committed, resends the same command. It never mints a new identity
@@ -135,6 +145,12 @@ reads and never writes.
 `not_committed` is established only for version 2 identities, which always commit a
 receipt with their entry. It says nothing about identity-less legacy requests.
 
+Lookup answers for the session's active context, and takes no context assertion. A
+client whose captured context differs from the current session (another organization,
+account or server) pauses and does not look up; in the wrong context its own receipt
+reads as `conflict`. The `conflict` versus `not_committed` distinction reveals only
+whether a random operation UUID is in use somewhere.
+
 ## Legacy `POST /api/time-entries`
 
 Unchanged, except that historical committed recovery now precedes fresh age admission.
@@ -145,6 +161,12 @@ committed entry; clock-out compares project and category). Session, membership,
 departure preservation, billing, evidence completeness and project/category checks
 still run first. Identity-less requests keep their current rules. There is no strict
 admission for them, because no client control exists yet.
+
+Project and category eligibility also still run before the legacy replay, as before
+this change. A committed legacy clock-out retry can therefore still be refused if the
+employee's assignment changed after the commit. Moving those checks behind replay would
+change the legacy matcher's inputs, so this slice leaves it alone. It is listed with the
+activation blockers.
 
 ## Linked cleanup
 
@@ -164,7 +186,7 @@ collaborator run on the gated, label-owned disposable PostgreSQL 16 database (fr
 migration chain including `0084`). Replaced: session, billing provisioning,
 notification delivery, the public-origin resolver, the server clock and the Next cache.
 
-Verified (14 tests):
+Verified (16 tests):
 
 - Capabilities report the server-derived context. `submit` follows the append control.
 - Clock-in: entry ID = operation ID, server-derived offset (+120 for Berlin), `api`
@@ -191,7 +213,11 @@ Verified (14 tests):
 - Lookup: committed with command and `standing`; `not_committed` for unknown and for
   rejected identities; `conflict` for another employee; `changed` after the period is
   soft-deleted (a resend is then a collision); 401 without a session.
-- Two concurrent identical submissions: one 201, one 200, one receipt.
+- Two concurrent identical clock-ins: one 201, one 200, one receipt. Three concurrent
+  identical clock-outs: one 201, two 200 with the same receipt, one closure.
+- Race: an identical clock-out commits between a retry's replay check and its target
+  read (forced through a validation hook). The retry returns the committed receipt as
+  `replayed`. Without the recheck it returned `target_not_active` (verified red).
 - Organization time-data cleanup removes start receipts.
 - Legacy route: a committed extension action ID resent eight days later replays the
   original entry with no writes.
@@ -200,7 +226,14 @@ Mutations: moving the age check before replay, dropping completed-work occupancy
 closing "the active period" instead of the target each failed exactly their test.
 
 The #272, #273 and #274 suites, offline-context and this suite passed together
-**93/93**.
+**95/95**. The full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
+fresh container, migration recovery check and full chain through `0084`) passed
+**38 files / 617 tests**. The label-owned container was verified and removed.
+
+The full unit suite has 143 failures, all environmental and matching clean `dev`: CRLF
+source checks, `pnpm` missing from subprocess `PATH`, Windows path separators and
+date-dependent tests. One source-string test was updated to follow the extracted
+`completeClockOutAfterCommit`. `pnpm run typecheck` passes.
 
 ### Database-free
 
@@ -234,6 +267,8 @@ This slice closes on implementation. Activation items move to #327, #329 and #33
 - **Lookup fencing.** `not_committed` is not a tombstone. A request that is still
   before its transaction can commit after a lookup. That is safe for clients that only
   resend the same identity, and client adapters must keep that rule.
+- **Legacy committed-retry ordering (#327).** On `POST /api/time-entries`, project and
+  category eligibility still precede the legacy replay (see above).
 - **Desktop atomic break close/resume (#263 §8)** is a separate operation and not part
   of this transport.
 - **Shared follow-ups (#305/#327).** Break enforcement and surcharges stay post-commit

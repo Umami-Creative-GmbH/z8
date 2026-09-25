@@ -32,9 +32,10 @@ export type ClockCommandAdmission = keyof typeof CLOCK_COMMAND_ADMISSION_WINDOWS
 
 // One exact representation per value: lowercase canonical UUIDs, UTC instants with
 // at most millisecond precision, and an origin without a path.
-const operationId = z
-	.string()
-	.regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+/** The one accepted operation ID representation: a lowercase canonical UUID. */
+export const CLOCK_COMMAND_OPERATION_ID =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const operationId = z.string().regex(CLOCK_COMMAND_OPERATION_ID);
 const utcInstant = z
 	.string()
 	.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/)

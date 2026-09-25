@@ -42,6 +42,7 @@ import {
 import {
 	ClockingAccessError,
 	ClockingConflictError,
+	ClockingOrganizationError,
 	clockingService,
 	TimeEntryAppendReviewRequiredError,
 } from "@/lib/time-tracking/clocking-service";
@@ -49,6 +50,7 @@ import {
 	type CloseActiveWorkResult,
 	CompletedWorkAttributionError,
 	CompletedWorkCollisionError,
+	CompletedWorkIntegrityError,
 	closeActiveWork,
 	findStandingClosure,
 	replayCloseActiveWork,
@@ -106,7 +108,8 @@ export type ClockCommandRejection =
 	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" }
 	| { code: "approval_policy_unavailable" }
 	| { code: "approval_routing"; error: string }
-	| { code: "append_review_required" };
+	| { code: "append_review_required" }
+	| { code: "integrity_review_required" };
 
 export type ClockCommandSubmission =
 	| {
@@ -144,9 +147,10 @@ type Actor = {
 	teamId: string | null;
 };
 
-class Rejected extends Error {
+class ClockCommandRejectedError extends Error {
 	constructor(readonly rejection: ClockCommandRejection) {
 		super(rejection.code);
+		this.name = "ClockCommandRejectedError";
 	}
 }
 
@@ -195,6 +199,8 @@ async function replayCommand(
 					replayed ? { kind: "close_active_work" as const, result: replayed.result } : null,
 				);
 	if (receipt) return receipt;
+	// Deliberately unscoped: operation IDs are global entry keys, so a use in any
+	// organization is a collision. Only the outcome is returned, never the row.
 	const [entry] = await scope.db
 		.select({ id: timeEntry.id })
 		.from(timeEntry)
@@ -231,9 +237,13 @@ function capture(command: ClockCommand, instant: Instant) {
 }
 
 function mapFailure(error: unknown): ClockCommandRejection | null {
-	if (error instanceof Rejected) return error.rejection;
-	if (error instanceof ClockingAccessError) return { code: "access_denied" };
+	if (error instanceof ClockCommandRejectedError) return error.rejection;
+	if (error instanceof ClockingAccessError || error instanceof ClockingOrganizationError) {
+		return { code: "access_denied" };
+	}
 	if (error instanceof CompletedWorkCollisionError) return { code: "collision" };
+	// Committed evidence the operation cannot interpret: hold for review, do not resend.
+	if (error instanceof CompletedWorkIntegrityError) return { code: "integrity_review_required" };
 	if (error instanceof LiveWorkOccupiedError) {
 		return {
 			code: error.occupant === "active_work" ? "already_clocked_in" : "occupancy_conflict",
@@ -285,7 +295,8 @@ export async function submitClockCommand(
 		try {
 			actor = await requireCommandActor(input.session);
 		} catch (error) {
-			if (error instanceof ClockingAccessError) throw new Rejected({ code: "access_denied" });
+			if (error instanceof ClockingAccessError)
+				throw new ClockCommandRejectedError({ code: "access_denied" });
 			throw error;
 		}
 		const mismatched = verifyClockCommandContext(command.context, {
@@ -295,11 +306,11 @@ export async function submitClockCommand(
 			server: input.serverOrigin,
 		});
 		if (mismatched.length > 0) {
-			throw new Rejected({ code: "context_mismatch", fields: mismatched });
+			throw new ClockCommandRejectedError({ code: "context_mismatch", fields: mismatched });
 		}
 		const billing = await requireBillingForMutation(actor.organizationId);
 		if (!isBillingMutationAllowed(billing)) {
-			throw new Rejected({ code: "billing_required", billing });
+			throw new ClockCommandRejectedError({ code: "billing_required", billing });
 		}
 
 		const committed = await replayTransaction(actor, (scope) =>
@@ -309,26 +320,49 @@ export async function submitClockCommand(
 			return { outcome: "replayed", operationId: command.operationId, receipt: committed };
 		}
 
-		const occurredAt = parseInstant(command.occurredAt);
-		const age = admitClockCommandAge(command.admission, occurredAt, clock.nowInstant());
-		if (!age.admitted) throw new Rejected({ code: "admission_window", reason: age.reason });
-		const validity = await validateTimeEntry(
-			actor.organizationId,
-			dateFromInstant(occurredAt),
-			command.timezone,
-		);
-		if (!validity.isValid) {
-			throw new Rejected({ code: "not_allowed_at_time", holidayName: validity.holidayName });
+		try {
+			return await submitFresh(actor, command, clock);
+		} catch (error) {
+			// An identical request may have committed after the replay check above,
+			// making a preflight read (such as the close target) stale. That commit,
+			// not this attempt's late refusal, is the command's outcome.
+			if (!mapFailure(error)) throw error;
+			const raced = await replayTransaction(actor, (scope) => replayCommand(scope, actor, command));
+			if (raced) return { outcome: "replayed", operationId: command.operationId, receipt: raced };
+			throw error;
 		}
-
-		return command.kind === "clock_in"
-			? await submitStart(actor, command, occurredAt)
-			: await submitClose(actor, command, occurredAt);
 	} catch (error) {
 		const rejection = mapFailure(error);
 		if (!rejection) throw error;
 		return { outcome: "rejected", operationId: command.operationId, ...rejection };
 	}
+}
+
+/** Fresh admission and execution, after committed replay was ruled out. */
+async function submitFresh(
+	actor: Actor,
+	command: ClockCommand,
+	clock: Clock,
+): Promise<ClockCommandSubmission> {
+	const occurredAt = parseInstant(command.occurredAt);
+	const age = admitClockCommandAge(command.admission, occurredAt, clock.nowInstant());
+	if (!age.admitted) {
+		throw new ClockCommandRejectedError({ code: "admission_window", reason: age.reason });
+	}
+	const validity = await validateTimeEntry(
+		actor.organizationId,
+		dateFromInstant(occurredAt),
+		command.timezone,
+	);
+	if (!validity.isValid) {
+		throw new ClockCommandRejectedError({
+			code: "not_allowed_at_time",
+			holidayName: validity.holidayName,
+		});
+	}
+	return command.kind === "clock_in"
+		? submitStart(actor, command, occurredAt)
+		: submitClose(actor, command, occurredAt);
 }
 
 async function submitStart(
@@ -351,7 +385,8 @@ async function submitStart(
 					receipt: committed,
 				};
 			}
-			if (scope.admission !== "append") throw new Rejected({ code: "not_adopted" });
+			if (scope.admission !== "append")
+				throw new ClockCommandRejectedError({ code: "not_adopted" });
 			const started = await startLiveWork(scope, {
 				organizationId: actor.organizationId,
 				employeeId: actor.employeeId,
@@ -393,9 +428,9 @@ async function resolveCloseTarget(actor: Actor, command: ClockOutCommand) {
 			),
 		)
 		.limit(1);
-	if (!period) throw new Rejected({ code: "target_unknown" });
+	if (!period) throw new ClockCommandRejectedError({ code: "target_unknown" });
 	if (!period.isActive || period.endTime !== null || period.deletedAt !== null) {
-		throw new Rejected({ code: "target_not_active" });
+		throw new ClockCommandRejectedError({ code: "target_not_active" });
 	}
 	return period.id;
 }
@@ -421,7 +456,7 @@ async function submitClose(
 			actor.organizationId,
 		);
 		if (!eligibility.isValid) {
-			throw new Rejected({ code: "attribution_not_allowed", field: "projectId" });
+			throw new ClockCommandRejectedError({ code: "attribution_not_allowed", field: "projectId" });
 		}
 	}
 	if (workCategoryId) {
@@ -431,14 +466,17 @@ async function submitClose(
 			actor.organizationId,
 		);
 		if (!eligibility.isValid) {
-			throw new Rejected({ code: "attribution_not_allowed", field: "workCategoryId" });
+			throw new ClockCommandRejectedError({
+				code: "attribution_not_allowed",
+				field: "workCategoryId",
+			});
 		}
 	}
 	let requiresApproval: boolean;
 	try {
 		requiresApproval = await checkClockOutNeedsApproval(actor.employeeId);
 	} catch {
-		throw new Rejected({ code: "approval_policy_unavailable" });
+		throw new ClockCommandRejectedError({ code: "approval_policy_unavailable" });
 	}
 
 	const result = await withWebClockOutTransaction(
@@ -457,7 +495,8 @@ async function submitClose(
 		async (coordination) => {
 			const committed = await replayCommand(coordination, actor, command);
 			if (committed) return { kind: "replayed" as const, receipt: committed };
-			if (coordination.admission !== "append") throw new Rejected({ code: "not_adopted" });
+			if (coordination.admission !== "append")
+				throw new ClockCommandRejectedError({ code: "not_adopted" });
 			return {
 				kind: "executed" as const,
 				closed: await closeActiveWork(coordination, {
@@ -525,6 +564,10 @@ export async function lookupClockCommand(input: {
 	}
 	const { operationId } = input;
 	return replayTransaction(actor, async (scope): Promise<ClockCommandLookup> => {
+		// Receipts and entries are keyed by the global operation ID. They are read
+		// by ID and compared to the authenticated scope, and anything outside it is
+		// only ever reported as `conflict`. Lookup runs in the active context: a
+		// client whose captured context differs pauses instead of looking up.
 		const [receipt] = await scope.db
 			.select()
 			.from(completedWorkOperation)

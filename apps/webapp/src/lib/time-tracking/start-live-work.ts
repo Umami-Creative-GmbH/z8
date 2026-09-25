@@ -34,6 +34,7 @@ import {
 	type Entry,
 } from "./clocking-core";
 import {
+	type CloseActiveWorkWriter,
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 	canonicalJson,
@@ -51,12 +52,8 @@ export type StartLiveWorkOperationCommand = {
 	workLocationType: WorkLocationType;
 };
 
-export type StartLiveWorkWriter = {
-	writer: CompletedWorkWriter;
-	writerVersion: number;
-	/** Stored on the clock-in entry as its source device. */
-	deviceInfo: string;
-};
+/** The same writer identity closures use; replay only matches the same writer. */
+export type StartLiveWorkWriter = CloseActiveWorkWriter;
 
 /** Committed result (receipt version 1). Current clock state is a separate read. */
 export type StartLiveWorkResult = {

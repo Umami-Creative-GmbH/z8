@@ -3,10 +3,10 @@ import { connection, NextResponse } from "next/server";
 import { lookupClockCommand } from "@/app/[locale]/(app)/time-tracking/actions/clock-command";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
+import { CLOCK_COMMAND_OPERATION_ID } from "@/lib/time-tracking/clock-command";
 
 const logger = createLogger("ClockCommandLookup");
 const noStore = { "Cache-Control": "no-store" };
-const OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /**
  * GET /api/time-entries/commands/{operationId}
@@ -19,7 +19,7 @@ export async function GET(
 ) {
 	await connection();
 	const { operationId } = await params;
-	if (!OPERATION_ID.test(operationId)) {
+	if (!CLOCK_COMMAND_OPERATION_ID.test(operationId)) {
 		return NextResponse.json(
 			{ outcome: "rejected", code: "invalid_operation_id" },
 			{ status: 400, headers: noStore },

@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 			activeOrganizationId: session.session.activeOrganizationId,
 		});
 		const adopted = (await readAppendAdmission(db, actor.organizationId)) === "append";
-		const window = (mode: keyof typeof CLOCK_COMMAND_ADMISSION_WINDOWS) => ({
+		const windowSeconds = (mode: keyof typeof CLOCK_COMMAND_ADMISSION_WINDOWS) => ({
 			pastSeconds: CLOCK_COMMAND_ADMISSION_WINDOWS[mode].pastMilliseconds / 1000,
 			futureSeconds: CLOCK_COMMAND_ADMISSION_WINDOWS[mode].futureMilliseconds / 1000,
 		});
@@ -60,7 +60,7 @@ export async function GET(request: Request) {
 				// adoption. Lookup and committed replay work in every mode.
 				submit: adopted ? "available" : "unavailable",
 				lookup: "available",
-				admission: { immediate: window("immediate"), delayed: window("delayed") },
+				admission: { immediate: windowSeconds("immediate"), delayed: windowSeconds("delayed") },
 				context: {
 					userId: actor.userId,
 					organizationId: actor.organizationId,
@@ -93,6 +93,7 @@ const REJECTION_STATUS: Record<
 	already_clocked_in: 409,
 	occupancy_conflict: 409,
 	append_review_required: 409,
+	integrity_review_required: 409,
 	admission_window: 422,
 	not_allowed_at_time: 422,
 	invalid_interval: 422,
