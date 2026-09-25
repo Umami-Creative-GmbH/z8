@@ -59,6 +59,7 @@ import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib
 import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { ConflictError } from "@/lib/effect/errors";
 import {
 	compareInstants,
 	comparePlainDates,
@@ -1276,6 +1277,7 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 						workLocationType,
 						workCategoryId,
 					},
+					correctionEntriesCommitted: !insertedCorrection,
 				});
 				if (result.kind === "auto_completed") {
 					throw new DemoCorrectionAutoCompletedError();
@@ -1316,7 +1318,10 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			if (
 				error instanceof DemoCorrectionAutoCompletedError ||
 				error instanceof DemoCorrectionSourceChangedError ||
-				error instanceof DemoCorrectionReplayedError
+				error instanceof DemoCorrectionReplayedError ||
+				// Its approval was purged (#306): the committed correction stays, unrouted.
+				(error instanceof ConflictError &&
+					error.conflictType === "purged_time_correction_approval")
 			) {
 				continue;
 			}

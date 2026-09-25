@@ -138,6 +138,10 @@ export async function runApprovalMaintenanceCli(
 					storage_type: "delivery_intent",
 					id,
 				})),
+				...result.attention.map((id) => ({
+					storage_type: "escalation_attention",
+					id,
+				})),
 			]);
 		}
 	} catch (error) {
