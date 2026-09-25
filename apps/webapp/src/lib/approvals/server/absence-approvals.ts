@@ -42,6 +42,7 @@ import {
 	renderAbsenceRequestApproved,
 	renderAbsenceRequestRejected,
 } from "@/lib/email/render";
+import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { createLogger } from "@/lib/logger";
 import {
 	onAbsenceRequestApproved,
@@ -1757,6 +1758,11 @@ function authenticatedAbsenceDecisionEffect(
 					),
 				),
 			);
+		}
+		if (execution.mode === "canonical" || execution.mode === "complete") {
+			// Refreshes of delivered cards were committed as intents with the
+			// transition; this only runs them sooner.
+			kickApprovalDelivery({ organizationId });
 		}
 	});
 }

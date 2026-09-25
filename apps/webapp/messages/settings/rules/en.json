@@ -100,6 +100,7 @@
         "recentlyClosed": "Recently closed ({count})",
         "recheck": "Recheck",
         "resolved": "Resolved",
+        "retryDelivery": "Retry delivery",
         "title": "Needs attention",
         "transfer": "Transfer…",
         "unknownApprover": "Not recorded"
@@ -195,6 +196,7 @@
       },
       "title": "Approval Escalation",
       "toast": {
+        "deliveryRetried": "Delivery retry scheduled",
         "disposed": "Attention item closed",
         "rechecked": "Checked {checked} items, {resolved} resolved",
         "requestFailed": "The request failed. Try again.",

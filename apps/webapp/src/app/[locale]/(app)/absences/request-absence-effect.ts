@@ -78,6 +78,7 @@ import {
 	renderAbsenceRequestPendingApproval,
 	renderAbsenceRequestSubmitted,
 } from "@/lib/email/render";
+import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { createLogger } from "@/lib/logger";
 import {
 	onAbsenceRequestPendingApproval,
@@ -1269,6 +1270,13 @@ function requestAbsenceWithResolverEffect(
 								}),
 							),
 						);
+					} else if (newAbsence.approvalWorkflowResult?.kind === "canonical") {
+						// The initial card's intent committed with the workflow; the
+						// delivery owner sends it (and the scheduled pass recovers it).
+						kickApprovalDelivery({
+							organizationId: currentEmployee.organizationId,
+							workflowId: newAbsence.approvalWorkflowResult.workflowId,
+						});
 					}
 				} else if (!category.requiresApproval) {
 					yield* _(

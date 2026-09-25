@@ -45,6 +45,14 @@
         "stepRejected": "Rifiutata da {actor} il {time}. La richiesta non è ancora definitiva; controllane lo stato attuale in Z8.",
         "recordedTitle": "Decisione registrata",
         "recorded": "Registrata da {actor} il {time}. Controlla lo stato attuale della richiesta in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Richiesta ritirata",
+        "withdrawn": "Questa richiesta è stata ritirata. Non serve alcuna decisione da questa scheda.",
+        "inactiveTitle": "Non più da decidere",
+        "inactive": "Questa richiesta non richiede più la tua decisione da questa scheda. Qui non è stato deciso nulla. Controlla lo stato attuale in Z8.",
+        "currentApproved": "Stato attuale della richiesta: approvata.",
+        "currentRejected": "Stato attuale della richiesta: respinta."
       }
     },
     "cmd": {

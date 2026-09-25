@@ -43,6 +43,15 @@ export function parseBoundApprovalCallback(
 }
 
 /**
+ * The receiving bot's scope, `telegram-bot:<numeric bot id>`, derived from the
+ * token. Invocation identity and delivered-message identity use the same scope.
+ */
+export function telegramReceiverScope(botToken: string): string | null {
+	const bot = BOT_TOKEN_PATTERN.exec(botToken);
+	return bot ? `telegram-bot:${bot[1]}` : null;
+}
+
+/**
  * Invocation identity per #261: the bot-scoped `callback_query.id`, with the
  * transport `update_id` kept only as delivery evidence. Without a query ID,
  * sender or recognizable bot identity there is no invocation, and the action
@@ -53,16 +62,16 @@ export function telegramInvocationEnvelope(
 	query: { id?: string; from?: { id?: number } },
 	updateId: number | undefined,
 ): BotInvocationEnvelope | null {
-	const bot = BOT_TOKEN_PATTERN.exec(botToken);
+	const receiverScope = telegramReceiverScope(botToken);
 	const invocationId = query.id;
 	const actorId = query.from?.id;
-	if (!bot || typeof invocationId !== "string" || invocationId.trim().length === 0) {
+	if (!receiverScope || typeof invocationId !== "string" || invocationId.trim().length === 0) {
 		return null;
 	}
 	if (typeof actorId !== "number" || !Number.isSafeInteger(actorId)) return null;
 	return {
 		scheme: "telegram_callback_query",
-		receiverScope: `telegram-bot:${bot[1]}`,
+		receiverScope,
 		invocationId,
 		deliveryId: Number.isSafeInteger(updateId) ? String(updateId) : null,
 		providerActorId: String(actorId),

@@ -100,6 +100,7 @@
         "recentlyClosed": "Kürzlich geschlossen ({count})",
         "recheck": "Erneut prüfen",
         "resolved": "Gelöst",
+        "retryDelivery": "Zustellung erneut versuchen",
         "title": "Erfordert Aufmerksamkeit",
         "transfer": "Übertragen…",
         "unknownApprover": "Nicht erfasst"
@@ -195,6 +196,7 @@
       },
       "title": "Genehmigungseskalation",
       "toast": {
+        "deliveryRetried": "Erneute Zustellung eingeplant",
         "disposed": "Fall geschlossen",
         "rechecked": "{checked} Fälle geprüft, {resolved} gelöst",
         "requestFailed": "Die Anfrage ist fehlgeschlagen. Bitte erneut versuchen.",

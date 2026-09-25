@@ -165,7 +165,7 @@ from the earliest removed period.
   `clearOrganizationTimeData(organizationId)` without a user still works for system
   callers.
 
-## Schema (migration 0086)
+## Schema (migration 0087)
 
 - `time_entry_append_position` operations add `demo_generation` and
   `demo_correction`.
@@ -262,8 +262,8 @@ employee key failed 7 of the then 11 tests: every adopted generation, correction
 attribution test, plus the coordinated cleanup test.
 
 Full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
-fresh container, migration recovery check and full chain through 0086): **41 files /
-669 tests passed** after merging `dev` (#275, #302, #284), including the #272/#273/#274 clocking suites. The label-owned
+fresh container, migration recovery check and full chain through 0087): **42 files /
+686 tests passed** after merging `dev` (#275, #302, #284, #291), including the #272/#273/#274 clocking suites. The label-owned
 container was verified and removed.
 
 ### Database-free
