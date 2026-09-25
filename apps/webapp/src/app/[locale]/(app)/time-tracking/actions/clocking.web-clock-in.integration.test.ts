@@ -97,7 +97,9 @@ vi.mock("./shared", async (importOriginal) => {
 });
 
 const { clockIn } = await import("./clocking");
-const { clockingService } = await import("@/lib/time-tracking/clocking-service");
+const { ClockingAppendAdoptedError, clockingService } = await import(
+	"@/lib/time-tracking/clocking-service"
+);
 const { withWebClockInTransaction } = await import("@/lib/time-tracking/web-clock-in-transaction");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
@@ -356,11 +358,14 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 		return rows;
 	}
 
-	/** Closes the open period without writing an entry, so only the period changes. */
+	/**
+	 * Closes the open period without writing an entry, so only the period changes. It
+	 * ends before the fixed clock-in instant, which adopted starts refuse to overlap (#327).
+	 */
 	async function closePeriodOutsideAppend(employeeId: string = ids.requester) {
 		await admin.query(
-			`update work_period set end_time = start_time + interval '1 hour', duration_minutes = 60,
-			        is_active = false
+			`update work_period set start_time = start_time - interval '2 hours',
+			        end_time = start_time - interval '1 hour', duration_minutes = 60, is_active = false
 			 where employee_id = $1 and end_time is null`,
 			[employeeId],
 		);
@@ -785,9 +790,8 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 		await expect(clockInAs()).resolves.toMatchObject({ success: true });
 		const admitted = await position();
 
-		// The shared legacy closer (direct HTTP, on-behalf, bots: #275-#277) still
-		// selects the latest-created head and does not advance the position, so it is
-		// an unexpected write for this scope. Web clock-out participates since #274.
+		// The uncoordinated clocking core refuses fresh writes once the organization
+		// adopted (#327), without writing anything.
 		await expect(
 			clockingService.clockOut({
 				employeeId: ids.requester,
@@ -802,7 +806,30 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 				},
 				source: { ipAddress: null, deviceInfo: "web" },
 			}),
-		).resolves.toMatchObject({ disposition: "executed" });
+		).rejects.toBeInstanceOf(ClockingAppendAdoptedError);
+		expect(await position()).toEqual(admitted);
+
+		// A binary that predates that fence (an undrained old server) still selects
+		// the latest-created head and does not advance the position, so its write is
+		// unexpected for this scope.
+		const tip = only(await entries());
+		await insertEntries([
+			{
+				id: randomUUID(),
+				type: "clock_out",
+				timestamp: clockOutAt.toString(),
+				previousEntryId: null,
+				hash: calculateHash({
+					employeeId: ids.requester,
+					type: "clock_out",
+					timestamp: "2026-07-22T16:00:00.000Z",
+					previousHash: tip.hash,
+				}),
+				previousHash: tip.hash,
+				createdAt: new Date().toISOString(),
+			},
+		]);
+		await closePeriodOutsideAppend();
 		const before = await entries();
 
 		await expect(clockInAs()).resolves.toEqual(reviewResult);
