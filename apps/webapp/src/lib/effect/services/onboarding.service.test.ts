@@ -37,6 +37,14 @@ vi.mock("@/lib/organization/creation-policy", () => ({
 		flag === "true" ? "true" : "false",
 }));
 
+/** Runs onboarding's guarded employee transaction (#318) on the same mock client. */
+function withTransaction<T extends object>(mockDb: T) {
+	return Object.assign(mockDb, {
+		execute: vi.fn(async () => ({ rows: [] })),
+		transaction: vi.fn(async (run: (transaction: T) => Promise<unknown>) => run(mockDb)),
+	});
+}
+
 beforeEach(() => {
 	creationPolicyState.disabled = false;
 	vi.clearAllMocks();
@@ -62,7 +70,7 @@ describe("OnboardingService.createOrganization", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -138,7 +146,7 @@ describe("OnboardingService.updateProfile", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -224,7 +232,7 @@ describe("OnboardingService.updateProfile", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -296,7 +304,7 @@ describe("OnboardingService.updateProfile", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -352,7 +360,7 @@ describe("OnboardingService.updateProfile", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -408,7 +416,7 @@ describe("OnboardingService.updateProfile", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -482,7 +490,7 @@ describe("OnboardingService.getOnboardingSummary", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);
@@ -532,7 +540,7 @@ describe("OnboardingService work-template authorization", () => {
 		const dbLayer = Layer.succeed(
 			DatabaseService,
 			DatabaseService.of({
-				db: mockDb as never,
+				db: withTransaction(mockDb) as never,
 				query: (_name, query) => Effect.promise(query) as never,
 			}),
 		);

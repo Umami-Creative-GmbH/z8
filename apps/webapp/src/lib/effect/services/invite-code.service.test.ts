@@ -455,11 +455,13 @@ describe("InviteCodeService transactional usability", () => {
 		const lock = inviteLockQuery(fake.transactionStatements);
 		expect(lock?.sql.toLowerCase()).toContain("for update");
 		expect(lock?.params).toEqual(["invite-1", "org-1"]);
-		expect(
-			new PgDialect()
-				.sqlToQuery(fake.transactionStatements[0] as SQL)
-				.sql.toLowerCase(),
-		).toContain("for update");
+		// The user's configuration/access guard precedes the invite-code row lock (#318).
+		const [guard, rowLock] = fake.transactionStatements.map((statement) =>
+			new PgDialect().sqlToQuery(statement as SQL),
+		);
+		expect(guard?.sql).toContain("pg_advisory_xact_lock");
+		expect(guard?.params).toEqual([JSON.stringify(["work-user-configuration-access", "user-1"])]);
+		expect(rowLock?.sql.toLowerCase()).toContain("for update");
 	});
 
 	it("serializes max-use redemption so a stale second precheck cannot exceed the limit", async () => {

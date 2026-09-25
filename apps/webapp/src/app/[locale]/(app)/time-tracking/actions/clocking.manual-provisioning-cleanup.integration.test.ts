@@ -84,6 +84,7 @@ vi.mock("next/cache", async (importOriginal) => ({
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
+			updateUser: async () => ({ status: true }),
 			getSession: async () => {
 				const identity = currentIdentity();
 				return identity
@@ -126,6 +127,11 @@ vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
 }));
 
+vi.mock("@/lib/billing/seat-sync-trigger", () => ({
+	reconcileBillingSeatsForOrganization: async () => undefined,
+	syncBillingSeatsAfterMemberChange: async () => undefined,
+}));
+
 vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
 	return Object.fromEntries(
@@ -165,6 +171,27 @@ const demo = await import("@/lib/demo/demo-data.service");
 const { deleteNonAdminEmployeesData } = await import("@/lib/demo/delete-non-admin");
 const { generateDemoEmployees } = await import("@/lib/demo/employee-generator");
 const { runOrganizationCleanup } = await import("@/lib/jobs/organization-cleanup");
+const { db } = await import("@/db");
+const { Effect, Layer } = await import("effect");
+const { ensureEmployeeForOrganizationMember } = await import(
+	"@/lib/auth/organization-member-provisioning"
+);
+const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
+const { InviteCodeService, InviteCodeServiceLive } = await import(
+	"@/lib/effect/services/invite-code.service"
+);
+const { PendingMemberService, PendingMemberServiceLive } = await import(
+	"@/lib/effect/services/pending-member.service"
+);
+const { OnboardingService, OnboardingServiceLive } = await import(
+	"@/lib/effect/services/onboarding.service"
+);
+const services = Layer.mergeAll(
+	InviteCodeServiceLive,
+	PendingMemberServiceLive,
+	OnboardingServiceLive,
+).pipe(Layer.provide(Layer.merge(DatabaseServiceLive, AuthServiceLive)));
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -318,13 +345,18 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 	 * so the submission commits on the prior configuration. A writer that skips
 	 * the guard commits early and times out here.
 	 */
-	async function writeBehindParkedSubmission<T>(guard: string, write: () => Promise<T>) {
+	async function writeBehindParkedSubmission<T>(
+		guard: string,
+		write: () => Promise<T>,
+		whileWaiting?: () => Promise<void>,
+	) {
 		const parked = await parkedSubmission();
 		let released = false;
 		try {
 			const writer = track(write());
 			await waitFor(() => advisoryWaiter(guard), "the writer on the configuration guard");
 			expect(writer.settled).toBe(false);
+			await whileWaiting?.();
 			await parked.release();
 			released = true;
 			const submitted = await parked.pending;
@@ -568,6 +600,155 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 
 			expect(submitted).toMatchObject({ success: true });
 			expect(written).toMatchObject({ committedRows: 1, failedRows: 0 });
+		});
+	});
+
+	describe("membership provisioning", () => {
+		// The employee user joins the other organization afresh: a user-global
+		// change of the target's employees, ordered by the target's user guard.
+		async function otherEmployeeIds() {
+			const { rows } = await admin.query(
+				"select id from employee where user_id = $1 and organization_id = $2",
+				[ids.employeeUser, ids.otherOrganization],
+			);
+			return rows.map((row) => row.id as string);
+		}
+		const noOtherEmployeeYet = async () => {
+			expect(await otherEmployeeIds()).toEqual([]);
+		};
+
+		async function leaveOtherOrganization(options: { membership: boolean }) {
+			await admin.query("delete from employee where id = $1", [ids.otherEmployee]);
+			if (options.membership) {
+				await admin.query("delete from member where id = 't318-m-other-employee'");
+			}
+		}
+
+		it("ensureEmployeeForOrganizationMember waits on the member's user guard", async () => {
+			await leaveOtherOrganization({ membership: false });
+
+			const { submitted } = await writeBehindParkedSubmission(
+				userGuard(ids.employeeUser),
+				() =>
+					ensureEmployeeForOrganizationMember(db, {
+						mode: "membershipAccepted",
+						userId: ids.employeeUser,
+						organizationId: ids.otherOrganization,
+						memberRole: "member",
+					}),
+				noOtherEmployeeYet,
+			);
+
+			expect(submitted).toMatchObject({ success: true });
+			expect(await otherEmployeeIds()).toHaveLength(1);
+		});
+
+		it("invite-code redemption waits on the member's user guard before its row lock", async () => {
+			await leaveOtherOrganization({ membership: true });
+			await admin.query(
+				`insert into invite_code (organization_id, code, label, requires_approval, created_by)
+				 values ($1, 'T318-JOIN', 'Join', false, $2)`,
+				[ids.otherOrganization, ids.otherOwnerUser],
+			);
+
+			const { submitted, written } = await writeBehindParkedSubmission(
+				userGuard(ids.employeeUser),
+				() =>
+					Effect.runPromise(
+						InviteCodeService.pipe(
+							Effect.flatMap((service) =>
+								service.useCode({ code: "T318-JOIN", userId: ids.employeeUser }),
+							),
+							Effect.provide(services),
+						),
+					),
+				async () => {
+					await noOtherEmployeeYet();
+					// The guard precedes the invite-code row lock.
+					const { rows } = await admin.query(
+						"select 1 from invite_code where code = 'T318-JOIN' for update nowait",
+					);
+					expect(rows).toHaveLength(1);
+				},
+			);
+
+			expect(submitted).toMatchObject({ success: true });
+			expect(written).toMatchObject({ success: true, status: "approved" });
+			expect(await otherEmployeeIds()).toHaveLength(1);
+		});
+
+		it("pending-member rejection waits on the member's user guard", async () => {
+			await leaveOtherOrganization({ membership: true });
+			const { rows: codes } = await admin.query(
+				`insert into invite_code (organization_id, code, label, requires_approval, created_by)
+				 values ($1, 'T318-ASK', 'Ask', true, $2) returning id`,
+				[ids.otherOrganization, ids.otherOwnerUser],
+			);
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, invite_code_id, created_at)
+				 values ('t318-m-pending', $1, $2, 'member', 'pending', $3, now())`,
+				[ids.otherOrganization, ids.employeeUser, only(codes).id],
+			);
+
+			const { submitted } = await writeBehindParkedSubmission(
+				userGuard(ids.employeeUser),
+				() =>
+					Effect.runPromise(
+						PendingMemberService.pipe(
+							Effect.flatMap((service) =>
+								service.reject({
+									memberId: "t318-m-pending",
+									organizationId: ids.otherOrganization,
+									rejectedBy: ids.otherOwnerUser,
+								}),
+							),
+							Effect.provide(services),
+						),
+					),
+				async () => {
+					// The guard precedes the member row lock.
+					const { rows } = await admin.query(
+						"select status from member where id = 't318-m-pending' for update nowait",
+					);
+					expect(rows).toEqual([{ status: "pending" }]);
+				},
+			);
+
+			expect(submitted).toMatchObject({ success: true });
+			const { rows } = await admin.query("select 1 from member where id = 't318-m-pending'");
+			expect(rows).toEqual([]);
+		});
+
+		it("onboarding employee creation waits on the member's user guard", async () => {
+			await leaveOtherOrganization({ membership: false });
+
+			const { submitted } = await writeBehindParkedSubmission(
+				userGuard(ids.employeeUser),
+				() =>
+					as(
+						ids.employeeUser,
+						() =>
+							Effect.runPromise(
+								OnboardingService.pipe(
+									Effect.flatMap((service) =>
+										service.updateProfile({
+											firstName: "Erin",
+											lastName: "Employee",
+											weekStartDay: "monday",
+											timeFormat: "24h",
+											helpImproveProduct: false,
+										}),
+									),
+									Effect.provide(services),
+								),
+							),
+						ids.otherOrganization,
+					),
+				noOtherEmployeeYet,
+			);
+
+			expect(submitted).toMatchObject({ success: true });
+			expect(await otherEmployeeIds()).toHaveLength(1);
 		});
 	});
 
