@@ -3,7 +3,7 @@
 One durable owner sends approval cards and keeps them current. It covers
 Telegram and Teams cards for canonical absences. It is **inactive for every
 organization**: migrations `0086_approval_delivery.sql` and
-`0089_teams_approval_actions.sql` insert no control rows.
+`0090_teams_approval_actions.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -161,7 +161,7 @@ app instance, then, per organization and after the #290 gates:
 ```sql
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'telegram');
--- Teams (#293), after 0089:
+-- Teams (#293), after 0090:
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'teams');
 ```

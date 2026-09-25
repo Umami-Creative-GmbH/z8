@@ -666,7 +666,7 @@ on-behalf roles, coverage, essential gaps), `telegram/bound-approval.test.ts`
 Canonical absence cards on Teams can carry Approve/Reject controls with the
 same binding, gates and decision owner as Telegram (#290). Each **recorded
 incoming activity** is one invocation. Admission is **inactive for every
-organization** (migration `0089_teams_approval_actions.sql` inserts no control
+organization** (migration `0090_teams_approval_actions.sql` inserts no control
 rows).
 
 ```text
@@ -734,7 +734,7 @@ evidence of commitment.
 
 ### Activation
 
-Apply `0089` after `0088`, then per organization, as the authorized adoption
+Apply `0090` after `0089`, then per organization, as the authorized adoption
 writer under the rollout lock (same statement as #290 with provider
 `teams`):
 
@@ -746,7 +746,7 @@ on conflict (organization_id, workflow_type, provider) do update set mode = excl
 
 ### Activation blockers (#293, unresolved)
 
-1. Apply `0089` through the authorized deployment (it has run only on the
+1. Apply `0090` through the authorized deployment (it has run only on the
    disposable PostgreSQL 16 database).
 2. **Live Teams profile.** The Universal Action shape, the presence of
    `activity.id` on `adaptiveCard/action` invokes and the invoke response were

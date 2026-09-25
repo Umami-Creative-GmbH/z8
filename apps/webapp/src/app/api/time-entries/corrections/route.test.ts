@@ -166,6 +166,26 @@ vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	clockingService: { requireActor: mockState.requireActor },
 }));
 
+// Legacy organizations: the direct branch runs the service inside the coordinated scope.
+vi.mock("@/lib/time-tracking/completed-work-transaction", () => ({
+	withCompletedWorkTransaction: (
+		_input: unknown,
+		operation: (scope: unknown) => Promise<unknown>,
+	) =>
+		operation({
+			admission: "legacy",
+			db: { coordinated: true },
+			assertEmployee: () => {},
+		}),
+}));
+
+vi.mock("@/lib/time-tracking/amend-completed-work", () => ({
+	AMEND_COMPLETED_WORK_COMMAND_VERSION: 1,
+	describeAmendmentFailure: () => null,
+	replayCommittedAmendment: async () => null,
+	replayOrAmendCompletedWork: vi.fn(),
+}));
+
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),

@@ -16,7 +16,11 @@ import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { auth } from "@/lib/auth";
 import { canApproveFor, getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { compareInstants } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	instantToCanonicalString,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -27,9 +31,17 @@ import {
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
+	type AmendCompletedWorkCommand,
+	describeAmendmentFailure,
+	replayCommittedAmendment,
+	replayOrAmendCompletedWork,
+} from "@/lib/time-tracking/amend-completed-work";
+import {
 	ClockingAccessError,
 	clockingService,
 } from "@/lib/time-tracking/clocking-service";
+import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
@@ -220,6 +232,38 @@ export async function POST(request: NextRequest) {
 		const submissionId = idempotencyKey
 			? idempotencyKey.toLowerCase()
 			: randomUUID();
+		// The request exactly as submitted: an adopted direct correction's command.
+		const directCommand: AmendCompletedWorkCommand = {
+			version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
+			operationId: submissionId,
+			request: {
+				replacesEntryId,
+				timestamp,
+				notes,
+				timezone: timezone ?? null,
+				workLocationType,
+				workCategoryId,
+			},
+		};
+		if (idempotencyKey) {
+			// A committed adopted correction replays before fresh reads: its own
+			// result superseded the entry this request names.
+			const replayed = await replayCommittedAmendment({
+				organizationId: activeOrgId,
+				actorUserId: session.user.id,
+				writer: "http_direct_correction",
+				command: directCommand,
+			});
+			if (replayed) {
+				return NextResponse.json(
+					{
+						entry: replayed.correctionEntries[0] ?? null,
+						message: "Correction applied successfully.",
+					},
+					{ status: 201 },
+				);
+			}
+		}
 
 		// Get current user's employee record for the active organization ONLY
 		const [currentEmployee] = await db
@@ -492,44 +536,117 @@ export async function POST(request: NextRequest) {
 				trustedEvidence.instant,
 				instantFromTimeCorrectionBoundary(entryToCorrect.timestamp),
 			) !== 0;
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.createCorrectionEntry({
-					employeeId: entryToCorrect.employeeId,
-					organizationId: currentEmployee.organizationId,
-					replacesEntryId,
-					workPeriodId: selectedWorkPeriod.id,
-					timestamp: trustedCorrectionTimestamp,
-					createdBy: session.user.id,
-					notes,
-					ipAddress,
-					deviceInfo,
-					...timezoneCapture,
-					workLocationType,
-					workCategoryId: workCategoryId?.toLowerCase() ?? null,
-					expectedClockInId: selectedWorkPeriod.clockInId,
-					expectedClockOutId: selectedWorkPeriod.clockOutId,
-					expectedStartTime: selectedWorkPeriod.startTime,
-					expectedEndTime: selectedWorkPeriod.endTime,
-					expectedWorkLocationType: selectedWorkPeriod.workLocationType,
-					expectedWorkCategoryId: selectedWorkPeriod.workCategoryId,
-					validateTimeRange: () =>
-						validateTimeEntryRange(
-							activeOrgId,
-							correctsClockIn
-								? trustedCorrectionTimestamp
-								: selectedWorkPeriod.startTime,
-							correctsClockIn
-								? (selectedWorkPeriod.endTime ?? trustedCorrectionTimestamp)
-								: trustedCorrectionTimestamp,
-							targetTimezone,
-						),
-				}),
+		const validateTimeRange = () =>
+			validateTimeEntryRange(
+				activeOrgId,
+				correctsClockIn
+					? trustedCorrectionTimestamp
+					: selectedWorkPeriod.startTime,
+				correctsClockIn
+					? (selectedWorkPeriod.endTime ?? trustedCorrectionTimestamp)
+					: trustedCorrectionTimestamp,
+				targetTimezone,
 			);
-		});
-
-		const correctionEntry = await runtime.runPromise(effect);
+		const direct = await withCompletedWorkTransaction(
+			{
+				organizationId: activeOrgId,
+				employeeId: entryToCorrect.employeeId,
+				actorUserId: session.user.id,
+			},
+			async (scope) => {
+				if (scope.admission === "append") {
+					// Holiday/range validation stays a preflight until the configuration
+					// writers participate (#316/#327); the operation owns everything else.
+					const validation = await validateTimeRange();
+					if (!validation.isValid) {
+						throw new ValidationError({
+							message:
+								validation.error ??
+								"Cannot create time correction for this period",
+							field: "timestamp",
+							value: validation.holidayName,
+						});
+					}
+					const correctedEndpoint = {
+						kind: "set" as const,
+						at: instantToCanonicalString(trustedEvidence.instant),
+						precision: "exact" as const,
+						...timezoneCapture,
+					};
+					const receipt = await replayOrAmendCompletedWork(scope, {
+						organizationId: activeOrgId,
+						employeeId: entryToCorrect.employeeId,
+						actorUserId: session.user.id,
+						authority: "owner_or_manager",
+						writer: "http_direct_correction",
+						command: directCommand,
+						intent: {
+							workPeriodId: selectedWorkPeriod.id,
+							clockIn: correctsClockIn
+								? correctedEndpoint
+								: { kind: "preserve" },
+							clockOut: correctsClockIn
+								? { kind: "preserve" }
+								: correctedEndpoint,
+							project: { kind: "preserve" },
+							workCategory:
+								workCategoryId === null
+									? { kind: "clear" }
+									: { kind: "replace", id: workCategoryId.toLowerCase() },
+							workLocation: { kind: "replace", id: workLocationType },
+							notes,
+						},
+						expectedSource: {
+							clockInId: selectedWorkPeriod.clockInId,
+							clockOutId: selectedWorkPeriod.clockOutId,
+							startAt: instantFromTimeCorrectionBoundary(
+								selectedWorkPeriod.startTime,
+							),
+							endAt: selectedWorkPeriod.endTime
+								? instantFromTimeCorrectionBoundary(selectedWorkPeriod.endTime)
+								: null,
+						},
+						evaluatedAt: systemClock.nowInstant(),
+						request: { ipAddress, deviceInfo },
+					});
+					return {
+						adopted: true as const,
+						entry: receipt.correctionEntries[0] ?? null,
+					};
+				}
+				const entry = await runtime.runPromise(
+					Effect.gen(function* (_) {
+						const timeEntryService = yield* _(TimeEntryService);
+						return yield* _(
+							timeEntryService.createCorrectionEntry({
+								employeeId: entryToCorrect.employeeId,
+								organizationId: currentEmployee.organizationId,
+								replacesEntryId,
+								workPeriodId: selectedWorkPeriod.id,
+								timestamp: trustedCorrectionTimestamp,
+								createdBy: session.user.id,
+								notes,
+								ipAddress,
+								deviceInfo,
+								...timezoneCapture,
+								workLocationType,
+								workCategoryId: workCategoryId?.toLowerCase() ?? null,
+								expectedClockInId: selectedWorkPeriod.clockInId,
+								expectedClockOutId: selectedWorkPeriod.clockOutId,
+								expectedStartTime: selectedWorkPeriod.startTime,
+								expectedEndTime: selectedWorkPeriod.endTime,
+								expectedWorkLocationType: selectedWorkPeriod.workLocationType,
+								expectedWorkCategoryId: selectedWorkPeriod.workCategoryId,
+								validateTimeRange,
+								transaction: scope.db,
+							}),
+						);
+					}),
+				);
+				return { adopted: false as const, entry };
+			},
+		);
+		const correctionEntry = direct.entry;
 		const originalTimezoneCapture =
 			entryToCorrect.timezone &&
 			Number.isInteger(entryToCorrect.utcOffsetMinutes)
@@ -549,7 +666,8 @@ export async function POST(request: NextRequest) {
 			},
 			trustedEvidence,
 		]);
-		if (endpointChanged) {
+		// The adopted operation committed its balance refresh intent with the work.
+		if (endpointChanged && !direct.adopted) {
 			await markWorkBalanceDirtyAfterDirectCorrectionBestEffort({
 				dirtyFromDate: dirtyFromDate ?? undefined,
 				employeeId: entryToCorrect.employeeId,
@@ -570,6 +688,13 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
+		}
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return NextResponse.json(
+				{ error: failure.message, code: failure.code },
+				{ status: 409 },
+			);
 		}
 		const domainError = getCorrectionDomainError(error);
 		if (domainError instanceof AuthorizationError) {

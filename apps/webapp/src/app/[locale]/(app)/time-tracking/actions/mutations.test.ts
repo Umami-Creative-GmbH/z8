@@ -100,6 +100,8 @@ vi.mock("./shared", () => ({
 	logger: mockState.logger,
 }));
 
+vi.mock("../actions", () => ({ updateWorkPeriodProject: vi.fn() }));
+
 const { approveWorkPeriod } = await import("./mutations");
 
 describe("approveWorkPeriod", () => {

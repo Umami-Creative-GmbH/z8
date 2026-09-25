@@ -672,7 +672,8 @@ async function resolveAttribution(
 	return row.id;
 }
 
-function earliestStartDate(start: Instant, utcOffsetMinutes: number): string {
+/** The earlier of the UTC and captured-offset local date of an instant. */
+export function earliestStartDate(start: Instant, utcOffsetMinutes: number): string {
 	const utcDate = start.toZonedDateTimeISO("UTC").toPlainDate();
 	const localDate = start.toZonedDateTimeISO(fixedOffsetZone(utcOffsetMinutes)).toPlainDate();
 	return (comparePlainDates(localDate, utcDate) < 0 ? localDate : utcDate).toString();
