@@ -776,6 +776,60 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 			);
 			expect(employees.map((row) => row.id)).toEqual([ids.otherEmployee]);
 		});
+
+		it("restarts with a user who joined while it waited, and protects them too", async () => {
+			await admin.query(
+				"update organization set deleted_at = now() - interval '6 days' where id = $1",
+				[ids.organization],
+			);
+			const lateUser = "t318-late-user";
+			const parked = await parkedSubmission();
+			let lateGuard: { release(): Promise<void> } | null = null;
+			try {
+				const cleanup = track(runOrganizationCleanup());
+				await waitFor(
+					() => advisoryWaiter(organizationGuard),
+					"the cleanup on the organization configuration guard",
+				);
+				// A user joins after the cleanup routed its scope; a fresh submission of
+				// theirs holds their guard shared.
+				await admin.query(
+					`insert into "user" (id, name, email, created_at, updated_at)
+					 values ($1, $1, $1 || '@example.test', now(), now())`,
+					[lateUser],
+				);
+				await admin.query(
+					`insert into member (id, organization_id, user_id, role, status, created_at)
+					 values ('t318-m-late', $1, $2, 'member', 'approved', now())`,
+					[ids.organization, lateUser],
+				);
+				lateGuard = await holdInTransaction(
+					"select pg_advisory_xact_lock_shared(hashtextextended($1, 0))",
+					[userGuard(lateUser)],
+				);
+
+				await parked.release();
+				expect(await parked.pending).toMatchObject({ success: true });
+				// The confirmation under protection finds the newcomer; the restarted
+				// transaction waits for their guard before deleting anything.
+				await waitFor(
+					() => advisoryWaiter(userGuard(lateUser)),
+					"the restarted cleanup on the newcomer's guard",
+				);
+				expect(cleanup.settled).toBe(false);
+				const { rows } = await admin.query("select 1 from organization where id = $1", [
+					ids.organization,
+				]);
+				expect(rows).toHaveLength(1);
+
+				await lateGuard.release();
+				lateGuard = null;
+				expect(await cleanup.promise).toMatchObject({ success: true, organizationsDeleted: 1 });
+			} finally {
+				await lateGuard?.release();
+				await admin.query('delete from "user" where id = $1', [lateUser]);
+			}
+		});
 	});
 
 	describe("runtime demo configuration", () => {

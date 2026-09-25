@@ -108,6 +108,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/settings/profile/user-configuration-access.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-holiday-policy.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command-billing.integration.test.ts" \
+	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-provisioning-cleanup.integration.test.ts" \
 	src/lib/demo/demo-work.integration.test.ts \
 	src/lib/bot-platform/clock-commands.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/work-period-amendment.integration.test.ts" \
