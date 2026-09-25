@@ -74,6 +74,20 @@ export async function acquireOrganizationConfigurationGuard(
 	);
 }
 
+/**
+ * Exclusive organization configuration protection for a writer of a manual
+ * dependency, held from before its first dependent mutation through commit. It
+ * drains and fences every holder of the shared guard; never upgrade from shared.
+ */
+export async function acquireExclusiveOrganizationConfigurationGuard(
+	transaction: Pick<Transaction, "execute">,
+	organizationId: string,
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+	);
+}
+
 export async function acquireUserConfigurationAccessGuards(
 	transaction: Pick<Transaction, "execute">,
 	userIds: readonly string[],

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	foreignKey,
 	index,
@@ -381,5 +382,39 @@ export const employeeWorkBalancePeriod = pgTable(
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
+	],
+);
+
+/**
+ * Durable balance-rebuild intent (#311). A configuration change that invalidates
+ * every balance projection of an organization commits one row with the change;
+ * `processWorkBalanceRebuildIntents` executes it separately and deletes it.
+ * While a row exists, the organization's projections are not current.
+ */
+export const workBalanceRebuildIntent = pgTable(
+	"work_balance_rebuild_intent",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		reason: text("reason").notNull(),
+		requestedBy: text("requested_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		requestedAt: timestamp("requested_at", { withTimezone: true }).notNull(),
+		attempts: integer("attempts").default(0).notNull(),
+		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+		lastError: text("last_error"),
+	},
+	(table) => [
+		index("workBalanceRebuildIntent_org_requested_idx").on(
+			table.organizationId,
+			table.requestedAt,
+		),
+		check(
+			"work_balance_rebuild_intent_reason_check",
+			sql`${table.reason} IN ('organization_timezone')`,
+		),
 	],
 );

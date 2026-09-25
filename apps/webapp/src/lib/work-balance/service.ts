@@ -1,7 +1,13 @@
 import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, min, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
+import {
+	employee,
+	employeeWorkBalance,
+	employeeWorkBalancePeriod,
+	workBalanceRebuildIntent,
+	workPeriod,
+} from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
@@ -14,7 +20,10 @@ import type { EmployeeWorkBalancePayload } from "./types";
 
 const WORK_BALANCE_RESET_MARKER_DATE = "0001-01-01";
 
-type WorkBalanceDbClient = Pick<typeof db, "delete" | "execute" | "insert" | "query" | "select">;
+export type WorkBalanceDbClient = Pick<
+	typeof db,
+	"delete" | "execute" | "insert" | "query" | "select"
+>;
 
 function isEmployeeWorkBalanceResetMarker(row: {
 	computedFromDate: string;
@@ -116,18 +125,33 @@ export function shouldIncludeWorkBalanceInBatch(
 	return !balance || balance.isDirty || balance.computedThroughDate < todayDate;
 }
 
+/**
+ * A pending rebuild intent (#311) means the organization's stored projections
+ * were computed under configuration that has since changed: none is current.
+ */
+export async function hasPendingWorkBalanceRebuild(organizationId: string): Promise<boolean> {
+	const pending = await db.query.workBalanceRebuildIntent.findFirst({
+		where: eq(workBalanceRebuildIntent.organizationId, organizationId),
+		columns: { id: true },
+	});
+	return pending !== undefined;
+}
+
 export async function getEmployeeWorkBalance(input: {
 	employeeId: string;
 	organizationId: string;
 }): Promise<EmployeeWorkBalancePayload | null> {
-	const row = await db.query.employeeWorkBalance.findFirst({
-		where: and(
-			eq(employeeWorkBalance.employeeId, input.employeeId),
-			eq(employeeWorkBalance.organizationId, input.organizationId),
-		),
-	});
+	const [row, rebuildPending] = await Promise.all([
+		db.query.employeeWorkBalance.findFirst({
+			where: and(
+				eq(employeeWorkBalance.employeeId, input.employeeId),
+				eq(employeeWorkBalance.organizationId, input.organizationId),
+			),
+		}),
+		hasPendingWorkBalanceRebuild(input.organizationId),
+	]);
 
-	if (!row) return null;
+	if (!row || rebuildPending) return null;
 	if (
 		isEmployeeWorkBalanceResetMarker({
 			computedFromDate: row.computedFromDate,
@@ -165,12 +189,16 @@ export async function getEmployeeWorkBalances(input: {
 	const employeeIds = [...new Set(input.employeeIds)];
 	if (employeeIds.length === 0) return new Map();
 
-	const rows = await db.query.employeeWorkBalance.findMany({
-		where: and(
-			eq(employeeWorkBalance.organizationId, input.organizationId),
-			inArray(employeeWorkBalance.employeeId, employeeIds),
-		),
-	});
+	const [rows, rebuildPending] = await Promise.all([
+		db.query.employeeWorkBalance.findMany({
+			where: and(
+				eq(employeeWorkBalance.organizationId, input.organizationId),
+				inArray(employeeWorkBalance.employeeId, employeeIds),
+			),
+		}),
+		hasPendingWorkBalanceRebuild(input.organizationId),
+	]);
+	if (rebuildPending) return new Map();
 
 	return new Map(
 		rows.flatMap((row) =>
@@ -805,6 +833,8 @@ export async function listEmployeesForWorkBalanceBatch(limit = 1000, now = new D
 			and(
 				eq(employee.isActive, true),
 				isNotNull(employee.organizationId),
+				// A pending rebuild resets these projections first; see rebuild-intents.ts.
+				sql`not exists (select 1 from ${workBalanceRebuildIntent} where ${workBalanceRebuildIntent.organizationId} = ${employee.organizationId})`,
 				or(
 					isNull(employeeWorkBalance.id),
 					eq(employeeWorkBalance.isDirty, true),
