@@ -138,7 +138,7 @@ two further runs (Chrome, Windows). The PostgreSQL suite passed 7/7.
 The remaining obligations below are activation work, not #267 implementation. Each now
 lives in its owning ticket:
 
-- 2 (deployed old-consumer control): #266 (C266-B) and #327.
+- 2 (deployed old-consumer control): #329, which carries #266's C266-B register.
 - 3 (pilot and release authorization): #329, with rollback in #331.
 - 4 (later clock adoption): #275 and #279.
 - 5 (hosted Tolgee sync): a release prerequisite recorded on #329. It needs the
