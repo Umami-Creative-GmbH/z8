@@ -126,7 +126,7 @@ database. It drives the real `clockIn` action and, as the competing legacy write
 real `clockOut` action. Only the session, request headers, billing provisioning,
 notifications and Next cache are replaced.
 
-Verified (24 tests):
+Verified (26 tests):
 
 - Legacy with no control row or an inactive one: latest-created hash, null predecessor
   ID, no position.
@@ -142,6 +142,12 @@ Verified (24 tests):
 - Review with no writes for forks, islands, a hole, an ID/hash contradiction, an
   unestablished provider hash format, and work without scoped entries. Each returns
   the employee-scoped reasons.
+- Duplicate hashes (added 2026-09-25). Two roots with identical hash inputs, whose
+  successors link by explicit ID, hold only with `multiple_roots`. The duplicate is not
+  reported as ambiguous or unverified. A hash-only link into two equal-hash rows holds
+  with `ambiguous_predecessor` and `multiple_roots`, even though the second row was
+  created later and latest-created selection would have picked it. A mutation that let
+  the classifier resolve an ambiguous hash failed exactly that test.
 - The peer employee is admitted while the requester is held, and while the requester's
   employee key is held.
 - After adoption, a legacy clock-out makes the next clock-in hold with
@@ -165,9 +171,12 @@ suite detects the admitted behavior. Full runner
 container, full migration chain): **30 files / 511 tests passed**. The container's
 ownership label was verified and the container removed.
 
-Not proven on PostgreSQL: a real admitted duplicate-hash case. The standard hash
-commits `previousHash`, so rows with equal hashes always sit on separate branches or
-components. The classifier covers disambiguation by explicit IDs in unit tests only.
+An admitted duplicate-hash case cannot exist. The standard hash commits
+`previousHash`, so two rows with equal hashes have equal predecessors all the way to
+their roots, and therefore sit on separate branches or components. On one verified
+path this would need a SHA-256 collision. The duplicate-hash tests above therefore
+prove the reachable behavior: duplicates are held for their structure and never
+resolved by choosing one.
 
 ### Database-free
 
@@ -179,8 +188,11 @@ components. The classifier covers disambiguation by explicit IDs in unit tests o
 
 ## Remaining activation blockers
 
-This slice does not activate anything. Before any organization's control row is set
-active:
+This slice does not activate anything. #273 closes on implementation (2026-09-25):
+the blockers below are activation gates and are tracked in #327 (all-writer
+adoption and coordination) and #329 (pilot), not in #273. Web-action replay is
+re-verified when #279 gives web clock-in an action ID. The O(history) admission read
+is measured in the #329 pilot. Before any organization's control row is set active:
 
 - Every competing appender must participate or be drained. Web clock-out (#274),
   direct HTTP (#275), on-behalf (#276), bot (#277), mobile (#278), manual (#308),
