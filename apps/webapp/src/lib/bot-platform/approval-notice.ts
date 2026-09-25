@@ -309,29 +309,6 @@ const BOUND_OUTCOME_TEXT: Readonly<
 	},
 };
 
-export function slackApprovalNotice(notice: ApprovalNotice) {
-	return {
-		text: `${notice.title}: ${notice.text} ${notice.reviewUrl}`,
-		blocks: [
-			{
-				type: "section",
-				text: { type: "plain_text", text: `${notice.title}\n${notice.text}` },
-			},
-			{
-				type: "actions",
-				elements: [
-					{
-						type: "button",
-						text: { type: "plain_text", text: notice.reviewLabel },
-						url: notice.reviewUrl,
-						action_id: "approval_review",
-					},
-				],
-			},
-		],
-	};
-}
-
 export function telegramApprovalNotice(notice: ApprovalNotice) {
 	return {
 		text: `${notice.title}\n\n${notice.text}`,

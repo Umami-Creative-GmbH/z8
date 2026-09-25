@@ -98,6 +98,8 @@ export async function loadApprovalDeliveryAdapter(
 	switch (provider) {
 		case "telegram":
 			return (await import("@/lib/telegram/approval-delivery")).telegramApprovalDeliveryAdapter;
+		case "slack":
+			return (await import("@/lib/slack/approval-delivery")).slackApprovalDeliveryAdapter;
 	}
 }
 

@@ -20,8 +20,9 @@ import { approvalWorkflowTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
-// #291: providers whose approval-card delivery has one durable owner.
-export const APPROVAL_DELIVERY_PROVIDERS = ["telegram"] as const;
+// #291: providers whose approval-card delivery has one durable owner. Slack
+// joined in #294 with review-only cards.
+export const APPROVAL_DELIVERY_PROVIDERS = ["telegram", "slack"] as const;
 export type ApprovalDeliveryProvider = (typeof APPROVAL_DELIVERY_PROVIDERS)[number];
 
 /**
@@ -64,7 +65,7 @@ export const approvalDeliveryControl = pgTable(
 			name: "approval_delivery_control_pk",
 			columns: [table.organizationId, table.workflowType, table.provider],
 		}),
-		check("approval_delivery_control_provider_check", sql`${table.provider} IN ('telegram')`),
+		check("approval_delivery_control_provider_check", sql`${table.provider} IN ('telegram', 'slack')`),
 	],
 );
 
@@ -112,7 +113,7 @@ export const approvalDeliveryMessage = pgTable(
 			table.remoteMessageId,
 		),
 		index("approvalDeliveryMessage_org_workflow_idx").on(table.organizationId, table.workflowId),
-		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram')`),
+		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'slack')`),
 		check(
 			"approval_delivery_message_controls_check",
 			sql`${table.controls} IN ('actionable', 'none')`,
@@ -193,7 +194,7 @@ export const approvalDeliveryWork = pgTable(
 		index("approvalDeliveryWork_due_idx")
 			.on(table.organizationId, table.availableAt)
 			.where(sql`status IN ('pending', 'processing')`),
-		check("approval_delivery_work_provider_check", sql`${table.provider} IN ('telegram')`),
+		check("approval_delivery_work_provider_check", sql`${table.provider} IN ('telegram', 'slack')`),
 		check(
 			"approval_delivery_work_effect_check",
 			sql`(${table.effect} = 'initial' AND ${table.messageId} IS NULL AND ${table.escalationTransferId} IS NULL) OR (${table.effect} = 'replacement' AND ${table.messageId} IS NULL AND ${table.escalationTransferId} IS NOT NULL) OR (${table.effect} = 'refresh' AND ${table.messageId} IS NOT NULL)`,
