@@ -61,11 +61,18 @@ import {
 	parseOrdinaryWorkPeriodWorkflowPayload,
 	type WorkPeriodApprovalResult,
 	type WorkPeriodMaintenanceFacts,
+	type WorkPeriodTerminalOutcome,
 } from "../domain-adapters/work-period-contract";
 import {
 	captureOrdinaryWorkPeriodLegacyState,
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence,
 } from "../domain-adapters/work-period-legacy-state";
+import { ApprovalEvidenceError } from "../evidence/errors";
+import {
+	prepareLegacyWorkPeriodDecisionEvidence,
+	recordLegacyWorkPeriodDecisionEvidence,
+	translateWorkPeriodEvidenceError,
+} from "../evidence/work-period-evidence";
 import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
@@ -787,6 +794,26 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 					bootstrappedWorkflowId = bootstrapped.snapshot.id;
 					expectedObservedVersion = bootstrapped.snapshot.version;
 				}
+				// Fresh evidence checks run only after the established replay matching
+				// above found no committed operation.
+				const evidencePlan = await prepareLegacyWorkPeriodDecisionEvidence(
+					database,
+					{
+						organizationId: input.organizationId,
+						kind: metadata.kind,
+						workPeriodId: period.id,
+						approvalRequestId: input.approvalRequestId,
+						chainInstanceId: verifiedLegacyState?.chain?.id ?? null,
+					},
+				);
+				const legacyIdempotencyKey = [
+					"ordinary-decision",
+					input.organizationId,
+					period.id,
+					input.approvalRequestId,
+					input.decision.kind,
+					input.decision.reason ?? "",
+				].join(":");
 				const coordinator = createLegacyApprovalWriteCoordinator({
 					writeGate: fixedGate,
 					compatibilityWriter: decisionContext.compatibilityWriter,
@@ -807,7 +834,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 						employeeId: actor.id,
 						userId: actor.userId,
 					},
-					idempotencyKey: `ordinary-decision:${input.organizationId}:${period.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`,
+					idempotencyKey: legacyIdempotencyKey,
 					expectedVersion: expectedObservedVersion,
 					captureState:
 						authority.mode === "legacy"
@@ -898,6 +925,23 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 						});
 					},
 				});
+				if (evidencePlan) {
+					const finalized = domainResult as WorkPeriodApprovalResult | undefined;
+					await recordLegacyWorkPeriodDecisionEvidence(database, evidencePlan, {
+						organizationId: input.organizationId,
+						action: input.decision.kind,
+						reason: input.decision.reason,
+						approvalRequestId: input.approvalRequestId,
+						idempotencyKey: legacyIdempotencyKey,
+						actor: { employeeId: actor.id, userId: actor.userId },
+						finalized: finalized
+							? {
+									outcome: finalized.outcome,
+									maintenance: finalized.maintenance,
+								}
+							: null,
+					});
+				}
 				const result =
 					(domainResult as WorkPeriodApprovalResult | undefined) ??
 					ordinaryDecisionResult({
@@ -1089,7 +1133,9 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 				}),
 			};
 		});
-	} catch {
+	} catch (error) {
+		// Evidence holds and contradictions keep their meaning for the caller.
+		if (error instanceof ApprovalEvidenceError) throw error;
 		throw new Error(ORDINARY_DECISION_ERROR);
 	}
 }
@@ -1808,6 +1854,8 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 	if (updatedRecords.length !== 1 || updatedRecords[0]?.id !== record.id) {
 		throw fail();
 	}
+	let adjustment: WorkPeriodTerminalOutcome["adjustment"] = { kind: "none" };
+	const resultPeriodIds = [period.id];
 	if (
 		input.kind === "policy_clock_out" &&
 		input.transition.kind === "approve" &&
@@ -1839,6 +1887,15 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			surchargeSnapshot: sourceSurchargeSnapshot,
 		});
 		maintenance = breakResult.maintenance;
+		if (breakResult.kind === "adjusted") {
+			adjustment = {
+				kind: "break_enforced",
+				breakMinutes: breakResult.breakMinutes,
+			};
+			resultPeriodIds.push(breakResult.secondPeriodId);
+		} else {
+			adjustment = { kind: "break_not_required" };
+		}
 	}
 
 	const decisions = await db
@@ -1867,6 +1924,7 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 			endTime: new Date(period.endTime.getTime()),
 		},
 		maintenance,
+		outcome: { status: terminalStatus, adjustment, resultPeriodIds },
 	};
 }
 
@@ -2251,11 +2309,15 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 				},
 			});
 		},
-		catch: () =>
-			new ConflictError({
-				message: ORDINARY_DECISION_ERROR,
-				conflictType: "approval_decision",
-			}),
+		catch: (error) => {
+			const evidenceConflict = translateWorkPeriodEvidenceError(error);
+			return evidenceConflict instanceof ConflictError
+				? evidenceConflict
+				: new ConflictError({
+						message: ORDINARY_DECISION_ERROR,
+						conflictType: "approval_decision",
+					});
+		},
 	});
 }
 

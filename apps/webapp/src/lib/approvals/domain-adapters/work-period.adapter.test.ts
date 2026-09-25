@@ -592,6 +592,101 @@ describe.each(
 		expect(projection.displayPayload).not.toHaveProperty("stage");
 		expect(JSON.stringify(projection)).not.toContain(ids.stage);
 	});
+
+	it("records no decision evidence unless evidence hooks are supplied", () => {
+		const { adapter } = createAdapter(kind);
+		expect(adapter.preflightDecisionEvidence).toBeUndefined();
+		expect(adapter.recordDecisionEvidence).toBeUndefined();
+	});
+
+	it("delegates decision evidence for this kind inside the engine transaction", async () => {
+		const { context, fixture } = await loadedContext(kind);
+		const evidence = { preflight: vi.fn(), record: vi.fn() };
+		const adapter = createOrdinaryWorkPeriodApprovalAdapter(kind, {
+			finalizeTerminal: vi.fn(),
+			evidence,
+		});
+		const dbService = { db: fixture.db } as never;
+		const command = {
+			type: "approve" as const,
+			stageId: ids.stage,
+			assignmentId: "assignment-1",
+		};
+
+		await adapter.preflightDecisionEvidence?.({
+			...context,
+			dbService,
+			command,
+			reviewedBindingId: null,
+		});
+		expect(evidence.preflight).toHaveBeenCalledWith(dbService, {
+			organizationId,
+			kind,
+			workflow: context.workflow,
+			reviewedBindingId: null,
+		});
+
+		const receipt = {
+			idempotencyKey: "key",
+			actorFingerprint: "actor",
+			commandFingerprint: "command",
+		};
+		await adapter.recordDecisionEvidence?.({
+			...context,
+			dbService,
+			command,
+			reviewedBindingId: null,
+			receipt,
+			result: {} as never,
+			finalization: null,
+		});
+		expect(evidence.record).toHaveBeenCalledWith(dbService, {
+			organizationId,
+			kind,
+			workflow: context.workflow,
+			command,
+			receipt,
+			result: {},
+			finalization: null,
+			reviewedBindingId: null,
+		});
+	});
+
+	it("carries the finalizer's work outcome into the terminal result", async () => {
+		const { adapter, context, finalizeTerminal } = await loadedContext(kind);
+		const outcome = {
+			status: "approved" as const,
+			adjustment: { kind: "none" as const },
+			resultPeriodIds: [ids.period],
+		};
+		finalizeTerminal.mockResolvedValueOnce({
+			kind,
+			action: "approve",
+			reason: null,
+			period: {
+				id: ids.period,
+				organizationId,
+				employeeId: ids.employee,
+				canonicalRecordId: ids.canonical,
+				startTime,
+				endTime,
+			},
+			maintenance: null,
+			outcome,
+		});
+		const approved = workflow(kind, { status: "approved" });
+
+		const result = await adapter.finalizeTerminal({
+			...context,
+			workflow: approved,
+			dbService: {} as never,
+			transition: { kind: "approve", from: "pending", to: "approved", reason: null },
+			finalizationCause: "command",
+			finalizedAt,
+		} as never);
+
+		expect(result.workOutcome).toEqual(outcome);
+	});
 });
 
 async function adapterCall(

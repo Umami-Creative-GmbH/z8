@@ -14,6 +14,7 @@ import {
 	timeEntryAppendPosition,
 	workPeriod,
 } from "@/db/schema";
+import { deleteWorkPeriodApprovalEvidence } from "@/lib/approvals/maintenance";
 
 export interface DeleteNonAdminResult {
 	employeesDeleted: number;
@@ -81,6 +82,10 @@ export async function deleteNonAdminEmployeesData(
 		await db.delete(absenceEntry).where(inArray(absenceEntry.employeeId, employeeIds));
 		result.absencesDeleted = absencesToDelete.length;
 	}
+
+	// Manual/policy clock-out approval evidence describes this history (#302)
+	// and references the employees by FK.
+	await deleteWorkPeriodApprovalEvidence(db, { organizationId, employeeIds });
 
 	// Step 4: Delete work periods (must be before time entries due to FK)
 	const workPeriodsToDelete = await db.query.workPeriod.findMany({
