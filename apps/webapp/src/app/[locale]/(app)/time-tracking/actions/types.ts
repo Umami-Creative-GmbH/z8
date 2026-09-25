@@ -17,6 +17,8 @@ export interface CorrectionRequest {
 
 export interface SameDayEditRequest {
 	workPeriodId: string;
+	/** Submission identity; a server-generated one cannot dedupe an unkeyed retry. */
+	submissionId?: string;
 	newClockInDate: string;
 	newClockInTime: string;
 	newClockOutDate?: string;

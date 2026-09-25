@@ -4560,41 +4560,6 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 			],
-			"src/lib/time-tracking/admin-work-period-time-edit.ts": [
-				{
-					columns: ["replaces_entry_id", "type"],
-					functionName: "applyAdminWorkPeriodTimeEdit",
-					operation: "insert",
-					semantic: "correction",
-					table: "time_entry",
-				},
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "applyAdminWorkPeriodTimeEdit",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "applyAdminWorkPeriodTimeEdit",
-					operation: "update",
-					semantic: "ordinary_finalization",
-					table: "time_record",
-				},
-				{
-					columns: [
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
-					functionName: "applyAdminWorkPeriodTimeEdit",
-					operation: "update",
-					table: "work_period",
-				},
-			],
 		});
 		expect(boundary.SOURCE_WRITE_EXCEPTIONS).toEqual({
 			"src/app/[locale]/(app)/absences/actions.canonical.ts": [

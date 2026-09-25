@@ -19,7 +19,11 @@ export type TimeEntryAppendMode = (typeof TIME_ENTRY_APPEND_MODES)[number];
 export const TIME_ENTRY_APPEND_ADMISSIONS = ["empty_history", "verified_lineage"] as const;
 export type TimeEntryAppendAdmission = (typeof TIME_ENTRY_APPEND_ADMISSIONS)[number];
 
-export const TIME_ENTRY_APPEND_OPERATIONS = ["live_clock_in", "live_clock_out"] as const;
+export const TIME_ENTRY_APPEND_OPERATIONS = [
+	"live_clock_in",
+	"live_clock_out",
+	"completed_work_correction",
+] as const;
 export type TimeEntryAppendOperation = (typeof TIME_ENTRY_APPEND_OPERATIONS)[number];
 
 // Per-organization evidence-based append adoption (#262/#273). No row keeps the
@@ -85,7 +89,7 @@ export const timeEntryAppendPosition = pgTable(
 		),
 		check(
 			"time_entry_append_position_operation_check",
-			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out')`,
+			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'completed_work_correction') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'completed_work_correction')`,
 		),
 	],
 );
