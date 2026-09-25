@@ -53,11 +53,13 @@ before-hook's guard and the endpoint's write commit together.
   `updateMemberRole` in organization settings and `removeEmployeeAccessAction`.
 - **HTTP**: `/api/auth` routes these POST paths through `handleCoordinatedAuthRequest`:
   - `/organization/update-member-role`, `/organization/remove-member`, `/organization/leave`,
-    `/organization/add-member`, `/organization/accept-invitation`, `/organization/delete`
+    `/organization/accept-invitation`, `/organization/delete`
   - `/admin/set-role`, `/admin/ban-user`, `/admin/unban-user`, `/admin/update-user`,
     `/admin/remove-user`
 
-  A response with an error status rolls the transaction back.
+  A response with an error status rolls the transaction back. The paths are read from Better
+  Auth's endpoint definitions, so a renamed endpoint cannot silently drop out.
+  `addMember` has no HTTP path; its server callers must use `runAuthMutation`.
 
 The email-lookup wrapper now also applies to the transaction adapter. Inside a coordinated
 transaction, user email lookups therefore stay case-insensitive.

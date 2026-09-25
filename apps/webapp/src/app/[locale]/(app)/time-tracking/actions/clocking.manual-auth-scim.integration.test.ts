@@ -802,7 +802,7 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 		it("holds an admin role change on the user's protection", async () => {
 			const submission = await pausedSubmission(manualCommand(), ids.adminUser);
 
-			const change = post("/admin/set-role", ids.platformAdminUser, {
+			const change = post(adminPlugin().endpoints.setRole.path, ids.platformAdminUser, {
 				userId: ids.adminUser,
 				role: "admin",
 			});

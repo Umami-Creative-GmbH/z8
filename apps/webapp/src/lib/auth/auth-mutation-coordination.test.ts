@@ -1,4 +1,6 @@
 import type { DBAdapter } from "@better-auth/core/db/adapter";
+import { admin as adminPlugin } from "better-auth/plugins/admin";
+import { organization as organizationPlugin } from "better-auth/plugins/organization";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -199,20 +201,27 @@ describe("coordinated organization hooks", () => {
 });
 
 describe("coordinated auth HTTP mutations", () => {
+	const organizationEndpoints = organizationPlugin().endpoints;
+	const adminEndpoints = adminPlugin().endpoints;
+
 	it.each([
-		"/organization/update-member-role",
-		"/organization/remove-member",
-		"/organization/leave",
-		"/organization/add-member",
-		"/organization/accept-invitation",
-		"/organization/delete",
-		"/admin/set-role",
-		"/admin/ban-user",
-		"/admin/unban-user",
-		"/admin/update-user",
-		"/admin/remove-user",
+		organizationEndpoints.updateMemberRole.path,
+		organizationEndpoints.removeMember.path,
+		organizationEndpoints.leaveOrganization.path,
+		organizationEndpoints.acceptInvitation.path,
+		organizationEndpoints.deleteOrganization.path,
+		adminEndpoints.setRole.path,
+		adminEndpoints.banUser.path,
+		adminEndpoints.unbanUser.path,
+		adminEndpoints.adminUpdateUser.path,
+		adminEndpoints.removeUser.path,
 	])("coordinates %s", (path) => {
 		expect(isCoordinatedAuthMutationPath(path)).toBe(true);
+	});
+
+	it("resolves every coordinated endpoint to an HTTP path", () => {
+		expect(organizationEndpoints.updateMemberRole.path).toBe("/organization/update-member-role");
+		expect(isCoordinatedAuthMutationPath("/organization/get-full-organization")).toBe(false);
 	});
 
 	it("passes other requests through without a transaction", async () => {

@@ -30,7 +30,8 @@
 import { queueAfterTransactionHook } from "@better-auth/core/context";
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
-import type { OrganizationOptions } from "better-auth/plugins/organization";
+import { admin } from "better-auth/plugins/admin";
+import { type OrganizationOptions, organization } from "better-auth/plugins/organization";
 import {
 	type AuthorizationMutationScope,
 	protectAuthorizationMutation,
@@ -49,21 +50,25 @@ import {
 
 type OrganizationHooks = NonNullable<OrganizationOptions["organizationHooks"]>;
 
-const ORGANIZATION_LEAVE_PATH = "/organization/leave";
-const GLOBAL_ACCESS_PATHS = new Set([
-	"/admin/set-role",
-	"/admin/ban-user",
-	"/admin/unban-user",
-	"/admin/update-user",
-	"/admin/remove-user",
+// Paths come from Better Auth's own endpoint definitions, so a renamed
+// endpoint cannot silently fall out of coordination. `addMember` is
+// server-only (no HTTP path); its callers use `runCoordinatedAuthMutation`.
+const organizationEndpoints = organization().endpoints;
+const adminEndpoints = admin().endpoints;
+const ORGANIZATION_LEAVE_PATH = organizationEndpoints.leaveOrganization.path;
+const GLOBAL_ACCESS_PATHS = new Set<string>([
+	adminEndpoints.setRole.path,
+	adminEndpoints.banUser.path,
+	adminEndpoints.unbanUser.path,
+	adminEndpoints.adminUpdateUser.path,
+	adminEndpoints.removeUser.path,
 ]);
-const COORDINATED_AUTH_MUTATION_PATHS = new Set([
-	"/organization/update-member-role",
-	"/organization/remove-member",
+const COORDINATED_AUTH_MUTATION_PATHS = new Set<string>([
+	organizationEndpoints.updateMemberRole.path,
+	organizationEndpoints.removeMember.path,
 	ORGANIZATION_LEAVE_PATH,
-	"/organization/add-member",
-	"/organization/accept-invitation",
-	"/organization/delete",
+	organizationEndpoints.acceptInvitation.path,
+	organizationEndpoints.deleteOrganization.path,
 	...GLOBAL_ACCESS_PATHS,
 ]);
 
