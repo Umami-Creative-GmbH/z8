@@ -10,6 +10,7 @@ import {
 	inArray,
 	isNotNull,
 	isNull,
+	notExists,
 	notInArray,
 } from "drizzle-orm";
 import { Effect } from "effect";
@@ -3124,6 +3125,31 @@ export async function clearOrganizationTimeData(
 				.delete(workPeriod)
 				.where(inArray(workPeriod.employeeId, employeeIds));
 			result.workPeriodsDeleted = workPeriodsToDelete.length;
+			// The periods' canonical work goes with them (#284); left behind it would
+			// read as unlinked canonical-native work. Records an approval request still
+			// references stay, as before.
+			const canonicalRecordIds = workPeriodsToDelete.flatMap((period) =>
+				period.canonicalRecordId ? [period.canonicalRecordId] : [],
+			);
+			if (canonicalRecordIds.length > 0) {
+				await db.delete(timeRecord).where(
+					and(
+						eq(timeRecord.organizationId, organizationId),
+						inArray(timeRecord.id, canonicalRecordIds),
+						notExists(
+							db
+								.select({ id: approvalRequest.id })
+								.from(approvalRequest)
+								.where(
+									and(
+										eq(approvalRequest.organizationId, organizationId),
+										eq(approvalRequest.canonicalRecordId, timeRecord.id),
+									),
+								),
+						),
+					),
+				);
+			}
 		}
 
 		// Delete time entries
