@@ -506,25 +506,25 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 	],
-	// Organization owner/admin direct edits replace both endpoints atomically.
+	// Owner/admin direct edits in legacy organizations (append ones amend below).
 	"src/lib/time-tracking/admin-work-period-time-edit.ts": [
 		{
 			columns: ["replaces_entry_id", "type"],
-			functionName: "applyAdminWorkPeriodTimeEdit",
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 			operation: "insert",
 			semantic: "correction",
 			table: "time_entry",
 		},
 		{
 			columns: ["is_superseded", "superseded_by_id"],
-			functionName: "applyAdminWorkPeriodTimeEdit",
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 			operation: "update",
 			semantic: "correction_lifecycle",
 			table: "time_entry",
 		},
 		{
 			columns: ["duration_minutes", "end_at", "start_at"],
-			functionName: "applyAdminWorkPeriodTimeEdit",
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 			operation: "update",
 			semantic: "ordinary_finalization",
 			table: "time_record",
@@ -537,8 +537,223 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 				"end_time",
 				"start_time",
 			],
-			functionName: "applyAdminWorkPeriodTimeEdit",
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 			operation: "update",
+			table: "work_period",
+		},
+	],
+	// Completed-work operations (#264) write sources inside the outer work transaction.
+	"src/lib/time-tracking/amend-completed-work.ts": [
+		{
+			columns: ["replaces_entry_id", "type"],
+			functionName: "amendCompletedWork",
+			operation: "insert",
+			semantic: "correction",
+			table: "time_entry",
+		},
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "amendCompletedWork",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "amendCompletedWork",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "amendCompletedWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "amendCompletedWork",
+			operation: "update",
+			table: "work_period",
+		},
+	],
+	"src/lib/time-tracking/close-active-work.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "closeActiveWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "closeActiveWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "closeActiveWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"pending_changes",
+			],
+			functionName: "closeActiveWork",
+			operation: "update",
+			table: "work_period",
+		},
+	],
+	"src/lib/time-tracking/record-imported-work.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "recordImportedWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "recordImportedWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "recordImportedWork",
+			operation: "insert",
+			table: "work_period",
+		},
+	],
+	"src/lib/time-tracking/record-manual-work.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "recordManualWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "recordManualWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "recordManualWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"pending_changes",
+				"start_time",
+			],
+			functionName: "recordManualWork",
+			operation: "insert",
+			table: "work_period",
+		},
+	],
+	"src/lib/time-tracking/start-live-work.ts": [
+		{
+			columns: ["clock_in_id", "start_time"],
+			functionName: "startLiveWork",
+			operation: "insert",
 			table: "work_period",
 		},
 	],
@@ -724,12 +939,57 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			semantic: "inactive_correction",
 			table: "time_entry",
 		},
+	],
+	// Runtime demo work (#285) writes through the shared work-transaction scope.
+	"src/lib/demo/demo-work.ts": [
 		{
 			columns: ["type"],
-			functionName: "generateDemoTimeEntries",
+			functionName: "insertDemoEntry",
 			operation: "insert",
 			table: "time_entry",
 			uncertainty: "dynamic_payload",
+		},
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "recordAdoptedDemoWorkDay",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "recordAdoptedDemoWorkDay",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: [
+				"approval_status",
+				"canonical_record_id",
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "recordAdoptedDemoWorkDay",
+			operation: "insert",
+			table: "work_period",
 		},
 		{
 			columns: [
@@ -739,7 +999,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 				"end_time",
 				"start_time",
 			],
-			functionName: "generateDemoTimeEntries",
+			functionName: "recordLegacyDemoWorkDay",
 			operation: "insert",
 			table: "work_period",
 		},
@@ -900,11 +1160,11 @@ const MAX_PRODUCTION_FILES = 4_096;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024;
 const APPROVAL_TABLE_PREFILTER =
-	/approval_(?:assignment|chain|command|delivery|event|inbox|migration|outbox|projection|request|requester|rollout|stage|workflow)/i;
+	/approval_(?:assignment|chain|command|decision|delivery|event|evidence|inbox|invocation|migration|outbox|presentation|projection|request|requester|review|rollout|stage|submitted|workflow)/i;
 const APPROVAL_TABLE_SYMBOL_PREFILTER =
-	/approval(?:Chain|Inbox|Outbox|Request|Requester|Stage|Workflow)/;
+	/approval(?:Chain|Decision|Delivery|Evidence|Inbox|Invocation|Outbox|Presentation|Request|Requester|Review|Stage|Submitted|Workflow)/;
 const COMPOSED_APPROVAL_TABLE_PREFILTER =
-	/approval_?["'`+\s]+(?:assignment|chain|command|delivery|event|inbox|migration|outbox|projection|request|rollout|stage|workflow)/i;
+	/approval_?["'`+\s]+(?:assignment|chain|command|decision|delivery|event|evidence|inbox|invocation|migration|outbox|presentation|projection|request|review|rollout|stage|submitted|workflow)/i;
 const SOURCE_TABLE_PREFILTER = /time_entry|work_period|time_record/i;
 const SOURCE_TABLE_SYMBOL_PREFILTER = /timeEntry|workPeriod|timeRecord/;
 const RAW_SQL_SURFACE_PREFILTER =

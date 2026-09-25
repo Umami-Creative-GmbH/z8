@@ -180,7 +180,11 @@
     "workLocationHome": "Homeoffice",
     "workLocationOffice": "Büro",
     "workLocationOther": "Sonstiges",
-    "workLocationRemote": "Mobil"
+    "workLocationRemote": "Mobil",
+    "clockInSavedForSending": "Einstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
+    "clockOutSavedForSending": "Ausstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
+    "clockInSavedHeld": "Einstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge.",
+    "clockOutSavedHeld": "Ausstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge."
   },
   "wellness": {
     "water": {

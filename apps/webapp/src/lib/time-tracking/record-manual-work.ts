@@ -55,7 +55,7 @@ import {
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
 import type { AppendReviewReason } from "./time-entry-append";
-import { findWorkOccupants, type WorkOccupant } from "./work-occupancy";
+import { loadWorkOccupants } from "./work-occupancy";
 import type { WorkTransactionScope } from "./work-transaction";
 
 export const MANUAL_WORK_RESULT_VERSION = 1;
@@ -139,8 +139,16 @@ export type ManualWorkResult = {
 	followUps: CompletedWorkFollowUp[];
 };
 
+/** A conflicting recorded interval, serializable for the form. */
+export type ManualWorkOccupant = {
+	kind: "work_period" | "time_record";
+	id: string;
+	startAt: string;
+	endAt: string | null;
+};
+
 export type ManualWorkRejection =
-	| { reason: "occupancy_conflict"; occupants: WorkOccupant[] }
+	| { reason: "occupancy_conflict"; occupants: ManualWorkOccupant[] }
 	| { reason: "append_review_required"; reasons: AppendReviewReason[] };
 
 export type RecordedManualWork =
@@ -246,14 +254,25 @@ export async function recordManualWork(
 	if (requiresApproval) context.requireApprovalScope();
 	const tx = context.db;
 
-	const occupants = await findWorkOccupants(
-		tx,
-		{ organizationId, employeeId },
-		facts.start,
-		facts.end,
-	);
+	const occupants = await loadWorkOccupants(tx, {
+		organizationId,
+		employeeId,
+		interval: { startAt: facts.start, endAt: facts.end },
+		excludeWorkPeriodIds: [],
+	});
 	if (occupants.length > 0) {
-		return { kind: "rejected", rejection: { reason: "occupancy_conflict", occupants } };
+		return {
+			kind: "rejected",
+			rejection: {
+				reason: "occupancy_conflict",
+				occupants: occupants.map((occupant) => ({
+					kind: occupant.kind,
+					id: occupant.id,
+					startAt: instantToCanonicalString(occupant.startAt),
+					endAt: occupant.endAt ? instantToCanonicalString(occupant.endAt) : null,
+				})),
+			},
+		};
 	}
 
 	const entryInput = (

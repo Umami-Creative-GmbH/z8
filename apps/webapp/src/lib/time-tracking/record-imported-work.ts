@@ -17,7 +17,7 @@
  * kept as evidence, and an interpretation that would change the worked interval
  * is held instead of guessed. Free of `server-only`: the import worker runs it.
  */
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, lt, notExists, or, type SQL } from "drizzle-orm";
 import {
 	completedWorkOperation,
 	employee,
@@ -43,11 +43,11 @@ import {
 } from "./clocking-core";
 import {
 	type ImportedWorkHold,
+	type ImportedWorkOccupant,
 	type ImportedWorkProviderEvidence,
 	interpretImportedWorkInterval,
 } from "./imported-work-interval";
 import { resolveFallbackTimezoneCapture, type TimeEntryTimezoneCapture } from "./timezone-capture";
-import { findWorkOccupants } from "./work-occupancy";
 import type { WorkTransactionScope } from "./work-transaction";
 
 export const IMPORTED_WORK_COMMAND_VERSION = 1;
@@ -246,12 +246,7 @@ export async function recordImportedWork(
 	if (earlier)
 		return { kind: "held", hold: { reason: "source_collision", operationId: earlier.id } };
 
-	const occupants = await findWorkOccupants(
-		tx,
-		{ organizationId, employeeId },
-		interval.start,
-		end,
-	);
+	const occupants = await findOccupants(tx, { organizationId, employeeId }, interval.start, end);
 	if (occupants.length > 0)
 		return { kind: "held", hold: { reason: "occupancy_conflict", occupants } };
 
@@ -401,4 +396,74 @@ export async function recordImportedWork(
 		sourceKey,
 	});
 	return { kind: "executed", result };
+}
+
+/**
+ * Symmetric half-open occupancy (#256 §4): nondeleted work in any approval state
+ * occupies its interval, active work from its start onward, adjacency is valid.
+ * A canonical record linked from any period is represented by that period, so
+ * one work segment is never counted twice and deleted work stays excluded.
+ */
+async function findOccupants(
+	tx: WorkTransactionScope["db"],
+	scope: { organizationId: string; employeeId: string },
+	start: Instant,
+	end: Instant | null,
+): Promise<ImportedWorkOccupant[]> {
+	const startAt = dateFromInstant(start);
+	const endAt = end ? dateFromInstant(end) : null;
+	const overlaps = (
+		startColumn: typeof workPeriod.startTime | typeof timeRecord.startAt,
+		endColumn: typeof workPeriod.endTime | typeof timeRecord.endAt,
+	): SQL[] => [
+		...(endAt ? [lt(startColumn, endAt)] : []),
+		or(isNull(endColumn), gt(endColumn, startAt)) as SQL,
+	];
+	const periods = await tx
+		.select({ id: workPeriod.id, startAt: workPeriod.startTime, endAt: workPeriod.endTime })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, scope.organizationId),
+				eq(workPeriod.employeeId, scope.employeeId),
+				isNull(workPeriod.deletedAt),
+				...overlaps(workPeriod.startTime, workPeriod.endTime),
+			),
+		)
+		.orderBy(asc(workPeriod.startTime), asc(workPeriod.id));
+	const records = await tx
+		.select({ id: timeRecord.id, startAt: timeRecord.startAt, endAt: timeRecord.endAt })
+		.from(timeRecord)
+		.where(
+			and(
+				eq(timeRecord.organizationId, scope.organizationId),
+				eq(timeRecord.employeeId, scope.employeeId),
+				eq(timeRecord.recordKind, "work"),
+				...overlaps(timeRecord.startAt, timeRecord.endAt),
+				notExists(
+					tx
+						.select({ id: workPeriod.id })
+						.from(workPeriod)
+						.where(
+							and(
+								eq(workPeriod.organizationId, scope.organizationId),
+								eq(workPeriod.canonicalRecordId, timeRecord.id),
+							),
+						),
+				),
+			),
+		)
+		.orderBy(asc(timeRecord.startAt), asc(timeRecord.id));
+	return [
+		...periods.map((row) => ({ kind: "work_period" as const, ...occupantInterval(row) })),
+		...records.map((row) => ({ kind: "time_record" as const, ...occupantInterval(row) })),
+	];
+}
+
+function occupantInterval(row: { id: string; startAt: Date; endAt: Date | null }) {
+	return {
+		id: row.id,
+		startAt: row.startAt.toISOString(),
+		endAt: row.endAt?.toISOString() ?? null,
+	};
 }

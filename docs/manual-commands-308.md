@@ -110,7 +110,7 @@ Inside that transaction, `actions/manual-command-submission.ts`:
    approval window and, for manual entries only, beyond it (the age-based `forbidden`) require
    approval. The generic change-policy service is not changed.
 6. `lib/time-tracking/record-manual-work.ts` writes the graph: symmetric half-open occupancy
-   (shared `work-occupancy.ts`, also used by imports; nothing is trimmed), both entries from
+   (the shared `work-occupancy.ts` from #286; nothing is trimmed), both entries from
    one append admission (`manual_entry`) with each endpoint's own offset, the canonical record
    (`origin = manual`), detail and project allocation, the period (`id = submissionId`,
    `graph_revision = 1`), required approval participation through the existing ordinary

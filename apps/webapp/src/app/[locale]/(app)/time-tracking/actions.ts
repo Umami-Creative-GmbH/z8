@@ -26,7 +26,12 @@ import {
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
@@ -57,6 +62,7 @@ import {
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import {
 	resolveFallbackTimezoneCapture,
@@ -71,6 +77,7 @@ import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command"
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
@@ -1568,26 +1575,31 @@ export async function updateWorkPeriodProject(
 			};
 		}
 
-		// Update the work period
-		await db
-			.update(workPeriod)
-			.set({
-				projectId: projectId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.organizationId, emp.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
+		await changeWorkPeriodProject({
+			organizationId: emp.organizationId,
+			employeeId: emp.id,
+			actorUserId: session.user.id,
+			period,
+			projectId,
+		});
 
 		return {
 			success: true,
 			data: { workPeriodId, projectId },
 		};
 	} catch (error) {
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
+		}
+		if (
+			error instanceof ValidationError ||
+			error instanceof ConflictError ||
+			error instanceof AuthorizationError ||
+			error instanceof NotFoundError
+		) {
+			return { success: false, error: error.message };
+		}
 		logger.error({ error }, "Failed to update work period project");
 		return { success: false, error: "Failed to update project assignment" };
 	}

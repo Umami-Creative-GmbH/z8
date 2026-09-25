@@ -344,7 +344,7 @@ describe("time correction request safety", () => {
 	it("applies direct same-day corrections through the shared locked service in one transaction", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).toContain("db.transaction");
+		expect(body).toContain("withCompletedWorkTransaction");
 		expect(body).toContain("canonicalTimeEntryClient.createCorrectionEntry");
 		expect(body).toContain("workPeriodId: selectedWorkPeriod.id");
 		expect(body).toContain("tx,");
@@ -367,7 +367,6 @@ describe("time correction request safety", () => {
 		["legacy project", legacySource, "updateWorkPeriodProject"],
 		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
 		["modular split", modularMutationsSource, "splitWorkPeriod"],
-		["modular project", modularMutationsSource, "updateWorkPeriodProject"],
 	])(
 		"excludes deleted work periods from %s calendar mutations",
 		(_name, source, functionName) => {
@@ -376,6 +375,13 @@ describe("time correction request safety", () => {
 			expect(body).toContain("isNull(workPeriod.deletedAt)");
 		},
 	);
+
+	it("keeps one project mutation: the modular export delegates to the calendar action", () => {
+		const body = functionBody(modularMutationsSource, "updateWorkPeriodProject");
+
+		expect(body).toContain("updateWorkPeriodProjectAction(workPeriodId, projectId)");
+		expect(body).not.toContain(".update(workPeriod)");
+	});
 
 	it("creates deterministic inactive rows before invoking the shared boundary in the repository transaction", () => {
 		const transactionBody = functionBody(modularSource, "submitCorrection");

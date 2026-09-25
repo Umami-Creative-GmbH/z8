@@ -1,86 +1,141 @@
 /**
- * Shared completed-work occupancy (#256 §4), used by every adopted fresh writer
- * that creates an interval (reviewed imports #284, manual entry #308).
+ * Symmetric fresh-work occupancy (#256 §4). Every interval-changing writer
+ * checks its resulting interval against the employee's other recorded work
+ * under the shared employee coordination:
+ *
+ * - nondeleted approved, pending and rejected work occupies its half-open interval;
+ * - active work occupies from its start onward, including starts on earlier days;
+ * - adjacency is valid, and empty intervals (deletion sentinels) occupy nothing;
+ * - a replacement excludes exactly the sources it atomically replaces;
+ * - a period and its linked canonical record are one segment, so only canonical
+ *   work without any period link is read as an independent occupant.
  */
-import { and, asc, eq, gt, isNull, lt, notExists, or, type SQL } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lt, notExists, notInArray, or } from "drizzle-orm";
+import type { db } from "@/db";
 import { timeRecord, workPeriod } from "@/db/schema";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
-import type { WorkTransactionScope } from "./work-transaction";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+} from "@/lib/datetime/temporal-core";
 
-/** One recorded work interval that intersects a requested interval. */
-export type WorkOccupant = {
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type OccupancyClient = Pick<Transaction, "select">;
+
+export interface WorkOccupant {
 	kind: "work_period" | "time_record";
 	id: string;
-	startAt: string;
-	endAt: string | null;
-};
+	startAt: Instant;
+	/** Null for active work. */
+	endAt: Instant | null;
+}
+
+export interface OccupancyInterval {
+	startAt: Instant;
+	endAt: Instant;
+}
+
+export class WorkOccupancyConflictError extends Error {
+	constructor(readonly conflicts: readonly WorkOccupant[]) {
+		super("The time range overlaps other recorded work");
+		this.name = "WorkOccupancyConflictError";
+	}
+}
+
+/** Occupants intersecting the half-open interval, ordered by start. */
+export function findOccupancyConflicts(
+	interval: OccupancyInterval,
+	occupants: readonly WorkOccupant[],
+): WorkOccupant[] {
+	return occupants
+		.filter(
+			(occupant) =>
+				(occupant.endAt === null || compareInstants(occupant.endAt, occupant.startAt) > 0) &&
+				compareInstants(occupant.startAt, interval.endAt) < 0 &&
+				(occupant.endAt === null || compareInstants(occupant.endAt, interval.startAt) > 0),
+		)
+		.sort((left, right) => compareInstants(left.startAt, right.startAt));
+}
 
 /**
- * Symmetric half-open occupancy (#256 §4): nondeleted work in any approval state
- * occupies its interval, active work from its start onward, adjacency is valid.
- * A canonical record linked from any period is represented by that period, so
- * one work segment is never counted twice and deleted work stays excluded.
+ * Reads the employee's recorded work that may intersect the interval. The caller
+ * holds the employee coordination lock, so a competing writer cannot insert
+ * into the interval until this transaction ends.
  */
-export async function findWorkOccupants(
-	tx: WorkTransactionScope["db"],
-	scope: { organizationId: string; employeeId: string },
-	start: Instant,
-	end: Instant | null,
+export async function loadWorkOccupants(
+	client: OccupancyClient,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		interval: OccupancyInterval;
+		/** Sources this operation replaces atomically. */
+		excludeWorkPeriodIds: readonly string[];
+	},
 ): Promise<WorkOccupant[]> {
-	const startAt = dateFromInstant(start);
-	const endAt = end ? dateFromInstant(end) : null;
-	const overlaps = (
-		startColumn: typeof workPeriod.startTime | typeof timeRecord.startAt,
-		endColumn: typeof workPeriod.endTime | typeof timeRecord.endAt,
-	): SQL[] => [
-		...(endAt ? [lt(startColumn, endAt)] : []),
-		or(isNull(endColumn), gt(endColumn, startAt)) as SQL,
-	];
-	const periods = await tx
+	const start = dateFromInstant(input.interval.startAt);
+	const end = dateFromInstant(input.interval.endAt);
+	const periods = await client
 		.select({ id: workPeriod.id, startAt: workPeriod.startTime, endAt: workPeriod.endTime })
 		.from(workPeriod)
 		.where(
 			and(
-				eq(workPeriod.organizationId, scope.organizationId),
-				eq(workPeriod.employeeId, scope.employeeId),
+				eq(workPeriod.organizationId, input.organizationId),
+				eq(workPeriod.employeeId, input.employeeId),
 				isNull(workPeriod.deletedAt),
-				...overlaps(workPeriod.startTime, workPeriod.endTime),
+				lt(workPeriod.startTime, end),
+				or(isNull(workPeriod.endTime), gt(workPeriod.endTime, start)),
+				...(input.excludeWorkPeriodIds.length
+					? [notInArray(workPeriod.id, [...input.excludeWorkPeriodIds])]
+					: []),
 			),
-		)
-		.orderBy(asc(workPeriod.startTime), asc(workPeriod.id));
-	const records = await tx
+		);
+	// Canonical work linked from any period, deleted or not, is that period's
+	// representation; only canonical-native work occupies independently.
+	const nativeRecords = await client
 		.select({ id: timeRecord.id, startAt: timeRecord.startAt, endAt: timeRecord.endAt })
 		.from(timeRecord)
 		.where(
 			and(
-				eq(timeRecord.organizationId, scope.organizationId),
-				eq(timeRecord.employeeId, scope.employeeId),
+				eq(timeRecord.organizationId, input.organizationId),
+				eq(timeRecord.employeeId, input.employeeId),
 				eq(timeRecord.recordKind, "work"),
-				...overlaps(timeRecord.startAt, timeRecord.endAt),
+				lt(timeRecord.startAt, end),
+				or(isNull(timeRecord.endAt), gt(timeRecord.endAt, start)),
 				notExists(
-					tx
+					client
 						.select({ id: workPeriod.id })
 						.from(workPeriod)
 						.where(
 							and(
-								eq(workPeriod.organizationId, scope.organizationId),
+								eq(workPeriod.organizationId, input.organizationId),
+								isNotNull(workPeriod.canonicalRecordId),
 								eq(workPeriod.canonicalRecordId, timeRecord.id),
 							),
 						),
 				),
 			),
-		)
-		.orderBy(asc(timeRecord.startAt), asc(timeRecord.id));
-	return [
-		...periods.map((row) => ({ kind: "work_period" as const, ...occupantInterval(row) })),
-		...records.map((row) => ({ kind: "time_record" as const, ...occupantInterval(row) })),
-	];
+		);
+	return findOccupancyConflicts(input.interval, [
+		...periods.map((row) => ({
+			kind: "work_period" as const,
+			id: row.id,
+			startAt: instantFromDate(row.startAt),
+			endAt: row.endAt ? instantFromDate(row.endAt) : null,
+		})),
+		...nativeRecords.map((row) => ({
+			kind: "time_record" as const,
+			id: row.id,
+			startAt: instantFromDate(row.startAt),
+			endAt: row.endAt ? instantFromDate(row.endAt) : null,
+		})),
+	]);
 }
 
-function occupantInterval(row: { id: string; startAt: Date; endAt: Date | null }) {
-	return {
-		id: row.id,
-		startAt: row.startAt.toISOString(),
-		endAt: row.endAt?.toISOString() ?? null,
-	};
+export async function assertWorkOccupancyFree(
+	client: OccupancyClient,
+	input: Parameters<typeof loadWorkOccupants>[1],
+): Promise<void> {
+	const conflicts = await loadWorkOccupants(client, input);
+	if (conflicts.length > 0) throw new WorkOccupancyConflictError(conflicts);
 }
