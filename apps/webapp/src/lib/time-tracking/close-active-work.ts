@@ -3,7 +3,7 @@ import "server-only";
 /**
  * Completed-work operation for closing live work (#274 / T10, design #256). The
  * web, mobile and all four bot adapters reach it through the shared live
- * clock-out (#277).
+ * clock-out (#277); manager on-behalf closure reaches it directly (#276).
  *
  * One call inside the web clock-out outer transaction establishes the whole
  * completed graph: the clock-out entry through the append collaborator, the

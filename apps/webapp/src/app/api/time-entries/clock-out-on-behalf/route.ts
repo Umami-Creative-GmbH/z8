@@ -1,280 +1,109 @@
-import { and, eq, isNull } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import {
-	checkComplianceAfterClockOut,
-	enforceBreaksAfterClockOut,
-	reconcileImmediateSurcharges,
-} from "@/app/[locale]/(app)/time-tracking/actions/compliance";
+	closeWorkOnBehalf,
+	type OnBehalfClockOutRejection,
+} from "@/app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
-import { db } from "@/db";
-import { employee, userSettings, workPeriod } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { getAbility } from "@/lib/auth-helpers";
-import { asAppSubject, ForbiddenError, toHttpError } from "@/lib/authorization";
-import {
-	createBillingForbiddenResponse,
-	isBillingMutationAllowed,
-	requireBillingForMutation,
-} from "@/lib/billing/guard";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
-import {
-	ClockingAccessError,
-	ClockingConflictError,
-	clockingService,
-} from "@/lib/time-tracking/clocking-service";
-import {
-	type PolicyClockOutSurchargeSnapshot,
-	resolvePolicyClockOutSurchargeSnapshotInTransaction,
-} from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
-import {
-	isValidIanaTimezone,
-	resolveFallbackTimezoneCapture,
-} from "@/lib/time-tracking/timezone-capture";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { createBillingForbiddenResponse } from "@/lib/billing/guard";
+import { parseOnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
 
-class TimeEntryConflictError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "TimeEntryConflictError";
+/**
+ * Manager on-behalf clock-out (#276). Closes the named running work period of
+ * another employee at the current server time.
+ *
+ * Body: `{ workPeriodId, operationId?, projectId?, workCategoryId? }`. The client
+ * mints `operationId` once per intended closure and resends it on every retry, so
+ * a lost response is recovered as the original committed outcome (200). Omitted
+ * attribution preserves the period's; `null` clears it; an ID replaces it.
+ */
+const REJECTIONS: Record<
+	Exclude<OnBehalfClockOutRejection["code"], "billing_required" | "attribution_not_allowed">,
+	{ status: number; error: string }
+> = {
+	access_denied: { status: 403, error: "Not authorized to clock out this employee" },
+	target_unknown: { status: 404, error: "Work period not found" },
+	target_not_active: { status: 409, error: "Work period is no longer running" },
+	collision: { status: 409, error: "This clock-out request conflicts with another one" },
+	invalid_interval: { status: 409, error: "Clock-out must be after clock-in" },
+	append_review_required: {
+		status: 409,
+		error: "Clock out was not saved because time history needs review",
+	},
+	integrity_review_required: {
+		status: 409,
+		error: "Clock out was not saved because committed work needs review",
+	},
+};
+
+function rejected(rejection: OnBehalfClockOutRejection, operationId: string | null) {
+	if (rejection.code === "billing_required") {
+		return createBillingForbiddenResponse(rejection.billing);
 	}
-}
-
-async function markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(input: {
-	employeeId: string;
-	organizationId: string;
-	dirtyFromDate?: string;
-}) {
-	try {
-		await markEmployeeWorkBalanceDirty(input);
-	} catch (error) {
-		logger.error(
+	if (rejection.code === "attribution_not_allowed") {
+		return NextResponse.json(
 			{
-				error,
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
+				error:
+					rejection.field === "projectId"
+						? "Cannot assign to this project"
+						: "Cannot assign to this work category",
+				code: rejection.code,
+				field: rejection.field,
+				operationId,
 			},
-			"Failed to mark work balance dirty after on-behalf clock-out",
+			{ status: 422 },
 		);
 	}
-}
-
-async function reconcileImmediateSurchargesAfterOnBehalfClockOutBestEffort(input: {
-	organizationId: string;
-	employeeId: string;
-	affectedWorkPeriodIds: string[];
-	snapshot: PolicyClockOutSurchargeSnapshot;
-}) {
-	try {
-		await reconcileImmediateSurcharges(input);
-	} catch (error) {
-		logger.error(
-			{
-				error,
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-			},
-			"Failed to reconcile surcharges after on-behalf clock-out",
-		);
-	}
+	const { status, error } = REJECTIONS[rejection.code];
+	return NextResponse.json({ error, code: rejection.code, operationId }, { status });
 }
 
 export async function POST(request: NextRequest) {
 	await connection();
 
+	let body: unknown;
 	try {
-		const body = await request.json();
-		const workPeriodId = body?.workPeriodId;
-
-		if (typeof workPeriodId !== "string" || !workPeriodId) {
-			return NextResponse.json(
-				{ error: "workPeriodId is required" },
-				{ status: 400 },
-			);
-		}
-
-		const resolvedHeaders = await headers();
-		const session = await auth.api.getSession({ headers: resolvedHeaders });
-
-		if (!session?.user) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		const organizationId = session.session.activeOrganizationId;
-		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
-		}
-		await clockingService.requireActor({
-			userId: session.user.id,
-			activeOrganizationId: organizationId,
-		});
-
-		const [actorEmployee] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!actorEmployee) {
-			return NextResponse.json(
-				{ error: "Employee record not found in this organization" },
-				{ status: 404 },
-			);
-		}
-
-		const [target] = await db
-			.select({ period: workPeriod, targetEmployee: employee })
-			.from(workPeriod)
-			.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.organizationId, organizationId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.limit(1);
-
-		if (!target) {
-			return NextResponse.json(
-				{ error: "Work period not found" },
-				{ status: 404 },
-			);
-		}
-
-		if (!target.period.isActive || target.period.endTime) {
-			return NextResponse.json(
-				{ error: "Work period is no longer running" },
-				{ status: 409 },
-			);
-		}
-
-		if (target.targetEmployee.id === actorEmployee.id) {
-			const error = new ForbiddenError("manage", "TimeEntry");
-			const httpError = toHttpError(error);
-			return NextResponse.json(httpError.body, { status: httpError.status });
-		}
-
-		const ability = await getAbility();
-		if (
-			!ability?.can(
-				"manage",
-				asAppSubject("TimeEntry", {
-					employeeId: target.targetEmployee.id,
-					organizationId,
-				}),
-			)
-		) {
-			const error = new ForbiddenError("manage", "TimeEntry");
-			const httpError = toHttpError(error);
-			return NextResponse.json(httpError.body, { status: httpError.status });
-		}
-
-		const billingAccess = await requireBillingForMutation(organizationId);
-		if (!isBillingMutationAllowed(billingAccess)) {
-			return createBillingForbiddenResponse(billingAccess);
-		}
-
-		const entryTime = new Date();
-		const settings = await db.query.userSettings.findFirst({
-			where: eq(userSettings.userId, target.targetEmployee.userId),
-			columns: { timezone: true },
-		});
-		const timezone = isValidIanaTimezone(settings?.timezone)
-			? settings.timezone
-			: "UTC";
-		const timezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: entryTime,
-			timezone,
-			timezoneSource: "manager_target_user_setting",
-		});
-		const actionInstant = instantFromDate(entryTime);
-		let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
-
-		const result = await clockingService.clockOut({
-			createdBy: session.user.id,
-			employeeId: target.targetEmployee.id,
-			organizationId,
-			workPeriodId: target.period.id,
-			action: { instant: actionInstant, ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: "web-on-behalf" },
-			beforePeriodClose: async ({ transaction, activePeriod }) => {
-				surchargeSnapshot =
-					await resolvePolicyClockOutSurchargeSnapshotInTransaction({
-						dbService: { db: transaction } as never,
-						organizationId,
-						employeeId: target.targetEmployee.id,
-						startTime: instantFromDate(activePeriod.startTime),
-						endTime: actionInstant,
-					});
-				return undefined;
-			},
-		});
-		if (!surchargeSnapshot) {
-			throw new Error("Clock-out surcharge snapshot was not captured");
-		}
-
-		await checkComplianceAfterClockOut(
-			target.targetEmployee.id,
-			organizationId,
-			result.period.id,
-			result.durationMinutes,
-			timezone,
-		);
-
-		const breakEnforcementResult = await enforceBreaksAfterClockOut({
-			createdBy: session.user.id,
-			employeeId: target.targetEmployee.id,
-			organizationId,
-			sessionDurationMinutes: result.durationMinutes,
-			timezone,
-			workPeriodId: result.period.id,
-		});
-		await reconcileImmediateSurchargesAfterOnBehalfClockOutBestEffort({
-			affectedWorkPeriodIds: breakEnforcementResult.affectedWorkPeriodIds,
-			employeeId: target.targetEmployee.id,
-			organizationId,
-			snapshot: surchargeSnapshot,
-		});
-
-		const dirtyMark = {
-			dirtyFromDate:
-				DateTime.fromJSDate(result.activePeriod.startTime, {
-					zone: "utc",
-				}).toISODate() ?? undefined,
-			employeeId: target.targetEmployee.id,
-			organizationId,
-		};
-
-		await markWorkBalanceDirtyAfterOnBehalfClockOutBestEffort(dirtyMark);
-
-		return NextResponse.json({ entry: result.entry }, { status: 201 });
-	} catch (error) {
-		if (error instanceof ClockingAccessError) {
-			return NextResponse.json({ error: error.message }, { status: 403 });
-		}
-		if (
-			error instanceof TimeEntryConflictError ||
-			error instanceof ClockingConflictError ||
-			(error instanceof Error && error.name === "ClockingConflictError")
-		) {
-			return NextResponse.json({ error: error.message }, { status: 409 });
-		}
-
+		body = await request.json();
+	} catch {
+		body = null;
+	}
+	const parsed = parseOnBehalfClockOutRequest(body);
+	if (!parsed) {
 		return NextResponse.json(
-			{ error: "Internal server error" },
+			{ error: "workPeriodId is required; operationId must be a lowercase UUID" },
+			{ status: 400 },
+		);
+	}
+
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	}
+	const activeOrganizationId = session.session.activeOrganizationId;
+	if (!activeOrganizationId) {
+		return NextResponse.json({ error: "No active organization" }, { status: 400 });
+	}
+
+	try {
+		const result = await closeWorkOnBehalf({
+			request: parsed,
+			session: { userId: session.user.id, activeOrganizationId },
+		});
+		if (result.outcome === "rejected") {
+			const { outcome: _outcome, operationId, ...rejection } = result;
+			return rejected(rejection as OnBehalfClockOutRejection, operationId);
+		}
+		return NextResponse.json(result, { status: result.outcome === "executed" ? 201 : 200 });
+	} catch (error) {
+		logger.error({ error }, "On-behalf clock-out failed");
+		// The work may or may not have committed; resending the same identity replays it.
+		return NextResponse.json(
+			{
+				error: "Internal server error",
+				outcome: "unknown",
+				operationId: parsed.operationId ?? null,
+			},
 			{ status: 500 },
 		);
 	}

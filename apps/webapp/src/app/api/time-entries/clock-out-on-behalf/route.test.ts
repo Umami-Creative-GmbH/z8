@@ -1,603 +1,160 @@
+/**
+ * HTTP adapter contract for manager on-behalf clock-out (#276). The closure
+ * itself (authorization, graph, replay, rollback, legacy mode) is verified
+ * against PostgreSQL in `route.integration.test.ts`.
+ */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockState = vi.hoisted(() => {
-	const limit = vi.fn();
-	const where = vi.fn(() => ({ limit }));
-	const innerJoin = vi.fn(() => ({ where }));
-	const from = vi.fn(() => ({ innerJoin, where }));
-	const select = vi.fn(() => ({ from }));
-
-	const txLimit = vi.fn();
-	const txWhere = vi.fn(() => ({ limit: txLimit }));
-	const txFrom = vi.fn(() => ({ where: txWhere }));
-	const txSelect = vi.fn(() => ({ from: txFrom }));
-	const txExecute = vi.fn(async () => undefined);
-	const updateReturning = vi.fn(async () => [{ id: "period-1" }]);
-	const updateWhere = vi.fn(() => ({ returning: updateReturning }));
-	const updateSet = vi.fn(() => ({ where: updateWhere }));
-	const update = vi.fn(() => ({ set: updateSet }));
-	const txClient = { execute: txExecute, select: txSelect, update };
-	const transaction = vi.fn(
-		async (callback: (tx: unknown) => Promise<unknown>) => callback(txClient),
-	);
-
-	return {
-		asAppSubject: vi.fn((subject, data) => ({
-			...data,
-			__caslSubjectType__: subject,
-		})),
-		connection: vi.fn(),
-		createBillingForbiddenResponse: vi.fn(),
-		createTimeEntry: vi.fn(),
-		clockingClockOut: vi.fn(),
-		calculateAndPersistSurcharges: vi.fn(),
-		reconcileImmediateSurcharges: vi.fn(),
-		checkComplianceAfterClockOut: vi.fn(),
-		enforceBreaksAfterClockOut: vi.fn(),
-		findUserSettings: vi.fn(),
-		getAbility: vi.fn(),
-		getSession: vi.fn(),
-		headers: vi.fn(),
-		innerJoin,
-		isBillingMutationAllowed: vi.fn(),
-		isValidIanaTimezone: vi.fn(),
-		markEmployeeWorkBalanceDirty: vi.fn(),
-		limit,
-		requireBillingForMutation: vi.fn(),
-		requireActor: vi.fn(),
-		resolveFallbackTimezoneCapture: vi.fn(),
-		resolveSurchargeSnapshot: vi.fn(),
-		logger: { error: vi.fn() },
-		select,
-		transaction,
-		txClient,
-		txExecute,
-		txLimit,
-		txSelect,
-		update,
-		updateReturning,
-		updateSet,
-		updateWhere,
-		where,
-	};
-});
-
-vi.mock("next/headers", () => ({
-	headers: mockState.headers,
+const mocks = vi.hoisted(() => ({
+	getSession: vi.fn(),
+	closeWorkOnBehalf: vi.fn(),
+	logError: vi.fn(),
 }));
 
-vi.mock("next/server", async () => {
-	const actual =
-		await vi.importActual<typeof import("next/server")>("next/server");
-	return {
-		...actual,
-		connection: mockState.connection,
-	};
-});
-
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			userSettings: { findFirst: mockState.findUserSettings },
-		},
-		select: mockState.select,
-		transaction: mockState.transaction,
-	},
+vi.mock("server-only", () => ({}));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => {},
 }));
-
-vi.mock("@/db/schema", () => ({
-	employee: {
-		id: "employee.id",
-		isActive: "employee.isActive",
-		organizationId: "employee.organizationId",
-		userId: "employee.userId",
-	},
-	timeEntry: {
-		employeeId: "timeEntry.employeeId",
-		organizationId: "timeEntry.organizationId",
-	},
-	userSettings: { userId: "userSettings.userId" },
-	workPeriod: {
-		clockOutId: "workPeriod.clockOutId",
-		deletedAt: "workPeriod.deletedAt",
-		durationMinutes: "workPeriod.durationMinutes",
-		employeeId: "workPeriod.employeeId",
-		endTime: "workPeriod.endTime",
-		id: "workPeriod.id",
-		isActive: "workPeriod.isActive",
-		organizationId: "workPeriod.organizationId",
-		startTime: "workPeriod.startTime",
-	},
-}));
-
-vi.mock("@/lib/auth", () => ({
-	auth: {
-		api: {
-			getSession: mockState.getSession,
-		},
-	},
-}));
-
-vi.mock("@/lib/auth-helpers", () => ({
-	getAbility: mockState.getAbility,
-}));
-
-vi.mock("@/lib/authorization", () => ({
-	asAppSubject: mockState.asAppSubject,
-	ForbiddenError: class ForbiddenError extends Error {},
-	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
-}));
-
+vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: mocks.getSession } } }));
 vi.mock("@/lib/billing/guard", () => ({
-	createBillingForbiddenResponse: mockState.createBillingForbiddenResponse,
-	isBillingMutationAllowed: mockState.isBillingMutationAllowed,
-	requireBillingForMutation: mockState.requireBillingForMutation,
+	createBillingForbiddenResponse: (access: { reason: string }) =>
+		Response.json({ error: "billing_required", code: access.reason }, { status: 402 }),
 }));
-
-vi.mock("@/lib/time-tracking/timezone-capture", () => ({
-	isValidIanaTimezone: mockState.isValidIanaTimezone,
-	resolveFallbackTimezoneCapture: mockState.resolveFallbackTimezoneCapture,
-}));
-
-vi.mock("@/lib/time-tracking/clocking-service", () => ({
-	ClockingAccessError: class ClockingAccessError extends Error {},
-	ClockingConflictError: class ClockingConflictError extends Error {},
-	clockingService: {
-		clockOut: (...args: unknown[]) => mockState.clockingClockOut(...args),
-		requireActor: mockState.requireActor,
-	},
-}));
-
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
-	createTimeEntry: mockState.createTimeEntry,
-}));
-
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/compliance", () => ({
-	calculateAndPersistSurcharges: mockState.calculateAndPersistSurcharges,
-	checkComplianceAfterClockOut: mockState.checkComplianceAfterClockOut,
-	enforceBreaksAfterClockOut: mockState.enforceBreaksAfterClockOut,
-	reconcileImmediateSurcharges: mockState.reconcileImmediateSurcharges,
-}));
-
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", () => ({
-	logger: mockState.logger,
+	logger: { error: mocks.logError },
 }));
-
-vi.mock("@/lib/time-tracking/policy-clock-out-surcharge-snapshot", () => ({
-	resolvePolicyClockOutSurchargeSnapshotInTransaction:
-		mockState.resolveSurchargeSnapshot,
-}));
-
-vi.mock("@/lib/work-balance/service", () => ({
-	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
-}));
-
-vi.mock("drizzle-orm", () => ({
-	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
-	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
-	isNull: (column: unknown) => ({ column, type: "isNull" }),
-	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
-		strings,
-		type: "sql",
-		values,
-	}),
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf", () => ({
+	closeWorkOnBehalf: mocks.closeWorkOnBehalf,
 }));
 
 const { POST } = await import("./route");
 
-const now = new Date("2026-06-09T10:30:00.000Z");
-const surchargeSnapshot = {
-	version: 1 as const,
-	evaluatedAt: "2026-06-09T10:30:00Z",
-	resolution: { kind: "none" as const },
-};
+const operationId = "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10";
 
-const actorEmployee = {
-	id: "actor-employee-1",
-	organizationId: "org-1",
-	userId: "actor-user-1",
-};
-
-const targetEmployee = {
-	id: "target-employee-1",
-	organizationId: "org-1",
-	userId: "target-user-1",
-};
-
-const runningPeriod = {
-	endTime: null,
-	id: "period-1",
-	isActive: true,
-	organizationId: "org-1",
-	startTime: new Date("2026-06-09T08:00:00.000Z"),
-};
-
-function createRequest(body: unknown) {
-	return new Request("https://z8.test/api/time-entries/clock-out-on-behalf", {
-		body: JSON.stringify(body),
+function request(body: unknown) {
+	return new Request("https://app.test/api/time-entries/clock-out-on-behalf", {
 		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: typeof body === "string" ? body : JSON.stringify(body),
 	}) as never;
 }
 
-function loadedPeriod(period = runningPeriod) {
-	return { period, targetEmployee };
-}
-
-function expectAndPredicateIncludes(
-	predicate: unknown,
-	expected: Array<{ column: string; value: unknown }>,
-) {
-	expect(predicate).toEqual(
-		expect.objectContaining({
-			conditions: expect.arrayContaining(
-				expected.map(({ column, value }) =>
-					expect.objectContaining({ column, value }),
-				),
-			),
-			type: "and",
-		}),
-	);
+async function respond(body: unknown) {
+	const response = await POST(request(body));
+	return { status: response.status, body: await response.json() };
 }
 
 describe("POST /api/time-entries/clock-out-on-behalf", () => {
 	beforeEach(() => {
-		vi.useFakeTimers();
-		vi.setSystemTime(now);
 		vi.clearAllMocks();
-		mockState.asAppSubject.mockImplementation((subject, data) => ({
-			...data,
-			__caslSubjectType__: subject,
-		}));
-		mockState.headers.mockResolvedValue(new Headers());
-		mockState.getSession.mockResolvedValue({
+		mocks.getSession.mockResolvedValue({
+			user: { id: "manager-user" },
 			session: { activeOrganizationId: "org-1" },
-			user: { id: "actor-user-1" },
-		});
-		mockState.limit.mockResolvedValue([]);
-		mockState.limit
-			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([loadedPeriod()]);
-		mockState.txLimit.mockResolvedValue([runningPeriod]);
-		mockState.getAbility.mockResolvedValue({ can: vi.fn(() => true) });
-		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
-		mockState.requireActor.mockResolvedValue({
-			employee: actorEmployee,
-			organizationId: "org-1",
-			userId: "actor-user-1",
-		});
-		mockState.isBillingMutationAllowed.mockReturnValue(true);
-		mockState.createBillingForbiddenResponse.mockImplementation((access) =>
-			Response.json(
-				{ error: "billing_required", reason: access.reason },
-				{ status: 402 },
-			),
-		);
-		mockState.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
-		mockState.isValidIanaTimezone.mockImplementation(
-			(timezone) => timezone === "Europe/Berlin",
-		);
-		mockState.resolveFallbackTimezoneCapture.mockReturnValue({
-			timezone: "Europe/Berlin",
-			timezoneSource: "manager_target_user_setting",
-			utcOffsetMinutes: 120,
-		});
-		mockState.createTimeEntry.mockResolvedValue({ id: "clock-out-entry-1" });
-		mockState.clockingClockOut.mockImplementation(async (input) => {
-			await input.beforePeriodClose?.({
-				transaction: mockState.txClient,
-				activePeriod: {
-					id: "period-1",
-					startTime: runningPeriod.startTime,
-				},
-				durationMinutes: 150,
-			});
-			return {
-				activePeriod: { id: "period-1", startTime: runningPeriod.startTime },
-				durationMinutes: 150,
-				entry: { id: "clock-out-entry-1" },
-				period: { id: "period-1" },
-			};
-		});
-		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
-		mockState.reconcileImmediateSurcharges.mockResolvedValue(undefined);
-		mockState.resolveSurchargeSnapshot.mockResolvedValue(surchargeSnapshot);
-		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
-		mockState.enforceBreaksAfterClockOut.mockResolvedValue({
-			wasAdjusted: false,
-			affectedWorkPeriodIds: ["period-1"],
-		});
-		mockState.markEmployeeWorkBalanceDirty.mockResolvedValue(undefined);
-		mockState.txExecute.mockResolvedValue(undefined);
-		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
-	});
-
-	it("closes a target running period at the current server time", async () => {
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({
-			entry: { id: "clock-out-entry-1" },
-		});
-		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
-			expect.objectContaining({
-				createdBy: "actor-user-1",
-				employeeId: "target-employee-1",
-				organizationId: "org-1",
-				workPeriodId: "period-1",
-				action: expect.objectContaining({
-					timezone: "Europe/Berlin",
-					timezoneSource: "manager_target_user_setting",
-				}),
-			}),
-		);
-		expect(mockState.findUserSettings).toHaveBeenCalledWith(
-			expect.objectContaining({ columns: { timezone: true } }),
-		);
-		expect(mockState.resolveFallbackTimezoneCapture).toHaveBeenCalledWith({
-			timestamp: now,
-			timezone: "Europe/Berlin",
-			timezoneSource: "manager_target_user_setting",
 		});
 	});
 
-	it("runs clock-out domain side effects after successfully closing the target period", async () => {
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+	it("passes the parsed request and the session scope to the operation", async () => {
+		mocks.closeWorkOnBehalf.mockResolvedValue({
+			outcome: "executed",
+			operationId,
+			entry: { id: operationId },
+			receipt: null,
+		});
 
-		expect(response.status).toBe(201);
-		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
-			affectedWorkPeriodIds: ["period-1"],
-			employeeId: "target-employee-1",
-			organizationId: "org-1",
-			snapshot: surchargeSnapshot,
+		const result = await respond({ workPeriodId: "period-1", operationId, projectId: null });
+
+		expect(result).toEqual({
+			status: 201,
+			body: { outcome: "executed", operationId, entry: { id: operationId }, receipt: null },
 		});
-		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
-			"target-employee-1",
-			"org-1",
-			"period-1",
-			150,
-			"Europe/Berlin",
-		);
-		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalledWith({
-			createdBy: "actor-user-1",
-			employeeId: "target-employee-1",
-			organizationId: "org-1",
-			sessionDurationMinutes: 150,
-			timezone: "Europe/Berlin",
-			workPeriodId: "period-1",
+		expect(mocks.closeWorkOnBehalf).toHaveBeenCalledWith({
+			request: { workPeriodId: "period-1", operationId, projectId: null },
+			session: { userId: "manager-user", activeOrganizationId: "org-1" },
 		});
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			dirtyFromDate: "2026-06-09",
-			employeeId: "target-employee-1",
-			organizationId: "org-1",
-		});
-		expect(mockState.resolveSurchargeSnapshot).toHaveBeenCalledWith({
-			dbService: { db: mockState.txClient },
-			employeeId: "target-employee-1",
-			organizationId: "org-1",
-			startTime: expect.anything(),
-			endTime: expect.anything(),
-		});
-		expect(
-			mockState.enforceBreaksAfterClockOut.mock.invocationCallOrder[0],
-		).toBeLessThan(
-			mockState.reconcileImmediateSurcharges.mock.invocationCallOrder[0],
-		);
 	});
 
-	it("keeps a successful clock-out response when work balance dirty marking fails", async () => {
-		mockState.markEmployeeWorkBalanceDirty.mockRejectedValueOnce(
-			new Error("dirty marker failed"),
-		);
-
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({
-			entry: { id: "clock-out-entry-1" },
+	it("answers a committed replay with 200", async () => {
+		mocks.closeWorkOnBehalf.mockResolvedValue({
+			outcome: "replayed",
+			operationId,
+			entry: { id: operationId },
+			receipt: null,
 		});
-		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledOnce();
-		expect(mockState.checkComplianceAfterClockOut).toHaveBeenCalledWith(
-			"target-employee-1",
-			"org-1",
-			"period-1",
-			150,
-			"Europe/Berlin",
-		);
-		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalledWith(
-			expect.objectContaining({ workPeriodId: "period-1" }),
-		);
+
+		expect((await respond({ workPeriodId: "period-1", operationId })).status).toBe(200);
 	});
 
-	it("reconciles every split period before marking work balance dirty", async () => {
-		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
-			wasAdjusted: true,
-			affectedWorkPeriodIds: ["period-1", "period-2"],
-		});
+	it.each([
+		[{ code: "access_denied" }, 403],
+		[{ code: "target_unknown" }, 404],
+		[{ code: "target_not_active" }, 409],
+		[{ code: "collision" }, 409],
+		[{ code: "invalid_interval" }, 409],
+		[{ code: "append_review_required" }, 409],
+		[{ code: "integrity_review_required" }, 409],
+		[{ code: "attribution_not_allowed", field: "projectId" }, 422],
+	])("maps the %o rejection to %i with its code", async (rejection, status) => {
+		mocks.closeWorkOnBehalf.mockResolvedValue({ outcome: "rejected", operationId, ...rejection });
 
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
+		const result = await respond({ workPeriodId: "period-1", operationId });
 
-		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({
-			entry: { id: "clock-out-entry-1" },
-		});
-		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledOnce();
-		expect(mockState.reconcileImmediateSurcharges).toHaveBeenCalledWith({
-			affectedWorkPeriodIds: ["period-1", "period-2"],
-			employeeId: "target-employee-1",
-			organizationId: "org-1",
-			snapshot: surchargeSnapshot,
-		});
-		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledOnce();
-		expect(mockState.markEmployeeWorkBalanceDirty).toHaveBeenCalledWith({
-			dirtyFromDate: "2026-06-09",
-			employeeId: "target-employee-1",
-			organizationId: "org-1",
-		});
-		expect(
-			mockState.reconcileImmediateSurcharges.mock.invocationCallOrder[0],
-		).toBeLessThan(
-			mockState.markEmployeeWorkBalanceDirty.mock.invocationCallOrder[0],
-		);
+		expect(result.status).toBe(status);
+		expect(result.body).toMatchObject({ ...rejection, operationId, error: expect.any(String) });
 	});
 
-	it("keeps a split clock-out response successful when atomic reconciliation fails", async () => {
-		mockState.enforceBreaksAfterClockOut.mockResolvedValueOnce({
-			wasAdjusted: true,
-			affectedWorkPeriodIds: ["period-1", "period-2"],
+	it("returns the billing guard response for billing rejections", async () => {
+		mocks.closeWorkOnBehalf.mockResolvedValue({
+			outcome: "rejected",
+			operationId,
+			code: "billing_required",
+			billing: { canAccess: false, reason: "subscription_required" },
 		});
-		mockState.reconcileImmediateSurcharges.mockRejectedValueOnce(
-			new Error("second surcharge insert failed"),
-		);
 
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(201);
-		expect(await response.json()).toEqual({
-			entry: { id: "clock-out-entry-1" },
+		expect(await respond({ workPeriodId: "period-1", operationId })).toEqual({
+			status: 402,
+			body: { error: "billing_required", code: "subscription_required" },
 		});
-		expect(mockState.logger.error).toHaveBeenCalledWith(
-			expect.objectContaining({
-				employeeId: "target-employee-1",
-				organizationId: "org-1",
-			}),
-			"Failed to reconcile surcharges after on-behalf clock-out",
-		);
 	});
 
-	it("returns 403 and does not create a time entry when ability denies access", async () => {
-		const ability = { can: vi.fn(() => false) };
-		mockState.getAbility.mockResolvedValue(ability);
+	it("reports an unknown outcome with the identity to resend when the operation throws", async () => {
+		mocks.closeWorkOnBehalf.mockRejectedValue(new Error("connection reset"));
 
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Forbidden" });
-		expect(ability.can).toHaveBeenCalledWith(
-			"manage",
-			expect.objectContaining({
-				employeeId: "target-employee-1",
-				organizationId: "org-1",
-			}),
-		);
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-	});
-
-	it("returns 403 and does not create a time entry when actor targets their own running period", async () => {
-		mockState.limit.mockReset();
-		mockState.limit
-			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([
-				{ period: runningPeriod, targetEmployee: actorEmployee },
-			]);
-
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(403);
-		expect(await response.json()).toEqual({ error: "Forbidden" });
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.transaction).not.toHaveBeenCalled();
-	});
-
-	it("returns 404 for a missing or cross-organization work period", async () => {
-		mockState.limit.mockReset();
-		mockState.limit
-			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([]);
-
-		const response = await POST(
-			createRequest({ workPeriodId: "foreign-period" }),
-		);
-
-		expect(response.status).toBe(404);
-		expect(await response.json()).toEqual({ error: "Work period not found" });
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-	});
-
-	it("scopes target period lookup to active employees in the active organization", async () => {
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(201);
-		expectAndPredicateIncludes(mockState.where.mock.calls[1]?.[0], [
-			{ column: "workPeriod.id", value: "period-1" },
-			{ column: "workPeriod.organizationId", value: "org-1" },
-			{ column: "employee.organizationId", value: "org-1" },
-			{ column: "employee.isActive", value: true },
-		]);
-	});
-
-	it("returns 409 when the loaded work period is already stopped", async () => {
-		mockState.limit.mockReset();
-		mockState.limit
-			.mockResolvedValueOnce([actorEmployee])
-			.mockResolvedValueOnce([
-				loadedPeriod({
-					...runningPeriod,
-					endTime: new Date("2026-06-09T09:00:00.000Z"),
-					isActive: false,
-				}),
-			]);
-
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(409);
-		expect(await response.json()).toEqual({
-			error: "Work period is no longer running",
+		expect(await respond({ workPeriodId: "period-1", operationId })).toEqual({
+			status: 500,
+			body: { error: "Internal server error", outcome: "unknown", operationId },
 		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect(mocks.logError).toHaveBeenCalledTimes(1);
 	});
 
-	it("returns 409 when the guarded update loses a race", async () => {
-		const conflict = new Error("Active work period changed");
-		conflict.name = "ClockingConflictError";
-		mockState.clockingClockOut.mockRejectedValueOnce(conflict);
-
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(409);
-		expect(await response.json()).toEqual({
-			error: "Active work period changed",
-		});
-		expect(mockState.clockingClockOut).toHaveBeenCalledWith(expect.anything());
+	it.each([
+		["a missing work period", {}],
+		["a non-string work period", { workPeriodId: 1 }],
+		[
+			"an uppercase operation id",
+			{ workPeriodId: "period-1", operationId: operationId.toUpperCase() },
+		],
+		["a non-UUID operation id", { workPeriodId: "period-1", operationId: "retry-1" }],
+		["an empty project id", { workPeriodId: "period-1", projectId: "" }],
+		["a numeric category id", { workPeriodId: "period-1", workCategoryId: 3 }],
+		["an array body", [{ workPeriodId: "period-1" }]],
+		["malformed JSON", "{"],
+	])("rejects %s with 400 before reading the session", async (_label, body) => {
+		expect((await respond(body)).status).toBe(400);
+		expect(mocks.getSession).not.toHaveBeenCalled();
+		expect(mocks.closeWorkOnBehalf).not.toHaveBeenCalled();
 	});
 
-	it("requires a workPeriodId string", async () => {
-		const response = await POST(createRequest({ workPeriodId: 42 }));
+	it("rejects unauthenticated requests and sessions without an organization", async () => {
+		mocks.getSession.mockResolvedValueOnce(null);
+		expect((await respond({ workPeriodId: "period-1" })).status).toBe(401);
 
-		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({
-			error: "workPeriodId is required",
+		mocks.getSession.mockResolvedValueOnce({
+			user: { id: "manager-user" },
+			session: { activeOrganizationId: null },
 		});
-		expect(mockState.getSession).not.toHaveBeenCalled();
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-	});
-
-	it("rejects unauthenticated requests", async () => {
-		mockState.getSession.mockResolvedValue(null);
-
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(response.status).toBe(401);
-		expect(await response.json()).toEqual({ error: "Unauthorized" });
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-	});
-
-	it("returns billing guard response before writing", async () => {
-		mockState.requireBillingForMutation.mockResolvedValue({
-			canAccess: false,
-			reason: "trial_expired",
-		});
-		mockState.isBillingMutationAllowed.mockReturnValue(false);
-
-		const response = await POST(createRequest({ workPeriodId: "period-1" }));
-
-		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
-		expect(response.status).toBe(402);
-		expect(await response.json()).toEqual({
-			error: "billing_required",
-			reason: "trial_expired",
-		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
+		expect((await respond({ workPeriodId: "period-1" })).status).toBe(400);
+		expect(mocks.closeWorkOnBehalf).not.toHaveBeenCalled();
 	});
 });
