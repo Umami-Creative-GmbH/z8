@@ -35,9 +35,9 @@ function failureReason(call: SlackCallFailure): string {
 	}
 }
 
-function sendFailure(call: SlackCallFailure, method: "send" | "open"): ApprovalDeliveryFailure {
+/** A failed post or DM open; only an update can find its message gone. */
+function deliveryFailure(call: SlackCallFailure, method: "send" | "open"): ApprovalDeliveryFailure {
 	const kind = classifySlackDeliveryFailure(call, method);
-	// Only an update can find its message gone.
 	return {
 		kind: "failed",
 		outcome: kind === "gone" ? "permanent" : kind,
@@ -70,7 +70,7 @@ async function resolveDirectMessage(
 	const opened = await openConversationWithOutcome(bot.botAccessToken, mapping.slackUserId);
 	return opened.kind === "ok"
 		? { kind: "ok", channelId: opened.result }
-		: sendFailure(opened, "open");
+		: deliveryFailure(opened, "open");
 }
 
 /**
@@ -89,8 +89,8 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			return { kind: "suppressed", reason: "integration_disabled" };
 		}
 		if (!bot.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
-		const destination = await resolveDirectMessage(bot, input);
-		if (destination.kind !== "ok") return destination;
+		// Entitlement first: no DM is opened for a recipient who may not see
+		// the request.
 		const card = await prepareApprovalPresentation({
 			approvalId: input.approvalRequestId,
 			recipientEmployeeId: input.recipientEmployeeId,
@@ -99,13 +99,15 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			summary: { fits: fitsSlackApprovalCard },
 		});
 		if (card.status === "undisclosable") return { kind: "suppressed", reason: "not_entitled" };
+		const destination = await resolveDirectMessage(bot, input);
+		if (destination.kind !== "ok") return destination;
 		// Never controls: an actionable card cannot be prepared for Slack, and
 		// the renderer has no approve or reject control either way.
 		const sent = await postMessageWithOutcome(bot.botAccessToken, {
 			channel: destination.channelId,
 			...slackApprovalCard(card),
 		});
-		if (sent.kind !== "ok") return sendFailure(sent, "send");
+		if (sent.kind !== "ok") return deliveryFailure(sent, "send");
 		return {
 			kind: "accepted",
 			receiverScope: slackReceiverScope(bot),

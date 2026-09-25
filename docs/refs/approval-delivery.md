@@ -108,6 +108,14 @@ carry approve or reject controls and never issue a binding:
   decision; `action_ts` and `block_id` are modeled for diagnostics only.
 - The delivery client makes one attempt per call with a 30 s timeout and
   rejects rate limits instead of waiting them out under a lease.
+- Entitlement is checked before the DM: no conversation is opened for a
+  recipient who may not see the request.
+- Refreshes run even after Slack approvals are disabled for the
+  installation: they only remove a card's live content, and a stale card is
+  worse than an update. Only the installation that sent it can update it.
+- Scope: the owner delivers and refreshes the approver's card only. Decision
+  notices to the requester (`approval_request_approved` and similar) keep the
+  existing notification path, unchanged by this slice.
 
 ## Failures, retries and recovery
 
@@ -207,11 +215,20 @@ canonical absence submissions then send no Telegram card at all.
    control only after every worker and app instance runs this release.
 3. **Legacy Slack cards** sent before activation are not tracked by the owner
    and are not refreshed; pressing one still decides nothing.
-4. **Slack identity (#261).** Actions stay review-only until Slack documents a
+4. **Historical replay wording.** A press on a legacy card whose supported
+   history replays (manual time submissions, policy clock-outs) states the
+   verified outcome without its original decision time: legacy rejections
+   record no decision time, and no render-time time is substituted. The
+   Slack rendering is covered by `bot-platform/approval-adapters.test.ts`,
+   not by the PostgreSQL suite.
+5. **Stale DM after a workspace change.** A saved DM from the previous
+   workspace is tried first; Slack answers `channel_not_found`, and the work
+   waits for repair until the recipient writes to the new bot or relinks.
+6. **Slack identity (#261).** Actions stay review-only until Slack documents a
    per-invocation identity; enabling them needs a new decision.
-5. **Live workspace.** Verified against the real Web API client with a
+7. **Live workspace.** Verified against the real Web API client with a
    replaced HTTP transport, not a live Slack workspace.
-6. Blockers 3–11 of #291 apply unchanged (legacy authority, escalation
+8. Blockers 3–11 of #291 apply unchanged (legacy authority, escalation
    replacement delivery #300, in-place material changes, untracked
    duplicates, activation handover, ingress, #290 gates, scanner on Windows).
 
