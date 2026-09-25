@@ -30,9 +30,7 @@ const MONEY_AMOUNT = /^\d{1,10}\.\d{2}$/;
 const CURRENCY = /^[A-Z]{3}$/;
 
 function money(value: TravelExpenseMoney | undefined): TravelExpenseMoney | null {
-	return value && MONEY_AMOUNT.test(value.amount) && CURRENCY.test(value.currency)
-		? value
-		: null;
+	return value && MONEY_AMOUNT.test(value.amount) && CURRENCY.test(value.currency) ? value : null;
 }
 
 /**

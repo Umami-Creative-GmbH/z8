@@ -349,8 +349,7 @@ async function processInitial(
 		state.workflowStatus !== "pending" ||
 		state.assignmentStatus !== "pending" ||
 		// A legacy request moved to another approver no longer needs this card.
-		(state.approverEmployeeId !== null &&
-			state.approverEmployeeId !== work.recipientEmployeeId)
+		(state.approverEmployeeId !== null && state.approverEmployeeId !== work.recipientEmployeeId)
 	) {
 		return finishSimply(work, "cancelled", "obsolete");
 	}
@@ -479,20 +478,21 @@ async function processRefresh(
 		organizationId: work.organizationId,
 	});
 	const decided = state.assignmentStatus === "approved" || state.assignmentStatus === "rejected";
-	const evidence = !display || !decided
-		? null
-		: work.legacy
-			? // The legacy decision evidence of exactly this request (#296).
-				await findLegacyDecisionEvidenceByRequest(db, {
-					organizationId: work.organizationId,
-					approvalRequestId: work.legacy.approvalRequestId,
-				})
-			: ((
-					await listDecisionEvidence(db, {
+	const evidence =
+		!display || !decided
+			? null
+			: work.legacy
+				? // The legacy decision evidence of exactly this request (#296).
+					await findLegacyDecisionEvidenceByRequest(db, {
 						organizationId: work.organizationId,
-						workflowId: work.workflowId ?? "",
+						approvalRequestId: work.legacy.approvalRequestId,
 					})
-				).find((record) => record.assignmentId === work.assignmentId) ?? null);
+				: ((
+						await listDecisionEvidence(db, {
+							organizationId: work.organizationId,
+							workflowId: work.workflowId ?? "",
+						})
+					).find((record) => record.assignmentId === work.assignmentId) ?? null);
 	const notice = await approvalStatusNotice(
 		{ workflowStatus: state.workflowStatus, evidence },
 		display,

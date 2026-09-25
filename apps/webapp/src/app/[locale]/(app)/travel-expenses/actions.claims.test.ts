@@ -24,6 +24,8 @@ const mockState = vi.hoisted(() => {
 		dbUpdate: vi.fn(() => ({ set: updateSet })),
 		dbInsert: vi.fn(() => ({ values: insertValues })),
 		dbTransaction,
+		deliveryIntent: false,
+		kick: vi.fn(),
 		updateSet,
 		updateWhere,
 		updateReturning,
@@ -87,6 +89,18 @@ vi.mock("@/lib/approvals/evidence", async (importOriginal) => ({
 vi.mock("@/lib/approvals/workflow/cutover", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/workflow/cutover")>()),
 	acquireApprovalWriteLock: mockState.acquireWriteLock,
+}));
+
+// The approver's card intent (#296) commits inside the submission transaction.
+vi.mock("@/lib/approvals/delivery/intents", () => ({
+	recordLegacyDeliveryIntent: vi.fn(async (_tx: unknown, input: { event: string }) => {
+		mockState.txSteps.push(`delivery-intent:${input.event}`);
+		return mockState.deliveryIntent;
+	}),
+}));
+
+vi.mock("@/lib/approvals/delivery/kick", () => ({
+	kickApprovalDelivery: mockState.kick,
 }));
 
 vi.mock("@/lib/timezone/effective-timezone", () => ({
@@ -499,6 +513,7 @@ describe("submitTravelExpenseClaim", () => {
 			"lock-claim:update",
 			"read-attachments",
 			"capture:default_created",
+			"delivery-intent:submitted",
 		]);
 		expect(mockState.captureEvidence).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
@@ -506,6 +521,8 @@ describe("submitTravelExpenseClaim", () => {
 			submitter: { employeeId: "emp-1", userId: "user-1" },
 			routing: { kind: "default_created", approvalRequestId: "approval-1" },
 		});
+		// No delivery control: no intent was written, so nothing is kicked.
+		expect(mockState.kick).not.toHaveBeenCalled();
 	});
 
 	it("rolls back the submission and explains the hold when evidence is incomplete", async () => {

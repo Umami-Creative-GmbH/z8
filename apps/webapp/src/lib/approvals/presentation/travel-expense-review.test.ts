@@ -70,9 +70,7 @@ function revision(): LegacyTravelExpenseSubmittedRevisionRecord {
 	};
 }
 
-function decision(
-	overrides: Partial<LegacyDecisionEvidenceRecord>,
-): LegacyDecisionEvidenceRecord {
+function decision(overrides: Partial<LegacyDecisionEvidenceRecord>): LegacyDecisionEvidenceRecord {
 	return {
 		id: "decision-1",
 		authority: "legacy",

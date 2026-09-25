@@ -162,7 +162,9 @@ const {
 const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { GET: getApprovalDetail } = await import("@/app/api/approvals/inbox/[id]/route");
-const { resolveApprovalReviewArrival } = await import("@/lib/approvals/presentation/review-arrival");
+const { resolveApprovalReviewArrival } = await import(
+	"@/lib/approvals/presentation/review-arrival"
+);
 const { parseApprovalReviewTarget } = await import(
 	"@/lib/approvals/presentation/review-navigation"
 );
@@ -549,8 +551,6 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 		).inline_keyboard.flat();
 	const approveData = (card: TelegramCall) =>
 		buttonsOf(card).find((button) => button.callback_data?.includes('"ba"'))?.callback_data ?? "";
-	const rejectData = (card: TelegramCall) =>
-		buttonsOf(card).find((button) => button.callback_data?.includes('"br"'))?.callback_data ?? "";
 
 	async function claimStatus(claimId: string): Promise<string> {
 		const { rows } = await admin.query<{ status: string }>(
@@ -816,9 +816,10 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 		const timeline = history.sections.find(
 			(section) => section.type === "timeline" && section.title === "Evidence history",
 		);
-		expect(timeline?.type === "timeline" && timeline.events.map((event) => event.label)).toEqual(
-			["Submitted", "Claim approved"],
-		);
+		expect(timeline?.type === "timeline" && timeline.events.map((event) => event.label)).toEqual([
+			"Submitted",
+			"Claim approved",
+		]);
 	});
 
 	it("records a rejection at its persisted time and never stores the reason", async () => {
@@ -1112,9 +1113,11 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 		const timeline = history.sections.find(
 			(section) => section.type === "timeline" && section.title === "Evidence history",
 		);
-		expect(timeline?.type === "timeline" && timeline.events.map((event) => event.label)).toEqual(
-			["Submitted", "Approval recorded — awaiting further approval", "Claim approved"],
-		);
+		expect(timeline?.type === "timeline" && timeline.events.map((event) => event.label)).toEqual([
+			"Submitted",
+			"Approval recorded — awaiting further approval",
+			"Claim approved",
+		]);
 	});
 
 	it("refreshes a delivered card after a web rejection", async () => {
@@ -1174,9 +1177,9 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 			second.requestId,
 			ids.backupManager,
 		]);
-		expect(
-			await attempt({ bindingId: secondMessage.binding_id, queryId: "t296-q-moved" }),
-		).toEqual({ status: "review_required" });
+		expect(await attempt({ bindingId: secondMessage.binding_id, queryId: "t296-q-moved" })).toEqual(
+			{ status: "review_required" },
+		);
 		await admin.query("update approval_request set approver_id = $2 where id = $1", [
 			second.requestId,
 			ids.manager,
@@ -1206,7 +1209,11 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 
 		// The same card still decides once everything matches again.
 		expect(
-			await attempt({ bindingId: secondMessage.binding_id, queryId: "t296-q-ok", action: "reject" }),
+			await attempt({
+				bindingId: secondMessage.binding_id,
+				queryId: "t296-q-ok",
+				action: "reject",
+			}),
 		).toMatchObject({ status: "decided", replayed: false });
 		expect(await claimStatus(second.claimId)).toBe("rejected");
 	});

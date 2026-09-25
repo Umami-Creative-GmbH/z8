@@ -1006,11 +1006,7 @@ export function approvalDeliveryMessageLegacyLifecycle(
 export async function isApprovalDeliveryMessagePending(
 	message: Pick<
 		ApprovalDeliveryMessageRecord,
-		| "organizationId"
-		| "lifecycle"
-		| "workflowId"
-		| "assignmentId"
-		| "legacyApprovalRequestId"
+		"organizationId" | "lifecycle" | "workflowId" | "assignmentId" | "legacyApprovalRequestId"
 	>,
 ): Promise<boolean> {
 	if (message.lifecycle === "legacy") {

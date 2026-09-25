@@ -1,10 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import {
-	approvalChainStageInstance,
-	approvalRequest,
-	travelExpenseClaim,
-} from "@/db/schema";
+import { approvalChainStageInstance, approvalRequest, travelExpenseClaim } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { ApprovalDatabase } from "../server/types";
 import type { ApprovalWorkflowStatus } from "../workflow/ports";
@@ -280,8 +276,7 @@ export async function findLegacyTravelExpenseDecisionReplay(
 	const matches =
 		evidence.receipt.idempotencyKey === travelExpenseDecisionIdempotencyKey(input) &&
 		evidence.receipt.actorFingerprint === employeeActorFingerprint(input.actor) &&
-		evidence.receipt.commandFingerprint ===
-			fingerprintLegacyTravelExpenseDecisionCommand(input);
+		evidence.receipt.commandFingerprint === fingerprintLegacyTravelExpenseDecisionCommand(input);
 	return matches ? evidence : null;
 }
 
