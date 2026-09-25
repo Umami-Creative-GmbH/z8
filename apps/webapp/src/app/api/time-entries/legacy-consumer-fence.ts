@@ -21,9 +21,8 @@
  *
  * Retire or narrow this fence when the #266 inventory shows no remaining
  * pre-preservation reader, or when a new cookie client adopts
- * `id`/`replay`/`organizationId`: such clients are classified here. The
- * extension is retired (#282), so installed X1–X3 readers remain the only
- * extension-origin callers.
+ * `id`/`replay`/`organizationId`: such clients are classified here. See
+ * docs/extension-clock-client-retirement-282.md for the retired extension.
  */
 export type LegacyClockConsumer =
 	| "legacy-browser-queue"

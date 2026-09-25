@@ -26,9 +26,9 @@ Basis:
 ## What retirement does not do
 
 Removing the source does not remove installed extensions. Installed X1–X3 readers
-(see the #266 cohort table) keep running. They keep the user's cookies and post
-legacy bodies to `POST /api/time-entries` from a `chrome-extension://` origin every
-minute. They are **old consumers, not supported clients**. Retirement removes the
+(see the #266 cohort table) keep running. They keep the user's cookies and retry
+queued rows every minute as legacy bodies to `POST /api/time-entries`, from a
+`chrome-extension://` origin. They are **old consumers, not supported clients**. Retirement removes the
 adoption work. It does not remove the old-consumer control that #259/#263 require
 before stricter admission.
 
@@ -45,12 +45,13 @@ Other effects:
 
 ## Retained entry points
 
-| Entry point | State after retirement | Disposition |
-| --- | --- | --- |
-| `POST /api/time-entries` from an extension origin (X1–X3) | Legacy writer. It does not participate in the adopted work operations. | #327: drain or gate before an organization adopts. |
-| `legacy-extension-queue` fence (`apps/webapp/src/app/api/time-entries/legacy-consumer-fence.ts`) | Stays. It rewrites 400 to 409 so X1–X3 keep the row. | Retire it only when the inventory shows no extension reader remains. #282 no longer adds a cookie client that it would misclassify. Any rollback release must keep it (#331). |
-| `GET /api/extension/projects` | Read-only project list for the popup. It has no effect on queued rows. | Keep while installed readers exist. Removal is harmless to rows and belongs with the #329 communication decision. |
-| User guide `apps/docs/content/docs/guide/user-guide/browser-extension.mdx` and the `extension` entry in `apps/docs/content/docs/tech/technical/index.mdx` | Still describe installing the extension and its offline sync. | Replace them with retirement guidance in the same #329 step that decides queue recovery, so the guidance does not send users to uninstall before recovery. |
+| Entry point | State after retirement | Checks that exercise it | Disposition |
+| --- | --- | --- | --- |
+| `POST /api/time-entries` from an extension origin (X1–X3) | Legacy writer. It does not participate in the adopted work operations. | Route tests (`route.test.ts`) with X1/X2- and X3-shaped bodies; the #275 PostgreSQL suite replays a committed extension action ID after eight days. No installed extension build was run. | #327: drain or gate before an organization adopts. |
+| The fence's `legacy-extension-queue` classification (`apps/webapp/src/app/api/time-entries/legacy-consumer-fence.ts`) | Stays. It rewrites 400 to 409 so X1–X3 keep the row. | Route tests, and the #266 Chromium probe: a minimal MV3 extension posting an X1/X2-shaped body got 409. Firefox/Safari origins and the X1 401 path are untested. | Retire it only when the inventory shows no extension reader remains. #282 no longer adds a cookie client that it would misclassify. Any rollback release must keep it (#331). |
+| `GET /api/time-entries/status` | Read-only. Installed readers poll it every minute from the background worker and every 30 seconds from the open popup. It has no effect on queued rows. | None for extension callers. | Keep while installed readers exist. Shared with other clients, so not an extension-only removal. |
+| `GET /api/extension/projects` | Read-only project list for the popup. It has no effect on queued rows. | None. | Keep while installed readers exist. Removal is harmless to rows and belongs with the #329 communication decision. |
+| User guide `apps/docs/content/docs/guide/user-guide/browser-extension.mdx` and the `extension` entry in `apps/docs/content/docs/tech/technical/index.mdx` | Still describe installing the extension and its offline sync. | Not applicable. | Replace them with retirement guidance in the same #329 step that decides queue recovery, so the guidance does not send users to uninstall before recovery. |
 
 ## Items moved to the activation tickets
 
@@ -60,13 +61,16 @@ Other effects:
   `Origin` of legacy requests in server logs), cohorts, and the servers they post to.
 - Store delisting, or confirmation that no listing exists.
 - Held rows: fenced rows stay at the head of an extension queue with no recovery UI.
-  Decide between an explicit acceptance of loss and a recovery path before telling
-  users to uninstall.
+  A recovery path is needed before users are told to uninstall.
 - Residual path 5: X1 still deletes on 401 (expired session).
 - User-facing retirement communication and the docs replacement above.
-- Proof, or an explicit acceptance decision, that installed readers cannot
-  destructively process unresolved rows before stricter admission. This was #282's
-  "effective old-consumer update/disable evidence" criterion.
+- Proof that installed readers cannot destructively process unresolved rows before
+  stricter admission. This was #282's "effective old-consumer update/disable
+  evidence" criterion. #263 blocks activation wherever such a reader can still
+  process affected records. The binding resolutions offer no acceptance
+  alternative, so accepting the residual risk (for example lost X1 rows) would
+  need a separate focused decision (#331: "a focused decision rather than weakened
+  contracts").
 
 **#327 (writers and drain):** legacy extension-origin writes are a non-participating
 writer for adopted organizations.
@@ -82,7 +86,7 @@ in every rollback target.
 | Persist the frozen command before send, with its binding | Not applicable: there is no extension client. |
 | Negotiated submit/lookup, receipt before removal, pause without downgrade | Not applicable. The #275 routes stay available to other clients. |
 | Interrupted migration, context changes, crash windows; old-consumer update/disable evidence | Migration and crash cases: not applicable. Old-consumer evidence moved to #329. |
-| Canonical scenarios through the real boundary | Not applicable to a retired client. The fence's route tests and the Chromium extension-origin probe from #266 still cover installed readers. |
+| Canonical scenarios through the real boundary | Not applicable to a retired client. For installed readers, only the server side is exercised (see the checks column above). The removed X1–X3 code was never run, so no runtime guarantee about them is claimed. |
 
 ## Verification
 

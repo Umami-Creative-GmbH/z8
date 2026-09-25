@@ -72,7 +72,9 @@ collision, never new work.
   Replacement keeps the existing employee eligibility validators.
 - The event zone is recorded with the existing `browser` source (captured by the
   client at event time). The command has no finer provenance field yet. Distinguishing
-  device, extension and desktop capture is a client-adoption follow-up (#329).
+  device and desktop capture is a client-adoption follow-up (#329). The extension
+  is retired and will not send version 2 commands
+  ([retirement record](extension-clock-client-retirement-282.md)).
 
 ## Order of checks
 
@@ -259,11 +261,12 @@ This slice closes on implementation. Activation items move to #327, #329 and #33
   be drained or gated before activation, and the #266 fence must keep old queue readers
   from deleting rows when that happens.
 - **Client adoption (#329).** No client sends version 2 yet. Browser (#279), mobile
-  (#278), desktop and extension adapters must freeze commands before the first attempt,
+  (#278) and desktop adapters must freeze commands before the first attempt,
   persist the receipt before leaving the active queue, and pause on `context_mismatch`,
   `not_adopted`, `unsupported_version` and `unknown`. Deployed-client inventory and
   effective update or disable control for old destructive consumers are required before
-  strict admission.
+  strict admission. The extension is retired (#282), but its installed readers remain
+  such old consumers.
 - **Lookup fencing.** `not_committed` is not a tombstone. A request that is still
   before its transaction can commit after a lookup. That is safe for clients that only
   resend the same identity, and client adapters must keep that rule.
