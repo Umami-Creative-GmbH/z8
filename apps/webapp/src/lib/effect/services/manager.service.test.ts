@@ -4,6 +4,20 @@ import { employee, employeeManagers } from "@/db/schema";
 import { DatabaseService } from "./database.service";
 import { ManagerService, ManagerServiceLive } from "./manager.service";
 
+// Protection itself is covered by authorization-mutation.test.ts and the
+// PostgreSQL suite; here it runs the mutation in the fake's transaction.
+const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: async (
+		scope: unknown,
+		mutation: (tx: unknown) => Promise<unknown>,
+		database: { transaction: (callback: (tx: unknown) => Promise<unknown>) => Promise<unknown> },
+	) => {
+		protection.scopes.push(scope);
+		return database.transaction(mutation);
+	},
+}));
+
 function createManagerServiceTestContext({
 	employeeRecord = { id: "employee-1", organizationId: "org-1" },
 	existingAssignment,
@@ -31,7 +45,8 @@ function createManagerServiceTestContext({
 				findFirst: vi
 					.fn()
 					.mockResolvedValueOnce(employeeRecord)
-					.mockResolvedValueOnce(managerRecord),
+					.mockResolvedValueOnce(managerRecord)
+					.mockResolvedValue(employeeRecord),
 			},
 			employeeManagers: {
 				findFirst: vi.fn(async () => existingAssignment ?? null),
@@ -46,6 +61,16 @@ function createManagerServiceTestContext({
 			return { set: updateSet };
 		}),
 		delete: vi.fn(() => ({ where: deleteWhere })),
+		// Reads inside the protected transaction: the existing link on assignment,
+		// every current link on removal.
+		select: vi.fn(() => ({
+			from: vi.fn(() => ({
+				where: vi.fn(async () =>
+					managerAssignments ?? (existingAssignment ? [existingAssignment] : []),
+				),
+			})),
+		})),
+		transaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) => callback(db)),
 	};
 
 	const dbLayer = Layer.succeed(
@@ -89,6 +114,17 @@ describe("ManagerService", () => {
 
 		expect(employeeManagersTableUpdateCount()).toBeGreaterThan(0);
 		expect(employeeTableUpdateCount()).toBe(0);
+	});
+
+	it("changes relations under both employees' configuration/access protection", async () => {
+		protection.scopes.length = 0;
+		const { runAssignManager } = createManagerServiceTestContext();
+
+		await runAssignManager(false);
+
+		expect(protection.scopes).toEqual([
+			{ organizationId: "org-1", employeeIds: ["employee-1", "manager-1"] },
+		]);
 	});
 
 	it("rejects manager assignments across organizations", async () => {

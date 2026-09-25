@@ -65,12 +65,17 @@ export async function readAppendAdmission(
 	return control?.mode === "active" ? "append" : "legacy";
 }
 
+const organizationConfigurationKey = (organizationId: string) =>
+	JSON.stringify(["work-organization-configuration", organizationId]);
+const userConfigurationAccessKey = (userId: string) =>
+	JSON.stringify(["work-user-configuration-access", userId]);
+
 export async function acquireOrganizationConfigurationGuard(
 	transaction: Pick<Transaction, "execute">,
 	organizationId: string,
 ) {
 	await transaction.execute(
-		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
 	);
 }
 
@@ -80,7 +85,33 @@ export async function acquireUserConfigurationAccessGuards(
 ) {
 	for (const userId of [...new Set(userIds)].sort()) {
 		await transaction.execute(
-			sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-user-configuration-access", userId])}, 0))`,
+			sql`select pg_advisory_xact_lock_shared(hashtextextended(${userConfigurationAccessKey(userId)}, 0))`,
+		);
+	}
+}
+
+/**
+ * Exclusive counterpart for a writer of organization-wide configuration that
+ * work transactions depend on. Writers take it in their original transaction
+ * before the first dependent mutation, and before any user protection.
+ */
+export async function protectOrganizationConfiguration(
+	transaction: Pick<Transaction, "execute">,
+	organizationId: string,
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
+	);
+}
+
+/** Exclusive counterpart for writers of user-scoped configuration/access facts, sorted. */
+export async function protectUserConfigurationAccess(
+	transaction: Pick<Transaction, "execute">,
+	userIds: readonly string[],
+) {
+	for (const userId of [...new Set(userIds)].sort()) {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${userConfigurationAccessKey(userId)}, 0))`,
 		);
 	}
 }
