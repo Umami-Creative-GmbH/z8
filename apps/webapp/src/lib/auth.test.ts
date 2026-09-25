@@ -220,25 +220,32 @@ describe("organization member removal", () => {
 		expect(reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
 	});
 
-	it("runs access revocation and billing only after membership removal", () => {
+	it("coordinates membership writers and runs removal cleanup in the removal transaction", () => {
 		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const revocationSource = readFileSync(
 			join(process.cwd(), "src/lib/auth/organization-session-revocation.ts"),
 			"utf8",
 		);
-		const beforeRemovalHook = source.slice(
-			source.indexOf("beforeRemoveMember"),
-			source.indexOf("afterRemoveMember"),
-		);
-		const afterRemovalHook = source.slice(
-			source.indexOf("afterRemoveMember"),
-			source.indexOf("},", source.indexOf("afterRemoveMember")) + 2,
-		);
+		const hooks = authModule.auth.options.plugins.find(
+			(plugin) => plugin.id === "organization",
+		)?.options?.organizationHooks;
 
-		expect(beforeRemovalHook).not.toContain("revokeRemovedMemberAccess");
-		expect(beforeRemovalHook).not.toContain("completeRemovedMemberCleanup");
-		expect(beforeRemovalHook).not.toContain("syncBillingSeats");
-		expect(afterRemovalHook).toContain("completeRemovedMemberCleanup");
+		// Removal cleanup is owned by the coordination module (#314), not an after-commit hook here.
+		expect(source).toContain(
+			"organizationHooks: createCoordinatedOrganizationHooks(",
+		);
+		expect(source).not.toContain("completeRemovedMemberCleanup({");
+		expect(source).toContain("drizzleAdapter(captureAuthTransactions(db)");
+		expect(hooks).toEqual(
+			expect.objectContaining({
+				beforeUpdateMemberRole: expect.any(Function),
+				beforeRemoveMember: expect.any(Function),
+				afterRemoveMember: expect.any(Function),
+				beforeAddMember: expect.any(Function),
+				beforeAcceptInvitation: expect.any(Function),
+				beforeDeleteOrganization: expect.any(Function),
+			}),
+		);
 		expect(revocationSource).toContain("secondaryStorage.deleteOrThrow(token)");
 		expect(authModule.auth.options.session?.cookieCache?.enabled).toBe(false);
 	});
@@ -343,6 +350,37 @@ describe("makeEmailLookupCaseInsensitiveAdapter", () => {
 		}
 		expect(wrapped.consumeOne).toBe(consumeOne);
 		expect(wrapped.incrementOne).toBe(incrementOne);
-		expect(wrapped.transaction).toBe(transaction);
+		expect(wrapped.transaction).not.toBe(transaction);
+	});
+
+	it("keeps user email lookups insensitive inside Better Auth transactions", async () => {
+		const user = { id: "user_1" };
+		const findOne = vi.fn(async () => user);
+		const create = vi.fn();
+		const transactionAdapter = { findOne, create };
+		const transaction = vi.fn(
+			async (callback: (trx: typeof transactionAdapter) => Promise<unknown>) =>
+				callback(transactionAdapter),
+		);
+		const wrapped = makeEmailLookupCaseInsensitiveAdapter({
+			findOne: vi.fn(),
+			transaction,
+		} as never);
+
+		const result = await wrapped.transaction(async (trx) => {
+			expect(trx.create).toBe(create);
+			return trx.findOne({
+				model: "user",
+				where: [{ field: "email", value: "USER@Example.com" }],
+			});
+		});
+
+		expect(result).toBe(user);
+		expect(findOne).toHaveBeenCalledWith({
+			model: "user",
+			where: [
+				{ field: "email", value: "USER@Example.com", mode: "insensitive" },
+			],
+		});
 	});
 });

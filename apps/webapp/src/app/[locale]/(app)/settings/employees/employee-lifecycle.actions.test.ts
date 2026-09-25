@@ -35,8 +35,26 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	},
 }));
 
+// The coordinated auth transaction (#314) is covered by auth-mutation-coordination
+// tests and the PostgreSQL suite; here it records that removal ran inside it.
+const coordination = vi.hoisted(() => ({ inside: false, removalsInside: 0 }));
 vi.mock("@/lib/auth", () => ({
-	auth: { api: { removeMember: mocks.authRemoveMember } },
+	auth: {
+		api: {
+			removeMember: (input: unknown) => {
+				if (coordination.inside) coordination.removalsInside += 1;
+				return mocks.authRemoveMember(input);
+			},
+		},
+	},
+	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+		coordination.inside = true;
+		try {
+			return await mutation();
+		} finally {
+			coordination.inside = false;
+		}
+	},
 }));
 
 vi.mock("@/lib/auth/member-removal-cleanup", () => ({
@@ -981,10 +999,12 @@ describe("removeEmployeeAccessAction", () => {
 
 	it("delegates removal by membership ID with the actor organization and request headers", async () => {
 		const { requestHeaders } = setupRemoval();
+		coordination.removalsInside = 0;
 
 		const result = await removeEmployeeAccessAction(employeeId);
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(coordination.removalsInside).toBe(1);
 		expect(mocks.authRemoveMember).toHaveBeenCalledExactlyOnceWith({
 			body: {
 				organizationId,

@@ -63,14 +63,27 @@ vi.mock("next/headers", () => ({
 	headers: headersMock,
 }));
 
+// Records that role updates run inside the coordinated auth transaction (#314).
+const authCoordination = vi.hoisted(() => ({ inside: false, updatesInside: 0 }));
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
 			getSession: getSessionMock,
 			createInvitation: createInvitationMock,
 			cancelInvitation: cancelInvitationMock,
-			updateMemberRole: updateMemberRoleMock,
+			updateMemberRole: (input: unknown) => {
+				if (authCoordination.inside) authCoordination.updatesInside += 1;
+				return updateMemberRoleMock(input);
+			},
 		},
+	},
+	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+		authCoordination.inside = true;
+		try {
+			return await mutation();
+		} finally {
+			authCoordination.inside = false;
+		}
 	},
 }));
 
@@ -434,12 +447,14 @@ describe("organization invitation actions", () => {
 				status: "approved",
 			});
 		updateMemberRoleMock.mockResolvedValue({});
+		authCoordination.updatesInside = 0;
 
 		const result = await updateMemberRole("org-1", "target-member", {
 			role: "admin",
 		});
 
 		expect(result).toMatchObject({ success: true });
+		expect(authCoordination.updatesInside).toBe(1);
 		expect(updateMemberRoleMock).toHaveBeenCalledExactlyOnceWith({
 			body: {
 				organizationId: "org-1",

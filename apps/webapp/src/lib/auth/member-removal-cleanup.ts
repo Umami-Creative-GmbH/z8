@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import { secondaryStorage } from "@/lib/redis";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
@@ -44,11 +45,21 @@ export async function revokeRemovedMemberAccess(
 	return { accessRestored: outcome.accessRestored };
 }
 
+/**
+ * Deactivates a removed member's employee and deletes their organization
+ * session rows. The user's exclusive configuration/access guard comes first
+ * (#314), ahead of the identity lock; inside the removal transaction the
+ * removal's before-hook already holds it.
+ */
 export async function revokeRemovedMemberAccessInTransaction(
 	dbClient: MemberRemovalTransaction,
 	userId: string,
 	organizationId: string,
 ): Promise<RemovedMemberAccessOutcome> {
+	await protectAuthorizationMutation(dbClient, {
+		organizationId,
+		userIds: [userId],
+	});
 	const targetUser = await dbClient.query.user.findFirst({
 		where: eq(authSchema.user.id, userId),
 		columns: { email: true },
