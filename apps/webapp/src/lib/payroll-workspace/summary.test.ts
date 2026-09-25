@@ -817,6 +817,7 @@ describe("workspace under scoped collection (#322)", () => {
 		approvalState: "approved" as const,
 		updatedAt: instant("2026-06-30T22:30:00Z"),
 		workPeriod: null,
+		pendingCorrection: false,
 		workCategory: null,
 		projects: [],
 		...overrides,

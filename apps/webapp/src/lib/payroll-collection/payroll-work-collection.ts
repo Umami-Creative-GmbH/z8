@@ -6,7 +6,8 @@
  * what makes the scope uncertain. Every in-scope record is classified **before** any
  * approval, end-present or project filter could drop it:
  *
- * - open work and work whose approval is undecided are blockers, not omissions;
+ * - open work, work whose approval is undecided and approved work with an undecided
+ *   correction are blockers, not omissions;
  * - approved work is credited with the shared protected-minute rule (#321) in the
  *   employee-local window, or blocks when its minutes cannot be allocated;
  * - rejected work, the record of a deleted period, valid zero-minute work and work
@@ -67,6 +68,8 @@ export interface PayrollCollectionWorkRecord {
 	updatedAt: Instant;
 	/** The legacy period linking the record, if any. */
 	workPeriod: { id: string; graphRevision: number; deleted: boolean } | null;
+	/** A correction of the record awaits a decision (request or period pending changes). */
+	pendingCorrection: boolean;
 	workCategory: { id: string; name: string; factor: string | null } | null;
 	projects: readonly { projectId: string; name: string; weightPercent: number }[];
 }
@@ -91,6 +94,7 @@ export interface PayrollCollectionSnapshot {
 export type PayrollWorkBlockerKind =
 	| "open_work"
 	| "pending_work_approval"
+	| "pending_work_correction"
 	| "unresolved_work_minutes"
 	| "uncertain_historical_work"
 	| "offboarding_clock_repair";
@@ -200,6 +204,11 @@ export function assessPayrollWorkCollection(
 		}
 		if (record.approvalState !== "approved") {
 			blocker("pending_work_approval");
+			continue;
+		}
+		// Approved values that an undecided correction may still change.
+		if (record.pendingCorrection) {
+			blocker("pending_work_correction");
 			continue;
 		}
 
@@ -321,7 +330,7 @@ export function payrollWorkInputDigest(
 
 /**
  * Whether a record may touch the window. Open work is relevant from its start on;
- * reversed endpoints have no established interval and stay relevant.
+ * reversed endpoints have no established interval, so the hull of both is used.
  */
 function touchesWindow(record: PayrollCollectionWorkRecord, window: InstantRange): boolean {
 	const start = record.startAt.epochNanoseconds;
@@ -329,7 +338,7 @@ function touchesWindow(record: PayrollCollectionWorkRecord, window: InstantRange
 	const windowEnd = window.endExclusive.epochNanoseconds;
 	if (record.endAt === null) return start < windowEnd;
 	const end = record.endAt.epochNanoseconds;
-	if (end < start) return true;
+	if (end < start) return end < windowEnd && start >= windowStart;
 	if (end === start) return windowStart <= start && start < windowEnd;
 	return start < windowEnd && end > windowStart;
 }

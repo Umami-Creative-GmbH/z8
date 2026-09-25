@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { parseISO } from "@/lib/datetime/luxon-utils";
 import type { CollectedPayrollWorkInput } from "@/lib/payroll-collection/payroll-work-collection";
 import type { WorkPeriodData } from "./types";
 
@@ -14,8 +14,9 @@ export function workPeriodsFromCollectedInput(input: CollectedPayrollWorkInput):
 		email: line.person.email || null,
 		firstName: line.person.firstName || null,
 		lastName: line.person.lastName || null,
-		startTime: DateTime.fromISO(line.startAt, { zone: "utc" }),
-		endTime: DateTime.fromISO(line.endExclusive, { zone: "utc" }),
+		// The formatter contract is still Luxon-typed; convert only at this boundary.
+		startTime: parseISO(line.startAt),
+		endTime: parseISO(line.endExclusive),
 		durationMinutes: line.minutes,
 		workCategoryId: line.workCategory?.id ?? null,
 		workCategoryName: line.workCategory?.name || null,

@@ -192,6 +192,7 @@ function sumCollectedMinutes(
 const COLLECTION_BLOCKER_LABELS: Record<PayrollWorkBlockerKind, string> = {
 	open_work: "Work without clock-out",
 	pending_work_approval: "Work awaiting approval",
+	pending_work_correction: "Pending time correction",
 	unresolved_work_minutes: "Unresolved work minutes",
 	uncertain_historical_work: "Historical work needs review",
 	offboarding_clock_repair: "Offboarding clock-out needs repair",
@@ -573,7 +574,7 @@ async function getBlockers(
 	period: { start: DateTime; end: DateTime },
 	organizationTimezone: string | null,
 	options: {
-		/** Scoped collection reports open work and departure timers itself (#322). */
+		/** Scoped collection reports open work, corrections and departure timers itself (#322). */
 		collectionOwnsWorkBlockers?: boolean;
 	} = {},
 ): Promise<PayrollBlocker[]> {
@@ -630,7 +631,9 @@ async function getBlockers(
 					or(isNull(timeRecord.endAt), gte(timeRecord.endAt, period.start.toUTC().toJSDate())),
 				),
 			),
-		db
+		collectionOwnsWorkBlockers
+			? []
+			: db
 			.select({
 				id: approvalRequest.id,
 				organizationId: approvalRequest.organizationId,

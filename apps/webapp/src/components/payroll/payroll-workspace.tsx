@@ -1412,10 +1412,11 @@ function PayrollBlockersAlert({
 							}`;
 							break;
 						case "pending_work_approval":
-							blockerType = t(
-								"payroll.blockers.pendingWorkApproval",
-								"Work awaiting approval",
-							);
+						case "pending_work_correction":
+							blockerType =
+								blocker.type === "pending_work_approval"
+									? t("payroll.blockers.pendingWorkApproval", "Work awaiting approval")
+									: t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
 							actionLabel = t(
 								"payroll.blockers.openApprovals",
 								"Open approvals",

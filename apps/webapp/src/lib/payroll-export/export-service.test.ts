@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
 	findFirst: vi.fn(),
-	findEmployee: vi.fn(),
 	updates: [] as Array<{ set?: unknown; where?: unknown }>,
 	inserts: [] as Array<{ table: unknown; values: unknown }>,
 	collectionActive: vi.fn(),
@@ -23,9 +22,6 @@ vi.mock("@/db", () => ({
 		query: {
 			payrollExportJob: {
 				findFirst: mockState.findFirst,
-			},
-			employee: {
-				findFirst: mockState.findEmployee,
 			},
 		},
 		transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
@@ -58,7 +54,6 @@ vi.mock("@/db", () => ({
 		organizationId: "payroll_export_job.organization_id",
 	},
 	payrollExportSyncRecord: {},
-	employee: { id: "employee.id", organizationId: "employee.organization_id" },
 }));
 
 vi.mock("@/lib/payroll-collection/payroll-work-collection-reader", () => ({
@@ -245,7 +240,6 @@ describe("payroll export under scoped work collection (#322)", () => {
 			config: { id: "config-1" },
 			format: {},
 		} as never);
-		mockState.findEmployee.mockResolvedValue({ userId: "user-1" });
 		mockState.collectionActive.mockResolvedValue(true);
 	});
 
@@ -260,6 +254,7 @@ describe("payroll export under scoped work collection (#322)", () => {
 			formatId: "datev_lohn",
 			requestedById: "employee-requester",
 			filters,
+			repairActorUserId: "user-1",
 		});
 
 		expect(mockState.collectPayrollWork).toHaveBeenCalledWith(expect.anything(), {
@@ -278,6 +273,25 @@ describe("payroll export under scoped work collection (#322)", () => {
 		expect(mockState.insertInput).toHaveBeenCalledWith(expect.anything(), "job-new", collectedInput);
 		// One collected line against a threshold of one: processed inline.
 		expect(result).toEqual({ jobId: "job-new", isAsync: false });
+	});
+
+	it("collects without repair when no administrator is present", async () => {
+		mockState.collectPayrollWork.mockResolvedValue({
+			collection: { input: collectedInput, blockers: [], employeeTimezones: {} },
+			repair: { status: "not_requested" },
+		});
+
+		await createExportJob({
+			organizationId: "org-1",
+			formatId: "datev_lohn",
+			requestedById: "employee-requester",
+			filters,
+		});
+
+		expect(mockState.collectPayrollWork).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ repairActorUserId: null }),
+		);
 	});
 
 	it("refuses the whole export when the scope is uncertain and creates no job", async () => {

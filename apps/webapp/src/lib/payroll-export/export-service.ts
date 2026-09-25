@@ -5,10 +5,11 @@
 
 import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { db, employee, payrollExportJob, payrollExportSyncRecord } from "@/db";
+import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
 import {
 	insertPayrollExportWorkInput,
+	PayrollExportWorkInputIntegrityError,
 	readPayrollExportWorkInput,
 } from "@/lib/payroll-collection/payroll-export-work-input";
 import type { CollectedPayrollWorkInput } from "@/lib/payroll-collection/payroll-work-collection";
@@ -132,6 +133,11 @@ export async function createExportJob(params: {
 	formatId: string;
 	requestedById: string;
 	filters: PayrollExportFilters;
+	/**
+	 * The present organization administrator who may execute eligible historical repairs
+	 * before collection (#322). Omitted, collection runs without repair.
+	 */
+	repairActorUserId?: string | null;
 }): Promise<{
 	jobId: string;
 	isAsync: boolean;
@@ -268,6 +274,13 @@ export async function processExportJob({
 		// A job collected under scoped collection reuses its stored input, including on
 		// recovery; changed work is never reread for it.
 		const storedInput = await readPayrollExportWorkInput(db, job.organizationId, jobId);
+		if (
+			storedInput &&
+			(storedInput.scope.startDate !== job.filters.dateRange.start ||
+				storedInput.scope.endDate !== job.filters.dateRange.end)
+		) {
+			throw new PayrollExportWorkInputIntegrityError(jobId);
+		}
 
 		// Fetch data
 		const [workPeriods, absences, mappings] = await Promise.all([
@@ -419,21 +432,14 @@ export async function processExportJob({
  */
 async function collectExportWorkInput(params: {
 	organizationId: string;
-	requestedById: string;
 	filters: PayrollExportFilters;
+	repairActorUserId?: string | null;
 }): Promise<CollectedPayrollWorkInput> {
 	const startDate = params.filters.dateRange.start.toISODate();
 	const endDate = params.filters.dateRange.end.toISODate();
 	if (!startDate || !endDate) {
 		throw new Error("Invalid payroll export date range");
 	}
-	const requester = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.id, params.requestedById),
-			eq(employee.organizationId, params.organizationId),
-		),
-		columns: { userId: true },
-	});
 
 	const { collection, repair } = await collectPayrollWork(db, {
 		organizationId: params.organizationId,
@@ -444,7 +450,7 @@ async function collectExportWorkInput(params: {
 			teamIds: params.filters.teamIds,
 			projectIds: params.filters.projectIds,
 		},
-		repairActorUserId: requester?.userId ?? null,
+		repairActorUserId: params.repairActorUserId ?? null,
 	});
 
 	if (collection.blockers.length > 0) {

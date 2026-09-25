@@ -536,6 +536,14 @@ describeIntegration("scoped payroll work collection on PostgreSQL", () => {
 			"update time_record set end_at = null, duration_minutes = null where id = $1",
 			[open.record_id],
 		);
+		// Approved work whose correction still awaits a decision.
+		const corrected = await approvedWork(ids.worker, "2026-07-22", "08:00", "09:00");
+		await admin.query(
+			`insert into approval_request (organization_id, entity_type, entity_id, canonical_record_id,
+			   requested_by, approver_id, status, updated_at)
+			 values ($1, 'time_entry', $2, $3, $4, $5, 'pending', now())`,
+			[ids.organization, corrected.period_id, corrected.record_id, ids.worker, ids.owner],
+		);
 		const before = await counts();
 
 		const refused = await exportJuly();
@@ -569,6 +577,7 @@ describeIntegration("scoped payroll work collection on PostgreSQL", () => {
 		).toEqual([
 			["open_work", open.record_id],
 			["pending_work_approval", pending.record_id],
+			["pending_work_correction", corrected.record_id],
 		]);
 		expect(await counts()).toEqual(before);
 
@@ -579,9 +588,15 @@ describeIntegration("scoped payroll work collection on PostgreSQL", () => {
 			expect.arrayContaining([
 				["open_work", open.record_id],
 				["pending_work_approval", pending.record_id],
+				["pending_work_correction", corrected.record_id],
 			]),
 		);
-		expect(summary.blockers.some((blocker) => blocker.type === "missing_clock_out")).toBe(false);
+		// The collection owns these: no dismissible duplicates of the same work.
+		expect(
+			summary.blockers.filter((blocker) =>
+				["missing_clock_out", "pending_time_correction"].includes(blocker.type),
+			),
+		).toEqual([]);
 
 		// Without the control the legacy read runs and silently drops both: the difference
 		// this slice closes. Another organization's active control does not change that.
@@ -664,6 +679,17 @@ describeIntegration("scoped payroll work collection on PostgreSQL", () => {
 			"insert into historical_work_repair_control (organization_id, mode) values ($1, 'active')",
 			[ids.organization],
 		);
+		// A payroll clerk is not an organization administrator: no repair runs for them.
+		expect(await exportJuly(ids.clerkUser)).toMatchObject({
+			success: false,
+			code: "ConflictError",
+		});
+		const { rows: afterClerk } = await admin.query(
+			"select count(*)::int as count from completed_work_operation where organization_id = $1",
+			[ids.organization],
+		);
+		expect(afterClerk[0].count).toBe(receiptsBefore);
+
 		const result = await exportJuly();
 		expect(result).toMatchObject({ success: true });
 		const { jobId } = (result as { data: { jobId: string } }).data;

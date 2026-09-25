@@ -51,6 +51,7 @@ function work(
 		approvalState: "approved",
 		updatedAt: instant("2026-07-10T09:00:01Z"),
 		workPeriod: { id: `period-${id}`, graphRevision: 1, deleted: false },
+		pendingCorrection: false,
 		workCategory: null,
 		projects: [],
 		...overrides,
@@ -236,6 +237,40 @@ describe("assessPayrollWorkCollection", () => {
 		).toEqual([
 			["unresolved_work_minutes", "missing-minutes", "missing_stored_minutes"],
 			["unresolved_work_minutes", "unlocated-break", "unresolved_interval"],
+		]);
+	});
+
+	it("blocks approved work whose correction still awaits a decision", () => {
+		const result = assessPayrollWorkCollection(
+			snapshot({ records: [work("corrected", { pendingCorrection: true })] }),
+			july,
+		);
+
+		expect(result.blockers.map((blocker) => [blocker.kind, blocker.sourceId])).toEqual([
+			["pending_work_correction", "corrected"],
+		]);
+		expect(result.input.work).toEqual([]);
+	});
+
+	it("uses the hull of reversed endpoints for relevance", () => {
+		const result = assessPayrollWorkCollection(
+			snapshot({
+				records: [
+					work("reversed-july", {
+						startAt: instant("2026-07-10T09:00:00Z"),
+						endAt: instant("2026-07-10T07:00:00Z"),
+					}),
+					work("reversed-2019", {
+						startAt: instant("2019-03-10T09:00:00Z"),
+						endAt: instant("2019-03-10T07:00:00Z"),
+					}),
+				],
+			}),
+			july,
+		);
+
+		expect(result.blockers.map((blocker) => [blocker.sourceId, blocker.reason])).toEqual([
+			["reversed-july", "invalid_endpoints"],
 		]);
 	});
 

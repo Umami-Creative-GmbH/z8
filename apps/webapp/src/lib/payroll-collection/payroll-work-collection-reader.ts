@@ -23,6 +23,7 @@ import { and, eq, gte, inArray, isNull, lt, or, type SQL } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import {
+	approvalRequest,
 	employee,
 	historicalWorkRepairControl,
 	payrollWorkCollectionControl,
@@ -271,11 +272,17 @@ async function readPayrollCollectionSnapshot(
 					eq(timeRecord.organizationId, organizationId),
 					eq(timeRecord.recordKind, "work"),
 					inArray(timeRecord.employeeId, chunk),
-					lt(timeRecord.startAt, rangeEnd),
 					or(
-						isNull(timeRecord.endAt),
-						gte(timeRecord.endAt, rangeStart),
-						lt(timeRecord.endAt, timeRecord.startAt),
+						and(
+							lt(timeRecord.startAt, rangeEnd),
+							or(isNull(timeRecord.endAt), gte(timeRecord.endAt, rangeStart)),
+						),
+						// Reversed endpoints: the hull of both instants.
+						and(
+							lt(timeRecord.endAt, timeRecord.startAt),
+							lt(timeRecord.endAt, rangeEnd),
+							gte(timeRecord.startAt, rangeStart),
+						),
 					),
 				),
 			),
@@ -328,6 +335,24 @@ async function readPayrollCollectionSnapshot(
 				),
 			),
 	);
+	// Corrections of these records that still await a decision.
+	const correctedRecordIds = new Set(
+		(
+			await selectInChunks(recordIds, (chunk) =>
+				reader
+					.select({ recordId: approvalRequest.canonicalRecordId })
+					.from(approvalRequest)
+					.where(
+						and(
+							eq(approvalRequest.organizationId, organizationId),
+							eq(approvalRequest.entityType, "time_entry"),
+							eq(approvalRequest.status, "pending"),
+							inArray(approvalRequest.canonicalRecordId, chunk),
+						),
+					),
+			)
+		).map((row) => row.recordId),
+	);
 
 	// Whole-history evidence of the scoped employees, before any filter.
 	const evidence = await readHistoricalWorkEvidence(reader, organizationId, employeeIds);
@@ -341,7 +366,10 @@ async function readPayrollCollectionSnapshot(
 
 	const linkingPeriod = new Map<string, PayrollCollectionWorkRecord["workPeriod"]>();
 	for (const period of evidence.periods.toSorted((left, right) => compare(left.id, right.id))) {
-		if (period.canonicalRecordId === null || linkingPeriod.has(period.canonicalRecordId)) continue;
+		if (period.canonicalRecordId === null) continue;
+		// Legacy pending changes on any linking period are an undecided correction.
+		if (period.hasPendingChanges) correctedRecordIds.add(period.canonicalRecordId);
+		if (linkingPeriod.has(period.canonicalRecordId)) continue;
 		linkingPeriod.set(period.canonicalRecordId, {
 			id: period.id,
 			graphRevision: period.graphRevision,
@@ -377,6 +405,7 @@ async function readPayrollCollectionSnapshot(
 				approvalState: row.approvalState,
 				updatedAt: instantFromDate(row.updatedAt),
 				workPeriod: linkingPeriod.get(row.id) ?? null,
+				pendingCorrection: correctedRecordIds.has(row.id),
 				workCategory:
 					detail?.categoryId && detail.categoryName
 						? { id: detail.categoryId, name: detail.categoryName, factor: detail.categoryFactor }

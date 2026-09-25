@@ -21,6 +21,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
+	getAbility: vi.fn(async () => ({ can: () => false })),
 }));
 
 vi.mock("@/lib/payroll-access/permissions", () => ({

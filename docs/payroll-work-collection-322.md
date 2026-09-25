@@ -46,8 +46,16 @@ append assurance, and the departure-repair finder.
 If the organization's `historical_work_repair_control` is `active`, the collection
 reads the #320 plan for the scoped employees. It then applies every employee's plan
 through `applyHistoricalGapRepair`, one short coordinated transaction per employee. The
-authenticated export requester is recorded as the executor. The fixed reason is
-`Eligible historical gap repair before payroll work collection`. A stale plan simply
+fixed reason is `Eligible historical gap repair before payroll work collection`.
+
+Repair needs a present organization administrator as its executor, the same authority
+the #320 route requires:
+
+- the workspace export passes the requester only when their ability allows `manage OrgSettings`;
+- the settings export, which is administrator-only, passes the session user;
+- scheduled exports pass nobody, so they never repair.
+
+Without an executor, collection runs without repair. A stale plan simply
 leaves its gap in place, and the final readiness check decides. If repair is not
 authorized, no plan is read, and the gap blocks the export.
 
@@ -67,7 +75,8 @@ at all. It never lands in one read and not the other.
 ### 3. Classification before any filter
 
 Every record of a scoped employee that touches the employee-local window is
-classified before a filter could drop it:
+classified before a filter could drop it. For reversed endpoints, the hull of both
+instants decides whether the record touches the window.
 
 | Record | Outcome |
 | --- | --- |
@@ -75,6 +84,7 @@ classified before a filter could drop it:
 | Record of a deleted period | Excluded (`deleted`). It is never payable. |
 | No end | Blocker `open_work` |
 | Approval undecided (`pending`, `draft`) | Blocker `pending_work_approval` |
+| Approved, with a pending `time_entry` approval request on the record or legacy pending changes on its period | Blocker `pending_work_correction`: its approved values may still change |
 | Approved, and its minutes cannot be allocated | Blocker `unresolved_work_minutes`, with the #321 reason |
 | Approved, outside a project filter | Excluded (`outside_project_filter`), after readiness |
 | Approved, zero credited minutes | Excluded (`zero_minutes`): valid zero-minute work, kept distinct from missing work |
@@ -101,7 +111,7 @@ Reading the input order-independently yields the same input and the same digest.
 ## Consumer adoption
 
 - **`createExportJob`** (the workspace export action, the settings export action and the scheduled-export executor) collects first. On any blocker it throws `PayrollWorkCollectionBlockedError`, and no job is created. Otherwise it inserts the job and its input **in one transaction**. The sync/async decision counts the collected lines.
-- **`processExportJob`** (inline processing and the `payroll-export` worker job) reads the stored input and formats it. It never rereads work for such a job, including on a BullMQ retry after a failed delivery. A job without stored input, created before activation, keeps the legacy read.
+- **`processExportJob`** (inline processing and the `payroll-export` worker job) reads the stored input, checks its dates against the job's filters, and formats it. It never rereads work for such a job, including on a BullMQ retry after a failed delivery. A job without stored input, created before activation, keeps the legacy read.
 - **Payroll workspace**: under the control, credited minutes come from the collection's lines, so workspace and export agree by construction. Its work blockers (`open_work`, `pending_work_approval`, `uncertain_historical_work`, `unresolved_work_minutes`, `offboarding_clock_repair`) come from the collection and cannot be dismissed. The legacy dismissible `missing_clock_out` blocker is not produced there, because `open_work` replaces it. Absence and correction blockers are unchanged. The workspace does not repair: it is a read, and it shows unaffected work under explicit blockers.
 - **Organization-wide cutover**: under the control, `assertCanonicalCutoverReady` no longer runs for work. Its organization-wide backfill would rewrite work lineage, which #260 forbids. Absences keep an organization-wide check, but as the new read-only `assertCanonicalAbsencesReady`, which runs no backfill.
 
@@ -121,17 +131,24 @@ CI `integration-tests` job. It ran against a fresh label-owned PostgreSQL 16 con
 with the full migration chain: **6 tests passed**.
 
 Work is written by the real legacy `createManualTimeEntry`. Exports and the workspace
-use the real payroll server actions: session, membership, payroll access grants,
+use the real payroll server actions: membership, CASL ability, payroll access grants,
 export service and DATEV formatter. The queued delivery is processed by the worker's
-`processExportJob`. Only the session, the object store and the queue transport are
-mocked.
+`processExportJob`.
+
+Mocked:
+
+- the session;
+- the object store and the queue transport;
+- Tolgee, whose translator returns fallbacks;
+- the billing guard and the notification senders, as in the #319/#320 suites;
+- a pass-through wrapper around the #319 evidence reader, used only to commit the concurrent write at a chosen point.
 
 Verified:
 
 - **Complete export, workspace agreement.** Protected 239 stored minutes over a 240-minute interval are exported as 239. The input stores two lines with source revisions, and its digest recomputes. The DATEV file names both personnel numbers. The workspace credits 3.98 h and 1 h, the same minutes, with no blockers. An `UPDATE` of the stored input raises.
-- **All-or-blocked before filters.** Approved, pending and open work are in scope. The export action returns the translated conflict, and no job or input row is created. The service names exactly `open_work` and `pending_work_approval` for those records. The workspace credits only the approved 4 h and lists both blockers, with no `missing_clock_out`. With the control removed, the legacy export succeeds and silently drops the uncertain work, which is the behavior this slice closes. Another organization's active control does not change that.
+- **All-or-blocked before filters.** Approved work, pending work, open work and approved work with a pending correction are in scope. The export action returns the translated conflict, and no job or input row is created. The service names exactly `open_work`, `pending_work_approval` and `pending_work_correction` for those records. The workspace credits only the approved 4 h and lists the three blockers, with no dismissible `missing_clock_out` or `pending_time_correction` duplicates. With the control removed, the legacy export succeeds and silently drops the uncertain work, which is the behavior this slice closes. Another organization's active control does not change that.
 - **Tenant-scoped widening.** A work record owned by another organization's employee widens uncertainty to the organization. A payroll clerk scoped to the worker sees one blocker for the worker, and the response contains neither the peer, the foreign employee nor the foreign record. The owner sees the blocker for all four employees. The clerk's export is refused.
-- **Repair precedes readiness.** A pre-adoption missing link blocks the export while repair is not authorized, and no receipt is written. Once it is authorized, the export succeeds. One `repair_historical_gap` receipt names the requester and the payroll reason, the period links its record, and the input holds the record.
+- **Repair precedes readiness.** A pre-adoption missing link blocks the export while repair is not authorized, and no receipt is written. Once repair is authorized, a payroll clerk's export is still refused and writes no receipt. The administrator's export succeeds. One `repair_historical_gap` receipt names the requester and the payroll reason, the period links its record, and the input holds the record.
 - **One snapshot under a concurrent write.** A write nulling the work's minutes commits after the work rows are read and before the evidence is read. The export collects the pre-write 240 minutes and succeeds. The next collection sees the write and blocks (`missing_stored_minutes`, `duration_missing`).
 - **Failed queued delivery recovers from stored input.** An async export is queued (`process-payroll-export`). Its work is then changed: minutes are corrected and new work is approved. The first delivery fails at the object store and the job is `failed`. The retry completes with `work_period_count` 1. Both attempts upload byte-identical files built from the stored input (4.00 h), and the stored row is unchanged. A fresh collection would now produce a different digest. Deleting the job removes its input.
 
@@ -143,10 +160,11 @@ Mutation checks, each run against PostgreSQL and then reverted:
 
 ### Database-free
 
-- `payroll-work-collection.test.ts` (15 tests) covers:
+- `payroll-work-collection.test.ts` (17 tests) covers:
   - protected and boundary allocation, and conservation across adjacent windows;
   - Tokyo and Berlin windows;
-  - open, pending, draft and rejected work;
+  - open, pending, draft, rejected and pending-correction work;
+  - reversed endpoints by their hull;
   - unallocatable minutes and valid zero minutes;
   - deleted periods;
   - diagnostic widening and disclosure;
@@ -164,9 +182,16 @@ Mutation checks, each run against PostgreSQL and then reverted:
   - non-dismissible opaque blockers;
   - no organization-wide backfill under the control.
 
-The full webapp unit run had no failures outside the known Windows/CRLF baseline.
+The full webapp unit run had 139 failures, all in the known Windows/CRLF and
+source-scanner baseline. That run included the employee-name source sweep, which this
+change had tripped until the collected identity field was renamed (`person`). The
+approval write-boundary scanner passed 290/290 in a Linux `node:24` container. This
+change adds no write to a protected approval table.
 
 ## Known limits
+
+- Races between a repair and a concurrent writer are covered by the #320 suite at the shared coordination key. Through payroll, a stale plan leaves its gap and the final snapshot blocks; there is no separate payroll race test for repair.
+- A refusal from the settings export action or the scheduled executor surfaces as the error's message, which carries counts only. Only the workspace action maps it to the translated conflict, and only that path is verified.
 
 - The collection reads each scoped employee's whole history for the diagnostics, as #319 does. Repair, when authorized, reads it once more for its plan.
 - Absences are not part of the collected input. They are read when the job is processed, under the read-only organization-wide absence check (#256 §9: other export prerequisites keep their own readiness). A recovered job therefore rereads absences, but never work.
