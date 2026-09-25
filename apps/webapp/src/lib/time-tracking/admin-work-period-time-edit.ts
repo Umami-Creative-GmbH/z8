@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
-import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
@@ -12,14 +11,26 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { compareInstants } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	instantToCanonicalString,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
 	ConflictError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
+	type AmendCompletedWorkCommand,
+	type AmendCompletedWorkIntent,
+	replayCommittedAmendment,
+	replayOrAmendCompletedWork,
+} from "@/lib/time-tracking/amend-completed-work";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
@@ -29,13 +40,23 @@ import {
 	resolveFallbackTimezoneCapture,
 	type TimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
+import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Transaction = WorkTransactionClient;
 
 export interface AdminWorkPeriodTimeEditInput {
 	organizationId: string;
 	actorUserId: string;
 	workPeriodId: string;
+	/** The edit's submission identity; the adopted operation's receipt ID. */
+	submissionId: string;
+	/** The form values exactly as submitted, before interpretation. */
+	submitted: {
+		clockInDate: string;
+		clockInTime: string;
+		clockOutDate: string;
+		clockOutTime: string;
+	};
 	/** Snapshot the caller validated against; the edit fails if the period changed since. */
 	expected: {
 		employeeId: string;
@@ -58,6 +79,11 @@ export interface AdminWorkPeriodTimeEditResult {
 	workPeriodId: string;
 	employeeId: string;
 	dirtyFromDate: string | null;
+	/**
+	 * `committed`: the refresh intent committed with the work (adopted operation).
+	 * `caller`: the caller marks the balance after commit (legacy writes).
+	 */
+	balanceRefresh: "committed" | "caller";
 }
 
 async function lockActorAndTarget(
@@ -201,19 +227,90 @@ async function lockExpectedWorkPeriod(
 	return period;
 }
 
+type AdminEditIdentity = Pick<
+	AdminWorkPeriodTimeEditInput,
+	"submissionId" | "workPeriodId" | "submitted" | "notes"
+>;
+
+function adminEditCommand(input: AdminEditIdentity): AmendCompletedWorkCommand {
+	return {
+		version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
+		operationId: input.submissionId,
+		request: {
+			workPeriodId: input.workPeriodId,
+			...input.submitted,
+			notes: input.notes,
+		},
+	};
+}
+
+/**
+ * Lookup-only replay of a committed adopted admin edit, before any fresh
+ * preflight. Null when nothing was committed with this submission identity.
+ */
+export async function replayAdminWorkPeriodTimeEdit(
+	input: AdminEditIdentity &
+		Pick<AdminWorkPeriodTimeEditInput, "organizationId" | "actorUserId">,
+): Promise<AdminWorkPeriodTimeEditResult | null> {
+	const receipt = await replayCommittedAmendment({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		writer: "admin_time_edit",
+		command: adminEditCommand(input),
+	});
+	return receipt
+		? {
+				workPeriodId: receipt.result.workPeriodId,
+				employeeId: receipt.result.owner.employeeId,
+				dirtyFromDate: null,
+				balanceRefresh: "committed",
+			}
+		: null;
+}
+
+function adminEditIntent(
+	input: AdminWorkPeriodTimeEditInput,
+): AmendCompletedWorkIntent {
+	const endpoint = (timestamp: Date) => ({
+		kind: "set" as const,
+		at: instantToCanonicalString(instantFromTimeCorrectionBoundary(timestamp)),
+		// Wall-clock minutes: an endpoint still inside its shown minute keeps its instant.
+		precision: "minute" as const,
+		...resolveFallbackTimezoneCapture({
+			timestamp,
+			timezone: input.timezone,
+			timezoneSource: input.timezoneSource,
+		}),
+	});
+	return {
+		workPeriodId: input.workPeriodId,
+		clockIn: endpoint(input.clockIn),
+		clockOut: endpoint(input.clockOut),
+		project: { kind: "preserve" },
+		workCategory: { kind: "preserve" },
+		workLocation: { kind: "preserve" },
+		notes: input.notes,
+	};
+}
+
 /**
  * Directly corrects both endpoints of a completed work period on behalf of an
  * organization owner/admin. Both endpoints are replaced in one transaction so an
  * entry can be moved across days without passing through an invalid intermediate
  * range. Original entries are superseded, never mutated, preserving the audit chain.
+ *
+ * Adopted organizations (#286) replay a committed receipt first and otherwise
+ * run the completed-work operation; legacy organizations keep the writes below
+ * inside the same coordinated transaction.
  */
 export async function applyAdminWorkPeriodTimeEdit(
 	input: AdminWorkPeriodTimeEditInput,
 ): Promise<AdminWorkPeriodTimeEditResult> {
-	const newStart = instantFromTimeCorrectionBoundary(input.clockIn);
-	const newEnd = instantFromTimeCorrectionBoundary(input.clockOut);
 	try {
-		validateTimeCorrectionRange(newStart, newEnd);
+		validateTimeCorrectionRange(
+			instantFromTimeCorrectionBoundary(input.clockIn),
+			instantFromTimeCorrectionBoundary(input.clockOut),
+		);
 	} catch (error) {
 		throw new ValidationError({
 			message:
@@ -221,6 +318,50 @@ export async function applyAdminWorkPeriodTimeEdit(
 			field: "timestamp",
 		});
 	}
+
+	return withCompletedWorkTransaction(
+		{
+			organizationId: input.organizationId,
+			employeeId: input.expected.employeeId,
+			actorUserId: input.actorUserId,
+		},
+		async (scope) => {
+			if (scope.admission === "legacy") {
+				return applyLegacyAdminWorkPeriodTimeEdit(scope.db, input);
+			}
+			const receipt = await replayOrAmendCompletedWork(scope, {
+				organizationId: input.organizationId,
+				employeeId: input.expected.employeeId,
+				actorUserId: input.actorUserId,
+				authority: "organization_admin",
+				writer: "admin_time_edit",
+				command: adminEditCommand(input),
+				intent: adminEditIntent(input),
+				expectedSource: {
+					clockInId: input.expected.clockInId,
+					clockOutId: input.expected.clockOutId,
+					startAt: instantFromTimeCorrectionBoundary(input.expected.startTime),
+					endAt: instantFromTimeCorrectionBoundary(input.expected.endTime),
+				},
+				evaluatedAt: systemClock.nowInstant(),
+				request: { ipAddress: input.ipAddress, deviceInfo: input.deviceInfo },
+			});
+			return {
+				workPeriodId: receipt.result.workPeriodId,
+				employeeId: input.expected.employeeId,
+				dirtyFromDate: null,
+				balanceRefresh: "committed" as const,
+			};
+		},
+	);
+}
+
+async function applyLegacyAdminWorkPeriodTimeEdit(
+	tx: Transaction,
+	input: AdminWorkPeriodTimeEditInput,
+): Promise<AdminWorkPeriodTimeEditResult> {
+	const newStart = instantFromTimeCorrectionBoundary(input.clockIn);
+	const newEnd = instantFromTimeCorrectionBoundary(input.clockOut);
 	const clockInChanged =
 		compareInstants(
 			newStart,
@@ -265,7 +406,7 @@ export async function applyAdminWorkPeriodTimeEdit(
 			: []),
 	];
 
-	const originalEntries = await db.transaction(async (tx) => {
+	const originalEntries = await (async () => {
 		await lockActorAndTarget(tx, input);
 		const period = await lockExpectedWorkPeriod(tx, input);
 
@@ -413,7 +554,7 @@ export async function applyAdminWorkPeriodTimeEdit(
 		}
 
 		return originals;
-	});
+	})();
 
 	const dirtyFromDate = dirtyFromDateForTimeCorrection([
 		...originalEntries.map((entry) => ({
@@ -435,5 +576,6 @@ export async function applyAdminWorkPeriodTimeEdit(
 		workPeriodId: input.workPeriodId,
 		employeeId: input.expected.employeeId,
 		dirtyFromDate,
+		balanceRefresh: "caller",
 	};
 }

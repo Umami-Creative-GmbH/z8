@@ -3,7 +3,7 @@
 One durable owner sends approval cards and keeps them current. It covers
 Telegram cards (#291) and review-only Slack cards (#294) for canonical
 absences. It is **inactive for every organization**: migrations
-`0086_approval_delivery.sql` and `0089_approval_delivery_slack.sql` insert no
+`0086_approval_delivery.sql` and `0090_approval_delivery_slack.sql` insert no
 control rows.
 
 ```text
@@ -165,7 +165,7 @@ app instance, then, per organization and after the #290 gates:
 ```sql
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'telegram');
--- #294, after 0089:
+-- #294, after 0090:
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'slack');
 ```
@@ -199,7 +199,7 @@ canonical absence submissions then send no Telegram card at all.
 
 ### Activation blockers (#294, unresolved)
 
-1. Apply `0089` through the authorized deployment. It has run only on the
+1. Apply `0090` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries.** A worker without this release that claims Slack work
    cannot load an adapter: the attempt is recorded as `ambiguous:internal_error`

@@ -59,7 +59,11 @@ import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
-import { compareInstants, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	instantToCanonicalString,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
 import {
 	ConflictError,
@@ -79,7 +83,16 @@ import {
 } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
+import {
+	AMEND_COMPLETED_WORK_COMMAND_VERSION,
+	type AmendCompletedWorkCommand,
+	type AmendCompletedWorkIntent,
+	describeAmendmentFailure,
+	replayCommittedAmendment,
+	replayOrAmendCompletedWork,
+} from "@/lib/time-tracking/amend-completed-work";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
@@ -235,6 +248,64 @@ export async function getForbiddenCorrectionEditMessage(input: {
 		: null;
 }
 
+/** The same-day request exactly as submitted: the adopted receipt's command. */
+function sameDayEditCommand(
+	submissionId: string,
+	data: SameDayEditRequest,
+): AmendCompletedWorkCommand {
+	return {
+		version: AMEND_COMPLETED_WORK_COMMAND_VERSION,
+		operationId: submissionId,
+		request: {
+			workPeriodId: data.workPeriodId,
+			newClockInDate: data.newClockInDate,
+			newClockInTime: data.newClockInTime,
+			newClockOutDate: data.newClockOutDate ?? null,
+			newClockOutTime: data.newClockOutTime ?? null,
+			reason: data.reason ?? null,
+			workLocationType: data.workLocationType,
+			workCategoryId: data.workCategoryId,
+		},
+	};
+}
+
+/**
+ * Adopted same-day intent (#286). Endpoints are absolute wall-clock minutes and
+ * metadata is the submitted value; the operation decides what changed against
+ * the locked source.
+ */
+function sameDayEditIntent(input: {
+	workPeriodId: string;
+	data: SameDayEditRequest;
+	notes: string;
+	timezone: string;
+	clockIn: Date;
+	clockOut: Date | null;
+}): AmendCompletedWorkIntent {
+	const endpoint = (timestamp: Date) => ({
+		kind: "set" as const,
+		at: instantToCanonicalString(instantFromTimeCorrectionBoundary(timestamp)),
+		precision: "minute" as const,
+		...resolveFallbackTimezoneCapture({
+			timestamp,
+			timezone: input.timezone,
+			timezoneSource: "user_setting",
+		}),
+	});
+	return {
+		workPeriodId: input.workPeriodId,
+		clockIn: endpoint(input.clockIn),
+		clockOut: input.clockOut ? endpoint(input.clockOut) : { kind: "preserve" },
+		project: { kind: "preserve" },
+		workCategory:
+			input.data.workCategoryId === null
+				? { kind: "clear" }
+				: { kind: "replace", id: input.data.workCategoryId.toLowerCase() },
+		workLocation: { kind: "replace", id: input.data.workLocationType },
+		notes: input.notes,
+	};
+}
+
 export async function editSameDayTimeEntry(
 	data: SameDayEditRequest,
 ): Promise<
@@ -248,6 +319,42 @@ export async function editSameDayTimeEntry(
 	const currentEmployee = await getCurrentEmployee();
 	if (!currentEmployee) {
 		return { success: false, error: "Employee profile not found" };
+	}
+
+	let submissionId: string;
+	try {
+		submissionId = data.submissionId
+			? validateSubmissionId(data.submissionId)
+			: globalThis.crypto.randomUUID();
+	} catch (error) {
+		return { success: false, error: (error as ValidationError).message };
+	}
+	if (data.submissionId) {
+		// A committed adopted edit replays before fresh checks, which its own
+		// result may have changed. Server-generated identities never replay.
+		try {
+			const replayed = await replayCommittedAmendment({
+				organizationId: currentEmployee.organizationId,
+				actorUserId: session.user.id,
+				writer: "self_service_time_edit",
+				command: sameDayEditCommand(submissionId, data),
+			});
+			if (replayed) {
+				return {
+					success: true,
+					data: { workPeriodId: replayed.result.workPeriodId },
+				};
+			}
+		} catch (error) {
+			const failure = describeAmendmentFailure(error);
+			if (failure)
+				return { success: false, error: failure.message, code: failure.code };
+			logger.error({ error }, "Failed to replay same-day time entry edit");
+			return {
+				success: false,
+				error: "Failed to update time entry. Please try again.",
+			};
+		}
 	}
 
 	const [timezone, [selectedWorkPeriod]] = await Promise.all([
@@ -384,12 +491,6 @@ export async function editSameDayTimeEntry(
 		data.workLocationType !==
 			normalizeWorkLocationType(selectedWorkPeriod.workLocationType) ||
 		data.workCategoryId !== selectedWorkPeriod.workCategoryId;
-	if (!clockInChanged && !clockOutChanged && !metadataChanged) {
-		return {
-			success: false,
-			error: "At least one correction value must change",
-		};
-	}
 	const now = new Date();
 
 	if (clockInChanged && correctedClockInDate > now) {
@@ -496,8 +597,55 @@ export async function editSameDayTimeEntry(
 				...capture,
 			};
 		});
-		const { clockInCorrectionId, clockOutCorrectionId } = await db.transaction(
-			async (tx) => {
+		const outcome = await withCompletedWorkTransaction(
+			{
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				actorUserId: session.user.id,
+			},
+			async (scope) => {
+				if (scope.admission === "append") {
+					const requestMetadata = await getRequestMetadata();
+					const receipt = await replayOrAmendCompletedWork(scope, {
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						actorUserId: session.user.id,
+						authority: "owner",
+						writer: "self_service_time_edit",
+						command: sameDayEditCommand(submissionId, data),
+						intent: sameDayEditIntent({
+							workPeriodId: selectedWorkPeriod.id,
+							data,
+							notes,
+							timezone,
+							clockIn: correctedClockInDate,
+							clockOut: correctedClockOutDate ?? null,
+						}),
+						expectedSource: {
+							clockInId: selectedWorkPeriod.clockInId,
+							clockOutId: selectedWorkPeriod.clockOutId,
+							startAt: instantFromTimeCorrectionBoundary(
+								selectedWorkPeriod.startTime,
+							),
+							endAt: selectedWorkPeriod.endTime
+								? instantFromTimeCorrectionBoundary(selectedWorkPeriod.endTime)
+								: null,
+						},
+						evaluatedAt: systemClock.nowInstant(),
+						request: {
+							ipAddress: requestMetadata.ipAddress,
+							deviceInfo: requestMetadata.userAgent,
+						},
+					});
+					return { kind: "adopted" as const, receipt };
+				}
+				if (!clockInChanged && !clockOutChanged && !metadataChanged) {
+					throw new ValidationError({
+						message: "At least one correction value must change",
+						field: "correction",
+					});
+				}
+				const tx = scope.db;
 				const lockedEmployees = await tx
 					.select()
 					.from(employee)
@@ -743,11 +891,26 @@ export async function editSameDayTimeEntry(
 				}
 
 				return {
+					kind: "legacy" as const,
 					clockInCorrectionId,
 					clockOutCorrectionId,
 				};
 			},
 		);
+		if (outcome.kind === "adopted") {
+			// The balance refresh intent committed with the work.
+			logger.info(
+				{
+					workPeriodId: data.workPeriodId,
+					employeeId: currentEmployee.id,
+					operationId: outcome.receipt.result.operationId,
+					disposition: outcome.receipt.disposition,
+				},
+				"Same-day time entry edited through the completed-work operation",
+			);
+			return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
+		}
+		const { clockInCorrectionId, clockOutCorrectionId } = outcome;
 
 		const dirtyFromDate = affectedOriginalIds.length
 			? dirtyFromDateForTimeCorrection([
@@ -802,6 +965,13 @@ export async function editSameDayTimeEntry(
 	} catch (error) {
 		if (error instanceof ValidationError) {
 			return { success: false, error: error.message };
+		}
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
+		}
+		if (error instanceof ConflictError) {
+			return { success: false, error: error.message, code: error.conflictType };
 		}
 		logger.error({ error }, "Failed to edit same-day time entry");
 		return {
