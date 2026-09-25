@@ -7,7 +7,11 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { db as database } from "@/db";
 import { timeEntry, timeEntryAppendPosition, workPeriod } from "@/db/schema";
-import { type AppendAssuranceReport, assessAppendAssurance } from "./append-assurance";
+import {
+	type AppendAssuranceReport,
+	appendPositionEvidenceOf,
+	assessAppendAssurance,
+} from "./append-assurance";
 import type { AppendEvidenceEntry } from "./append-lineage";
 
 type Database = typeof database;
@@ -87,18 +91,7 @@ export async function readAppendAssurance(
 			assessAppendAssurance({
 				scope: { organizationId, employeeId },
 				entries: entriesByEmployee.get(employeeId) ?? [],
-				position: position
-					? {
-							tipEntryId: position.tipEntryId,
-							tipHash: position.tipHash,
-							entryCount: position.entryCount,
-							admission: position.admission,
-							admittedTipEntryId: position.admittedTipEntryId,
-							admittedTipHash: position.admittedTipHash,
-							admittedEntryCount: position.admittedEntryCount,
-							admittedAt: position.admittedAt.toISOString(),
-						}
-					: null,
+				position: position ? appendPositionEvidenceOf(position) : null,
 				hasWork: employeesWithWork.has(employeeId),
 			}),
 		);

@@ -657,6 +657,23 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
+	// Separately authorized explicit repair proposals (#323) change the reviewed
+	// fields inside the outer completed-work transaction, guarded by their before values.
+	"src/lib/time-tracking/historical-work-proposals.ts": [
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "applyFieldRepair",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes"],
+			functionName: "applyFieldRepair",
+			operation: "update",
+			table: "work_period",
+		},
+	],
 	"src/lib/time-tracking/close-active-work.ts": [
 		{
 			columns: [

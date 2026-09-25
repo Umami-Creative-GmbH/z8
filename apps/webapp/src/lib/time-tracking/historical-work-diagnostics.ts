@@ -254,6 +254,11 @@ export interface HistoricalWorkDiagnostics {
 // Assessment
 // ---------------------------------------------------------------------------
 
+const HISTORICAL_REPAIR_OPERATION_KINDS: ReadonlySet<CompletedWorkOperationKind> = new Set([
+	"repair_historical_gap",
+	"apply_historical_repair_proposal",
+]);
+
 const CREATING_OPERATION_KINDS: ReadonlySet<CompletedWorkOperationKind> = new Set([
 	"close_active_work",
 	"start_live_work",
@@ -998,14 +1003,15 @@ function provenanceResolver(
 			const creating = operations.find((operation) => CREATING_OPERATION_KINDS.has(operation.kind));
 			const point = adoptionPoint(period.employeeId);
 			if (!creating) {
-				// An evidence-only gap repair (#320) fills absent facts; it is not an amendment.
+				// Historical repairs (#320 evidence-only, #323 authorized proposals) correct
+				// pre-adoption history under their own receipts; they are not amendments.
 				return withoutReceipt(
 					period.employeeId,
 					period.createdAt,
 					operations.some(
 						(operation) =>
 							operation.appendAdmission === "append" &&
-							operation.kind !== "repair_historical_gap",
+							!HISTORICAL_REPAIR_OPERATION_KINDS.has(operation.kind),
 					),
 				);
 			}

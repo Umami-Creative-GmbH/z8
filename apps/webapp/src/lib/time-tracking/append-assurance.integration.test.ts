@@ -10,8 +10,13 @@
  * session, request headers, billing provisioning, notification delivery, Next cache
  * and the audit-export hardening (signing/S3) boundary are replaced. Append adoption
  * is enabled per test organization by inserting its control row directly.
+ *
+ * #323 extends it: an authorized continuation is proposed, approved and applied
+ * through the real proposals route (repair authorization inserted as its control row),
+ * then a real clock-in appends from its anchor.
  */
 
+import { randomUUID } from "node:crypto";
 import JSZip from "jszip";
 import { DateTime } from "luxon";
 import type { NextRequest } from "next/server";
@@ -109,7 +114,8 @@ vi.mock("@/lib/audit-export", async (importOriginal) => {
 });
 
 const { POST } = await import("@/app/api/time-entries/verify/route");
-const { clockIn } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { POST: proposalsRoute } = await import("@/app/api/time-entries/diagnostics/proposals/route");
+const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 const { processAuditPack } = await import("@/lib/audit-pack/application/audit-pack-processor");
 const { getPayrollReadiness } = await import("@/lib/payroll-readiness/get-payroll-readiness");
 
@@ -200,6 +206,18 @@ describeIntegration("graph-aware verification and audit assurance on PostgreSQL"
 		harness.organizationId = ids.organization;
 		const response = await POST(
 			new Request("http://localhost/api/time-entries/verify", {
+				method: "POST",
+				body: JSON.stringify(body),
+			}) as unknown as NextRequest,
+		);
+		return { status: response.status, body: await response.json() };
+	}
+
+	async function proposalAction(body: Record<string, unknown>) {
+		harness.userId = ids.ownerUser;
+		harness.organizationId = ids.organization;
+		const response = await proposalsRoute(
+			new Request("http://localhost/api/time-entries/diagnostics/proposals", {
 				method: "POST",
 				body: JSON.stringify(body),
 			}) as unknown as NextRequest,
@@ -636,6 +654,7 @@ describeIntegration("graph-aware verification and audit assurance on PostgreSQL"
 		expect(scope.appendAssurance).toEqual({
 			employeeCount: 2,
 			wholeHistory: 1,
+			postAnchor: 0,
 			none: 1,
 			limitations: [
 				"derived_links",
@@ -648,6 +667,127 @@ describeIntegration("graph-aware verification and audit assurance on PostgreSQL"
 		});
 		expect(artifact.append_assurance).toEqual(scope.appendAssurance);
 		expect(artifact.entry_count).toBe(4);
+	});
+
+	it("gives an approved continuation over a forked history post-anchor scope until a new incident", async () => {
+		await admin.query(
+			"insert into time_entry_append_control (organization_id, mode) values ($1, 'active')",
+			[ids.organization],
+		);
+		const root = seedEntry(null, "clock_in", "2026-07-20T08:00:00Z");
+		const left = seedEntry(root, "clock_out", "2026-07-20T16:00:00Z");
+		const right = seedEntry(root, "clock_out", "2026-07-20T17:00:00Z", { link: "hash-only" });
+		await insertEntries([root, left, right]);
+		harness.userId = ids.workerUser;
+		harness.organizationId = ids.organization;
+		await expect(
+			clockIn("office", { instant: parseInstant("2026-07-22T08:00:00Z"), browserTimezone: "UTC" }),
+		).resolves.toMatchObject({ success: false, code: "append_review_required" });
+
+		const created = await proposalAction({
+			action: "propose_continuation",
+			proposalId: randomUUID(),
+			employeeId: ids.worker,
+			anchorEntryId: right.id,
+			anchorHash: right.hash,
+			reason: "Forked import; continue from the later clock-out",
+		});
+		expect(created.status).toBe(200);
+		const proposal = created.body.proposal;
+		expect(
+			(await proposalAction({ action: "approve", proposalId: proposal.id, fingerprint: proposal.fingerprint }))
+				.body.status,
+		).toBe("approved");
+		await admin.query(
+			"insert into historical_work_repair_control (organization_id, mode) values ($1, 'active')",
+			[ids.organization],
+		);
+		expect((await proposalAction({ action: "apply", proposalId: proposal.id })).body.status).toBe(
+			"applied",
+		);
+
+		const continued = (await verifyAs(ids.ownerUser, { employeeId: ids.worker })).body.assurance;
+		expect(continued.lineage.status).toBe("review_required");
+		expect(continued.continuity).toMatchObject({
+			status: "established",
+			provenance: {
+				admission: "authorized_continuation",
+				anchor: { id: right.id, hash: right.hash },
+				continuationProposalId: proposal.id,
+				admittedEntryCount: 3,
+			},
+			postAnchorEntryIds: [],
+		});
+		expect(continued.assurance.scope).toBe("post_anchor");
+		expect(continued.assurance.limitations).toEqual(
+			expect.arrayContaining([
+				{ code: "continuation_anchor", anchorEntryId: right.id, proposalId: proposal.id },
+				{ code: "lineage_unresolved" },
+			]),
+		);
+
+		// A real clock-in now appends from the anchor, not from a guessed head.
+		harness.userId = ids.workerUser;
+		harness.organizationId = ids.organization;
+		await expect(
+			clockIn("office", { instant: parseInstant("2026-07-22T08:00:00Z"), browserTimezone: "UTC" }),
+		).resolves.toMatchObject({ success: true });
+		const {
+			rows: [appended],
+		} = await admin.query<{ id: string; hash: string; previous_hash: string }>(
+			"select id, hash, previous_hash from time_entry where employee_id = $1 and previous_entry_id = $2",
+			[ids.worker, right.id],
+		);
+		expect(appended.previous_hash).toBe(right.hash);
+		const advanced = (await verifyAs(ids.ownerUser, { employeeId: ids.worker })).body.assurance;
+		expect(advanced.continuity).toMatchObject({
+			status: "established",
+			postAnchorEntryIds: [appended.id],
+		});
+		expect(advanced.assurance.scope).toBe("post_anchor");
+		const own = (await verifyAs(ids.workerUser)).body.assurance;
+		expect(own.assurance.scope).toBe("post_anchor");
+		expect(JSON.stringify(own)).not.toContain(right.id);
+
+		// The pack discloses the post-anchor scope; it is never counted as whole history.
+		const { request, artifact, read } = await generatePack({
+			start: "2026-07-01T00:00:00Z",
+			end: "2026-07-31T23:59:59Z",
+		});
+		expect(request).toEqual({ status: "completed", error_code: null });
+		const scope = await read("meta/scope.json");
+		expect(scope.appendAssurance).toMatchObject({
+			employeeCount: 1,
+			wholeHistory: 0,
+			postAnchor: 1,
+			none: 0,
+		});
+		expect(scope.appendAssurance.limitations).toContain("continuation_anchor");
+		expect(artifact.append_assurance).toEqual(scope.appendAssurance);
+
+		// A write that bypassed the position after the continuation is a new incident.
+		const tip = { ...right, id: appended.id, hash: appended.hash };
+		await insertEntries([seedEntry(tip, "clock_out", "2026-07-22T16:00:00Z")]);
+		const interrupted = (await verifyAs(ids.ownerUser, { employeeId: ids.worker })).body.assurance;
+		expect(interrupted.continuity).toMatchObject({
+			status: "interrupted",
+			reasons: expect.arrayContaining([
+				{ kind: "unexpected_history_change", expectedEntryCount: 4, actualEntryCount: 5 },
+			]),
+		});
+		expect(interrupted.assurance.scope).toBe("none");
+		harness.userId = ids.workerUser;
+		harness.organizationId = ids.organization;
+		await expect(
+			clockOut(null, null, {
+				submissionId: randomUUID(),
+				instant: parseInstant("2026-07-22T17:00:00Z"),
+				browserTimezone: "UTC",
+			}),
+		).resolves.toMatchObject({
+			success: false,
+			error: expect.stringContaining("time history needs review"),
+		});
 	});
 
 	it("fails an audit pack honestly when required correction evidence is missing", async () => {

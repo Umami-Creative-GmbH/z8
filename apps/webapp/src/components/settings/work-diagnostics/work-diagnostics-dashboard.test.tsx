@@ -180,4 +180,55 @@ describe("WorkDiagnosticsDashboard", () => {
 		expect(screen.getByText("admitted_history_changed")).toBeTruthy();
 		expect(screen.getByText("continuity_interrupted")).toBeTruthy();
 	});
+
+	it("never counts continuity from an approved anchor as verified lineage", () => {
+		render(
+			<WorkDiagnosticsDashboard
+				t={t}
+				data={view({
+					appendAssurance: [
+						{
+							employeeId: worker,
+							report: assurance({
+								lineage: {
+									status: "review_required",
+									issues: [{ kind: "fork", predecessorId: "e1", successorIds: ["e2", "e3"] }],
+								},
+								continuity: {
+									status: "established",
+									provenance: {
+										admission: "authorized_continuation",
+										anchor: { id: "e3", hash: "h3" },
+										admittedEntryCount: 3,
+										admittedAt: "2026-09-25T00:00:00Z",
+										continuationProposalId: "p1",
+										tip: { id: "e3", hash: "h3" },
+										entryCount: 3,
+									},
+									postAnchorEntryIds: [],
+								},
+								assurance: {
+									scope: "post_anchor",
+									limitations: [
+										{ code: "continuation_anchor", anchorEntryId: "e3", proposalId: "p1" },
+									],
+								},
+							}),
+						},
+					],
+				})}
+			/>,
+		);
+
+		expect(
+			screen.getByText("0 of 1 employees have lineage verified from stored evidence."),
+		).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Employees continuing from an approved anchor: 1. History before each anchor is not verified.",
+			),
+		).toBeTruthy();
+		expect(screen.getByText("post_anchor")).toBeTruthy();
+		expect(screen.getByText("fork")).toBeTruthy();
+	});
 });

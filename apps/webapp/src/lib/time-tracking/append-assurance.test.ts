@@ -4,6 +4,7 @@ import {
 	assessAppendAssurance,
 	summarizeAppendAssurance,
 } from "./append-assurance";
+import { appendHistoryDigest } from "./append-continuation";
 import type { AppendEvidenceEntry } from "./append-lineage";
 import { calculateHash } from "./blockchain";
 
@@ -82,6 +83,31 @@ function position(
 		admittedTipHash: anchor?.hash ?? null,
 		admittedEntryCount,
 		admittedAt,
+		admittedHistoryDigest: null,
+		continuationProposalId: null,
+	};
+}
+
+const proposalId = "c0000000-0000-4000-8000-000000000323";
+
+/** A continuation approved at `anchor` over `history`, since advanced to `tip`. */
+function continuation(
+	anchor: AppendEvidenceEntry,
+	history: readonly AppendEvidenceEntry[],
+	tip: AppendEvidenceEntry = anchor,
+	entryCount: number = history.length,
+): AppendPositionEvidence {
+	return {
+		tipEntryId: tip.id,
+		tipHash: tip.hash,
+		entryCount,
+		admission: "authorized_continuation",
+		admittedTipEntryId: anchor.id,
+		admittedTipHash: anchor.hash,
+		admittedEntryCount: history.length,
+		admittedAt,
+		admittedHistoryDigest: appendHistoryDigest(history),
+		continuationProposalId: proposalId,
 	};
 }
 
@@ -271,6 +297,7 @@ describe("assessAppendAssurance", () => {
 					anchor: null,
 					admittedEntryCount: 0,
 					admittedAt,
+					continuationProposalId: null,
 					tip: { id: entries[2].id, hash: entries[2].hash },
 					entryCount: 3,
 				},
@@ -416,6 +443,117 @@ describe("assessAppendAssurance", () => {
 				status: "interrupted",
 				reasons: [{ kind: "post_anchor_segment_broken" }],
 			});
+		});
+	});
+});
+
+describe("authorized continuation (#323)", () => {
+	/** A fork: two successors of one root; the continuation anchors at one tip. */
+	function forked() {
+		const [root, left] = lineage(2);
+		const [right] = lineage(1, "explicit", root);
+		return { root, left, right, history: [root, left, right] };
+	}
+
+	it("claims post-anchor continuity only, and discloses the anchor and the unverified history", () => {
+		const { right, history } = forked();
+		const report = assessAppendAssurance({
+			scope,
+			entries: history,
+			position: continuation(right, history),
+			hasWork: true,
+		});
+
+		expect(report.lineage.status).toBe("review_required");
+		expect(report.continuity).toMatchObject({
+			status: "established",
+			provenance: {
+				admission: "authorized_continuation",
+				anchor: { id: right.id, hash: right.hash },
+				continuationProposalId: proposalId,
+			},
+			postAnchorEntryIds: [],
+		});
+		expect(report.assurance.scope).toBe("post_anchor");
+		expect(report.assurance.limitations).toContainEqual({
+			code: "continuation_anchor",
+			anchorEntryId: right.id,
+			proposalId,
+		});
+		expect(codes(report)).toContain("lineage_unresolved");
+		expect(codes(report)).not.toContain("continuity_interrupted");
+	});
+
+	it("keeps post-anchor continuity after fresh appends from the anchor", () => {
+		const { right, history } = forked();
+		const appended = lineage(2, "explicit", right);
+		const report = assessAppendAssurance({
+			scope,
+			entries: [...history, ...appended],
+			position: continuation(right, history, appended[1], 5),
+			hasWork: true,
+		});
+
+		expect(report.continuity).toMatchObject({
+			status: "established",
+			postAnchorEntryIds: appended.map((row) => row.id).toSorted(),
+		});
+		expect(report.assurance.scope).toBe("post_anchor");
+	});
+
+	it("interrupts continuity when a new incident follows the continuation", () => {
+		const { right, history } = forked();
+		const appended = lineage(1, "explicit", right);
+		const [bypass] = lineage(1, "explicit", appended[0]);
+		const report = assessAppendAssurance({
+			scope,
+			entries: [...history, ...appended, bypass],
+			position: continuation(right, history, appended[0], 4),
+			hasWork: true,
+		});
+
+		expect(report.continuity).toMatchObject({
+			status: "interrupted",
+			reasons: expect.arrayContaining([
+				{ kind: "unexpected_history_change", expectedEntryCount: 4, actualEntryCount: 5 },
+				{ kind: "unexpected_successor", predecessorId: appended[0].id, entryIds: [bypass.id] },
+			]),
+		});
+		expect(report.assurance.scope).toBe("none");
+		expect(codes(report)).toContain("continuation_anchor");
+	});
+
+	it("interrupts continuity when disclosed history before the anchor changes", () => {
+		const { root, right, history } = forked();
+		const appended = lineage(1, "explicit", right);
+		const changed = history.map((row) => (row.id === root.id ? { ...row, type: "clock_out" } : row));
+		const report = assessAppendAssurance({
+			scope,
+			entries: [...changed, ...appended],
+			position: continuation(right, history, appended[0], 4),
+			hasWork: true,
+		});
+
+		expect(report.continuity).toMatchObject({
+			status: "interrupted",
+			reasons: [{ kind: "admitted_history_changed" }],
+		});
+		expect(report.assurance.scope).toBe("none");
+	});
+
+	it("interrupts continuity when a competing head grows before the anchor", () => {
+		const { left, right, history } = forked();
+		const [competing] = lineage(1, "explicit", left);
+		const report = assessAppendAssurance({
+			scope,
+			entries: [...history, competing],
+			position: continuation(right, history),
+			hasWork: true,
+		});
+
+		expect(report.continuity).toMatchObject({
+			status: "interrupted",
+			reasons: expect.arrayContaining([{ kind: "admitted_history_changed" }]),
 		});
 	});
 });

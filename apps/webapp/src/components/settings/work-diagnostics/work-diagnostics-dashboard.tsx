@@ -48,6 +48,10 @@ export function WorkDiagnosticsDashboard({
 	const heldAppendScopes = data.appendAssurance.filter(
 		({ report: assurance }) => assurance.assurance.scope === "none",
 	);
+	// An authorized continuation (#323) is continuity from its anchor, never verified history.
+	const continuedAppendScopes = data.appendAssurance.filter(
+		({ report: assurance }) => assurance.assurance.scope === "post_anchor",
+	);
 
 	return (
 		<div className="space-y-6">
@@ -178,12 +182,24 @@ export function WorkDiagnosticsDashboard({
 							"settings.workDiagnostics.append.counts",
 							"{verified} of {total} employees have lineage verified from stored evidence.",
 							{
-								verified: data.appendAssurance.length - heldAppendScopes.length,
+								verified:
+									data.appendAssurance.length -
+									heldAppendScopes.length -
+									continuedAppendScopes.length,
 								total: data.appendAssurance.length,
 							},
 						)}
 					</p>
-					{heldAppendScopes.map(({ employeeId, report: assurance }) => (
+					{continuedAppendScopes.length > 0 ? (
+						<p className="text-sm">
+							{t(
+								"settings.workDiagnostics.append.continued",
+								"Employees continuing from an approved anchor: {count}. History before each anchor is not verified.",
+								{ count: continuedAppendScopes.length },
+							)}
+						</p>
+					) : null}
+					{[...heldAppendScopes, ...continuedAppendScopes].map(({ employeeId, report: assurance }) => (
 						<AppendAssuranceDetail
 							key={employeeId}
 							t={t}
@@ -277,6 +293,7 @@ function AppendAssuranceDetail({
 				{label}
 				<Badge variant="outline">{assurance.lineage.status}</Badge>
 				<Badge variant="outline">{assurance.continuity.status}</Badge>
+				<Badge variant="outline">{assurance.assurance.scope}</Badge>
 			</div>
 			{issues.length > 0 ? (
 				<div className="mt-2">

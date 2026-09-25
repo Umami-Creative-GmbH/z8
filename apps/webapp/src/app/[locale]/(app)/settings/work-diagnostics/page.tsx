@@ -3,6 +3,11 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { Temporal } from "temporal-polyfill";
 import { WorkDiagnosticsDashboard } from "@/components/settings/work-diagnostics/work-diagnostics-dashboard";
+import {
+	continuationTargetsOf,
+	type RepairTarget,
+	WorkProposalPanel,
+} from "@/components/settings/work-diagnostics/work-proposal-panel";
 import { WorkRepairPanel } from "@/components/settings/work-diagnostics/work-repair-panel";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +17,7 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { readHistoricalGapRepairPlan } from "@/lib/time-tracking/historical-gap-repair-executor";
 import { calendarDateEnvelope } from "@/lib/time-tracking/historical-work-diagnostics";
+import { listHistoricalWorkProposals } from "@/lib/time-tracking/historical-work-proposals";
 import { getTranslate } from "@/tolgee/server";
 
 export const metadata = {
@@ -107,6 +113,25 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 		range: calendarDateEnvelope(period.startDate, period.endDate),
 	});
 
+	const proposals = await listHistoricalWorkProposals(db, organizationId, selectedEmployeeId);
+	const assuranceReports = [...appendAssurance].map(([employeeId, report]) => ({
+		employeeId,
+		report,
+	}));
+	// Work with review findings an explicit repair could address, one entry per work period.
+	const repairTargets = new Map<string, RepairTarget>();
+	for (const finding of work.findings) {
+		if (finding.treatment === "disclosed" || finding.workPeriodIds.length !== 1) continue;
+		const [workPeriodId] = finding.workPeriodIds;
+		const target = repairTargets.get(workPeriodId) ?? {
+			workPeriodId,
+			employeeId: finding.employeeIds[0] ?? "",
+			findingKinds: [],
+		};
+		if (!target.findingKinds.includes(finding.kind)) target.findingKinds.push(finding.kind);
+		repairTargets.set(workPeriodId, target);
+	}
+
 	const hrefFor = (change: { employeeId?: string | null; month?: "previous" | "next" }) => {
 		const next = change.month ? shiftMonth(period.startDate, change.month) : period;
 		const employeeId = change.employeeId === undefined ? selectedEmployeeId : change.employeeId;
@@ -121,10 +146,7 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 				t={t}
 				data={{
 					report: work,
-					appendAssurance: [...appendAssurance].map(([employeeId, report]) => ({
-						employeeId,
-						report,
-					})),
+					appendAssurance: assuranceReports,
 					employeeLabels,
 					period,
 					selectedEmployeeId,
@@ -137,6 +159,13 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 				period={period}
 				selectedEmployeeId={selectedEmployeeId}
 				employeeLabels={employeeLabels}
+			/>
+			<WorkProposalPanel
+				proposals={proposals.proposals}
+				authorized={proposals.authorized}
+				employeeLabels={employeeLabels}
+				repairTargets={[...repairTargets.values()]}
+				continuationTargets={continuationTargetsOf(assuranceReports)}
 			/>
 		</div>
 	);

@@ -10,7 +10,10 @@
  * else returns an employee-scoped review requirement. With a position, history
  * must still be that one lineage, ending at the recorded tip with the recorded
  * entry count: a change made outside this collaborator holds fresh appends for
- * investigation instead of silently re-admitting history.
+ * investigation instead of silently re-admitting history. A position established
+ * by an authorized continuation (#323) instead requires uninterrupted continuity
+ * from its approved anchor with the disclosed earlier history unchanged; the
+ * collaborator never establishes a continuation itself.
  */
 import { and, eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
@@ -19,6 +22,11 @@ import type {
 	TimeEntryAppendAdmission,
 	TimeEntryAppendOperation,
 } from "@/db/schema/time-entry-append";
+import {
+	type AppendContinuityInterruption,
+	appendPositionEvidenceOf,
+	assessAppendAssurance,
+} from "./append-assurance";
 import { type AppendLineageIssue, type AppendScope, classifyAppendLineage } from "./append-lineage";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -26,6 +34,7 @@ type AppendClient = Pick<Transaction, "select" | "insert" | "update">;
 
 export type AppendReviewReason =
 	| AppendLineageIssue
+	| AppendContinuityInterruption
 	| { kind: "history_without_entries" }
 	| { kind: "position_tip_missing"; tipEntryId: string }
 	| { kind: "position_tip_changed"; tipEntryId: string }
@@ -117,12 +126,33 @@ export async function admitTimeEntryAppend(
 				eq(timeEntry.employeeId, scope.employeeId),
 			),
 		);
-	const lineage = classifyAppendLineage(scope, evidence);
 	const review = (reasons: AppendReviewReason[]) => ({
 		kind: "review_required" as const,
 		requirement: { ...scope, reasons },
 	});
 
+	if (position?.admission === "authorized_continuation") {
+		// Disclosed pre-anchor issues do not block; anything new after the anchor does.
+		const { continuity } = assessAppendAssurance({
+			scope,
+			entries: evidence,
+			position: appendPositionEvidenceOf(position),
+			hasWork: true,
+		});
+		const recordedTip = evidence.find((entry) => entry.id === position.tipEntryId);
+		if (continuity.status !== "established" || !recordedTip) {
+			return review(continuity.status === "interrupted" ? continuity.reasons : []);
+		}
+		return {
+			kind: "admitted",
+			append: createAppend(client, scope, operation, {
+				predecessor: { id: recordedTip.id, hash: recordedTip.hash },
+				position: { version: position.version, entryCount: position.entryCount },
+			}),
+		};
+	}
+
+	const lineage = classifyAppendLineage(scope, evidence);
 	if (position) {
 		const reasons: AppendReviewReason[] = [];
 		const recordedTip = evidence.find((entry) => entry.id === position.tipEntryId);

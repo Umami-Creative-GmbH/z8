@@ -692,6 +692,7 @@ function AppendAssuranceNote({
 	if (assurance.employeeCount === 0) return null;
 
 	const limited = assurance.none;
+	const continued = assurance.postAnchor ?? 0;
 	if (limited > 0) {
 		return (
 			<p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
@@ -700,6 +701,18 @@ function AppendAssuranceNote({
 					"settings.auditExport.auditPack.lineageLimited",
 					"Limited lineage assurance for {limited} of {total} employees. See append-assurance.json in the pack.",
 					{ limited, total: assurance.employeeCount },
+				)}
+			</p>
+		);
+	}
+	if (continued > 0) {
+		return (
+			<p className="flex items-center gap-1 text-xs text-muted-foreground">
+				<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
+				{t(
+					"settings.auditExport.auditPack.lineageContinued",
+					"Continuity from an approved anchor for {continued} of {total} employees; history before the anchor is not verified. See append-assurance.json in the pack.",
+					{ continued, total: assurance.employeeCount },
 				)}
 			</p>
 		);

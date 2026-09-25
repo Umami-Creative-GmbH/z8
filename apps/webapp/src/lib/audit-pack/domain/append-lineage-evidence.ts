@@ -86,9 +86,10 @@ export function toPackAssuranceRecord(report: AppendAssuranceReport): AuditPackA
 export function summarizeAuditPackAssurance(
 	reports: Iterable<AppendAssuranceReport>,
 ): AuditPackAppendAssurance {
-	const summary: AuditPackAppendAssurance = {
+	const summary: Required<AuditPackAppendAssurance> = {
 		employeeCount: 0,
 		wholeHistory: 0,
+		postAnchor: 0,
 		none: 0,
 		limitations: [],
 	};
@@ -96,6 +97,7 @@ export function summarizeAuditPackAssurance(
 	for (const report of reports) {
 		summary.employeeCount += 1;
 		if (report.assurance.scope === "whole_history") summary.wholeHistory += 1;
+		else if (report.assurance.scope === "post_anchor") summary.postAnchor += 1;
 		else summary.none += 1;
 		for (const limitation of report.assurance.limitations) limitations.add(limitation.code);
 	}

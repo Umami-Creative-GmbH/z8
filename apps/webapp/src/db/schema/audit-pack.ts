@@ -5,12 +5,15 @@ import { auditExportPackage } from "./audit-export";
 
 /**
  * Append assurance disclosed by a pack (#324): how many assessed employees have
- * whole-history or no append assurance, and every limitation code the pack
- * discloses. Null for packs generated before the disclosure existed.
+ * whole-history, post-anchor (an authorized continuation, #323) or no append
+ * assurance, and every limitation code the pack discloses. Null for packs
+ * generated before the disclosure existed.
  */
 export interface AuditPackAppendAssurance {
 	employeeCount: number;
 	wholeHistory: number;
+	/** Absent in packs generated before authorized continuations existed. */
+	postAnchor?: number;
 	none: number;
 	/** Limitation codes as written by the generating release. */
 	limitations: string[];
