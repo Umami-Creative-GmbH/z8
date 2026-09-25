@@ -31,7 +31,21 @@ const harness = vi.hoisted(() => ({
 	notifications: [] as string[],
 	/** Runs once between a submission's replay check and its fresh preflight. */
 	beforeFreshPreflight: null as (() => Promise<void>) | null,
+	/** Policy clock-out approval is production-false today; scenarios force it. */
+	forceApproval: false,
 }));
+
+vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => {
+	const original =
+		await importOriginal<
+			typeof import("@/app/[locale]/(app)/time-tracking/actions/policy-helpers")
+		>();
+	return {
+		...original,
+		checkClockOutNeedsApproval: async (employeeId: string) =>
+			harness.forceApproval || (await original.checkClockOutNeedsApproval(employeeId)),
+	};
+});
 
 vi.mock("@/lib/time-tracking/validation", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/time-tracking/validation")>();
@@ -158,6 +172,8 @@ const ids = {
 	otherOrganization: "t275-clock-command-other-org",
 	requesterUser: "t275-requester-user",
 	peerUser: "t275-peer-user",
+	managerUser: "t281-manager-user",
+	manager: "f1000000-0000-4000-8000-000000000003",
 	requester: "f1000000-0000-4000-8000-000000000001",
 	peer: "f1000000-0000-4000-8000-000000000002",
 	projectA: "f3000000-0000-4000-8000-000000000001",
@@ -265,9 +281,12 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			   (select json_agg(row_to_json(t) order by t.id) from work_period t where organization_id = $1) as periods,
 			   (select json_agg(row_to_json(t) order by t.id) from time_entry t where organization_id = $1) as entries,
 			   (select json_agg(row_to_json(t) order by t.id) from time_record t where organization_id = $1) as records,
+			   (select json_agg(row_to_json(t) order by t.record_id) from time_record_work t where organization_id = $1) as works,
+			   (select json_agg(row_to_json(t) order by t.id) from time_record_allocation t where organization_id = $1) as allocations,
 			   (select json_agg(row_to_json(t) order by t.employee_id) from time_entry_append_position t where organization_id = $1) as positions,
 			   (select json_agg(row_to_json(t) order by t.employee_id) from employee_work_balance t where organization_id = $1) as balances,
-			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = $1) as receipts`,
+			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = $1) as receipts,
+			   (select json_agg(row_to_json(t) order by t.id) from approval_request t where organization_id = $1) as approval_requests`,
 			[ids.organization],
 		);
 		return only(rows);
@@ -301,11 +320,16 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
+		await admin.query("drop function if exists t281_fail() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
 			ids.organization,
 			ids.otherOrganization,
 		]);
-		await admin.query('delete from "user" where id in ($1, $2)', [ids.requesterUser, ids.peerUser]);
+		await admin.query('delete from "user" where id in ($1, $2, $3)', [
+			ids.requesterUser,
+			ids.peerUser,
+			ids.managerUser,
+		]);
 	}
 
 	async function seed() {
@@ -380,6 +404,7 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		harness.server = server;
 		harness.notifications.length = 0;
 		harness.beforeFreshPreflight = null;
+		harness.forceApproval = false;
 		actAs(ids.requesterUser);
 		await seed();
 	});
@@ -400,7 +425,7 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			status: 200,
 			body: {
 				commandVersions: [2],
-				kinds: ["clock_in", "clock_out"],
+				kinds: ["clock_in", "clock_out", "break"],
 				submit: "available",
 				lookup: "available",
 				admission: {
@@ -978,5 +1003,508 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			clock_out_id: close.operationId,
 		});
 		expect(await receipt(close.operationId)).toMatchObject({ command: close });
+	});
+
+	describe("desktop idle breaks (#281)", () => {
+		/** The process-relative monotonic reading that agrees with the instant. */
+		const monotonicMs = (instant: Instant) =>
+			Number(instant.epochMilliseconds - now.subtract(days(1)).epochMilliseconds);
+		const utc = (instant: Instant) => instant.toString({ fractionalSecondDigits: 3 });
+		const idleStart = now.add({ hours: 2, seconds: 5, milliseconds: 123 });
+		const detectedReturn = now.add({ hours: 2, minutes: 30, milliseconds: 456 });
+
+		function breakCommand(
+			target: Record<string, string>,
+			options: {
+				lastActivity?: Instant;
+				returned?: Instant;
+				confirmed?: Instant;
+				startZone?: string;
+				returnZone?: string;
+				overrides?: Record<string, unknown>;
+			} = {},
+		): Command {
+			const lastActivity = options.lastActivity ?? idleStart;
+			const returned = options.returned ?? detectedReturn;
+			const confirmed = options.confirmed ?? returned.add({ minutes: 5 });
+			const idleDetected = lastActivity.add({ minutes: 5 });
+			const startZone = options.startZone ?? "Europe/Lisbon";
+			const returnZone = options.returnZone ?? "Europe/Berlin";
+			return {
+				version: 2,
+				operationId: randomUUID(),
+				kind: "break",
+				admission: "delayed",
+				occurredAt: utc(returned),
+				timezone: returnZone,
+				context: context(),
+				target,
+				workLocationType: "office",
+				breakStart: { at: utc(lastActivity), timezone: startZone },
+				observations: {
+					lastActivity: { utc: utc(lastActivity), monotonicMs: monotonicMs(lastActivity) },
+					idleDetected: {
+						utc: utc(idleDetected),
+						monotonicMs: monotonicMs(idleDetected),
+						timezone: startZone,
+					},
+					returnDetected: {
+						utc: utc(returned),
+						monotonicMs: monotonicMs(returned),
+						timezone: returnZone,
+					},
+					confirmed: { utc: utc(confirmed), monotonicMs: monotonicMs(confirmed) },
+				},
+				...options.overrides,
+			};
+		}
+
+		/** Clocked in at `now`; the employee confirms the break after `detectedReturn`. */
+		async function startWork() {
+			const start = clockInCommand();
+			expect((await submit(start)).status).toBe(201);
+			harness.now = detectedReturn.add({ minutes: 5, seconds: 2 });
+			return start;
+		}
+
+		async function entry(id: string) {
+			const { rows } = await admin.query(
+				`select type, timestamp, utc_offset_minutes, timezone, previous_entry_id, device_info
+				 from time_entry where id = $1`,
+				[id],
+			);
+			return only(rows);
+		}
+
+		it("closes at the idle start and resumes at the detected return in one committed operation", async () => {
+			const start = await startWork();
+			const command = breakCommand({ clockInOperationId: start.operationId });
+
+			const executed = await submit(command);
+
+			expect(executed.status).toBe(201);
+			const { result } = executed.body.receipt;
+			expect(executed.body).toMatchObject({
+				outcome: "executed",
+				operationId: command.operationId,
+				receipt: { kind: "close_resume_work" },
+			});
+			expect(result).toMatchObject({
+				version: 1,
+				operationId: command.operationId,
+				owner: { employeeId: ids.requester },
+				actor: { kind: "human", userId: ids.requesterUser },
+				close: {
+					operationId: command.operationId,
+					clockInEntryId: start.operationId,
+					segment: {
+						startAt: "2026-09-20T10:00:00Z",
+						// The estimated idle start, not the confirmation.
+						endAt: "2026-09-20T12:00:05.123Z",
+						durationMinutes: 120,
+						startUtcOffsetMinutes: 120,
+						// The zone observed when idleness was detected.
+						endUtcOffsetMinutes: 60,
+						endTimezone: "Europe/Lisbon",
+						endTimezoneSource: "browser",
+					},
+					approvalState: "approved",
+					approval: { participation: "none" },
+				},
+				resume: {
+					operationId: command.operationId,
+					clockInEntryId: command.operationId,
+					// The detected return, not the later confirmation.
+					start: {
+						at: "2026-09-20T12:30:00.456Z",
+						utcOffsetMinutes: 120,
+						timezone: "Europe/Berlin",
+						timezoneSource: "browser",
+					},
+					attribution: { workLocationType: "office" },
+				},
+			});
+			const closed = await period(start.operationId);
+			expect(closed).toMatchObject({
+				id: result.close.workPeriodId,
+				is_active: false,
+				end_time: new Date("2026-09-20T12:00:05.123Z"),
+				duration_minutes: 120,
+				clock_out_id: result.close.clockOutEntryId,
+				graph_revision: 1,
+			});
+			expect(await period(command.operationId)).toMatchObject({
+				id: result.resume.workPeriodId,
+				is_active: true,
+				start_time: new Date("2026-09-20T12:30:00.456Z"),
+				end_time: null,
+				work_location_type: "office",
+			});
+			// Both entries follow the exact predecessor in one append progression.
+			expect(await entry(result.close.clockOutEntryId)).toEqual({
+				type: "clock_out",
+				timestamp: new Date("2026-09-20T12:00:05.123Z"),
+				utc_offset_minutes: 60,
+				timezone: "Europe/Lisbon",
+				previous_entry_id: start.operationId,
+				device_info: "api",
+			});
+			expect(await entry(command.operationId)).toEqual({
+				type: "clock_in",
+				timestamp: new Date("2026-09-20T12:30:00.456Z"),
+				utc_offset_minutes: 120,
+				timezone: "Europe/Berlin",
+				previous_entry_id: result.close.clockOutEntryId,
+				device_info: "api",
+			});
+			const { rows: positions } = await admin.query(
+				"select tip_entry_id, version, last_operation from time_entry_append_position where employee_id = $1",
+				[ids.requester],
+			);
+			expect(only(positions)).toEqual({
+				tip_entry_id: command.operationId,
+				version: 3,
+				last_operation: "live_clock_in",
+			});
+			expect(await receipt(command.operationId)).toMatchObject({
+				kind: "close_resume_work",
+				writer: "direct_http",
+				command_version: 2,
+				command,
+				append_admission: "append",
+				actor_user_id: ids.requesterUser,
+				work_period_id: closed.id,
+			});
+			expect((await snapshot()).balances).toEqual([
+				expect.objectContaining({ is_dirty: true, dirty_from_date: "2026-09-20" }),
+			]);
+
+			// Exact replay, also after the admission window, writes nothing and
+			// returns the original receipt without post-commit advice.
+			const before = await snapshot();
+			harness.now = now.add(days(9));
+			expect(await submit(command)).toEqual({
+				status: 200,
+				body: {
+					outcome: "replayed",
+					operationId: command.operationId,
+					receipt: executed.body.receipt,
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+			expect((await lookup(command.operationId)).body).toMatchObject({
+				outcome: "committed",
+				receipt: executed.body.receipt,
+				command,
+				evidence: "standing",
+			});
+			// A changed break under the committed identity is a collision.
+			const changed = breakCommand(
+				{ clockInOperationId: start.operationId },
+				{ confirmed: detectedReturn.add({ minutes: 6 }) },
+			);
+			expect((await submit({ ...changed, operationId: command.operationId })).body.code).toBe(
+				"collision",
+			);
+			expect(await snapshot()).toEqual(before);
+
+			// A later clock-out binds the resumed work through the break's identity.
+			harness.now = detectedReturn.add({ hours: 1 });
+			const close = clockOutCommand(
+				{ clockInOperationId: command.operationId },
+				{ occurredAt: harness.now.toString() },
+			);
+			expect((await submit(close)).status).toBe(201);
+			expect(await period(command.operationId)).toMatchObject({
+				is_active: false,
+				clock_out_id: close.operationId,
+			});
+			// The break's work changed after it committed, which lookup reports.
+			await admin.query("update work_period set deleted_at = now() where clock_in_id = $1", [
+				command.operationId,
+			]);
+			expect((await lookup(command.operationId)).body.evidence).toBe("changed");
+			await clearOrganizationTimeData(ids.organization);
+			expect((await snapshot()).receipts).toBeNull();
+		});
+
+		it("commits nothing when any stage fails, then executes and replays the exact resend", async () => {
+			const start = await startWork();
+			const command = breakCommand({ clockInOperationId: start.operationId });
+			const before = await snapshot();
+			await admin.query(
+				`create function t281_fail() returns trigger language plpgsql as $$
+				 begin raise exception 't281 injected failure'; end $$`,
+			);
+			// Every write of the close, the resume and their shared evidence, in order.
+			const stages: [stage: string, event: string, table: string, when?: string][] = [
+				["canonical record", "insert", "time_record"],
+				["canonical work detail", "insert", "time_record_work"],
+				["close entry", "insert", "time_entry", "new.type = 'clock_out'"],
+				[
+					"close append position",
+					"update",
+					"time_entry_append_position",
+					"new.last_operation = 'live_clock_out'",
+				],
+				["closed period", "update", "work_period"],
+				["work-balance intent", "insert", "employee_work_balance"],
+				["resume entry", "insert", "time_entry", "new.type = 'clock_in'"],
+				[
+					"resume append position",
+					"update",
+					"time_entry_append_position",
+					"new.last_operation = 'live_clock_in'",
+				],
+				["resumed period", "insert", "work_period"],
+				["receipt", "insert", "completed_work_operation"],
+			];
+			for (const [stage, event, table, when] of stages) {
+				await admin.query(
+					`create trigger t281_fail before ${event} on ${table} for each row
+					 ${when ? `when (${when})` : ""} execute function t281_fail()`,
+				);
+				const failed = await submit(command);
+				await admin.query(`drop trigger t281_fail on ${table}`);
+
+				expect([stage, failed.status, failed.body]).toEqual([
+					stage,
+					500,
+					{ outcome: "unknown", operationId: command.operationId },
+				]);
+				expect(await snapshot()).toEqual(before);
+				expect((await lookup(command.operationId)).body.outcome).toBe("not_committed");
+			}
+
+			const executed = await submit(command);
+			expect(executed.status).toBe(201);
+			const committed = await snapshot();
+			expect(await submit(command)).toEqual({
+				status: 200,
+				body: {
+					outcome: "replayed",
+					operationId: command.operationId,
+					receipt: executed.body.receipt,
+				},
+			});
+			expect(await snapshot()).toEqual(committed);
+		});
+
+		it("commits required approval with the close, and rolls both endpoints back when it fails", async () => {
+			harness.forceApproval = true;
+			const timestamp = new Date("2026-07-01T00:00:00Z");
+			await admin.query(
+				`insert into "user" (id, name, email, created_at, updated_at)
+				 values ($1, 'Manager', 't281-manager@example.test', $2, $2)`,
+				[ids.managerUser, timestamp],
+			);
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values ('t281-member-manager', $1, $2, 'member', 'approved', $3)`,
+				[ids.organization, ids.managerUser, timestamp],
+			);
+			await admin.query(
+				`insert into employee (id, user_id, organization_id, role, updated_at)
+				 values ($1, $2, $3, 'manager', $4)`,
+				[ids.manager, ids.managerUser, ids.organization, timestamp],
+			);
+			await admin.query(
+				`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
+				 values ($1, $2, $3, true, $4, now(), now())`,
+				[randomUUID(), ids.requester, ids.manager, ids.managerUser],
+			);
+			const start = await startWork();
+			const command = breakCommand({ clockInOperationId: start.operationId });
+			const before = await snapshot();
+			await admin.query(
+				`create function t281_fail() returns trigger language plpgsql as $$
+				 begin raise exception 't281 injected approval failure'; end $$`,
+			);
+			await admin.query(
+				"create trigger t281_fail before insert on approval_request for each row execute function t281_fail()",
+			);
+			expect((await submit(command)).status).toBe(500);
+			await admin.query("drop function t281_fail() cascade");
+			expect(await snapshot()).toEqual(before);
+			expect(harness.notifications).toEqual([]);
+
+			const executed = await submit(command);
+
+			expect(executed.status).toBe(201);
+			expect(executed.body.receipt.result.close).toMatchObject({
+				approvalState: "pending",
+				approval: {
+					participation: "policy_clock_out",
+					disposition: "executed",
+					approvalRequestId: expect.any(String),
+				},
+			});
+			expect(await period(command.operationId)).toMatchObject({ is_active: true });
+			expect((await snapshot()).approval_requests).toHaveLength(1);
+			expect(harness.notifications).toEqual(["pending"]);
+		});
+
+		it("refuses breaks on stale, reviewed, overlapping or inverted work without writing", async () => {
+			const start = await startWork();
+			const target = { clockInOperationId: start.operationId };
+			const { id: activeId } = await period(start.operationId);
+
+			// Completed work already occupies the resumed interval.
+			const occupiedAt = detectedReturn.add({ minutes: 10 });
+			await admin.query(
+				`insert into work_period (id, employee_id, organization_id, clock_in_id, start_time, end_time, is_active, duration_minutes, updated_at)
+				 select $1, employee_id, organization_id, id, $2, $3, false, 10, now() from time_entry where id = $4`,
+				[
+					randomUUID(),
+					occupiedAt.toString(),
+					occupiedAt.add({ minutes: 10 }).toString(),
+					start.operationId,
+				],
+			);
+			let before = await snapshot();
+			const occupied = await submit(breakCommand(target));
+			expect([occupied.status, occupied.body.code]).toEqual([409, "occupancy_conflict"]);
+			// The close that preceded the refused resume was rolled back with it.
+			expect(await snapshot()).toEqual(before);
+			await admin.query("delete from work_period where start_time = $1", [occupiedAt.toString()]);
+
+			// The break starts before the work it closes.
+			before = await snapshot();
+			const inverted = await submit(
+				breakCommand(target, { lastActivity: now.subtract({ minutes: 1 }) }),
+			);
+			expect([inverted.status, inverted.body.code]).toEqual([422, "invalid_interval"]);
+			expect(await snapshot()).toEqual(before);
+
+			// Unresolved review on the target holds structural changes.
+			await admin.query("update work_period set approval_status = 'pending' where id = $1", [
+				activeId,
+			]);
+			before = await snapshot();
+			const reviewed = await submit(breakCommand(target));
+			expect([reviewed.status, reviewed.body.code]).toEqual([409, "review_pending"]);
+			expect(await snapshot()).toEqual(before);
+			await admin.query("update work_period set approval_status = 'approved' where id = $1", [
+				activeId,
+			]);
+
+			// Once the target was closed, the break never moves to newer active work.
+			harness.now = detectedReturn.add({ hours: 1 });
+			const closedLater = await submit(
+				clockOutCommand(target, {
+					admission: "delayed",
+					occurredAt: detectedReturn.add({ minutes: 50 }).toString(),
+				}),
+			);
+			expect(closedLater.status).toBe(201);
+			const newer = clockInCommand({ occurredAt: harness.now.toString() });
+			await submit(newer);
+			before = await snapshot();
+			const stale = await submit(breakCommand(target));
+			const unknown = await submit(breakCommand({ clockInOperationId: randomUUID() }));
+			expect([stale.status, stale.body.code]).toEqual([409, "target_not_active"]);
+			expect([unknown.status, unknown.body.code]).toEqual([409, "target_unknown"]);
+			expect(await snapshot()).toEqual(before);
+			expect((await period(newer.operationId)).is_active).toBe(true);
+		});
+
+		it("requires review for a clock discontinuity and admits only inside the windows", async () => {
+			const start = await startWork();
+			const target = { clockInOperationId: start.operationId };
+			const before = await snapshot();
+
+			// The wall clock moved an hour while the device was idle.
+			const jumped = breakCommand(target);
+			const observations = jumped.observations as { idleDetected: { utc: string } };
+			observations.idleDetected.utc = utc(idleStart.add({ hours: 1, minutes: 5 }));
+			const discontinuous = await submit(jumped);
+			expect(discontinuous).toMatchObject({
+				status: 422,
+				body: { code: "clock_discontinuity", from: "lastActivity" },
+			});
+
+			// Endpoints that are not the observations they claim are malformed.
+			const mismatched = await submit(
+				breakCommand(target, {
+					overrides: { occurredAt: utc(detectedReturn.add({ minutes: 5 })) },
+				}),
+			);
+			expect([mismatched.status, mismatched.body.code]).toEqual([400, "invalid_command"]);
+
+			// Delayed admission: the idle start at most seven days back, the confirmation
+			// at most five minutes ahead of the server.
+			harness.now = idleStart.add(days(7)).add({ milliseconds: 1 });
+			const tooOld = await submit(breakCommand(target));
+			expect([tooOld.status, tooOld.body.reason]).toEqual([422, "too_old"]);
+			harness.now = detectedReturn.subtract({ milliseconds: 1 });
+			const early = await submit(breakCommand(target));
+			expect([early.status, early.body.reason]).toEqual([422, "in_future"]);
+			expect(await snapshot()).toEqual(before);
+			expect((await lookup(discontinuous.body.operationId)).body.outcome).toBe("not_committed");
+		});
+
+		it("serializes concurrent identical breaks into one close and one resume", async () => {
+			const start = await startWork();
+			const command = breakCommand({ clockInOperationId: start.operationId });
+			const outcomes = await Promise.all([submit(command), submit(command), submit(command)]);
+			expect(outcomes.map(({ status }) => status).sort()).toEqual([200, 200, 201]);
+			for (const { body } of outcomes) expect(body.receipt).toEqual(outcomes[0]?.body.receipt);
+			const { rows } = await admin.query(
+				`select count(*)::int as periods, count(*) filter (where is_active)::int as active
+				 from work_period where organization_id = $1`,
+				[ids.organization],
+			);
+			expect(only(rows)).toEqual({ periods: 2, active: 1 });
+		});
+
+		it("commits a queued break in the exact shape the desktop freezes", async () => {
+			const desktop = (name: string): Command =>
+				JSON.parse(
+					readFileSync(
+						new URL(
+							`../../../../../../desktop/src-tauri/tests/clock-core/fixtures/${name}`,
+							import.meta.url,
+						),
+						"utf8",
+					),
+				);
+			// Both fixtures moved two days back together, as captured offline.
+			const shift = (value: unknown): unknown => {
+				if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(value)) {
+					return utc(parseInstant(value).subtract(days(2)));
+				}
+				if (Array.isArray(value)) return value.map(shift);
+				if (value && typeof value === "object") {
+					return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, shift(item)]));
+				}
+				return value;
+			};
+			const start = {
+				...(shift(desktop("desktop-v2-clock-in.json")) as Command),
+				operationId: randomUUID(),
+				context: context(),
+			};
+			const queued = {
+				...(shift(desktop("desktop-v2-break.json")) as Command),
+				operationId: randomUUID(),
+				context: context(),
+				target: { clockInOperationId: start.operationId },
+			};
+
+			expect((await submit(start)).status).toBe(201);
+			expect((await lookup(queued.operationId)).body.outcome).toBe("not_committed");
+			const executed = await submit(queued);
+
+			expect(executed.status).toBe(201);
+			expect(executed.body.receipt.result.close.segment).toMatchObject({
+				startAt: "2026-09-18T08:00:05.123Z",
+				endAt: "2026-09-18T10:00:05.123Z",
+				durationMinutes: 120,
+				endTimezone: "Europe/Berlin",
+			});
+			expect(executed.body.receipt.result.resume.start.at).toBe("2026-09-18T10:30:00.456Z");
+			expect(await receipt(queued.operationId)).toMatchObject({ command: queued });
+			expect((await submit(queued)).status).toBe(200);
+		});
 	});
 });

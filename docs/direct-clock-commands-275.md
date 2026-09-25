@@ -273,7 +273,8 @@ This slice closes on implementation. Activation items move to #327, #329 and #33
 - **Legacy committed-retry ordering (#327).** On `POST /api/time-entries`, project and
   category eligibility still precede the legacy replay (see above).
 - **Desktop atomic break close/resume (#263 §8)** is a separate operation and not part
-  of this transport.
+  of this transport. *Update:* #281 adds it to this transport as the `break` kind
+  ([record](desktop-break-close-resume-281.md)).
 - **Shared follow-ups (#305/#327).** Break enforcement and surcharges stay post-commit
   best effort.
 - **Rollback (#331).** Returning an organization to inactive keeps lookup and committed

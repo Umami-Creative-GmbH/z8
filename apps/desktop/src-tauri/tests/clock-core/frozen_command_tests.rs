@@ -1,7 +1,8 @@
+use crate::break_evidence::{BreakEvidence, BreakReview, IdleBreak, Observation, ZonedObservation};
 use crate::clock::WorkLocationType;
 use crate::frozen_command::{
-    freeze_clock_in, freeze_clock_out, new_operation_id, utc_instant, Admission, ClockTarget,
-    CommandContext, CommandFrame, CommandKind,
+    freeze_break, freeze_clock_in, freeze_clock_out, new_operation_id, utc_instant, Admission,
+    ClockTarget, CommandContext, CommandFrame, CommandKind,
 };
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -123,4 +124,80 @@ fn clock_out_can_bind_a_known_work_period() {
     );
     assert_eq!(body["admission"], "immediate");
     assert_eq!(body["timezone"], "UTC");
+}
+
+const BREAK_OPERATION: &str = "6e1d2c3b-4a59-4e8f-9d7c-1b2a3c4d5e6f";
+
+fn observed(at: &str, monotonic_ms: u64) -> Observation {
+    Observation {
+        utc: DateTime::parse_from_rfc3339(at)
+            .unwrap()
+            .with_timezone(&Utc),
+        monotonic_ms,
+    }
+}
+
+fn zoned(at: &str, monotonic_ms: u64, zone: Option<&str>) -> ZonedObservation {
+    ZonedObservation {
+        at: observed(at, monotonic_ms),
+        timezone: zone.map(Into::into),
+    }
+}
+
+fn break_evidence(start_zone: Option<&str>) -> BreakEvidence {
+    BreakEvidence {
+        idle: IdleBreak {
+            id: "local-idle-1".into(),
+            last_activity: observed("2026-09-20T10:00:05.123Z", 7_200_000),
+            idle_detected: zoned("2026-09-20T10:05:08.123Z", 7_503_000, start_zone),
+            returned: zoned("2026-09-20T10:30:00.456Z", 8_995_333, Some("Europe/Berlin")),
+        },
+        confirmed: observed("2026-09-20T10:35:00.456Z", 9_295_333),
+    }
+}
+
+#[test]
+fn break_freezes_the_detected_return_and_separate_start_evidence() {
+    // The frame's own instant is the click; the break replaces it with the return.
+    let frozen = freeze_break(
+        frame(
+            BREAK_OPERATION,
+            instant() + chrono::Duration::hours(3),
+            "Asia/Tokyo",
+            Admission::Delayed,
+            Some(CLOCK_IN_OPERATION),
+        ),
+        ClockTarget::ClockInOperation(CLOCK_IN_OPERATION.into()),
+        WorkLocationType::Remote,
+        &break_evidence(Some("Europe/Berlin")),
+    )
+    .unwrap();
+    assert_eq!(frozen.kind, CommandKind::Break);
+    assert_eq!(frozen.occurred_at, "2026-09-20T10:30:00.456Z");
+    assert_eq!(frozen.timezone, "Europe/Berlin");
+    assert_eq!(frozen.depends_on.as_deref(), Some(CLOCK_IN_OPERATION));
+    assert_eq!(
+        frozen.body,
+        include_str!("fixtures/desktop-v2-break.json").trim_end()
+    );
+}
+
+#[test]
+fn break_without_observed_endpoint_evidence_is_not_frozen() {
+    let target = || ClockTarget::WorkPeriod("5c0b1a8e-2f4d-4e6a-9b3c-7d8e9f0a1b2c".into());
+    let freeze = |evidence: &BreakEvidence| {
+        freeze_break(
+            frame(BREAK_OPERATION, instant(), "UTC", Admission::Delayed, None),
+            target(),
+            WorkLocationType::Office,
+            evidence,
+        )
+    };
+    assert_eq!(
+        freeze(&break_evidence(None)).unwrap_err(),
+        BreakReview::StartZoneUnavailable
+    );
+    let mut moved = break_evidence(Some("Europe/Berlin"));
+    moved.confirmed.utc = moved.confirmed.utc + chrono::Duration::hours(1);
+    assert_eq!(freeze(&moved).unwrap_err(), BreakReview::ClockDiscontinuity);
 }

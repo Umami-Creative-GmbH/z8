@@ -1,4 +1,5 @@
 mod auth;
+mod break_evidence;
 mod clock;
 mod clock_command;
 mod clock_journal;
@@ -103,6 +104,7 @@ pub fn run() {
             commands::clock_in,
             commands::clock_out,
             commands::clock_out_with_break,
+            commands::dismiss_idle_break,
             commands::initiate_oauth,
             commands::logout,
             commands::get_session,

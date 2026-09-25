@@ -7,6 +7,7 @@
 use chrono::{DateTime, SecondsFormat, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::break_evidence::{BreakEvidence, BreakReview, Observation};
 use crate::clock::WorkLocationType;
 
 pub const CLOCK_COMMAND_VERSION: u32 = 2;
@@ -36,6 +37,9 @@ pub enum Admission {
 pub enum CommandKind {
     ClockIn,
     ClockOut,
+    /// A confirmed idle break: one atomic close at the idle start and resume at
+    /// the detected return (#281).
+    Break,
 }
 
 impl CommandKind {
@@ -43,6 +47,7 @@ impl CommandKind {
         match self {
             Self::ClockIn => "clock_in",
             Self::ClockOut => "clock_out",
+            Self::Break => "break",
         }
     }
 
@@ -50,13 +55,14 @@ impl CommandKind {
         match value {
             "clock_in" => Some(Self::ClockIn),
             "clock_out" => Some(Self::ClockOut),
+            "break" => Some(Self::Break),
             _ => None,
         }
     }
 }
 
-/// The work a clock-out closes: a known period, or the queued clock-in that
-/// creates it. Never "whichever period is active when the command is sent".
+/// The work a clock-out or break closes: a known period, or the queued clock-in
+/// (or break) that creates it. Never "whichever period is active when the command is sent".
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClockTarget {
     WorkPeriod(String),
@@ -133,20 +139,76 @@ pub fn freeze_clock_in(frame: CommandFrame, location: WorkLocationType) -> Froze
     )
 }
 
+fn target_json(target: ClockTarget) -> serde_json::Value {
+    match target {
+        ClockTarget::WorkPeriod(id) => serde_json::json!({ "workPeriodId": id }),
+        ClockTarget::ClockInOperation(id) => serde_json::json!({ "clockInOperationId": id }),
+    }
+}
+
 /// Desktop clock-out has no attribution input, so it states "preserve"
 /// explicitly rather than omitting the intent.
 pub fn freeze_clock_out(frame: CommandFrame, target: ClockTarget) -> FrozenCommand {
-    let target = match target {
-        ClockTarget::WorkPeriod(id) => serde_json::json!({ "workPeriodId": id }),
-        ClockTarget::ClockInOperation(id) => serde_json::json!({ "clockInOperationId": id }),
-    };
     freeze(
         frame,
         CommandKind::ClockOut,
         serde_json::json!({
-            "target": target,
+            "target": target_json(target),
             "project": { "kind": "preserve" },
             "workCategory": { "kind": "preserve" },
         }),
     )
+}
+
+fn observation_json(observation: Observation, timezone: Option<&str>) -> serde_json::Value {
+    let mut value = serde_json::json!({
+        "utc": utc_instant(observation.utc),
+        "monotonicMs": observation.monotonic_ms,
+    });
+    if let Some(timezone) = timezone {
+        value["timezone"] = serde_json::Value::String(timezone.to_string());
+    }
+    value
+}
+
+/// A confirmed idle break. Its action instant and zone are the detected return,
+/// not the frame's click time: the break closes the target at the last input
+/// before idleness, with the zone observed when idleness was detected, and
+/// resumes at the return. Evidence that leaves the interval uncertain is not
+/// frozen; it needs a reviewed correction instead.
+pub fn freeze_break(
+    mut frame: CommandFrame,
+    target: ClockTarget,
+    location: WorkLocationType,
+    evidence: &BreakEvidence,
+) -> Result<FrozenCommand, BreakReview> {
+    if let Some(review) = evidence.review() {
+        return Err(review);
+    }
+    let idle = &evidence.idle;
+    let (Some(start_zone), Some(return_zone)) =
+        (&idle.idle_detected.timezone, &idle.returned.timezone)
+    else {
+        return Err(BreakReview::StartZoneUnavailable);
+    };
+    frame.occurred_at = idle.returned.at.utc;
+    frame.timezone = return_zone.clone();
+    Ok(freeze(
+        frame,
+        CommandKind::Break,
+        serde_json::json!({
+            "target": target_json(target),
+            "workLocationType": location.as_str(),
+            "breakStart": {
+                "at": utc_instant(idle.last_activity.utc),
+                "timezone": start_zone,
+            },
+            "observations": {
+                "lastActivity": observation_json(idle.last_activity, None),
+                "idleDetected": observation_json(idle.idle_detected.at, Some(start_zone)),
+                "returnDetected": observation_json(idle.returned.at, Some(return_zone)),
+                "confirmed": observation_json(evidence.confirmed, None),
+            },
+        }),
+    ))
 }

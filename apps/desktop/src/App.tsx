@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import {
   IconSettings,
   IconWifiOff,
@@ -146,7 +147,7 @@ function AppContent() {
     setIsProcessingIdle(true);
     try {
       const handled = await presentClockAction(() => clockOutWithBreak({
-        breakStartTime: idleEvent.idleStartTime,
+        breakId: idleEvent.id,
         workLocationType,
       }), "Break recorded, clocked back in");
       if (handled) dismissIdle();
@@ -156,6 +157,7 @@ function AppContent() {
   };
 
   const handleIdleResume = () => {
+    if (idleEvent) void invoke("dismiss_idle_break", { breakId: idleEvent.id });
     dismissIdle();
     toast.info("Continuing work session");
   };
