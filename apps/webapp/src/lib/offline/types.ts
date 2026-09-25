@@ -4,6 +4,10 @@
  * These types are shared between the service worker and React app.
  */
 
+import type {
+	BrowserClockCommandOutcome,
+	ClockCommandCaptureRequest,
+} from "@/lib/time-tracking/browser-clock-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 /**
@@ -57,8 +61,8 @@ export type SWToClientMessage =
 	| { type: "QUEUE_UPDATED"; count?: number }
 	| {
 			type: "SYNC_SUCCESS";
-			eventId: string;
-			serverId: string;
+			eventId?: string;
+			serverId?: string;
 			userId?: string;
 			organizationId?: string;
 	  }
@@ -83,7 +87,17 @@ export type ClientToSWMessage =
 			context: OfflineRecoveryContext;
 			eventId: string;
 	  }
-	| { type: "TRIGGER_SYNC" }
+	| { type: "TRIGGER_SYNC"; retryExhausted?: boolean }
+	| { type: "CAPTURE_CLOCK_COMMAND"; payload: ClockCommandCaptureRequest }
+	| {
+			type: "DISPATCH_CLOCK_COMMANDS";
+			/** The command the caller just captured and waits for. */
+			operationId?: string;
+			/** The caller's account; the reply names only a record captured in it. */
+			context?: OfflineRecoveryContext;
+			retryExhausted?: boolean;
+	  }
+	| { type: "ACKNOWLEDGE_CLOCK_COMMAND"; operationId: string }
 	| { type: "CLEAR_OLD_QUEUE" }
 	| { type: "SKIP_WAITING" }
 	| { type: "GET_VERSION" };
@@ -94,6 +108,8 @@ export type ClientToSWMessage =
 export interface OfflineQueueStatus {
 	pendingCount: number;
 	reviewCount: number;
+	/** Frozen commands that will be sent automatically. */
+	waitingCount: number;
 	savedCount: number;
 	/** False until an authenticated durable read establishes the total. */
 	countVerified: boolean;
@@ -106,6 +122,21 @@ export interface OfflineRecoveryContext {
 	userId: string;
 	organizationId: string;
 }
+
+/** `CAPTURE_CLOCK_COMMAND` reply: durable local acceptance, or why there is none. */
+export type ClockCommandCaptureReply =
+	| { success: true; recoveryId: string; operationId: string; state: string }
+	/** `message`, not `error`: the save definitely failed, it is not a worker fault. */
+	| { success: false; code: string; message: string };
+
+/** `DISPATCH_CLOCK_COMMANDS` reply: the run status and the caller's stored outcome. */
+export type ClockCommandDispatchReply =
+	| {
+			success: true;
+			status: string;
+			record: (BrowserClockCommandOutcome & { operationId: string }) | null;
+	  }
+	| { success: false; error: string };
 
 /** Legacy values remain uninterpreted, including unsupported fields. */
 export interface OfflineRecoveryRecord extends Record<string, unknown> {
