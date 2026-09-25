@@ -26,6 +26,9 @@ const {
 
 vi.mock("./actions", () => ({
 	requireEnterpriseOrgAdmin: requireEnterpriseOrgAdminMock,
+}));
+
+vi.mock("./identity-setup-record", () => ({
 	getOrCreateEnterpriseIdentitySetupRecord: getOrCreateSetupMock,
 }));
 
