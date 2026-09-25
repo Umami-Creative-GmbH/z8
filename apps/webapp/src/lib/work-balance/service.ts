@@ -543,14 +543,18 @@ export async function upsertEmployeeWorkBalance(
 		});
 }
 
-export async function markEmployeeWorkBalanceDirty(input: {
-	employeeId: string;
-	organizationId: string;
-	dirtyFromDate?: string;
-}) {
+export async function markEmployeeWorkBalanceDirty(
+	input: {
+		employeeId: string;
+		organizationId: string;
+		dirtyFromDate?: string;
+	},
+	// A caller's transaction commits the refresh intent with the work that needs it.
+	client: Pick<typeof db, "insert"> = db,
+) {
 	const requestedAt = new Date();
 	const dirtyFromDate = input.dirtyFromDate ?? null;
-	await db
+	await client
 		.insert(employeeWorkBalance)
 		.values({
 			employeeId: input.employeeId,

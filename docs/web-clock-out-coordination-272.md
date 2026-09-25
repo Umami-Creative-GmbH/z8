@@ -10,6 +10,11 @@ checks. Clocking receives a branded, scoped, transaction-lifetime-bound context;
 its coordinated adapter neither opens a transaction nor first acquires the
 employee lock. The legacy transaction adapter remains for other callers.
 
+> Since #274 the coordinator reads the append control and adopted organizations
+> close through the completed-work operation; see
+> [web-clock-out-operation-274.md](web-clock-out-operation-274.md). The text
+> below describes the #272 prefactor as delivered.
+
 Admission is deliberately fixed to `legacy`. There is no activation setter,
 exclusive adoption upgrade, new command version, receipt owner, dispatcher, or
 production evidence capture. The shared adoption lock reserves the future
