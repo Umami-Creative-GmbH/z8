@@ -14,7 +14,7 @@ import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
-import { isTimeApprovalWorkflowType } from "../presentation/time-card";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import {
 	buildTimeReviewSections,
 	prepareTimeReviewEvidence,
@@ -318,10 +318,25 @@ export async function getApprovalInboxDetailFromRequest({
 	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
-	let sections = buildDetailSections(detail);
-
 	let review: { sections: ApprovalInboxDetailSection[]; decisionsBlocked: boolean } | null =
 		null;
+	// The request's submitted revision and committed results (#325). With
+	// evidence, the live correction reconstruction (UTC clock times from current
+	// rows) would contradict the submitted proposal and is not built.
+	const timeEvidence =
+		request.entityType === "time_entry"
+			? await loadTimeReviewEvidence({
+					organizationId: request.organizationId,
+					approvalRequestId: request.id,
+					workPeriodId: request.entityId,
+					requestPending: request.status === "pending",
+					kind: timeApprovalKindOf(detail.entity),
+				})
+			: null;
+	const sections = buildDetailSections(detail, {
+		liveCorrection: !(timeEvidence?.status === "evidenced" && timeEvidence.kind === "time_correction"),
+	});
+
 	if (request.entityType === "absence_entry") {
 		const evidence = await loadAbsenceReviewEvidence({
 			organizationId: request.organizationId,
@@ -336,28 +351,8 @@ export async function getApprovalInboxDetailFromRequest({
 				claimId: request.entityId,
 			}),
 		);
-	} else if (request.entityType === "time_entry") {
-		// The request's submitted revision and committed results (#325).
-		const evidence = await loadTimeReviewEvidence({
-			organizationId: request.organizationId,
-			approvalRequestId: request.id,
-			workPeriodId: request.entityId,
-			requestPending: request.status === "pending",
-			kind: timeApprovalKindOf(detail.entity),
-		});
-		if (evidence.status === "evidenced" && evidence.kind === "time_correction") {
-			// The live reconstruction (UTC clock times from current rows) would
-			// contradict the submitted proposal; the evidence replaces it.
-			sections = sections.filter(
-				(section) =>
-					!(
-						section.type === "key_value" &&
-						typeof section.title !== "string" &&
-						section.title.key === "approvals:approvals.requestedCorrection"
-					),
-			);
-		}
-		review = buildTimeReviewSections(evidence);
+	} else if (timeEvidence) {
+		review = buildTimeReviewSections(timeEvidence);
 	}
 	if (review) {
 		sections.splice(1, 0, ...review.sections);
@@ -522,6 +517,7 @@ function toInboxItem(
 
 function buildDetailSections(
 	detail: ApprovalDetail,
+	options: { liveCorrection: boolean },
 ): ApprovalInboxDetailSection[] {
 	const stage = detail.approval.display.stage;
 	const useDisplayLocalTimelineIds = isOrdinaryTimeApprovalDetail(detail);
@@ -549,7 +545,7 @@ function buildDetailSections(
 		});
 	}
 
-	sections.push(...buildTimeCorrectionDetailSections(detail));
+	if (options.liveCorrection) sections.push(...buildTimeCorrectionDetailSections(detail));
 
 	if (detail.timeline.length > 0) {
 		sections.push({

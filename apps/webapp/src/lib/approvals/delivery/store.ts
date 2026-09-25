@@ -14,6 +14,7 @@ import {
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowRollout,
+	approvalWorkflowStage,
 	workPeriod,
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
@@ -90,24 +91,14 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 }): Promise<boolean> {
 	if (!input.entityId) return false;
 	let absenceId: string | null = null;
-	let workPeriodId: string | null = null;
+	// Time kinds (#325): the canonical workflow of exactly this cycle names the
+	// kind; a legacy request (no mirroring stage) keeps the existing path.
+	let timeWorkflowType: ApprovalWorkflowType | null = null;
 	if (input.entityType === "absence_entry") {
 		absenceId = input.entityId;
 	} else if (input.entityType === "work_period") {
-		workPeriodId = input.entityId;
-	} else if (input.entityType === "approval_request") {
-		const request = await db.query.approvalRequest.findFirst({
-			where: and(
-				eq(approvalRequest.id, input.entityId),
-				eq(approvalRequest.organizationId, input.organizationId),
-			),
-			columns: { entityType: true, entityId: true },
-		});
-		if (request?.entityType === "absence_entry") absenceId = request.entityId;
-		if (request?.entityType === "time_entry") workPeriodId = request.entityId;
-	}
-	if (workPeriodId) {
-		// Time kinds (#325): the period's current canonical workflow names the kind.
+		// The notification names only the period: its linked workflow counts only
+		// while that cycle is still pending (the one being notified about).
 		const [linked] = await db
 			.select({ workflowType: approvalWorkflow.workflowType })
 			.from(workPeriod)
@@ -116,17 +107,52 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 				and(
 					eq(approvalWorkflow.id, workPeriod.approvalWorkflowId),
 					eq(approvalWorkflow.organizationId, workPeriod.organizationId),
+					eq(approvalWorkflow.sourceType, "time_entry"),
+					eq(approvalWorkflow.sourceId, workPeriod.id),
+					eq(approvalWorkflow.status, "pending"),
 				),
 			)
-			.where(and(eq(workPeriod.id, workPeriodId), eq(workPeriod.organizationId, input.organizationId)))
+			.where(
+				and(eq(workPeriod.id, input.entityId), eq(workPeriod.organizationId, input.organizationId)),
+			)
 			.limit(1);
-		return linked
-			? await isApprovalDeliveryOwner({
-					organizationId: input.organizationId,
-					workflowType: linked.workflowType,
-					provider: input.provider,
-				})
-			: false;
+		timeWorkflowType = linked?.workflowType ?? null;
+	} else if (input.entityType === "approval_request") {
+		const request = await db.query.approvalRequest.findFirst({
+			where: and(
+				eq(approvalRequest.id, input.entityId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+			columns: { id: true, entityType: true, entityId: true },
+		});
+		if (request?.entityType === "absence_entry") absenceId = request.entityId;
+		if (request?.entityType === "time_entry") {
+			const [mirrored] = await db
+				.select({ workflowType: approvalWorkflow.workflowType })
+				.from(approvalWorkflowStage)
+				.innerJoin(
+					approvalWorkflow,
+					and(
+						eq(approvalWorkflow.id, approvalWorkflowStage.workflowId),
+						eq(approvalWorkflow.organizationId, approvalWorkflowStage.organizationId),
+					),
+				)
+				.where(
+					and(
+						eq(approvalWorkflowStage.organizationId, input.organizationId),
+						eq(approvalWorkflowStage.legacyApprovalRequestId, request.id),
+					),
+				)
+				.limit(1);
+			timeWorkflowType = mirrored?.workflowType ?? null;
+		}
+	}
+	if (timeWorkflowType) {
+		return await isApprovalDeliveryOwner({
+			organizationId: input.organizationId,
+			workflowType: timeWorkflowType,
+			provider: input.provider,
+		});
 	}
 	if (!absenceId) return false;
 	const owner = await isApprovalDeliveryOwner({

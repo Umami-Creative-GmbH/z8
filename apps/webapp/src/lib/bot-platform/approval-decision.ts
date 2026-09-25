@@ -13,7 +13,7 @@ import {
 	loadReviewBindingAuthority,
 	loadReviewBindingWorkflowType,
 } from "@/lib/approvals/evidence/store";
-import { isTimeApprovalWorkflowType } from "@/lib/approvals/presentation/time-card";
+import { isTimeApprovalWorkflowType } from "@/lib/approvals/time-approval-kinds";
 import { decideBoundTimeInvocation } from "@/lib/approvals/server/time-bound-decision";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
 import { decideBoundAbsenceInvocation } from "@/lib/approvals/server/absence-approvals";

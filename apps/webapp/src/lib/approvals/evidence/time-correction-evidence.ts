@@ -24,11 +24,11 @@ import { loadEmployeeLabel } from "./absence-submission";
 import { deriveCommandDecisionOutcome } from "./decision-outcome";
 import { ApprovalEvidenceError } from "./errors";
 import {
+	assertTimeReviewBinding,
 	type ReviewedDecisionTarget,
-	workPeriodCommandFingerprintDigest,
+	timeEvidenceCommandFingerprintDigest,
 } from "./work-period-evidence";
 import {
-	assertReviewBindingMatches,
 	captureTimeCorrectionSubmittedRevision,
 	type LegacyDecisionEvidenceRecord,
 	loadCanonicalTimeCorrectionSubmittedRevision,
@@ -648,21 +648,8 @@ export async function preflightCanonicalTimeCorrectionDecisionEvidence(
 	},
 ): Promise<void> {
 	const revision = await loadCanonicalDecisionRevision(database, input);
-	if (!revision) {
-		if (input.reviewedBindingId !== null) throw new ApprovalEvidenceError("binding_mismatch");
-		return;
-	}
-	await enforceRevision(database, revision);
-	if (input.reviewedBindingId === null) return;
-	if (!input.target.actorEmployeeId) throw new ApprovalEvidenceError("binding_mismatch");
-	await assertReviewBindingMatches(database, input.reviewedBindingId, {
-		organizationId: input.organizationId,
-		recipientEmployeeId: input.target.actorEmployeeId,
-		workflowId: input.workflow.id,
-		stageId: input.target.stageId,
-		assignmentId: input.target.assignmentId,
-		submittedRevisionId: revision.id,
-	});
+	if (revision) await enforceRevision(database, revision);
+	await assertTimeReviewBinding(database, { ...input, submittedRevisionId: revision?.id ?? null });
 }
 
 /** Records one executed canonical decision in the engine's transaction. */
@@ -698,7 +685,7 @@ export async function recordCanonicalTimeCorrectionDecisionEvidence(
 			...input.receipt,
 			idempotencyKey: timeCorrectionReceiptKeyDigest(input.receipt.idempotencyKey),
 			// The engine's command fingerprint carries a rejection reason verbatim.
-			commandFingerprint: workPeriodCommandFingerprintDigest(input.receipt.commandFingerprint),
+			commandFingerprint: timeEvidenceCommandFingerprintDigest(input.receipt.commandFingerprint),
 		},
 		action: input.command.type,
 		stageId: outcome.stageId,

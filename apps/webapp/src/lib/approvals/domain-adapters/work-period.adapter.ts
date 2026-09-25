@@ -1,3 +1,4 @@
+import type { ReviewedDecisionTarget } from "../evidence/work-period-evidence";
 import { sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "../approval-database-row";
@@ -47,11 +48,7 @@ export interface OrdinaryWorkPeriodDecisionEvidenceHooks {
 			workflow: ApprovalWorkflowSnapshot;
 			reviewedBindingId: string | null;
 			/** The deciding actor and exact assignment a reviewed binding must name. */
-			target: {
-				actorEmployeeId: string | null;
-				stageId: string;
-				assignmentId: string;
-			};
+			target: ReviewedDecisionTarget;
 		},
 	): Promise<void>;
 	record(

@@ -15,7 +15,7 @@ import {
 	requireCanonicalInvocationDecision,
 } from "../evidence/invocation";
 import { type DecisionEvidenceRecord, loadReviewBinding } from "../evidence/store";
-import { isTimeApprovalWorkflowType } from "../presentation/time-card";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import {

@@ -805,7 +805,7 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		]);
 		expect(keyValue(review.sections, "Result")).toEqual([
 			["Outcome", "Approved"],
-			["Break adjustment", "30 min break inserted"],
+			["Break inserted", "30 min"],
 			["Segment 1", "2026-07-22 08:00 (UTC+00:00) – 2026-07-22 14:00 (UTC+00:00) · 6 h 0 min"],
 			["Segment 2", "2026-07-22 14:30 (UTC+00:00) – 2026-07-22 15:00 (UTC+00:00) · 0 h 31 min"],
 		]);
@@ -931,7 +931,8 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		]);
 		expect(keyValue(review.sections, "Result")).toEqual([
 			["Outcome", "Approved"],
-			["Entry", "2026-07-22 08:30 (UTC+00:00) – 2026-07-22 10:00 (UTC+00:00) · 1 h 30 min"],
+			["Entry", "2026-07-22 08:30 (UTC+00:00) – 2026-07-22 10:00 (UTC+00:00)"],
+			["Resulting duration", "1 h 30 min"],
 		]);
 		// The live (UTC clock-time) reconstruction is replaced by the evidence.
 		expect(
@@ -1384,28 +1385,45 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		expect(await remaining(purged.workflow_id)).toMatchObject({ invocations: "0" });
 	});
 
-	it("silences the existing time notification path where the owner delivers the card", async () => {
+	it("silences the existing time notification path only for the cycle the owner delivers", async () => {
 		await seed();
 		const manualId = await submitManual();
-		const notice = {
+		const cycle = await pendingCycle(manualId, "manual_time_submission");
+		const notice = (entityType: string, entityId: string) => ({
 			userId: ids.managerUser,
 			organizationId: ids.organization,
 			type: "approval_request_submitted" as const,
 			title: "Manual time entry approval required",
 			message: "Avery Requester submitted a manual time entry.",
-			entityType: "work_period",
-			entityId: manualId,
-		};
-		await sendTelegramNotification(notice);
+			entityType,
+			entityId,
+		});
+		await sendTelegramNotification(notice("work_period", manualId));
+		await sendTelegramNotification(notice("approval_request", cycle.request_id));
 		expect(sends()).toHaveLength(0);
 
-		// Without a delivery control for the kind, the existing path keeps its message.
+		// Once that cycle is decided, the period no longer names an owned pending
+		// cycle, and the existing path keeps its message.
+		actAs(ids.managerUser);
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: cycle.request_id,
+				actorEmployeeId: ids.manager,
+				organizationId: ids.organization,
+			}),
+		).resolves.toMatchObject({ status: "approved" });
+		harness.userId = null;
+		await sendTelegramNotification(notice("work_period", manualId));
+		expect(sends()).toHaveLength(1);
+
+		// Without a delivery control for the kind, the path speaks as before.
+		const next = await submitManual("2026-07-21");
 		await admin.query(
 			`delete from approval_delivery_control
 			 where organization_id = $1 and workflow_type = 'manual_time_submission'`,
 			[ids.organization],
 		);
-		await sendTelegramNotification(notice);
-		expect(sends()).toHaveLength(1);
+		await sendTelegramNotification(notice("work_period", next));
+		expect(sends()).toHaveLength(2);
 	});
 });

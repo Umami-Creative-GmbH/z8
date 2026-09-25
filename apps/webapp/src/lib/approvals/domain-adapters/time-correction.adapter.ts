@@ -1,3 +1,4 @@
+import type { ReviewedDecisionTarget } from "../evidence/work-period-evidence";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { member } from "@/db/auth-schema";
 import {
@@ -144,11 +145,7 @@ export interface TimeCorrectionDecisionEvidenceDependencies {
 			workflow: ApprovalWorkflowSnapshot;
 			reviewedBindingId: string | null;
 			/** The deciding actor and exact assignment a reviewed binding must name. */
-			target: {
-				actorEmployeeId: string | null;
-				stageId: string;
-				assignmentId: string;
-			};
+			target: ReviewedDecisionTarget;
 		},
 	): Promise<void>;
 	record(

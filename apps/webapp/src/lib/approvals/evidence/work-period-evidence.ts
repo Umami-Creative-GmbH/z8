@@ -83,7 +83,7 @@ export function workPeriodReceiptKeyDigest(idempotencyKey: string): string {
  * The engine's command fingerprint carries a rejection reason verbatim; the
  * evidence keeps only its digest (#325), like the receipt key.
  */
-export function workPeriodCommandFingerprintDigest(commandFingerprint: string): string {
+export function timeEvidenceCommandFingerprintDigest(commandFingerprint: string): string {
 	return `command-fingerprint:sha256:${sha256(commandFingerprint)}`;
 }
 
@@ -644,20 +644,36 @@ export async function preflightCanonicalWorkPeriodDecisionEvidence(
 	},
 ): Promise<void> {
 	const revision = await loadCanonicalDecisionRevision(database, input);
-	if (!revision) {
-		if (input.reviewedBindingId !== null) throw new ApprovalEvidenceError("binding_mismatch");
-		return;
-	}
-	await enforceRevision(database, revision);
+	if (revision) await enforceRevision(database, revision);
+	await assertTimeReviewBinding(database, { ...input, submittedRevisionId: revision?.id ?? null });
+}
+
+/**
+ * A supplied reviewed binding must name exactly the deciding actor, the
+ * workflow's assignment and its current submitted revision; without a
+ * revision it can name nothing. Shared by the time-kind preflights.
+ */
+export async function assertTimeReviewBinding(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workflow: { id: string };
+		reviewedBindingId: string | null;
+		target: ReviewedDecisionTarget;
+		submittedRevisionId: string | null;
+	},
+): Promise<void> {
 	if (input.reviewedBindingId === null) return;
-	if (!input.target.actorEmployeeId) throw new ApprovalEvidenceError("binding_mismatch");
+	if (!input.submittedRevisionId || !input.target.actorEmployeeId) {
+		throw new ApprovalEvidenceError("binding_mismatch");
+	}
 	await assertReviewBindingMatches(database, input.reviewedBindingId, {
 		organizationId: input.organizationId,
 		recipientEmployeeId: input.target.actorEmployeeId,
 		workflowId: input.workflow.id,
 		stageId: input.target.stageId,
 		assignmentId: input.target.assignmentId,
-		submittedRevisionId: revision.id,
+		submittedRevisionId: input.submittedRevisionId,
 	});
 }
 
@@ -706,7 +722,7 @@ export async function recordCanonicalWorkPeriodDecisionEvidence(
 		receipt: {
 			...input.receipt,
 			idempotencyKey: workPeriodReceiptKeyDigest(input.receipt.idempotencyKey),
-			commandFingerprint: workPeriodCommandFingerprintDigest(input.receipt.commandFingerprint),
+			commandFingerprint: timeEvidenceCommandFingerprintDigest(input.receipt.commandFingerprint),
 		},
 		action: input.command.type,
 		stageId: outcome.stageId,

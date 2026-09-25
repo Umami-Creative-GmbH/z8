@@ -150,7 +150,7 @@ describe("buildTimeReviewSections", () => {
 		]);
 		expect(rows(sections, "Result")).toEqual([
 			["Outcome", "Approved"],
-			["Break adjustment", "30 min break inserted"],
+			["Break inserted", "30 min"],
 			["Segment 1", "2026-10-05 08:00 (UTC+02:00) – 2026-10-05 14:00 (UTC+02:00) · 6 h 0 min"],
 			["Segment 2", "2026-10-05 14:30 (UTC+02:00) – 2026-10-05 14:31 (UTC+02:00) · 0 h 1 min"],
 		]);
@@ -260,7 +260,8 @@ describe("buildTimeReviewSections", () => {
 		]);
 		expect(rows(reviewed.sections, "Result")).toEqual([
 			["Outcome", "Approved"],
-			["Entry", "2026-10-05 08:00 (UTC+02:00) – 2026-10-05 16:00 (UTC+01:00) · 9 h 0 min"],
+			["Entry", "2026-10-05 08:00 (UTC+02:00) – 2026-10-05 16:00 (UTC+01:00)"],
+			["Resulting duration", "9 h 0 min"],
 		]);
 		const history = reviewed.sections.find((section) => section.type === "timeline");
 		expect(history?.type === "timeline" && history.events.map((event) => event.label)).toEqual([

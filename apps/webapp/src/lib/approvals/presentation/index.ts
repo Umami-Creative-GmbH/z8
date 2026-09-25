@@ -21,11 +21,8 @@ import {
 	prepareBoundAbsenceCard,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
-import {
-	isTimeApprovalWorkflowType,
-	prepareBoundTimeCard,
-	prepareTimeReviewSummary,
-} from "./time-card";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
+import { prepareBoundTimeCard, prepareTimeReviewSummary } from "./time-card";
 import { prepareBoundTravelExpenseCard } from "./travel-expense-card";
 
 const logger = createLogger("ApprovalPresentation");

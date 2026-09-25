@@ -26,7 +26,7 @@ import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-cor
 import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
 import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
 import type { ApprovalDatabase } from "../server/types";
-import type { ApprovalWorkflowType } from "../workflow/ports";
+import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import type {
 	ApprovalActionableCard,
 	ApprovalCardDraft,
@@ -189,6 +189,16 @@ export function buildTimeCorrectionCardFacts(
 	const roles = roleFacts(revision, t);
 	if (!roles) return null;
 	const { baseline, requested, changeMask, intent } = revision.facts;
+	// A change the mask names but the proposal does not carry is contradictory
+	// essential evidence (#253 §5.3): no actionable card.
+	if (
+		(changeMask.clockIn && !requested.clockIn) ||
+		(changeMask.clockOut && !requested.clockOut) ||
+		(changeMask.workLocation && requested.workLocationType.kind !== "set") ||
+		(changeMask.workCategory && requested.workCategoryId.kind !== "set")
+	) {
+		return null;
+	}
 	const request = REQUEST_TEXT[intent];
 	const entryEnd = baseline.clockOut
 		? endpointText(baseline.clockOut, display)
@@ -275,17 +285,6 @@ function categoryText(
 ): string | null {
 	if (id === null) return t("bot.approval.card.noCategory", "No category");
 	return names[id] ?? null;
-}
-
-export const TIME_APPROVAL_WORKFLOW_TYPES = [
-	"manual_time_submission",
-	"policy_clock_out",
-	"time_correction",
-] as const satisfies readonly ApprovalWorkflowType[];
-export type TimeApprovalWorkflowType = (typeof TIME_APPROVAL_WORKFLOW_TYPES)[number];
-
-export function isTimeApprovalWorkflowType(value: unknown): value is TimeApprovalWorkflowType {
-	return TIME_APPROVAL_WORKFLOW_TYPES.includes(value as TimeApprovalWorkflowType);
 }
 
 const TITLES: Readonly<Record<TimeApprovalWorkflowType, { key: string; fallback: string }>> = {

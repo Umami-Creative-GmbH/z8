@@ -285,4 +285,17 @@ describe("buildTimeCorrectionCardFacts", () => {
 			buildTimeCorrectionCardFacts(metadataOnly, { "cat-travel": null }, berlin24, t),
 		).toBeNull();
 	});
+
+	it("is review-only when the change mask names a change the proposal does not carry", () => {
+		const base = correctionRevision();
+		// A changed clock-out without a requested clock-out is contradictory evidence.
+		const missingEndpoint = correctionRevision({
+			changeMask: { ...base.facts.changeMask, clockOut: true },
+		});
+		expect(buildTimeCorrectionCardFacts(missingEndpoint, {}, berlin24, t)).toBeNull();
+		const missingLocation = correctionRevision({
+			changeMask: { ...base.facts.changeMask, workLocation: true },
+		});
+		expect(buildTimeCorrectionCardFacts(missingLocation, {}, berlin24, t)).toBeNull();
+	});
 });

@@ -31,7 +31,8 @@ import type {
 import type { ApprovalInboxDetailSection } from "../inbox/types";
 import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
 import type { ApprovalDatabase } from "../server/types";
-import { loadTimeCorrectionCategoryNames, type TimeApprovalWorkflowType } from "./time-card";
+import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
+import { loadTimeCorrectionCategoryNames } from "./time-card";
 
 type TimeDecisionEvidence = DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 
@@ -158,8 +159,8 @@ function workPeriodResultRows(terminal: Record<string, unknown>): Row[] {
 	const adjustment = record(terminal.adjustment);
 	if (adjustment?.kind === "break_enforced" && typeof adjustment.breakMinutes === "number") {
 		rows.push({
-			label: text("breakAdjustment", "Break adjustment"),
-			value: `${adjustment.breakMinutes} min break inserted`,
+			label: text("breakInserted", "Break inserted"),
+			value: `${adjustment.breakMinutes} min`,
 		});
 	} else if (adjustment?.kind === "break_not_required") {
 		rows.push({
@@ -394,10 +395,21 @@ function correctionResultRows(terminal: Record<string, unknown>): Row[] {
 		return rows;
 	}
 	const segment = record(terminal.segment);
+	const clockIn = segment?.clockIn;
+	const clockOut = segment?.clockOut;
 	rows.push({
 		label: text("entry", "Entry"),
-		value: (segment && segmentText(segment)) ?? UNAVAILABLE,
+		value: isEndpoint(clockIn)
+			? `${capturedEndpointText(clockIn)} – ${isEndpoint(clockOut) ? capturedEndpointText(clockOut) : "…"}`
+			: UNAVAILABLE,
 	});
+	// The resulting stored minutes, apart from the submitted baseline's.
+	if (typeof segment?.storedDurationMinutes === "number") {
+		rows.push({
+			label: text("resultingDuration", "Resulting duration"),
+			value: minutesText(segment.storedDurationMinutes),
+		});
+	}
 	return rows;
 }
 
@@ -473,12 +485,15 @@ async function findTimeRevisionLifecycle(
 			),
 		)
 		.limit(2);
-	const row = rows[0];
-	if (rows.length !== 1 || !row) return null;
-	const kind = row.workflowType as TimeApprovalWorkflowType;
+	// The authority that owns the request wins; a legacy capture of a request
+	// a canonical stage now mirrors is only an earlier observation of it.
+	const canonical = rows.filter((row) => row.authority === "canonical");
+	const chosen = canonical.length > 0 ? canonical : rows;
+	const row = chosen[0];
+	if (chosen.length !== 1 || !row || !isTimeApprovalWorkflowType(row.workflowType)) return null;
 	return row.authority === "canonical" && workflowId
-		? { authority: "canonical", workflowId, kind }
-		: { authority: "legacy", chainInstanceId, kind };
+		? { authority: "canonical", workflowId, kind: row.workflowType }
+		: { authority: "legacy", chainInstanceId, kind: row.workflowType };
 }
 
 /**
