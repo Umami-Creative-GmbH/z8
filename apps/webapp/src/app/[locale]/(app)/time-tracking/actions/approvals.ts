@@ -1,4 +1,7 @@
-"use server";
+import "server-only";
+
+// Approval notification senders for callers that have already authorized the
+// submission (#443): not server actions, so a client cannot trigger them.
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
