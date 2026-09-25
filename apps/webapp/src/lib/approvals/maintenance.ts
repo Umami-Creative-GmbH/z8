@@ -174,6 +174,8 @@ export interface DeletedApprovalEvidenceRecords {
 	submittedRevisions: string[];
 	decisionEvidence: string[];
 	reviewBindings: string[];
+	/** Provider invocation associations of the lifecycle's decisions (#290). */
+	invocations: string[];
 }
 
 export interface DeletedApprovalRecords {
@@ -209,7 +211,8 @@ export async function deleteApprovalInTransaction(
 	await transaction.execute(sql`
 		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
 			approval_workflow, approval_workflow_stage, approval_submitted_revision,
-			approval_review_binding, approval_decision_evidence, approval_escalation_transfer
+			approval_review_binding, approval_decision_evidence, approval_escalation_transfer,
+			approval_invocation
 			in share row exclusive mode
 	`);
 
@@ -321,6 +324,11 @@ export async function deleteApprovalInTransaction(
 			`)),
 		);
 	}
+	// Invocation associations reference their decision and binding; delete them
+	// first so the audit records them and a late redelivery cannot replay.
+	const invocations = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_invocation where ${evidenceScope} returning id
+		`);
 	const decisionEvidence: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_decision_evidence where ${evidenceScope} returning id
 		`);
@@ -364,6 +372,7 @@ export async function deleteApprovalInTransaction(
 			submittedRevisions: submittedRevisions.sort(),
 			decisionEvidence: decisionEvidence.sort(),
 			reviewBindings: reviewBindings.sort(),
+			invocations: invocations.sort(),
 		},
 		escalationTransfers: escalationTransfers.sort(),
 	};

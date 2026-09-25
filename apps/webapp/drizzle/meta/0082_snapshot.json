@@ -1,5 +1,5 @@
 {
-  "id": "d3d4d5cd-63f6-4538-ad93-fc33961bde13",
+  "id": "affcb345-c96e-42c3-9c1c-0ca843108f66",
   "prevId": "0532477f-6956-4dd9-86a1-8954e51beac0",
   "version": "7",
   "dialect": "postgresql",
@@ -6268,7 +6268,17 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "approvalDecisionEvidence_id_workflow_organizationId_idx": {
+          "name": "approvalDecisionEvidence_id_workflow_organizationId_idx",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "workflow_id",
+            "organization_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "approval_decision_evidence_operation_kind_check": {
@@ -6346,6 +6356,378 @@
         "approval_evidence_control_mode_check": {
           "name": "approval_evidence_control_mode_check",
           "value": "\"approval_evidence_control\".\"mode\" IN ('inactive', 'capture')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_invocation": {
+      "name": "approval_invocation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scheme": {
+          "name": "scheme",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scheme_version": {
+          "name": "scheme_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receiver_scope": {
+          "name": "receiver_scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invocation_id": {
+          "name": "invocation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delivery_id": {
+          "name": "delivery_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_actor_id": {
+          "name": "provider_actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_employee_id": {
+          "name": "actor_employee_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_id": {
+          "name": "workflow_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_binding_id": {
+          "name": "reviewed_binding_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "command_fingerprint": {
+          "name": "command_fingerprint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "receipt_idempotency_key": {
+          "name": "receipt_idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "decision_evidence_id": {
+          "name": "decision_evidence_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "approvalInvocation_org_identity_idx": {
+          "name": "approvalInvocation_org_identity_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "scheme",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "receiver_scope",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "invocation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "approvalInvocation_org_workflow_receipt_idx": {
+          "name": "approvalInvocation_org_workflow_receipt_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workflow_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "receipt_idempotency_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "approvalInvocation_org_workflow_idx": {
+          "name": "approvalInvocation_org_workflow_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "workflow_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "approval_invocation_organization_id_organization_id_fk": {
+          "name": "approval_invocation_organization_id_organization_id_fk",
+          "tableFrom": "approval_invocation",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "approval_invocation_actor_user_id_user_id_fk": {
+          "name": "approval_invocation_actor_user_id_user_id_fk",
+          "tableFrom": "approval_invocation",
+          "tableTo": "user",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "approval_invocation_workflow_id_organization_id_approval_workflow_id_organization_id_fk": {
+          "name": "approval_invocation_workflow_id_organization_id_approval_workflow_id_organization_id_fk",
+          "tableFrom": "approval_invocation",
+          "tableTo": "approval_workflow",
+          "columnsFrom": [
+            "workflow_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "approval_invocation_reviewed_binding_id_organization_id_approval_review_binding_id_organization_id_fk": {
+          "name": "approval_invocation_reviewed_binding_id_organization_id_approval_review_binding_id_organization_id_fk",
+          "tableFrom": "approval_invocation",
+          "tableTo": "approval_review_binding",
+          "columnsFrom": [
+            "reviewed_binding_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "approval_invocation_decision_evidence_id_workflow_id_organization_id_approval_decision_evidence_id_workflow_id_organization_id_fk": {
+          "name": "approval_invocation_decision_evidence_id_workflow_id_organization_id_approval_decision_evidence_id_workflow_id_organization_id_fk",
+          "tableFrom": "approval_invocation",
+          "tableTo": "approval_decision_evidence",
+          "columnsFrom": [
+            "decision_evidence_id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "workflow_id",
+            "organization_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "approval_invocation_actor_employee_id_organization_id_employee_id_organization_id_fk": {
+          "name": "approval_invocation_actor_employee_id_organization_id_employee_id_organization_id_fk",
+          "tableFrom": "approval_invocation",
+          "tableTo": "employee",
+          "columnsFrom": [
+            "actor_employee_id",
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id",
+            "organization_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_invocation_scheme_check": {
+          "name": "approval_invocation_scheme_check",
+          "value": "\"approval_invocation\".\"scheme\" IN ('telegram_callback_query') AND \"approval_invocation\".\"scheme_version\" = 1"
+        },
+        "approval_invocation_action_check": {
+          "name": "approval_invocation_action_check",
+          "value": "\"approval_invocation\".\"action\" IN ('approve', 'reject')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.approval_presentation_control": {
+      "name": "approval_presentation_control",
+      "schema": "",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workflow_type": {
+          "name": "workflow_type",
+          "type": "approval_workflow_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'review_only'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "approval_presentation_control_organization_id_organization_id_fk": {
+          "name": "approval_presentation_control_organization_id_organization_id_fk",
+          "tableFrom": "approval_presentation_control",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "approval_presentation_control_pk": {
+          "name": "approval_presentation_control_pk",
+          "columns": [
+            "organization_id",
+            "workflow_type",
+            "provider"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "approval_presentation_control_provider_check": {
+          "name": "approval_presentation_control_provider_check",
+          "value": "\"approval_presentation_control\".\"provider\" IN ('telegram', 'discord', 'teams', 'slack')"
+        },
+        "approval_presentation_control_mode_check": {
+          "name": "approval_presentation_control_mode_check",
+          "value": "\"approval_presentation_control\".\"mode\" IN ('review_only', 'actionable')"
+        },
+        "approval_presentation_control_slack_check": {
+          "name": "approval_presentation_control_slack_check",
+          "value": "NOT (\"approval_presentation_control\".\"provider\" = 'slack' AND \"approval_presentation_control\".\"mode\" = 'actionable')"
         }
       },
       "isRLSEnabled": false

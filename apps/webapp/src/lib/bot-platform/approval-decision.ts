@@ -3,7 +3,14 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
+import {
+	APPROVAL_INVOCATION_SCHEME_VERSION,
+	type ApprovalInvocationScheme,
+} from "@/lib/approvals/evidence/invocation";
+import type { DecisionEvidenceRecord } from "@/lib/approvals/evidence/store";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
+import { decideBoundAbsenceInvocation } from "@/lib/approvals/server/absence-approvals";
+import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import {
 	DatabaseService,
@@ -100,4 +107,87 @@ export async function attemptBotApproval(
 	return verified._tag === "Right"
 		? { status: "historical", action: input.action }
 		: { status: "review_required" };
+}
+
+/**
+ * Provider invocation evidence for a bound card action. Only providers with a
+ * documented per-invocation identity supply it (#261); anything missing makes
+ * the action review-only.
+ */
+export interface BotInvocationEnvelope {
+	scheme: ApprovalInvocationScheme;
+	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>`. */
+	receiverScope: string;
+	invocationId: string;
+	/** Transport delivery identity (Telegram update_id), kept separately. */
+	deliveryId: string | null;
+	providerActorId: string;
+}
+
+type BoundBotApprovalInput = {
+	organizationId: string;
+	actorEmployeeId: string;
+	actorUserId: string;
+	/** Opaque reviewed-binding handle carried by the card. */
+	bindingId: string;
+	action: ApprovalAction;
+	platform: BotPlatform;
+	invocation: BotInvocationEnvelope | null;
+};
+
+export type BoundBotApprovalResult =
+	| {
+			status: "decided";
+			/** This invocation was already committed; the original is returned. */
+			replayed: boolean;
+			evidence: DecisionEvidenceRecord;
+	  }
+	| { status: "review_required" }
+	| { status: "conflict" }
+	| { status: "not_found" };
+
+const INVOCATION_SCHEMES: Partial<
+	Record<BotPlatform, ApprovalInvocationScheme>
+> = { telegram: "telegram_callback_query" };
+
+/**
+ * A bound card action. The binding and invocation cross the shared attempt
+ * into the authoritative decision transaction, which validates organization,
+ * recipient, cycle, subject, assignment and submitted revision at commit. The
+ * provider acknowledgment is the adapter's concern and proves nothing here.
+ */
+export async function attemptBoundBotApproval(
+	input: BoundBotApprovalInput,
+): Promise<BoundBotApprovalResult> {
+	const scheme = INVOCATION_SCHEMES[input.platform];
+	if (!scheme || input.invocation?.scheme !== scheme) {
+		// No established invocation identity: never decide, never replay. An
+		// incomplete identity is refused by the decision owner's parser.
+		return { status: "review_required" };
+	}
+	const result = await decideBoundAbsenceInvocation({
+		database: db,
+		organizationId: input.organizationId,
+		actorEmployeeId: input.actorEmployeeId,
+		actorUserId: input.actorUserId,
+		bindingId: input.bindingId,
+		action: input.action,
+		...(input.action === "reject"
+			? { reason: `Rejected via ${platformNames[input.platform]}` }
+			: {}),
+		invocation: {
+			identity: {
+				organizationId: input.organizationId,
+				scheme,
+				schemeVersion: APPROVAL_INVOCATION_SCHEME_VERSION,
+				receiverScope: input.invocation.receiverScope,
+				invocationId: input.invocation.invocationId,
+			},
+			deliveryId: input.invocation.deliveryId,
+			providerActorId: input.invocation.providerActorId,
+		},
+	});
+	return result.status === "review_required"
+		? { status: "review_required" }
+		: result;
 }

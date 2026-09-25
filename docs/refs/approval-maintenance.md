@@ -38,7 +38,7 @@ Deletion bypasses approve/deny logic and works even if the source record is miss
 - The selected approval.
 - Explicitly linked legacy requests, approval chains, and canonical workflows for that approval lifecycle, including multi-stage siblings.
 - Dependent approval stages, assignments, events, commands, projections, outbox/delivery records, migration issues, and legacy integration records through database cascades.
-- Immutable approval evidence linked to the lifecycle's canonical workflows (submitted revisions, decision evidence and review bindings). These are deleted explicitly and their IDs are returned and written to the platform-admin audit entry. See [Approval evidence](approval-evidence.md).
+- Immutable approval evidence linked to the lifecycle's canonical workflows (submitted revisions, decision evidence, review bindings and bot invocation associations). These are deleted explicitly and their IDs are returned and written to the platform-admin audit entry. See [Approval evidence](approval-evidence.md).
 - Legacy-authority evidence linked to the lifecycle through the legacy request, chain or observed shadow workflow it recorded. A legacy submitted revision ID can also be passed directly, which removes that revision, its decision evidence and any still-linked approval rows.
 - Escalation transfer journal entries: canonical ones through the lifecycle's workflows, legacy ones (#299) through the legacy request or observed shadow workflow they recorded. Their delivery events cascade, and their IDs are returned as `escalationTransfers`. A legacy transfer ID can also be passed directly. See [Escalation transfer](escalation-transfer.md).
 

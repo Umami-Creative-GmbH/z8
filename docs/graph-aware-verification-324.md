@@ -100,7 +100,7 @@ like altered rows, and are never labeled verified.
   claims, issues, continuity provenance and limitations. Per-entry detail is left
   out; `entries.json` carries the included entries.
 - `meta/scope.json.appendAssurance` and `audit_pack_artifact.append_assurance`
-  (migration `0081`, nullable for older packs) record the scope counts and the
+  (migration `0082`, nullable for older packs) record the scope counts and the
   union of limitation codes. The audit-pack card shows "Limited lineage assurance
   for N of M employees", "Lineage verified from stored evidence for M employees. Its
   limitations are listed in append-assurance.json.", or "Lineage assurance not
