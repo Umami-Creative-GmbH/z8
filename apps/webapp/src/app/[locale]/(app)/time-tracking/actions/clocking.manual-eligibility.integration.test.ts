@@ -744,30 +744,67 @@ describeIntegration("project and category eligibility coordination on PostgreSQL
 			// An assignment row of this organization that points at a foreign project.
 			await assign(candidates.foreign, "employee_id", ids.employee);
 			await assignSetToEmployee();
-
-			const context = await actAs(ids.employeeUser, () => getManualEntryTargetContext({}));
-			expect(context.success).toBe(true);
-			if (!context.success) return;
-			const offered = new Set(context.data.projects.map((choice) => choice.id));
-			expect([...offered].sort()).toEqual(
-				[candidates.direct, candidates.team, candidates.paused].sort(),
+			const categoryCandidates = {
+				inSet: ids.category,
+				inactiveInSet: "e3150000-0000-4000-8000-000000000060",
+				notInSet: "e3150000-0000-4000-8000-000000000061",
+				// Another organization's category linked into this organization's set.
+				foreignInSet: ids.otherCategory,
+			};
+			await admin.query(
+				`insert into work_category (id, organization_id, name, is_active, created_by, updated_at) values
+				 ($1, $3, 'T315 retired', false, $4, now()), ($2, $3, 'T315 elsewhere', true, $4, now())`,
+				[
+					categoryCandidates.inactiveInSet,
+					categoryCandidates.notInSet,
+					ids.organization,
+					ids.ownerUser,
+				],
 			);
-			expect(context.data.categories.map((choice) => choice.id)).toEqual([ids.category]);
+			await admin.query(
+				"insert into work_category_set_category (set_id, category_id) values ($1, $2), ($1, $3)",
+				[ids.categorySet, categoryCandidates.inactiveInSet, categoryCandidates.foreignInSet],
+			);
 
-			let day = 1;
-			for (const projectId of Object.values(candidates)) {
-				const command = manualCommand({
-					projectId,
+			// One non-overlapping hour per submission, all before the pinned instant.
+			let slot = 0;
+			const nextSlot = () => {
+				const day = 1 + Math.floor(slot / 4);
+				const hour = 8 + 2 * (slot % 4);
+				slot += 1;
+				const time = (h: number) => `${String(h).padStart(2, "0")}:00`;
+				return {
 					date: `2026-09-0${day}`,
-				});
-				day += 1;
-				expectOutcome(await submit(command), offered.has(projectId), command);
+					clockIn: at(time(hour), 120),
+					clockOut: at(time(hour + 1), 120),
+				};
+			};
+
+			// The employee for themself, and the owner on the employee's behalf.
+			for (const actor of [ids.employeeUser, ids.ownerUser]) {
+				const context = await actAs(actor, () =>
+					getManualEntryTargetContext({ targetEmployeeId: ids.employee }),
+				);
+				expect(context.success).toBe(true);
+				if (!context.success) return;
+				const offeredProjects = new Set(context.data.projects.map((choice) => choice.id));
+				const offeredCategories = new Set(context.data.categories.map((choice) => choice.id));
+				expect([...offeredProjects].sort()).toEqual(
+					[candidates.direct, candidates.team, candidates.paused].sort(),
+				);
+				expect([...offeredCategories]).toEqual([ids.category]);
+
+				const submitAs = (command: ManualTimeEntryCommand) =>
+					actAs(actor, () => createManualTimeEntry(command));
+				for (const projectId of Object.values(candidates)) {
+					const command = manualCommand({ projectId, ...nextSlot() });
+					expectOutcome(await submitAs(command), offeredProjects.has(projectId), command);
+				}
+				for (const workCategoryId of Object.values(categoryCandidates)) {
+					const command = manualCommand({ workCategoryId, ...nextSlot() });
+					expectOutcome(await submitAs(command), offeredCategories.has(workCategoryId), command);
+				}
 			}
-			expectOutcome(
-				await submit(manualCommand({ workCategoryId: ids.category, date: "2026-09-09" })),
-				true,
-				manualCommand({ workCategoryId: ids.category }),
-			);
 		});
 
 		it("distinguishes an explicit null selection from a missing one", async () => {

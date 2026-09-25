@@ -131,6 +131,7 @@ function projectMutationError(error: unknown, message: string, operation: string
 				message: error instanceof Error ? error.message : message,
 				operation,
 				table,
+				cause: error instanceof Error ? error : undefined,
 			});
 }
 

@@ -28,7 +28,10 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
+import {
+	type Transaction,
+	withOrganizationConfigurationMutation,
+} from "@/lib/time-tracking/work-transaction";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -284,7 +287,7 @@ function ensureScopedCategoryIds(
 function runWorkCategoryEligibilityMutation<T>(
 	dbService: WorkCategorySettingsActor["dbService"],
 	organizationId: string,
-	write: Parameters<typeof withOrganizationConfigurationMutation<T>>[2],
+	write: (tx: Transaction) => Promise<T>,
 	failure: { message: string; operation: string; table: string },
 ) {
 	return Effect.tryPromise({
@@ -871,6 +874,7 @@ export async function deleteOrganizationCategory(
 							and(
 								eq(workCategory.id, categoryId),
 								eq(workCategory.organizationId, actor.organizationId),
+								eq(workCategory.isActive, true),
 							),
 						)
 						.returning({ id: workCategory.id });
@@ -1380,6 +1384,7 @@ export async function deleteWorkCategorySet(
 							and(
 								eq(workCategorySet.id, setId),
 								eq(workCategorySet.organizationId, actor.organizationId),
+								eq(workCategorySet.isActive, true),
 							),
 						)
 						.returning({ id: workCategorySet.id });
@@ -1436,41 +1441,50 @@ export async function updateSetCategories(
 			}),
 		);
 		const dbService = actor.dbService;
-		const scopedSet = yield* _(
-			getScopedOrganizationWorkCategorySet(
-				dbService,
-				actor.organizationId,
-				setId,
-				"updateSetCategories:scopedSet",
-			),
-		);
 
-		if (!scopedSet) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: setId,
-					}),
-				),
-			);
-		}
-		yield* _(
-			ensureScopedCategoryIds(
-				dbService,
-				actor.organizationId,
-				categoryIds,
-				"updateSetCategories:scopedCategoryIds",
-			),
-		);
-
-		// Replace the set's contents in one protected transaction.
+		// Validate and replace the set's contents in one protected transaction.
 		yield* _(
 			runWorkCategoryEligibilityMutation(
 				dbService,
 				actor.organizationId,
 				async (tx) => {
+					const [activeSet] = await tx
+						.select({ id: workCategorySet.id })
+						.from(workCategorySet)
+						.where(
+							and(
+								eq(workCategorySet.id, setId),
+								eq(workCategorySet.organizationId, actor.organizationId),
+								eq(workCategorySet.isActive, true),
+							),
+						)
+						.limit(1);
+					if (!activeSet) {
+						throw new NotFoundError({
+							message: "Work category set not found",
+							entityType: "work_category_set",
+							entityId: setId,
+						});
+					}
+					const requestedIds = [...new Set(categoryIds)];
+					if (requestedIds.length > 0) {
+						const scopedCategories = await tx
+							.select({ id: workCategory.id })
+							.from(workCategory)
+							.where(
+								and(
+									eq(workCategory.organizationId, actor.organizationId),
+									inArray(workCategory.id, requestedIds),
+								),
+							);
+						if (scopedCategories.length !== requestedIds.length) {
+							throw new NotFoundError({
+								message: "One or more work categories were not found in this organization",
+								entityType: "work_category",
+								entityId: requestedIds.join(","),
+							});
+						}
+					}
 					await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
 					if (categoryIds.length > 0) {
 						await tx.insert(workCategorySetCategory).values(
@@ -1891,6 +1905,7 @@ export async function deleteSetAssignment(
 							and(
 								eq(workCategorySetAssignment.id, assignmentId),
 								eq(workCategorySetAssignment.organizationId, actor.organizationId),
+								eq(workCategorySetAssignment.isActive, true),
 							),
 						)
 						.returning({ id: workCategorySetAssignment.id });

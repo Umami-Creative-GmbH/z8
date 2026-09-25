@@ -43,17 +43,20 @@ it never acquires an earlier-ranked resource late and never upgrades from shared
 | `settings/projects` `updateProject` with `status` (also `archiveProject`) | Bookable lifecycle | Organization-scoped update. Name/description/budget/customer-only updates stay unguarded |
 | `addProjectAssignment` (team or employee) | Inserts an assignment that preparation may have found absent | Target team/active employee in the project's organization, duplicate check, insert |
 | `removeProjectAssignment` | Revokes an assignment | Organization-scoped delete; a row that is already gone is `Assignment not found` |
-| `settings/work-categories` `deleteOrganizationCategory` | Category activation and set contents | Soft delete and removal from every set, now in **one** transaction |
-| `deleteWorkCategorySet` | Set activation, its assignments and contents | All three writes in one transaction (they used to be three) |
-| `updateSetCategories` | Set contents | Delete and insert in one transaction (a failed insert used to leave the set empty) |
+| `settings/work-categories` `deleteOrganizationCategory` | Category activation and set contents | Soft delete of the active category and removal from every set, now in **one** transaction |
+| `deleteWorkCategorySet` | Set activation, its assignments and contents | Soft delete of the active set, its assignments and contents in one transaction (they used to be three) |
+| `updateSetCategories` | Set contents | Active set and categories in the organization, then delete and insert in one transaction (a failed insert used to leave the set empty) |
 | `createSetAssignment` | Inserts an effective assignment that preparation may have found absent | Active set in the organization; team/employee in the organization; insert |
-| `deleteSetAssignment` | Revokes an effective assignment | Organization-scoped soft delete; missing row is `not found` |
+| `deleteSetAssignment` | Revokes an effective assignment | Organization-scoped soft delete of the active row |
 
 `createSetAssignment` also rejects, before the transaction, a level that does not name exactly
 its own target: an organization default with a team or employee, a team level without a team
 or with an employee, and an employee level without an employee or with a team. An empty id
 counts as none. Before this slice a set assignment could reference another organization's
 team or employee.
+
+Removals report `not found` when the row is already gone or already inactive (a repeated or
+concurrent delete); before, they reported success.
 
 Not participating, because they do not change current manual eligibility: `createProject` (a
 new project has no assignment), project managers, `createOrganizationCategory` and
@@ -117,7 +120,11 @@ employee and set in set assignments are rejected with no rows; level/target mism
 rejected; another organization's project or category in a command is ineligible; the form
 offers exactly the projects (direct, team, paused; not completed, inactive, unassigned or
 foreign through an own-organization assignment row) and categories that submissions accept;
-explicit null versus missing selections; version-2 and legacy replay after revocation.
+explicit null versus missing selections; version-2 and legacy replay after revocation. The
+agreement test covers projects (direct, team, paused, completed, inactive, unassigned, foreign
+through an own-organization assignment row) and categories (in the effective set, inactive in
+the set, outside the set, foreign linked into the set), for the employee's own entries and for
+the owner creating on the employee's behalf.
 
 Mutation evidence: before the writers were changed (the red run of this suite), all 20 race
 tests and the set-assignment reference test failed. In a separate mutation run, removing the
@@ -135,6 +142,8 @@ preparation on the shared project rule.
 - `settings/projects/actions.tenant-security.test.ts`: the shared rule scopes project and
   assignment by organization.
 - Existing settings scope tests unchanged.
+- The approval write-boundary scanner (`approval-write-boundary.test.ts`) passes 290/290 in a
+  Linux `node:24` container; these writes touch no protected approval table.
 
 ## Remaining activation blockers
 
