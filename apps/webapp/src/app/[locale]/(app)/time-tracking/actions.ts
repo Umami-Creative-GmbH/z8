@@ -63,11 +63,7 @@ import {
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
-import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
-import {
-	resolveFallbackTimezoneCapture,
-	type TimeEntryTimezoneSource,
-} from "@/lib/time-tracking/timezone-capture";
+import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import {
 	getMonthRangeInTimezone,
 	getTodayRangeInTimezone,
@@ -75,12 +71,12 @@ import {
 } from "@/lib/time-tracking/timezone-utils";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { TimeSummary } from "@/lib/time-tracking/types";
-import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
+	type AddBreakActionContext,
 	addBreakToActiveSession as addBreakToActiveSessionAction,
 	clockIn as clockInAction,
 	clockOut as clockOutAction,
@@ -100,6 +96,7 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
+import { splitOwnWorkPeriod } from "./actions/work-period-split";
 import {
 	createManualTimeEntryFromCommand,
 	lookupManualTimeEntryCommand,
@@ -122,7 +119,10 @@ import type {
 import { canonicalTimeEntryClient } from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
-export async function addBreakToActiveSession(breakMinutes: number) {
+export async function addBreakToActiveSession(
+	breakMinutes: number,
+	actionContext?: AddBreakActionContext,
+) {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -142,7 +142,7 @@ export async function addBreakToActiveSession(breakMinutes: number) {
 		};
 	}
 
-	return addBreakToActiveSessionAction(breakMinutes);
+	return addBreakToActiveSessionAction(breakMinutes, actionContext);
 }
 
 const logger = createLogger("TimeTrackingActionsEffect");
@@ -1113,205 +1113,19 @@ export async function splitWorkPeriod(
 	beforeNotes?: string,
 	afterNotes?: string,
 	disambiguation?: "earlier" | "later",
+	submissionId?: string,
 ): Promise<
 	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const emp = await getCurrentEmployee();
-	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
-	}
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
+	return splitOwnWorkPeriod({
+		workPeriodId,
+		splitDateKey,
+		splitTime,
+		beforeNotes,
+		afterNotes,
+		disambiguation,
+		submissionId,
 	});
-	const timezone = settingsData?.timezone || "UTC";
-
-	try {
-		// Get the work period with related entries
-		const [period] = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.employeeId, emp.id),
-					eq(workPeriod.organizationId, emp.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.limit(1);
-
-		if (!period) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		// Verify ownership
-		if (period.employeeId !== emp.id) {
-			return {
-				success: false,
-				error: "You can only split your own work periods",
-			};
-		}
-
-		// Work period must be completed (have an end time)
-		if (!period.endTime || !period.clockOutId) {
-			return { success: false, error: "Cannot split an active work period" };
-		}
-
-		const resolvedSplit = resolveWorkPeriodSplit({
-			startTime: period.startTime,
-			endTime: period.endTime,
-			splitDate: splitDateKey,
-			splitTime,
-			timezone,
-			disambiguation,
-		});
-		if (!resolvedSplit.success) {
-			return {
-				success: false,
-				error:
-					resolvedSplit.code === "ambiguous"
-						? "Split time is ambiguous"
-						: resolvedSplit.code === "nonexistent"
-							? "Split time does not exist on this date"
-							: "Split time must be between work period start and end times",
-			};
-		}
-		const splitDate = resolvedSplit.splitTime;
-		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: splitDate,
-			timezone,
-			timezoneSource: "user_setting",
-		});
-
-		// Validate split time is between start and end
-		// Validate the split times (check for holidays)
-		const validation = await validateTimeEntryRange(
-			emp.organizationId,
-			period.startTime,
-			period.endTime,
-		);
-
-		if (!validation.isValid) {
-			return {
-				success: false,
-				error: validation.error || "Cannot split work period",
-				holidayName: validation.holidayName,
-			};
-		}
-
-		const billingAccess = await requireBillingForMutation(emp.organizationId);
-		if (!isBillingMutationAllowed(billingAccess)) {
-			return {
-				success: false,
-				error: "billing_required",
-				code: billingAccess.reason ?? "subscription_required",
-			};
-		}
-
-		// Create clock-out entry for first period at split time
-		const firstClockOut = await createTimeEntry({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			type: "clock_out",
-			timestamp: splitDate,
-			createdBy: session.user.id,
-			...splitTimezoneCapture,
-			notes: beforeNotes,
-		});
-
-		// Create clock-in entry for second period at split time
-		const secondClockIn = await createTimeEntry({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			type: "clock_in",
-			timestamp: splitDate,
-			createdBy: session.user.id,
-			...splitTimezoneCapture,
-			notes: afterNotes,
-		});
-
-		// Update the original work period clock-out entry with notes if provided
-		if (beforeNotes && period.clockOutId) {
-			// Mark original clock-out as superseded
-			await db
-				.update(timeEntry)
-				.set({
-					isSuperseded: true,
-					supersededById: firstClockOut.id,
-				})
-				.where(eq(timeEntry.id, period.clockOutId));
-		}
-
-		// Calculate durations
-		const { firstDurationMinutes, secondDurationMinutes } = resolvedSplit;
-
-		// Update the original work period to end at split time
-		await db
-			.update(workPeriod)
-			.set({
-				clockOutId: firstClockOut.id,
-				endTime: splitDate,
-				durationMinutes: firstDurationMinutes,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, period.id),
-					eq(workPeriod.organizationId, emp.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
-
-		// Create a new work period for the second segment
-		const [secondPeriod] = await db
-			.insert(workPeriod)
-			.values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				clockInId: secondClockIn.id,
-				clockOutId: period.clockOutId, // Use original clock-out for second period
-				startTime: splitDate,
-				endTime: period.endTime,
-				durationMinutes: secondDurationMinutes,
-				isActive: false,
-			})
-			.returning();
-
-		// Update the original clock-out entry with afterNotes if provided
-		if (afterNotes && period.clockOutId) {
-			await db
-				.update(timeEntry)
-				.set({ notes: afterNotes })
-				.where(eq(timeEntry.id, period.clockOutId));
-		}
-
-		logger.info(
-			{
-				originalPeriodId: workPeriodId,
-				firstPeriodId: period.id,
-				secondPeriodId: secondPeriod.id,
-				splitTime,
-			},
-			"Work period split successfully",
-		);
-
-		return {
-			success: true,
-			data: { firstPeriodId: period.id, secondPeriodId: secondPeriod.id },
-		};
-	} catch (error) {
-		logger.error({ error }, "Split work period error");
-		return {
-			success: false,
-			error: "Failed to split work period. Please try again.",
-		};
-	}
 }
 
 /**

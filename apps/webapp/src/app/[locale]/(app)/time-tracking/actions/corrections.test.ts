@@ -29,6 +29,10 @@ const modularMutationsSource = readFileSync(
 	fileURLToPath(new URL("./mutations.ts", import.meta.url)),
 	"utf8",
 );
+const splitSource = readFileSync(
+	fileURLToPath(new URL("./work-period-split.ts", import.meta.url)),
+	"utf8",
+);
 const legacySource = readFileSync(
 	fileURLToPath(new URL("../actions.ts", import.meta.url)),
 	"utf8",
@@ -363,10 +367,8 @@ describe("time correction request safety", () => {
 
 	it.each([
 		["legacy notes", legacySource, "updateWorkPeriodNotes"],
-		["legacy split", legacySource, "splitWorkPeriod"],
 		["legacy project", legacySource, "updateWorkPeriodProject"],
 		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
-		["modular split", modularMutationsSource, "splitWorkPeriod"],
 	])(
 		"excludes deleted work periods from %s calendar mutations",
 		(_name, source, functionName) => {
@@ -375,6 +377,17 @@ describe("time correction request safety", () => {
 			expect(body).toContain("isNull(workPeriod.deletedAt)");
 		},
 	);
+
+	it("keeps one split mutation: both calendar entry points delegate to the coordinated split", () => {
+		for (const source of [legacySource, modularMutationsSource]) {
+			const body = functionBody(source, "splitWorkPeriod");
+			expect(body).toContain("return splitOwnWorkPeriod({");
+			expect(body).not.toContain("createTimeEntry(");
+		}
+		expect(functionBody(splitSource, "splitOwnWorkPeriod")).toContain(
+			"isNull(workPeriod.deletedAt)",
+		);
+	});
 
 	it("keeps one project mutation: the modular export delegates to the calendar action", () => {
 		const body = functionBody(modularMutationsSource, "updateWorkPeriodProject");

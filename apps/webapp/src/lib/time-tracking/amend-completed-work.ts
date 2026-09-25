@@ -406,7 +406,11 @@ export async function replayOrAmendCompletedWork(
 	return (await replayAmendCompletedWork(scope, input)) ?? (await amendCompletedWork(scope, input));
 }
 
-async function lockAuthority(
+/**
+ * Locks and verifies the actor's current authority over the owner's work. Shared
+ * with the other direct completed-work writers (#304 calendar splits).
+ */
+export async function lockAuthority(
 	tx: TransactionClient,
 	input: Pick<
 		AmendCompletedWorkInput,

@@ -1,12 +1,14 @@
 import { Temporal } from "temporal-polyfill";
 import {
 	dateFromInstant,
+	type Instant,
 	instantFromDate,
 	type PlainDate,
 	parsePlainDate,
 	parsePlainTimeMinute,
 } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimezone } from "./timezone-capture";
+import { deriveWorkDurationMinutes } from "./work-duration";
 
 type SplitFailureCode = "outside_period" | "nonexistent" | "ambiguous";
 
@@ -76,6 +78,36 @@ export function resolveWorkPeriodSplit({
 	} catch {
 		return { success: false, code: "outside_period" };
 	}
+}
+
+export type CompletedWorkSplitSegment = {
+	startAt: Instant;
+	endAt: Instant;
+	durationMinutes: number;
+};
+
+/**
+ * Adopted split of completed work (#252 §2, #304): each segment rounds its own
+ * exact UTC elapsed time half up, so a positive segment may store zero minutes.
+ * A split on or outside the period's endpoints is refused.
+ */
+export function planCompletedWorkSplit(input: {
+	startAt: Instant;
+	endAt: Instant;
+	splitAt: Instant;
+}): { first: CompletedWorkSplitSegment; second: CompletedWorkSplitSegment } {
+	return {
+		first: {
+			startAt: input.startAt,
+			endAt: input.splitAt,
+			durationMinutes: deriveWorkDurationMinutes(input.startAt, input.splitAt),
+		},
+		second: {
+			startAt: input.splitAt,
+			endAt: input.endAt,
+			durationMinutes: deriveWorkDurationMinutes(input.splitAt, input.endAt),
+		},
+	};
 }
 
 export function getWorkPeriodSplitDates({
