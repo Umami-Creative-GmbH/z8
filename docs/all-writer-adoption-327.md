@@ -57,9 +57,19 @@ Each caller answers the refusal in its own way:
   leaves the period open for the canonical correction flow. Offboarding shows its
   own label for this reason.
 
-The activation step (exclusive adoption gate, then the control row) therefore
-drains in-flight legacy writes. A legacy write that arrives while an activation
-commits is refused.
+There is no activation code: the activation step is an operator transaction that
+takes the exclusive adoption gate and then inserts the control row. The route
+suite runs exactly that SQL. Such a transaction drains in-flight legacy writes,
+and a legacy write that arrives while it commits is refused.
+
+**Known limit: lock order in the departure path.** The departure runs inside its
+lifecycle transaction, which already holds the employee advisory lock and the
+organization row (`lockLifecycleScope`). The shared adoption gate is therefore
+taken after them, which inverts the #264 order. That is safe while activation
+takes only the exclusive gate and the control row. Activation tooling must not
+take employee or organization locks while it holds the exclusive gate, or it can
+deadlock with a departure. Adopting the departure into the completed-work
+operation (W24 below) removes this.
 
 ### Symmetric occupancy for adopted live starts (W01)
 
@@ -120,7 +130,7 @@ append admission, and commits a receipt where its operation defines one.
 | W13 correction lifecycle | Participates, with retention instead of deletion (#301) | correction-lifecycle suite, import races |
 | W14 metadata | Project changes use the #286 amendment. Notes are neither hashed nor part of the interval graph | source |
 | W15 reviewed imports | Participate (#284) | import suite, import↔correction races |
-| W16 direct Clockodo/Clockin | Orchestrators deleted (#318). The actions refuse | `lib/clockodo`, `lib/clockin` hold only clients and types |
+| W16 direct Clockodo/Clockin | Orchestrators deleted (#318). The actions refuse | Source only: `lib/clockodo`, `lib/clockin` hold only clients and types. No test in this slice |
 | W17 runtime demo | Participates (#285); cleanup since #306/#318 | demo-work suite |
 | W18 canonical creation | **Retired (#327)** | actions and service tests pin the absence |
 | W19 read-time repair | Not run under `payroll_work_collection_control` (#322). Legacy payroll reads still run it | payroll collection suite |
@@ -154,8 +164,16 @@ Next cache are replaced.
 | Gap repair vs real split | Split first: repair `stale`, no receipt. Repair first: `applied`, then the split proceeds | `historical-gap-repair…` |
 | Proposal application vs real split | Split first: `stale`, no receipt. Application first: `applied`, then the split proceeds | `historical-work-proposals…` |
 
-In each race, the first writer parks at its first insert while it holds the
-employee key, and the second writer is observed waiting on that key.
+In each race, the first writer parks at its first insert on a test-owned
+advisory lock, after it has taken the employee key. The test then waits until a
+second ungranted advisory lock appears before it releases the first writer. That
+the second writer waits on the employee key specifically follows from the
+coordinators' acquisition order; the helpers do not inspect the lock key.
+
+Configuration and cleanup races, and the changed-scope restart, are not raced
+again here. They are covered by the #311–#318 suites (configuration guards in
+both orders, organization and user scope restart) and #306 (cleanup), which pass
+in the full run below.
 
 ### Failure injection
 
@@ -167,7 +185,9 @@ and `work_break_adjustment_intent` (18 cases). In every case the whole operation
 rolls back, another employee commits while the failure is armed, and the same
 command then commits. The earlier slices' suites cover failure injection for their
 own owners: imports, corrections, splits, breaks, demo, repair, approvals and
-delivery.
+delivery. **Not in this matrix:** approval_request and approval evidence steps of
+a clock-out that needs approval. The #274 and #302 suites cover them for web
+clock-out; the other callers remain in "Verification not yet done".
 
 ### Continuity and provenance
 
@@ -328,7 +348,13 @@ Separately:
   closures, and deferrals.
 - **Surcharge event-time semantics** for manual entries that need approval (#308).
 - **Linux/CI write-boundary scanner** for every release that adds a writer. It ran
-  for this slice; see the verification record.
+  for this slice (290/290, see the verification record).
+- **Unauthenticated `"use server"` follow-up exports.** `actions/compliance.ts` and
+  `time-tracking/actions.ts` still export break, compliance and surcharge follow-ups
+  without authorization. Only server code calls them. Tracked as a separate
+  hardening task.
+- **Departure correction flow.** No test shows that the canonical correction flow
+  closes a departed employee's open period after an `append_adopted` repair.
 
 ### Operations and monitoring
 
@@ -356,13 +382,14 @@ Do not apply continuations before the writer drain for that organization.
 
 ## Verification record
 
-Runs on this branch:
+Runs on this branch (Windows, disposable PostgreSQL 16 created and migrated with
+the runner's migration verification):
 
 - **Unit tests.** New fence, occupancy, route-mapping and retirement tests; the
-  touched suites pass.
+  touched unit suites pass. The only failures are the 5 date-dependent
+  `clockOut` tests in `actions/clocking.test.ts`, which also fail on clean `dev`.
 - **Typecheck.** `pnpm run typecheck` passes.
-- **PostgreSQL.** The new and changed suites pass: legacy writer 7, departure,
-  commands, web clock-in, manual 55, correction lifecycle 29, gap repair,
-  proposals, assurance and diagnostics.
-- The full runner list, the Linux scanner and the full unit suite are recorded in
-  the PR.
+- **PostgreSQL, full runner list.** 75 files passed and 1 skipped (Redis); 1335
+  tests passed, 6 skipped.
+- **Write-boundary scanner (Linux, `node:24` container, run as `node`).**
+  `approval-write-boundary.test.ts` passes 290/290.
