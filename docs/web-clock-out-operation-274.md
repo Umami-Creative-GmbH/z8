@@ -262,8 +262,8 @@ in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
 
 - Every competing writer of the same employee graph must participate or be
   drained: direct HTTP (#275), on-behalf (#276), bots (#277), manual (#308), active
-  breaks and splits (#304), corrections (#301/#286), imports (#284), and ordinary,
-  cron and terminal breaks (#303/#305). Runtime demo writers participate since
+  breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md)),
+  and ordinary, cron and terminal breaks (#303/#305). Runtime demo writers participate since
   [#285](runtime-demo-work-285.md) and also advance `graph_revision` (category
   assignment). Until then, `graph_revision` is
   only advanced by this operation.

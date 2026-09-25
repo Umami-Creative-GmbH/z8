@@ -199,7 +199,7 @@ is measured in the #329 pilot. Before any organization's control row is set acti
   participates ([#274](web-clock-out-operation-274.md)); still outstanding are
   direct HTTP (#275), on-behalf (#276), bot (#277), mobile clients (#278; the mobile
   route's clock-out already uses the web action), manual (#308),
-  active breaks and splits (#304), corrections (#301/#286), imports (#284)
+  active breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md))
   and ordinary/cron/terminal breaks (#303/#305). Runtime demo generation, corrections
   and cleanup participate since [#285](runtime-demo-work-285.md). Until then, one legacy write holds the
   employee's next clock-in, which the suite demonstrates with the shared legacy

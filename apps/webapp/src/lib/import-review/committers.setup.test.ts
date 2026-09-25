@@ -148,14 +148,17 @@ beforeEach(() => {
 	});
 
 	dbMock.from.mockReturnValue({ where: dbMock.where });
-	dbMock.where.mockImplementation(async () => {
-		for (const row of dbMock.rows) {
-			if (typeof row.id === "string" && !dbMock.persistedRows.has(row.id)) {
-				dbMock.persistedRows.set(row.id, { ...row });
+	dbMock.where.mockImplementation(() => {
+		const candidates = (async () => {
+			for (const row of dbMock.rows) {
+				if (typeof row.id === "string" && !dbMock.persistedRows.has(row.id)) {
+					dbMock.persistedRows.set(row.id, { ...row });
+				}
 			}
-		}
-		await dbMock.candidateBarrier?.();
-		return dbMock.rows.map((row) => ({ ...row }));
+			await dbMock.candidateBarrier?.();
+			return dbMock.rows.map((row) => ({ ...row }));
+		})();
+		return Object.assign(candidates, { orderBy: () => candidates });
 	});
 	dbMock.select.mockReturnValue({ from: dbMock.from });
 	dbMock.update.mockReturnValue({ set: dbMock.set });

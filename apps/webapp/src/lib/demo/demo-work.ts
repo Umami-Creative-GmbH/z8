@@ -591,10 +591,10 @@ export type DemoHistoryDeletion = {
 
 /**
  * Removes one employee's whole time history atomically under its employee key:
- * approval lifecycle evidence (#302), append position, receipts, periods and entries. In an adopted scope it also
- * removes the periods' canonical work records (except those a retained approval
- * request references) and commits the balance refresh intent. No other employee or
- * organization is touched.
+ * approval lifecycle evidence (#302), append position, receipts, periods, their
+ * canonical work records (except those a retained approval request references) and
+ * entries. An adopted scope also commits the balance refresh intent. No other
+ * employee or organization is touched.
  */
 export async function deleteDemoEmployeeHistory(
 	scope: WorkTransactionScope,
@@ -641,9 +641,9 @@ export async function deleteDemoEmployeeHistory(
 	const canonicalRecordIds = periods.flatMap((period) =>
 		period.canonicalRecordId ? [period.canonicalRecordId] : [],
 	);
-	// Adopted scopes also remove the linked canonical work and commit the balance
-	// refresh intent for it; legacy cleanup keeps its established rows.
-	if (scope.admission === "append" && canonicalRecordIds.length > 0) {
+	// The periods' canonical work goes with them in every mode (#284); left behind it
+	// would read as unlinked canonical-native work.
+	if (canonicalRecordIds.length > 0) {
 		await client.delete(timeRecord).where(
 			and(
 				eq(timeRecord.organizationId, input.organizationId),
@@ -678,6 +678,7 @@ export async function deleteDemoEmployeeHistory(
 			earliest === null || period.startTime < earliest ? period.startTime : earliest,
 		null,
 	);
+	// Adopted scopes commit the balance refresh intent for the removed work.
 	if (scope.admission === "append" && earliestStart) {
 		await markEmployeeWorkBalanceDirty(
 			{

@@ -293,6 +293,16 @@
         "commitQueued": "{count} lignes acceptées mises en file d'attente pour validation",
         "committing": "Validation en cours...",
         "description": "Examinez les lignes d'importation mises en attente, résolvez les problèmes bloquants et validez les enregistrements acceptés lorsque le lot est prêt.",
+        "hold": {
+          "appendReviewRequired": "L'historique des temps de l'employé doit être vérifié avant de pouvoir ajouter de nouvelles entrées.",
+          "invalidInterval": "Les horaires du fournisseur n'ont pas de décalage explicite, ne sont pas dans l'ordre ou se situent dans le futur.",
+          "label": "Retenue pour vérification",
+          "occupancyConflict": "Ce temps chevauche un travail déjà enregistré pour cet employé.",
+          "operationCollision": "Cette ligne est en conflit avec son import validé précédemment.",
+          "providerDurationMismatch": "La durée du fournisseur diffère des heures de début et de fin.",
+          "sourceCollision": "Cet enregistrement du fournisseur a déjà été importé.",
+          "unlocatedBreak": "Le fournisseur signale des pauses sans leurs horaires, l'intervalle travaillé est donc inconnu."
+        },
         "issueGroups": {
           "currentMarkers": "Les lignes actuelles incluent {blockingRows} marqueurs de problème bloquants et {warningRows} avertissements.",
           "description": "Les zones d'examen regroupées aident à garder les contrôles de qualité visibles avant que les lignes acceptées ne soient validées.",

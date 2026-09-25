@@ -97,6 +97,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-in.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out-operation.integration.test.ts" \
+	src/lib/import-review/reviewed-import-operation.integration.test.ts \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.approval-evidence.integration.test.ts" \
 	src/lib/demo/demo-work.integration.test.ts \
 	src/app/api/time-entries/offline-context/route.integration.test.ts \
