@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 		return NextResponse.json(
 			{
 				commandVersions: [CLOCK_COMMAND_VERSION],
-				kinds: ["clock_in", "clock_out"],
+				kinds: ["clock_in", "clock_out", "break"],
 				// Fresh submission stays gated with the organization's completed-work
 				// adoption. Lookup and committed replay work in every mode.
 				submit: adopted ? "available" : "unavailable",
@@ -90,6 +90,7 @@ const REJECTION_STATUS: Record<
 	not_adopted: 409,
 	target_unknown: 409,
 	target_not_active: 409,
+	review_pending: 409,
 	already_clocked_in: 409,
 	occupancy_conflict: 409,
 	append_review_required: 409,
@@ -97,6 +98,7 @@ const REJECTION_STATUS: Record<
 	admission_window: 422,
 	not_allowed_at_time: 422,
 	invalid_interval: 422,
+	clock_discontinuity: 422,
 	attribution_not_allowed: 422,
 	approval_routing: 422,
 	approval_policy_unavailable: 503,

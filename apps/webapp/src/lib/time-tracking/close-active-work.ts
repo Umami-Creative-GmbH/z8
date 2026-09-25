@@ -356,6 +356,36 @@ export async function closeActiveWork(
 	context: WorkTransactionContext,
 	input: CloseActiveWorkInput,
 ): Promise<ClosedActiveWork> {
+	const closed = await closeActiveWorkGraph(context, input, input.command.operationId);
+	await context.db.insert(completedWorkOperation).values({
+		id: input.command.operationId,
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		kind: "close_active_work",
+		writer: input.writer.writer,
+		writerVersion: input.writer.writerVersion,
+		commandVersion: input.command.version,
+		command: input.command,
+		appendAdmission: closed.result.append.admission,
+		actorKind: "human",
+		actorUserId: input.actorUserId,
+		workPeriodId: closed.result.workPeriodId,
+		resultVersion: CLOSE_ACTIVE_WORK_RESULT_VERSION,
+		result: closed.result,
+	});
+	return closed;
+}
+
+/**
+ * The closure's graph without its receipt, for an operation that commits the
+ * closure as one part of its own receipt (#281). The clock-out entry takes
+ * `clockOutEntryId`, which must be unused.
+ */
+export async function closeActiveWorkGraph(
+	context: WorkTransactionContext,
+	input: CloseActiveWorkInput,
+	clockOutEntryId: string,
+): Promise<ClosedActiveWork> {
 	const { organizationId, employeeId, command } = input;
 	context.assertEmployee(organizationId, employeeId);
 	const tx = context.db;
@@ -364,7 +394,7 @@ export async function closeActiveWork(
 		throw new ClockingOrganizationError();
 	}
 	await assertEmployeeMayClock(store, { employeeId, organizationId });
-	if (await store.getEntryByActionId(employeeId, organizationId, command.operationId)) {
+	if (await store.getEntryByActionId(employeeId, organizationId, clockOutEntryId)) {
 		throw new CompletedWorkCollisionError();
 	}
 
@@ -475,7 +505,7 @@ export async function closeActiveWork(
 			employeeId,
 			organizationId,
 			createdBy: input.actorUserId,
-			actionId: command.operationId,
+			actionId: clockOutEntryId,
 			action: { instant: input.eventInstant, ...input.capture },
 			source: { ipAddress: input.writer.ipAddress ?? null, deviceInfo: input.writer.deviceInfo },
 		},
@@ -616,22 +646,6 @@ export async function closeActiveWork(
 		approval,
 		followUps,
 	};
-	await tx.insert(completedWorkOperation).values({
-		id: command.operationId,
-		organizationId,
-		employeeId,
-		kind: "close_active_work",
-		writer: input.writer.writer,
-		writerVersion: input.writer.writerVersion,
-		commandVersion: command.version,
-		command,
-		appendAdmission: appended.admission,
-		actorKind: "human",
-		actorUserId: input.actorUserId,
-		workPeriodId: period.id,
-		resultVersion: CLOSE_ACTIVE_WORK_RESULT_VERSION,
-		result,
-	});
 
 	return {
 		disposition: "executed",

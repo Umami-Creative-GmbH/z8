@@ -45,16 +45,34 @@ import {
 	onTimeCorrectionApproved,
 	onTimeCorrectionRejected,
 } from "@/lib/notifications/triggers";
+import type { CompletedWorkFollowUp } from "@/lib/time-tracking/close-active-work";
+import {
+	advanceCorrectionWorkRevision,
+	correctedDurationMinutes,
+	deriveTimeCorrectionOperationId,
+	type FinalizeTimeCorrectionResult,
+	insertTimeCorrectionReceipt,
+	resolveCorrectionWorkScope,
+	type TimeCorrectionEntryEvidence,
+	type TimeCorrectionIntentKind,
+	type TimeCorrectionLifecycleReference,
+	type TimeCorrectionSegment,
+	timeCorrectionLifecycleKey,
+	translateCorrectionWorkError,
+} from "@/lib/time-tracking/correction-lifecycle-work";
 import {
 	calculateTimeCorrectionPeriod,
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
 	instantToTimeCorrectionDate,
+	serializeTimeCorrectionInstant,
 	type TimeCorrectionTemporalEndpoint,
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
+import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
+import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
@@ -71,6 +89,10 @@ import {
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
+import {
+	prepareLegacyTimeCorrectionDecisionEvidence,
+	recordLegacyTimeCorrectionDecisionEvidence,
+} from "../evidence/time-correction-evidence";
 import { translateWorkPeriodEvidenceError } from "../evidence/work-period-evidence";
 import {
 	ApprovalAuditLogger,
@@ -101,6 +123,10 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "./time-correction-category-authorization";
+import {
+	acquireTimeCorrectionWorkScope,
+	retryTimeCorrectionWorkTransaction,
+} from "./time-correction-work-transaction";
 import type {
 	ApprovalDbService,
 	CurrentApprover,
@@ -891,12 +917,21 @@ function assertCancellationEntryEvidence(
 	}
 }
 
+/**
+ * Ends the work side of a cancelled pending correction. Legacy organizations
+ * delete the pending correction rows as before. Adopted organizations (#301)
+ * retain them: they are committed entries another append may already follow,
+ * so they keep their inactive flags, the period revision advances and a
+ * `cancel_time_correction` receipt records their `cancelled_inactive` meaning.
+ */
 export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 	dbService: ApprovalDbService;
 	organizationId: string;
 	workPeriodId: string;
 	expectedSource: CancelledTimeCorrectionSourceEvidence;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
+	/** The cancelled lifecycle; required when the organization is adopted. */
+	lifecycle?: TimeCorrectionLifecycleReference;
 }): Promise<void> {
 	const expected = input.expectedSource;
 	let correction: TimeCorrectionWorkflowPayload["timeCorrection"];
@@ -907,10 +942,15 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 	} catch {
 		throw new Error("Time correction cancellation evidence is invalid");
 	}
+	const adoptedScope = resolveCorrectionWorkScope(input.dbService.db, {
+		organizationId: input.organizationId,
+		employeeId: expected.employeeId,
+	});
 	const employeeRows = await input.dbService.db
 		.select({
 			id: employee.id,
 			organizationId: employee.organizationId,
+			userId: employee.userId,
 			isActive: employee.isActive,
 		})
 		.from(employee)
@@ -950,6 +990,7 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 			workLocationType: workPeriod.workLocationType,
 			workCategoryId: workPeriod.workCategoryId,
 			deletedAt: workPeriod.deletedAt,
+			graphRevision: workPeriod.graphRevision,
 		})
 		.from(workPeriod)
 		.where(
@@ -1225,6 +1266,54 @@ export async function deleteCancelledTimeCorrectionsInTransaction(input: {
 		}
 	}
 
+	if (adoptedScope) {
+		if (!input.lifecycle) {
+			throw new Error("Time correction cancellation lifecycle is required");
+		}
+		const lifecycleKey = timeCorrectionLifecycleKey(input.lifecycle);
+		const operationId = deriveTimeCorrectionOperationId({
+			organizationId: input.organizationId,
+			stage: "cancel",
+			key: lifecycleKey,
+		});
+		const resultRevision = await advanceCorrectionWorkRevision(adoptedScope.db, {
+			organizationId: input.organizationId,
+			employeeId: expected.employeeId,
+			workPeriodId: period.id,
+			expectedRevision: period.graphRevision,
+		});
+		const retained: TimeCorrectionEntryEvidence[] = correctionEntries.map(
+			(entry) => ({
+				endpoint:
+					entry.originalId === period.clockInId ? "clock_in" : "clock_out",
+				entryId: entry.id,
+				replacesEntryId: entry.originalId,
+				meaning: "cancelled_inactive",
+			}),
+		);
+		await insertTimeCorrectionReceipt(adoptedScope.db, {
+			organizationId: input.organizationId,
+			employeeId: expected.employeeId,
+			actorUserId: lockedEmployee.userId,
+			stage: "cancel",
+			operationId,
+			workPeriodId: period.id,
+			command: { lifecycle: lifecycleKey, transition: "cancelled" },
+			result: {
+				version: 1,
+				operationId,
+				owner: { employeeId: expected.employeeId },
+				actor: { kind: "human", userId: lockedEmployee.userId },
+				workPeriodId: period.id,
+				lifecycle: input.lifecycle,
+				retained,
+				revisions: {
+					workPeriod: { source: period.graphRevision, result: resultRevision },
+				},
+			},
+		});
+		return;
+	}
 	if (correctionEntries.length === 0) return;
 	const deleted = await input.dbService.db
 		.delete(timeEntry)
@@ -1263,6 +1352,8 @@ interface LockedTimeCorrectionPeriod {
 	id: string;
 	organizationId: string;
 	employeeId: string;
+	graphRevision: number;
+	projectId: string | null;
 	clockInId: string;
 	clockOutId: string | null;
 	canonicalRecordId: string | null;
@@ -1430,6 +1521,18 @@ function sameCorrectionPayload(
 		);
 	} catch {
 		return false;
+	}
+}
+
+/** Correction entry IDs a request's metadata names, or none when it is malformed. */
+function namedCorrectionEntryIds(metadata: unknown): string[] {
+	try {
+		const correction = correctionPayload(metadata);
+		return [correction.clockInCorrectionId, correction.clockOutCorrectionId].filter(
+			(id): id is string => Boolean(id),
+		);
+	} catch {
+		return [];
 	}
 }
 
@@ -1875,6 +1978,132 @@ function validateCorrectionEntry(
 	return entry;
 }
 
+/** The approval lifecycle a finalization belongs to, as its authority stores it. */
+async function finalizationLifecycle(
+	input: FinalizeTimeCorrectionTerminalInput,
+	/** The canonical workflow, or the shadow workflow observed beside a legacy lifecycle. */
+	boundWorkflowId: string | null,
+): Promise<TimeCorrectionLifecycleReference> {
+	if (input.legacyApprovalRequestId !== null) {
+		// A chain is keyed by its chain, as its submission and cancellation are.
+		const [stage] = await input.dbService.db
+			.select({ chainInstanceId: approvalChainStageInstance.chainInstanceId })
+			.from(approvalChainStageInstance)
+			.where(
+				and(
+					eq(approvalChainStageInstance.organizationId, input.organizationId),
+					eq(
+						approvalChainStageInstance.approvalRequestId,
+						input.legacyApprovalRequestId,
+					),
+				),
+			)
+			.limit(1);
+		return {
+			authority: "legacy",
+			approvalRequestId: input.legacyApprovalRequestId,
+			chainInstanceId: stage?.chainInstanceId ?? null,
+			observedWorkflowId: boundWorkflowId,
+		};
+	}
+	if (!boundWorkflowId) {
+		throw timeCorrectionFinalizationConflict("approval_identity_mismatch");
+	}
+	return { authority: "canonical", workflowId: boundWorkflowId };
+}
+
+/** A segment by value from the locked endpoint entries (captured offsets included). */
+function correctionSegment(input: {
+	clockIn: LockedTimeCorrectionEntry;
+	clockOut: LockedTimeCorrectionEntry | null;
+	durationMinutes: number | null;
+	attribution: {
+		projectId: string | null;
+		workCategoryId: string | null;
+		workLocationType: string | null;
+	};
+}): TimeCorrectionSegment {
+	return {
+		clockInEntryId: input.clockIn.id,
+		clockOutEntryId: input.clockOut?.id ?? null,
+		startAt: serializeTimeCorrectionInstant(
+			instantFromTimeCorrectionBoundary(input.clockIn.timestamp),
+		),
+		endAt: input.clockOut
+			? serializeTimeCorrectionInstant(
+					instantFromTimeCorrectionBoundary(input.clockOut.timestamp),
+				)
+			: null,
+		durationMinutes: input.durationMinutes,
+		startUtcOffsetMinutes: input.clockIn.utcOffsetMinutes,
+		endUtcOffsetMinutes: input.clockOut?.utcOffsetMinutes ?? null,
+		attribution: {
+			projectId: input.attribution.projectId,
+			workCategoryId: input.attribution.workCategoryId,
+			workLocationType: input.attribution.workLocationType,
+		},
+	};
+}
+
+/**
+ * The adopted finalization receipt (#301): the transition, the captured source,
+ * the actual resulting graph and the meaning of every correction entry. The
+ * revision was advanced by the caller (with the period update, or alone for a
+ * rejection that leaves the graph unchanged).
+ */
+async function recordAdoptedCorrectionFinalization(input: {
+	scope: WorkTransactionScope;
+	organizationId: string;
+	employeeId: string;
+	actorUserId: string;
+	workPeriodId: string;
+	canonicalRecordId: string | null;
+	lifecycle: TimeCorrectionLifecycleReference;
+	transition: "approved" | "rejected";
+	intent: TimeCorrectionIntentKind;
+	source: TimeCorrectionSegment;
+	result: FinalizeTimeCorrectionResult["result"];
+	corrections: TimeCorrectionEntryEvidence[];
+	sourceRevision: number;
+	resultRevision: number;
+	followUps: CompletedWorkFollowUp[];
+}): Promise<void> {
+	const lifecycleKey = timeCorrectionLifecycleKey(input.lifecycle);
+	const operationId = deriveTimeCorrectionOperationId({
+		organizationId: input.organizationId,
+		stage: "finalize",
+		key: lifecycleKey,
+	});
+	const result: FinalizeTimeCorrectionResult = {
+		version: 1,
+		operationId,
+		owner: { employeeId: input.employeeId },
+		actor: { kind: "human", userId: input.actorUserId },
+		workPeriodId: input.workPeriodId,
+		canonicalRecordId: input.canonicalRecordId,
+		lifecycle: input.lifecycle,
+		transition: input.transition,
+		intent: input.intent,
+		source: input.source,
+		result: input.result,
+		corrections: input.corrections,
+		revisions: {
+			workPeriod: { source: input.sourceRevision, result: input.resultRevision },
+		},
+		followUps: input.followUps,
+	};
+	await insertTimeCorrectionReceipt(input.scope.db, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		actorUserId: input.actorUserId,
+		stage: "finalize",
+		operationId,
+		workPeriodId: input.workPeriodId,
+		command: { lifecycle: lifecycleKey, transition: input.transition },
+		result,
+	});
+}
+
 async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	input: FinalizeTimeCorrectionTerminalInput,
 ): Promise<TimeCorrectionTerminalDetailedResult> {
@@ -1894,6 +2123,13 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	if (currentCorrection && !expectedOriginalWorkMetadata) {
 		throw timeCorrectionFinalizationConflict("missing_original_work_metadata");
 	}
+	// Adopted organizations (#301): the coordinated scope; without one the legacy
+	// writes run. Every production caller opens the coordinated transaction, and
+	// the engine adapter refuses an adopted organization without it.
+	const adoptedScope = resolveCorrectionWorkScope(input.dbService.db, {
+		organizationId: input.organizationId,
+		employeeId: input.expectedRequesterEmployeeId,
+	});
 	const employeeIds = [
 		...new Set([input.expectedRequesterEmployeeId, input.actorEmployeeId]),
 	].sort();
@@ -1945,6 +2181,8 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			workLocationType: workPeriod.workLocationType,
 			workCategoryId: workPeriod.workCategoryId,
 			deletedAt: workPeriod.deletedAt,
+			graphRevision: workPeriod.graphRevision,
+			projectId: workPeriod.projectId,
 		})
 		.from(workPeriod)
 		.where(
@@ -2473,9 +2711,66 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		clockInCorrection?.timestamp ??
 		clockOutCorrection?.timestamp ??
 		originalNotificationTime;
+	const hasEndpointCorrection = correctionEntries.length > 0;
+	const adopted = adoptedScope
+		? {
+				scope: adoptedScope,
+				lifecycle: await finalizationLifecycle(input, expectedApprovalWorkflowId),
+				intent: (correction.action === "delete"
+					? "delete"
+					: hasEndpointCorrection
+						? "edit"
+						: "metadata_only") as TimeCorrectionIntentKind,
+				source: correctionSegment({
+					clockIn: originalClockIn,
+					clockOut: originalClockOut,
+					durationMinutes: period.durationMinutes,
+					attribution: period,
+				}),
+			}
+		: null;
+	const correctionEvidence = (
+		meaning: TimeCorrectionEntryEvidence["meaning"],
+	): TimeCorrectionEntryEvidence[] =>
+		[
+			["clock_in", clockInCorrection],
+			["clock_out", clockOutCorrection],
+		].flatMap(([endpoint, entry]) =>
+			entry && typeof entry === "object"
+				? [
+						{
+							endpoint: endpoint as "clock_in" | "clock_out",
+							entryId: entry.id,
+							replacesEntryId: entry.replacesEntryId ?? "",
+							meaning,
+						},
+					]
+				: [],
+		);
 
 	if (input.transition.kind === "reject") {
 		if (modernState) {
+			if (adopted) {
+				await recordAdoptedCorrectionFinalization({
+					...adopted,
+					organizationId: input.organizationId,
+					employeeId: period.employeeId,
+					actorUserId: input.actorUserId,
+					workPeriodId: period.id,
+					canonicalRecordId: period.canonicalRecordId,
+					transition: "rejected",
+					result: { kind: "unchanged" },
+					corrections: correctionEvidence("rejected_inactive"),
+					sourceRevision: period.graphRevision,
+					resultRevision: await advanceCorrectionWorkRevision(adopted.scope.db, {
+						organizationId: input.organizationId,
+						employeeId: period.employeeId,
+						workPeriodId: period.id,
+						expectedRevision: period.graphRevision,
+					}),
+					followUps: [],
+				});
+			}
 			return {
 				transition: "rejected",
 				requesterEmployeeId: period.employeeId,
@@ -2537,6 +2832,27 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				.returning({ id: timeEntry.id });
 			requireSingleMutation(deactivated, correctionEntry.id);
 		});
+		if (adopted) {
+			await recordAdoptedCorrectionFinalization({
+				...adopted,
+				organizationId: input.organizationId,
+				employeeId: period.employeeId,
+				actorUserId: input.actorUserId,
+				workPeriodId: period.id,
+				canonicalRecordId: period.canonicalRecordId,
+				transition: "rejected",
+				result: { kind: "unchanged" },
+				corrections: correctionEvidence("rejected_inactive"),
+				sourceRevision: period.graphRevision,
+				resultRevision: await advanceCorrectionWorkRevision(adopted.scope.db, {
+					organizationId: input.organizationId,
+					employeeId: period.employeeId,
+					workPeriodId: period.id,
+					expectedRevision: period.graphRevision,
+				}),
+				followUps: [],
+			});
+		}
 		return {
 			transition: "rejected",
 			requesterEmployeeId: period.employeeId,
@@ -2574,6 +2890,31 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				]
 			: []),
 	]);
+	// Adopted approvals derive fresh minutes (half up) from the exact UTC
+	// endpoints and check the resulting interval against other recorded work.
+	const resultDurationMinutes =
+		adopted && !correctedPeriod.isDeletion && correctedPeriod.clockOut
+			? correctedDurationMinutes(
+					true,
+					correctedPeriod.clockIn.instant,
+					correctedPeriod.clockOut.instant,
+				)
+			: correctedPeriod.durationMinutes;
+	if (adopted && hasEndpointCorrection && !correctedPeriod.isDeletion) {
+		const occupiedUntil =
+			correctedPeriod.clockOut?.instant ?? input.finalizedAt;
+		if (compareInstants(occupiedUntil, correctedPeriod.clockIn.instant) > 0) {
+			await assertWorkOccupancyFree(adopted.scope.db, {
+				organizationId: input.organizationId,
+				employeeId: period.employeeId,
+				interval: {
+					startAt: correctedPeriod.clockIn.instant,
+					endAt: occupiedUntil,
+				},
+				excludeWorkPeriodIds: [period.id],
+			});
+		}
+	}
 
 	await mapSequentially(
 		[
@@ -2618,7 +2959,6 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	);
 
 	const finalizedAt = instantToTimeCorrectionDate(input.finalizedAt);
-	const hasEndpointCorrection = correctionEntries.length > 0;
 	const updatedPeriods = await input.dbService.db
 		.update(workPeriod)
 		.set({
@@ -2632,9 +2972,10 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 						endTime: correctedPeriod.clockOut
 							? instantToTimeCorrectionDate(correctedPeriod.clockOut.instant)
 							: null,
-						durationMinutes: correctedPeriod.durationMinutes,
+						durationMinutes: resultDurationMinutes,
 					}
 				: {}),
+			...(adopted ? { graphRevision: period.graphRevision + 1 } : {}),
 			...(currentCorrection
 				? {
 						workLocationType: currentCorrection.workLocationType,
@@ -2681,6 +3022,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				...(expectedApprovalWorkflowId
 					? [eq(workPeriod.approvalWorkflowId, expectedApprovalWorkflowId)]
 					: [isNull(workPeriod.approvalWorkflowId)]),
+				...(adopted
+					? [eq(workPeriod.graphRevision, period.graphRevision)]
+					: []),
 				isNull(workPeriod.deletedAt),
 			),
 		)
@@ -2695,7 +3039,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				endAt: correctedPeriod.clockOut
 					? instantToTimeCorrectionDate(correctedPeriod.clockOut.instant)
 					: null,
-				durationMinutes: correctedPeriod.durationMinutes,
+				durationMinutes: resultDurationMinutes,
 				updatedAt: finalizedAt,
 				updatedBy: input.actorUserId,
 			})
@@ -2754,6 +3098,64 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				"canonical_work_mutation_cardinality_mismatch",
 			);
 		}
+	}
+	if (adopted) {
+		const followUps: CompletedWorkFollowUp[] = [];
+		if (dirtyFromDate && hasEndpointCorrection) {
+			// The refresh intent commits with the work that needs it.
+			await markEmployeeWorkBalanceDirty(
+				{
+					employeeId: period.employeeId,
+					organizationId: input.organizationId,
+					dirtyFromDate,
+				},
+				adopted.scope.db,
+			);
+			followUps.push({
+				kind: "work_balance_refresh",
+				delivery: "committed_intent",
+				dirtyFromDate,
+			});
+		}
+		const resultAttribution = {
+			projectId: period.projectId,
+			workCategoryId: currentCorrection
+				? currentCorrection.workCategoryId
+				: period.workCategoryId,
+			workLocationType: currentCorrection
+				? currentCorrection.workLocationType
+				: period.workLocationType,
+		};
+		const resultClockIn = clockInCorrection ?? originalClockIn;
+		const resultClockOut = clockOutCorrection ?? originalClockOut;
+		const resulting = correctionSegment({
+			clockIn: resultClockIn,
+			clockOut: resultClockOut,
+			durationMinutes: hasEndpointCorrection
+				? resultDurationMinutes
+				: period.durationMinutes,
+			attribution: resultAttribution,
+		});
+		await recordAdoptedCorrectionFinalization({
+			...adopted,
+			organizationId: input.organizationId,
+			employeeId: period.employeeId,
+			actorUserId: input.actorUserId,
+			workPeriodId: period.id,
+			canonicalRecordId: period.canonicalRecordId,
+			transition: "approved",
+			result: correctedPeriod.isDeletion
+				? {
+						kind: "deleted",
+						deletedAt: serializeTimeCorrectionInstant(input.finalizedAt),
+						sentinel: resulting,
+					}
+				: { kind: "amended", segment: resulting },
+			corrections: correctionEvidence("active"),
+			sourceRevision: period.graphRevision,
+			resultRevision: period.graphRevision + 1,
+			followUps,
+		});
 	}
 
 	return {
@@ -4232,9 +4634,16 @@ function exactOwnDataRecord(
 function parseCompatibilityTargetMetadata(
 	metadata: unknown,
 ): CompatibilityTargetMetadata | null {
+	// Current-contract requests also carry their original work metadata (#301).
 	const root = exactOwnDataRecord(
 		metadata,
-		["workflow", "stage", "timeCorrection", "submission"],
+		[
+			"workflow",
+			"stage",
+			"timeCorrection",
+			"submission",
+			"timeCorrectionOriginalWorkMetadata",
+		],
 		["workflow", "stage"],
 	);
 	if (!root) return null;
@@ -4278,8 +4687,9 @@ export async function executeTimeCorrectionDecisionInTransaction(
 	input: ExecuteTimeCorrectionDecisionInput,
 ) {
 	try {
-		return await input.runtime.repository.withTransaction(async (context) => {
-			const transactionDb = context.dbService
+		return await retryTimeCorrectionWorkTransaction(() =>
+			input.runtime.repository.withTransaction(async (outerContext) => {
+			const transactionDb = outerContext.dbService
 				.db as unknown as ApprovalDbService["db"];
 			const dbService: ApprovalDbService = {
 				db: transactionDb,
@@ -4439,16 +4849,33 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const endpointIds = [period.clockInId, period.clockOutId].filter(
 					(id): id is string => Boolean(id),
 				);
+				// A pending correction's own rows are inactive (superseded without a
+				// successor) until approval; the request names them exactly (#301).
+				const namedPendingIds = namedCorrectionEntryIds(request.metadata);
 				const correctionEvidence = endpointIds.length
 					? await transactionDb.query.timeEntry.findMany({
 							where: and(
 								eq(timeEntry.organizationId, input.organizationId),
 								eq(timeEntry.employeeId, request.requestedBy),
 								eq(timeEntry.type, "correction"),
-								eq(timeEntry.isSuperseded, false),
 								or(
-									inArray(timeEntry.id, endpointIds),
-									inArray(timeEntry.replacesEntryId, endpointIds),
+									and(
+										eq(timeEntry.isSuperseded, false),
+										or(
+											inArray(timeEntry.id, endpointIds),
+											inArray(timeEntry.replacesEntryId, endpointIds),
+										),
+									),
+									...(namedPendingIds.length > 0
+										? [
+												and(
+													eq(timeEntry.isSuperseded, true),
+													isNull(timeEntry.supersededById),
+													inArray(timeEntry.id, namedPendingIds),
+													inArray(timeEntry.replacesEntryId, endpointIds),
+												),
+											]
+										: []),
 								),
 							),
 						})
@@ -4502,10 +4929,17 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				};
 			}
 
-			const authority = await context.writeGate.acquire({
+			// Shared work protocol (#301): the reads above only routed the
+			// decision. Before any row lock take the adoption gate, the
+			// time-correction approval gate, configuration and access guards and
+			// the employee keys; the finalizer re-reads everything under them.
+			const work = await acquireTimeCorrectionWorkScope(outerContext, {
 				organizationId: input.organizationId,
-				workflowType: "time_correction",
+				ownerEmployeeId: period.employeeId,
+				actorUserId: input.actorUserId,
 			});
+			const context = work.context;
+			const authority = work.authority;
 			const fixedGate = fixedTimeCorrectionGate(
 				input.organizationId,
 				authority,
@@ -4579,6 +5013,18 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						conflictType: "approval_transition",
 					});
 				}
+				// Fresh evidence checks (#301) before the legacy mutation: an
+				// evidenced lifecycle must still match its submitted revision.
+				const evidencePlan = await prepareLegacyTimeCorrectionDecisionEvidence(
+					transactionDb,
+					{
+						organizationId: input.organizationId,
+						workPeriodId: period.id,
+						approvalRequestId: request.id,
+						chainInstanceId: stage?.chainInstanceId ?? null,
+					},
+				);
+				const legacyIdempotencyKey = `time-correction:${period.id}:${request.id}:${input.action}:${decisionFingerprint(input.reason)}`;
 				const capture =
 					input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 				const coordinator = createLegacyApprovalWriteCoordinator({
@@ -4599,7 +5045,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						employeeId: actor.id,
 						userId: actor.userId,
 					},
-					idempotencyKey: `time-correction:${period.id}:${request.id}:${input.action}:${decisionFingerprint(input.reason)}`,
+					idempotencyKey: legacyIdempotencyKey,
 					expectedVersion: observedWorkflow?.version ?? null,
 					captureState: () =>
 						capture({
@@ -4625,6 +5071,21 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const terminalResult = domainResult as
 					| TimeCorrectionApprovalResult
 					| undefined;
+				if (evidencePlan) {
+					await recordLegacyTimeCorrectionDecisionEvidence(
+						transactionDb,
+						evidencePlan,
+						{
+							organizationId: input.organizationId,
+							action: input.action,
+							reason: input.reason ?? null,
+							approvalRequestId: request.id,
+							idempotencyKey: legacyIdempotencyKey,
+							actor: { employeeId: actor.id, userId: actor.userId },
+							finalized: Boolean(terminalResult),
+						},
+					);
+				}
 				return {
 					kind: "time_correction" as const,
 					domainResult,
@@ -4763,9 +5224,14 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					terminal: null,
 				},
 			};
-		});
+		}),
+		);
 	} catch (error) {
-		throw translateTimeCorrectionDecisionError(error);
+		throw translateCorrectionWorkError(
+			translateWorkPeriodEvidenceError(
+				translateTimeCorrectionDecisionError(error),
+			),
+		);
 	}
 }
 
