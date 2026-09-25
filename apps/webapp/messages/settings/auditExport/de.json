@@ -24,7 +24,7 @@
         "jobFailed": "Generierung des Audit-Pakets fehlgeschlagen",
         "lineageLimited": "Eingeschränkte Nachweiskette für {limited} von {total} Mitarbeitenden. Siehe append-assurance.json im Paket.",
         "lineageNotRecorded": "Nachweiskette nicht erfasst",
-        "lineageVerified": "Nachweiskette aus gespeicherten Belegen für {total} Mitarbeitende verifiziert",
+        "lineageVerified": "Nachweiskette aus gespeicherten Belegen für {total} Mitarbeitende verifiziert. Die Einschränkungen stehen in append-assurance.json.",
         "loadingRequests": "Lade Anfragen...",
         "noRequests": "Noch keine Audit-Paket-Anfragen vorhanden. Erstellen Sie oben Ihre erste Anfrage.",
         "pending": "Ausstehend",

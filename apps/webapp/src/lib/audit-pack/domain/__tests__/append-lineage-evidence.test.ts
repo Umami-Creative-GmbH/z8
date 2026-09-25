@@ -3,6 +3,7 @@ import { assessAppendAssurance } from "@/lib/time-tracking/append-assurance";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
 	type AuditEntryRow,
+	indexAssessedEntries,
 	summarizeAuditPackAssurance,
 	toEntryChainEvidenceInput,
 	toLineageNode,
@@ -40,13 +41,16 @@ function row(
 }
 
 function reportFor(rows: AuditEntryRow[]) {
-	const report = assessAppendAssurance({
+	return assessAppendAssurance({
 		scope: { organizationId, employeeId },
 		entries: rows,
 		position: null,
 		hasWork: true,
 	});
-	return new Map([[employeeId, report]]);
+}
+
+function assessedFor(rows: AuditEntryRow[]) {
+	return indexAssessedEntries([reportFor(rows)]);
 }
 
 describe("audit pack append lineage evidence", () => {
@@ -56,9 +60,7 @@ describe("audit pack append lineage evidence", () => {
 	const rows = [root, hashOnly, explicit];
 
 	it("expands through the resolved predecessor while keeping the stored ID", () => {
-		const reports = reportFor(rows);
-
-		expect(toLineageNode(hashOnly, reports)).toEqual({
+		expect(toLineageNode(hashOnly, assessedFor(rows))).toEqual({
 			id: "e2",
 			previousEntryId: null,
 			appendPredecessorId: "e1",
@@ -69,16 +71,15 @@ describe("audit pack append lineage evidence", () => {
 
 	it("does not follow a stored predecessor ID that does not resolve in the employee's scope", () => {
 		const foreign = { ...row("e9", null), previousEntryId: "other-employee-entry" };
-		const reports = reportFor([...rows, foreign]);
+		const assessed = assessedFor([...rows, foreign]);
 
-		expect(toLineageNode(foreign, reports).appendPredecessorId).toBeNull();
-		expect(toLineageNode(foreign, reports).previousEntryId).toBe("other-employee-entry");
+		expect(toLineageNode(foreign, assessed).appendPredecessorId).toBeNull();
+		expect(toLineageNode(foreign, assessed).previousEntryId).toBe("other-employee-entry");
 	});
 
 	it("preserves original stored fields and labels derived links and hash status", () => {
-		const reports = reportFor(rows);
 		const [evidence] = buildEntryChainEvidence(
-			[toEntryChainEvidenceInput(hashOnly, reports, "2026-07-01T09:00:00.000Z")],
+			[toEntryChainEvidenceInput(hashOnly, assessedFor(rows), "2026-07-01T09:00:00.000Z")],
 			organizationId,
 		);
 
@@ -94,14 +95,12 @@ describe("audit pack append lineage evidence", () => {
 		});
 	});
 
-	it("fails rather than presenting an entry whose employee was not assessed", () => {
+	it("fails rather than presenting an entry that was not assessed", () => {
 		expect(() => toLineageNode(root, new Map())).toThrow(/not assessed/);
 	});
 
 	it("omits per-entry detail from the pack record but keeps claims and provenance", () => {
-		const report = reportFor(rows).get(employeeId);
-		if (!report) throw new Error("missing report");
-		const record = toPackAssuranceRecord(report);
+		const record = toPackAssuranceRecord(reportFor(rows));
 
 		expect(record).not.toHaveProperty("entries");
 		expect(record).toMatchObject({
@@ -115,19 +114,17 @@ describe("audit pack append lineage evidence", () => {
 	});
 
 	it("summarizes assurance scopes and limitation codes across employees", () => {
-		const verified = reportFor(rows).get(employeeId);
+		const verified = reportFor(rows);
 		const unresolved = assessAppendAssurance({
 			scope: { organizationId, employeeId: "a0000000-0000-4000-8000-000000000002" },
 			entries: [],
 			position: null,
 			hasWork: true,
 		});
-		if (!verified) throw new Error("missing report");
 
 		expect(summarizeAuditPackAssurance([verified, unresolved])).toEqual({
 			employeeCount: 2,
 			wholeHistory: 1,
-			postAnchor: 0,
 			none: 1,
 			limitations: [
 				"derived_links",

@@ -11,18 +11,24 @@
  * - continuity: entries written after the append position's admission anchor
  *   still form the uninterrupted path the position recorded.
  *
- * The assurance scope says which history those claims cover. Post-anchor
- * continuity is never reported as verified whole history, and none of the claims
- * proves row identity, original actors or captures, or payroll readiness.
+ * Both current admissions verified the whole history when the position was
+ * established, so any later lineage issue is a post-adoption incident that
+ * interrupts continuity. Continuity is therefore never a substitute for verified
+ * history: the scope is `whole_history` only when the lineage itself verifies.
+ * An authorized continuation (#323) will admit with disclosed pre-anchor
+ * uncertainty and needs its own post-anchor scope. None of the claims proves row
+ * identity, original actors or captures, or payroll readiness.
  */
 import type { TimeEntryAppendAdmission } from "@/db/schema/time-entry-append";
 import {
 	type AppendEvidenceEntry,
 	type AppendHashStatus,
 	type AppendLineageIssue,
+	type AppendLinkGraph,
 	type AppendLinkResolution,
 	type AppendScope,
-	classifyAppendLineage,
+	classifyAppendLinkGraph,
+	predecessorIdOf,
 	resolveAppendLinks,
 } from "./append-lineage";
 
@@ -35,7 +41,8 @@ export interface AppendPositionEvidence {
 	admittedTipEntryId: string | null;
 	admittedTipHash: string | null;
 	admittedEntryCount: number;
-	admittedAt: Date;
+	/** ISO instant, converted at the database boundary. */
+	admittedAt: string;
 }
 
 export interface AppendAssuranceInput {
@@ -67,7 +74,7 @@ export interface AppendContinuityProvenance {
 	/** Existing tip the position was admitted from; null when admitted from empty history. */
 	anchor: { id: string; hash: string } | null;
 	admittedEntryCount: number;
-	admittedAt: Date;
+	admittedAt: string;
 	tip: { id: string; hash: string };
 	entryCount: number;
 }
@@ -77,6 +84,8 @@ export type AppendContinuityInterruption =
 	| { kind: "position_tip_changed"; tipEntryId: string }
 	| { kind: "unexpected_history_change"; expectedEntryCount: number; actualEntryCount: number }
 	| { kind: "post_anchor_segment_broken"; entryId: string }
+	/** History verified at admission no longer forms one lineage. */
+	| { kind: "admitted_history_changed" }
 	| { kind: "unexpected_successor"; predecessorId: string; entryIds: string[] };
 
 export type AppendContinuity =
@@ -94,10 +103,9 @@ export type AppendContinuity =
 
 /**
  * `whole_history`: every entry verified as one lineage, with no interruption of a
- * recorded position. `post_anchor`: only the path after the admission anchor is
- * assured. `none`: no append assurance can be claimed.
+ * recorded position. `none`: no append assurance can be claimed.
  */
-export type AppendAssuranceScope = "whole_history" | "post_anchor" | "none";
+export type AppendAssuranceScope = "whole_history" | "none";
 
 export type AppendAssuranceLimitation =
 	/** The standard hash commits employee, type, event time and predecessor hash only. */
@@ -113,8 +121,9 @@ export type AppendAssuranceLimitation =
 	| { code: "duplicate_hashes"; entryIdGroups: string[][] }
 	| { code: "no_continuity_position" }
 	| { code: "continuity_interrupted" }
-	| { code: "history_before_anchor_unverified"; anchorEntryId: string | null }
 	| { code: "lineage_unresolved" };
+
+export type AppendAssuranceLimitationCode = AppendAssuranceLimitation["code"];
 
 export interface AppendAssuranceReport extends AppendScope {
 	entryCount: number;
@@ -177,16 +186,14 @@ export function assessAppendAssurance(input: AppendAssuranceInput): AppendAssura
 		unresolved: idsWith((entry) => entry.link.kind === "unresolved").length,
 	};
 
-	const lineage = assessLineage(input, entries);
-	const continuity = position ? assessContinuity(position, graph.entries, entries) : null;
+	const lineage = assessLineage(input, graph, entries);
+	const continuity = position ? assessContinuity(position, graph.entries, entries, lineage) : null;
 
 	const scopeClaim: AppendAssuranceScope =
 		(lineage.status === "single" || lineage.status === "empty") &&
 		continuity?.status !== "interrupted"
 			? "whole_history"
-			: continuity?.status === "established"
-				? "post_anchor"
-				: "none";
+			: "none";
 
 	const limitations: AppendAssuranceLimitation[] = [];
 	if (entries.length > 0) {
@@ -209,13 +216,7 @@ export function assessAppendAssurance(input: AppendAssuranceInput): AppendAssura
 		limitations.push({ code: "duplicate_hashes", entryIdGroups: hashes.duplicates });
 	}
 	if (continuity?.status === "interrupted") limitations.push({ code: "continuity_interrupted" });
-	if (scopeClaim === "post_anchor") {
-		limitations.push({
-			code: "history_before_anchor_unverified",
-			anchorEntryId: position?.admittedTipEntryId ?? null,
-		});
-	}
-	if (scopeClaim === "none" && lineage.status === "review_required") {
+	if (lineage.status === "review_required") {
 		limitations.push({ code: "lineage_unresolved" });
 	}
 
@@ -233,9 +234,10 @@ export function assessAppendAssurance(input: AppendAssuranceInput): AppendAssura
 
 function assessLineage(
 	input: AppendAssuranceInput,
+	graph: AppendLinkGraph,
 	entries: readonly AppendEntryAssessment[],
 ): AppendLineageAssessment {
-	const classified = classifyAppendLineage(input.scope, input.entries);
+	const classified = classifyAppendLinkGraph(graph);
 	if (classified.kind === "empty") {
 		// Work without any entries means earlier history is missing, not empty.
 		return input.hasWork
@@ -252,14 +254,16 @@ function assessLineage(
 
 /**
  * Continuity holds when the recorded tip is unchanged, nothing was added after it
- * or elsewhere, and walking back exactly the entries appended since admission
+ * or elsewhere, walking back exactly the entries appended since admission
  * reaches the admission anchor (or, for empty history, a root) through
- * reproducible entries, with nothing else branching from that path.
+ * reproducible entries with nothing else branching from that path, and the
+ * history admission verified still forms one lineage.
  */
 function assessContinuity(
 	position: AppendPositionEvidence,
 	evidence: readonly AppendEvidenceEntry[],
 	entries: readonly AppendEntryAssessment[],
+	lineage: AppendLineageAssessment,
 ): AppendContinuity {
 	const anchor =
 		position.admittedTipEntryId !== null && position.admittedTipHash !== null
@@ -290,6 +294,9 @@ function assessContinuity(
 		});
 	}
 
+	// Both admissions verified the whole history, so any issue now is a new incident.
+	if (lineage.status === "review_required") reasons.push({ kind: "admitted_history_changed" });
+
 	const walk = tip
 		? walkPostAnchorSegment(
 				tip,
@@ -316,13 +323,10 @@ function assessContinuity(
 		if (segmentIds.has(entry.entryId)) continue;
 		// Unresolved references still count: a contradictory link to the path is not harmless.
 		const predecessorId =
-			entry.link.kind === "stored" || entry.link.kind === "derived"
-				? entry.link.predecessorId
-				: (entry.stored.previousEntryId ??
-					(entry.stored.previousHash === null
-						? undefined
-						: guardedByHash.get(entry.stored.previousHash)));
-		if (predecessorId !== undefined && guardedIds.has(predecessorId)) {
+			predecessorIdOf(entry.link) ??
+			entry.stored.previousEntryId ??
+			(entry.stored.previousHash === null ? null : guardedByHash.get(entry.stored.previousHash));
+		if (predecessorId && guardedIds.has(predecessorId)) {
 			successors.set(predecessorId, [...(successors.get(predecessorId) ?? []), entry.entryId]);
 		}
 	}
@@ -362,8 +366,7 @@ function walkPostAnchorSegment(
 		}
 		segment.push(current);
 		const link: AppendLinkResolution = current.link;
-		const predecessorId =
-			link.kind === "stored" || link.kind === "derived" ? link.predecessorId : null;
+		const predecessorId = predecessorIdOf(link);
 		if (segment.length === length) {
 			const reachesStart =
 				anchor === null

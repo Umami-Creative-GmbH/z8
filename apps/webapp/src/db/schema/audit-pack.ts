@@ -1,19 +1,19 @@
 import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
+import type { AppendAssuranceLimitationCode } from "@/lib/time-tracking/append-assurance";
 import { organization, user } from "../auth-schema";
 import { auditExportPackage } from "./audit-export";
 
 /**
  * Append assurance disclosed by a pack (#324): how many assessed employees have
- * whole-history, post-anchor-only or no append assurance, and every limitation
- * code the pack discloses. Null for packs generated before the disclosure existed.
+ * whole-history or no append assurance, and every limitation code the pack
+ * discloses. Null for packs generated before the disclosure existed.
  */
 export interface AuditPackAppendAssurance {
 	employeeCount: number;
 	wholeHistory: number;
-	postAnchor: number;
 	none: number;
-	limitations: string[];
+	limitations: AppendAssuranceLimitationCode[];
 }
 
 export const auditPackStatusEnum = pgEnum("audit_pack_status", [

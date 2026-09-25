@@ -27,7 +27,7 @@ repeatable-read snapshot, so a concurrent append cannot look like an interruptio
 | Hash reproducibility | Per entry: `reproduced`, `not_reproduced`, or `input_unavailable`. A hash that does not reproduce may be in another format; the format is not guessed and the entry is not verified. | Row identity, organization, creator, creation time, captures, notes, or replacement links. |
 | Predecessor identity | Per entry, `link`: `root`, `stored` (explicit ID agreeing with `previousHash`), `derived` (read-only unique hash match), or `unresolved`. Original `stored` fields are kept as recorded. | That a derived link was ever written. |
 | Lineage | `empty`, `single` (root and tip), or `review_required` with the #262 issues (forks, islands, holes, cycles, cross-scope, ambiguous duplicates). Scoped work without entries is `history_without_entries`. | Continuity. |
-| Continuity | From the append position: `not_adopted`, `established` (provenance: admission, anchor ID/hash, admitted count and time, tip, and the post-anchor entry IDs), or `interrupted` (tip missing or changed, count change, broken post-anchor path, or a successor off the anchor or post-anchor path). | Verified history before the anchor. |
+| Continuity | From the append position: `not_adopted`, `established` (provenance: admission, anchor ID/hash, admitted count and time, tip, and the post-anchor entry IDs), or `interrupted` (tip missing or changed, count change, broken post-anchor path, a successor off the anchor or post-anchor path, or `admitted_history_changed`). | Verified history before the anchor. |
 
 `resolveAppendLinks` in `append-lineage.ts` is the shared per-entry resolver.
 `classifyAppendLineage` (admission) and the assurance module both use it.
@@ -36,18 +36,31 @@ The **assurance scope** combines the claims:
 
 - `whole_history`: the lineage is single (or genuinely empty) and no recorded
   position is interrupted.
-- `post_anchor`: continuity is established but earlier history no longer verifies.
-  This adds `history_before_anchor_unverified` with the anchor ID. It is never
-  presented as genesis-to-tip.
 - `none`: everything else, including stored evidence that forms one lineage after an
   unexplained write interrupted the position.
+
+Both current admissions (`empty_history`, `verified_lineage`) verified the whole
+history when the position was established. Any later lineage issue, including one
+before the anchor or a hole that offsets a bypassing write in the count, is therefore
+a post-adoption incident. It interrupts continuity with `admitted_history_changed`.
+It is not narrowed to a post-anchor claim, so continuity never stands in for verified
+history. A post-anchor scope becomes meaningful only when an authorized continuation
+(#323) admits with disclosed pre-anchor uncertainty. That slice must add it.
+
+With no position, `whole_history` means the stored evidence forms one verified
+lineage from its root. `no_continuity_position` discloses that nothing guarantees
+the root is the true genesis or that nothing is missing before it.
 
 Limitations are explicit codes. `hash_commits_event_fields_only`,
 `original_actor_and_capture_unproven` and `payroll_readiness_not_assessed` always
 apply when entries exist. The conditional codes are `derived_links`,
 `hash_not_reproduced`, `hash_input_unavailable`, `duplicate_hashes` (disclosed, not a
-failure), `no_continuity_position`, `continuity_interrupted`,
-`history_before_anchor_unverified` and `lineage_unresolved`.
+failure), `no_continuity_position`, `continuity_interrupted` and `lineage_unresolved`.
+
+No hash format other than the standard one is recognised. Retained provider imports
+(for example Clockodo) do not store the raw provider bytes, so their format cannot be
+established from evidence (#262 §7). They are reported as `hash_not_reproduced`, just
+like altered rows, and are never labeled verified.
 
 ## Verification endpoints
 
@@ -62,7 +75,11 @@ failure), `no_continuity_position`, `continuity_interrupted`,
   the organization, not just direct reports. `GET` uses the same subject check.
 - `GET /api/time-entries/verify` still returns the digest, now labeled
   `claim: "change_digest"`. It is computed in ID order and no longer depends on
-  creation time.
+  creation time, which was nondeterministic for tied rows. Digest values therefore
+  change once with this release. No in-repo consumer stores them.
+- The POST response shape changed from `verification` to `{ diagnostics, assurance }`.
+  No in-repo consumer exists. #259 allows graph-aware diagnostics/audit disclosure as
+  an early correction.
 - `GET /api/time-entries/:id` keeps its hash fields and adds
   `claim: "hash_reproducibility"` plus its limitations.
 - The creation-time `validateChain` and `validateChainDetailed` helpers are removed.
@@ -85,8 +102,14 @@ failure), `no_continuity_position`, `continuity_interrupted`,
 - `meta/scope.json.appendAssurance` and `audit_pack_artifact.append_assurance`
   (migration `0081`, nullable for older packs) record the scope counts and the
   union of limitation codes. The audit-pack card shows "Limited lineage assurance
-  for N of M employees", "Lineage verified from stored evidence for M employees", or
-  "Lineage assurance not recorded" for older packs.
+  for N of M employees", "Lineage verified from stored evidence for M employees. Its
+  limitations are listed in append-assurance.json.", or "Lineage assurance not
+  recorded" for older packs.
+- Behaviour change: an unresolved stored `previousEntryId` used to fail the pack with
+  `lineage_broken` if its target was outside the organization or missing. It now
+  appears as an `unresolved` link plus `lineage_unresolved`. #262 §8 allows this as a
+  disclosed limitation. Records keep issue IDs from each employee's whole history
+  (organization-scoped, admin-only pack).
 - Lifecycle: the column lives on the existing artifact row, which cascades with its
   request and organization. There is no new lifecycle to clean up.
 
@@ -124,8 +147,9 @@ Verified (8 tests, fresh label-owned PostgreSQL 16 container, full migration cha
   `ambiguous_predecessor` with both candidates.
 - After a real admitted clock-in on a hash-only lineage, continuity is `established`
   with anchor, admitted count and post-anchor entry, and the scope is `whole_history`.
-  Changing a hashed field before the anchor narrows the scope to `post_anchor`. A
-  bypassing write after the tip interrupts continuity, and the scope becomes `none`.
+  Changing a hashed field before the anchor interrupts continuity with
+  `admitted_history_changed`, and the scope becomes `none`. A bypassing write after
+  the tip interrupts it with a count change and an unexpected successor.
 - An audit pack includes an out-of-range predecessor reached only through a derived
   link. It does not follow a cross-employee stored ID. It writes
   `append-assurance.json` for both employees and records the same summary in
@@ -138,8 +162,8 @@ back to the string-level CASL check, each failed its test.
 
 ### Database-free
 
-- `append-assurance.test.ts`: the claim and scope matrix (16 tests), including input
-  order independence.
+- `append-assurance.test.ts`: the claim and scope matrix, including input order
+  independence and a removal that offsets a fork in the count.
 - `audit-pack/domain/__tests__`: resolved-link closure, evidence labeling, pack
   records and summary, and the CSV columns.
 - `audit-pack-generator-card.test.tsx`: the three disclosure states.
@@ -151,10 +175,9 @@ back to the string-level CASL check, each failed its test.
 This slice closes on implementation (see #264 decision, 2026-09-25). Activation
 items move to #327/#329/#331:
 
-- Authorized continuation (#323) will add a continuation admission kind. The
-  assurance module already reports continuity from any recorded anchor, so it must
-  keep presenting pre-continuation history as a limitation. Verify this once
-  #323 persists continuations.
+- Authorized continuation (#323) will add a continuation admission kind. It must
+  exempt disclosed pre-anchor issues from `admitted_history_changed` and add a
+  post-anchor assurance scope that is never presented as whole history.
 - Record-level historical diagnostics UI and broader operator surfacing (#319).
   This slice exposes the API and the pack disclosure only.
 - All-writer participation (#327). Until then, legacy writers interrupt continuity

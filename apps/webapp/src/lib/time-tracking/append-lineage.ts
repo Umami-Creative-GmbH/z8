@@ -63,6 +63,11 @@ export type AppendLinkResolution =
 	| { kind: "derived"; predecessorId: string }
 	| { kind: "unresolved" };
 
+/** The resolved predecessor of a stored or derived link; null for roots and unresolved links. */
+export function predecessorIdOf(link: AppendLinkResolution): string | null {
+	return link.kind === "stored" || link.kind === "derived" ? link.predecessorId : null;
+}
+
 export interface AppendLinkGraph {
 	/** Entries in ID order; sorting only stabilizes output and never chooses an edge. */
 	entries: readonly AppendEvidenceEntry[];
@@ -180,18 +185,23 @@ export function classifyAppendLineage(
 	scope: AppendScope,
 	evidence: readonly AppendEvidenceEntry[],
 ): AppendLineage {
-	if (evidence.length === 0) return { kind: "empty" };
+	return classifyAppendLinkGraph(resolveAppendLinks(scope, evidence));
+}
 
-	const { entries, links, issues } = resolveAppendLinks(scope, evidence);
+/** Classifies an already resolved graph: forks, roots and cycles decide the lineage. */
+export function classifyAppendLinkGraph(graph: AppendLinkGraph): AppendLineage {
+	const { entries, links } = graph;
+	if (entries.length === 0) return { kind: "empty" };
+
+	const issues = [...graph.issues];
 	const rowsById = new Map(entries.map((entry) => [entry.id, entry]));
 	const predecessorOf = new Map<string, string>();
 	const roots: string[] = [];
 	let derivedLinks = 0;
 	for (const [entryId, link] of links) {
 		if (link.kind === "root") roots.push(entryId);
-		if (link.kind === "stored" || link.kind === "derived") {
-			predecessorOf.set(entryId, link.predecessorId);
-		}
+		const predecessorId = predecessorIdOf(link);
+		if (predecessorId !== null) predecessorOf.set(entryId, predecessorId);
 		if (link.kind === "derived") derivedLinks += 1;
 	}
 

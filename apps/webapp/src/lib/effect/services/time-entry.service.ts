@@ -137,7 +137,7 @@ export class TimeEntryService extends Context.Tag("TimeEntryService")<
 		) => Effect.Effect<TimeEntry | null, DatabaseError>;
 
 		/** Graph-aware append assurance; see `lib/time-tracking/append-assurance.ts`. */
-		readonly verifyTimeEntryChain: (
+		readonly getAppendAssurance: (
 			employeeId: string,
 			organizationId: string,
 		) => Effect.Effect<AppendAssuranceReport, DatabaseError>;
@@ -1006,7 +1006,7 @@ export const TimeEntryServiceLive = Layer.effect(
 					return entry;
 				}),
 
-			verifyTimeEntryChain: (employeeId, organizationId) =>
+			getAppendAssurance: (employeeId, organizationId) =>
 				dbService.query("getAppendAssurance", () =>
 					readEmployeeAppendAssurance(dbService.db, { organizationId, employeeId }),
 				),

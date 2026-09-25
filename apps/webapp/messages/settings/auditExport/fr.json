@@ -24,7 +24,7 @@
         "jobFailed": "La génération du pack d'audit a échoué",
         "lineageLimited": "Garantie de traçabilité limitée pour {limited} employés sur {total}. Voir append-assurance.json dans le paquet.",
         "lineageNotRecorded": "Garantie de traçabilité non enregistrée",
-        "lineageVerified": "Traçabilité vérifiée à partir des preuves enregistrées pour {total} employés",
+        "lineageVerified": "Traçabilité vérifiée à partir des preuves enregistrées pour {total} employés. Ses limites sont listées dans append-assurance.json.",
         "loadingRequests": "Chargement des demandes...",
         "noRequests": "Aucune demande de pack d'audit pour le moment. Créez votre première demande ci-dessus.",
         "pending": "En attente",

@@ -24,7 +24,7 @@
         "jobFailed": "Denetim paketi oluşturma başarısız oldu",
         "lineageLimited": "{total} çalışandan {limited} için sınırlı zincir güvencesi. Paketteki append-assurance.json dosyasına bakın.",
         "lineageNotRecorded": "Zincir güvencesi kaydedilmedi",
-        "lineageVerified": "Zincir, {total} çalışan için kayıtlı kanıtlardan doğrulandı",
+        "lineageVerified": "Zincir, {total} çalışan için kayıtlı kanıtlardan doğrulandı. Sınırlamalar append-assurance.json dosyasında listelenir.",
         "loadingRequests": "İstekler yükleniyor...",
         "noRequests": "Henüz denetim paketi isteği yok. İlk isteğinizi yukarıdan oluşturun.",
         "pending": "Beklemede",

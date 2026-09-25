@@ -24,7 +24,7 @@
         "jobFailed": "A geração do pacote de auditoria falhou",
         "lineageLimited": "Garantia de rastreabilidade limitada para {limited} de {total} funcionários. Consulte append-assurance.json no pacote.",
         "lineageNotRecorded": "Garantia de rastreabilidade não registada",
-        "lineageVerified": "Rastreabilidade verificada a partir das evidências armazenadas para {total} funcionários",
+        "lineageVerified": "Rastreabilidade verificada a partir das evidências armazenadas para {total} funcionários. As limitações estão listadas em append-assurance.json.",
         "loadingRequests": "Carregando solicitações...",
         "noRequests": "Nenhuma solicitação de pacote de auditoria ainda. Crie sua primeira solicitação acima.",
         "pending": "Pendente",

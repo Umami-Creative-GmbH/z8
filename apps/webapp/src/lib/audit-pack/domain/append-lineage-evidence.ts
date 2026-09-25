@@ -6,11 +6,11 @@
  */
 import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
 import type {
-	AppendAssuranceLimitation,
+	AppendAssuranceLimitationCode,
 	AppendAssuranceReport,
-	AppendContinuity,
 	AppendEntryAssessment,
 } from "@/lib/time-tracking/append-assurance";
+import { predecessorIdOf } from "@/lib/time-tracking/append-lineage";
 import type { EntryChainEvidenceInput, LineageLinkNode } from "./types";
 
 export interface AuditEntryRow {
@@ -26,31 +26,30 @@ export interface AuditEntryRow {
 	supersededById: string | null;
 }
 
-type AssuranceReports = ReadonlyMap<string, AppendAssuranceReport>;
+/** Every assessed entry of the given reports, by entry ID. */
+export type AssessedEntries = ReadonlyMap<string, AppendEntryAssessment>;
 
-const entryIndexes = new WeakMap<AppendAssuranceReport, Map<string, AppendEntryAssessment>>();
-
-function assessedEntry(row: AuditEntryRow, reports: AssuranceReports) {
-	const report = reports.get(row.employeeId);
-	let index = report ? entryIndexes.get(report) : undefined;
-	if (report && !index) {
-		index = new Map(report.entries.map((entry) => [entry.entryId, entry]));
-		entryIndexes.set(report, index);
+export function indexAssessedEntries(reports: Iterable<AppendAssuranceReport>): AssessedEntries {
+	const index = new Map<string, AppendEntryAssessment>();
+	for (const report of reports) {
+		for (const entry of report.entries) index.set(entry.entryId, entry);
 	}
-	const entry = index?.get(row.id);
+	return index;
+}
+
+function assessedEntry(row: AuditEntryRow, assessed: AssessedEntries) {
+	const entry = assessed.get(row.id);
 	if (!entry) {
 		throw new Error(`Append lineage was not assessed for entry ${row.id}`);
 	}
 	return entry;
 }
 
-export function toLineageNode(row: AuditEntryRow, reports: AssuranceReports): LineageLinkNode {
-	const { link } = assessedEntry(row, reports);
+export function toLineageNode(row: AuditEntryRow, assessed: AssessedEntries): LineageLinkNode {
 	return {
 		id: row.id,
 		previousEntryId: row.previousEntryId,
-		appendPredecessorId:
-			link.kind === "stored" || link.kind === "derived" ? link.predecessorId : null,
+		appendPredecessorId: predecessorIdOf(assessedEntry(row, assessed).link),
 		replacesEntryId: row.replacesEntryId,
 		supersededById: row.supersededById,
 	};
@@ -58,10 +57,10 @@ export function toLineageNode(row: AuditEntryRow, reports: AssuranceReports): Li
 
 export function toEntryChainEvidenceInput(
 	row: AuditEntryRow,
-	reports: AssuranceReports,
+	assessed: AssessedEntries,
 	occurredAt: string,
 ): EntryChainEvidenceInput {
-	const { link, hash } = assessedEntry(row, reports);
+	const { link, hash } = assessedEntry(row, assessed);
 	return {
 		id: row.id,
 		organizationId: row.organizationId,
@@ -72,45 +71,17 @@ export function toEntryChainEvidenceInput(
 		replacesEntryId: row.replacesEntryId,
 		supersededById: row.supersededById,
 		hash: { stored: row.hash, previousHash: row.previousHash, status: hash },
-		appendLink: {
-			resolution: link.kind,
-			predecessorId: link.kind === "stored" || link.kind === "derived" ? link.predecessorId : null,
-		},
+		appendLink: { resolution: link.kind, predecessorId: predecessorIdOf(link) },
 	};
 }
-
-type SerializedContinuity =
-	| Extract<AppendContinuity, { status: "not_adopted" }>
-	| (Omit<Exclude<AppendContinuity, { status: "not_adopted" }>, "provenance"> & {
-			provenance: Omit<
-				Exclude<AppendContinuity, { status: "not_adopted" }>["provenance"],
-				"admittedAt"
-			> & { admittedAt: string };
-	  });
 
 /** An employee's claims without per-entry detail; entries.json carries the included entries. */
-export type AuditPackAssuranceRecord = Omit<AppendAssuranceReport, "entries" | "continuity"> & {
-	continuity: SerializedContinuity;
-};
+export type AuditPackAssuranceRecord = Omit<AppendAssuranceReport, "entries">;
 
 export function toPackAssuranceRecord(report: AppendAssuranceReport): AuditPackAssuranceRecord {
-	const { entries: _entries, continuity, ...claims } = report;
-	return {
-		...claims,
-		continuity:
-			continuity.status === "not_adopted"
-				? continuity
-				: {
-						...continuity,
-						provenance: {
-							...continuity.provenance,
-							admittedAt: continuity.provenance.admittedAt.toISOString(),
-						},
-					},
-	};
+	const { entries: _entries, ...claims } = report;
+	return claims;
 }
-
-export type { AuditPackAppendAssurance };
 
 export function summarizeAuditPackAssurance(
 	reports: Iterable<AppendAssuranceReport>,
@@ -118,16 +89,14 @@ export function summarizeAuditPackAssurance(
 	const summary: AuditPackAppendAssurance = {
 		employeeCount: 0,
 		wholeHistory: 0,
-		postAnchor: 0,
 		none: 0,
 		limitations: [],
 	};
-	const limitations = new Set<AppendAssuranceLimitation["code"]>();
+	const limitations = new Set<AppendAssuranceLimitationCode>();
 	for (const report of reports) {
 		summary.employeeCount += 1;
 		if (report.assurance.scope === "whole_history") summary.wholeHistory += 1;
-		if (report.assurance.scope === "post_anchor") summary.postAnchor += 1;
-		if (report.assurance.scope === "none") summary.none += 1;
+		else summary.none += 1;
 		for (const limitation of report.assurance.limitations) limitations.add(limitation.code);
 	}
 	summary.limitations = [...limitations].toSorted();

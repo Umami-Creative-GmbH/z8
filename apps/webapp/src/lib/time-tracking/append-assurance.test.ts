@@ -11,7 +11,7 @@ const scope = {
 	organizationId: "org-1",
 	employeeId: "a0000000-0000-4000-8000-000000000001",
 };
-const admittedAt = new Date("2026-09-01T00:00:00.000Z");
+const admittedAt = "2026-09-01T00:00:00.000Z";
 
 let sequence = 0;
 function nextId() {
@@ -303,7 +303,7 @@ describe("assessAppendAssurance", () => {
 			expect(report.assurance.scope).toBe("whole_history");
 		});
 
-		it("claims only post-anchor continuity when earlier history no longer verifies", () => {
+		it("treats a change to history verified at admission as a new incident", () => {
 			const history = lineage(3);
 			const appended = lineage(2, "explicit", history[2]);
 			const tampered = { ...history[0], type: "clock_out" };
@@ -314,14 +314,16 @@ describe("assessAppendAssurance", () => {
 				hasWork: true,
 			});
 
-			expect(report.continuity.status).toBe("established");
-			expect(report.lineage.status).toBe("review_required");
-			expect(report.assurance.scope).toBe("post_anchor");
-			expect(report.assurance.limitations).toContainEqual({
-				code: "history_before_anchor_unverified",
-				anchorEntryId: history[2].id,
+			// The path after the anchor is intact, but it does not stand in for history.
+			expect(report.continuity).toMatchObject({
+				status: "interrupted",
+				reasons: [{ kind: "admitted_history_changed" }],
 			});
-			expect(codes(report)).not.toContain("lineage_unresolved");
+			expect(report.lineage.status).toBe("review_required");
+			expect(report.assurance.scope).toBe("none");
+			expect(codes(report)).toEqual(
+				expect.arrayContaining(["continuity_interrupted", "lineage_unresolved"]),
+			);
 		});
 
 		it("interrupts continuity for an entry written after the recorded tip", () => {
@@ -360,9 +362,13 @@ describe("assessAppendAssurance", () => {
 				hasWork: true,
 			});
 
+			// The removal leaves a hole, and the fork bypassed the position.
 			expect(report.continuity).toMatchObject({
 				status: "interrupted",
-				reasons: [{ kind: "unexpected_successor", predecessorId: appended[0].id }],
+				reasons: [
+					{ kind: "admitted_history_changed" },
+					{ kind: "unexpected_successor", predecessorId: appended[0].id, entryIds: [fork.id] },
+				],
 			});
 		});
 

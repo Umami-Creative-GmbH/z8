@@ -515,17 +515,18 @@ describeIntegration("graph-aware verification and audit assurance on PostgreSQL"
 		});
 		expect(admitted.assurance.scope).toBe("whole_history");
 
-		// A hashed field changed before the anchor: continuity after it still holds,
-		// but the claim narrows to post-anchor instead of verified whole history.
+		// A hashed field changed before the anchor. That history was verified at
+		// admission, so this is a new incident: the intact path after the anchor
+		// does not stand in for it.
 		await admin.query("update time_entry set type = 'clock_out' where id = $1", [e1.id]);
-		const narrowed = (await verifyAs(ids.ownerUser, { employeeId: ids.worker })).body.assurance;
-		expect(narrowed.continuity.status).toBe("established");
-		expect(narrowed.lineage.status).toBe("review_required");
-		expect(narrowed.assurance.scope).toBe("post_anchor");
-		expect(narrowed.assurance.limitations).toContainEqual({
-			code: "history_before_anchor_unverified",
-			anchorEntryId: e2.id,
+		const changed = (await verifyAs(ids.ownerUser, { employeeId: ids.worker })).body.assurance;
+		expect(changed.continuity).toMatchObject({
+			status: "interrupted",
+			reasons: [{ kind: "admitted_history_changed" }],
 		});
+		expect(changed.lineage.issues).toEqual([{ kind: "unverified_hash", entryId: e1.id }]);
+		expect(changed.assurance.scope).toBe("none");
+		await admin.query("update time_entry set type = 'clock_in' where id = $1", [e1.id]);
 
 		// A write after the recorded tip that bypassed the collaborator interrupts it.
 		const tip = { ...e2, id: appended.id, hash: appended.hash };
@@ -635,7 +636,6 @@ describeIntegration("graph-aware verification and audit assurance on PostgreSQL"
 		expect(scope.appendAssurance).toEqual({
 			employeeCount: 2,
 			wholeHistory: 1,
-			postAnchor: 0,
 			none: 1,
 			limitations: [
 				"derived_links",

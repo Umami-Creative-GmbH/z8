@@ -7,9 +7,10 @@ import {
 	readAppendAssurance,
 	withAppendEvidenceSnapshot,
 } from "@/lib/time-tracking/append-assurance-reader";
+import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
 import {
 	type AuditEntryRow,
-	type AuditPackAppendAssurance,
+	indexAssessedEntries,
 	summarizeAuditPackAssurance,
 	toEntryChainEvidenceInput,
 	toLineageNode,
@@ -299,8 +300,9 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 			}
 
 			for (;;) {
+				const assessed = indexAssessedEntries(reports.values());
 				const lookupById: Record<string, LineageLinkNode> = {};
-				for (const row of rowsById.values()) lookupById[row.id] = toLineageNode(row, reports);
+				for (const row of rowsById.values()) lookupById[row.id] = toLineageNode(row, assessed);
 				const closure = buildCorrectionClosure(
 					baseEntries.map((entry) => lookupById[entry.id]),
 					lookupById,
@@ -343,12 +345,10 @@ const defaultDependencies: AuditPackOrchestratorDependencies = {
 		const typedExpanded = expanded as AuditPackExpandedResult;
 		const organizationId = typedExpanded.request.organizationId;
 
-		const reportsByEmployee = new Map(
-			typedExpanded.assuranceReports.map((report) => [report.employeeId, report]),
-		);
+		const assessed = indexAssessedEntries(typedExpanded.assuranceReports);
 		const entryEvidence = buildEntryChainEvidence(
 			typedExpanded.lineageEntries.map((entry) =>
-				toEntryChainEvidenceInput(entry, reportsByEmployee, toIso(entry.timestamp)),
+				toEntryChainEvidenceInput(entry, assessed, toIso(entry.timestamp)),
 			),
 			organizationId,
 		);

@@ -691,7 +691,7 @@ function AppendAssuranceNote({
 	}
 	if (assurance.employeeCount === 0) return null;
 
-	const limited = assurance.postAnchor + assurance.none;
+	const limited = assurance.none;
 	if (limited > 0) {
 		return (
 			<p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
@@ -709,7 +709,7 @@ function AppendAssuranceNote({
 			<IconShieldCheck className="size-3 shrink-0" aria-hidden="true" />
 			{t(
 				"settings.auditExport.auditPack.lineageVerified",
-				"Lineage verified from stored evidence for {total} employees",
+				"Lineage verified from stored evidence for {total} employees. Its limitations are listed in append-assurance.json.",
 				{ total: assurance.employeeCount },
 			)}
 		</p>

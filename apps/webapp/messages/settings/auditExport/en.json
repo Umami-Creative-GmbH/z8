@@ -24,7 +24,7 @@
         "jobFailed": "Audit pack generation failed",
         "lineageLimited": "Limited lineage assurance for {limited} of {total} employees. See append-assurance.json in the pack.",
         "lineageNotRecorded": "Lineage assurance not recorded",
-        "lineageVerified": "Lineage verified from stored evidence for {total} employees",
+        "lineageVerified": "Lineage verified from stored evidence for {total} employees. Its limitations are listed in append-assurance.json.",
         "loadingRequests": "Loading requests...",
         "noRequests": "No audit pack requests yet. Create your first request above.",
         "pending": "Pending",

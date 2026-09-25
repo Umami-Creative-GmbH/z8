@@ -96,7 +96,7 @@ export async function readAppendAssurance(
 							admittedTipEntryId: position.admittedTipEntryId,
 							admittedTipHash: position.admittedTipHash,
 							admittedEntryCount: position.admittedEntryCount,
-							admittedAt: position.admittedAt,
+							admittedAt: position.admittedAt.toISOString(),
 						}
 					: null,
 				hasWork: employeesWithWork.has(employeeId),

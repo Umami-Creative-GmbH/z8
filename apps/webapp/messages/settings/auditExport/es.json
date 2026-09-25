@@ -24,7 +24,7 @@
         "jobFailed": "Error en la generación del paquete de auditoría",
         "lineageLimited": "Garantía de trazabilidad limitada para {limited} de {total} empleados. Consulte append-assurance.json en el paquete.",
         "lineageNotRecorded": "Garantía de trazabilidad no registrada",
-        "lineageVerified": "Trazabilidad verificada con la evidencia almacenada para {total} empleados",
+        "lineageVerified": "Trazabilidad verificada con la evidencia almacenada para {total} empleados. Sus limitaciones figuran en append-assurance.json.",
         "loadingRequests": "Cargando solicitudes...",
         "noRequests": "Aún no hay solicitudes de paquetes de auditoría. Cree su primera solicitud arriba.",
         "pending": "Pendiente",

@@ -184,13 +184,13 @@ describe("AuditPackGeneratorCard", () => {
 	it.each([
 		[
 			"discloses limited lineage assurance for some employees",
-			{ employeeCount: 3, wholeHistory: 1, postAnchor: 1, none: 1, limitations: [] },
+			{ employeeCount: 3, wholeHistory: 1, none: 2, limitations: [] },
 			"Limited lineage assurance for 2 of 3 employees. See append-assurance.json in the pack.",
 		],
 		[
 			"states verified lineage only when every employee has whole-history assurance",
-			{ employeeCount: 2, wholeHistory: 2, postAnchor: 0, none: 0, limitations: [] },
-			"Lineage verified from stored evidence for 2 employees",
+			{ employeeCount: 2, wholeHistory: 2, none: 0, limitations: [] },
+			"Lineage verified from stored evidence for 2 employees. Its limitations are listed in append-assurance.json.",
 		],
 		["marks packs generated before the disclosure", null, "Lineage assurance not recorded"],
 	])("%s", async (_name, appendAssurance, text) => {

@@ -6,11 +6,20 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { asAppSubject, ForbiddenError, toHttpError } from "@/lib/authorization";
+import { type AppAbility, asAppSubject, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { summarizeAppendAssurance } from "@/lib/time-tracking/append-assurance";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
+
+/** Subject-scoped: a manager's TimeEntry grant covers direct reports only. */
+function canManageEntriesOf(
+	ability: AppAbility | null,
+	employeeId: string,
+	organizationId: string,
+): boolean {
+	return Boolean(ability?.can("manage", asAppSubject("TimeEntry", { employeeId, organizationId })));
+}
 
 /**
  * POST /api/time-entries/verify
@@ -61,21 +70,12 @@ export async function POST(request: NextRequest) {
 
 		// Every role self-manages its own time entries, so that alone does not make an
 		// operator. Record-level diagnostics need management of this other employee's
-		// entries (a manager's covers direct reports only), or organization
-		// administration when verifying one's own history.
+		// entries, or organization administration when verifying one's own history.
 		const ability = await getAbility();
 		const isSelf = targetEmployeeId === currentEmployee.id;
-		const canDiagnose = Boolean(
-			isSelf
-				? ability?.can("manage", "OrgSettings")
-				: ability?.can(
-						"manage",
-						asAppSubject("TimeEntry", {
-							employeeId: targetEmployeeId,
-							organizationId: currentEmployee.organizationId,
-						}),
-					),
-		);
+		const canDiagnose = isSelf
+			? Boolean(ability?.can("manage", "OrgSettings"))
+			: canManageEntriesOf(ability, targetEmployeeId, currentEmployee.organizationId);
 
 		// Only allow verifying own entries unless user can manage the target's time entries
 		if (!isSelf) {
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 		const effect = Effect.gen(function* (_) {
 			const timeEntryService = yield* _(TimeEntryService);
 			return yield* _(
-				timeEntryService.verifyTimeEntryChain(targetEmployeeId, currentEmployee.organizationId),
+				timeEntryService.getAppendAssurance(targetEmployeeId, currentEmployee.organizationId),
 			);
 		});
 
@@ -175,15 +175,7 @@ export async function GET(request: NextRequest) {
 		// Only allow viewing own chain hash unless user can manage the target's time entries
 		if (targetEmployeeId !== currentEmployee.id) {
 			const ability = await getAbility();
-			if (
-				!ability?.can(
-					"manage",
-					asAppSubject("TimeEntry", {
-						employeeId: targetEmployeeId,
-						organizationId: currentEmployee.organizationId,
-					}),
-				)
-			) {
+			if (!canManageEntriesOf(ability, targetEmployeeId, currentEmployee.organizationId)) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
