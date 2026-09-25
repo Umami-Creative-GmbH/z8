@@ -117,11 +117,10 @@ cards show the submitted facts without controls (#294, see
   workflow fail instead of recreating it.
 - Whole-organization deletion removes all evidence and the control through the
   organization FKs. Source absences and their outcomes are preserved.
-- Known ordering gap (not introduced here): `lib/jobs/organization-cleanup.ts`
-  deletes `employee` rows before the organization and never deletes
-  `approval_workflow` explicitly. The existing workflow/event employee FKs already
-  block that step for organizations with canonical workflows; the evidence
-  employee FKs are the same class. Reconciling the whole-tenant order is #306.
+- The former ordering gap in `lib/jobs/organization-cleanup.ts` (explicit
+  employee and entry deletes blocked by non-cascading references) is resolved
+  by #306: the job now deletes the organization row and lets its cascade remove
+  every approval table. See [Lifecycle cleanup (#306)](../lifecycle-cleanup-306.md).
 
 ## Legacy-authoritative absences (#288 / T24)
 
@@ -251,10 +250,8 @@ No application endpoint changes the mode.
    cleanup plus late-capture failure.
 4. Confirm no old binaries decide canonical absences without the evidence hooks
    (pre-deployment binaries bypass them).
-5. Whole-organization cleanup ordering (see above) must be reconciled and
-   verified with PostgreSQL before production capture (#306). Legacy evidence
-   carries the same employee FKs, so once capture is enabled for a legacy
-   organization it joins the set that `organization-cleanup.ts` cannot delete.
+5. Whole-organization cleanup ordering: resolved and verified with PostgreSQL
+   in #306 ([Lifecycle cleanup](../lifecycle-cleanup-306.md)).
 6. Legacy absences (#288) remain unverified against PostgreSQL for: mobile
    submission (same owner, different caller), inbox bulk decisions, concurrent
    decision races (two approvers, decision versus `sick-vacation-override` or
@@ -410,7 +407,7 @@ Expense revisions and activation outcomes are ordinary legacy evidence: listed
 as `legacy_evidence` and removed by privileged `deleteApproval` through their
 legacy request (or revision ID), preserving the claim, its attachments and other
 claims. Whole-organization deletion cascades them through the organization FK,
-with the same employee-FK gap as above (#306). Deleting a claim through an
+which works since #306 resolved the ordering gap above. Deleting a claim through an
 employee/organization cascade still leaves its stored receipt objects
 (pre-existing, not introduced here).
 
@@ -445,7 +442,7 @@ employee/organization cascade still leaves its stored receipt objects
    refused for both approve and reject and there is no expense cancellation
    path, so it stays `submitted` until authorized cleanup (`deleteApproval`)
    or a separately agreed repair. No administrative-attention record is raised.
-8. Whole-organization cleanup ordering (#306), then a limited pilot (#328).
+8. Whole-organization cleanup ordering (resolved in #306), then a limited pilot (#328).
 
 **Not gated by capture.** These ship active on deploy, as bounded corrections:
 logical-date columns on new drafts, upload staging with checksum/version,
@@ -668,8 +665,7 @@ No application endpoint changes either control.
    request FKs of delivery rows also cascade on cancellation, which deletes
    pending absence requests.
 9. Everything in the #295 blockers (storage immutability, abandoned objects,
-   historical drafts), whole-organization cleanup ordering (#306; legacy
-   bindings carry the same employee FK) and the pilot (#328).
+   historical drafts), whole-organization cleanup ordering (resolved in #306) and the pilot (#328).
 10. The approval write-boundary scanner cannot read sources on Windows. The new
     writers (`delivery/intents.ts`, the intent expansion in `delivery/store.ts`,
     maintenance deletes) are registered but were not scanned.
@@ -868,7 +864,7 @@ No application endpoint changes the mode.
    change is verified; a real escalation transfer (#298) between rendering and
    the click is covered by the same active-assignment check but not exercised.
 6. Everything in blockers 2–7 of the canonical evidence activation above
-   (in-flight classification, old binaries, #306 cleanup ordering, pilot #328).
+   (in-flight classification, old binaries, pilot #328; cleanup ordering resolved in #306).
 7. The approval write-boundary scanner cannot read sources on Windows; the new
    raw-SQL delete was checked with the analyzer directly, the builder inserts in
    `evidence/invocation.ts` were not.
@@ -1190,10 +1186,11 @@ so reason text stays in workflow events and legacy rows.
   before the history and employees are deleted: `clearOrganizationTimeData`
   and `deleteNonAdminEmployeesData` (every lifecycle naming one of their
   employees as subject, requester, submitter or deciding actor), organization
-  cleanup (the whole organization). Only organization cleanup runs in one
-  transaction; the two demo paths have never been transactional, so a failure
-  part-way through them can leave history without its evidence. Other kinds
-  are untouched (#306).
+  cleanup (the whole organization, through its cascade since #306). Only
+  organization cleanup runs in one transaction; the two demo paths have never
+  been transactional, so a failure part-way through them can leave history
+  without its evidence. `deleteNonAdminEmployeesData` also purges every other
+  kind's lifecycle naming a deleted employee (#306).
 - Organization deletion also cascades through the organization FK.
 
 ### Activation
@@ -1242,8 +1239,8 @@ No application endpoint changes the mode.
    owner), bots deciding time approvals, multi-stage chains, `shadow`/`ready`
    modes, concurrent decision races, and old binaries (pre-deployment binaries
    submit and decide without evidence).
-8. Whole-organization cleanup ordering for other kinds (#306), then the pilot
-   (#329/#330).
+8. Whole-organization cleanup ordering for other kinds: resolved in #306.
+   Then the pilot (#329/#330).
 
 ### Verification (#302)
 
