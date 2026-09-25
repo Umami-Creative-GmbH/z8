@@ -37,6 +37,11 @@ import {
 	type TravelExpenseSubmittedLabels,
 } from "./travel-expense-facts";
 import {
+	fingerprintTimeCorrectionFacts,
+	TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION,
+	type TimeCorrectionSubmittedFacts,
+} from "./time-correction-facts";
+import {
 	fingerprintWorkPeriodMaterialFacts,
 	WORK_PERIOD_EVIDENCE_SCHEMA_VERSION,
 	type WorkPeriodEvidenceKind,
@@ -1576,4 +1581,208 @@ export async function loadLegacyWorkPeriodSubmittedRevision(
 	}
 	const row = rows[0];
 	return row ? parseWorkPeriodRevision(row, input.organizationId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Approval-based time corrections (#301). Canonical lifecycles reference their
+// workflow; legacy lifecycles reference the request or chain routing created.
+// ---------------------------------------------------------------------------
+
+export interface TimeCorrectionSubmittedRevisionRecord {
+	id: string;
+	organizationId: string;
+	lifecycle: WorkPeriodEvidenceLifecycle;
+	workPeriodId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	requesterEmployeeId: string;
+	submitter: SubmitterIdentity;
+	materialFingerprint: string;
+	facts: TimeCorrectionSubmittedFacts;
+	labels: WorkPeriodSubmittedLabels;
+	provenance: "captured_at_submission";
+	submittedAt: Instant;
+}
+
+function parseTimeCorrectionRevision(
+	row: SubmittedRevisionRow,
+	organizationId: string,
+): TimeCorrectionSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	const lifecycle = workPeriodLifecycle(row);
+	if (
+		!lifecycle ||
+		row.organizationId !== organizationId ||
+		row.workflowType !== "time_correction" ||
+		row.sourceType !== "time_entry" ||
+		row.schemaVersion !== TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		row.submitterActorKind !== "employee" ||
+		!isRecord(facts) ||
+		facts.kind !== "time_correction" ||
+		facts.schemaVersion !== TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.workPeriodId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isRecord(facts.baseline) ||
+		!isRecord(facts.requested) ||
+		!isRecord(facts.changeMask) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName) ||
+		!nullableString(labels.requesterName) ||
+		!nullableString(labels.submitterName)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "time_correction_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as TimeCorrectionSubmittedFacts;
+	if (fingerprintTimeCorrectionFacts(parsedFacts) !== row.materialFingerprint) {
+		throw new ApprovalEvidenceError("invariant", { field: "material_fingerprint" });
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		lifecycle,
+		workPeriodId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		requesterEmployeeId: row.requesterEmployeeId,
+		submitter: {
+			kind: row.submitterActorKind,
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: labels as unknown as WorkPeriodSubmittedLabels,
+		provenance: "captured_at_submission",
+		submittedAt: instantFromDate(row.submittedAt),
+	};
+}
+
+/**
+ * Written by the correction submission owner inside its transaction, after
+ * routing created the lifecycle. A second capture for the same cycle is a
+ * contradiction and rolls the submission back.
+ */
+export async function captureTimeCorrectionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		lifecycle: WorkPeriodEvidenceLifecycle;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: TimeCorrectionSubmittedFacts;
+		labels: WorkPeriodSubmittedLabels;
+		submitter: { kind: "employee"; employeeId: string; userId: string };
+	},
+): Promise<TimeCorrectionSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const legacy = input.lifecycle.authority === "legacy" ? input.lifecycle.legacy : null;
+	const inserted = await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: input.lifecycle.authority,
+			workflowId:
+				input.lifecycle.authority === "canonical" ? input.lifecycle.workflowId : null,
+			legacyApprovalRequestId: legacy?.approvalRequestId ?? null,
+			legacyChainInstanceId: legacy?.chainInstanceId ?? null,
+			observedWorkflowId: legacy?.observedWorkflowId ?? null,
+			workflowType: "time_correction",
+			sourceType: "time_entry",
+			sourceId: input.facts.workPeriodId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint: fingerprintTimeCorrectionFacts(input.facts),
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "time_correction_submitted_revision",
+		});
+	}
+	return parseTimeCorrectionRevision(row, input.organizationId);
+}
+
+/** The canonical lifecycle revision, scoped to its organization and workflow. */
+export async function loadCanonicalTimeCorrectionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string },
+): Promise<TimeCorrectionSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.workflowId, input.workflowId),
+				eq(approvalSubmittedRevision.workflowType, "time_correction"),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseTimeCorrectionRevision(row, input.organizationId) : null;
+}
+
+/**
+ * The legacy lifecycle a request belongs to: the request routing created, or
+ * any stage request of the chain it created. A shared period ID alone never
+ * links two cycles.
+ */
+export async function loadLegacyTimeCorrectionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workPeriodId: string;
+		approvalRequestId: string;
+		chainInstanceId: string | null;
+	},
+): Promise<TimeCorrectionSubmittedRevisionRecord | null> {
+	const lifecycle = input.chainInstanceId
+		? or(
+				eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId),
+				eq(approvalSubmittedRevision.legacyChainInstanceId, input.chainInstanceId),
+			)
+		: eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId);
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.workflowType, "time_correction"),
+				eq(approvalSubmittedRevision.sourceType, "time_entry"),
+				eq(approvalSubmittedRevision.sourceId, input.workPeriodId),
+				lifecycle,
+			),
+		)
+		.limit(2);
+	if (rows.length > 1) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "time_correction_submitted_revision",
+		});
+	}
+	const row = rows[0];
+	return row ? parseTimeCorrectionRevision(row, input.organizationId) : null;
 }

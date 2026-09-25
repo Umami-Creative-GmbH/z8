@@ -26,7 +26,7 @@ Inventory rows: C09 and C10 in `docs/audits/265-configuration-paths.md`.
 
 `lib/time-tracking/work-transaction.ts`:
 
-- `acquireOrganizationConfigurationMutationGuard(tx, organizationId)` takes
+- `acquireExclusiveOrganizationConfigurationGuard(tx, organizationId)` (shared with #313) takes
   `pg_advisory_xact_lock` on `["work-organization-configuration", organizationId]`, the key
   whose shared side manual preparation takes at acquisition step 3.
 - `withOrganizationConfigurationMutation(db, organizationId, write)` opens the writer's own

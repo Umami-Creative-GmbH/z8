@@ -17,6 +17,7 @@ import {
 	isEmployeeIdentityConflict,
 } from "@/lib/auth/employee-identity-lock";
 import { isInvitationActionable } from "@/lib/auth/employee-invitation-draft";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -126,26 +127,36 @@ export async function createEmployeeAction(
 
 				const [newEmployee] = yield* _(
 					dbService
-						.query("createEmployee", async () => {
-							return await dbService.db
-								.insert(employee)
-								.values({
-									userId: validatedData.userId,
+						.query("createEmployee", () =>
+							// A new employee row gives the user an employee role and team in
+							// the organization: an absent-row insertion under their protection.
+							withAuthorizationMutation(
+								{
 									organizationId: validatedData.organizationId,
-									teamId: validatedData.teamId || null,
-									role: validatedData.role,
-									position: validatedData.position || null,
-									gender: validatedData.gender || null,
-									pronouns: validatedData.pronouns || null,
-									birthday: validatedData.birthday || null,
-									startDate: validatedData.startDate || null,
-									endDate: validatedData.endDate || null,
-									isActive: true,
-									contractType: validatedData.contractType || "fixed",
-									currentHourlyRate: hourlyRateValue?.toString() || null,
-								})
-								.returning();
-						})
+									userIds: [validatedData.userId],
+								},
+								(tx) =>
+									tx
+										.insert(employee)
+										.values({
+											userId: validatedData.userId,
+											organizationId: validatedData.organizationId,
+											teamId: validatedData.teamId || null,
+											role: validatedData.role,
+											position: validatedData.position || null,
+											gender: validatedData.gender || null,
+											pronouns: validatedData.pronouns || null,
+											birthday: validatedData.birthday || null,
+											startDate: validatedData.startDate || null,
+											endDate: validatedData.endDate || null,
+											isActive: true,
+											contractType: validatedData.contractType || "fixed",
+											currentHourlyRate: hourlyRateValue?.toString() || null,
+										})
+										.returning(),
+								dbService.db,
+							),
+						)
 						.pipe(
 							Effect.mapError((error) =>
 								isEmployeeIdentityConflict(error)
@@ -256,13 +267,28 @@ export async function updateEmployeeAction(
 					lastName?: string;
 				};
 
+				// Role, team and active state feed creation authority and target checks.
 				yield* _(
-					dbService.query("updateEmployee", async () => {
-						await dbService.db
-							.update(employee)
-							.set(employeeUpdateData)
-							.where(eq(employee.id, employeeId));
-					}),
+					dbService.query("updateEmployee", () =>
+						withAuthorizationMutation(
+							{
+								organizationId: targetEmployee.organizationId,
+								employeeIds: [employeeId],
+							},
+							async (tx) => {
+								await tx
+									.update(employee)
+									.set(employeeUpdateData)
+									.where(
+										and(
+											eq(employee.id, employeeId),
+											eq(employee.organizationId, targetEmployee.organizationId),
+										),
+									);
+							},
+							dbService.db,
+						),
+					),
 				);
 
 				if (

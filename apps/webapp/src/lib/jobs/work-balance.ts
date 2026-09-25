@@ -1,6 +1,10 @@
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import {
+	processWorkBalanceRebuildIntents,
+	type WorkBalanceRebuildResult,
+} from "@/lib/work-balance/rebuild-intents";
+import {
 	listEmployeesForWorkBalanceBatch,
 	markEmployeeWorkBalanceFailed,
 	refreshEmployeeWorkBalanceFromPeriods,
@@ -15,10 +19,17 @@ export interface WorkBalanceJobResult {
 	skipped: number;
 	batchLimit: number;
 	errors: Array<{ employeeId: string; organizationId: string; error: string }>;
+	rebuildIntents: WorkBalanceRebuildResult;
 }
 
 export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 	const batchLimit = Number(env.WORK_BALANCE_JOB_BATCH_LIMIT);
+	// Recover pending rebuild intents (#311) first, so their reset projections
+	// are refreshed in this same run.
+	const rebuildIntents = await processWorkBalanceRebuildIntents();
+	for (const failure of rebuildIntents.failures) {
+		logger.error(failure, "Failed to rebuild organization work balances");
+	}
 	const employees = await listEmployeesForWorkBalanceBatch(batchLimit);
 	const result: WorkBalanceJobResult = {
 		success: true,
@@ -27,6 +38,7 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 		skipped: 0,
 		batchLimit,
 		errors: [],
+		rebuildIntents,
 	};
 
 	const employeeResults = await Promise.all(
@@ -89,6 +101,6 @@ export async function runWorkBalanceRefresh(): Promise<WorkBalanceJobResult> {
 		}
 	}
 
-	result.success = result.errors.length === 0;
+	result.success = result.errors.length === 0 && rebuildIntents.failures.length === 0;
 	return result;
 }

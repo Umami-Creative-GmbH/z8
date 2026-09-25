@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Neden",
       "reasonPlaceholder": "Ne üzerinde çalıştığınızı açıklayın…",
+      "recovery": {
+        "check": "Durumu kontrol et",
+        "checkFailed": "Bu kayıt şu anda kontrol edilemedi. Daha sonra tekrar deneyin.",
+        "contextMismatch": "Farklı bir hesapta veya kuruluşta oturum açtınız. Bu kaydı işlemek için geri geçin.",
+        "description": "Bu kayıtlar bu sekmeden onaylanmış bir sonuç olmadan gönderildi. Siz seçmedikçe hiçbir şey yeniden gönderilmez.",
+        "discard": "Kapat",
+        "editAsNew": "Yeni kayıt olarak düzenle",
+        "notCommitted": "Kayıt bulunamadı.",
+        "notCommittedToast": "Bu kayıt için kaydedilmiş bir sonuç bulunamadı. Aynen yeniden deneyin veya yeni kayıt olarak düzenleyin.",
+        "retry": "Aynen yeniden dene",
+        "saved": "Bu kayıt kaydedildi.",
+        "savedForApproval": "Bu kayıt kaydedildi ve onaya gönderildi. Güncel durumu: {status}.",
+        "status": {
+          "approved": "onaylandı",
+          "pending": "beklemede",
+          "rejected": "reddedildi"
+        },
+        "stillUncertain": "Hâlâ onaylanmadı. Kayıt tutuluyor; tekrar çevrimiçi olduğunuzda yeniden deneyin.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Onaylanmamış kayıtlar",
+        "uncertain": "Onaylanmadı. Zaten kaydedilmiş olabilir.",
+        "uncertainToast": "Bu kaydın kaydedilip kaydedilmediğini doğrulayamadık. Onaylanmamış kayıtlar altında tutuluyor; oradan aynen yeniden deneyebilir veya durumunu kontrol edebilirsiniz.",
+        "unsupported": "Durumu kontrol edilemiyor. Zaten kaydedilmiş olabilir.",
+        "unsupportedToast": "Bu kaydın durumu şu anda kontrol edilemiyor. Yeniden denemek tam olarak aynı kaydı gönderir."
+      },
       "submit": "Giriş Oluştur",
       "submitting": "Oluşturuluyor…",
       "success": {

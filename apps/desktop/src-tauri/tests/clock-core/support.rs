@@ -1,5 +1,6 @@
 //! A real device store (SQLite files in a temporary directory) and the server
 //! shapes of the #275 routes.
+use crate::break_evidence::{BreakEvidence, IdleBreak, Observation, ZonedObservation};
 use crate::clock::ClockService;
 use crate::clock_command::{
     execute, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockSession,
@@ -7,7 +8,7 @@ use crate::clock_command::{
 use crate::command_store::{token_fingerprint, CommandStore, StoredCommand};
 use crate::command_transport::Capabilities;
 use crate::offline::OfflineQueue;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use parking_lot::Mutex;
 
 pub const SERVER: &str = "https://app.z8.test";
@@ -15,10 +16,18 @@ pub const EMPLOYEE: &str = "7d1f3f0e-8a4c-4a7e-9f39-0b8f1a2c3d4e";
 pub const PERIOD: &str = "5c0b1a8e-2f4d-4e6a-9b3c-7d8e9f0a1b2c";
 pub const TOKEN: &str = "session-a";
 
+/// Kinds a #275 server offers; a #281 server adds `break`.
+pub const CLOCK_KINDS: &[&str] = &["clock_in", "clock_out"];
+pub const BREAK_KINDS: &[&str] = &["clock_in", "clock_out", "break"];
+
 pub fn capabilities(organization_id: &str, submit: &str) -> String {
+    capabilities_with(organization_id, submit, CLOCK_KINDS)
+}
+
+pub fn capabilities_with(organization_id: &str, submit: &str, kinds: &[&str]) -> String {
     serde_json::json!({
         "commandVersions": [2],
-        "kinds": ["clock_in", "clock_out"],
+        "kinds": kinds,
         "submit": submit,
         "lookup": "available",
         "admission": {
@@ -105,13 +114,23 @@ impl Device {
 
     /// What an earlier online session left in the context cache.
     pub fn negotiated(&self, endpoint: &str, organization_id: &str, clocked_in: bool) {
+        self.negotiated_with(endpoint, organization_id, clocked_in, CLOCK_KINDS);
+    }
+
+    pub fn negotiated_with(
+        &self,
+        endpoint: &str,
+        organization_id: &str,
+        clocked_in: bool,
+        kinds: &[&str],
+    ) {
         let mut store = self.store.lock();
         let session = token_fingerprint(TOKEN);
         store
             .save_capabilities(
                 endpoint,
                 &session,
-                &capabilities(organization_id, "available"),
+                &capabilities_with(organization_id, "available", kinds),
                 1,
             )
             .unwrap();
@@ -158,16 +177,55 @@ impl Device {
     }
 
     pub async fn sync(&self, endpoint: &str, organization_id: &str, submit: &str) {
+        self.sync_with(endpoint, organization_id, submit, CLOCK_KINDS)
+            .await
+    }
+
+    pub async fn sync_with(
+        &self,
+        endpoint: &str,
+        organization_id: &str,
+        submit: &str,
+        kinds: &[&str],
+    ) {
         crate::command_sync::drain(
             &self.service,
             &self.store,
             endpoint,
             TOKEN,
-            &Capabilities::parse(&capabilities(organization_id, submit)).unwrap(),
+            &Capabilities::parse(&capabilities_with(organization_id, submit, kinds)).unwrap(),
             crate::command_sync::Pacing::Now,
             || Utc::now().timestamp_millis(),
         )
         .await
         .unwrap();
+    }
+}
+
+/// A consistent confirmed break: idle from `last_activity`, noticed five minutes
+/// later, back after thirty minutes and confirmed five minutes after that.
+pub fn confirmed_break(
+    last_activity: DateTime<Utc>,
+    start_zone: Option<&str>,
+    return_zone: Option<&str>,
+) -> BreakEvidence {
+    let at = |minutes: i64| Observation {
+        utc: last_activity + chrono::Duration::minutes(minutes),
+        monotonic_ms: (10_000_000 + minutes * 60_000) as u64,
+    };
+    BreakEvidence {
+        idle: IdleBreak {
+            id: "local-idle-1".into(),
+            last_activity: at(0),
+            idle_detected: ZonedObservation {
+                at: at(5),
+                timezone: start_zone.map(Into::into),
+            },
+            returned: ZonedObservation {
+                at: at(30),
+                timezone: return_zone.map(Into::into),
+            },
+        },
+        confirmed: at(35),
     }
 }

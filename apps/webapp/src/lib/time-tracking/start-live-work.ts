@@ -195,6 +195,35 @@ export async function startLiveWork(
 	context: WorkTransactionScope,
 	input: StartLiveWorkInput,
 ): Promise<StartLiveWorkReceipt & { disposition: "executed" }> {
+	const started = await startLiveWorkGraph(context, input);
+	await context.db.insert(completedWorkOperation).values({
+		id: input.command.operationId,
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		kind: "start_live_work",
+		writer: input.writer.writer,
+		writerVersion: input.writer.writerVersion,
+		commandVersion: input.command.version,
+		command: input.command,
+		appendAdmission: started.result.append.admission,
+		actorKind: "human",
+		actorUserId: input.actorUserId,
+		workPeriodId: started.result.workPeriodId,
+		resultVersion: START_LIVE_WORK_RESULT_VERSION,
+		result: started.result,
+	});
+	return started;
+}
+
+/**
+ * The start's graph without its receipt, for an operation that commits the
+ * start as one part of its own receipt (#281). The clock-in entry takes the
+ * command's operation ID.
+ */
+export async function startLiveWorkGraph(
+	context: WorkTransactionScope,
+	input: StartLiveWorkInput,
+): Promise<StartLiveWorkReceipt & { disposition: "executed" }> {
 	const { organizationId, employeeId, command } = input;
 	context.assertEmployee(organizationId, employeeId);
 	const tx = context.db;
@@ -269,21 +298,5 @@ export async function startLiveWork(
 			previousHash: appended.previousHash,
 		},
 	};
-	await tx.insert(completedWorkOperation).values({
-		id: command.operationId,
-		organizationId,
-		employeeId,
-		kind: "start_live_work",
-		writer: input.writer.writer,
-		writerVersion: input.writer.writerVersion,
-		commandVersion: command.version,
-		command,
-		appendAdmission: appended.admission,
-		actorKind: "human",
-		actorUserId: input.actorUserId,
-		workPeriodId: period.id,
-		resultVersion: START_LIVE_WORK_RESULT_VERSION,
-		result,
-	});
 	return { disposition: "executed", result, entry: appended.entry };
 }

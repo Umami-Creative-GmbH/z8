@@ -19,8 +19,6 @@ import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
-	approvalRequest,
-	approvalWorkflow,
 	completedWorkOperation,
 	employee,
 	employeeManagers,
@@ -77,6 +75,7 @@ import { WorkIntervalError } from "./work-duration";
 import type { WorkLocationType } from "./work-location";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
+import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
 import type { WorkTransactionScope } from "./work-transaction";
 
 export const AMEND_COMPLETED_WORK_COMMAND_VERSION = 1;
@@ -490,52 +489,6 @@ async function lockAuthority(
 	return target;
 }
 
-async function assertNoUnresolvedReview(
-	tx: TransactionClient,
-	organizationId: string,
-	period: typeof workPeriod.$inferSelect,
-) {
-	if (period.approvalStatus === "pending") {
-		throw new ConflictError({
-			message: "This work period is awaiting approval and cannot be edited",
-			conflictType: "work_period_pending_approval",
-		});
-	}
-	const [legacyPending, canonicalPending] = await Promise.all([
-		tx
-			.select({ id: approvalRequest.id })
-			.from(approvalRequest)
-			.where(
-				and(
-					eq(approvalRequest.organizationId, organizationId),
-					eq(approvalRequest.entityType, "time_entry"),
-					eq(approvalRequest.entityId, period.id),
-					eq(approvalRequest.status, "pending"),
-				),
-			)
-			.limit(1),
-		tx
-			.select({ id: approvalWorkflow.id })
-			.from(approvalWorkflow)
-			.where(
-				and(
-					eq(approvalWorkflow.organizationId, organizationId),
-					eq(approvalWorkflow.workflowType, "time_correction"),
-					eq(approvalWorkflow.sourceType, "time_entry"),
-					eq(approvalWorkflow.sourceId, period.id),
-					eq(approvalWorkflow.status, "pending"),
-				),
-			)
-			.limit(1),
-	]);
-	if (legacyPending.length > 0 || canonicalPending.length > 0) {
-		throw new ConflictError({
-			message: "A time correction approval is already pending for this work period",
-			conflictType: "pending_time_correction_approval",
-		});
-	}
-}
-
 async function assertProjectEligible(
 	tx: TransactionClient,
 	input: { organizationId: string; employeeId: string; teamId: string | null; projectId: string },
@@ -643,7 +596,7 @@ export async function amendCompletedWork(
 	) {
 		throw staleSource();
 	}
-	await assertNoUnresolvedReview(tx, organizationId, period);
+	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
 	const running = new ConflictError({
 		message: "Cannot edit an active work period. Please clock out first.",
 		conflictType: "work_period_running",
