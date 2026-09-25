@@ -45,6 +45,8 @@ import {
 import type {
 	ManualApprovalIntent,
 	ManualCaptureSource,
+	ManualPolicyEvidence,
+	ManualTargetZoneSource,
 	ManualTimeEntryCommand,
 } from "./manual-command";
 import type { ManualWorkTransactionContext } from "./manual-work-transaction";
@@ -69,7 +71,7 @@ export type ManualWorkFacts = {
 	evaluatedAt: Instant;
 	timezone: string;
 	captureSource: ManualCaptureSource;
-	targetZone: { timezone: string; source: string };
+	targetZone: { timezone: string; source: ManualTargetZoneSource };
 	start: Instant;
 	end: Instant;
 	startOffsetMinutes: number;
@@ -79,7 +81,7 @@ export type ManualWorkFacts = {
 	projectId: string | null;
 	workCategoryId: string | null;
 	daysBack: number;
-	policy: Record<string, unknown> | null;
+	policy: ManualPolicyEvidence | null;
 	approval: ManualApprovalIntent;
 };
 
@@ -111,10 +113,10 @@ export type ManualWorkResult = {
 		evaluatedAt: string;
 		timezone: string;
 		captureSource: ManualCaptureSource;
-		targetZone: { timezone: string; source: string };
+		targetZone: { timezone: string; source: ManualTargetZoneSource };
 		onBehalf: boolean;
 		daysBack: number;
-		policy: Record<string, unknown> | null;
+		policy: ManualPolicyEvidence | null;
 		approvalIntent: ManualApprovalIntent;
 	};
 	segment: {
@@ -169,7 +171,12 @@ export async function replayManualWork(
 	const [receipt] = await scope.db
 		.select()
 		.from(completedWorkOperation)
-		.where(eq(completedWorkOperation.id, operationId))
+		.where(
+			and(
+				eq(completedWorkOperation.id, operationId),
+				eq(completedWorkOperation.organizationId, input.organizationId),
+			),
+		)
 		.limit(1);
 	const [period] = await scope.db
 		.select({
@@ -181,14 +188,13 @@ export async function replayManualWork(
 			deletedAt: workPeriod.deletedAt,
 		})
 		.from(workPeriod)
-		.where(eq(workPeriod.id, operationId))
+		.where(and(eq(workPeriod.id, operationId), eq(workPeriod.organizationId, input.organizationId)))
 		.limit(1);
 	if (!receipt) {
 		if (period) throw new CompletedWorkCollisionError();
 		return null;
 	}
 	if (
-		receipt.organizationId !== input.organizationId ||
 		receipt.employeeId !== input.employeeId ||
 		receipt.kind !== MANUAL_KIND ||
 		receipt.writer !== "manual_entry" ||
@@ -204,7 +210,6 @@ export async function replayManualWork(
 	// Corrected or deleted evidence keeps the conflict; it is never recreated.
 	if (
 		!period ||
-		period.organizationId !== input.organizationId ||
 		period.employeeId !== input.employeeId ||
 		period.deletedAt !== null ||
 		period.clockInId !== result.clockInEntryId ||

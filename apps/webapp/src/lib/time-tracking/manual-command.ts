@@ -437,6 +437,16 @@ export type ManualChangePolicy = {
 	noApprovalRequired: boolean;
 };
 
+/** The assignment level that decided the effective change policy. */
+export type ManualPolicyLevel = "employee" | "team" | "organization";
+
+/** The effective change policy as it was applied, recorded with the interpretation. */
+export type ManualPolicyEvidence = {
+	policyId: string;
+	assignmentId: string;
+	level: ManualPolicyLevel;
+} & ManualChangePolicy;
+
 export type ManualApprovalIntent =
 	| {
 			intent: "direct";

@@ -176,6 +176,9 @@ const ids = {
 	changePolicyAssignment: "e3080000-0000-4000-8000-000000000031",
 	holidayCategory: "e3080000-0000-4000-8000-000000000040",
 	holiday: "e3080000-0000-4000-8000-000000000041",
+	category: "e3080000-0000-4000-8000-000000000050",
+	categorySet: "e3080000-0000-4000-8000-000000000051",
+	categorySetAssignment: "e3080000-0000-4000-8000-000000000052",
 } as const;
 const users = [ids.employeeUser, ids.managerUser, ids.ownerUser, ids.peerUser];
 
@@ -870,6 +873,43 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 			});
 		});
 
+		it("requires a category from the target's current effective set", async () => {
+			harness.now = parseInstant("2026-09-10T10:00:00Z");
+			await admin.query(
+				`insert into work_category (id, organization_id, name, created_by, updated_at)
+				 values ($1, $2, 'Night', $3, now())`,
+				[ids.category, ids.organization, ids.ownerUser],
+			);
+			await admin.query(
+				`insert into work_category_set (id, organization_id, name, created_by, updated_at)
+				 values ($1, $2, 'T308 set', $3, now())`,
+				[ids.categorySet, ids.organization, ids.ownerUser],
+			);
+			await admin.query(
+				"insert into work_category_set_category (set_id, category_id) values ($1, $2)",
+				[ids.categorySet, ids.category],
+			);
+			const command = manualCommand({ workCategoryId: ids.category });
+			await expect(submit(command)).resolves.toMatchObject({
+				success: false,
+				code: "category_ineligible",
+			});
+			// Effective only after the evaluation instant: still not available.
+			await admin.query(
+				`insert into work_category_set_assignment
+				 (id, set_id, organization_id, assignment_type, employee_id, priority, effective_from, created_by, updated_at)
+				 values ($1, $2, $3, 'employee', $4, 2, '2026-09-10T11:00:00', $5, now())`,
+				[ids.categorySetAssignment, ids.categorySet, ids.organization, ids.employee, ids.ownerUser],
+			);
+			await expect(submit(command)).resolves.toMatchObject({ code: "category_ineligible" });
+			await admin.query(
+				"update work_category_set_assignment set effective_from = null where id = $1",
+				[ids.categorySetAssignment],
+			);
+			await expect(submit(command)).resolves.toMatchObject({ success: true });
+			expect(only(await periods())).toMatchObject({ id: command.submissionId });
+		});
+
 		it("requires an active, bookable, assigned project", async () => {
 			await admin.query(
 				`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
@@ -1119,6 +1159,18 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 
 			await expect(
 				submit(manualCommand({ targetEmployeeId: ids.peer, date: "2026-09-02" }), ids.managerUser),
+			).resolves.toMatchObject({ success: false, code: "target_not_authorized" });
+
+			// An owner whose employee role is ordinary may create for colleagues;
+			// a plain employee may not.
+			await expect(
+				submit(
+					manualCommand({ targetEmployeeId: ids.peer, date: "2026-09-03", browserTimezone: null }),
+					ids.ownerUser,
+				),
+			).resolves.toMatchObject({ success: true, data: { requiresApproval: false } });
+			await expect(
+				submit(manualCommand({ date: "2026-09-04", browserTimezone: null }), ids.peerUser),
 			).resolves.toMatchObject({ success: false, code: "target_not_authorized" });
 		});
 

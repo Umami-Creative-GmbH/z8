@@ -283,6 +283,17 @@ function outcomeMessage(result: ManualTimeEntryResult): Message | null {
 	return reason ? (INTERVAL_MESSAGES[reason] ?? null) : null;
 }
 
+/**
+ * Version-2 continuation into another zone: the draft can be sent unchanged
+ * only when neither endpoint needs an occurrence choice there. Otherwise the
+ * form shows the new zone so the user confirms what it means in that zone.
+ */
+function needsReviewInZone(value: FormValues, timezone: string): boolean {
+	return [value.clockInTime, value.clockOutTime].some(
+		(time) => describeEndpoint(value.date, time, timezone)?.kind !== "unique",
+	);
+}
+
 /** Outcomes after which the advisory context and confirmations must be refreshed. */
 function needsReconfirmation(result: ManualTimeEntryResult): boolean {
 	return (
@@ -332,6 +343,7 @@ function isFutureDate(date: string, timezone: string): boolean {
 function useManualEntryForm({
 	commandVersion,
 	contextTargetEmployeeId,
+	zoneBasis,
 	defaults,
 	effectiveTimezone,
 	setPendingMismatch,
@@ -343,6 +355,8 @@ function useManualEntryForm({
 	/** From the advisory target context; `2` builds strict versioned commands. */
 	commandVersion: 1 | 2;
 	contextTargetEmployeeId: string | null;
+	/** `browser` while a self entry continues once in the browser zone. */
+	zoneBasis: ManualZoneBasis;
 	defaults: Pick<
 		Props,
 		"defaultDate" | "defaultClockInTime" | "defaultClockOutTime"
@@ -372,7 +386,7 @@ function useManualEntryForm({
 							value,
 							targetEmployeeId: contextTargetEmployeeId,
 							timezone: effectiveTimezone,
-							basis: "target",
+							basis: zoneBasis,
 							browserTimezone: targetEmployeeId ? null : browserTimezone,
 							submissionId,
 						})
@@ -395,7 +409,7 @@ function useManualEntryForm({
 					effectiveTimezone,
 					targetEmployeeId ? null : browserTimezone,
 					submissionId,
-					"target",
+					zoneBasis,
 				);
 				return;
 			}
@@ -738,7 +752,15 @@ function ManualEntryFormContent({
 						targetEmployeeName={targetEmployeeName}
 					/>
 
-					<form.Field name="date">
+					<form.Field
+						name="date"
+						listeners={{
+							onChange: () => {
+								form.setFieldValue("clockInOccurrence", undefined);
+								form.setFieldValue("clockOutOccurrence", undefined);
+							},
+						}}
+					>
 						{(field) => (
 							<TFormItem>
 								<TFormLabel hasError={fieldHasError(field)}>
@@ -769,6 +791,9 @@ function ManualEntryFormContent({
 						<form.Field
 							name="clockInTime"
 							validators={{ onChange: validateTime, onSubmit: validateTime }}
+							listeners={{
+								onChange: () => form.setFieldValue("clockInOccurrence", undefined),
+							}}
 						>
 							{(field) => (
 								<TFormItem>
@@ -794,6 +819,9 @@ function ManualEntryFormContent({
 						<form.Field
 							name="clockOutTime"
 							validators={{ onChange: validateTime, onSubmit: validateTime }}
+							listeners={{
+								onChange: () => form.setFieldValue("clockOutOccurrence", undefined),
+							}}
 						>
 							{(field) => (
 								<TFormItem>
@@ -1026,6 +1054,11 @@ export function ManualTimeEntryDialog({
 		source: string;
 		value: string;
 	} | null>(null);
+	// Version-2 self entries continued once in the browser zone for this draft.
+	const [continueOnceZone, setContinueOnceZone] = useState<{
+		source: string;
+		value: string;
+	} | null>(null);
 	const isTimezoneContinuationPendingRef = useRef(false);
 	const wasOpenRef = useRef(false);
 	const router = useRouter();
@@ -1036,12 +1069,21 @@ export function ManualTimeEntryDialog({
 	const contextTimezone = context?.timezone ?? null;
 	// Self entries may continue in the browser zone after updating the saved one;
 	// on-behalf entries always use the target's zone.
-	const effectiveTimezone =
+	const continuesOnce = Boolean(
 		contextTimezone &&
-		context?.isOwnEntry &&
-		timezoneOverride?.source === contextTimezone
-			? timezoneOverride.value
-			: contextTimezone;
+			context?.isOwnEntry &&
+			context.manualCommandVersion === 2 &&
+			continueOnceZone?.source === contextTimezone,
+	);
+	const effectiveTimezone =
+		continuesOnce && continueOnceZone
+			? continueOnceZone.value
+			: contextTimezone &&
+					context?.isOwnEntry &&
+					timezoneOverride?.source === contextTimezone
+				? timezoneOverride.value
+				: contextTimezone;
+	const zoneBasis: ManualZoneBasis = continuesOnce ? "browser" : "target";
 	const defaultsTimezone = effectiveTimezone ?? employeeTimezone;
 	// Callers may not know the target's name (e.g. a calendar opened by URL).
 	const resolvedTargetName =
@@ -1141,10 +1183,7 @@ export function ManualTimeEntryDialog({
 								"Failed to create time entry",
 							),
 			);
-			if (needsReconfirmation(result)) {
-				form.setFieldValue("clockInOccurrence", undefined);
-				form.setFieldValue("clockOutOccurrence", undefined);
-			}
+			if (needsReconfirmation(result)) clearOccurrences();
 			// The server rejected the draft; refresh the advisory context so the
 			// form reflects the target's current zone and eligible choices.
 			void targetContext.refetch();
@@ -1155,6 +1194,7 @@ export function ManualTimeEntryDialog({
 	const form = useManualEntryForm({
 		commandVersion: context?.manualCommandVersion ?? 1,
 		contextTargetEmployeeId: context?.targetEmployeeId ?? null,
+		zoneBasis,
 		defaults: { defaultDate, defaultClockInTime, defaultClockOutTime },
 		effectiveTimezone,
 		setPendingMismatch,
@@ -1163,6 +1203,21 @@ export function ManualTimeEntryDialog({
 		targetEmployeeId,
 		isTimezoneContinuationPendingRef,
 	});
+	function clearOccurrences() {
+		form.setFieldValue("clockInOccurrence", undefined);
+		form.setFieldValue("clockOutOccurrence", undefined);
+	}
+
+	// A different target, zone or zone basis changes what a repeated time means.
+	const occurrenceScope = `${targetEmployeeId ?? ""}|${effectiveTimezone ?? ""}|${zoneBasis}`;
+	const occurrenceScopeRef = useRef(occurrenceScope);
+	useEffect(() => {
+		if (occurrenceScopeRef.current === occurrenceScope) return;
+		occurrenceScopeRef.current = occurrenceScope;
+		form.setFieldValue("clockInOccurrence", undefined);
+		form.setFieldValue("clockOutOccurrence", undefined);
+	}, [form, occurrenceScope]);
+
 	const revalidation = useTargetDraftRevalidation({
 		context,
 		form,
@@ -1197,6 +1252,14 @@ export function ManualTimeEntryDialog({
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.manualEntry.all,
 					});
+					if (
+						context?.manualCommandVersion === 2 &&
+						needsReviewInZone(value, browserTimezone)
+					) {
+						clearOccurrences();
+						toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
+						return;
+					}
 					await submitManualEntry(
 						value,
 						browserTimezone,
@@ -1219,6 +1282,16 @@ export function ManualTimeEntryDialog({
 			setIsTimezoneContinuationPending,
 			async () => {
 				const { value, browserTimezone, submissionId } = pendingMismatch;
+				if (context?.manualCommandVersion === 2 && contextTimezone) {
+					// The form now shows the browser zone; its choices apply there.
+					setContinueOnceZone({ source: contextTimezone, value: browserTimezone });
+					if (needsReviewInZone(value, browserTimezone)) {
+						setPendingMismatch(null);
+						clearOccurrences();
+						toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
+						return;
+					}
+				}
 				await submitManualEntry(
 					value,
 					browserTimezone,
@@ -1232,6 +1305,7 @@ export function ManualTimeEntryDialog({
 	}
 
 	const handleOpenChange = (isOpen: boolean) => {
+		if (!isOpen) setContinueOnceZone(null);
 		if (isOpen) {
 			form.reset(
 				getDefaultValues(defaultsTimezone, {

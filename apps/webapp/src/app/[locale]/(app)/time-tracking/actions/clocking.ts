@@ -50,7 +50,10 @@ import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
-import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
+import {
+	employeeHasAccessToCategory,
+	type WorkCategoryReader,
+} from "@/lib/query/work-category.queries";
 import {
 	ClockingConflictError,
 	clockingService,
@@ -962,8 +965,11 @@ export async function validateWorkCategoryAssignment(
 	employeeId: string,
 	workCategoryId: string,
 	organizationId: string,
+	/** Protected preparation passes its transaction and evaluation instant. */
+	reader: WorkCategoryReader = db,
+	now: Date = new Date(),
 ) {
-	const category = await db.query.workCategory.findFirst({
+	const category = await reader.query.workCategory.findFirst({
 		where: and(
 			eq(workCategory.id, workCategoryId),
 			eq(workCategory.organizationId, organizationId),
@@ -977,6 +983,8 @@ export async function validateWorkCategoryAssignment(
 		employeeId,
 		workCategoryId,
 		organizationId,
+		reader,
+		now,
 	))
 		? { isValid: true }
 		: { isValid: false, error: "Cannot assign to this work category" };

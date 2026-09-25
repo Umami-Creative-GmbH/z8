@@ -97,7 +97,9 @@ Inside that transaction, `actions/manual-command-submission.ts`:
    current creation authorization (the principal loader on the transaction; bans; explicit
    `create TimeEntry` for on-behalf targets), the target's effective zone (employee →
    organization → UTC), zone agreement, interval interpretation, organization holiday
-   blocking on each occupied local date in the effective zone, project eligibility (active,
+   blocking on each occupied local date in the effective zone (the holiday category must now
+   also belong to the organization; this tightens the shared check for every caller), project
+   eligibility (active,
    bookable, assigned), category eligibility (current effective set at the instant), and the
    change policy: organization-scoped, active, effective and not yet expired at the instant,
    employee → team → organization, with more than one candidate at the deciding level failing
@@ -134,7 +136,11 @@ When the target context advertises version 2, the manual form:
   ("First, UTC+02:00" / "Second, UTC+01:00"), and flags spring-forward times immediately;
 - freezes the command with the offsets it displayed and runs the same interpreter locally for
   feedback (UTC order, future, 24 hours);
-- sends `basis: "browser"` only for a self entry continued once in the browser zone;
+- sends `basis: "browser"` only for a self entry continued once in the browser zone. The
+  form then shows the browser zone; if an endpoint needs an occurrence choice there, the
+  draft is not sent until the user chooses in that zone;
+- drops an occurrence choice when its date or time changes, and all choices when the target,
+  zone or zone basis changes;
 - on reconfirmation, not-adopted or refresh outcomes, clears occurrence choices, refetches
   the context and asks the user to review.
 
@@ -149,7 +155,7 @@ registered in `scripts/run-approval-workflow-repository-integration.sh` and the 
 `integration-tests` job. The real public `createManualTimeEntry` action, approval routing and
 live `clockIn` run on the label-owned disposable PostgreSQL 16 database; only the session,
 billing provisioning, notification delivery and Next cache are replaced, and the authoritative
-clock can be pinned. **26/26.**
+clock can be pinned. **27/27.**
 
 - Gating: v2 writes nothing without or with an inactive control row; legacy input stays
   legacy before adoption; after adoption a committed legacy submission replays and fresh
@@ -164,7 +170,8 @@ clock can be pinned. **26/26.**
   ordering, zone/ambiguity/offset reconfirmation, same-zone fallback source, browser
   continue-once versus on-behalf.
 - Future, nonpositive, over-24-hour and invalid fields; holiday blocking by the effective
-  zone's local date (Auckland 09:00 on the 25th blocks, UTC would not); project eligibility.
+  zone's local date (Auckland 09:00 on the 25th blocks, UTC would not); project eligibility;
+  category eligibility from the current effective set at the evaluation instant.
 - Occupancy: rejected work occupies, deleted work does not, adjacency commits, an active
   prior-day period occupies from its start, two concurrent overlapping submissions commit
   exactly one, manual work waits on the shared employee key.
@@ -172,8 +179,9 @@ clock can be pinned. **26/26.**
   on the target user's access guard and then reads the committed change.
 - Policy: inclusive age at one instant across Berlin midnight, approval routed to the manager
   with pending participation, beyond-window conversion, expired and future assignments
-  ignored, owner self and manager on-behalf exemptions, unrelated target refused, unroutable
-  approval rolled back.
+  ignored, owner self and manager on-behalf exemptions, unrelated target refused, an owner
+  with an ordinary employee role may create for a colleague and a plain employee may not,
+  unroutable approval rolled back.
 - Cleanup: `clearOrganizationTimeData` removes manual receipts, positions and records.
 
 Mutations each failed their tests: no occupancy (3), not-adopted before replay (1), no zone
@@ -188,7 +196,8 @@ by the target behavior: manual work over imported work is refused with the occup
 - `lib/time-tracking/manual-command.test.ts` (42): strict parsing, wall-time classification,
   zone agreement, interval interpretation, half-open local dates, calendar-day age, intent.
 - `components/time-tracking/manual-time-entry-dialog.test.tsx`: occurrence choice and command,
-  UTC-ordered repeated hour, gap feedback, browser-basis continuation, reconfirmation and
+  UTC-ordered repeated hour, gap feedback, browser-basis continuation (including a time that
+  repeats only in the browser zone), dropped choices after a time change, reconfirmation and
   not-adopted handling, with the real `TimeInput`.
 - `actions/manual-entry-target.test.ts`: the advertised command version.
 
@@ -211,6 +220,11 @@ This slice closes on implementation. The items below are activation gates for #3
   identity before the approval write gate. It is only reachable for legacy input and waits
   on the adoption gate in its write transaction; old binaries must be drained before
   activation.
+- **Not verified here:** unchanged surcharge event-time semantics with manual approval (the
+  operation passes the exact interval to the existing snapshot resolver), and a manual/live
+  clock race in both arrival orders (only manual-waits-behind-the-employee-key is exercised).
+- **Freezing** the confirmed command across the timezone prompt is left to #310; the dialog
+  rebuilds it from the draft once the zone is confirmed.
 - **Policy ambiguity** cannot currently occur in the database (unique active assignment
   indexes per level); the explicit failure is covered only by construction.
 - **Write-boundary inventory**: the new `time_entry`/`work_period`/`time_record` writes in

@@ -2,23 +2,23 @@ import "server-only";
 
 import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
-import { changePolicy, changePolicyAssignment, employee, workCategory } from "@/db/schema";
+import { changePolicy, changePolicyAssignment, employee } from "@/db/schema";
 import { isAccountBanned } from "@/lib/auth/account-ban";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
 import type { PrincipalContext } from "@/lib/authorization/types";
 import { isHolidayBlockingTimeEntry } from "@/lib/calendar/holiday-service";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
-import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
 import {
 	evaluateManualApprovalIntent,
 	interpretManualInterval,
 	type ManualApprovalIntent,
 	type ManualCaptureSource,
-	type ManualChangePolicy,
 	type ManualCommandRejection,
 	type ManualInterval,
 	type ManualIntervalRejection,
+	type ManualPolicyEvidence,
+	type ManualPolicyLevel,
 	type ManualTargetZoneSource,
 	type ManualTimeEntryCommand,
 	type ManualZoneRejection,
@@ -27,6 +27,7 @@ import {
 	resolveManualInterpretationZone,
 } from "@/lib/time-tracking/manual-command";
 import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import { validateWorkCategoryAssignment } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
 import { resolveManualEntryTargetZone } from "./manual-entry-target";
 
@@ -53,14 +54,6 @@ export type ManualPreparationRejection =
 	| { reason: "project_ineligible"; message: string }
 	| { reason: "category_ineligible"; message: string }
 	| { reason: "policy_ambiguous"; level: ManualPolicyLevel };
-
-export type ManualPolicyLevel = "employee" | "team" | "organization";
-
-export type ManualPolicyEvidence = {
-	policyId: string;
-	assignmentId: string;
-	level: ManualPolicyLevel;
-} & ManualChangePolicy;
 
 /** Normalized authoritative facts; the submitted command stays separate. */
 export type PreparedManualWork = {
@@ -219,35 +212,6 @@ async function resolveEffectiveChangePolicy(
 	return { ok: true, policy: null };
 }
 
-async function validateCategory(
-	tx: Reader,
-	target: Pick<Employee, "id" | "organizationId">,
-	workCategoryId: string,
-	at: Date,
-): Promise<string | null> {
-	const [category] = await tx
-		.select({ id: workCategory.id })
-		.from(workCategory)
-		.where(
-			and(
-				eq(workCategory.id, workCategoryId),
-				eq(workCategory.organizationId, target.organizationId),
-				eq(workCategory.isActive, true),
-			),
-		)
-		.limit(1);
-	if (!category) return "Work category not found";
-	return (await employeeHasAccessToCategory(
-		target.id,
-		workCategoryId,
-		target.organizationId,
-		tx,
-		at,
-	))
-		? null
-		: "Cannot assign to this work category";
-}
-
 /**
  * Interpret the frozen command against current protected facts at `now`. The
  * caller must already hold the manual transaction's guards and have ruled out
@@ -310,8 +274,22 @@ export async function prepareManualWork(
 		}
 	}
 	if (command.workCategoryId) {
-		const message = await validateCategory(tx, target, command.workCategoryId, at);
-		if (message) return { ok: false, rejection: { reason: "category_ineligible", message } };
+		const category = await validateWorkCategoryAssignment(
+			target.id,
+			command.workCategoryId,
+			target.organizationId,
+			tx,
+			at,
+		);
+		if (!category.isValid) {
+			return {
+				ok: false,
+				rejection: {
+					reason: "category_ineligible",
+					message: category.error ?? "Cannot assign to this work category",
+				},
+			};
+		}
 	}
 
 	const daysBack = manualCalendarDaysBack(interval.end, now, zone.timezone);

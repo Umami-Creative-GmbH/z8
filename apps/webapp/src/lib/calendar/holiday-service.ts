@@ -46,6 +46,7 @@ export async function isHolidayBlockingTimeEntry(
 			and(
 				eq(holiday.organizationId, organizationId),
 				eq(holiday.isActive, true),
+				eq(holidayCategory.organizationId, organizationId),
 				eq(holidayCategory.isActive, true),
 				eq(holidayCategory.blocksTimeEntry, true),
 				eq(holiday.recurrenceType, "none"),
@@ -74,6 +75,7 @@ export async function isHolidayBlockingTimeEntry(
 			and(
 				eq(holiday.organizationId, organizationId),
 				eq(holiday.isActive, true),
+				eq(holidayCategory.organizationId, organizationId),
 				eq(holidayCategory.isActive, true),
 				eq(holidayCategory.blocksTimeEntry, true),
 				eq(holiday.recurrenceType, "yearly"),

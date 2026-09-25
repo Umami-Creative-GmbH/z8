@@ -1419,6 +1419,59 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 		expect(updateTimezone).not.toHaveBeenCalled();
 	});
 
+	it("shows a time that repeats only in the browser zone for review before continuing once", async () => {
+		renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				employeeTimezone: "UTC",
+				defaultDate: "2025-11-02",
+				defaultClockInTime: "00:30",
+				defaultClockOutTime: "01:30",
+			},
+			{ manualCommandVersion: 2 },
+		);
+		// Unambiguous in the saved UTC zone: no choice is offered yet.
+		expect(screen.queryByRole("radio")).toBeNull();
+
+		enterReasonAndSubmit();
+		fireEvent.click(await screen.findByRole("button", { name: "Continue once" }));
+
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				"This time occurs twice on this date. Choose which one you mean.",
+			),
+		);
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+		fireEvent.click(await screen.findByRole("radio", { name: "Second, UTC-05:00" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() =>
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					zone: { basis: "browser", timezone: "America/New_York" },
+					browserTimezone: "America/New_York",
+					clockIn: { time: "00:30", occurrence: null, displayedOffsetMinutes: -240 },
+					clockOut: { time: "01:30", occurrence: "later", displayedOffsetMinutes: -300 },
+				}),
+			),
+		);
+	});
+
+	it("drops an occurrence choice when its time changes", async () => {
+		renderBerlinOnBehalf("2025-10-26", "01:00", "02:30");
+		fireEvent.click(screen.getByRole("radio", { name: "Second, UTC+01:00" }));
+
+		fireEvent.change(screen.getByLabelText("Clock Out"), { target: { value: "02:45" } });
+
+		expect(
+			screen.getByRole("radio", { name: "Second, UTC+01:00" }).getAttribute("aria-checked"),
+		).toBe("false");
+		enterReasonAndSubmit();
+		await waitFor(() => expect(toastError).toHaveBeenCalled());
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+	});
+
 	it("clears confirmations and refreshes the context when the server asks for reconfirmation", async () => {
 		createManualTimeEntry.mockResolvedValue({
 			success: false,
