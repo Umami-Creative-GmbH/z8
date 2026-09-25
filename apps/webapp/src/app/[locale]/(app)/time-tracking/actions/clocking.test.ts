@@ -1,6 +1,7 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import {
 	createClockingService,
@@ -35,6 +36,9 @@ const mockState = vi.hoisted(() => ({
 	sendManualEntryApprovalNotifications: vi.fn(),
 	sendManualEntryApprovedNotification: vi.fn(),
 	transactionOpen: false,
+	readAppendAdmission: vi.fn(async () => "legacy" as "legacy" | "append"),
+	replayCloseActiveWork: vi.fn(async (): Promise<unknown> => null),
+	closeActiveWork: vi.fn(),
 	calculateAndPersistSurcharges: vi.fn(),
 	reconcileImmediateSurcharges: vi.fn(),
 	checkComplianceAfterClockOut: vi.fn(),
@@ -247,6 +251,26 @@ vi.mock("@/lib/work-balance/service", () => ({
 vi.mock("@/lib/time-tracking/web-clock-in-transaction", () => ({
 	withWebClockInTransaction: (...args: unknown[]) =>
 		mockState.withWebClockInTransaction(...args),
+}));
+
+vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/lib/time-tracking/work-transaction")
+	>()),
+	readAppendAdmission: (...args: unknown[]) =>
+		mockState.readAppendAdmission(...(args as [])),
+}));
+
+// The operation itself runs against PostgreSQL in the web clock-out integration
+// suite; here the action's dispatch and replay order are observed.
+vi.mock("@/lib/time-tracking/close-active-work", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@/lib/time-tracking/close-active-work")
+	>()),
+	replayCloseActiveWork: (...args: unknown[]) =>
+		mockState.replayCloseActiveWork(...(args as [])),
+	closeActiveWork: (...args: unknown[]) =>
+		mockState.closeActiveWork(...args),
 }));
 
 vi.mock("@/lib/time-tracking/clocking-service", async (importOriginal) => ({
@@ -1046,6 +1070,9 @@ describe("clockIn", () => {
 describe("clockOut", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.readAppendAdmission.mockResolvedValue("legacy");
+		mockState.replayCloseActiveWork.mockResolvedValue(null);
+		mockState.closeActiveWork.mockReset();
 		mockState.executeOrdinarySubmission.mockReset();
 		mockState.createClockOutApprovalRequest.mockReset();
 		mockState.updateReturning.mockReset();
@@ -2587,6 +2614,122 @@ describe("clockOut", () => {
 				action: expect.objectContaining({ timezone: "UTC" }),
 			}),
 		);
+	});
+
+	function closedByOperation(input: {
+		command: { operationId: string };
+		workPeriodId: string;
+	}) {
+		return {
+			disposition: "executed",
+			entry: { id: input.command.operationId, type: "clock_out" },
+			result: {
+				workPeriodId: input.workPeriodId,
+				segment: {
+					startAt: "2026-05-04T09:00:00Z",
+					endAt: "2026-05-04T10:00:00Z",
+					durationMinutes: 60,
+				},
+				approval: { participation: "none" },
+			},
+			approvalSubmission: null,
+			surchargeSnapshot: null,
+		};
+	}
+
+	it("closes adopted organizations through the completed-work operation", async () => {
+		mockState.readAppendAdmission.mockResolvedValue("append");
+		mockState.closeActiveWork.mockImplementation(async (_context, input) =>
+			closedByOperation(input),
+		);
+
+		const result = await clockOut();
+
+		expect(result).toMatchObject({
+			success: true,
+			data: { id: defaultSubmissionId },
+		});
+		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
+		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
+		expect(mockState.closeActiveWork).toHaveBeenCalledTimes(1);
+		const [context, input] = mockState.closeActiveWork.mock.calls[0];
+		expect(context).toMatchObject({ admission: "append", requiresApproval: false });
+		expect(input).toMatchObject({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			actorUserId: "user-1",
+			workPeriodId: "period-1",
+			eventInstant: expect.anything(),
+			capture: expect.objectContaining({ timezone: "UTC" }),
+			command: {
+				version: 1,
+				operationId: defaultSubmissionId,
+				project: { kind: "preserve" },
+				workCategory: { kind: "preserve" },
+				requestedInstant: null,
+				browserTimezone: null,
+				deviceInfo: "web",
+			},
+		});
+		// The refresh intent committed with the work; post-commit work uses its facts.
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
+		expect(mockState.enforceBreaksAfterClockOut).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: "period-1",
+				sessionDurationMinutes: 60,
+			}),
+		);
+	});
+
+	it("keeps explicit clearing distinct from omitted attribution", async () => {
+		mockState.readAppendAdmission.mockResolvedValue("append");
+		mockState.closeActiveWork.mockImplementation(async (_context, input) =>
+			closedByOperation(input),
+		);
+
+		const result = await clockOutAction(null, undefined, {
+			submissionId: defaultSubmissionId,
+			instant: parseInstant("2026-05-04T10:00:00Z"),
+			deviceInfo: "mobile",
+			browserTimezone: "Europe/Berlin",
+		});
+
+		expect(result.success).toBe(true);
+		expect(mockState.closeActiveWork.mock.calls[0][1].command).toEqual({
+			version: 1,
+			operationId: defaultSubmissionId,
+			project: { kind: "clear" },
+			workCategory: { kind: "preserve" },
+			requestedInstant: "2026-05-04T10:00:00Z",
+			browserTimezone: "Europe/Berlin",
+			deviceInfo: "mobile",
+		});
+	});
+
+	it("replays a committed operation receipt before any fresh check", async () => {
+		mockState.replayCloseActiveWork.mockResolvedValueOnce({
+			disposition: "replayed",
+			entry: { id: defaultSubmissionId, type: "clock_out" },
+			result: {
+				approval: {
+					participation: "policy_clock_out",
+					disposition: "executed",
+					outcome: "default_created",
+					approvalRequestId: "approval-1",
+				},
+			},
+		});
+
+		const result = await clockOut();
+
+		expect(result).toEqual({
+			success: true,
+			data: { id: defaultSubmissionId, type: "clock_out", pendingApproval: true },
+		});
+		expect(mockState.getActiveWorkPeriod).not.toHaveBeenCalled();
+		expect(mockState.closeActiveWork).not.toHaveBeenCalled();
+		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
+		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
 	it("rolls back the live clock-out source rows when approval creation fails", async () => {

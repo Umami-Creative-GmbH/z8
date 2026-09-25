@@ -470,8 +470,8 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
  * @param workCategoryId - Optional work category ID to apply a time factor
  */
 export async function clockOut(
-	projectId: string | undefined,
-	workCategoryId: string | undefined,
+	projectId: string | null | undefined,
+	workCategoryId: string | null | undefined,
 	timezoneContext: ClockOutActionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	return clockOutAction(projectId, workCategoryId, timezoneContext);

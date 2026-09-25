@@ -4,10 +4,10 @@
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
- * The real `clockIn` (and, where a competing legacy writer is needed, `clockOut`)
- * server actions run against that database. Only the request/session, external
- * billing provisioning, notification delivery, and Next cache boundaries are
- * replaced. Append adoption is enabled per test organization by inserting its
+ * The real `clockIn` server action runs against that database; the shared
+ * clocking service's legacy closer stands in for a competing legacy writer.
+ * Only the request/session, external billing provisioning, notification
+ * delivery, and Next cache boundaries are replaced. Append adoption is enabled per test organization by inserting its
  * control row directly: production has no activation setter.
  */
 
@@ -96,7 +96,7 @@ vi.mock("./shared", async (importOriginal) => {
 	};
 });
 
-const { clockIn, clockOut } = await import("./clocking");
+const { clockIn } = await import("./clocking");
 const { clockingService } = await import("@/lib/time-tracking/clocking-service");
 const { withWebClockInTransaction } = await import("@/lib/time-tracking/web-clock-in-transaction");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
@@ -785,16 +785,24 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 		await expect(clockInAs()).resolves.toMatchObject({ success: true });
 		const admitted = await position();
 
-		// Web clock-out still selects the latest-created head (#274) and does not
-		// advance the position, so it is an unexpected write for this scope.
-		harness.userId = ids.requesterUser;
+		// The shared legacy closer (direct HTTP, on-behalf, bots: #275-#277) still
+		// selects the latest-created head and does not advance the position, so it is
+		// an unexpected write for this scope. Web clock-out participates since #274.
 		await expect(
-			clockOut(undefined, undefined, {
-				submissionId: randomUUID(),
-				instant: clockOutAt,
-				browserTimezone: "UTC",
+			clockingService.clockOut({
+				employeeId: ids.requester,
+				organizationId: ids.organization,
+				createdBy: ids.requesterUser,
+				actionId: randomUUID(),
+				action: {
+					instant: clockOutAt,
+					utcOffsetMinutes: 0,
+					timezone: "UTC",
+					timezoneSource: "browser",
+				},
+				source: { ipAddress: null, deviceInfo: "web" },
 			}),
-		).resolves.toMatchObject({ success: true });
+		).resolves.toMatchObject({ disposition: "executed" });
 		const before = await entries();
 
 		await expect(clockInAs()).resolves.toEqual(reviewResult);

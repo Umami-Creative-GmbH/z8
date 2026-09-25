@@ -194,11 +194,14 @@ adoption and coordination) and #329 (pilot), not in #273. Web-action replay is
 re-verified when #279 gives web clock-in an action ID. The O(history) admission read
 is measured in the #329 pilot. Before any organization's control row is set active:
 
-- Every competing appender must participate or be drained. Web clock-out (#274),
-  direct HTTP (#275), on-behalf (#276), bot (#277), mobile (#278), manual (#308),
+- Every competing appender must participate or be drained. Web clock-out now
+  participates ([#274](web-clock-out-operation-274.md)); still outstanding are
+  direct HTTP (#275), on-behalf (#276), bot (#277), mobile clients (#278; the mobile
+  route's clock-out already uses the web action), manual (#308),
   active breaks and splits (#304), corrections (#301/#286), imports (#284), demo (#285)
   and ordinary/cron/terminal breaks (#303/#305). Until then, one legacy write holds the
-  employee's next clock-in, which the suite demonstrates for clock-out.
+  employee's next clock-in, which the suite demonstrates with the shared legacy
+  closer (web clock-out itself was the legacy writer until #274).
 - Authorized continuation for held histories (#323). Graph-aware verifier and audit
   consumers that distinguish stored from derived links (#324). Historical diagnostics
   (#319).

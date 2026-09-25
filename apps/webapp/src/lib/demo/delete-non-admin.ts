@@ -10,6 +10,7 @@ import {
 	employeeManagers,
 	employeeVacationAllowance,
 	timeEntry,
+	completedWorkOperation,
 	timeEntryAppendPosition,
 	workPeriod,
 } from "@/db/schema";
@@ -102,6 +103,15 @@ export async function deleteNonAdminEmployeesData(
 				and(
 					eq(timeEntryAppendPosition.organizationId, organizationId),
 					inArray(timeEntryAppendPosition.employeeId, employeeIds),
+				),
+			);
+		// Operation receipts describe that history by value; remove them with it.
+		await db
+			.delete(completedWorkOperation)
+			.where(
+				and(
+					eq(completedWorkOperation.organizationId, organizationId),
+					inArray(completedWorkOperation.employeeId, employeeIds),
 				),
 			);
 		await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));

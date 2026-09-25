@@ -5,8 +5,9 @@
  * coordination, then source identities and rows. All advisory locks are
  * transaction-scoped with hash seed zero.
  */
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
+import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
@@ -45,6 +46,23 @@ export async function acquireAdoptionGate(
 	await transaction.execute(
 		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["completed-work-adoption", organizationId])}, 0))`,
 	);
+}
+
+/**
+ * The organization's append admission, read under the shared adoption gate so an
+ * exclusive adoption holder drains this transaction before a mode change is
+ * visible. No control row, or an inactive one, keeps legacy head selection.
+ */
+export async function readAppendAdmission(
+	transaction: Pick<Transaction, "select">,
+	organizationId: string,
+): Promise<WorkTransactionAdmission> {
+	const [control] = await transaction
+		.select({ mode: timeEntryAppendControl.mode })
+		.from(timeEntryAppendControl)
+		.where(eq(timeEntryAppendControl.organizationId, organizationId))
+		.limit(1);
+	return control?.mode === "active" ? "append" : "legacy";
 }
 
 export async function acquireOrganizationConfigurationGuard(

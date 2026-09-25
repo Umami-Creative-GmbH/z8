@@ -39,6 +39,7 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	instantToCanonicalString,
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
@@ -55,6 +56,15 @@ import {
 	clockingService,
 	TimeEntryAppendReviewRequiredError,
 } from "@/lib/time-tracking/clocking-service";
+import {
+	attributionIntent,
+	type CloseActiveWorkCommand,
+	type CloseActiveWorkReceipt,
+	CompletedWorkAttributionError,
+	CompletedWorkCollisionError,
+	closeActiveWork,
+	replayCloseActiveWork,
+} from "@/lib/time-tracking/close-active-work";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import {
 	type PolicyClockOutSurchargeSnapshot,
@@ -74,7 +84,11 @@ import {
 } from "@/lib/time-tracking/work-location";
 import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import { withWebClockInTransaction } from "@/lib/time-tracking/web-clock-in-transaction";
-import { withWebClockOutTransaction } from "@/lib/time-tracking/web-clock-out-transaction";
+import {
+	type WorkTransactionContext,
+	withWebClockOutTransaction,
+} from "@/lib/time-tracking/web-clock-out-transaction";
+import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalWorkRecordClient } from "../actions.canonical";
 import {
@@ -135,6 +149,10 @@ const APPROVAL_POLICY_CHECK_ERROR =
 // Ordinary users learn only that review is needed; operators get the scoped reasons.
 const APPEND_REVIEW_REQUIRED_ERROR =
 	"Your time history needs review before you can clock in. Please contact your administrator.";
+const CLOCK_OUT_COLLISION_ERROR =
+	"This clock-out conflicts with an earlier request or changed work. Please refresh and try again.";
+const CLOCK_OUT_APPEND_REVIEW_REQUIRED_ERROR =
+	"Your time history needs review before you can clock out. Please contact your administrator.";
 const CANONICAL_UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -1012,9 +1030,27 @@ export async function clockIn(
 	}
 }
 
+/** The original committed result; current approval state is a separate read. */
+function receiptResponse(receipt: CloseActiveWorkReceipt): ClockOutResult {
+	const { approval } = receipt.result;
+	return {
+		...(receipt.entry as ClockOutResult),
+		pendingApproval:
+			approval.participation === "policy_clock_out"
+				? approval.outcome !== "auto_completed"
+				: undefined,
+	};
+}
+
+/**
+ * Web clock-out. `undefined` attribution preserves the active period's project or
+ * category; `null` clears it explicitly (adopted operation path). Organizations
+ * whose append control is active close through the completed-work operation;
+ * the others keep the #272 legacy closure until activation.
+ */
 export async function clockOut(
-	projectId: string | undefined,
-	workCategoryId: string | undefined,
+	projectId: string | null | undefined,
+	workCategoryId: string | null | undefined,
 	actionContext: ClockOutActionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
@@ -1032,6 +1068,65 @@ export async function clockOut(
 	} catch {
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}
+	const command: CloseActiveWorkCommand = {
+		version: 1,
+		operationId: submissionId,
+		project: attributionIntent(projectId),
+		workCategory: attributionIntent(workCategoryId),
+		requestedInstant: actionContext.instant
+			? instantToCanonicalString(actionContext.instant)
+			: null,
+		browserTimezone: actionContext.browserTimezone ?? null,
+		deviceInfo: actionContext.deviceInfo ?? "web",
+	};
+	const operationScope = {
+		organizationId: currentEmployee.organizationId,
+		employeeId: currentEmployee.id,
+		command,
+	};
+
+	/** Receipt-less committed clock-outs keep their exact legacy matching rules. */
+	const replayLegacyClockOut = async (coordination: WorkTransactionContext) => {
+		const context = coordination.approval;
+		const evidence = await findPolicyClockOutSubmissionEvidence({
+			tx: coordination.db,
+			submissionId,
+			organizationId: currentEmployee.organizationId,
+			employeeId: currentEmployee.id,
+			projectId: projectId ?? null,
+			workCategoryId: workCategoryId ?? null,
+		});
+		if (!evidence) return null;
+		const { period, hasApprovalEvidence } = evidence;
+		if (!hasApprovalEvidence) return { period, approvalSubmission: null };
+		const approvalSubmission = requireReplayOnlySubmission(
+			await executeOrdinaryWorkPeriodSubmissionInTransaction({
+				dbService: approvalDbServiceForTransaction(context.dbService),
+				context,
+				coordination,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: period.id,
+				submissionId,
+				requesterEmployeeId: currentEmployee.id,
+				requesterUserId: session.user.id,
+				teamId: currentEmployee.teamId,
+				defaultApproverId: null,
+				reason: "Clock-out requires approval (0-day policy)",
+				overtimeRisk: "warning",
+				kind: "policy_clock_out",
+				metadata: {},
+			}),
+		);
+		return { period, approvalSubmission };
+	};
+	const legacyReplayResponse = (
+		replay: NonNullable<Awaited<ReturnType<typeof replayLegacyClockOut>>>,
+	): ClockOutResult => ({
+		...(replay.period.clockOut as ClockOutResult),
+		pendingApproval: replay.approvalSubmission
+			? replay.approvalSubmission.result.kind !== "auto_completed"
+			: undefined,
+	});
 
 	try {
 		const replay = await withWebClockOutTransaction(
@@ -1043,52 +1138,20 @@ export async function clockOut(
 			},
 			createOrdinaryApprovalRuntime,
 			async (coordination) => {
-				const context = coordination.approval;
-				const tx = coordination.db;
-				const evidence = await findPolicyClockOutSubmissionEvidence({
-					tx,
-					submissionId,
-					organizationId: currentEmployee.organizationId,
-					employeeId: currentEmployee.id,
-					projectId: projectId ?? null,
-					workCategoryId: workCategoryId ?? null,
-				});
-				if (!evidence) return null;
-				const { period, hasApprovalEvidence } = evidence;
-				if (!hasApprovalEvidence) return { period, approvalSubmission: null };
-				const approvalSubmission = requireReplayOnlySubmission(
-					await executeOrdinaryWorkPeriodSubmissionInTransaction({
-						dbService: approvalDbServiceForTransaction(context.dbService),
-						context,
-						coordination,
-						organizationId: currentEmployee.organizationId,
-						workPeriodId: period.id,
-						submissionId,
-						requesterEmployeeId: currentEmployee.id,
-						requesterUserId: session.user.id,
-						teamId: currentEmployee.teamId,
-						defaultApproverId: null,
-						reason: "Clock-out requires approval (0-day policy)",
-						overtimeRisk: "warning",
-						kind: "policy_clock_out",
-						metadata: {},
-					}),
-				);
-				return { period, approvalSubmission };
+				// Receipts precede the legacy matcher in every mode, so a later mode
+				// rollback still replays committed operations exactly.
+				const receipt = await replayCloseActiveWork(coordination, operationScope);
+				if (receipt) return { data: receiptResponse(receipt) };
+				const legacy = await replayLegacyClockOut(coordination);
+				return legacy ? { data: legacyReplayResponse(legacy) } : null;
 			},
 		);
-		if (replay) {
-			return {
-				success: true,
-				data: {
-					...(replay.period.clockOut as ClockOutResult),
-					pendingApproval: replay.approvalSubmission
-						? replay.approvalSubmission.result.kind !== "auto_completed"
-						: undefined,
-				},
-			};
-		}
+		if (replay) return { success: true, data: replay.data };
 	} catch (error) {
+		if (error instanceof CompletedWorkCollisionError) {
+			logger.warn({ error }, "Clock out identity collision");
+			return { success: false, error: CLOCK_OUT_COLLISION_ERROR };
+		}
 		logger.error({ error }, "Clock out replay error");
 		return { success: false, error: "Failed to clock out. Please try again." };
 	}
@@ -1184,6 +1247,144 @@ export async function clockOut(
 		);
 		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
 			null;
+		// #272 prefactor closure, kept for organizations that have not adopted.
+		const closeLegacyClockOut = async (coordination: WorkTransactionContext) => {
+			const context = coordination.approval;
+			const clockOutResult = await clockingService.clockOut({
+				coordination,
+				actionId: submissionId,
+				employeeId: currentEmployee.id,
+				organizationId: currentEmployee.organizationId,
+				workPeriodId: activeWorkPeriod.id,
+				createdBy: session.user.id,
+				action: { instant: actionInstant, ...timezoneCapture },
+				source: {
+					ipAddress: null,
+					deviceInfo: actionContext.deviceInfo ?? "web",
+				},
+				projectId,
+				workCategoryId,
+				approvalStatus: needsClockOutApproval ? "pending" : "approved",
+				beforePeriodClose: async () => {
+					const breakPolicySnapshot = needsClockOutApproval
+						? await resolvePolicyClockOutBreakSnapshotInTransaction({
+								dbService: { db: coordination.db },
+								organizationId: currentEmployee.organizationId,
+								employeeId: currentEmployee.id,
+								endTime: actionInstant,
+							})
+						: null;
+					const surchargeSnapshot =
+						await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+							dbService: { db: coordination.db },
+							organizationId: currentEmployee.organizationId,
+							employeeId: currentEmployee.id,
+							startTime: instantFromDate(activeWorkPeriod.startTime),
+							endTime: actionInstant,
+						});
+					if (!needsClockOutApproval)
+						immediateSurchargeSnapshot = surchargeSnapshot;
+					const canonicalRecord =
+						await canonicalWorkRecordClient.createForCompletedPeriod(
+							{
+								organizationId: currentEmployee.organizationId,
+								employeeId: currentEmployee.id,
+								startAt: activeWorkPeriod.startTime,
+								endAt: now,
+								durationMinutes: sessionDurationMinutes,
+								approvalState: needsClockOutApproval ? "pending" : "approved",
+								createdBy: session.user.id,
+								workCategoryId: workCategoryId ?? null,
+								workLocationType: activeWorkPeriod.workLocationType ?? null,
+								projectId: projectId ?? null,
+								origin: "clock",
+							},
+							coordination.db,
+						);
+					return {
+						canonicalRecordId: canonicalRecord.id,
+						pendingChanges:
+							breakPolicySnapshot && surchargeSnapshot
+								? {
+										originalStartTime:
+											activeWorkPeriod.startTime.toISOString(),
+										originalEndTime: now.toISOString(),
+										originalDurationMinutes: sessionDurationMinutes,
+										requestedAt: now.toISOString(),
+										requestedBy: session.user.id,
+										isNewClockOut: true,
+										ordinarySubmission: {
+											submissionId,
+											kind: "policy_clock_out" as const,
+										},
+										breakPolicySnapshot,
+										surchargeSnapshot,
+									}
+								: null,
+					};
+				},
+				afterPeriodClose: needsClockOutApproval
+					? async ({ transaction }) => {
+							if (transaction !== context.dbService.db) {
+								throw new Error("Clock-out transaction context changed");
+							}
+							return executeOrdinaryWorkPeriodSubmissionInTransaction({
+								dbService: approvalDbServiceForTransaction(context.dbService),
+								context,
+								coordination,
+								organizationId: currentEmployee.organizationId,
+								workPeriodId: activeWorkPeriod.id,
+								submissionId: requireCanonicalSubmissionId(submissionId),
+								requesterEmployeeId: currentEmployee.id,
+								requesterUserId: session.user.id,
+								teamId: currentEmployee.teamId,
+								defaultApproverId: null,
+								reason: "Clock-out requires approval (0-day policy)",
+								overtimeRisk: "warning",
+								kind: "policy_clock_out",
+								metadata: {},
+							});
+						}
+					: undefined,
+			});
+			if (clockOutResult.disposition !== "replayed") {
+				return clockOutResult;
+			}
+			const replayEvidence = await findPolicyClockOutSubmissionEvidence({
+				tx: coordination.db,
+				submissionId,
+				organizationId: currentEmployee.organizationId,
+				employeeId: currentEmployee.id,
+				projectId: projectId ?? null,
+				workCategoryId: workCategoryId ?? null,
+			});
+			if (
+				!replayEvidence ||
+				replayEvidence.period.id !== clockOutResult.period.id
+			) {
+				throw new Error("Submission collision");
+			}
+			if (!replayEvidence.hasApprovalEvidence) return clockOutResult;
+			const transactionResult = requireReplayOnlySubmission(
+				await executeOrdinaryWorkPeriodSubmissionInTransaction({
+					dbService: approvalDbServiceForTransaction(context.dbService),
+					context,
+					organizationId: currentEmployee.organizationId,
+					workPeriodId: clockOutResult.period.id,
+					coordination,
+					submissionId: requireCanonicalSubmissionId(submissionId),
+					requesterEmployeeId: currentEmployee.id,
+					requesterUserId: session.user.id,
+					teamId: currentEmployee.teamId,
+					defaultApproverId: null,
+					reason: "Clock-out requires approval (0-day policy)",
+					overtimeRisk: "warning",
+					kind: "policy_clock_out",
+					metadata: {},
+				}),
+			);
+			return { ...clockOutResult, transactionResult };
+		};
 		const result = await withWebClockOutTransaction(
 			{
 				organizationId: currentEmployee.organizationId,
@@ -1198,153 +1399,78 @@ export async function clockOut(
 			},
 			createOrdinaryApprovalRuntime,
 			async (coordination) => {
-				const context = coordination.approval;
-				const clockOutResult = await clockingService.clockOut({
-					coordination,
-					actionId: submissionId,
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					workPeriodId: activeWorkPeriod.id,
-					createdBy: session.user.id,
-					action: { instant: actionInstant, ...timezoneCapture },
-					source: {
-						ipAddress: null,
-						deviceInfo: actionContext.deviceInfo ?? "web",
-					},
-					projectId,
-					workCategoryId,
-					approvalStatus: needsClockOutApproval ? "pending" : "approved",
-					beforePeriodClose: async () => {
-						const breakPolicySnapshot = needsClockOutApproval
-							? await resolvePolicyClockOutBreakSnapshotInTransaction({
-									dbService: { db: coordination.db },
-									organizationId: currentEmployee.organizationId,
-									employeeId: currentEmployee.id,
-									endTime: actionInstant,
-								})
-							: null;
-						const surchargeSnapshot =
-							await resolvePolicyClockOutSurchargeSnapshotInTransaction({
-								dbService: { db: coordination.db },
-								organizationId: currentEmployee.organizationId,
-								employeeId: currentEmployee.id,
-								startTime: instantFromDate(activeWorkPeriod.startTime),
-								endTime: actionInstant,
-							});
-						if (!needsClockOutApproval)
-							immediateSurchargeSnapshot = surchargeSnapshot;
-						const canonicalRecord =
-							await canonicalWorkRecordClient.createForCompletedPeriod(
-								{
-									organizationId: currentEmployee.organizationId,
-									employeeId: currentEmployee.id,
-									startAt: activeWorkPeriod.startTime,
-									endAt: now,
-									durationMinutes: sessionDurationMinutes,
-									approvalState: needsClockOutApproval ? "pending" : "approved",
-									createdBy: session.user.id,
-									workCategoryId: workCategoryId ?? null,
-									workLocationType: activeWorkPeriod.workLocationType ?? null,
-									projectId: projectId ?? null,
-									origin: "clock",
-								},
-								coordination.db,
-							);
-						return {
-							canonicalRecordId: canonicalRecord.id,
-							pendingChanges:
-								breakPolicySnapshot && surchargeSnapshot
-									? {
-											originalStartTime:
-												activeWorkPeriod.startTime.toISOString(),
-											originalEndTime: now.toISOString(),
-											originalDurationMinutes: sessionDurationMinutes,
-											requestedAt: now.toISOString(),
-											requestedBy: session.user.id,
-											isNewClockOut: true,
-											ordinarySubmission: {
-												submissionId,
-												kind: "policy_clock_out" as const,
-											},
-											breakPolicySnapshot,
-											surchargeSnapshot,
-										}
-									: null,
-						};
-					},
-					afterPeriodClose: needsClockOutApproval
-						? async ({ transaction }) => {
-								if (transaction !== context.dbService.db) {
-									throw new Error("Clock-out transaction context changed");
-								}
-								return executeOrdinaryWorkPeriodSubmissionInTransaction({
-									dbService: approvalDbServiceForTransaction(context.dbService),
-									context,
-									coordination,
-									organizationId: currentEmployee.organizationId,
-									workPeriodId: activeWorkPeriod.id,
-									submissionId: requireCanonicalSubmissionId(submissionId),
-									requesterEmployeeId: currentEmployee.id,
-									requesterUserId: session.user.id,
-									teamId: currentEmployee.teamId,
-									defaultApproverId: null,
-									reason: "Clock-out requires approval (0-day policy)",
-									overtimeRisk: "warning",
-									kind: "policy_clock_out",
-									metadata: {},
-								});
-							}
-						: undefined,
-				});
-				if (clockOutResult.disposition !== "replayed") {
-					return clockOutResult;
+				const receipt = await replayCloseActiveWork(coordination, operationScope);
+				if (receipt) {
+					return { kind: "replayed" as const, data: receiptResponse(receipt) };
 				}
-				const replayEvidence = await findPolicyClockOutSubmissionEvidence({
-					tx: coordination.db,
-					submissionId,
-					organizationId: currentEmployee.organizationId,
-					employeeId: currentEmployee.id,
-					projectId: projectId ?? null,
-					workCategoryId: workCategoryId ?? null,
-				});
-				if (
-					!replayEvidence ||
-					replayEvidence.period.id !== clockOutResult.period.id
-				) {
-					throw new Error("Submission collision");
+				if (coordination.admission !== "append") {
+					return {
+						kind: "legacy" as const,
+						closed: await closeLegacyClockOut(coordination),
+					};
 				}
-				if (!replayEvidence.hasApprovalEvidence) return clockOutResult;
-				const transactionResult = requireReplayOnlySubmission(
-					await executeOrdinaryWorkPeriodSubmissionInTransaction({
-						dbService: approvalDbServiceForTransaction(context.dbService),
-						context,
+				const legacyReplay = await replayLegacyClockOut(coordination);
+				if (legacyReplay) {
+					return {
+						kind: "replayed" as const,
+						data: legacyReplayResponse(legacyReplay),
+					};
+				}
+				return {
+					kind: "operation" as const,
+					closed: await closeActiveWork(coordination, {
 						organizationId: currentEmployee.organizationId,
-						workPeriodId: clockOutResult.period.id,
-						coordination,
-						submissionId: requireCanonicalSubmissionId(submissionId),
-						requesterEmployeeId: currentEmployee.id,
-						requesterUserId: session.user.id,
+						employeeId: currentEmployee.id,
 						teamId: currentEmployee.teamId,
-						defaultApproverId: null,
-						reason: "Clock-out requires approval (0-day policy)",
-						overtimeRisk: "warning",
-						kind: "policy_clock_out",
-						metadata: {},
+						actorUserId: session.user.id,
+						workPeriodId: activeWorkPeriod.id,
+						command,
+						eventInstant: actionInstant,
+						capture: timezoneCapture,
 					}),
-				);
-				return { ...clockOutResult, transactionResult };
+				};
 			},
 		);
-		const entry = result.entry as Awaited<ReturnType<typeof createTimeEntry>>;
-		const { durationMinutes } = result;
-
-		const approvalSubmission = result.transactionResult as
-			| {
-					result: { kind: string };
-					disposition: "executed" | "replayed";
-					postCommit: WorkPeriodPostCommitDescriptor | null;
-			  }
-			| undefined;
+		if (result.kind === "replayed") return { success: true, data: result.data };
+		// One shape for post-commit work. The operation reports its committed
+		// receipt facts; the legacy closure keeps its preflight snapshot facts.
+		const outcome =
+			result.kind === "operation"
+				? {
+						entry: result.closed.entry,
+						disposition: result.closed.disposition,
+						durationMinutes: result.closed.result.segment.durationMinutes,
+						approvalSubmission: result.closed.approvalSubmission ?? undefined,
+						workPeriodId: result.closed.result.workPeriodId,
+						startTime: dateFromInstant(
+							parseInstant(result.closed.result.segment.startAt),
+						),
+						endTime: dateFromInstant(
+							parseInstant(result.closed.result.segment.endAt),
+						),
+						surchargeSnapshot: result.closed.surchargeSnapshot,
+						balanceRefreshCommitted: true,
+					}
+				: {
+						entry: result.closed.entry,
+						disposition: result.closed.disposition,
+						durationMinutes: result.closed.durationMinutes,
+						approvalSubmission: result.closed.transactionResult as
+							| {
+									result: { kind: string };
+									disposition: "executed" | "replayed";
+									postCommit: WorkPeriodPostCommitDescriptor | null;
+							  }
+							| undefined,
+						workPeriodId: activeWorkPeriod.id,
+						startTime: activeWorkPeriod.startTime,
+						endTime: now,
+						surchargeSnapshot:
+							immediateSurchargeSnapshot as PolicyClockOutSurchargeSnapshot | null,
+						balanceRefreshCommitted: false,
+					};
+		const entry = outcome.entry as Awaited<ReturnType<typeof createTimeEntry>>;
+		const { durationMinutes, approvalSubmission, workPeriodId } = outcome;
 		const approvalResult = approvalSubmission?.result;
 		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
 		if (
@@ -1366,7 +1492,7 @@ export async function clockOut(
 						return;
 					}
 					const params = {
-						workPeriodId: activeWorkPeriod.id,
+						workPeriodId: workPeriodId,
 						employeeId: currentEmployee.id,
 						managerId,
 						organizationId: currentEmployee.organizationId,
@@ -1385,7 +1511,7 @@ export async function clockOut(
 						{
 							error,
 							organizationId: currentEmployee.organizationId,
-							workPeriodId: activeWorkPeriod.id,
+							workPeriodId: workPeriodId,
 						},
 						"Failed to dispatch clock-out approval notification after commit",
 					),
@@ -1394,7 +1520,7 @@ export async function clockOut(
 						{
 							error,
 							organizationId: currentEmployee.organizationId,
-							workPeriodId: activeWorkPeriod.id,
+							workPeriodId: workPeriodId,
 						},
 						"Failed to reconcile clock-out approval maintenance after commit",
 					),
@@ -1402,7 +1528,7 @@ export async function clockOut(
 		}
 
 		const shouldRunPostCommitEffects =
-			result.disposition === "executed" &&
+			outcome.disposition === "executed" &&
 			(!needsClockOutApproval ||
 				approvalSubmission?.disposition === "executed");
 		let complianceWarnings: Awaited<
@@ -1414,13 +1540,13 @@ export async function clockOut(
 					complianceWarnings = await checkComplianceAfterClockOut(
 						currentEmployee.id,
 						currentEmployee.organizationId,
-						activeWorkPeriod.id,
+						workPeriodId,
 						durationMinutes,
 						timezone,
 					);
 				},
 				"Failed to check compliance after clock-out",
-				{ workPeriodId: activeWorkPeriod.id },
+				{ workPeriodId: workPeriodId },
 			);
 		}
 
@@ -1428,7 +1554,7 @@ export async function clockOut(
 			ReturnType<typeof enforceBreaksAfterClockOut>
 		> = {
 			wasAdjusted: false,
-			affectedWorkPeriodIds: [activeWorkPeriod.id],
+			affectedWorkPeriodIds: [workPeriodId],
 		};
 		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
 			await bestEffort(
@@ -1436,14 +1562,14 @@ export async function clockOut(
 					breakEnforcementResult = await enforceBreaksAfterClockOut({
 						employeeId: currentEmployee.id,
 						organizationId: currentEmployee.organizationId,
-						workPeriodId: activeWorkPeriod.id,
+						workPeriodId: workPeriodId,
 						sessionDurationMinutes: durationMinutes,
 						timezone,
 						createdBy: session.user.id,
 					});
 				},
 				"Failed to enforce breaks after clock-out",
-				{ workPeriodId: activeWorkPeriod.id },
+				{ workPeriodId: workPeriodId },
 			);
 		}
 		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
@@ -1459,24 +1585,30 @@ export async function clockOut(
 							})
 						: Promise.resolve(),
 				"Failed to calculate surcharges after clock-out",
-				{ workPeriodId: activeWorkPeriod.id },
+				{ workPeriodId: workPeriodId },
 			);
 		}
 
-		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
+		// The operation commits this refresh intent with the work itself.
+		if (
+			shouldRunPostCommitEffects &&
+			!needsClockOutApproval &&
+			!outcome.balanceRefreshCommitted
+		) {
 			await markWorkBalanceDirtyAfterClockOutBestEffort(
 				{
 					employeeId: currentEmployee.id,
 					organizationId: currentEmployee.organizationId,
 					dirtyFromDate:
-						DateTime.fromJSDate(activeWorkPeriod.startTime, {
-							zone: "utc",
-						}).toISODate() ?? undefined,
+						instantFromDate(outcome.startTime)
+							.toZonedDateTimeISO("UTC")
+							.toPlainDate()
+							.toString(),
 				},
 				{
 					employeeId: currentEmployee.id,
 					organizationId: currentEmployee.organizationId,
-					workPeriodId: activeWorkPeriod.id,
+					workPeriodId: workPeriodId,
 				},
 			);
 		}
@@ -1498,7 +1630,7 @@ export async function clockOut(
 				"Failed to revalidate time tracking after clock-out",
 				{
 					organizationId: currentEmployee.organizationId,
-					workPeriodId: activeWorkPeriod.id,
+					workPeriodId: workPeriodId,
 				},
 			);
 		}
@@ -1520,6 +1652,29 @@ export async function clockOut(
 	} catch (error) {
 		if (error instanceof ClockingConflictError) {
 			return { success: false, error: "You are not currently clocked in" };
+		}
+		if (error instanceof WorkIntervalError) {
+			return { success: false, error: "Clock-out must be after clock-in" };
+		}
+		if (error instanceof CompletedWorkCollisionError) {
+			logger.warn({ error }, "Clock out identity collision");
+			return { success: false, error: CLOCK_OUT_COLLISION_ERROR };
+		}
+		if (error instanceof CompletedWorkAttributionError) {
+			return {
+				success: false,
+				error:
+					error.field === "projectId"
+						? "Cannot assign to this project"
+						: "Cannot assign to this work category",
+			};
+		}
+		if (error instanceof TimeEntryAppendReviewRequiredError) {
+			logger.warn(
+				{ appendReviewRequirement: error.requirement },
+				"Clock out held for append history review",
+			);
+			return { success: false, error: CLOCK_OUT_APPEND_REVIEW_REQUIRED_ERROR };
 		}
 		if (
 			error instanceof ValidationError &&
