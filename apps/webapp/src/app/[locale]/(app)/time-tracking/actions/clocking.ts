@@ -64,6 +64,7 @@ import {
 	CompletedWorkCollisionError,
 	closeActiveWork,
 	replayCloseActiveWork,
+	WEB_CLOCK_OUT_WRITER_VERSION,
 } from "@/lib/time-tracking/close-active-work";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import {
@@ -775,7 +776,7 @@ async function findPolicyClockOutSubmissionEvidence(input: {
 	return { period, marker, hasApprovalEvidence };
 }
 
-function createOrdinaryApprovalRuntime(
+export function createOrdinaryApprovalRuntime(
 	database: ApprovalWorkflowDatabase = db,
 ) {
 	return createProductionApprovalWorkflowRuntime({
@@ -899,7 +900,7 @@ async function markWorkBalanceDirtyAfterManualTimeEntryBestEffort(
 	}
 }
 
-async function validateWorkCategoryAssignment(
+export async function validateWorkCategoryAssignment(
 	employeeId: string,
 	workCategoryId: string,
 	organizationId: string,
@@ -1039,6 +1040,219 @@ function receiptResponse(receipt: CloseActiveWorkReceipt): ClockOutResult {
 			approval.participation === "policy_clock_out"
 				? approval.outcome !== "auto_completed"
 				: undefined,
+	};
+}
+
+/** Post-commit facts of one executed or legacy-replayed live closure. */
+export type ClockOutCommitOutcome = {
+	entry: unknown;
+	disposition: "executed" | "replayed";
+	durationMinutes: number;
+	approvalSubmission:
+		| {
+				result: { kind: string };
+				disposition: "executed" | "replayed";
+				postCommit: WorkPeriodPostCommitDescriptor | null;
+		  }
+		| undefined;
+	workPeriodId: string;
+	startTime: Date;
+	endTime: Date;
+	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
+	/** True when the closure committed its own work-balance refresh intent. */
+	balanceRefreshCommitted: boolean;
+};
+
+/**
+ * Post-commit work shared by every live clock-out adapter: approval
+ * notification dispatch through the approval owner, then the best-effort
+ * compliance, break, surcharge, balance, budget and cache follow-ups. None of
+ * them can turn the committed closure into a failure.
+ */
+export async function completeClockOutAfterCommit(input: {
+	outcome: ClockOutCommitOutcome;
+	employee: { id: string; organizationId: string };
+	userId: string;
+	needsClockOutApproval: boolean;
+	timezone: string;
+	projectId: string | null | undefined;
+}): Promise<ClockOutResult> {
+	const { outcome, employee, userId, needsClockOutApproval, timezone, projectId } =
+		input;
+	const entry = outcome.entry as Awaited<ReturnType<typeof createTimeEntry>>;
+	const { durationMinutes, approvalSubmission, workPeriodId } = outcome;
+	const approvalResult = approvalSubmission?.result;
+	const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
+	if (
+		needsClockOutApproval &&
+		approvalSubmission?.disposition === "executed"
+	) {
+		await completeOrdinaryWorkPeriodDecisionAfterCommit({
+			execute: async () => approvalSubmission,
+			dispatchPending: true,
+			dispatch: async (execution) => {
+				const descriptor = execution.postCommit;
+				const managerId = descriptor?.approverEmployeeId;
+				if (!descriptor) return;
+				if (!managerId) {
+					logger.warn(
+						{ organizationId: employee.organizationId },
+						"Clock-out approval has no notification recipient",
+					);
+					return;
+				}
+				const params = {
+					workPeriodId: workPeriodId,
+					employeeId: employee.id,
+					managerId,
+					organizationId: employee.organizationId,
+					startTime: outcome.startTime,
+					endTime: outcome.endTime,
+					durationMinutes,
+					dedupeKey: descriptor.dedupeKey,
+				};
+				await (descriptor.event === "approved"
+					? sendClockOutApprovedNotification(params)
+					: sendClockOutApprovalNotifications(params));
+			},
+			maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
+			onDispatchError: (error) =>
+				logger.error(
+					{
+						error,
+						organizationId: employee.organizationId,
+						workPeriodId: workPeriodId,
+					},
+					"Failed to dispatch clock-out approval notification after commit",
+				),
+			onMaintenanceError: (error) =>
+				logger.error(
+					{
+						error,
+						organizationId: employee.organizationId,
+						workPeriodId: workPeriodId,
+					},
+					"Failed to reconcile clock-out approval maintenance after commit",
+				),
+		});
+	}
+
+	const shouldRunPostCommitEffects =
+		outcome.disposition === "executed" &&
+		(!needsClockOutApproval ||
+			approvalSubmission?.disposition === "executed");
+	let complianceWarnings: Awaited<
+		ReturnType<typeof checkComplianceAfterClockOut>
+	> = [];
+	if (shouldRunPostCommitEffects) {
+		await bestEffort(
+			async () => {
+				complianceWarnings = await checkComplianceAfterClockOut(
+					employee.id,
+					employee.organizationId,
+					workPeriodId,
+					durationMinutes,
+					timezone,
+				);
+			},
+			"Failed to check compliance after clock-out",
+			{ workPeriodId: workPeriodId },
+		);
+	}
+
+	let breakEnforcementResult: Awaited<
+		ReturnType<typeof enforceBreaksAfterClockOut>
+	> = {
+		wasAdjusted: false,
+		affectedWorkPeriodIds: [workPeriodId],
+	};
+	if (shouldRunPostCommitEffects && !needsClockOutApproval) {
+		await bestEffort(
+			async () => {
+				breakEnforcementResult = await enforceBreaksAfterClockOut({
+					employeeId: employee.id,
+					organizationId: employee.organizationId,
+					workPeriodId: workPeriodId,
+					sessionDurationMinutes: durationMinutes,
+					timezone,
+					createdBy: userId,
+				});
+			},
+			"Failed to enforce breaks after clock-out",
+			{ workPeriodId: workPeriodId },
+		);
+	}
+	if (shouldRunPostCommitEffects && !needsClockOutApproval) {
+		await bestEffort(
+			() =>
+				outcome.surchargeSnapshot
+					? reconcileImmediateSurcharges({
+							affectedWorkPeriodIds:
+								breakEnforcementResult.affectedWorkPeriodIds,
+							employeeId: employee.id,
+							organizationId: employee.organizationId,
+							snapshot: outcome.surchargeSnapshot,
+						})
+					: Promise.resolve(),
+			"Failed to calculate surcharges after clock-out",
+			{ workPeriodId: workPeriodId },
+		);
+	}
+
+	// The operation commits this refresh intent with the work itself.
+	if (
+		shouldRunPostCommitEffects &&
+		!needsClockOutApproval &&
+		!outcome.balanceRefreshCommitted
+	) {
+		await markWorkBalanceDirtyAfterClockOutBestEffort(
+			{
+				employeeId: employee.id,
+				organizationId: employee.organizationId,
+				dirtyFromDate:
+					instantFromDate(outcome.startTime)
+						.toZonedDateTimeISO("UTC")
+						.toPlainDate()
+						.toString(),
+			},
+			{
+				employeeId: employee.id,
+				organizationId: employee.organizationId,
+				workPeriodId: workPeriodId,
+			},
+		);
+	}
+
+	if (projectId && shouldRunPostCommitEffects) {
+		void checkProjectBudgetAfterClockOut(
+			projectId,
+			employee.organizationId,
+		).catch((error) => {
+			logger.error(
+				{ error, projectId },
+				"Failed to check project budget warnings",
+			);
+		});
+	}
+	if (shouldRunPostCommitEffects) {
+		await bestEffort(
+			async () => revalidatePath("/time-tracking"),
+			"Failed to revalidate time tracking after clock-out",
+			{
+				organizationId: employee.organizationId,
+				workPeriodId: workPeriodId,
+			},
+		);
+	}
+
+	return {
+		...entry,
+		pendingApproval: approvalSubmission ? !approvalAutoCompleted : undefined,
+		complianceWarnings:
+			complianceWarnings.length > 0 ? complianceWarnings : undefined,
+		breakAdjustment: breakEnforcementResult.wasAdjusted
+			? breakEnforcementResult.adjustment
+			: undefined,
 	};
 }
 
@@ -1422,6 +1636,11 @@ export async function clockOut(
 						actorUserId: session.user.id,
 						workPeriodId: activeWorkPeriod.id,
 						command,
+						writer: {
+							writer: "web_clock_out",
+							writerVersion: WEB_CLOCK_OUT_WRITER_VERSION,
+							deviceInfo: command.deviceInfo,
+						},
 						eventInstant: actionInstant,
 						capture: timezoneCapture,
 					}),
@@ -1466,185 +1685,16 @@ export async function clockOut(
 							immediateSurchargeSnapshot as PolicyClockOutSurchargeSnapshot | null,
 						balanceRefreshCommitted: false,
 					};
-		const entry = outcome.entry as Awaited<ReturnType<typeof createTimeEntry>>;
-		const { durationMinutes, approvalSubmission, workPeriodId } = outcome;
-		const approvalResult = approvalSubmission?.result;
-		const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
-		if (
-			needsClockOutApproval &&
-			approvalSubmission?.disposition === "executed"
-		) {
-			await completeOrdinaryWorkPeriodDecisionAfterCommit({
-				execute: async () => approvalSubmission,
-				dispatchPending: true,
-				dispatch: async (execution) => {
-					const descriptor = execution.postCommit;
-					const managerId = descriptor?.approverEmployeeId;
-					if (!descriptor) return;
-					if (!managerId) {
-						logger.warn(
-							{ organizationId: currentEmployee.organizationId },
-							"Clock-out approval has no notification recipient",
-						);
-						return;
-					}
-					const params = {
-						workPeriodId: workPeriodId,
-						employeeId: currentEmployee.id,
-						managerId,
-						organizationId: currentEmployee.organizationId,
-						startTime: activeWorkPeriod.startTime,
-						endTime: now,
-						durationMinutes,
-						dedupeKey: descriptor.dedupeKey,
-					};
-					await (descriptor.event === "approved"
-						? sendClockOutApprovedNotification(params)
-						: sendClockOutApprovalNotifications(params));
-				},
-				maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-				onDispatchError: (error) =>
-					logger.error(
-						{
-							error,
-							organizationId: currentEmployee.organizationId,
-							workPeriodId: workPeriodId,
-						},
-						"Failed to dispatch clock-out approval notification after commit",
-					),
-				onMaintenanceError: (error) =>
-					logger.error(
-						{
-							error,
-							organizationId: currentEmployee.organizationId,
-							workPeriodId: workPeriodId,
-						},
-						"Failed to reconcile clock-out approval maintenance after commit",
-					),
-			});
-		}
-
-		const shouldRunPostCommitEffects =
-			outcome.disposition === "executed" &&
-			(!needsClockOutApproval ||
-				approvalSubmission?.disposition === "executed");
-		let complianceWarnings: Awaited<
-			ReturnType<typeof checkComplianceAfterClockOut>
-		> = [];
-		if (shouldRunPostCommitEffects) {
-			await bestEffort(
-				async () => {
-					complianceWarnings = await checkComplianceAfterClockOut(
-						currentEmployee.id,
-						currentEmployee.organizationId,
-						workPeriodId,
-						durationMinutes,
-						timezone,
-					);
-				},
-				"Failed to check compliance after clock-out",
-				{ workPeriodId: workPeriodId },
-			);
-		}
-
-		let breakEnforcementResult: Awaited<
-			ReturnType<typeof enforceBreaksAfterClockOut>
-		> = {
-			wasAdjusted: false,
-			affectedWorkPeriodIds: [workPeriodId],
-		};
-		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
-			await bestEffort(
-				async () => {
-					breakEnforcementResult = await enforceBreaksAfterClockOut({
-						employeeId: currentEmployee.id,
-						organizationId: currentEmployee.organizationId,
-						workPeriodId: workPeriodId,
-						sessionDurationMinutes: durationMinutes,
-						timezone,
-						createdBy: session.user.id,
-					});
-				},
-				"Failed to enforce breaks after clock-out",
-				{ workPeriodId: workPeriodId },
-			);
-		}
-		if (shouldRunPostCommitEffects && !needsClockOutApproval) {
-			await bestEffort(
-				() =>
-					immediateSurchargeSnapshot
-						? reconcileImmediateSurcharges({
-								affectedWorkPeriodIds:
-									breakEnforcementResult.affectedWorkPeriodIds,
-								employeeId: currentEmployee.id,
-								organizationId: currentEmployee.organizationId,
-								snapshot: immediateSurchargeSnapshot,
-							})
-						: Promise.resolve(),
-				"Failed to calculate surcharges after clock-out",
-				{ workPeriodId: workPeriodId },
-			);
-		}
-
-		// The operation commits this refresh intent with the work itself.
-		if (
-			shouldRunPostCommitEffects &&
-			!needsClockOutApproval &&
-			!outcome.balanceRefreshCommitted
-		) {
-			await markWorkBalanceDirtyAfterClockOutBestEffort(
-				{
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					dirtyFromDate:
-						instantFromDate(outcome.startTime)
-							.toZonedDateTimeISO("UTC")
-							.toPlainDate()
-							.toString(),
-				},
-				{
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					workPeriodId: workPeriodId,
-				},
-			);
-		}
-
-		if (projectId && shouldRunPostCommitEffects) {
-			void checkProjectBudgetAfterClockOut(
-				projectId,
-				currentEmployee.organizationId,
-			).catch((error) => {
-				logger.error(
-					{ error, projectId },
-					"Failed to check project budget warnings",
-				);
-			});
-		}
-		if (shouldRunPostCommitEffects) {
-			await bestEffort(
-				async () => revalidatePath("/time-tracking"),
-				"Failed to revalidate time tracking after clock-out",
-				{
-					organizationId: currentEmployee.organizationId,
-					workPeriodId: workPeriodId,
-				},
-			);
-		}
-
 		return {
 			success: true,
-			data: {
-				...entry,
-				pendingApproval: approvalSubmission
-					? !approvalAutoCompleted
-					: undefined,
-				complianceWarnings:
-					complianceWarnings.length > 0 ? complianceWarnings : undefined,
-				breakAdjustment: breakEnforcementResult.wasAdjusted
-					? breakEnforcementResult.adjustment
-					: undefined,
-			},
+			data: await completeClockOutAfterCommit({
+				outcome,
+				employee: currentEmployee,
+				userId: session.user.id,
+				needsClockOutApproval,
+				timezone,
+				projectId,
+			}),
 		};
 	} catch (error) {
 		if (error instanceof ClockingConflictError) {
