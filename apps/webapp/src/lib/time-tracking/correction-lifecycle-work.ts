@@ -21,6 +21,7 @@
  */
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
+import { Cause, Runtime } from "effect";
 import { completedWorkOperation, workPeriod } from "@/db/schema";
 import type { CompletedWorkWriter } from "@/db/schema/completed-work";
 import type { Instant } from "@/lib/datetime/temporal-core";
@@ -388,6 +389,12 @@ export async function loadTimeCorrectionReceipt(
  * same messages and codes as the direct amendment (#286). Other errors pass.
  */
 export function translateCorrectionWorkError(error: unknown): unknown {
+	// The legacy decision runs the finalizer inside an Effect program.
+	if (Runtime.isFiberFailure(error)) {
+		const failure = Cause.squash(error[Runtime.FiberFailureCauseId]);
+		const translated = translateCorrectionWorkError(failure);
+		return translated === failure ? error : translated;
+	}
 	if (error instanceof CompletedWorkCollisionError) {
 		return new ConflictError({
 			message:

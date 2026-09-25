@@ -250,6 +250,21 @@ export async function cancelPendingTimeCorrection(
 					throw new Error("Time correction cancellation is unavailable");
 				}
 				const legacy = exactPendingLegacyEvidence(before, input);
+				// The capture normalizes request metadata to the correction payload;
+				// the durable tombstone keeps the persisted submission evidence (#301).
+				const persistedRequests = await database.query.approvalRequest.findMany({
+					where: and(
+						eq(approvalRequest.id, legacy.cycle.approvalRequestId),
+						eq(approvalRequest.organizationId, input.organizationId),
+					),
+					limit: 2,
+				});
+				const persistedRequestMetadata =
+					persistedRequests.find(
+						(request) =>
+							request.id === legacy.cycle.approvalRequestId &&
+							request.organizationId === input.organizationId,
+					)?.metadata ?? null;
 				const lifecycle: TimeCorrectionLifecycleReference = {
 					authority: "legacy",
 					approvalRequestId: legacy.cycle.approvalRequestId,
@@ -313,8 +328,9 @@ export async function cancelPendingTimeCorrection(
 							state: before,
 							cancelledAt,
 							retainDirectCancellation: true,
+							persistedRequestMetadata,
 							directCancellationMetadata: durableRequesterCancellationMetadata(
-								before.approvalRequest?.metadata,
+								persistedRequestMetadata,
 								input,
 								cancelledAt,
 								before.chain?.id ?? null,
@@ -847,7 +863,8 @@ function cancellationEntryFromCapture(
 		logicalRole,
 		type,
 		replacesEntryId: cancellationNullableString(entry.replacesEntryId),
-		timestamp: cancellationInstant(entry.timestamp),
+		// The legacy-state capture serializes each entry's instant as `instant`.
+		timestamp: cancellationInstant(entry.instant),
 		utcOffsetMinutes: cancellationInteger(entry.utcOffsetMinutes),
 		timezone: cancellationString(entry.timezone),
 		timezoneSource: cancellationString(entry.timezoneSource),

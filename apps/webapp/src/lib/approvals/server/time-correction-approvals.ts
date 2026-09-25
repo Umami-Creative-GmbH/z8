@@ -1520,6 +1520,18 @@ function sameCorrectionPayload(
 	}
 }
 
+/** Correction entry IDs a request's metadata names, or none when it is malformed. */
+function namedCorrectionEntryIds(metadata: unknown): string[] {
+	try {
+		const correction = correctionPayload(metadata);
+		return [correction.clockInCorrectionId, correction.clockOutCorrectionId].filter(
+			(id): id is string => Boolean(id),
+		);
+	} catch {
+		return [];
+	}
+}
+
 function correctionPayload(
 	value: unknown,
 ): TimeCorrectionWorkflowPayload["timeCorrection"] {
@@ -4602,9 +4614,16 @@ function exactOwnDataRecord(
 function parseCompatibilityTargetMetadata(
 	metadata: unknown,
 ): CompatibilityTargetMetadata | null {
+	// Current-contract requests also carry their original work metadata (#301).
 	const root = exactOwnDataRecord(
 		metadata,
-		["workflow", "stage", "timeCorrection", "submission"],
+		[
+			"workflow",
+			"stage",
+			"timeCorrection",
+			"submission",
+			"timeCorrectionOriginalWorkMetadata",
+		],
 		["workflow", "stage"],
 	);
 	if (!root) return null;
@@ -4810,16 +4829,33 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const endpointIds = [period.clockInId, period.clockOutId].filter(
 					(id): id is string => Boolean(id),
 				);
+				// A pending correction's own rows are inactive (superseded without a
+				// successor) until approval; the request names them exactly (#301).
+				const namedPendingIds = namedCorrectionEntryIds(request.metadata);
 				const correctionEvidence = endpointIds.length
 					? await transactionDb.query.timeEntry.findMany({
 							where: and(
 								eq(timeEntry.organizationId, input.organizationId),
 								eq(timeEntry.employeeId, request.requestedBy),
 								eq(timeEntry.type, "correction"),
-								eq(timeEntry.isSuperseded, false),
 								or(
-									inArray(timeEntry.id, endpointIds),
-									inArray(timeEntry.replacesEntryId, endpointIds),
+									and(
+										eq(timeEntry.isSuperseded, false),
+										or(
+											inArray(timeEntry.id, endpointIds),
+											inArray(timeEntry.replacesEntryId, endpointIds),
+										),
+									),
+									...(namedPendingIds.length > 0
+										? [
+												and(
+													eq(timeEntry.isSuperseded, true),
+													isNull(timeEntry.supersededById),
+													inArray(timeEntry.id, namedPendingIds),
+													inArray(timeEntry.replacesEntryId, endpointIds),
+												),
+											]
+										: []),
 								),
 							),
 						})

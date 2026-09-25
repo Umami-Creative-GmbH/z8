@@ -123,6 +123,7 @@ interface CorrectionEntryForReview {
 	timestamp: Date;
 	replacesEntryId: string | null;
 	isSuperseded?: boolean;
+	supersededById?: string | null;
 }
 
 type TimeCorrectionAction = "edit" | "delete";
@@ -314,9 +315,16 @@ export function buildTimeApprovalTimelineMessage(
 		: `${label} ${status}`;
 }
 
+/**
+ * Correction rows that verify a request's endpoint lineage: active legacy
+ * corrections, and the pending rows the request itself names. A pending
+ * correction's rows stay inactive (superseded without a successor) until the
+ * decision activates them (#301).
+ */
 function activeRelationalCorrectionCandidates(
 	period: Pick<WorkPeriodWithRelations, "clockIn" | "clockOut">,
 	correctionEntries: CorrectionEntryForReview[],
+	namedPendingIds: ReadonlySet<string> = new Set(),
 ) {
 	const endpointIds = new Set(
 		[period.clockIn.id, period.clockOut?.id].filter((id): id is string =>
@@ -325,7 +333,8 @@ function activeRelationalCorrectionCandidates(
 	);
 	return correctionEntries.filter(
 		(entry) =>
-			entry.isSuperseded !== true &&
+			(entry.isSuperseded !== true ||
+				(namedPendingIds.has(entry.id) && entry.supersededById === null)) &&
 			Boolean(entry.replacesEntryId && endpointIds.has(entry.replacesEntryId)),
 	);
 }
@@ -340,9 +349,15 @@ export function buildTimeApprovalReview(
 	correctionEntries: CorrectionEntryForReview[],
 	categoryNamesById = period.categoryNamesById,
 ) {
+	const requested = correctionMetadataFromRequest(request);
 	const verifiedCorrections = activeRelationalCorrectionCandidates(
 		period,
 		correctionEntries,
+		new Set(
+			[requested?.clockInCorrectionId, requested?.clockOutCorrectionId].filter(
+				(id): id is string => Boolean(id),
+			),
+		),
 	);
 	const verifiedRelationalCorrectionIds: string[] = [];
 	const verifiedRelationalCorrectionIdsByEndpoint: {
