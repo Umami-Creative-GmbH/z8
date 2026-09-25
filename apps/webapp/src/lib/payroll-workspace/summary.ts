@@ -1,4 +1,5 @@
 import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -21,8 +22,20 @@ import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
 } from "@/lib/payroll-allocation/protected-minutes";
+import type {
+	CollectedPayrollWork,
+	PayrollWorkBlockerKind,
+	PayrollWorkCollection,
+} from "@/lib/payroll-collection/payroll-work-collection";
+import {
+	isPayrollWorkCollectionActive,
+	readPayrollWorkCollection,
+} from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { buildPayrollQueryEnvelope } from "@/lib/payroll-export/calendar-boundaries";
-import { assertCanonicalCutoverReady } from "@/lib/time-record/migration/cutover-state";
+import {
+	assertCanonicalAbsencesReady,
+	assertCanonicalCutoverReady,
+} from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
 import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
@@ -64,13 +77,14 @@ export function buildPayrollSummaryFromRows(input: {
 	generatedBy: { id: string; name: string };
 	employees: PayrollSummaryEmployeeSource[];
 	workRows: PayrollSummaryWorkRow[];
+	/** Work credited by scoped collection (#322); replaces `workRows` when present. */
+	collectedWork?: readonly Pick<CollectedPayrollWork, "employeeId" | "minutes">[];
 	absenceRows: PayrollSummaryAbsenceRow[];
 	blockers: PayrollBlocker[];
 }): PayrollWorkspaceSummary {
-	const { workedMinutesByEmployee, blockers: workBlockers } = calculatePayrollWorkedMinutes(
-		input.workRows,
-		input.period,
-	);
+	const { workedMinutesByEmployee, blockers: workBlockers } = input.collectedWork
+		? { workedMinutesByEmployee: sumCollectedMinutes(input.collectedWork), blockers: [] }
+		: calculatePayrollWorkedMinutes(input.workRows, input.period);
 	const blockers = [...workBlockers, ...input.blockers];
 	const absenceDetails = buildPayrollAbsenceDetails(input.absenceRows, input.period);
 
@@ -160,6 +174,56 @@ export function calculatePayrollWorkedMinutes(
 	}
 
 	return { workedMinutesByEmployee, blockers };
+}
+
+function sumCollectedMinutes(
+	work: readonly Pick<CollectedPayrollWork, "employeeId" | "minutes">[],
+): Map<string, number> {
+	const minutesByEmployee = new Map<string, number>();
+	for (const line of work) {
+		minutesByEmployee.set(
+			line.employeeId,
+			(minutesByEmployee.get(line.employeeId) ?? 0) + line.minutes,
+		);
+	}
+	return minutesByEmployee;
+}
+
+const COLLECTION_BLOCKER_LABELS: Record<PayrollWorkBlockerKind, string> = {
+	open_work: "Work without clock-out",
+	pending_work_approval: "Work awaiting approval",
+	unresolved_work_minutes: "Unresolved work minutes",
+	uncertain_historical_work: "Historical work needs review",
+	offboarding_clock_repair: "Offboarding clock-out needs repair",
+};
+
+/**
+ * Workspace blockers from scoped collection (#322). They are the ones an export
+ * would be refused for, so none of them can be dismissed. A historical finding that
+ * affects several employees yields one blocker per employee. Its ID is an opaque
+ * digest: a finding ID can name work outside the reader's payroll scope.
+ */
+export function payrollBlockersFromCollection(
+	collection: Pick<PayrollWorkCollection, "blockers" | "employeeTimezones">,
+): PayrollBlocker[] {
+	return collection.blockers.map((blocker) => {
+		const timezone = collection.employeeTimezones[blocker.employeeId];
+		return {
+			id:
+				blocker.kind === "uncertain_historical_work"
+					? createHash("sha256")
+							.update(`${blocker.sourceId}\u0000${blocker.employeeId}`)
+							.digest("hex")
+							.slice(0, 32)
+					: blocker.sourceId,
+			employeeId: blocker.employeeId,
+			type: blocker.kind,
+			label: COLLECTION_BLOCKER_LABELS[blocker.kind],
+			...(blocker.at && timezone
+				? localizeInstant(Temporal.Instant.from(blocker.at), timezone)
+				: { date: null, time: null }),
+		};
+	});
 }
 
 export function filterPendingTimeApprovalBlockers(input: {
@@ -274,9 +338,16 @@ export async function getPayrollWorkspaceSummary(input: {
 	generatedBy: { id: string; name: string };
 	generatedAt?: DateTime;
 }): Promise<PayrollWorkspaceSummary> {
-	await assertCanonicalCutoverReady(input.organizationId);
-
 	const { db } = await import("@/db");
+	// Scoped collection (#322) owns work readiness; the organization-wide backfill must
+	// not run for it, so only absences keep their organization-wide (read-only) check.
+	const scopedCollection = await isPayrollWorkCollectionActive(db, input.organizationId);
+	if (scopedCollection) {
+		await assertCanonicalAbsencesReady(input.organizationId);
+	} else {
+		await assertCanonicalCutoverReady(input.organizationId);
+	}
+
 	const [organizationRow] = await db
 		.select({ name: organization.name, timezone: organization.timezone })
 		.from(organization)
@@ -301,6 +372,35 @@ export async function getPayrollWorkspaceSummary(input: {
 	}
 
 	const allowedEmployeeIds = Array.from(new Set(input.allowedEmployeeIds)).toSorted();
+	if (scopedCollection) {
+		const [employeeRows, collection, absenceRows, blockers] = await Promise.all([
+			getEmployeeRows(input.organizationId, allowedEmployeeIds),
+			readPayrollWorkCollection(db, input.organizationId, {
+				startDate: summaryInput.period.start,
+				endDate: summaryInput.period.end,
+				employeeIds: allowedEmployeeIds,
+			}),
+			getAbsenceRows(input.organizationId, allowedEmployeeIds, input.period),
+			getBlockers(
+				input.organizationId,
+				allowedEmployeeIds,
+				input.period,
+				organizationRow?.timezone ?? null,
+				{ collectionOwnsWorkBlockers: true },
+			),
+		]);
+
+		// Explicitly incomplete: unaffected work is credited, uncertain work is listed.
+		return buildPayrollSummaryFromRows({
+			...summaryInput,
+			employees: employeeRows,
+			workRows: [],
+			collectedWork: collection.input.work,
+			absenceRows,
+			blockers: [...blockers, ...payrollBlockersFromCollection(collection)],
+		});
+	}
+
 	const [employeeRows, workRows, absenceRows, blockers] = await Promise.all([
 		getEmployeeRows(input.organizationId, allowedEmployeeIds),
 		getWorkRows(
@@ -472,11 +572,18 @@ async function getBlockers(
 	allowedEmployeeIds: string[],
 	period: { start: DateTime; end: DateTime },
 	organizationTimezone: string | null,
+	options: {
+		/** Scoped collection reports open work and departure timers itself (#322). */
+		collectionOwnsWorkBlockers?: boolean;
+	} = {},
 ): Promise<PayrollBlocker[]> {
 	const { db } = await import("@/db");
+	const collectionOwnsWorkBlockers = options.collectionOwnsWorkBlockers === true;
 	const [missingClockOutRows, pendingAbsenceRows, pendingApprovalRows, clockRepairs] =
 		await Promise.all([
-		db
+		collectionOwnsWorkBlockers
+			? []
+			: db
 			.select({
 				id: timeRecord.id,
 				employeeId: timeRecord.employeeId,
@@ -557,12 +664,14 @@ async function getBlockers(
 					gte(timeRecord.endAt, period.start.toUTC().toJSDate()),
 				),
 			),
-		findOpenDepartureClockRepairs(db, {
-			organizationId,
-			employeeIds: allowedEmployeeIds,
-			rangeStart: period.start.toUTC().toJSDate(),
-			rangeEndExclusive: period.end.toUTC().plus({ milliseconds: 1 }).toJSDate(),
-		}),
+		collectionOwnsWorkBlockers
+			? []
+			: findOpenDepartureClockRepairs(db, {
+					organizationId,
+					employeeIds: allowedEmployeeIds,
+					rangeStart: period.start.toUTC().toJSDate(),
+					rangeEndExclusive: period.end.toUTC().plus({ milliseconds: 1 }).toJSDate(),
+				}),
 	]);
 
 	const affectedEmployeeIds = Array.from(

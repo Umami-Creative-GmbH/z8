@@ -5,13 +5,24 @@
 
 import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
-import { db, payrollExportJob, payrollExportSyncRecord } from "@/db";
+import { db, employee, payrollExportJob, payrollExportSyncRecord } from "@/db";
 import { createLogger } from "@/lib/logger";
+import {
+	insertPayrollExportWorkInput,
+	readPayrollExportWorkInput,
+} from "@/lib/payroll-collection/payroll-export-work-input";
+import type { CollectedPayrollWorkInput } from "@/lib/payroll-collection/payroll-work-collection";
+import { PayrollWorkCollectionBlockedError } from "@/lib/payroll-collection/payroll-work-collection-blocked-error";
+import {
+	collectPayrollWork,
+	isPayrollWorkCollectionActive,
+} from "@/lib/payroll-collection/payroll-work-collection-reader";
 import { getPresignedUrl, uploadExport } from "@/lib/storage/export-s3-client";
 import { parsePayrollLogicalDate, serializePayrollLogicalDate } from "./calendar-boundaries";
 import { personioConnector } from "./connectors/personio-connector";
 import { PayrollConnectorRegistry } from "./connectors/registry";
 import { successFactorsConnector } from "./connectors/successfactors-connector";
+import { workPeriodsFromCollectedInput } from "./collected-work";
 import {
 	countWorkPeriods,
 	fetchAbsencesForExport,
@@ -144,9 +155,17 @@ export async function createExportJob(params: {
 		throw new Error(`No configuration found for format: ${params.formatId}`);
 	}
 
+	// Under scoped collection (#322) the work is collected now, before the job exists,
+	// and stored with it; otherwise the legacy read runs when the job is processed.
+	const collectedInput = (await isPayrollWorkCollectionActive(db, params.organizationId))
+		? await collectExportWorkInput(params)
+		: null;
+
 	// Count work periods to determine sync/async
 	// Use the sync threshold from whichever is available (formatter or exporter)
-	const count = await countWorkPeriods(params.organizationId, params.filters);
+	const count = collectedInput
+		? collectedInput.work.length
+		: await countWorkPeriods(params.organizationId, params.filters);
 	const syncThreshold = formatter?.getSyncThreshold() ?? exporter?.getSyncThreshold() ?? 500;
 	const isAsync = count > syncThreshold;
 
@@ -161,18 +180,22 @@ export async function createExportJob(params: {
 		projectIds: params.filters.projectIds,
 	};
 
-	// Create job record
-	const [job] = await db
-		.insert(payrollExportJob)
-		.values({
-			organizationId: params.organizationId,
-			configId: configResult.config.id,
-			requestedById: params.requestedById,
-			filters: serializedFilters,
-			isAsync,
-			status: "pending",
-		})
-		.returning();
+	// Create the job record; collected input commits with it, before any delivery.
+	const job = await db.transaction(async (tx) => {
+		const [created] = await tx
+			.insert(payrollExportJob)
+			.values({
+				organizationId: params.organizationId,
+				configId: configResult.config.id,
+				requestedById: params.requestedById,
+				filters: serializedFilters,
+				isAsync,
+				status: "pending",
+			})
+			.returning();
+		if (collectedInput) await insertPayrollExportWorkInput(tx, created.id, collectedInput);
+		return created;
+	});
 
 	logger.info({ jobId: job.id, isAsync, workPeriodCount: count }, "Payroll export job created");
 
@@ -242,10 +265,18 @@ export async function processExportJob({
 			projectIds: job.filters.projectIds,
 		};
 
+		// A job collected under scoped collection reuses its stored input, including on
+		// recovery; changed work is never reread for it.
+		const storedInput = await readPayrollExportWorkInput(db, job.organizationId, jobId);
+
 		// Fetch data
 		const [workPeriods, absences, mappings] = await Promise.all([
-			fetchWorkPeriodsForExport(job.organizationId, filters),
-			fetchAbsencesForExport(job.organizationId, filters),
+			storedInput
+				? workPeriodsFromCollectedInput(storedInput)
+				: fetchWorkPeriodsForExport(job.organizationId, filters),
+			fetchAbsencesForExport(job.organizationId, filters, {
+				canonicalReadiness: storedInput ? "absences" : "cutover",
+			}),
 			getWageTypeMappings(job.configId),
 		]);
 
@@ -380,6 +411,64 @@ export async function processExportJob({
 
 		throw error;
 	}
+}
+
+/**
+ * Scoped collection for an export (#322): eligible repair, then readiness and
+ * collection in one snapshot. Any blocker refuses the whole export.
+ */
+async function collectExportWorkInput(params: {
+	organizationId: string;
+	requestedById: string;
+	filters: PayrollExportFilters;
+}): Promise<CollectedPayrollWorkInput> {
+	const startDate = params.filters.dateRange.start.toISODate();
+	const endDate = params.filters.dateRange.end.toISODate();
+	if (!startDate || !endDate) {
+		throw new Error("Invalid payroll export date range");
+	}
+	const requester = await db.query.employee.findFirst({
+		where: and(
+			eq(employee.id, params.requestedById),
+			eq(employee.organizationId, params.organizationId),
+		),
+		columns: { userId: true },
+	});
+
+	const { collection, repair } = await collectPayrollWork(db, {
+		organizationId: params.organizationId,
+		filters: {
+			startDate,
+			endDate,
+			employeeIds: params.filters.employeeIds,
+			teamIds: params.filters.teamIds,
+			projectIds: params.filters.projectIds,
+		},
+		repairActorUserId: requester?.userId ?? null,
+	});
+
+	if (collection.blockers.length > 0) {
+		logger.warn(
+			{
+				organizationId: params.organizationId,
+				repair: repair.status,
+				blockers: collection.blockers,
+			},
+			"Payroll export blocked by uncertain work in the requested scope",
+		);
+		throw new PayrollWorkCollectionBlockedError(params.organizationId, collection.blockers);
+	}
+
+	logger.info(
+		{
+			organizationId: params.organizationId,
+			repair: repair.status,
+			workCount: collection.input.work.length,
+			digest: collection.input.digest,
+		},
+		"Payroll work collected for export",
+	);
+	return collection.input;
 }
 
 export async function markPayrollExportJobFailed({

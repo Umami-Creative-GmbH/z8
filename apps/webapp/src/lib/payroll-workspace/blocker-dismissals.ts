@@ -2,10 +2,16 @@ import type { DismissiblePayrollBlockerType, PayrollBlocker, PayrollBlockerType 
 
 export type DismissiblePayrollBlocker = PayrollBlocker & { type: DismissiblePayrollBlockerType };
 
+const DISMISSIBLE_PAYROLL_BLOCKER_TYPES: ReadonlySet<PayrollBlockerType> = new Set([
+	"missing_clock_out",
+	"pending_absence",
+	"pending_time_correction",
+] satisfies DismissiblePayrollBlockerType[]);
+
 export function isDismissiblePayrollBlockerType(
 	blockerType: PayrollBlockerType,
 ): blockerType is DismissiblePayrollBlockerType {
-	return blockerType !== "unresolved_work_minutes" && blockerType !== "offboarding_clock_repair";
+	return DISMISSIBLE_PAYROLL_BLOCKER_TYPES.has(blockerType);
 }
 
 export function isDismissiblePayrollBlocker(
