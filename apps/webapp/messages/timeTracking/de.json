@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Grund",
       "reasonPlaceholder": "Beschreiben Sie, woran Sie gearbeitet haben …",
+      "recovery": {
+        "check": "Status prüfen",
+        "checkFailed": "Dieser Eintrag konnte gerade nicht geprüft werden. Versuche es später erneut.",
+        "contextMismatch": "Du bist mit einem anderen Konto oder einer anderen Organisation angemeldet. Wechsle zurück, um diesen Eintrag zu bearbeiten.",
+        "description": "Diese Einträge wurden aus diesem Tab gesendet, ohne dass ein Ergebnis bestätigt wurde. Es wird nichts erneut gesendet, solange du es nicht auswählst.",
+        "discard": "Verwerfen",
+        "editAsNew": "Als neuen Eintrag bearbeiten",
+        "notCommitted": "Nicht gespeichert.",
+        "notCommittedToast": "Dieser Eintrag wurde nicht gespeichert. Sende ihn genau so erneut oder bearbeite ihn als neuen Eintrag.",
+        "retry": "Genau so erneut senden",
+        "saved": "Dieser Eintrag wurde gespeichert.",
+        "savedForApproval": "Dieser Eintrag wurde gespeichert und zur Genehmigung eingereicht. Aktueller Status: {status}.",
+        "status": {
+          "approved": "genehmigt",
+          "pending": "ausstehend",
+          "rejected": "abgelehnt"
+        },
+        "stillUncertain": "Immer noch nicht bestätigt. Der Eintrag bleibt erhalten; versuche es erneut, sobald du wieder online bist.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Unbestätigte Einträge",
+        "uncertain": "Nicht bestätigt. Möglicherweise bereits gespeichert.",
+        "uncertainToast": "Wir konnten nicht bestätigen, ob dieser Eintrag gespeichert wurde. Er bleibt unter „Unbestätigte Einträge“, wo du ihn genau so erneut senden oder seinen Status prüfen kannst.",
+        "unsupported": "Der Status kann nicht geprüft werden. Möglicherweise bereits gespeichert.",
+        "unsupportedToast": "Der Status dieses Eintrags kann gerade nicht geprüft werden. Erneutes Senden schickt genau denselben Eintrag."
+      },
       "submit": "Eintrag erstellen",
       "submitting": "Wird erstellt …",
       "success": {

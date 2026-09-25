@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Powód",
       "reasonPlaceholder": "Opisz, nad czym pracowałeś…",
+      "recovery": {
+        "check": "Sprawdź stan",
+        "checkFailed": "Nie można teraz sprawdzić tego wpisu. Spróbuj później.",
+        "contextMismatch": "Jesteś zalogowany na inne konto lub w innej organizacji. Przełącz się z powrotem, aby obsłużyć ten wpis.",
+        "description": "Te wpisy wysłano z tej karty bez potwierdzonego wyniku. Nic nie zostanie wysłane ponownie bez Twojego wyboru.",
+        "discard": "Odrzuć",
+        "editAsNew": "Edytuj jako nowy wpis",
+        "notCommitted": "Niezapisany.",
+        "notCommittedToast": "Ten wpis nie został zapisany. Ponów go bez zmian lub edytuj jako nowy wpis.",
+        "retry": "Ponów bez zmian",
+        "saved": "Ten wpis został zapisany.",
+        "savedForApproval": "Ten wpis został zapisany i przesłany do zatwierdzenia. Jego obecny stan: {status}.",
+        "status": {
+          "approved": "zatwierdzony",
+          "pending": "oczekujący",
+          "rejected": "odrzucony"
+        },
+        "stillUncertain": "Nadal niepotwierdzony. Wpis zostaje zachowany; spróbuj ponownie po powrocie do sieci.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Niepotwierdzone wpisy",
+        "uncertain": "Niepotwierdzony. Może być już zapisany.",
+        "uncertainToast": "Nie udało się potwierdzić, czy ten wpis został zapisany. Pozostaje w sekcji Niepotwierdzone wpisy, gdzie możesz ponowić go bez zmian lub sprawdzić jego stan.",
+        "unsupported": "Nie można sprawdzić jego stanu. Może być już zapisany.",
+        "unsupportedToast": "Nie można teraz sprawdzić stanu tego wpisu. Ponowienie wysyła dokładnie ten sam wpis."
+      },
       "submit": "Utwórz wpis",
       "submitting": "Tworzenie…",
       "success": {

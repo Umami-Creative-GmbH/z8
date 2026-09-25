@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Describa en qué trabajó…",
+      "recovery": {
+        "check": "Comprobar estado",
+        "checkFailed": "No se pudo comprobar este registro ahora. Inténtalo más tarde.",
+        "contextMismatch": "Has iniciado sesión en otra cuenta u organización. Vuelve a cambiar para gestionar este registro.",
+        "description": "Estos registros se enviaron desde esta pestaña sin un resultado confirmado. No se vuelve a enviar nada a menos que lo elijas.",
+        "discard": "Descartar",
+        "editAsNew": "Editar como nuevo registro",
+        "notCommitted": "No guardado.",
+        "notCommittedToast": "Este registro no se guardó. Reinténtalo exactamente o edítalo como un nuevo registro.",
+        "retry": "Reintentar exactamente",
+        "saved": "Este registro se guardó.",
+        "savedForApproval": "Este registro se guardó y se envió para aprobación. Su estado actual: {status}.",
+        "status": {
+          "approved": "aprobado",
+          "pending": "pendiente",
+          "rejected": "rechazado"
+        },
+        "stillUncertain": "Aún sin confirmar. El registro se conserva; inténtalo de nuevo cuando vuelvas a estar en línea.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Registros sin confirmar",
+        "uncertain": "Sin confirmar. Puede que ya esté guardado.",
+        "uncertainToast": "No pudimos confirmar si este registro se guardó. Se conserva en Registros sin confirmar, donde puedes reintentarlo exactamente o comprobar su estado.",
+        "unsupported": "No se puede comprobar su estado. Puede que ya esté guardado.",
+        "unsupportedToast": "No se puede comprobar el estado de este registro ahora. Al reintentar se envía exactamente el mismo registro."
+      },
       "submit": "Crear entrada",
       "submitting": "Creando…",
       "success": {

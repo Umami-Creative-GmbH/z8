@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Reason",
       "reasonPlaceholder": "Describe what you worked on…",
+      "recovery": {
+        "check": "Check status",
+        "checkFailed": "Couldn't check this entry right now. Try again later.",
+        "contextMismatch": "You're signed in to a different account or organization. Switch back to handle this entry.",
+        "description": "These entries were sent from this tab without a confirmed result. Nothing is sent again unless you choose to.",
+        "discard": "Dismiss",
+        "editAsNew": "Edit as new entry",
+        "notCommitted": "Not saved.",
+        "notCommittedToast": "This entry wasn't saved. Retry it exactly, or edit it as a new entry.",
+        "retry": "Retry exactly",
+        "saved": "This entry was saved.",
+        "savedForApproval": "This entry was saved and submitted for approval. Its current status: {status}.",
+        "status": {
+          "approved": "approved",
+          "pending": "pending",
+          "rejected": "rejected"
+        },
+        "stillUncertain": "Still not confirmed. The entry is kept; try again when you're back online.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Unconfirmed entries",
+        "uncertain": "Not confirmed. It may already be saved.",
+        "uncertainToast": "We couldn't confirm whether this entry was saved. It's kept under Unconfirmed entries, where you can retry it exactly or check its status.",
+        "unsupported": "Its status can't be checked. It may already be saved.",
+        "unsupportedToast": "This entry's status can't be checked right now. Retrying sends exactly the same entry."
+      },
       "submit": "Create Entry",
       "submitting": "Creating…",
       "success": {

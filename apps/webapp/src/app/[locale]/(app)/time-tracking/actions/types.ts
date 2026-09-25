@@ -96,6 +96,8 @@ export interface ManualEntryTargetContext {
 	 * (#308), otherwise `1` (legacy input). The server re-reads it under protection.
 	 */
 	manualCommandVersion: 1 | 2;
+	/** The session's user and organization; scopes frozen command recovery (#310). */
+	recoveryContext: ManualEntryRecoveryContext;
 	projects: AssignedProject[];
 	categories: ManualEntryCategoryChoice[];
 }
@@ -151,3 +153,40 @@ export const MANUAL_ENTRY_REFRESH_REQUIRED = "manual_entry_refresh_required";
 export const MANUAL_ENTRY_NOT_ADOPTED = "manual_entry_not_adopted";
 /** The submission identity names other committed work or changed evidence. */
 export const MANUAL_ENTRY_COLLISION = "manual_entry_collision";
+/** Required approval had no routable approver; the attempt rolled back. */
+export const MANUAL_ENTRY_APPROVAL_UNROUTABLE = "approval_unroutable";
+/** The request asserted another signed-in user or organization; nothing ran. */
+export const MANUAL_ENTRY_CONTEXT_MISMATCH = "context_mismatch";
+export const MANUAL_ENTRY_NOT_AUTHENTICATED = "not_authenticated";
+export const MANUAL_ENTRY_EMPLOYEE_NOT_FOUND = "employee_not_found";
+
+/**
+ * The signed-in user and organization a frozen manual command belongs to. A
+ * recovery request carries it so another session never answers or resends it.
+ */
+export interface ManualEntryRecoveryContext {
+	userId: string;
+	organizationId: string;
+}
+
+/**
+ * Lookup-only recovery of a version-2 manual command (#310). It never creates
+ * work. `committed` describes the original commit (`requiresApproval` is the
+ * participation at commit); `currentApprovalStatus` is read separately now.
+ */
+export type ManualTimeEntryLookup =
+	| {
+			status: "committed";
+			data: ManualTimeEntryCreated & {
+				currentApprovalStatus: "pending" | "approved" | "rejected";
+			};
+	  }
+	/** No commit under the identity was serialized before this lookup. */
+	| { status: "not_committed" }
+	/** The identity names other work, or the committed evidence changed. */
+	| { status: "conflict" }
+	/** No supported matcher can answer for this command; not proof of absence. */
+	| { status: "unsupported" }
+	/** Refused before the identity was read (session, organization, access, billing). */
+	| { status: "refused"; error: string; code: string }
+	| { status: "failed"; error: string };

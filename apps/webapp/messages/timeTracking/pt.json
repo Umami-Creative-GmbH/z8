@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Descreva no que você trabalhou…",
+      "recovery": {
+        "check": "Verificar estado",
+        "checkFailed": "Não foi possível verificar este registo agora. Tente mais tarde.",
+        "contextMismatch": "Tem sessão iniciada noutra conta ou organização. Volte a mudar para tratar este registo.",
+        "description": "Estes registos foram enviados a partir deste separador sem um resultado confirmado. Nada é reenviado a menos que o escolha.",
+        "discard": "Descartar",
+        "editAsNew": "Editar como novo registo",
+        "notCommitted": "Não guardado.",
+        "notCommittedToast": "Este registo não foi guardado. Tente novamente igual ou edite-o como novo registo.",
+        "retry": "Tentar novamente igual",
+        "saved": "Este registo foi guardado.",
+        "savedForApproval": "Este registo foi guardado e enviado para aprovação. Estado atual: {status}.",
+        "status": {
+          "approved": "aprovado",
+          "pending": "pendente",
+          "rejected": "rejeitado"
+        },
+        "stillUncertain": "Ainda não confirmado. O registo é mantido; tente novamente quando voltar a estar online.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Registos não confirmados",
+        "uncertain": "Não confirmado. Pode já estar guardado.",
+        "uncertainToast": "Não foi possível confirmar se este registo foi guardado. Fica em Registos não confirmados, onde pode tentar novamente igual ou verificar o estado.",
+        "unsupported": "Não é possível verificar o estado. Pode já estar guardado.",
+        "unsupportedToast": "Não é possível verificar agora o estado deste registo. Tentar novamente envia exatamente o mesmo registo."
+      },
       "submit": "Criar Entrada",
       "submitting": "Criando…",
       "success": {
