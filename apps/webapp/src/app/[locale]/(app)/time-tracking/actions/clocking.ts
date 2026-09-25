@@ -1241,10 +1241,6 @@ export async function clockOut(
 			browserSource: "browser",
 			fallbackSource: "user_setting",
 		});
-		const sessionDurationMinutes = calculateDurationMinutes(
-			activeWorkPeriod.startTime,
-			now,
-		);
 		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
 			null;
 		// #272 prefactor closure, kept for organizations that have not adopted.
@@ -1265,7 +1261,9 @@ export async function clockOut(
 				projectId,
 				workCategoryId,
 				approvalStatus: needsClockOutApproval ? "pending" : "approved",
-				beforePeriodClose: async () => {
+				// The canonical record and policy evidence reuse the closer's locked
+				// start and derived duration, so both representations agree (#388).
+				beforePeriodClose: async ({ activePeriod, durationMinutes }) => {
 					const breakPolicySnapshot = needsClockOutApproval
 						? await resolvePolicyClockOutBreakSnapshotInTransaction({
 								dbService: { db: coordination.db },
@@ -1279,7 +1277,7 @@ export async function clockOut(
 							dbService: { db: coordination.db },
 							organizationId: currentEmployee.organizationId,
 							employeeId: currentEmployee.id,
-							startTime: instantFromDate(activeWorkPeriod.startTime),
+							startTime: instantFromDate(activePeriod.startTime),
 							endTime: actionInstant,
 						});
 					if (!needsClockOutApproval)
@@ -1289,9 +1287,9 @@ export async function clockOut(
 							{
 								organizationId: currentEmployee.organizationId,
 								employeeId: currentEmployee.id,
-								startAt: activeWorkPeriod.startTime,
+								startAt: activePeriod.startTime,
 								endAt: now,
-								durationMinutes: sessionDurationMinutes,
+								durationMinutes,
 								approvalState: needsClockOutApproval ? "pending" : "approved",
 								createdBy: session.user.id,
 								workCategoryId: workCategoryId ?? null,
@@ -1306,10 +1304,9 @@ export async function clockOut(
 						pendingChanges:
 							breakPolicySnapshot && surchargeSnapshot
 								? {
-										originalStartTime:
-											activeWorkPeriod.startTime.toISOString(),
+										originalStartTime: activePeriod.startTime.toISOString(),
 										originalEndTime: now.toISOString(),
-										originalDurationMinutes: sessionDurationMinutes,
+										originalDurationMinutes: durationMinutes,
 										requestedAt: now.toISOString(),
 										requestedBy: session.user.id,
 										isNewClockOut: true,

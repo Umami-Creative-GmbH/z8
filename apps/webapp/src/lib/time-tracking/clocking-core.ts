@@ -20,6 +20,7 @@ import {
 	TimeEntryAppendReviewRequiredError,
 } from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
+import { deriveWorkDurationMinutes } from "./work-duration";
 import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
 
 export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
@@ -429,7 +430,16 @@ export function createClockingService(deps: ClockingDependencies) {
 				if (elapsedMinutes < 0) {
 					throw new ClockingConflictError("Clock-out precedes clock-in");
 				}
-				const durationMinutes = Math.round(elapsedMinutes);
+				// Positive intervals use the shared half-up rule (#252, #388). Equal
+				// endpoints keep this closer's legacy zero-minute result for its other
+				// callers until their own adoption (#275-#277).
+				const durationMinutes =
+					elapsedMinutes === 0
+						? 0
+						: deriveWorkDurationMinutes(
+								instantFromDate(activePeriod.startTime),
+								input.action.instant,
+							);
 				if (
 					(input.beforePeriodClose || input.afterPeriodClose) &&
 					!store.transaction
