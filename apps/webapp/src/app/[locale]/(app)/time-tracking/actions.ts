@@ -63,7 +63,6 @@ import {
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
-import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import {
 	getMonthRangeInTimezone,
 	getTodayRangeInTimezone,
@@ -116,7 +115,6 @@ import type {
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
-import { canonicalTimeEntryClient } from "./actions.canonical";
 import type { WorkPeriodWithEntries } from "./types";
 
 export async function addBreakToActiveSession(
@@ -757,99 +755,6 @@ export async function enforceBreaksAfterClockOut(input: {
 			affectedWorkPeriodIds: [input.workPeriodId],
 		};
 	}
-}
-
-/**
- * Create a time entry with blockchain hash linking
- * Used for creating correction entries in the requestTimeCorrection workflow
- */
-export async function createTimeEntry(
-	params: {
-		employeeId: string;
-		organizationId: string;
-		timestamp: Date;
-		createdBy: string;
-		utcOffsetMinutes: number;
-		timezone: string;
-		timezoneSource: TimeEntryTimezoneSource;
-		notes?: string;
-	} & (
-		| {
-				type: "correction";
-				replacesEntryId: string;
-				workPeriodId: string;
-		  }
-		| {
-				type: "clock_in" | "clock_out";
-				replacesEntryId?: never;
-				workPeriodId?: never;
-		  }
-	),
-	transaction?: Parameters<Parameters<typeof db.transaction>[0]>[0],
-): Promise<typeof timeEntry.$inferSelect> {
-	const {
-		employeeId,
-		organizationId,
-		type,
-		timestamp,
-		createdBy,
-		utcOffsetMinutes,
-		timezone,
-		timezoneSource,
-		replacesEntryId,
-		workPeriodId,
-		notes,
-	} = params;
-
-	// Get request metadata
-	const headersList = await headers();
-	const ipAddress =
-		headersList.get("x-forwarded-for") ||
-		headersList.get("x-real-ip") ||
-		"unknown";
-	const userAgent = headersList.get("user-agent") || "unknown";
-
-	if (type === "correction") {
-		const correctionInput = {
-			employeeId,
-			organizationId,
-			replacesEntryId,
-			workPeriodId,
-			timestamp,
-			createdBy,
-			notes: notes ?? "",
-			ipAddress,
-			deviceInfo: userAgent,
-			utcOffsetMinutes,
-			timezone,
-			timezoneSource,
-		};
-		const correction = await (transaction
-			? canonicalTimeEntryClient.createCorrectionEntry(
-					correctionInput,
-					transaction,
-				)
-			: canonicalTimeEntryClient.createCorrectionEntry(correctionInput));
-		if (!correction) throw new Error("Correction entry was not created");
-		return correction;
-	}
-
-	const entryInput = {
-		employeeId,
-		organizationId,
-		type,
-		timestamp,
-		createdBy,
-		notes,
-		ipAddress,
-		deviceInfo: userAgent,
-		utcOffsetMinutes,
-		timezone,
-		timezoneSource,
-	};
-	return transaction
-		? canonicalTimeEntryClient.createTimeEntry(entryInput, transaction)
-		: canonicalTimeEntryClient.createTimeEntry(entryInput);
 }
 
 export async function requestTimeCorrection(

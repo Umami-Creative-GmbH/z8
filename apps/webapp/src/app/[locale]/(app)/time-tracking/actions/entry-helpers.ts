@@ -1,4 +1,7 @@
-"use server";
+import "server-only";
+
+// Server-side helpers only (#327): not server actions, so their raw entry writers
+// cannot be invoked from a client without the callers' authorization.
 
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
