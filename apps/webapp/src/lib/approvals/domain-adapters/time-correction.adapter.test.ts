@@ -14,6 +14,15 @@ import {
 } from "./time-correction.adapter";
 import type { ApprovalTerminalAdapterInput } from "./types";
 
+const { assertCorrectionWorkCoordinated } = vi.hoisted(() => ({
+	assertCorrectionWorkCoordinated: vi.fn(),
+}));
+
+// The adoption fence reads the append control; these source-shape tests have no database.
+vi.mock("@/lib/time-tracking/correction-work-fence", () => ({
+	assertCorrectionWorkCoordinated,
+}));
+
 const ids = {
 	workflow: "10000000-0000-4000-8000-000000000001",
 	period: "20000000-0000-4000-8000-000000000001",
@@ -1175,7 +1184,39 @@ describe("time correction approval adapter", () => {
 				pendingCorrections: source.pendingCorrections,
 			},
 			correction,
+			lifecycle: { authority: "canonical", workflowId: ids.workflow },
 		});
+		expect(finalizeTimeCorrectionTerminal).not.toHaveBeenCalled();
+	});
+
+	it("refuses a terminal outside the coordinated work transaction before delegating", async () => {
+		const { adapter, source, deleteCancelledCorrections, finalizeTimeCorrectionTerminal } =
+			await loadSource();
+		const dbService = { db: {} } as never;
+		assertCorrectionWorkCoordinated.mockRejectedValueOnce(
+			new Error("Adopted correction lifecycles must run inside the coordinated work transaction"),
+		);
+
+		await expect(
+			adapter.finalizeTerminal({
+				...context(source, { status: "cancelled", version: 5, cancelledAt: finalizedAt }),
+				actor: { kind: "employee" as const, employeeId: ids.employee, userId: requesterUserId },
+				dbService,
+				finalizationCause: "command" as const,
+				transition: {
+					kind: "cancel_pending" as const,
+					from: "pending" as const,
+					to: "cancelled" as const,
+					reason: "withdrawn",
+				},
+				finalizedAt,
+			}),
+		).rejects.toThrow("coordinated work transaction");
+		expect(assertCorrectionWorkCoordinated).toHaveBeenLastCalledWith(
+			(dbService as { db: object }).db,
+			organizationId,
+		);
+		expect(deleteCancelledCorrections).not.toHaveBeenCalled();
 		expect(finalizeTimeCorrectionTerminal).not.toHaveBeenCalled();
 	});
 

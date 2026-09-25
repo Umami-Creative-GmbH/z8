@@ -5,10 +5,42 @@ import { describe, expect, it } from "vitest";
 const workflowPath = fileURLToPath(
 	new URL("../../../../../../.github/workflows/tests.yml", import.meta.url),
 );
+const integrationVitestCommand =
+	"pnpm --filter webapp exec vitest run --no-file-parallelism";
+
+async function readWorkflow() {
+	// Windows autocrlf checkouts read CRLF; the contract is written against LF.
+	return (await readFile(workflowPath, "utf8")).replace(/\r\n/g, "\n");
+}
+
+function integrationSuiteFiles(workflow: string) {
+	const lines = workflow.split("\n");
+	const start = lines.findIndex((line) =>
+		line.includes(integrationVitestCommand),
+	);
+	const files: string[] = [];
+	for (let index = start; start >= 0 && index < lines.length; index++) {
+		const line = lines[index].trim();
+		const args =
+			index === start
+				? line.slice(
+						line.indexOf(integrationVitestCommand) +
+							integrationVitestCommand.length,
+					)
+				: line;
+		const continues = args.endsWith("\\");
+		const file = (continues ? args.slice(0, -1) : args)
+			.trim()
+			.replace(/^"(.*)"$/, "$1");
+		if (file) files.push(file);
+		if (!continues) break;
+	}
+	return files;
+}
 
 describe("approval workflow repository integration CI contract", () => {
 	it("enables the filtered PR trigger and runs the PostgreSQL migration integration gate", async () => {
-		const workflow = await readFile(workflowPath, "utf8");
+		const workflow = await readWorkflow();
 
 		expect(workflow).toMatch(`on:
   pull_request:
@@ -42,9 +74,7 @@ describe("approval workflow repository integration CI contract", () => {
           pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts`,
 		);
 		expect(workflow).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
-		expect(workflow).toContain(
-			"pnpm --filter webapp exec vitest run --no-file-parallelism",
-		);
+		expect(workflow).toContain(integrationVitestCommand);
 		expect(workflow).toContain(
 			"src/lib/scim/seat-sync-outbox.integration.test.ts",
 		);
@@ -55,8 +85,17 @@ describe("approval workflow repository integration CI contract", () => {
 		expect(workflow).toContain(
 			"src/lib/cron/legacy-escalation-fencing.integration.test.ts",
 		);
-		expect(workflow).toMatch(
-			/seat-sync-outbox\.integration\.test\.ts \\\n+\s+src\/lib\/scim\/protocol\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/workflow\/repository\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/workflow\/transition-engine\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/server\/time-correction-approvals\.integration\.test\.ts \\\n+\s+src\/lib\/approvals\/server\/work-period-approvals\.integration\.test\.ts \\\n+\s+"src\/app\/\[locale\]\/\(app\)\/time-tracking\/actions\/clocking\.web-clock-out\.integration\.test\.ts"/,
+		expect(integrationSuiteFiles(workflow)).toEqual(
+			expect.arrayContaining([
+				"src/lib/scim/seat-sync-outbox.integration.test.ts",
+				"src/lib/scim/protocol.integration.test.ts",
+				"src/lib/approvals/workflow/repository.integration.test.ts",
+				"src/lib/approvals/workflow/transition-engine.integration.test.ts",
+				"src/lib/approvals/server/time-correction-approvals.integration.test.ts",
+				"src/lib/approvals/server/work-period-approvals.integration.test.ts",
+				"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-in.integration.test.ts",
+				"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts",
+			]),
 		);
 	});
 });

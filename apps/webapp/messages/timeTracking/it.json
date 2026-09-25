@@ -110,6 +110,31 @@
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Descrivi il lavoro svolto...",
+      "recovery": {
+        "check": "Verifica stato",
+        "checkFailed": "Impossibile verificare questa voce ora. Riprova più tardi.",
+        "contextMismatch": "Hai effettuato l'accesso con un altro account o un'altra organizzazione. Torna indietro per gestire questa voce.",
+        "description": "Queste voci sono state inviate da questa scheda senza un risultato confermato. Nulla viene reinviato se non lo scegli tu.",
+        "discard": "Ignora",
+        "editAsNew": "Modifica come nuova voce",
+        "notCommitted": "Nessun salvataggio trovato.",
+        "notCommittedToast": "Non è stato trovato alcun salvataggio per questa voce. Riprovala identica o modificala come nuova voce.",
+        "retry": "Riprova identica",
+        "saved": "Questa voce è stata salvata.",
+        "savedForApproval": "Questa voce è stata salvata e inviata per l'approvazione. Stato attuale: {status}.",
+        "status": {
+          "approved": "approvata",
+          "pending": "in attesa",
+          "rejected": "rifiutata"
+        },
+        "stillUncertain": "Ancora non confermata. La voce resta; riprova quando sarai di nuovo online.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Voci non confermate",
+        "uncertain": "Non confermata. Potrebbe essere già salvata.",
+        "uncertainToast": "Non è stato possibile confermare se questa voce è stata salvata. Resta in Voci non confermate, dove puoi riprovarla identica o verificarne lo stato.",
+        "unsupported": "Impossibile verificarne lo stato. Potrebbe essere già salvata.",
+        "unsupportedToast": "Impossibile verificare ora lo stato di questa voce. Riprovando si invia esattamente la stessa voce."
+      },
       "submit": "Crea voce",
       "submitting": "Creazione in corso...",
       "success": {

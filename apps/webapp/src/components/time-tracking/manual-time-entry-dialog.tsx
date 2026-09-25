@@ -4,14 +4,25 @@ import { IconAlertCircle, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
 import { createManualTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { ProjectSelectorView } from "@/components/time-tracking/project-selector";
+import {
+	canDiscardManualRecovery,
+	frozenManualCommand,
+	type ManualRecoveryRecord,
+	type ManualRecoveryScope,
+} from "@/components/time-tracking/manual-command-recovery";
 import { TimezoneMismatchDialog } from "@/components/time-tracking/timezone-mismatch-dialog";
+import {
+	type ManualAttemptOutcome,
+	type ManualLookupOutcome,
+	useManualCommandRecovery,
+} from "@/components/time-tracking/use-manual-command-recovery";
 import {
 	type ManualEntryTargetContext,
 	ManualEntryTargetContextError,
@@ -65,6 +76,7 @@ import {
 import { useRouter } from "@/navigation";
 import {
 	MANUAL_ENTRY_COLLISION,
+	MANUAL_ENTRY_CONTEXT_MISMATCH,
 	MANUAL_ENTRY_NOT_ADOPTED,
 	MANUAL_ENTRY_REFRESH_REQUIRED,
 	type ManualTimeEntryResult,
@@ -102,6 +114,8 @@ type PendingMismatch = {
 	value: FormValues;
 	browserTimezone: string;
 	submissionId: string;
+	/** Version-2 commands: the user, organization and target captured at submit. */
+	target: ManualRecoveryScope | null;
 };
 type SubmitManualEntry = (
 	value: FormValues,
@@ -109,6 +123,7 @@ type SubmitManualEntry = (
 	browserTimezone: string | null,
 	submissionId: string,
 	basis: ManualZoneBasis,
+	target: ManualRecoveryScope | null,
 ) => Promise<boolean>;
 type Message = readonly [key: string, fallback: string];
 
@@ -156,6 +171,41 @@ const MESSAGES = {
 		"timeTracking.manualEntry.errors.historyReview",
 		"This time history needs review before new entries can be saved. Contact your administrator.",
 	],
+	uncertain: [
+		"timeTracking.manualEntry.recovery.uncertainToast",
+		"We couldn't confirm whether this entry was saved. It's kept under Unconfirmed entries, where you can retry it exactly or check its status.",
+	],
+	stillUncertain: [
+		"timeTracking.manualEntry.recovery.stillUncertain",
+		"Still not confirmed. The entry is kept; try again when you're back online.",
+	],
+	contextMismatch: [
+		"timeTracking.manualEntry.recovery.contextMismatch",
+		"You're signed in to a different account or organization. Switch back to handle this entry.",
+	],
+	checkFailed: [
+		"timeTracking.manualEntry.recovery.checkFailed",
+		"Couldn't check this entry right now. Try again later.",
+	],
+	saved: ["timeTracking.manualEntry.recovery.saved", "This entry was saved."],
+	savedForApproval: [
+		"timeTracking.manualEntry.recovery.savedForApproval",
+		"This entry was saved and submitted for approval. Its current status: {status}.",
+	],
+	notCommitted: [
+		"timeTracking.manualEntry.recovery.notCommittedToast",
+		"No save was found for this entry. Retry it exactly, or edit it as a new entry.",
+	],
+	unsupported: [
+		"timeTracking.manualEntry.recovery.unsupportedToast",
+		"This entry's status can't be checked right now. Retrying sends exactly the same entry.",
+	],
+} as const satisfies Record<string, Message>;
+
+const APPROVAL_STATUS_MESSAGES = {
+	pending: ["timeTracking.manualEntry.recovery.status.pending", "pending"],
+	approved: ["timeTracking.manualEntry.recovery.status.approved", "approved"],
+	rejected: ["timeTracking.manualEntry.recovery.status.rejected", "rejected"],
 } as const satisfies Record<string, Message>;
 
 /** How a complete date and time map to instants in the zone; null while incomplete. */
@@ -351,10 +401,13 @@ function useManualEntryForm({
 	t,
 	targetEmployeeId,
 	isTimezoneContinuationPendingRef,
+	recoveryScope,
 }: {
 	/** From the advisory target context; `2` builds strict versioned commands. */
 	commandVersion: 1 | 2;
 	contextTargetEmployeeId: string | null;
+	/** The session and target a version-2 command is frozen for (#310). */
+	recoveryScope: ManualRecoveryScope | null;
 	/** `browser` while a self entry continues once in the browser zone. */
 	zoneBasis: ManualZoneBasis;
 	defaults: Pick<
@@ -401,7 +454,12 @@ function useManualEntryForm({
 					browserTimezone &&
 					browserTimezone !== effectiveTimezone
 				) {
-					setPendingMismatch({ value, browserTimezone, submissionId });
+					setPendingMismatch({
+						value,
+						browserTimezone,
+						submissionId,
+						target: recoveryScope,
+					});
 					return;
 				}
 				await submitManualEntry(
@@ -410,6 +468,7 @@ function useManualEntryForm({
 					targetEmployeeId ? null : browserTimezone,
 					submissionId,
 					zoneBasis,
+					recoveryScope,
 				);
 				return;
 			}
@@ -454,7 +513,7 @@ function useManualEntryForm({
 				browserTimezone &&
 				browserTimezone !== effectiveTimezone
 			) {
-				setPendingMismatch({ value, browserTimezone, submissionId });
+				setPendingMismatch({ value, browserTimezone, submissionId, target: null });
 				return;
 			}
 
@@ -466,6 +525,7 @@ function useManualEntryForm({
 					: null,
 				submissionId,
 				"target",
+				null,
 			);
 		},
 	});
@@ -679,6 +739,147 @@ function TargetContextStatus({
 	);
 }
 
+function recoveryStatusMessage(record: ManualRecoveryRecord): Message {
+	switch (record.status) {
+		case "uncertain":
+			return [
+				"timeTracking.manualEntry.recovery.uncertain",
+				"Not confirmed. It may already be saved.",
+			];
+		case "not_committed":
+			return ["timeTracking.manualEntry.recovery.notCommitted", "No save found."];
+		case "conflict":
+			return MESSAGES.collision;
+		case "unsupported":
+			return [
+				"timeTracking.manualEntry.recovery.unsupported",
+				"Its status can't be checked. It may already be saved.",
+			];
+	}
+}
+
+/**
+ * Commands frozen in this tab for the current user, organization and target
+ * whose outcome is still open (#310). Nothing is resent unless the user asks.
+ */
+function ManualRecoveryPanel({
+	busyId,
+	onDiscard,
+	onEditAsNew,
+	onLookup,
+	onRetry,
+	records,
+	t,
+}: {
+	busyId: string | null;
+	onDiscard: (record: ManualRecoveryRecord) => void;
+	onEditAsNew: (record: ManualRecoveryRecord) => void;
+	onLookup: (record: ManualRecoveryRecord) => void;
+	onRetry: (record: ManualRecoveryRecord) => void;
+	records: ManualRecoveryRecord[];
+	t: Translate;
+}) {
+	const headingId = useId();
+	if (records.length === 0) return null;
+	return (
+		<section aria-labelledby={headingId} className="grid gap-2 rounded-md border p-3">
+			<div className="grid gap-0.5">
+				<h3 id={headingId} className="text-sm font-medium">
+					{t("timeTracking.manualEntry.recovery.title", "Unconfirmed entries")}
+				</h3>
+				<p className="text-xs text-muted-foreground">
+					{t(
+						"timeTracking.manualEntry.recovery.description",
+						"These entries were sent from this tab without a confirmed result. Nothing is sent again unless you choose to.",
+					)}
+				</p>
+			</div>
+			<ul className="grid gap-2">
+				{records.map((record) => {
+					const command = frozenManualCommand(record);
+					const status = recoveryStatusMessage(record);
+					const busy = busyId !== null;
+					const summary = t(
+						"timeTracking.manualEntry.recovery.summary",
+						"{date}, {clockIn}–{clockOut} ({timezone})",
+						{
+							date: command.date,
+							clockIn: command.clockIn.time,
+							clockOut: command.clockOut.time,
+							timezone: command.zone.timezone,
+						},
+					);
+					return (
+						<li
+							key={record.submissionId}
+							aria-label={summary}
+							className="grid gap-1.5 rounded-md bg-muted/50 p-2"
+						>
+							<p className="text-sm font-medium tabular-nums">{summary}</p>
+							<p className="truncate text-xs text-muted-foreground">{command.reason}</p>
+							<p className="text-xs">
+								{t(status[0], status[1])}
+								{record.code === MANUAL_ENTRY_CONTEXT_MISMATCH
+									? ` ${t(MESSAGES.contextMismatch[0], MESSAGES.contextMismatch[1])}`
+									: null}
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{record.status !== "conflict" ? (
+									<>
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											disabled={busy}
+											onClick={() => onRetry(record)}
+										>
+											{busyId === record.submissionId ? (
+												<IconLoader2 className="size-3.5 animate-spin" aria-hidden="true" />
+											) : null}
+											{t("timeTracking.manualEntry.recovery.retry", "Retry exactly")}
+										</Button>
+										<Button
+											type="button"
+											size="sm"
+											variant="outline"
+											disabled={busy}
+											onClick={() => onLookup(record)}
+										>
+											{t("timeTracking.manualEntry.recovery.check", "Check status")}
+										</Button>
+									</>
+								) : null}
+								{record.status === "not_committed" ? (
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										disabled={busy}
+										onClick={() => onEditAsNew(record)}
+									>
+										{t("timeTracking.manualEntry.recovery.editAsNew", "Edit as new entry")}
+									</Button>
+								) : null}
+								{canDiscardManualRecovery(record) ? (
+									<Button
+										type="button"
+										size="sm"
+										variant="ghost"
+										disabled={busy}
+										onClick={() => onDiscard(record)}
+									>
+										{t("timeTracking.manualEntry.recovery.discard", "Dismiss")}
+									</Button>
+								) : null}
+							</div>
+						</li>
+					);
+				})}
+			</ul>
+		</section>
+	);
+}
+
 function ManualEntryFormContent({
 	context,
 	contextError,
@@ -687,11 +888,13 @@ function ManualEntryFormContent({
 	isContextLoading,
 	isTimezoneContinuationPending,
 	onRetryContext,
+	recoveryPanel,
 	revalidationMessage,
 	t,
 	targetEmployeeId,
 	targetEmployeeName,
 }: {
+	recoveryPanel: ReactNode;
 	context: ManualEntryTargetContext | null;
 	contextError: Error | null;
 	effectiveTimezone: string | null;
@@ -751,6 +954,7 @@ function ManualEntryFormContent({
 						t={t}
 						targetEmployeeName={targetEmployeeName}
 					/>
+					{recoveryPanel}
 
 					<form.Field
 						name="date"
@@ -1090,6 +1294,15 @@ export function ManualTimeEntryDialog({
 		targetEmployeeName ||
 		(context && !context.isOwnEntry ? context.targetName : "") ||
 		undefined;
+	// Frozen commands belong to the session's user and organization and the target (#310).
+	const recoveryScope: ManualRecoveryScope | null = context?.recoveryContext
+		? {
+				userId: context.recoveryContext.userId,
+				organizationId: context.recoveryContext.organizationId,
+				targetEmployeeId: context.targetEmployeeId,
+			}
+		: null;
+	const recovery = useManualCommandRecovery(recoveryScope);
 
 	async function submitManualEntry(
 		value: FormValues,
@@ -1097,12 +1310,19 @@ export function ManualTimeEntryDialog({
 		browserTimezone: string | null,
 		submissionId: string,
 		basis: ManualZoneBasis,
+		target: ManualRecoveryScope | null,
 	) {
 		let result: ManualTimeEntryResult;
 		if (context?.manualCommandVersion === 2) {
+			if (!target) {
+				toast.error(t(MESSAGES.refresh[0], MESSAGES.refresh[1]));
+				return false;
+			}
+			// Built once, after zone and occurrence confirmation, for the target captured
+			// at submit; the stored bytes are what every later retry sends.
 			const built = buildManualCommand({
 				value,
-				targetEmployeeId: context.targetEmployeeId,
+				targetEmployeeId: target.targetEmployeeId,
 				timezone,
 				basis,
 				browserTimezone,
@@ -1112,7 +1332,12 @@ export function ManualTimeEntryDialog({
 				toast.error(t(built.message[0], built.message[1]));
 				return false;
 			}
-			result = await createManualTimeEntry(built.command);
+			const attempt = await recovery.submit(target, built.command);
+			if (attempt.verdict.kind === "uncertain" || !attempt.result) {
+				toast.error(t(MESSAGES.uncertain[0], MESSAGES.uncertain[1]));
+				return false;
+			}
+			result = attempt.result;
 		} else {
 			result = await createManualTimeEntry({
 				submissionId,
@@ -1194,6 +1419,7 @@ export function ManualTimeEntryDialog({
 	const form = useManualEntryForm({
 		commandVersion: context?.manualCommandVersion ?? 1,
 		contextTargetEmployeeId: context?.targetEmployeeId ?? null,
+		recoveryScope,
 		zoneBasis,
 		defaults: { defaultDate, defaultClockInTime, defaultClockOutTime },
 		effectiveTimezone,
@@ -1241,7 +1467,7 @@ export function ManualTimeEntryDialog({
 						return;
 					}
 
-					const { value, browserTimezone, submissionId } = pendingMismatch;
+					const { value, browserTimezone, submissionId, target } = pendingMismatch;
 					if (contextTimezone) {
 						setTimezoneOverride({
 							source: contextTimezone,
@@ -1266,6 +1492,7 @@ export function ManualTimeEntryDialog({
 						browserTimezone,
 						submissionId,
 						"target",
+						target,
 					);
 				} catch {
 					toast.error("An error occurred while updating timezone");
@@ -1281,7 +1508,7 @@ export function ManualTimeEntryDialog({
 			isTimezoneContinuationPendingRef,
 			setIsTimezoneContinuationPending,
 			async () => {
-				const { value, browserTimezone, submissionId } = pendingMismatch;
+				const { value, browserTimezone, submissionId, target } = pendingMismatch;
 				if (context?.manualCommandVersion === 2 && contextTimezone) {
 					// The form now shows the browser zone; its choices apply there.
 					setContinueOnceZone({ source: contextTimezone, value: browserTimezone });
@@ -1298,6 +1525,7 @@ export function ManualTimeEntryDialog({
 					browserTimezone,
 					submissionId,
 					"browser",
+					target,
 				);
 				setPendingMismatch(null);
 			},
@@ -1332,9 +1560,98 @@ export function ManualTimeEntryDialog({
 				}),
 			);
 			revalidation.clearMessage();
+			// Another dialog in this tab may have settled a frozen command.
+			recovery.refresh();
 		}
 		wasOpenRef.current = open;
 	});
+
+	function afterRecoveredCommit() {
+		router.refresh();
+		onSuccess?.();
+	}
+
+	function refusalMessage(code: string, error: string) {
+		return code === MANUAL_ENTRY_CONTEXT_MISMATCH
+			? t(MESSAGES.contextMismatch[0], MESSAGES.contextMismatch[1])
+			: error;
+	}
+
+	async function handleRecoveryRetry(record: ManualRecoveryRecord) {
+		const outcome: ManualAttemptOutcome | null = await recovery.retry(record);
+		if (!outcome) return;
+		const { result, verdict } = outcome;
+		if (verdict.kind === "committed" && result?.success) {
+			afterRecoveredCommit();
+			toast.success(
+				result.data.requiresApproval
+					? t(
+							"timeTracking.manualEntry.success.pendingApproval",
+							"Time entry submitted for manager approval",
+						)
+					: t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
+			);
+			return;
+		}
+		if (verdict.kind === "uncertain" || !result || result.success) {
+			toast.error(t(MESSAGES.stillUncertain[0], MESSAGES.stillUncertain[1]));
+			return;
+		}
+		if (verdict.kind === "refused") {
+			toast.error(refusalMessage(verdict.code, result.error));
+			return;
+		}
+		const message = outcomeMessage(result);
+		toast.error(message ? t(message[0], message[1]) : result.error);
+	}
+
+	async function handleRecoveryLookup(record: ManualRecoveryRecord) {
+		const outcome: ManualLookupOutcome | null = await recovery.lookup(record);
+		if (!outcome) return;
+		const { result } = outcome;
+		switch (result?.status) {
+			case "committed": {
+				const { requiresApproval, currentApprovalStatus } = result.data;
+				afterRecoveredCommit();
+				// The original outcome, with the current status read separately.
+				const status = APPROVAL_STATUS_MESSAGES[currentApprovalStatus];
+				toast.success(
+					requiresApproval
+						? t(MESSAGES.savedForApproval[0], MESSAGES.savedForApproval[1], {
+								status: t(status[0], status[1]),
+							})
+						: t(MESSAGES.saved[0], MESSAGES.saved[1]),
+				);
+				return;
+			}
+			case "not_committed":
+				toast.info(t(MESSAGES.notCommitted[0], MESSAGES.notCommitted[1]));
+				return;
+			case "conflict":
+				toast.error(t(MESSAGES.collision[0], MESSAGES.collision[1]));
+				return;
+			case "unsupported":
+				toast.error(t(MESSAGES.unsupported[0], MESSAGES.unsupported[1]));
+				return;
+			case "refused":
+				toast.error(refusalMessage(result.code, result.error));
+				return;
+			default:
+				toast.error(t(MESSAGES.checkFailed[0], MESSAGES.checkFailed[1]));
+		}
+	}
+
+	/** Conclusively unsaved: its values become the editable draft for a fresh submission. */
+	function handleRecoveryEditAsNew(record: ManualRecoveryRecord) {
+		const command = frozenManualCommand(record);
+		form.setFieldValue("date", command.date);
+		form.setFieldValue("clockInTime", command.clockIn.time);
+		form.setFieldValue("clockOutTime", command.clockOut.time);
+		form.setFieldValue("reason", command.reason);
+		form.setFieldValue("projectId", command.projectId ?? undefined);
+		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
+		recovery.discard(record);
+	}
 
 	return (
 		<>
@@ -1362,6 +1679,17 @@ export function ManualTimeEntryDialog({
 					isContextLoading={targetContext.isLoading}
 					isTimezoneContinuationPending={isTimezoneContinuationPending}
 					onRetryContext={() => void targetContext.refetch()}
+					recoveryPanel={
+						<ManualRecoveryPanel
+							busyId={recovery.busyId}
+							onDiscard={recovery.discard}
+							onEditAsNew={handleRecoveryEditAsNew}
+							onLookup={(record) => void handleRecoveryLookup(record)}
+							onRetry={(record) => void handleRecoveryRetry(record)}
+							records={recovery.records}
+							t={t}
+						/>
+					}
 					revalidationMessage={revalidation.message}
 					t={t}
 					targetEmployeeId={targetEmployeeId}

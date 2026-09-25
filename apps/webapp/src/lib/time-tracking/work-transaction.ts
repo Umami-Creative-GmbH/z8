@@ -32,11 +32,38 @@ export interface WorkTransactionScope {
 	assertEmployee(organizationId: string, employeeId: string): void;
 }
 
-/** For the outer transaction coordinators only; ordinary callers receive a scope. */
+const scopesByTransaction = new WeakMap<object, WorkTransactionScope>();
+
+/**
+ * For the outer transaction coordinators only; ordinary callers receive a scope.
+ * The sealed scope is also registered for its transaction client, so trusted
+ * collaborators that the approval engine calls with only that client (#301
+ * correction finalization and cancellation) can find the coordinated scope.
+ */
 export function sealWorkTransactionScope<T extends object>(
 	scope: T,
 ): T & { readonly [protectedTransaction]: true } {
-	return Object.freeze({ ...scope, [protectedTransaction]: true as const });
+	const sealed = Object.freeze({ ...scope, [protectedTransaction]: true as const });
+	if (isWorkTransactionScope(sealed)) scopesByTransaction.set(sealed.db, sealed);
+	return sealed;
+}
+
+function isWorkTransactionScope(value: object): value is WorkTransactionScope {
+	const candidate = value as Partial<WorkTransactionScope>;
+	return (
+		typeof candidate.db === "object" &&
+		candidate.db !== null &&
+		(candidate.admission === "legacy" || candidate.admission === "append") &&
+		typeof candidate.assertEmployee === "function"
+	);
+}
+
+/**
+ * The coordinated scope sealed for this transaction client, or null when the
+ * client was not opened by a work-transaction coordinator.
+ */
+export function workTransactionScopeFor(client: object): WorkTransactionScope | null {
+	return scopesByTransaction.get(client) ?? null;
 }
 
 export async function acquireAdoptionGate(

@@ -158,6 +158,8 @@ describe("getManualEntryTargetContextForEmployee", () => {
 				timezone: "Europe/Berlin",
 				timezoneSource: "employee",
 				manualCommandVersion: 1,
+				// The session's user and organization scope frozen command recovery (#310).
+				recoveryContext: { userId: "manager-user", organizationId: "org-1" },
 				projects: [
 					{
 						id: "project-a",

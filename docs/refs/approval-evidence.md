@@ -1287,3 +1287,111 @@ Unit seams: `evidence/work-period-facts.test.ts`,
 ordering, hold before mutation, failure propagation),
 `policy-clock-out-terminal-break.test.ts` (created period reported),
 `jobs/organization-cleanup.test.ts`.
+
+## Time corrections (#301 / T37)
+
+Approval-based time corrections keep immutable approval evidence in the same
+tables, under `workflow_type = 'time_correction'`. Capture follows
+`approval_evidence_control` for `time_correction`; no control row exists, so
+capture is **inactive for every organization**. No migration is needed.
+
+Code: `lib/approvals/evidence/time-correction-facts.ts` (facts, fingerprint,
+comparison), `time-correction-evidence.ts` (capture, decision checks and
+records, resulting graph), rows in `store.ts`, whole-history cleanup in
+`maintenance.ts` (`deleteWorkPeriodApprovalEvidence`, now including
+`time_correction`). The completed-work receipts of the same lifecycles are
+described in [the #301 record](../correction-lifecycle-operation-301.md).
+
+### Who writes what, and when
+
+| Evidence | Written by | When |
+| --- | --- | --- |
+| Submitted revision | `submitCorrection` (dialog, deletion request, HTTP approval branch) | Same coordinated transaction. Facts are read from the locked period and the pending correction entries **before** routing or an auto-completion can change them; the row is written once routing created the lifecycle |
+| Submission activation outcome | Same owner | When routing auto-completes (requester is approver): `system` actor, persisted `approval_request.approved_at` (legacy) or `approval_workflow.completed_at` (canonical), with the resulting graph |
+| Decision evidence (canonical) | Time-correction adapter hooks in the transition engine, wired by `createProductionApprovalWorkflowRuntime` | Same transaction as the transition, finalization and command receipt |
+| Decision evidence (legacy) | Legacy branch of `executeTimeCorrectionDecisionInTransaction` | Same transaction, after the legacy mutation |
+
+### Submitted facts
+
+- The requester-owned period **baseline** as locked: both endpoint entries with
+  their exact UTC instants and each event's own captured offset, zone and source;
+  the stored minutes as persisted and the UTC elapsed seconds, kept apart; the
+  attribution (project, category, location). Active work has no end endpoint.
+- The **requested** values: each proposed endpoint with the original entry it
+  replaces, the pending correction entry and its instant and capture; the
+  requested location and category as `{ kind: "set", value }` (an explicit null
+  clears) or `{ kind: "unchanged" }` for a legacy proposal without metadata.
+- The **change mask** (`clockIn`, `clockOut`, `workLocation`, `workCategory`) and
+  the **intent**: `edit`, `metadata_only` or `delete` (a deletion proposes both
+  endpoints).
+- Labels: subject, requester and submitter names. The reason (free text) is never
+  copied.
+- Material fingerprint `time_correction:v1:<sha256>` over every fact.
+
+Unverifiable evidence (a foreign or moved endpoint, a correction entry that does
+not replace the period's endpoint, a deleted period, a requester who is not the
+owner) throws `evidence_incomplete` and rolls the submission back.
+
+### Decision evidence and results
+
+The decision row records the action, the approver's outcome, the request outcome
+(an intermediate chain approval stays `pending`), the persisted decision time and
+the actor. `result.terminal` holds the graph this finalization left, read from the
+committed rows: `amended` or `unchanged` (rejection) with the segment's endpoints,
+captures, stored minutes and elapsed seconds, or `deleted` with the deletion time
+and the zero-length canonical sentinel. Legacy rows also record
+`legacyRequestStatus`, `decidedAtSource` and `actorAuthority`, as for #302.
+
+### Replay, holds and rollback
+
+- Receipt before fresh checks: canonical decisions replay through the engine's
+  command receipt before any evidence read; a legacy request that was already
+  decided is refused before evidence reads; a replayed submission never recaptures.
+- Once a lifecycle has a submitted revision it is always enforced: the live
+  baseline and proposal must equal the revision, otherwise `material_change`.
+  While capture is active a lifecycle without a revision is held
+  (`evidence_required`). Supplied reviewed bindings are refused
+  (`binding_mismatch`).
+- Holds answer as `ConflictError` with `conflictType: "approval_evidence"`. An
+  evidence write failure rolls back the submission or decision completely.
+
+### Cleanup participation
+
+- Privileged `deleteApproval` resolves every kind's lifecycle through explicit
+  links, so it also removes a correction lifecycle's revision and decision
+  evidence; this path is not separately verified for corrections.
+- `clearOrganizationTimeData`, `deleteNonAdminEmployeesData` and organization
+  cleanup remove time correction evidence with the history it describes.
+
+### Activation blockers (#301, unresolved)
+
+1. **In-flight classification.** Enabling capture holds every pending correction
+   submitted before capture (`evidence_required`) until it is drained or cancelled.
+2. **Presentation** of these facts in the inbox and cards is #325; bindings for
+   time kinds do not exist yet.
+3. **Demo corrections** (#285) capture no evidence.
+4. Not verified on PostgreSQL: multi-stage chains, `shadow`/`ready` modes, bots
+   deciding corrections, and old binaries (pre-deployment binaries submit and
+   decide without evidence).
+5. The #264 pilot and rollback gates (#328/#329/#331).
+
+### Verification (#301)
+
+PostgreSQL 16, in `time-tracking/actions/correction-lifecycle.integration.test.ts`
+(part of `test:approval-workflow-repository:integration`), through the real
+submission, inbox decision and cleanup callers. 7 evidence scenarios pass:
+
+- capture inactive writes nothing;
+- legacy capture: baseline with captured offsets, 121 stored minutes versus 7240
+  elapsed seconds, requested clock-in with its pending entry, explicit metadata,
+  mask and intent, labels, no reason text; the approval's decision evidence names
+  the revision, the manager, `approval_request.approved_at` and the resulting
+  segment (61 stored minutes, 3640 elapsed seconds);
+- business deletion: intent `delete` and a `deleted` result with a 0-minute
+  sentinel;
+- a changed baseline holds the approval (`material_change`) and a lifecycle
+  submitted before capture holds it (`evidence_required`), both with no writes;
+- canonical lifecycle: revision on the workflow, decision evidence with its stage;
+- `clearOrganizationTimeData` removes the revision and decision evidence.
+
+Unit seam: `evidence/time-correction-facts.test.ts`.
