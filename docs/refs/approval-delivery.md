@@ -2,10 +2,12 @@
 
 One durable owner sends approval cards and keeps them current. It covers
 Telegram cards (#291), review-only Slack cards (#294), Teams cards (#293) and
-Discord cards (#292, see its section at the end) for canonical absences. It is
-**inactive for every organization**: migrations `0086_approval_delivery.sql`,
-`0090_approval_delivery_slack.sql`, `0091_teams_approval_actions.sql` and
-`0093_discord_approval_delivery.sql` insert no control rows.
+Discord cards (#292, see its section at the end) for canonical absences, and,
+since #296, Telegram cards for legacy-authoritative expense claims (see "Legacy
+lifecycles"). It is **inactive for every organization**: migrations
+`0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql`,
+`0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql` and
+`0094_discord_approval_delivery.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -87,6 +89,37 @@ Teams adapter (#293)                                    lib/teams/approval-deliv
 - Replacement assignments (`reassigned_from_assignment_id`) belong to
   escalation's replacement delivery (#300). The owner does refresh the messages
   of the assignment they replaced.
+
+## Legacy lifecycles (#296)
+
+Expense claims have no workflow, so their lifecycle is the claim (a claim
+leaves draft once) and its legacy requests stand in for assignments.
+
+- **Intents.** The expense submission and decision owners write an
+  `approval_delivery_intent` row (`submitted` or `decided`, naming the claim and
+  the legacy request that changed) in the transaction that changes the
+  lifecycle, only while a delivery control exists for `(organization,
+  travel_expense)`. The owner expands them like outbox rows, only while the kind
+  has legacy authority there and only for intents created at or after the
+  control's activation.
+- **Plan from current state.** One initial card per pending legacy request and
+  owned provider (dedupe `legacy-initial:<request>:<provider>`), cancellation of
+  initial work whose request is no longer pending, and a refresh of every known
+  message whose request is decided and whose version is behind.
+- **Version.** One plus the number of the claim's decided legacy requests.
+  Decisions only move forward, so it only increases; a two-stage chain moves 1 →
+  2 → 3.
+- **State.** Before sending, the owner rechecks that the request and claim are
+  pending and that the request's approver is still the recipient (otherwise
+  `cancelled`, `obsolete`). A refresh reports the recipient's own committed
+  legacy decision evidence and the claim's current status.
+- **Rows.** Work and messages carry `lifecycle = 'legacy'`, the kind, the source
+  and the exact legacy request (FK to `approval_request`, cascading), never a
+  workflow, stage or assignment. A message's review link is its legacy request.
+  Attention incidents use the `legacy_assignment` subject.
+- A press on a still-pending legacy card that decided nothing becomes a review
+  notice in the webhook, as for canonical cards; a decided card is refreshed by
+  the owner only.
 
 ## Sending and refreshing
 
@@ -196,9 +229,11 @@ carry approve or reject controls and never issue a binding:
 
 ## Cleanup
 
-`deleteApprovalInTransaction` locks both tables, deletes the lifecycle's
-delivery work and messages through its verified workflows and reports them as
-`delivery.work` and `delivery.messages` (platform-admin card, CLI and audit). A
+`deleteApprovalInTransaction` locks the delivery tables, deletes the
+lifecycle's delivery work and messages through its verified workflows (or, for
+legacy lifecycles, its legacy requests, together with their intents) and
+reports them as `delivery.work`, `delivery.messages` and `delivery.intents`
+(platform-admin card, CLI and audit). A
 send that completes after the purge cannot record its message: the workflow FK
 fails and the owner reports `delivered_after_purge`.
 
@@ -228,7 +263,10 @@ canonical absence submissions then send no Telegram card at all.
 2. **Old binaries.** Instances without this release neither run
    `cron:approval-delivery` nor kick the owner; delivery then waits for an
    upgraded worker. Insert controls only after every instance is upgraded.
-3. **Legacy authority** (#384). The owner delivers canonical absences only.
+3. **Legacy authority.** Legacy absences are #384. Legacy expense claims are
+   delivered since #296 (their own blockers are in
+   [Approval evidence](approval-evidence.md), "Expense review, decisions and
+   cards").
 4. **Escalation replacement delivery** (#300) is not part of this slice.
 5. **In-place material changes** without a workflow transition commit no
    intent, so the card is not refreshed. Pressing it decides nothing.
@@ -358,7 +396,7 @@ Unit seams: `slack/delivery-outcome.test.ts`, `slack/approval-card.test.ts`,
 
 Discord uses the same prepared presentation, reviewed bindings, decision owner
 and delivery owner as Telegram. It adds no persistence, authority or dispatch
-of its own. Migration `0093_discord_approval_delivery.sql` only widens the
+of its own. Migration `0094_discord_approval_delivery.sql` only widens the
 provider and scheme CHECKs. It inserts no `approval_presentation_control` and
 no `approval_delivery_control` rows, so Discord stays review-only on the
 existing path for every organization.
@@ -418,14 +456,14 @@ interaction (signature verified by the route)          lib/discord/approval-hand
 
 ### Activation (#292)
 
-Apply `0093` after `0092`, then per organization, after the #290/#291 gates:
+Apply `0094` after `0093`, then per organization, after the #290/#291 gates:
 insert `approval_presentation_control (…, 'discord', 'actionable')` under the
 rollout lock as for Telegram, and
 `approval_delivery_control (:org, 'absence', 'discord')`.
 
 ### Activation blockers (#292, unresolved)
 
-1. Apply `0093` through the authorized deployment. It has run only on the
+1. Apply `0094` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries** do not know the Discord adapter or `discord_interaction`.
    Insert controls only after every worker and app instance is upgraded.

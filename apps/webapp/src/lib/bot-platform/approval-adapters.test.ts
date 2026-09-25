@@ -139,6 +139,10 @@ vi.mock("@/lib/logger", () => ({ createLogger: () => state.logger }));
 vi.mock("@/lib/approvals/presentation/bound-card", () => ({
 	prepareBoundAbsenceCard: async () => null,
 }));
+// Expense card admission (#296) likewise: expense-review-decision.integration.test.ts.
+vi.mock("@/lib/approvals/presentation/travel-expense-card", () => ({
+	prepareBoundTravelExpenseCard: async () => null,
+}));
 vi.mock("@/lib/app-url", () => ({
 	getOrganizationBaseUrl: async (organizationId: string) =>
 		`https://${organizationId}.z8.test`,

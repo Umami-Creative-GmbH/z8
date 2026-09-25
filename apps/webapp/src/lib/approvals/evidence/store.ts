@@ -2,8 +2,10 @@ import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import {
 	APPROVAL_EVIDENCE_MODES,
 	type ApprovalEvidenceMode,
+	approvalChainStageInstance,
 	approvalDecisionEvidence,
 	approvalEvidenceControl,
+	approvalRequest,
 	approvalReviewBinding,
 	approvalStageAssignment,
 	approvalSubmittedRevision,
@@ -532,6 +534,15 @@ export async function loadReviewBinding(
 		.limit(1);
 	const row = rows[0];
 	if (!row || row.organizationId !== input.organizationId) return null;
+	// A legacy binding never names a canonical target (#296).
+	if (
+		row.authority !== "canonical" ||
+		!row.workflowId ||
+		!row.stageId ||
+		!row.assignmentId
+	) {
+		return null;
+	}
 	return {
 		id: row.id,
 		organizationId: row.organizationId,
@@ -541,6 +552,28 @@ export async function loadReviewBinding(
 		assignmentId: row.assignmentId,
 		submittedRevisionId: row.submittedRevisionId,
 	};
+}
+
+/**
+ * Which authority a binding handle belongs to, so a card action reaches only
+ * that authority's decision owner. Organization-scoped; null when unknown.
+ */
+export async function loadReviewBindingAuthority(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<"canonical" | "legacy" | null> {
+	const rows = await database
+		.select({ authority: approvalReviewBinding.authority })
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	const authority = rows[0]?.authority;
+	return authority === "canonical" || authority === "legacy" ? authority : null;
 }
 
 /** Transaction-time check that a supplied handle names exactly this target. */
@@ -732,12 +765,15 @@ export interface LegacyDecisionEvidenceInput
 		chainStageId: string | null;
 		observedWorkflowId: string | null;
 	};
+	/** The legacy binding a bound card decision was reviewed through (#296). */
+	reviewedBindingId?: string | null;
 }
 
 export interface LegacyDecisionEvidenceRecord
 	extends LegacyDecisionEvidenceInput {
 	id: string;
 	authority: "legacy";
+	reviewedBindingId: string | null;
 }
 
 function parseLegacyDecisionEvidence(
@@ -751,7 +787,6 @@ function parseLegacyDecisionEvidence(
 		!row.legacyApprovalRequestId ||
 		row.stageId !== null ||
 		row.assignmentId !== null ||
-		row.reviewedBindingId !== null ||
 		row.schemaVersion !== ABSENCE_EVIDENCE_SCHEMA_VERSION ||
 		!Array.isArray(row.eventIds) ||
 		row.eventIds.length !== 0 ||
@@ -790,6 +825,7 @@ function parseLegacyDecisionEvidence(
 		decidedAt: instantFromDate(row.decidedAt),
 		result: row.result as JsonObject,
 		labels: { actorName: row.labels.actorName },
+		reviewedBindingId: row.reviewedBindingId,
 	};
 }
 
@@ -828,7 +864,7 @@ export async function recordLegacyDecisionEvidence(
 			eventIds: [],
 			result: input.result,
 			labels: input.labels,
-			reviewedBindingId: null,
+			reviewedBindingId: input.reviewedBindingId ?? null,
 			schemaVersion: ABSENCE_EVIDENCE_SCHEMA_VERSION,
 		})
 		.returning();
@@ -894,6 +930,220 @@ export async function findLegacyDecisionEvidenceByRequest(
 	}
 	const row = rows[0];
 	return row ? parseLegacyDecisionEvidence(row, input.organizationId) : null;
+}
+
+export async function findLegacyDecisionEvidenceById(
+	database: ApprovalDatabase,
+	input: { organizationId: string; id: string },
+): Promise<LegacyDecisionEvidenceRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalDecisionEvidence)
+		.where(
+			and(
+				eq(approvalDecisionEvidence.organizationId, input.organizationId),
+				eq(approvalDecisionEvidence.authority, "legacy"),
+				eq(approvalDecisionEvidence.id, input.id),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	return row ? parseLegacyDecisionEvidence(row, input.organizationId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy reviewed bindings (#296). A legacy binding names the exact legacy
+// request a recipient reviewed (the assignment equivalent) and the legacy
+// submitted revision the card showed. It is a handle, not authority: the legacy
+// decision owner revalidates everything under its transaction.
+// ---------------------------------------------------------------------------
+
+export interface LegacyReviewBindingTarget {
+	organizationId: string;
+	recipientEmployeeId: string;
+	legacyApprovalRequestId: string;
+	submittedRevisionId: string;
+}
+
+export interface LegacyReviewBindingRecord extends LegacyReviewBindingTarget {
+	id: string;
+	authority: "legacy";
+}
+
+/**
+ * Whether a legacy request belongs to the lifecycle a legacy revision was
+ * captured for: the request routing created, or a stage request of the chain
+ * it recorded. Verified links only, never a shared subject ID alone.
+ */
+export async function isLegacyRequestInRevisionLifecycle(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		approvalRequestId: string;
+		revision: {
+			sourceType: string;
+			sourceId: string;
+			legacy: LegacyLifecycleReference;
+		};
+	},
+): Promise<boolean> {
+	const requests = await database
+		.select({
+			entityType: approvalRequest.entityType,
+			entityId: approvalRequest.entityId,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	const request = requests[0];
+	if (
+		!request ||
+		request.entityType !== input.revision.sourceType ||
+		request.entityId !== input.revision.sourceId
+	) {
+		return false;
+	}
+	if (input.approvalRequestId === input.revision.legacy.approvalRequestId) {
+		return true;
+	}
+	const chainInstanceId = input.revision.legacy.chainInstanceId;
+	if (!chainInstanceId) return false;
+	const stages = await database
+		.select({ id: approvalChainStageInstance.id })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(1);
+	return stages.length === 1;
+}
+
+/**
+ * Issues (or reuses) the handle for one recipient's review of an exact pending
+ * legacy request and the current legacy revision of its lifecycle. The caller
+ * has verified that the revision still matches the live source.
+ */
+export async function issueLegacyReviewBinding(
+	database: ApprovalDatabase,
+	target: LegacyReviewBindingTarget & {
+		revision: {
+			sourceType: string;
+			sourceId: string;
+			legacy: LegacyLifecycleReference;
+		};
+	},
+): Promise<string> {
+	const pending = await database
+		.select({ id: approvalRequest.id })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, target.legacyApprovalRequestId),
+				eq(approvalRequest.organizationId, target.organizationId),
+				eq(approvalRequest.approverId, target.recipientEmployeeId),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.limit(1);
+	const revisions = await database
+		.select({ id: approvalSubmittedRevision.id })
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.id, target.submittedRevisionId),
+				eq(approvalSubmittedRevision.organizationId, target.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, target.revision.sourceType),
+				eq(approvalSubmittedRevision.sourceId, target.revision.sourceId),
+			),
+		)
+		.limit(1);
+	if (
+		pending.length !== 1 ||
+		revisions.length !== 1 ||
+		!(await isLegacyRequestInRevisionLifecycle(database, {
+			organizationId: target.organizationId,
+			approvalRequestId: target.legacyApprovalRequestId,
+			revision: target.revision,
+		}))
+	) {
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "target" });
+	}
+	const values = {
+		organizationId: target.organizationId,
+		authority: "legacy" as const,
+		recipientEmployeeId: target.recipientEmployeeId,
+		legacyApprovalRequestId: target.legacyApprovalRequestId,
+		submittedRevisionId: target.submittedRevisionId,
+	};
+	await database.insert(approvalReviewBinding).values(values).onConflictDoNothing();
+	const rows = await database
+		.select({ id: approvalReviewBinding.id })
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.organizationId, target.organizationId),
+				eq(approvalReviewBinding.authority, "legacy"),
+				eq(approvalReviewBinding.recipientEmployeeId, target.recipientEmployeeId),
+				eq(
+					approvalReviewBinding.legacyApprovalRequestId,
+					target.legacyApprovalRequestId,
+				),
+				eq(approvalReviewBinding.submittedRevisionId, target.submittedRevisionId),
+			),
+		)
+		.limit(1);
+	const id = rows[0]?.id;
+	if (!id) {
+		throw new ApprovalEvidenceError("invariant", { field: "review_binding" });
+	}
+	return id;
+}
+
+/** Organization-scoped legacy handle lookup; a canonical handle is not one. */
+export async function loadLegacyReviewBinding(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<LegacyReviewBindingRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+				eq(approvalReviewBinding.authority, "legacy"),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	if (
+		!row ||
+		row.organizationId !== input.organizationId ||
+		row.authority !== "legacy" ||
+		!row.legacyApprovalRequestId ||
+		row.workflowId !== null ||
+		row.assignmentId !== null
+	) {
+		return null;
+	}
+	return {
+		id: row.id,
+		authority: "legacy",
+		organizationId: row.organizationId,
+		recipientEmployeeId: row.recipientEmployeeId,
+		legacyApprovalRequestId: row.legacyApprovalRequestId,
+		submittedRevisionId: row.submittedRevisionId,
+	};
 }
 
 // ---------------------------------------------------------------------------

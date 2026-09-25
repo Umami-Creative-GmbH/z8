@@ -7,9 +7,14 @@ import {
 	APPROVAL_INVOCATION_SCHEME_VERSION,
 	type ApprovalInvocationScheme,
 } from "@/lib/approvals/evidence/invocation";
-import type { DecisionEvidenceRecord } from "@/lib/approvals/evidence/store";
+import {
+	type DecisionEvidenceRecord,
+	type LegacyDecisionEvidenceRecord,
+	loadReviewBindingAuthority,
+} from "@/lib/approvals/evidence/store";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
 import { decideBoundAbsenceInvocation } from "@/lib/approvals/server/absence-approvals";
+import { decideBoundTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import {
@@ -144,7 +149,7 @@ export type BoundBotApprovalResult =
 			status: "decided";
 			/** This invocation was already committed; the original is returned. */
 			replayed: boolean;
-			evidence: DecisionEvidenceRecord;
+			evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 	  }
 	| { status: "review_required" }
 	| { status: "conflict" }
@@ -173,7 +178,7 @@ export async function attemptBoundBotApproval(
 		// incomplete identity is refused by the decision owner's parser.
 		return { status: "review_required" };
 	}
-	const result = await decideBoundAbsenceInvocation({
+	const decision = {
 		database: db,
 		organizationId: input.organizationId,
 		actorEmployeeId: input.actorEmployeeId,
@@ -187,14 +192,26 @@ export async function attemptBoundBotApproval(
 			identity: {
 				organizationId: input.organizationId,
 				scheme,
-				schemeVersion: APPROVAL_INVOCATION_SCHEME_VERSION,
+				schemeVersion: APPROVAL_INVOCATION_SCHEME_VERSION as typeof APPROVAL_INVOCATION_SCHEME_VERSION,
 				receiverScope: input.invocation.receiverScope,
 				invocationId: input.invocation.invocationId,
 			},
 			deliveryId: input.invocation.deliveryId,
 			providerActorId: input.invocation.providerActorId,
 		},
+	};
+	// A binding decides only under the authority it was issued for: a legacy
+	// handle reaches the legacy expense owner (#296), never a canonical one.
+	// Bindings are immutable and outlive their committed invocations, so
+	// routing on them keeps exact replays intact.
+	const authority = await loadReviewBindingAuthority(db, {
+		organizationId: input.organizationId,
+		bindingId: input.bindingId,
 	});
+	const result =
+		authority === "legacy"
+			? await decideBoundTravelExpenseInvocation(decision)
+			: await decideBoundAbsenceInvocation(decision);
 	return result.status === "review_required"
 		? { status: "review_required" }
 		: result;

@@ -3,10 +3,12 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest, travelExpenseClaim } from "@/db/schema";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
+	ApprovalActionOptions,
 	ApprovalDetail,
 	ApprovalDisplayMetadata,
 	ApprovalPriority,
@@ -14,14 +16,22 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
-import { processApprovalWithCurrentEmployee } from "../server/shared";
 import {
+	decideTravelExpenseClaimEffect,
 	loadTravelExpenseApprover,
-	notifyTravelExpenseRequesterAfterDecision,
-	persistTravelExpenseDecision,
-	preflightTravelExpenseDecision,
 } from "../server/travel-expense-approvals";
 import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
+
+function decisionOptions(options: ApprovalActionOptions) {
+	return {
+		...(options.approvalRequestId ? { approvalRequestId: options.approvalRequestId } : {}),
+		...(options.allowAnyApprover ? { allowAnyApprover: true } : {}),
+		...(options.allowOrganizationWideApprover ? { allowOrganizationWideApprover: true } : {}),
+		...(options.reviewedBindingId !== undefined
+			? { reviewedBindingId: options.reviewedBindingId }
+			: {}),
+	};
+}
 
 interface TravelExpenseClaimWithRelations {
 	id: string;
@@ -32,6 +42,9 @@ interface TravelExpenseClaimWithRelations {
 	status: "draft" | "submitted" | "approved" | "rejected";
 	tripStart: Date;
 	tripEnd: Date;
+	tripStartDate: string | null;
+	tripEndDate: string | null;
+	tripDateTimeZone: string | null;
 	destinationCity: string | null;
 	destinationCountry: string | null;
 	projectId: string | null;
@@ -86,33 +99,57 @@ function getClaimIcon(type: TravelExpenseClaimWithRelations["type"]): string {
 	}
 }
 
-function formatTripDateRange(start: Date, end: Date): string {
-	const startDate = DateTime.fromJSDate(start);
-	const endDate = DateTime.fromJSDate(end);
+const MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
+] as const;
 
-	if (startDate.hasSame(endDate, "day")) {
-		return startDate.toFormat("LLL dd, yyyy");
+/**
+ * The trip's logical dates exactly as entered (#295). They never shift with the
+ * server's or viewer's zone; claims created before they were recorded show no
+ * date range rather than one derived from their UTC bounds.
+ */
+function formatTripDateRange(startDate: string | null, endDate: string | null): string | null {
+	if (!startDate || !endDate) return null;
+	let start: ReturnType<typeof parsePlainDate>;
+	let end: ReturnType<typeof parsePlainDate>;
+	try {
+		start = parsePlainDate(startDate);
+		end = parsePlainDate(endDate);
+	} catch {
+		return null;
 	}
-
-	if (startDate.hasSame(endDate, "month") && startDate.hasSame(endDate, "year")) {
-		return `${startDate.toFormat("LLL d")}-${endDate.toFormat("d, yyyy")}`;
+	const month = (date: typeof start) => MONTHS[date.month - 1];
+	if (start.equals(end)) {
+		return `${month(start)} ${String(start.day).padStart(2, "0")}, ${start.year}`;
 	}
-
-	if (startDate.hasSame(endDate, "year")) {
-		return `${startDate.toFormat("LLL d")}-${endDate.toFormat("LLL d, yyyy")}`;
+	if (start.year === end.year && start.month === end.month) {
+		return `${month(start)} ${start.day}-${end.day}, ${end.year}`;
 	}
-
-	return `${startDate.toFormat("LLL d, yyyy")}-${endDate.toFormat("LLL d, yyyy")}`;
+	if (start.year === end.year) {
+		return `${month(start)} ${start.day}-${month(end)} ${end.day}, ${end.year}`;
+	}
+	return `${month(start)} ${start.day}, ${start.year}-${month(end)} ${end.day}, ${end.year}`;
 }
 
 function getDisplayMetadata(entity: TravelExpenseClaimWithRelations): ApprovalDisplayMetadata {
 	const destination = entity.destinationCity ?? entity.destinationCountry ?? "Trip";
-	const tripRange = formatTripDateRange(entity.tripStart, entity.tripEnd);
+	const tripRange = formatTripDateRange(entity.tripStartDate, entity.tripEndDate);
 	const claimTypeLabel = getClaimTypeLabel(entity.type);
 
 	return {
 		title: "Travel Expense",
-		subtitle: `${destination} - ${tripRange}`,
+		subtitle: tripRange ? `${destination} - ${tripRange}` : destination,
 		summary: `${claimTypeLabel} for ${entity.calculatedCurrency} ${entity.calculatedAmount}`,
 		badge: entity.project
 			? {
@@ -216,7 +253,7 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 	getCount: (approverId, organizationId, visibility) =>
 		getApprovalCount("travel_expense_claim", approverId, organizationId, visibility),
 
-	getDetail: (entityId, organizationId) =>
+	getDetail: (entityId, organizationId, context) =>
 		Effect.gen(function* (_) {
 			const dbService = yield* _(DatabaseService);
 
@@ -250,10 +287,14 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 
 			const request = yield* _(
 				dbService.query("getTravelExpenseApprovalRequest", async () => {
+					// The exact request (a chain has one per stage), in the claim's
+					// organization; never another stage's or tenant's row.
 					return await dbService.db.query.approvalRequest.findFirst({
 						where: and(
 							eq(approvalRequest.entityType, "travel_expense_claim"),
 							eq(approvalRequest.entityId, entityId),
+							eq(approvalRequest.organizationId, claim.organizationId),
+							...(context?.approvalId ? [eq(approvalRequest.id, context.approvalId)] : []),
 						),
 						with: {
 							approver: { with: { user: true } },
@@ -353,29 +394,14 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 		Effect.gen(function* (_) {
 			const dbService = yield* _(DatabaseService);
 			const currentEmployee = yield* _(loadTravelExpenseApprover(dbService, approverId));
+			// One owner for every expense decision: replay, frozen-submission holds,
+			// decision evidence and delivery commit with the legacy mutation (#296).
 			yield* _(
-				processApprovalWithCurrentEmployee(
-					dbService,
-					currentEmployee,
-					"travel_expense_claim",
-					entityId,
-					"approve",
-					undefined,
-					(decisionDbService, decisionEntityId, approver) =>
-						persistTravelExpenseDecision(decisionDbService, decisionEntityId, approver, "approve"),
-					(decisionDbService, decisionEntityId, approver, actionOptions) =>
-						preflightTravelExpenseDecision(
-							decisionDbService,
-							decisionEntityId,
-							approver,
-							"approve",
-							actionOptions,
-						),
-					{ ...options, transactional: true },
-				),
-			);
-			yield* _(
-				notifyTravelExpenseRequesterAfterDecision(dbService, entityId, currentEmployee, "approve"),
+				decideTravelExpenseClaimEffect(dbService, currentEmployee, {
+					claimId: entityId,
+					action: "approve",
+					...(options ? { options: decisionOptions(options) } : {}),
+				}),
 			);
 		}),
 
@@ -384,40 +410,12 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 			const dbService = yield* _(DatabaseService);
 			const currentEmployee = yield* _(loadTravelExpenseApprover(dbService, approverId));
 			yield* _(
-				processApprovalWithCurrentEmployee(
-					dbService,
-					currentEmployee,
-					"travel_expense_claim",
-					entityId,
-					"reject",
+				decideTravelExpenseClaimEffect(dbService, currentEmployee, {
+					claimId: entityId,
+					action: "reject",
 					reason,
-					(decisionDbService, decisionEntityId, approver) =>
-						persistTravelExpenseDecision(
-							decisionDbService,
-							decisionEntityId,
-							approver,
-							"reject",
-							reason,
-						),
-					(decisionDbService, decisionEntityId, approver, actionOptions) =>
-						preflightTravelExpenseDecision(
-							decisionDbService,
-							decisionEntityId,
-							approver,
-							"reject",
-							actionOptions,
-						),
-					{ ...options, transactional: true },
-				),
-			);
-			yield* _(
-				notifyTravelExpenseRequesterAfterDecision(
-					dbService,
-					entityId,
-					currentEmployee,
-					"reject",
-					reason,
-				),
+					...(options ? { options: decisionOptions(options) } : {}),
+				}),
 			);
 		}),
 

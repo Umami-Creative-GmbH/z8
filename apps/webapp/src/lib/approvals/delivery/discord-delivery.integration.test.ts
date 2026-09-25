@@ -1073,6 +1073,8 @@ describeIntegration("Discord approval decisions and delivery (PostgreSQL)", () =
 		expect(deleted.delivery).toEqual({
 			work: deliveryWork.map((row) => row.id).sort(),
 			messages: [message.id],
+			// Legacy-lifecycle intents (#296); none for a canonical workflow.
+			intents: [],
 		});
 		expect(deleted.evidence.invocations).toHaveLength(1);
 		expect(await messages(workflowId)).toHaveLength(0);

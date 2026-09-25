@@ -401,7 +401,8 @@ receipt set, date, amount, type, destination or identity, or live rows that can
 no longer be verified, returns a 409 `approval_evidence` conflict and the claim
 stays pending; the supported successor is a new claim. Decision evidence,
 review presentation, bindings and the `evidence_required` hold for claims
-submitted before capture belong to #296.
+submitted before capture are added by #296 (see "Expense review, decisions and
+cards" below).
 
 ### Cleanup participation
 
@@ -420,7 +421,8 @@ employee/organization cascade still leaves its stored receipt objects
 2. **Historical drafts.** Drafts created before 0078 lack logical dates, and
    receipts uploaded before it lack checksums. With capture on they cannot be
    submitted and must be recreated; classify or drain them first. Claims
-   submitted before capture have no revision and are not held here (#296).
+   submitted before capture have no revision; since #296 they are held
+   (`evidence_required`) while capture is active.
 3. Old binaries attach receipts without the claim lock or checksum and submit
    without capture; drain them before relying on manifests.
 4. The web UI does not expose receipt upload or claim submission yet (only the
@@ -470,6 +472,256 @@ activation evidence; privileged cleanup of one lifecycle; abandoned staging
 cleanup that never deletes an attached object; a slow upload re-recorded with
 its version after its row was swept. Unit seams: `travel-expense-facts.test.ts`,
 the upload route and submission action tests.
+
+## Expense review, decisions and cards (#296 / T32)
+
+Expense claims are decided only by legacy authority. #296 adds the review,
+decision evidence, bound cards and delivery for them without creating canonical
+authority. Everything is **inactive for every organization**: migration
+`0093_legacy_expense_presentation.sql` inserts no control rows. Apply it after
+`0092`.
+
+```text
+submitTravelExpenseClaim (tx)                    #295 capture, then
+  recordLegacyDeliveryIntent("submitted")         only while a delivery control exists
+after commit: kickApprovalDelivery
+
+inbox handler / expense page / bound card        one owner: executeTravelExpenseDecisionInTransaction
+  rollout lock (shared, travel_expense)
+  bound: invocation lock → committed? replay | conflict (no current state read)
+         presentation control still actionable? rollout not canonical?
+  target = bound legacy request | caller's request | actor's own pending request
+  authenticated with explicit request: exact semantic replay?
+  frozen submission: material_change → 409   none while capture → evidence_required (409)
+  bound: legacy binding names this actor and the current revision
+  unchanged legacy mutation (processApprovalWithCurrentEmployee, "existing")
+  legacy decision evidence (+ reviewed binding) → approval_invocation → delivery intent
+after commit (not on replay): requester notification, kickApprovalDelivery
+```
+
+Code: `lib/approvals/evidence/travel-expense-decision.ts` (facts of the decision,
+replay, holds, record), `lib/approvals/server/travel-expense-approvals.ts`
+(owner, web effect, bound decision), `lib/approvals/presentation/travel-expense-card.ts`
+(card facts, bound card), `lib/approvals/presentation/travel-expense-review.ts`
+(web review sections), legacy bindings in `evidence/store.ts`.
+
+### Decision evidence
+
+Every decision on a claim with a frozen submission writes one legacy decision
+evidence row in the transaction of the legacy mutation. It doubles as the
+operation receipt of the one legacy request it decided.
+
+- Outcome, stage and time come from the persisted rows afterwards:
+  `approval_chain_stage_instance.decided_at` (and its `decided_by`, which must be
+  the actor) for chain stages, otherwise `approval_request.approved_at` or, for a
+  rejection, `approval_request.updated_at`. The request outcome is the claim's
+  status as of the operation: an intermediate chain approval leaves it
+  `pending`. `result` records `claimStatus`, `legacyRequestStatus`,
+  `decidedAtSource` and `actorAuthority` (`assigned_approver` or
+  `other_authorized_approver`: a single-stage request keeps its assigned approver
+  when another authorized approver decides it).
+- Nothing is inferred: another outcome, another decider, a missing persisted time,
+  or a request outside the frozen submission's lifecycle rolls the decision back.
+- The reason enters only the command fingerprint
+  (`travel-expense-legacy-decision:v1`); no reason text, note, reimbursement or
+  payable amount is stored.
+- Keys: an authenticated decision is keyed
+  `travel_expense_claim:<claim>:<request>:<action>:<sha256(reason)>`; a card
+  decision by its provider invocation (`approval-invocation:v1:…`). A semantic
+  retry matches only a semantic receipt with the same key, actor and command,
+  so neither kind can replay the other. Nothing is matched without the exact
+  request.
+- Claims submitted before capture have no revision. Without capture they are
+  decided as before and no evidence is written; with capture they are held
+  (`evidence_required`), never reconstructed from live rows.
+- Holds and binding refusals surface as `ConflictError` (`conflictType:
+  "approval_evidence"`, `details.code`); integrity contradictions stay errors.
+- The existing decision owner is unchanged: the same legacy request update,
+  chain progression, claim status and decision log, now run inside the owner's
+  transaction. Expense decisions now also take the shared `travel_expense`
+  rollout lock.
+
+### Legacy reviewed bindings and invocations
+
+`approval_review_binding`, `approval_decision_evidence` and
+`approval_invocation` now carry an `authority`. A legacy binding names the
+recipient, the exact legacy request (the assignment equivalent, by value) and
+the legacy submitted revision; it never names a workflow, stage or assignment
+(check constraints). Composite FKs keep a binding, the decision it was reviewed
+through and the invocation on the same authority, so a legacy handle can never
+decide under canonical authority or the other way round.
+`attemptBoundBotApproval` routes a handle by its authority; the canonical
+loader returns nothing for a legacy handle.
+
+A bound expense decision is valid only when all hold under the transaction: the
+invocation is new, the provider is still admitted, the kind has no canonical
+rollout, the binding belongs to the actor, the actor is the current approver of
+the exact bound request (no eligible-manager or management authority), the
+request is pending and part of the frozen submission's lifecycle, and the
+binding names the current revision, which still matches the live claim and
+receipts. Otherwise nothing is decided and the card becomes a review notice.
+The invocation row is written with the decision evidence it committed.
+
+### Card facts and admission
+
+`buildTravelExpenseCardFacts` builds platform-neutral facts from the frozen
+submission only (#253 §3): employee, submitter when different, claim type,
+logical trip dates (never shifted), **Claim amount** (persisted value and
+currency in the recipient's number format, never converted or re-rounded),
+original amount when different, destination and project when present, the
+receipt count for receipt claims, and the submission instant in the
+recipient's zone. Notes, receipt contents and file names stay in authenticated
+review. A missing essential fact (employee label, claim type, trip dates, money,
+receipts of a receipt claim) makes the card review-only.
+
+`prepareBoundTravelExpenseCard` issues a binding only when every gate holds:
+the request is pending and assigned to the recipient, no canonical rollout for
+`travel_expense`, `approval_evidence_control` = `capture` and
+`approval_presentation_control` = `actionable` for `(organization,
+travel_expense, provider)`, the claim is submitted, its frozen submission still
+matches and the request belongs to its lifecycle, the facts are intelligible
+and the card fits the provider. Only Telegram is an admitted adapter; Discord,
+Teams and Slack stay review-only (#292–#294).
+
+### Authenticated review
+
+The inbox detail (and so the exact-item review page, #289) shows a **Submitted
+claim** section from the frozen submission: employee, submitter, claim type,
+logical trip dates with the zone they were entered in, claim and original
+amounts, destination, project and receipt file names. A material change is a
+danger callout, and a claim without a frozen submission is a warning callout
+while capture is active; both disable approve, reject and bulk actions, as the
+server does. The **Evidence history** timeline separates an intermediate step
+("Approval recorded — awaiting further approval") from the claim outcome, with
+persisted times and actors. The inbox list shows the logical trip dates instead
+of dates derived from the UTC bounds; claims created before #295 show none. The
+expense detail now loads the exact approval request (a chain has one per stage)
+within the claim's organization.
+
+### Delivery
+
+With a delivery control for `(organization, travel_expense, telegram)` the
+approval delivery owner sends the approver's card and keeps it current; see
+[Approval card delivery](approval-delivery.md), "Legacy lifecycles". Without a
+control nothing is sent, as before (expense submissions never notified the
+approver).
+
+### Cleanup
+
+Privileged `deleteApproval` follows the lifecycle's legacy requests and
+revisions. It deletes legacy delivery work, messages and intents before the
+requests, and legacy invocations, decision evidence and bindings before the
+revisions. They are reported as `evidence.invocations`, `evidence.reviewBindings`,
+`delivery.work`, `delivery.messages` and `delivery.intents`. A late redelivery of
+a purged press finds no binding and recreates nothing. The claim, its receipts
+and other claims are preserved.
+
+### Activation
+
+Apply `0093`, then, as the authorized adoption writer and under the exclusive
+rollout lock of the kind (scope suffix `:14:travel_expense`), after capture is
+active (#295):
+
+```sql
+begin;
+select pg_advisory_xact_lock(hashtextextended(
+  'approval-rollout:' || length(:org) || ':' || :org || ':14:travel_expense', 0));
+insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+values (:org, 'travel_expense', 'telegram', 'actionable')
+on conflict (organization_id, workflow_type, provider) do update set mode = excluded.mode;
+commit;
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, 'travel_expense', 'telegram');
+```
+
+No application endpoint changes either control.
+
+### Activation blockers (#296, unresolved)
+
+1. Apply `0093` through the authorized deployment. It has run only on the
+   disposable PostgreSQL 16 database.
+2. **Old binaries.** Instances without this release decide expenses without the
+   rollout lock, evidence, replay or holds, and write no delivery intents. Drain
+   them before enabling capture or any control.
+3. **In-flight classification.** Enabling capture holds every submitted claim
+   without a frozen submission (`evidence_required`). Drain them, or record
+   provenance-bearing reconstructed revisions through a separately authorized
+   step (not implemented).
+4. **Held claims have no durable attention.** A materially changed or
+   unevidenced claim is refused for approve and reject and stays `submitted`;
+   no administrative-attention record is raised (#253 §5.3) and there is no
+   expense cancellation path (see #295 blocker 7).
+5. **Reassignment has no replacement card.** A legacy expense request moved to
+   another approver makes the former card stale (verified), but no owner sends
+   the new approver a card: there is no legacy escalation for expenses and
+   replacement delivery is #300.
+6. Only Telegram is verified. Teams actions (#293) share the same bound path,
+   so a `travel_expense`/`teams` presentation control would make expense cards
+   actionable there, but that is unverified: do not admit it. Discord and Slack
+   stay review-only (#292, #294). No in-app or e-mail approver notification is
+   added.
+7. **Ingress.** No durable acceptance before the webhook acknowledgment.
+8. **Legacy lifecycle identity.** Delivery treats one expense claim as one
+   lifecycle (a claim leaves draft once) and versions it as one plus its
+   decided legacy requests. A kind with several submission cycles per source,
+   such as legacy absences (#384), needs a cycle-specific key; the legacy
+   request FKs of delivery rows also cascade on cancellation, which deletes
+   pending absence requests.
+9. Everything in the #295 blockers (storage immutability, abandoned objects,
+   historical drafts), whole-organization cleanup ordering (#306; legacy
+   bindings carry the same employee FK) and the pilot (#328).
+10. The approval write-boundary scanner cannot read sources on Windows. The new
+    writers (`delivery/intents.ts`, the intent expansion in `delivery/store.ts`,
+    maintenance deletes) are registered but were not scanned.
+11. No browser check: the review sections were verified through the real
+    arrival and detail API, not the rendered page.
+
+### Verification (#296)
+
+PostgreSQL 16 (`lib/travel-expenses/expense-review-decision.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+draft/upload/submit actions, exact-item review arrival and inbox detail API,
+expense decision actions and inbox handler, delivery owner, Telegram webhook,
+shared bot attempt and privileged maintenance. Only the session,
+notification fan-out, object storage, the vault, the post-commit fast path and
+the Telegram transport are replaced. 12/12 passing:
+
+- review of the frozen claim (logical dates and entry zone, amounts, receipts,
+  no notes), a receipt-content change shown and held, and a claim submitted
+  before capture held (`evidence_required`) with nothing decided;
+- a web approval recorded from the persisted rows (time from `approved_at`,
+  actor, request outcome, semantic key); the exact retry replays with no
+  evidence or notification; a different command is refused; the history keeps
+  the submitted amount after a later source edit;
+- a rejection at `updated_at` without the reason;
+- no delivery control → no intent and nothing sent; no admission or no capture
+  → a review-only notice and no binding;
+- a real submission commits its intent and sends nothing until the owner runs;
+  the owner sends one bound card (facts, exact review link, no notes or file
+  names) and records the legacy message, binding and status version;
+- a Telegram press decides with an atomic legacy invocation; the redelivered
+  query replays; the same query with another command conflicts; a new query
+  decides nothing; the owner refreshes the card to "Request approved" without
+  controls; the committed press still replays after a source edit;
+- a two-stage chain: the stage-one press is "Approval recorded" with the claim
+  pending and chain-stage time; stage two gets its own card in the recipient's
+  locale; after the web approval both cards reach the final status and the
+  history separates the step from the claim outcome;
+- a web rejection refreshes the delivered card;
+- a changed receipt set, a paused provider, a reassigned request, another
+  tenant and another member all decide nothing; the same card then decides;
+- an injected invocation failure rolls back the whole decision (request, claim,
+  evidence, notification), and the same query then decides freshly;
+- three concurrent deliveries of one press produce one decision;
+- privileged cleanup removes and reports the lifecycle's revision, decision,
+  binding, invocation and delivery work, messages and intents, keeps the other
+  claim, and a late press recreates nothing.
+
+The #295, #288, #290 and #291 suites still pass on the same runner (the #291
+cleanup report now includes `delivery.intents`), and the migration recovery
+check passes with `0093` in the chain. Unit seams: `travel-expense-decision.test.ts`,
+`travel-expense-card.test.ts`, `travel-expense-review.test.ts`, the handler,
+action and maintenance tests.
 
 ## Telegram absence cards with reviewed bindings (#290 / T26)
 

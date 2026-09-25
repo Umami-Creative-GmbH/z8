@@ -183,17 +183,24 @@ async function decideBoundInteraction(
 			{ error, bindingId: callback.bindingId, status: result.status },
 			"Failed to update bound Discord approval card",
 		);
-		notice =
-			result.status === "decided" && result.evidence.assignmentId
-				? await boundDecisionNotice(result, recipient, {
-						kind: "canonical",
-						assignmentId: result.evidence.assignmentId,
-					}).catch(() => null)
-				: null;
+		const reference = decidedReviewReference(result);
+		notice = reference
+			? await boundDecisionNotice(result, recipient, reference).catch(() => null)
+			: null;
 	}
 	return notice
 		? discordApprovalNotice(notice)
 		: { content: "This approval is unavailable. Open Z8 to review your inbox." };
+}
+
+/** The exact item a committed decision's evidence names, canonical or legacy. */
+function decidedReviewReference(result: BoundBotApprovalResult): ApprovalReviewReference | null {
+	if (result.status !== "decided") return null;
+	const { evidence } = result;
+	if ("legacy" in evidence) {
+		return { kind: "compatibility", approvalRequestId: evidence.legacy.approvalRequestId };
+	}
+	return evidence.assignmentId ? { kind: "canonical", assignmentId: evidence.assignmentId } : null;
 }
 
 async function outcomeUnknownReply(recipient: {
@@ -255,9 +262,7 @@ async function updateClickedCard(
 			: undefined;
 	const reference: ApprovalReviewReference | null = tracked
 		? { kind: "compatibility", approvalRequestId: tracked.approvalRequestId }
-		: result.status === "decided" && result.evidence.assignmentId
-			? { kind: "canonical", assignmentId: result.evidence.assignmentId }
-			: null;
+		: decidedReviewReference(result);
 	if (!reference) return null;
 	const notice = await boundDecisionNotice(result, recipient, reference);
 	if (notice && tracked) {

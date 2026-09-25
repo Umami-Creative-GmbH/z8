@@ -77,6 +77,7 @@ import {
 	lockApprovalInvocation,
 	readApprovalPresentationMode,
 	recordApprovalInvocation,
+	requireCanonicalInvocationDecision,
 } from "../evidence/invocation";
 import {
 	type DecisionEvidenceRecord,
@@ -449,7 +450,10 @@ export async function executeAbsenceDecisionInTransaction(
 					domainResult: undefined,
 					commandResult: undefined,
 					replayed: null as LegacyDecisionEvidenceRecord | null,
-					invocation: { replayed: true, evidence } as AbsenceInvocationOutcome,
+					invocation: {
+						replayed: true,
+						evidence: requireCanonicalInvocationDecision(evidence),
+					} as AbsenceInvocationOutcome,
 				};
 			}
 			// A fresh invocation needs current admission, read under the rollout
@@ -1875,7 +1879,11 @@ export async function decideBoundAbsenceInvocation(input: {
 			}),
 		});
 		if (committed) {
-			return { status: "decided", replayed: true, evidence: committed };
+			return {
+				status: "decided",
+				replayed: true,
+				evidence: requireCanonicalInvocationDecision(committed),
+			};
 		}
 	} catch (error) {
 		return classifyBoundAbsenceError(error);
