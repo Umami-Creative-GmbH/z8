@@ -506,7 +506,91 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_record",
 		},
 	],
+	// Owner/admin direct edits in legacy organizations (append ones amend below).
+	"src/lib/time-tracking/admin-work-period-time-edit.ts": [
+		{
+			columns: ["replaces_entry_id", "type"],
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+			operation: "insert",
+			semantic: "correction",
+			table: "time_entry",
+		},
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+			operation: "update",
+			table: "work_period",
+		},
+	],
 	// Completed-work operations (#264) write sources inside the outer work transaction.
+	"src/lib/time-tracking/amend-completed-work.ts": [
+		{
+			columns: ["replaces_entry_id", "type"],
+			functionName: "amendCompletedWork",
+			operation: "insert",
+			semantic: "correction",
+			table: "time_entry",
+		},
+		{
+			columns: ["is_superseded", "superseded_by_id"],
+			functionName: "amendCompletedWork",
+			operation: "update",
+			semantic: "correction_lifecycle",
+			table: "time_entry",
+		},
+		{
+			columns: ["duration_minutes", "end_at", "start_at"],
+			functionName: "amendCompletedWork",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "amendCompletedWork",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
+			functionName: "amendCompletedWork",
+			operation: "update",
+			table: "work_period",
+		},
+	],
 	"src/lib/time-tracking/close-active-work.ts": [
 		{
 			columns: [
