@@ -13,7 +13,8 @@ import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
-import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
+import { updateWorkPeriodProject as updateWorkPeriodProjectAction } from "../actions";
+import { createTimeEntry } from "./entry-helpers";
 import { logger } from "./shared";
 
 export async function approveWorkPeriod(input: {
@@ -406,79 +407,12 @@ export async function updateTimeEntryNotes(
 	}
 }
 
+/** One implementation: the calendar action owns project changes (#286). */
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
-	const session = await getCurrentSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	try {
-		const [selectedWorkPeriod] = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.employeeId, currentEmployee.id),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.limit(1);
-
-		if (!selectedWorkPeriod) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return {
-				success: false,
-				error: "You can only update your own work periods",
-			};
-		}
-
-		if (projectId) {
-			const projectValidation = await validateProjectAssignment(
-				projectId,
-				currentEmployee.id,
-				currentEmployee.teamId,
-				currentEmployee.organizationId,
-			);
-			if (!projectValidation.isValid) {
-				return {
-					success: false,
-					error: projectValidation.error || "Cannot assign to this project",
-				};
-			}
-		}
-
-		await db
-			.update(workPeriod)
-			.set({
-				projectId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
-
-		return { success: true, data: { workPeriodId, projectId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to update work period project");
-		return { success: false, error: "Failed to update project assignment" };
-	}
+	return updateWorkPeriodProjectAction(workPeriodId, projectId);
 }

@@ -14,6 +14,7 @@
       "card": {
         "absenceTitle": "Absence approval request",
         "boundHint": "Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",
+        "reviewOnlyHint": "Approve or reject this request in Z8. It cannot be decided from this message.",
         "approve": "Approve",
         "reject": "Reject",
         "unavailable": "Unavailable",
