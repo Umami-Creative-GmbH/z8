@@ -9,6 +9,7 @@ import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import type { AppendAssuranceLimitationCode } from "@/lib/time-tracking/append-assurance";
 import {
 	ClockingAccessError,
 	clockingService,
@@ -127,6 +128,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 				isValid: verification.isValid,
 				calculatedHash: verification.calculatedHash,
 				storedHash: verification.storedHash,
+				// Reproducing one hash says nothing about lineage, row identity or authorship.
+				claim: "hash_reproducibility",
+				limitations: [
+					"hash_commits_event_fields_only",
+					"original_actor_and_capture_unproven",
+				] satisfies AppendAssuranceLimitationCode[],
 			},
 		});
 	} catch (error) {

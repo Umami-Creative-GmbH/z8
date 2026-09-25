@@ -5,6 +5,13 @@ import {
 	type AuditPackRepository,
 } from "../audit-pack-orchestrator";
 
+const appendAssurance = {
+	employeeCount: 2,
+	wholeHistory: 1,
+	none: 1,
+	limitations: ["lineage_unresolved"],
+};
+
 function createRepositoryMocks() {
 	const setStatus: AuditPackRepository["setStatus"] = vi.fn().mockResolvedValue(undefined);
 	const failRequest: AuditPackRepository["failRequest"] = vi.fn().mockResolvedValue(undefined);
@@ -42,6 +49,7 @@ function createDependencyMocks() {
 			timelineEventCount: 3,
 			expandedNodeCount: 1,
 		},
+		appendAssurance,
 	});
 	const harden: AuditPackOrchestratorDependencies["harden"] = vi.fn().mockResolvedValue({
 		auditPackageId: "pkg-1",
@@ -106,6 +114,7 @@ describe("AuditPackOrchestrator", () => {
 			approvalEventCount: 1,
 			timelineEventCount: 3,
 			expandedNodeCount: 1,
+			appendAssurance,
 		});
 	});
 

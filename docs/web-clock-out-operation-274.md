@@ -206,9 +206,9 @@ now uses the shared legacy closer (`clockingService.clockOut`, the path of direc
 HTTP, on-behalf and bots). Run together, the operation, #273 and #272 suites passed
 **70/70**. The full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`,
 fresh container, migration recovery check and full chain) passed **35 files / 575
-tests**. That run predates the `dev` merge that renumbered this migration from
-`0081` to `0082`; after the merge the fresh chain and the three clocking suites
-(70/70) passed again. The label-owned containers were verified and removed.
+tests**. That run predates the `dev` merges that renumbered this migration from
+`0081` to `0083`; after each merge the fresh chain and the three clocking suites
+passed again. The label-owned containers were verified and removed.
 
 Mutation: flooring the duration and making omission clear attribution failed 5
 tests (graph, rounding, attribution, allocation rollback and approval).
