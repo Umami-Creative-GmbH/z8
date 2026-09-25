@@ -175,6 +175,29 @@ describe("TimeClockPopover", () => {
 		);
 	});
 
+	it("explains a clock-in held for time history review without server details", async () => {
+		clockInMock.mockResolvedValue({
+			success: false,
+			code: "append_review_required",
+			error: "Server-side review message",
+		});
+		render(<TimeClockPopover />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+		fireEvent.click(getPopoverClockButton("Clock In"));
+
+		await waitFor(() =>
+			expect(toastMocks.error).toHaveBeenCalledWith(
+				"Clock-in needs a review of your time history",
+				{
+					description:
+						"Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+				},
+			),
+		);
+		expect(toastMocks.success).not.toHaveBeenCalled();
+	});
+
 	it("submits remote when selected before quick clock-in", async () => {
 		render(<TimeClockPopover />);
 

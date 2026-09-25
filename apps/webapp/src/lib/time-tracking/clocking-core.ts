@@ -10,9 +10,19 @@ import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
+import type { AppendScope } from "./append-lineage";
 import { calculateHash } from "./blockchain";
+import {
+	type AppendPredecessor,
+	admitTimeEntryAppend,
+	type TimeEntryAppendAdmissionResult,
+	TimeEntryAppendReviewRequiredError,
+} from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import type { WorkTransactionContext } from "./web-clock-out-transaction";
+import type { WorkTransactionScope } from "./work-transaction";
+
+export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 
 export class ClockingConflictError extends Error {
 	constructor(message: string) {
@@ -57,7 +67,7 @@ type ClockingInput = {
 	notes?: string;
 	location?: string;
 	transaction?: unknown;
-	coordination?: WorkTransactionContext;
+	coordination?: WorkTransactionScope;
 };
 
 type ClockInInput = ClockingInput & {
@@ -122,6 +132,11 @@ export type ClockingStore = {
 		employeeId: string,
 		organizationId: string,
 	): Promise<string | null>;
+	/** Evidence-based admission; used only when the outer scope has adopted appends. */
+	admitAppend?(
+		scope: AppendScope,
+		operation: TimeEntryAppendOperation,
+	): Promise<TimeEntryAppendAdmissionResult>;
 	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
 	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
 	closeActivePeriod(
@@ -136,7 +151,7 @@ export type ClockingDependencies = {
 	transaction<T>(callback: (store: ClockingStore) => Promise<T>): Promise<T>;
 	storeForTransaction?: (transaction: unknown) => ClockingStore;
 	storeForCoordinatedTransaction?: (
-		context: WorkTransactionContext,
+		context: WorkTransactionScope,
 	) => ClockingStore;
 	findApprovedMembership?: (
 		userId: string,
@@ -161,14 +176,21 @@ export type ClockingDependencies = {
 	) => Promise<void>;
 };
 
-function entryValues(
-	input: ClockingInput,
-	type: "clock_in" | "clock_out",
-	previousHash: string | null,
-) {
+/**
+ * Legacy writers link only the latest-created hash. An admitted append links its
+ * exact predecessor, persisted as both the ID and the hash link.
+ */
+type EntryLink =
+	| { kind: "legacy"; previousHash: string | null }
+	| { kind: "admitted"; predecessor: AppendPredecessor | null };
+
+function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link: EntryLink) {
 	const timestamp = dateFromInstant(input.action.instant);
+	const previousHash =
+		link.kind === "admitted" ? (link.predecessor?.hash ?? null) : link.previousHash;
 	return {
 		...(input.actionId ? { id: input.actionId } : {}),
+		...(link.kind === "admitted" ? { previousEntryId: link.predecessor?.id ?? null } : {}),
 		employeeId: input.employeeId,
 		organizationId: input.organizationId,
 		type,
@@ -284,13 +306,37 @@ export function createClockingService(deps: ClockingDependencies) {
 				) {
 					throw new ClockingConflictError("Active work period already exists");
 				}
-				const entry = await store.insertEntry(
-					entryValues(
-						input,
-						"clock_in",
-						await store.getLatestHash(input.employeeId, input.organizationId),
-					),
-				);
+				let entry: Entry;
+				if (input.coordination?.admission === "append") {
+					if (!store.admitAppend) {
+						throw new Error("Append admission is unavailable");
+					}
+					const appendAdmission = await store.admitAppend(
+						{ organizationId: input.organizationId, employeeId: input.employeeId },
+						"live_clock_in",
+					);
+					if (appendAdmission.kind === "review_required") {
+						throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
+					}
+					const values = entryValues(input, "clock_in", {
+						kind: "admitted",
+						predecessor: appendAdmission.append.predecessor,
+					});
+					entry = await store.insertEntry(values);
+					await appendAdmission.append.record({
+						id: entry.id,
+						hash: values.hash,
+						previousEntryId: values.previousEntryId ?? null,
+						previousHash: values.previousHash,
+					});
+				} else {
+					entry = await store.insertEntry(
+						entryValues(input, "clock_in", {
+							kind: "legacy",
+							previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+						}),
+					);
+				}
 				const period = await store.insertActivePeriod({
 					employeeId: input.employeeId,
 					organizationId: input.organizationId,
@@ -367,11 +413,10 @@ export function createClockingService(deps: ClockingDependencies) {
 						})
 					: undefined;
 				const entry = await store.insertEntry(
-					entryValues(
-						input,
-						"clock_out",
-						await store.getLatestHash(input.employeeId, input.organizationId),
-					),
+					entryValues(input, "clock_out", {
+						kind: "legacy",
+						previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+					}),
 				);
 				const period = await store.closeActivePeriod(
 					activePeriod.id,
@@ -528,6 +573,7 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				.limit(1);
 			return latest?.hash ?? null;
 		},
+		admitAppend: (scope, operation) => admitTimeEntryAppend(tx, scope, operation),
 		insertEntry: async (values) => {
 			const [entry] = await tx
 				.insert(timeEntry)

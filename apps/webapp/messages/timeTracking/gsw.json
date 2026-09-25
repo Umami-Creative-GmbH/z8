@@ -61,6 +61,8 @@
     "deadline": "Frist",
     "errors": {
       "clockInFailed": "Iistämple nöd möglich",
+      "appendReviewRequired": "Iistemple bruucht e Prüefig vo dim Ziitverlauf",
+      "appendReviewRequiredDesc": "Dini bisherige Ziiteiträg hend nöd chöne verifiziert werde, drum isch s Iistemple nöd gspeicheret worde. Bitte wend di a dini Administration.",
       "clockOutFailed": "Usstämple nöd möglich",
       "holidayBlocked": "Am {holidayName} chasch nöd usstämple",
       "holidayBlockedDesc": "De Tag isch als Fiirtig markiert und Ziiteiträg sind nöd erlaubt",

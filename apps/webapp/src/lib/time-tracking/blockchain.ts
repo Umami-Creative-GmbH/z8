@@ -137,7 +137,11 @@ export async function validateChain(entries: TimeEntry[]): Promise<boolean> {
  * Verify a single time entry's hash integrity
  * Returns true if the entry's hash matches the calculated hash
  */
-export function verifyHash(entry: TimeEntry): {
+export function verifyHash(
+	entry: Pick<TimeEntry, "employeeId" | "timestamp" | "hash" | "previousHash"> & {
+		type: string;
+	},
+): {
 	isValid: boolean;
 	calculatedHash: string;
 	storedHash: string;

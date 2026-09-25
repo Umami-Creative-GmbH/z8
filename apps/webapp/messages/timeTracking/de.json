@@ -61,6 +61,8 @@
     "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Fehler beim Einstempeln",
+      "appendReviewRequired": "Einstempeln erfordert eine Prüfung Ihres Zeitverlaufs",
+      "appendReviewRequiredDesc": "Ihre bisherigen Zeiteinträge konnten nicht verifiziert werden, daher wurde das Einstempeln nicht gespeichert. Bitte wenden Sie sich an Ihre Administration.",
       "clockOutFailed": "Fehler beim Ausstempeln",
       "holidayBlocked": "Ausstempeln am {holidayName} nicht möglich",
       "holidayBlockedDesc": "Dieser Tag ist als Feiertag markiert und Zeiteinträge sind nicht erlaubt",

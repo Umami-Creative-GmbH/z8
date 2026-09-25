@@ -38,6 +38,7 @@ import {
 	team,
 	teamMembership,
 	timeEntry,
+	timeEntryAppendPosition,
 	timeRecord,
 	workCategory,
 	workCategorySet,
@@ -3129,6 +3130,15 @@ export async function clearOrganizationTimeData(
 			where: inArray(timeEntry.employeeId, employeeIds),
 		});
 		if (timeEntriesToDelete.length > 0) {
+			// The append position references its tip entry; remove it with the history.
+			await db
+				.delete(timeEntryAppendPosition)
+				.where(
+					and(
+						eq(timeEntryAppendPosition.organizationId, organizationId),
+						inArray(timeEntryAppendPosition.employeeId, employeeIds),
+					),
+				);
 			await db
 				.delete(timeEntry)
 				.where(inArray(timeEntry.employeeId, employeeIds));

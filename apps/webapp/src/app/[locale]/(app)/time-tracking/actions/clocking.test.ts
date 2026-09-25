@@ -2,7 +2,11 @@ import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { ValidationError } from "@/lib/effect/errors";
-import { createClockingService } from "@/lib/time-tracking/clocking-service";
+import {
+	createClockingService,
+	TimeEntryAppendReviewRequiredError,
+} from "@/lib/time-tracking/clocking-service";
+import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
@@ -56,6 +60,7 @@ const mockState = vi.hoisted(() => ({
 	findTeamMemberships: vi.fn(),
 	findTeams: vi.fn(),
 	transaction: vi.fn(),
+	withWebClockInTransaction: vi.fn(),
 	acquireApprovalGate: vi.fn(),
 	updateReturning: vi.fn(),
 	updateSet: vi.fn(),
@@ -235,6 +240,13 @@ vi.mock("@/lib/billing/guard", () => ({
 
 vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
+}));
+
+// The real clock-in coordinator is exercised on PostgreSQL by
+// clocking.web-clock-in.integration.test.ts.
+vi.mock("@/lib/time-tracking/web-clock-in-transaction", () => ({
+	withWebClockInTransaction: (...args: unknown[]) =>
+		mockState.withWebClockInTransaction(...args),
 }));
 
 vi.mock("@/lib/time-tracking/clocking-service", async (importOriginal) => ({
@@ -860,11 +872,21 @@ function createManualTimeEntry(
 }
 
 describe("clockIn", () => {
+	const clockInScope = sealWorkTransactionScope({
+		db: {} as never,
+		admission: "legacy" as const,
+		assertEmployee: () => undefined,
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T09:00:00.000Z"));
 
+		mockState.withWebClockInTransaction.mockImplementation(
+			async (_input: unknown, operation: (scope: unknown) => Promise<unknown>) =>
+				operation(clockInScope),
+		);
 		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
 		mockState.getCurrentEmployee.mockResolvedValue({
 			id: "employee-1",
@@ -970,6 +992,42 @@ describe("clockIn", () => {
 			expect.objectContaining({
 				workLocationType: "office",
 			}),
+		);
+	});
+
+	it("runs the clocking service inside the coordinated clock-in transaction", async () => {
+		await clockIn("office");
+
+		expect(mockState.withWebClockInTransaction).toHaveBeenCalledWith(
+			{ organizationId: "org-1", employeeId: "employee-1", userId: "user-1" },
+			expect.any(Function),
+		);
+		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
+			expect.objectContaining({ coordination: clockInScope }),
+		);
+	});
+
+	it("returns only a review code to the user when append history needs review", async () => {
+		const requirement = {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			reasons: [{ kind: "fork" as const, predecessorId: "a", successorIds: ["b", "c"] }],
+		};
+		mockState.clockingClockIn.mockRejectedValue(
+			new TimeEntryAppendReviewRequiredError(requirement),
+		);
+
+		const result = await clockIn("office");
+
+		expect(result).toEqual({
+			success: false,
+			code: "append_review_required",
+			error:
+				"Your time history needs review before you can clock in. Please contact your administrator.",
+		});
+		expect(mockState.logger.warn).toHaveBeenCalledWith(
+			{ appendReviewRequirement: requirement },
+			"Clock in held for append history review",
 		);
 	});
 
