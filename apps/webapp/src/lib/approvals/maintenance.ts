@@ -309,6 +309,17 @@ export async function deleteApprovalInTransaction(
 	// FKs also prevent a late capture from recreating purged evidence.
 	const evidenceScope = sql`organization_id = ${organizationId}
 		and workflow_id = any(${sql.param(workflowIds)}::uuid[])`;
+	// Delivery work and tracked messages follow the same workflow links. Delete
+	// them explicitly, before the escalation journal their replacement delivery
+	// work cascades from, so the audit records the work and the remote message
+	// identities; a late send completing afterwards cannot record a message (its
+	// FKs fail).
+	const deliveryWork = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_work where ${evidenceScope} returning id
+		`);
+	const deliveryMessages = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_message where ${evidenceScope} returning id
+		`);
 	// Escalation journals follow the same verified workflow links; their FKs to the
 	// workflow, its assignments and events likewise prevent late recreation.
 	const escalationTransfers = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -326,15 +337,6 @@ export async function deleteApprovalInTransaction(
 			`)),
 		);
 	}
-	// Delivery work and tracked messages follow the same workflow links. Delete
-	// them explicitly so the audit records the remote message identities; a late
-	// send completing afterwards cannot record a message (its FKs fail).
-	const deliveryWork = workflowIds.length === 0 ? [] : await deletedIds(sql`
-			delete from approval_delivery_work where ${evidenceScope} returning id
-		`);
-	const deliveryMessages = workflowIds.length === 0 ? [] : await deletedIds(sql`
-			delete from approval_delivery_message where ${evidenceScope} returning id
-		`);
 	// Invocation associations reference their decision and binding; delete them
 	// first so the audit records them and a late redelivery cannot replay.
 	const invocations = workflowIds.length === 0 ? [] : await deletedIds(sql`

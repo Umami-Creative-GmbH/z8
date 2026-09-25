@@ -69,11 +69,19 @@ export type ApprovalRefreshResult =
  */
 export interface ApprovalDeliveryAdapter {
 	provider: ApprovalDeliveryProvider;
+	/**
+	 * The channel's current escalation-delivery preference (#251 §4.3). It
+	 * freezes a transfer's intended channels at expansion and is rechecked by
+	 * `sendInitial` for every replacement card.
+	 */
+	acceptsEscalationDelivery(organizationId: string): Promise<boolean>;
 	sendInitial(input: {
 		organizationId: string;
 		approvalRequestId: string;
 		recipientEmployeeId: string;
 		recipientUserId: string;
+		/** `replacement`: the card of an escalation's replacement assignment (#300). */
+		purpose: "initial" | "replacement";
 	}): Promise<ApprovalInitialSendResult>;
 	refresh(input: {
 		organizationId: string;
@@ -82,7 +90,9 @@ export interface ApprovalDeliveryAdapter {
 	}): Promise<ApprovalRefreshResult>;
 }
 
-async function loadAdapter(provider: ApprovalDeliveryProvider): Promise<ApprovalDeliveryAdapter> {
+export async function loadApprovalDeliveryAdapter(
+	provider: ApprovalDeliveryProvider,
+): Promise<ApprovalDeliveryAdapter> {
 	switch (provider) {
 		case "telegram":
 			return (await import("@/lib/telegram/approval-delivery")).telegramApprovalDeliveryAdapter;
@@ -159,7 +169,7 @@ function attentionCondition(
 		},
 		attempts: [
 			{
-				kind: work.effect === "initial" ? "delivery" : "retirement",
+				kind: work.effect === "refresh" ? "retirement" : "delivery",
 				channel: work.provider,
 				reference: work.id,
 				outcome,
@@ -295,10 +305,11 @@ async function finishSimply(
 }
 
 /**
- * Initial card for one assignment. Current state is rechecked before any
- * fresh details leave: a no-longer-pending assignment is obsolete, and
- * preferences, membership/entitlement, integration enablement and the
- * destination are checked at send time.
+ * Initial or replacement card for one assignment. Current state is rechecked
+ * before any fresh details leave: a no-longer-pending assignment is obsolete
+ * (for a replacement: authority moved on), and preferences,
+ * membership/entitlement, integration and escalation-delivery enablement and
+ * the destination are checked at send time.
  */
 async function processInitial(
 	work: ClaimedApprovalDeliveryWork,
@@ -353,6 +364,7 @@ async function processInitial(
 		approvalRequestId: state.approvalRequestId,
 		recipientEmployeeId: work.recipientEmployeeId,
 		recipientUserId: recipient.userId,
+		purpose: work.effect === "replacement" ? "replacement" : "initial",
 	});
 	if (sent.kind === "suppressed") return finishSimply(work, "suppressed", sent.reason);
 	if (sent.kind === "failed") {
@@ -388,10 +400,14 @@ async function processInitial(
 	});
 	// The card was prepared from state read before sending. If the request
 	// moved on meanwhile, this message is stale: schedule its retirement.
+	// Escalation retires its own stale replacement card.
 	if (recorded.kind !== "purged") {
 		await scheduleApprovalMessageRefreshes({
 			organizationId: work.organizationId,
 			workflowId: work.workflowId,
+			...(work.escalationTransferId
+				? { assignmentId: work.assignmentId, escalationTransferId: work.escalationTransferId }
+				: {}),
 		});
 	}
 	return finished ? "delivered" : "lease_lost";
@@ -430,6 +446,20 @@ async function processRefresh(
 		organizationId: work.organizationId,
 	});
 	const decided = state.assignmentStatus === "approved" || state.assignmentStatus === "rejected";
+	// A replaced assignment (escalation or reassignment) says so on its cards.
+	const [successor] = decided
+		? []
+		: await db
+				.select({ id: approvalStageAssignment.id })
+				.from(approvalStageAssignment)
+				.where(
+					and(
+						eq(approvalStageAssignment.organizationId, work.organizationId),
+						eq(approvalStageAssignment.workflowId, work.workflowId),
+						eq(approvalStageAssignment.reassignedFromAssignmentId, work.assignmentId),
+					),
+				)
+				.limit(1);
 	const evidence =
 		display && decided
 			? ((
@@ -440,7 +470,7 @@ async function processRefresh(
 				).find((record) => record.assignmentId === work.assignmentId) ?? null)
 			: null;
 	const notice = await approvalStatusNotice(
-		{ workflowStatus: state.workflowStatus, evidence },
+		{ workflowStatus: state.workflowStatus, evidence, reassigned: successor !== undefined },
 		display,
 		work.organizationId,
 		approvalDeliveryMessageReviewReference(message),
@@ -485,41 +515,24 @@ export interface ApprovalDeliveryRunSummary {
 }
 
 /**
- * One bounded, organization-scoped delivery pass: expand new lifecycle
- * intents into work, lease due work (including expired leases of crashed
- * workers) and execute it. Callers supply scope and limits only.
+ * Executes claimed work through the shared transport and tracking, whichever
+ * owner claimed it. `now` pins the clock in tests; production reads it per
+ * attempt so retry intervals are measured from the actual attempt.
  */
-export async function processApprovalDeliveries(input: {
-	organizationId: string;
-	limit?: number;
-	workflowId?: string;
-	now?: Instant;
-}): Promise<ApprovalDeliveryRunSummary> {
-	const limit = input.limit ?? DEFAULT_APPROVAL_DELIVERY_BATCH_LIMIT;
-	const expansion = await expandApprovalDeliveryIntents({
-		organizationId: input.organizationId,
-		limit,
-		...(input.workflowId ? { workflowId: input.workflowId } : {}),
-	});
-	// Tests pin one instant; production reads the clock per attempt so retry
-	// intervals are measured from the actual attempt.
-	const clock = () => input.now ?? systemClock.nowInstant();
-	const now = clock();
-	const claimed = await claimApprovalDeliveryWork({
-		organizationId: input.organizationId,
-		limit,
-		now,
-		...(input.workflowId ? { workflowId: input.workflowId } : {}),
-	});
+export async function executeApprovalDeliveryWork(
+	claimed: readonly ClaimedApprovalDeliveryWork[],
+	now?: Instant,
+): Promise<Partial<Record<ApprovalDeliveryOutcome, number>>> {
+	const clock = () => now ?? systemClock.nowInstant();
 	const outcomes: Partial<Record<ApprovalDeliveryOutcome, number>> = {};
 	for (const work of claimed) {
 		let outcome: ApprovalDeliveryOutcome;
 		try {
-			const adapter = await loadAdapter(work.provider);
+			const adapter = await loadApprovalDeliveryAdapter(work.provider);
 			outcome =
-				work.effect === "initial"
-					? await processInitial(work, adapter, clock)
-					: await processRefresh(work, adapter, clock);
+				work.effect === "refresh"
+					? await processRefresh(work, adapter, clock)
+					: await processInitial(work, adapter, clock);
 		} catch (error) {
 			// Unexpected failure, possibly after the provider accepted the send:
 			// retry on the schedule as ambiguous (it may duplicate) instead of
@@ -537,6 +550,35 @@ export async function processApprovalDeliveries(input: {
 		}
 		outcomes[outcome] = (outcomes[outcome] ?? 0) + 1;
 	}
+	return outcomes;
+}
+
+/**
+ * One bounded, organization-scoped delivery pass: expand new lifecycle
+ * intents into work, lease due work (including expired leases of crashed
+ * workers) and execute it. Callers supply scope and limits only. Work of
+ * escalation's replacement delivery (#300) is left to escalation.
+ */
+export async function processApprovalDeliveries(input: {
+	organizationId: string;
+	limit?: number;
+	workflowId?: string;
+	now?: Instant;
+}): Promise<ApprovalDeliveryRunSummary> {
+	const limit = input.limit ?? DEFAULT_APPROVAL_DELIVERY_BATCH_LIMIT;
+	const expansion = await expandApprovalDeliveryIntents({
+		organizationId: input.organizationId,
+		limit,
+		...(input.workflowId ? { workflowId: input.workflowId } : {}),
+	});
+	const claimed = await claimApprovalDeliveryWork({
+		organizationId: input.organizationId,
+		owner: "delivery",
+		limit,
+		now: input.now ?? systemClock.nowInstant(),
+		...(input.workflowId ? { workflowId: input.workflowId } : {}),
+	});
+	const outcomes = await executeApprovalDeliveryWork(claimed, input.now);
 	return {
 		organizationId: input.organizationId,
 		expanded: expansion.expanded,

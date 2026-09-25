@@ -49,6 +49,8 @@
       "status": {
         "withdrawnTitle": "Demande retirée",
         "withdrawn": "Cette demande a été retirée. Aucune décision n'est nécessaire depuis cette carte.",
+        "reassignedTitle": "Réattribuée",
+        "reassigned": "Cette approbation a été réattribuée à une autre personne. Aucune décision n'est nécessaire de votre part depuis cette carte, et aucune n'a été prise ici. Consultez son statut actuel dans Z8.",
         "inactiveTitle": "Plus d'action requise",
         "inactive": "Cette demande ne nécessite plus votre décision depuis cette carte. Aucune décision n'a été prise ici. Consultez son statut actuel dans Z8.",
         "currentApproved": "Statut actuel de la demande : approuvée.",

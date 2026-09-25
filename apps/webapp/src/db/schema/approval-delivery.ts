@@ -13,6 +13,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
+import { approvalEscalationTransfer } from "./approval-escalation";
 import { approvalReviewBinding } from "./approval-evidence";
 import { approvalOutbox, approvalStageAssignment, approvalWorkflow } from "./approval-workflow";
 import { approvalWorkflowTypeEnum } from "./enums";
@@ -23,8 +24,11 @@ import { currentTimestamp } from "./timestamp";
 export const APPROVAL_DELIVERY_PROVIDERS = ["telegram"] as const;
 export type ApprovalDeliveryProvider = (typeof APPROVAL_DELIVERY_PROVIDERS)[number];
 
-/** `initial` sends a card for one assignment; `refresh` updates one sent message. */
-export const APPROVAL_DELIVERY_EFFECTS = ["initial", "refresh"] as const;
+/**
+ * `initial` sends a card for one assignment; `replacement` sends the card of an
+ * escalation's replacement assignment (#300); `refresh` updates one sent message.
+ */
+export const APPROVAL_DELIVERY_EFFECTS = ["initial", "replacement", "refresh"] as const;
 export type ApprovalDeliveryEffect = (typeof APPROVAL_DELIVERY_EFFECTS)[number];
 
 export const APPROVAL_DELIVERY_STATUSES = [
@@ -143,6 +147,9 @@ export const approvalDeliveryMessage = pgTable(
 // One logical delivery effect per row, with a stable dedupe identity. Workers
 // lease rows (`claim_token`, `lease_expires_at`) and complete them only while
 // their token still holds; an expired lease is recovered by the next claim.
+// Work linked to an escalation transfer (#300) belongs to escalation's
+// replacement delivery; the delivery owner executes all other work. A refresh
+// has one row whichever owner planned it first (shared dedupe identity).
 export const approvalDeliveryWork = pgTable(
 	"approval_delivery_work",
 	{
@@ -158,6 +165,8 @@ export const approvalDeliveryWork = pgTable(
 		assignmentId: uuid("assignment_id").notNull(),
 		recipientEmployeeId: uuid("recipient_employee_id").notNull(),
 		messageId: uuid("message_id"),
+		/** The committed transfer whose replacement delivery owns this work. */
+		escalationTransferId: uuid("escalation_transfer_id"),
 		dedupeKey: text("dedupe_key").notNull(),
 		status: text("status").$type<ApprovalDeliveryStatus>().default("pending").notNull(),
 		availableAt: timestamp("available_at", { withTimezone: true }).defaultNow().notNull(),
@@ -178,13 +187,16 @@ export const approvalDeliveryWork = pgTable(
 	(table) => [
 		uniqueIndex("approvalDeliveryWork_org_dedupe_idx").on(table.organizationId, table.dedupeKey),
 		index("approvalDeliveryWork_org_workflow_idx").on(table.organizationId, table.workflowId),
+		index("approvalDeliveryWork_org_transfer_idx")
+			.on(table.organizationId, table.escalationTransferId)
+			.where(sql`escalation_transfer_id IS NOT NULL`),
 		index("approvalDeliveryWork_due_idx")
 			.on(table.organizationId, table.availableAt)
 			.where(sql`status IN ('pending', 'processing')`),
 		check("approval_delivery_work_provider_check", sql`${table.provider} IN ('telegram')`),
 		check(
 			"approval_delivery_work_effect_check",
-			sql`(${table.effect} = 'initial' AND ${table.messageId} IS NULL) OR (${table.effect} = 'refresh' AND ${table.messageId} IS NOT NULL)`,
+			sql`(${table.effect} = 'initial' AND ${table.messageId} IS NULL AND ${table.escalationTransferId} IS NULL) OR (${table.effect} = 'replacement' AND ${table.messageId} IS NULL AND ${table.escalationTransferId} IS NOT NULL) OR (${table.effect} = 'refresh' AND ${table.messageId} IS NOT NULL)`,
 		),
 		check(
 			"approval_delivery_work_status_check",
@@ -209,6 +221,11 @@ export const approvalDeliveryWork = pgTable(
 			name: "approval_delivery_work_message_fk",
 			columns: [table.messageId, table.organizationId],
 			foreignColumns: [approvalDeliveryMessage.id, approvalDeliveryMessage.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "approval_delivery_work_escalation_transfer_fk",
+			columns: [table.escalationTransferId, table.organizationId],
+			foreignColumns: [approvalEscalationTransfer.id, approvalEscalationTransfer.organizationId],
 		}).onDelete("cascade"),
 		foreignKey({
 			name: "approval_delivery_work_recipient_fk",

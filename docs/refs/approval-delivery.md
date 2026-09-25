@@ -40,8 +40,8 @@ Telegram adapter                                        lib/telegram/approval-de
   workflow, so the same card is never sent twice. A legacy request (for example
   a policy fallback) keeps the old path.
 - Replacement assignments (`reassigned_from_assignment_id`) belong to
-  escalation's replacement delivery (#300). The owner does refresh the messages
-  of the assignment they replaced.
+  escalation's replacement delivery ([#300](#escalation-replacement-delivery--300--t36)).
+  The owner does refresh the messages of the assignment they replaced.
 
 ## Sending and refreshing
 
@@ -137,7 +137,7 @@ canonical absence submissions then send no Telegram card at all.
    `cron:approval-delivery` nor kick the owner; delivery then waits for an
    upgraded worker. Insert controls only after every instance is upgraded.
 3. **Legacy authority** (#384). The owner delivers canonical absences only.
-4. **Escalation replacement delivery** (#300) is not part of this slice.
+4. **Escalation replacement delivery** is #300 (see below).
 5. **In-place material changes** without a workflow transition commit no
    intent, so the card is not refreshed. Pressing it decides nothing.
 6. **Untracked duplicates.** A crash between Telegram's acceptance and tracking
@@ -197,3 +197,151 @@ transport (`fetch`). 17/17 passing:
 
 Unit seams: `delivery/schedule.test.ts`, `telegram/delivery-outcome.test.ts`,
 `bot-platform/approval-status-notice.test.ts`, `maintenance.test.ts`.
+
+## Escalation replacement delivery — #300 / T36
+
+A committed escalation transfer (#298) gets its replacement card and the
+retirement of the former assignment's cards from escalation's own delivery
+pass. The pass reuses this owner's transport, message tracking, leases, retry
+schedule and attention. It is inactive wherever no delivery control exists.
+
+```text
+scheduled/human transfer (one transaction)                  escalation/transfer.ts
+  workflow escalate → journal row + immutable delivery event
+after commit: kickApprovalDelivery (best effort) · cron:approval-delivery (every minute)
+
+processEscalationReplacementDeliveries(org, limit)      escalation/replacement-delivery.ts
+  expand pending canonical events (row-locked until their work commits)
+    channels  = delivery controls active at the transfer ∩ escalation delivery enabled now
+    replacement  one per channel             dedupe replacement:<transfer>:<provider>
+    retirement   per tracked former message  dedupe refresh:<message>:<version>  (shared)
+  cancel replacement work whose assignment is no longer pending
+  lease due escalation work → the shared executor (owner.ts)
+```
+
+### Ownership
+
+- `approval_delivery_work.escalation_transfer_id` (migration `0089`) links work
+  to the transfer whose delivery owns it. Escalation claims only linked work,
+  and the delivery owner claims only unlinked work. Both claim under the same
+  organization lock, and at most one refresh per message is in flight.
+- Effect `replacement` sends the replacement assignment's card. A CHECK ties
+  it to a transfer; `initial` work never carries one.
+- A refresh has the same dedupe identity whichever owner plans it. The
+  retirement that escalation plans at expansion and the refresh that the
+  delivery owner plans from the transition's outbox row are one row with one
+  executor: whoever planned it first. Later status refreshes (after the
+  replacement or anyone else decides) come from the delivery owner as before,
+  for former and replacement cards alike.
+- Pausing escalation automation stops new transfers only. Committed transfers
+  keep their delivery and recovery.
+
+### Expansion and frozen channels
+
+- Each event is expanded exactly once. The intended channels are frozen at
+  that expansion. They are the providers whose delivery control for the kind
+  was activated at or before the transfer, and whose escalation-delivery
+  preference (`telegram_bot_config.enable_escalations`) is on at that moment.
+  Enabling escalations later adds no channel to an expanded transfer.
+- A crash during expansion rolls it back. The event stays `pending` and the
+  next pass expands it. Expansion never repeats the transfer.
+- The former assignment's tracked cards are retired whatever the channels,
+  including when no replacement channel is intended.
+
+### Sending
+
+- Before sending, the shared executor rechecks:
+  - the replacement assignment is still pending (authority did not move on);
+  - the recipient is an active employee;
+  - the `approval_request_submitted` Telegram preference is on;
+  - the bot is active and has approvals enabled;
+  - for replacements only, the current escalation-delivery preference
+    (`escalations_disabled` → `suppressed`).
+
+  The shared presentation checks membership and entitlement and binds the
+  card to the replacement assignment.
+- Outcomes, retries (1 min, 5 min, 30 min, 2 h, 12 h), `awaiting_repair`,
+  exhaustion and explicit recovery (**Retry delivery**, destination repair)
+  follow the table above. Attention is raised on the replacement assignment.
+  Recovery kicks both passes. Delivered work is never resent.
+- Replacement work is cancelled as `obsolete` if, before sending, its
+  assignment is decided or transferred again, or the request settles. A
+  replacement card that went stale while in flight is tracked, and escalation
+  schedules its retirement.
+- Duplicate and late sends (lease takeover) keep their own message rows, so
+  every known card is refreshed later. After a crash between Telegram's
+  acceptance and tracking the card is sent again; only the second identity is
+  known.
+
+### Former cards
+
+A former assignee's card is edited into **Reassigned**. It says the approval
+was reassigned and that no decision is needed or was made here, and keeps the
+review link. It never names the replacement or the outcome. A recipient who is
+no longer an active member gets the generic inactive notice. Either owner uses
+this wording for any replaced assignment (escalation or reassignment). A press
+on a former card that is still on screen decides nothing; the replacement
+decides through its own bound card.
+
+### Activation blockers (#300, unresolved)
+
+1. Apply `0089` after `0088` through the authorized deployment. It has run only
+   on the disposable PostgreSQL 16 database.
+2. Everything under the #291 blockers above, the escalation activation blockers
+   in `escalation-transfer.md` (ownership writer, drained cutover) and the
+   pilot gates.
+3. **Legacy-authoritative transfers** (#299) cannot be named by the shared
+   delivery tables, because they have no workflow. Their events stay `pending`
+   until legacy delivery exists (#384). The replacement finds the request in
+   the web inbox.
+4. **Telegram only.** Slack, Discord and Teams have no delivery adapter. Their
+   old escalation checkers stay execution-gated.
+5. **Old binaries** neither run the replacement pass nor claim by owner. A #291
+   delivery-owner binary would claim escalation work too: it would cancel a
+   replacement card as `purged` (it has no message) and execute retirements.
+   Deploy to every worker before inserting delivery controls in
+   escalation-owned organizations.
+6. A press on a former card gets the generic "review required"
+   acknowledgment, not a reassigned-specific one.
+
+### Verification (#300)
+
+PostgreSQL 16 (`lib/approvals/escalation/replacement-delivery.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`). It drives the real
+`requestAbsenceEffect`, `processApprovalDeliveries`, `processDueEscalations`,
+`processEscalationReplacementDeliveries`, `approveAbsenceEffect`,
+`handleTelegramUpdate`, `saveConversation`, `recoverApprovalDeliveryForAttention`
+and `deleteApproval`. It replaces the same dependencies as the #291 suite.
+12/12 passing:
+
+- A transfer commits its event and sends nothing. The pass, with automation
+  paused, sends one bound replacement card to the backup and edits the former
+  card into "Reassigned" without controls. The delivery owner's pass then plans
+  and executes nothing more, and reruns send nothing.
+- A press on the former card decides nothing. The replacement approves from
+  its card. Afterwards every card shows the current version without controls,
+  and the former card still says "Reassigned".
+- Escalations disabled at expansion: no replacement work, the former card is
+  retired, and enabling escalations later adds none. Enabled at expansion but
+  disabled before the send: `suppressed`.
+- A crash during expansion leaves the event pending. A rerun of the scheduled
+  escalation transfers nothing more, and the next pass delivers.
+- A decision before the send cancels the replacement card. A decision while
+  the card is in flight leaves it tracked, and it is retired afterwards.
+- 502 ×6: due exactly after 1 min, 5 min, 30 min, 2 h and 12 h, then exhausted
+  with a `delivery_exhausted` incident on the replacement assignment. The
+  assignment stays pending and no second transfer happens. Recovery sends once
+  through escalation's pass (not the delivery owner's) and never again.
+- A failed tracking write after acceptance sends again and keeps one identity.
+  A lease takeover keeps both identities, and both are retired after the
+  decision.
+- A missing destination raises `delivery_unavailable` at once without spending
+  retries; saving the chat delivers.
+- The replacement's preference off → `suppressed`.
+- Three concurrent passes send one card.
+- Privileged cleanup removes and reports the initial, replacement and
+  retirement work, both messages and the journal row.
+
+Unit seams: `bot-platform/approval-status-notice.test.ts` (reassigned wording)
+and `maintenance.test.ts` (delivery work is deleted before the journal it
+cascades from).

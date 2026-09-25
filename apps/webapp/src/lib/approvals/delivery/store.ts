@@ -167,18 +167,27 @@ async function planWorkflowEffects(
 			),
 		)
 		.returning({ id: approvalDeliveryWork.id });
-	created += await planMessageRefreshes(transaction, input);
+	created += await planApprovalMessageRefreshes(transaction, input);
 	return { created, cancelled: cancelled.length };
 }
 
 /**
  * A refresh for every known message whose card no longer matches the
  * workflow: its assignment or the request is no longer pending and the
- * message does not yet reflect the current workflow version.
+ * message does not yet reflect the current workflow version. The dedupe
+ * identity is shared by both owners, so a refresh planned by escalation
+ * (with its transfer, optionally for one assignment's messages) and by the
+ * delivery owner is one effect with one executor: whoever planned it first.
  */
-async function planMessageRefreshes(
+export async function planApprovalMessageRefreshes(
 	executor: ApprovalDeliveryExecutor,
-	input: { organizationId: string; workflowId: string; outboxId: string | null },
+	input: {
+		organizationId: string;
+		workflowId: string;
+		outboxId: string | null;
+		assignmentId?: string;
+		escalationTransferId?: string;
+	},
 ): Promise<number> {
 	const stale = rows(
 		await executor.execute(sql`
@@ -194,6 +203,7 @@ async function planMessageRefreshes(
 				and m.state <> 'gone'
 				and m.status_version < w.version
 				and (a.status <> 'pending' or w.status <> 'pending')
+				${input.assignmentId ? sql`and m.assignment_id = ${input.assignmentId}::uuid` : sql``}
 		`),
 	);
 	let created = 0;
@@ -211,6 +221,7 @@ async function planMessageRefreshes(
 				assignmentId: text(message.assignment_id, "assignment"),
 				recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
 				messageId,
+				escalationTransferId: input.escalationTransferId ?? null,
 				dedupeKey: refreshDedupeKey(messageId, version),
 			})
 			.onConflictDoNothing({
@@ -226,8 +237,79 @@ async function planMessageRefreshes(
 export async function scheduleApprovalMessageRefreshes(input: {
 	organizationId: string;
 	workflowId: string;
+	assignmentId?: string;
+	escalationTransferId?: string;
 }): Promise<number> {
-	return planMessageRefreshes(db, { ...input, outboxId: null });
+	return planApprovalMessageRefreshes(db, { ...input, outboxId: null });
+}
+
+function replacementDedupeKey(transferId: string, provider: string): string {
+	return `approval-delivery:v1:replacement:${transferId}:${provider}`;
+}
+
+/**
+ * The replacement card of one committed escalation transfer, once per
+ * intended provider. The providers are the channels frozen at the transfer
+ * event's first successful expansion; the work rows are that frozen intent.
+ */
+export async function planReplacementDeliveryWork(
+	executor: ApprovalDeliveryExecutor,
+	input: {
+		organizationId: string;
+		workflowId: string;
+		escalationTransferId: string;
+		replacementAssignmentId: string;
+		recipientEmployeeId: string;
+		providers: readonly ApprovalDeliveryProvider[];
+	},
+): Promise<number> {
+	if (input.providers.length === 0) return 0;
+	const inserted = await executor
+		.insert(approvalDeliveryWork)
+		.values(
+			input.providers.map((provider) => ({
+				organizationId: input.organizationId,
+				workflowId: input.workflowId,
+				effect: "replacement" as const,
+				provider,
+				assignmentId: input.replacementAssignmentId,
+				recipientEmployeeId: input.recipientEmployeeId,
+				escalationTransferId: input.escalationTransferId,
+				dedupeKey: replacementDedupeKey(input.escalationTransferId, provider),
+			})),
+		)
+		.onConflictDoNothing({
+			target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
+		})
+		.returning({ id: approvalDeliveryWork.id });
+	return inserted.length;
+}
+
+/**
+ * Cancels replacement work that became obsolete before it was sent: its
+ * assignment is no longer pending (decided, or transferred again) or the
+ * request settled. Work in flight is rechecked by its own worker.
+ */
+export async function cancelObsoleteReplacementDeliveryWork(input: {
+	organizationId: string;
+	workflowId?: string;
+}): Promise<number> {
+	const cancelled = rows(
+		await db.execute(sql`
+			update approval_delivery_work d
+			set status = 'cancelled', last_outcome = 'obsolete', processed_at = now()
+			from approval_stage_assignment a, approval_workflow w
+			where d.organization_id = ${input.organizationId}
+				${input.workflowId ? sql`and d.workflow_id = ${input.workflowId}::uuid` : sql``}
+				and d.effect = 'replacement'
+				and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
+				and a.id = d.assignment_id and a.organization_id = d.organization_id
+				and w.id = d.workflow_id and w.organization_id = d.organization_id
+				and (a.status <> 'pending' or w.status <> 'pending')
+			returning d.id
+		`),
+	);
+	return cancelled.length;
 }
 
 export interface ApprovalDeliveryExpansionSummary {
@@ -330,19 +412,26 @@ export interface ClaimedApprovalDeliveryWork {
 	assignmentId: string;
 	recipientEmployeeId: string;
 	messageId: string | null;
+	/** Set when escalation's replacement delivery owns this work (#300). */
+	escalationTransferId: string | null;
 	claimToken: string;
 	retryCount: number;
 	attemptCount: number;
 }
 
+/** Which executor a work row belongs to: escalation owns transfer-linked work. */
+export type ApprovalDeliveryWorkOwner = "delivery" | "escalation";
+
 /**
- * Leases due work: pending rows whose time has come and processing rows whose
- * lease expired (a crashed or stalled worker). Claims are serialized per
- * organization, and at most one refresh per message is in flight, so an
- * older refresh can never overwrite a newer one remotely.
+ * Leases due work of one owner: pending rows whose time has come and
+ * processing rows whose lease expired (a crashed or stalled worker). Claims
+ * are serialized per organization across both owners, and at most one
+ * refresh per message is in flight, so an older refresh can never overwrite
+ * a newer one remotely.
  */
 export async function claimApprovalDeliveryWork(input: {
 	organizationId: string;
+	owner: ApprovalDeliveryWorkOwner;
 	limit: number;
 	now: Instant;
 	workflowId?: string;
@@ -372,6 +461,7 @@ export async function claimApprovalDeliveryWork(input: {
 						(d.status = 'pending' and d.available_at <= ${now})
 						or (d.status = 'processing' and d.lease_expires_at <= ${now})
 					)
+					and d.escalation_transfer_id is ${input.owner === "escalation" ? sql`not null` : sql`null`}
 					${input.workflowId ? sql`and d.workflow_id = ${input.workflowId}::uuid` : sql``}
 					and (d.message_id is null or not exists (
 						select 1 from approval_delivery_work x
@@ -409,7 +499,7 @@ export async function claimApprovalDeliveryWork(input: {
 					and w.id = d.workflow_id and w.organization_id = d.organization_id
 				returning d.id, d.organization_id, d.workflow_id, w.workflow_type,
 					d.effect, d.provider, d.assignment_id, d.recipient_employee_id,
-					d.message_id, d.retry_count, d.attempt_count
+					d.message_id, d.escalation_transfer_id, d.retry_count, d.attempt_count
 			`),
 		);
 		return claimed
@@ -423,6 +513,8 @@ export async function claimApprovalDeliveryWork(input: {
 				assignmentId: text(row.assignment_id, "assignment"),
 				recipientEmployeeId: text(row.recipient_employee_id, "recipient"),
 				messageId: typeof row.message_id === "string" ? row.message_id : null,
+				escalationTransferId:
+					typeof row.escalation_transfer_id === "string" ? row.escalation_transfer_id : null,
 				claimToken,
 				retryCount: Number(row.retry_count),
 				attemptCount: Number(row.attempt_count),

@@ -163,8 +163,9 @@ the source assignment.
 fallback decide an assignment whose lineage contains an escalation; explicit
 organization `manage Approval` remains a separate, audited path. Bot cards stay
 review-only for absences, and after the mirror retargets the representative a
-former assignee's bot action is `unauthorized`. Old-card retirement and
-replacement delivery are #300.
+former assignee's bot action is `unauthorized`. Replacement delivery and
+old-card retirement (#300) are described in
+[approval-delivery.md](approval-delivery.md#escalation-replacement-delivery--300--t36).
 
 ## Scheduling
 
@@ -193,8 +194,10 @@ not part of this lifecycle and are not deleted.
   per stage. Legacy absences are covered by #299 below; other kinds (#326), `complete` mode (the
   absence inbox has no canonical discovery) and parallel assignments are held
   or skipped, not transferred.
-- **Delivery:** no replacement notification or old-card retirement yet (#300);
-  the replacement finds the approval in the web inbox.
+- **Delivery:** replacement cards and old-card retirement (#300) exist for
+  Telegram only and need a delivery control; see the #300 blockers in
+  `approval-delivery.md`. Otherwise the replacement finds the approval in the
+  web inbox.
 - **Starvation:** persistent holds are re-examined each run and count towards
   the batch limit. Organizations with more held assignments than the limit need
   a larger limit or a follow-up cursor.
@@ -332,12 +335,14 @@ cancellation removed the request.
 ### Activation blockers (legacy)
 
 - Everything under [Activation blockers](#activation-blockers) (ownership
-  writer, delivery #300, starvation).
+  writer, delivery, starvation).
 - Legacy chain stages are held, not transferred.
 - Shadow/ready requests submitted before shadowing have no observation and are
   held (`legacy_observation_missing`).
-- Replacement notification and old-card retirement (#300); the replacement finds
-  the request in the web inbox as its approver.
+- No replacement notification or old-card retirement: #300 delivers canonical
+  transfers only, and legacy transfer events stay pending until legacy delivery
+  exists (#384). The replacement finds the request in the web inbox as its
+  approver.
 - Old binaries: pre-deployment binaries decide legacy absences without the
   transfer check. Deploy before activation and drain old workers.
 - The approval write-boundary scanner cannot read sources on Windows; the new
