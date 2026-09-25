@@ -27,6 +27,12 @@ const state = vi.hoisted(() => ({
 	lockSubmissionSource: vi.fn(),
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
 	createProductionApprovalWorkflowRuntime: () => state.runtime,
@@ -231,7 +237,7 @@ function legacyState(status: "pending" | "cancelled") {
 					organizationId: ids.organization,
 					employeeId: ids.employee,
 					type: "clock_in",
-					timestamp: "2026-07-21T06:00:00Z",
+					instant: "2026-07-21T06:00:00Z",
 					utcOffsetMinutes: 120,
 					timezone: "Europe/Berlin",
 					timezoneSource: "browser",
@@ -260,7 +266,7 @@ function legacyState(status: "pending" | "cancelled") {
 						organizationId: ids.organization,
 						employeeId: ids.employee,
 						type: "correction",
-						timestamp: "2026-07-21T06:05:00Z",
+						instant: "2026-07-21T06:05:00Z",
 						utcOffsetMinutes: 120,
 						timezone: "Europe/Berlin",
 						timezoneSource: "browser",
@@ -357,7 +363,14 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 				findMany: vi.fn().mockResolvedValue([]),
 			},
 			approvalRequest: {
-				findMany: vi.fn().mockResolvedValue([]),
+				// After a capture, the persisted request row the capture described:
+				// the tombstone keeps its submission evidence (#301).
+				findMany: vi.fn(async () => {
+					const captured = (await state.captureLegacy.mock.results.at(-1)?.value) as
+						| { approvalRequest?: unknown }
+						| undefined;
+					return captured?.approvalRequest ? [captured.approvalRequest] : [];
+				}),
 			},
 			employee: {
 				findMany: vi.fn().mockResolvedValue([

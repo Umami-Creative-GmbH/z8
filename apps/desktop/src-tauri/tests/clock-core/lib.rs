@@ -24,6 +24,9 @@ mod command_sync;
 #[path = "../../src/clock_journal.rs"]
 mod clock_journal;
 
+#[path = "../../src/break_evidence.rs"]
+mod break_evidence;
+
 #[cfg(test)]
 mod storage_tests;
 
@@ -35,6 +38,12 @@ mod command_tests;
 
 #[cfg(test)]
 mod frozen_command_tests;
+
+#[cfg(test)]
+mod break_evidence_tests;
+
+#[cfg(test)]
+mod break_tests;
 
 #[cfg(test)]
 mod sync_tests;

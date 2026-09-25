@@ -19,6 +19,7 @@ import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-re
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
 import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
+import type { WorkBalanceRebuildResult } from "@/lib/work-balance/rebuild-intents";
 
 // ============================================
 // TYPES
@@ -148,6 +149,7 @@ export interface WorkBalanceRefreshResult {
 	skipped: number;
 	batchLimit: number;
 	errors: Array<{ employeeId: string; organizationId: string; error: string }>;
+	rebuildIntents: WorkBalanceRebuildResult;
 }
 
 /** Result from Teams daily digest job */

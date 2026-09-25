@@ -35,6 +35,11 @@ import {
 	type TimeCorrectionEndpointEvidence,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import {
+	captureTimeCorrectionSubmissionEvidence,
+	prepareTimeCorrectionSubmissionFacts,
+} from "@/lib/approvals/evidence/time-correction-evidence";
+import { translateWorkPeriodEvidenceError } from "@/lib/approvals/evidence/work-period-evidence";
 import { mapSequentially } from "@/lib/approvals/sequential";
 import {
 	deleteCancelledTimeCorrectionsInTransaction,
@@ -49,6 +54,10 @@ import {
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import {
+	acquireTimeCorrectionWorkScope,
+	retryTimeCorrectionWorkTransaction,
+} from "@/lib/approvals/server/time-correction-work-transaction";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import {
 	deriveApprovalWorkflowId,
@@ -61,6 +70,7 @@ import {
 } from "@/lib/billing/guard";
 import {
 	compareInstants,
+	instantFromDate,
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
@@ -93,6 +103,22 @@ import {
 } from "@/lib/time-tracking/amend-completed-work";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { withCompletedWorkTransaction } from "@/lib/time-tracking/completed-work-transaction";
+import {
+	admitTimeCorrectionAppend,
+	advanceCorrectionWorkRevision,
+	deriveTimeCorrectionOperationId,
+	insertTimeCorrectionReceipt,
+	loadTimeCorrectionReceipt,
+	type RequestedCorrectionEndpoint,
+	sameCorrectionCommand,
+	type SubmitTimeCorrectionResult,
+	type TimeCorrectionLifecycleReference,
+	translateCorrectionWorkError,
+} from "@/lib/time-tracking/correction-lifecycle-work";
+import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-work";
+import type { TimeEntryAppend } from "@/lib/time-tracking/time-entry-append";
+import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
+import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
@@ -1190,6 +1216,11 @@ async function insertOrVerifyCorrection(input: {
 		"id" | "hash" | "employeeId" | "organizationId"
 	> | null;
 	requestMetadata: { ipAddress: string; userAgent: string };
+	/**
+	 * Adopted organizations (#301): fresh entries follow the admitted append
+	 * predecessor, and a replay never creates entries (null: replay only).
+	 */
+	adopted?: { append: TimeEntryAppend | null };
 }) {
 	const existing = await input.tx.query.timeEntry.findFirst({
 		where: and(
@@ -1218,8 +1249,18 @@ async function insertOrVerifyCorrection(input: {
 		}
 		return { entry: existing, inserted: false as const };
 	}
-
-	const previousHash = input.previousEntry?.hash ?? null;
+	if (input.adopted && !input.adopted.append) {
+		// A committed submission keeps its entries (cancellation retains them);
+		// a replay must never recreate a missing one.
+		throw new ConflictError({
+			message: "Time correction request conflicts with existing data",
+			conflictType: "time_correction_identity",
+		});
+	}
+	const predecessor = input.adopted?.append
+		? input.adopted.append.predecessor
+		: input.previousEntry;
+	const previousHash = predecessor?.hash ?? null;
 	const created = await insertTimeCorrectionSourceEntry({
 		dbService: { db: input.tx } as ApprovalDbService,
 		id: input.id,
@@ -1227,7 +1268,7 @@ async function insertOrVerifyCorrection(input: {
 		organizationId: input.organizationId,
 		timestamp: input.endpoint.timestamp,
 		timezoneCapture: input.endpoint.timezoneCapture,
-		previousEntryId: input.previousEntry?.id ?? null,
+		previousEntryId: predecessor?.id ?? null,
 		previousHash,
 		hash: calculateHash({
 			employeeId: input.employeeId,
@@ -1242,6 +1283,12 @@ async function insertOrVerifyCorrection(input: {
 		deviceInfo: input.requestMetadata.userAgent,
 	});
 	if (!created) throw new Error("Time correction row was not created");
+	await input.adopted?.append?.record({
+		id: created.id,
+		hash: created.hash,
+		previousEntryId: created.previousEntryId,
+		previousHash: created.previousHash,
+	});
 	return { entry: created, inserted: true as const };
 }
 
@@ -1344,6 +1391,243 @@ export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(in
 	return { lockedEmployee, lockedTeamId, lockedPeriod };
 }
 
+type SubmitCorrectionInput = Parameters<typeof submitCorrection>[0];
+type LockedSubmissionPeriod = typeof workPeriod.$inferSelect;
+
+/** The submitted request by value: the adopted receipt command (#301). */
+function adoptedSubmissionCommand(input: {
+	input: SubmitCorrectionInput;
+	submissionKey: string;
+}): Record<string, unknown> {
+	const request = input.input;
+	return {
+		submissionKey: input.submissionKey,
+		submissionId: request.submissionId,
+		request: {
+			action: request.action,
+			workPeriodId: request.workPeriodId,
+			expected: {
+				clockInId: request.expectedClockInId,
+				clockOutId: request.expectedClockOutId,
+				startAt: instantToCanonicalString(instantFromDate(request.expectedStartTime)),
+				endAt: request.expectedEndTime
+					? instantToCanonicalString(instantFromDate(request.expectedEndTime))
+					: null,
+			},
+			endpoints: request.endpoints.map((endpoint) => ({
+				endpointType: endpoint.endpointType,
+				...requestedEndpoint(endpoint),
+			})),
+			workLocationType: request.workLocationType,
+			workCategoryId: request.workCategoryId,
+		},
+	};
+}
+
+function requestedEndpoint(endpoint: SubmissionEndpoint): RequestedCorrectionEndpoint {
+	return {
+		originalEntryId: endpoint.originalEntryId,
+		at: instantToCanonicalString(instantFromDate(endpoint.timestamp)),
+		utcOffsetMinutes: endpoint.timezoneCapture.utcOffsetMinutes,
+		timezone: endpoint.timezoneCapture.timezone,
+		timezoneSource: endpoint.timezoneCapture.timezoneSource,
+	};
+}
+
+/**
+ * Adopted edits check their resulting interval against other recorded work
+ * before the proposal is committed; approval checks it again (#301).
+ */
+async function assertSubmittedIntervalFree(
+	scope: WorkTransactionScope,
+	input: SubmitCorrectionInput,
+	period: LockedSubmissionPeriod,
+) {
+	if (input.action !== "edit" || input.endpoints.length === 0 || !period.endTime) return;
+	const clockIn = input.endpoints.find(({ endpointType }) => endpointType === "clock_in");
+	const clockOut = input.endpoints.find(({ endpointType }) => endpointType === "clock_out");
+	const startAt = instantFromDate(clockIn?.timestamp ?? period.startTime);
+	const endAt = instantFromDate(clockOut?.timestamp ?? period.endTime);
+	if (compareInstants(startAt, endAt) >= 0) return;
+	await assertWorkOccupancyFree(scope.db, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		interval: { startAt, endAt },
+		excludeWorkPeriodIds: [period.id],
+	});
+}
+
+type AdoptedSubmissionContext = {
+	scope: WorkTransactionScope;
+	input: SubmitCorrectionInput;
+	lockedPeriod: LockedSubmissionPeriod;
+	submissionKey: string;
+	proposedMetadata: { workLocationType: WorkLocationType; workCategoryId: string | null };
+	legacyReplay: boolean;
+};
+
+/**
+ * The adopted `submit_time_correction` receipt (#301): the requester-owned
+ * baseline as locked, the requested values and change mask, the intent, the
+ * appended pending entries with their exact predecessors, the revision and
+ * the approval lifecycle routing created.
+ */
+async function recordAdoptedSubmission(
+	input: AdoptedSubmissionContext & {
+		correctionEntries: Array<typeof timeEntry.$inferSelect>;
+		authorityMode: string;
+		result: { kind: string; approvalRequestId: string; chainInstanceId?: string | null };
+		submittedRevision: number;
+	},
+) {
+	const { input: request, lockedPeriod, scope } = input;
+	const endpointRows = await scope.db
+		.select({ id: timeEntry.id, utcOffsetMinutes: timeEntry.utcOffsetMinutes })
+		.from(timeEntry)
+		.where(
+			and(
+				eq(timeEntry.organizationId, request.organizationId),
+				eq(timeEntry.employeeId, request.employeeId),
+				inArray(
+					timeEntry.id,
+					[lockedPeriod.clockInId, lockedPeriod.clockOutId].filter(
+						(id): id is string => id !== null,
+					),
+				),
+			),
+		);
+	const offsetOf = (id: string | null) =>
+		id === null ? null : (endpointRows.find((row) => row.id === id)?.utcOffsetMinutes ?? null);
+	const endpointOf = (type: "clock_in" | "clock_out") => {
+		const endpoint = request.endpoints.find(({ endpointType }) => endpointType === type);
+		return endpoint ? requestedEndpoint(endpoint) : null;
+	};
+	const currentLocation = normalizeWorkLocationType(lockedPeriod.workLocationType);
+	const canonical = input.authorityMode === "canonical" || input.authorityMode === "complete";
+	const [bound] = canonical
+		? []
+		: await scope.db
+				.select({ approvalWorkflowId: workPeriod.approvalWorkflowId })
+				.from(workPeriod)
+				.where(eq(workPeriod.id, lockedPeriod.id))
+				.limit(1);
+	const lifecycle: TimeCorrectionLifecycleReference = canonical
+		? {
+				authority: "canonical",
+				workflowId: deriveApprovalWorkflowId({
+					organizationId: request.organizationId,
+					workflowType: "time_correction",
+					sourceType: "time_entry",
+					sourceId: lockedPeriod.id,
+					allocationKey: input.submissionKey,
+				}),
+			}
+		: {
+				authority: "legacy",
+				approvalRequestId: input.result.approvalRequestId,
+				chainInstanceId: input.result.chainInstanceId ?? null,
+				observedWorkflowId:
+					input.authorityMode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+			};
+	const operationId = deriveTimeCorrectionOperationId({
+		organizationId: request.organizationId,
+		stage: "submit",
+		key: input.submissionKey,
+	});
+	const result: SubmitTimeCorrectionResult = {
+		version: 1,
+		operationId,
+		owner: { employeeId: request.employeeId },
+		actor: { kind: "human", userId: request.userId },
+		workPeriodId: lockedPeriod.id,
+		canonicalRecordId: lockedPeriod.canonicalRecordId,
+		intent:
+			request.action === "delete"
+				? "delete"
+				: request.endpoints.length === 0
+					? "metadata_only"
+					: "edit",
+		changeMask: {
+			clockIn: endpointOf("clock_in") !== null,
+			clockOut: endpointOf("clock_out") !== null,
+			workLocation: input.proposedMetadata.workLocationType !== currentLocation,
+			workCategory: input.proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId,
+		},
+		baseline: {
+			clockInEntryId: lockedPeriod.clockInId,
+			clockOutEntryId: lockedPeriod.clockOutId,
+			startAt: instantToCanonicalString(instantFromDate(lockedPeriod.startTime)),
+			endAt: lockedPeriod.endTime
+				? instantToCanonicalString(instantFromDate(lockedPeriod.endTime))
+				: null,
+			durationMinutes: lockedPeriod.durationMinutes,
+			startUtcOffsetMinutes: offsetOf(lockedPeriod.clockInId),
+			endUtcOffsetMinutes: offsetOf(lockedPeriod.clockOutId),
+			attribution: {
+				projectId: lockedPeriod.projectId,
+				workCategoryId: lockedPeriod.workCategoryId,
+				workLocationType: lockedPeriod.workLocationType,
+			},
+		},
+		requested: {
+			clockIn: endpointOf("clock_in"),
+			clockOut: endpointOf("clock_out"),
+			...(input.legacyReplay
+				? {}
+				: {
+						workLocationType: input.proposedMetadata.workLocationType,
+						workCategoryId: input.proposedMetadata.workCategoryId,
+					}),
+		},
+		corrections: input.correctionEntries.map((entry) => ({
+			endpoint: entry.replacesEntryId === lockedPeriod.clockInId ? "clock_in" : "clock_out",
+			entryId: entry.id,
+			replacesEntryId: entry.replacesEntryId ?? "",
+			meaning: "pending",
+			previousEntryId: entry.previousEntryId,
+			previousHash: entry.previousHash,
+		})),
+		revisions: {
+			workPeriod: { source: lockedPeriod.graphRevision, result: input.submittedRevision },
+		},
+		approval: {
+			lifecycle,
+			outcome: input.result.kind === "auto_completed" ? "auto_completed" : "pending",
+		},
+	};
+	await insertTimeCorrectionReceipt(scope.db, {
+		organizationId: request.organizationId,
+		employeeId: request.employeeId,
+		actorUserId: request.userId,
+		stage: "submit",
+		operationId,
+		workPeriodId: lockedPeriod.id,
+		command: adoptedSubmissionCommand(input),
+		result,
+	});
+}
+
+/**
+ * A committed adopted submission replays only with the exact command. A
+ * lifecycle committed before adoption has no receipt; nothing is fabricated.
+ */
+async function verifyAdoptedSubmissionReplay(input: AdoptedSubmissionContext) {
+	const receipt = await loadTimeCorrectionReceipt(input.scope.db, {
+		organizationId: input.input.organizationId,
+		employeeId: input.input.employeeId,
+		stage: "submit",
+		operationId: deriveTimeCorrectionOperationId({
+			organizationId: input.input.organizationId,
+			stage: "submit",
+			key: input.submissionKey,
+		}),
+		workPeriodId: input.input.workPeriodId,
+	});
+	if (receipt && !sameCorrectionCommand(receipt, adoptedSubmissionCommand(input))) {
+		throw new CompletedWorkCollisionError();
+	}
+}
+
 export async function submitCorrection(input: {
 	dbService: ApprovalDbService;
 	organizationId: string;
@@ -1379,7 +1663,31 @@ export async function submitCorrection(input: {
 	}
 	const runtime = createCorrectionRuntime(input.dbService);
 	const requestMetadata = await getRequestMetadata();
-	return await runtime.repository.withTransaction(async (context) => {
+	try {
+		return await retryTimeCorrectionWorkTransaction(() =>
+			submitCorrectionInTransaction(runtime, input, requestMetadata),
+		);
+	} catch (error) {
+		// Evidence holds and adopted work outcomes answer as typed 409 conflicts.
+		throw translateCorrectionWorkError(translateWorkPeriodEvidenceError(error));
+	}
+}
+
+function submitCorrectionInTransaction(
+	runtime: ReturnType<typeof createCorrectionRuntime>,
+	input: Parameters<typeof submitCorrection>[0],
+	requestMetadata: { ipAddress: string; userAgent: string },
+) {
+	return runtime.repository.withTransaction(async (outerContext) => {
+		// Shared work protocol (#301) before any row lock: adoption gate, the
+		// time-correction approval gate, configuration, access, employee key.
+		const work = await acquireTimeCorrectionWorkScope(outerContext, {
+			organizationId: input.organizationId,
+			ownerEmployeeId: input.employeeId,
+			actorUserId: input.userId,
+		});
+		const context = work.context;
+		const adopted = work.scope.admission === "append" ? work.scope : null;
 		const tx = context.dbService.db as unknown as typeof db;
 		const { lockedEmployee, lockedTeamId, lockedPeriod } =
 			await lockTimeCorrectionSubmissionActorAndPeriodInTransaction({
@@ -1512,14 +1820,33 @@ export async function submitCorrection(input: {
 		});
 		const submissionKey = persistedSubmissionKey ?? v2SubmissionKey;
 		const legacyReplay = submissionKey === v1SubmissionKey;
-		let previousEntry =
-			(await tx.query.timeEntry.findFirst({
-				where: and(
-					eq(timeEntry.employeeId, input.employeeId),
-					eq(timeEntry.organizationId, input.organizationId),
-				),
-				orderBy: [desc(timeEntry.createdAt)],
-			})) ?? null;
+		// Adopted (#301): a fresh submission checks its resulting interval and
+		// appends through the collaborator; a committed one replays only.
+		const freshAdopted = adopted !== null && persistedSubmissionKey === null;
+		if (freshAdopted && adopted) {
+			await assertSubmittedIntervalFree(adopted, input, lockedPeriod);
+		}
+		const adoptedAppend =
+			adopted === null
+				? undefined
+				: {
+						append:
+							freshAdopted && input.endpoints.length > 0
+								? await admitTimeCorrectionAppend(adopted, {
+										organizationId: input.organizationId,
+										employeeId: input.employeeId,
+									})
+								: null,
+					};
+		let previousEntry = adopted
+			? null
+			: ((await tx.query.timeEntry.findFirst({
+					where: and(
+						eq(timeEntry.employeeId, input.employeeId),
+						eq(timeEntry.organizationId, input.organizationId),
+					),
+					orderBy: [desc(timeEntry.createdAt)],
+				})) ?? null);
 		const evidence: TimeCorrectionEndpointEvidence[] = [];
 		const correctionEntries: (typeof timeEntry.$inferSelect)[] = [];
 		const newlyInserted: Array<{
@@ -1541,6 +1868,7 @@ export async function submitCorrection(input: {
 				endpoint,
 				previousEntry,
 				requestMetadata,
+				adopted: adoptedAppend,
 			});
 			previousEntry = correction.entry;
 			correctionEntries.push(correction.entry);
@@ -1577,6 +1905,28 @@ export async function submitCorrection(input: {
 					}
 				: {}),
 		};
+		// Submitted evidence (#301) is captured from the locked period and the
+		// pending entries before routing or an auto-completion can change them.
+		const evidenceFacts =
+			persistedSubmissionKey === null
+				? await prepareTimeCorrectionSubmissionFacts(tx, {
+						organizationId: input.organizationId,
+						workPeriodId: input.workPeriodId,
+						requesterEmployeeId: input.employeeId,
+						correction,
+					})
+				: null;
+		// The pending proposal changes the graph: advance its revision before
+		// routing, so an auto-completing finalization advances from there.
+		const submittedRevision =
+			freshAdopted && adopted
+				? await advanceCorrectionWorkRevision(adopted.db, {
+						organizationId: input.organizationId,
+						employeeId: input.employeeId,
+						workPeriodId: lockedPeriod.id,
+						expectedRevision: lockedPeriod.graphRevision,
+					})
+				: null;
 		const result = (await executeTimeCorrectionSubmissionInTransaction({
 			dbService,
 			context,
@@ -1611,6 +1961,70 @@ export async function submitCorrection(input: {
 					field: "timestamp",
 					value: validation.holidayName,
 				});
+			}
+		}
+		if (evidenceFacts && result.disposition === "executed") {
+			const canonical =
+				work.authority.mode === "canonical" || work.authority.mode === "complete";
+			const [bound] = await tx
+				.select({ approvalWorkflowId: workPeriod.approvalWorkflowId })
+				.from(workPeriod)
+				.where(eq(workPeriod.id, lockedPeriod.id))
+				.limit(1);
+			await captureTimeCorrectionSubmissionEvidence(tx, {
+				organizationId: input.organizationId,
+				requestCycleKey: submissionKey,
+				facts: evidenceFacts,
+				submitterUserId: input.userId,
+				lifecycle: canonical
+					? {
+							authority: "canonical",
+							workflow: await context.repository.loadSnapshot({
+								organizationId: input.organizationId,
+								workflowId: deriveApprovalWorkflowId({
+									organizationId: input.organizationId,
+									workflowType: "time_correction",
+									sourceType: "time_entry",
+									sourceId: lockedPeriod.id,
+									allocationKey: submissionKey,
+								}),
+							}),
+						}
+					: {
+							authority: "legacy",
+							approvalRequestId: result.approvalRequestId,
+							chainInstanceId:
+								"chainInstanceId" in result && typeof result.chainInstanceId === "string"
+									? result.chainInstanceId
+									: null,
+							observedWorkflowId:
+								work.authority.mode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+							autoCompleted: result.kind === "auto_completed",
+						},
+			});
+		}
+		if (adopted) {
+			const receiptInput = {
+				scope: adopted,
+				input,
+				lockedPeriod,
+				submissionKey,
+				proposedMetadata,
+				legacyReplay,
+			};
+			if (freshAdopted && submittedRevision !== null) {
+				if (result.disposition !== "executed") {
+					throw new CompletedWorkCollisionError();
+				}
+				await recordAdoptedSubmission({
+					...receiptInput,
+					correctionEntries,
+					authorityMode: work.authority.mode,
+					result,
+					submittedRevision,
+				});
+			} else {
+				await verifyAdoptedSubmissionReplay(receiptInput);
 			}
 		}
 		if (result.disposition === "replayed") {

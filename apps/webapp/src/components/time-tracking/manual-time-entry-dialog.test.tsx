@@ -178,6 +178,8 @@ vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
 	updateTimezone,
 }));
 
+const RECOVERY_CONTEXT = { userId: "user-current", organizationId: "org-1" };
+
 function buildTargetContext(
 	targetEmployeeId: string | undefined,
 	overrides: Partial<ManualEntryTargetContext> = {},
@@ -189,6 +191,7 @@ function buildTargetContext(
 		timezone: "UTC",
 		timezoneSource: "employee",
 		manualCommandVersion: 1,
+		recoveryContext: RECOVERY_CONTEXT,
 		projects: [
 			{
 				id: "project-1",
@@ -267,6 +270,8 @@ function jsonRoundTrip<Value>(value: Value): Value {
 afterEach(() => {
 	vi.useRealTimers();
 	vi.restoreAllMocks();
+	// Frozen commands live in the tab's session storage (#310).
+	window.sessionStorage.clear();
 });
 
 describe("ManualTimeEntryDialog layout", () => {
@@ -1341,19 +1346,22 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
 
 		await waitFor(() =>
-			expect(createManualTimeEntry).toHaveBeenCalledWith({
-				version: 2,
-				submissionId,
-				targetEmployeeId: "employee-2",
-				date: "2025-10-26",
-				clockIn: { time: "01:00", occurrence: null, displayedOffsetMinutes: 120 },
-				clockOut: { time: "02:30", occurrence: "later", displayedOffsetMinutes: 60 },
-				zone: { basis: "target", timezone: "Europe/Berlin" },
-				browserTimezone: null,
-				reason: "Forgot to clock out",
-				projectId: null,
-				workCategoryId: null,
-			}),
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				{
+					version: 2,
+					submissionId,
+					targetEmployeeId: "employee-2",
+					date: "2025-10-26",
+					clockIn: { time: "01:00", occurrence: null, displayedOffsetMinutes: 120 },
+					clockOut: { time: "02:30", occurrence: "later", displayedOffsetMinutes: 60 },
+					zone: { basis: "target", timezone: "Europe/Berlin" },
+					browserTimezone: null,
+					reason: "Forgot to clock out",
+					projectId: null,
+					workCategoryId: null,
+				},
+				RECOVERY_CONTEXT,
+			),
 		);
 		expect(screen.getByRole("radio", { name: "First, UTC+02:00" })).toBeTruthy();
 	});
@@ -1373,6 +1381,7 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 					clockIn: { time: "02:40", occurrence: "earlier", displayedOffsetMinutes: 120 },
 					clockOut: { time: "02:10", occurrence: "later", displayedOffsetMinutes: 60 },
 				}),
+				RECOVERY_CONTEXT,
 			),
 		);
 	});
@@ -1414,6 +1423,7 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 					browserTimezone: "America/New_York",
 					clockIn: { time: "10:15", occurrence: null, displayedOffsetMinutes: -240 },
 				}),
+				RECOVERY_CONTEXT,
 			),
 		);
 		expect(updateTimezone).not.toHaveBeenCalled();
@@ -1454,6 +1464,7 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 					clockIn: { time: "00:30", occurrence: null, displayedOffsetMinutes: -240 },
 					clockOut: { time: "01:30", occurrence: "later", displayedOffsetMinutes: -300 },
 				}),
+				RECOVERY_CONTEXT,
 			),
 		);
 	});

@@ -1,14 +1,24 @@
 //! Legacy transport behavior (#268), which stays in use wherever the server
 //! does not accept version 2 commands.
+use crate::break_evidence::BreakEvidence;
 use crate::clock::WorkLocationType;
 use crate::clock_command::{execute, ActionEvidence, ClockCommand, ClockCommandOutcome};
 use crate::offline::{ActionType, ReviewReason, StoredValue};
-use crate::support::{capabilities, Device};
+use crate::support::{capabilities, confirmed_break, Device};
 use crate::test_http::{request_body, request_line, server};
 use rusqlite::Connection;
 
 const CLOSE_ENTRY: &str = r#"{"entry":{"id":"close-1","employeeId":"employee-1","type":"clock_out","timestamp":"2026-05-09T10:15:30Z"}}"#;
 const OPEN_ENTRY: &str = r#"{"entry":{"id":"open-1","employeeId":"employee-1","type":"clock_in","timestamp":"2026-05-09T10:30:00Z"}}"#;
+
+/// A confirmed break whose idle start is the legacy fixtures' close time.
+fn legacy_break() -> BreakEvidence {
+    confirmed_break(
+        "2026-05-09T10:15:30Z".parse().unwrap(),
+        Some("Europe/Berlin"),
+        Some("Europe/Berlin"),
+    )
+}
 
 fn evidence() -> ActionEvidence {
     ActionEvidence {
@@ -42,10 +52,12 @@ async fn every_committed_command_survives_status_failure_without_queueing() {
         ),
         (
             ClockCommand::Break {
-                start: "2026-05-09T10:15:30Z".into(),
+                evidence: legacy_break(),
                 location: WorkLocationType::Remote,
             },
             vec![
+                // Breaks negotiate too; this server has no version 2 commands.
+                Some((404, "{}".to_string())),
                 Some((200, CLOSE_ENTRY.to_string())),
                 Some((200, OPEN_ENTRY.to_string())),
                 Some((503, "{}".to_string())),
@@ -106,18 +118,19 @@ async fn actual_persistence_failure_reaches_the_clock_caller() {
 async fn partial_break_is_retained_with_acknowledged_close_and_blocks_resubmission_after_restart() {
     let device = Device::new();
     let (url, server) = server(vec![
+        Some((404, "{}".to_string())),
         Some((200, CLOSE_ENTRY.to_string())),
         Some((400, "{}".to_string())),
     ]);
     let command = ClockCommand::Break {
-        start: "2026-05-09T10:15:30Z".into(),
+        evidence: legacy_break(),
         location: WorkLocationType::Remote,
     };
     let outcome = device.act(&url, command).await.unwrap();
     let ClockCommandOutcome::RetainedForReview { recovery_id } = outcome else {
         panic!("Must require review")
     };
-    assert_eq!(server.join().unwrap().len(), 2);
+    assert_eq!(server.join().unwrap().len(), 3);
     let device = device.restart();
     let records = device.queue.lock().get_pending().unwrap();
     assert_eq!(records[0].id, recovery_id);

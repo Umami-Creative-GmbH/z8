@@ -256,6 +256,7 @@
       "title": "Ekipler"
     },
     "timezone": {
+      "balances-recalculating": "Çalışma bakiyeleri yeni saat dilimi için yeniden hesaplanıyor ve hazır olana kadar gizli kalır.",
       "default": "Varsayılan Saat Dilimi",
       "description": "Kuruluşunuz için varsayılan saat dilimini ayarlayın. Bu, izin takibi, raporlar ve diğer tarih tabanlı özellikler için kullanılır. Bireysel kullanıcılar bunu profil ayarlarından geçersiz kılabilir.",
       "owner-only": "Yalnızca kuruluş sahipleri saat dilimi ayarını değiştirebilir.",

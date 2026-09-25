@@ -29,12 +29,12 @@ The inventory rows are C11–C13 in [the configuration-path audit](audits/265-co
 `["work-organization-configuration", organizationId]` and both of its modes. The module
 imports no schema, so route handlers can take the guard without loading the
 work-transaction module (whose schema import breaks their stubbed `drizzle-orm` tests).
-`work-transaction.ts` re-exports all three functions for the coordinators. The names match
-#315's PR #416, so the two slices share one helper.
+`work-transaction.ts` re-exports all three functions, so the coordinators and the #311,
+#313 and #315 writers share this one helper.
 
 - `acquireOrganizationConfigurationGuard(tx, organizationId)`: shared, taken by fresh
   manual work transactions.
-- `acquireOrganizationConfigurationMutationGuard(tx, organizationId)`: exclusive,
+- `acquireExclusiveOrganizationConfigurationGuard(tx, organizationId)`: exclusive,
   `pg_advisory_xact_lock(hashtextextended(key, 0))`.
 - `withOrganizationConfigurationMutation(client, organizationId, write)` opens the writer's
   transaction, takes the exclusive guard as its first statement, then runs `write` on that
@@ -60,7 +60,7 @@ upgrade from shared to exclusive and never acquire an earlier-ranked resource la
 | `settings/change-policies` `createChangePolicy`, `updateChangePolicy`, `deleteChangePolicy` | Policy values and activation | Guarded insert/update |
 | `settings/change-policies` `createChangePolicyAssignment` | Effective assignment insertion, with `effectiveFrom`/`effectiveUntil` | Guarded insert. The policy and a team or employee target must now belong to the organization (`ValidationError` otherwise); before, a foreign policy ID was inserted unchecked |
 | `settings/change-policies` `deleteChangePolicyAssignment` | Assignment deactivation | Guarded update |
-| `settings/teams` `deleteTeam` | Cascade-deletes the team-level assignment and sets `employee.team_id` to null | Guarded delete, now also organization-scoped. The action only refuses a team with `team_membership` rows, while preparation resolves the team through `employee.team_id`, so this delete can change an employee's policy |
+| `settings/teams` `deleteTeam` | Cascade-deletes the team-level assignment and sets `employee.team_id` to null | #313 runs the member check and the delete in an organization-wide authorization mutation, which takes the same exclusive guard. This slice's PostgreSQL case covers the cascaded assignment |
 
 **Retired:** `ChangePolicyService.createPolicy`, `updatePolicy`, `deletePolicy`,
 `assignPolicy` and `unassignPolicy` in `lib/effect/services/change-policy.service.ts` had
@@ -80,8 +80,6 @@ deliberately does not substitute for the organization-level check.
   which runs inside `import-work-transaction.ts` holding the guard only **shared** and so
   must switch to exclusive; demo policy setup and cleanup (`lib/demo/demo-data.service.ts`);
   and whole-organization cleanup (`lib/jobs/organization-cleanup.ts`).
-- #313: the other team facts (membership, `employee.team_id` assignment) and the
-  `team_membership` check in `deleteTeam`, which still runs before the guard.
 - Employee and user hard deletion cascades employee-level assignments: demo
   (`lib/demo/delete-non-admin.ts`, `demo-data.service.ts`) and organization cleanup (#318).
 

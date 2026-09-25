@@ -1,9 +1,13 @@
 import { sql } from "drizzle-orm";
+import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import type { LifecycleTransaction } from "./types";
 
 /**
- * Lock order for lifecycle transitions: the employee advisory lock (the
- * canonical clocking key; sorted by ID when several are needed), then the
+ * Lock order for lifecycle transitions: exclusive configuration/access
+ * protection of the employee's user (#313: transitions change access and
+ * active state, which manual creation reads under the shared counterpart, and
+ * #264 ranks it before employee coordination), then the employee advisory lock
+ * (the canonical clocking key; sorted by ID when several are needed), then the
  * organization row, then scoped rows. Clocking already holds the employee lock
  * before its surcharge snapshot locks the organization row, so taking the
  * organization first here could deadlock a departure against a clock-out.
@@ -15,6 +19,7 @@ export async function lockLifecycleScope(
 	organizationId: string,
 	employeeId: string,
 ): Promise<void> {
+	await protectAuthorizationMutation(tx, { organizationId, employeeIds: [employeeId] });
 	await lockLifecycleEmployee(tx, employeeId);
 	await lockLifecycleOrganization(tx, organizationId);
 }

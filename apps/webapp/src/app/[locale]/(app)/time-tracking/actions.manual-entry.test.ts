@@ -28,10 +28,14 @@ describe("monolithic manual time entry action", () => {
 		expect(employee).toBeGreaterThan(auth);
 		expect(billing).toBeGreaterThan(employee);
 		expect(delegation).toBeGreaterThan(billing);
-		expect(body).toContain('{ success: false, error: "Not authenticated" }');
 		expect(body).toContain(
-			'{ success: false, error: "Employee profile not found" }',
+			'{ success: false, error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED }',
 		);
+		expect(body).toContain('error: "Employee profile not found",');
+		// A frozen command's retry is refused for another session before billing (#310).
+		const contextCheck = body.indexOf("recoveryContext.userId !== session.user.id");
+		expect(contextCheck).toBeGreaterThan(employee);
+		expect(billing).toBeGreaterThan(contextCheck);
 		expect(body).toContain('error: "billing_required"');
 	});
 

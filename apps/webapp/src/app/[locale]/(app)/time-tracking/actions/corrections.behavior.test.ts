@@ -49,6 +49,12 @@ const state = vi.hoisted(() => ({
 	events: [] as string[],
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/datetime/temporal-core")>()),
 	systemClock: { nowInstant: state.nowInstant },

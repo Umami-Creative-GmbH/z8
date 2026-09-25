@@ -12,12 +12,12 @@ import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
 // The organization configuration guard lives in a schema-free module so route
 // handlers can take it; coordinators keep importing it from here.
 export {
+	acquireExclusiveOrganizationConfigurationGuard,
 	acquireOrganizationConfigurationGuard,
-	acquireOrganizationConfigurationMutationGuard,
 	withOrganizationConfigurationMutation,
 } from "./organization-configuration-guard";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
 	Transaction,
 	"execute" | "query" | "select" | "insert" | "update" | "delete"
@@ -40,11 +40,38 @@ export interface WorkTransactionScope {
 	assertEmployee(organizationId: string, employeeId: string): void;
 }
 
-/** For the outer transaction coordinators only; ordinary callers receive a scope. */
+const scopesByTransaction = new WeakMap<object, WorkTransactionScope>();
+
+/**
+ * For the outer transaction coordinators only; ordinary callers receive a scope.
+ * The sealed scope is also registered for its transaction client, so trusted
+ * collaborators that the approval engine calls with only that client (#301
+ * correction finalization and cancellation) can find the coordinated scope.
+ */
 export function sealWorkTransactionScope<T extends object>(
 	scope: T,
 ): T & { readonly [protectedTransaction]: true } {
-	return Object.freeze({ ...scope, [protectedTransaction]: true as const });
+	const sealed = Object.freeze({ ...scope, [protectedTransaction]: true as const });
+	if (isWorkTransactionScope(sealed)) scopesByTransaction.set(sealed.db, sealed);
+	return sealed;
+}
+
+function isWorkTransactionScope(value: object): value is WorkTransactionScope {
+	const candidate = value as Partial<WorkTransactionScope>;
+	return (
+		typeof candidate.db === "object" &&
+		candidate.db !== null &&
+		(candidate.admission === "legacy" || candidate.admission === "append") &&
+		typeof candidate.assertEmployee === "function"
+	);
+}
+
+/**
+ * The coordinated scope sealed for this transaction client, or null when the
+ * client was not opened by a work-transaction coordinator.
+ */
+export function workTransactionScopeFor(client: object): WorkTransactionScope | null {
+	return scopesByTransaction.get(client) ?? null;
 }
 
 export async function acquireAdoptionGate(
@@ -73,13 +100,32 @@ export async function readAppendAdmission(
 	return control?.mode === "active" ? "append" : "legacy";
 }
 
+const userConfigurationAccessKey = (userId: string) =>
+	JSON.stringify(["work-user-configuration-access", userId]);
+
 export async function acquireUserConfigurationAccessGuards(
 	transaction: Pick<Transaction, "execute">,
 	userIds: readonly string[],
 ) {
 	for (const userId of [...new Set(userIds)].sort()) {
 		await transaction.execute(
-			sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-user-configuration-access", userId])}, 0))`,
+			sql`select pg_advisory_xact_lock_shared(hashtextextended(${userConfigurationAccessKey(userId)}, 0))`,
+		);
+	}
+}
+
+/**
+ * Exclusive user configuration/access protection for a writer of a user's
+ * manual dependencies (#313), sorted, taken after any organization protection
+ * and before the writer's first dependent mutation; never upgrade from shared.
+ */
+export async function acquireExclusiveUserConfigurationAccessGuards(
+	transaction: Pick<Transaction, "execute">,
+	userIds: readonly string[],
+) {
+	for (const userId of [...new Set(userIds)].sort()) {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${userConfigurationAccessKey(userId)}, 0))`,
 		);
 	}
 }
