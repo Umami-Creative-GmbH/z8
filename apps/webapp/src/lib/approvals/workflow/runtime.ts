@@ -15,6 +15,10 @@ import {
 	createOrdinaryWorkPeriodApprovalAdapter,
 	type OrdinaryWorkPeriodApprovalAdapterDependencies,
 } from "../domain-adapters/work-period.adapter";
+import {
+	preflightCanonicalWorkPeriodDecisionEvidence,
+	recordCanonicalWorkPeriodDecisionEvidence,
+} from "../evidence/work-period-evidence";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
 import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
@@ -480,6 +484,26 @@ export function createProductionApprovalWorkflowRuntime(input: {
 	repository: ApprovalWorkflowRepository;
 	transitionEngine: ApprovalTransitionEngine;
 } {
+	// Production decisions participate in manual/policy clock-out evidence
+	// (#302); an explicit null opts a caller out.
+	const ordinaryWorkPeriod: OrdinaryWorkPeriodApprovalAdapterDependencies = {
+		...input.adapters.ordinaryWorkPeriod,
+		evidence:
+			input.adapters.ordinaryWorkPeriod.evidence === undefined
+				? {
+						preflight: (dbService, evidenceInput) =>
+							preflightCanonicalWorkPeriodDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+						record: (dbService, evidenceInput) =>
+							recordCanonicalWorkPeriodDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+					}
+				: input.adapters.ordinaryWorkPeriod.evidence,
+	};
 	return createApprovalWorkflowRuntime({
 		db: input.db,
 		adapterRegistry: createProductionApprovalDomainAdapterRegistry({
@@ -489,11 +513,11 @@ export function createProductionApprovalWorkflowRuntime(input: {
 			),
 			manualTimeSubmission: createOrdinaryWorkPeriodApprovalAdapter(
 				"manual_time_submission",
-				input.adapters.ordinaryWorkPeriod,
+				ordinaryWorkPeriod,
 			),
 			policyClockOut: createOrdinaryWorkPeriodApprovalAdapter(
 				"policy_clock_out",
-				input.adapters.ordinaryWorkPeriod,
+				ordinaryWorkPeriod,
 			),
 		}),
 		canManageApproval: input.canManageApproval,

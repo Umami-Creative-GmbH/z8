@@ -20,12 +20,17 @@ import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/type
 import {
 	type OrdinaryWorkPeriodApprovalKind,
 	parseOrdinaryWorkPeriodWorkflowPayload,
+	type WorkPeriodApprovalResult,
 	type WorkPeriodMaintenanceFacts,
 } from "../domain-adapters/work-period-contract";
 import {
 	captureOrdinaryWorkPeriodLegacyPreSubmissionState,
 	captureOrdinaryWorkPeriodLegacyState,
 } from "../domain-adapters/work-period-legacy-state";
+import {
+	captureWorkPeriodSubmissionEvidence,
+	prepareWorkPeriodSubmissionFacts,
+} from "../evidence/work-period-evidence";
 import {
 	type ResolvePolicyAndCreateApprovalResult,
 	resolvePolicyAndCreateApproval,
@@ -61,6 +66,16 @@ export interface ExecuteOrdinaryWorkPeriodSubmissionInput {
 	overtimeRisk: ApprovalPolicyOvertimeRisk;
 	kind: OrdinaryWorkPeriodApprovalKind;
 	metadata: Record<string, unknown>;
+	/**
+	 * The authenticated human who submitted, evidenced separately from the
+	 * requester. Defaults to the requester's user.
+	 */
+	submitterUserId?: string;
+}
+
+/** Approval participation evidence committed with an executed submission. */
+export interface WorkPeriodSubmissionEvidence {
+	submittedRevisionId: string;
 }
 
 export interface WorkPeriodPostCommitDescriptor {
@@ -1592,6 +1607,12 @@ async function resolveTerminalReplay(input: {
 	};
 }
 
+function activationEvidence(finalized: WorkPeriodApprovalResult | null) {
+	if (!finalized) return null;
+	if (!finalized.outcome) return fail();
+	return { outcome: finalized.outcome, maintenance: finalized.maintenance };
+}
+
 function descriptor(input: {
 	submission: ExecuteOrdinaryWorkPeriodSubmissionInput;
 	source: LockedOrdinarySource;
@@ -1630,6 +1651,8 @@ async function executeOrdinaryWorkPeriodSubmission(
 	result: ResolvePolicyAndCreateApprovalResult;
 	disposition: "executed" | "replayed";
 	postCommit: WorkPeriodPostCommitDescriptor | null;
+	/** Present only when this call captured submitted evidence. */
+	evidence?: WorkPeriodSubmissionEvidence;
 }> {
 	const submissionId = canonicalSubmissionId(input.submissionId);
 	if (input.context.dbService.db !== input.dbService.db) fail();
@@ -1744,6 +1767,29 @@ async function executeOrdinaryWorkPeriodSubmission(
 	}
 	if (historicalManualSubmission) fail();
 	let terminalMaintenance: WorkPeriodMaintenanceFacts | null = null;
+	let terminalFinalized: WorkPeriodApprovalResult | null = null;
+	// Submitted facts come from the locked graph before routing or terminal
+	// finalization can change it; the mode is read under the shared rollout lock.
+	const submittedFacts = await prepareWorkPeriodSubmissionFacts(
+		input.dbService.db,
+		{
+			organizationId: input.organizationId,
+			kind: input.kind,
+			workPeriodId: input.workPeriodId,
+			requesterEmployeeId: input.requesterEmployeeId,
+			policy: {
+				breakPolicySnapshot:
+					"breakPolicySnapshot" in payload
+						? (payload.breakPolicySnapshot ?? null)
+						: null,
+				surchargeSnapshot:
+					"surchargeSnapshot" in payload
+						? (payload.surchargeSnapshot ?? null)
+						: null,
+			},
+		},
+	);
+	const submitterUserId = input.submitterUserId ?? input.requesterUserId;
 
 	if (
 		authority.mode === "legacy" ||
@@ -1751,6 +1797,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		authority.mode === "ready"
 	) {
 		let created: ResolvePolicyAndCreateApprovalResult | null = null;
+		let observedWorkflowId: string | null = null;
 		let captureCount = 0;
 		const coordinator = createLegacyApprovalWriteCoordinator({
 			writeGate: fixedGate,
@@ -1862,11 +1909,13 @@ async function executeOrdinaryWorkPeriodSubmission(
 							finalizedAt: systemClock.nowInstant(),
 						});
 					terminalMaintenance = finalized.maintenance;
+					terminalFinalized = finalized;
 				}
 				return created;
 			},
 			afterMirror: async (observed) => {
 				if (!created) return fail();
+				observedWorkflowId = observed.snapshot.id;
 				await bindSourceWorkflow({
 					submission: input,
 					source,
@@ -1876,6 +1925,20 @@ async function executeOrdinaryWorkPeriodSubmission(
 				});
 			},
 		});
+		const evidence = submittedFacts
+			? await captureWorkPeriodSubmissionEvidence(input.dbService.db, {
+					organizationId: input.organizationId,
+					requestCycleKey: submissionKey,
+					facts: submittedFacts,
+					submitterUserId,
+					lifecycle: {
+						authority: "legacy",
+						routing: result,
+						observedWorkflowId,
+					},
+					activation: activationEvidence(terminalFinalized),
+				})
+			: null;
 		const approverEmployeeId =
 			result.kind === "auto_completed"
 				? input.requesterEmployeeId
@@ -1883,6 +1946,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		return {
 			result,
 			disposition: "executed",
+			...(evidence ? { evidence: { submittedRevisionId: evidence.id } } : {}),
 			postCommit: descriptor({
 				submission: input,
 				source,
@@ -1977,7 +2041,24 @@ async function executeOrdinaryWorkPeriodSubmission(
 				finalizedAt: started.snapshot.completedAt ?? systemClock.nowInstant(),
 			});
 		terminalMaintenance = finalized.maintenance;
+		terminalFinalized = finalized;
 	}
+	// A replayed start (same cycle) never recaptures.
+	const evidence =
+		submittedFacts && started.kind === "created"
+			? await captureWorkPeriodSubmissionEvidence(input.dbService.db, {
+					organizationId: input.organizationId,
+					requestCycleKey: submissionKey,
+					facts: submittedFacts,
+					submitterUserId,
+					lifecycle: {
+						authority: "canonical",
+						workflow: started.snapshot,
+						events: started.events,
+					},
+					activation: activationEvidence(terminalFinalized),
+				})
+			: null;
 	if (started.kind === "created" && authority.mode === "canonical") {
 		await context.compatibilityWriter.mirrorCanonicalToLegacy({
 			result: {
@@ -2022,6 +2103,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 	return {
 		result,
 		disposition: started.kind === "existing" ? "replayed" : "executed",
+		...(evidence ? { evidence: { submittedRevisionId: evidence.id } } : {}),
 		postCommit:
 			started.kind === "existing"
 				? null
@@ -2048,6 +2130,8 @@ export async function executeOrdinaryWorkPeriodSubmissionInTransaction(
 	result: ResolvePolicyAndCreateApprovalResult;
 	disposition: "executed" | "replayed";
 	postCommit: WorkPeriodPostCommitDescriptor | null;
+	/** Present only when this call captured submitted evidence. */
+	evidence?: WorkPeriodSubmissionEvidence;
 }> {
 	try {
 		return await executeOrdinaryWorkPeriodSubmission(input);

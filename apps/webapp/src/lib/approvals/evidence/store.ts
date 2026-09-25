@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import {
 	APPROVAL_EVIDENCE_MODES,
 	type ApprovalEvidenceMode,
@@ -34,6 +34,13 @@ import {
 	type TravelExpenseSubmittedFacts,
 	type TravelExpenseSubmittedLabels,
 } from "./travel-expense-facts";
+import {
+	fingerprintWorkPeriodMaterialFacts,
+	WORK_PERIOD_EVIDENCE_SCHEMA_VERSION,
+	type WorkPeriodEvidenceKind,
+	type WorkPeriodSubmittedFacts,
+	type WorkPeriodSubmittedLabels,
+} from "./work-period-facts";
 
 /**
  * Evidence capture is additive and inactive by default. The mode is read in the
@@ -1083,4 +1090,240 @@ export async function captureLegacyTravelExpenseSubmittedRevision(
 		});
 	}
 	return revision;
+}
+
+// ---------------------------------------------------------------------------
+// Manual time submissions and policy clock-outs (#302). Canonical lifecycles
+// reference their workflow; legacy lifecycles reference the legacy request or
+// chain routing created, exactly as for absences.
+// ---------------------------------------------------------------------------
+
+export const WORK_PERIOD_EVIDENCE_WORKFLOW_TYPES = [
+	"manual_time_submission",
+	"policy_clock_out",
+] as const satisfies readonly WorkPeriodEvidenceKind[];
+
+export type WorkPeriodEvidenceLifecycle =
+	| { authority: "canonical"; workflowId: string }
+	| { authority: "legacy"; legacy: LegacyLifecycleReference };
+
+export interface WorkPeriodSubmittedRevisionRecord {
+	id: string;
+	organizationId: string;
+	lifecycle: WorkPeriodEvidenceLifecycle;
+	workflowType: WorkPeriodEvidenceKind;
+	workPeriodId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	requesterEmployeeId: string;
+	submitter: SubmitterIdentity;
+	materialFingerprint: string;
+	facts: WorkPeriodSubmittedFacts;
+	labels: WorkPeriodSubmittedLabels;
+	provenance: "captured_at_submission";
+	submittedAt: Instant;
+}
+
+function workPeriodLifecycle(row: SubmittedRevisionRow): WorkPeriodEvidenceLifecycle | null {
+	if (row.authority === "canonical" && row.workflowId) {
+		return { authority: "canonical", workflowId: row.workflowId };
+	}
+	if (row.authority === "legacy" && !row.workflowId && row.legacyApprovalRequestId) {
+		return {
+			authority: "legacy",
+			legacy: {
+				approvalRequestId: row.legacyApprovalRequestId,
+				chainInstanceId: row.legacyChainInstanceId,
+				observedWorkflowId: row.observedWorkflowId,
+			},
+		};
+	}
+	return null;
+}
+
+function parseWorkPeriodRevision(
+	row: SubmittedRevisionRow,
+	organizationId: string,
+): WorkPeriodSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	const lifecycle = workPeriodLifecycle(row);
+	if (
+		!lifecycle ||
+		row.organizationId !== organizationId ||
+		(row.workflowType !== "manual_time_submission" &&
+			row.workflowType !== "policy_clock_out") ||
+		row.sourceType !== "time_entry" ||
+		row.schemaVersion !== WORK_PERIOD_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		row.submitterActorKind !== "employee" ||
+		!isRecord(facts) ||
+		facts.kind !== row.workflowType ||
+		facts.schemaVersion !== WORK_PERIOD_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.workPeriodId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isRecord(facts.interval) ||
+		!isRecord(facts.policy) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName) ||
+		!nullableString(labels.requesterName) ||
+		!nullableString(labels.submitterName)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "work_period_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as WorkPeriodSubmittedFacts;
+	if (fingerprintWorkPeriodMaterialFacts(parsedFacts) !== row.materialFingerprint) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "material_fingerprint",
+		});
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		lifecycle,
+		workflowType: row.workflowType,
+		workPeriodId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		requesterEmployeeId: row.requesterEmployeeId,
+		submitter: {
+			kind: row.submitterActorKind,
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: labels as unknown as WorkPeriodSubmittedLabels,
+		provenance: "captured_at_submission",
+		submittedAt: instantFromDate(row.submittedAt),
+	};
+}
+
+/**
+ * Written by the ordinary work-period submission owner inside its transaction,
+ * after routing created the lifecycle. The insert is not idempotent: a second
+ * capture for the same cycle is a contradiction and rolls the submission back.
+ */
+export async function captureWorkPeriodSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		lifecycle: WorkPeriodEvidenceLifecycle;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: WorkPeriodSubmittedFacts;
+		labels: WorkPeriodSubmittedLabels;
+		submitter: { kind: "employee"; employeeId: string; userId: string };
+	},
+): Promise<WorkPeriodSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const legacy = input.lifecycle.authority === "legacy" ? input.lifecycle.legacy : null;
+	const inserted = await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: input.lifecycle.authority,
+			workflowId:
+				input.lifecycle.authority === "canonical" ? input.lifecycle.workflowId : null,
+			legacyApprovalRequestId: legacy?.approvalRequestId ?? null,
+			legacyChainInstanceId: legacy?.chainInstanceId ?? null,
+			observedWorkflowId: legacy?.observedWorkflowId ?? null,
+			workflowType: input.facts.kind,
+			sourceType: "time_entry",
+			sourceId: input.facts.workPeriodId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: WORK_PERIOD_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint: fingerprintWorkPeriodMaterialFacts(input.facts),
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "work_period_submitted_revision",
+		});
+	}
+	return parseWorkPeriodRevision(row, input.organizationId);
+}
+
+/** The canonical lifecycle revision, scoped to its organization and workflow. */
+export async function loadCanonicalWorkPeriodSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string },
+): Promise<WorkPeriodSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.workflowId, input.workflowId),
+				inArray(approvalSubmittedRevision.workflowType, [
+					...WORK_PERIOD_EVIDENCE_WORKFLOW_TYPES,
+				]),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseWorkPeriodRevision(row, input.organizationId) : null;
+}
+
+/**
+ * The legacy lifecycle a request belongs to: the request routing created, or
+ * any stage request of the chain it created. A shared work-period ID alone
+ * never links two cycles.
+ */
+export async function loadLegacyWorkPeriodSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workPeriodId: string;
+		approvalRequestId: string;
+		chainInstanceId: string | null;
+	},
+): Promise<WorkPeriodSubmittedRevisionRecord | null> {
+	const lifecycle = input.chainInstanceId
+		? or(
+				eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId),
+				eq(approvalSubmittedRevision.legacyChainInstanceId, input.chainInstanceId),
+			)
+		: eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId);
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, "time_entry"),
+				eq(approvalSubmittedRevision.sourceId, input.workPeriodId),
+				lifecycle,
+			),
+		)
+		.limit(2);
+	if (rows.length > 1) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "work_period_submitted_revision",
+		});
+	}
+	const row = rows[0];
+	return row ? parseWorkPeriodRevision(row, input.organizationId) : null;
 }

@@ -13,10 +13,10 @@ import {
 import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
-export const COMPLETED_WORK_OPERATION_KINDS = ["close_active_work"] as const;
+export const COMPLETED_WORK_OPERATION_KINDS = ["close_active_work", "start_live_work"] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
-export const COMPLETED_WORK_WRITERS = ["web_clock_out"] as const;
+export const COMPLETED_WORK_WRITERS = ["web_clock_out", "direct_http"] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
 export const COMPLETED_WORK_ACTOR_KINDS = ["human", "system", "unknown_historical"] as const;
@@ -25,7 +25,7 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // Committed completed-work operation receipt (#256 §5, #274). Written in the same
 // transaction as the work graph it describes. The ID is the operation's originating
 // identity (for a web clock-out, its submission ID, which is also the clock-out
-// entry ID). Work identities are stored by value: the receipt is committed evidence
+// entry ID; for a direct-HTTP command, its operation ID, which is also the entry ID). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
 export const completedWorkOperation = pgTable(
@@ -57,8 +57,8 @@ export const completedWorkOperation = pgTable(
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 		index("completedWorkOperation_org_employee_idx").on(table.organizationId, table.employeeId),
-		check("completed_work_operation_kind_check", sql`${table.kind} IN ('close_active_work')`),
-		check("completed_work_operation_writer_check", sql`${table.writer} IN ('web_clock_out')`),
+		check("completed_work_operation_kind_check", sql`${table.kind} IN ('close_active_work', 'start_live_work')`),
+		check("completed_work_operation_writer_check", sql`${table.writer} IN ('web_clock_out', 'direct_http')`),
 		check(
 			"completed_work_operation_admission_check",
 			sql`${table.appendAdmission} IN ('legacy', 'append')`,

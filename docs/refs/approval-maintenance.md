@@ -47,4 +47,6 @@ Time records, absences, shifts, expenses, and compliance source records remain. 
 
 Other submission cycles are not selected merely because they share the same source ID. Every lookup and mutation is scoped to the specified organization.
 
+Manual time submission and policy clock-out evidence (#302) follows the same lifecycle rules. In addition, the whole-history deletes (`clearOrganizationTimeData`, `deleteNonAdminEmployeesData` and organization cleanup) remove that evidence together with the work history it describes, through `deleteWorkPeriodApprovalEvidence`.
+
 Cleanup uses one transaction with foreign-key checks enabled. Short-lived table locks prevent approval topology from changing during cleanup; lock waits are limited to 10 seconds and individual statements to 30 seconds. A missing/ambiguous ID, unexpected dependency, or database failure causes an error and rollback. Successful output lists the approval and chain IDs actually removed after commit.

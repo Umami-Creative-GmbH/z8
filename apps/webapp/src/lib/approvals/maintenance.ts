@@ -389,3 +389,81 @@ export async function deleteApprovalInTransaction(
 		delivery: { work: deliveryWork.sort(), messages: deliveryMessages.sort() },
 	};
 }
+
+/**
+ * Whole-history cleanup participation for manual time submission and policy
+ * clock-out evidence (#302). Paths that delete an organization's (or some
+ * employees') work history remove the lifecycle evidence describing it before
+ * the history and the employees, dependants first, so employee FKs never block
+ * the delete. It runs in the caller's transaction when the caller has one; the
+ * demo cleanup paths have none. Other kinds are untouched.
+ */
+export async function deleteWorkPeriodApprovalEvidence(
+	transaction: ApprovalTransactionClient,
+	input: { organizationId: string; employeeIds: readonly string[] | "all" },
+): Promise<DeletedApprovalEvidenceRecords> {
+	const none: DeletedApprovalEvidenceRecords = {
+		submittedRevisions: [],
+		decisionEvidence: [],
+		reviewBindings: [],
+		invocations: [],
+	};
+	if (input.employeeIds !== "all" && input.employeeIds.length === 0) return none;
+	// Any lifecycle naming a deleted employee as subject, requester, submitter or
+	// deciding actor goes: those references are FKs without cascade.
+	const employees = input.employeeIds === "all" ? null : sql.param([...input.employeeIds]);
+	const subjects =
+		employees === null
+			? sql`true`
+			: sql`(subject_employee_id = any(${employees}::uuid[])
+				or requester_employee_id = any(${employees}::uuid[])
+				or submitter_employee_id = any(${employees}::uuid[])
+				or id in (
+					select submitted_revision_id from approval_decision_evidence
+					where organization_id = ${input.organizationId}
+						and actor_employee_id = any(${employees}::uuid[])
+				))`;
+	const revisionIds = rows(
+		await transaction.execute(sql`
+			select id from approval_submitted_revision
+			where organization_id = ${input.organizationId}
+				and workflow_type in ('manual_time_submission', 'policy_clock_out')
+				and source_type = 'time_entry'
+				and ${subjects}
+			for update
+		`),
+	).map(rowId);
+	if (revisionIds.length === 0) return none;
+	const deletedIds = async (query: SQL) => rows(await transaction.execute(query)).map(rowId);
+	const scope = sql`organization_id = ${input.organizationId}`;
+	const revisions = sql`${sql.param(revisionIds)}::uuid[]`;
+	const invocations = await deletedIds(sql`
+		delete from approval_invocation
+		where ${scope} and decision_evidence_id in (
+			select id from approval_decision_evidence
+			where ${scope} and submitted_revision_id = any(${revisions})
+		)
+		returning id
+	`);
+	const decisionEvidence = await deletedIds(sql`
+		delete from approval_decision_evidence
+		where ${scope} and submitted_revision_id = any(${revisions})
+		returning id
+	`);
+	const reviewBindings = await deletedIds(sql`
+		delete from approval_review_binding
+		where ${scope} and submitted_revision_id = any(${revisions})
+		returning id
+	`);
+	const submittedRevisions = await deletedIds(sql`
+		delete from approval_submitted_revision
+		where ${scope} and id = any(${revisions})
+		returning id
+	`);
+	return {
+		submittedRevisions: submittedRevisions.sort(),
+		decisionEvidence: decisionEvidence.sort(),
+		reviewBindings: reviewBindings.sort(),
+		invocations: invocations.sort(),
+	};
+}

@@ -58,6 +58,8 @@ export type PolicyClockOutTerminalBreakResult =
 	| {
 			kind: "adjusted";
 			breakMinutes: number;
+			/** The period created after the inserted break. */
+			secondPeriodId: string;
 			maintenance: WorkPeriodMaintenanceFacts;
 	  };
 
@@ -696,6 +698,7 @@ export async function applyPolicyClockOutTerminalBreakInTransaction(
 	return {
 		kind: "adjusted",
 		breakMinutes: finalCalculation.deficit,
+		secondPeriodId,
 		maintenance: maintenance([source.id, secondPeriodId]),
 	};
 }
