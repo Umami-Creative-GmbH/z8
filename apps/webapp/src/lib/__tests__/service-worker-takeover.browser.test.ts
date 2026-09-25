@@ -29,6 +29,7 @@ const WORKER_FILES = [
 	"/sw.js",
 	"/lib/offline-queue-db.js",
 	"/lib/sync-service.js",
+	"/lib/clock-command-dispatch.js",
 ];
 type Release = "pre-preservation" | "preserving" | "preserving-rebuilt";
 
@@ -161,7 +162,7 @@ describe.skipIf(!executablePath)(
 
 		function queuedRows() {
 			return page.evaluate(`new Promise((resolve, reject) => {
-			const request = indexedDB.open('z8-offline-queue', 1);
+			const request = indexedDB.open('z8-offline-queue');
 			request.onsuccess = () => {
 				const all = request.result.transaction('clock-events').objectStore('clock-events').getAll();
 				all.onsuccess = () => { request.result.close(); resolve(all.result); };

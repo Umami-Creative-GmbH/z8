@@ -23,17 +23,38 @@ vi.mock("@/lib/auth-client", () => ({
 vi.mock("./use-online-status", () => ({ useOnlineStatus: () => true }));
 import { useOfflineClock } from "./use-offline-clock";
 
+const OPERATION_ID = "0f8fad5b-d9cb-469f-a165-70867728950e";
+const commandContext = {
+	userId: "user-1",
+	organizationId: "org-1",
+	employeeId: "5f0c6a52-58a4-4d5c-9b0e-5f7b8c1d2e3f",
+	server: "http://localhost:3000",
+};
+const captureRequest = {
+	operationId: OPERATION_ID,
+	kind: "clock_in" as const,
+	admission: "delayed" as const,
+	occurredAt: "2026-09-25T08:00:00.000Z",
+	timezone: "Europe/Berlin",
+	context: commandContext,
+	workLocationType: "office" as const,
+};
+
 describe("offline clock caller outcomes", () => {
 	let serviceWorker: EventTarget;
 	let controller: { postMessage: ReturnType<typeof vi.fn> };
 	let mode: string;
 	let saveError: string | undefined;
+	let captureReply: unknown;
+	let dispatchReply: unknown;
 	let client: QueryClient;
 	const messages: unknown[] = [];
 
 	beforeEach(() => {
 		mode = "preservation-only-v1";
 		saveError = undefined;
+		captureReply = { success: true, recoveryId: "local-1", operationId: OPERATION_ID, state: "pending" };
+		dispatchReply = { success: false, error: "worker busy" };
 		messages.length = 0;
 		mocks.session = structuredClone(signedInSession);
 		vi.stubGlobal("MessageChannel", MessageChannel);
@@ -42,7 +63,13 @@ describe("offline clock caller outcomes", () => {
 				messages.push(message);
 				const response =
 					message.type === "GET_VERSION"
-						? { clockQueueMode: mode }
+						? mode === "frozen"
+							? { clockQueueMode: "preservation-only-v1", clockCommandMode: "frozen-v2" }
+							: { clockQueueMode: mode }
+						: message.type === "CAPTURE_CLOCK_COMMAND"
+							? captureReply
+							: message.type === "DISPATCH_CLOCK_COMMANDS"
+								? dispatchReply
 						: message.type === "GET_QUEUE_COUNT"
 							? { count: 2, reviewCount: 2, savedCount: 3 }
 							: message.type === "QUEUE_CLOCK_EVENT"
@@ -194,5 +221,104 @@ describe("offline clock caller outcomes", () => {
 		expect(messages).not.toContainEqual(
 			expect.objectContaining({ type: "QUEUE_CLOCK_EVENT" }),
 		);
+	});
+
+	describe("frozen clock commands (#279)", () => {
+		function stubCapabilities() {
+			const fetch = vi.fn(async () =>
+				Response.json({ commandVersions: [2], submit: "available", context: commandContext }),
+			);
+			vi.stubGlobal("fetch", fetch);
+			return fetch;
+		}
+
+		it("does not read capabilities or offer freezing through a worker without frozen commands", async () => {
+			const fetch = stubCapabilities();
+			const { result } = renderHook(() => useOfflineClock(), { wrapper });
+			await waitFor(() => expect(result.current.swReady).toBe(true));
+			expect(result.current.commandsReady).toBe(false);
+			expect(result.current.commandCapabilities).toBeNull();
+			expect(fetch).not.toHaveBeenCalled();
+		});
+
+		it("reports a failed local save as a failure and sends nothing", async () => {
+			mode = "frozen";
+			stubCapabilities();
+			const { result } = renderHook(() => useOfflineClock(), { wrapper });
+			await waitFor(() => expect(result.current.commandCapabilities).toMatchObject({ submit: "available" }));
+			captureReply = { success: false, code: "storage_failed", message: "QuotaExceededError" };
+			let outcome: unknown;
+			await act(async () => {
+				outcome = await result.current.submitClockCommand(captureRequest);
+			});
+			expect(outcome).toEqual({
+				success: false,
+				code: "storage_failed",
+				error: "Could not save the clock action on this device. Nothing was sent.",
+			});
+			expect(messages).not.toContainEqual(expect.objectContaining({ type: "DISPATCH_CLOCK_COMMANDS" }));
+		});
+
+		it("dispatches the saved command and reads its stored outcome, never failing after the save", async () => {
+			mode = "frozen";
+			stubCapabilities();
+			const { result } = renderHook(() => useOfflineClock(), { wrapper });
+			await waitFor(() => expect(result.current.commandCapabilities).not.toBeNull());
+			// Reconnect/reload lets the worker send what it holds.
+			expect(messages).toContainEqual({ type: "TRIGGER_SYNC" });
+
+			dispatchReply = {
+				success: true,
+				status: "done",
+				record: {
+					operationId: OPERATION_ID,
+					kind: "clock_in",
+					state: "committed",
+					receipt: { kind: "start_live_work", result: { clockInEntryId: "entry-1" } },
+				},
+			};
+			let committed: unknown;
+			await act(async () => {
+				committed = await result.current.submitClockCommand(captureRequest);
+			});
+			expect(committed).toEqual({ success: true, data: { id: "entry-1" } });
+			expect(messages).toContainEqual({ type: "CAPTURE_CLOCK_COMMAND", payload: captureRequest });
+			expect(messages).toContainEqual({
+				type: "DISPATCH_CLOCK_COMMANDS",
+				operationId: OPERATION_ID,
+				context: { userId: "user-1", organizationId: "org-1" },
+			});
+			expect(messages).not.toContainEqual(
+				expect.objectContaining({ type: "ACKNOWLEDGE_CLOCK_COMMAND" }),
+			);
+
+			dispatchReply = {
+				success: true,
+				status: "done",
+				record: {
+					operationId: OPERATION_ID,
+					kind: "clock_in",
+					state: "rejected",
+					lastOutcome: { kind: "rejected", code: "already_clocked_in" },
+				},
+			};
+			let refused: unknown;
+			await act(async () => {
+				refused = await result.current.submitClockCommand(captureRequest);
+			});
+			expect(refused).toMatchObject({ success: false, code: "already_clocked_in" });
+			// Shown to the person, so the worker may resolve it.
+			expect(messages).toContainEqual({
+				type: "ACKNOWLEDGE_CLOCK_COMMAND",
+				operationId: OPERATION_ID,
+			});
+
+			dispatchReply = { success: false, error: "Worker stopped" };
+			let unknown: unknown;
+			await act(async () => {
+				unknown = await result.current.submitClockCommand(captureRequest);
+			});
+			expect(unknown).toEqual({ success: true, queued: true, delivery: "pending" });
+		});
 	});
 });
