@@ -260,13 +260,13 @@ This slice closes on implementation. Activation items move to #327, #329 and #33
   selection. In an adopted organization they are a non-participating writer. They must
   be drained or gated before activation, and the #266 fence must keep old queue readers
   from deleting rows when that happens.
-- **Client adoption (#329).** No client sends version 2 yet. Browser (#279), mobile
-  (#278) and desktop adapters must freeze commands before the first attempt,
+- **Client adoption (#329).** No client sends version 2 yet. Browser (#279) and desktop
+  adapters must freeze commands before the first attempt,
   persist the receipt before leaving the active queue, and pause on `context_mismatch`,
   `not_adopted`, `unsupported_version` and `unknown`. Deployed-client inventory and
   effective update or disable control for old destructive consumers are required before
-  strict admission. The extension is retired (#282), but its installed readers remain
-  such old consumers.
+  strict admission. The extension (#282) and the mobile app (#283, #278) are retired,
+  but their installed copies remain such old consumers.
 - **Lookup fencing.** `not_committed` is not a tombstone. A request that is still
   before its transaction can commit after a lookup. That is safe for clients that only
   resend the same identity, and client adapters must keep that rule.

@@ -643,3 +643,7 @@ extension client will adopt version 2 commands, so the #282 references above
 (C266-E, the fence retirement trigger) no longer point at planned adoption.
 Installed X1–X3 readers remain old consumers under #329. See
 [the retirement record](../extension-clock-client-retirement-282.md).
+
+The mobile app was retired the same day (#283 and #278 close as not planned).
+C266-M no longer points at planned adoption. Installed apps remain old consumers
+under #329. See [the mobile retirement record](../mobile-clock-client-retirement-283.md).
