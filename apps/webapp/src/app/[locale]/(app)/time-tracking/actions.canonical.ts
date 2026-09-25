@@ -13,7 +13,10 @@ import {
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Transaction = Pick<
+	Parameters<Parameters<typeof db.transaction>[0]>[0],
+	"select" | "insert" | "update" | "query"
+>;
 type CanonicalWorkRecordDbClient = Pick<typeof db, "insert">;
 
 function transactionDatabaseLayer(transaction: Transaction) {

@@ -52,6 +52,20 @@ export interface ApprovalActionableCard {
 	rejectLabel: string;
 }
 
+/**
+ * Submitted facts for a provider that cannot decide (#294): no binding and no
+ * controls, only the exact item's review link.
+ */
+export interface ApprovalReviewSummary {
+	status: "review_summary";
+	recipientUserId: string;
+	title: string;
+	facts: ApprovalCardFact[];
+	text: string;
+	reviewLabel: string;
+	reviewUrl: string;
+}
+
 /** Everything a provider renders, before a binding is issued for it. */
 export type ApprovalCardDraft = Omit<ApprovalActionableCard, "bindingId">;
 
@@ -176,27 +190,16 @@ export function buildAbsenceCardFacts(
 }
 
 /**
- * Prepares an actionable absence card for one recipient's exact pending
- * assignment, or returns null so the caller shows a review-only notice. Every
- * gate must hold: canonical absence authority, evidence capture, an admitted
- * provider, a current submitted revision that still matches the live request,
- * intelligible facts, and the provider's own limits (`fits`). A binding is
- * issued only for a card that will be sent. Infrastructure errors propagate.
+ * Facts from the immutable submitted revision for one recipient's exact
+ * pending assignment, or null so the caller shows a review-only notice. Every
+ * gate must hold: canonical absence authority, evidence capture, a current
+ * submitted revision that still matches the live request, and intelligible
+ * facts. Infrastructure errors propagate.
  */
-export async function prepareBoundAbsenceCard(
+async function loadAbsenceCardFacts(
 	database: ApprovalDatabase,
-	input: {
-		target: ApprovalCardTarget;
-		provider: ApprovalPresentationProvider;
-		/** Compatibility request of this stage; the review link's target. */
-		approvalRequestId: string;
-		recipientUserId: string;
-		display: DisplayContext;
-		t: BotTranslateFn;
-		/** Provider limits; essential content never gets truncated controls. */
-		fits?: (draft: ApprovalCardDraft) => boolean;
-	},
-): Promise<ApprovalActionableCard | null> {
+	input: { target: ApprovalCardTarget; display: DisplayContext; t: BotTranslateFn },
+): Promise<{ facts: ApprovalCardFact[]; submittedRevisionId: string } | null> {
 	const { target } = input;
 	const [workflow] = await database
 		.select({
@@ -232,19 +235,11 @@ export async function prepareBoundAbsenceCard(
 		.limit(1);
 	if (rollout?.mode !== "canonical" && rollout?.mode !== "complete")
 		return null;
-	const [evidenceMode, presentationMode] = await Promise.all([
-		readApprovalEvidenceMode(database, {
-			organizationId: target.organizationId,
-			workflowType: "absence",
-		}),
-		readApprovalPresentationMode(database, {
-			organizationId: target.organizationId,
-			workflowType: "absence",
-			provider: input.provider,
-		}),
-	]);
-	if (evidenceMode !== "capture" || presentationMode !== "actionable")
-		return null;
+	const evidenceMode = await readApprovalEvidenceMode(database, {
+		organizationId: target.organizationId,
+		workflowType: "absence",
+	});
+	if (evidenceMode !== "capture") return null;
 	const revision = await loadCurrentAbsenceSubmittedRevision(database, {
 		organizationId: target.organizationId,
 		workflowId: target.workflowId,
@@ -299,40 +294,101 @@ export async function prepareBoundAbsenceCard(
 			categoryName: live.categoryName ?? null,
 		},
 	);
-	const facts = buildAbsenceCardFacts(
-		revision,
-		comparison,
-		input.display,
-		input.t,
-	);
-	if (!facts) return null;
-	const { t } = input;
+	const facts = buildAbsenceCardFacts(revision, comparison, input.display, input.t);
+	return facts ? { facts, submittedRevisionId: revision.id } : null;
+}
+
+// Exact item; it stays reviewable as history after a decision, and arrival
+// rechecks membership and entitlement.
+function cardReviewUrl(target: ApprovalCardTarget, approvalRequestId: string) {
+	return approvalReviewUrl({
+		organizationId: target.organizationId,
+		reference: { kind: "compatibility", approvalRequestId },
+	});
+}
+
+/**
+ * Prepares an actionable absence card for one recipient's exact pending
+ * assignment, or returns null so the caller shows a review-only notice. Every
+ * fact gate must hold, the provider must be admitted, and the card must fit
+ * the provider's own limits (`fits`). A binding is issued only for a card
+ * that will be sent. Infrastructure errors propagate.
+ */
+export async function prepareBoundAbsenceCard(
+	database: ApprovalDatabase,
+	input: {
+		target: ApprovalCardTarget;
+		provider: ApprovalPresentationProvider;
+		/** Compatibility request of this stage; the review link's target. */
+		approvalRequestId: string;
+		recipientUserId: string;
+		display: DisplayContext;
+		t: BotTranslateFn;
+		/** Provider limits; essential content never gets truncated controls. */
+		fits?: (draft: ApprovalCardDraft) => boolean;
+	},
+): Promise<ApprovalActionableCard | null> {
+	const { target, t } = input;
+	const presentationMode = await readApprovalPresentationMode(database, {
+		organizationId: target.organizationId,
+		workflowType: "absence",
+		provider: input.provider,
+	});
+	if (presentationMode !== "actionable") return null;
+	const loaded = await loadAbsenceCardFacts(database, input);
+	if (!loaded) return null;
 	const draft: ApprovalCardDraft = {
 		status: "actionable",
 		recipientUserId: input.recipientUserId,
 		title: t("bot.approval.card.absenceTitle", "Absence approval request"),
-		facts,
+		facts: loaded.facts,
 		text: t(
 			"bot.approval.card.boundHint",
 			"Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",
 		),
 		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
-		// Exact item; it stays reviewable as history after a decision, and
-		// arrival rechecks membership and entitlement.
-		reviewUrl: await approvalReviewUrl({
-			organizationId: target.organizationId,
-			reference: {
-				kind: "compatibility",
-				approvalRequestId: input.approvalRequestId,
-			},
-		}),
+		reviewUrl: await cardReviewUrl(target, input.approvalRequestId),
 		approveLabel: t("bot.approval.card.approve", "Approve"),
 		rejectLabel: t("bot.approval.card.reject", "Reject"),
 	};
 	if (input.fits && !input.fits(draft)) return null;
 	const bindingId = await issueReviewBinding(database, {
 		...target,
-		submittedRevisionId: revision.id,
+		submittedRevisionId: loaded.submittedRevisionId,
 	});
 	return { ...draft, bindingId };
+}
+
+/**
+ * The submitted facts without controls, for a provider that cannot decide
+ * (Slack, #294). The same fact gates as an actionable card apply; nothing is
+ * bound, and a summary that does not fit the provider's limits is not sent.
+ */
+export async function prepareAbsenceReviewSummary(
+	database: ApprovalDatabase,
+	input: {
+		target: ApprovalCardTarget;
+		approvalRequestId: string;
+		recipientUserId: string;
+		display: DisplayContext;
+		t: BotTranslateFn;
+		fits?: (summary: ApprovalReviewSummary) => boolean;
+	},
+): Promise<ApprovalReviewSummary | null> {
+	const loaded = await loadAbsenceCardFacts(database, input);
+	if (!loaded) return null;
+	const { t } = input;
+	const summary: ApprovalReviewSummary = {
+		status: "review_summary",
+		recipientUserId: input.recipientUserId,
+		title: t("bot.approval.card.absenceTitle", "Absence approval request"),
+		facts: loaded.facts,
+		text: t(
+			"bot.approval.card.reviewOnlyHint",
+			"Approve or reject this request in Z8. It cannot be decided from this message.",
+		),
+		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
+		reviewUrl: await cardReviewUrl(input.target, input.approvalRequestId),
+	};
+	return input.fits && !input.fits(summary) ? null : summary;
 }

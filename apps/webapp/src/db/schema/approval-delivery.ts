@@ -20,8 +20,9 @@ import { approvalWorkflowTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
-// #291: providers whose approval-card delivery has one durable owner.
-export const APPROVAL_DELIVERY_PROVIDERS = ["telegram"] as const;
+// #291: providers whose approval-card delivery has one durable owner. Slack
+// joined in #294 with review-only cards.
+export const APPROVAL_DELIVERY_PROVIDERS = ["telegram", "slack"] as const;
 export type ApprovalDeliveryProvider = (typeof APPROVAL_DELIVERY_PROVIDERS)[number];
 
 /** `initial` sends a card for one assignment; `refresh` updates one sent message. */
@@ -88,7 +89,7 @@ export const approvalDeliveryControl = pgTable(
 			name: "approval_delivery_control_pk",
 			columns: [table.organizationId, table.workflowType, table.provider],
 		}),
-		check("approval_delivery_control_provider_check", sql`${table.provider} IN ('telegram')`),
+		check("approval_delivery_control_provider_check", sql`${table.provider} IN ('telegram', 'slack')`),
 	],
 );
 
@@ -145,7 +146,7 @@ export const approvalDeliveryMessage = pgTable(
 		index("approvalDeliveryMessage_org_legacy_source_idx")
 			.on(table.organizationId, table.legacySourceType, table.legacySourceId)
 			.where(sql`${table.lifecycle} = 'legacy'`),
-		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram')`),
+		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'slack')`),
 		check("approval_delivery_message_lifecycle_check", lifecycleCheck(table)),
 		check(
 			"approval_delivery_message_legacy_reference_check",
@@ -240,7 +241,7 @@ export const approvalDeliveryWork = pgTable(
 		index("approvalDeliveryWork_due_idx")
 			.on(table.organizationId, table.availableAt)
 			.where(sql`status IN ('pending', 'processing')`),
-		check("approval_delivery_work_provider_check", sql`${table.provider} IN ('telegram')`),
+		check("approval_delivery_work_provider_check", sql`${table.provider} IN ('telegram', 'slack')`),
 		check(
 			"approval_delivery_work_effect_check",
 			sql`(${table.effect} = 'initial' AND ${table.messageId} IS NULL) OR (${table.effect} = 'refresh' AND ${table.messageId} IS NOT NULL)`,

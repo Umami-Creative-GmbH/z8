@@ -16,6 +16,8 @@ import {
 	type ApprovalActionableCard,
 	type ApprovalCardDraft,
 	type ApprovalCardTarget,
+	type ApprovalReviewSummary,
+	prepareAbsenceReviewSummary,
 	prepareBoundAbsenceCard,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
@@ -50,8 +52,16 @@ export async function prepareApprovalPresentation(input: {
 	provider?: ApprovalPresentationProvider;
 	/** The provider's limits for an actionable card (e.g. message length). */
 	fits?: (draft: ApprovalCardDraft) => boolean;
+	/**
+	 * A provider that cannot decide may show the submitted facts without
+	 * controls (#294), within its own limits; otherwise it gets a notice.
+	 */
+	summary?: { fits: (summary: ApprovalReviewSummary) => boolean };
 }): Promise<
-	ApprovalReviewNotice | ApprovalActionableCard | { status: "undisclosable" }
+	| ApprovalReviewNotice
+	| ApprovalActionableCard
+	| ApprovalReviewSummary
+	| { status: "undisclosable" }
 > {
 	const request = await db.query.approvalRequest.findFirst({
 		where: and(
@@ -147,6 +157,17 @@ export async function prepareApprovalPresentation(input: {
 			...(input.fits ? { fits: input.fits } : {}),
 		});
 		if (card) return card;
+		if (input.summary) {
+			const summary = await prepareAbsenceReviewSummary(db, {
+				target: canonicalTarget,
+				approvalRequestId: request.id,
+				recipientUserId: recipient.userId,
+				display,
+				t,
+				fits: input.summary.fits,
+			});
+			if (summary) return summary;
+		}
 	} else if (input.provider && request.entityType === "travel_expense_claim") {
 		// Legacy-authoritative expense claims bind the exact legacy request (#296).
 		const card = await prepareBoundTravelExpenseCard(db, {
@@ -191,6 +212,7 @@ export type {
 	ApprovalActionableCard,
 	ApprovalCardDraft,
 	ApprovalCardFact,
+	ApprovalReviewSummary,
 } from "./bound-card";
 export {
 	type AbsenceReviewEvidence,

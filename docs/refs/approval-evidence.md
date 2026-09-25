@@ -100,7 +100,9 @@ regardless.
 
 Bot cards stay review-only (#270) unless a provider is admitted. #290 adds
 the first actionable path (Telegram, canonical absences); see "Telegram absence
-cards" below. Discord, Teams and Slack remain #292–#294.
+cards" below. Discord and Teams remain #292–#293. Slack is never admitted; its
+cards show the submitted facts without controls (#294, see
+[Approval card delivery](approval-delivery.md)).
 
 ## Cleanup participation (before any capture)
 
@@ -476,8 +478,8 @@ the upload route and submission action tests.
 Expense claims are decided only by legacy authority. #296 adds the review,
 decision evidence, bound cards and delivery for them without creating canonical
 authority. Everything is **inactive for every organization**: migration
-`0089_legacy_expense_presentation.sql` inserts no control rows. Apply it after
-`0088`.
+`0091_legacy_expense_presentation.sql` inserts no control rows. Apply it after
+`0090`.
 
 ```text
 submitTravelExpenseClaim (tx)                    #295 capture, then
@@ -616,7 +618,7 @@ and other claims are preserved.
 
 ### Activation
 
-Apply `0089`, then, as the authorized adoption writer and under the exclusive
+Apply `0091`, then, as the authorized adoption writer and under the exclusive
 rollout lock of the kind (scope suffix `:14:travel_expense`), after capture is
 active (#295):
 
@@ -636,7 +638,7 @@ No application endpoint changes either control.
 
 ### Activation blockers (#296, unresolved)
 
-1. Apply `0089` through the authorized deployment. It has run only on the
+1. Apply `0091` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries.** Instances without this release decide expenses without the
    rollout lock, evidence, replay or holds, and write no delivery intents. Drain
@@ -714,7 +716,7 @@ the Telegram transport are replaced. 12/12 passing:
 
 The #295, #288, #290 and #291 suites still pass on the same runner (the #291
 cleanup report now includes `delivery.intents`), and the migration recovery
-check passes with `0089` in the chain. Unit seams: `travel-expense-decision.test.ts`,
+check passes with `0091` in the chain. Unit seams: `travel-expense-decision.test.ts`,
 `travel-expense-card.test.ts`, `travel-expense-review.test.ts`, the handler,
 action and maintenance tests.
 
