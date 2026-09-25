@@ -18,6 +18,7 @@
     "db:seed": "tsx src/db/seed/do-seed.ts",
     "approvals:list": "tsx scripts/approvals.ts list",
     "approvals:delete": "tsx scripts/approvals.ts delete",
+    "approvals:pilot-readiness": "tsx scripts/approval-pilot-readiness.ts",
     "queue:obliterate": "tsx scripts/obliterate-job-queue.ts"
   },
   "dependencies": {

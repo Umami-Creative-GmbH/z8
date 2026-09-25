@@ -13,6 +13,7 @@
 		"test:watch": "turbo test:watch",
 		"approvals:list": "pnpm --filter webapp approvals:list",
 		"approvals:delete": "pnpm --filter webapp approvals:delete",
+		"approvals:pilot-readiness": "pnpm --filter webapp approvals:pilot-readiness",
 		"dev:webapp": "turbo dev --filter=webapp",
 		"dev:desktop": "turbo dev --filter=desktop",
 		"build:webapp": "turbo build --filter=webapp",
