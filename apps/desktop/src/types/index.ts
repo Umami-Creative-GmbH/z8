@@ -54,6 +54,16 @@ export interface RecoverySummary {
 
 export type SavedCommandState = "pending" | "stalled" | "rejected" | "committed" | "archived";
 
+/** What a paused saved command waits for before it can be sent. */
+export type WaitingFor =
+  | "signIn"
+  | "access"
+  | "subscription"
+  | "originalContext"
+  | "serverAdoption"
+  | "appUpdate"
+  | "server";
+
 /** A frozen clock command captured for the session's current context. */
 export interface SavedClockCommand {
   operationId: string;
@@ -67,6 +77,7 @@ export interface SavedClockCommand {
   capturedAtMs: number;
   dependsOn: string | null;
   failure: CommandFailure | null;
+  waitingFor: WaitingFor | null;
   /** Refused without committed work under its identity, so it may be archived. */
   archivable: boolean;
   /** The exact command sent on every attempt. */

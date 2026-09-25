@@ -2,7 +2,7 @@
 //! shapes of the #275 routes.
 use crate::clock::ClockService;
 use crate::clock_command::{
-    execute, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockDevice,
+    execute, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockSession,
 };
 use crate::command_store::{token_fingerprint, CommandStore, StoredCommand};
 use crate::command_transport::Capabilities;
@@ -93,8 +93,8 @@ impl Device {
         Self::open(dir)
     }
 
-    pub fn at<'a>(&'a self, endpoint: &'a str, token: &'a str) -> ClockDevice<'a> {
-        ClockDevice {
+    pub fn at<'a>(&'a self, endpoint: &'a str, token: &'a str) -> ClockSession<'a> {
+        ClockSession {
             service: &self.service,
             queue: &self.queue,
             store: &self.store,
@@ -164,7 +164,7 @@ impl Device {
             endpoint,
             TOKEN,
             &Capabilities::parse(&capabilities(organization_id, submit)).unwrap(),
-            true,
+            crate::command_sync::Pacing::Now,
             || Utc::now().timestamp_millis(),
         )
         .await

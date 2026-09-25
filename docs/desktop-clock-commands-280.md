@@ -42,9 +42,11 @@ instant and the device IANA zone (`iana-time-zone`). The caller then:
 2. Reads capabilities. When they are fetched, they are cached for this endpoint and session
    (SHA-256 of the token; the token is not stored again). If the server is unreachable, only
    capabilities that this session negotiated earlier may be asserted. Without either, the
-   action uses the legacy transport. When the context accepts frozen commands but the device
-   zone cannot be read, the action is refused before sending instead of falling back to the
-   legacy writer.
+   action uses the legacy transport, unless this endpoint has accepted frozen commands on
+   this device before (a marker that outlives logout). Then it is refused before sending
+   ("connect once"), because an unconfirmed context must not fall back to the legacy writer
+   there. Likewise, when the context accepts frozen commands but the device zone cannot be
+   read, the action is refused before sending.
    Every desktop command declares `delayed` admission (seven days past, five minutes future),
    online or offline. It is saved before sending and may be delivered late. An `immediate`
    command whose first send failed would be refused after five minutes, and it cannot be
@@ -79,6 +81,7 @@ cannot process or delete frozen commands.
 | --- | --- |
 | `clock_command` | Local `recovery_id` (never the business identity), `operation_id`, version, kind, endpoint, captured context, instant, zone, `depends_on_operation_id`, the exact command bytes, capture time; lifecycle `state`, `attempts`, `transient_failures`, last failure evidence, receipt, resolution time |
 | `clock_context` | Per endpoint: session fingerprint, last capabilities, last status |
+| `clock_endpoint` | Endpoints that accepted frozen commands on this device, and when |
 
 Triggers make every frozen column immutable and forbid deleting any command that is not
 `committed`. Committed commands are pruned after 30 days unless an unresolved command still
@@ -164,7 +167,7 @@ their missing context cannot be inferred. They remain byte-identical after the u
 
 ## Verification (2026-09-25)
 
-**Desktop core** (`pnpm --filter desktop test:clock`, Windows): **46 passed**. Two
+**Desktop core** (`pnpm --filter desktop test:clock`, Windows): **48 passed**. Two
 subprocess fixtures run through their parent tests. The harness compiles the real
 `clock.rs`, `clock_command.rs`, `offline.rs`, `frozen_command.rs`, `command_store.rs`,
 `command_transport.rs`, `command_sync.rs` and `clock_journal.rs`. It uses real SQLite
@@ -197,8 +200,10 @@ files, triggers and locks, and real HTTP on loopback. Scenarios:
 - The journal discloses only the current context. It counts other contexts and projects
   saved work, or the last status offline.
 - The unadopted server keeps the legacy transport and freezes nothing. An accepting context
-  with an unreadable device zone refuses before sending, with no legacy request. A collision
-  refusal cannot be archived. The #268 legacy scenarios still pass.
+  with an unreadable device zone refuses before sending, with no legacy request. So does a new
+  offline session on an endpoint that accepted frozen commands before, while one without that
+  history keeps the legacy transport. A collision refusal cannot be archived. A paused command
+  reports what it waits for. The #268 legacy scenarios still pass.
 
 Mutations, each run against the whole suite:
 
@@ -253,13 +258,14 @@ This slice closes on implementation (see the #264 decision); these move to #327,
   see `clock_command`, but they still read and delete the legacy `queue`. Establish deployed
   versions and effective update/disable control before strict admission.
 - **Legacy clock-in/out writer (#327).** The legacy transport stays in use where the server
-  does not offer v2 submission, and offline when this session never negotiated a context
-  (for example, after signing in while offline). Its failures still produce identity-less
-  rows. In an adopted organization that offline case is a non-participating writer until
-  the legacy transport is gated.
-- **Editing saved commands.** The desktop has no editor for saved actions. A new action
-  after archiving gets a new, unlinked identity. #263 §7's linked replacement identity and
-  authorized reconciliation of committed-evidence refusals are not provided here.
+  does not offer v2 submission. On a device that never saw its endpoint accept frozen
+  commands, it is also used offline before the session confirms a context. Its failures
+  still produce identity-less rows. Gating the legacy route server-side remains #327's.
+- **Editing saved commands.** The desktop has no surface that changes a saved action's time,
+  zone, target or metadata, so #263 §7's linked replacement identity has no caller here. A
+  new action after archiving is a new action, not an edit. Archiving is possible only for
+  refusals without committed work, and uncertain or committed-evidence commands keep blocking
+  their context. Reconciling those is the webapp's reviewed correction (#301/#323).
 - **Legacy rows.** Identity-less rows still block clocking on the installation. Authorized,
   evidence-based resolution and raw export remain open: ownership cannot be established from
   a current login.

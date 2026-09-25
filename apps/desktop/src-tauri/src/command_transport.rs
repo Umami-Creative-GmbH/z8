@@ -65,6 +65,14 @@ impl Capabilities {
     pub fn accepts_fresh_commands(&self) -> bool {
         self.body.submit == "available"
     }
+
+    /// The desktop may freeze clock-in and clock-out for this context.
+    pub fn accepts_frozen_commands(&self) -> bool {
+        self.command_context().is_some()
+            && self.supports(CommandKind::ClockIn)
+            && self.supports(CommandKind::ClockOut)
+            && self.accepts_fresh_commands()
+    }
 }
 
 pub enum CapabilitiesFetch {

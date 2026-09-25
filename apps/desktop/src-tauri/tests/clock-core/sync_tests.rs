@@ -474,6 +474,12 @@ async fn an_expired_session_pauses_without_counting_a_failure() {
     let saved = &device.saved()[0];
     assert_eq!(saved.state, CommandState::Pending);
     assert_eq!(saved.transient_failures, 0);
+    let journal =
+        crate::clock_command::journal_offline(&device.at(&url, crate::support::TOKEN)).unwrap();
+    assert_eq!(
+        journal.commands[0].waiting_for,
+        Some(crate::command_store::WaitingFor::SignIn)
+    );
 }
 
 #[tokio::test]
@@ -516,7 +522,7 @@ async fn automatic_retries_back_off_and_stop_without_losing_the_command() {
         &url,
         crate::support::TOKEN,
         &capabilities,
-        false,
+        crate::command_sync::Pacing::AfterBackoff,
         || failed_at + 1_000,
     )
     .await
@@ -530,7 +536,7 @@ async fn automatic_retries_back_off_and_stop_without_losing_the_command() {
             &url,
             crate::support::TOKEN,
             &capabilities,
-            true,
+            crate::command_sync::Pacing::Now,
             || chrono::Utc::now().timestamp_millis(),
         )
         .await
@@ -552,9 +558,12 @@ async fn the_journal_discloses_only_the_current_context_and_projects_saved_work(
     device.negotiated(&url, "org-1", false);
     device.act(&url, clock_in()).await.unwrap();
 
-    let journal = crate::clock_command::sync(&device.at(&url, crate::support::TOKEN), false)
-        .await
-        .unwrap();
+    let journal = crate::clock_command::sync(
+        &device.at(&url, crate::support::TOKEN),
+        crate::command_sync::Pacing::AfterBackoff,
+    )
+    .await
+    .unwrap();
     assert!(!journal.server_reachable);
     assert!(
         journal.commands_enabled,
@@ -572,9 +581,12 @@ async fn the_journal_discloses_only_the_current_context_and_projects_saved_work(
 
     // Another organization's session sees a count, never the details.
     device.negotiated(&url, "org-2", false);
-    let journal = crate::clock_command::sync(&device.at(&url, crate::support::TOKEN), false)
-        .await
-        .unwrap();
+    let journal = crate::clock_command::sync(
+        &device.at(&url, crate::support::TOKEN),
+        crate::command_sync::Pacing::AfterBackoff,
+    )
+    .await
+    .unwrap();
     assert!(journal.commands.is_empty());
     assert_eq!(journal.other_contexts, 1);
     assert_eq!(
@@ -593,9 +605,12 @@ async fn offline_after_restart_the_journal_projects_the_last_status_seen() {
     let url = free_endpoint();
     device.negotiated(&url, "org-1", true);
     let device = device.restart();
-    let journal = crate::clock_command::sync(&device.at(&url, crate::support::TOKEN), false)
-        .await
-        .unwrap();
+    let journal = crate::clock_command::sync(
+        &device.at(&url, crate::support::TOKEN),
+        crate::command_sync::Pacing::AfterBackoff,
+    )
+    .await
+    .unwrap();
     assert!(!journal.server_reachable);
     assert_eq!(
         journal.projection,
@@ -605,9 +620,12 @@ async fn offline_after_restart_the_journal_projects_the_last_status_seen() {
         })
     );
     // A different session has no negotiated context or status to rely on.
-    let journal = crate::clock_command::sync(&device.at(&url, "session-b"), false)
-        .await
-        .unwrap();
+    let journal = crate::clock_command::sync(
+        &device.at(&url, "session-b"),
+        crate::command_sync::Pacing::AfterBackoff,
+    )
+    .await
+    .unwrap();
     assert!(!journal.commands_enabled);
     assert_eq!(journal.projection, None);
 }
@@ -649,8 +667,61 @@ async fn a_refusal_over_committed_evidence_cannot_be_archived() {
     assert!(device.store.lock().archive(&saved.operation_id, 1).is_err());
     assert_eq!(device.saved()[0].state, CommandState::Rejected);
 
-    let journal = crate::clock_command::sync(&device.at(&url, crate::support::TOKEN), false)
+    let journal = crate::clock_command::sync(
+        &device.at(&url, crate::support::TOKEN),
+        crate::command_sync::Pacing::AfterBackoff,
+    )
+    .await
+    .unwrap();
+    assert!(!journal.commands[0].archivable);
+}
+
+#[tokio::test]
+async fn offline_without_a_confirmed_context_refuses_where_frozen_commands_were_accepted() {
+    let device = Device::new();
+    let url = free_endpoint();
+    // An earlier session saw this server accept frozen commands, then signed out.
+    let server = serve_on(&url, 1, |_, _| {
+        Some((200, capabilities("org-1", "available")))
+    });
+    crate::clock_command::negotiate(&device.at(&url, crate::support::TOKEN))
         .await
         .unwrap();
-    assert!(!journal.commands[0].archivable);
+    server.join().unwrap();
+    device.store.lock().forget_contexts().unwrap();
+
+    // A new session, offline before it could confirm its context.
+    let error = crate::clock_command::execute(
+        &device.at(&url, "session-b"),
+        clock_in(),
+        crate::clock_command::ActionEvidence {
+            occurred_at: chrono::Utc::now(),
+            timezone: Some("Europe/Berlin".into()),
+        },
+    )
+    .await
+    .unwrap_err();
+    assert!(
+        error.message.contains("Nothing was recorded"),
+        "{}",
+        error.message
+    );
+    assert!(device.saved().is_empty());
+    assert_eq!(
+        device.queue.lock().count().unwrap(),
+        0,
+        "No identity-less legacy row"
+    );
+}
+
+#[tokio::test]
+async fn offline_without_any_accepting_history_keeps_the_legacy_transport() {
+    let device = Device::new();
+    let url = free_endpoint();
+    let outcome = device.act(&url, clock_in()).await.unwrap();
+    assert!(matches!(
+        outcome,
+        ClockCommandOutcome::RetainedForReview { .. }
+    ));
+    assert!(device.saved().is_empty());
 }

@@ -3,15 +3,18 @@ use parking_lot::Mutex;
 use serde::Serialize;
 
 use crate::clock::{BreakFailure, ClockService, ClockStatus, ClockWriteOutcome, WorkLocationType};
-use crate::clock_journal::{self, ClockJournal, Projection};
+use crate::clock_journal::{self, ClockJournal, JournalScope, Projection};
 use crate::command_store::{token_fingerprint, CommandFailure, CommandState, CommandStore};
-use crate::command_sync;
+use crate::command_sync::{self, Pacing};
 use crate::command_transport::{Capabilities, CapabilitiesFetch};
 use crate::frozen_command::{
     freeze_clock_in, freeze_clock_out, new_operation_id, Admission, ClockTarget, CommandContext,
-    CommandKind,
+    CommandFrame, CommandKind, FrozenCommand,
 };
 use crate::offline::{ActionType, OfflineQueue};
+
+/// Shown whenever local clock storage cannot be opened, read or written.
+pub const STORAGE_PAUSED: &str = "Cannot read local clock storage. Clock actions are paused.";
 
 pub enum ClockCommand {
     ClockIn(WorkLocationType),
@@ -22,6 +25,24 @@ pub enum ClockCommand {
     },
 }
 
+/// The clock actions that can be frozen. Breaks keep the two-request legacy
+/// transport until #281.
+#[derive(Clone, Copy)]
+enum WorkAction {
+    ClockIn(WorkLocationType),
+    ClockOut,
+}
+
+impl ClockCommand {
+    fn work_action(&self) -> Option<WorkAction> {
+        match self {
+            Self::ClockIn(location) => Some(WorkAction::ClockIn(*location)),
+            Self::ClockOut => Some(WorkAction::ClockOut),
+            Self::Break { .. } => None,
+        }
+    }
+}
+
 /// Observed when the user acted, before any lock, network or storage work.
 pub struct ActionEvidence {
     pub occurred_at: DateTime<Utc>,
@@ -29,8 +50,9 @@ pub struct ActionEvidence {
     pub timezone: Option<String>,
 }
 
-/// Everything one clock action needs from this installation.
-pub struct ClockDevice<'a> {
+/// One signed-in session's view of this installation: the HTTP service, the
+/// device stores, and the endpoint and token of the session.
+pub struct ClockSession<'a> {
     pub service: &'a ClockService,
     pub queue: &'a Mutex<OfflineQueue>,
     pub store: &'a Mutex<CommandStore>,
@@ -93,8 +115,8 @@ impl ClockCommandError {
     }
 }
 
-fn storage_unreadable() -> ClockCommandError {
-    ClockCommandError::pre_send("Cannot read local clock storage. Clock actions are paused.")
+fn storage_paused() -> ClockCommandError {
+    ClockCommandError::pre_send(STORAGE_PAUSED)
 }
 
 /// How this action is sent. Chosen before anything is frozen, so a frozen
@@ -129,33 +151,40 @@ impl Negotiated {
     }
 }
 
-pub fn cached_capabilities(device: &ClockDevice<'_>) -> anyhow::Result<Option<Capabilities>> {
-    Ok(device
+pub fn cached_capabilities(session: &ClockSession<'_>) -> anyhow::Result<Option<Capabilities>> {
+    Ok(session
         .store
         .lock()
-        .cached_context(device.endpoint, &token_fingerprint(device.token))?
+        .cached_context(session.endpoint, &token_fingerprint(session.token))?
         .and_then(|cached| Capabilities::parse(&cached.capabilities)))
 }
 
-pub async fn negotiate(device: &ClockDevice<'_>) -> anyhow::Result<Negotiated> {
+pub async fn negotiate(session: &ClockSession<'_>) -> anyhow::Result<Negotiated> {
     Ok(
-        match device
+        match session
             .service
-            .command_capabilities(device.endpoint, device.token)
+            .command_capabilities(session.endpoint, session.token)
             .await
         {
             CapabilitiesFetch::Fetched(capabilities) => {
-                if let Err(error) = device.store.lock().save_capabilities(
-                    device.endpoint,
-                    &token_fingerprint(device.token),
+                let mut store = session.store.lock();
+                let cached = store.save_capabilities(
+                    session.endpoint,
+                    &token_fingerprint(session.token),
                     capabilities.raw(),
                     now_ms(),
-                ) {
+                );
+                let accepted = if capabilities.accepts_frozen_commands() {
+                    store.record_endpoint_acceptance(session.endpoint, now_ms())
+                } else {
+                    Ok(())
+                };
+                if let Err(error) = cached.and(accepted) {
                     log::warn!("Clock context cache not updated: {error}");
                 }
                 Negotiated::Live(capabilities)
             }
-            CapabilitiesFetch::Unreachable => Negotiated::Cached(cached_capabilities(device)?),
+            CapabilitiesFetch::Unreachable => Negotiated::Cached(cached_capabilities(session)?),
             CapabilitiesFetch::Unauthorized => Negotiated::Unauthorized,
             CapabilitiesFetch::NotOffered => Negotiated::NotOffered,
         },
@@ -167,11 +196,10 @@ fn now_ms() -> i64 {
 }
 
 async fn choose_route(
-    device: &ClockDevice<'_>,
-    kind: CommandKind,
+    session: &ClockSession<'_>,
     timezone: Option<&str>,
 ) -> Result<Route, ClockCommandError> {
-    let capabilities = match negotiate(device).await.map_err(|_| storage_unreadable())? {
+    let capabilities = match negotiate(session).await.map_err(|_| storage_paused())? {
         Negotiated::Unauthorized => {
             return Err(ClockCommandError::pre_send(
                 "Your session has expired. Sign in again before clocking.",
@@ -179,21 +207,36 @@ async fn choose_route(
         }
         // Offline, only a context this session negotiated earlier may be asserted.
         Negotiated::Live(capabilities) | Negotiated::Cached(Some(capabilities)) => capabilities,
-        Negotiated::Cached(None) | Negotiated::NotOffered => return Ok(Route::Legacy),
+        Negotiated::Cached(None) => {
+            let accepted = session
+                .store
+                .lock()
+                .endpoint_accepted_commands(session.endpoint)
+                .map_err(|_| storage_paused())?;
+            if accepted {
+                // This server takes frozen commands, but this session cannot
+                // confirm its context yet. The legacy writer is not a fallback.
+                return Err(ClockCommandError::pre_send(
+                    "This device has not confirmed your account with Z8 since you signed in. Connect once, then clock again. Nothing was recorded.",
+                ));
+            }
+            return Ok(Route::Legacy);
+        }
+        Negotiated::NotOffered => return Ok(Route::Legacy),
     };
-    let Some(context) = capabilities.command_context() else {
+    let Some(context) = capabilities
+        .command_context()
+        .filter(|_| capabilities.accepts_frozen_commands())
+    else {
         return Ok(Route::Legacy);
     };
-    if !capabilities.supports(kind) || !capabilities.accepts_fresh_commands() {
-        return Ok(Route::Legacy);
-    }
     // This context accepts frozen commands, so the legacy writer is not a fallback.
     let Some(timezone) = timezone else {
         return Err(ClockCommandError::pre_send(
             "The device time zone could not be read, so this clock action was not recorded. Try again.",
         ));
     };
-    let status = cached_status(device, &context).map_err(|_| storage_unreadable())?;
+    let status = cached_status(session, &context).map_err(|_| storage_paused())?;
     Ok(Route::Commands {
         capabilities,
         context,
@@ -205,13 +248,13 @@ async fn choose_route(
 /// The last status this session saw for the context's employee. Employee IDs
 /// are organization-specific, so this binds the status to the context.
 fn cached_status(
-    device: &ClockDevice<'_>,
+    session: &ClockSession<'_>,
     context: &CommandContext,
 ) -> anyhow::Result<Option<ClockStatus>> {
-    Ok(device
+    Ok(session
         .store
         .lock()
-        .cached_context(device.endpoint, &token_fingerprint(device.token))?
+        .cached_context(session.endpoint, &token_fingerprint(session.token))?
         .and_then(|cached| cached.status)
         .and_then(|status| serde_json::from_str::<ClockStatus>(&status).ok())
         .filter(|status| status.employee_id.as_deref() == Some(context.employee_id.as_str())))
@@ -220,71 +263,75 @@ fn cached_status(
 /// The native caller serializes commands. No legacy command is automatically
 /// retried: neither current status nor a failed response proves noncommitment.
 pub async fn execute(
-    device: &ClockDevice<'_>,
+    session: &ClockSession<'_>,
     command: ClockCommand,
     evidence: ActionEvidence,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
-    if device.queue.lock().count().map_err(|_| {
+    if session.queue.lock().count().map_err(|_| {
         ClockCommandError::pre_send("Cannot read local recovery storage. Clock action paused.")
     })? > 0
     {
         return Err(ClockCommandError::pre_send("Unresolved desktop records require review before another clock action. Check your time entries in Z8."));
     }
 
-    let route = match &command {
-        ClockCommand::ClockIn(_) => {
-            choose_route(device, CommandKind::ClockIn, evidence.timezone.as_deref()).await?
-        }
-        ClockCommand::ClockOut => {
-            choose_route(device, CommandKind::ClockOut, evidence.timezone.as_deref()).await?
-        }
-        // Breaks keep the two-request legacy transport until #281.
-        ClockCommand::Break { .. } => Route::Legacy,
+    let action = command.work_action();
+    let route = match action {
+        Some(_) => choose_route(session, evidence.timezone.as_deref()).await?,
+        None => Route::Legacy,
     };
-    match route {
-        Route::Commands {
-            capabilities,
-            context,
-            timezone,
-            status,
-        } => {
-            let frozen = freeze_command(device, &command, &evidence, context, &timezone, status)?;
-            send_frozen(device, &capabilities, frozen).await
+    match (route, action) {
+        (
+            Route::Commands {
+                capabilities,
+                context,
+                timezone,
+                status,
+            },
+            Some(action),
+        ) => {
+            let frame = CommandFrame {
+                operation_id: new_operation_id(),
+                context,
+                occurred_at: evidence.occurred_at,
+                timezone,
+                // Every desktop command is saved before sending and may be
+                // delivered late, online or not, so each one declares delayed.
+                admission: Admission::Delayed,
+                depends_on: None,
+            };
+            let frozen = freeze_command(session, action, frame, status)?;
+            send_frozen(session, &capabilities, frozen).await
         }
-        Route::Legacy => {
-            let unresolved = device
+        _ => {
+            let unresolved = session
                 .store
                 .lock()
                 .active()
-                .map_err(|_| storage_unreadable())?
+                .map_err(|_| storage_paused())?
                 .into_iter()
-                .any(|saved| saved.endpoint == device.endpoint);
+                .any(|saved| saved.endpoint == session.endpoint);
             if unresolved {
                 return Err(ClockCommandError::pre_send(
                     "Clock actions saved on this device must reach the server first. Refresh status and check the saved actions.",
                 ));
             }
-            execute_legacy(device, command).await
+            execute_legacy(session, command).await
         }
     }
 }
 
+/// Binds the action to the work it continues and freezes it.
 fn freeze_command(
-    device: &ClockDevice<'_>,
-    command: &ClockCommand,
-    evidence: &ActionEvidence,
-    context: CommandContext,
-    timezone: &str,
+    session: &ClockSession<'_>,
+    action: WorkAction,
+    mut frame: CommandFrame,
     status: Option<ClockStatus>,
-) -> Result<crate::frozen_command::FrozenCommand, ClockCommandError> {
-    // Every desktop command is saved before sending and may be delivered late,
-    // online or not, so each one declares delayed admission.
-    let admission = Admission::Delayed;
-    let active: Vec<_> = device
+) -> Result<FrozenCommand, ClockCommandError> {
+    let active: Vec<_> = session
         .store
         .lock()
-        .for_context(device.endpoint, &context)
-        .map_err(|_| storage_unreadable())?
+        .for_context(session.endpoint, &frame.context)
+        .map_err(|_| storage_paused())?
         .into_iter()
         .filter(|saved| saved.state.is_active())
         .collect();
@@ -297,10 +344,9 @@ fn freeze_command(
         ));
     }
     let last = active.last();
-    let depends_on = last.map(|saved| saved.operation_id.clone());
-    let operation_id = new_operation_id();
-    match command {
-        ClockCommand::ClockIn(location) => {
+    frame.depends_on = last.map(|saved| saved.operation_id.clone());
+    match action {
+        WorkAction::ClockIn(location) => {
             let clocked_in = match last {
                 Some(saved) => saved.kind == CommandKind::ClockIn,
                 None => status.is_some_and(|status| status.is_clocked_in),
@@ -310,17 +356,9 @@ fn freeze_command(
                     "You are already clocked in. Refresh status before another action.",
                 ));
             }
-            Ok(freeze_clock_in(
-                operation_id,
-                context,
-                evidence.occurred_at,
-                timezone,
-                admission,
-                *location,
-                depends_on,
-            ))
+            Ok(freeze_clock_in(frame, location))
         }
-        ClockCommand::ClockOut => {
+        WorkAction::ClockOut => {
             let target = match last {
                 Some(saved) if saved.kind == CommandKind::ClockIn => {
                     ClockTarget::ClockInOperation(saved.operation_id.clone())
@@ -348,37 +386,28 @@ fn freeze_command(
                     }
                 },
             };
-            Ok(freeze_clock_out(
-                operation_id,
-                context,
-                evidence.occurred_at,
-                timezone,
-                admission,
-                target,
-                depends_on,
-            ))
+            Ok(freeze_clock_out(frame, target))
         }
-        ClockCommand::Break { .. } => unreachable!("breaks use the legacy transport"),
     }
 }
 
 async fn send_frozen(
-    device: &ClockDevice<'_>,
+    session: &ClockSession<'_>,
     capabilities: &Capabilities,
-    frozen: crate::frozen_command::FrozenCommand,
+    frozen: FrozenCommand,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
-    device
+    session
         .store
         .lock()
-        .capture(device.endpoint, &frozen, now_ms())
+        .capture(session.endpoint, &frozen, now_ms())
         .map_err(|_| {
             ClockCommandError::pre_send(
                 "This clock action could not be saved on this device, so nothing was sent. Try again.",
             )
         })?;
     // Storage errors after capture leave the command saved; its state decides.
-    send_saved(device, capabilities, true).await;
-    let saved = device
+    send_saved(session, capabilities, Pacing::Now).await;
+    let saved = session
         .store
         .lock()
         .get(&frozen.operation_id)
@@ -391,13 +420,13 @@ async fn send_frozen(
         })?;
     Ok(match saved.state {
         CommandState::Committed => {
-            let mut write = device
+            let mut write = session
                 .service
-                .committed_with_status(device.endpoint, device.token, Vec::new())
+                .committed_with_status(session.endpoint, session.token, Vec::new())
                 .await;
             write.operation_id = Some(saved.operation_id);
             if let Some(status) = &write.status {
-                remember_status(device.store, device.endpoint, device.token, status);
+                remember_status(session.store, session.endpoint, session.token, status);
             }
             ClockCommandOutcome::Committed { write }
         }
@@ -414,14 +443,14 @@ async fn send_frozen(
     })
 }
 
-async fn send_saved(device: &ClockDevice<'_>, capabilities: &Capabilities, force: bool) {
+async fn send_saved(session: &ClockSession<'_>, capabilities: &Capabilities, pacing: Pacing) {
     if let Err(error) = command_sync::drain(
-        device.service,
-        device.store,
-        device.endpoint,
-        device.token,
+        session.service,
+        session.store,
+        session.endpoint,
+        session.token,
         capabilities,
-        force,
+        pacing,
         now_ms,
     )
     .await
@@ -450,48 +479,64 @@ pub fn remember_status(
     }
 }
 
+/// Reports saved commands without the network, from this session's cache.
+pub fn journal_offline(session: &ClockSession<'_>) -> anyhow::Result<ClockJournal> {
+    let capabilities = cached_capabilities(session)?;
+    let context = capabilities
+        .as_ref()
+        .and_then(Capabilities::command_context);
+    let legacy = session.queue.lock().recovery_summary()?;
+    clock_journal::build(
+        &session.store.lock(),
+        legacy,
+        JournalScope {
+            endpoint: session.endpoint,
+            context: context.as_ref(),
+            server_reachable: true,
+            commands_enabled: false,
+            last_known: None,
+        },
+    )
+}
+
 /// Sends saved commands of the session's current context, then reports what
 /// the UI may show. Runs without the server too, from the cached context.
-pub async fn sync(device: &ClockDevice<'_>, force: bool) -> anyhow::Result<ClockJournal> {
-    let negotiated = negotiate(device).await?;
+pub async fn sync(session: &ClockSession<'_>, pacing: Pacing) -> anyhow::Result<ClockJournal> {
+    let negotiated = negotiate(session).await?;
     if let Negotiated::Live(capabilities) = &negotiated {
-        send_saved(device, capabilities, force).await;
+        send_saved(session, capabilities, pacing).await;
     }
-    let reachable = !matches!(negotiated, Negotiated::Cached(_));
+    let server_reachable = !matches!(negotiated, Negotiated::Cached(_));
     let capabilities = negotiated.capabilities();
     let context = capabilities.and_then(Capabilities::command_context);
-    let enabled = capabilities.is_some_and(|capabilities| {
-        context.is_some()
-            && capabilities.supports(CommandKind::ClockIn)
-            && capabilities.supports(CommandKind::ClockOut)
-            && capabilities.accepts_fresh_commands()
-    });
     // Offline, the last status seen for this employee stands in for the server's.
-    let last_known = match (&context, reachable) {
-        (Some(context), false) => cached_status(device, context)?.map(|status| Projection {
+    let last_known = match (&context, server_reachable) {
+        (Some(context), false) => cached_status(session, context)?.map(|status| Projection {
             is_clocked_in: status.is_clocked_in,
             since: status.active_work_period.map(|period| period.start_time),
         }),
         _ => None,
     };
-    let legacy = device.queue.lock().recovery_summary()?;
+    let legacy = session.queue.lock().recovery_summary()?;
     let journal = clock_journal::build(
-        &device.store.lock(),
+        &session.store.lock(),
         legacy,
-        device.endpoint,
-        context.as_ref(),
-        reachable,
-        enabled,
-        last_known,
+        JournalScope {
+            endpoint: session.endpoint,
+            context: context.as_ref(),
+            server_reachable,
+            commands_enabled: capabilities.is_some_and(Capabilities::accepts_frozen_commands),
+            last_known,
+        },
     )?;
     Ok(journal)
 }
 
 async fn execute_legacy(
-    device: &ClockDevice<'_>,
+    session: &ClockSession<'_>,
     command: ClockCommand,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
-    let (service, webapp_url, token) = (device.service, device.endpoint, device.token);
+    let (service, webapp_url, token) = (session.service, session.endpoint, session.token);
     let (action_type, payload, result) = match command {
         ClockCommand::ClockIn(location) => (
             ActionType::ClockIn,
@@ -535,14 +580,14 @@ async fn execute_legacy(
     match result {
         Ok(write) => {
             if let Some(status) = &write.status {
-                remember_status(device.store, device.endpoint, device.token, status);
+                remember_status(session.store, session.endpoint, session.token, status);
             }
             Ok(ClockCommandOutcome::Committed { write })
         }
         Err(_) => {
             // This is failure-observation time in seconds, NOT original click
             // time or a future replay timestamp. Keep the legacy format intact.
-            let recovery_id = device.queue.lock().enqueue(action_type, Utc::now().timestamp(), payload)
+            let recovery_id = session.queue.lock().enqueue(action_type, Utc::now().timestamp(), payload)
                 .map_err(|_| ClockCommandError::uncertain(
                     "Clock outcome is unconfirmed and local recovery could not be saved. Check your time entries before trying again; do not assume the write failed.",
                 ))?;

@@ -60,6 +60,10 @@ CREATE TABLE clock_context (
     status TEXT,
     status_at_ms INTEGER
 );
+CREATE TABLE clock_endpoint (
+    endpoint TEXT PRIMARY KEY,
+    accepted_commands_at_ms INTEGER NOT NULL
+);
 ";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -121,12 +125,46 @@ pub struct CommandFailure {
     pub at_ms: i64,
 }
 
+/// What a paused command waits for before a resend can succeed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WaitingFor {
+    SignIn,
+    Access,
+    Subscription,
+    OriginalContext,
+    ServerAdoption,
+    AppUpdate,
+    /// An answer the app does not recognize.
+    Server,
+}
+
+impl WaitingFor {
+    /// The server refusals that pause a command instead of rejecting it.
+    pub fn for_code(code: &str) -> Option<Self> {
+        Some(match code {
+            "unauthorized" => Self::SignIn,
+            "access_denied" => Self::Access,
+            "billing_required" => Self::Subscription,
+            "context_mismatch" => Self::OriginalContext,
+            "not_adopted" | "submit_unavailable" => Self::ServerAdoption,
+            "unsupported_version" => Self::AppUpdate,
+            _ => return None,
+        })
+    }
+}
+
 impl CommandFailure {
     /// Whether the server refused the command without any committed work
     /// under its identity, so that setting it aside hides nothing.
     pub fn refused_without_commit(&self) -> bool {
         self.class == FailureClass::Rejected
             && !COMMITTED_EVIDENCE_CODES.contains(&self.code.as_str())
+    }
+
+    pub fn waiting_for(&self) -> Option<WaitingFor> {
+        (self.class == FailureClass::Paused)
+            .then(|| WaitingFor::for_code(&self.code).unwrap_or(WaitingFor::Server))
     }
 }
 
@@ -489,9 +527,34 @@ impl CommandStore {
             .optional()?)
     }
 
-    /// Logout forgets cached contexts. Captured commands are not touched.
+    /// Logout forgets cached contexts. Captured commands and endpoint
+    /// acceptance are not touched.
     pub fn forget_contexts(&mut self) -> Result<()> {
         self.conn.execute("DELETE FROM clock_context", [])?;
         Ok(())
+    }
+
+    /// Remembers that this endpoint accepted frozen commands on this device.
+    /// It outlives logout, so that an offline session which cannot confirm its
+    /// context refuses instead of using the legacy writer there.
+    pub fn record_endpoint_acceptance(&mut self, endpoint: &str, at_ms: i64) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO clock_endpoint (endpoint, accepted_commands_at_ms) VALUES (?1, ?2)
+             ON CONFLICT (endpoint) DO UPDATE SET accepted_commands_at_ms = ?2",
+            params![endpoint, at_ms],
+        )?;
+        Ok(())
+    }
+
+    pub fn endpoint_accepted_commands(&self, endpoint: &str) -> Result<bool> {
+        Ok(self
+            .conn
+            .query_row(
+                "SELECT 1 FROM clock_endpoint WHERE endpoint = ?",
+                [endpoint],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some())
     }
 }

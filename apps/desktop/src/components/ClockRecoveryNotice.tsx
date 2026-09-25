@@ -1,4 +1,5 @@
-import type { ClockJournal, CommandFailure, SavedClockCommand } from "../types";
+import { isUnresolved } from "../lib/saved-commands";
+import type { ClockJournal, SavedClockCommand, WaitingFor } from "../types";
 
 const countFormatter = new Intl.NumberFormat();
 
@@ -6,6 +7,7 @@ interface ClockRecoveryNoticeProps {
   journal: ClockJournal | undefined;
   journalError: boolean;
   actionError: string | null;
+  savedCommandError: string | null;
   needsStatusRefresh: boolean;
   onRefresh: () => void;
   onRetry: (operationId: string) => void;
@@ -13,14 +15,14 @@ interface ClockRecoveryNoticeProps {
   isUpdating: boolean;
 }
 
-const PAUSE_REASONS: Record<string, string> = {
-  unauthorized: "Waiting for you to sign in again.",
-  access_denied: "Waiting for access to this organization.",
-  billing_required: "Waiting for an active subscription.",
-  context_mismatch: "Waiting for the account and organization it was recorded in.",
-  not_adopted: "Waiting until the server accepts saved clock actions.",
-  submit_unavailable: "Waiting until the server accepts saved clock actions.",
-  unsupported_version: "The server does not support this app version. Update Z8 Timer.",
+const WAITING_FOR: Record<WaitingFor, string> = {
+  signIn: "Waiting for you to sign in again.",
+  access: "Waiting for access to this organization.",
+  subscription: "Waiting for an active subscription.",
+  originalContext: "Waiting for the account and organization it was recorded in.",
+  serverAdoption: "Waiting until the server accepts saved clock actions.",
+  appUpdate: "The server does not support this app version. Update Z8 Timer.",
+  server: "Waiting for a server answer this app recognizes.",
 };
 
 /** Shown in the zone the action was recorded in, not the viewer's current zone. */
@@ -33,14 +35,11 @@ function eventTime(command: SavedClockCommand) {
   return `${formatted} (${command.timezone})`;
 }
 
-function isUnresolved(command: SavedClockCommand) {
-  return command.state === "pending" || command.state === "stalled" || command.state === "rejected";
-}
-
-function describeState(command: SavedClockCommand, failure: CommandFailure | null) {
+function describeState(command: SavedClockCommand) {
+  const failure = command.failure;
   switch (command.state) {
     case "pending":
-      if (failure?.class === "paused") return PAUSE_REASONS[failure.code] ?? "Waiting before it can be sent.";
+      if (command.waitingFor) return WAITING_FOR[command.waitingFor];
       if (command.dependsOn && command.attempts === 0) return "Saved on this device. Sent after the action before it.";
       return "Saved on this device. It is sent as soon as the server is reachable.";
     case "stalled":
@@ -70,15 +69,15 @@ function SavedCommand({ command, onRetry, onArchive, isUpdating }: {
     <li>
       <strong>{command.kind === "clock_in" ? "Clock in" : "Clock out"}</strong> at {eventTime(command)}
       <br />
-      {describeState(command, command.failure)}
+      {describeState(command)}
       <div className="clock-recovery-actions">
         {command.state === "stalled" && (
-          <button type="button" className="clock-recovery-refresh" disabled={isUpdating} onClick={() => onRetry(command.operationId)}>Retry</button>
+          <button type="button" className="clock-recovery-action" disabled={isUpdating} onClick={() => onRetry(command.operationId)}>Retry</button>
         )}
         {command.archivable && (
-          <button type="button" className="clock-recovery-refresh" disabled={isUpdating} onClick={() => onArchive(command.operationId)}>Archive</button>
+          <button type="button" className="clock-recovery-action" disabled={isUpdating} onClick={() => onArchive(command.operationId)}>Archive</button>
         )}
-        <button type="button" className="clock-recovery-refresh" onClick={copyDetails}>Copy details</button>
+        <button type="button" className="clock-recovery-action" onClick={copyDetails}>Copy details</button>
       </div>
     </li>
   );
@@ -88,6 +87,7 @@ export function ClockRecoveryNotice({
   journal,
   journalError,
   actionError,
+  savedCommandError,
   needsStatusRefresh,
   onRefresh,
   onRetry,
@@ -101,13 +101,14 @@ export function ClockRecoveryNotice({
   const otherContexts = journal?.otherContexts ?? 0;
   // Archived evidence stays visible; routine committed actions alone do not open the notice.
   const hasArchived = resolved.some((command) => command.state === "archived");
-  if (!hasRetainedRecords && !journalError && !actionError && !needsStatusRefresh && unresolved.length === 0 && otherContexts === 0 && !hasArchived) {
+  if (!hasRetainedRecords && !journalError && !actionError && !needsStatusRefresh && !savedCommandError && unresolved.length === 0 && otherContexts === 0 && !hasArchived) {
     return null;
   }
 
   return (
     <section className="clock-recovery" aria-label="Clock recovery" aria-live="polite">
       {actionError && <p>{actionError}</p>}
+      {savedCommandError && <p>{savedCommandError}</p>}
       {journalError && (
         <p>Local clock storage could not be read. Clock actions are paused. Check your time entries in Z8 before trying again.</p>
       )}

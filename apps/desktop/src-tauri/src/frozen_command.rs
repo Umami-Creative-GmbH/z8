@@ -87,84 +87,62 @@ pub fn utc_instant(instant: DateTime<Utc>) -> String {
     instant.to_rfc3339_opts(SecondsFormat::Millis, true)
 }
 
-fn freeze(
-    operation_id: String,
-    kind: CommandKind,
-    context: CommandContext,
-    occurred_at: DateTime<Utc>,
-    timezone: &str,
-    admission: Admission,
-    depends_on: Option<String>,
-    fields: serde_json::Value,
-) -> FrozenCommand {
-    let occurred_at = utc_instant(occurred_at);
+/// Everything a command carries besides its kind-specific fields.
+#[derive(Debug, Clone)]
+pub struct CommandFrame {
+    pub operation_id: String,
+    pub context: CommandContext,
+    pub occurred_at: DateTime<Utc>,
+    /// Device IANA zone at action time.
+    pub timezone: String,
+    pub admission: Admission,
+    /// The earlier queued operation that must be committed or archived first.
+    pub depends_on: Option<String>,
+}
+
+fn freeze(frame: CommandFrame, kind: CommandKind, fields: serde_json::Value) -> FrozenCommand {
+    let occurred_at = utc_instant(frame.occurred_at);
     let mut body = serde_json::json!({
         "version": CLOCK_COMMAND_VERSION,
-        "operationId": operation_id,
+        "operationId": frame.operation_id,
         "kind": kind.as_str(),
-        "admission": admission,
+        "admission": frame.admission,
         "occurredAt": occurred_at,
-        "timezone": timezone,
-        "context": context,
+        "timezone": frame.timezone,
+        "context": frame.context,
     });
     for (key, value) in fields.as_object().into_iter().flatten() {
         body[key] = value.clone();
     }
     FrozenCommand {
-        operation_id,
+        operation_id: frame.operation_id,
         kind,
-        context,
+        context: frame.context,
         occurred_at,
-        timezone: timezone.to_string(),
-        depends_on,
+        timezone: frame.timezone,
+        depends_on: frame.depends_on,
         body: body.to_string(),
     }
 }
 
-pub fn freeze_clock_in(
-    operation_id: String,
-    context: CommandContext,
-    occurred_at: DateTime<Utc>,
-    timezone: &str,
-    admission: Admission,
-    location: WorkLocationType,
-    depends_on: Option<String>,
-) -> FrozenCommand {
+pub fn freeze_clock_in(frame: CommandFrame, location: WorkLocationType) -> FrozenCommand {
     freeze(
-        operation_id,
+        frame,
         CommandKind::ClockIn,
-        context,
-        occurred_at,
-        timezone,
-        admission,
-        depends_on,
         serde_json::json!({ "workLocationType": location.as_str() }),
     )
 }
 
 /// Desktop clock-out has no attribution input, so it states "preserve"
 /// explicitly rather than omitting the intent.
-pub fn freeze_clock_out(
-    operation_id: String,
-    context: CommandContext,
-    occurred_at: DateTime<Utc>,
-    timezone: &str,
-    admission: Admission,
-    target: ClockTarget,
-    depends_on: Option<String>,
-) -> FrozenCommand {
+pub fn freeze_clock_out(frame: CommandFrame, target: ClockTarget) -> FrozenCommand {
     let target = match target {
         ClockTarget::WorkPeriod(id) => serde_json::json!({ "workPeriodId": id }),
         ClockTarget::ClockInOperation(id) => serde_json::json!({ "clockInOperationId": id }),
     };
     freeze(
-        operation_id,
+        frame,
         CommandKind::ClockOut,
-        context,
-        occurred_at,
-        timezone,
-        admission,
-        depends_on,
         serde_json::json!({
             "target": target,
             "project": { "kind": "preserve" },

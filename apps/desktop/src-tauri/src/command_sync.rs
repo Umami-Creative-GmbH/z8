@@ -11,7 +11,7 @@ use parking_lot::Mutex;
 
 use crate::clock::ClockService;
 use crate::command_store::{
-    CommandFailure, CommandState, CommandStore, FailureClass, StoredCommand,
+    CommandFailure, CommandState, CommandStore, FailureClass, StoredCommand, WaitingFor,
 };
 use crate::command_transport::{Capabilities, HttpReply};
 
@@ -55,16 +55,14 @@ fn field<'a>(body: &'a Option<serde_json::Value>, name: &str) -> Option<&'a str>
     body.as_ref()?.get(name)?.as_str()
 }
 
-/// Session, context, billing, adoption or version must change before a resend
-/// can succeed. These pause the command without counting an attempt.
-const PAUSED_CODES: [&str; 6] = [
-    "unauthorized",
-    "access_denied",
-    "billing_required",
-    "context_mismatch",
-    "not_adopted",
-    "unsupported_version",
-];
+/// How soon saved commands are sent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Pacing {
+    /// A fresh user action or explicit retry: ignore the retry backoff.
+    Now,
+    /// A periodic run: wait out each command's retry backoff.
+    AfterBackoff,
+}
 
 /// A receipt counts only for the command that was sent.
 pub fn classify_submission(reply: &HttpReply, operation_id: &str, at_ms: i64) -> SendOutcome {
@@ -84,7 +82,9 @@ pub fn classify_submission(reply: &HttpReply, operation_id: &str, at_ms: i64) ->
         return SendOutcome::Committed(raw.clone());
     }
     let (class, code) = match (outcome, field(body, "code")) {
-        (Some("rejected"), Some(code)) if PAUSED_CODES.contains(&code) => {
+        // Session, context, billing, adoption or version must change first.
+        // These pause the command without counting a failure.
+        (Some("rejected"), Some(code)) if WaitingFor::for_code(code).is_some() => {
             (FailureClass::Paused, code)
         }
         (Some("rejected"), Some(code @ "approval_policy_unavailable")) => {
@@ -150,15 +150,14 @@ fn backoff_ms(transient_failures: i64) -> i64 {
     (BACKOFF_BASE_MS.saturating_mul(1 << exponent)).min(BACKOFF_MAX_MS)
 }
 
-/// Processes the current context's saved commands. `force` skips the retry
-/// backoff; it is used for a fresh user action or an explicit retry.
+/// Processes the current context's saved commands.
 pub async fn drain(
     service: &ClockService,
     store: &Mutex<CommandStore>,
     endpoint: &str,
     token: &str,
     capabilities: &Capabilities,
-    force: bool,
+    pacing: Pacing,
     now_ms: impl Fn() -> i64,
 ) -> Result<()> {
     let Some(context) = capabilities.command_context() else {
@@ -178,7 +177,7 @@ pub async fn drain(
         if command.state != CommandState::Pending {
             return Ok(());
         }
-        if !force
+        if pacing == Pacing::AfterBackoff
             && command.transient_failures > 0
             && command
                 .failure

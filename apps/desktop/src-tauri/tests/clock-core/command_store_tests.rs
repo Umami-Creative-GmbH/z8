@@ -5,7 +5,7 @@ use crate::command_store::{
 };
 use crate::frozen_command::{
     freeze_clock_in, freeze_clock_out, new_operation_id, Admission, ClockTarget, CommandContext,
-    FrozenCommand,
+    CommandFrame, FrozenCommand,
 };
 use crate::offline::{ActionType, OfflineQueue};
 use chrono::{TimeZone, Utc};
@@ -22,16 +22,19 @@ pub fn context(organization_id: &str) -> CommandContext {
     }
 }
 
+fn frame(organization_id: &str, depends_on: Option<String>) -> CommandFrame {
+    CommandFrame {
+        operation_id: new_operation_id(),
+        context: context(organization_id),
+        occurred_at: Utc.with_ymd_and_hms(2026, 9, 20, 8, 0, 0).unwrap(),
+        timezone: "Europe/Berlin".into(),
+        admission: Admission::Delayed,
+        depends_on,
+    }
+}
+
 fn clock_in(organization_id: &str) -> FrozenCommand {
-    freeze_clock_in(
-        new_operation_id(),
-        context(organization_id),
-        Utc.with_ymd_and_hms(2026, 9, 20, 8, 0, 0).unwrap(),
-        "Europe/Berlin",
-        Admission::Delayed,
-        WorkLocationType::Office,
-        None,
-    )
+    freeze_clock_in(frame(organization_id, None), WorkLocationType::Office)
 }
 
 fn failure(class: FailureClass, code: &str) -> CommandFailure {
@@ -293,13 +296,8 @@ fn only_resolved_commands_without_active_dependants_are_pruned() {
     let depended_id = store.capture(ENDPOINT, &depended, 2).unwrap();
     store.record_receipt(depended_id, "{}", 100).unwrap();
     let dependant = freeze_clock_out(
-        new_operation_id(),
-        context("org-1"),
-        Utc::now(),
-        "UTC",
-        Admission::Delayed,
+        frame("org-1", Some(depended.operation_id.clone())),
         ClockTarget::ClockInOperation(depended.operation_id.clone()),
-        Some(depended.operation_id.clone()),
     );
     store.capture(ENDPOINT, &dependant, 3).unwrap();
     let recent = clock_in("org-1");

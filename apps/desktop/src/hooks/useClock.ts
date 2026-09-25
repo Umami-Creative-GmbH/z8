@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef, useState } from "react";
+import { isUnsent, needsReview } from "../lib/saved-commands";
 import type { ClockCommandOutcome, ClockJournal, ClockStatus, WorkLocationType } from "../types";
 
 type ClockAction =
@@ -94,6 +95,7 @@ export function useClock({ enabled, sessionVersion, serverUrl, organizationId }:
     },
   });
 
+  // Its errors concern a saved command, not a new clock action; see savedCommandError.
   const savedCommandMutation = useMutation({
     mutationFn: ({ command, operationId }: { command: "retry_clock_command" | "archive_clock_command"; operationId: string }) =>
       invoke<ClockJournal>(command, { operationId }),
@@ -101,7 +103,6 @@ export function useClock({ enabled, sessionVersion, serverUrl, organizationId }:
       queryClient.setQueryData(["clock-journal", scopeKey], journal);
       void queryClient.invalidateQueries({ queryKey: ["clock-status"] });
     },
-    onError: (error) => setActionFailure(new ClockCommandFailure(String(error), "preSend")),
   });
 
   const refetch = useCallback(() => {
@@ -127,8 +128,8 @@ export function useClock({ enabled, sessionVersion, serverUrl, organizationId }:
   const retained = mutation.data?.outcome === "retainedForReview";
   const needsStatusRefresh = refreshScope === scopeKey;
   const isStatusCurrent = !!statusQuery.data && !statusQuery.isError && !needsStatusRefresh;
-  const savedNeedReview = journal?.commands.some((command) => command.state === "rejected" || command.state === "stalled") ?? false;
-  const hasUnsentCommands = journal?.commands.some((command) => command.state === "pending") ?? false;
+  const savedNeedReview = journal?.commands.some(needsReview) ?? false;
+  const hasUnsentCommands = journal?.commands.some(isUnsent) ?? false;
   const serverReady = isStatusCurrent && statusQuery.data?.hasEmployee === true;
   // Without the server, only a context this session negotiated can be asserted.
   const offlineCapture = !!journal && journal.commandsEnabled && !journal.serverReachable;
@@ -157,6 +158,7 @@ export function useClock({ enabled, sessionVersion, serverUrl, organizationId }:
     retrySavedCommand: (operationId: string) => savedCommandMutation.mutate({ command: "retry_clock_command", operationId }),
     archiveSavedCommand: (operationId: string) => savedCommandMutation.mutate({ command: "archive_clock_command", operationId }),
     isUpdatingSavedCommand: savedCommandMutation.isPending,
+    savedCommandError: savedCommandMutation.error ? String(savedCommandMutation.error) : null,
     isClockingIn: mutation.isPending && mutation.variables.action.command === "clock_in",
     isClockingOut: mutation.isPending && mutation.variables.action.command !== "clock_in",
     refetch,

@@ -5,8 +5,10 @@ use tauri::{AppHandle, Manager};
 use crate::auth;
 use crate::clock::{ClockService, ClockStatus, WorkLocationType};
 use crate::clock_command::{
-    self, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockDevice,
+    self, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockSession,
+    STORAGE_PAUSED,
 };
+use crate::command_sync::Pacing;
 use crate::clock_journal::ClockJournal;
 use crate::command_store::CommandStore;
 use crate::offline::RecoverySummary;
@@ -108,7 +110,7 @@ fn command_store(state: &AppState) -> Result<&parking_lot::Mutex<CommandStore>, 
     state
         .command_store
         .as_ref()
-        .map_err(|_| "Cannot open local clock storage. Clock actions are paused.".to_string())
+        .map_err(|_| STORAGE_PAUSED.to_string())
 }
 
 async fn run_clock_command(
@@ -134,9 +136,9 @@ async fn run_clock_command(
         return Err(ClockCommandError::pre_send("Webapp URL not configured"));
     }
     let service = ClockService::new();
-    let device = clock_device(&state, &service, &webapp_url, &token)
+    let session = clock_session(&state, &service, &webapp_url, &token)
         .map_err(ClockCommandError::pre_send)?;
-    let mut outcome = clock_command::execute(&device, command, evidence).await?;
+    let mut outcome = clock_command::execute(&session, command, evidence).await?;
     // Do not publish an old context's current-state result into a new session.
     if state.get_session_token().as_deref() == Some(&token) && state.get_webapp_url() == webapp_url
     {
@@ -289,13 +291,13 @@ pub fn get_queue_recovery_summary(app_handle: AppHandle) -> Result<RecoverySumma
         .map_err(|_| "Cannot read local recovery storage. Clock actions are paused.".into())
 }
 
-fn clock_device<'a>(
+fn clock_session<'a>(
     state: &'a AppState,
     service: &'a ClockService,
     webapp_url: &'a str,
     token: &'a str,
-) -> Result<ClockDevice<'a>, String> {
-    Ok(ClockDevice {
+) -> Result<ClockSession<'a>, String> {
+    Ok(ClockSession {
         service,
         queue: &state.offline_queue,
         store: command_store(state)?,
@@ -311,6 +313,7 @@ pub async fn sync_clock_commands(
     app_handle: AppHandle,
     force: bool,
 ) -> Result<ClockJournal, String> {
+    let pacing = if force { Pacing::Now } else { Pacing::AfterBackoff };
     let state = app_handle.state::<Arc<AppState>>();
     let token = state.get_session_token().ok_or("Not authenticated")?;
     let webapp_url = state.get_webapp_url();
@@ -318,25 +321,12 @@ pub async fn sync_clock_commands(
         return Err("Webapp URL not configured".into());
     }
     let service = ClockService::new();
-    let device = clock_device(&state, &service, &webapp_url, &token)?;
-    let unreadable = |_| "Cannot read local clock storage. Clock actions are paused.".to_string();
-    let Ok(_guard) = state.clock_command_lock.try_lock() else {
-        let context = clock_command::cached_capabilities(&device)
-            .map_err(unreadable)?
-            .and_then(|capabilities| capabilities.command_context());
-        let legacy = state.offline_queue.lock().recovery_summary().map_err(unreadable)?;
-        return crate::clock_journal::build(
-            &device.store.lock(),
-            legacy,
-            &webapp_url,
-            context.as_ref(),
-            true,
-            false,
-            None,
-        )
-        .map_err(unreadable);
+    let session = clock_session(&state, &service, &webapp_url, &token)?;
+    let journal = match state.clock_command_lock.try_lock() {
+        Ok(_guard) => clock_command::sync(&session, pacing).await,
+        Err(_) => clock_command::journal_offline(&session),
     };
-    clock_command::sync(&device, force).await.map_err(unreadable)
+    journal.map_err(|_| STORAGE_PAUSED.to_string())
 }
 
 /// Only the context that captured a command may act on it.
@@ -344,17 +334,17 @@ async fn owned_command(state: &AppState, operation_id: &str) -> Result<(), Strin
     let token = state.get_session_token().ok_or("Not authenticated")?;
     let webapp_url = state.get_webapp_url();
     let service = ClockService::new();
-    let device = clock_device(state, &service, &webapp_url, &token)?;
-    let context = clock_command::negotiate(&device)
+    let session = clock_session(state, &service, &webapp_url, &token)?;
+    let context = clock_command::negotiate(&session)
         .await
         .ok()
-        .and_then(|negotiated| negotiated.capabilities().and_then(|c| c.command_context()))
+        .and_then(|negotiated| negotiated.capabilities()?.command_context())
         .ok_or("The account and organization for this clock action cannot be confirmed.")?;
-    let command = device
+    let command = session
         .store
         .lock()
         .get(operation_id)
-        .map_err(|_| "Cannot read local clock storage.".to_string())?
+        .map_err(|_| STORAGE_PAUSED.to_string())?
         .ok_or("Clock action not found.")?;
     if command.endpoint != webapp_url || command.context != context {
         return Err("This clock action belongs to another account, organization or server.".into());
@@ -389,6 +379,9 @@ pub async fn archive_clock_command(
     command_store(&state)?
         .lock()
         .archive(&operation_id, chrono::Utc::now().timestamp_millis())
-        .map_err(|_| "Only a clock action the server refused can be archived.".to_string())?;
+        .map_err(|_| {
+            "Only a clock action the server refused without saving work can be archived."
+                .to_string()
+        })?;
     sync_clock_commands(app_handle.clone(), false).await
 }

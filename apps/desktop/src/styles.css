@@ -136,7 +136,8 @@ body {
   font-weight: 600;
 }
 
-.clock-recovery-refresh {
+.clock-recovery-refresh,
+.clock-recovery-action {
   padding: 6px 10px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -152,12 +153,13 @@ body {
   margin-block: 6px 10px;
 }
 
-.clock-recovery-refresh:disabled {
+.clock-recovery-action:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.clock-recovery-refresh:hover {
+.clock-recovery-refresh:hover,
+.clock-recovery-action:hover {
   border-color: var(--color-primary);
 }
 

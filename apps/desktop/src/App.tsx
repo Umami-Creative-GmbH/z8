@@ -116,6 +116,7 @@ function AppContent() {
     retrySavedCommand,
     archiveSavedCommand,
     isUpdatingSavedCommand,
+    savedCommandError,
     refetch,
   } = useClock({
     enabled: isAuthenticated,
@@ -247,6 +248,7 @@ function AppContent() {
           journal={journal}
           journalError={journalError}
           actionError={actionError}
+          savedCommandError={savedCommandError}
           needsStatusRefresh={needsStatusRefresh}
           onRefresh={refetch}
           onRetry={retrySavedCommand}

@@ -6,7 +6,7 @@
 use anyhow::Result;
 use serde::Serialize;
 
-use crate::command_store::{CommandFailure, CommandState, CommandStore, StoredCommand};
+use crate::command_store::{CommandFailure, CommandState, CommandStore, StoredCommand, WaitingFor};
 use crate::frozen_command::{CommandContext, CommandKind};
 use crate::offline::RecoverySummary;
 
@@ -25,6 +25,8 @@ pub struct CommandView {
     pub captured_at_ms: i64,
     pub depends_on: Option<String>,
     pub failure: Option<CommandFailure>,
+    /// What a paused command waits for.
+    pub waiting_for: Option<WaitingFor>,
     /// Refused without committed work under its identity, so it may be archived.
     pub archivable: bool,
     /// The exact frozen command, for inspection and export.
@@ -44,6 +46,10 @@ impl From<StoredCommand> for CommandView {
             attempts: command.attempts,
             captured_at_ms: command.captured_at_ms,
             depends_on: command.depends_on,
+            waiting_for: command
+                .failure
+                .as_ref()
+                .and_then(CommandFailure::waiting_for),
             archivable: command.state == CommandState::Rejected
                 && command
                     .failure
@@ -77,15 +83,29 @@ pub struct ClockJournal {
     pub projection: Option<Projection>,
 }
 
+/// The session a journal is built for.
+pub struct JournalScope<'a> {
+    pub endpoint: &'a str,
+    /// The session's current context, when it is known.
+    pub context: Option<&'a CommandContext>,
+    pub server_reachable: bool,
+    pub commands_enabled: bool,
+    /// Shown when no saved command determines the clock state.
+    pub last_known: Option<Projection>,
+}
+
 pub fn build(
     store: &CommandStore,
     legacy: RecoverySummary,
-    endpoint: &str,
-    context: Option<&CommandContext>,
-    server_reachable: bool,
-    commands_enabled: bool,
-    last_known: Option<Projection>,
+    scope: JournalScope<'_>,
 ) -> Result<ClockJournal> {
+    let JournalScope {
+        endpoint,
+        context,
+        server_reachable,
+        commands_enabled,
+        last_known,
+    } = scope;
     let own =
         |command: &StoredCommand| command.endpoint == endpoint && Some(&command.context) == context;
     let other_contexts = store

@@ -1,7 +1,7 @@
 use crate::clock::WorkLocationType;
 use crate::frozen_command::{
     freeze_clock_in, freeze_clock_out, new_operation_id, utc_instant, Admission, ClockTarget,
-    CommandContext, CommandKind,
+    CommandContext, CommandFrame, CommandKind,
 };
 use chrono::{DateTime, TimeZone, Utc};
 
@@ -16,6 +16,23 @@ fn context() -> CommandContext {
 
 fn instant() -> DateTime<Utc> {
     Utc.with_ymd_and_hms(2026, 9, 20, 8, 0, 5).unwrap() + chrono::Duration::microseconds(123_987)
+}
+
+fn frame(
+    operation_id: &str,
+    occurred_at: DateTime<Utc>,
+    timezone: &str,
+    admission: Admission,
+    depends_on: Option<&str>,
+) -> CommandFrame {
+    CommandFrame {
+        operation_id: operation_id.into(),
+        context: context(),
+        occurred_at,
+        timezone: timezone.into(),
+        admission,
+        depends_on: depends_on.map(Into::into),
+    }
 }
 
 const CLOCK_IN_OPERATION: &str = "3b241101-e2bb-4255-8caf-4136c566a962";
@@ -49,13 +66,14 @@ fn instants_are_utc_with_millisecond_precision_not_rounded_up() {
 #[test]
 fn clock_in_freezes_the_exact_v2_wire_command() {
     let frozen = freeze_clock_in(
-        CLOCK_IN_OPERATION.into(),
-        context(),
-        instant(),
-        "Europe/Berlin",
-        Admission::Delayed,
+        frame(
+            CLOCK_IN_OPERATION,
+            instant(),
+            "Europe/Berlin",
+            Admission::Delayed,
+            None,
+        ),
         WorkLocationType::Remote,
-        None,
     );
     assert_eq!(frozen.kind, CommandKind::ClockIn);
     assert_eq!(frozen.operation_id, CLOCK_IN_OPERATION);
@@ -69,13 +87,14 @@ fn clock_in_freezes_the_exact_v2_wire_command() {
 #[test]
 fn clock_out_binds_a_queued_clock_in_and_preserves_attribution() {
     let frozen = freeze_clock_out(
-        CLOCK_OUT_OPERATION.into(),
-        context(),
-        instant() + chrono::Duration::hours(8),
-        "Europe/Berlin",
-        Admission::Delayed,
+        frame(
+            CLOCK_OUT_OPERATION,
+            instant() + chrono::Duration::hours(8),
+            "Europe/Berlin",
+            Admission::Delayed,
+            Some(CLOCK_IN_OPERATION),
+        ),
         ClockTarget::ClockInOperation(CLOCK_IN_OPERATION.into()),
-        Some(CLOCK_IN_OPERATION.into()),
     );
     assert_eq!(frozen.kind, CommandKind::ClockOut);
     assert_eq!(frozen.depends_on.as_deref(), Some(CLOCK_IN_OPERATION));
@@ -88,13 +107,14 @@ fn clock_out_binds_a_queued_clock_in_and_preserves_attribution() {
 #[test]
 fn clock_out_can_bind_a_known_work_period() {
     let frozen = freeze_clock_out(
-        CLOCK_OUT_OPERATION.into(),
-        context(),
-        instant(),
-        "UTC",
-        Admission::Immediate,
+        frame(
+            CLOCK_OUT_OPERATION,
+            instant(),
+            "UTC",
+            Admission::Immediate,
+            None,
+        ),
         ClockTarget::WorkPeriod("5c0b1a8e-2f4d-4e6a-9b3c-7d8e9f0a1b2c".into()),
-        None,
     );
     let body: serde_json::Value = serde_json::from_str(&frozen.body).unwrap();
     assert_eq!(
