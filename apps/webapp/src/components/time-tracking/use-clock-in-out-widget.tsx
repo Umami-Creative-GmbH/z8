@@ -19,6 +19,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
+import { showSavedClockToast } from "./saved-clock-toast";
 import { useQuickBreakHandler } from "./use-quick-break-handler";
 
 interface ActiveWorkPeriodData {
@@ -157,15 +158,7 @@ export function useClockInOutWidget(
 			browserTimezone,
 		});
 		if (result.success) {
-			if ("queued" in result && result.queued) {
-				toast.info(
-					t(
-						"timeTracking.clockInSavedForReview",
-						"Clock-in saved on this device for review; not confirmed on the server",
-					),
-				);
-				return;
-			}
+			if (showSavedClockToast(result, "clock_in", t)) return;
 
 			toast.success(
 				t("timeTracking.clockInSuccess", "Clocked in successfully"),
@@ -201,15 +194,7 @@ export function useClockInOutWidget(
 	async function submitClockOut(browserTimezone: string | null) {
 		const result = await timeClock.clockOut({ browserTimezone });
 		if (result.success) {
-			if ("queued" in result && result.queued) {
-				toast.info(
-					t(
-						"timeTracking.clockOutSavedForReview",
-						"Clock-out saved on this device for review; not confirmed on the server",
-					),
-				);
-				return;
-			}
+			if (showSavedClockToast(result, "clock_out", t)) return;
 
 			toast.success(
 				t("timeTracking.clockOutSuccess", "Clocked out successfully"),
