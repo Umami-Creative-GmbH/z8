@@ -95,6 +95,7 @@ const TABLE_EXPORTS: Readonly<Record<string, ProtectedWriteTable>> = {
 	approvalChainStageInstance: "approval_chain_stage_instance",
 	approvalDecisionEvidence: "approval_decision_evidence",
 	approvalDeliveryControl: "approval_delivery_control",
+	approvalDeliveryIntent: "approval_delivery_intent",
 	approvalDeliveryMessage: "approval_delivery_message",
 	approvalDeliveryWork: "approval_delivery_work",
 	approvalEvidenceControl: "approval_evidence_control",
