@@ -2,12 +2,14 @@
  * Shared outer work-transaction scope and the #264 acquisition protocol keys.
  * Coordinators acquire, in order: the organization adoption gate, approval gates,
  * organization configuration, sorted user configuration/access, sorted employee
- * coordination, then source identities and rows. All advisory locks are
- * transaction-scoped with hash seed zero.
+ * coordination, then source identities and rows. Configuration writers take the
+ * organization guard exclusively (`organization-configuration-guard.ts`). All
+ * advisory locks are transaction-scoped with hash seed zero.
  */
 import { eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
+import { organizationConfigurationGuardKey } from "./organization-configuration-guard";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
@@ -70,7 +72,7 @@ export async function acquireOrganizationConfigurationGuard(
 	organizationId: string,
 ) {
 	await transaction.execute(
-		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationGuardKey(organizationId)}, 0))`,
 	);
 }
 

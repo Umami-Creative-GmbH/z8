@@ -6,6 +6,7 @@ import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * PATCH /api/org-admin/holidays/[id]
@@ -41,17 +42,6 @@ export async function PATCH(
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Verify holiday belongs to organization
-		const [existingHoliday] = await db
-			.select()
-			.from(holiday)
-			.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
-			.limit(1);
-
-		if (!existingHoliday) {
-			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
-		}
-
 		const body = await request.json();
 		const {
 			name,
@@ -65,49 +55,64 @@ export async function PATCH(
 			isActive,
 		} = body;
 
-		if (categoryId) {
-			const [existingCategory] = await db
+		// Manual submissions read organization holidays under the configuration guard.
+		const result = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+			// Verify holiday belongs to organization
+			const [existingHoliday] = await tx
 				.select()
-				.from(holidayCategory)
-				.where(
-					and(
-						eq(holidayCategory.id, categoryId),
-						eq(holidayCategory.organizationId, activeOrgId),
-					),
-				)
+				.from(holiday)
+				.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
 				.limit(1);
+			if (!existingHoliday) return "holiday_not_found" as const;
 
-			if (!existingCategory) {
-				return NextResponse.json(
-					{ error: "Invalid holiday category" },
-					{ status: 400 },
-				);
+			if (categoryId) {
+				const [existingCategory] = await tx
+					.select()
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.id, categoryId),
+							eq(holidayCategory.organizationId, activeOrgId),
+						),
+					)
+					.limit(1);
+				if (!existingCategory) return "invalid_category" as const;
 			}
+
+			const [updated] = await tx
+				.update(holiday)
+				.set({
+					...(name && { name }),
+					...(description !== undefined && { description }),
+					...(categoryId && { categoryId }),
+					...(startDate && { startDate: new Date(startDate) }),
+					...(endDate && { endDate: new Date(endDate) }),
+					...(recurrenceType && { recurrenceType }),
+					...(recurrenceRule !== undefined && { recurrenceRule }),
+					...(recurrenceEndDate !== undefined && {
+						recurrenceEndDate: recurrenceEndDate
+							? new Date(recurrenceEndDate)
+							: null,
+					}),
+					...(isActive !== undefined && { isActive }),
+					updatedBy: session.user.id,
+				})
+				.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
+				.returning();
+			return { holiday: updated };
+		});
+
+		if (result === "holiday_not_found") {
+			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
+		}
+		if (result === "invalid_category") {
+			return NextResponse.json(
+				{ error: "Invalid holiday category" },
+				{ status: 400 },
+			);
 		}
 
-		// Update holiday
-		const [updatedHoliday] = await db
-			.update(holiday)
-			.set({
-				...(name && { name }),
-				...(description !== undefined && { description }),
-				...(categoryId && { categoryId }),
-				...(startDate && { startDate: new Date(startDate) }),
-				...(endDate && { endDate: new Date(endDate) }),
-				...(recurrenceType && { recurrenceType }),
-				...(recurrenceRule !== undefined && { recurrenceRule }),
-				...(recurrenceEndDate !== undefined && {
-					recurrenceEndDate: recurrenceEndDate
-						? new Date(recurrenceEndDate)
-						: null,
-				}),
-				...(isActive !== undefined && { isActive }),
-				updatedBy: session.user.id,
-			})
-			.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
-			.returning();
-
-		return NextResponse.json({ holiday: updatedHoliday });
+		return NextResponse.json({ holiday: result.holiday });
 	} catch (error) {
 		console.error("Error updating holiday:", error);
 		return NextResponse.json(
@@ -151,23 +156,16 @@ export async function DELETE(
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Verify holiday belongs to organization
-		const [existingHoliday] = await db
-			.select()
-			.from(holiday)
-			.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
-			.limit(1);
-
-		if (!existingHoliday) {
-			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
-		}
-
-		// Soft delete by setting isActive to false
-		const [deletedHoliday] = await db
-			.update(holiday)
-			.set({ isActive: false, updatedBy: session.user.id })
-			.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
-			.returning({ id: holiday.id });
+		// Soft delete by setting isActive to false, under the configuration guard
+		// that manual submissions read organization holidays under.
+		const deletedHoliday = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+			const [deleted] = await tx
+				.update(holiday)
+				.set({ isActive: false, updatedBy: session.user.id })
+				.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
+				.returning({ id: holiday.id });
+			return deleted;
+		});
 		if (!deletedHoliday) {
 			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
 		}

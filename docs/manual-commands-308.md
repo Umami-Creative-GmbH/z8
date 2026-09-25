@@ -212,7 +212,10 @@ This slice closes on implementation. The items below are activation gates for #3
 
 - **Configuration writers** (#311–#318) do not yet take the exclusive configuration and
   user access guards, so the shared guards reserve the protocol without fencing settings,
-  auth/SCIM, project/category, holiday, change-policy and billing mutations.
+  auth/SCIM, project/category and billing mutations. Holiday, blocking-category and
+  change-policy writers participate since #316
+  ([evidence](holiday-change-policy-coordination-316.md)), except the import, demo and
+  cleanup writers left to #318.
 - **Billing** is still checked before the transaction with the provisioning gate; the
   transaction-bound non-provisioning recheck is #317.
 - **Frozen command recovery** (tab-scoped storage, lookup-only recovery, exact retry after an

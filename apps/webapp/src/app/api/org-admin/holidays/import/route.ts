@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -12,6 +12,7 @@ import {
 	mapToHolidayFormValues,
 } from "@/lib/holidays/date-holidays-service";
 import { holidayImportSchema } from "@/lib/holidays/validation";
+import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * POST /api/org-admin/holidays/import
@@ -58,12 +59,9 @@ export async function POST(request: NextRequest) {
 		const { holidays, categoryId, createRecurring, skipDuplicates } =
 			validationResult.data;
 
-		const result = await db.transaction(async (tx) => {
-			const lockKey = `holiday-import:${activeOrgId}`;
-			await tx.execute(
-				sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
-			);
-
+		// The exclusive configuration guard serializes imports per organization and
+		// fences manual submissions, which read organization holidays under it.
+		const result = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
 			if (categoryId) {
 				const [category] = await tx
 					.select({ id: holidayCategory.id })

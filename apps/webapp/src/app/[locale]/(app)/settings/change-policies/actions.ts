@@ -6,6 +6,7 @@ import { changePolicy, changePolicyAssignment, employee, team, teamPermissions }
 import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
+import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -473,22 +474,24 @@ export async function createChangePolicy(
 		}
 
 		const [policy] = yield* _(
-			actor.dbService.query("createChangePolicy", async () => {
-				return await actor.dbService.db
-					.insert(changePolicy)
-					.values({
-						organizationId: actor.organizationId,
-						name: data.name.trim(),
-						description: data.description?.trim(),
-						selfServiceDays: data.selfServiceDays,
-						approvalDays: data.approvalDays,
-						noApprovalRequired: data.noApprovalRequired ?? false,
-						notifyAllManagers: data.notifyAllManagers ?? false,
-						createdBy: actor.session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-			}),
+			actor.dbService.query("createChangePolicy", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+					tx
+						.insert(changePolicy)
+						.values({
+							organizationId: actor.organizationId,
+							name: data.name.trim(),
+							description: data.description?.trim(),
+							selfServiceDays: data.selfServiceDays,
+							approvalDays: data.approvalDays,
+							noApprovalRequired: data.noApprovalRequired ?? false,
+							notifyAllManagers: data.notifyAllManagers ?? false,
+							createdBy: actor.session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning(),
+				),
+			),
 		);
 
 		return { id: policy.id };
@@ -567,30 +570,32 @@ export async function updateChangePolicy(
 		}
 
 		yield* _(
-			actor.dbService.query("updateChangePolicy", async () => {
-				await actor.dbService.db
-					.update(changePolicy)
-					.set({
-						...(data.name !== undefined && { name: data.name.trim() }),
-						...(data.description !== undefined && { description: data.description?.trim() }),
-						...(data.selfServiceDays !== undefined && { selfServiceDays: data.selfServiceDays }),
-						...(data.approvalDays !== undefined && { approvalDays: data.approvalDays }),
-						...(data.noApprovalRequired !== undefined && {
-							noApprovalRequired: data.noApprovalRequired,
-						}),
-						...(data.notifyAllManagers !== undefined && {
-							notifyAllManagers: data.notifyAllManagers,
-						}),
-						...(data.isActive !== undefined && { isActive: data.isActive }),
-						updatedBy: actor.session.user.id,
-					})
-					.where(
-						and(
-							eq(changePolicy.id, existingPolicy.id),
-							eq(changePolicy.organizationId, actor.organizationId),
+			actor.dbService.query("updateChangePolicy", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+					tx
+						.update(changePolicy)
+						.set({
+							...(data.name !== undefined && { name: data.name.trim() }),
+							...(data.description !== undefined && { description: data.description?.trim() }),
+							...(data.selfServiceDays !== undefined && { selfServiceDays: data.selfServiceDays }),
+							...(data.approvalDays !== undefined && { approvalDays: data.approvalDays }),
+							...(data.noApprovalRequired !== undefined && {
+								noApprovalRequired: data.noApprovalRequired,
+							}),
+							...(data.notifyAllManagers !== undefined && {
+								notifyAllManagers: data.notifyAllManagers,
+							}),
+							...(data.isActive !== undefined && { isActive: data.isActive }),
+							updatedBy: actor.session.user.id,
+						})
+						.where(
+							and(
+								eq(changePolicy.id, existingPolicy.id),
+								eq(changePolicy.organizationId, actor.organizationId),
+							),
 						),
-					);
-			}),
+				),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 
@@ -616,17 +621,19 @@ export async function deleteChangePolicy(policyId: string): Promise<ServerAction
 		);
 
 		yield* _(
-			actor.dbService.query("deleteChangePolicy", async () => {
-				await actor.dbService.db
-					.update(changePolicy)
-					.set({ isActive: false, updatedBy: actor.session.user.id })
-					.where(
-						and(
-							eq(changePolicy.id, policyId),
-							eq(changePolicy.organizationId, actor.organizationId),
+			actor.dbService.query("deleteChangePolicy", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+					tx
+						.update(changePolicy)
+						.set({ isActive: false, updatedBy: actor.session.user.id })
+						.where(
+							and(
+								eq(changePolicy.id, policyId),
+								eq(changePolicy.organizationId, actor.organizationId),
+							),
 						),
-					);
-			}),
+				),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 
@@ -754,28 +761,79 @@ export async function createChangePolicyAssignment(
 		const priority =
 			data.assignmentType === "employee" ? 2 : data.assignmentType === "team" ? 1 : 0;
 
-		const [assignment] = yield* _(
-			actor.dbService.query("createChangePolicyAssignment", async () => {
-				return await actor.dbService.db
-					.insert(changePolicyAssignment)
-					.values({
-						policyId: data.policyId,
-						organizationId: actor.organizationId,
-						assignmentType: data.assignmentType,
-						teamId: data.teamId ?? null,
-						employeeId: data.employeeId ?? null,
-						priority,
-						effectiveFrom: data.effectiveFrom,
-						effectiveUntil: data.effectiveUntil,
-						isActive: true,
-						createdBy: actor.session.user.id,
-						updatedAt: new Date(),
-					})
-					.returning();
-			}),
+		// The policy and its target must be this organization's; manual submissions
+		// read effective assignments under the configuration guard.
+		const created = yield* _(
+			actor.dbService.query("createChangePolicyAssignment", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, async (tx) => {
+					const [policy] = await tx
+						.select({ id: changePolicy.id })
+						.from(changePolicy)
+						.where(
+							and(
+								eq(changePolicy.id, data.policyId),
+								eq(changePolicy.organizationId, actor.organizationId),
+								eq(changePolicy.isActive, true),
+							),
+						)
+						.limit(1);
+					if (!policy) return { invalid: "policyId" as const };
+					if (data.teamId) {
+						const [assignedTeam] = await tx
+							.select({ id: team.id })
+							.from(team)
+							.where(and(eq(team.id, data.teamId), eq(team.organizationId, actor.organizationId)))
+							.limit(1);
+						if (!assignedTeam) return { invalid: "teamId" as const };
+					}
+					if (data.employeeId) {
+						const [assignedEmployee] = await tx
+							.select({ id: employee.id })
+							.from(employee)
+							.where(
+								and(
+									eq(employee.id, data.employeeId),
+									eq(employee.organizationId, actor.organizationId),
+								),
+							)
+							.limit(1);
+						if (!assignedEmployee) return { invalid: "employeeId" as const };
+					}
+
+					const [assignment] = await tx
+						.insert(changePolicyAssignment)
+						.values({
+							policyId: data.policyId,
+							organizationId: actor.organizationId,
+							assignmentType: data.assignmentType,
+							teamId: data.teamId ?? null,
+							employeeId: data.employeeId ?? null,
+							priority,
+							effectiveFrom: data.effectiveFrom,
+							effectiveUntil: data.effectiveUntil,
+							isActive: true,
+							createdBy: actor.session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning({ id: changePolicyAssignment.id });
+					return { id: assignment.id };
+				}),
+			),
 		);
 
-		return { id: assignment.id };
+		if ("invalid" in created) {
+			return yield* _(
+				Effect.fail(
+					new ValidationError({
+						message:
+							"The policy must be active, and it and the assignment target must belong to this organization",
+						field: created.invalid,
+					}),
+				),
+			);
+		}
+
+		return { id: created.id };
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -798,17 +856,19 @@ export async function deleteChangePolicyAssignment(
 		);
 
 		yield* _(
-			actor.dbService.query("deleteChangePolicyAssignment", async () => {
-				await actor.dbService.db
-					.update(changePolicyAssignment)
-					.set({ isActive: false })
-					.where(
-						and(
-							eq(changePolicyAssignment.id, assignmentId),
-							eq(changePolicyAssignment.organizationId, actor.organizationId),
+			actor.dbService.query("deleteChangePolicyAssignment", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+					tx
+						.update(changePolicyAssignment)
+						.set({ isActive: false })
+						.where(
+							and(
+								eq(changePolicyAssignment.id, assignmentId),
+								eq(changePolicyAssignment.organizationId, actor.organizationId),
+							),
 						),
-					);
-			}),
+				),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 

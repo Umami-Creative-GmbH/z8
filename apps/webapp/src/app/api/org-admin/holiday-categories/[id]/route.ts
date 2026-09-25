@@ -6,6 +6,7 @@ import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * PATCH /api/org-admin/holiday-categories/[id]
@@ -41,25 +42,6 @@ export async function PATCH(
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Verify category belongs to organization
-		const [existingCategory] = await db
-			.select()
-			.from(holidayCategory)
-			.where(
-				and(
-					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, activeOrgId),
-				),
-			)
-			.limit(1);
-
-		if (!existingCategory) {
-			return NextResponse.json(
-				{ error: "Category not found" },
-				{ status: 404 },
-			);
-		}
-
 		const body = await request.json();
 		const {
 			type,
@@ -71,27 +53,31 @@ export async function PATCH(
 			isActive,
 		} = body;
 
-		// Update category
-		const [updatedCategory] = await db
-			.update(holidayCategory)
-			.set({
-				...(type && { type }),
-				...(name && { name }),
-				...(description !== undefined && { description }),
-				...(color !== undefined && { color }),
-				...(blocksTimeEntry !== undefined && { blocksTimeEntry }),
-				...(excludeFromCalculations !== undefined && {
-					excludeFromCalculations,
-				}),
-				...(isActive !== undefined && { isActive }),
-			})
-			.where(
-				and(
-					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, activeOrgId),
-				),
-			)
-			.returning();
+		// Update the organization's category under the configuration guard that
+		// manual submissions read blocking categories under.
+		const updatedCategory = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+			const [updated] = await tx
+				.update(holidayCategory)
+				.set({
+					...(type && { type }),
+					...(name && { name }),
+					...(description !== undefined && { description }),
+					...(color !== undefined && { color }),
+					...(blocksTimeEntry !== undefined && { blocksTimeEntry }),
+					...(excludeFromCalculations !== undefined && {
+						excludeFromCalculations,
+					}),
+					...(isActive !== undefined && { isActive }),
+				})
+				.where(
+					and(
+						eq(holidayCategory.id, id),
+						eq(holidayCategory.organizationId, activeOrgId),
+					),
+				)
+				.returning();
+			return updated;
+		});
 		if (!updatedCategory) {
 			return NextResponse.json(
 				{ error: "Category not found" },
@@ -143,36 +129,21 @@ export async function DELETE(
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Verify category belongs to organization
-		const [existingCategory] = await db
-			.select()
-			.from(holidayCategory)
-			.where(
-				and(
-					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, activeOrgId),
-				),
-			)
-			.limit(1);
-
-		if (!existingCategory) {
-			return NextResponse.json(
-				{ error: "Category not found" },
-				{ status: 404 },
-			);
-		}
-
-		// Soft delete by setting isActive to false
-		const [deletedCategory] = await db
-			.update(holidayCategory)
-			.set({ isActive: false })
-			.where(
-				and(
-					eq(holidayCategory.id, id),
-					eq(holidayCategory.organizationId, activeOrgId),
-				),
-			)
-			.returning({ id: holidayCategory.id });
+		// Soft delete by setting isActive to false, under the configuration guard
+		// that manual submissions read blocking categories under.
+		const deletedCategory = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+			const [deleted] = await tx
+				.update(holidayCategory)
+				.set({ isActive: false })
+				.where(
+					and(
+						eq(holidayCategory.id, id),
+						eq(holidayCategory.organizationId, activeOrgId),
+					),
+				)
+				.returning({ id: holidayCategory.id });
+			return deleted;
+		});
 		if (!deletedCategory) {
 			return NextResponse.json(
 				{ error: "Category not found" },

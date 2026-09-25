@@ -14,6 +14,7 @@ import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types"
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
+import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -346,36 +347,16 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 			}),
 		);
 
-		const _existingHoliday = yield* _(
-			actor.dbService.query("verifyHoliday", async () => {
-				const [h] = await actor.dbService.db
-					.select()
-					.from(holiday)
-					.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)))
-					.limit(1);
-
-				if (!h) {
-					throw new Error("Holiday not found");
-				}
-
-				return h;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Holiday not found",
-						entityType: "holiday",
-						entityId: holidayId,
-					}),
+		// Manual submissions read organization holidays under the configuration guard.
+		const deleted = yield* _(
+			actor.dbService.query("deleteHoliday", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+					tx
+						.delete(holiday)
+						.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)))
+						.returning({ id: holiday.id }),
+				),
 			),
-		);
-
-		yield* _(
-			actor.dbService.query("deleteHoliday", async () => {
-				await actor.dbService.db
-					.delete(holiday)
-					.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)));
-			}),
 			Effect.mapError(
 				(error) =>
 					new DatabaseError({
@@ -386,6 +367,18 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 					}),
 			),
 		);
+
+		if (deleted.length === 0) {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Holiday not found",
+						entityType: "holiday",
+						entityId: holidayId,
+					}),
+				),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runHolidayServerAction(effect);
@@ -411,12 +404,21 @@ export async function bulkDeleteHolidays(
 
 		const result = yield* _(
 			actor.dbService.query("bulkDeleteHolidays", async () => {
-				const deleteResult = await actor.dbService.db
-					.delete(holiday)
-					.where(
-						and(inArray(holiday.id, holidayIds), eq(holiday.organizationId, actor.organizationId)),
-					)
-					.returning({ id: holiday.id });
+				// Manual submissions read organization holidays under the configuration guard.
+				const deleteResult = await mutateOrganizationConfiguration(
+					actor.dbService.db,
+					actor.organizationId,
+					(tx) =>
+						tx
+							.delete(holiday)
+							.where(
+								and(
+									inArray(holiday.id, holidayIds),
+									eq(holiday.organizationId, actor.organizationId),
+								),
+							)
+							.returning({ id: holiday.id }),
+				);
 
 				return { deleted: deleteResult.length };
 			}),
@@ -451,64 +453,48 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
 			}),
 		);
 
-		const _existingCategory = yield* _(
-			actor.dbService.query("verifyCategory", async () => {
-				const [cat] = await actor.dbService.db
-					.select()
-					.from(holidayCategory)
-					.where(
-						and(
-							eq(holidayCategory.id, categoryId),
-							eq(holidayCategory.organizationId, actor.organizationId),
-						),
-					)
-					.limit(1);
+		// Existence, the in-use check and the soft delete share one transaction under
+		// the configuration guard that manual submissions read blocking categories under.
+		const outcome = yield* _(
+			actor.dbService.query("deleteCategory", () =>
+				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, async (tx) => {
+					const [category] = await tx
+						.select({ id: holidayCategory.id })
+						.from(holidayCategory)
+						.where(
+							and(
+								eq(holidayCategory.id, categoryId),
+								eq(holidayCategory.organizationId, actor.organizationId),
+							),
+						)
+						.limit(1);
+					if (!category) return "not_found" as const;
 
-				if (!cat) {
-					throw new Error("Category not found");
-				}
+					const [holidayUsingCategory] = await tx
+						.select({ id: holiday.id })
+						.from(holiday)
+						.where(
+							and(
+								eq(holiday.organizationId, actor.organizationId),
+								eq(holiday.categoryId, categoryId),
+								eq(holiday.isActive, true),
+							),
+						)
+						.limit(1);
+					if (holidayUsingCategory) return "in_use" as const;
 
-				return cat;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Category not found",
-						entityType: "holiday_category",
-						entityId: categoryId,
-					}),
+					await tx
+						.update(holidayCategory)
+						.set({ isActive: false })
+						.where(
+							and(
+								eq(holidayCategory.id, categoryId),
+								eq(holidayCategory.organizationId, actor.organizationId),
+							),
+						);
+					return "deleted" as const;
+				}),
 			),
-		);
-
-		const holidaysUsingCategory = yield* _(
-			actor.dbService.query("checkHolidaysUsingCategory", async () => {
-				return await actor.dbService.db
-					.select()
-					.from(holiday)
-					.where(and(eq(holiday.categoryId, categoryId), eq(holiday.isActive, true)))
-					.limit(1);
-			}),
-		);
-
-		if (holidaysUsingCategory.length > 0) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Cannot delete category - it is being used by active holidays",
-						conflictType: "category_in_use",
-						details: { categoryId, holidayCount: holidaysUsingCategory.length },
-					}),
-				),
-			);
-		}
-
-		yield* _(
-			actor.dbService.query("deleteCategory", async () => {
-				await actor.dbService.db
-					.update(holidayCategory)
-					.set({ isActive: false })
-					.where(eq(holidayCategory.id, categoryId));
-			}),
 			Effect.mapError(
 				(error) =>
 					new DatabaseError({
@@ -519,6 +505,29 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
 					}),
 			),
 		);
+
+		if (outcome === "not_found") {
+			yield* _(
+				Effect.fail(
+					new NotFoundError({
+						message: "Category not found",
+						entityType: "holiday_category",
+						entityId: categoryId,
+					}),
+				),
+			);
+		}
+		if (outcome === "in_use") {
+			yield* _(
+				Effect.fail(
+					new ConflictError({
+						message: "Cannot delete category - it is being used by active holidays",
+						conflictType: "category_in_use",
+						details: { categoryId, holidayCount: 1 },
+					}),
+				),
+			);
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runHolidayServerAction(effect);
