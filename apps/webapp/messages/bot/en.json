@@ -11,6 +11,7 @@
       "alreadyProcessed": "This approval has already been processed.",
       "boundReviewRequired": "This card no longer matches the current request or assignment, or the action could not be verified. No decision was made. Review the request in Z8.",
       "invocationConflict": "This button press was already recorded with a different action. No decision was made. Review the request in Z8.",
+      "outcomeUnknown": "The result of this press could not be confirmed. Check the request in Z8 before pressing again.",
       "card": {
         "absenceTitle": "Absence approval request",
         "boundHint": "Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",

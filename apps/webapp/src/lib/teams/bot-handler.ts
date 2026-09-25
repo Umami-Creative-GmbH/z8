@@ -12,7 +12,8 @@ import { getBotTranslate, getUserLocale } from "@/lib/bot-platform/i18n";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
-import { handleApprovalAction } from "./approval-handler";
+import { handleApprovalAction, handleBoundApprovalInvoke } from "./approval-handler";
+import { parseTeamsBoundApprovalInvoke } from "./bound-approval";
 import { deactivateConversation, saveConversationReference } from "./conversation-manager";
 import { handleShiftPickupAction } from "./shift-pickup-handler";
 import { resolveTenant, updateTenantServiceUrl } from "./tenant-resolver";
@@ -300,15 +301,21 @@ async function handleInvoke(context: TurnContext): Promise<void> {
 		return;
 	}
 
-	// Handle approval action
-	if (value?.action && value?.approvalId) {
-		await handleApprovalAction(
-			context,
-			value.approvalId,
-			value.action as "approve" | "reject",
-			userResult.user,
-			tenant,
-		);
+	// Bound approval cards (#293): Universal Actions carrying a reviewed
+	// binding. The invoke response reports the outcome.
+	const bound = parseTeamsBoundApprovalInvoke(activity);
+	if (bound.kind !== "none") {
+		const response = await handleBoundApprovalInvoke(context, bound, userResult.user, tenant);
+		await context.sendActivity({ type: "invokeResponse", value: response });
+		return;
+	}
+
+	// Old unbound cards: historical-result-only access, never a new decision.
+	if (
+		(value?.action === "approve" || value?.action === "reject") &&
+		typeof value?.approvalId === "string"
+	) {
+		await handleApprovalAction(context, value.approvalId, value.action, userResult.user, tenant);
 	}
 
 	// Handle shift pickup action
