@@ -757,7 +757,16 @@ on conflict (organization_id, workflow_type, provider) do update set mode = excl
    ID (#261 §4). Accepted as scoped recorded-activity deduplication only.
 4. **Connector authentication** runs in the route (`CloudAdapter.process`) and
    was not exercised by the suite.
-5. Legacy authority (#384), escalation replacement delivery (#300), ingress
+5. **Markdown rendering.** Request facts are escaped for inline emphasis,
+   code and link syntax (backslash, backtick, `*`, `_`, `[`, `]`, `~`) only. That Teams hides those escape
+   backslashes in `FactSet` and `TextBlock` text is unverified in a real
+   client.
+6. **Webhook versus owner writes.** The webhook checks that a delivered card
+   is still pending, then turns it into a review notice. A decision committed
+   in between can let the owner refresh the card first and the webhook
+   overwrite it with "Review required" (no controls either way; the same
+   window exists for Telegram).
+7. Legacy authority (#384), escalation replacement delivery (#300), ingress
    (no durable acceptance before the invoke is answered), and everything in
    the #290 and #291 blockers.
 
@@ -793,8 +802,8 @@ post-commit fast path, the bot credentials and the connector transport
   retries;
 - a card that went stale in flight is retired; an oversized card is sent
   review-only without a binding;
-- the existing Teams channel stays silent under the owner and still sends
-  without it; a bound card from that path is decided and updated in place;
+- the existing Teams channel and the old sender used by legacy escalation
+  stay silent under the owner, and the channel still sends without it; a bound card from that path is decided and updated in place;
 - privileged cleanup reports the invocation and message; a late retry
   recreates nothing.
 

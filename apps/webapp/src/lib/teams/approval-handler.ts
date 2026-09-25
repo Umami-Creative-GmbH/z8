@@ -1,13 +1,14 @@
 import type { Activity, TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { teamsApprovalCard } from "@/db/schema";
+import { approvalRequest, teamsApprovalCard } from "@/db/schema";
 import { env } from "@/env";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
 	approvalDeliveryMessageReviewReference,
 	findApprovalDeliveryMessageByRemoteIdentity,
+	isAbsenceCardDeliveredByOwner,
 	isApprovalDeliveryMessagePending,
 	markApprovalDeliveryMessageWithoutControls,
 } from "@/lib/approvals/delivery/store";
@@ -23,9 +24,10 @@ import {
 	boundDecisionNotice,
 	teamsApprovalNotice,
 } from "@/lib/bot-platform/approval-notice";
-import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import { type BotTranslateFn, getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import {
 	TEAMS_APPROVAL_VERBS,
 	type TeamsBoundApprovalInvoke,
@@ -78,7 +80,7 @@ export async function handleApprovalAction(
 			{ kind: "compatibility", approvalRequestId: approvalId },
 		);
 		if (!notice) return;
-		await context.sendActivity(teamsCardActivity(teamsApprovalNotice(notice), notice.title));
+		await context.sendActivity(teamsNoticeActivity(notice));
 	} catch (error) {
 		logger.error({ error, approvalId }, "Failed to review Teams approval card");
 		throw new TeamsError("Failed to review approval", "BOT_ERROR");
@@ -87,10 +89,11 @@ export async function handleApprovalAction(
 
 /**
  * Adaptive Card text is Markdown. Request facts (names, labels) are data, so
- * Markdown syntax in them is escaped rather than rendered.
+ * the inline emphasis, code and link syntax in them is escaped rather than
+ * rendered. Dates, times and zones contain none of these characters.
  */
 function escapeTeamsMarkdown(value: string): string {
-	return value.replace(/[\\`*_{}[\]()#+\-.!|~>]/g, "\\$&");
+	return value.replace(/[\\`*_[\]~]/g, "\\$&");
 }
 
 export function teamsCardActivity(
@@ -150,6 +153,18 @@ export function teamsActionableCard(card: ApprovalActionableCard): Record<string
 	};
 }
 
+/** A review-only or status notice: the review link, never controls. */
+export function teamsNoticeActivity(notice: ApprovalNotice): Partial<Activity> {
+	return teamsCardActivity(
+		teamsApprovalNotice({
+			...notice,
+			title: escapeTeamsMarkdown(notice.title),
+			text: escapeTeamsMarkdown(notice.text),
+		}),
+		notice.title,
+	);
+}
+
 export function teamsActionableActivity(card: ApprovalActionableCard): Partial<Activity> {
 	return teamsCardActivity(teamsActionableCard(card), card.title);
 }
@@ -172,14 +187,23 @@ function invokeMessage(text: string): TeamsInvokeResponse {
 	};
 }
 
-async function localizedText(
-	recipient: { userId: string; organizationId: string },
-	key: string,
-	fallback: string,
-): Promise<string> {
+function invokeError(code: string, message: string): TeamsInvokeResponse {
+	return {
+		status: 200,
+		body: { statusCode: 500, type: "application/vnd.microsoft.error", value: { code, message } },
+	};
+}
+
+type Recipient = { userId: string; organizationId: string };
+
+async function recipientTranslate(recipient: Recipient): Promise<BotTranslateFn> {
 	const display = await resolveRecipientDisplayContext(recipient);
-	const t = await getBotTranslate(display?.locale ?? "en");
-	return t(key, fallback);
+	return getBotTranslate(display?.locale ?? DEFAULT_LANGUAGE);
+}
+
+async function reviewRequiredMessage(recipient: Recipient): Promise<TeamsInvokeResponse> {
+	const t = await recipientTranslate(recipient);
+	return invokeMessage(t("bot.approval.reviewRequiredTitle", "Review required"));
 }
 
 /**
@@ -198,9 +222,7 @@ export async function handleBoundApprovalInvoke(
 	const recipient = { userId: user.userId, organizationId: tenant.organizationId };
 	if (invoke.kind === "refresh") {
 		// An automatic refresh is not a click: nothing is decided or written.
-		return invokeMessage(
-			await localizedText(recipient, "bot.approval.reviewRequiredTitle", "Review required"),
-		);
+		return reviewRequiredMessage(recipient);
 	}
 	let result: BoundBotApprovalResult = { status: "review_required" };
 	if (invoke.kind === "action" && user.organizationId === tenant.organizationId) {
@@ -219,21 +241,14 @@ export async function handleBoundApprovalInvoke(
 			// Outcome unknown: claim nothing. A retry of this recorded activity
 			// replays the committed result if the decision did commit.
 			logger.error({ error, bindingId: invoke.bindingId }, "Failed to decide bound Teams approval");
-			return {
-				status: 200,
-				body: {
-					statusCode: 500,
-					type: "application/vnd.microsoft.error",
-					value: {
-						code: "OutcomeUnknown",
-						message: await localizedText(
-							recipient,
-							"bot.approval.outcomeUnknown",
-							"The result of this press could not be confirmed. Check the request in Z8 before pressing again.",
-						),
-					},
-				},
-			};
+			const t = await recipientTranslate(recipient);
+			return invokeError(
+				"OutcomeUnknown",
+				t(
+					"bot.approval.outcomeUnknown",
+					"The result of this press could not be confirmed. Check the request in Z8 before pressing again.",
+				),
+			);
 		}
 	}
 	try {
@@ -250,9 +265,7 @@ export async function handleBoundApprovalInvoke(
 		});
 		if (decided) return invokeMessage(decided.title);
 	}
-	return invokeMessage(
-		await localizedText(recipient, "bot.approval.reviewRequiredTitle", "Review required"),
-	);
+	return reviewRequiredMessage(recipient);
 }
 
 /**
@@ -300,7 +313,7 @@ async function updatePressedCard(
 	if (!notice) return null;
 	// Cards sent outside the delivery owner have no other writer.
 	await context.updateActivity({
-		...teamsCardActivity(teamsApprovalNotice(notice), notice.title),
+		...teamsNoticeActivity(notice),
 		id: cardActivityId,
 	});
 	return notice;
@@ -317,7 +330,7 @@ async function updateDeliveredBoundCard(
 	context: TurnContext,
 	result: BoundBotApprovalResult,
 	message: ApprovalDeliveryMessageRecord,
-	recipient: { userId: string; organizationId: string },
+	recipient: Recipient,
 ): Promise<ApprovalNotice | null> {
 	try {
 		const notice = await boundDecisionNotice(
@@ -328,7 +341,7 @@ async function updateDeliveredBoundCard(
 		if (!notice) return null;
 		if (result.status !== "decided" && (await isApprovalDeliveryMessagePending(message))) {
 			await context.updateActivity({
-				...teamsCardActivity(teamsApprovalNotice(notice), notice.title),
+				...teamsNoticeActivity(notice),
 				id: message.remoteMessageId,
 			});
 			await markApprovalDeliveryMessageWithoutControls({
@@ -345,12 +358,39 @@ async function updateDeliveredBoundCard(
 	}
 }
 
+/**
+ * Whether the approval delivery owner sends this request's Teams card. Every
+ * sender outside the owner (notification channel, legacy escalation) checks
+ * it, so a card is never sent twice.
+ */
+async function deliveredByApprovalOwner(
+	approvalId: string,
+	organizationId: string,
+): Promise<boolean> {
+	const request = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.id, approvalId),
+			eq(approvalRequest.organizationId, organizationId),
+		),
+		columns: { entityType: true, entityId: true },
+	});
+	return (
+		request?.entityType === "absence_entry" &&
+		isAbsenceCardDeliveredByOwner({
+			organizationId,
+			absenceId: request.entityId,
+			provider: "teams",
+		})
+	);
+}
+
 export async function sendApprovalCardToManager(
 	approvalId: string,
 	approverId: string,
 	organizationId: string,
 ): Promise<void> {
 	try {
+		if (await deliveredByApprovalOwner(approvalId, organizationId)) return;
 		const notice = await prepareApprovalPresentation({
 			approvalId,
 			recipientEmployeeId: approverId,
@@ -370,7 +410,7 @@ export async function sendApprovalCardToManager(
 			conversation,
 			notice.status === "actionable"
 				? teamsActionableActivity(notice)
-				: teamsCardActivity(teamsApprovalNotice(notice), notice.title),
+				: teamsNoticeActivity(notice),
 		);
 		if (activityId)
 			await db.insert(teamsApprovalCard).values({

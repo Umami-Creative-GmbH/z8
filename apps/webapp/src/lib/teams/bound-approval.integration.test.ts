@@ -995,6 +995,8 @@ describeIntegration("Teams bound approval cards (PostgreSQL)", () => {
 			entityType: "approval_request",
 			entityId: inactive.requestId,
 		});
+		// Legacy escalation reaches the same sender directly; it stays silent too.
+		await sendApprovalCardToManager(inactive.requestId, ids.manager, ids.organization);
 		expect(sends()).toHaveLength(1);
 	});
 

@@ -47,12 +47,17 @@ Teams adapter (#293)                                    lib/teams/approval-deliv
   credentials or no tenant configuration is `unavailable`; an inactive tenant
   or approvals disabled is `suppressed`; a stored conversation from another
   tenant is `destination_invalid`.
+- An organization can connect several tenants. A send uses the tenant of the
+  recipient's personal conversation; a refresh uses the tenant named in the
+  message's receiver scope, never an arbitrary tenant of the organization.
 - Destination repair: a personal conversation saved for the recipient (they
   messaged the bot) re-arms their Teams `destination_invalid` work. Repair is
   per provider: a Telegram chat does not re-arm Teams work, and the reverse.
 - The existing Teams channel stays silent for an absence with a canonical
   workflow while the Teams owner is active, both for `absence_entry` and for
-  `approval_request` notifications of that absence.
+  `approval_request` notifications of that absence. The old sender
+  (`sendApprovalCardToManager`) checks the same condition itself, so the
+  legacy Teams escalation checker cannot send a second card either.
 - Pressed cards: see "Teams absence cards with reviewed bindings" in
   [approval-evidence.md](approval-evidence.md).
 

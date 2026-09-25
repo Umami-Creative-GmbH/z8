@@ -7,8 +7,7 @@ import type {
 	ApprovalDeliveryFailure,
 } from "@/lib/approvals/delivery/owner";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
-import { teamsApprovalNotice } from "@/lib/bot-platform/approval-notice";
-import { fitsTeamsCard, teamsActionableActivity, teamsCardActivity } from "./approval-handler";
+import { fitsTeamsCard, teamsActionableActivity, teamsNoticeActivity } from "./approval-handler";
 import { isBotConfigured, sendActivityWithOutcome, updateActivityWithOutcome } from "./bot-adapter";
 import { teamsReceiverScope } from "./bound-approval";
 import { findConversationReference, findPersonalConversation } from "./conversation-manager";
@@ -27,18 +26,19 @@ function failure(
 	return { kind: "failed", outcome: kind, reason };
 }
 
-/** The organization's Teams tenant; read failures propagate. */
-async function loadTenant(organizationId: string) {
-	const [config] = await db
+/**
+ * Every Teams tenant configured for the organization (an organization may
+ * connect more than one); read failures propagate.
+ */
+function loadTenants(organizationId: string) {
+	return db
 		.select({
 			tenantId: teamsTenantConfig.tenantId,
 			setupStatus: teamsTenantConfig.setupStatus,
 			enableApprovals: teamsTenantConfig.enableApprovals,
 		})
 		.from(teamsTenantConfig)
-		.where(eq(teamsTenantConfig.organizationId, organizationId))
-		.limit(1);
-	return config ?? null;
+		.where(eq(teamsTenantConfig.organizationId, organizationId));
 }
 
 /**
@@ -54,15 +54,9 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		if (!isBotConfigured()) {
 			return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
 		}
-		const tenant = await loadTenant(input.organizationId);
-		if (!tenant) return { kind: "failed", outcome: "unavailable", reason: "tenant_unavailable" };
-		if (tenant.setupStatus !== "active") {
-			return { kind: "suppressed", reason: "integration_disabled" };
-		}
-		if (!tenant.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
-		const receiverScope = teamsReceiverScope(env.MICROSOFT_APP_ID, tenant.tenantId);
-		if (!receiverScope) {
-			return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };
+		const tenants = await loadTenants(input.organizationId);
+		if (tenants.length === 0) {
+			return { kind: "failed", outcome: "unavailable", reason: "tenant_unavailable" };
 		}
 		const conversation = await findPersonalConversation(
 			input.recipientUserId,
@@ -71,12 +65,22 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		if (!conversation) {
 			return { kind: "failed", outcome: "destination_invalid", reason: "destination_missing" };
 		}
-		if (conversation.teamsTenantId !== tenant.tenantId) {
+		// The recipient's conversation decides the tenant; it must be one of ours.
+		const tenant = tenants.find((config) => config.tenantId === conversation.teamsTenantId);
+		if (!tenant) {
 			return {
 				kind: "failed",
 				outcome: "destination_invalid",
 				reason: "destination_tenant_mismatch",
 			};
+		}
+		if (tenant.setupStatus !== "active") {
+			return { kind: "suppressed", reason: "integration_disabled" };
+		}
+		if (!tenant.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+		const receiverScope = teamsReceiverScope(env.MICROSOFT_APP_ID, tenant.tenantId);
+		if (!receiverScope) {
+			return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };
 		}
 		const card = await prepareApprovalPresentation({
 			approvalId: input.approvalRequestId,
@@ -88,13 +92,14 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		if (card.status === "undisclosable") return { kind: "suppressed", reason: "not_entitled" };
 		const sent = await sendActivityWithOutcome(
 			conversation.reference,
-			card.status === "actionable"
-				? teamsActionableActivity(card)
-				: teamsCardActivity(teamsApprovalNotice(card), card.title),
+			card.status === "actionable" ? teamsActionableActivity(card) : teamsNoticeActivity(card),
 		);
 		if (sent.kind !== "ok") {
 			const failed = failure(sent, "send");
-			return failed === "gone" ? { kind: "failed", outcome: "permanent", reason: failed } : failed;
+			// A send has no message to lose; classification never yields "gone" here.
+			return failed === "gone"
+				? { kind: "failed", outcome: "permanent", reason: "unexpected_gone" }
+				: failed;
 		}
 		if (!sent.activityId) {
 			// Posted, but its identity is unknown: it cannot be tracked or retired.
@@ -114,12 +119,13 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		if (!isBotConfigured()) {
 			return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
 		}
-		const tenant = await loadTenant(input.organizationId);
-		if (!tenant) return { kind: "failed", outcome: "unavailable", reason: "tenant_unavailable" };
 		// Only the bot and tenant that sent a message can update it.
-		if (teamsReceiverScope(env.MICROSOFT_APP_ID, tenant.tenantId) !== input.message.receiverScope) {
-			return { kind: "gone", reason: "bot_replaced" };
-		}
+		const tenants = await loadTenants(input.organizationId);
+		const sender = tenants.some(
+			(config) =>
+				teamsReceiverScope(env.MICROSOFT_APP_ID, config.tenantId) === input.message.receiverScope,
+		);
+		if (!sender) return { kind: "gone", reason: "bot_replaced" };
 		const reference = await findConversationReference(
 			input.message.destinationId,
 			input.organizationId,
@@ -128,7 +134,7 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		const updated = await updateActivityWithOutcome(
 			reference,
 			input.message.remoteMessageId,
-			teamsCardActivity(teamsApprovalNotice(input.notice), input.notice.title),
+			teamsNoticeActivity(input.notice),
 		);
 		if (updated.kind === "ok") return { kind: "accepted" };
 		const failed = failure(updated, "update");

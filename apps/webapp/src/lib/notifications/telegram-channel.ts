@@ -47,14 +47,6 @@ export async function isTelegramAvailable(
 	}
 }
 
-/** Whether the approval delivery owner (#291) sends this absence's Telegram card. */
-function deliveredByApprovalOwner(
-	organizationId: string,
-	absenceId: string | undefined,
-): Promise<boolean> {
-	return isAbsenceCardDeliveredByOwner({ organizationId, absenceId, provider: "telegram" });
-}
-
 /**
  * Send a notification via Telegram
  */
@@ -90,7 +82,11 @@ export async function sendTelegramNotification(
 		if (
 			params.type === "approval_request_submitted" &&
 			params.entityType === "absence_entry" &&
-			(await deliveredByApprovalOwner(params.organizationId, params.entityId))
+			(await isAbsenceCardDeliveredByOwner({
+				organizationId: params.organizationId,
+				absenceId: params.entityId,
+				provider: "telegram",
+			}))
 		) {
 			return;
 		}
@@ -109,7 +105,11 @@ export async function sendTelegramNotification(
 
 			if (
 				approval?.entityType === "absence_entry" &&
-				(await deliveredByApprovalOwner(params.organizationId, approval.entityId))
+				(await isAbsenceCardDeliveredByOwner({
+					organizationId: params.organizationId,
+					absenceId: approval.entityId,
+					provider: "telegram",
+				}))
 			) {
 				return;
 			}
