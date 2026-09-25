@@ -16,6 +16,10 @@ import {
 	type OrdinaryWorkPeriodApprovalAdapterDependencies,
 } from "../domain-adapters/work-period.adapter";
 import {
+	preflightCanonicalTimeCorrectionDecisionEvidence,
+	recordCanonicalTimeCorrectionDecisionEvidence,
+} from "../evidence/time-correction-evidence";
+import {
 	preflightCanonicalWorkPeriodDecisionEvidence,
 	recordCanonicalWorkPeriodDecisionEvidence,
 } from "../evidence/work-period-evidence";
@@ -504,13 +508,30 @@ export function createProductionApprovalWorkflowRuntime(input: {
 					}
 				: input.adapters.ordinaryWorkPeriod.evidence,
 	};
+	// Production decisions also participate in time correction evidence (#301).
+	const timeCorrection: TimeCorrectionApprovalAdapterDependencies = {
+		...input.adapters.timeCorrection,
+		evidence:
+			input.adapters.timeCorrection.evidence === undefined
+				? {
+						preflight: (dbService, evidenceInput) =>
+							preflightCanonicalTimeCorrectionDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+						record: (dbService, evidenceInput) =>
+							recordCanonicalTimeCorrectionDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+					}
+				: input.adapters.timeCorrection.evidence,
+	};
 	return createApprovalWorkflowRuntime({
 		db: input.db,
 		adapterRegistry: createProductionApprovalDomainAdapterRegistry({
 			absence: createAbsenceApprovalAdapter(input.adapters.absence),
-			timeCorrection: createTimeCorrectionApprovalAdapter(
-				input.adapters.timeCorrection,
-			),
+			timeCorrection: createTimeCorrectionApprovalAdapter(timeCorrection),
 			manualTimeSubmission: createOrdinaryWorkPeriodApprovalAdapter(
 				"manual_time_submission",
 				ordinaryWorkPeriod,

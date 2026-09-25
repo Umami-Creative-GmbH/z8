@@ -431,8 +431,8 @@ export async function deleteApprovalInTransaction(
 }
 
 /**
- * Whole-history cleanup participation for manual time submission and policy
- * clock-out evidence (#302). Paths that delete an organization's (or some
+ * Whole-history cleanup participation for manual time submission, policy
+ * clock-out (#302) and time correction (#301) evidence. Paths that delete an organization's (or some
  * employees') work history remove the lifecycle evidence describing it before
  * the history and the employees, dependants first, so employee FKs never block
  * the delete. It runs in the caller's transaction when the caller has one; the
@@ -468,7 +468,7 @@ export async function deleteWorkPeriodApprovalEvidence(
 		await transaction.execute(sql`
 			select id from approval_submitted_revision
 			where organization_id = ${input.organizationId}
-				and workflow_type in ('manual_time_submission', 'policy_clock_out')
+				and workflow_type in ('manual_time_submission', 'policy_clock_out', 'time_correction')
 				and source_type = 'time_entry'
 				and ${subjects}
 			for update

@@ -35,6 +35,11 @@ import {
 	type TimeCorrectionEndpointEvidence,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
+import {
+	captureTimeCorrectionSubmissionEvidence,
+	prepareTimeCorrectionSubmissionFacts,
+} from "@/lib/approvals/evidence/time-correction-evidence";
+import { translateWorkPeriodEvidenceError } from "@/lib/approvals/evidence/work-period-evidence";
 import { mapSequentially } from "@/lib/approvals/sequential";
 import {
 	deleteCancelledTimeCorrectionsInTransaction,
@@ -1663,7 +1668,8 @@ export async function submitCorrection(input: {
 			submitCorrectionInTransaction(runtime, input, requestMetadata),
 		);
 	} catch (error) {
-		throw translateCorrectionWorkError(error);
+		// Evidence holds and adopted work outcomes answer as typed 409 conflicts.
+		throw translateCorrectionWorkError(translateWorkPeriodEvidenceError(error));
 	}
 }
 
@@ -1899,6 +1905,17 @@ function submitCorrectionInTransaction(
 					}
 				: {}),
 		};
+		// Submitted evidence (#301) is captured from the locked period and the
+		// pending entries before routing or an auto-completion can change them.
+		const evidenceFacts =
+			persistedSubmissionKey === null
+				? await prepareTimeCorrectionSubmissionFacts(tx, {
+						organizationId: input.organizationId,
+						workPeriodId: input.workPeriodId,
+						requesterEmployeeId: input.employeeId,
+						correction,
+					})
+				: null;
 		// The pending proposal changes the graph: advance its revision before
 		// routing, so an auto-completing finalization advances from there.
 		const submittedRevision =
@@ -1945,6 +1962,46 @@ function submitCorrectionInTransaction(
 					value: validation.holidayName,
 				});
 			}
+		}
+		if (evidenceFacts && result.disposition === "executed") {
+			const canonical =
+				work.authority.mode === "canonical" || work.authority.mode === "complete";
+			const [bound] = await tx
+				.select({ approvalWorkflowId: workPeriod.approvalWorkflowId })
+				.from(workPeriod)
+				.where(eq(workPeriod.id, lockedPeriod.id))
+				.limit(1);
+			await captureTimeCorrectionSubmissionEvidence(tx, {
+				organizationId: input.organizationId,
+				requestCycleKey: submissionKey,
+				facts: evidenceFacts,
+				submitterUserId: input.userId,
+				lifecycle: canonical
+					? {
+							authority: "canonical",
+							workflow: await context.repository.loadSnapshot({
+								organizationId: input.organizationId,
+								workflowId: deriveApprovalWorkflowId({
+									organizationId: input.organizationId,
+									workflowType: "time_correction",
+									sourceType: "time_entry",
+									sourceId: lockedPeriod.id,
+									allocationKey: submissionKey,
+								}),
+							}),
+						}
+					: {
+							authority: "legacy",
+							approvalRequestId: result.approvalRequestId,
+							chainInstanceId:
+								"chainInstanceId" in result && typeof result.chainInstanceId === "string"
+									? result.chainInstanceId
+									: null,
+							observedWorkflowId:
+								work.authority.mode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+							autoCompleted: result.kind === "auto_completed",
+						},
+			});
 		}
 		if (adopted) {
 			const receiptInput = {

@@ -50,6 +50,18 @@ const {
 	},
 }));
 
+// Mock-database harnesses run with time correction evidence capture inactive;
+// capture, holds and decision evidence are verified against PostgreSQL (#301).
+vi.mock("../evidence/time-correction-evidence", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../evidence/time-correction-evidence")>()),
+	prepareLegacyTimeCorrectionDecisionEvidence: async () => null,
+	recordLegacyTimeCorrectionDecisionEvidence: async () => {
+		throw new Error("No time correction evidence plan in the legacy harness");
+	},
+	preflightCanonicalTimeCorrectionDecisionEvidence: async () => undefined,
+	recordCanonicalTimeCorrectionDecisionEvidence: async () => undefined,
+}));
+
 vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
 	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
 		await importOriginal(),

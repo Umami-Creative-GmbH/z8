@@ -402,6 +402,56 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		return rows;
 	}
 
+	async function setEvidenceCapture(mode: "capture" | "inactive") {
+		await admin.query(
+			`insert into approval_evidence_control (organization_id, workflow_type, mode)
+			 values ($1, 'time_correction', $2)
+			 on conflict (organization_id, workflow_type) do update set mode = excluded.mode`,
+			[ids.organization, mode],
+		);
+	}
+
+	async function revisions() {
+		const { rows } = await admin.query<{
+			id: string;
+			authority: string;
+			workflow_id: string | null;
+			legacy_approval_request_id: string | null;
+			request_cycle_key: string;
+			submitter_user_id: string;
+			material_fingerprint: string;
+			facts: Record<string, unknown>;
+			labels: Record<string, unknown>;
+		}>(
+			`select id, authority, workflow_id, legacy_approval_request_id, request_cycle_key,
+			        submitter_user_id, material_fingerprint, facts, labels
+			 from approval_submitted_revision
+			 where organization_id = $1 and workflow_type = 'time_correction' order by created_at`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
+	async function decisions() {
+		const { rows } = await admin.query<{
+			submitted_revision_id: string;
+			operation_kind: string;
+			action: string;
+			request_outcome: string;
+			actor_user_id: string | null;
+			stage_id: string | null;
+			legacy_approval_request_id: string | null;
+			result: Record<string, unknown>;
+		}>(
+			`select submitted_revision_id, operation_kind, action, request_outcome, actor_user_id,
+			        stage_id, legacy_approval_request_id, result
+			 from approval_decision_evidence
+			 where organization_id = $1 order by created_at`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
 	async function cleanup() {
 		await admin.query("drop function if exists t301_fail() cascade");
 		await admin.query("delete from organization where id = $1", [ids.organization]);
@@ -942,6 +992,189 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 			[ids.organization],
 		);
 		expect(rows).toHaveLength(0);
+	});
+
+	it("captures no correction evidence while capture is inactive", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+		expect(await revisions()).toHaveLength(0);
+		expect(await decisions()).toHaveLength(0);
+	});
+
+	it("captures the submitted baseline and records the decision with its resulting graph", async () => {
+		await setEvidenceCapture("capture");
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:40Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "09:00", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const [pending] = await corrections(work.id);
+		const approvalId = await pendingApprovalId(work.id);
+
+		const [revision] = await revisions();
+		expect(revision).toMatchObject({
+			authority: "legacy",
+			workflow_id: null,
+			legacy_approval_request_id: approvalId,
+			submitter_user_id: ids.requesterUser,
+			labels: { subjectName: ids.requesterUser, submitterName: ids.requesterUser },
+			facts: {
+				kind: "time_correction",
+				intent: "edit",
+				canonicalRecordId: expect.any(String),
+				baseline: {
+					clockIn: { entryId: work.clock_in_id, at: "2026-07-22T08:00:00Z", utcOffsetMinutes: 0 },
+					clockOut: { entryId: work.clock_out_id, at: "2026-07-22T10:00:40Z" },
+					storedDurationMinutes: 121,
+					elapsedSeconds: 7240,
+				},
+				requested: {
+					clockIn: {
+						originalEntryId: work.clock_in_id,
+						correctionEntryId: pending?.id,
+						at: "2026-07-22T09:00:00Z",
+					},
+					clockOut: null,
+					workLocationType: { kind: "set", value: "office" },
+					workCategoryId: { kind: "set", value: null },
+				},
+				changeMask: { clockIn: true, clockOut: false, workLocation: false, workCategory: false },
+			},
+		});
+		expect(revision?.material_fingerprint).toMatch(/^time_correction:v1:/);
+		expect(JSON.stringify(revision)).not.toContain("Forgot to clock correctly");
+
+		await expect(approve(approvalId)).resolves.toBeDefined();
+
+		const [decision] = await decisions();
+		expect(decision).toMatchObject({
+			submitted_revision_id: revision?.id,
+			operation_kind: "command",
+			action: "approve",
+			request_outcome: "approved",
+			actor_user_id: ids.managerUser,
+			legacy_approval_request_id: approvalId,
+			result: {
+				legacyRequestStatus: "approved",
+				decidedAtSource: "approval_request.approved_at",
+				actorAuthority: "assigned_approver",
+				terminal: {
+					transition: "approved",
+					kind: "amended",
+					segment: {
+						clockIn: { entryId: pending?.id, at: "2026-07-22T09:00:00Z" },
+						storedDurationMinutes: 61,
+						elapsedSeconds: 3640,
+					},
+				},
+			},
+		});
+	});
+
+	it("records a business deletion decision with the canonical sentinel", async () => {
+		await setEvidenceCapture("capture");
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		actAs(ids.requesterUser);
+		await expect(
+			requestTimeEntryDeletion({
+				workPeriodId: work.id,
+				submissionId: randomUUID(),
+				reason: "Recorded by mistake",
+			}),
+		).resolves.toMatchObject({ success: true });
+		expect((await revisions())[0]?.facts).toMatchObject({
+			intent: "delete",
+			changeMask: { clockIn: true, clockOut: true },
+		});
+
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+		expect((await decisions())[0]?.result).toMatchObject({
+			terminal: { kind: "deleted", sentinel: { durationMinutes: 0 } },
+		});
+	});
+
+	it("holds a decision whose submitted baseline changed, changing nothing", async () => {
+		await setEvidenceCapture("capture");
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const approvalId = await pendingApprovalId(work.id);
+		await admin.query("update work_period set work_location_type = 'home' where id = $1", [
+			work.id,
+		]);
+		const committed = await snapshot();
+
+		await expect(approve(approvalId)).rejects.toMatchObject({
+			conflictType: "approval_evidence",
+			details: { code: "material_change" },
+		});
+		expect(await snapshot()).toEqual(committed);
+		expect(await decisions()).toHaveLength(0);
+	});
+
+	it("holds a lifecycle submitted before capture was enabled", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		await setEvidenceCapture("capture");
+		const approvalId = await pendingApprovalId(work.id);
+		const committed = await snapshot();
+
+		await expect(approve(approvalId)).rejects.toMatchObject({
+			conflictType: "approval_evidence",
+			details: { code: "evidence_required" },
+		});
+		expect(await snapshot()).toEqual(committed);
+	});
+
+	it("captures and decides a canonical lifecycle through the engine hooks", async () => {
+		await setCorrectionRollout("canonical");
+		await setEvidenceCapture("capture");
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const [revision] = await revisions();
+		expect(revision).toMatchObject({
+			authority: "canonical",
+			workflow_id: expect.any(String),
+			legacy_approval_request_id: null,
+		});
+
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+
+		const [decision] = await decisions();
+		expect(decision).toMatchObject({
+			submitted_revision_id: revision?.id,
+			operation_kind: "command",
+			action: "approve",
+			request_outcome: "approved",
+			actor_user_id: ids.managerUser,
+			stage_id: expect.any(String),
+			result: { terminal: { kind: "amended", segment: { storedDurationMinutes: 90 } } },
+		});
+	});
+
+	it("removes correction evidence with the organization's time data", async () => {
+		await setEvidenceCapture("capture");
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+		expect(await revisions()).toHaveLength(1);
+		expect(await decisions()).toHaveLength(1);
+
+		await clearOrganizationTimeData(ids.organization);
+
+		expect(await revisions()).toHaveLength(0);
+		expect(await decisions()).toHaveLength(0);
 	});
 
 	it("removes correction lifecycle receipts with the organization's time data", async () => {

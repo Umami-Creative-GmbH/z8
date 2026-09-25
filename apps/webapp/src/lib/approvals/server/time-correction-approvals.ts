@@ -89,6 +89,10 @@ import {
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
+import {
+	prepareLegacyTimeCorrectionDecisionEvidence,
+	recordLegacyTimeCorrectionDecisionEvidence,
+} from "../evidence/time-correction-evidence";
 import { translateWorkPeriodEvidenceError } from "../evidence/work-period-evidence";
 import {
 	ApprovalAuditLogger,
@@ -4993,6 +4997,18 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						conflictType: "approval_transition",
 					});
 				}
+				// Fresh evidence checks (#301) before the legacy mutation: an
+				// evidenced lifecycle must still match its submitted revision.
+				const evidencePlan = await prepareLegacyTimeCorrectionDecisionEvidence(
+					transactionDb,
+					{
+						organizationId: input.organizationId,
+						workPeriodId: period.id,
+						approvalRequestId: request.id,
+						chainInstanceId: stage?.chainInstanceId ?? null,
+					},
+				);
+				const legacyIdempotencyKey = `time-correction:${period.id}:${request.id}:${input.action}:${decisionFingerprint(input.reason)}`;
 				const capture =
 					input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 				const coordinator = createLegacyApprovalWriteCoordinator({
@@ -5013,7 +5029,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						employeeId: actor.id,
 						userId: actor.userId,
 					},
-					idempotencyKey: `time-correction:${period.id}:${request.id}:${input.action}:${decisionFingerprint(input.reason)}`,
+					idempotencyKey: legacyIdempotencyKey,
 					expectedVersion: observedWorkflow?.version ?? null,
 					captureState: () =>
 						capture({
@@ -5039,6 +5055,21 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const terminalResult = domainResult as
 					| TimeCorrectionApprovalResult
 					| undefined;
+				if (evidencePlan) {
+					await recordLegacyTimeCorrectionDecisionEvidence(
+						transactionDb,
+						evidencePlan,
+						{
+							organizationId: input.organizationId,
+							action: input.action,
+							reason: input.reason ?? null,
+							approvalRequestId: request.id,
+							idempotencyKey: legacyIdempotencyKey,
+							actor: { employeeId: actor.id, userId: actor.userId },
+							finalized: Boolean(terminalResult),
+						},
+					);
+				}
 				return {
 					kind: "time_correction" as const,
 					domainResult,
@@ -5181,7 +5212,9 @@ export async function executeTimeCorrectionDecisionInTransaction(
 		);
 	} catch (error) {
 		throw translateCorrectionWorkError(
-			translateTimeCorrectionDecisionError(error),
+			translateWorkPeriodEvidenceError(
+				translateTimeCorrectionDecisionError(error),
+			),
 		);
 	}
 }
