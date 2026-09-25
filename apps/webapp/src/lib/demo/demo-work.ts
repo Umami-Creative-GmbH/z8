@@ -28,6 +28,7 @@ import { db } from "@/db";
 import {
 	approvalRequest,
 	completedWorkOperation,
+	historicalWorkProposal,
 	timeEntry,
 	timeEntryAppendPosition,
 	timeRecord,
@@ -591,7 +592,7 @@ export type DemoHistoryDeletion = {
 
 /**
  * Removes one employee's whole time history atomically under its employee key:
- * approval lifecycle evidence (#302), append position, receipts, periods, their
+ * approval lifecycle evidence (#302), append position, proposals (#323), receipts, periods, their
  * canonical work records (except those a retained approval request references) and
  * entries. An adopted scope also commits the balance refresh intent. No other
  * employee or organization is touched.
@@ -614,6 +615,16 @@ export async function deleteDemoEmployeeHistory(
 			and(
 				eq(timeEntryAppendPosition.organizationId, input.organizationId),
 				eq(timeEntryAppendPosition.employeeId, input.employeeId),
+			),
+		);
+	// Explicit proposals (#323) copy that history by value; the position above referenced
+	// an applied continuation, so they go after it.
+	await client
+		.delete(historicalWorkProposal)
+		.where(
+			and(
+				eq(historicalWorkProposal.organizationId, input.organizationId),
+				eq(historicalWorkProposal.employeeId, input.employeeId),
 			),
 		);
 	// Operation receipts describe that history by value; remove them with it.

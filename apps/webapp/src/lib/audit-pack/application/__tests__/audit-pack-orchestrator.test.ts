@@ -8,6 +8,7 @@ import {
 const appendAssurance = {
 	employeeCount: 2,
 	wholeHistory: 1,
+	postAnchor: 0,
 	none: 1,
 	limitations: ["lineage_unresolved"],
 };

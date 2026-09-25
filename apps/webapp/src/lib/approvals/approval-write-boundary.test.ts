@@ -4795,6 +4795,21 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
+			"src/lib/time-tracking/historical-work-proposals.ts": [
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "applyFieldRepair",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes"],
+					functionName: "applyFieldRepair",
+					operation: "update",
+					table: "work_period",
+				},
+			],
 			"src/lib/time-tracking/close-active-work.ts": [
 				{
 					columns: [

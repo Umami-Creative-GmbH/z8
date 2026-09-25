@@ -175,9 +175,9 @@ back to the string-level CASL check, each failed its test.
 This slice closes on implementation (see #264 decision, 2026-09-25). Activation
 items move to #327/#329/#331:
 
-- Authorized continuation (#323) will add a continuation admission kind. It must
-  exempt disclosed pre-anchor issues from `admitted_history_changed` and add a
-  post-anchor assurance scope that is never presented as whole history.
+- Authorized continuation (#323): done. The `authorized_continuation` admission, the
+  digest-based exemption of disclosed pre-anchor issues and the `post_anchor` scope are
+  described in [historical-work-proposals-323.md](historical-work-proposals-323.md).
 - Record-level historical diagnostics UI and broader operator surfacing (#319).
   This slice exposes the API and the pack disclosure only.
 - All-writer participation (#327). Until then, legacy writers interrupt continuity

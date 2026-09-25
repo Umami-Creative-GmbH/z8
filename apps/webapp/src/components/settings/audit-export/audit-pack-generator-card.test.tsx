@@ -188,6 +188,11 @@ describe("AuditPackGeneratorCard", () => {
 			"Limited lineage assurance for 2 of 3 employees. See append-assurance.json in the pack.",
 		],
 		[
+			"discloses continuity from an approved anchor without claiming verified history",
+			{ employeeCount: 3, wholeHistory: 2, postAnchor: 1, none: 0, limitations: [] },
+			"Continuity from an approved anchor for 1 of 3 employees; history before the anchor is not verified. See append-assurance.json in the pack.",
+		],
+		[
 			"states verified lineage only when every employee has whole-history assurance",
 			{ employeeCount: 2, wholeHistory: 2, none: 0, limitations: [] },
 			"Lineage verified from stored evidence for 2 employees. Its limitations are listed in append-assurance.json.",

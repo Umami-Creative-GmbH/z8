@@ -10,13 +10,18 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization } from "../auth-schema";
+import { historicalWorkProposal } from "./completed-work";
 import { employee } from "./organization";
 import { timeEntry } from "./time-tracking";
 
 export const TIME_ENTRY_APPEND_MODES = ["inactive", "active"] as const;
 export type TimeEntryAppendMode = (typeof TIME_ENTRY_APPEND_MODES)[number];
 
-export const TIME_ENTRY_APPEND_ADMISSIONS = ["empty_history", "verified_lineage"] as const;
+export const TIME_ENTRY_APPEND_ADMISSIONS = [
+	"empty_history",
+	"verified_lineage",
+	"authorized_continuation",
+] as const;
 export type TimeEntryAppendAdmission = (typeof TIME_ENTRY_APPEND_ADMISSIONS)[number];
 
 export const TIME_ENTRY_APPEND_OPERATIONS = [
@@ -30,6 +35,7 @@ export const TIME_ENTRY_APPEND_OPERATIONS = [
 	"time_correction_submission",
 	"policy_clock_out_break",
 	"completed_work_split",
+	"authorized_continuation",
 ] as const;
 export type TimeEntryAppendOperation = (typeof TIME_ENTRY_APPEND_OPERATIONS)[number];
 
@@ -55,6 +61,8 @@ export const timeEntryAppendControl = pgTable(
 // advanced it. `entryCount` is position evidence: any unexpected write or
 // removal in the employee's history changes it and holds fresh appends for
 // review. The tip reference keeps committed evidence from being removed under it.
+// An authorized continuation (#323) is established by its approved proposal at the
+// anchor, with the tip at the anchor and the digest of the history it disclosed.
 export const timeEntryAppendPosition = pgTable(
 	"time_entry_append_position",
 	{
@@ -73,6 +81,11 @@ export const timeEntryAppendPosition = pgTable(
 		admittedTipEntryId: uuid("admitted_tip_entry_id").references(() => timeEntry.id),
 		admittedTipHash: text("admitted_tip_hash"),
 		admittedEntryCount: integer("admitted_entry_count").notNull(),
+		// Digest of the disclosed history an authorized continuation admitted over.
+		admittedHistoryDigest: text("admitted_history_digest"),
+		continuationProposalId: uuid("continuation_proposal_id").references(
+			() => historicalWorkProposal.id,
+		),
 		admittedOperation: text("admitted_operation").$type<TimeEntryAppendOperation>().notNull(),
 		admittedAt: timestamp("admitted_at", { withTimezone: true }).notNull(),
 		lastOperation: text("last_operation").$type<TimeEntryAppendOperation>().notNull(),
@@ -88,15 +101,15 @@ export const timeEntryAppendPosition = pgTable(
 		check("time_entry_append_position_version_check", sql`${table.version} >= 1`),
 		check(
 			"time_entry_append_position_count_check",
-			sql`${table.entryCount} > ${table.admittedEntryCount} AND ${table.admittedEntryCount} >= 0`,
+			sql`(${table.entryCount} > ${table.admittedEntryCount} OR (${table.admission} = 'authorized_continuation' AND ${table.entryCount} = ${table.admittedEntryCount})) AND ${table.admittedEntryCount} >= 0`,
 		),
 		check(
 			"time_entry_append_position_admission_check",
-			sql`(${table.admission} = 'empty_history' AND ${table.admittedTipEntryId} IS NULL AND ${table.admittedTipHash} IS NULL AND ${table.admittedEntryCount} = 0) OR (${table.admission} = 'verified_lineage' AND ${table.admittedTipEntryId} IS NOT NULL AND ${table.admittedTipHash} IS NOT NULL AND ${table.admittedEntryCount} > 0)`,
+			sql`(${table.admission} = 'empty_history' AND ${table.admittedTipEntryId} IS NULL AND ${table.admittedTipHash} IS NULL AND ${table.admittedEntryCount} = 0 AND ${table.admittedHistoryDigest} IS NULL AND ${table.continuationProposalId} IS NULL) OR (${table.admission} = 'verified_lineage' AND ${table.admittedTipEntryId} IS NOT NULL AND ${table.admittedTipHash} IS NOT NULL AND ${table.admittedEntryCount} > 0 AND ${table.admittedHistoryDigest} IS NULL AND ${table.continuationProposalId} IS NULL) OR (${table.admission} = 'authorized_continuation' AND ${table.admittedTipEntryId} IS NOT NULL AND ${table.admittedTipHash} IS NOT NULL AND ${table.admittedEntryCount} > 0 AND ${table.admittedHistoryDigest} IS NOT NULL AND ${table.continuationProposalId} IS NOT NULL)`,
 		),
 		check(
 			"time_entry_append_position_operation_check",
-			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split')`,
+			sql`${table.admittedOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split', 'authorized_continuation') AND ${table.lastOperation} IN ('live_clock_in', 'live_clock_out', 'reviewed_import', 'demo_generation', 'demo_correction', 'completed_work_correction', 'manual_entry', 'time_correction_submission', 'policy_clock_out_break', 'completed_work_split', 'authorized_continuation')`,
 		),
 	],
 );

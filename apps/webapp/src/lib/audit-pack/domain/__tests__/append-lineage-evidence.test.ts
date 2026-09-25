@@ -113,6 +113,30 @@ describe("audit pack append lineage evidence", () => {
 		});
 	});
 
+	it("counts an authorized continuation as post-anchor assurance, never as whole history", () => {
+		const continued = reportFor(rows);
+		const summary = summarizeAuditPackAssurance([
+			{
+				...continued,
+				assurance: {
+					scope: "post_anchor",
+					limitations: [
+						{ code: "continuation_anchor", anchorEntryId: "e-1", proposalId: "p-1" },
+						{ code: "lineage_unresolved" },
+					],
+				},
+			},
+		]);
+
+		expect(summary).toEqual({
+			employeeCount: 1,
+			wholeHistory: 0,
+			postAnchor: 1,
+			none: 0,
+			limitations: ["continuation_anchor", "lineage_unresolved"],
+		});
+	});
+
 	it("summarizes assurance scopes and limitation codes across employees", () => {
 		const verified = reportFor(rows);
 		const unresolved = assessAppendAssurance({
@@ -125,6 +149,7 @@ describe("audit pack append lineage evidence", () => {
 		expect(summarizeAuditPackAssurance([verified, unresolved])).toEqual({
 			employeeCount: 2,
 			wholeHistory: 1,
+			postAnchor: 0,
 			none: 1,
 			limitations: [
 				"derived_links",

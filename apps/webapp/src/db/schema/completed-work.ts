@@ -28,6 +28,7 @@ export const COMPLETED_WORK_OPERATION_KINDS = [
 	"split_policy_clock_out_break",
 	"repair_historical_gap",
 	"split_completed_work",
+	"apply_historical_repair_proposal",
 ] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
@@ -49,6 +50,7 @@ export const COMPLETED_WORK_WRITERS = [
 	"policy_clock_out_decision",
 	"historical_gap_repair",
 	"work_period_split",
+	"historical_repair_proposal",
 ] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
@@ -65,7 +67,8 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // evidence-only historical gap repair (#320), an ID derived from the repaired work and its
 // plan, with the repair executor as actor and the original actor in its result; for a calendar
 // split (#304), the split's submission ID or a server-generated ID, with `work_period_id` naming the
-// split source and the generated period in its result). Work identities are stored by value: the receipt is committed evidence
+// split source and the generated period in its result; for an applied explicit repair proposal
+// (#323), the proposal's ID). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
 // `actor_user_id` names a human actor only. A `system` actor (runtime demo
@@ -108,11 +111,11 @@ export const completedWorkOperation = pgTable(
 			.where(sql`${table.sourceKey} IS NOT NULL`),
 		check(
 			"completed_work_operation_kind_check",
-			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'split_completed_work')`,
+			sql`${table.kind} IN ('close_active_work', 'start_live_work', 'import_completed_work', 'import_open_work', 'create_completed_work', 'amend_completed_work', 'close_resume_work', 'submit_time_correction', 'finalize_time_correction', 'cancel_time_correction', 'split_policy_clock_out_break', 'repair_historical_gap', 'split_completed_work', 'apply_historical_repair_proposal')`,
 		),
 		check(
 			"completed_work_operation_writer_check",
-			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split')`,
+			sql`${table.writer} IN ('web_clock_out', 'direct_http', 'reviewed_import', 'runtime_demo', 'bot_clock_out', 'admin_time_edit', 'self_service_time_edit', 'http_direct_correction', 'work_period_attribution_edit', 'manager_on_behalf', 'manual_entry', 'time_correction_request', 'time_correction_decision', 'time_correction_cancellation', 'policy_clock_out_decision', 'historical_gap_repair', 'work_period_split', 'historical_repair_proposal')`,
 		),
 		check(
 			"completed_work_operation_source_check",
@@ -152,6 +155,79 @@ export const historicalWorkRepairControl = pgTable(
 		check(
 			"historical_work_repair_control_mode_check",
 			sql`${table.mode} IN ('inactive', 'active')`,
+		),
+	],
+);
+
+export const HISTORICAL_WORK_PROPOSAL_KINDS = ["field_repair", "append_continuation"] as const;
+export type HistoricalWorkProposalKind = (typeof HISTORICAL_WORK_PROPOSAL_KINDS)[number];
+
+export const HISTORICAL_WORK_PROPOSAL_STATUSES = [
+	"proposed",
+	"approved",
+	"applied",
+	"stale",
+	"rejected",
+] as const;
+export type HistoricalWorkProposalStatus = (typeof HISTORICAL_WORK_PROPOSAL_STATUSES)[number];
+
+// Separately authorized explicit historical proposals (#260 §9, #262 §4, #323): an
+// exact field repair of one work, or an append continuation from one existing anchor
+// entry. The proposal content is immutable inspectable evidence (before/after or
+// anchor, evidence, uncertainty, expected state and consequences); `fingerprint`
+// identifies it. An organization administrator approves that exact proposal, and
+// application revalidates the expected state under the employee's coordination:
+// changed evidence makes it `stale`, never overwritten. Terminal states record who
+// resolved it and the outcome. Work and anchor identities are stored by value.
+// Organization and employee deletion cascade.
+export const historicalWorkProposal = pgTable(
+	"historical_work_proposal",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		kind: text("kind").$type<HistoricalWorkProposalKind>().notNull(),
+		status: text("status").$type<HistoricalWorkProposalStatus>().default("proposed").notNull(),
+		// The repaired work period of a field repair; null for a continuation.
+		workPeriodId: uuid("work_period_id"),
+		fingerprint: text("fingerprint").notNull(),
+		proposal: jsonb("proposal").$type<Record<string, unknown>>().notNull(),
+		reason: text("reason").notNull(),
+		proposedBy: text("proposed_by")
+			.notNull()
+			.references(() => user.id),
+		proposedAt: timestamp("proposed_at", { withTimezone: true }).notNull(),
+		approvedBy: text("approved_by").references(() => user.id),
+		approvedAt: timestamp("approved_at", { withTimezone: true }),
+		// Who applied, rejected, or found the proposal stale, and when.
+		resolvedBy: text("resolved_by").references(() => user.id),
+		resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+		outcome: jsonb("outcome").$type<Record<string, unknown>>(),
+	},
+	(table) => [
+		foreignKey({
+			name: "historical_work_proposal_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		index("historicalWorkProposal_org_employee_idx").on(table.organizationId, table.employeeId),
+		check(
+			"historical_work_proposal_kind_check",
+			sql`${table.kind} IN ('field_repair', 'append_continuation') AND (${table.kind} = 'field_repair') = (${table.workPeriodId} IS NOT NULL)`,
+		),
+		check(
+			"historical_work_proposal_status_check",
+			sql`${table.status} IN ('proposed', 'approved', 'applied', 'stale', 'rejected')`,
+		),
+		check(
+			"historical_work_proposal_approval_check",
+			sql`${table.status} NOT IN ('approved', 'applied') OR (${table.approvedBy} IS NOT NULL AND ${table.approvedAt} IS NOT NULL)`,
+		),
+		check(
+			"historical_work_proposal_resolution_check",
+			sql`(${table.status} IN ('applied', 'stale', 'rejected')) = (${table.resolvedBy} IS NOT NULL AND ${table.resolvedAt} IS NOT NULL AND ${table.outcome} IS NOT NULL)`,
 		),
 	],
 );
