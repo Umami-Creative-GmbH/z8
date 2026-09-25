@@ -142,7 +142,7 @@ export async function assertNoUnrelatedWorkPeriodReview(
 			) as "canonicalPending"
 	`);
 	const [row] = rowsOf(result);
-	if (!row || row.workflowMatches !== true || row.requestMatches !== true) {
+	if (row?.workflowMatches !== true || row.requestMatches !== true) {
 		throw new Error("Terminal split resolving lifecycle does not match its period");
 	}
 	if (row.legacyPending !== false || row.canonicalPending !== false) {

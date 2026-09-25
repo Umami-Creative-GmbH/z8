@@ -44,6 +44,7 @@ export function legacyWorkPeriodDecisionTransaction(
 				},
 			};
 		},
+		observeWorkPeriodDecision: async () => "unobserved",
 		retryWorkPeriodDecisionTransaction: (run) => run(),
 	};
 }

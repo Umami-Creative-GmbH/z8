@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Runtime } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -46,6 +46,7 @@ import {
 	policyClockOutSurchargeSnapshotsEqual,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracking/policy-clock-out-terminal-break";
+import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -86,6 +87,7 @@ import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engin
 import { processApprovalWithCurrentEmployee } from "./shared";
 import {
 	acquireWorkPeriodDecisionScope,
+	observeWorkPeriodDecision,
 	retryWorkPeriodDecisionTransaction,
 } from "./work-period-decision-transaction";
 import type {
@@ -102,6 +104,20 @@ export type {
 } from "../domain-adapters/work-period-contract";
 
 const ORDINARY_DECISION_ERROR = "Ordinary work-period decision failed";
+
+/**
+ * The terminal break split's unresolved-review refusal (#303), wherever the
+ * decision wrappers carried it. It reaches the approver as its conflict so they
+ * learn which review blocks the approval; every other failure stays generic.
+ */
+function unresolvedWorkPeriodReviewFrom(error: unknown): ConflictError | null {
+	if (Runtime.isFiberFailure(error)) {
+		return unresolvedWorkPeriodReviewFrom(
+			Cause.squash(error[Runtime.FiberFailureCauseId]),
+		);
+	}
+	return isUnresolvedWorkPeriodReview(error) ? error : null;
+}
 const logger = createLogger("WorkPeriodApprovals");
 
 function exactDecisionMetadata(value: unknown): {
@@ -394,7 +410,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	} catch (error) {
 		// Evidence holds and contradictions keep their meaning for the caller.
 		if (error instanceof ApprovalEvidenceError) throw error;
-		throw new Error(ORDINARY_DECISION_ERROR);
+		throw unresolvedWorkPeriodReviewFrom(error) ?? new Error(ORDINARY_DECISION_ERROR);
 	}
 }
 
@@ -404,6 +420,11 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 	return await input.runtime.repository.withTransaction(async (context) => {
 		const database = context.dbService
 			.db as unknown as ApprovalDbService["db"];
+		// Observed before the first read and re-observed under the protocol.
+		const observed = await observeWorkPeriodDecision(context, {
+			organizationId: input.organizationId,
+			workPeriodId: input.workPeriodId,
+		});
 		const actors = await database.query.employee.findMany({
 			where: and(
 				eq(employee.id, input.actor.id),
@@ -688,6 +709,8 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				kind: metadata.kind,
 				ownerEmployeeId: period.employeeId,
 				actorUserId: actor.userId,
+				workPeriodId: period.id,
+				observed,
 			});
 		const decisionContext = {
 			...context,
@@ -1952,8 +1975,8 @@ export async function finalizeOrdinaryWorkPeriodTerminalInTransaction(
 ): Promise<WorkPeriodApprovalResult> {
 	try {
 		return await finalizeOrdinaryWorkPeriodTerminal(input);
-	} catch {
-		throw ordinaryWorkPeriodFinalizationConflict();
+	} catch (error) {
+		throw unresolvedWorkPeriodReviewFrom(error) ?? ordinaryWorkPeriodFinalizationConflict();
 	}
 }
 
@@ -2053,7 +2076,9 @@ function finalizeCurrentWorkPeriodDecision(
 								: { kind: "reject", reason: reason ?? "" },
 						finalizedAt: systemClock.nowInstant(),
 					}),
-				catch: () => conflict("Ordinary work-period finalization conflict"),
+				catch: (error) =>
+					unresolvedWorkPeriodReviewFrom(error) ??
+					conflict("Ordinary work-period finalization conflict"),
 			}),
 		);
 	});
