@@ -232,7 +232,14 @@ describe("buildTimeCorrectionCardFacts", () => {
 		const deletion = correctionRevision({
 			intent: "delete",
 			requested: {
-				clockIn: { ...correctionRevision().facts.requested.clockIn!, at: "2026-10-05T06:00:00Z" },
+				clockIn: {
+					originalEntryId: "in",
+					correctionEntryId: "c-in",
+					at: "2026-10-05T06:00:00Z",
+					utcOffsetMinutes: 120,
+					timezone: "Europe/Berlin",
+					timezoneSource: "browser",
+				},
 				clockOut: {
 					originalEntryId: "out",
 					correctionEntryId: "c-out",

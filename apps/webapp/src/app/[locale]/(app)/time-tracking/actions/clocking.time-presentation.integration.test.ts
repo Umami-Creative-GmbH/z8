@@ -97,7 +97,10 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 			.select()
 			.from(employee)
 			.where(
-				and(eq(employee.userId, harness.userId), eq(employee.organizationId, harness.organizationId)),
+				and(
+					eq(employee.userId, harness.userId),
+					eq(employee.organizationId, harness.organizationId),
+				),
 			)
 			.limit(1);
 		return {
@@ -395,8 +398,7 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 					[ids.organization, kind],
 				);
 			}
-			const presentation =
-				options.presentation === undefined ? "actionable" : options.presentation;
+			const presentation = options.presentation === undefined ? "actionable" : options.presentation;
 			if (presentation) {
 				await admin.query(
 					`insert into approval_presentation_control
@@ -540,7 +542,14 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 			`insert into work_policy_assignment
 			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active, created_by, updated_at)
 			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
-			[ids.policyAssignment, ids.policy, ids.organization, ids.requester, ids.managerUser, timestamp],
+			[
+				ids.policyAssignment,
+				ids.policy,
+				ids.organization,
+				ids.requester,
+				ids.managerUser,
+				timestamp,
+			],
 		);
 	}
 
@@ -841,9 +850,10 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		);
 		expect(only(periods).approval_status).toBe("rejected");
 		// The platform reason never enters the evidence.
-		const { rows: evidence } = await admin.query("select * from approval_decision_evidence where workflow_id = $1", [
-			cycle.workflow_id,
-		]);
+		const { rows: evidence } = await admin.query(
+			"select * from approval_decision_evidence where workflow_id = $1",
+			[cycle.workflow_id],
+		);
 		expect(JSON.stringify(evidence)).not.toContain("Rejected via");
 
 		await deliver();
@@ -876,9 +886,13 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		const text = String(card.body.text);
 		expect(text).toContain("Time correction approval request");
 		expect(text).toContain("Request: Change times");
-		expect(text).toContain("Entry: Jul 22, 2026, 08:00 (UTC+00:00) – Jul 22, 2026, 10:00 (UTC+00:00)");
+		expect(text).toContain(
+			"Entry: Jul 22, 2026, 08:00 (UTC+00:00) – Jul 22, 2026, 10:00 (UTC+00:00)",
+		);
 		expect(text).toContain("Duration before: 2 h 0 min");
-		expect(text).toContain("Clock in: Jul 22, 2026, 08:00 (UTC+00:00) → Jul 22, 2026, 08:30 (UTC+00:00)");
+		expect(text).toContain(
+			"Clock in: Jul 22, 2026, 08:00 (UTC+00:00) → Jul 22, 2026, 08:30 (UTC+00:00)",
+		);
 		expect(text).not.toContain("Clock out:");
 		expect(text).toContain("Work location: Office → Home");
 		expect(text).not.toContain("Private explanation");
@@ -988,7 +1002,10 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 
 		if (!deletionCard) throw new Error("missing deletion card");
 		await press(deletionCard, "ba", "t325-deletion-1");
-		expect(await counts(deletion.workflow_id)).toMatchObject({ decisions: "1", status: "approved" });
+		expect(await counts(deletion.workflow_id)).toMatchObject({
+			decisions: "1",
+			status: "approved",
+		});
 		const { rows } = await admin.query<{ deleted_at: Date | null }>(
 			"select deleted_at from work_period where id = $1",
 			[deleted.id],
@@ -1152,8 +1169,7 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 			(section) => section.type === "timeline" && section.title === "Evidence history",
 		);
 		expect(
-			history?.type === "timeline" &&
-				history.events.map((event) => [event.label, event.actorName]),
+			history?.type === "timeline" && history.events.map((event) => [event.label, event.actorName]),
 		).toEqual([
 			["Submitted", "Avery Requester"],
 			["Request approved", "Morgan Manager"],
@@ -1231,7 +1247,8 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 			(await bindingWorkflow(cards[0] as TelegramCall)) === committedCycle.workflow_id
 				? (cards[0] as TelegramCall)
 				: (cards[1] as TelegramCall);
-		const pausedCard = committedCard === cards[0] ? (cards[1] as TelegramCall) : (cards[0] as TelegramCall);
+		const pausedCard =
+			committedCard === cards[0] ? (cards[1] as TelegramCall) : (cards[0] as TelegramCall);
 		await press(committedCard, "ba", "t325-paused-committed");
 		const committed = await counts(committedCycle.workflow_id);
 
@@ -1241,7 +1258,10 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		);
 		const paused = await press(pausedCard, "ba", "t325-paused-fresh");
 		expect(paused.answer.body).toMatchObject({ text: "Review required" });
-		expect(await counts(pausedCycle.workflow_id)).toMatchObject({ decisions: "0", status: "pending" });
+		expect(await counts(pausedCycle.workflow_id)).toMatchObject({
+			decisions: "0",
+			status: "pending",
+		});
 		const replay = await press(committedCard, "ba", "t325-paused-committed");
 		expect(replay.answer.body).toMatchObject({ text: "Request approved" });
 		expect(await counts(committedCycle.workflow_id)).toEqual(committed);

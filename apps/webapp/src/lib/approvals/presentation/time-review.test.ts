@@ -50,7 +50,11 @@ const policyRevision: WorkPeriodSubmittedRevisionRecord = {
 		},
 		attribution: { projectId: null, workCategoryId: null, workLocationType: null },
 	},
-	labels: { subjectName: "Avery Requester", requesterName: "Avery Requester", submitterName: "Avery Requester" },
+	labels: {
+		subjectName: "Avery Requester",
+		requesterName: "Avery Requester",
+		submitterName: "Avery Requester",
+	},
 	provenance: "captured_at_submission",
 	submittedAt: parseInstant("2026-10-05T12:31:05Z"),
 };
@@ -87,7 +91,11 @@ function rows(sections: ApprovalInboxDetailSection[], title: string) {
 	if (section?.type !== "key_value") throw new Error(`missing section ${title}`);
 	return section.rows.map((row) => [
 		typeof row.label === "string" ? row.label : row.label.fallback,
-		typeof row.value === "string" ? row.value : "fallback" in row.value ? row.value.fallback : row.value,
+		typeof row.value === "string"
+			? row.value
+			: "fallback" in row.value
+				? row.value.fallback
+				: row.value,
 	]);
 }
 
@@ -157,7 +165,10 @@ describe("buildTimeReviewSections", () => {
 		const correction: TimeCorrectionSubmittedRevisionRecord = {
 			...policyRevision,
 			id: "r2",
-			lifecycle: { authority: "legacy", legacy: { approvalRequestId: "q1", chainInstanceId: "c1", observedWorkflowId: null } },
+			lifecycle: {
+				authority: "legacy",
+				legacy: { approvalRequestId: "q1", chainInstanceId: "c1", observedWorkflowId: null },
+			},
 			materialFingerprint: "time_correction:v1:x",
 			facts: {
 				schemaVersion: 1,
@@ -191,7 +202,11 @@ describe("buildTimeReviewSections", () => {
 				changeMask: { clockIn: false, clockOut: true, workLocation: true, workCategory: true },
 			},
 		};
-		const intermediate = decision({ assignmentOutcome: "approved", requestOutcome: "pending", result: { terminal: null } });
+		const intermediate = decision({
+			assignmentOutcome: "approved",
+			requestOutcome: "pending",
+			result: { terminal: null },
+		});
 		const final = decision({
 			id: "d2",
 			result: {
@@ -225,13 +240,20 @@ describe("buildTimeReviewSections", () => {
 			["Clock out", "2026-10-05 16:00 (UTC+02:00) → 2026-10-05 16:00 (UTC+01:00)"],
 			[
 				"Work location",
-				{ kind: "change", original: { kind: "work_location", value: "office" }, requested: { kind: "work_location", value: "home" } },
+				{
+					kind: "change",
+					original: { kind: "work_location", value: "office" },
+					requested: { kind: "work_location", value: "home" },
+				},
 			],
 			[
 				"Work category",
 				{
 					kind: "change",
-					original: { kind: "work_category", value: { state: "named", id: "cat-old", name: "Consulting" } },
+					original: {
+						kind: "work_category",
+						value: { state: "named", id: "cat-old", name: "Consulting" },
+					},
 					requested: { kind: "work_category", value: { state: "none" } },
 				},
 			],
@@ -260,14 +282,21 @@ describe("buildTimeReviewSections", () => {
 							kind: "deleted",
 							graphRevision: 4,
 							deletedAt: "2026-10-06T08:00:00Z",
-							sentinel: { startAt: "2026-10-05T06:00:00Z", endAt: "2026-10-05T06:00:00Z", durationMinutes: 0 },
+							sentinel: {
+								startAt: "2026-10-05T06:00:00Z",
+								endAt: "2026-10-05T06:00:00Z",
+								durationMinutes: 0,
+							},
 						},
 					},
 				}),
 			],
 			categoryNames: {},
 		});
-		expect(rows(deleted.sections, "Requested correction")[1]).toEqual(["Request", "Delete this entry"]);
+		expect(rows(deleted.sections, "Requested correction")[1]).toEqual([
+			"Request",
+			"Delete this entry",
+		]);
 		expect(rows(deleted.sections, "Result")).toEqual([
 			["Outcome", "Approved"],
 			["Entry", "Deleted"],
@@ -282,7 +311,9 @@ describe("buildTimeReviewSections", () => {
 			categoryNames: {},
 		});
 		expect(changed.decisionsBlocked).toBe(true);
-		expect(changed.sections.some((section) => section.type === "callout" && section.tone === "danger")).toBe(true);
+		expect(
+			changed.sections.some((section) => section.type === "callout" && section.tone === "danger"),
+		).toBe(true);
 		// A category without a known name stays explicitly unavailable, never "no category".
 		expect(rows(changed.sections, "Requested correction")[6]?.[1]).toMatchObject({
 			original: { kind: "work_category", value: { state: "unavailable", id: "cat-old" } },

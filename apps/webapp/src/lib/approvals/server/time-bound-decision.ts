@@ -11,13 +11,13 @@ import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	ApprovalInvocationNotAdmittedError,
 	BoundAssignmentNotCurrentError,
-	requireCanonicalInvocationDecision,
 	findCommittedInvocationDecision,
+	requireCanonicalInvocationDecision,
 } from "../evidence/invocation";
 import { type DecisionEvidenceRecord, loadReviewBinding } from "../evidence/store";
 import { isTimeApprovalWorkflowType } from "../presentation/time-card";
-import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import {
 	type BoundTimeInvocation,
 	BoundTimeInvocationReplay,

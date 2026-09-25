@@ -24,9 +24,9 @@ import {
 } from "../evidence/store";
 import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
 import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
+import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
 import type { ApprovalDatabase } from "../server/types";
 import type { ApprovalWorkflowType } from "../workflow/ports";
-import type { WorkPeriodEndpointFacts } from "../evidence/work-period-facts";
 import type {
 	ApprovalActionableCard,
 	ApprovalCardDraft,
@@ -71,7 +71,10 @@ function elapsedText(seconds: number, t: BotTranslateFn): string {
 		: t("bot.approval.card.durationSeconds", "{hours} h {minutes} min {seconds} s", params);
 }
 
-function submittedAtText(instant: WorkPeriodSubmittedRevisionRecord["submittedAt"], display: DisplayContext) {
+function submittedAtText(
+	instant: WorkPeriodSubmittedRevisionRecord["submittedAt"],
+	display: DisplayContext,
+) {
 	return `${formatInstant(instant, display, "dateTimeMedium")} (${display.timezone})`;
 }
 
@@ -139,7 +142,10 @@ export function buildWorkPeriodCardFacts(
 			: [];
 	return [
 		...roles,
-		{ label: t("bot.approval.card.clockIn", "Clock in"), value: endpointText(interval.clockIn, display) },
+		{
+			label: t("bot.approval.card.clockIn", "Clock in"),
+			value: endpointText(interval.clockIn, display),
+		},
 		{
 			label: t("bot.approval.card.clockOut", "Clock out"),
 			value: endpointText(interval.clockOut, display),
@@ -207,7 +213,10 @@ export function buildTimeCorrectionCardFacts(
 		if (changeMask.clockIn && requested.clockIn) {
 			facts.push({
 				label: t("bot.approval.card.clockIn", "Clock in"),
-				value: change(baseline.clockIn, { ...requested.clockIn, entryId: requested.clockIn.correctionEntryId }),
+				value: change(baseline.clockIn, {
+					...requested.clockIn,
+					entryId: requested.clockIn.correctionEntryId,
+				}),
 			});
 		}
 		if (changeMask.clockOut && requested.clockOut) {
@@ -284,7 +293,10 @@ const TITLES: Readonly<Record<TimeApprovalWorkflowType, { key: string; fallback:
 		key: "bot.approval.card.manualTimeTitle",
 		fallback: "Manual time approval request",
 	},
-	policy_clock_out: { key: "bot.approval.card.clockOutTitle", fallback: "Clock-out approval request" },
+	policy_clock_out: {
+		key: "bot.approval.card.clockOutTitle",
+		fallback: "Clock-out approval request",
+	},
 	time_correction: {
 		key: "bot.approval.card.timeCorrectionTitle",
 		fallback: "Time correction approval request",
@@ -307,11 +319,8 @@ export async function loadTimeCorrectionCategoryNames(
 		.select({ id: workCategory.id, name: workCategory.name })
 		.from(workCategory)
 		.where(and(eq(workCategory.organizationId, organizationId), inArray(workCategory.id, ids)));
-	return Object.fromEntries(
-		ids.map((id) => [id, rows.find((row) => row.id === id)?.name ?? null]),
-	);
+	return Object.fromEntries(ids.map((id) => [id, rows.find((row) => row.id === id)?.name ?? null]));
 }
-
 
 /**
  * Facts from the immutable submitted revision for one recipient's exact

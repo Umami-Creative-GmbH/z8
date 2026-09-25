@@ -5,11 +5,9 @@ import {
 	approvalSubmittedRevision,
 	approvalWorkflowStage,
 } from "@/db/schema";
-import {
-	instantToCanonicalString,
-	parseInstant,
-} from "@/lib/datetime/temporal-core";
+import { instantToCanonicalString, parseInstant } from "@/lib/datetime/temporal-core";
 import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
+import { isWorkLocationType } from "@/lib/time-tracking/work-location";
 import {
 	type DecisionEvidenceRecord,
 	type LegacyDecisionEvidenceRecord,
@@ -24,17 +22,16 @@ import {
 	type WorkPeriodSubmittedRevisionRecord,
 } from "../evidence/store";
 import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
-import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
-import type { ApprovalDatabase } from "../server/types";
-import { loadTimeCorrectionCategoryNames, type TimeApprovalWorkflowType } from "./time-card";
 import type { TimeCorrectionRevisionComparison } from "../evidence/time-correction-facts";
+import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
 import type {
 	WorkPeriodEndpointFacts,
 	WorkPeriodRevisionComparison,
 } from "../evidence/work-period-facts";
 import type { ApprovalInboxDetailSection } from "../inbox/types";
 import type { WorkCategoryReviewValue } from "../server/time-correction-review-metadata";
-import { isWorkLocationType } from "@/lib/time-tracking/work-location";
+import type { ApprovalDatabase } from "../server/types";
+import { loadTimeCorrectionCategoryNames, type TimeApprovalWorkflowType } from "./time-card";
 
 type TimeDecisionEvidence = DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 
@@ -75,7 +72,9 @@ function text(key: string, fallback: string) {
  * offset. It never shifts with the viewer, and the same text is shown to
  * every reviewer.
  */
-export function capturedEndpointText(endpoint: Pick<WorkPeriodEndpointFacts, "at" | "utcOffsetMinutes">): string {
+export function capturedEndpointText(
+	endpoint: Pick<WorkPeriodEndpointFacts, "at" | "utcOffsetMinutes">,
+): string {
 	const local = parseInstant(endpoint.at).toZonedDateTimeISO(
 		offsetMinutesToTimeZoneId(endpoint.utcOffsetMinutes),
 	);
@@ -224,12 +223,18 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 		const rows: Row[] = [
 			...roleRows(evidence.revision),
 			{ label: text("clockIn", "Clock in"), value: capturedEndpointText(facts.interval.clockIn) },
-			{ label: text("clockOut", "Clock out"), value: capturedEndpointText(facts.interval.clockOut) },
+			{
+				label: text("clockOut", "Clock out"),
+				value: capturedEndpointText(facts.interval.clockOut),
+			},
 			{
 				label: text("submittedDuration", "Submitted duration"),
 				value: minutesText(facts.interval.storedDurationMinutes),
 			},
-			{ label: text("elapsedTime", "Elapsed time"), value: elapsedText(facts.interval.elapsedSeconds) },
+			{
+				label: text("elapsedTime", "Elapsed time"),
+				value: elapsedText(facts.interval.elapsedSeconds),
+			},
 		];
 		if (facts.policy.kind === "policy_clock_out" && facts.policy.breakAdjustment === "may_apply") {
 			rows.push({
@@ -240,7 +245,11 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 				),
 			});
 		}
-		sections.push({ type: "key_value", title: text("submittedTimesTitle", "Submitted times"), rows });
+		sections.push({
+			type: "key_value",
+			title: text("submittedTimesTitle", "Submitted times"),
+			rows,
+		});
 	}
 	if (evidence.kind === "time_correction") {
 		sections.push({
@@ -433,7 +442,8 @@ async function findTimeRevisionLifecycle(
 			.limit(2),
 	]);
 	const workflowId = stages.length === 1 ? (stages[0]?.workflowId ?? null) : null;
-	const chainInstanceId = chainStages.length === 1 ? (chainStages[0]?.chainInstanceId ?? null) : null;
+	const chainInstanceId =
+		chainStages.length === 1 ? (chainStages[0]?.chainInstanceId ?? null) : null;
 	const legacyLifecycle = chainInstanceId
 		? or(
 				eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId),
