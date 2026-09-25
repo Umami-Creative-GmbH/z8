@@ -142,6 +142,11 @@ jobs:
             src/lib/import-review/reviewed-import-operation.integration.test.ts \
             "src/app/[locale]/(app)/time-tracking/actions/clocking.approval-evidence.integration.test.ts" \
             "src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command.integration.test.ts" \
+            "src/app/[locale]/(app)/time-tracking/actions/clocking.manual-eligibility.integration.test.ts" \
+            "src/app/[locale]/(app)/time-tracking/actions/clocking.manual-authorization.integration.test.ts" \
+            "src/app/[locale]/(app)/settings/organizations/organization-timezone.integration.test.ts" \
+            "src/app/[locale]/(app)/time-tracking/actions/clocking.manual-holiday-policy.integration.test.ts" \
+            "src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command-billing.integration.test.ts" \
             src/lib/demo/demo-work.integration.test.ts \
             src/lib/bot-platform/clock-commands.integration.test.ts \
             "src/app/[locale]/(app)/time-tracking/actions/work-period-amendment.integration.test.ts" \
@@ -151,6 +156,7 @@ jobs:
             src/app/api/time-entries/commands/browser.integration.test.ts \
             src/app/api/mobile/time-clock/route.integration.test.ts \
             src/lib/time-tracking/append-assurance.integration.test.ts \
+            src/lib/time-tracking/historical-work-diagnostics.integration.test.ts \
             src/lib/cron/legacy-escalation-fencing.integration.test.ts \
             src/lib/approvals/presentation/review-arrival.integration.test.ts \
             src/lib/telegram/bound-approval.integration.test.ts \
@@ -160,6 +166,7 @@ jobs:
             src/lib/travel-expenses/expense-review-decision.integration.test.ts \
             src/lib/approvals/delivery/discord-delivery.integration.test.ts \
             src/lib/approvals/escalation/replacement-delivery.integration.test.ts \
+            "src/app/[locale]/(app)/time-tracking/actions/correction-lifecycle.integration.test.ts" \
             src/lib/approvals/pilot/readiness.integration.test.ts
 
   tests:

@@ -23,13 +23,13 @@ export interface CompletedWorkTransactionInput {
 	actorUserId: string;
 }
 
-type RoutedScope = { userIds: string[]; employeeIds: string[] };
+export type RoutedScope = { userIds: string[]; employeeIds: string[] };
 
 /**
  * The owner's user and every employee row the amendment's authorization path
  * locks: the owner and each of the actor's employee records in the organization.
  */
-async function routeScope(
+export async function routeScope(
 	transaction: WorkTransactionClient,
 	input: CompletedWorkTransactionInput,
 ): Promise<RoutedScope> {
@@ -48,7 +48,7 @@ async function routeScope(
 	};
 }
 
-function sameScope(left: RoutedScope, right: RoutedScope): boolean {
+export function sameScope(left: RoutedScope, right: RoutedScope): boolean {
 	return (
 		left.userIds.join() === right.userIds.join() &&
 		left.employeeIds.join() === right.employeeIds.join()

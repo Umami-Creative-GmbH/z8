@@ -5,7 +5,8 @@ import "server-only";
  *
  * Submission and lookup-only recovery for version 2 commands, composed from the
  * existing completed-work operations and outer transaction owners: starts go
- * through `startLiveWork`, closures through `closeActiveWork`, and both commit a
+ * through `startLiveWork`, closures through `closeActiveWork`, desktop breaks
+ * through `closeAndResumeWork` (#281), and each commits a
  * `completed_work_operation` receipt with the work. No separate receipt store.
  *
  * Order for a submission, per resolution #263 §2–§5:
@@ -33,10 +34,13 @@ import {
 import { ValidationError } from "@/lib/effect/errors";
 import {
 	admitClockCommandAge,
+	type BreakClockDiscontinuity,
+	type BreakCommand,
 	type ClockCommand,
 	type ClockCommandContext,
 	type ClockInCommand,
 	type ClockOutCommand,
+	checkBreakClockContinuity,
 	verifyClockCommandContext,
 } from "@/lib/time-tracking/clock-command";
 import {
@@ -49,6 +53,7 @@ import {
 import {
 	attributionValue,
 	type CloseActiveWorkResult,
+	type ClosedActiveWork,
 	CompletedWorkAttributionError,
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
@@ -56,6 +61,12 @@ import {
 	findStandingClosure,
 	replayCloseActiveWork,
 } from "@/lib/time-tracking/close-active-work";
+import {
+	type CloseResumeWorkResult,
+	closeAndResumeWork,
+	isCloseResumeStanding,
+	replayCloseResumeWork,
+} from "@/lib/time-tracking/close-resume-work";
 import {
 	findStandingStart,
 	LiveWorkOccupiedError,
@@ -68,6 +79,7 @@ import { validateTimeEntry } from "@/lib/time-tracking/validation";
 import { withWebClockInTransaction } from "@/lib/time-tracking/web-clock-in-transaction";
 import { withWebClockOutTransaction } from "@/lib/time-tracking/web-clock-out-transaction";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
+import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { getUserTimezone } from "./auth";
 import {
@@ -87,7 +99,8 @@ export const DIRECT_HTTP_WRITER = {
 
 export type ClockCommandReceipt =
 	| { kind: "start_live_work"; result: StartLiveWorkResult }
-	| { kind: "close_active_work"; result: CloseActiveWorkResult };
+	| { kind: "close_active_work"; result: CloseActiveWorkResult }
+	| { kind: "close_resume_work"; result: CloseResumeWorkResult };
 
 /** Typed actionable failures. None of them wrote anything. */
 export type ClockCommandRejection =
@@ -103,6 +116,10 @@ export type ClockCommandRejection =
 	| { code: "not_allowed_at_time"; holidayName?: string }
 	| { code: "target_unknown" }
 	| { code: "target_not_active" }
+	/** The target has an unresolved approval or correction; a break must not split it. */
+	| { code: "review_pending" }
+	/** The break's wall-clock and monotonic observations disagree; record a reviewed correction. */
+	| BreakClockDiscontinuity
 	| { code: "already_clocked_in" }
 	| { code: "occupancy_conflict" }
 	| { code: "invalid_interval" }
@@ -117,7 +134,7 @@ export type ClockCommandSubmission =
 			outcome: "executed" | "replayed";
 			operationId: string;
 			receipt: ClockCommandReceipt;
-			/** Post-commit clock-out advice; absent on replay and for starts. */
+			/** Post-commit advice for a closure (clock-out or break); absent on replay and for starts. */
 			clockOut?: Pick<ClockOutResult, "complianceWarnings" | "breakAdjustment">;
 	  }
 	| ({ outcome: "rejected"; operationId: string } & ClockCommandRejection);
@@ -191,14 +208,18 @@ async function replayCommand(
 		command,
 		writer: DIRECT_HTTP_WRITER.writer,
 	};
-	const receipt =
+	const receipt: ClockCommandReceipt | null =
 		command.kind === "clock_in"
 			? await replayStartLiveWork(scope, input).then((replayed) =>
 					replayed ? { kind: "start_live_work" as const, result: replayed.result } : null,
 				)
-			: await replayCloseActiveWork(scope, input).then((replayed) =>
-					replayed ? { kind: "close_active_work" as const, result: replayed.result } : null,
-				);
+			: command.kind === "clock_out"
+				? await replayCloseActiveWork(scope, input).then((replayed) =>
+						replayed ? { kind: "close_active_work" as const, result: replayed.result } : null,
+					)
+				: await replayCloseResumeWork(scope, input).then((replayed) =>
+						replayed ? { kind: "close_resume_work" as const, result: replayed.result } : null,
+					);
 	if (receipt) return receipt;
 	// Deliberately unscoped: operation IDs are global entry keys, so a use in any
 	// organization is a collision. Only the outcome is returned, never the row.
@@ -228,10 +249,10 @@ function replayTransaction<T>(
 	);
 }
 
-function capture(command: ClockCommand, instant: Instant) {
+function capture(timezone: string, instant: Instant) {
 	return {
-		utcOffsetMinutes: getUtcOffsetMinutesForZone(dateFromInstant(instant), command.timezone),
-		timezone: command.timezone,
+		utcOffsetMinutes: getUtcOffsetMinutesForZone(dateFromInstant(instant), timezone),
+		timezone,
 		// Captured by the client at event time, like the web browser capture.
 		timezoneSource: "browser" as const,
 	};
@@ -257,6 +278,7 @@ function mapFailure(error: unknown): ClockCommandRejection | null {
 			: null;
 	}
 	if (error instanceof WorkIntervalError) return { code: "invalid_interval" };
+	if (isUnresolvedWorkPeriodReview(error)) return { code: "review_pending" };
 	if (error instanceof CompletedWorkAttributionError) {
 		return { code: "attribution_not_allowed", field: error.field };
 	}
@@ -346,24 +368,46 @@ async function submitFresh(
 	clock: Clock,
 ): Promise<ClockCommandSubmission> {
 	const occurredAt = parseInstant(command.occurredAt);
-	const age = admitClockCommandAge(command.admission, occurredAt, clock.nowInstant());
-	if (!age.admitted) {
-		throw new ClockCommandRejectedError({ code: "admission_window", reason: age.reason });
+	if (command.kind === "break") {
+		const discontinuity = checkBreakClockContinuity(command);
+		if (discontinuity) throw new ClockCommandRejectedError(discontinuity);
 	}
-	const validity = await validateTimeEntry(
-		actor.organizationId,
-		dateFromInstant(occurredAt),
-		command.timezone,
-	);
-	if (!validity.isValid) {
-		throw new ClockCommandRejectedError({
-			code: "not_allowed_at_time",
-			holidayName: validity.holidayName,
-		});
+	// A break is admitted from its idle start through its confirmation.
+	const admitted =
+		command.kind === "break"
+			? [command.breakStart.at, command.occurredAt, command.observations.confirmed.utc]
+			: [command.occurredAt];
+	const serverNow = clock.nowInstant();
+	for (const instant of admitted) {
+		const age = admitClockCommandAge(command.admission, parseInstant(instant), serverNow);
+		if (!age.admitted) {
+			throw new ClockCommandRejectedError({ code: "admission_window", reason: age.reason });
+		}
 	}
-	return command.kind === "clock_in"
-		? submitStart(actor, command, occurredAt)
-		: submitClose(actor, command, occurredAt);
+	// Each endpoint is judged in its own captured zone.
+	const endpoints: [Instant, string][] =
+		command.kind === "break"
+			? [
+					[parseInstant(command.breakStart.at), command.breakStart.timezone],
+					[occurredAt, command.timezone],
+				]
+			: [[occurredAt, command.timezone]];
+	for (const [instant, timezone] of endpoints) {
+		const validity = await validateTimeEntry(
+			actor.organizationId,
+			dateFromInstant(instant),
+			timezone,
+		);
+		if (!validity.isValid) {
+			throw new ClockCommandRejectedError({
+				code: "not_allowed_at_time",
+				holidayName: validity.holidayName,
+			});
+		}
+	}
+	if (command.kind === "clock_in") return submitStart(actor, command, occurredAt);
+	if (command.kind === "clock_out") return submitClose(actor, command, occurredAt);
+	return submitBreak(actor, command, occurredAt);
 }
 
 async function submitStart(
@@ -395,7 +439,7 @@ async function submitStart(
 				command,
 				writer: DIRECT_HTTP_WRITER,
 				eventInstant: occurredAt,
-				capture: capture(command, occurredAt),
+				capture: capture(command.timezone, occurredAt),
 			});
 			return {
 				outcome: "executed" as const,
@@ -407,10 +451,10 @@ async function submitStart(
 }
 
 /**
- * The close target is the known period, or the period the named clock-in
- * operation created. It is never whichever period happens to be active now.
+ * The close target is the known period, or the period the named clock-in (or
+ * break) operation created. It is never whichever period happens to be active now.
  */
-async function resolveCloseTarget(actor: Actor, command: ClockOutCommand) {
+async function resolveCloseTarget(actor: Actor, command: ClockOutCommand | BreakCommand) {
 	const [period] = await db
 		.select({
 			id: workPeriod.id,
@@ -504,7 +548,7 @@ async function submitClose(
 					command,
 					writer: DIRECT_HTTP_WRITER,
 					eventInstant: occurredAt,
-					capture: capture(command, occurredAt),
+					capture: capture(command.timezone, occurredAt),
 				}),
 			};
 		},
@@ -512,8 +556,88 @@ async function submitClose(
 	if (result.kind === "replayed") {
 		return { outcome: "replayed", operationId: command.operationId, receipt: result.receipt };
 	}
+	return {
+		outcome: "executed",
+		operationId: command.operationId,
+		receipt: { kind: "close_active_work", result: result.closed.result },
+		clockOut: await closedWorkFollowUps(actor, command, result.closed, requiresApproval),
+	};
+}
 
-	const { closed } = result;
+/**
+ * A confirmed desktop break (#281): the target closes at the idle start and work
+ * resumes at the detected return, in one operation under the clock-out owner.
+ */
+async function submitBreak(
+	actor: Actor,
+	command: BreakCommand,
+	occurredAt: Instant,
+): Promise<ClockCommandSubmission> {
+	const workPeriodId = await resolveCloseTarget(actor, command);
+	const breakStart = parseInstant(command.breakStart.at);
+	let requiresApproval: boolean;
+	try {
+		requiresApproval = await checkClockOutNeedsApproval(actor.employeeId);
+	} catch {
+		throw new ClockCommandRejectedError({ code: "approval_policy_unavailable" });
+	}
+
+	const result = await withWebClockOutTransaction(
+		{
+			organizationId: actor.organizationId,
+			employeeId: actor.employeeId,
+			userId: actor.userId,
+			submissionId: command.operationId,
+			workPeriodId,
+			endTime: breakStart,
+			requiresApproval,
+		},
+		createOrdinaryApprovalRuntime,
+		async (coordination) => {
+			const committed = await replayCommand(coordination, actor, command);
+			if (committed) return { kind: "replayed" as const, receipt: committed };
+			if (coordination.admission !== "append")
+				throw new ClockCommandRejectedError({ code: "not_adopted" });
+			return {
+				kind: "executed" as const,
+				executed: await closeAndResumeWork(coordination, {
+					organizationId: actor.organizationId,
+					employeeId: actor.employeeId,
+					teamId: actor.teamId,
+					actorUserId: actor.userId,
+					workPeriodId,
+					command,
+					writer: DIRECT_HTTP_WRITER,
+					close: {
+						instant: breakStart,
+						capture: capture(command.breakStart.timezone, breakStart),
+					},
+					resume: { instant: occurredAt, capture: capture(command.timezone, occurredAt) },
+				}),
+			};
+		},
+	);
+	if (result.kind === "replayed") {
+		return { outcome: "replayed", operationId: command.operationId, receipt: result.receipt };
+	}
+	return {
+		outcome: "executed",
+		operationId: command.operationId,
+		receipt: { kind: "close_resume_work", result: result.executed.result },
+		clockOut: await closedWorkFollowUps(actor, command, result.executed.closed, requiresApproval),
+	};
+}
+
+/**
+ * Post-commit follow-ups of a committed closure, shared by clock-out and break:
+ * compliance, break enforcement, surcharges and approval notification.
+ */
+async function closedWorkFollowUps(
+	actor: Actor,
+	command: ClockOutCommand | BreakCommand,
+	closed: ClosedActiveWork,
+	requiresApproval: boolean,
+): Promise<Pick<ClockOutResult, "complianceWarnings" | "breakAdjustment">> {
 	const advice = await completeClockOutAfterCommit({
 		outcome: {
 			entry: closed.entry,
@@ -533,13 +657,8 @@ async function submitClose(
 		projectId: closed.result.attribution.projectId,
 	});
 	return {
-		outcome: "executed",
-		operationId: command.operationId,
-		receipt: { kind: "close_active_work", result: closed.result },
-		clockOut: {
-			complianceWarnings: advice.complianceWarnings,
-			breakAdjustment: advice.breakAdjustment,
-		},
+		complianceWarnings: advice.complianceWarnings,
+		breakAdjustment: advice.breakAdjustment,
 	};
 }
 
@@ -577,17 +696,22 @@ export async function lookupClockCommand(input: {
 			) {
 				return { outcome: "conflict", operationId };
 			}
-			const standing =
-				receipt.kind === "start_live_work"
-					? await findStandingStart(scope.db, actor, receipt.result as StartLiveWorkResult)
-					: await findStandingClosure(scope.db, actor, receipt.result as CloseActiveWorkResult);
+			let committed: ClockCommandReceipt;
+			let standing: boolean;
+			if (receipt.kind === "start_live_work") {
+				committed = { kind: receipt.kind, result: receipt.result as StartLiveWorkResult };
+				standing = (await findStandingStart(scope.db, actor, committed.result)) !== null;
+			} else if (receipt.kind === "close_resume_work") {
+				committed = { kind: receipt.kind, result: receipt.result as CloseResumeWorkResult };
+				standing = await isCloseResumeStanding(scope.db, actor, committed.result);
+			} else {
+				committed = { kind: "close_active_work", result: receipt.result as CloseActiveWorkResult };
+				standing = (await findStandingClosure(scope.db, actor, committed.result)) !== null;
+			}
 			return {
 				outcome: "committed",
 				operationId,
-				receipt:
-					receipt.kind === "start_live_work"
-						? { kind: "start_live_work", result: receipt.result as StartLiveWorkResult }
-						: { kind: "close_active_work", result: receipt.result as CloseActiveWorkResult },
+				receipt: committed,
 				command: receipt.command,
 				evidence: standing ? "standing" : "changed",
 			};

@@ -355,12 +355,10 @@ tests (both occupancy scenarios and the authority replay).
 This slice closes on implementation. The items below are activation gates, tracked
 in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
 
-- **Business deletion and correction lifecycles (#301).** The approved correction
-  and deletion finalizer, the submission's auto-completion and cancellation must
-  move into the outer transaction and the operation context. Until then they write
-  without the adoption gate, the employee key and a revision advance, and replay
-  cannot detect their changes by revision. The operation still detects them through
-  entry IDs and supersession.
+- **Business deletion and correction lifecycles (#301).** Done in #301: submission,
+  finalization (including business deletion and auto-completion) and cancellation
+  run in the coordinated transaction and advance the revision; see
+  [the #301 record](correction-lifecycle-operation-301.md).
 - Holiday validation and the change-policy capability are still preflights. The
   configuration writers do not take the guards yet (#316/#327), inherited as in #274.
 - The legacy `createTimeEntry` correction branch (above) must be retired or gated.

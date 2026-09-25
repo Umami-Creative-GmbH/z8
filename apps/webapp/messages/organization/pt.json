@@ -256,6 +256,7 @@
       "title": "Equipes"
     },
     "timezone": {
+      "balances-recalculating": "Os saldos de trabalho estão a ser recalculados para o novo fuso horário e ficam ocultos até estarem prontos.",
       "default": "Fuso horário predefinido",
       "description": "Defina o fuso horário padrão para a sua organização. Isto é usado para monitorização de ausências, relatórios e outras funcionalidades baseadas em datas. Utilizadores individuais podem substituir isto nas suas definições de perfil.",
       "owner-only": "Apenas os proprietários da organização podem alterar a definição de fuso horário.",

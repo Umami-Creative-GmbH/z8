@@ -21,6 +21,20 @@ const mocks = vi.hoisted(() => ({
 	runTracedEmployeeAction: vi.fn(),
 }));
 
+// Protection is covered by authorization-mutation.test.ts and the PostgreSQL
+// suite; here it records its scope and opens the fake transaction.
+const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: async (
+		scope: unknown,
+		mutation: (tx: unknown) => Promise<unknown>,
+		database: { transaction: (run: (tx: unknown) => Promise<unknown>) => Promise<unknown> },
+	) => {
+		protection.scopes.push(scope);
+		return database.transaction(mutation);
+	},
+}));
+
 vi.mock("@/lib/auth", () => ({
 	auth: { api: { removeMember: mocks.authRemoveMember } },
 }));
@@ -476,6 +490,15 @@ describe("employee lifecycle actions", () => {
 		const result = await deactivateEmployeeAction(employeeId);
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
 		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("changes the target's active state under its configuration/access protection", async () => {
+		protection.scopes.length = 0;
+		setup();
+
+		await deactivateEmployeeAction(employeeId);
+
+		expect(protection.scopes).toEqual([{ organizationId, employeeIds: [employeeId] }]);
 	});
 
 	it("serializes the owner check and state update with an organization lock", async () => {

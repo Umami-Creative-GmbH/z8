@@ -4,6 +4,7 @@ use std::fs;
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
+use crate::break_evidence::IdleBreak;
 use crate::command_store::CommandStore;
 use crate::offline::OfflineQueue;
 use crate::settings::Settings;
@@ -19,6 +20,8 @@ pub struct AppState {
     pub command_store: Result<Mutex<CommandStore>, String>,
     pub clock_command_lock: tokio::sync::Mutex<()>,
     pub is_clocked_in: RwLock<bool>,
+    /// The latest idle span awaiting the employee's answer (#281).
+    pending_break: Mutex<Option<IdleBreak>>,
     app_data_dir: PathBuf,
 }
 
@@ -69,6 +72,7 @@ impl AppState {
             command_store,
             clock_command_lock: tokio::sync::Mutex::new(()),
             is_clocked_in: RwLock::new(false),
+            pending_break: Mutex::new(None),
             app_data_dir,
         })
     }
@@ -107,5 +111,26 @@ impl AppState {
 
     pub fn is_clocked_in(&self) -> bool {
         *self.is_clocked_in.read()
+    }
+
+    pub fn set_pending_break(&self, idle: Option<IdleBreak>) {
+        *self.pending_break.lock() = idle;
+    }
+
+    /// The idle span the dialog shows, if it is still the latest one.
+    pub fn pending_break(&self, id: &str) -> Option<IdleBreak> {
+        self.pending_break
+            .lock()
+            .as_ref()
+            .filter(|idle| idle.id == id)
+            .cloned()
+    }
+
+    /// Forgets the idle span once it was answered.
+    pub fn clear_pending_break(&self, id: &str) {
+        let mut pending = self.pending_break.lock();
+        if pending.as_ref().is_some_and(|idle| idle.id == id) {
+            *pending = None;
+        }
     }
 }

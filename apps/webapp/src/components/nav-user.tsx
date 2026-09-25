@@ -12,6 +12,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { NavUserPreferences } from "@/components/nav-user-preferences";
+import { clearManualRecoveries } from "@/components/time-tracking/manual-command-recovery";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -62,6 +63,8 @@ export function NavUser({
 			await authClient.signOut({
 				fetchOptions: {
 					onSuccess: () => {
+						// Sign-out ends this tab's manual-entry recovery (#310).
+						clearManualRecoveries();
 						// Keep the overlay visible during navigation
 						setTimeout(() => {
 							push("/sign-in");

@@ -6,20 +6,12 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { type AppAbility, asAppSubject, ForbiddenError, toHttpError } from "@/lib/authorization";
+import { ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { summarizeAppendAssurance } from "@/lib/time-tracking/append-assurance";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
-
-/** Subject-scoped: a manager's TimeEntry grant covers direct reports only. */
-function canManageEntriesOf(
-	ability: AppAbility | null,
-	employeeId: string,
-	organizationId: string,
-): boolean {
-	return Boolean(ability?.can("manage", asAppSubject("TimeEntry", { employeeId, organizationId })));
-}
+import { canManageEntriesOf } from "@/lib/time-tracking/diagnostic-access";
 
 /**
  * POST /api/time-entries/verify

@@ -22,6 +22,9 @@ sent through the legacy transport later.
 
 Breaks (idle "I was on break") keep the two-request legacy transport until the atomic
 close/resume operation (#281).
+*Update:* #281 adds that operation as the version 2 `break` kind, frozen and sent like
+clock-in/out wherever the server lists it; see
+[desktop-break-close-resume-281.md](desktop-break-close-resume-281.md).
 
 ```text
 src-tauri/src/frozen_command.rs      # v2 wire command: identity, UTC ms instant, zone, context, target
@@ -271,7 +274,8 @@ This slice closes on implementation (see the #264 decision); these move to #327,
   a current login.
 - **Breaks (#281).** The legacy two-request break stays in use and is refused while commands
   of the current context are unsent. In an adopted organization it is a non-participating
-  writer until #281 replaces it.
+  writer until #281 replaces it. *Update:* #281 replaces it wherever the server offers the
+  `break` kind; the fallback remains for servers that do not.
 - **Lookup fencing.** `not_committed` is not a tombstone (#275). The client only resends
   the same identity, which keeps this safe.
 - **Rollback (#331).** A release without this code leaves `clock_command` rows untouched
