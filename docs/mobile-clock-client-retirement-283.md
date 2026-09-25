@@ -74,9 +74,10 @@ a PostgreSQL suite. None of that was pushed. The user decided:
   migration, and the small #275 refactors that came with them. #278 closes as not
   planned.
 - **Shipped separately:** a preservation fix on the legacy `POST /api/mobile/time-clock`
-  for installed apps. A clock-out whose `submissionId` already committed as an entry
-  in the caller's organization and employee skips the 5-minute skew check and replays
-  through the unchanged legacy matcher. Before the fix it failed with 400 "outside the
+  for installed apps. A clock-out whose `submissionId` already committed as a clock-out
+  entry in the caller's organization and employee skips the 5-minute skew check and
+  replays through the unchanged legacy matcher. The fix is ungated: it changes live
+  legacy behaviour in every organization, which #263 §4 allows as committed replay. Before the fix it failed with 400 "outside the
   allowed skew" once 5 minutes had passed. This mirrors #275's committed recovery on
   the legacy direct route and #259's rule that fresh validation must not invalidate
   committed recovery. It is linked from the #278 closing comment.
