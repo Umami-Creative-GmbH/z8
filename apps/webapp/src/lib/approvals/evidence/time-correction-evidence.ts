@@ -23,7 +23,10 @@ import {
 import { loadEmployeeLabel } from "./absence-submission";
 import { deriveCommandDecisionOutcome } from "./decision-outcome";
 import { ApprovalEvidenceError } from "./errors";
-import type { ReviewedDecisionTarget } from "./work-period-evidence";
+import {
+	type ReviewedDecisionTarget,
+	workPeriodCommandFingerprintDigest,
+} from "./work-period-evidence";
 import {
 	assertReviewBindingMatches,
 	captureTimeCorrectionSubmittedRevision,
@@ -694,6 +697,8 @@ export async function recordCanonicalTimeCorrectionDecisionEvidence(
 		receipt: {
 			...input.receipt,
 			idempotencyKey: timeCorrectionReceiptKeyDigest(input.receipt.idempotencyKey),
+			// The engine's command fingerprint carries a rejection reason verbatim.
+			commandFingerprint: workPeriodCommandFingerprintDigest(input.receipt.commandFingerprint),
 		},
 		action: input.command.type,
 		stageId: outcome.stageId,

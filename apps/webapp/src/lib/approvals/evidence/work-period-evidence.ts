@@ -79,6 +79,14 @@ export function workPeriodReceiptKeyDigest(idempotencyKey: string): string {
 	return `receipt-key:sha256:${sha256(idempotencyKey)}`;
 }
 
+/**
+ * The engine's command fingerprint carries a rejection reason verbatim; the
+ * evidence keeps only its digest (#325), like the receipt key.
+ */
+export function workPeriodCommandFingerprintDigest(commandFingerprint: string): string {
+	return `command-fingerprint:sha256:${sha256(commandFingerprint)}`;
+}
+
 function incomplete(field: string): never {
 	throw new ApprovalEvidenceError("evidence_incomplete", { field });
 }
@@ -698,6 +706,7 @@ export async function recordCanonicalWorkPeriodDecisionEvidence(
 		receipt: {
 			...input.receipt,
 			idempotencyKey: workPeriodReceiptKeyDigest(input.receipt.idempotencyKey),
+			commandFingerprint: workPeriodCommandFingerprintDigest(input.receipt.commandFingerprint),
 		},
 		action: input.command.type,
 		stageId: outcome.stageId,
