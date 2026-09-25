@@ -343,11 +343,13 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 	it("does not query mutable team, assignment, policy, regulation, or rule tables", async () => {
 		const { execute, queries } = splitDatabase({ policies: [] });
 
-		await expect(
-			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({
+		const result = await enforcePolicyClockOutTerminalBreakInTransaction(
+			input(execute),
+		);
+		expect(result).toEqual({
 			kind: "adjusted",
 			breakMinutes: 60,
+			secondPeriodId: expect.any(String),
 			maintenance: {
 				organizationId,
 				employeeId,
@@ -357,6 +359,10 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				staleSurchargePeriodIds: [],
 			},
 		});
+		// The created period is reported for the decision evidence (#302).
+		expect(result.kind === "adjusted" && result.secondPeriodId).toBe(
+			result.maintenance.surchargePeriodIds[1],
+		);
 		expect(queries.map((query) => query.sql).join("\n")).not.toMatch(
 			/work_policy|team_id|employee_row\.team_id/,
 		);

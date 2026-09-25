@@ -2384,6 +2384,7 @@ export async function createManualTimeEntry(
 						overtimeRisk: "none",
 						kind: "manual_time_submission",
 						metadata: {},
+						submitterUserId: session.user.id,
 					})
 				: null;
 

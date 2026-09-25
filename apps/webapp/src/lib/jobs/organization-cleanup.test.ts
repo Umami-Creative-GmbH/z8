@@ -27,7 +27,10 @@ function createTransaction() {
 	}));
 	const update = vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn() })) }));
 	const findMany = vi.fn().mockResolvedValue([]);
+	// Manual/policy clock-out evidence cleanup (#302) selects, then deletes.
+	const execute = vi.fn(async () => ({ rows: [] }));
 	const tx = {
+		execute,
 		delete: deleteFrom,
 		update,
 		query: {
@@ -43,7 +46,7 @@ function createTransaction() {
 			location: { findMany },
 		},
 	};
-	return { deleteFrom, events, tx };
+	return { deleteFrom, events, execute, tx };
 }
 
 describe("organization cleanup membership cascade", () => {
@@ -59,7 +62,7 @@ describe("organization cleanup membership cascade", () => {
 	});
 
 	it("deletes tenant data then the organization without directly deleting memberships", async () => {
-		const { deleteFrom, events, tx } = createTransaction();
+		const { deleteFrom, events, execute, tx } = createTransaction();
 		mocks.db.transaction.mockImplementation(async (run) => run(tx));
 
 		const result = await runOrganizationCleanup();
@@ -70,6 +73,7 @@ describe("organization cleanup membership cascade", () => {
 			errors: [],
 		});
 		expect(mocks.db.transaction).toHaveBeenCalledOnce();
+		expect(execute).toHaveBeenCalledOnce();
 		expect(deleteFrom).not.toHaveBeenCalledWith(authSchema.member);
 		expect(events).toEqual(["organization-delete"]);
 		expect(deleteFrom).toHaveBeenLastCalledWith(authSchema.organization);
