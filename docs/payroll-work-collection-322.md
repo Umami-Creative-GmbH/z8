@@ -33,7 +33,7 @@ resolutions of
 | `lib/payroll-collection/payroll-export-work-input.ts` | Stores a job's input and reads it back. The read checks the digest and version. |
 | `lib/payroll-collection/payroll-work-collection-blocked-error.ts` | The refusal. It carries the blockers for server logs, and its client-facing `summary()` contains counts only. |
 | `lib/payroll-export/collected-work.ts` | Turns collected lines into formatter lines without any recomputation. |
-| Migration `0103_payroll_work_collection` | Adds `payroll_work_collection_control` and `payroll_export_work_input`. The input table is immutable (an update trigger raises) and cascades with its job and organization. |
+| Migration `0104_payroll_work_collection` | Adds `payroll_work_collection_control` and `payroll_export_work_input`. The input table is immutable (an update trigger raises) and cascades with its job and organization. |
 
 Reused, not duplicated: the #319 diagnostics reader and assessment, the #320 plan
 reader and executor, the #321 protected-minute rule, the snapshot helper shared with

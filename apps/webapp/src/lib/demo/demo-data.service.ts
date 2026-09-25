@@ -89,6 +89,8 @@ import {
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
+import type { Transaction } from "@/lib/time-tracking/work-transaction";
+import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
 
 const demoLogger = createLogger("demo-data");
 
@@ -1526,15 +1528,32 @@ export async function generateDemoTeams(
 		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
 	}
 
+	return withDemoConfigurationMutation(options.organizationId, (tx, organizationEmployees) =>
+		generateDemoTeamsInTransaction(
+			tx,
+			options,
+			selectDemoEmployees(organizationEmployees, options.employeeIds),
+		),
+	);
+}
+
+/** The organization's employees, narrowed to `employeeIds` when given. */
+function selectDemoEmployees(
+	organizationEmployees: DemoEmployee[],
+	employeeIds: readonly string[] | undefined,
+): DemoEmployee[] {
+	if (!employeeIds) return organizationEmployees;
+	const selected = new Set(employeeIds);
+	return organizationEmployees.filter((row) => selected.has(row.id));
+}
+
+async function generateDemoTeamsInTransaction(
+	tx: Transaction,
+	options: DemoDataOptions,
+	employees: DemoEmployee[],
+): Promise<{ teamsCreated: number; employeesAssignedToTeams: number }> {
 	const defaultTeamNames = getDefaultTeamNames();
 	const teamNameGenerators = getTeamNameGenerators();
-
-	// Get employees for the organization
-	const employees = await db.query.employee.findMany({
-		where: options.employeeIds
-			? inArray(employee.id, options.employeeIds)
-			: eq(employee.organizationId, options.organizationId),
-	});
 
 	if (employees.length === 0) {
 		return { teamsCreated: 0, employeesAssignedToTeams: 0 };
@@ -1568,7 +1587,7 @@ export async function generateDemoTeams(
 	// Create teams
 	const createdTeams: { id: string; name: string }[] = [];
 	for (const name of teamNames) {
-		const [newTeam] = await db
+		const [newTeam] = await tx
 			.insert(team)
 			.values({
 				organizationId: options.organizationId,
@@ -1596,20 +1615,30 @@ export async function generateDemoTeams(
 		i < createdTeams.length && i < shuffledEmployees.length;
 		i++
 	) {
-		await db
+		await tx
 			.update(employee)
 			.set({ teamId: createdTeams[i].id })
-			.where(eq(employee.id, shuffledEmployees[i].id));
+			.where(
+				and(
+					eq(employee.id, shuffledEmployees[i].id),
+					eq(employee.organizationId, options.organizationId),
+				),
+			);
 		employeesAssigned++;
 	}
 
 	// Assign remaining employees randomly to teams
 	for (let i = createdTeams.length; i < shuffledEmployees.length; i++) {
 		const randomTeam = faker.helpers.arrayElement(createdTeams);
-		await db
+		await tx
 			.update(employee)
 			.set({ teamId: randomTeam.id })
-			.where(eq(employee.id, shuffledEmployees[i].id));
+			.where(
+				and(
+					eq(employee.id, shuffledEmployees[i].id),
+					eq(employee.organizationId, options.organizationId),
+				),
+			);
 		employeesAssigned++;
 	}
 
@@ -1722,7 +1751,7 @@ export async function generateDemoProjects(
 	}
 
 	// Create projects
-	let projectsCreated = 0;
+	const projects: Array<typeof project.$inferInsert> = [];
 	// Valid statuses from projectStatusEnum: planned, active, paused, completed, archived
 	const statuses: Array<
 		"planned" | "active" | "paused" | "completed" | "archived"
@@ -1744,7 +1773,7 @@ export async function generateDemoProjects(
 		const hasDeadline = status !== "completed" && Math.random() < 0.5;
 		const deadline = hasDeadline ? faker.date.future({ years: 1 }) : null;
 
-		await db.insert(project).values({
+		projects.push({
 			organizationId: options.organizationId,
 			name,
 			description: `Demo project - ${name}`,
@@ -1757,11 +1786,13 @@ export async function generateDemoProjects(
 			createdBy: options.createdBy,
 			updatedAt: new Date(),
 		});
-
-		projectsCreated++;
 	}
 
-	return { projectsCreated };
+	await withDemoConfigurationMutation(options.organizationId, async (tx) => {
+		await tx.insert(project).values(projects);
+	});
+
+	return { projectsCreated: projects.length };
 }
 
 /**
@@ -1770,69 +1801,58 @@ export async function generateDemoProjects(
 export async function generateDemoManagerAssignments(
 	options: DemoDataOptions,
 ): Promise<{ managerAssignmentsCreated: number }> {
-	// Get the current user's employee record (the owner/admin)
-	const ownerEmployee = await db.query.employee.findFirst({
-		where: eq(employee.userId, options.createdBy),
-	});
+	return withDemoConfigurationMutation(options.organizationId, async (tx, organizationEmployees) => {
+		// The current user's employee record in this organization (the owner/admin)
+		const ownerEmployee = organizationEmployees.find((row) => row.userId === options.createdBy);
 
-	if (!ownerEmployee) {
-		return { managerAssignmentsCreated: 0 };
-	}
+		if (!ownerEmployee) {
+			return { managerAssignmentsCreated: 0 };
+		}
 
-	// Get all other employees in the organization (excluding the owner)
-	const otherEmployees = await db.query.employee.findMany({
-		where: and(
-			eq(employee.organizationId, options.organizationId),
-			options.employeeIds?.length
-				? inArray(employee.id, options.employeeIds)
-				: undefined,
-		),
-	});
+		// Filter out the owner and get employees without managers
+		const employeesWithoutOwner = selectDemoEmployees(
+			organizationEmployees,
+			options.employeeIds?.length ? options.employeeIds : undefined,
+		).filter((e) => e.id !== ownerEmployee.id);
 
-	// Filter out the owner and get employees without managers
-	const employeesWithoutOwner = otherEmployees.filter(
-		(e) => e.id !== ownerEmployee.id,
-	);
+		if (employeesWithoutOwner.length === 0) {
+			return { managerAssignmentsCreated: 0 };
+		}
 
-	if (employeesWithoutOwner.length === 0) {
-		return { managerAssignmentsCreated: 0 };
-	}
-
-	// Check existing manager assignments to avoid duplicates
-	const existingAssignments = await db.query.employeeManagers.findMany({
-		where: inArray(
-			employeeManagers.employeeId,
-			employeesWithoutOwner.map((e) => e.id),
-		),
-	});
-
-	const employeesWithManagers = new Set(
-		existingAssignments.map((a) => a.employeeId),
-	);
-
-	// Assign ~60-80% of employees without managers to the owner
-	const employeesNeedingManagers = employeesWithoutOwner.filter(
-		(e) => !employeesWithManagers.has(e.id),
-	);
-
-	const assignmentRate = 0.6 + Math.random() * 0.2; // 60-80%
-	const employeesToAssign = faker.helpers
-		.shuffle(employeesNeedingManagers)
-		.slice(0, Math.ceil(employeesNeedingManagers.length * assignmentRate));
-
-	let managerAssignmentsCreated = 0;
-
-	for (const emp of employeesToAssign) {
-		await db.insert(employeeManagers).values({
-			employeeId: emp.id,
-			managerId: ownerEmployee.id,
-			isPrimary: true,
-			assignedBy: options.createdBy,
+		// Check existing manager assignments to avoid duplicates
+		const existingAssignments = await tx.query.employeeManagers.findMany({
+			where: inArray(
+				employeeManagers.employeeId,
+				employeesWithoutOwner.map((e) => e.id),
+			),
 		});
-		managerAssignmentsCreated++;
-	}
 
-	return { managerAssignmentsCreated };
+		const employeesWithManagers = new Set(existingAssignments.map((a) => a.employeeId));
+
+		// Assign ~60-80% of employees without managers to the owner
+		const employeesNeedingManagers = employeesWithoutOwner.filter(
+			(e) => !employeesWithManagers.has(e.id),
+		);
+
+		const assignmentRate = 0.6 + Math.random() * 0.2; // 60-80%
+		const employeesToAssign = faker.helpers
+			.shuffle(employeesNeedingManagers)
+			.slice(0, Math.ceil(employeesNeedingManagers.length * assignmentRate));
+
+		let managerAssignmentsCreated = 0;
+
+		for (const emp of employeesToAssign) {
+			await tx.insert(employeeManagers).values({
+				employeeId: emp.id,
+				managerId: ownerEmployee.id,
+				isPrimary: true,
+				assignedBy: options.createdBy,
+			});
+			managerAssignmentsCreated++;
+		}
+
+		return { managerAssignmentsCreated };
+	});
 }
 
 // ============================================
@@ -2030,125 +2050,127 @@ export async function generateDemoWorkCategories(
 		return { setsCreated: 0, categoriesCreated: 0, assignmentsCreated: 0 };
 	}
 
-	const workCategoryTemplates = getWorkCategoryTemplates();
-	const workCategorySetTemplates = getWorkCategorySetTemplates();
-	const setCount = options.workCategorySetCount ?? 2;
-	const categoryCount =
-		options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
+	return withDemoConfigurationMutation(options.organizationId, async (tx) => {
+		const workCategoryTemplates = getWorkCategoryTemplates();
+		const workCategorySetTemplates = getWorkCategorySetTemplates();
+		const setCount = options.workCategorySetCount ?? 2;
+		const categoryCount =
+			options.workCategoryCount ?? Math.min(8, workCategoryTemplates.length);
 
-	let setsCreated = 0;
-	let categoriesCreated = 0;
-	let assignmentsCreated = 0;
+		let setsCreated = 0;
+		let categoriesCreated = 0;
+		let assignmentsCreated = 0;
 
-	// First, create all categories at org level
-	const createdCategories: Array<{ id: string; name: string }> = [];
-	const shuffledTemplates = faker.helpers.shuffle([...workCategoryTemplates]);
+		// First, create all categories at org level
+		const createdCategories: Array<{ id: string; name: string }> = [];
+		const shuffledTemplates = faker.helpers.shuffle([...workCategoryTemplates]);
 
-	for (let i = 0; i < categoryCount && i < shuffledTemplates.length; i++) {
-		const template = shuffledTemplates[i];
-		const [newCategory] = await db
-			.insert(workCategory)
-			.values({
-				organizationId: options.organizationId,
-				name: template.name,
-				description: `Demo work category - ${template.name}`,
-				factor: template.factor,
-				color: template.color,
-				isActive: true,
-				createdBy: options.createdBy,
-				updatedAt: new Date(),
-			})
-			.returning();
-
-		createdCategories.push({ id: newCategory.id, name: newCategory.name });
-		categoriesCreated++;
-	}
-
-	// Create category sets and link categories
-	const createdSets: Array<{ id: string; name: string }> = [];
-
-	for (let i = 0; i < setCount && i < workCategorySetTemplates.length; i++) {
-		const template = workCategorySetTemplates[i];
-		const [newSet] = await db
-			.insert(workCategorySet)
-			.values({
-				organizationId: options.organizationId,
-				name: template.name,
-				description: `Demo work category set - ${template.description}`,
-				isActive: true,
-				createdBy: options.createdBy,
-				updatedAt: new Date(),
-			})
-			.returning();
-
-		createdSets.push({ id: newSet.id, name: newSet.name });
-		setsCreated++;
-
-		// Link categories to this set (each set gets a different subset)
-		const startIdx = i * 3; // Each set gets different categories
-		const categoriesForSet = createdCategories.slice(startIdx, startIdx + 6);
-
-		// Always include "Normal Work" if available
-		const normalWork = createdCategories.find((c) => c.name === "Normal Work");
-		if (normalWork && !categoriesForSet.find((c) => c.name === "Normal Work")) {
-			categoriesForSet.unshift(normalWork);
-		}
-
-		for (let j = 0; j < categoriesForSet.length; j++) {
-			await db.insert(workCategorySetCategory).values({
-				setId: newSet.id,
-				categoryId: categoriesForSet[j].id,
-				sortOrder: j,
-			});
-		}
-	}
-
-	// Create organization-level assignment (first set as default)
-	if (createdSets.length > 0) {
-		await db.insert(workCategorySetAssignment).values({
-			setId: createdSets[0].id,
-			organizationId: options.organizationId,
-			assignmentType: "organization",
-			priority: 0,
-			isActive: true,
-			createdBy: options.createdBy,
-			updatedAt: new Date(),
-		});
-		assignmentsCreated++;
-
-		// Assign other sets to teams (if multiple sets and teams exist)
-		if (createdSets.length > 1) {
-			const teams = await db.query.team.findMany({
-				where: eq(team.organizationId, options.organizationId),
-			});
-
-			const shuffledTeams = faker.helpers.shuffle(teams);
-			const teamsToAssign = shuffledTeams.slice(
-				0,
-				Math.min(2, shuffledTeams.length),
-			);
-
-			for (
-				let i = 0;
-				i < teamsToAssign.length && i + 1 < createdSets.length;
-				i++
-			) {
-				await db.insert(workCategorySetAssignment).values({
-					setId: createdSets[i + 1].id,
+		for (let i = 0; i < categoryCount && i < shuffledTemplates.length; i++) {
+			const template = shuffledTemplates[i];
+			const [newCategory] = await tx
+				.insert(workCategory)
+				.values({
 					organizationId: options.organizationId,
-					assignmentType: "team",
-					teamId: teamsToAssign[i].id,
-					priority: 1,
+					name: template.name,
+					description: `Demo work category - ${template.name}`,
+					factor: template.factor,
+					color: template.color,
 					isActive: true,
 					createdBy: options.createdBy,
 					updatedAt: new Date(),
+				})
+				.returning();
+
+			createdCategories.push({ id: newCategory.id, name: newCategory.name });
+			categoriesCreated++;
+		}
+
+		// Create category sets and link categories
+		const createdSets: Array<{ id: string; name: string }> = [];
+
+		for (let i = 0; i < setCount && i < workCategorySetTemplates.length; i++) {
+			const template = workCategorySetTemplates[i];
+			const [newSet] = await tx
+				.insert(workCategorySet)
+				.values({
+					organizationId: options.organizationId,
+					name: template.name,
+					description: `Demo work category set - ${template.description}`,
+					isActive: true,
+					createdBy: options.createdBy,
+					updatedAt: new Date(),
+				})
+				.returning();
+
+			createdSets.push({ id: newSet.id, name: newSet.name });
+			setsCreated++;
+
+			// Link categories to this set (each set gets a different subset)
+			const startIdx = i * 3; // Each set gets different categories
+			const categoriesForSet = createdCategories.slice(startIdx, startIdx + 6);
+
+			// Always include "Normal Work" if available
+			const normalWork = createdCategories.find((c) => c.name === "Normal Work");
+			if (normalWork && !categoriesForSet.find((c) => c.name === "Normal Work")) {
+				categoriesForSet.unshift(normalWork);
+			}
+
+			for (let j = 0; j < categoriesForSet.length; j++) {
+				await tx.insert(workCategorySetCategory).values({
+					setId: newSet.id,
+					categoryId: categoriesForSet[j].id,
+					sortOrder: j,
 				});
-				assignmentsCreated++;
 			}
 		}
-	}
 
-	return { setsCreated, categoriesCreated, assignmentsCreated };
+		// Create organization-level assignment (first set as default)
+		if (createdSets.length > 0) {
+			await tx.insert(workCategorySetAssignment).values({
+				setId: createdSets[0].id,
+				organizationId: options.organizationId,
+				assignmentType: "organization",
+				priority: 0,
+				isActive: true,
+				createdBy: options.createdBy,
+				updatedAt: new Date(),
+			});
+			assignmentsCreated++;
+
+			// Assign other sets to teams (if multiple sets and teams exist)
+			if (createdSets.length > 1) {
+				const teams = await tx.query.team.findMany({
+					where: eq(team.organizationId, options.organizationId),
+				});
+
+				const shuffledTeams = faker.helpers.shuffle(teams);
+				const teamsToAssign = shuffledTeams.slice(
+					0,
+					Math.min(2, shuffledTeams.length),
+				);
+
+				for (
+					let i = 0;
+					i < teamsToAssign.length && i + 1 < createdSets.length;
+					i++
+				) {
+					await tx.insert(workCategorySetAssignment).values({
+						setId: createdSets[i + 1].id,
+						organizationId: options.organizationId,
+						assignmentType: "team",
+						teamId: teamsToAssign[i].id,
+						priority: 1,
+						isActive: true,
+						createdBy: options.createdBy,
+						updatedAt: new Date(),
+					});
+					assignmentsCreated++;
+				}
+			}
+		}
+
+		return { setsCreated, categoriesCreated, assignmentsCreated };
+	});
 }
 
 // ============================================
@@ -2203,49 +2225,51 @@ export async function generateDemoChangePolicies(
 		return { policiesCreated: 0, assignmentsCreated: 0 };
 	}
 
-	const changePolicyTemplates = getChangePolicyTemplates();
-	const policyCount = options.changePolicyCount ?? 2;
-	let policiesCreated = 0;
-	let assignmentsCreated = 0;
+	return withDemoConfigurationMutation(options.organizationId, async (tx) => {
+		const changePolicyTemplates = getChangePolicyTemplates();
+		const policyCount = options.changePolicyCount ?? 2;
+		let policiesCreated = 0;
+		let assignmentsCreated = 0;
 
-	const createdPolicies: Array<{ id: string; name: string }> = [];
+		const createdPolicies: Array<{ id: string; name: string }> = [];
 
-	for (let i = 0; i < policyCount && i < changePolicyTemplates.length; i++) {
-		const template = changePolicyTemplates[i];
-		const [newPolicy] = await db
-			.insert(changePolicy)
-			.values({
+		for (let i = 0; i < policyCount && i < changePolicyTemplates.length; i++) {
+			const template = changePolicyTemplates[i];
+			const [newPolicy] = await tx
+				.insert(changePolicy)
+				.values({
+					organizationId: options.organizationId,
+					name: template.name,
+					description: `Demo change policy - ${template.description}`,
+					selfServiceDays: template.selfServiceDays,
+					approvalDays: template.approvalDays,
+					noApprovalRequired: template.noApprovalRequired,
+					isActive: true,
+					createdBy: options.createdBy,
+					updatedAt: new Date(),
+				})
+				.returning();
+
+			createdPolicies.push({ id: newPolicy.id, name: newPolicy.name });
+			policiesCreated++;
+		}
+
+		// Create organization-level assignment (first policy as default)
+		if (createdPolicies.length > 0) {
+			await tx.insert(changePolicyAssignment).values({
+				policyId: createdPolicies[0].id,
 				organizationId: options.organizationId,
-				name: template.name,
-				description: `Demo change policy - ${template.description}`,
-				selfServiceDays: template.selfServiceDays,
-				approvalDays: template.approvalDays,
-				noApprovalRequired: template.noApprovalRequired,
+				assignmentType: "organization",
+				priority: 0,
 				isActive: true,
 				createdBy: options.createdBy,
 				updatedAt: new Date(),
-			})
-			.returning();
+			});
+			assignmentsCreated++;
+		}
 
-		createdPolicies.push({ id: newPolicy.id, name: newPolicy.name });
-		policiesCreated++;
-	}
-
-	// Create organization-level assignment (first policy as default)
-	if (createdPolicies.length > 0) {
-		await db.insert(changePolicyAssignment).values({
-			policyId: createdPolicies[0].id,
-			organizationId: options.organizationId,
-			assignmentType: "organization",
-			priority: 0,
-			isActive: true,
-			createdBy: options.createdBy,
-			updatedAt: new Date(),
-		});
-		assignmentsCreated++;
-	}
-
-	return { policiesCreated, assignmentsCreated };
+		return { policiesCreated, assignmentsCreated };
+	});
 }
 
 // ============================================
@@ -2815,225 +2839,232 @@ export async function clearOrganizationTimeData(
 	result.workCategoryAssignmentsRemoved = deleted.workPeriodsWithCategory;
 	result.timeEntriesDeleted = deleted.timeEntriesDeleted;
 
-	// ============================================
-	// WORK CATEGORY CLEANUP
-	// ============================================
+	// Configuration cleanup is one batch under exclusive organization configuration
+	// protection and the guards of every employee's user (#318): a fresh manual
+	// submission reads either all of the demo configuration or none of it.
+	await withDemoConfigurationMutation(organizationId, async (tx, organizationEmployees) => {
+		const organizationEmployeeIds = organizationEmployees.map((e) => e.id);
 
-	// Delete work category set assignments (cascade from sets)
-	// Delete work category set categories (cascade from sets/categories)
-	// Delete demo work category sets
-	const allWorkCategorySets = await db.query.workCategorySet.findMany({
-		where: eq(workCategorySet.organizationId, organizationId),
-	});
-	const workCategorySetsToDelete = allWorkCategorySets.filter((s) =>
-		s.description?.startsWith("Demo work category set - "),
-	);
-	if (workCategorySetsToDelete.length > 0) {
-		// Delete assignments first (no cascade defined)
-		await db.delete(workCategorySetAssignment).where(
-			inArray(
-				workCategorySetAssignment.setId,
-				workCategorySetsToDelete.map((s) => s.id),
-			),
-		);
-		// Delete set categories
-		await db.delete(workCategorySetCategory).where(
-			inArray(
-				workCategorySetCategory.setId,
-				workCategorySetsToDelete.map((s) => s.id),
-			),
-		);
-		// Delete sets
-		await db.delete(workCategorySet).where(
-			inArray(
-				workCategorySet.id,
-				workCategorySetsToDelete.map((s) => s.id),
-			),
-		);
-		result.workCategorySetsDeleted = workCategorySetsToDelete.length;
-	}
+		// ============================================
+		// WORK CATEGORY CLEANUP
+		// ============================================
 
-	// Delete demo work categories
-	const allWorkCategories = await db.query.workCategory.findMany({
-		where: eq(workCategory.organizationId, organizationId),
-	});
-	const workCategoriesToDelete = allWorkCategories.filter((c) =>
-		c.description?.startsWith("Demo work category - "),
-	);
-	if (workCategoriesToDelete.length > 0) {
-		await db.delete(workCategory).where(
-			inArray(
-				workCategory.id,
-				workCategoriesToDelete.map((c) => c.id),
-			),
-		);
-		result.workCategoriesDeleted = workCategoriesToDelete.length;
-	}
-
-	// ============================================
-	// CHANGE POLICY CLEANUP
-	// ============================================
-
-	// Delete demo change policies (cascade deletes assignments)
-	const allChangePolicies = await db.query.changePolicy.findMany({
-		where: eq(changePolicy.organizationId, organizationId),
-	});
-	const changePoliciesToDelete = allChangePolicies.filter((p) =>
-		p.description?.startsWith("Demo change policy - "),
-	);
-	if (changePoliciesToDelete.length > 0) {
-		// Delete assignments first
-		await db.delete(changePolicyAssignment).where(
-			inArray(
-				changePolicyAssignment.policyId,
-				changePoliciesToDelete.map((p) => p.id),
-			),
-		);
-		// Delete policies
-		await db.delete(changePolicy).where(
-			inArray(
-				changePolicy.id,
-				changePoliciesToDelete.map((p) => p.id),
-			),
-		);
-		result.changePoliciesDeleted = changePoliciesToDelete.length;
-	}
-
-	// ============================================
-	// LOCATION CLEANUP
-	// ============================================
-
-	// Delete demo locations (cascade deletes subareas and employee assignments)
-	const allLocations = await db.query.location.findMany({
-		where: eq(location.organizationId, organizationId),
-	});
-	const locationsToDelete = allLocations.filter((l) =>
-		l.name.startsWith("Demo - "),
-	);
-	if (locationsToDelete.length > 0) {
-		const locationIdsToDelete = locationsToDelete.map((l) => l.id);
-
-		// Count subareas before deletion
-		const subareasToDelete = await db.query.locationSubarea.findMany({
-			where: inArray(locationSubarea.locationId, locationIdsToDelete),
+		// Delete work category set assignments (cascade from sets)
+		// Delete work category set categories (cascade from sets/categories)
+		// Delete demo work category sets
+		const allWorkCategorySets = await tx.query.workCategorySet.findMany({
+			where: eq(workCategorySet.organizationId, organizationId),
 		});
-		result.subareasDeleted = subareasToDelete.length;
-
-		// Delete location employee assignments
-		await db
-			.delete(locationEmployee)
-			.where(inArray(locationEmployee.locationId, locationIdsToDelete));
-
-		// Delete subarea employee assignments
-		if (subareasToDelete.length > 0) {
-			await db.delete(subareaEmployee).where(
+		const workCategorySetsToDelete = allWorkCategorySets.filter((s) =>
+			s.description?.startsWith("Demo work category set - "),
+		);
+		if (workCategorySetsToDelete.length > 0) {
+			// Delete assignments first (no cascade defined)
+			await tx.delete(workCategorySetAssignment).where(
 				inArray(
-					subareaEmployee.subareaId,
-					subareasToDelete.map((s) => s.id),
+					workCategorySetAssignment.setId,
+					workCategorySetsToDelete.map((s) => s.id),
 				),
 			);
+			// Delete set categories
+			await tx.delete(workCategorySetCategory).where(
+				inArray(
+					workCategorySetCategory.setId,
+					workCategorySetsToDelete.map((s) => s.id),
+				),
+			);
+			// Delete sets
+			await tx.delete(workCategorySet).where(
+				inArray(
+					workCategorySet.id,
+					workCategorySetsToDelete.map((s) => s.id),
+				),
+			);
+			result.workCategorySetsDeleted = workCategorySetsToDelete.length;
 		}
 
-		// Delete subareas
-		await db
-			.delete(locationSubarea)
-			.where(inArray(locationSubarea.locationId, locationIdsToDelete));
-
-		// Delete locations
-		await db.delete(location).where(inArray(location.id, locationIdsToDelete));
-		result.locationsDeleted = locationsToDelete.length;
-	}
-
-	// ============================================
-	// EXISTING CLEANUP (absences, allowances, teams, managers)
-	// ============================================
-
-	if (employeeIds.length > 0) {
-		// Delete absence entries
-		const absencesToDelete = await db.query.absenceEntry.findMany({
-			where: inArray(absenceEntry.employeeId, employeeIds),
+		// Delete demo work categories
+		const allWorkCategories = await tx.query.workCategory.findMany({
+			where: eq(workCategory.organizationId, organizationId),
 		});
-		if (absencesToDelete.length > 0) {
-			await db
-				.delete(absenceEntry)
-				.where(inArray(absenceEntry.employeeId, employeeIds));
-			result.absencesDeleted = absencesToDelete.length;
+		const workCategoriesToDelete = allWorkCategories.filter((c) =>
+			c.description?.startsWith("Demo work category - "),
+		);
+		if (workCategoriesToDelete.length > 0) {
+			await tx.delete(workCategory).where(
+				inArray(
+					workCategory.id,
+					workCategoriesToDelete.map((c) => c.id),
+				),
+			);
+			result.workCategoriesDeleted = workCategoriesToDelete.length;
 		}
 
-		// Delete employee vacation allowances (reset to org defaults)
-		const allowancesToDelete =
-			await db.query.employeeVacationAllowance.findMany({
-				where: inArray(employeeVacationAllowance.employeeId, employeeIds),
+		// ============================================
+		// CHANGE POLICY CLEANUP
+		// ============================================
+
+		// Delete demo change policies (cascade deletes assignments)
+		const allChangePolicies = await tx.query.changePolicy.findMany({
+			where: eq(changePolicy.organizationId, organizationId),
+		});
+		const changePoliciesToDelete = allChangePolicies.filter((p) =>
+			p.description?.startsWith("Demo change policy - "),
+		);
+		if (changePoliciesToDelete.length > 0) {
+			// Delete assignments first
+			await tx.delete(changePolicyAssignment).where(
+				inArray(
+					changePolicyAssignment.policyId,
+					changePoliciesToDelete.map((p) => p.id),
+				),
+			);
+			// Delete policies
+			await tx.delete(changePolicy).where(
+				inArray(
+					changePolicy.id,
+					changePoliciesToDelete.map((p) => p.id),
+				),
+			);
+			result.changePoliciesDeleted = changePoliciesToDelete.length;
+		}
+
+		// ============================================
+		// LOCATION CLEANUP
+		// ============================================
+
+		// Delete demo locations (cascade deletes subareas and employee assignments)
+		const allLocations = await tx.query.location.findMany({
+			where: eq(location.organizationId, organizationId),
+		});
+		const locationsToDelete = allLocations.filter((l) =>
+			l.name.startsWith("Demo - "),
+		);
+		if (locationsToDelete.length > 0) {
+			const locationIdsToDelete = locationsToDelete.map((l) => l.id);
+
+			// Count subareas before deletion
+			const subareasToDelete = await tx.query.locationSubarea.findMany({
+				where: inArray(locationSubarea.locationId, locationIdsToDelete),
 			});
-		if (allowancesToDelete.length > 0) {
-			await db
-				.delete(employeeVacationAllowance)
-				.where(inArray(employeeVacationAllowance.employeeId, employeeIds));
-			result.vacationAllowancesReset = allowancesToDelete.length;
-		}
+			result.subareasDeleted = subareasToDelete.length;
 
-		// Unassign employees from teams
-		const employeesWithTeams = employees.filter((e) => e.teamId !== null);
-		if (employeesWithTeams.length > 0) {
-			await db
-				.update(employee)
-				.set({ teamId: null })
-				.where(
+			// Delete location employee assignments
+			await tx
+				.delete(locationEmployee)
+				.where(inArray(locationEmployee.locationId, locationIdsToDelete));
+
+			// Delete subarea employee assignments
+			if (subareasToDelete.length > 0) {
+				await tx.delete(subareaEmployee).where(
 					inArray(
-						employee.id,
-						employeesWithTeams.map((e) => e.id),
+						subareaEmployee.subareaId,
+						subareasToDelete.map((s) => s.id),
 					),
 				);
-			result.employeesUnassignedFromTeams = employeesWithTeams.length;
+			}
+
+			// Delete subareas
+			await tx
+				.delete(locationSubarea)
+				.where(inArray(locationSubarea.locationId, locationIdsToDelete));
+
+			// Delete locations
+			await tx.delete(location).where(inArray(location.id, locationIdsToDelete));
+			result.locationsDeleted = locationsToDelete.length;
 		}
 
-		// Delete manager assignments for these employees
-		const managerAssignmentsToDelete = await db.query.employeeManagers.findMany(
-			{
-				where: inArray(employeeManagers.employeeId, employeeIds),
-			},
-		);
-		if (managerAssignmentsToDelete.length > 0) {
-			await db
-				.delete(employeeManagers)
-				.where(inArray(employeeManagers.employeeId, employeeIds));
-			result.managerAssignmentsDeleted = managerAssignmentsToDelete.length;
+		// ============================================
+		// EXISTING CLEANUP (absences, allowances, teams, managers)
+		// ============================================
+
+		if (organizationEmployeeIds.length > 0) {
+			// Delete absence entries
+			const absencesToDelete = await tx.query.absenceEntry.findMany({
+				where: inArray(absenceEntry.employeeId, organizationEmployeeIds),
+			});
+			if (absencesToDelete.length > 0) {
+				await tx
+					.delete(absenceEntry)
+					.where(inArray(absenceEntry.employeeId, organizationEmployeeIds));
+				result.absencesDeleted = absencesToDelete.length;
+			}
+
+			// Delete employee vacation allowances (reset to org defaults)
+			const allowancesToDelete =
+				await tx.query.employeeVacationAllowance.findMany({
+					where: inArray(employeeVacationAllowance.employeeId, organizationEmployeeIds),
+				});
+			if (allowancesToDelete.length > 0) {
+				await tx
+					.delete(employeeVacationAllowance)
+					.where(inArray(employeeVacationAllowance.employeeId, organizationEmployeeIds));
+				result.vacationAllowancesReset = allowancesToDelete.length;
+			}
+
+			// Unassign employees from teams
+			const employeesWithTeams = organizationEmployees.filter((e) => e.teamId !== null);
+			if (employeesWithTeams.length > 0) {
+				await tx
+					.update(employee)
+					.set({ teamId: null })
+					.where(
+						inArray(
+							employee.id,
+							employeesWithTeams.map((e) => e.id),
+						),
+					);
+				result.employeesUnassignedFromTeams = employeesWithTeams.length;
+			}
+
+			// Delete manager assignments for these employees
+			const managerAssignmentsToDelete = await tx.query.employeeManagers.findMany(
+				{
+					where: inArray(employeeManagers.employeeId, organizationEmployeeIds),
+				},
+			);
+			if (managerAssignmentsToDelete.length > 0) {
+				await tx
+					.delete(employeeManagers)
+					.where(inArray(employeeManagers.employeeId, organizationEmployeeIds));
+				result.managerAssignmentsDeleted = managerAssignmentsToDelete.length;
+			}
 		}
-	}
 
-	// Delete demo teams (teams with description starting with "Demo team")
-	const allTeams = await db.query.team.findMany({
-		where: eq(team.organizationId, organizationId),
-	});
-	const teamsToDelete = allTeams.filter((t) =>
-		t.description?.startsWith("Demo team - "),
-	);
-	if (teamsToDelete.length > 0) {
-		await db.delete(team).where(
-			inArray(
-				team.id,
-				teamsToDelete.map((t) => t.id),
-			),
+		// Delete demo teams (teams with description starting with "Demo team")
+		const allTeams = await tx.query.team.findMany({
+			where: eq(team.organizationId, organizationId),
+		});
+		const teamsToDelete = allTeams.filter((t) =>
+			t.description?.startsWith("Demo team - "),
 		);
-		result.teamsDeleted = teamsToDelete.length;
-	}
+		if (teamsToDelete.length > 0) {
+			await tx.delete(team).where(
+				inArray(
+					team.id,
+					teamsToDelete.map((t) => t.id),
+				),
+			);
+			result.teamsDeleted = teamsToDelete.length;
+		}
 
-	// Delete demo projects (projects with description starting with "Demo project")
-	const allProjects = await db.query.project.findMany({
-		where: eq(project.organizationId, organizationId),
-	});
-	const projectsToDelete = allProjects.filter((p) =>
-		p.description?.startsWith("Demo project - "),
-	);
-	if (projectsToDelete.length > 0) {
-		await db.delete(project).where(
-			inArray(
-				project.id,
-				projectsToDelete.map((p) => p.id),
-			),
+		// Delete demo projects (projects with description starting with "Demo project")
+		const allProjects = await tx.query.project.findMany({
+			where: eq(project.organizationId, organizationId),
+		});
+		const projectsToDelete = allProjects.filter((p) =>
+			p.description?.startsWith("Demo project - "),
 		);
-		result.projectsDeleted = projectsToDelete.length;
-	}
+		if (projectsToDelete.length > 0) {
+			await tx.delete(project).where(
+				inArray(
+					project.id,
+					projectsToDelete.map((p) => p.id),
+				),
+			);
+			result.projectsDeleted = projectsToDelete.length;
+		}
+	});
 
 	return result;
 }

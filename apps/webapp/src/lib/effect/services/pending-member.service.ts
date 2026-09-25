@@ -17,6 +17,7 @@ import {
 } from "@/lib/auth/member-removal-cleanup";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
 	type DatabaseError,
@@ -314,6 +315,9 @@ export const PendingMemberServiceLive = Layer.effect(
 					return null;
 				}
 
+				// Rejection removes the membership and revokes the user's access: their
+				// exclusive guard precedes the identity lock and the member row lock (#318).
+				await acquireExclusiveUserConfigurationAccessGuards(tx, [candidate.userId]);
 				const userRecord = await tx.query.user.findFirst({
 					where: eq(user.id, candidate.userId),
 				});

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { resolveWorkPeriodSplit } from "./split-work-period";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { planCompletedWorkSplit, resolveWorkPeriodSplit } from "./split-work-period";
+import { WorkIntervalError } from "./work-duration";
 
 describe("resolveWorkPeriodSplit", () => {
 	it("resolves a Berlin wall-clock split and derives UTC durations", () => {
@@ -106,5 +108,52 @@ describe("resolveWorkPeriodSplit", () => {
 			success: true,
 			splitTime: new Date("2026-10-25T01:30:00.000Z"),
 		});
+	});
+});
+
+describe("planCompletedWorkSplit", () => {
+	const at = (value: string) => parseInstant(value);
+
+	it("rounds each segment from its own exact UTC endpoints, half up", () => {
+		expect(
+			planCompletedWorkSplit({
+				startAt: at("2026-07-22T08:00:40Z"),
+				endAt: at("2026-07-22T17:00:31Z"),
+				splitAt: at("2026-07-22T12:00:00Z"),
+			}),
+		).toEqual({
+			first: {
+				startAt: at("2026-07-22T08:00:40Z"),
+				endAt: at("2026-07-22T12:00:00Z"),
+				durationMinutes: 239,
+			},
+			second: {
+				startAt: at("2026-07-22T12:00:00Z"),
+				endAt: at("2026-07-22T17:00:31Z"),
+				durationMinutes: 301,
+			},
+		});
+	});
+
+	it("keeps a positive segment that rounds to zero minutes", () => {
+		const plan = planCompletedWorkSplit({
+			startAt: at("2026-07-22T11:59:40Z"),
+			endAt: at("2026-07-22T13:00:00Z"),
+			splitAt: at("2026-07-22T12:00:00Z"),
+		});
+		expect(plan.first.durationMinutes).toBe(0);
+		expect(plan.second.durationMinutes).toBe(60);
+	});
+
+	it("refuses a split on or outside the period's endpoints", () => {
+		for (const splitAt of ["2026-07-22T08:00:00Z", "2026-07-22T09:00:00Z", "2026-07-22T07:00:00Z"]) {
+			expect(() =>
+				planCompletedWorkSplit({
+					startAt: at("2026-07-22T08:00:00Z"),
+					endAt: at("2026-07-22T09:00:00Z"),
+					splitAt: at(splitAt),
+				}),
+			).toThrow(WorkIntervalError);
+		}
 	});
 });

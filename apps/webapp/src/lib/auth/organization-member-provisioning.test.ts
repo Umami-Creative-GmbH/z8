@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { sql } from "drizzle-orm";
+import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { employee, employeeInvitationDraft } from "@/db/schema";
@@ -42,8 +42,11 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		const userFindFirst = vi
 			.fn()
 			.mockResolvedValue({ email: " Invitee@Example.COM " });
-		const execute = vi.fn(async () => {
-			events.push("identity-lock");
+		const execute = vi.fn(async (query: SQL) => {
+			const [key] = new PgDialect().sqlToQuery(query).params;
+			events.push(
+				String(key).includes("work-user-configuration-access") ? "user-guard" : "identity-lock",
+			);
 		});
 		const teamPermissionsFindFirst = vi.fn().mockResolvedValue(null);
 		const memberFindMany = vi.fn().mockResolvedValue([]);
@@ -253,7 +256,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 		expect(insert).not.toHaveBeenCalled();
 	});
 
-	it("locks normalized organization identity before draft and employee reads or writes", async () => {
+	it("takes the user guard, then the normalized organization identity, before draft and employee reads or writes", async () => {
 		const { db, draftFindFirst, events, execute, transaction, userFindFirst } =
 			createDbMock();
 
@@ -273,6 +276,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			}),
 		);
 		expect(events).toEqual([
+			"user-guard",
 			"identity-lock",
 			"draft-read",
 			"draft-read",
@@ -280,7 +284,7 @@ describe("ensureEmployeeForOrganizationMember", () => {
 			"employee-write",
 		]);
 		expect(draftFindFirst).toHaveBeenCalledTimes(2);
-		const lockQuery = new PgDialect().sqlToQuery(execute.mock.calls[0]?.[0]);
+		const lockQuery = new PgDialect().sqlToQuery(execute.mock.calls[1]?.[0]);
 		expect(lockQuery.params).toEqual(["org-1", "invitee@example.com"]);
 	});
 

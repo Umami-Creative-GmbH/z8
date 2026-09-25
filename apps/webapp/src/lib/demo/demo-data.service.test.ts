@@ -162,6 +162,18 @@ function advisoryLockLabel(query: { queryChunks?: unknown[] }) {
 	return `${mode}:${String(key)}`;
 }
 
+// Configuration batches (#318) are covered on PostgreSQL; here they run on the
+// mocked client with no employees in scope.
+vi.mock("./demo-configuration", async () => {
+	const { db } = await import("@/db");
+	return {
+		withDemoConfigurationMutation: (
+			_organizationId: string,
+			mutation: (transaction: unknown, employees: unknown[]) => Promise<unknown>,
+		) => mutation(db, []),
+	};
+});
+
 vi.mock("@/db", () => ({
 	db: {
 		execute: vi.fn(async (query: { queryChunks?: unknown[] }) => {

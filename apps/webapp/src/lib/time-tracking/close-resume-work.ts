@@ -35,7 +35,7 @@ import {
 import { findStandingStart, type StartLiveWorkResult, startLiveWorkGraph } from "./start-live-work";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
-import type { WorkLocationType } from "./work-location";
+import { normalizeWorkLocationType, type WorkLocationType } from "./work-location";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
 import type { WorkTransactionScope } from "./work-transaction";
 
@@ -45,8 +45,8 @@ export const CLOSE_RESUME_WORK_RESULT_VERSION = 1;
 export type CloseResumeWorkOperationCommand = {
 	version: number;
 	operationId: string;
-	/** Location of the resumed work. */
-	workLocationType: WorkLocationType;
+	/** Location of the resumed work; when omitted, the closed work's location carries over. */
+	workLocationType?: WorkLocationType;
 };
 
 /** Committed result (receipt version 1). Current clock state is a separate read. */
@@ -197,12 +197,23 @@ export async function closeAndResumeWork(
 		randomUUID(),
 	);
 	// Symmetric occupancy for the resumed interval runs after the closure, so the
-	// closed target no longer occupies it and any other work still does.
+	// closed target no longer occupies it and any other work still does. The
+	// resumed work continues the closed work's project and category (#304).
+	const { attribution } = closed.result;
 	const resumed = await startLiveWorkGraph(context, {
 		organizationId,
 		employeeId,
 		actorUserId: input.actorUserId,
-		command,
+		command: {
+			version: command.version,
+			operationId: command.operationId,
+			workLocationType:
+				command.workLocationType ?? normalizeWorkLocationType(attribution.workLocationType),
+		},
+		carriedAttribution: {
+			projectId: attribution.projectId,
+			workCategoryId: attribution.workCategoryId,
+		},
 		writer: input.writer,
 		eventInstant: input.resume.instant,
 		capture: input.resume.capture,
