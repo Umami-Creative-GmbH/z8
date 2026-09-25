@@ -135,8 +135,9 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	"src/lib/absences/sick-vacation-override.ts": {
 		approval_request: ["insert", "update"],
 	},
-	// Legacy-authoritative escalation transfer (#299): moves a pending legacy
-	// absence request to its replacement until legacy absence authority retires.
+	// Legacy-authoritative escalation transfer (#299, #326): moves a pending
+	// legacy absence or travel expense request to its replacement until legacy
+	// authority of those kinds retires.
 	"src/lib/approvals/escalation/legacy-transfer.ts": {
 		approval_request: ["update"],
 	},

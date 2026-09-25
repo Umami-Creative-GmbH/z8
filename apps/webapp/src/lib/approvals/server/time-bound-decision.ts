@@ -7,6 +7,7 @@ import { ConflictError, NotFoundError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
 import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
+import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	ApprovalInvocationNotAdmittedError,
@@ -48,7 +49,13 @@ export type BoundTimeInvocationResult =
 	  }
 	| {
 			status: "review_required";
-			reason: "binding" | "stale" | "material_change" | "evidence" | "not_admitted";
+			reason:
+				| "binding"
+				| "stale"
+				| "reassigned"
+				| "material_change"
+				| "evidence"
+				| "not_admitted";
 	  }
 	| { status: "conflict" }
 	| { status: "not_found" };
@@ -256,6 +263,10 @@ function classifyBoundTimeError(error: unknown): BoundTimeInvocationResult {
 	}
 	if (error instanceof BoundAssignmentNotCurrentError) {
 		return { status: "review_required", reason: "stale" };
+	}
+	if (error instanceof ApprovalAssignmentReassignedError) {
+		// Escalation replaced the card's recipient (#326): nothing is decided.
+		return { status: "review_required", reason: "reassigned" };
 	}
 	if (error instanceof ApprovalInvocationNotAdmittedError) {
 		return { status: "review_required", reason: "not_admitted" };

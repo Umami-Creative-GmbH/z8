@@ -24,6 +24,11 @@ vi.mock("@/lib/approvals/workflow/cutover", () => ({
 vi.mock("@/lib/approvals/delivery/intents", () => ({
 	recordLegacyDeliveryIntent: async () => false,
 }));
+// Escalation transfers and their revocation of former holders (#326) run
+// against PostgreSQL in escalation/expense-transfer.integration.test.ts.
+vi.mock("@/lib/approvals/escalation/legacy-transfer-store", () => ({
+	findLegacyTransferredApprovalRequest: async () => null,
+}));
 
 vi.mock("@/env", () => ({
 	env: {

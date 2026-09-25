@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
+import { TRANSFERABLE_ESCALATION_APPROVAL_TYPES } from "@/lib/approvals/escalation/kinds";
 import type { EscalationAttentionView } from "@/lib/approvals/escalation/management-overview";
 import type { EscalationCandidateView } from "@/lib/approvals/escalation/transfer";
 import { Link } from "@/navigation";
@@ -362,10 +363,11 @@ function transferTarget(
 	return null;
 }
 
-/** Human transfers are available for absence approvals. */
+/** Human transfers are available for the kinds escalation transfers (#326). */
 function canTransfer(item: EscalationAttentionView): boolean {
 	return (
-		item.approvalType === "absence" &&
+		item.approvalType !== null &&
+		TRANSFERABLE_ESCALATION_APPROVAL_TYPES.includes(item.approvalType) &&
 		transferTarget(item) !== null &&
 		TRANSFERABLE_REASONS.has(item.reason)
 	);

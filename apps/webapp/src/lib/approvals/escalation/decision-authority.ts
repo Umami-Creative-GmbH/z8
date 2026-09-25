@@ -1,3 +1,4 @@
+import { ConflictError } from "@/lib/effect/errors";
 import type {
 	ApprovalAssignmentSnapshot,
 	ApprovalStageSnapshot,
@@ -16,6 +17,16 @@ export class ApprovalAssignmentReassignedError extends Error {
 		super("This approval was reassigned to another approver");
 		this.name = "ApprovalAssignmentReassignedError";
 	}
+}
+
+/** The web outcome of {@link ApprovalAssignmentReassignedError}. */
+export function approvalReassignedConflict(error: ApprovalAssignmentReassignedError) {
+	return new ConflictError({
+		message:
+			"This approval was reassigned to another approver. Open the approvals inbox to see its current state.",
+		conflictType: "approval_reassigned",
+		details: { code: error.code },
+	});
 }
 
 function isEscalationReplacement(assignment: ApprovalAssignmentSnapshot) {
@@ -55,6 +66,38 @@ export function wasReplacedByEscalation(stage: ApprovalStageSnapshot, employeeId
 					isEscalationReplacement(replacement),
 			),
 	);
+}
+
+/**
+ * A fresh decision of a pending assignment by someone escalation replaced in
+ * the same stage returns the stale "reassigned" outcome (#255 §4, #326),
+ * before any authorization is attempted: the former holder's lost authority
+ * is never silently replaced by eligible-manager or management fallback.
+ */
+export function assertNotReplacedByEscalation(input: {
+	stage: ApprovalStageSnapshot;
+	target: ApprovalAssignmentSnapshot;
+	actorEmployeeId: string;
+}): void {
+	if (
+		input.target.status === "pending" &&
+		input.target.approverEmployeeId !== input.actorEmployeeId &&
+		wasReplacedByEscalation(input.stage, input.actorEmployeeId)
+	) {
+		throw new ApprovalAssignmentReassignedError();
+	}
+}
+
+/**
+ * Eligible-manager fallback may decide an assignment only while no
+ * escalation replaced any assignment on its lineage; explicit organization
+ * management stays a separate path (#255 §4).
+ */
+export function eligibleManagerFallbackAllowed(
+	stage: ApprovalStageSnapshot,
+	assignmentId: string,
+): boolean {
+	return !lineageContainsEscalation(stage, assignmentId);
 }
 
 function notUnique(): never {

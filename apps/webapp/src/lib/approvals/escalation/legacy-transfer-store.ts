@@ -51,14 +51,35 @@ export interface LegacyTransferredRequest {
 
 /**
  * The legacy absence request a decision addresses, when escalation ever
- * transferred it. Addressed exactly by ID when supplied (the inbox always
- * does), otherwise the pending request of the absence. The request row is
- * locked like the transfer locks it, so a decision and a transfer serialize:
- * a transfer that commits first is always seen here.
+ * transferred it (see {@link findLegacyTransferredApprovalRequest}).
  */
-export async function findLegacyTransferredRequest(
+export function findLegacyTransferredRequest(
 	executor: LegacyTransferExecutor,
 	input: { organizationId: string; absenceId: string; approvalRequestId?: string },
+): Promise<LegacyTransferredRequest | null> {
+	return findLegacyTransferredApprovalRequest(executor, {
+		organizationId: input.organizationId,
+		entityType: "absence_entry",
+		entityId: input.absenceId,
+		...(input.approvalRequestId ? { approvalRequestId: input.approvalRequestId } : {}),
+	});
+}
+
+/**
+ * The legacy request a decision addresses, when escalation ever transferred
+ * it. Addressed exactly by ID when supplied (the inbox always does),
+ * otherwise the pending request of the subject. The request row is locked
+ * like the transfer locks it, so a decision and a transfer serialize: a
+ * transfer that commits first is always seen here.
+ */
+export async function findLegacyTransferredApprovalRequest(
+	executor: LegacyTransferExecutor,
+	input: {
+		organizationId: string;
+		entityType: "absence_entry" | "travel_expense_claim";
+		entityId: string;
+		approvalRequestId?: string;
+	},
 ): Promise<LegacyTransferredRequest | null> {
 	const [request] = await executor
 		.select({ id: approvalRequest.id, approverId: approvalRequest.approverId })
@@ -66,8 +87,8 @@ export async function findLegacyTransferredRequest(
 		.where(
 			and(
 				eq(approvalRequest.organizationId, input.organizationId),
-				eq(approvalRequest.entityType, "absence_entry"),
-				eq(approvalRequest.entityId, input.absenceId),
+				eq(approvalRequest.entityType, input.entityType),
+				eq(approvalRequest.entityId, input.entityId),
 				input.approvalRequestId
 					? eq(approvalRequest.id, input.approvalRequestId)
 					: eq(approvalRequest.status, "pending"),

@@ -53,6 +53,12 @@ import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
+	ApprovalAssignmentReassignedError,
+	approvalReassignedConflict,
+	assertNotReplacedByEscalation,
+	eligibleManagerFallbackAllowed,
+} from "../escalation/decision-authority";
+import {
 	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	type FinalizeOrdinaryWorkPeriodTerminalInput,
 	type OrdinaryWorkPeriodApprovalKind,
@@ -449,8 +455,14 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 			executeOrdinaryWorkPeriodDecisionAttempt(input),
 		);
 	} catch (error) {
-		// Evidence holds and contradictions keep their meaning for the caller.
-		if (error instanceof ApprovalEvidenceError) throw error;
+		// Evidence holds, contradictions and escalation revocation keep their
+		// meaning for the caller.
+		if (
+			error instanceof ApprovalEvidenceError ||
+			error instanceof ApprovalAssignmentReassignedError
+		) {
+			throw error;
+		}
 		if (input.bound && isBoundTimeDecisionSignal(error)) throw error;
 		throw unresolvedWorkPeriodReviewFrom(error) ?? new Error(ORDINARY_DECISION_ERROR);
 	}
@@ -1168,6 +1180,11 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		if (targets.length !== 1 || !target) {
 			throw new Error(ORDINARY_DECISION_ERROR);
 		}
+		assertNotReplacedByEscalation({
+			stage: target.stage,
+			target: target.assignment,
+			actorEmployeeId: actor.id,
+		});
 		// A bound invocation gets its own receipt: it can replay only itself and
 		// never matches the semantic key an earlier decision used.
 		const idempotencyKey = input.bound
@@ -2392,12 +2409,18 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 							candidate.status === "pending",
 					);
 					if (!stage?.legacyApprovalRequestId) return false;
-					return await isEligibleManagerForApprovalRequest({
+					const eligible = await isEligibleManagerForApprovalRequest({
 						db: authorization.dbService.db as never,
 						approvalRequestId: stage.legacyApprovalRequestId,
 						managerEmployeeId: currentEmployee.id,
 						organizationId: authorization.organizationId,
 					});
+					// Eligible-manager status never bypasses an escalation replacement:
+					// the eligible manager is told the approval moved (#255 §4, #326).
+					if (eligible && !eligibleManagerFallbackAllowed(stage, command.assignmentId)) {
+						throw new ApprovalAssignmentReassignedError();
+					}
+					return eligible;
 				},
 				clock: systemClock,
 			});
@@ -2446,6 +2469,9 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 			});
 		},
 		catch: (error) => {
+			if (error instanceof ApprovalAssignmentReassignedError) {
+				return approvalReassignedConflict(error);
+			}
 			const evidenceConflict = translateWorkPeriodEvidenceError(error);
 			return evidenceConflict instanceof ConflictError
 				? evidenceConflict

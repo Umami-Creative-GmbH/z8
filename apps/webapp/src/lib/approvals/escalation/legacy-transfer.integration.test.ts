@@ -425,11 +425,15 @@ describeIntegration("legacy escalation transfer (PostgreSQL)", () => {
 		expect((await request(requestId)).approver_id).toBe(ids.manager);
 
 		const early = await processAt(createdAt, 59);
-		expect(early).toMatchObject({ authority: "legacy", transferred: 0 });
+		expect(early).toMatchObject({ authorities: { absence: "legacy" }, transferred: 0 });
 		expect(await journal()).toEqual([]);
 
 		const due = await processAt(createdAt, 60);
-		expect(due).toMatchObject({ status: "processed", authority: "legacy", transferred: 1 });
+		expect(due).toMatchObject({
+			status: "processed",
+			authorities: { absence: "legacy" },
+			transferred: 1,
+		});
 
 		const moved = await request(requestId);
 		expect(moved.approver_id).toBe(ids.backup);
@@ -844,7 +848,7 @@ describeIntegration("legacy escalation transfer (PostgreSQL)", () => {
 
 		const summary = await processAt(createdAt, 60);
 
-		expect(summary.authority).toBe("canonical");
+		expect(summary.authorities.absence).toBe("canonical");
 		const legacyRows = (await journal()).filter((row) => row.authority_mode === "legacy");
 		expect(legacyRows).toEqual([]);
 	});

@@ -105,9 +105,9 @@ consistency.
 
 ## Activation blockers
 
-- Canonical absence transfers (#298, [escalation-transfer.md](escalation-transfer.md))
-  raise and resolve transfer conditions once ownership moves; legacy absences,
-  delivery and other kinds (#299, #300, #326) are not implemented yet.
+- Transfers (#298 canonical absences, #299 legacy absences, #326 canonical time
+  kinds and legacy expenses; [escalation-transfer.md](escalation-transfer.md))
+  raise and resolve transfer conditions once ownership moves.
 - Policy preparation is not yet invoked for organizations that never open the
   page; cutover preparation must call it.
 - PostgreSQL migration application, partial-index upsert behavior, CHECK
