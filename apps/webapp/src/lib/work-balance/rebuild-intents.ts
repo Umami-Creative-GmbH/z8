@@ -1,4 +1,4 @@
-import { asc, eq, inArray, min, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, min, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, workBalanceRebuildIntent } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
@@ -6,7 +6,16 @@ import { requestEmployeeWorkBalanceFullRebuild, type WorkBalanceDbClient } from 
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export type WorkBalanceRebuildReason = "organization_timezone";
+/**
+ * What a rebuild covers in its organization: every projection after an
+ * organization timezone change, or one user's employees after that user's
+ * timezone change (#312).
+ */
+export type WorkBalanceRebuildScope =
+	| { reason: "organization_timezone" }
+	| { reason: "user_timezone"; userId: string };
+
+export type WorkBalanceRebuildReason = WorkBalanceRebuildScope["reason"];
 
 export interface WorkBalanceRebuildResult {
 	organizationsRebuilt: number;
@@ -21,15 +30,14 @@ class RebuildScopeChanged extends Error {
 }
 
 /**
- * Records, in the caller's transaction, that every balance projection of the
- * organization must be rebuilt. The configuration change and its intent commit
- * or roll back together; the rebuild itself runs separately.
+ * Records, in the caller's transaction, that the scoped balance projections of
+ * the organization must be rebuilt. The configuration change and its intent
+ * commit or roll back together; the rebuild itself runs separately.
  */
 export async function recordWorkBalanceRebuildIntent(
 	client: Pick<Transaction, "insert">,
-	input: {
+	input: WorkBalanceRebuildScope & {
 		organizationId: string;
-		reason: WorkBalanceRebuildReason;
 		requestedBy: string | null;
 		requestedAt: Date;
 	},
@@ -37,23 +45,36 @@ export async function recordWorkBalanceRebuildIntent(
 	await client.insert(workBalanceRebuildIntent).values({
 		organizationId: input.organizationId,
 		reason: input.reason,
+		userId: input.reason === "user_timezone" ? input.userId : null,
 		requestedBy: input.requestedBy,
 		requestedAt: input.requestedAt,
 	});
 }
 
-async function organizationEmployeeIds(transaction: Transaction, organizationId: string) {
+/**
+ * The employees the claimed intents cover: the whole organization when any
+ * intent is organization-wide, otherwise the named users' employees in it.
+ */
+async function scopedEmployeeIds(
+	transaction: Transaction,
+	organizationId: string,
+	userIds: readonly string[] | null,
+) {
 	const rows = await transaction
 		.select({ id: employee.id })
 		.from(employee)
-		.where(eq(employee.organizationId, organizationId))
+		.where(
+			userIds === null
+				? eq(employee.organizationId, organizationId)
+				: and(eq(employee.organizationId, organizationId), inArray(employee.userId, [...userIds])),
+		)
 		.orderBy(asc(employee.id));
 	return rows.map(({ id }) => id);
 }
 
 /**
  * One organization's rebuild: claim its pending intents (a concurrent worker
- * skips them), route the complete employee scope at execution, reset each
+ * skips them), route the complete covered employee scope at execution, reset each
  * projection under its sorted work-balance lock, revalidate the scope, then
  * consume the claimed intents. Process loss rolls everything back and leaves the
  * intents pending. Intents committed after the claim stay pending for the next run.
@@ -63,7 +84,7 @@ async function rebuildOrganization(organizationId: string, now: Date): Promise<b
 		try {
 			return await db.transaction(async (transaction) => {
 				const claimed = await transaction
-					.select({ id: workBalanceRebuildIntent.id })
+					.select({ id: workBalanceRebuildIntent.id, userId: workBalanceRebuildIntent.userId })
 					.from(workBalanceRebuildIntent)
 					.where(eq(workBalanceRebuildIntent.organizationId, organizationId))
 					.orderBy(asc(workBalanceRebuildIntent.requestedAt), asc(workBalanceRebuildIntent.id))
@@ -71,14 +92,17 @@ async function rebuildOrganization(organizationId: string, now: Date): Promise<b
 				const intentIds = claimed.map(({ id }) => id);
 				if (intentIds.length === 0) return false;
 
-				const scope = await organizationEmployeeIds(transaction, organizationId);
+				const userIds = claimed.some(({ userId }) => userId === null)
+					? null
+					: [...new Set(claimed.flatMap(({ userId }) => (userId ? [userId] : [])))].sort();
+				const scope = await scopedEmployeeIds(transaction, organizationId, userIds);
 				for (const employeeId of scope) {
 					await requestEmployeeWorkBalanceFullRebuild(
 						{ employeeId, organizationId },
 						{ dbClient: transaction as WorkBalanceDbClient, requestedAt: now },
 					);
 				}
-				const current = await organizationEmployeeIds(transaction, organizationId);
+				const current = await scopedEmployeeIds(transaction, organizationId, userIds);
 				if (JSON.stringify(current) !== JSON.stringify(scope)) {
 					throw new RebuildScopeChanged();
 				}
