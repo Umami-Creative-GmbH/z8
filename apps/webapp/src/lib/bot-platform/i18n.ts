@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import type { DateTime } from "luxon";
 import { db } from "@/db";
 import { userSettings } from "@/db/schema/user-settings";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE, loadNamespaces, TolgeeBase } from "@/tolgee/shared";
 
 /** The translate function signature returned by getBotTranslate */
@@ -109,19 +110,7 @@ export async function getUserLocaleRaw(userId: string): Promise<string | null> {
 export async function setUserLocale(userId: string, locale: string): Promise<void> {
 	if (!ALL_LANGUAGES.includes(locale)) return;
 
-	const existing = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, userId),
-		columns: { id: true },
-	});
-
-	if (existing) {
-		await db.update(userSettings).set({ locale }).where(eq(userSettings.userId, userId));
-	} else {
-		await db.insert(userSettings).values({
-			userId,
-			locale,
-		});
-	}
+	await writeUserSettings(db, userId, { locale });
 }
 
 /**

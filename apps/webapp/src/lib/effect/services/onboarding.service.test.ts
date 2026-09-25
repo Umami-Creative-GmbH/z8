@@ -2,6 +2,7 @@ import { Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/lib/auth";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { AuthorizationError, ValidationError } from "../errors";
 import { AuthService } from "./auth.service";
 import { DatabaseService } from "./database.service";
@@ -23,6 +24,11 @@ vi.mock("@/lib/auth", () => ({
 			updateUser: vi.fn(),
 		},
 	},
+}));
+
+// Settings rows are written through the protected writer (#312).
+vi.mock("@/lib/user-preferences/user-settings-mutation", () => ({
+	writeUserSettings: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/lib/organization/creation-policy", () => ({
@@ -310,22 +316,17 @@ describe("OnboardingService.updateProfile", () => {
 			}).pipe(Effect.provide(layer)),
 		);
 
-		expect(insertedValues).toHaveBeenCalledWith(
+		expect(writeUserSettings).toHaveBeenCalledWith(
+			mockDb,
+			"user-1",
 			expect.objectContaining({
 				weekStartDay: "monday",
 				timeFormat: "12h",
 				helpImproveProduct: false,
 			}),
 		);
-		expect(conflictUpdate).toHaveBeenCalledWith(
-			expect.objectContaining({
-				set: expect.objectContaining({
-					weekStartDay: "monday",
-					timeFormat: "12h",
-					helpImproveProduct: false,
-				}),
-			}),
-		);
+		expect(insertedValues).not.toHaveBeenCalled();
+		expect(conflictUpdate).not.toHaveBeenCalled();
 	});
 
 	it("rejects invalid week start day values before writing", async () => {
@@ -581,6 +582,7 @@ describe("OnboardingService work-template authorization", () => {
 				left: expect.any(AuthorizationError),
 			});
 			expect(insert).not.toHaveBeenCalled();
+			expect(writeUserSettings).not.toHaveBeenCalled();
 		},
 	);
 
@@ -600,6 +602,7 @@ describe("OnboardingService work-template authorization", () => {
 			});
 			expect(findMembership).not.toHaveBeenCalled();
 			expect(insert).not.toHaveBeenCalled();
+			expect(writeUserSettings).not.toHaveBeenCalled();
 		},
 	);
 
@@ -611,7 +614,8 @@ describe("OnboardingService work-template authorization", () => {
 			const result = await runMutation(layer, "skip");
 
 			expect(result).toMatchObject({ _tag: "Right" });
-			expect(insert).toHaveBeenCalledOnce();
+			expect(writeUserSettings).toHaveBeenCalledOnce();
+			expect(insert).not.toHaveBeenCalled();
 		},
 	);
 });
