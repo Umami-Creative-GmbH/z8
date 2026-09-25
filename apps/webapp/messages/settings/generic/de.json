@@ -293,6 +293,16 @@
         "commitQueued": "{count} akzeptierte Zeilen für die Übertragung in die Warteschlange gestellt",
         "committing": "Übertragung läuft...",
         "description": "Überprüfen Sie die bereitgestellten Importzeilen, beheben Sie blockierende Probleme und übertragen Sie die akzeptierten Datensätze, sobald der Stapel bereit ist.",
+        "hold": {
+          "appendReviewRequired": "Der Zeitverlauf des Mitarbeiters muss geprüft werden, bevor neue Einträge hinzugefügt werden können.",
+          "invalidInterval": "Die Zeiten des Anbieters haben keinen expliziten Versatz, sind nicht in der richtigen Reihenfolge oder liegen in der Zukunft.",
+          "label": "Zur Prüfung zurückgehalten",
+          "occupancyConflict": "Die Zeit überschneidet sich mit bereits erfasster Arbeit dieses Mitarbeiters.",
+          "operationCollision": "Diese Zeile steht im Konflikt mit ihrem früher übernommenen Import.",
+          "providerDurationMismatch": "Die Dauer des Anbieters weicht von Start- und Endzeit ab.",
+          "sourceCollision": "Dieser Datensatz des Anbieters wurde bereits importiert.",
+          "unlocatedBreak": "Der Anbieter meldet Pausen ohne deren Zeiten, daher ist der gearbeitete Zeitraum unbekannt."
+        },
         "issueGroups": {
           "currentMarkers": "Aktuelle Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Prüfbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übertragen werden.",

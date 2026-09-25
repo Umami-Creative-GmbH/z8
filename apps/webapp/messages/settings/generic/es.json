@@ -293,6 +293,16 @@
         "commitQueued": "Se han puesto en cola {count} filas aceptadas para su confirmación",
         "committing": "Confirmando...",
         "description": "Revise las filas de importación almacenadas, resuelva los problemas de bloqueo y confirme los registros aceptados cuando el lote esté listo.",
+        "hold": {
+          "appendReviewRequired": "El historial de tiempo del empleado debe revisarse antes de poder añadir nuevas entradas.",
+          "invalidInterval": "Las horas del proveedor no tienen un desfase explícito, no están en orden o están en el futuro.",
+          "label": "Retenida para revisión",
+          "occupancyConflict": "El tiempo se solapa con trabajo ya registrado para este empleado.",
+          "operationCollision": "Esta fila entra en conflicto con su importación confirmada anterior.",
+          "providerDurationMismatch": "La duración del proveedor difiere de las horas de inicio y fin.",
+          "sourceCollision": "Este registro del proveedor ya se ha importado.",
+          "unlocatedBreak": "El proveedor informa de pausas sin sus horas, por lo que se desconoce el intervalo trabajado."
+        },
         "issueGroups": {
           "currentMarkers": "Las filas actuales incluyen {blockingRows} marcadores de problemas de bloqueo y {warningRows} de advertencia.",
           "description": "Las áreas de revisión agrupadas ayudan a mantener visibles los controles de calidad antes de confirmar las filas aceptadas.",

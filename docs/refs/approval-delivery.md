@@ -2,7 +2,7 @@
 
 One durable owner sends approval cards and keeps them current. It covers
 Telegram cards for canonical absences. It is **inactive for every
-organization**: migration `0085_approval_delivery.sql` inserts no control rows.
+organization**: migration `0086_approval_delivery.sql` inserts no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -118,7 +118,7 @@ fails and the owner reports `delivered_after_purge`.
 
 ## Activation
 
-Apply `0085` after `0084`. Deploy a release with the owner to every worker and
+Apply `0086` after `0085`. Deploy a release with the owner to every worker and
 app instance, then, per organization and after the #290 gates:
 
 ```sql
@@ -131,7 +131,7 @@ canonical absence submissions then send no Telegram card at all.
 
 ### Activation blockers (#291, unresolved)
 
-1. Apply `0085` through the authorized deployment. It has run only on the
+1. Apply `0086` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries.** Instances without this release neither run
    `cron:approval-delivery` nor kick the owner; delivery then waits for an

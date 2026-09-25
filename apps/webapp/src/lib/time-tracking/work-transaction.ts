@@ -85,6 +85,16 @@ export async function acquireUserConfigurationAccessGuards(
 	}
 }
 
+/** Exclusive originating-source identity (#264 step 6), e.g. a provider record. */
+export async function acquireSourceIdentity(
+	transaction: Pick<Transaction, "execute">,
+	identity: readonly string[],
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${JSON.stringify(identity)}, 0))`,
+	);
+}
+
 /** Reuses the established exclusive employee key shared by every clocking writer. */
 export async function acquireEmployeeCoordination(
 	transaction: Pick<Transaction, "execute">,
