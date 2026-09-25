@@ -64,16 +64,26 @@
       },
       "clockin": {
         "alreadyIn": "Vous avez déjà pointé depuis {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Vous avez déjà pointé votre arrivée.",
+        "appendReview": "Votre historique de temps doit être vérifié avant que vous puissiez pointer votre arrivée. Veuillez contacter votre administrateur.",
         "cannotNow": "Impossible de pointer à l'entrée pour le moment.",
+        "committed": "Arrivée pointée.",
+        "failed": "Impossible de pointer l'arrivée. Veuillez réessayer.",
         "noProfile": "Profil de l'employé introuvable.",
-        "success": "Pointage à l'entrée effectué à {time}."
+        "success": "Pointage à l'entrée effectué à {time}.",
+        "unconfirmed": "Votre pointage d'arrivée n'a pas pu être confirmé. Vérifiez votre statut avant de réessayer."
       },
       "clockout": {
+        "appendReview": "Votre historique de temps doit être vérifié avant que vous puissiez pointer votre départ. Veuillez contacter votre administrateur.",
         "cannotNow": "Impossible de pointer à la sortie pour le moment.",
+        "committed": "Départ pointé.",
+        "failed": "Impossible de pointer le départ. Veuillez réessayer.",
         "noProfile": "Profil de l'employé introuvable.",
         "notClockedIn": "Vous n'êtes pas actuellement pointé.",
         "policyCheckFailed": "Impossible de vérifier la politique d'approbation du temps. Veuillez réessayer.",
         "success": "Pointage à la sortie effectué à {time}. Durée : {hours}h {minutes}m.",
+        "successAt": "Départ pointé à {time}.",
+        "unconfirmed": "Votre pointage de départ n'a pas pu être confirmé. Vérifiez votre statut avant de réessayer.",
         "unsupportedApproval": "Les changements de temps nécessitant une approbation ne sont pas encore pris en charge pour cette action"
       },
       "compliance": {
@@ -140,7 +150,8 @@
       "typeHelp": "Tapez /help pour voir les commandes disponibles.",
       "unconfigured": "L'intégration Z8 de votre organisation est en cours de configuration. Veuillez attendre que votre administrateur termine la configuration.",
       "welcome": "Bienvenue sur Z8 ! Pour connecter votre compte, allez dans Paramètres > Intégrations > Telegram dans votre tableau de bord Z8 et générez un code de lien. Envoyez ensuite : /link VOTRE_CODE",
-      "welcomeTeams": "Bienvenue sur Z8 ! Tapez « help » pour voir les commandes disponibles."
+      "welcomeTeams": "Bienvenue sur Z8 ! Tapez « help » pour voir les commandes disponibles.",
+      "replyUndelivered": "Votre commande a été traitée, mais sa réponse n'a pas pu être affichée. Vérifiez votre statut avant de la répéter."
     }
   }
 }

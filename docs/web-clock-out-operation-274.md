@@ -242,7 +242,8 @@ the legacy web closure writes the canonical record and policy evidence from the
 closer's locked start and duration. Already-committed rows are unchanged and keep
 their replay outcome; a mismatched historical row still replays as a collision.
 The #272 suite verifies both at 8h0m40s. Equal endpoints keep the shared closer's
-legacy zero-minute result for its other callers until #275-#277.
+legacy zero-minute result for its other callers until #275 and #276 (bots moved
+to the shared clock-out in [#277](bot-clocking-277.md)).
 
 ## Review follow-ups deferred to activation
 
@@ -261,7 +262,7 @@ This slice closes on implementation. The items below are activation gates, track
 in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
 
 - Every competing writer of the same employee graph must participate or be
-  drained: direct HTTP (#275), on-behalf (#276), bots (#277), manual (#308), active
+  drained: direct HTTP (#275), on-behalf (#276), manual (#308), active
   breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md)),
   and ordinary, cron and terminal breaks (#303/#305). Runtime demo writers participate since
   [#285](runtime-demo-work-285.md) and also advance `graph_revision` (category

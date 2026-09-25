@@ -64,16 +64,26 @@
       },
       "clockin": {
         "alreadyIn": "{time} saatinden beri mesaiye devam ediyorsunuz ({hours}s {minutes}dk).",
+        "alreadyInNow": "Zaten giriş yaptınız.",
+        "appendReview": "Giriş yapabilmeniz için zaman geçmişinizin incelenmesi gerekiyor. Lütfen yöneticinize başvurun.",
         "cannotNow": "Şu anda mesaiye başlanamıyor.",
+        "committed": "Giriş yapıldı.",
+        "failed": "Giriş yapılamadı. Lütfen tekrar deneyin.",
         "noProfile": "Çalışan profili bulunamadı.",
-        "success": "{time} saatinde mesaiye başlandı."
+        "success": "{time} saatinde mesaiye başlandı.",
+        "unconfirmed": "Girişiniz doğrulanamadı. Tekrar denemeden önce durumunuzu kontrol edin."
       },
       "clockout": {
+        "appendReview": "Çıkış yapabilmeniz için zaman geçmişinizin incelenmesi gerekiyor. Lütfen yöneticinize başvurun.",
         "cannotNow": "Şu anda mesai bitirilemiyor.",
+        "committed": "Çıkış yapıldı.",
+        "failed": "Çıkış yapılamadı. Lütfen tekrar deneyin.",
         "noProfile": "Çalışan profili bulunamadı.",
         "notClockedIn": "Şu anda mesaide değilsiniz.",
         "policyCheckFailed": "Zaman onay politikası doğrulanamadı. Lütfen tekrar deneyin.",
         "success": "{time} saatinde mesai bitirildi. Süre: {hours}s {minutes}dk.",
+        "successAt": "Çıkış saati: {time}.",
+        "unconfirmed": "Çıkışınız doğrulanamadı. Tekrar denemeden önce durumunuzu kontrol edin.",
         "unsupportedApproval": "Onay gerektiren zaman değişiklikleri bu eylem için henüz desteklenmiyor"
       },
       "compliance": {
@@ -140,7 +150,8 @@
       "typeHelp": "Kullanılabilir komutları görmek için /help yazın.",
       "unconfigured": "Organizasyonunuzun Z8 entegrasyonu kuruluyor. Lütfen yöneticinizin yapılandırmayı tamamlamasını bekleyin.",
       "welcome": "Z8'e hoş geldiniz! Hesabınızı bağlamak için Z8 panonuzda Ayarlar > Entegrasyonlar > Telegram bölümüne gidin ve bir bağlantı kodu oluşturun. Ardından şunu gönderin: /link KODUNUZ",
-      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın."
+      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın.",
+      "replyUndelivered": "Komutunuz işlendi ancak yanıtı gösterilemedi. Tekrarlamadan önce durumunuzu kontrol edin."
     }
   }
 }
