@@ -50,10 +50,11 @@ export async function handleApprovalCallback(
 			),
 		});
 		if (!tracked) return;
-		const notice = await approvalAttemptNotice(result, {
-			userId: user.user.userId,
-			organizationId: bot.organizationId,
-		});
+		const notice = await approvalAttemptNotice(
+			result,
+			{ userId: user.user.userId, organizationId: bot.organizationId },
+			{ kind: "compatibility", approvalRequestId: tracked.approvalRequestId },
+		);
 		if (!notice) return;
 		await editMessageText(bot.botToken, {
 			chat_id: tracked.chatId,

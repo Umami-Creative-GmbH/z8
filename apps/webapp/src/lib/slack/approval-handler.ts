@@ -51,10 +51,11 @@ export async function handleApprovalAction(
 			),
 		});
 		if (!tracked) return;
-		const notice = await approvalAttemptNotice(result, {
-			userId: user.user.userId,
-			organizationId: bot.organizationId,
-		});
+		const notice = await approvalAttemptNotice(
+			result,
+			{ userId: user.user.userId, organizationId: bot.organizationId },
+			{ kind: "compatibility", approvalRequestId: tracked.approvalRequestId },
+		);
 		if (!notice) return;
 		await updateMessage(bot.botAccessToken, {
 			channel: tracked.channelId,

@@ -1,5 +1,8 @@
-import { getDefaultAppBaseUrl } from "@/lib/app-url";
 import type { ApprovalReviewNotice } from "@/lib/approvals/presentation";
+import {
+	type ApprovalReviewReference,
+	approvalReviewUrl,
+} from "@/lib/approvals/presentation/review-navigation";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { getBotTranslate } from "./i18n";
 
@@ -14,6 +17,7 @@ export async function approvalAttemptNotice(
 		| { status: "historical"; action: "approve" | "reject" }
 		| { status: "review_required" },
 	recipient: { userId: string; organizationId: string },
+	reference: ApprovalReviewReference,
 ): Promise<ApprovalNotice | null> {
 	const display = await resolveRecipientDisplayContext(recipient);
 	if (!display) return null;
@@ -39,7 +43,11 @@ export async function approvalAttemptNotice(
 						"This card cannot establish the facts originally reviewed. No decision was made. Review the request in Z8.",
 					),
 		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
-		reviewUrl: `${getDefaultAppBaseUrl()}/approvals/inbox`,
+		// Exact item; arrival rechecks membership and entitlement.
+		reviewUrl: await approvalReviewUrl({
+			organizationId: recipient.organizationId,
+			reference,
+		}),
 	};
 }
 

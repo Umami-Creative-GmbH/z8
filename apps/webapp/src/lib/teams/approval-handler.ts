@@ -38,10 +38,11 @@ export async function handleApprovalAction(
 			);
 			return;
 		}
-		const notice = await approvalAttemptNotice(result, {
-			userId: user.userId,
-			organizationId: tenant.organizationId,
-		});
+		const notice = await approvalAttemptNotice(
+			result,
+			{ userId: user.userId, organizationId: tenant.organizationId },
+			{ kind: "compatibility", approvalRequestId: approvalId },
+		);
 		if (!notice) return;
 		await context.sendActivity({
 			type: "message",
