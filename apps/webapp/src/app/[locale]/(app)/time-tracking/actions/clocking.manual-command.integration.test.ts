@@ -311,6 +311,7 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 	async function cleanup() {
 		await admin.query("drop function if exists t308_fail() cascade");
 		await admin.query("drop function if exists t310_hold() cascade");
+		await admin.query("drop function if exists t327_park() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
 			ids.organization,
 			ids.otherOrganization,
@@ -1058,6 +1059,88 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 				rejection: { reason: "target_not_authorized" },
 			});
 			expect(await periods()).toEqual([]);
+		});
+	});
+
+	// #327: manual and live clocking race on empty history in both arrival orders.
+	// The first writer parks at its first entry insert, after it holds the employee
+	// key; the second then waits on that key, sees the committed work and is refused.
+	describe("manual and live clock-in arrival order (#327)", () => {
+		// 10:00 Berlin, inside the default 08:00–12:30 Berlin manual interval.
+		const liveStart = parseInstant("2026-09-01T08:00:00Z");
+
+		async function parkNextEntryInsert() {
+			await admin.query(`create function t327_park() returns trigger language plpgsql as $$
+				begin perform pg_advisory_xact_lock(hashtextextended('t327-park', 0)); return new; end $$`);
+			await admin.query(
+				"create trigger t327_park before insert on time_entry for each row execute function t327_park()",
+			);
+			return holdAdvisoryLock("t327-park");
+		}
+
+		async function waitForAdvisoryWaiters(count: number) {
+			for (let attempt = 0; attempt < 200; attempt += 1) {
+				const { rows } = await admin.query<{ waiting: number }>(
+					"select count(*)::int as waiting from pg_locks where locktype = 'advisory' and not granted",
+				);
+				if ((rows[0]?.waiting ?? 0) >= count) return;
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+			throw new Error(`Fewer than ${count} transactions waited on advisory locks`);
+		}
+
+		function liveClockIn() {
+			actAs(ids.employeeUser);
+			return clockIn("office", { instant: liveStart, browserTimezone: "Europe/Berlin" });
+		}
+
+		it("refuses a manual entry that arrives while a live clock-in commits over it", async () => {
+			const park = await parkNextEntryInsert();
+			const live = liveClockIn();
+			await waitForAdvisoryWaiters(1);
+			const manual = submit(manualCommand());
+			await waitForAdvisoryWaiters(2);
+			await park.release();
+
+			await expect(live).resolves.toMatchObject({ success: true });
+			const active = only(await periods());
+			await expect(manual).resolves.toMatchObject({
+				success: false,
+				code: "occupancy_conflict",
+				rejection: { occupants: [{ kind: "work_period", id: active.id }] },
+			});
+			expect(await periods()).toHaveLength(1);
+		});
+
+		it("refuses a live clock-in that arrives while a manual entry commits around it", async () => {
+			const park = await parkNextEntryInsert();
+			const manual = submit(manualCommand());
+			await waitForAdvisoryWaiters(1);
+			const live = liveClockIn();
+			await waitForAdvisoryWaiters(2);
+			await park.release();
+
+			await expect(manual).resolves.toMatchObject({ success: true });
+			const before = await snapshot();
+			await expect(live).resolves.toEqual({
+				success: false,
+				error: "This time overlaps other recorded work",
+				code: "occupancy_conflict",
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("admits a live clock-in adjacent to committed manual work", async () => {
+			await expect(submit(manualCommand())).resolves.toMatchObject({ success: true });
+
+			actAs(ids.employeeUser);
+			// 12:30 Berlin: the manual interval is half-open, so its end is free.
+			await expect(
+				clockIn("office", {
+					instant: parseInstant("2026-09-01T10:30:00Z"),
+					browserTimezone: "Europe/Berlin",
+				}),
+			).resolves.toMatchObject({ success: true });
 		});
 	});
 
