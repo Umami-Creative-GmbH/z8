@@ -13,6 +13,7 @@
 
 import type { JobsOptions } from "bullmq";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
+import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/scheduled-job";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
@@ -511,6 +512,19 @@ export const CRON_JOBS = {
 			return runApprovalEscalationJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+
+	"cron:approval-delivery": {
+		schedule: "* * * * *", // Every minute: the first retry is due after 1 minute
+		description:
+			"Deliver, refresh and retry approval cards for organizations whose delivery moved to the approval delivery owner",
+		processor: async (): Promise<ApprovalDeliveryJobResult> => {
+			const { runApprovalDeliveryJob } = await import(
+				"@/lib/approvals/delivery/scheduled-job"
+			);
+			return runApprovalDeliveryJob();
+		},
+		defaultJobOptions: { attempts: 1, priority: 6 },
 	},
 
 	"cron:slack-escalation": {

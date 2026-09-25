@@ -6,6 +6,7 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import type { TelegramCallFailure } from "./delivery-outcome";
 import type {
 	TelegramApiResponse,
 	TelegramEditMessageParams,
@@ -214,6 +215,95 @@ async function callApi<T>(
 	}
 
 	return parsed;
+}
+
+const DELIVERY_CALL_TIMEOUT_MS = 30_000;
+
+export type TelegramCallOutcome<T> =
+	| { kind: "ok"; result: T }
+	| TelegramCallFailure;
+
+/**
+ * Call a method and report exactly what is known about the outcome. Unlike
+ * `callApi`, a thrown or timed-out request is reported as `unknown` (Telegram
+ * may have processed it) instead of propagating, so durable delivery can
+ * classify it explicitly.
+ */
+async function callApiWithOutcome<T>(
+	botToken: string,
+	method: string,
+	decodeResult: ResultDecoder<T>,
+	params: Record<string, unknown>,
+): Promise<TelegramCallOutcome<T>> {
+	const token = normalizeToken(botToken);
+	let response: Response;
+	let text: string;
+	try {
+		response = await fetch(`${TELEGRAM_API_BASE}/bot${token}/${method}`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(params),
+			signal: AbortSignal.timeout(DELIVERY_CALL_TIMEOUT_MS),
+		});
+		text = await response.text();
+	} catch (error) {
+		const timeout =
+			error instanceof Error &&
+			(error.name === "TimeoutError" || error.name === "AbortError");
+		logger.warn({ method, timeout }, "Telegram API call outcome unknown");
+		return { kind: "unknown", reason: timeout ? "timeout" : "network" };
+	}
+	const parsed = parseJson(text);
+	if (isTelegramFailure(parsed) || !response.ok) {
+		const failure = isTelegramFailure(parsed)
+			? parsed
+			: {
+					ok: false as const,
+					error_code: response.status,
+					description: `HTTP ${response.status}`,
+				};
+		logApiFailure(method, response.status, token, failure);
+		return {
+			kind: "failed",
+			errorCode: failure.error_code ?? null,
+			description: redactToken(failure.description ?? "", token),
+		};
+	}
+	if (!isTelegramSuccess(parsed, decodeResult)) {
+		logApiFailure(method, response.status, token, {
+			ok: false,
+			error_code: response.status,
+			description: "Invalid Telegram API response",
+		});
+		return { kind: "unknown", reason: "invalid_response" };
+	}
+	return { kind: "ok", result: parsed.result };
+}
+
+/** `sendMessage` with an explicit outcome for durable delivery. */
+export function sendMessageWithOutcome(
+	botToken: string,
+	params: TelegramSendMessageParams,
+): Promise<TelegramCallOutcome<TelegramMessage>> {
+	return callApiWithOutcome(
+		botToken,
+		"sendMessage",
+		isTelegramMessage,
+		params as unknown as Record<string, unknown>,
+	);
+}
+
+/** `editMessageText` with an explicit outcome for durable delivery. */
+export function editMessageTextWithOutcome(
+	botToken: string,
+	params: TelegramEditMessageParams,
+): Promise<TelegramCallOutcome<true | TelegramMessage>> {
+	return callApiWithOutcome(
+		botToken,
+		"editMessageText",
+		isEditMessageResult,
+		params as unknown as Record<string, unknown>,
+	);
 }
 
 /**

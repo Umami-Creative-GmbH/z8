@@ -64,11 +64,20 @@ export const CANONICAL_WRITE_OWNERS = {
 	"src/lib/approvals/maintenance.ts": {
 		approval_chain_instance: ["delete"],
 		approval_decision_evidence: ["delete"],
+		approval_delivery_message: ["delete"],
+		approval_delivery_work: ["delete"],
 		approval_invocation: ["delete"],
 		approval_request: ["delete"],
 		approval_review_binding: ["delete"],
 		approval_submitted_revision: ["delete"],
 		approval_workflow: ["delete"],
+	},
+	// The approval delivery owner (#291): expands lifecycle intents, leases and
+	// completes delivery work, and records every delivered remote message.
+	"src/lib/approvals/delivery/store.ts": {
+		approval_delivery_message: ["insert", "update"],
+		approval_delivery_work: ["insert", "update"],
+		approval_outbox: ["update"],
 	},
 	// Immutable invocation association, inserted by the bound decision owner.
 	"src/lib/approvals/evidence/invocation.ts": {

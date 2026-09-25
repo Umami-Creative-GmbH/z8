@@ -126,6 +126,14 @@ export async function runApprovalMaintenanceCli(
 					storage_type: "escalation_transfer",
 					id,
 				})),
+				...result.delivery.messages.map((id) => ({
+					storage_type: "delivery_message",
+					id,
+				})),
+				...result.delivery.work.map((id) => ({
+					storage_type: "delivery_work",
+					id,
+				})),
 			]);
 		}
 	} catch (error) {
