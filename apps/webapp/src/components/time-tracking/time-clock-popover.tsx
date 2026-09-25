@@ -1,6 +1,9 @@
 "use client";
 
-import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
+import {
+	ClockCaptureControls,
+	type ClockCaptureMode,
+} from "@/components/offline/offline-capture-actions";
 
 import {
 	IconCheck,
@@ -30,6 +33,7 @@ import {
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
+import { showSavedClockToast } from "./saved-clock-toast";
 import { WorkLocationSelector } from "./clock-in-out-widget-parts";
 import { ProjectSelectorView } from "./project-selector";
 import { QuickBreakPopover } from "./quick-break-popover";
@@ -109,7 +113,7 @@ function ClockOutNotesView({
 }
 
 interface ClockControlsViewProps {
-	captureMode: "local-review" | "server";
+	captureMode: ClockCaptureMode;
 	onClockIn: () => Promise<void>;
 	onClockOut: () => Promise<void>;
 	activeStartTime: string | Date | null;
@@ -161,7 +165,8 @@ function ClockControlsView({
 	workCategoriesIsLoading,
 	workLocationType,
 }: ClockControlsViewProps) {
-	const isLocalReview = captureMode === "local-review";
+	// Offline controls cannot trust the last server status, so both ends stay open.
+	const isLocalReview = captureMode !== "server";
 	return (
 		<>
 			<div className="font-medium">
@@ -294,15 +299,8 @@ export function TimeClockPopover({
 				localStorage.setItem("z8-work-location-type", uiState.workLocationType);
 			}
 
-			// Check if this was an offline queued request
-			if ("queued" in result && result.queued) {
-				toast.info(
-					t(
-						"timeTracking.clockInSavedForReview",
-						"Clock-in saved on this device for review; not confirmed on the server",
-					),
-				);
-			} else {
+			// Saved on this device, not confirmed on the server
+			if (!showSavedClockToast(result, "clock_in", t)) {
 				toast.success(
 					t("timeTracking.clockInSuccess", "Clocked in successfully"),
 				);
@@ -340,14 +338,8 @@ export function TimeClockPopover({
 		});
 
 		if (result.success) {
-			// Check if this was an offline queued request
-			if ("queued" in result && result.queued) {
-				toast.info(
-					t(
-						"timeTracking.clockOutSavedForReview",
-						"Clock-out saved on this device for review; not confirmed on the server",
-					),
-				);
+			// Saved on this device, not confirmed on the server
+			if (showSavedClockToast(result, "clock_out", t)) {
 				dispatch({ type: "resetClockOutSelections" });
 				setOpen(false);
 				return;

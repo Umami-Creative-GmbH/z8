@@ -15,6 +15,90 @@ import {
 import type { OfflineRecoveryRecord } from "@/lib/offline/types";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 
+type Translate = (key: string, defaultValue: string, params?: Record<string, string>) => string;
+
+const COMMAND_RECORD_FORMAT = "z8-clock-command-record-v1";
+const ACTIVE_COMMAND_STATES = new Set(["pending", "exhausted", "review_required"]);
+
+/** Whether the record is still owed an outcome, and so can be archived. */
+function isActiveRecord(record: OfflineRecoveryRecord) {
+	return record.format === COMMAND_RECORD_FORMAT
+		? ACTIVE_COMMAND_STATES.has(String(record.state))
+		: record.recovery?.state !== "archived";
+}
+
+function holdLabel(reason: unknown, t: Translate) {
+	switch (reason) {
+		case "context_mismatch":
+			return t(
+				"common:offline.recovery.command.pausedContext",
+				"Paused — sign in to the account and organization it was saved for",
+			);
+		case "predecessor_waiting":
+			return t(
+				"common:offline.recovery.command.waitingPredecessor",
+				"Waiting for an earlier clock action on this device",
+			);
+		case "predecessor_blocked":
+			return t(
+				"common:offline.recovery.command.blockedPredecessor",
+				"Paused — an earlier clock action on this device needs review",
+			);
+		case "not_adopted":
+		case "unsupported_version":
+			return t(
+				"common:offline.recovery.command.pausedServer",
+				"Paused — the server does not accept this clock action yet",
+			);
+		default:
+			return t(
+				"common:offline.recovery.command.pausedAccess",
+				"Paused — sign in again with access to clock in this organization",
+			);
+	}
+}
+
+/** One status line per record; frozen commands say exactly what is known. */
+function recordStatus(record: OfflineRecoveryRecord, t: Translate) {
+	if (record.format !== COMMAND_RECORD_FORMAT) {
+		return record.recovery?.state === "archived"
+			? t("common:offline.recovery.archived", "Archived — evidence retained")
+			: t("common:offline.recovery.held", "Needs review — not confirmed on server");
+	}
+	const code = String((record.lastOutcome as { code?: string } | null)?.code ?? "");
+	const hold = record.hold as { reason?: string } | null;
+	switch (record.state) {
+		case "committed":
+			return t("common:offline.recovery.command.committed", "Saved on the server");
+		case "rejected":
+			return t(
+				"common:offline.recovery.command.rejected",
+				"Not saved — the server refused it ({code})",
+				{ code },
+			);
+		case "review_required":
+			return t(
+				"common:offline.recovery.command.review",
+				"Needs review — the server did not accept it ({code})",
+				{ code },
+			);
+		case "exhausted":
+			return t(
+				"common:offline.recovery.command.exhausted",
+				"Sending stopped after repeated failures — not confirmed on server",
+			);
+		case "archived":
+			return t("common:offline.recovery.archived", "Archived — evidence retained");
+		default:
+			return hold?.reason
+				? holdLabel(hold.reason, t)
+				: t(
+						"common:offline.recovery.command.pending",
+						"Waiting to be sent — not confirmed on server",
+					);
+	}
+}
+
 export function OfflineRecoveryDialog({
 	loadRecords,
 	archiveRecord,
@@ -79,7 +163,8 @@ export function OfflineRecoveryDialog({
 						new Blob(
 							[
 								JSON.stringify(
-									{ format: "z8-browser-recovery-v1", records: current },
+									// v2: may include frozen clock command records (#279).
+									{ format: "z8-browser-recovery-v2", records: current },
 									null,
 									2,
 								),
@@ -133,8 +218,8 @@ export function OfflineRecoveryDialog({
 					</DialogTitle>
 					<DialogDescription>
 						{t(
-							"common:offline.recovery.description",
-							"These records are saved on this device. Server commitment is unknown. Check existing time entries with your manager before submitting replacement work. Archiving keeps the evidence and does not cancel work on the server.",
+							"common:offline.recovery.descriptionOutcomes",
+							"These records are saved on this device. Unless a record says it was saved on the server, its server outcome is not confirmed. Check existing time entries with your manager before submitting replacement work. Archiving keeps the evidence and does not cancel work on the server.",
 						)}
 					</DialogDescription>
 				</DialogHeader>
@@ -162,17 +247,7 @@ export function OfflineRecoveryDialog({
 							key={record.id}
 							className="rounded-md border p-3 space-y-3 [content-visibility:auto] [contain-intrinsic-size:auto_150px]"
 						>
-							<p className="text-sm font-medium">
-								{record.recovery?.state === "archived"
-									? t(
-											"common:offline.recovery.archived",
-											"Archived — evidence retained",
-										)
-									: t(
-											"common:offline.recovery.held",
-											"Needs review — not confirmed on server",
-										)}
-							</p>
+							<p className="text-sm font-medium">{recordStatus(record, t)}</p>
 							<details>
 								<summary className="cursor-pointer text-sm focus-visible:outline-ring">
 									{t(
@@ -187,7 +262,7 @@ export function OfflineRecoveryDialog({
 									{JSON.stringify(record, null, 2)}
 								</pre>
 							</details>
-							{record.recovery?.state !== "archived" ? (
+							{isActiveRecord(record) ? (
 								<Button
 									variant="outline"
 									size="sm"

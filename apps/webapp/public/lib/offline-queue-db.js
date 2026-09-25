@@ -1,8 +1,11 @@
 /** Durable browser recovery evidence. Shared by pages and the service worker. */
 const DB_NAME = "z8-offline-queue";
-// Additive fields in the existing store: no copy/delete migration or new identity.
-const DB_VERSION = 1;
+// Version 2 adds the frozen command store (#279). Legacy rows stay where they are.
+// Readers built for version 1 can no longer open the database, so an older worker
+// fails closed instead of reading or deleting records it does not understand.
+const DB_VERSION = 2;
 const STORE_NAME = "clock-events";
+const COMMAND_STORE_NAME = "clock-commands";
 
 function openDB() {
 	return new Promise((resolve, reject) => {
@@ -15,7 +18,9 @@ function openDB() {
 			db.onversionchange = () => db.close();
 			resolve(db);
 		};
-		request.onupgradeneeded = () => {
+		// One versionchange transaction: either every step below commits, or the
+		// database stays at its old version with its rows untouched.
+		request.onupgradeneeded = (event) => {
 			const db = request.result;
 			if (!db.objectStoreNames.contains(STORE_NAME)) {
 				const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
@@ -24,17 +29,27 @@ function openDB() {
 					unique: false,
 				});
 			}
+			if (!db.objectStoreNames.contains(COMMAND_STORE_NAME)) {
+				const commands = db.createObjectStore(COMMAND_STORE_NAME, {
+					keyPath: "recoveryId",
+				});
+				commands.createIndex("operationId", "operationId", { unique: true });
+			}
+			if (event.oldVersion >= 1) {
+				classifyLegacyRows(request.transaction.objectStore(STORE_NAME), () => {});
+			}
 		};
 	});
 }
 
-async function transact(mode, operation) {
+async function transact(mode, operation, storeName = STORE_NAME) {
 	const db = await openDB();
 	return new Promise((resolve, reject) => {
 		let tx;
 		let result;
+		let failure;
 		try {
-			tx = db.transaction(STORE_NAME, mode);
+			tx = db.transaction(storeName, mode);
 			tx.oncomplete = () => {
 				db.close();
 				resolve(result);
@@ -42,12 +57,21 @@ async function transact(mode, operation) {
 			tx.onerror = tx.onabort = () => {
 				db.close();
 				reject(
-					tx.error || new Error("Clock recovery storage transaction aborted"),
+					failure ||
+						tx.error ||
+						new Error("Clock recovery storage transaction aborted"),
 				);
 			};
-			operation(tx.objectStore(STORE_NAME), (value) => {
-				result = value;
-			});
+			operation(
+				tx.objectStore(storeName),
+				(value) => {
+					result = value;
+				},
+				(error) => {
+					failure = error;
+					tx.abort();
+				},
+			);
 		} catch (error) {
 			tx?.abort();
 			db.close();
@@ -102,25 +126,27 @@ async function getCount() {
 
 /** Classify in one transaction; preserve original fields and all prior outcomes. */
 async function retainForReview() {
-	return transact("readwrite", (store, done) => {
-		let retainedCount = 0;
-		store.openCursor().onsuccess = (event) => {
-			const cursor = event.target.result;
-			if (!cursor) {
-				done(retainedCount);
-				return;
-			}
-			const record = cursor.value;
-			if (!record.recovery) {
-				cursor.update({
-					...record,
-					recovery: { ...reviewState(record), original: record },
-				});
-				retainedCount++;
-			}
-			cursor.continue();
-		};
-	});
+	return transact("readwrite", classifyLegacyRows);
+}
+
+function classifyLegacyRows(store, done) {
+	let retainedCount = 0;
+	store.openCursor().onsuccess = (event) => {
+		const cursor = event.target.result;
+		if (!cursor) {
+			done(retainedCount);
+			return;
+		}
+		const record = cursor.value;
+		if (!record.recovery) {
+			cursor.update({
+				...record,
+				recovery: { ...reviewState(record), original: record },
+			});
+			retainedCount++;
+		}
+		cursor.continue();
+	};
 }
 
 /** Compatibility for older callers: age cleanup never purges unresolved work. */
@@ -181,4 +207,301 @@ self.OfflineQueueDB = {
 	cleanOldEntries,
 	archive,
 	canInspect,
+};
+
+// =============================================================================
+// Frozen clock commands (#279)
+// =============================================================================
+
+const COMMAND_RECORD_FORMAT = "z8-clock-command-record-v1";
+const OPERATION_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+/** Still owed a server outcome; the active queue. */
+const ACTIVE_COMMAND_STATES = new Set(["pending", "exhausted", "review_required"]);
+/** A dependant in one of these states no longer claims its clock-in. */
+const RELEASED_COMMAND_STATES = new Set(["rejected", "archived"]);
+
+class ClockCommandCaptureError extends Error {
+	constructor(code, message) {
+		super(message);
+		this.code = code;
+	}
+}
+
+function sameCommandContext(left, right) {
+	return ["userId", "organizationId", "employeeId", "server"].every(
+		(field) => left[field] === right[field],
+	);
+}
+
+function validCaptureRequest(request) {
+	const context = request?.context;
+	return (
+		request &&
+		(request.kind === "clock_in" || request.kind === "clock_out") &&
+		typeof request.operationId === "string" &&
+		OPERATION_ID.test(request.operationId) &&
+		typeof request.occurredAt === "string" &&
+		typeof request.timezone === "string" &&
+		context &&
+		["userId", "organizationId", "employeeId", "server"].every(
+			(field) => typeof context[field] === "string" && context[field],
+		)
+	);
+}
+
+/**
+ * The clock-out target, read in the capture transaction: a still unconfirmed
+ * clock-in on this device wins, then the period the page last saw active, then
+ * the period of the latest committed clock-in. Never "whatever is active later".
+ */
+function resolveCaptureTarget(request, records) {
+	const inContext = records.filter((record) =>
+		sameCommandContext(record.command.context, request.context),
+	);
+	const claims = (record) =>
+		inContext.some(
+			(other) =>
+				other.dependsOn === record.operationId &&
+				!RELEASED_COMMAND_STATES.has(other.state),
+		);
+	const clockIns = inContext
+		.filter(
+			(record) =>
+				record.kind === "clock_in" &&
+				!RELEASED_COMMAND_STATES.has(record.state) &&
+				!claims(record),
+		)
+		.sort((left, right) => right.sequence - left.sequence);
+	const open = clockIns.find((record) => ACTIVE_COMMAND_STATES.has(record.state));
+	if (request.kind === "clock_in") {
+		if (open) {
+			throw new ClockCommandCaptureError(
+				"clock_in_pending",
+				"An earlier clock-in on this device is not confirmed yet",
+			);
+		}
+		return { target: null, dependsOn: null };
+	}
+	if (open) {
+		return {
+			target: { clockInOperationId: open.operationId },
+			dependsOn: open.operationId,
+		};
+	}
+	const committed = clockIns.find((record) => record.state === "committed");
+	const workPeriodId =
+		request.knownWorkPeriodId || committed?.receipt?.result?.workPeriodId;
+	if (!workPeriodId) {
+		throw new ClockCommandCaptureError(
+			"no_target",
+			"No known work period to clock out of",
+		);
+	}
+	const duplicate = inContext.some(
+		(record) =>
+			record.kind === "clock_out" &&
+			ACTIVE_COMMAND_STATES.has(record.state) &&
+			record.command.target?.workPeriodId === workPeriodId,
+	);
+	if (duplicate) {
+		throw new ClockCommandCaptureError(
+			"clock_out_pending",
+			"A clock-out for this work period is not confirmed yet",
+		);
+	}
+	return { target: { workPeriodId }, dependsOn: null };
+}
+
+/**
+ * Freeze one command before its first attempt. One readwrite transaction reads
+ * the queue, binds the target and adds the record, so a failure leaves nothing.
+ * Capturing the same request again returns the stored record unchanged.
+ */
+async function captureCommand(request) {
+	if (!validCaptureRequest(request)) {
+		throw new ClockCommandCaptureError("invalid_request", "Invalid clock command");
+	}
+	const requestJson = JSON.stringify(request);
+	return transact(
+		"readwrite",
+		(store, done, fail) => {
+			store.getAll().onsuccess = (event) => {
+				const records = event.target.result;
+				const existing = records.find(
+					(record) => record.operationId === request.operationId,
+				);
+				if (existing) {
+					if (existing.capture.requestJson === requestJson) {
+						done({ record: existing, created: false });
+					} else {
+						fail(
+							new ClockCommandCaptureError(
+								"identity_conflict",
+								"This clock action identity is already used",
+							),
+						);
+					}
+					return;
+				}
+				let binding;
+				try {
+					binding = resolveCaptureTarget(request, records);
+				} catch (error) {
+					fail(error);
+					return;
+				}
+				const command = self.ClockCommandDispatch.buildCommand(request, binding.target);
+				const record = {
+					format: COMMAND_RECORD_FORMAT,
+					recoveryId: crypto.randomUUID(),
+					operationId: request.operationId,
+					sequence: records.reduce((max, item) => Math.max(max, item.sequence), 0) + 1,
+					revision: 1,
+					kind: request.kind,
+					command,
+					body: JSON.stringify(command),
+					dependsOn: binding.dependsOn,
+					// Local storage observation; the event instant is command.occurredAt.
+					capture: { capturedAt: Date.now(), requestJson },
+					state: "pending",
+					hold: null,
+					attemptCount: 0,
+					transientFailures: 0,
+					uncertain: false,
+					lastOutcome: null,
+					receipt: null,
+				};
+				store.add(record);
+				done({ record, created: true });
+			};
+		},
+		COMMAND_STORE_NAME,
+	);
+}
+
+async function listCommands() {
+	return transact(
+		"readonly",
+		(store, done) => {
+			store.getAll().onsuccess = (event) =>
+				done(event.target.result.sort((left, right) => left.sequence - right.sequence));
+		},
+		COMMAND_STORE_NAME,
+	);
+}
+
+/**
+ * Read, check and write one record in a single transaction. The frozen command
+ * and its identity are never part of a patch. `expectedRevision` null skips the
+ * check, for receipts that must land even after a concurrent archive.
+ */
+async function updateCommand(recoveryId, expectedRevision, patch) {
+	const {
+		command: _command,
+		body: _body,
+		operationId: _operationId,
+		recoveryId: _recoveryId,
+		capture: _capture,
+		...lifecycle
+	} = patch;
+	return transact(
+		"readwrite",
+		(store, done, fail) => {
+			store.get(recoveryId).onsuccess = (event) => {
+				const record = event.target.result;
+				if (!record) {
+					fail(new Error("Clock command record not found"));
+					return;
+				}
+				if (expectedRevision !== null && record.revision !== expectedRevision) {
+					fail(new Error("Clock command record changed meanwhile"));
+					return;
+				}
+				const updated = { ...record, ...lifecycle, revision: record.revision + 1 };
+				store.put(updated);
+				done(updated);
+			};
+		},
+		COMMAND_STORE_NAME,
+	);
+}
+
+function canInspectCommand(record, context) {
+	const captured = record?.command?.context;
+	return Boolean(
+		captured &&
+			context?.userId &&
+			context?.organizationId &&
+			captured.userId === context.userId &&
+			captured.organizationId === context.organizationId &&
+			captured.server === context.serverOrigin,
+	);
+}
+
+/** Visible archive of unresolved work. It stops automatic sending, nothing else. */
+async function archiveCommand(recoveryId, context) {
+	return transact(
+		"readwrite",
+		(store, done, fail) => {
+			store.get(recoveryId).onsuccess = (event) => {
+				const record = event.target.result;
+				if (!record) {
+					done(false);
+					return;
+				}
+				if (!canInspectCommand(record, context)) {
+					fail(new Error("This record belongs to another account or organization"));
+					return;
+				}
+				if (ACTIVE_COMMAND_STATES.has(record.state)) {
+					store.put({
+						...record,
+						state: "archived",
+						archivedFrom: record.state,
+						archivedAt: Date.now(),
+						revision: record.revision + 1,
+					});
+				}
+				done(true);
+			};
+		},
+		COMMAND_STORE_NAME,
+	);
+}
+
+/** Linked cleanup: only records whose receipt or resolution is already stored. */
+async function pruneCommands(resolvedBefore) {
+	return transact(
+		"readwrite",
+		(store, done) => {
+			let removed = 0;
+			store.openCursor().onsuccess = (event) => {
+				const cursor = event.target.result;
+				if (!cursor) {
+					done(removed);
+					return;
+				}
+				const record = cursor.value;
+				if (
+					(record.state === "committed" || record.state === "rejected") &&
+					record.resolvedAt < resolvedBefore
+				) {
+					cursor.delete();
+					removed++;
+				}
+				cursor.continue();
+			};
+		},
+		COMMAND_STORE_NAME,
+	);
+}
+
+self.ClockCommandStore = {
+	ACTIVE_STATES: ACTIVE_COMMAND_STATES,
+	capture: captureCommand,
+	list: listCommands,
+	update: updateCommand,
+	archive: archiveCommand,
+	prune: pruneCommands,
+	canInspect: canInspectCommand,
 };

@@ -10,6 +10,7 @@
 // Import offline queue modules
 importScripts("/lib/offline-queue-db.js");
 importScripts("/lib/sync-service.js");
+importScripts("/lib/clock-command-dispatch.js");
 
 // =============================================================================
 // CACHE CONFIGURATION
@@ -23,6 +24,9 @@ const APP_SHELL_CACHE = "z8-app-shell-v1";
 
 /** Reported to callers; readers without it may delete queued clock records */
 const CLOCK_QUEUE_MODE = "preservation-only-v1";
+
+/** Reported to callers: this worker stores and sends frozen v2 clock commands (#279). */
+const CLOCK_COMMAND_MODE = "frozen-v2";
 
 /** Background sync tag */
 const SYNC_TAG = "clock-sync";
@@ -357,10 +361,11 @@ self.addEventListener("sync", (event) => {
 /**
  * Process the offline queue when sync fires
  */
-async function handleClockSync() {
+async function handleClockSync(options = {}) {
 	await broadcastSafely({ type: "SYNC_STARTED" });
 	try {
 		const result = await self.SyncService.processQueue();
+		result.commands = await dispatchClockCommands(options);
 		await notifyQueueUpdateSafely();
 		return result;
 	} catch (error) {
@@ -374,6 +379,42 @@ async function handleClockSync() {
 		throw error;
 	} finally {
 		await broadcastSafely({ type: "SYNC_COMPLETED" });
+	}
+}
+
+/**
+ * Send stored frozen commands. Every commit is announced only as an invalidation
+ * for its own account and organization; tabs reread status themselves.
+ */
+async function dispatchClockCommands(options = {}) {
+	const run = await self.ClockCommandDispatch.process({
+		store: self.ClockCommandStore,
+		fetch: (url, init) => fetch(url, { ...init, credentials: "same-origin" }),
+		origin: self.location.origin,
+		attendedOperationId: options.attendedOperationId,
+		retryExhausted: options.retryExhausted === true,
+	});
+	for (const commit of run.committed) {
+		await broadcastSafely({
+			type: "SYNC_SUCCESS",
+			eventId: commit.operationId,
+			serverId: commit.operationId,
+			userId: commit.userId,
+			organizationId: commit.organizationId,
+		});
+	}
+	if (run.status === "offline" || run.status === "unavailable") {
+		await registerClockSync();
+	}
+	return run;
+}
+
+async function registerClockSync() {
+	if (!("sync" in self.registration)) return;
+	try {
+		await self.registration.sync.register(SYNC_TAG);
+	} catch {
+		// Explicit retries and reconnect triggers still work without Background Sync.
 	}
 }
 
@@ -411,7 +452,16 @@ self.addEventListener("message", (event) => {
 				version: APP_SHELL_CACHE,
 				pushVersion: PUSH_CACHE,
 				clockQueueMode: CLOCK_QUEUE_MODE,
+				clockCommandMode: CLOCK_COMMAND_MODE,
 			});
+			break;
+
+		case "CAPTURE_CLOCK_COMMAND":
+			event.waitUntil(handleCaptureClockCommand(payload, event));
+			break;
+
+		case "DISPATCH_CLOCK_COMMANDS":
+			event.waitUntil(handleDispatchClockCommands(event));
 			break;
 
 		case "QUEUE_CLOCK_EVENT":
@@ -461,21 +511,105 @@ async function handleQueueClockEvent(payload, event) {
 }
 
 /**
+ * Freeze one clock command before any request is sent. The reply is the durable
+ * local acceptance; a failed write is reported as a failure, never as queued.
+ */
+async function handleCaptureClockCommand(payload, event) {
+	try {
+		const { record } = await self.ClockCommandStore.capture(payload);
+		event.ports[0]?.postMessage({
+			success: true,
+			recoveryId: record.recoveryId,
+			operationId: record.operationId,
+			state: record.state,
+		});
+		await notifyQueueUpdateSafely();
+	} catch (error) {
+		console.error("[SW] Failed to store clock command:", error);
+		event.ports[0]?.postMessage({
+			success: false,
+			code: error.code || "storage_failed",
+			// Not `error`: pages treat that as an unanswered worker, and this is a
+			// definite failure with nothing stored.
+			message: error.message,
+		});
+	}
+}
+
+/** Only the lifecycle a caller needs; no other record's evidence is disclosed. */
+function commandOutcome(record) {
+	if (!record) return null;
+	return {
+		operationId: record.operationId,
+		kind: record.kind,
+		state: record.state,
+		hold: record.hold,
+		lastOutcome: record.lastOutcome,
+		receipt: record.receipt,
+		clockOut: record.clockOut,
+	};
+}
+
+/**
+ * Run the sender now, for the person who just pressed a clock button. The reply
+ * carries that command's stored outcome after the run.
+ */
+async function handleDispatchClockCommands(event) {
+	const operationId = event.data.operationId;
+	try {
+		const run = await handleClockSync({
+			attendedOperationId: operationId,
+			retryExhausted: event.data.retryExhausted === true,
+		});
+		const record = operationId
+			? (await self.ClockCommandStore.list()).find(
+					(item) => item.operationId === operationId,
+				)
+			: null;
+		event.ports[0]?.postMessage({
+			success: true,
+			status: run.commands.status,
+			record: commandOutcome(record),
+		});
+	} catch (error) {
+		event.ports[0]?.postMessage({ success: false, error: error.message });
+	}
+}
+
+async function readInspectableRecords(context) {
+	const legacy = (await self.OfflineQueueDB.getRecords()).filter((record) =>
+		self.OfflineQueueDB.canInspect(record, context),
+	);
+	const commands = (await self.ClockCommandStore.list()).filter((record) =>
+		self.ClockCommandStore.canInspect(record, context),
+	);
+	return { legacy, commands };
+}
+
+/**
  * Handle GET_QUEUE_COUNT message
  */
 async function handleGetQueueCount(event) {
 	try {
 		const context = await requireRecoveryContext(event.data.context);
-		const records = (await self.OfflineQueueDB.getRecords()).filter((record) =>
-			self.OfflineQueueDB.canInspect(record, context),
-		);
-		const count = records.filter(
+		const { legacy, commands } = await readInspectableRecords(context);
+		const legacyCount = legacy.filter(
 			(record) => record.recovery?.state !== "archived",
 		).length;
+		const waitingCount = commands.filter((record) => record.state === "pending").length;
+		const heldCount = commands.filter(
+			(record) => record.state === "exhausted" || record.state === "review_required",
+		).length;
 		event.ports[0]?.postMessage({
-			count,
-			reviewCount: count,
-			savedCount: records.length,
+			count: legacyCount + waitingCount + heldCount,
+			reviewCount: legacyCount + heldCount,
+			waitingCount,
+			// Committed and resolved commands are not saved-for-review evidence.
+			savedCount:
+				legacy.length +
+				commands.filter(
+					(record) => record.state !== "committed" && record.state !== "rejected",
+				).length,
 		});
 	} catch (error) {
 		console.error("[SW] Failed to get queue count:", error);
@@ -491,7 +625,7 @@ async function handleTriggerSync(event) {
 	// Completion/error are separate notifications and durable status is reread.
 	event.ports[0]?.postMessage({ success: true, accepted: true });
 	try {
-		await handleClockSync();
+		await handleClockSync({ retryExhausted: event.data.retryExhausted === true });
 	} catch (error) {
 		if ("sync" in self.registration) {
 			try {
@@ -535,12 +669,21 @@ async function handleRecoveryMessage(event) {
 	try {
 		const context = await requireRecoveryContext(event.data.context);
 		if (event.data.type === "ARCHIVE_QUEUE_RECORD") {
-			await self.OfflineQueueDB.archive(event.data.eventId, context);
+			const archivedCommand = await self.ClockCommandStore.archive(
+				event.data.eventId,
+				context,
+			);
+			if (!archivedCommand) {
+				await self.OfflineQueueDB.archive(event.data.eventId, context);
+			}
 			await notifyQueueUpdateSafely();
 		}
-		const records = (await self.OfflineQueueDB.getRecords()).filter((record) =>
-			self.OfflineQueueDB.canInspect(record, context),
-		);
+		const { legacy, commands } = await readInspectableRecords(context);
+		// Frozen commands carry their local recovery ID as `id`, like legacy rows.
+		const records = [
+			...legacy,
+			...commands.map((record) => ({ ...record, id: record.recoveryId })),
+		];
 		event.ports[0]?.postMessage({ success: true, records });
 	} catch (error) {
 		event.ports[0]?.postMessage({ success: false, error: error.message });

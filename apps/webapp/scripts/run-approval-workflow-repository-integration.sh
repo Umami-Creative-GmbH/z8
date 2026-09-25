@@ -103,6 +103,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/bot-platform/clock-commands.integration.test.ts \
 	src/app/api/time-entries/offline-context/route.integration.test.ts \
 	src/app/api/time-entries/commands/route.integration.test.ts \
+	src/app/api/time-entries/commands/browser.integration.test.ts \
 	src/lib/time-tracking/append-assurance.integration.test.ts \
 	src/lib/cron/legacy-escalation-fencing.integration.test.ts \
 	src/lib/employee-lifecycle/repository.integration.test.ts \
