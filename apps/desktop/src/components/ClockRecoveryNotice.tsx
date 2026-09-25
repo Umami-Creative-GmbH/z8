@@ -152,6 +152,7 @@ export function ClockRecoveryNotice({
             <li>Malformed records: {countFormatter.format(legacy.malformed)}</li>
             <li>Retry limit reached: {countFormatter.format(legacy.exhausted)}</li>
             <li>Breaks that may be partly saved: {countFormatter.format(legacy.possiblePartialBreaks)}</li>
+            <li>Of those, breaks whose clock-out was confirmed: {countFormatter.format(legacy.breaksWithAcknowledgedClose)}</li>
             <li>All retained records have unverified ownership or operation evidence.</li>
           </ul>
           <p>Stored failure times are not original click times. A break may already be partly saved. Record contents and export remain unavailable until ownership can be verified.</p>

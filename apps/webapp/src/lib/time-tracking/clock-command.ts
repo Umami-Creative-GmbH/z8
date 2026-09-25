@@ -9,7 +9,7 @@
  * assertion check. Execution lives with the completed-work operations.
  */
 import { z } from "zod";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { WORK_LOCATION_TYPES } from "./work-location";
 
@@ -204,7 +204,8 @@ export function checkBreakClockContinuity(command: BreakCommand): BreakClockDisc
 		const from = BREAK_OBSERVATION_ORDER[index - 1];
 		const to = BREAK_OBSERVATION_ORDER[index];
 		const monotonic = seen[to].monotonicMs - seen[from].monotonicMs;
-		const wall = Date.parse(seen[to].utc) - Date.parse(seen[from].utc);
+		const wall =
+			parseInstant(seen[to].utc).epochMilliseconds - parseInstant(seen[from].utc).epochMilliseconds;
 		const allowed =
 			BREAK_CLOCK_TOLERANCE.baseMilliseconds +
 			Math.floor(monotonic / 1000) * BREAK_CLOCK_TOLERANCE.perSecondMilliseconds;

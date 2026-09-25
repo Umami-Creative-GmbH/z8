@@ -130,9 +130,13 @@ compliance, break enforcement, surcharges and approval notification.
   capabilities list `break`. It is then saved before its first send and sent in capture
   order like every #280 command, with lookup before any resend.
 - **Target.** An unsent clock-in or break is the target (`clockInOperationId`), else the
-  period last seen for this employee. A clock-out or clock-in after an unsent break treats
-  the break as resumed work: the clock-out targets the break's operation, and a clock-in is
-  refused ("already clocked in").
+  period last seen for this employee. The target must have started before the idle start.
+  Work that started later means the clocked work changed while the user was away (for
+  example, clock-out and clock-in on the web). The break is then refused before anything is
+  saved and routed to a time correction, instead of relying on the server's
+  `invalid_interval`. A clock-out or clock-in after an unsent break treats the break as
+  resumed work: the clock-out targets the break's operation, and a clock-in is refused
+  ("already clocked in").
 - **Journal.** An unsent break projects as clocked in since the return. `breaksEnabled`
   tells the UI that a break can be saved even with unsent actions or while offline. Saved
   breaks are listed as "Break, work resumed" at their return time and zone.
@@ -143,8 +147,13 @@ compliance, break enforcement, surcharges and approval notification.
   discontinuity.
 - **Legacy partial breaks.** Retained two-request break rows still block every clock action,
   including the atomic break. They are never replayed as close then resume, and never
-  assumed uncommitted. The recovery summary now counts them
-  (`possiblePartialBreaks`), and the recovery notice shows that count.
+  assumed uncommitted. Each row is classified by the evidence it carries. A row whose
+  payload records an acknowledged close (`observedFailure.closeAcknowledged`, captured only
+  with the default-off `desktop-recovery-evidence` feature) is `BreakCloseAcknowledged`:
+  its close committed and its resume is unknown. Every other row stays "may be partly
+  saved", because a failed first response never proves that the close did not commit.
+  The recovery summary counts both (`possiblePartialBreaks`, `breaksWithAcknowledgedClose`),
+  and the recovery notice shows the counts.
 
 ## Verification (2026-09-25)
 
@@ -198,7 +207,7 @@ typed business error, can.
 **Unit.** `clock-command.test.ts` **43/43**: break shape, endpoint/observation consistency,
 the continuity boundary, and the fixture parse.
 
-**Desktop core** (`pnpm --filter desktop test:clock`, Windows): **61 passed**. It compiles
+**Desktop core** (`pnpm --filter desktop test:clock`, Windows): **64 passed**. It compiles
 the real `break_evidence.rs` and `frozen_command.rs` as well as the #280 modules.
 
 - The idle tracker records the last input, the detection zone, and the first input after
@@ -208,12 +217,16 @@ the real `break_evidence.rs` and `frozen_command.rs` as well as the #280 modules
 - The break freezes the pinned fixture bytes, and uncertain evidence is not frozen.
 - An online break is one `POST /commands` whose bytes were durable before sending. It is
   never two legacy requests. It targets the period last seen and resumes at the return.
+- A break whose response was lost is recovered after a restart by lookup and is never sent
+  twice.
+- A break that starts before its target work is refused before anything is saved.
 - Offline, a break binds the queued clock-in, the next clock-out binds the break, and a
   clock-in after it is refused. After a restart all three go out in order.
 - The journal projects a saved break as clocked in since the return.
 - Uncertain evidence is refused before anything is saved or sent.
 - A retained legacy partial break blocks the atomic break without touching the row, and the
-  summary counts it.
+  summary counts it. Rows are classified by an acknowledged close only when their payload
+  records one.
 - A server without `break` keeps the two-request break, closing at the idle start.
 - The #268 legacy break tests pass through the new command shape.
 
@@ -225,6 +238,14 @@ Desktop mutations, each against the whole suite:
 | Resuming at the confirmation | failed 3 tests |
 | A break after a queued break targets the last seen period | failed 1 test |
 | Clocks always agree | failed 4 tests |
+| No check that the target work started before the idle start | failed its test |
+| No acknowledged-close classification | failed its test |
+
+**Full PostgreSQL runner.** Every registered suite passed: **52 files, 965 tests** (the
+browser suite is skipped without `Z8_TEST_CHROME_PATH`). The run includes migration
+recovery and the fresh chain through `0097`. The approval write-boundary scanner passed
+**290/290** in a Linux `node:24` container. Its registrations follow the writes into
+`closeActiveWorkGraph` and `startLiveWorkGraph`.
 
 **Desktop app.** `cargo check` of the full Tauri crate passes on Windows with the 5
 existing warnings and no new ones. `tsc --noEmit`, `vite build` and
@@ -246,10 +267,13 @@ This slice closes on implementation (see the #264 decision). These items move to
   backdated clock-in without an age limit. Where the server does not offer `break`, that
   break stays a non-participating writer, and its partial failures still produce
   identity-less rows. Gating it server-side remains #327's.
-- **Legacy partial-break resolution (#329).** Retained rows are counted and block
-  clocking. Their evidence-based reconciliation (which of close and resume committed, from
-  server history) needs the authorized recovery protocol; ownership cannot be established
-  from a current login.
+- **Legacy partial-break resolution (#329).** Retained rows are classified and counted, and
+  they block clocking. Settling which of close and resume committed needs server history
+  and the authorized recovery protocol; ownership cannot be established from a current
+  login.
+- **Reviewed correction entry.** When a break cannot be recorded automatically, the desktop
+  records nothing and directs the user to a time correction in Z8. It does not start the
+  correction itself; the reviewed correction flow is the webapp's (#301/#323).
 - **Zone provenance (#329).** Like every v2 command, break endpoints are stored with the
   `browser` timezone source. The command records which observation each zone came from,
   but the entries cannot say "desktop, read at idle detection" without a versioned server

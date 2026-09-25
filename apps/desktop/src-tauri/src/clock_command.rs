@@ -396,7 +396,25 @@ fn freeze_command(
         }
         ClockCommand::ClockOut => Ok(freeze_clock_out(frame, target()?)),
         ClockCommand::Break { evidence, location } => {
-            freeze_break(frame, target()?, *location, evidence).map_err(break_review_error)
+            let target = target()?;
+            // The target must be the work the employee was in when they went
+            // idle. Work that started later means it changed while they were away.
+            let work_start = match last {
+                Some(saved) => Some(saved.occurred_at.as_str()),
+                None => status
+                    .as_ref()
+                    .and_then(|status| status.active_work_period.as_ref())
+                    .map(|period| period.start_time.as_str()),
+            };
+            let started_before_break = work_start
+                .and_then(|start| DateTime::parse_from_rfc3339(start).ok())
+                .is_some_and(|start| start < evidence.idle.last_activity.utc);
+            if !started_before_break {
+                return Err(ClockCommandError::pre_send(
+                    "Your clocked work changed while you were away, so this break cannot be recorded automatically. Nothing was recorded. Enter the break as a time correction in Z8.",
+                ));
+            }
+            freeze_break(frame, target, *location, evidence).map_err(break_review_error)
         }
     }
 }

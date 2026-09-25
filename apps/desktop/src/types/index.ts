@@ -52,6 +52,8 @@ export interface RecoverySummary {
   exhausted: number;
   /** Two-request breaks whose close or resume may already be saved. */
   possiblePartialBreaks: number;
+  /** Of those, breaks whose close the server acknowledged; their resume is unknown. */
+  breaksWithAcknowledgedClose: number;
 }
 
 export type SavedCommandState = "pending" | "stalled" | "rejected" | "committed" | "archived";

@@ -121,7 +121,13 @@ async fn offline_breaks_bind_queued_work_and_the_next_clock_out_binds_the_break(
         .act(&url, ClockCommand::ClockIn(WorkLocationType::Remote))
         .await
         .unwrap();
-    let paused = device.act(&url, take_break(evidence())).await.unwrap();
+    // Idle after the queued clock-in started.
+    let after_start = confirmed_break(
+        Utc::now() + Duration::seconds(1),
+        Some("Europe/Lisbon"),
+        Some("Europe/Berlin"),
+    );
+    let paused = device.act(&url, take_break(after_start)).await.unwrap();
     assert!(matches!(paused, ClockCommandOutcome::SavedOnDevice { .. }));
     // Still clocked in after the break: another clock-in is refused.
     let error = device
@@ -294,4 +300,74 @@ async fn a_server_without_break_commands_keeps_the_two_request_break() {
         device.saved().is_empty(),
         "Nothing is frozen for this server"
     );
+}
+
+#[tokio::test]
+async fn a_break_before_the_start_of_its_target_work_needs_a_correction() {
+    // The period last seen started at 08:00; the employee was idle from 07:00,
+    // so the work changed while they were away.
+    let device = Device::new();
+    let url = free_endpoint();
+    device.negotiated_with(&url, "org-1", true, BREAK_KINDS);
+    let earlier = confirmed_break(
+        "2026-09-20T07:00:00Z".parse().unwrap(),
+        Some("Europe/Berlin"),
+        Some("Europe/Berlin"),
+    );
+
+    let error = device.act(&url, take_break(earlier)).await.unwrap_err();
+
+    assert!(matches!(error.kind, ClockCommandErrorKind::PreSend));
+    assert!(
+        error.message.contains("changed while you were away"),
+        "{}",
+        error.message
+    );
+    assert!(device.saved().is_empty());
+}
+
+#[tokio::test]
+async fn a_break_whose_response_was_lost_is_looked_up_after_restart_not_resent() {
+    let device = Device::new();
+    let (url, server) = serve(2, |index, _| match index {
+        0 => Some((200, capabilities_with("org-1", "available", BREAK_KINDS))),
+        // The server may have committed it; the response never arrives.
+        _ => None,
+    });
+    device.negotiated_with(&url, "org-1", true, BREAK_KINDS);
+    let outcome = device.act(&url, take_break(evidence())).await.unwrap();
+    let sent = server.join().unwrap();
+    let ClockCommandOutcome::SavedOnDevice { operation_id, .. } = outcome else {
+        panic!("An unanswered break is saved, not failed")
+    };
+
+    let device = device.restart();
+    let server = serve_on(&url, 1, |_, request| {
+        let path = request_line(request).split(' ').nth(1).unwrap();
+        let operation_id = path.rsplit('/').next().unwrap();
+        Some((
+            200,
+            serde_json::json!({
+                "outcome": "committed",
+                "operationId": operation_id,
+                "receipt": { "kind": "close_resume_work", "result": {} },
+                "command": {},
+                "evidence": "standing",
+            })
+            .to_string(),
+        ))
+    });
+    device
+        .sync_with(&url, "org-1", "available", BREAK_KINDS)
+        .await;
+    let recovered = server.join().unwrap();
+
+    assert_eq!(
+        request_line(&recovered[0]),
+        format!("GET /api/time-entries/commands/{operation_id} HTTP/1.1")
+    );
+    let saved = &device.saved()[0];
+    assert_eq!(saved.state, CommandState::Committed);
+    assert_eq!(saved.attempts, 1, "Recovered by lookup, never sent twice");
+    assert_eq!(saved.command, request_body(&sent[1]));
 }
