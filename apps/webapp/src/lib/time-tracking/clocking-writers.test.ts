@@ -12,7 +12,8 @@ describe("live clocking writers", () => {
 		const mobileApi = source("../../app/api/mobile/time-clock/route.ts");
 		const web = source("../../app/[locale]/(app)/time-tracking/actions/clocking.ts");
 		const legacyWeb = source("../../app/[locale]/(app)/time-tracking/actions.ts");
-		const onBehalf = source("../../app/api/time-entries/clock-out-on-behalf/route.ts");
+		const onBehalfRoute = source("../../app/api/time-entries/clock-out-on-behalf/route.ts");
+		const onBehalf = source("../../app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf.ts");
 		const clockInBot = source("../teams/commands/clock-in.ts");
 		const clockOutBot = source("../teams/commands/clock-out.ts");
 
@@ -49,7 +50,13 @@ describe("live clocking writers", () => {
 		expect(mobileApi).toContain("await clockIn(");
 		expect(mobileApi).toContain("await clockOut(");
 		expect(mobileApi).not.toContain("clockingService");
+		// On-behalf closes through the completed-work operation once adopted and the
+		// shared legacy closer before (#276); its route only adapts HTTP.
+		expect(onBehalf).toContain("closeActiveWork(coordination");
 		expect(onBehalf).toContain("clockingService.clockOut");
 		expect(onBehalf).not.toContain("createTimeEntry(");
+		expect(onBehalfRoute).toContain("closeWorkOnBehalf(");
+		expect(onBehalfRoute).not.toContain("clockingService");
+		expect(onBehalfRoute).not.toContain("@/db");
 	});
 });

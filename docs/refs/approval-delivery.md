@@ -5,7 +5,7 @@ Telegram cards (#291), review-only Slack cards (#294), Teams cards (#293) and
 Discord cards (#292, see its section at the end) for canonical absences. It is
 **inactive for every organization**: migrations `0086_approval_delivery.sql`,
 `0090_approval_delivery_slack.sql`, `0091_teams_approval_actions.sql` and
-`0092_discord_approval_delivery.sql` insert no control rows.
+`0093_discord_approval_delivery.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -358,7 +358,7 @@ Unit seams: `slack/delivery-outcome.test.ts`, `slack/approval-card.test.ts`,
 
 Discord uses the same prepared presentation, reviewed bindings, decision owner
 and delivery owner as Telegram. It adds no persistence, authority or dispatch
-of its own. Migration `0092_discord_approval_delivery.sql` only widens the
+of its own. Migration `0093_discord_approval_delivery.sql` only widens the
 provider and scheme CHECKs. It inserts no `approval_presentation_control` and
 no `approval_delivery_control` rows, so Discord stays review-only on the
 existing path for every organization.
@@ -418,14 +418,14 @@ interaction (signature verified by the route)          lib/discord/approval-hand
 
 ### Activation (#292)
 
-Apply `0092` after `0091`, then per organization, after the #290/#291 gates:
+Apply `0093` after `0092`, then per organization, after the #290/#291 gates:
 insert `approval_presentation_control (…, 'discord', 'actionable')` under the
 rollout lock as for Telegram, and
 `approval_delivery_control (:org, 'absence', 'discord')`.
 
 ### Activation blockers (#292, unresolved)
 
-1. Apply `0092` through the authorized deployment. It has run only on the
+1. Apply `0093` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries** do not know the Discord adapter or `discord_interaction`.
    Insert controls only after every worker and app instance is upgraded.

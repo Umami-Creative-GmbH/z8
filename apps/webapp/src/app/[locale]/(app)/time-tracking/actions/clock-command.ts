@@ -47,6 +47,7 @@ import {
 	TimeEntryAppendReviewRequiredError,
 } from "@/lib/time-tracking/clocking-service";
 import {
+	attributionValue,
 	type CloseActiveWorkResult,
 	CompletedWorkAttributionError,
 	CompletedWorkCollisionError,
@@ -433,11 +434,6 @@ async function resolveCloseTarget(actor: Actor, command: ClockOutCommand) {
 		throw new ClockCommandRejectedError({ code: "target_not_active" });
 	}
 	return period.id;
-}
-
-function attributionValue(intent: ClockOutCommand["project"]): string | null | undefined {
-	if (intent.kind === "preserve") return undefined;
-	return intent.kind === "clear" ? null : intent.id;
 }
 
 async function submitClose(
