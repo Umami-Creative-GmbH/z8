@@ -66,6 +66,7 @@ vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
 }));
 vi.mock("@/lib/time-tracking/admin-work-period-time-edit", () => ({
 	applyAdminWorkPeriodTimeEdit: state.applyAdminEdit,
+	replayAdminWorkPeriodTimeEdit: async () => null,
 }));
 vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntryRange: state.validateRange,
@@ -134,6 +135,7 @@ describe("work period time edit actions", () => {
 			workPeriodId: ids.period,
 			employeeId: ids.otherEmployee,
 			dirtyFromDate: "2026-08-03",
+			balanceRefresh: "caller",
 		});
 	});
 
@@ -236,6 +238,7 @@ describe("work period time edit actions", () => {
 		expect(result).toEqual({ success: true, data: { status: "applied" } });
 		expect(state.editSameDay).toHaveBeenCalledWith({
 			workPeriodId: ids.period,
+			submissionId: ids.submission,
 			newClockInDate: "2026-09-01",
 			newClockInTime: "09:00",
 			newClockOutDate: "2026-09-01",

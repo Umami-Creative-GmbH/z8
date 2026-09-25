@@ -50,7 +50,10 @@ import { DatabaseService } from "./database.service";
 
 type TimeEntry = typeof timeEntry.$inferSelect;
 type TimeEntryType = "clock_in" | "clock_out" | "correction";
-type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type TransactionClient = Pick<
+	Parameters<Parameters<typeof db.transaction>[0]>[0],
+	"select" | "insert" | "update" | "query"
+>;
 
 export interface CreateTimeEntryInput {
 	employeeId: string;

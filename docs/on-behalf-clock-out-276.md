@@ -26,7 +26,7 @@ app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf.ts  # authorization
 app/api/time-entries/clock-out-on-behalf/route.ts           # HTTP adapter only
 lib/time-tracking/web-clock-out-{transaction,resources}.ts  # acting user separate from the work owner
 components/calendar/calendar-view.tsx                       # mints and resends the identity
-drizzle/0089_on_behalf_clock_out_writer.sql                 # adds the manager_on_behalf writer
+drizzle/0090_on_behalf_clock_out_writer.sql                 # adds the manager_on_behalf writer
 ```
 
 ## Request
@@ -160,7 +160,7 @@ Suite: `apps/webapp/src/app/api/time-entries/clock-out-on-behalf/route.integrati
 registered in `scripts/run-approval-workflow-repository-integration.sh` and the CI
 `integration-tests` job. The real route handler, target authorization, coordinator,
 operation, append collaborator and follow-ups run on a label-owned disposable
-PostgreSQL 16 database with the fresh migration chain through `0089`. The target's
+PostgreSQL 16 database with the fresh migration chain through `0090`. The target's
 running work is started by the real web `clockIn` action. Replaced: session, billing
 provisioning, the server clock, the compliance follow-up (to inject a post-commit
 failure) and the Next cache.
