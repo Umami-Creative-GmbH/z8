@@ -5,7 +5,7 @@
  * can use it directly. Request paths use the access-coordinated
  * `clockingService` from `./clocking-service`.
  */
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
@@ -55,6 +55,18 @@ export class ClockingAppendAdoptedError extends Error {
 	constructor() {
 		super("This organization only accepts coordinated clock commands");
 		this.name = "ClockingAppendAdoptedError";
+	}
+}
+
+/** Fresh start refused because other undeleted work occupies its interval. */
+export class LiveWorkOccupiedError extends Error {
+	constructor(readonly occupant: "active_work" | "completed_work") {
+		super(
+			occupant === "active_work"
+				? "Active work period already exists"
+				: "Work already occupies this interval",
+		);
+		this.name = "LiveWorkOccupiedError";
 	}
 }
 
@@ -152,6 +164,15 @@ export type ClockingStore = {
 		actionId: string,
 		workPeriodId?: string,
 	): Promise<CompletedPeriod | null>;
+	/**
+	 * Whether undeleted completed work of the employee ends after the instant. An
+	 * adopted live start is refused over it: active work occupies its start onward.
+	 */
+	hasCompletedWorkEndingAfter(
+		employeeId: string,
+		organizationId: string,
+		instant: Date,
+	): Promise<boolean>;
 	getLatestHash(
 		employeeId: string,
 		organizationId: string,
@@ -454,6 +475,18 @@ export function createClockingService(deps: ClockingDependencies) {
 				) {
 					throw new ClockingConflictError("Active work period already exists");
 				}
+				// Adopted starts share the completed-work operations' symmetric
+				// half-open occupancy (#327, W01); legacy starts keep their rule.
+				if (
+					input.coordination?.admission === "append" &&
+					(await store.hasCompletedWorkEndingAfter(
+						input.employeeId,
+						input.organizationId,
+						dateFromInstant(input.action.instant),
+					))
+				) {
+					throw new LiveWorkOccupiedError("completed_work");
+				}
 				const { entry } = await appendClockEntry(
 					store,
 					input,
@@ -692,6 +725,21 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				endTime: period.endTime,
 				durationMinutes: period.durationMinutes,
 			};
+		},
+		hasCompletedWorkEndingAfter: async (employeeId, organizationId, instant) => {
+			const [occupant] = await tx
+				.select({ id: workPeriod.id })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
+						isNull(workPeriod.deletedAt),
+						gt(workPeriod.endTime, instant),
+					),
+				)
+				.limit(1);
+			return Boolean(occupant);
 		},
 		getLatestHash: async (employeeId, organizationId) => {
 			const [latest] = await tx

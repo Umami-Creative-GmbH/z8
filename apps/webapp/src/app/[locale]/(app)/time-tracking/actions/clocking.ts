@@ -1131,6 +1131,14 @@ export async function clockInAs(
 				failure: "already_clocked_in",
 			};
 		}
+		if (error instanceof LiveWorkOccupiedError) {
+			return {
+				success: false,
+				error: "This time overlaps other recorded work",
+				code: "occupancy_conflict",
+				failure: "rejected",
+			};
+		}
 		if (error instanceof TimeEntryAppendReviewRequiredError) {
 			logger.warn(
 				{ appendReviewRequirement: error.requirement },

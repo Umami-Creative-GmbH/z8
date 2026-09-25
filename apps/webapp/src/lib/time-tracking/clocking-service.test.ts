@@ -38,6 +38,7 @@ function createHarness(options?: {
 						trace.push(`adoption-gate:${organizationId}`);
 					},
 					readAppendAdmission: async () => organization.admission,
+					hasCompletedWorkEndingAfter: async () => false,
 					lockEmployee: async (employeeId) => {
 						trace.push(`employee:${employeeId}`);
 					},
@@ -118,6 +119,7 @@ describe("clocking service", () => {
 			transaction,
 			acquireAdoptionGate: async () => undefined,
 			readAppendAdmission: async () => "legacy" as const,
+			hasCompletedWorkEndingAfter: async () => false,
 			lockEmployee: async () => undefined,
 			isOrganizationMember: async () => true,
 			getEntryByActionId: async () => null,
@@ -164,6 +166,7 @@ describe("clocking service", () => {
 				callback({
 					acquireAdoptionGate: async () => undefined,
 					readAppendAdmission: async () => "legacy" as const,
+					hasCompletedWorkEndingAfter: async () => false,
 					lockEmployee: async () => undefined,
 					isOrganizationMember: async () => true,
 					getEntryByActionId: async () => null,
@@ -196,6 +199,7 @@ describe("clocking service", () => {
 				callback({
 					acquireAdoptionGate: async () => undefined,
 					readAppendAdmission: async () => "legacy" as const,
+					hasCompletedWorkEndingAfter: async () => false,
 					lockEmployee: async () => undefined,
 					isOrganizationMember: async () => true,
 					getEntryByActionId: async () => null,
@@ -304,6 +308,7 @@ describe("clocking service", () => {
 					return await callback({
 						acquireAdoptionGate: async () => undefined,
 						readAppendAdmission: async () => "legacy" as const,
+						hasCompletedWorkEndingAfter: async () => false,
 						lockEmployee: async () => undefined,
 						isOrganizationMember: async () => true,
 						getEntryByActionId: async () => null,
@@ -400,6 +405,7 @@ describe("uncoordinated writers in an adopted organization", () => {
 					trace.push("adoption-gate");
 				},
 				readAppendAdmission: async () => "append",
+				hasCompletedWorkEndingAfter: async () => false,
 				lockEmployee: async () => {
 					trace.push("employee");
 				},
