@@ -6,7 +6,7 @@ import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * PATCH /api/org-admin/holidays/[id]
@@ -56,7 +56,7 @@ export async function PATCH(
 		} = body;
 
 		// Manual submissions read organization holidays under the configuration guard.
-		const result = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const result = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			// Verify holiday belongs to organization
 			const [existingHoliday] = await tx
 				.select()
@@ -158,7 +158,7 @@ export async function DELETE(
 
 		// Soft delete by setting isActive to false, under the configuration guard
 		// that manual submissions read organization holidays under.
-		const deletedHoliday = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const deletedHoliday = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			const [deleted] = await tx
 				.update(holiday)
 				.set({ isActive: false, updatedBy: session.user.id })

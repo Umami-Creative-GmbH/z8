@@ -6,7 +6,7 @@ import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * GET /api/org-admin/holiday-categories
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Manual submissions read blocking categories under the configuration guard.
-		const newCategory = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const newCategory = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			const [created] = await tx
 				.insert(holidayCategory)
 				.values({

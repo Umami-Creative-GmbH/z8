@@ -1,41 +1,56 @@
 /**
- * The #264 organization configuration guard (rank 3). Fresh manual submissions
- * hold it shared while they read organization configuration; writers of that
- * configuration (holidays, blocking categories, change policies) hold it
- * exclusively. Writers take nothing ranked earlier.
+ * The #264 organization configuration guard (rank 3). Fresh manual preparation
+ * holds it shared while it reads organization configuration; writers of that
+ * configuration hold it exclusively. It imports no schema, so route handlers
+ * and actions can take it without loading the work-transaction module.
  */
 import { sql } from "drizzle-orm";
 import type { db } from "@/db";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-/** Advisory key text; locks use `hashtextextended(key, 0)`. */
-export function organizationConfigurationGuardKey(organizationId: string) {
+/** The advisory key shared by manual preparation (shared) and configuration writers (exclusive). */
+function organizationConfigurationKey(organizationId: string) {
 	return JSON.stringify(["work-organization-configuration", organizationId]);
 }
 
-export async function acquireExclusiveOrganizationConfigurationGuard(
+export async function acquireOrganizationConfigurationGuard(
 	transaction: Pick<Transaction, "execute">,
 	organizationId: string,
 ) {
 	await transaction.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationGuardKey(organizationId)}, 0))`,
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
 	);
 }
 
 /**
- * Runs an organization configuration mutation in its own transaction under the
- * exclusive guard, taken before its first read or write and held until commit.
- * In-flight fresh manual submissions finish on the prior configuration; later
- * ones read the committed change.
+ * Exclusive counterpart of the shared organization configuration guard, for a
+ * writer of facts that fresh manual preparation reads (#258 §4). Take it first
+ * in the writer's own transaction, before its target validation and first
+ * dependent write, and hold it to commit: never after a write, never as an
+ * after-commit hook, and never as an upgrade from the shared guard.
  */
-export function mutateOrganizationConfiguration<T>(
+export async function acquireOrganizationConfigurationMutationGuard(
+	transaction: Pick<Transaction, "execute">,
+	organizationId: string,
+) {
+	await transaction.execute(
+		sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
+	);
+}
+
+/**
+ * Runs one organization configuration mutation in its own transaction under
+ * exclusive configuration protection. Validation that decides whether the
+ * write is allowed belongs inside `write`, so it serializes with preparation.
+ */
+export async function withOrganizationConfigurationMutation<T>(
 	client: Pick<typeof db, "transaction">,
 	organizationId: string,
-	mutation: (transaction: Transaction) => Promise<T>,
+	write: (transaction: Transaction) => Promise<T>,
 ): Promise<T> {
 	return client.transaction(async (transaction) => {
-		await acquireExclusiveOrganizationConfigurationGuard(transaction, organizationId);
-		return mutation(transaction);
+		await acquireOrganizationConfigurationMutationGuard(transaction, organizationId);
+		return write(transaction);
 	});
 }

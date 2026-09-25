@@ -14,7 +14,7 @@ import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types"
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,
@@ -350,7 +350,7 @@ export async function deleteHoliday(holidayId: string): Promise<ServerActionResu
 		// Manual submissions read organization holidays under the configuration guard.
 		const deleted = yield* _(
 			actor.dbService.query("deleteHoliday", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
 					tx
 						.delete(holiday)
 						.where(and(eq(holiday.id, holidayId), eq(holiday.organizationId, actor.organizationId)))
@@ -405,7 +405,7 @@ export async function bulkDeleteHolidays(
 		const result = yield* _(
 			actor.dbService.query("bulkDeleteHolidays", async () => {
 				// Manual submissions read organization holidays under the configuration guard.
-				const deleteResult = await mutateOrganizationConfiguration(
+				const deleteResult = await withOrganizationConfigurationMutation(
 					actor.dbService.db,
 					actor.organizationId,
 					(tx) =>
@@ -457,7 +457,7 @@ export async function deleteCategory(categoryId: string): Promise<ServerActionRe
 		// the configuration guard that manual submissions read blocking categories under.
 		const outcome = yield* _(
 			actor.dbService.query("deleteCategory", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, async (tx) => {
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, async (tx) => {
 					const [category] = await tx
 						.select({ id: holidayCategory.id })
 						.from(holidayCategory)

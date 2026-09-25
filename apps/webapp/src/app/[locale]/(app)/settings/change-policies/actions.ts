@@ -6,7 +6,7 @@ import { changePolicy, changePolicyAssignment, employee, team, teamPermissions }
 import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -475,7 +475,7 @@ export async function createChangePolicy(
 
 		const [policy] = yield* _(
 			actor.dbService.query("createChangePolicy", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
 					tx
 						.insert(changePolicy)
 						.values({
@@ -571,7 +571,7 @@ export async function updateChangePolicy(
 
 		yield* _(
 			actor.dbService.query("updateChangePolicy", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
 					tx
 						.update(changePolicy)
 						.set({
@@ -622,7 +622,7 @@ export async function deleteChangePolicy(policyId: string): Promise<ServerAction
 
 		yield* _(
 			actor.dbService.query("deleteChangePolicy", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
 					tx
 						.update(changePolicy)
 						.set({ isActive: false, updatedBy: actor.session.user.id })
@@ -765,7 +765,7 @@ export async function createChangePolicyAssignment(
 		// read effective assignments under the configuration guard.
 		const created = yield* _(
 			actor.dbService.query("createChangePolicyAssignment", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, async (tx) => {
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, async (tx) => {
 					const [policy] = await tx
 						.select({ id: changePolicy.id })
 						.from(changePolicy)
@@ -855,7 +855,7 @@ export async function deleteChangePolicyAssignment(
 
 		yield* _(
 			actor.dbService.query("deleteChangePolicyAssignment", () =>
-				mutateOrganizationConfiguration(actor.dbService.db, actor.organizationId, (tx) =>
+				withOrganizationConfigurationMutation(actor.dbService.db, actor.organizationId, (tx) =>
 					tx
 						.update(changePolicyAssignment)
 						.set({ isActive: false })

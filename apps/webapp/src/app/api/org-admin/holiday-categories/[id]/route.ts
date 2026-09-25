@@ -6,7 +6,7 @@ import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * PATCH /api/org-admin/holiday-categories/[id]
@@ -55,7 +55,7 @@ export async function PATCH(
 
 		// Update the organization's category under the configuration guard that
 		// manual submissions read blocking categories under.
-		const updatedCategory = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const updatedCategory = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			const [updated] = await tx
 				.update(holidayCategory)
 				.set({
@@ -131,7 +131,7 @@ export async function DELETE(
 
 		// Soft delete by setting isActive to false, under the configuration guard
 		// that manual submissions read blocking categories under.
-		const deletedCategory = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const deletedCategory = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			const [deleted] = await tx
 				.update(holidayCategory)
 				.set({ isActive: false })

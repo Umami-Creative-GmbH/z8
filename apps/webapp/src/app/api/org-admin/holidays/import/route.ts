@@ -12,7 +12,7 @@ import {
 	mapToHolidayFormValues,
 } from "@/lib/holidays/date-holidays-service";
 import { holidayImportSchema } from "@/lib/holidays/validation";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * POST /api/org-admin/holidays/import
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
 		// The exclusive configuration guard serializes imports per organization and
 		// fences manual submissions, which read organization holidays under it.
-		const result = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const result = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			if (categoryId) {
 				const [category] = await tx
 					.select({ id: holidayCategory.id })

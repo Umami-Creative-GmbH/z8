@@ -26,15 +26,21 @@ The inventory rows are C11–C13 in [the configuration-path audit](audits/265-co
 ## Protocol
 
 `lib/time-tracking/organization-configuration-guard.ts` owns the rank-3 key
-`["work-organization-configuration", organizationId]`:
+`["work-organization-configuration", organizationId]` and both of its modes. The module
+imports no schema, so route handlers can take the guard without loading the
+work-transaction module (whose schema import breaks their stubbed `drizzle-orm` tests).
+`work-transaction.ts` re-exports all three functions for the coordinators. The names match
+#315's PR #416, so the two slices share one helper.
 
-- `acquireExclusiveOrganizationConfigurationGuard(tx, organizationId)` takes
+- `acquireOrganizationConfigurationGuard(tx, organizationId)`: shared, taken by fresh
+  manual work transactions.
+- `acquireOrganizationConfigurationMutationGuard(tx, organizationId)`: exclusive,
   `pg_advisory_xact_lock(hashtextextended(key, 0))`.
-- `mutateOrganizationConfiguration(client, organizationId, mutation)` opens the writer's
-  transaction, takes the exclusive guard as its first statement, then runs the mutation on
-  that transaction.
+- `withOrganizationConfigurationMutation(client, organizationId, write)` opens the writer's
+  transaction, takes the exclusive guard as its first statement, then runs `write` on that
+  transaction.
 
-`work-transaction.ts` takes the shared guard with the same key. Configuration writers take
+Configuration writers take
 nothing ranked earlier (no adoption or approval gate), so the #258 order holds: they never
 upgrade from shared to exclusive and never acquire an earlier-ranked resource late.
 

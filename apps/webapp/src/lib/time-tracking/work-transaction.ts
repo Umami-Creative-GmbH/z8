@@ -8,7 +8,14 @@
 import { eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
-import { organizationConfigurationGuardKey } from "./organization-configuration-guard";
+
+// The organization configuration guard lives in a schema-free module so route
+// handlers can take it; coordinators keep importing it from here.
+export {
+	acquireOrganizationConfigurationGuard,
+	acquireOrganizationConfigurationMutationGuard,
+	withOrganizationConfigurationMutation,
+} from "./organization-configuration-guard";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
@@ -64,16 +71,6 @@ export async function readAppendAdmission(
 		.where(eq(timeEntryAppendControl.organizationId, organizationId))
 		.limit(1);
 	return control?.mode === "active" ? "append" : "legacy";
-}
-
-/** Shared; configuration writers take it exclusively (`organization-configuration-guard.ts`). */
-export async function acquireOrganizationConfigurationGuard(
-	transaction: Pick<Transaction, "execute">,
-	organizationId: string,
-) {
-	await transaction.execute(
-		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationGuardKey(organizationId)}, 0))`,
-	);
 }
 
 export async function acquireUserConfigurationAccessGuards(

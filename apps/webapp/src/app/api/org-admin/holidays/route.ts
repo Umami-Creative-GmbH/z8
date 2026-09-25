@@ -6,7 +6,7 @@ import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { mutateOrganizationConfiguration } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * GET /api/org-admin/holidays
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Manual submissions read organization holidays under the configuration guard.
-		const newHoliday = await mutateOrganizationConfiguration(db, activeOrgId, async (tx) => {
+		const newHoliday = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			const [existingCategory] = await tx
 				.select()
 				.from(holidayCategory)
