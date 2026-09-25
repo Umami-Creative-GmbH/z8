@@ -4174,6 +4174,9 @@ db.delete(approvalOutbox);`,
 			"src/lib/absences/sick-vacation-override.ts": {
 				approval_request: ["insert", "update"],
 			},
+			"src/lib/approvals/escalation/legacy-transfer.ts": {
+				approval_request: ["update"],
+			},
 			"src/lib/approvals/policies/chain-service.ts": {
 				approval_chain_instance: ["insert", "update"],
 				approval_chain_stage_instance: ["insert", "update"],

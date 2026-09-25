@@ -66,6 +66,7 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));
 
+import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { ApprovalEvidenceError } from "@/lib/approvals/evidence/errors";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
@@ -107,6 +108,11 @@ function inactiveLegacyEvidence() {
 		prepare: vi.fn(async () => null),
 		record: vi.fn(),
 	};
+}
+
+/** No legacy escalation transfer touched the decided request. */
+function noLegacyTransfers() {
+	return { findTransferredRequest: vi.fn(async () => null) };
 }
 
 describe("absence canonical decision errors", () => {
@@ -1810,6 +1816,7 @@ describe("absence decision rollout routing", () => {
 			captureLegacyState,
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 			legacyEvidence: inactiveLegacyEvidence(),
+			legacyTransferAuthority: noLegacyTransfers(),
 		});
 
 		expect(outerTransaction).toHaveBeenCalledOnce();
@@ -2024,6 +2031,7 @@ describe("absence decision rollout routing", () => {
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 				legacyEvidence: inactiveLegacyEvidence(),
+				legacyTransferAuthority: noLegacyTransfers(),
 			});
 
 		await decide("approval-target-1");
@@ -2134,6 +2142,7 @@ describe("absence decision rollout routing", () => {
 			captureLegacyState: vi.fn(),
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 			legacyEvidence: inactiveLegacyEvidence(),
+			legacyTransferAuthority: noLegacyTransfers(),
 		});
 
 		expect(transition).toHaveBeenCalledOnce();
@@ -2212,6 +2221,7 @@ describe("absence decision rollout routing", () => {
 				captureLegacyState,
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 				legacyEvidence: inactiveLegacyEvidence(),
+				legacyTransferAuthority: noLegacyTransfers(),
 			}),
 		).rejects.toThrow(/active absence approval actor/i);
 		expect(captureLegacyState).not.toHaveBeenCalled();
@@ -2326,6 +2336,7 @@ describe("absence decision rollout routing", () => {
 				captureLegacyState,
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 				legacyEvidence: inactiveLegacyEvidence(),
+				legacyTransferAuthority: noLegacyTransfers(),
 			}),
 		).rejects.toThrow(
 			failurePoint === "mirror" ? "mirror failed" : "capture after failed",
@@ -2431,6 +2442,7 @@ describe("absence decision rollout routing", () => {
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 				legacyEvidence: inactiveLegacyEvidence(),
+				legacyTransferAuthority: noLegacyTransfers(),
 			}),
 		).rejects.toThrow("engine rollback");
 		expect(committed.sourceStatus).toBe("pending");
@@ -2518,6 +2530,7 @@ describe("absence decision rollout routing", () => {
 				captureLegacyState: vi.fn(),
 				nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 				legacyEvidence: inactiveLegacyEvidence(),
+				legacyTransferAuthority: noLegacyTransfers(),
 			}),
 		).rejects.toThrow(
 			linkState === "missing_target" ? /decision target/i : /workflow link/i,
@@ -2647,6 +2660,7 @@ describe("legacy absence decision evidence routing", () => {
 			}),
 			nowInstant: () => parseInstant("2026-07-19T10:00:00Z"),
 			legacyEvidence,
+			legacyTransferAuthority: noLegacyTransfers(),
 		};
 		return {
 			committed: () => committed,
@@ -2749,6 +2763,111 @@ describe("legacy absence decision evidence routing", () => {
 
 		expect(harness.legacyEvidence.record).not.toHaveBeenCalled();
 		expect(harness.committed()).toEqual({ sourceStatus: "rejected" });
+	});
+
+	describe("after an escalation transfer", () => {
+		function transferredTo(currentApproverEmployeeId: string | null) {
+			return {
+				findTransferredRequest: vi.fn(async () =>
+					currentApproverEmployeeId === null
+						? null
+						: { approvalRequestId: "approval-1", currentApproverEmployeeId },
+				),
+			};
+		}
+
+		it("refuses the former approver with a reassigned outcome before any fresh check or mutation", async () => {
+			const harness = legacyDecisionContext("shadow");
+			const legacyTransferAuthority = transferredTo("emp-backup");
+			const canManageOrganizationApproval = vi.fn(async () => false);
+
+			await expect(
+				executeAbsenceDecisionInTransaction({
+					...harness.input,
+					legacyTransferAuthority,
+					canManageOrganizationApproval,
+				} as never),
+			).rejects.toBeInstanceOf(ApprovalAssignmentReassignedError);
+
+			expect(legacyTransferAuthority.findTransferredRequest).toHaveBeenCalledWith(
+				expect.anything(),
+				{
+					organizationId: "org-1",
+					absenceId: "absence-1",
+					approvalRequestId: "approval-1",
+				},
+			);
+			expect(harness.events).toEqual(["replay-lookup"]);
+			expect(harness.input.processLegacy).not.toHaveBeenCalled();
+			expect(harness.committed()).toEqual({ sourceStatus: "pending" });
+		});
+
+		it("fails closed for a non-holder when no management check is supplied", async () => {
+			const harness = legacyDecisionContext("legacy");
+
+			await expect(
+				executeAbsenceDecisionInTransaction({
+					...harness.input,
+					legacyTransferAuthority: transferredTo("emp-backup"),
+				} as never),
+			).rejects.toBeInstanceOf(ApprovalAssignmentReassignedError);
+			expect(harness.input.processLegacy).not.toHaveBeenCalled();
+		});
+
+		it("lets the replacement decide the transferred request", async () => {
+			const harness = legacyDecisionContext("legacy");
+			const canManageOrganizationApproval = vi.fn(async () => false);
+
+			await executeAbsenceDecisionInTransaction({
+				...harness.input,
+				legacyTransferAuthority: transferredTo("emp-manager"),
+				canManageOrganizationApproval,
+			} as never);
+
+			expect(harness.committed()).toEqual({ sourceStatus: "rejected" });
+			expect(canManageOrganizationApproval).not.toHaveBeenCalled();
+		});
+
+		it("keeps explicit organization approval management as a separate path", async () => {
+			const harness = legacyDecisionContext("legacy");
+
+			await executeAbsenceDecisionInTransaction({
+				...harness.input,
+				legacyTransferAuthority: transferredTo("emp-backup"),
+				canManageOrganizationApproval: vi.fn(async () => true),
+			} as never);
+
+			expect(harness.committed()).toEqual({ sourceStatus: "rejected" });
+		});
+
+		it("leaves untransferred requests to the unchanged legacy authorization", async () => {
+			const harness = legacyDecisionContext("legacy");
+			const canManageOrganizationApproval = vi.fn(async () => false);
+
+			await executeAbsenceDecisionInTransaction({
+				...harness.input,
+				legacyTransferAuthority: transferredTo(null),
+				canManageOrganizationApproval,
+			} as never);
+
+			expect(harness.committed()).toEqual({ sourceStatus: "rejected" });
+			expect(canManageOrganizationApproval).not.toHaveBeenCalled();
+		});
+
+		it("replays an exact committed decision before looking at the transfer", async () => {
+			const harness = legacyDecisionContext("legacy");
+			const legacyTransferAuthority = transferredTo("emp-backup");
+			const evidence = { id: "decision-1", operationKind: "command" };
+			harness.legacyEvidence.findReplay.mockResolvedValueOnce(evidence as never);
+
+			const result = await executeAbsenceDecisionInTransaction({
+				...harness.input,
+				legacyTransferAuthority,
+			} as never);
+
+			expect(result).toMatchObject({ replayed: evidence });
+			expect(legacyTransferAuthority.findTransferredRequest).not.toHaveBeenCalled();
+		});
 	});
 });
 
