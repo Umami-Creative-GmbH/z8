@@ -138,8 +138,10 @@ describe("coordinated organization hooks", () => {
 
 	it("revokes access in the removal transaction and clears sessions and seats after commit", async () => {
 		const auth = coordinatedAuth();
+		const organizationHooks = hooks();
 		await runCoordinatedAuthMutation(auth.context, async () => {
-			await hooks().afterRemoveMember!({ member, user, organization });
+			await organizationHooks.beforeRemoveMember!({ member, user, organization });
+			await organizationHooks.afterRemoveMember!({ member, user, organization });
 			mocks.events.push("removal-end");
 		});
 
@@ -170,15 +172,29 @@ describe("coordinated organization hooks", () => {
 
 	it("rolls back the removal when in-transaction access revocation fails", async () => {
 		const auth = coordinatedAuth();
+		const organizationHooks = hooks();
 		mocks.revoke.mockRejectedValueOnce(new Error("revocation failed"));
+
+		await expect(
+			runCoordinatedAuthMutation(auth.context, async () => {
+				await organizationHooks.beforeRemoveMember!({ member, user, organization });
+				await organizationHooks.afterRemoveMember!({ member, user, organization });
+			}),
+		).rejects.toThrow("revocation failed");
+		expect(auth.outcome).toEqual({ committed: 0, rolledBack: 1 });
+		expect(mocks.postCommit).not.toHaveBeenCalled();
+	});
+
+	it("rolls back a removal whose member was not guarded before the delete", async () => {
+		const auth = coordinatedAuth();
 
 		await expect(
 			runCoordinatedAuthMutation(auth.context, () =>
 				hooks().afterRemoveMember!({ member, user, organization }),
 			),
-		).rejects.toThrow("revocation failed");
+		).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
 		expect(auth.outcome).toEqual({ committed: 0, rolledBack: 1 });
-		expect(mocks.postCommit).not.toHaveBeenCalled();
+		expect(mocks.revoke).not.toHaveBeenCalled();
 	});
 });
 

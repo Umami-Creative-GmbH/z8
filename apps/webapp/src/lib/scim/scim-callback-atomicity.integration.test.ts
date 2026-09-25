@@ -14,6 +14,7 @@ import {
 	resolveApprovalWorkflowRepositoryTestConfiguration,
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "@/lib/approvals/workflow/repository-integration-harness";
+import { captureAuthTransactions } from "@/lib/auth/auth-transaction";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
 import {
 	createSCIMCallbackModelRegistration,
@@ -63,7 +64,8 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 	const auth = betterAuth({
 		baseURL: "http://localhost:3000",
 		secret: "scim-callback-integration-secret-value",
-		database: drizzleAdapter(database, {
+		// As in production: SCIM callbacks guard on the captured transaction (#314).
+		database: drizzleAdapter(captureAuthTransactions(database), {
 			provider: "pg",
 			schema: authDatabaseSchema,
 			transaction: true,

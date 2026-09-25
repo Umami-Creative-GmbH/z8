@@ -40,6 +40,7 @@ import {
 	type CoordinatedAuthContext,
 	requireAuthTransaction,
 	runCoordinatedAuthMutation,
+	UncoordinatedAuthMutationError,
 } from "./auth-transaction";
 import {
 	completeRemovedMemberCleanupPostCommit,
@@ -66,16 +67,30 @@ const COORDINATED_AUTH_MUTATION_PATHS = new Set([
 	...GLOBAL_ACCESS_PATHS,
 ]);
 
+/** Users whose exclusive guard each coordinated transaction took before writing. */
+const protectedUsers = new WeakMap<object, Set<string>>();
+
 async function protectAuthMutation(
 	operation: string,
 	scope: Omit<AuthorizationMutationScope, "route">,
 ) {
-	await protectAuthorizationMutation(requireAuthTransaction(operation), scope);
+	const transaction = requireAuthTransaction(operation);
+	await protectAuthorizationMutation(transaction, scope);
+	const users = protectedUsers.get(transaction) ?? new Set<string>();
+	for (const userId of scope.userIds ?? []) users.add(userId);
+	protectedUsers.set(transaction, users);
 }
 
-/** Deactivates the removed member in the removal transaction; the rest runs after commit. */
+/**
+ * Deactivates the removed member in the removal transaction; the rest runs
+ * after commit. Refuses (rolling the removal back) unless the removal took
+ * the member's guard before deleting the membership.
+ */
 async function cleanUpRemovedMember(input: { organizationId: string; userId: string }) {
 	const transaction = requireAuthTransaction("organization member removal cleanup");
+	if (!protectedUsers.get(transaction)?.has(input.userId)) {
+		throw new UncoordinatedAuthMutationError("organization member removal");
+	}
 	const outcome = await revokeRemovedMemberAccessInTransaction(
 		transaction,
 		input.userId,
@@ -144,6 +159,25 @@ function stringField(body: unknown, field: string): string | null {
 	return typeof value === "string" && value ? value : null;
 }
 
+type BeforeHookContext = Parameters<typeof getSessionFromCtx>[0];
+
+/**
+ * The requesting user, from the session cookie or a bearer session token.
+ * Before-hooks see the request's original headers: the bearer plugin's
+ * cookie is only merged in after every before-hook has run.
+ */
+async function requestingUserId(ctx: BeforeHookContext): Promise<string | null> {
+	const session = await getSessionFromCtx(ctx);
+	if (session) return session.user.id;
+	const authorization =
+		ctx.headers?.get("authorization") ?? ctx.request?.headers.get("authorization");
+	if (authorization?.slice(0, 7).toLowerCase() !== "bearer ") return null;
+	const token = decodeURIComponent(authorization.slice(7).trim()).split(".")[0];
+	if (!token) return null;
+	const found = await ctx.context.internalAdapter.findSession(token);
+	return found && found.session.expiresAt > new Date() ? found.user.id : null;
+}
+
 /**
  * Guards the Better Auth writers without organization hooks: leaving an
  * organization (plus its removal cleanup) and admin global access changes.
@@ -157,20 +191,18 @@ export function authMutationCoordinationPlugin() {
 					matcher: (context) => context.path === ORGANIZATION_LEAVE_PATH,
 					handler: createAuthMiddleware(async (ctx) => {
 						const organizationId = stringField(ctx.body, "organizationId");
-						const session = await getSessionFromCtx(ctx);
-						if (!organizationId || !session) return;
-						await protectAuthMutation("organization leave", {
-							organizationId,
-							userIds: [session.user.id],
-						});
+						const userId = await requestingUserId(ctx);
+						// Unresolved here, the removal cleanup refuses the unguarded leave.
+						if (!organizationId || !userId) return;
+						await protectAuthMutation("organization leave", { organizationId, userIds: [userId] });
 					}),
 				},
 				{
 					matcher: (context) => GLOBAL_ACCESS_PATHS.has(context.path ?? ""),
 					handler: createAuthMiddleware(async (ctx) => {
+						// The target is in the body; the endpoint authorizes the caller afterwards.
 						const userId = stringField(ctx.body, "userId");
-						// Without a session the endpoint refuses before writing anything.
-						if (!userId || !(await getSessionFromCtx(ctx))) return;
+						if (!userId) return;
 						await acquireExclusiveUserConfigurationAccessGuards(
 							requireAuthTransaction("global user access change"),
 							[userId],
