@@ -48,7 +48,13 @@ export interface WorkTransactionContext extends WorkTransactionScope {
 export interface WebClockOutTransactionInput {
 	organizationId: string;
 	employeeId: string;
+	/** The authenticated human acting; their approved membership is protected. */
 	userId: string;
+	/**
+	 * The user of the employee who owns the work, when another human acts on their
+	 * behalf (#276). Defaults to the acting user.
+	 */
+	ownerUserId?: string;
 	submissionId: string;
 	workPeriodId?: string;
 	endTime?: Instant;

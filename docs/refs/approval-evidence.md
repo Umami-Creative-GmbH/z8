@@ -478,8 +478,8 @@ the upload route and submission action tests.
 Expense claims are decided only by legacy authority. #296 adds the review,
 decision evidence, bound cards and delivery for them without creating canonical
 authority. Everything is **inactive for every organization**: migration
-`0092_legacy_expense_presentation.sql` inserts no control rows. Apply it after
-`0091`.
+`0093_legacy_expense_presentation.sql` inserts no control rows. Apply it after
+`0092`.
 
 ```text
 submitTravelExpenseClaim (tx)                    #295 capture, then
@@ -618,7 +618,7 @@ and other claims are preserved.
 
 ### Activation
 
-Apply `0092`, then, as the authorized adoption writer and under the exclusive
+Apply `0093`, then, as the authorized adoption writer and under the exclusive
 rollout lock of the kind (scope suffix `:14:travel_expense`), after capture is
 active (#295):
 
@@ -638,7 +638,7 @@ No application endpoint changes either control.
 
 ### Activation blockers (#296, unresolved)
 
-1. Apply `0092` through the authorized deployment. It has run only on the
+1. Apply `0093` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database.
 2. **Old binaries.** Instances without this release decide expenses without the
    rollout lock, evidence, replay or holds, and write no delivery intents. Drain
@@ -719,7 +719,7 @@ the Telegram transport are replaced. 12/12 passing:
 
 The #295, #288, #290 and #291 suites still pass on the same runner (the #291
 cleanup report now includes `delivery.intents`), and the migration recovery
-check passes with `0092` in the chain. Unit seams: `travel-expense-decision.test.ts`,
+check passes with `0093` in the chain. Unit seams: `travel-expense-decision.test.ts`,
 `travel-expense-card.test.ts`, `travel-expense-review.test.ts`, the handler,
 action and maintenance tests.
 

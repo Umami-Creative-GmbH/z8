@@ -6,7 +6,7 @@ for canonical absences, and, since #296, Telegram cards for legacy-authoritative
 expense claims (see "Legacy lifecycles"). It is **inactive for every
 organization**: migrations `0086_approval_delivery.sql`,
 `0090_approval_delivery_slack.sql`, `0091_teams_approval_actions.sql` and
-`0092_legacy_expense_presentation.sql` insert no control rows.
+`0093_legacy_expense_presentation.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
