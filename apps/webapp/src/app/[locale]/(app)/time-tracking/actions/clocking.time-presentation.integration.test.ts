@@ -181,6 +181,7 @@ const { getApprovalInboxDetail } = await import("@/lib/approvals/inbox/read-serv
 const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
 const { prepareApprovalPresentation } = await import("@/lib/approvals/presentation");
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
+const { sendTelegramNotification } = await import("@/lib/notifications/telegram-channel");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { workPeriodReceiptKeyDigest } = await import(
 	"@/lib/approvals/evidence/work-period-evidence"
@@ -219,8 +220,13 @@ const ids = {
 	organization: "t325-time-presentation-org",
 	requesterUser: "t325-requester-user",
 	managerUser: "t325-manager-user",
+	finalUser: "t325-final-user",
 	requester: "e3250000-0000-4000-8000-000000000001",
 	manager: "e3250000-0000-4000-8000-000000000002",
+	finalApprover: "e3250000-0000-4000-8000-000000000003",
+	approvalPolicy: "e3254000-0000-4000-8000-000000000001",
+	firstStage: "e3254000-0000-4000-8000-000000000002",
+	secondStage: "e3254000-0000-4000-8000-000000000003",
 	managerLink: "e3251000-0000-4000-8000-000000000001",
 	policy: "e3252000-0000-4000-8000-000000000001",
 	regulation: "e3252000-0000-4000-8000-000000000002",
@@ -234,6 +240,8 @@ const ids = {
 interface TelegramCall {
 	method: string;
 	body: Record<string, unknown>;
+	/** The message ID Telegram "assigned" to a sent message. */
+	messageId?: number;
 }
 
 function only<T>(rows: readonly T[]): T {
@@ -264,11 +272,12 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 			if (!match) throw new Error(`Unexpected fetch in test: ${url}`);
 			const method = match[1] ?? "";
 			const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
-			calls.push({ method, body });
+			const messageId = method === "sendMessage" ? nextMessageId++ : undefined;
+			calls.push({ method, body, ...(messageId === undefined ? {} : { messageId }) });
 			const result =
 				method === "sendMessage"
 					? {
-							message_id: nextMessageId++,
+							message_id: messageId,
 							date: 1_790_000_000,
 							chat: { id: Number(body.chat_id), type: "private" },
 							text: body.text,
@@ -316,16 +325,8 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 	let nextUpdateId = 325_000;
 	async function press(card: TelegramCall, action: "ba" | "br", queryId: string) {
 		const before = calls.length;
-		const messageId = Number(
-			only(
-				(
-					await admin.query<{ remote_message_id: string }>(
-						"select remote_message_id from approval_delivery_message where binding_id = $1",
-						[bindingOf(card)],
-					)
-				).rows,
-			).remote_message_id,
-		);
+		const messageId = card.messageId;
+		if (messageId === undefined) throw new Error("not a sent card");
 		await handleTelegramUpdate(
 			{
 				update_id: nextUpdateId++,
@@ -342,11 +343,11 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 			},
 			botConfig(),
 		);
+		// Concurrent presses share the call log; each press is acknowledged once.
 		const after = calls.slice(before);
-		return {
-			answer: only(after.filter((call) => call.method === "answerCallbackQuery")),
-			edits: after.filter((call) => call.method === "editMessageText"),
-		};
+		const answer = after.find((call) => call.method === "answerCallbackQuery");
+		if (!answer) throw new Error("press was not acknowledged");
+		return { answer, edits: after.filter((call) => call.method === "editMessageText") };
 	}
 
 	let passMinutes = 0;
@@ -362,7 +363,7 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		await admin.query("drop function if exists t325_fail() cascade");
 		await admin.query("delete from organization where id = $1", [ids.organization]);
 		await admin.query('delete from "user" where id = any($1::text[])', [
-			[ids.requesterUser, ids.managerUser],
+			[ids.requesterUser, ids.managerUser, ids.finalUser],
 		]);
 	}
 
@@ -476,6 +477,46 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		);
 	}
 
+	/** Direct manager, then a named final approver (who decides on the web). */
+	async function seedTwoStages() {
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into "user" (id, name, email, created_at, updated_at)
+			 values ($1, 'Frankie Final', 't325-final@example.test', $2, $2)`,
+			[ids.finalUser, timestamp],
+		);
+		await admin.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at)
+			 values ('t325-member-final', $1, $2, 'admin', 'approved', $3)`,
+			[ids.organization, ids.finalUser, timestamp],
+		);
+		await admin.query(
+			`insert into employee (id, user_id, organization_id, role, updated_at)
+			 values ($1, $2, $3, 'admin', $4)`,
+			[ids.finalApprover, ids.finalUser, ids.organization, timestamp],
+		);
+		await admin.query(
+			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, $2, 'T325 two stages', true, 1, $3, $4)`,
+			[ids.approvalPolicy, ids.organization, ids.managerUser, timestamp],
+		);
+		await admin.query(
+			`insert into approval_policy_stage
+			 (id, organization_id, policy_id, step_order, label, approver_type,
+			  approver_employee_id, fallback_behavior, updated_at) values
+			 ($1, $3, $4, 1, 'Manager', 'direct_manager', null, 'fail', $6),
+			 ($2, $3, $4, 2, 'Final', 'specific_employee', $5, 'fail', $6)`,
+			[
+				ids.firstStage,
+				ids.secondStage,
+				ids.organization,
+				ids.approvalPolicy,
+				ids.finalApprover,
+				timestamp,
+			],
+		);
+	}
+
 	async function seedBreakPolicy() {
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
@@ -542,13 +583,13 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 	}
 
 	/** A manual entry of 09:00-17:30 in the Berlin browser zone (continued once). */
-	async function submitManual(submissionId = randomUUID()) {
+	async function submitManual(date = "2026-07-20", submissionId = randomUUID()) {
 		actAs(ids.requesterUser);
 		const result = await createManualTimeEntry({
 			version: 2,
 			submissionId,
 			targetEmployeeId: ids.requester,
-			date: "2026-07-20",
+			date,
 			clockIn: { time: "09:00", occurrence: null, displayedOffsetMinutes: 120 },
 			clockOut: { time: "17:30", occurrence: null, displayedOffsetMinutes: 120 },
 			zone: { basis: "browser", timezone: "Europe/Berlin" },
@@ -887,5 +928,464 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 					section.title.key === "approvals:approvals.requestedCorrection",
 			),
 		).toBe(false);
+	});
+
+	it("presents a deletion request and a metadata-only change without inventing working times", async () => {
+		await seed();
+		const deleted = await recordWork(
+			parseInstant("2026-07-22T08:00:00Z"),
+			parseInstant("2026-07-22T10:00:00Z"),
+			{ approval: false },
+		);
+		actAs(ids.requesterUser);
+		await expect(
+			requestTimeEntryDeletion({
+				workPeriodId: deleted.id,
+				submissionId: randomUUID(),
+				reason: "Recorded by mistake",
+			}),
+		).resolves.toMatchObject({ success: true });
+		const deletion = await pendingCycle(deleted.id, "time_correction");
+		const metadata = await recordWork(
+			parseInstant("2026-07-23T08:00:00Z"),
+			parseInstant("2026-07-23T10:00:00Z"),
+			{ approval: false },
+		);
+		actAs(ids.requesterUser);
+		await expect(
+			requestTimeCorrection({
+				workPeriodId: metadata.id,
+				submissionId: randomUUID(),
+				newClockInDate: "2026-07-23",
+				newClockInTime: "08:00",
+				newClockOutDate: "2026-07-23",
+				newClockOutTime: "10:00",
+				reason: "Worked from home",
+				workLocationType: "home",
+				workCategoryId: null,
+			}),
+		).resolves.toMatchObject({ success: true });
+		const metadataOnly = await pendingCycle(metadata.id, "time_correction");
+
+		await deliver();
+		const cardFor = (request: string) =>
+			sends().find((call) => String(call.body.text).includes(request));
+		const deletionCard = cardFor("Request: Delete this entry");
+		const metadataCard = cardFor("Request: Change work details");
+		expect(sends()).toHaveLength(2);
+		const deletionText = String(deletionCard?.body.text);
+		expect(deletionText).toContain("Request: Delete this entry");
+		expect(deletionText).toContain(
+			"Entry: Jul 22, 2026, 08:00 (UTC+00:00) – Jul 22, 2026, 10:00 (UTC+00:00)",
+		);
+		// Deletion markers are never shown as proposed working times.
+		expect(deletionText).not.toContain("Clock in:");
+		expect(deletionText).not.toContain("Clock out:");
+		const metadataText = String(metadataCard?.body.text);
+		expect(metadataText).toContain("Request: Change work details");
+		expect(metadataText).toContain("Work location: Office → Home");
+		expect(metadataText).not.toContain("Clock in:");
+
+		if (!deletionCard) throw new Error("missing deletion card");
+		await press(deletionCard, "ba", "t325-deletion-1");
+		expect(await counts(deletion.workflow_id)).toMatchObject({ decisions: "1", status: "approved" });
+		const { rows } = await admin.query<{ deleted_at: Date | null }>(
+			"select deleted_at from work_period where id = $1",
+			[deleted.id],
+		);
+		expect(only(rows).deleted_at).not.toBeNull();
+		const review = await reviewSections(deletion.request_id);
+		expect(keyValue(review.sections, "Requested correction").slice(1)).toEqual([
+			["Request", "Delete this entry"],
+			["Entry", "2026-07-22 08:00 (UTC+00:00) – 2026-07-22 10:00 (UTC+00:00)"],
+			["Duration before", "2 h 0 min"],
+		]);
+		expect(keyValue(review.sections, "Result")).toEqual([
+			["Outcome", "Approved"],
+			["Entry", "Deleted"],
+		]);
+		expect(
+			keyValue((await reviewSections(metadataOnly.request_id)).sections, "Requested correction")[1],
+		).toEqual(["Request", "Change work details"]);
+	});
+
+	it("decides nothing when the entry changed after the card was sent, and holds it in review", async () => {
+		await seed();
+		const work = await recordWork(
+			parseInstant("2026-07-22T08:00:00Z"),
+			parseInstant("2026-07-22T10:00:00Z"),
+			{ approval: false },
+		);
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const cycle = await pendingCycle(work.id, "time_correction");
+		await deliver();
+		const card = only(sends());
+		await admin.query("update work_period set work_location_type = 'home' where id = $1", [
+			work.id,
+		]);
+		const before = await counts(cycle.workflow_id);
+
+		const pressed = await press(card, "ba", "t325-changed-1");
+		expect(pressed.answer.body).toMatchObject({ text: "Review required" });
+		expect(await counts(cycle.workflow_id)).toEqual(before);
+		// The still-pending card becomes a review notice without controls.
+		const notice = only(pressed.edits);
+		expect(String(notice.body.text)).toContain("No decision was made");
+		expect(buttonsOf(notice).every((button) => !button.callback_data)).toBe(true);
+
+		const review = await reviewSections(cycle.request_id);
+		expect(
+			review.sections.some((section) => section.type === "callout" && section.tone === "danger"),
+		).toBe(true);
+		expect(review.actions).toMatchObject({ canApprove: false, canReject: false });
+		// A fresh card is not bound to the changed entry either.
+		const fresh = await prepareApprovalPresentation({
+			approvalId: cycle.request_id,
+			recipientEmployeeId: ids.manager,
+			organizationId: ids.organization,
+			provider: "telegram",
+		});
+		expect(fresh.status).toBe("review_required");
+	});
+
+	it("keeps cards review-only unless every gate holds; Slack gets the facts without controls", async () => {
+		const bindings = async () =>
+			Number(
+				only(
+					(
+						await admin.query<{ count: string }>(
+							"select count(*) from approval_review_binding where organization_id = $1",
+							[ids.organization],
+						)
+					).rows,
+				).count,
+			);
+		for (const gate of [
+			{ presentation: "review_only" as const },
+			{ presentation: null },
+			{ capture: false },
+		]) {
+			await seed(gate);
+			const manualId = await submitManual();
+			const cycle = await pendingCycle(manualId, "manual_time_submission");
+			const card = await prepareApprovalPresentation({
+				approvalId: cycle.request_id,
+				recipientEmployeeId: ids.manager,
+				organizationId: ids.organization,
+				provider: "telegram",
+			});
+			expect(card.status).toBe("review_required");
+			expect(await bindings()).toBe(0);
+		}
+
+		await seed();
+		const manualId = await submitManual();
+		const cycle = await pendingCycle(manualId, "manual_time_submission");
+		const slack = await prepareApprovalPresentation({
+			approvalId: cycle.request_id,
+			recipientEmployeeId: ids.manager,
+			organizationId: ids.organization,
+			provider: "slack",
+			summary: { fits: () => true },
+		});
+		expect(slack).toMatchObject({
+			status: "review_summary",
+			title: "Manual time approval request",
+			reviewUrl: `https://t325.example.test/approvals/review/${ids.organization}/compatibility/${cycle.request_id}`,
+		});
+		expect(slack.status === "review_summary" && slack.facts).toContainEqual({
+			label: "Clock in",
+			value: "Jul 20, 2026, 09:00 (UTC+02:00)",
+		});
+		expect(slack).not.toHaveProperty("bindingId");
+		expect(await bindings()).toBe(0);
+		// A card too large for the provider is review-only and binds nothing.
+		const oversized = await prepareApprovalPresentation({
+			approvalId: cycle.request_id,
+			recipientEmployeeId: ids.manager,
+			organizationId: ids.organization,
+			provider: "telegram",
+			fits: () => false,
+		});
+		expect(oversized.status).toBe("review_required");
+		expect(await bindings()).toBe(0);
+	});
+
+	it("keeps legacy-authority time cards review-only while their review shows the evidence", async () => {
+		await seed({ rollout: "legacy" });
+		const manualId = await submitManual();
+		const { rows } = await admin.query<{ id: string }>(
+			"select id from approval_request where entity_id = $1 and status = 'pending'",
+			[manualId],
+		);
+		const requestId = only(rows).id;
+
+		const card = await prepareApprovalPresentation({
+			approvalId: requestId,
+			recipientEmployeeId: ids.manager,
+			organizationId: ids.organization,
+			provider: "telegram",
+		});
+		expect(card.status).toBe("review_required");
+		// No legacy delivery intents exist for time kinds: the owner sends nothing.
+		await deliver();
+		expect(sends()).toHaveLength(0);
+
+		const review = await reviewSections(requestId);
+		expect(keyValue(review.sections, "Submitted times").slice(0, 3)).toEqual([
+			["Employee", "Avery Requester"],
+			["Clock in", "2026-07-20 09:00 (UTC+02:00)"],
+			["Clock out", "2026-07-20 17:30 (UTC+02:00)"],
+		]);
+		actAs(ids.managerUser);
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: requestId,
+				actorEmployeeId: ids.manager,
+				organizationId: ids.organization,
+			}),
+		).resolves.toMatchObject({ status: "approved" });
+		harness.userId = null;
+		const history = (await reviewSections(requestId)).sections.find(
+			(section) => section.type === "timeline" && section.title === "Evidence history",
+		);
+		expect(
+			history?.type === "timeline" &&
+				history.events.map((event) => [event.label, event.actorName]),
+		).toEqual([
+			["Submitted", "Avery Requester"],
+			["Request approved", "Morgan Manager"],
+		]);
+	});
+
+	it("reports an intermediate step apart from the final outcome across a two-stage chain", async () => {
+		await seed();
+		await seedTwoStages();
+		const manualId = await submitManual();
+		const cycle = await pendingCycle(manualId, "manual_time_submission");
+		await deliver();
+		const stageOne = only(sends());
+
+		const pressed = await press(stageOne, "ba", "t325-stage-1");
+		expect(pressed.answer.body).toMatchObject({ text: "Approval recorded" });
+		expect(await counts(cycle.workflow_id)).toMatchObject({ decisions: "1", status: "pending" });
+		const { rows: stepEvidence } = await admin.query(
+			`select assignment_outcome, request_outcome, result from approval_decision_evidence
+			 where workflow_id = $1`,
+			[cycle.workflow_id],
+		);
+		// An intermediate approval is not final: no terminal result exists yet.
+		expect(only(stepEvidence)).toMatchObject({
+			assignment_outcome: "approved",
+			request_outcome: "pending",
+			result: { workPeriodStatus: "pending", terminal: null },
+		});
+
+		// Stage one's card reports its own step; the final approver approves on the web.
+		await deliver();
+		expect(String(only(edits()).body.text)).toContain("Approval recorded");
+		const { rows: finalRequests } = await admin.query<{ id: string }>(
+			`select r.id from approval_request r where r.entity_id = $1 and r.status = 'pending'`,
+			[manualId],
+		);
+		actAs(ids.finalUser);
+		await expect(
+			approveApprovalInboxItem({
+				approvalId: only(finalRequests).id,
+				actorEmployeeId: ids.finalApprover,
+				organizationId: ids.organization,
+			}),
+		).resolves.toMatchObject({ status: "approved" });
+		harness.userId = null;
+		const history = (await reviewSections(cycle.request_id)).sections.find(
+			(section) => section.type === "timeline" && section.title === "Evidence history",
+		);
+		expect(history?.type === "timeline" && history.events.map((event) => event.label)).toEqual([
+			"Submitted",
+			"Approval recorded — awaiting further approval",
+			"Request approved",
+		]);
+	});
+
+	it("stops sent cards when the provider is paused, while committed presses keep replaying", async () => {
+		await seed();
+		const first = await submitManual("2026-07-20");
+		const second = await submitManual("2026-07-21");
+		const committedCycle = await pendingCycle(first, "manual_time_submission");
+		const pausedCycle = await pendingCycle(second, "manual_time_submission");
+		await deliver();
+		expect(sends()).toHaveLength(2);
+		const bindingWorkflow = async (call: TelegramCall) =>
+			only(
+				(
+					await admin.query<{ workflow_id: string }>(
+						"select workflow_id from approval_review_binding where id = $1",
+						[bindingOf(call)],
+					)
+				).rows,
+			).workflow_id;
+		const cards = sends();
+		const committedCard =
+			(await bindingWorkflow(cards[0] as TelegramCall)) === committedCycle.workflow_id
+				? (cards[0] as TelegramCall)
+				: (cards[1] as TelegramCall);
+		const pausedCard = committedCard === cards[0] ? (cards[1] as TelegramCall) : (cards[0] as TelegramCall);
+		await press(committedCard, "ba", "t325-paused-committed");
+		const committed = await counts(committedCycle.workflow_id);
+
+		await admin.query(
+			`update approval_presentation_control set mode = 'review_only' where organization_id = $1`,
+			[ids.organization],
+		);
+		const paused = await press(pausedCard, "ba", "t325-paused-fresh");
+		expect(paused.answer.body).toMatchObject({ text: "Review required" });
+		expect(await counts(pausedCycle.workflow_id)).toMatchObject({ decisions: "0", status: "pending" });
+		const replay = await press(committedCard, "ba", "t325-paused-committed");
+		expect(replay.answer.body).toMatchObject({ text: "Request approved" });
+		expect(await counts(committedCycle.workflow_id)).toEqual(committed);
+	});
+
+	it("commits one decision for concurrent deliveries and rolls back a failed invocation write", async () => {
+		await seed();
+		const work = await recordWork(
+			parseInstant("2026-07-22T08:00:00Z"),
+			parseInstant("2026-07-22T10:00:00Z"),
+			{ approval: false },
+		);
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const cycle = await pendingCycle(work.id, "time_correction");
+		await deliver();
+		const card = only(sends());
+		const before = await counts(cycle.workflow_id);
+		const { rows: periodBefore } = await admin.query("select * from work_period where id = $1", [
+			work.id,
+		]);
+
+		expect(
+			(
+				await admin.query(
+					"select id, controls, state, origin_work_id from approval_delivery_message where workflow_id = $1",
+					[cycle.workflow_id],
+				)
+			).rows,
+		).toHaveLength(1);
+		// An injected invocation failure rolls the whole decision back.
+		await admin.query(
+			`create function t325_fail() returns trigger language plpgsql as $$
+			 begin raise exception 't325 injected invocation failure'; end $$`,
+		);
+		await admin.query(
+			"create trigger t325_fail before insert on approval_invocation for each row execute function t325_fail()",
+		);
+		const failed = await press(card, "ba", "t325-concurrent");
+		expect(failed.answer.body).not.toHaveProperty("text");
+		await admin.query("drop function t325_fail() cascade");
+		expect(await counts(cycle.workflow_id)).toEqual(before);
+		const { rows: periodAfter } = await admin.query("select * from work_period where id = $1", [
+			work.id,
+		]);
+		expect(periodAfter).toEqual(periodBefore);
+
+		// The same query then decides freshly, once, however often it arrives.
+		await Promise.all([
+			press(card, "ba", "t325-concurrent"),
+			press(card, "ba", "t325-concurrent"),
+			press(card, "ba", "t325-concurrent"),
+		]);
+		expect(await counts(cycle.workflow_id)).toMatchObject({
+			decisions: "1",
+			invocations: "1",
+			status: "approved",
+		});
+		expect(
+			answers()
+				.slice(-3)
+				.map((answer) => answer.body.text),
+		).toEqual(["Request approved", "Request approved", "Request approved"]);
+	});
+
+	it("purges one lifecycle's bindings, invocations and delivery rows; a late press recreates nothing", async () => {
+		await seed();
+		const purgedId = await submitManual("2026-07-20");
+		const keptId = await submitManual("2026-07-21");
+		const purged = await pendingCycle(purgedId, "manual_time_submission");
+		const kept = await pendingCycle(keptId, "manual_time_submission");
+		await deliver();
+		const purgedCard = (
+			await Promise.all(
+				sends().map(async (call) => ({
+					call,
+					workflowId: only(
+						(
+							await admin.query<{ workflow_id: string }>(
+								"select workflow_id from approval_review_binding where id = $1",
+								[bindingOf(call)],
+							)
+						).rows,
+					).workflow_id,
+				})),
+			)
+		).find((entry) => entry.workflowId === purged.workflow_id)?.call;
+		if (!purgedCard) throw new Error("missing card");
+		await press(purgedCard, "ba", "t325-purge-1");
+
+		const deleted = await deleteApproval(db as never, ids.organization, purged.workflow_id);
+		expect(deleted.evidence.invocations).toHaveLength(1);
+		expect(deleted.evidence.reviewBindings).toHaveLength(1);
+		expect(deleted.delivery.messages).toHaveLength(1);
+		const remaining = async (workflowId: string) =>
+			only(
+				(
+					await admin.query<Record<string, string>>(
+						`select
+						   (select count(*) from approval_review_binding where workflow_id = $1) as bindings,
+						   (select count(*) from approval_invocation where workflow_id = $1) as invocations,
+						   (select count(*) from approval_delivery_message where workflow_id = $1) as messages,
+						   (select count(*) from approval_submitted_revision where workflow_id = $1) as revisions`,
+						[workflowId],
+					)
+				).rows,
+			);
+		expect(await remaining(purged.workflow_id)).toEqual({
+			bindings: "0",
+			invocations: "0",
+			messages: "0",
+			revisions: "0",
+		});
+		expect(await remaining(kept.workflow_id)).toMatchObject({ bindings: "1", revisions: "1" });
+
+		// A late redelivery of the purged press finds nothing and writes nothing.
+		const late = await press(purgedCard, "ba", "t325-purge-1").catch(() => null);
+		expect(late?.answer.body ?? {}).not.toMatchObject({ text: "Request approved" });
+		expect(await remaining(purged.workflow_id)).toMatchObject({ invocations: "0" });
+	});
+
+	it("silences the existing time notification path where the owner delivers the card", async () => {
+		await seed();
+		const manualId = await submitManual();
+		const notice = {
+			userId: ids.managerUser,
+			organizationId: ids.organization,
+			type: "approval_request_submitted" as const,
+			title: "Manual time entry approval required",
+			message: "Avery Requester submitted a manual time entry.",
+			entityType: "work_period",
+			entityId: manualId,
+		};
+		await sendTelegramNotification(notice);
+		expect(sends()).toHaveLength(0);
+
+		// Without a delivery control for the kind, the existing path keeps its message.
+		await admin.query(
+			`delete from approval_delivery_control
+			 where organization_id = $1 and workflow_type = 'manual_time_submission'`,
+			[ids.organization],
+		);
+		await sendTelegramNotification(notice);
+		expect(sends()).toHaveLength(1);
 	});
 });

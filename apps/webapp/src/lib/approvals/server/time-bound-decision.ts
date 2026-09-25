@@ -5,6 +5,8 @@ import { approvalWorkflow, employee } from "@/db/schema";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { ConflictError, NotFoundError } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
+import { TimeCorrectionApprovalAdapterError } from "../domain-adapters/time-correction.adapter";
+import { OrdinaryWorkPeriodApprovalAdapterError } from "../domain-adapters/work-period.adapter";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	ApprovalInvocationNotAdmittedError,
@@ -287,9 +289,13 @@ function classifyBoundTimeError(error: unknown): BoundTimeInvocationResult {
 	}
 	// The owners' refusals of a request that is no longer the reviewed one
 	// (decided elsewhere, removed, or its scope changed) decide nothing.
+	// The adapters refuse a source that no longer matches its workflow before
+	// anything is written: a stale card, like any other.
 	if (
 		error instanceof ConflictError ||
 		error instanceof NotFoundError ||
+		error instanceof TimeCorrectionApprovalAdapterError ||
+		error instanceof OrdinaryWorkPeriodApprovalAdapterError ||
 		isOrdinaryWorkPeriodDecisionRefusal(error)
 	) {
 		return { status: "review_required", reason: "stale" };
