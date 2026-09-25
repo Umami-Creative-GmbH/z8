@@ -656,6 +656,52 @@ describeIntegration("web clock-in append admission on PostgreSQL", () => {
 			reasons: ["predecessor_hash_mismatch"],
 		},
 		{
+			// Identical hash inputs legitimately give equal hashes. The standard hash
+			// commits previousHash, so a duplicate never sits on one verified path: only
+			// the structure blocks, and explicit IDs keep it from reading as ambiguous.
+			name: "duplicate hashes disambiguated by explicit IDs",
+			history: () => {
+				const left = seedEntry(null, "clock_in", "2026-07-20T08:00:00Z", "2026-07-20T08:00:00Z");
+				const right = {
+					...left,
+					id: seedEntry(null, "clock_in", left.timestamp, left.createdAt).id,
+				};
+				const leftOut = seedEntry(
+					left,
+					"clock_out",
+					"2026-07-20T16:00:00Z",
+					"2026-07-20T16:00:00Z",
+				);
+				const rightOut = {
+					...leftOut,
+					id: seedEntry(right, "clock_out", leftOut.timestamp, leftOut.createdAt).id,
+					previousEntryId: right.id,
+				};
+				return [left, right, leftOut, rightOut];
+			},
+			reasons: ["multiple_roots"],
+		},
+		{
+			name: "a hash-only link into duplicate hashes",
+			history: () => {
+				const left = seedEntry(null, "clock_in", "2026-07-20T08:00:00Z", "2026-07-20T08:00:00Z");
+				// Created later, so latest-created selection would pick it.
+				const right = {
+					...left,
+					id: seedEntry(null, "clock_in", left.timestamp, left.createdAt).id,
+					createdAt: "2026-07-20T09:00:00Z",
+				};
+				return [
+					left,
+					right,
+					seedEntry(left, "clock_out", "2026-07-20T16:00:00Z", "2026-07-20T16:00:00Z", {
+						link: "hash-only",
+					}),
+				];
+			},
+			reasons: ["ambiguous_predecessor", "multiple_roots"],
+		},
+		{
 			name: "an unestablished provider hash format",
 			history: () => [
 				{
