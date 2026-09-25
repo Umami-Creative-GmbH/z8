@@ -105,6 +105,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/time-tracking/actions/work-period-amendment.integration.test.ts" \
 	src/app/api/time-entries/offline-context/route.integration.test.ts \
 	src/app/api/time-entries/commands/route.integration.test.ts \
+	src/app/api/time-entries/clock-out-on-behalf/route.integration.test.ts \
 	src/app/api/time-entries/commands/browser.integration.test.ts \
 	src/app/api/mobile/time-clock/route.integration.test.ts \
 	src/lib/time-tracking/append-assurance.integration.test.ts \
@@ -134,4 +135,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/approvals/escalation/legacy-transfer.integration.test.ts \
 	src/lib/telegram/bound-approval.integration.test.ts \
 	src/lib/approvals/delivery/telegram-delivery.integration.test.ts \
-	src/lib/approvals/delivery/slack-delivery.integration.test.ts
+	src/lib/approvals/delivery/slack-delivery.integration.test.ts \
+	src/lib/teams/bound-approval.integration.test.ts

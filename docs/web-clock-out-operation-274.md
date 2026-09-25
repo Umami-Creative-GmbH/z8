@@ -262,7 +262,8 @@ This slice closes on implementation. The items below are activation gates, track
 in #327 (all-writer adoption), #329 (pilot) and #331 (rollback).
 
 - Every competing writer of the same employee graph must participate or be
-  drained: direct HTTP (#275), on-behalf (#276), manual (#308), active
+  drained: direct HTTP (#275), on-behalf (#276, now participating:
+  [on-behalf-clock-out-276.md](on-behalf-clock-out-276.md)), manual (#308), active
   breaks and splits (#304), corrections (#301/#286), imports (#284, now participating: [reviewed-import-operation-284.md](reviewed-import-operation-284.md)),
   and ordinary, cron and terminal breaks (#303/#305). Runtime demo writers participate since
   [#285](runtime-demo-work-285.md) and also advance `graph_revision` (category
