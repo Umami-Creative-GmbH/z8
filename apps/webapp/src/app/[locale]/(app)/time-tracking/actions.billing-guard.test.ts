@@ -199,7 +199,11 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("marks work balances dirty after clockOut changes payable time", () => {
-		const body = functionBody("clockOutAs", clockingSource);
+		// Every live clock-out adapter shares the post-commit follow-ups (#275).
+		expect(functionBody("clockOutAs", clockingSource)).toContain(
+			"await completeClockOutAfterCommit(",
+		);
+		const body = functionBody("completeClockOutAfterCommit", clockingSource);
 		expect(body).toContain(
 			"await markWorkBalanceDirtyAfterClockOutBestEffort(",
 		);

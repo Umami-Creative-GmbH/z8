@@ -76,8 +76,9 @@ scoping and limits (#261), and Slack has no usable ID.
 The receipt's command records `deviceInfo: "<platform>-bot"`,
 `requestedInstant: null` (the server sampled the instant) and
 `browserTimezone: null`. Bot receipts use the writer `bot_clock_out` (migration
-`0084`; `writer_version` 1). The platform is in the command, and replay compares
-both the writer and the command.
+`0085`; `writer_version` 1), passed to the operation as an explicit writer like
+#275's `direct_http`. The platform is in the command, and replay compares both the
+writer and the command.
 
 ### Complete work invariant
 
@@ -198,8 +199,8 @@ because the old command read the policy through a different module than the one
 the suite forces. It proves nothing about the old code.)
 
 The full runner (`bash apps/webapp/scripts/run-approval-workflow-repository-integration.sh`:
-fresh container, migration recovery check and full chain including `0084`) passed
-**38 files / 724 tests**, including the #272, #273 and #274 clocking suites against
+fresh container, migration recovery check and full chain including `0085`) passed
+**40 files / 750 tests** after merging `dev` (#275, #302), including the #272, #273 and #274 clocking suites against
 the refactored web core. The label-owned containers were verified and removed.
 
 ### Database-free

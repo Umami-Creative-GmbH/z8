@@ -339,6 +339,18 @@ vi.mock(
 	},
 );
 
+// Evidence capture stays inactive here (no control row), as in production; the
+// PostgreSQL suites cover active capture through these same callers.
+vi.mock(
+	"@/lib/approvals/evidence/work-period-evidence",
+	async (importOriginal) => ({
+		...(await importOriginal<
+			typeof import("@/lib/approvals/evidence/work-period-evidence")
+		>()),
+		prepareWorkPeriodSubmissionFacts: async () => null,
+	}),
+);
+
 vi.mock("@/lib/approvals/workflow/runtime", async (importOriginal) => {
 	const actual =
 		await importOriginal<typeof import("@/lib/approvals/workflow/runtime")>();

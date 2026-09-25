@@ -7,3 +7,5 @@ export * from "./legacy-absence";
 export * from "./store";
 export * from "./travel-expense-facts";
 export * from "./travel-expense-submission";
+export * from "./work-period-evidence";
+export * from "./work-period-facts";
