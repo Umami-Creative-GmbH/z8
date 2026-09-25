@@ -80,7 +80,9 @@ vi.mock("@/lib/billing/guard", () => ({
 }));
 
 const { processImportReviewJob } = await import("./worker");
-const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
+const { clockIn, clockOut, createManualTimeEntry } = await import(
+	"@/app/[locale]/(app)/time-tracking/actions/clocking"
+);
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -1316,6 +1318,73 @@ describeIntegration("reviewed imports through the completed-work operation on Po
 				expect(await position()).toMatchObject({ entry_count: 1, version: 1 });
 			},
 		);
+
+		it("holds an import over committed manual work, and records the manual writer's own rule", async () => {
+			// Manual entry rejects future times, so the scenario uses yesterday (UTC).
+			const day = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+			actAs(ids.employeeUser);
+			const manual = await createManualTimeEntry({
+				submissionId: randomUUID(),
+				date: day,
+				clockInTime: "08:00",
+				clockOutTime: "09:00",
+				reason: "Forgot to clock in",
+				timezone: "UTC",
+				browserTimezone: "UTC",
+			});
+			expect(manual).toMatchObject({ success: true });
+			const manualPeriod = only(await periods());
+			const batch = await createBatch();
+			const overManual = await stageRow(batch, {
+				sourceId: "over-manual",
+				startsAt: `${day}T08:30:00Z`,
+				endsAt: `${day}T09:30:00Z`,
+			});
+			const beforeManual = await stageRow(batch, {
+				sourceId: "before-manual",
+				startsAt: `${day}T06:00:00Z`,
+				endsAt: `${day}T07:00:00Z`,
+			});
+
+			await runCommit(batch);
+
+			expect((await stagedRow(overManual)).commit_hold).toMatchObject({
+				reason: "occupancy_conflict",
+				occupants: [{ kind: "work_period", id: manualPeriod.id }],
+			});
+			expect((await stagedRow(beforeManual)).row_status).toBe("committed");
+
+			// Import first: the manual writer has not adopted the shared rule yet (#308). It
+			// avoids the overlap by trimming its own interval, which #254 forbids; pinned
+			// here as the current behavior, not the target.
+			actAs(ids.employeeUser);
+			const overImport = await createManualTimeEntry({
+				submissionId: randomUUID(),
+				date: day,
+				clockInTime: "06:30",
+				clockOutTime: "07:30",
+				reason: "Overlaps the imported work",
+				timezone: "UTC",
+				browserTimezone: "UTC",
+			});
+			expect(overImport).toMatchObject({
+				success: true,
+				data: {
+					wasAdjusted: true,
+					adjustedTimes: { clockIn: `${day}T07:01:00.000Z`, clockOut: `${day}T07:30:00.000Z` },
+				},
+			});
+			const { rows: overlaps } = await admin.query(
+				`select a.id from work_period a join work_period b
+				   on a.employee_id = b.employee_id and a.id < b.id
+				  and a.deleted_at is null and b.deleted_at is null
+				  and a.start_time < coalesce(b.end_time, 'infinity')
+				  and b.start_time < coalesce(a.end_time, 'infinity')
+				 where a.employee_id = $1`,
+				[ids.employee],
+			);
+			expect(overlaps).toEqual([]);
+		});
 
 		it("keeps other employees independent while one employee's key is held", async () => {
 			const batch = await createBatch();
