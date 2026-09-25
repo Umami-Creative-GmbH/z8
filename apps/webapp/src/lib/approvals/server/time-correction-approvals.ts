@@ -89,6 +89,12 @@ import {
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
+import {
+	ApprovalAssignmentReassignedError,
+	approvalReassignedConflict,
+	assertNotReplacedByEscalation,
+	eligibleManagerFallbackAllowed,
+} from "../escalation/decision-authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	prepareLegacyTimeCorrectionDecisionEvidence,
@@ -161,6 +167,9 @@ class OrdinaryWorkPeriodDecisionDelegation extends Error {
 }
 
 export function translateTimeCorrectionDecisionError(error: unknown): unknown {
+	if (error instanceof ApprovalAssignmentReassignedError) {
+		return approvalReassignedConflict(error);
+	}
 	if (!(error instanceof ApprovalTransitionEngineError)) return error;
 
 	switch (error.code) {
@@ -5263,6 +5272,13 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						),
 					);
 			const target = targets[0];
+			if (target) {
+				assertNotReplacedByEscalation({
+					stage: target.stage,
+					target: target.assignment,
+					actorEmployeeId: input.actorEmployeeId,
+				});
+			}
 			if (targets.length !== 1 || !target) {
 				throw new ConflictError({
 					message:
@@ -5395,12 +5411,18 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							candidate.status === "pending",
 					);
 					if (!stage?.legacyApprovalRequestId) return false;
-					return await isEligibleManagerForApprovalRequest({
+					const eligible = await isEligibleManagerForApprovalRequest({
 						db: authorization.dbService.db as never,
 						approvalRequestId: stage.legacyApprovalRequestId,
 						managerEmployeeId: currentEmployee.id,
 						organizationId: authorization.organizationId,
 					});
+					// Eligible-manager status never bypasses an escalation replacement:
+					// the eligible manager is told the approval moved (#255 §4, #326).
+					if (eligible && !eligibleManagerFallbackAllowed(stage, command.assignmentId)) {
+						throw new ApprovalAssignmentReassignedError();
+					}
+					return eligible;
 				},
 				clock: systemClock,
 			});
@@ -5493,6 +5515,9 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							? { kind: "approve", reason: reason ?? null }
 							: { kind: "reject", reason: reason ?? "" },
 				}).catch((ordinaryError: unknown) => {
+					if (ordinaryError instanceof ApprovalAssignmentReassignedError) {
+						throw approvalReassignedConflict(ordinaryError);
+					}
 					// Manual/policy clock-out evidence holds answer as 409 conflicts.
 					throw translateWorkPeriodEvidenceError(ordinaryError);
 				});

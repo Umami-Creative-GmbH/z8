@@ -7,6 +7,7 @@ import {
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 } from "@/db/schema";
+import { getAbility } from "@/lib/auth-helpers";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -18,6 +19,11 @@ import { onTravelExpenseApproved, onTravelExpenseRejected } from "@/lib/notifica
 import { recordLegacyDeliveryIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
+import {
+	ApprovalAssignmentReassignedError,
+	approvalReassignedConflict,
+} from "../escalation/decision-authority";
+import { findLegacyTransferredApprovalRequest } from "../escalation/legacy-transfer-store";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	type ApprovalInvocationCommand,
@@ -512,6 +518,12 @@ export interface TravelExpenseDecisionInput {
 	>;
 	/** Present only for a bound card action; its authority is the binding alone. */
 	bound?: TravelExpenseBoundInvocation;
+	/**
+	 * Explicit organization-level approval management, checked by the trusted
+	 * caller. Absent means no management authority (fail closed); a card
+	 * never carries it.
+	 */
+	canManageOrganizationApproval?(): Promise<boolean>;
 }
 
 export type TravelExpenseDecisionOutcome =
@@ -671,6 +683,24 @@ export async function executeTravelExpenseDecisionInTransaction(
 		}
 	}
 
+	// An escalation transfer revoked the former holders' authority (#326): only
+	// the current approver or explicit organization management may decide.
+	// Eligible-manager fallback never bypasses the replacement (#255 §4). The
+	// request row is locked like the transfer locks it, so they serialize.
+	const transferred = await findLegacyTransferredApprovalRequest(database, {
+		organizationId,
+		entityType: "travel_expense_claim",
+		entityId: claimId,
+		...(approvalRequestId ? { approvalRequestId } : {}),
+	});
+	if (
+		transferred &&
+		transferred.currentApproverEmployeeId !== actor.id &&
+		(input.bound !== undefined || !(await input.canManageOrganizationApproval?.()))
+	) {
+		throw new ApprovalAssignmentReassignedError();
+	}
+
 	const revision = await prepareLegacyTravelExpenseDecisionEvidence(database, {
 		organizationId,
 		claimId,
@@ -788,6 +818,9 @@ const EVIDENCE_CONFLICT_MESSAGES: Record<string, string> = {
 
 /** Evidence holds surface as 409 conflicts; integrity contradictions stay errors. */
 export function translateTravelExpenseDecisionError(error: unknown): unknown {
+	if (error instanceof ApprovalAssignmentReassignedError) {
+		return approvalReassignedConflict(error);
+	}
 	if (!(error instanceof ApprovalEvidenceError) || error.code === "invariant") {
 		return error;
 	}
@@ -835,6 +868,14 @@ export function decideTravelExpenseClaimEffect(
 		...input,
 		organizationId: currentEmployee.organizationId,
 		actor: currentEmployee,
+		// Explicit organization approval management, from the caller's current
+		// abilities; never inferred from eligible-manager status.
+		canManageOrganizationApproval:
+			input.canManageOrganizationApproval ??
+			(async () => {
+				const ability = await getAbility();
+				return ability?.cannot("manage", "Approval") === false;
+			}),
 	};
 	return Effect.tryPromise({
 		try: async () => {
@@ -859,12 +900,22 @@ export type BoundTravelExpenseInvocationResult =
 	  }
 	| {
 			status: "review_required";
-			reason: "binding" | "stale" | "material_change" | "evidence" | "not_admitted";
+			reason:
+				| "binding"
+				| "stale"
+				| "reassigned"
+				| "material_change"
+				| "evidence"
+				| "not_admitted";
 	  }
 	| { status: "conflict" }
 	| { status: "not_found" };
 
 function classifyBoundTravelExpenseError(error: unknown): BoundTravelExpenseInvocationResult {
+	if (error instanceof ApprovalAssignmentReassignedError) {
+		// Escalation moved the card's request to another approver (#326).
+		return { status: "review_required", reason: "reassigned" };
+	}
 	if (error instanceof ApprovalInvocationNotAdmittedError) {
 		return { status: "review_required", reason: "not_admitted" };
 	}

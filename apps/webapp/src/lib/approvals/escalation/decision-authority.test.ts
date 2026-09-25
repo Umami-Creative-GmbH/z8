@@ -3,6 +3,8 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalAssignmentSnapshot, ApprovalWorkflowSnapshot } from "../workflow/ports";
 import {
 	ApprovalAssignmentReassignedError,
+	assertNotReplacedByEscalation,
+	eligibleManagerFallbackAllowed,
 	lineageContainsEscalation,
 	selectCanonicalDecisionTarget,
 	wasReplacedByEscalation,
@@ -204,5 +206,64 @@ describe("escalated lineage", () => {
 		if (!stage) throw new Error("fixture");
 		expect(lineageContainsEscalation(stage, ids.replacement)).toBe(false);
 		expect(wasReplacedByEscalation(stage, ids.formerApprover)).toBe(false);
+	});
+});
+
+describe("decision revocation shared by every canonical kind (#326)", () => {
+	function escalatedStage(kind: "escalation" | "reassignment" = "escalation") {
+		const stage = escalated(kind).stages[0];
+		if (!stage) throw new Error("fixture");
+		const replacement = stage.assignments.find((candidate) => candidate.id === ids.replacement);
+		if (!replacement) throw new Error("fixture");
+		return { stage, replacement };
+	}
+
+	it("refuses the replaced holder's fresh decision of the replacement as reassigned", () => {
+		const { stage, replacement } = escalatedStage();
+		expect(() =>
+			assertNotReplacedByEscalation({
+				stage,
+				target: replacement,
+				actorEmployeeId: ids.formerApprover,
+			}),
+		).toThrow(ApprovalAssignmentReassignedError);
+	});
+
+	it("admits the replacement and actors who never held the lineage", () => {
+		const { stage, replacement } = escalatedStage();
+		for (const actorEmployeeId of [ids.replacementApprover, ids.manager]) {
+			expect(() =>
+				assertNotReplacedByEscalation({ stage, target: replacement, actorEmployeeId }),
+			).not.toThrow();
+		}
+	});
+
+	it("leaves decided targets (exact retries) and human reassignments alone", () => {
+		const { stage, replacement } = escalatedStage();
+		expect(() =>
+			assertNotReplacedByEscalation({
+				stage,
+				target: { ...replacement, status: "approved" },
+				actorEmployeeId: ids.formerApprover,
+			}),
+		).not.toThrow();
+		const reassigned = escalatedStage("reassignment");
+		expect(() =>
+			assertNotReplacedByEscalation({
+				stage: reassigned.stage,
+				target: reassigned.replacement,
+				actorEmployeeId: ids.formerApprover,
+			}),
+		).not.toThrow();
+	});
+
+	it("closes eligible-manager fallback on an escalated lineage only", () => {
+		expect(eligibleManagerFallbackAllowed(escalatedStage().stage, ids.replacement)).toBe(false);
+		expect(
+			eligibleManagerFallbackAllowed(escalatedStage("reassignment").stage, ids.replacement),
+		).toBe(true);
+		const single = workflow([assignment({ id: ids.former })]).stages[0];
+		if (!single) throw new Error("fixture");
+		expect(eligibleManagerFallbackAllowed(single, ids.former)).toBe(true);
 	});
 });

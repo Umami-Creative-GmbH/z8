@@ -56,6 +56,7 @@ import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	ApprovalAssignmentReassignedError,
+	approvalReassignedConflict,
 	lineageContainsEscalation,
 	selectCanonicalDecisionTarget,
 } from "../escalation/decision-authority";
@@ -134,12 +135,7 @@ const EVIDENCE_REVIEW_MESSAGES = {
 
 export function translateAbsenceDecisionError(error: unknown): unknown {
 	if (error instanceof ApprovalAssignmentReassignedError) {
-		return new ConflictError({
-			message:
-				"This approval was reassigned to another approver. Open the approvals inbox to see its current state.",
-			conflictType: "approval_reassigned",
-			details: { code: error.code },
-		});
+		return approvalReassignedConflict(error);
 	}
 	if (error instanceof ApprovalEvidenceError) {
 		// Integrity contradictions stay infrastructure-visible errors.

@@ -1,4 +1,4 @@
-import { and, asc, eq, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type ApprovalEscalationAttentionReason,
@@ -10,13 +10,16 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import {
+	compareInstants,
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { TIME_APPROVAL_WORKFLOW_TYPES } from "../time-approval-kinds";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalAssignmentSnapshot,
@@ -41,6 +44,16 @@ import {
 } from "./attention-store";
 import { loadEscalationCandidateFacts } from "./candidates";
 import {
+	CANONICAL_ESCALATION_WORKFLOW_TYPES,
+	type CanonicalEscalationWorkflowType,
+	ESCALATION_WORKFLOW_TYPES,
+	type EscalationWorkflowType,
+	isCanonicalEscalationWorkflowType,
+	LEGACY_ESCALATION_ENTITY_TYPES,
+	type LegacyEscalationEntityType,
+	unsupportedCanonicalReplacementRoute,
+} from "./kinds";
+import {
 	commitLegacyHumanTransfer,
 	isLegacyObservationRejection,
 	LegacyTransferRaceError,
@@ -48,7 +61,6 @@ import {
 	listDueLegacyRequestCandidates,
 	prepareLegacyHumanEscalation,
 	processDueLegacyRequest,
-	readAbsenceAuthorityForDiscovery,
 } from "./legacy-transfer";
 import {
 	createEscalationRuntime,
@@ -57,9 +69,9 @@ import {
 	employeeNames,
 	fixedGateContext,
 	isTransitionRace,
+	readDecisionAuthorityForDiscovery,
 	readEscalationOwnership,
 	readEscalationPolicy,
-	SUPPORTED_WORKFLOW_TYPE,
 } from "./transfer-context";
 import {
 	automaticEscalationOperationKey,
@@ -121,23 +133,28 @@ function toTransferView(row: EscalationTransferRow): EscalationTransferView {
 }
 
 interface CurrentStageAssignment {
+	workflowType: CanonicalEscalationWorkflowType;
 	snapshot: ApprovalWorkflowSnapshot;
 	requesterEmployeeId: string;
 	stage: ApprovalStageSnapshot;
 	source: ApprovalAssignmentSnapshot;
 }
 
-/** The source must still be a pending assignment of the active human stage. */
+/**
+ * The source must still be a pending assignment of the active human stage of
+ * a workflow of the kind whose gate this transaction holds.
+ */
 function currentPendingAssignment(
 	snapshot: ApprovalWorkflowSnapshot,
 	organizationId: string,
+	workflowType: CanonicalEscalationWorkflowType,
 	stageId: string,
 	assignmentId: string,
 ): CurrentStageAssignment | null {
 	const requesterEmployeeId = snapshot.requesterEmployeeId;
 	if (
 		snapshot.organizationId !== organizationId ||
-		snapshot.workflowType !== SUPPORTED_WORKFLOW_TYPE ||
+		snapshot.workflowType !== workflowType ||
 		snapshot.status !== "pending" ||
 		requesterEmployeeId === null
 	) {
@@ -155,7 +172,7 @@ function currentPendingAssignment(
 	) {
 		return null;
 	}
-	return { snapshot, requesterEmployeeId, stage, source };
+	return { workflowType, snapshot, requesterEmployeeId, stage, source };
 }
 
 function pendingSiblings(current: CurrentStageAssignment) {
@@ -164,22 +181,16 @@ function pendingSiblings(current: CurrentStageAssignment) {
 	);
 }
 
-/**
- * The replacement's web inbox discovers canonical absences through the
- * canonical-to-legacy representative, which names exactly one approver.
- * Anything else has no actual replacement inbox path yet and must be held.
- */
+/** Why the replacement would have no working inbox/decision path, if so. */
 function unsupportedReplacementRoute(
 	current: CurrentStageAssignment,
 	gate: ApprovalWriteGateResult,
 ): string | null {
-	if (gate.behavior.mirror !== "canonical_to_legacy") {
-		return "absence_inbox_requires_compatibility_mirror";
-	}
-	if (pendingSiblings(current).length > 0) {
-		return "parallel_assignments_without_replacement_inbox";
-	}
-	return null;
+	return unsupportedCanonicalReplacementRoute({
+		workflowType: current.workflowType,
+		mirror: gate.behavior.mirror,
+		pendingSiblingCount: pendingSiblings(current).length,
+	});
 }
 
 /**
@@ -331,7 +342,7 @@ async function commitCanonicalTransfer(input: CommitTransferInput): Promise<Comm
 			operationKey: input.operationKey,
 			initiator: input.initiator,
 			authorityMode: "canonical",
-			workflowType: SUPPORTED_WORKFLOW_TYPE,
+			workflowType: input.current.workflowType,
 			workflowId: snapshot.id,
 			stageId: stage.id,
 			sourceAssignmentId: source.id,
@@ -444,17 +455,20 @@ export interface ProcessDueEscalationsSummary {
 		| "ownership_changed"
 		| "policy_not_prepared"
 		| "policy_disabled";
-	/** Which authority's assignments were discovered and processed (#299). */
-	authority: "canonical" | "legacy" | null;
+	/**
+	 * Discovery-time authority of each discovered kind (#299, #326): canonical
+	 * kinds' assignments or legacy kinds' pending requests were examined.
+	 */
+	authorities: Partial<Record<EscalationWorkflowType, "canonical" | "legacy">>;
 	examined: number;
 	transferred: number;
 	replayed: number;
 	held: Partial<Record<ApprovalEscalationAttentionReason, number>>;
 	notDue: number;
 	notPending: number;
-	/** Canonical discovery skipped: legacy owners decide these absences. */
+	/** Canonical discovery skipped: legacy owners decide this kind now. */
 	legacyAuthority: number;
-	/** Legacy discovery skipped: the rollout moved to canonical authority. */
+	/** Legacy discovery skipped: the kind's rollout moved to canonical authority. */
 	canonicalAuthority: number;
 	raced: number;
 	failed: number;
@@ -467,7 +481,7 @@ function emptySummary(
 	return {
 		organizationId,
 		status,
-		authority: null,
+		authorities: {},
 		examined: 0,
 		transferred: 0,
 		replayed: 0,
@@ -481,13 +495,30 @@ function emptySummary(
 	};
 }
 
+type DiscoveredWork =
+	| {
+			authority: "canonical";
+			workflowType: CanonicalEscalationWorkflowType;
+			workflowId: string;
+			stageId: string;
+			assignmentId: string;
+			pendingSince: Instant;
+	  }
+	| { authority: "legacy"; approvalRequestId: string; pendingSince: Instant };
+
+function discoveredId(work: DiscoveredWork): string {
+	return work.authority === "canonical" ? work.assignmentId : work.approvalRequestId;
+}
+
 /**
  * Bounded, organization-scoped scheduled operation (#255 §1). The scheduler
- * supplies scope and limits only: this module discovers candidates, evaluates
- * the current policy against evidenced actionable instants, selects the
- * backup and commits transfers or durable holds. Each assignment commits in
- * its own transaction; a race lost to a decision or another transfer is an
- * explicit outcome, not an infrastructure failure.
+ * supplies scope and limits only: this module discovers candidates of every
+ * admitted kind under its current authority, evaluates the current policy
+ * against evidenced actionable instants, selects the backup and commits
+ * transfers or durable holds. Canonical assignments and legacy requests are
+ * examined oldest first within one limit. Each commits in its own
+ * transaction; a race lost to a decision or another transfer is an explicit
+ * outcome, not an infrastructure failure.
  */
 export async function processDueEscalations(input: {
 	organizationId: string;
@@ -515,24 +546,136 @@ export async function processDueEscalations(input: {
 	if (!policy) return emptySummary(organizationId, "policy_not_prepared");
 	if (!policy.enabled) return emptySummary(organizationId, "policy_disabled");
 
-	// actionableAt >= assignedAt for every evidence kind, so this prefilter
-	// never skips a due assignment.
-	const assignedCutoff = dateFromInstant(now.subtract({ hours: policy.responseWindowHours }));
-	// Canonical versus legacy authority selects what is discovered; each
-	// transfer transaction re-reads the mode under the write gate.
-	if ((await readAbsenceAuthorityForDiscovery(db, organizationId)) === "legacy") {
-		return processDueLegacyEscalations({
+	// actionableAt >= assignedAt (or the request's creation) for every
+	// evidence kind, so this prefilter never skips due work.
+	const cutoff = now.subtract({ hours: policy.responseWindowHours });
+	// Each kind's authority selects what is discovered; every transfer
+	// transaction re-reads the mode under that kind's write gate.
+	const authorities = await readDecisionAuthorityForDiscovery(
+		db,
+		organizationId,
+		ESCALATION_WORKFLOW_TYPES,
+	);
+	const canonicalTypes = CANONICAL_ESCALATION_WORKFLOW_TYPES.filter(
+		(workflowType) => authorities.get(workflowType) === "canonical",
+	);
+	const legacyEntityTypes = (
+		Object.keys(LEGACY_ESCALATION_ENTITY_TYPES) as LegacyEscalationEntityType[]
+	).filter((entityType) => {
+		const workflowType = LEGACY_ESCALATION_ENTITY_TYPES[entityType];
+		if (workflowType === null) {
+			return TIME_APPROVAL_WORKFLOW_TYPES.some((time) => authorities.get(time) === "legacy");
+		}
+		// Expenses have no canonical adapter: under any other mode their
+		// requests are held visibly, never skipped.
+		return workflowType === "travel_expense" || authorities.get(workflowType) === "legacy";
+	});
+
+	const canonicalWork = await listDueCanonicalAssignments({
+		organizationId,
+		workflowTypes: canonicalTypes,
+		assignedCutoff: cutoff,
+		limit,
+	});
+	const legacyWork: DiscoveredWork[] = (
+		await listDueLegacyRequestCandidates(db, {
 			organizationId,
+			entityTypes: legacyEntityTypes,
+			// Mirrored representatives of canonically decided kinds are
+			// discovered through their assignments instead.
+			excludeCanonicalWorkflowTypes: canonicalTypes,
+			createdCutoff: cutoff,
 			limit,
-			now,
-			createdCutoff: now.subtract({ hours: policy.responseWindowHours }),
-		});
+		})
+	).map((request) => ({
+		authority: "legacy" as const,
+		approvalRequestId: request.approvalRequestId,
+		pendingSince: request.createdAt,
+	}));
+	const work = [...canonicalWork, ...legacyWork]
+		.sort(
+			(left, right) =>
+				compareInstants(left.pendingSince, right.pendingSince) ||
+				discoveredId(left).localeCompare(discoveredId(right)),
+		)
+		.slice(0, limit);
+
+	const summary: ProcessDueEscalationsSummary = {
+		...emptySummary(organizationId, "processed"),
+		authorities: Object.fromEntries(authorities),
+	};
+	const runtime = createEscalationRuntime(null);
+	for (const item of work) {
+		summary.examined += 1;
+		try {
+			const outcome =
+				item.authority === "canonical"
+					? await processDueAssignment(runtime, { organizationId, ...item, now })
+					: await processDueLegacyRequest(runtime, {
+							organizationId,
+							approvalRequestId: item.approvalRequestId,
+							now,
+						});
+			switch (outcome.kind) {
+				case "transferred":
+					if (outcome.disposition === "executed") {
+						summary.transferred += 1;
+						if (item.authority === "canonical") {
+							// Committed; the replacement delivery pass also runs on schedule.
+							kickApprovalDelivery({ organizationId, workflowId: item.workflowId });
+						}
+					} else summary.replayed += 1;
+					break;
+				case "held":
+					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
+					break;
+				case "not_due":
+					summary.notDue += 1;
+					break;
+				case "not_pending":
+					summary.notPending += 1;
+					break;
+				case "legacy_authority":
+					summary.legacyAuthority += 1;
+					break;
+				case "canonical_authority":
+					summary.canonicalAuthority += 1;
+					break;
+				case "suppressed":
+					// Ownership moved or paused mid-run: stop without new transfers.
+					summary.status = "ownership_changed";
+					return summary;
+			}
+		} catch (error) {
+			if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
+				summary.raced += 1;
+				continue;
+			}
+			summary.failed += 1;
+			logger.error(
+				{ error, organizationId, subject: discoveredId(item) },
+				"Scheduled approval escalation failed",
+			);
+		}
 	}
-	const candidates = await db
+	return summary;
+}
+
+/** Pending assignments of active human stages of canonically decided kinds, oldest first. */
+async function listDueCanonicalAssignments(input: {
+	organizationId: string;
+	workflowTypes: readonly CanonicalEscalationWorkflowType[];
+	assignedCutoff: Instant;
+	limit: number;
+}): Promise<DiscoveredWork[]> {
+	if (input.workflowTypes.length === 0) return [];
+	const rows = await db
 		.select({
 			assignmentId: approvalStageAssignment.id,
 			workflowId: approvalStageAssignment.workflowId,
 			stageId: approvalStageAssignment.stageId,
+			workflowType: approvalWorkflow.workflowType,
+			assignedAt: approvalStageAssignment.assignedAt,
 		})
 		.from(approvalStageAssignment)
 		.innerJoin(
@@ -551,10 +694,10 @@ export async function processDueEscalations(input: {
 		)
 		.where(
 			and(
-				eq(approvalStageAssignment.organizationId, organizationId),
+				eq(approvalStageAssignment.organizationId, input.organizationId),
 				eq(approvalStageAssignment.status, "pending"),
-				lte(approvalStageAssignment.assignedAt, assignedCutoff),
-				eq(approvalWorkflow.workflowType, SUPPORTED_WORKFLOW_TYPE),
+				lte(approvalStageAssignment.assignedAt, dateFromInstant(input.assignedCutoff)),
+				inArray(approvalWorkflow.workflowType, [...input.workflowTypes]),
 				eq(approvalWorkflow.status, "pending"),
 				eq(approvalWorkflowStage.status, "pending"),
 				eq(approvalWorkflowStage.activationMode, "human"),
@@ -562,146 +705,44 @@ export async function processDueEscalations(input: {
 			),
 		)
 		.orderBy(asc(approvalStageAssignment.assignedAt), asc(approvalStageAssignment.id))
-		.limit(limit);
-
-	const summary: ProcessDueEscalationsSummary = {
-		...emptySummary(organizationId, "processed"),
-		authority: "canonical",
-	};
-	const runtime = createEscalationRuntime(null);
-	for (const candidate of candidates) {
-		summary.examined += 1;
-		try {
-			const outcome = await processDueAssignment(runtime, {
-				organizationId,
-				...candidate,
-				now,
-			});
-			switch (outcome.kind) {
-				case "transferred":
-					if (outcome.disposition === "executed") {
-						summary.transferred += 1;
-						// Committed; the replacement delivery pass also runs on schedule.
-						kickApprovalDelivery({ organizationId, workflowId: candidate.workflowId });
-					} else summary.replayed += 1;
-					break;
-				case "held":
-					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
-					break;
-				case "not_due":
-					summary.notDue += 1;
-					break;
-				case "not_pending":
-					summary.notPending += 1;
-					break;
-				case "legacy_authority":
-					summary.legacyAuthority += 1;
-					break;
-				case "suppressed":
-					// Ownership moved or paused mid-run: stop without new transfers.
-					summary.status = "ownership_changed";
-					return summary;
-			}
-		} catch (error) {
-			if (isTransitionRace(error)) {
-				summary.raced += 1;
-				continue;
-			}
-			summary.failed += 1;
-			logger.error(
-				{ error, organizationId, assignmentId: candidate.assignmentId },
-				"Scheduled approval escalation failed",
-			);
-		}
-	}
-	return summary;
-}
-
-/** Legacy-authoritative discovery and processing (#299); one transaction per request. */
-async function processDueLegacyEscalations(input: {
-	organizationId: string;
-	limit: number;
-	now: Instant;
-	createdCutoff: Instant;
-}): Promise<ProcessDueEscalationsSummary> {
-	const { organizationId } = input;
-	const requestIds = await listDueLegacyRequestCandidates(db, {
-		organizationId,
-		createdCutoff: input.createdCutoff,
-		limit: input.limit,
-	});
-	const summary: ProcessDueEscalationsSummary = {
-		...emptySummary(organizationId, "processed"),
-		authority: "legacy",
-	};
-	const runtime = createEscalationRuntime(null);
-	for (const approvalRequestId of requestIds) {
-		summary.examined += 1;
-		try {
-			const outcome = await processDueLegacyRequest(runtime, {
-				organizationId,
-				approvalRequestId,
-				now: input.now,
-			});
-			switch (outcome.kind) {
-				case "transferred":
-					if (outcome.disposition === "executed") summary.transferred += 1;
-					else summary.replayed += 1;
-					break;
-				case "held":
-					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
-					break;
-				case "not_due":
-					summary.notDue += 1;
-					break;
-				case "not_pending":
-					summary.notPending += 1;
-					break;
-				case "canonical_authority":
-					summary.canonicalAuthority += 1;
-					break;
-				case "suppressed":
-					summary.status = "ownership_changed";
-					return summary;
-			}
-		} catch (error) {
-			if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
-				summary.raced += 1;
-				continue;
-			}
-			summary.failed += 1;
-			logger.error(
-				{ error, organizationId, approvalRequestId },
-				"Scheduled legacy approval escalation failed",
-			);
-		}
-	}
-	return summary;
+		.limit(input.limit);
+	return rows.flatMap((row): DiscoveredWork[] =>
+		isCanonicalEscalationWorkflowType(row.workflowType)
+			? [
+					{
+						authority: "canonical",
+						workflowType: row.workflowType,
+						workflowId: row.workflowId,
+						stageId: row.stageId,
+						assignmentId: row.assignmentId,
+						pendingSince: instantFromDate(row.assignedAt),
+					},
+				]
+			: [],
+	);
 }
 
 async function processDueAssignment(
 	runtime: EscalationRuntime,
 	input: {
 		organizationId: string;
+		workflowType: CanonicalEscalationWorkflowType;
 		workflowId: string;
 		stageId: string;
 		assignmentId: string;
 		now: Instant;
 	},
 ): Promise<DueAssignmentOutcome> {
-	const { organizationId } = input;
+	const { organizationId, workflowType } = input;
 	return runtime.repository.withTransaction(async (context) => {
 		const tx = context.dbService.db as unknown as DatabaseTransaction;
 		const ownership = await readEscalationOwnership(tx, organizationId, true);
 		if (ownership.kind !== "owned" || ownership.paused) {
 			return { kind: "suppressed" };
 		}
-		const gate = await context.writeGate.acquire({
-			organizationId,
-			workflowType: SUPPORTED_WORKFLOW_TYPE,
-		});
+		const gate = await context.writeGate.acquire({ organizationId, workflowType });
 		if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
-			// Legacy-authoritative absences transfer through their own path.
+			// Legacy-authoritative kinds transfer (or are held) through their own path.
 			return { kind: "legacy_authority" };
 		}
 		const snapshot = await context.repository.loadSnapshot({
@@ -711,6 +752,7 @@ async function processDueAssignment(
 		const current = currentPendingAssignment(
 			snapshot,
 			organizationId,
+			workflowType,
 			input.stageId,
 			input.assignmentId,
 		);
@@ -780,7 +822,7 @@ async function processDueAssignment(
 				...(evidence.lineageRootAssignmentId
 					? { lineageRootAssignmentId: evidence.lineageRootAssignmentId }
 					: {}),
-				approvalType: SUPPORTED_WORKFLOW_TYPE,
+				approvalType: workflowType,
 				...(current.stage.legacyApprovalRequestId
 					? { approvalRequestId: current.stage.legacyApprovalRequestId }
 					: {}),
@@ -802,7 +844,7 @@ async function processDueAssignment(
 		});
 		const committed = await commitCanonicalTransfer({
 			runtime,
-			context: fixedGateContext(context, organizationId, gate),
+			context: fixedGateContext(context, organizationId, gate, workflowType),
 			current,
 			recipientEmployeeId: decision.recipientEmployeeId,
 			operationKey,
@@ -887,8 +929,16 @@ async function locateAssignment(
 		.select({
 			workflowId: approvalStageAssignment.workflowId,
 			stageId: approvalStageAssignment.stageId,
+			workflowType: approvalWorkflow.workflowType,
 		})
 		.from(approvalStageAssignment)
+		.innerJoin(
+			approvalWorkflow,
+			and(
+				eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+				eq(approvalWorkflow.organizationId, approvalStageAssignment.organizationId),
+			),
+		)
 		.where(
 			and(
 				eq(approvalStageAssignment.organizationId, organizationId),
@@ -921,23 +971,25 @@ async function prepareHumanEscalation(
 	if (ownership.kind !== "owned") return { kind: "not_owner" };
 	const located = await locateAssignment(tx, actor.organizationId, assignmentId);
 	if (!located) return { kind: "not_found" };
+	const { workflowType } = located;
+	if (!isCanonicalEscalationWorkflowType(workflowType)) {
+		return { kind: "unsupported", route: `workflow_type:${workflowType}` };
+	}
 	const gate = await context.writeGate.acquire({
 		organizationId: actor.organizationId,
-		workflowType: SUPPORTED_WORKFLOW_TYPE,
+		workflowType,
 	});
+	if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+		return { kind: "unsupported", route: "legacy_authority" };
+	}
 	const snapshot = await context.repository.loadSnapshot({
 		organizationId: actor.organizationId,
 		workflowId: located.workflowId,
 	});
-	if (snapshot.workflowType !== SUPPORTED_WORKFLOW_TYPE) {
-		return { kind: "unsupported", route: `workflow_type:${snapshot.workflowType}` };
-	}
-	if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
-		return { kind: "unsupported", route: "legacy_authority" };
-	}
 	const current = currentPendingAssignment(
 		snapshot,
 		actor.organizationId,
+		workflowType,
 		located.stageId,
 		assignmentId,
 	);
@@ -1061,7 +1113,12 @@ export async function escalateAssignmentByManager(input: {
 				const policy = await readEscalationPolicy(tx, actor.organizationId);
 				const outcome = await commitCanonicalTransfer({
 					runtime,
-					context: fixedGateContext(context, actor.organizationId, prepared.gate),
+					context: fixedGateContext(
+						context,
+						actor.organizationId,
+						prepared.gate,
+						prepared.current.workflowType,
+					),
 					current: prepared.current,
 					recipientEmployeeId: recipient.employeeId,
 					operationKey,
