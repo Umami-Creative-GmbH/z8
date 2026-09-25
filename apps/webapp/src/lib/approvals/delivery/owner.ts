@@ -103,6 +103,8 @@ export async function loadApprovalDeliveryAdapter(
 			return (await import("@/lib/teams/approval-delivery")).teamsApprovalDeliveryAdapter;
 		case "slack":
 			return (await import("@/lib/slack/approval-delivery")).slackApprovalDeliveryAdapter;
+		case "discord":
+			return (await import("@/lib/discord/approval-delivery")).discordApprovalDeliveryAdapter;
 	}
 }
 

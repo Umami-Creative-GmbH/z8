@@ -1,12 +1,13 @@
-# Approval card delivery — #291 / T27, #294 / T30, #293 / T29
+# Approval card delivery — #291 / T27, #294 / T30, #293 / T29, #292 / T28
 
 One durable owner sends approval cards and keeps them current. It covers
-Telegram cards (#291), review-only Slack cards (#294) and Teams cards (#293)
-for canonical absences, and, since #296, Telegram cards for legacy-authoritative
-expense claims (see "Legacy lifecycles"). It is **inactive for every
-organization**: migrations `0086_approval_delivery.sql`,
-`0090_approval_delivery_slack.sql`, `0091_teams_approval_actions.sql` and
-`0093_legacy_expense_presentation.sql` insert no control rows.
+Telegram cards (#291), review-only Slack cards (#294), Teams cards (#293) and
+Discord cards (#292, see its section at the end) for canonical absences, and,
+since #296, Telegram cards for legacy-authoritative expense claims (see "Legacy
+lifecycles"). It is **inactive for every organization**: migrations
+`0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql`,
+`0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql` and
+`0094_discord_approval_delivery.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -211,8 +212,8 @@ carry approve or reject controls and never issue a binding:
   repair-waiting work with a fresh schedule. Delivered, suppressed and cancelled
   work is never resent. The incident closes only when a delivery succeeds.
 - Destination repair: when the recipient's Telegram private chat or Slack DM
-  is saved again, or they link their Slack account, their `destination_invalid`
-  work for that provider is re-armed. `unavailable` work (bot missing or token
+  is saved again, they link their Slack account, or they reach the Discord bot
+  again, their `destination_invalid` work for that provider is re-armed. `unavailable` work (bot missing or token
   revoked) waits for explicit recovery after the bot is repaired.
 - Delivery incidents are per channel: `delivery_exhausted` and (since #294)
   `delivery_unavailable` include the delivery channel in their identity, so a
@@ -391,6 +392,123 @@ below both provider clients. 17/17 passing:
 Unit seams: `slack/delivery-outcome.test.ts`, `slack/approval-card.test.ts`,
 `escalation/attention.test.ts`.
 
+## Discord reviewed decisions and delivery — #292 / T28
+
+Discord uses the same prepared presentation, reviewed bindings, decision owner
+and delivery owner as Telegram. It adds no persistence, authority or dispatch
+of its own. Migration `0094_discord_approval_delivery.sql` only widens the
+provider and scheme CHECKs. It inserts no `approval_presentation_control` and
+no `approval_delivery_control` rows, so Discord stays review-only on the
+existing path for every organization.
+
+```text
+owner (provider "discord")                              lib/discord/approval-delivery.ts
+  bot active + approvals enabled; receiver scope discord-app:<application id>
+  destination = DM opened from the recipient's active account link   (never a stored channel)
+  prepareApprovalPresentation(provider "discord", fits: 2000 chars, labels ≤ 80, url ≤ 512)
+  create / edit message with explicit outcomes                        (api.ts, delivery-outcome.ts)
+
+interaction (signature verified by the route)          lib/discord/approval-handler.ts
+  custom_id {"a":"ba"|"br","b":<binding>}  → handleBoundApprovalInteraction
+    deferred ephemeral acknowledgment (type 5), within 3 s, before any decision
+    invocation = discord-app:<application id> + interaction.id  (application must match)
+    attemptBoundBotApproval → decideBoundAbsenceInvocation (scheme discord_interaction)
+    delivered card: pending and undecided → review notice; otherwise left to the owner
+    ephemeral follow-up = committed or verified outcome
+  custom_id {"a":"ap"|"rj","id":<request>} → legacy historical-only matching (unchanged)
+```
+
+- **Identity.** The invocation is the top-level `interaction.id`, scoped to the
+  installation's application ID (#261). The component `custom_id` and the source
+  message ID never stand in for it: a new interaction on the same button gets
+  fresh checks. The same interaction with the same command replays the original
+  result; with another command it is a conflict. Discord has no transport
+  delivery ID, so `delivery_id` is empty. An interaction for another
+  application, or without a snowflake ID or actor, decides nothing.
+- **Acknowledgment.** The deferred acknowledgment is protocol only and proves
+  nothing. If it fails, nothing is decided (Discord shows the press as failed).
+  The follow-up reports the committed outcome, even when updating the card
+  fails. When the outcome is unknown (the decision call failed), it says so and
+  claims nothing; the same interaction replays if the decision did commit. Discord documents no inbound
+  interaction redelivery, so nothing relies on one.
+- **Destination.** Cards go only to the recipient's DM, opened through Discord
+  from their active `discord_user_mapping` in the organization. The stored
+  `discord_conversation` channel may be a server channel and is not used for
+  approval cards (legacy path included). No link is `destination_invalid:destination_missing`;
+  closed DMs (50007), an unknown channel or user and missing access are
+  `destination_invalid`. Any later interaction by the recipient with the
+  Discord bot (`saveConversation`) re-arms that Discord work only; destination
+  repair is scoped to the provider (Telegram's re-arms Telegram work only).
+- **Outcomes.** 429 is `retryable`; 5xx, network errors, timeouts and invalid
+  responses are `ambiguous`; 401 is `unavailable`; other 4xx are `permanent`.
+  On edits, an unknown message or channel, or a message by another author, is
+  `gone`. Only the application that sent a message can edit it; a replaced
+  application's messages are `gone`.
+- **Rendering.** Card and notice text is markdown-escaped and sent with
+  `allowed_mentions: {parse: []}`. A refresh or review notice keeps only the
+  review link button, so controls are removed.
+- **Cross-platform.** The owner refreshes every tracked message of a lifecycle,
+  whatever the provider, so a decision on Telegram, Discord or the web retires
+  the cards on the others.
+- **Legacy path.** Without a Discord delivery control, `sendDiscordNotification`
+  keeps sending, now to the DM and, when admitted, as a bound card. With one,
+  it stays silent for absences that have a canonical workflow.
+
+### Activation (#292)
+
+Apply `0094` after `0093`, then per organization, after the #290/#291 gates:
+insert `approval_presentation_control (…, 'discord', 'actionable')` under the
+rollout lock as for Telegram, and
+`approval_delivery_control (:org, 'absence', 'discord')`.
+
+### Activation blockers (#292, unresolved)
+
+1. Apply `0094` through the authorized deployment. It has run only on the
+   disposable PostgreSQL 16 database.
+2. **Old binaries** do not know the Discord adapter or `discord_interaction`.
+   Insert controls only after every worker and app instance is upgraded.
+3. **Ingress.** The route answers 202 before any durable acceptance; an
+   interaction lost after that is not recovered.
+4. **Untracked duplicates** and **in-place material changes**, as for Telegram
+   (blockers 5 and 6 above).
+5. **Live Discord.** Only the REST transport was replaced in tests; no real
+   application, signature or DM was exercised.
+6. **Stored server channels.** Other (non-approval) Discord notifications still
+   use `discord_conversation`, which slash commands in a server also populate.
+7. Everything in the #290 and #291 blockers (legacy authority #384, escalation
+   replacement delivery #300, activation handover, pilot).
+
+### Verification (#292)
+
+PostgreSQL 16 (`lib/approvals/delivery/discord-delivery.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+`requestAbsenceEffect`, `approveAbsenceEffect`, `processApprovalDeliveries`,
+`handleDiscordInteraction`, `handleTelegramUpdate`, `saveConversation`,
+`sendDiscordNotification` and `deleteApproval`; only the Discord and Telegram
+HTTP transports, vault, session and side channels are replaced. 13/13 passing:
+
+- a real submission sends one bound card to the DM opened from the account
+  link (not the stored server channel) with full identity; a rerun sends nothing;
+- a press is acknowledged (deferred, ephemeral) while the workflow is still
+  pending, decides once with `discord_interaction` / `discord-app:<id>` /
+  interaction ID, reports "Request approved", and leaves the card to the owner,
+  which retires it at the current version;
+- the same interaction replays, a changed command conflicts, and a new
+  interaction on the same message and button decides nothing;
+- another application's interaction decides nothing;
+- a paused press turns the pending card into a review notice;
+- legacy `{"a":"ap"}` buttons stay historical-only;
+- 429 then 502 ×5 retry after 1m/5m/30m/2h/12h and exhaust with attention;
+- no link and closed DMs wait for repair; `saveConversation` re-arms Discord
+  work only, never another provider's;
+- a card that went stale in flight is tracked and retired;
+- Telegram and Discord decisions refresh each other's cards;
+- without a control the existing path sends to the DM; with one it is silent;
+- cleanup removes and reports Discord work, messages and invocations.
+
+Unit seams: `discord/bound-approval.test.ts`, `discord/delivery-outcome.test.ts`,
+`discord/approval-card.test.ts`.
+
 ## Escalation replacement delivery — #300 / T36
 
 A committed escalation transfer (#298) gets its replacement card and the
@@ -414,7 +532,7 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 
 ### Ownership
 
-- `approval_delivery_work.escalation_transfer_id` (migration `0094`) links work
+- `approval_delivery_work.escalation_transfer_id` (migration `0095`) links work
   to the transfer whose delivery owns it. Escalation claims only linked work,
   and the delivery owner claims only unlinked work. Both claim under the same
   organization lock, and at most one refresh per message is in flight.
@@ -436,8 +554,9 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 - Each event is expanded exactly once. The intended channels are frozen at
   that expansion. They are the providers whose delivery control for the kind
   was activated at or before the transfer, and whose escalation-delivery
-  preference (`enable_escalations` on the Telegram bot, the Slack workspace or
-  any of the organization's Teams tenants) is on at that moment. A Teams
+  preference (`enable_escalations` on the Telegram bot, the Slack workspace,
+  the Discord bot or any of the organization's Teams tenants) is on at that
+  moment. A Teams
   replacement is sent only if the recipient's own tenant has it on.
   Enabling escalations later adds no channel to an expanded transfer. A
   delivery control activated after the transfer committed does not count,
@@ -487,10 +606,10 @@ bound card.
 
 ### Activation blockers (#300, unresolved)
 
-1. Apply `0094` after `0093` (#296) through the authorized deployment. It has
+1. Apply `0095` after `0094` (#292) through the authorized deployment. It has
    run only on the disposable PostgreSQL 16 database.
-2. Everything under the #291 and #294 blockers and "Teams specifics (#293)"
-   above, the escalation activation blockers in `escalation-transfer.md`
+2. Everything under the #291, #294 and #292 blockers and "Teams specifics
+   (#293)" above, the escalation activation blockers in `escalation-transfer.md`
    (ownership writer, drained cutover) and the pilot gates.
 3. **Legacy-authoritative transfers** (#299): escalation's pass expands
    canonical transfers only. Their events stay `pending` (recoverable, never
@@ -498,17 +617,16 @@ bound card.
    #408; it can build on the legacy delivery lifecycle #296 added, and its
    actionable absence cards need #384's legacy bound cards. The replacement
    finds the request in the web inbox.
-4. **Telegram, Slack and Teams only.** Slack replacement cards are
+4. **Adapter coverage.** All four adapters (Telegram, Slack, Teams, Discord)
+   implement the escalation-delivery checks. Slack replacement cards are
    review-only, like every Slack card (#294). The PostgreSQL suite covers
-   Telegram; the Slack and Teams adapters' escalation-delivery checks are
-   verified by typecheck and shared code only. Discord has no delivery adapter
-   until #404 lands (it must add the same hooks); its old escalation checker
-   stays execution-gated.
+   Telegram only; the Slack, Teams and Discord checks are verified by
+   typecheck and shared code.
 5. **Old binaries** neither run the replacement pass nor claim by owner. A
-   pre-#300 delivery-owner binary (#291, #294 or #293) would claim escalation work
-   too: it would cancel a replacement card as `purged` (it has no message) and
-   retire former cards with the generic inactive wording, which is never
-   corrected afterwards.
+   pre-#300 delivery-owner binary (#291, #294, #293, #296 or #292) would claim
+   escalation work too: it would cancel a replacement card as `purged` (it has
+   no message) and retire former cards with the generic inactive wording,
+   which is never corrected afterwards.
    Deploy to every worker and drain old delivery-owner workers before any
    organization with a delivery control switches escalation ownership.
 6. **Untracked duplicates** (#291 blocker 6) apply to replacement cards too.

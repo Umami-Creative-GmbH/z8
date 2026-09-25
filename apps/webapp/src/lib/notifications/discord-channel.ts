@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { createLogger } from "@/lib/logger";
 import type { NotificationType } from "./types";
 
@@ -60,6 +61,16 @@ export async function sendDiscordNotification(
 
 		const botConfig = await getBotConfigByOrganization(params.organizationId);
 		if (!botConfig) return;
+
+		// One owner per delivery effect: where the approval delivery owner has
+		// the absence card, this path sends neither the card nor a plain
+		// message about the same request.
+		if (
+			params.type === "approval_request_submitted" &&
+			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "discord" }))
+		) {
+			return;
+		}
 
 		// Handle approval-related notifications specially
 		if (
