@@ -11,6 +11,7 @@
       "alreadyProcessed": "Questa approvazione è già stata elaborata.",
       "boundReviewRequired": "Questa scheda non corrisponde più alla richiesta o all’assegnazione attuale, oppure l’azione non è stata verificata. Nessuna decisione è stata presa. Esamina la richiesta in Z8.",
       "invocationConflict": "Questa pressione è già stata registrata con un’altra azione. Nessuna decisione è stata presa. Esamina la richiesta in Z8.",
+      "outcomeUnknown": "Non è stato possibile confermare il risultato di questa pressione. Controlla la richiesta in Z8 prima di premere di nuovo.",
       "card": {
         "absenceTitle": "Richiesta di assenza da approvare",
         "boundHint": "Approva o rifiuta decide esattamente la richiesta mostrata sopra. Se è stata modificata o riassegnata, non viene deciso nulla e ti verrà chiesto di esaminarla in Z8.",

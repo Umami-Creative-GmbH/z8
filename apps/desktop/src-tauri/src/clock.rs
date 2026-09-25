@@ -32,7 +32,10 @@ pub struct TimeEntry {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClockWriteOutcome {
+    /// Legacy transport entries; empty for a version 2 command receipt.
     pub entries: Vec<TimeEntry>,
+    /// The frozen command's identity, when the write used version 2.
+    pub operation_id: Option<String>,
     pub status: Option<ClockStatus>,
     pub status_refresh_failed: bool,
     pub context_changed: bool,
@@ -97,7 +100,7 @@ impl WorkLocationType {
 }
 
 pub struct ClockService {
-    client: reqwest::Client,
+    pub(crate) client: reqwest::Client,
 }
 
 fn clock_in_body(
@@ -126,7 +129,7 @@ impl ClockService {
         }
     }
 
-    async fn committed_with_status(
+    pub async fn committed_with_status(
         &self,
         webapp_url: &str,
         token: &str,
@@ -134,6 +137,7 @@ impl ClockService {
     ) -> ClockWriteOutcome {
         let status = self.get_status(webapp_url, token).await.ok();
         ClockWriteOutcome {
+            operation_id: None,
             context_changed: false,
             status_refresh_failed: status.is_none(),
             entries,

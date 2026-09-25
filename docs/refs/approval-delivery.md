@@ -1,10 +1,10 @@
-# Approval card delivery — #291 / T27, #294 / T30
+# Approval card delivery — #291 / T27, #294 / T30, #293 / T29
 
 One durable owner sends approval cards and keeps them current. It covers
-Telegram cards (#291) and review-only Slack cards (#294) for canonical
-absences. It is **inactive for every organization**: migrations
-`0086_approval_delivery.sql` and `0090_approval_delivery_slack.sql` insert no
-control rows.
+Telegram cards (#291), review-only Slack cards (#294) and Teams cards (#293)
+for canonical absences. It is **inactive for every organization**: migrations
+`0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql` and
+`0091_teams_approval_actions.sql` insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -29,7 +29,43 @@ Slack adapter (review-only)                             lib/slack/approval-deliv
   installation + approvals enabled, recipient's DM (saved, or opened for the linked account)
   prepareApprovalPresentation with a review summary       (approval-card.ts renders it)
   chat.postMessage / chat.update, no client retries       (api.ts, delivery-outcome.ts)
+
+Teams adapter (#293)                                    lib/teams/approval-delivery.ts
+  bot credentials, active tenant with approvals enabled, recipient's personal
+  conversation in that tenant, prepareApprovalPresentation (provider "teams")
+  proactive send / update with explicit outcomes   (bot-adapter.ts, delivery-outcome.ts)
 ```
+
+### Teams specifics (#293)
+
+- Message identity: receiver scope `teams-bot:<app id>:tenant:<tenant id>`,
+  destination = the personal conversation ID, remote message = the activity ID
+  the connector returned. A send that returns no activity ID is `ambiguous`
+  (`no_message_identity`): the message cannot be tracked or retired, and the
+  retry may duplicate it.
+- A refresh updates the message through the stored reference of its
+  conversation (active or not). Another bot or tenant, or an unknown
+  conversation, makes the message `gone`.
+- Connector failures: 429, 409 and 412 are `retryable`; network errors,
+  timeouts (30 s) and 5xx are `ambiguous`; 401 is `unavailable`; 403 and 404
+  are `destination_invalid` for a send (blocked, uninstalled, conversation not
+  found) and `gone` for an update; other 4xx are `permanent`. No bot
+  credentials or no tenant configuration is `unavailable`; an inactive tenant
+  or approvals disabled is `suppressed`; a stored conversation from another
+  tenant is `destination_invalid`.
+- An organization can connect several tenants. A send uses the tenant of the
+  recipient's personal conversation; a refresh uses the tenant named in the
+  message's receiver scope, never an arbitrary tenant of the organization.
+- Destination repair: a personal conversation saved for the recipient (they
+  messaged the bot) re-arms their Teams `destination_invalid` work. Repair is
+  per provider: a Telegram chat does not re-arm Teams work, and the reverse.
+- The existing Teams channel stays silent for an absence with a canonical
+  workflow while the Teams owner is active, both for `absence_entry` and for
+  `approval_request` notifications of that absence. The old sender
+  (`sendApprovalCardToManager`) checks the same condition itself, so the
+  legacy Teams escalation checker cannot send a second card either.
+- Pressed cards: see "Teams absence cards with reviewed bindings" in
+  [approval-evidence.md](approval-evidence.md).
 
 ## Ownership and routing
 
@@ -176,6 +212,9 @@ values (:org, 'absence', 'telegram');
 -- #294, after 0090:
 insert into approval_delivery_control (organization_id, workflow_type, provider)
 values (:org, 'absence', 'slack');
+-- Teams (#293), after 0091:
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, 'absence', 'teams');
 ```
 
 Deleting the row stops the owner. Unfinished work stays for recovery, but
@@ -337,7 +376,7 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 
 ### Ownership
 
-- `approval_delivery_work.escalation_transfer_id` (migration `0091`) links work
+- `approval_delivery_work.escalation_transfer_id` (migration `0092`) links work
   to the transfer whose delivery owns it. Escalation claims only linked work,
   and the delivery owner claims only unlinked work. Both claim under the same
   organization lock, and at most one refresh per message is in flight.
@@ -359,8 +398,9 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 - Each event is expanded exactly once. The intended channels are frozen at
   that expansion. They are the providers whose delivery control for the kind
   was activated at or before the transfer, and whose escalation-delivery
-  preference (`enable_escalations` on the Telegram bot or Slack workspace
-  configuration) is on at that moment.
+  preference (`enable_escalations` on the Telegram bot, the Slack workspace or
+  any of the organization's Teams tenants) is on at that moment. A Teams
+  replacement is sent only if the recipient's own tenant has it on.
   Enabling escalations later adds no channel to an expanded transfer. A
   delivery control activated after the transfer committed does not count,
   matching the #291 rule that intents before `activated_at` are not the
@@ -409,23 +449,24 @@ bound card.
 
 ### Activation blockers (#300, unresolved)
 
-1. Apply `0091` after `0090` through the authorized deployment. It has run only
-   on the disposable PostgreSQL 16 database.
-2. Everything under the #291 and #294 blockers above, the escalation
-   activation blockers in `escalation-transfer.md` (ownership writer, drained
-   cutover) and the pilot gates.
+1. Apply `0092` after `0091` (#293) through the authorized deployment. It has
+   run only on the disposable PostgreSQL 16 database.
+2. Everything under the #291 and #294 blockers and "Teams specifics (#293)"
+   above, the escalation activation blockers in `escalation-transfer.md`
+   (ownership writer, drained cutover) and the pilot gates.
 3. **Legacy-authoritative transfers** (#299) cannot be named by the shared
    delivery tables, because they have no workflow. Their events stay `pending`
    (recoverable, never marked delivered) and raise no attention. No ticket
    covers legacy replacement delivery yet; #384 covers legacy bound cards,
    which it needs. The replacement finds the request in the web inbox.
-4. **Telegram and Slack only.** Slack replacement cards are review-only, like
-   every Slack card (#294). The PostgreSQL suite covers Telegram; the Slack
-   adapter's escalation-delivery checks are verified by typecheck and shared
-   code only. Discord and Teams have no delivery adapter; their old escalation
-   checkers stay execution-gated.
+4. **Telegram, Slack and Teams only.** Slack replacement cards are
+   review-only, like every Slack card (#294). The PostgreSQL suite covers
+   Telegram; the Slack and Teams adapters' escalation-delivery checks are
+   verified by typecheck and shared code only. Discord has no delivery adapter
+   until #404 lands (it must add the same hooks); its old escalation checker
+   stays execution-gated.
 5. **Old binaries** neither run the replacement pass nor claim by owner. A
-   pre-#300 delivery-owner binary (#291 or #294) would claim escalation work
+   pre-#300 delivery-owner binary (#291, #294 or #293) would claim escalation work
    too: it would cancel a replacement card as `purged` (it has no message) and
    retire former cards with the generic inactive wording, which is never
    corrected afterwards.

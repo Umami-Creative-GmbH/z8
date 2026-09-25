@@ -11,6 +11,7 @@
       "alreadyProcessed": "Die Freigab isch bereits bearbeitet worde.",
       "boundReviewRequired": "Die Charte passt nüme zum aktuelle Aatrag oder zur aktuelle Zuewiisig, oder d’Aktion het nöd chöne verifiziert werde. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
       "invocationConflict": "De Tastedruck isch scho mit ere andere Aktion erfasst worde. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
+      "outcomeUnknown": "S Resultat vo däm Tastedruck het nöd chöne bestätigt wärde. Prüefed Sie de Antrag in Z8, bevor Sie nomal drucked.",
       "card": {
         "absenceTitle": "Abwäseheitsaatrag zur Genehmigung",
         "boundHint": "Genehmige oder Ablehne entscheidet genau über de Aatrag obe. Isch er gänderet oder neu zuegwise worde, wird nüt entschide und du wirsch bitte, ihn in Z8 z’prüefe.",

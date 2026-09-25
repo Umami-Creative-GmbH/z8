@@ -14,6 +14,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -913,5 +914,69 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		} finally {
 			vi.useRealTimers();
 		}
+	});
+
+	it("commits and recovers commands in the exact shape the desktop freezes (#280)", async () => {
+		// Keys and value formats come from the desktop's pinned wire fixtures. Only the
+		// identities, context and instants belong to this test.
+		const desktop = (name: string): Command =>
+			JSON.parse(
+				readFileSync(
+					new URL(
+						`../../../../../../desktop/src-tauri/tests/clock-core/fixtures/${name}`,
+						import.meta.url,
+					),
+					"utf8",
+				),
+			);
+		// Captured offline two days ago, with millisecond UTC instants as the desktop sends them.
+		const startedAt = now.subtract(days(2));
+		const start: Command = {
+			...desktop("desktop-v2-clock-in.json"),
+			operationId: randomUUID(),
+			context: context(),
+			occurredAt: startedAt.toString({ fractionalSecondDigits: 3 }),
+		};
+		const close: Command = {
+			...desktop("desktop-v2-clock-out.json"),
+			operationId: randomUUID(),
+			context: context(),
+			occurredAt: startedAt.add({ hours: 8 }).toString({ fractionalSecondDigits: 3 }),
+			target: { clockInOperationId: start.operationId },
+		};
+
+		// A send whose response was lost is looked up before it is resent.
+		expect((await lookup(start.operationId)).body).toEqual({
+			outcome: "not_committed",
+			operationId: start.operationId,
+		});
+		const executed = await submit(start);
+		expect(executed.status).toBe(201);
+		expect((await lookup(start.operationId)).body).toMatchObject({
+			outcome: "committed",
+			command: start,
+			evidence: "standing",
+		});
+		const before = await snapshot();
+		expect(await submit(start)).toEqual({
+			status: 200,
+			body: { ...executed.body, outcome: "replayed" },
+		});
+		expect(await snapshot()).toEqual(before);
+
+		// The queued clock-out closes exactly the work its clock-in created.
+		const closed = await submit(close);
+		expect(closed.status).toBe(201);
+		expect(closed.body.receipt.result.segment).toMatchObject({
+			startAt: "2026-09-18T10:00:00Z",
+			endAt: "2026-09-18T18:00:00Z",
+			durationMinutes: 480,
+			endTimezone: "Europe/Berlin",
+		});
+		expect(await period(start.operationId)).toMatchObject({
+			is_active: false,
+			clock_out_id: close.operationId,
+		});
+		expect(await receipt(close.operationId)).toMatchObject({ command: close });
 	});
 });

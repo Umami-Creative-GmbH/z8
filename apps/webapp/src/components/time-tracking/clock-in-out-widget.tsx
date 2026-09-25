@@ -107,7 +107,7 @@ export function ClockInOutWidget({
 					sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
 				/>
 
-				{(widget.captureMode === "local-review" || !widget.isClockedIn) &&
+				{(widget.captureMode !== "server" || !widget.isClockedIn) &&
 				!widget.uiState.showNotesInput ? (
 					<WorkLocationSelector
 						value={widget.uiState.workLocationType}
