@@ -177,7 +177,8 @@ async function planWorkflowEffects(
  * message does not yet reflect the current workflow version. The dedupe
  * identity is shared by both owners, so a refresh planned by escalation
  * (with its transfer, optionally for one assignment's messages) and by the
- * delivery owner is one effect with one executor: whoever planned it first.
+ * delivery owner is one effect with one executor. Escalation's planning
+ * wins while the effect is still unclaimed.
  */
 export async function planApprovalMessageRefreshes(
 	executor: ApprovalDeliveryExecutor,
@@ -210,24 +211,31 @@ export async function planApprovalMessageRefreshes(
 	for (const message of stale) {
 		const messageId = text(message.id, "message");
 		const version = Number(message.version);
-		const inserted = await executor
-			.insert(approvalDeliveryWork)
-			.values({
-				organizationId: input.organizationId,
-				outboxId: input.outboxId,
-				workflowId: input.workflowId,
-				effect: "refresh",
-				provider: text(message.provider, "provider") as ApprovalDeliveryProvider,
-				assignmentId: text(message.assignment_id, "assignment"),
-				recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
-				messageId,
-				escalationTransferId: input.escalationTransferId ?? null,
-				dedupeKey: refreshDedupeKey(messageId, version),
-			})
-			.onConflictDoNothing({
-				target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
-			})
-			.returning({ id: approvalDeliveryWork.id });
+		const planned = executor.insert(approvalDeliveryWork).values({
+			organizationId: input.organizationId,
+			outboxId: input.outboxId,
+			workflowId: input.workflowId,
+			effect: "refresh",
+			provider: text(message.provider, "provider") as ApprovalDeliveryProvider,
+			assignmentId: text(message.assignment_id, "assignment"),
+			recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
+			messageId,
+			escalationTransferId: input.escalationTransferId ?? null,
+			dedupeKey: refreshDedupeKey(messageId, version),
+		});
+		const target = [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey];
+		const inserted = await (input.escalationTransferId
+			? // Escalation owns the retirement of its transfer's cards: it adopts
+				// the same refresh when the delivery owner planned it first and no
+				// worker has claimed it yet (a claim moves it out of `pending`).
+				planned.onConflictDoUpdate({
+					target,
+					set: { escalationTransferId: input.escalationTransferId },
+					setWhere: sql`${approvalDeliveryWork.escalationTransferId} is null
+						and ${approvalDeliveryWork.status} = 'pending'`,
+				})
+			: planned.onConflictDoNothing({ target })
+		).returning({ id: approvalDeliveryWork.id });
 		created += inserted.length;
 	}
 	return created;
@@ -736,6 +744,27 @@ export async function isApprovalDeliveryMessagePending(
 		)
 		.limit(1);
 	return row?.workflowStatus === "pending" && row.assignmentStatus === "pending";
+}
+
+/**
+ * Whether a delivered card's assignment was replaced by another approver's
+ * (escalation or reassignment): its cards then say it was reassigned.
+ */
+export async function isApprovalDeliveryAssignmentReplaced(
+	message: Pick<ApprovalDeliveryMessageRecord, "organizationId" | "workflowId" | "assignmentId">,
+): Promise<boolean> {
+	const [successor] = await db
+		.select({ id: approvalStageAssignment.id })
+		.from(approvalStageAssignment)
+		.where(
+			and(
+				eq(approvalStageAssignment.organizationId, message.organizationId),
+				eq(approvalStageAssignment.workflowId, message.workflowId),
+				eq(approvalStageAssignment.reassignedFromAssignmentId, message.assignmentId),
+			),
+		)
+		.limit(1);
+	return successor !== undefined;
 }
 
 /**

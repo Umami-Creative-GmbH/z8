@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
+	type ApprovalDeliveryEffect,
 	type ApprovalDeliveryProvider,
 	approvalStageAssignment,
 	approvalWorkflow,
@@ -27,6 +28,7 @@ import {
 	claimApprovalDeliveryWork,
 	expandApprovalDeliveryIntents,
 	finishApprovalDeliveryWork,
+	isApprovalDeliveryAssignmentReplaced,
 	loadApprovalDeliveryMessage,
 	recordDeliveredApprovalMessage,
 	renewApprovalDeliveryLease,
@@ -81,7 +83,7 @@ export interface ApprovalDeliveryAdapter {
 		recipientEmployeeId: string;
 		recipientUserId: string;
 		/** `replacement`: the card of an escalation's replacement assignment (#300). */
-		purpose: "initial" | "replacement";
+		purpose: Exclude<ApprovalDeliveryEffect, "refresh">;
 	}): Promise<ApprovalInitialSendResult>;
 	refresh(input: {
 		organizationId: string;
@@ -447,19 +449,7 @@ async function processRefresh(
 	});
 	const decided = state.assignmentStatus === "approved" || state.assignmentStatus === "rejected";
 	// A replaced assignment (escalation or reassignment) says so on its cards.
-	const [successor] = decided
-		? []
-		: await db
-				.select({ id: approvalStageAssignment.id })
-				.from(approvalStageAssignment)
-				.where(
-					and(
-						eq(approvalStageAssignment.organizationId, work.organizationId),
-						eq(approvalStageAssignment.workflowId, work.workflowId),
-						eq(approvalStageAssignment.reassignedFromAssignmentId, work.assignmentId),
-					),
-				)
-				.limit(1);
+	const reassigned = !decided && (await isApprovalDeliveryAssignmentReplaced(message));
 	const evidence =
 		display && decided
 			? ((
@@ -470,7 +460,7 @@ async function processRefresh(
 				).find((record) => record.assignmentId === work.assignmentId) ?? null)
 			: null;
 	const notice = await approvalStatusNotice(
-		{ workflowStatus: state.workflowStatus, evidence, reassigned: successor !== undefined },
+		{ workflowStatus: state.workflowStatus, evidence, reassigned },
 		display,
 		work.organizationId,
 		approvalDeliveryMessageReviewReference(message),

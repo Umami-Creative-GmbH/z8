@@ -6,6 +6,7 @@ import {
 	type ApprovalDeliveryMessageRecord,
 	approvalDeliveryMessageReviewReference,
 	findApprovalDeliveryMessageByRemoteIdentity,
+	isApprovalDeliveryAssignmentReplaced,
 	isApprovalDeliveryMessagePending,
 	markApprovalDeliveryMessageWithoutControls,
 } from "@/lib/approvals/delivery/store";
@@ -17,10 +18,12 @@ import {
 import type { BoundBotApprovalResult } from "@/lib/bot-platform/approval-decision";
 import {
 	approvalAttemptNotice,
+	approvalStatusNotice,
 	boundDecisionNotice,
 	telegramApprovalNotice,
 } from "@/lib/bot-platform/approval-notice";
 import { createLogger } from "@/lib/logger";
+import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { editMessageText, sendMessage } from "./api";
 import {
 	encodeBoundApprovalCallback,
@@ -223,7 +226,9 @@ export async function handleBoundApprovalCallback(
  * the owner, which refreshes every message of the lifecycle from the
  * committed intent, so it has one writer. A still-pending card whose action
  * could not be decided here becomes a review notice without controls; the
- * owner does not refresh pending cards.
+ * owner does not refresh pending cards. A press on the card of a replaced
+ * (reassigned) assignment is acknowledged as reassigned; the owner edits the
+ * card itself, with the review link.
  */
 async function updateDeliveredBoundCard(
 	result: BoundBotApprovalResult,
@@ -238,6 +243,24 @@ async function updateDeliveredBoundCard(
 			approvalDeliveryMessageReviewReference(message),
 		);
 		if (!notice) return undefined;
+		if (
+			result.status === "review_required" &&
+			(await isApprovalDeliveryAssignmentReplaced(message))
+		) {
+			const display = await resolveRecipientDisplayContext({
+				userId: recipientUserId,
+				organizationId: bot.organizationId,
+			});
+			if (display) {
+				const reassigned = await approvalStatusNotice(
+					{ workflowStatus: "pending", evidence: null, reassigned: true },
+					display,
+					bot.organizationId,
+					approvalDeliveryMessageReviewReference(message),
+				);
+				return reassigned.title;
+			}
+		}
 		const remoteMessageId = Number(message.remoteMessageId);
 		if (
 			result.status !== "decided" &&

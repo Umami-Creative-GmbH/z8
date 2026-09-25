@@ -144,6 +144,7 @@ const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-ap
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
 const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
+const { expandApprovalDeliveryIntents } = await import("@/lib/approvals/delivery/store");
 
 const { recoverApprovalDeliveryForAttention } = await import("@/lib/approvals/delivery/recovery");
 const { telegramApprovalDeliveryAdapter } = await import("@/lib/telegram/approval-delivery");
@@ -770,7 +771,8 @@ describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
 		);
 		expect(only(stillPending).status).toBe("pending");
 		const refused = only(calls.filter((call) => call.method === "answerCallbackQuery"));
-		expect(String(refused.body.text)).not.toBe("Request approved");
+		// The acknowledgment explains that the assignment moved.
+		expect(refused.body.text).toBe("Reassigned");
 
 		await replace();
 		const replacementCard = only(sendsTo(BACKUP_CHAT_ID));
@@ -1109,6 +1111,78 @@ describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
 		});
 		// The former card is retired regardless.
 		expect(edits()).toHaveLength(1);
+	});
+
+	it("owns the former card's retirement even when the delivery owner planned it first", async () => {
+		await seed();
+		const { workflowId, transfer } = await transferred();
+		// The delivery owner expands the transition's intent before escalation's
+		// pass: it plans the same refresh, unlinked.
+		const planned = await expandApprovalDeliveryIntents({
+			organizationId: ids.organization,
+			limit: 10,
+		});
+		expect(planned.created).toBe(1);
+		expect(
+			(await work(workflowId)).find((row) => row.effect === "refresh")?.escalation_transfer_id,
+		).toBeNull();
+
+		await replace();
+		const retirements = (await work(workflowId)).filter((row) => row.effect === "refresh");
+		expect(retirements).toHaveLength(1);
+		expect(retirements[0]).toMatchObject({
+			status: "delivered",
+			escalation_transfer_id: transfer.id,
+		});
+		expect(edits()).toHaveLength(1);
+	});
+
+	it("keeps authority when the replacement send fails permanently, and retries a failed retirement", async () => {
+		await seed();
+		const { workflowId, transfer } = await transferred();
+		script.sendMessage = [
+			{ kind: "error", status: 400, errorCode: 400, description: "Bad Request: invalid markup" },
+		];
+		script.editMessageText = [{ kind: "network" }];
+
+		await replace();
+		expect(only(await replacementWork(workflowId))).toMatchObject({
+			status: "failed",
+			last_outcome: "permanent:telegram_400",
+		});
+		expect(only(await openAttention("delivery_exhausted")).assignment_id).toBe(
+			transfer.replacement_assignment_id,
+		);
+		const retirement = (await work(workflowId)).find((row) => row.effect === "refresh");
+		expect(retirement).toMatchObject({
+			status: "pending",
+			retry_count: 1,
+			last_outcome: "ambiguous:network",
+		});
+		expect(await assignmentStatus(transfer.replacement_assignment_id)).toBe("pending");
+		expect(await transfers(workflowId)).toHaveLength(1);
+
+		// A permanent failure is not retried; the retirement is, and succeeds.
+		await replace(minutes(1));
+		expect(sendsTo(BACKUP_CHAT_ID)).toHaveLength(1);
+		expect(edits()).toHaveLength(2);
+		const [former] = await messages(workflowId);
+		expect(former).toMatchObject({ controls: "none", state: "retired" });
+	});
+
+	it("sends no fresh details to a replacement who lost organization membership", async () => {
+		await seed();
+		const { workflowId } = await transferred();
+		await admin.query("delete from member where organization_id = $1 and user_id = $2", [
+			ids.organization,
+			ids.backupUser,
+		]);
+		await replace();
+		expect(sendsTo(BACKUP_CHAT_ID)).toHaveLength(0);
+		expect(only(await replacementWork(workflowId))).toMatchObject({
+			status: "suppressed",
+			last_outcome: "not_entitled",
+		});
 	});
 
 	it("sends one replacement card when passes run concurrently", async () => {

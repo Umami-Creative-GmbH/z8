@@ -230,9 +230,11 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 - A refresh has the same dedupe identity whichever owner plans it. The
   retirement that escalation plans at expansion and the refresh that the
   delivery owner plans from the transition's outbox row are one row with one
-  executor: whoever planned it first. Later status refreshes (after the
-  replacement or anyone else decides) come from the delivery owner as before,
-  for former and replacement cards alike.
+  executor. If the delivery owner planned it first, escalation adopts it while
+  it is still `pending` (unclaimed); a row a worker already claimed stays with
+  that worker. Later status refreshes (after the replacement or anyone else
+  decides) come from the delivery owner as before, for former and replacement
+  cards alike.
 - Pausing escalation automation stops new transfers only. Committed transfers
   keep their delivery and recovery.
 
@@ -242,7 +244,10 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
   that expansion. They are the providers whose delivery control for the kind
   was activated at or before the transfer, and whose escalation-delivery
   preference (`telegram_bot_config.enable_escalations`) is on at that moment.
-  Enabling escalations later adds no channel to an expanded transfer.
+  Enabling escalations later adds no channel to an expanded transfer. A
+  delivery control activated after the transfer committed does not count,
+  matching the #291 rule that intents before `activated_at` are not the
+  owner's (in-flight classification).
 - A crash during expansion rolls it back. The event stays `pending` and the
   next pass expands it. Expansion never repeats the transfer.
 - The former assignment's tracked cards are retired whatever the channels,
@@ -279,9 +284,11 @@ A former assignee's card is edited into **Reassigned**. It says the approval
 was reassigned and that no decision is needed or was made here, and keeps the
 review link. It never names the replacement or the outcome. A recipient who is
 no longer an active member gets the generic inactive notice. Either owner uses
-this wording for any replaced assignment (escalation or reassignment). A press
-on a former card that is still on screen decides nothing; the replacement
-decides through its own bound card.
+this wording for any replaced assignment (escalation or reassignment), because
+it is equally true for both. A press on a former card that is still on screen
+decides nothing and is acknowledged as **Reassigned**; the owner then edits the
+card itself with the review link. The replacement decides through its own
+bound card.
 
 ### Activation blockers (#300, unresolved)
 
@@ -292,17 +299,21 @@ decides through its own bound card.
    pilot gates.
 3. **Legacy-authoritative transfers** (#299) cannot be named by the shared
    delivery tables, because they have no workflow. Their events stay `pending`
-   until legacy delivery exists (#384). The replacement finds the request in
-   the web inbox.
+   (recoverable, never marked delivered) and raise no attention. No ticket
+   covers legacy replacement delivery yet; #384 covers legacy bound cards,
+   which it needs. The replacement finds the request in the web inbox.
 4. **Telegram only.** Slack, Discord and Teams have no delivery adapter. Their
    old escalation checkers stay execution-gated.
 5. **Old binaries** neither run the replacement pass nor claim by owner. A #291
    delivery-owner binary would claim escalation work too: it would cancel a
-   replacement card as `purged` (it has no message) and execute retirements.
-   Deploy to every worker before inserting delivery controls in
-   escalation-owned organizations.
-6. A press on a former card gets the generic "review required"
-   acknowledgment, not a reassigned-specific one.
+   replacement card as `purged` (it has no message) and retire former cards
+   with the generic inactive wording, which is never corrected afterwards.
+   Deploy to every worker and drain old delivery-owner workers before any
+   organization with a delivery control switches escalation ownership.
+6. **Untracked duplicates** (#291 blocker 6) apply to replacement cards too.
+7. Obsolete replacement work is cancelled in bulk; a `delivery_exhausted`
+   incident on its assignment closes through the attention recheck once the
+   approval settles, like #291 refresh incidents.
 
 ### Verification (#300)
 
@@ -312,15 +323,18 @@ part of `test:approval-workflow-repository:integration`). It drives the real
 `processEscalationReplacementDeliveries`, `approveAbsenceEffect`,
 `handleTelegramUpdate`, `saveConversation`, `recoverApprovalDeliveryForAttention`
 and `deleteApproval`. It replaces the same dependencies as the #291 suite.
-12/12 passing:
+15/15 passing:
 
 - A transfer commits its event and sends nothing. The pass, with automation
   paused, sends one bound replacement card to the backup and edits the former
   card into "Reassigned" without controls. The delivery owner's pass then plans
   and executes nothing more, and reruns send nothing.
-- A press on the former card decides nothing. The replacement approves from
-  its card. Afterwards every card shows the current version without controls,
-  and the former card still says "Reassigned".
+- A press on the former card decides nothing and is acknowledged as
+  "Reassigned". The replacement approves from its card. Afterwards every card
+  shows the current version without controls, and the former card still says
+  "Reassigned".
+- When the delivery owner planned the former card's retirement first,
+  escalation adopts and executes that one row.
 - Escalations disabled at expansion: no replacement work, the former card is
   retired, and enabling escalations later adds none. Enabled at expansion but
   disabled before the send: `suppressed`.
@@ -337,7 +351,11 @@ and `deleteApproval`. It replaces the same dependencies as the #291 suite.
   decision.
 - A missing destination raises `delivery_unavailable` at once without spending
   retries; saving the chat delivers.
-- The replacement's preference off → `suppressed`.
+- A permanent send failure (400) is `failed` with a `delivery_exhausted`
+  incident and never retried; authority and the journal are unchanged. A
+  retirement that failed on the network is retried and succeeds.
+- The replacement's preference off → `suppressed`; lost organization
+  membership → `suppressed` (`not_entitled`), nothing sent.
 - Three concurrent passes send one card.
 - Privileged cleanup removes and reports the initial, replacement and
   retirement work, both messages and the journal row.

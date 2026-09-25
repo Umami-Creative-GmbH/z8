@@ -340,9 +340,9 @@ cancellation removed the request.
 - Shadow/ready requests submitted before shadowing have no observation and are
   held (`legacy_observation_missing`).
 - No replacement notification or old-card retirement: #300 delivers canonical
-  transfers only, and legacy transfer events stay pending until legacy delivery
-  exists (#384). The replacement finds the request in the web inbox as its
-  approver.
+  transfers only, and legacy transfer events stay pending until legacy
+  replacement delivery exists (not yet ticketed; it needs #384's legacy bound
+  cards). The replacement finds the request in the web inbox as its approver.
 - Old binaries: pre-deployment binaries decide legacy absences without the
   transfer check. Deploy before activation and drain old workers.
 - The approval write-boundary scanner cannot read sources on Windows; the new
