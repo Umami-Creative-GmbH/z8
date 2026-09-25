@@ -70,10 +70,26 @@ import {
 } from "../domain-adapters/work-period-legacy-state";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
+	ApprovalInvocationNotAdmittedError,
+	BoundAssignmentNotCurrentError,
+} from "../evidence/invocation";
+import {
 	prepareLegacyWorkPeriodDecisionEvidence,
 	recordLegacyWorkPeriodDecisionEvidence,
 	translateWorkPeriodEvidenceError,
+	workPeriodReceiptKeyDigest,
 } from "../evidence/work-period-evidence";
+import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
+import {
+	admitFreshTimeInvocation,
+	type BoundTimeInvocation,
+	type BoundTimeInvocationOutcome,
+	BoundTimeInvocationReplay,
+	boundTimeInvocationCommand,
+	boundTimeInvocationKey,
+	recordTimeInvocationDecision,
+	replayCommittedTimeInvocation,
+} from "./bound-time-invocation";
 import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
@@ -104,6 +120,11 @@ export type {
 } from "../domain-adapters/work-period-contract";
 
 const ORDINARY_DECISION_ERROR = "Ordinary work-period decision failed";
+
+/** The owner's generic refusal: the target is not a decidable reviewed request. */
+export function isOrdinaryWorkPeriodDecisionRefusal(error: unknown): boolean {
+	return error instanceof Error && error.message === ORDINARY_DECISION_ERROR;
+}
 
 /**
  * The terminal break split's unresolved-review refusal (#303), wherever the
@@ -386,8 +407,26 @@ async function bindPreCanonicalOrdinaryWorkflow(input: {
 	}
 }
 
+/**
+ * Outcomes a bound card action must keep (#325): its exact replay, a stale or
+ * paused card, and engine refusals. Unbound callers keep the generic error.
+ */
+export function isBoundTimeDecisionSignal(error: unknown): boolean {
+	return (
+		error instanceof BoundTimeInvocationReplay ||
+		error instanceof BoundAssignmentNotCurrentError ||
+		error instanceof ApprovalInvocationNotAdmittedError ||
+		error instanceof ApprovalTransitionEngineError
+	);
+}
+
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	historicalOnly?: boolean;
+	/**
+	 * A reviewed-binding card action (#325). The target is then the exact bound
+	 * canonical assignment, decided under the invocation's own receipt.
+	 */
+	bound?: BoundTimeInvocation;
 	dbService: ApprovalDbService;
 	runtime: ReturnType<typeof createProductionApprovalWorkflowRuntime>;
 	organizationId: string;
@@ -402,6 +441,8 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 }): Promise<{
 	result: WorkPeriodApprovalResult;
 	postCommit: WorkPeriodPostCommitDescriptor | null;
+	/** Bound decisions only: the committed invocation and its evidence. */
+	invocation?: BoundTimeInvocationOutcome;
 }> {
 	try {
 		return await retryWorkPeriodDecisionTransaction(() =>
@@ -410,6 +451,7 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	} catch (error) {
 		// Evidence holds and contradictions keep their meaning for the caller.
 		if (error instanceof ApprovalEvidenceError) throw error;
+		if (input.bound && isBoundTimeDecisionSignal(error)) throw error;
 		throw unresolvedWorkPeriodReviewFrom(error) ?? new Error(ORDINARY_DECISION_ERROR);
 	}
 }
@@ -425,6 +467,22 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			organizationId: input.organizationId,
 			workPeriodId: input.workPeriodId,
 		});
+		const boundCommand = input.bound
+			? boundTimeInvocationCommand({
+					bound: input.bound,
+					actorEmployeeId: input.actor.id,
+					actorUserId: input.actor.userId,
+					action: input.decision.kind,
+					reason: input.decision.reason,
+				})
+			: null;
+		if (input.bound && boundCommand) {
+			// Receipt before fresh checks, also after a restart (#325).
+			await replayCommittedTimeInvocation(database, {
+				bound: input.bound,
+				command: boundCommand,
+			});
+		}
 		const actors = await database.query.employee.findMany({
 			where: and(
 				eq(employee.id, input.actor.id),
@@ -609,6 +667,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			? fingerprintApprovalWorkflowCommand(canonicalCommand)
 			: null;
 		const canonicalReplayReceipt =
+			!input.bound &&
 			assignment &&
 			assignmentStage &&
 			canonicalTarget &&
@@ -718,6 +777,18 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			compatibilityWriter:
 				context.compatibilityWriter.withWriteGate(fixedGate),
 		} as ApprovalWorkflowTransactionContext;
+		if (input.bound && boundCommand) {
+			await admitFreshTimeInvocation(database, {
+				organizationId: input.organizationId,
+				workflowType: metadata.kind,
+				bound: input.bound,
+				command: boundCommand,
+			});
+			// Bindings exist only for exact canonical assignments.
+			if (requestRow || !assignment || authority.mode === "legacy" || authority.mode === "shadow" || authority.mode === "ready") {
+				throw new ApprovalEvidenceError("binding_mismatch");
+			}
+		}
 		if (
 			authority.mode === "legacy" ||
 			authority.mode === "shadow" ||
@@ -1097,6 +1168,11 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		if (targets.length !== 1 || !target) {
 			throw new Error(ORDINARY_DECISION_ERROR);
 		}
+		// A bound invocation gets its own receipt: it can replay only itself and
+		// never matches the semantic key an earlier decision used.
+		const idempotencyKey = input.bound
+			? boundTimeInvocationKey(input.bound)
+			: `ordinary-decision:${input.organizationId}:${snapshot.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`;
 		const execution =
 			await input.runtime.transitionEngine.executeInTransactionWithDisposition(
 				decisionContext,
@@ -1104,8 +1180,9 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 					organizationId: input.organizationId,
 					workflowId: snapshot.id,
 					expectedVersion: snapshot.version,
-					idempotencyKey: `ordinary-decision:${input.organizationId}:${snapshot.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`,
+					idempotencyKey,
 					historicalOnly: input.historicalOnly,
+					...(input.bound ? { reviewedBindingId: input.bound.reviewedBindingId } : {}),
 					principal: { kind: "employee", userId: actor.userId },
 					command:
 						input.decision.kind === "approve"
@@ -1128,8 +1205,22 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			period: decisionPeriod,
 		});
 		if (execution.disposition === "replayed") {
+			// A bound invocation's receipt and invocation row commit together.
+			if (input.bound) {
+				throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
+			}
 			return { result, postCommit: null };
 		}
+		const invocation =
+			input.bound && boundCommand
+				? await recordTimeInvocationDecision(database, {
+						organizationId: input.organizationId,
+						workflowId: snapshot.id,
+						bound: input.bound,
+						command: boundCommand,
+						receiptKeyDigest: workPeriodReceiptKeyDigest(idempotencyKey),
+					})
+				: undefined;
 		const event =
 			execution.result.snapshot.status === "approved"
 				? "approved"
@@ -1146,6 +1237,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 					});
 		return {
 			result,
+			...(invocation ? { invocation } : {}),
 			postCommit: Object.freeze({
 				disposition: "observe" as const,
 				dedupeKey: `ordinary-decision:${snapshot.id}:${input.approvalRequestId}:${snapshot.version}`,

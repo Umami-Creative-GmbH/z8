@@ -1,3 +1,4 @@
+import type { ReviewedDecisionTarget } from "../evidence/work-period-evidence";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { member } from "@/db/auth-schema";
 import {
@@ -143,6 +144,8 @@ export interface TimeCorrectionDecisionEvidenceDependencies {
 			organizationId: string;
 			workflow: ApprovalWorkflowSnapshot;
 			reviewedBindingId: string | null;
+			/** The deciding actor and exact assignment a reviewed binding must name. */
+			target: ReviewedDecisionTarget;
 		},
 	): Promise<void>;
 	record(
@@ -561,6 +564,12 @@ export function createTimeCorrectionApprovalAdapter(
 						organizationId: input.organizationId,
 						workflow: input.workflow,
 						reviewedBindingId: input.reviewedBindingId,
+						target: {
+							actorEmployeeId:
+								input.actor.kind === "employee" ? input.actor.employeeId : null,
+							stageId: input.command.stageId,
+							assignmentId: input.command.assignmentId,
+						},
 					});
 				},
 				async recordDecisionEvidence(input) {

@@ -89,10 +89,20 @@ import {
 } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { WorkPeriodApprovalResult } from "../domain-adapters/work-period-contract";
+import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	prepareLegacyTimeCorrectionDecisionEvidence,
 	recordLegacyTimeCorrectionDecisionEvidence,
+	timeCorrectionReceiptKeyDigest,
 } from "../evidence/time-correction-evidence";
+import {
+	admitFreshTimeInvocation,
+	type BoundTimeInvocation,
+	boundTimeInvocationCommand,
+	boundTimeInvocationKey,
+	recordTimeInvocationDecision,
+	replayCommittedTimeInvocation,
+} from "./bound-time-invocation";
 import { translateWorkPeriodEvidenceError } from "../evidence/work-period-evidence";
 import {
 	ApprovalAuditLogger,
@@ -135,6 +145,7 @@ import type {
 import {
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
+	isBoundTimeDecisionSignal,
 	notifyWorkPeriodApprovalAfterCommit,
 } from "./work-period-approvals";
 
@@ -4593,6 +4604,11 @@ export async function completeTimeCorrectionDecisionAfterCommit<
 
 export interface ExecuteTimeCorrectionDecisionInput {
 	runtime: TimeCorrectionDecisionRuntime;
+	/**
+	 * A reviewed-binding card action (#325). The target is then the exact bound
+	 * canonical assignment, decided under the invocation's own receipt.
+	 */
+	bound?: BoundTimeInvocation;
 	organizationId: string;
 	actorEmployeeId: string;
 	actorUserId: string;
@@ -4774,6 +4790,22 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					entityType: "approval_request",
 				});
 			}
+			const boundCommand = input.bound
+				? boundTimeInvocationCommand({
+						bound: input.bound,
+						actorEmployeeId: actor.id,
+						actorUserId: actor.userId,
+						action: input.action,
+						reason: input.reason ?? null,
+					})
+				: null;
+			if (input.bound && boundCommand) {
+				// Receipt before fresh checks, also after a restart (#325).
+				await replayCommittedTimeInvocation(transactionDb, {
+					bound: input.bound,
+					command: boundCommand,
+				});
+			}
 			const requestRow = await transactionDb.query.approvalRequest.findFirst({
 				where: and(
 					eq(approvalRequest.id, input.approvalRequestId),
@@ -4942,6 +4974,10 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					field: "approvalRequest.metadata.timeRequest.kind",
 				});
 			}
+			if (input.bound && (requestRow || kind !== "time_correction")) {
+				// A time-correction binding names an exact canonical assignment.
+				throw new ApprovalEvidenceError("binding_mismatch");
+			}
 			if (kind === "manual_time_submission" || kind === "policy_clock_out") {
 				if (!input.processOrdinary) {
 					throw new Error(
@@ -4982,6 +5018,18 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				compatibilityWriter:
 					context.compatibilityWriter.withWriteGate(fixedGate),
 			} as ApprovalWorkflowTransactionContext;
+			if (input.bound && boundCommand) {
+				await admitFreshTimeInvocation(transactionDb, {
+					organizationId: input.organizationId,
+					workflowType: "time_correction",
+					bound: input.bound,
+					command: boundCommand,
+				});
+				// Legacy authority has no reviewed-binding validation.
+				if (authority.mode === "legacy" || authority.mode === "shadow" || authority.mode === "ready") {
+					throw new ApprovalEvidenceError("binding_mismatch");
+				}
+			}
 			if (
 				authority.mode === "legacy" ||
 				authority.mode === "shadow" ||
@@ -5222,6 +5270,11 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					conflictType: "approval_transition",
 				});
 			}
+			// A bound invocation gets its own receipt: it can replay only itself
+			// and never matches the semantic key an earlier decision used.
+			const idempotencyKey = input.bound
+				? boundTimeInvocationKey(input.bound)
+				: `time-correction:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${decisionFingerprint(input.reason)}`;
 			const commandResult =
 				await input.runtime.transitionEngine.executeInTransaction(
 					decisionContext,
@@ -5229,7 +5282,10 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						organizationId: input.organizationId,
 						workflowId: workflow.id,
 						expectedVersion: workflow.version,
-						idempotencyKey: `time-correction:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${decisionFingerprint(input.reason)}`,
+						idempotencyKey,
+						...(input.bound
+							? { reviewedBindingId: input.bound.reviewedBindingId }
+							: {}),
 						principal: { kind: "employee", userId: actor.userId },
 						command:
 							input.action === "approve"
@@ -5246,10 +5302,21 @@ export async function executeTimeCorrectionDecisionInTransaction(
 									},
 					},
 				);
+			const invocation =
+				input.bound && boundCommand
+					? await recordTimeInvocationDecision(transactionDb, {
+							organizationId: input.organizationId,
+							workflowId: workflow.id,
+							bound: input.bound,
+							command: boundCommand,
+							receiptKeyDigest: timeCorrectionReceiptKeyDigest(idempotencyKey),
+						})
+					: undefined;
 			return {
 				kind: "time_correction" as const,
 				domainResult: undefined,
 				commandResult,
+				...(invocation ? { invocation } : {}),
 				postCommit: {
 					authority: "canonical" as const,
 					submittedToEmployeeId: null,
@@ -5259,6 +5326,13 @@ export async function executeTimeCorrectionDecisionInTransaction(
 		}),
 		);
 	} catch (error) {
+		// A bound card action keeps its exact outcome for the card (#325).
+		if (
+			input.bound &&
+			(error instanceof ApprovalEvidenceError || isBoundTimeDecisionSignal(error))
+		) {
+			throw error;
+		}
 		throw translateCorrectionWorkError(
 			translateWorkPeriodEvidenceError(
 				translateTimeCorrectionDecisionError(error),

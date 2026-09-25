@@ -1,3 +1,4 @@
+import type { ReviewedDecisionTarget } from "../evidence/work-period-evidence";
 import { sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "../approval-database-row";
@@ -46,6 +47,8 @@ export interface OrdinaryWorkPeriodDecisionEvidenceHooks {
 			kind: OrdinaryWorkPeriodApprovalKind;
 			workflow: ApprovalWorkflowSnapshot;
 			reviewedBindingId: string | null;
+			/** The deciding actor and exact assignment a reviewed binding must name. */
+			target: ReviewedDecisionTarget;
 		},
 	): Promise<void>;
 	record(
@@ -284,6 +287,12 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 						kind,
 						workflow: input.workflow,
 						reviewedBindingId: input.reviewedBindingId,
+						target: {
+							actorEmployeeId:
+								input.actor.kind === "employee" ? input.actor.employeeId : null,
+							stageId: input.command.stageId,
+							assignmentId: input.command.assignmentId,
+						},
 					});
 				},
 				async recordDecisionEvidence(input) {

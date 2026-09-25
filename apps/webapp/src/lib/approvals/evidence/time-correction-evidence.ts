@@ -24,6 +24,11 @@ import { loadEmployeeLabel } from "./absence-submission";
 import { deriveCommandDecisionOutcome } from "./decision-outcome";
 import { ApprovalEvidenceError } from "./errors";
 import {
+	assertTimeReviewBinding,
+	type ReviewedDecisionTarget,
+	timeEvidenceCommandFingerprintDigest,
+} from "./work-period-evidence";
+import {
 	captureTimeCorrectionSubmittedRevision,
 	type LegacyDecisionEvidenceRecord,
 	loadCanonicalTimeCorrectionSubmittedRevision,
@@ -38,6 +43,7 @@ import {
 	buildTimeCorrectionSubmittedFacts,
 	compareLiveTimeCorrectionWithRevision,
 	type TimeCorrectionFactsInput,
+	type TimeCorrectionRevisionComparison,
 	type TimeCorrectionSubmittedFacts,
 } from "./time-correction-facts";
 
@@ -558,11 +564,15 @@ function correctionFromFacts(facts: TimeCorrectionSubmittedFacts): Correction {
 	};
 }
 
-/** The live period must still be the submitted baseline with the same proposal. */
-async function enforceRevision(
+/**
+ * Whether the live period still is the submitted baseline with the same
+ * proposal. Used by the decision owners (which hold on a change) and by review
+ * and card preparation.
+ */
+export async function compareTimeCorrectionWithSubmittedRevision(
 	database: ApprovalDatabase,
 	revision: TimeCorrectionSubmittedRevisionRecord,
-): Promise<void> {
+): Promise<TimeCorrectionRevisionComparison> {
 	const live = await loadFactsInput(database, {
 		organizationId: revision.organizationId,
 		employeeId: revision.subjectEmployeeId,
@@ -573,9 +583,17 @@ async function enforceRevision(
 		if (error instanceof ApprovalEvidenceError) return null;
 		throw error;
 	});
-	const comparison = live
+	return live
 		? compareLiveTimeCorrectionWithRevision(revision.facts, live)
-		: { kind: "material_change" as const, changedFields: ["unverifiable:work_period"] };
+		: { kind: "material_change", changedFields: ["unverifiable:work_period"] };
+}
+
+/** The live period must still be the submitted baseline with the same proposal. */
+async function enforceRevision(
+	database: ApprovalDatabase,
+	revision: TimeCorrectionSubmittedRevisionRecord,
+): Promise<void> {
+	const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
 	if (comparison.kind === "material_change") {
 		throw new ApprovalEvidenceError("material_change", {
 			fields: comparison.changedFields.join(","),
@@ -617,7 +635,8 @@ async function loadCanonicalDecisionRevision(
 /**
  * Fresh checks after the engine's receipt claim: an evidenced lifecycle must
  * still match its revision; while capture is active one without it is held.
- * Time-kind reviewed bindings are not issued yet, so any supplied one fails.
+ * A supplied reviewed binding (#325) must name exactly this actor, assignment
+ * and the current submitted revision; without a revision it can name nothing.
  */
 export async function preflightCanonicalTimeCorrectionDecisionEvidence(
 	database: ApprovalDatabase,
@@ -625,11 +644,12 @@ export async function preflightCanonicalTimeCorrectionDecisionEvidence(
 		organizationId: string;
 		workflow: ApprovalWorkflowSnapshot;
 		reviewedBindingId: string | null;
+		target: ReviewedDecisionTarget;
 	},
 ): Promise<void> {
-	if (input.reviewedBindingId !== null) throw new ApprovalEvidenceError("binding_mismatch");
 	const revision = await loadCanonicalDecisionRevision(database, input);
 	if (revision) await enforceRevision(database, revision);
+	await assertTimeReviewBinding(database, { ...input, submittedRevisionId: revision?.id ?? null });
 }
 
 /** Records one executed canonical decision in the engine's transaction. */
@@ -664,6 +684,8 @@ export async function recordCanonicalTimeCorrectionDecisionEvidence(
 		receipt: {
 			...input.receipt,
 			idempotencyKey: timeCorrectionReceiptKeyDigest(input.receipt.idempotencyKey),
+			// The engine's command fingerprint carries a rejection reason verbatim.
+			commandFingerprint: timeEvidenceCommandFingerprintDigest(input.receipt.commandFingerprint),
 		},
 		action: input.command.type,
 		stageId: outcome.stageId,

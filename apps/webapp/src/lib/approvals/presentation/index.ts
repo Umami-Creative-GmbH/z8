@@ -21,6 +21,8 @@ import {
 	prepareBoundAbsenceCard,
 } from "./bound-card";
 import { approvalReviewUrl } from "./review-navigation";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
+import { prepareBoundTimeCard, prepareTimeReviewSummary } from "./time-card";
 import { prepareBoundTravelExpenseCard } from "./travel-expense-card";
 
 const logger = createLogger("ApprovalPresentation");
@@ -39,9 +41,10 @@ export interface ApprovalReviewNotice {
  * revision. Do not load live names, categories, projects, receipts or endpoints
  * to stand in for that history. With an explicit, admitted provider a canonical
  * absence gets an evidence-backed card bound to the recipient's exact
- * assignment and submitted revision (#290), and a legacy-authoritative expense
- * claim one bound to the exact legacy request and its frozen submission (#296);
- * everything else stays review-only.
+ * assignment and submitted revision (#290), as does a canonical manual time
+ * submission, policy clock-out or time correction (#325), and a
+ * legacy-authoritative expense claim one bound to the exact legacy request and
+ * its frozen submission (#296); everything else stays review-only.
  * Infrastructure failures propagate; lack of entitlement discloses nothing.
  */
 export async function prepareApprovalPresentation(input: {
@@ -85,6 +88,7 @@ export async function prepareApprovalPresentation(input: {
 		limit: 2,
 	});
 	let canonicalTarget: ApprovalCardTarget | null = null;
+	let canonicalTimeKind = false;
 	if (stages.length > 0) {
 		const stage = stages[0];
 		if (stages.length !== 1 || stage.status !== "pending")
@@ -96,7 +100,7 @@ export async function prepareApprovalPresentation(input: {
 				eq(approvalWorkflow.status, "pending"),
 				eq(approvalWorkflow.currentStageOrder, stage.sequence),
 			),
-			columns: { id: true },
+			columns: { id: true, workflowType: true },
 		});
 		if (!workflow) return { status: "undisclosable" };
 		const assignment = await db.query.approvalStageAssignment.findFirst({
@@ -113,6 +117,7 @@ export async function prepareApprovalPresentation(input: {
 			columns: { id: true },
 		});
 		if (!assignment) return { status: "undisclosable" };
+		canonicalTimeKind = isTimeApprovalWorkflowType(workflow.workflowType);
 		canonicalTarget = {
 			organizationId: input.organizationId,
 			recipientEmployeeId: input.recipientEmployeeId,
@@ -147,7 +152,7 @@ export async function prepareApprovalPresentation(input: {
 	if (!display) return { status: "undisclosable" };
 	const t = await getBotTranslate(display.locale);
 	if (input.provider && canonicalTarget) {
-		const card = await prepareBoundAbsenceCard(db, {
+		const cardInput = {
 			target: canonicalTarget,
 			provider: input.provider,
 			approvalRequestId: request.id,
@@ -155,17 +160,23 @@ export async function prepareApprovalPresentation(input: {
 			display,
 			t,
 			...(input.fits ? { fits: input.fits } : {}),
-		});
+		};
+		const card = canonicalTimeKind
+			? await prepareBoundTimeCard(db, cardInput)
+			: await prepareBoundAbsenceCard(db, cardInput);
 		if (card) return card;
 		if (input.summary) {
-			const summary = await prepareAbsenceReviewSummary(db, {
+			const summaryInput = {
 				target: canonicalTarget,
 				approvalRequestId: request.id,
 				recipientUserId: recipient.userId,
 				display,
 				t,
 				fits: input.summary.fits,
-			});
+			};
+			const summary = canonicalTimeKind
+				? await prepareTimeReviewSummary(db, summaryInput)
+				: await prepareAbsenceReviewSummary(db, summaryInput);
 			if (summary) return summary;
 		}
 	} else if (input.provider && request.entityType === "travel_expense_claim") {

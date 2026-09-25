@@ -624,6 +624,13 @@ describe.each(
 			kind,
 			workflow: context.workflow,
 			reviewedBindingId: null,
+			// The actor and exact assignment a reviewed binding must name (#325).
+			target: {
+				actorEmployeeId:
+					context.actor.kind === "employee" ? context.actor.employeeId : null,
+				stageId: ids.stage,
+				assignmentId: "assignment-1",
+			},
 		});
 
 		const receipt = {

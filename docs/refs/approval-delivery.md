@@ -4,7 +4,9 @@ One durable owner sends approval cards and keeps them current. It covers
 Telegram cards (#291), review-only Slack cards (#294), Teams cards (#293) and
 Discord cards (#292, see its section at the end) for canonical absences, and,
 since #296, Telegram cards for legacy-authoritative expense claims (see "Legacy
-lifecycles"). It is **inactive for every organization**: migrations
+lifecycles"). Since #325 it also delivers canonical manual time submissions,
+policy clock-outs and time corrections (Telegram verified; see "Time approval
+presentation and bound decisions" in [approval evidence](approval-evidence.md)). It is **inactive for every organization**: migrations
 `0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql`,
 `0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql` and
 `0094_discord_approval_delivery.sql` insert no control rows.
