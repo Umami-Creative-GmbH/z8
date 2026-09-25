@@ -293,6 +293,16 @@
         "commitQueued": "{count} linhas aceitas colocadas na fila para confirmação",
         "committing": "Confirmando...",
         "description": "Revise as linhas de importação preparadas, resolva problemas de bloqueio e confirme os registros aceitos quando o lote estiver pronto.",
+        "hold": {
+          "appendReviewRequired": "O histórico de tempo do colaborador precisa de revisão antes de poderem ser adicionados novos registos.",
+          "invalidInterval": "Os horários do fornecedor não têm um desvio explícito, não estão em ordem ou estão no futuro.",
+          "label": "Retida para revisão",
+          "occupancyConflict": "O tempo sobrepõe-se a trabalho já registado para este colaborador.",
+          "operationCollision": "Esta linha entra em conflito com a sua importação confirmada anteriormente.",
+          "providerDurationMismatch": "A duração do fornecedor difere das horas de início e de fim.",
+          "sourceCollision": "Este registo do fornecedor já foi importado.",
+          "unlocatedBreak": "O fornecedor indica pausas sem os respetivos horários, pelo que o intervalo trabalhado é desconhecido."
+        },
         "issueGroups": {
           "currentMarkers": "As linhas atuais incluem {blockingRows} marcadores de problemas de bloqueio e {warningRows} de aviso.",
           "description": "Áreas de revisão agrupadas ajudam a manter as verificações de qualidade visíveis antes que as linhas aceitas sejam confirmadas.",

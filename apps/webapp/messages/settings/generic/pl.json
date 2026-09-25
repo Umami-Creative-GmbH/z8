@@ -293,6 +293,16 @@
         "commitQueued": "Dodano {count} zaakceptowanych wierszy do kolejki zatwierdzania",
         "committing": "Zatwierdzanie...",
         "description": "Przejrzyj przygotowane wiersze importu, rozwiąż blokujące problemy i zatwierdź zaakceptowane rekordy, gdy partia będzie gotowa.",
+        "hold": {
+          "appendReviewRequired": "Historia czasu pracownika wymaga przeglądu, zanim będzie można dodać nowe wpisy.",
+          "invalidInterval": "Czasy dostawcy nie mają jawnego przesunięcia, nie są uporządkowane lub leżą w przyszłości.",
+          "label": "Wstrzymano do przeglądu",
+          "occupancyConflict": "Czas pokrywa się z pracą już zarejestrowaną dla tego pracownika.",
+          "operationCollision": "Ten wiersz koliduje z jego wcześniej zatwierdzonym importem.",
+          "providerDurationMismatch": "Czas trwania podany przez dostawcę różni się od godzin rozpoczęcia i zakończenia.",
+          "sourceCollision": "Ten rekord dostawcy został już zaimportowany.",
+          "unlocatedBreak": "Dostawca zgłasza przerwy bez ich godzin, więc przepracowany przedział jest nieznany."
+        },
         "issueGroups": {
           "currentMarkers": "Bieżące wiersze zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
           "description": "Pogrupowane obszary przeglądu pomagają zachować widoczność kontroli jakości przed zatwierdzeniem wierszy.",
