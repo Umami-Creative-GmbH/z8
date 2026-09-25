@@ -25,6 +25,12 @@ function fakeTransaction(options: {
 		if (text.startsWith("delete from approval_escalation_transfer")) {
 			return [{ id: "transfer-2" }, { id: "transfer-1" }];
 		}
+		if (text.startsWith("delete from approval_delivery_work")) {
+			return [{ id: "work-2" }, { id: "work-1" }];
+		}
+		if (text.startsWith("delete from approval_delivery_message")) {
+			return [{ id: "message-1" }];
+		}
 		if (text.startsWith("delete from approval_invocation")) {
 			return [{ id: "invocation-1" }];
 		}
@@ -82,12 +88,18 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			invocations: ["invocation-1"],
 		});
 		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
+		expect(result.delivery).toEqual({
+			work: ["work-1", "work-2"],
+			messages: ["message-1"],
+		});
 		const deletes = statements
 			.map((statement) => statement.sql)
 			.filter((text) => text.startsWith("delete from"))
 			.map((text) => text.split(" ")[2]);
 		expect(deletes).toEqual([
 			"approval_escalation_transfer",
+			"approval_delivery_work",
+			"approval_delivery_message",
 			"approval_invocation",
 			"approval_decision_evidence",
 			"approval_review_binding",
@@ -95,7 +107,7 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			"approval_workflow",
 		]);
 		for (const statement of statements.filter((candidate) =>
-			/^delete from approval_(escalation_transfer|invocation|decision_evidence|review_binding|submitted_revision)/.test(
+			/^delete from approval_(escalation_transfer|delivery_work|delivery_message|invocation|decision_evidence|review_binding|submitted_revision)/.test(
 				candidate.sql,
 			),
 		)) {
@@ -107,6 +119,8 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(statements[2]?.sql).toContain("approval_submitted_revision");
 		expect(statements[2]?.sql).toContain("approval_decision_evidence");
 		expect(statements[2]?.sql).toContain("approval_invocation");
+		expect(statements[2]?.sql).toContain("approval_delivery_work");
+		expect(statements[2]?.sql).toContain("approval_delivery_message");
 	});
 
 	it("touches no evidence when the lifecycle has no canonical workflow", async () => {
@@ -125,9 +139,10 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			invocations: [],
 		});
 		expect(result.escalationTransfers).toEqual([]);
+		expect(result.delivery).toEqual({ work: [], messages: [] });
 		expect(
 			statements.some((statement) =>
-				/^delete from approval_(escalation_transfer|invocation|decision_evidence|review_binding|submitted_revision)/.test(
+				/^delete from approval_(escalation_transfer|delivery_work|delivery_message|invocation|decision_evidence|review_binding|submitted_revision)/.test(
 					statement.sql,
 				),
 			),

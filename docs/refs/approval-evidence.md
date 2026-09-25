@@ -605,11 +605,10 @@ No application endpoint changes the mode.
    organizations whose absences are `legacy`, `shadow` or `ready` keep
    review-only cards. A legacy binding representation is not implemented
    (#384).
-3. **Routing and delivery (#291).** Real submission routing, durable delivery
-   intents, retries, complete message identity (tracking is still one row per
-   compatibility request, without the binding) and refreshing cards after web or
-   cross-platform decisions are not part of this slice. Until then a stale card
-   keeps its buttons; pressing one decides nothing.
+3. **Routing and delivery (#291).** Implemented by the approval delivery
+   owner, which has its own activation blockers; see
+   [Approval card delivery](approval-delivery.md). Without its control a stale
+   card keeps its buttons; pressing one decides nothing.
 4. **Ingress.** No durable acceptance before the webhook acknowledgment.
 5. **Escalation race.** Revalidation after a web decision and after a material
    change is verified; a real escalation transfer (#298) between rendering and

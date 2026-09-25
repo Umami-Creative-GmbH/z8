@@ -45,6 +45,14 @@
         "stepRejected": "Odrzucone przez {actor} {time}. Wniosek nie jest jeszcze ostateczny; sprawdź jego aktualny status w Z8.",
         "recordedTitle": "Decyzja zapisana",
         "recorded": "Zapisane przez {actor} {time}. Sprawdź aktualny status wniosku w Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Wniosek wycofany",
+        "withdrawn": "Ten wniosek został wycofany. Z tej karty nie jest potrzebna żadna decyzja.",
+        "inactiveTitle": "Nie wymaga już działania",
+        "inactive": "Ten wniosek nie wymaga już Twojej decyzji z tej karty. Nie podjęto tu żadnej decyzji. Sprawdź jego aktualny status w Z8.",
+        "currentApproved": "Aktualny status wniosku: zatwierdzony.",
+        "currentRejected": "Aktualny status wniosku: odrzucony."
       }
     },
     "cmd": {

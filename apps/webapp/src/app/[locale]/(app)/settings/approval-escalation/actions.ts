@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { recoverApprovalDeliveryForAttention } from "@/lib/approvals/delivery/recovery";
 import {
 	dispatchEscalationAttentionAlerts,
 	disposeEscalationAttention,
@@ -207,6 +208,48 @@ export async function disposeApprovalEscalationAttention(
 			return { success: false, error: "Attention item not found." };
 		case "invalid_note":
 			return { success: false, error: "A disposition note is required." };
+	}
+}
+
+const retryDeliverySchema = z.object({ attentionId: z.string().uuid() });
+
+/**
+ * Explicit recovery of an exhausted or repair-waiting approval delivery. It
+ * re-arms only undelivered work; the item closes once delivery succeeds.
+ */
+export async function retryApprovalEscalationDelivery(
+	input: z.input<typeof retryDeliverySchema>,
+): Promise<ActionResult<undefined>> {
+	const manager = await requireEscalationManager();
+	if (!manager) return FORBIDDEN;
+	const parsed = retryDeliverySchema.safeParse(input);
+	if (!parsed.success) {
+		return { success: false, error: "Attention item not found." };
+	}
+	try {
+		const outcome = await recoverApprovalDeliveryForAttention({
+			organizationId: manager.organizationId,
+			actorUserId: manager.userId,
+			attentionId: parsed.data.attentionId,
+		});
+		switch (outcome.kind) {
+			case "rearmed":
+				revalidatePath(ESCALATION_MANAGEMENT_PATH);
+				return { success: true, data: undefined };
+			case "not_recoverable":
+				return {
+					success: false,
+					error: "This delivery is not waiting for recovery. Recheck to see its current state.",
+				};
+			case "not_found":
+				return { success: false, error: "Attention item not found." };
+		}
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: manager.organizationId },
+			"Approval delivery recovery failed",
+		);
+		return { success: false, error: "The delivery could not be retried." };
 	}
 }
 

@@ -121,4 +121,5 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/approvals/presentation/review-arrival.integration.test.ts \
 	src/lib/travel-expenses/expense-submission.integration.test.ts \
 	src/lib/approvals/escalation/legacy-transfer.integration.test.ts \
-	src/lib/telegram/bound-approval.integration.test.ts
+	src/lib/telegram/bound-approval.integration.test.ts \
+	src/lib/approvals/delivery/telegram-delivery.integration.test.ts

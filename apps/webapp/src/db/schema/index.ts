@@ -8,6 +8,7 @@ export * from "./absence";
 export * from "./access-policy";
 export * from "./app-auth";
 export * from "./approval";
+export * from "./approval-delivery";
 export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";

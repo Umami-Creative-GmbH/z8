@@ -1,6 +1,12 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { telegramApprovalMessage } from "@/db/schema";
+import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
+import {
+	type ApprovalDeliveryMessageRecord,
+	findApprovalDeliveryMessageByRemoteIdentity,
+	markApprovalDeliveryMessageWithoutControls,
+} from "@/lib/approvals/delivery/store";
 import {
 	type ApprovalActionableCard,
 	type ApprovalCardDraft,
@@ -17,6 +23,7 @@ import { editMessageText, sendMessage } from "./api";
 import {
 	encodeBoundApprovalCallback,
 	telegramInvocationEnvelope,
+	telegramReceiverScope,
 } from "./bound-approval";
 import { getChatIdForUser } from "./conversation-manager";
 import type {
@@ -96,7 +103,7 @@ function telegramCardText(card: ApprovalCardDraft): string {
  * Essential facts must fit one Telegram message; a truncated proposal never
  * keeps its controls, so an oversized card is prepared as review-only.
  */
-function fitsTelegramMessage(card: ApprovalCardDraft): boolean {
+export function fitsTelegramMessage(card: ApprovalCardDraft): boolean {
 	return telegramCardText(card).length <= TELEGRAM_TEXT_LIMIT;
 }
 
@@ -164,6 +171,19 @@ export async function handleBoundApprovalCallback(
 	}
 	try {
 		if (!query.message) return undefined;
+		const receiverScope = telegramReceiverScope(bot.botToken);
+		const delivered = receiverScope
+			? await findApprovalDeliveryMessageByRemoteIdentity({
+					organizationId: bot.organizationId,
+					provider: "telegram",
+					receiverScope,
+					destinationId: String(query.message.chat.id),
+					remoteMessageId: String(query.message.message_id),
+				})
+			: null;
+		if (delivered && delivered.recipientUserId === user.user.userId) {
+			return await updateDeliveredBoundCard(result, delivered, bot, user.user.userId);
+		}
 		const tracked = await db.query.telegramApprovalMessage.findFirst({
 			where: and(
 				eq(telegramApprovalMessage.organizationId, bot.organizationId),
@@ -191,6 +211,49 @@ export async function handleBoundApprovalCallback(
 			"Failed to update bound Telegram approval card",
 		);
 		return undefined;
+	}
+}
+
+/**
+ * The clicked card was sent by the approval delivery owner (#291): show the
+ * attempt's outcome and drop its controls. The recorded status version is
+ * left alone, so the owner's refresh still brings the message to the
+ * request's current status; the lifecycle's other messages are refreshed
+ * from the decision's committed intent.
+ */
+async function updateDeliveredBoundCard(
+	result: BoundBotApprovalResult,
+	message: ApprovalDeliveryMessageRecord,
+	bot: ResolvedTelegramBot,
+	recipientUserId: string,
+): Promise<string | undefined> {
+	const notice = await boundDecisionNotice(
+		result,
+		{ userId: recipientUserId, organizationId: bot.organizationId },
+		message.approvalRequestId
+			? { kind: "compatibility", approvalRequestId: message.approvalRequestId }
+			: { kind: "canonical", assignmentId: message.assignmentId },
+	);
+	try {
+		if (!notice) return undefined;
+		const edited = await editMessageText(bot.botToken, {
+			chat_id: message.destinationId,
+			message_id: Number(message.remoteMessageId),
+			...telegramApprovalNotice(notice),
+		});
+		if (edited) {
+			await markApprovalDeliveryMessageWithoutControls({
+				organizationId: bot.organizationId,
+				messageId: message.id,
+			});
+		}
+		return notice.title;
+	} finally {
+		// After this edit, so the owner's refresh is the last word on the card.
+		kickApprovalDelivery({
+			organizationId: bot.organizationId,
+			workflowId: message.workflowId,
+		});
 	}
 }
 
