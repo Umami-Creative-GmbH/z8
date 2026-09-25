@@ -26,6 +26,7 @@ import {
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
+import { canonicalJson } from "./canonical-json";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -37,7 +38,6 @@ import {
 	type CloseActiveWorkWriter,
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
-	canonicalJson,
 } from "./close-active-work";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";

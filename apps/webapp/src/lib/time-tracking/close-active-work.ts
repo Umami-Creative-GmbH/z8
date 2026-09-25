@@ -43,6 +43,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { assertEmployeeMayClock } from "@/lib/employee-lifecycle/clocking-gate";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { canonicalJson } from "./canonical-json";
 import {
 	appendClockEntry,
 	ClockingConflictError,
@@ -216,20 +217,6 @@ export class CompletedWorkAttributionError extends Error {
 		super(field === "projectId" ? "Project not found" : "Work category not found");
 		this.name = "CompletedWorkAttributionError";
 	}
-}
-
-/** Stable serialization for exact command comparison. */
-export function canonicalJson(value: unknown): string {
-	if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-	if (value && typeof value === "object") {
-		return `{${Object.keys(value)
-			.sort()
-			.map(
-				(key) => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`,
-			)
-			.join(",")}}`;
-	}
-	return JSON.stringify(value);
 }
 
 function approvalDbService(context: WorkTransactionContext): ApprovalDbService {

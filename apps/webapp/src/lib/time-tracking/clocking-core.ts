@@ -270,6 +270,61 @@ export async function appendClockEntry(
 	};
 }
 
+/**
+ * Appends the entries of one operation from a single evidence-based admission
+ * (#262): each entry follows the previous one exactly and advances the position
+ * in turn. When the history requires review, nothing is written.
+ */
+export async function appendAdmittedClockEntries(
+	store: ClockingStore,
+	operation: TimeEntryAppendOperation,
+	entries: ReadonlyArray<{ input: ClockingInput; type: "clock_in" | "clock_out" }>,
+): Promise<AppendedClockEntry[]> {
+	const [first] = entries;
+	if (!first || !store.admitAppend) {
+		throw new Error("Append admission is unavailable");
+	}
+	const scope = {
+		organizationId: first.input.organizationId,
+		employeeId: first.input.employeeId,
+	};
+	if (
+		entries.some(
+			({ input }) =>
+				input.organizationId !== scope.organizationId ||
+				input.employeeId !== scope.employeeId,
+		)
+	) {
+		throw new Error("Appended entries must share one employee scope");
+	}
+	const appendAdmission = await store.admitAppend(scope, operation);
+	if (appendAdmission.kind === "review_required") {
+		throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
+	}
+	const appended: AppendedClockEntry[] = [];
+	for (const { input, type } of entries) {
+		const values = entryValues(input, type, {
+			kind: "admitted",
+			predecessor: appendAdmission.append.predecessor,
+		});
+		const entry = await store.insertEntry(values);
+		const previousEntryId = values.previousEntryId ?? null;
+		await appendAdmission.append.record({
+			id: entry.id,
+			hash: values.hash,
+			previousEntryId,
+			previousHash: values.previousHash,
+		});
+		appended.push({
+			entry,
+			admission: "append",
+			previousEntryId,
+			previousHash: values.previousHash,
+		});
+	}
+	return appended;
+}
+
 export function createClockingService(deps: ClockingDependencies) {
 	async function withinEmployeeTransaction<T>(
 		input: ClockingInput,

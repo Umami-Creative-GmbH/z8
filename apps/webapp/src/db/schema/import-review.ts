@@ -142,6 +142,9 @@ export const importStagedRow = pgTable(
 		commitTargetTable: text("commit_target_table"),
 		commitTargetId: text("commit_target_id"),
 		commitError: text("commit_error"),
+		// Structured evidence for a row the reviewed-import operation held for review
+		// instead of committing (#284); never cleared by retries.
+		commitHold: jsonb("commit_hold").$type<Record<string, unknown> | null>(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.defaultNow()
