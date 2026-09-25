@@ -685,7 +685,14 @@
       "idx": 97,
       "version": "7",
       "when": 1792684800000,
-      "tag": "0097_work_balance_rebuild_intent",
+      "tag": "0097_close_resume_work",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1792771200000,
+      "tag": "0098_work_balance_rebuild_intent",
       "breakpoints": true
     }
   ]
