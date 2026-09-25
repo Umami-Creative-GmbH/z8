@@ -21,8 +21,8 @@ import { employee } from "./organization";
 import { currentTimestamp } from "./timestamp";
 
 // #291: providers whose approval-card delivery has one durable owner. Slack
-// joined in #294 with review-only cards, Teams in #293.
-export const APPROVAL_DELIVERY_PROVIDERS = ["telegram", "teams", "slack"] as const;
+// joined in #294 with review-only cards, Teams in #293, Discord in #292.
+export const APPROVAL_DELIVERY_PROVIDERS = ["telegram", "teams", "slack", "discord"] as const;
 export type ApprovalDeliveryProvider = (typeof APPROVAL_DELIVERY_PROVIDERS)[number];
 
 /** `initial` sends a card for one assignment; `refresh` updates one sent message. */
@@ -91,7 +91,7 @@ export const approvalDeliveryControl = pgTable(
 		}),
 		check(
 			"approval_delivery_control_provider_check",
-			sql`${table.provider} IN ('telegram', 'teams', 'slack')`,
+			sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`,
 		),
 	],
 );
@@ -149,7 +149,7 @@ export const approvalDeliveryMessage = pgTable(
 		index("approvalDeliveryMessage_org_legacy_source_idx")
 			.on(table.organizationId, table.legacySourceType, table.legacySourceId)
 			.where(sql`${table.lifecycle} = 'legacy'`),
-		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'teams', 'slack')`),
+		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`),
 		check("approval_delivery_message_lifecycle_check", lifecycleCheck(table)),
 		check(
 			"approval_delivery_message_legacy_reference_check",
@@ -246,7 +246,7 @@ export const approvalDeliveryWork = pgTable(
 			.where(sql`status IN ('pending', 'processing')`),
 		check(
 			"approval_delivery_work_provider_check",
-			sql`${table.provider} IN ('telegram', 'teams', 'slack')`,
+			sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`,
 		),
 		check(
 			"approval_delivery_work_effect_check",

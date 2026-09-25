@@ -28,6 +28,7 @@ export const APPROVAL_INVOCATION_SCHEMES = [
 	// Teams Universal Action invoke (`adaptiveCard/action`, manual trigger):
 	// the recorded activity ID, scoped by bot, tenant and conversation (#293).
 	"teams_adaptive_card_action",
+	"discord_interaction",
 ] as const;
 export type ApprovalInvocationScheme =
 	(typeof APPROVAL_INVOCATION_SCHEMES)[number];
@@ -36,7 +37,11 @@ export const APPROVAL_INVOCATION_SCHEME_VERSION = 1;
 
 const SCHEME_PROVIDERS: Readonly<
 	Record<ApprovalInvocationScheme, ApprovalPresentationProvider>
-> = { telegram_callback_query: "telegram", teams_adaptive_card_action: "teams" };
+> = {
+	telegram_callback_query: "telegram",
+	teams_adaptive_card_action: "teams",
+	discord_interaction: "discord",
+};
 
 /** The provider whose card admission governs invocations of this scheme. */
 export function approvalInvocationProvider(
@@ -61,7 +66,7 @@ export interface ApprovalInvocationIdentity {
 	organizationId: string;
 	scheme: ApprovalInvocationScheme;
 	schemeVersion: typeof APPROVAL_INVOCATION_SCHEME_VERSION;
-	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>`. */
+	/** Authenticated receiver, e.g. `telegram-bot:<bot user id>` or `discord-app:<application id>`. */
 	receiverScope: string;
 	/** Exact provider invocation ID, kept opaque. */
 	invocationId: string;

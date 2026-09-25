@@ -123,11 +123,12 @@ export interface BotInvocationEnvelope {
 	scheme: ApprovalInvocationScheme;
 	/**
 	 * Authenticated receiver, e.g. `telegram-bot:<bot user id>` or the Teams
-	 * bot/tenant/conversation scope of a recorded activity.
+	 * bot/tenant/conversation scope of a recorded activity, or
+	 * `discord-app:<application id>`.
 	 */
 	receiverScope: string;
 	invocationId: string;
-	/** Transport delivery identity (Telegram update_id), kept separately. */
+	/** Transport delivery identity (Telegram update_id; none on Discord), kept separately. */
 	deliveryId: string | null;
 	providerActorId: string;
 }
@@ -156,7 +157,11 @@ export type BoundBotApprovalResult =
 
 const INVOCATION_SCHEMES: Partial<
 	Record<BotPlatform, ApprovalInvocationScheme>
-> = { telegram: "telegram_callback_query", teams: "teams_adaptive_card_action" };
+> = {
+	telegram: "telegram_callback_query",
+	teams: "teams_adaptive_card_action",
+	discord: "discord_interaction",
+};
 
 /**
  * A bound card action. The binding and invocation cross the shared attempt
