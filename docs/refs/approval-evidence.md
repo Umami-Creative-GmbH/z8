@@ -1570,7 +1570,7 @@ No application endpoint changes either control.
 1. **Legacy authority.** Legacy-authoritative time approvals (every
    organization today) stay review-only on bots: no legacy binding, no legacy
    delivery intent, and legacy delivery assumes one lifecycle per source while a
-   work period has several approval cycles. Follow-up ticket required.
+   work period has several approval cycles. Follow-up: #432.
 2. **Canonical-only (`complete`) references.** Presentation starts from the
    compatibility request; a `complete`-mode workflow without one is delivered as
    `unsupported_route` attention (same limit as absences).
