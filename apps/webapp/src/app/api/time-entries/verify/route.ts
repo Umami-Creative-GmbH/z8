@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { asAppSubject, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { summarizeAppendAssurance } from "@/lib/time-tracking/append-assurance";
@@ -15,8 +15,8 @@ import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocki
 /**
  * POST /api/time-entries/verify
  * Graph-aware append assurance for an employee's time entries (#324). Operators
- * who can manage time entries receive record-level diagnostics; others verifying
- * their own history receive status and limitation codes only.
+ * receive record-level diagnostics; employees verifying their own history receive
+ * status and limitation codes only.
  */
 export async function POST(request: NextRequest) {
 	await connection();
@@ -59,11 +59,26 @@ export async function POST(request: NextRequest) {
 		// Determine which employee's chain to verify
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
+		// Every role self-manages its own time entries, so that alone does not make an
+		// operator. Record-level diagnostics need management of this other employee's
+		// entries (a manager's covers direct reports only), or organization
+		// administration when verifying one's own history.
 		const ability = await getAbility();
-		const canDiagnose = Boolean(ability?.can("manage", "TimeEntry"));
+		const isSelf = targetEmployeeId === currentEmployee.id;
+		const canDiagnose = Boolean(
+			isSelf
+				? ability?.can("manage", "OrgSettings")
+				: ability?.can(
+						"manage",
+						asAppSubject("TimeEntry", {
+							employeeId: targetEmployeeId,
+							organizationId: currentEmployee.organizationId,
+						}),
+					),
+		);
 
-		// Only allow verifying own entries unless user can manage time entries
-		if (targetEmployeeId !== currentEmployee.id) {
+		// Only allow verifying own entries unless user can manage the target's time entries
+		if (!isSelf) {
 			if (!canDiagnose) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
@@ -157,10 +172,18 @@ export async function GET(request: NextRequest) {
 		// Determine which employee's chain hash to get
 		const targetEmployeeId = employeeId || currentEmployee.id;
 
-		// Only allow viewing own chain hash unless user can manage time entries
+		// Only allow viewing own chain hash unless user can manage the target's time entries
 		if (targetEmployeeId !== currentEmployee.id) {
 			const ability = await getAbility();
-			if (!ability || ability.cannot("manage", "TimeEntry")) {
+			if (
+				!ability?.can(
+					"manage",
+					asAppSubject("TimeEntry", {
+						employeeId: targetEmployeeId,
+						organizationId: currentEmployee.organizationId,
+					}),
+				)
+			) {
 				const error = new ForbiddenError("read", "TimeEntry");
 				const httpError = toHttpError(error);
 				return NextResponse.json(httpError.body, { status: httpError.status });
