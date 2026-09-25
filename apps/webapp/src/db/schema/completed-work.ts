@@ -13,10 +13,10 @@ import {
 import { organization, user } from "../auth-schema";
 import { employee } from "./organization";
 
-export const COMPLETED_WORK_OPERATION_KINDS = ["close_active_work"] as const;
+export const COMPLETED_WORK_OPERATION_KINDS = ["close_active_work", "create_completed_work"] as const;
 export type CompletedWorkOperationKind = (typeof COMPLETED_WORK_OPERATION_KINDS)[number];
 
-export const COMPLETED_WORK_WRITERS = ["web_clock_out"] as const;
+export const COMPLETED_WORK_WRITERS = ["web_clock_out", "runtime_demo"] as const;
 export type CompletedWorkWriter = (typeof COMPLETED_WORK_WRITERS)[number];
 
 export const COMPLETED_WORK_ACTOR_KINDS = ["human", "system", "unknown_historical"] as const;
@@ -28,6 +28,8 @@ export type CompletedWorkActorKind = (typeof COMPLETED_WORK_ACTOR_KINDS)[number]
 // entry ID). Work identities are stored by value: the receipt is committed evidence
 // and does not follow later business changes to the work it created. Organization
 // and employee deletion cascade; partial history cleanup deletes receipts explicitly.
+// A `system` actor names the executing process in the result; `actor_user_id` then
+// holds the human who triggered it (runtime demo generation, #285), if any.
 export const completedWorkOperation = pgTable(
 	"completed_work_operation",
 	{
@@ -57,8 +59,8 @@ export const completedWorkOperation = pgTable(
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
 		index("completedWorkOperation_org_employee_idx").on(table.organizationId, table.employeeId),
-		check("completed_work_operation_kind_check", sql`${table.kind} IN ('close_active_work')`),
-		check("completed_work_operation_writer_check", sql`${table.writer} IN ('web_clock_out')`),
+		check("completed_work_operation_kind_check", sql`${table.kind} IN ('close_active_work', 'create_completed_work')`),
+		check("completed_work_operation_writer_check", sql`${table.writer} IN ('web_clock_out', 'runtime_demo')`),
 		check(
 			"completed_work_operation_admission_check",
 			sql`${table.appendAdmission} IN ('legacy', 'append')`,
