@@ -39,8 +39,8 @@ const {
 	notLikeMock: vi.fn((column, value) => ({ type: "notLike", column, value })),
 }));
 
-vi.mock("@/db", () => ({
-	db: {
+vi.mock("@/db", () => {
+	const db = {
 		query: {
 			subscription: {
 				findFirst,
@@ -53,8 +53,12 @@ vi.mock("@/db", () => ({
 			set: setValues,
 		})),
 		select,
-	},
-}));
+		// Billing mutations run in their own transaction under configuration protection.
+		execute: vi.fn(async () => undefined),
+		transaction: vi.fn(async (callback: (transaction: unknown) => unknown) => callback(db)),
+	};
+	return { db };
+});
 
 // Seat semantics are covered by billable-seat-count.integration.test.ts.
 vi.mock("./billable-seat-count", () => ({ countBillableSeats }));

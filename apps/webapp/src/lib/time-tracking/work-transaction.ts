@@ -65,13 +65,33 @@ export async function readAppendAdmission(
 	return control?.mode === "active" ? "append" : "legacy";
 }
 
+const organizationConfigurationKey = (organizationId: string) =>
+	JSON.stringify(["work-organization-configuration", organizationId]);
+
 export async function acquireOrganizationConfigurationGuard(
 	transaction: Pick<Transaction, "execute">,
 	organizationId: string,
 ) {
 	await transaction.execute(
-		sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", organizationId])}, 0))`,
+		sql`select pg_advisory_xact_lock_shared(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
 	);
+}
+
+/**
+ * Exclusive counterpart for a configuration writer, taken in the writer's own
+ * transaction before it changes a fact work transactions read under the shared
+ * guard. It waits for in-flight work transactions and holds new ones until the
+ * change commits or rolls back. Never call it under a shared work guard.
+ */
+export async function acquireOrganizationConfigurationProtection(
+	transaction: Pick<Transaction, "execute">,
+	organizationIds: readonly string[],
+) {
+	for (const organizationId of [...new Set(organizationIds)].sort()) {
+		await transaction.execute(
+			sql`select pg_advisory_xact_lock(hashtextextended(${organizationConfigurationKey(organizationId)}, 0))`,
+		);
+	}
 }
 
 export async function acquireUserConfigurationAccessGuards(
