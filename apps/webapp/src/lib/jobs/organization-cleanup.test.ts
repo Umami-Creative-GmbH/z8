@@ -67,7 +67,7 @@ describe("organization cleanup topology", () => {
 	});
 
 	it("deletes the organization in one transaction and lets its cascade remove tenant data", async () => {
-		const { deleteFrom, events, execute, tx } = createTransaction([
+		const { deleteFrom, events, tx } = createTransaction([
 			{ userId: "user-1" },
 			{ userId: null },
 		]);

@@ -770,10 +770,9 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 				[[ids.organization, ids.otherOrganization]],
 			);
 			expect(organizations.map((row) => row.id)).toEqual([ids.otherOrganization]);
-			const { rows: employees } = await admin.query(
-				"select id from employee where user_id = $1",
-				[ids.employeeUser],
-			);
+			const { rows: employees } = await admin.query("select id from employee where user_id = $1", [
+				ids.employeeUser,
+			]);
 			expect(employees.map((row) => row.id)).toEqual([ids.otherEmployee]);
 		});
 
@@ -851,7 +850,8 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 			},
 			{
 				name: "generateDemoProjects",
-				write: () => demo.generateDemoProjects(demoOptions({ includeProjects: true, projectCount: 1 })),
+				write: () =>
+					demo.generateDemoProjects(demoOptions({ includeProjects: true, projectCount: 1 })),
 			},
 			{
 				name: "generateDemoWorkCategories",
@@ -874,7 +874,11 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 
 		it("generateDemoEmployees waits for a fresh submission", async () => {
 			const { submitted, written } = await writeBehindParkedSubmission(organizationGuard, () =>
-				generateDemoEmployees({ organizationId: ids.organization, count: 1, includeManagers: true }),
+				generateDemoEmployees({
+					organizationId: ids.organization,
+					count: 1,
+					includeManagers: true,
+				}),
 			);
 			expect(submitted).toMatchObject({ success: true });
 			expect(written).toMatchObject({ usersCreated: 1, employeesCreated: 1, managersCreated: 1 });
@@ -917,12 +921,17 @@ describeIntegration("provisioning, import, demo and cleanup writers on PostgreSQ
 
 		it("never moves another organization's employee into a demo team", async () => {
 			await demo.generateDemoTeams(
-				demoOptions({ includeTeams: true, teamCount: 1, employeeIds: [ids.employee, ids.otherEmployee] }),
+				demoOptions({
+					includeTeams: true,
+					teamCount: 1,
+					employeeIds: [ids.employee, ids.otherEmployee],
+				}),
 			);
 
-			const { rows } = await admin.query("select id, team_id from employee where id = any($1::uuid[])", [
-				[ids.employee, ids.otherEmployee],
-			]);
+			const { rows } = await admin.query(
+				"select id, team_id from employee where id = any($1::uuid[])",
+				[[ids.employee, ids.otherEmployee]],
+			);
 			expect(rows.find((row) => row.id === ids.otherEmployee)?.team_id).toBeNull();
 			expect(rows.find((row) => row.id === ids.employee)?.team_id).not.toBeNull();
 		});

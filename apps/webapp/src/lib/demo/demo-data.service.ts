@@ -89,9 +89,8 @@ import {
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
+import type { Transaction } from "@/lib/time-tracking/work-transaction";
 import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
-
-type DemoTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const demoLogger = createLogger("demo-data");
 
@@ -1549,7 +1548,7 @@ function selectDemoEmployees(
 }
 
 async function generateDemoTeamsInTransaction(
-	tx: DemoTransaction,
+	tx: Transaction,
 	options: DemoDataOptions,
 	employees: DemoEmployee[],
 ): Promise<{ teamsCreated: number; employeesAssignedToTeams: number }> {

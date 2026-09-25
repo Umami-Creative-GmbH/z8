@@ -731,8 +731,9 @@ async function commitReviewedWorkRow(
 }
 
 /**
- * Setup entities whose rows manual preparation reads: organization holidays in
- * blocking categories and work categories (#318). Their commit takes exclusive
+ * Setup entities whose rows manual preparation reads (#318): organization
+ * holidays (blocking whenever their category blocks) and work categories,
+ * which Clockodo stages as `service` rows. Their commit takes exclusive
  * organization configuration protection before claiming the row, so it drains
  * and fences fresh manual submissions. Teams (created without members),
  * absences and surcharge models are not manual dependencies.

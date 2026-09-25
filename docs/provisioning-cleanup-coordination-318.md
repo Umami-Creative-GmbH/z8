@@ -96,7 +96,7 @@ call each generator on its own, so each one participates individually.
 | `generateDemoChangePolicies` | change policies, organization assignment | PG: waits |
 | `generateDemoManagerAssignments` | manager relations | PG: waits. The owner is now resolved within the organization; before this, `findFirst` by user alone could pick the owner's employee in another organization |
 | `clearOrganizationTimeData` | After the per-employee history deletion (#306, employee keys in their own transactions), one guarded batch deletes categories, sets, assignments, policies, locations, absences and allowances, removes team placement and manager relations, and deletes teams and projects | PG: parked on a demo team row after taking its guards, a fresh submission waits on the organization guard and then commits |
-| `deleteNonAdminEmployeesData` | After lifecycles, absences and histories, one guarded batch removes manager relations, detaches audit rows, deletes employees (cascading their assignments), memberships and demo users (cascading their other memberships and settings) | PG: parked on a member row, an owner's submission waits and then commits; the other organization's employees are untouched |
+| `deleteNonAdminEmployeesData` | After lifecycles, absences and histories, one guarded batch removes manager relations, detaches audit rows, deletes employees (cascading their assignments), memberships and demo users (cascading their other memberships and settings). The batch acts only on employees in the set confirmed under protection, so a user who left the organization in the meantime is not deleted unguarded | PG: parked on a member row, an owner's submission waits and then commits; the other organization's employees are untouched |
 
 ### Cleanup and cascade (C18, R14)
 
@@ -112,7 +112,7 @@ call each generator on its own, so each one participates individually.
 with their tests. They had no caller: both actions already refused direct imports
 ("Direct Clockodo imports are disabled…"), and the reviewed-import adapters use only the
 clients and types. Their two `SOURCE_WRITE_EXCEPTIONS` registrations are removed. The
-helper-scoping scanner test now uses `demo-work.ts`'s `insertDemoEntry`.
+helper-scoping scanner test now uses `clocking-core.ts`'s `insertEntry`.
 `ImportUserMapping`, the disabled action's parameter type, moved to `lib/clockodo/types.ts`.
 The disabled-action tests still pass unchanged. Raw provider payloads already imported stay
 as historical evidence; no data changes.
@@ -137,6 +137,20 @@ none of those:
 - `db/seed` (`work-policy-presets.ts`): global work-policy presets, run by operators only.
 - Clockodo `saveUserMappings` (`clockodo_user_mapping`), invitation drafts (consumed by
   provisioning under its guard) and `storePendingInvitation` (`invitedVia`, #314).
+
+### Operator surfaces and trial provisioning (R15, C16)
+
+- `scripts/approval-workflow-rollout.ts` changes approval rollout modes under its own gate,
+  and `scripts/approvals.ts` purges approval lifecycles (#306 R13). Neither writes a
+  configuration fact that manual preparation reads.
+- `scripts/obliterate-job-queue.ts` and `migrate-with-lock.js` write no organization, user
+  or employee configuration. Queue obliteration can erase recovery evidence, and that stays
+  an operational item for #327.
+- `db/seed` writes only global work-policy presets (see above).
+- Trial provisioning (C16) belongs to #317: `provisionLocalTrial` takes the exclusive guard
+  when it must insert, and every work transaction reads billing without provisioning. The
+  subscription row's cascade on organization deletion now runs under the organization
+  guard (the cleanup row above).
 
 ## Verification
 
@@ -163,6 +177,8 @@ real PostgreSQL locks. **17/17.**
   organization cleanup and non-admin deletion leave the other organization's employees in
   place.
 - **Changed-scope restart:** see the organization cleanup row.
+- **User-global ordering:** the user guard is global. The provisioning cases run the writer
+  in the other organization, and it still waits for a submission in this one.
 
 Mutation runs, one at a time and reverted afterwards:
 
@@ -171,6 +187,12 @@ Mutation runs, one at a time and reverted afterwards:
 - Exclusive user guard made a no-op: 5 fail, the 4 provisioning cases and the restart.
 - Scope confirmation in `protectAuthorizationMutation` disabled: only the restart case
   fails.
+
+### Approval write-boundary scanner
+
+The scanner cannot read sources on Windows, so it ran in a Linux `node:24` container:
+`approval-write-boundary.test.ts` passes **290/290**. The production inventory is unchanged
+apart from the two retired registrations.
 
 ### Database-free
 
@@ -196,16 +218,22 @@ This slice closes on implementation. The items below are activation gates for #3
   build that still contains the direct import orchestrators. Drain or disable them before
   activation. Operator seed runs must not target adopted organizations.
 - **Organization-wide pauses.** Demo generation and cleanup, and whole-organization
-  deletion, hold the organization guard for their batch. Manual submissions in that
+  deletion, hold the organization guard for their batch. The demo employee generator takes
+  it once per generated employee, so generating N employees pauses the organization N
+  times, each time briefly. Manual submissions in that
   organization wait for the batch, as they already do for #313's organization-wide writers.
   Administrator-facing latency under load is not measured.
 - **Restart limit.** A scope that keeps changing fails the demo batch or the organization
   deletion after three attempts. That takes a user joining on every attempt; only the single
   restart is exercised.
-- **Not raced on PostgreSQL:** `setWorkSchedule` (same guarded pattern as `updateProfile`),
+- **Not raced on PostgreSQL:** a submission in another organization against the
+  cross-organization cascade of a deleted demo user (the global user guard is shown by the
+  provisioning cases), `setWorkSchedule` (same guarded pattern as `updateProfile`),
   `bulkReject` (same transaction as `reject`), the reconciliation and switch callers of
   `ensureEmployeeForOrganizationMember` (same owner), and `processPendingInviteCode` (same
   redemption transaction as `useCode`).
+- **SSO approval refusal** rejects any update payload that carries the key, even with an
+  unchanged value. No z8 caller sends it.
 - **Observation, outside manual dependencies:** organization cleanup deletes
   `water_intake_log` and `push_subscription` rows for every employee user of the deleted
   organization (#306), including users who still belong to other organizations.

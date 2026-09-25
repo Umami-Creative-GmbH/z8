@@ -5534,9 +5534,9 @@ export function renamedCreateTimeRecord() {
 	});
 
 	it("keeps uncertainty exceptions scoped to their named helper", () => {
-		const path = "src/lib/demo/demo-work.ts";
+		const path = "src/lib/time-tracking/clocking-core.ts";
 		const source = `import { db, timeEntry } from "@/db";
-export async function insertDemoEntry(values: object) {
+export async function insertEntry(values: object) {
   return db.transaction(async (tx) => tx.insert(timeEntry).values(values));
 }
 export async function hiddenImport(values: object) {

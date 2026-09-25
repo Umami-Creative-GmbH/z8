@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
+import type { Transaction } from "@/lib/time-tracking/work-transaction";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type DemoEmployee = typeof employee.$inferSelect;
 
 /**

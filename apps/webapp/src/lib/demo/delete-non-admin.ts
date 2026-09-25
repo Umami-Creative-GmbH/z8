@@ -67,7 +67,6 @@ export async function deleteNonAdminEmployeesData(
 	}
 
 	const employeeIds = nonAdminEmployees.map((e) => e.id);
-	const userIds = nonAdminEmployees.map((e) => e.userId);
 
 	// Step 2: Remove every approval lifecycle naming these employees in any role
 	// (requester, approver, decider, card recipient, ...) through the privileged
@@ -117,7 +116,15 @@ export async function deleteNonAdminEmployeesData(
 	// exclusive organization configuration protection and the guards of every
 	// employee's user, including the deleted users, whose cascades reach their
 	// other organizations and settings (#318).
-	await withDemoConfigurationMutation(organizationId, async (tx) => {
+	await withDemoConfigurationMutation(organizationId, async (tx, organizationEmployees) => {
+		// Only employees still in the organization under protection: their users'
+		// guards are held. One who left meanwhile is not touched here.
+		const selected = new Set(nonAdminEmployees.map((e) => e.id));
+		const protectedEmployees = organizationEmployees.filter((e) => selected.has(e.id));
+		const employeeIds = protectedEmployees.map((e) => e.id);
+		const userIds = protectedEmployees.map((e) => e.userId);
+		if (employeeIds.length === 0) return;
+
 		// Step 7: Delete manager assignments (both as employee and manager)
 		const managerAssignmentsToDelete = await tx
 			.select()
