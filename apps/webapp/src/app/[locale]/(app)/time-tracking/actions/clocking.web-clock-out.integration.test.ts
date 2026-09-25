@@ -718,6 +718,72 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		).toBe(true);
 	});
 
+	async function durations(periodId: string) {
+		const { rows } = await admin.query<{
+			period_minutes: number;
+			record_minutes: number;
+		}>(
+			`select wp.duration_minutes as period_minutes, tr.duration_minutes as record_minutes
+			 from work_period wp join time_record tr on tr.id = wp.canonical_record_id
+			 where wp.id = $1`,
+			[periodId],
+		);
+		return only(rows);
+	}
+
+	it("stores one half-up duration and replays a clock-out 40 seconds past the minute (#388)", async () => {
+		const periodId = await clockInRequester();
+		const submissionId = randomUUID();
+		const instant = clockOutAt.add({ seconds: 40 });
+
+		const first = await clockOutRequester(submissionId, ids.requesterUser, instant);
+		expect(first).toMatchObject({ success: true });
+		// 8h0m40s: the period and the canonical record agree on 481 minutes.
+		expect(await durations(periodId)).toEqual({
+			period_minutes: 481,
+			record_minutes: 481,
+		});
+		const committed = await workState();
+
+		const retry = await clockOutRequester(submissionId, ids.requesterUser, instant);
+
+		expect(retry).toMatchObject({
+			success: true,
+			data: { id: first.success ? first.data.id : undefined },
+		});
+		expect(await workState()).toEqual(committed);
+		expect(await durations(periodId)).toEqual({
+			period_minutes: 481,
+			record_minutes: 481,
+		});
+	});
+
+	it("keeps a committed row with mismatched minutes a replay collision (#388)", async () => {
+		const periodId = await clockInRequester();
+		const submissionId = randomUUID();
+		const instant = clockOutAt.add({ seconds: 40 });
+		await expect(
+			clockOutRequester(submissionId, ids.requesterUser, instant),
+		).resolves.toMatchObject({ success: true });
+		// Historical rows written before #388 floored the canonical minutes.
+		await admin.query(
+			`update time_record set duration_minutes = duration_minutes - 1
+			 where id = (select canonical_record_id from work_period where id = $1)`,
+			[periodId],
+		);
+		const committed = await workState();
+
+		await expect(
+			clockOutRequester(submissionId, ids.requesterUser, instant),
+		).resolves.toEqual({ success: false, error: genericFailure });
+
+		expect(await workState()).toEqual(committed);
+		expect(await durations(periodId)).toEqual({
+			period_minutes: 481,
+			record_minutes: 480,
+		});
+	});
+
 	it("acquires advisory scope before the employee key and routed rows in the amended order", async () => {
 		const periodId = await clockInRequester();
 		const rowHolder = await openHolder();

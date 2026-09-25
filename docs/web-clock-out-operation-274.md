@@ -232,8 +232,16 @@ The legacy #272 closure writes the canonical duration with
 or more seconds past the minute they disagree. The legacy replay matcher then
 rejects its own committed clock-out as "Submission collision". A retried legacy web
 clock-out after about half of all commits therefore returns "Failed to clock out"
-even though the work was saved. This is pre-existing on `dev`. The adopted path
-derives one duration, so it is not affected. The legacy replay test uses 60m20s.
+even though the work was saved. The adopted path derives one duration, so it is
+not affected.
+
+Fixed for fresh legacy writes in [#388](https://github.com/Umami-Creative-GmbH/z8/issues/388):
+the shared closer derives positive durations with `deriveWorkDurationMinutes`, and
+the legacy web closure writes the canonical record and policy evidence from the
+closer's locked start and duration. Already-committed rows are unchanged and keep
+their replay outcome; a mismatched historical row still replays as a collision.
+The #272 suite verifies both at 8h0m40s. Equal endpoints keep the shared closer's
+legacy zero-minute result for its other callers until #275-#277.
 
 ## Review follow-ups deferred to activation
 
