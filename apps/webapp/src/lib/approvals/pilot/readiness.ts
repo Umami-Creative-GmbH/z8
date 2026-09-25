@@ -4,6 +4,7 @@ import {
 	APPROVAL_DELIVERY_PROVIDERS,
 	type ApprovalDeliveryProvider,
 	type ApprovalDeliveryStatus,
+	type ApprovalEvidenceMode,
 	absenceEntry,
 	approvalDeliveryControl,
 	approvalEscalationControl,
@@ -66,6 +67,7 @@ export type PilotFindingCode =
 	| "delivery_exhausted"
 	| "delivery_failed"
 	| "delivery_lease_expired"
+	| "escalation_delivery_disabled"
 	| "escalation_legacy_owner"
 	| "escalation_owner_unrecognized"
 	| "escalation_paused"
@@ -121,7 +123,7 @@ export interface PilotKindReadiness {
 	authority: "canonical" | "legacy";
 	/** Stored rollout mode; null when the organization has no rollout row. */
 	lifecycleMode: string | null;
-	evidenceMode: string;
+	evidenceMode: ApprovalEvidenceMode;
 	pending: PilotPendingEvidence;
 }
 
@@ -184,24 +186,35 @@ async function loadLifecycleMode(
 	return typeof row?.lifecycle_mode === "string" ? row.lifecycle_mode : null;
 }
 
-/** Providers with an active integration that has approvals enabled. */
+/**
+ * Providers with an active integration that has approvals enabled, and whether
+ * it also delivers escalation replacement cards (Teams: any such tenant).
+ */
 async function loadConfiguredProviders(
 	database: ApprovalDatabase,
 	organizationId: string,
-): Promise<Set<ApprovalDeliveryProvider>> {
+): Promise<Map<ApprovalDeliveryProvider, { escalations: boolean }>> {
 	const result = rows(
 		await database.execute(sql`
-			select 'telegram' as provider from telegram_bot_config
-				where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
-			union select 'teams' from teams_tenant_config
-				where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
-			union select 'slack' from slack_workspace_config
-				where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
-			union select 'discord' from discord_bot_config
-				where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
+			select provider, bool_or(enable_escalations) as escalations from (
+				select 'telegram' as provider, enable_escalations from telegram_bot_config
+					where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
+				union all select 'teams', enable_escalations from teams_tenant_config
+					where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
+				union all select 'slack', enable_escalations from slack_workspace_config
+					where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
+				union all select 'discord', enable_escalations from discord_bot_config
+					where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
+			) integration
+			group by provider
 		`),
 	);
-	return new Set(result.map((row) => row.provider as ApprovalDeliveryProvider));
+	return new Map(
+		result.map((row) => [
+			row.provider as ApprovalDeliveryProvider,
+			{ escalations: row.escalations === true },
+		]),
+	);
 }
 
 async function loadDeliveryActivation(
@@ -546,6 +559,12 @@ async function assess(
 	// An unknown ID would otherwise read as an organization with nothing pending.
 	if (!known) throw new Error(`Unknown organization ${organizationId}`);
 	const configured = await loadConfiguredProviders(database, organizationId);
+	const escalation = await assessEscalation(database, organizationId);
+	// Scheduled transfers run (and send replacement cards) only under the new owner.
+	const transfersActive =
+		escalation.owner === "escalation" &&
+		!escalation.automationPaused &&
+		escalation.policy?.enabled === true;
 	const kinds: PilotKindReadiness[] = [];
 	const combinations: PilotCombinationReadiness[] = [];
 	for (const workflowType of PILOT_WORKFLOW_TYPES) {
@@ -595,8 +614,13 @@ async function assess(
 			} else if (admission === "actionable" && presentation !== "actionable") {
 				findings.push({ code: "presentation_not_actionable", severity: "blocker" });
 			}
-			if (!configured.has(provider)) {
+			const integration = configured.get(provider);
+			if (!integration) {
 				findings.push({ code: "provider_not_configured", severity: "blocker" });
+			} else if (workflowType === "absence" && transfersActive && !integration.escalations) {
+				// Channels are frozen at transfer expansion (#300): a backup reached
+				// through this provider gets no replacement card, only the web inbox.
+				findings.push({ code: "escalation_delivery_disabled", severity: "hold" });
 			}
 			const scope = { organizationId, workflowType, provider };
 			const activatedAt = await loadDeliveryActivation(database, scope);
@@ -636,7 +660,7 @@ async function assess(
 		organizationId,
 		kinds,
 		combinations,
-		escalation: await assessEscalation(database, organizationId),
+		escalation,
 	};
 }
 

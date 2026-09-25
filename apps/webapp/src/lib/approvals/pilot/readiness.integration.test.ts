@@ -739,4 +739,43 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			{ code: "attention_open", severity: "hold", count: 2 },
 		]);
 	});
+
+	it("holds a card combination whose integration does not deliver escalations once escalation owns transfers", async () => {
+		await seedOrganization();
+		// The seeded Telegram bot delivers approvals but not escalations; Slack does both.
+		await prepareAbsence();
+		const telegramBefore = combination(
+			await assessApprovalPilotReadiness({ organizationId: ids.organization }),
+			"absence",
+			"telegram",
+		);
+		// Legacy escalation still owns transfers: no replacement cards to miss yet.
+		expect(telegramBefore.findings).toEqual([]);
+
+		await admin.query(
+			`insert into approval_escalation_control
+			 (organization_id, owner, automation_paused, escalation_owned_since)
+			 values ($1, 'escalation', false, now())`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into approval_escalation_policy
+			 (organization_id, enabled, response_window_hours, revision, migration_provenance,
+			  conflict_review_status, updated_at)
+			 values ($1, true, 24, 1, '{}'::jsonb, 'none', now())`,
+			[ids.organization],
+		);
+
+		const report = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		expect(combination(report, "absence", "telegram")).toMatchObject({
+			verdict: "hold",
+			findings: [{ code: "escalation_delivery_disabled", severity: "hold" }],
+		});
+		expect(combination(report, "absence", "slack").findings).toEqual([]);
+		// Expense claims have no escalation transfers.
+		expect(codes(combination(report, "travel_expense", "telegram").findings)).not.toContain(
+			"escalation_delivery_disabled",
+		);
+	});
 });

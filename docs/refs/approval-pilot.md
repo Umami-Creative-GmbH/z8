@@ -45,6 +45,11 @@ is exactly one that cannot be decided from a card:
 delivery owner owns the combination (`approval_delivery_control` and its
 `activated_at`), its delivery work by status, and findings.
 
+The report does not classify committed invocations, decision receipts or
+evidence history: they are immutable, keep replaying after any pause, and are
+only removed by privileged cleanup. Nor does it see legacy expense
+reassignments, which get no replacement card (#296 blocker 5).
+
 **Escalation** (organization-wide): the owner in `approval_escalation_control`
 (`legacy` when no row exists), pause, `escalation_owned_since`, the migrated
 policy, the committed transfer journal and open administrative-attention
@@ -63,10 +68,11 @@ drains). It is never cleared by the report.
 | `authority_not_legacy` | blocker | Expense cards exist only under legacy authority (#296); a canonical expense rollout has no card path. |
 | `evidence_capture_inactive` | blocker | Turn on `approval_evidence_control` first (#287, #295). |
 | `presentation_not_actionable` | blocker | Actionable providers need `approval_presentation_control = actionable` (#290, #293, #292, #296). Slack needs none: it is always review-only. |
-| `combination_unverified` | blocker | Expense cards are admitted on Telegram only. Do not activate expense delivery on Teams, Slack or Discord. |
+| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. |
 | `presentation_actionable_unverified` | blocker | An `actionable` expense row on Teams, Slack or Discord would make unverified cards actionable. Remove it. |
 | `provider_not_configured` | blocker | No active integration with approvals enabled (for Teams: no such tenant). |
-| `evidence_held` | hold | Pending lifecycles held for evidence (count = `notCaptured` + `materialChange` + `authorityChange`). They are decided in the web inbox after resubmission. Nothing backfills them. |
+| `escalation_delivery_disabled` | hold | Absences only, while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
+| `evidence_held` | hold | Pending lifecycles held for evidence (count = `notCaptured` + `materialChange` + `authorityChange`), now or, while capture is still off, as soon as it is turned on. A held lifecycle is refused for approve and reject everywhere, the web inbox included. Absences leave the hold by cancellation and resubmission; held expense claims have no cancellation path and raise no attention record (#296 blocker 4), so they are not in `attention_open`. Otherwise drain them, or record reconstructed revisions through a separately authorized step (not implemented). Nothing backfills them. |
 | `in_flight_before_activation` | hold | Pending lifecycles without a lifecycle intent at or after `activated_at` (or, before activation, every pending lifecycle). The owner never sends them a card. See [In-flight decision](#in-flight-decision). |
 | `legacy_cards_historical_only` | hold | Unanswered cards of the pre-owner path (`telegram_approval_message`, `teams_approval_card`, `slack_approval_message`, `discord_approval_message`) on pending approvals. They are not refreshed. A press revalidates at commit and decides nothing on its own. |
 | `delivery_awaiting_repair` | hold | Work waiting for a destination (unlinked recipient, closed DMs, stale workspace DM). It re-arms when the recipient reaches the bot. |
@@ -107,8 +113,9 @@ every step.
    job names; they are still needed for queued or manual jobs.
 3. **Evidence capture.** Turn on `approval_evidence_control` for the kinds
    under the exclusive rollout lock (absence `:7:absence`, expense
-   `:14:travel_expense`). Re-run the report: `evidence_held` lists what will be
-   decided in the web inbox.
+   `:14:travel_expense`). Re-run the report: `evidence_held` counts the pending
+   lifecycles that can no longer be decided until they drain or are
+   resubmitted.
 4. **Presentation.** Insert the `actionable` rows: absences on Telegram, Teams
    and Discord; expenses on **Telegram only**.
 5. **Escalation.** Prepare the policy and review its conflicts. Then, after
@@ -167,7 +174,9 @@ documented SQL and the owners write them. It covers:
 - old-path cards on pending approvals;
 - organization isolation and an unknown organization;
 - escalation ownership, policy conflicts, legacy transfer events and open
-  attention.
+  attention;
+- absence combinations whose integration does not deliver escalations once
+  escalation owns transfers.
 
 `readiness-cli.test.ts` covers argument parsing, help without a database, the
 required environment, the text and JSON output, and pool cleanup on failure.
