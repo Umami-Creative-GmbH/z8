@@ -598,6 +598,71 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
+	// Evidence-only historical gap repair (#320) fills absent facts inside the outer
+	// completed-work transaction, guarded against the planned state.
+	"src/lib/time-tracking/historical-gap-repair-executor.ts": [
+		{
+			columns: [
+				"approval_state",
+				"duration_minutes",
+				"employee_id",
+				"end_at",
+				"organization_id",
+				"start_at",
+			],
+			functionName: "applyUnit",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes"],
+			functionName: "applyUnit",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: ["duration_minutes", "end_at"],
+			functionName: "applyUnit",
+			operation: "update",
+			semantic: "ordinary_finalization",
+			table: "time_record",
+		},
+		{
+			columns: [
+				"allocation_kind",
+				"organization_id",
+				"project_id",
+				"record_id",
+				"weight_percent",
+			],
+			functionName: "insertProject",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_allocation",
+		},
+		{
+			columns: [
+				"computation_metadata",
+				"organization_id",
+				"record_id",
+				"record_kind",
+				"work_category_id",
+				"work_location_type",
+			],
+			functionName: "insertDetail",
+			operation: "insert",
+			semantic: "policy_clock_out_terminal_break",
+			table: "time_record_work",
+		},
+		{
+			columns: ["canonical_record_id", "duration_minutes", "end_time"],
+			functionName: "applyUnit",
+			operation: "update",
+			table: "work_period",
+		},
+	],
 	"src/lib/time-tracking/close-active-work.ts": [
 		{
 			columns: [

@@ -705,7 +705,8 @@ describeIntegration("historical gap repair on PostgreSQL", () => {
 				"approval",
 				async (client, periodId) => {
 					await client.query(
-						"update work_period set approval_status = 'rejected', graph_revision = graph_revision + 1 where id = $1",
+						// A legacy decision: it does not advance the graph revision.
+						"update work_period set approval_status = 'rejected' where id = $1",
 						[periodId],
 					);
 				},
