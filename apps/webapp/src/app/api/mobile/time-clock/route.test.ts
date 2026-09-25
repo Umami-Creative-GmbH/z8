@@ -21,6 +21,7 @@ const mockState = vi.hoisted(() => ({
 	},
 	requireMobileSessionContext: vi.fn(),
 	requireMobileEmployee: vi.fn(),
+	hasCommittedMobileClockOut: vi.fn(),
 	clockIn: vi.fn(),
 	clockOut: vi.fn(),
 }));
@@ -29,6 +30,7 @@ vi.mock("@/app/api/mobile/shared", () => ({
 	MobileApiError: mockState.MobileApiError,
 	requireMobileSessionContext: mockState.requireMobileSessionContext,
 	requireMobileEmployee: mockState.requireMobileEmployee,
+	hasCommittedMobileClockOut: mockState.hasCommittedMobileClockOut,
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/clocking", () => ({
@@ -53,6 +55,76 @@ describe("POST /api/mobile/time-clock", () => {
 			id: "emp-1",
 			organizationId: "org-1",
 		});
+		mockState.hasCommittedMobileClockOut.mockResolvedValue(false);
+	});
+
+	function clockOutRequest(timestamp: string) {
+		return new Request("https://app.example.com/api/mobile/time-clock", {
+			method: "POST",
+			body: JSON.stringify({
+				action: "clock_out",
+				submissionId,
+				timestamp,
+				browserTimezone: "UTC",
+				utcOffsetMinutes: 0,
+			}),
+			headers: { "content-type": "application/json" },
+		});
+	}
+
+	it("replays a committed clock-out submission beyond the five-minute skew", async () => {
+		mockState.hasCommittedMobileClockOut.mockResolvedValue(true);
+		mockState.clockOut.mockResolvedValue({ success: true, data: { id: submissionId } });
+		const timestamp = new Date(Date.now() - 9 * 24 * 60 * 60_000).toISOString();
+
+		const response = await POST(clockOutRequest(timestamp));
+
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ success: true, data: { id: submissionId } });
+		expect(mockState.hasCommittedMobileClockOut).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "emp-1",
+			submissionId,
+		});
+		// The legacy matcher receives the original evidence unchanged.
+		expect(mockState.clockOut).toHaveBeenCalledWith(undefined, undefined, {
+			browserTimezone: "UTC",
+			deviceInfo: "mobile",
+			instant: expect.objectContaining({ epochMilliseconds: Date.parse(timestamp) }),
+			submissionId,
+		});
+	});
+
+	it("keeps the five-minute skew for a clock-out submission that has not committed", async () => {
+		const response = await POST(
+			clockOutRequest(new Date(Date.now() - 10 * 60_000).toISOString()),
+		);
+
+		expect(response.status).toBe(400);
+		expect(await response.json()).toEqual({
+			error: "Clock action timestamp is outside the allowed skew",
+		});
+		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
+	it("keeps the offset check for committed clock-out submissions", async () => {
+		mockState.hasCommittedMobileClockOut.mockResolvedValue(true);
+		const response = await POST(
+			new Request("https://app.example.com/api/mobile/time-clock", {
+				method: "POST",
+				body: JSON.stringify({
+					action: "clock_out",
+					submissionId,
+					timestamp: new Date(Date.now() - 60 * 60_000).toISOString(),
+					browserTimezone: "Asia/Kathmandu",
+					utcOffsetMinutes: 0,
+				}),
+				headers: { "content-type": "application/json" },
+			}),
+		);
+
+		expect(response.status).toBe(400);
+		expect(mockState.clockOut).not.toHaveBeenCalled();
 	});
 
 	it("requires workLocationType when clocking in", async () => {
