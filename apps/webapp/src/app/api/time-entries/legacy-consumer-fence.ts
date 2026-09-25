@@ -20,8 +20,10 @@
  * (browser age cleanup, rows already at the retry limit).
  *
  * Retire or narrow this fence when the #266 inventory shows no remaining
- * pre-preservation reader, or when a new cookie client (for example #282)
- * adopts `id`/`replay`/`organizationId`: such clients are classified here.
+ * pre-preservation reader, or when a new cookie client adopts
+ * `id`/`replay`/`organizationId`: such clients are classified here. The
+ * extension is retired (#282), so installed X1–X3 readers remain the only
+ * extension-origin callers.
  */
 export type LegacyClockConsumer =
 	| "legacy-browser-queue"
