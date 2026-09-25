@@ -12,11 +12,11 @@
  * Trial provisioning is such a mutation. It runs only before a work transaction,
  * in its own protected transaction, never under a shared guard.
  */
-import { and, eq, inArray } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { and, eq, inArray, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
+import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	acquireOrganizationConfigurationProtection,
 	type WorkTransactionClient,
@@ -26,8 +26,11 @@ import { type BillingAccessResult, evaluateBillingAccess } from "./billing-acces
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type SubscriptionRow = typeof subscription.$inferSelect;
+/** The subscription rows of one Stripe subscription within the protected organizations. */
+type ProtectedSubscriptionScope = SQL | undefined;
 
 const TRIAL_DAYS = 14;
+const OWNERSHIP_ATTEMPTS = 3;
 
 /**
  * Current billing access through the caller's transaction. Read-only: a missing
@@ -52,16 +55,13 @@ export async function readBillingAccessInTransaction(
 	return evaluateBillingAccess({ billingEnabled, subscription: row ?? null, now });
 }
 
-/** A billing mutation for known organizations, under exclusive configuration protection. */
+/** A billing mutation for a known organization, under exclusive configuration protection. */
 export function withOrganizationBillingMutation<T>(
-	organizationIds: string | readonly string[],
+	organizationId: string,
 	mutate: (transaction: Transaction) => Promise<T>,
 ): Promise<T> {
 	return db.transaction(async (transaction) => {
-		await acquireOrganizationConfigurationProtection(
-			transaction,
-			typeof organizationIds === "string" ? [organizationIds] : organizationIds,
-		);
+		await acquireOrganizationConfigurationProtection(transaction, [organizationId]);
 		return mutate(transaction);
 	});
 }
@@ -73,11 +73,7 @@ export function withOrganizationBillingMutation<T>(
  */
 export async function withStripeSubscriptionMutation<T>(
 	stripeSubscriptionId: string,
-	mutate: (
-		transaction: Transaction,
-		scope: ReturnType<typeof and>,
-		organizationIds: readonly string[],
-	) => Promise<T>,
+	mutate: (transaction: Transaction, scope: ProtectedSubscriptionScope) => Promise<T>,
 ): Promise<T | undefined> {
 	const owners = async (reader: Pick<Transaction, "select">) =>
 		(
@@ -88,7 +84,7 @@ export async function withStripeSubscriptionMutation<T>(
 		)
 			.map(({ organizationId }) => organizationId)
 			.sort();
-	for (let attempt = 0; attempt < 3; attempt += 1) {
+	for (let attempt = 0; attempt < OWNERSHIP_ATTEMPTS; attempt += 1) {
 		const outcome = await db.transaction(async (transaction) => {
 			const organizationIds = await owners(transaction);
 			// No local subscription: the update would match nothing, as before.
@@ -101,7 +97,7 @@ export async function withStripeSubscriptionMutation<T>(
 				eq(subscription.stripeSubscriptionId, stripeSubscriptionId),
 				inArray(subscription.organizationId, organizationIds),
 			);
-			return { done: true as const, value: await mutate(transaction, scope, organizationIds) };
+			return { done: true as const, value: await mutate(transaction, scope) };
 		});
 		if (outcome.done) return outcome.value;
 	}
@@ -124,9 +120,8 @@ export async function provisionLocalTrial(
 	if (existing) return existing;
 
 	return withOrganizationBillingMutation(organizationId, async (transaction) => {
-		const trialEnd = DateTime.fromJSDate(now, { zone: "utc" })
-			.plus({ days: TRIAL_DAYS })
-			.toJSDate();
+		// Exact UTC days: elapsed hours, independent of any zone's DST.
+		const trialEnd = dateFromInstant(instantFromDate(now).add({ hours: TRIAL_DAYS * 24 }));
 		const currentSeats = await countBillableSeats(transaction, organizationId);
 		const [inserted] = await transaction
 			.insert(subscription)

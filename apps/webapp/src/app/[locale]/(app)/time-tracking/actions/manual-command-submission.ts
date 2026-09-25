@@ -48,9 +48,8 @@ import {
  * billing revalidation through the transaction (#317), exact receipt replay (in
  * every mode, before any fresh check), then, only in adopted organizations, one
  * evaluation instant, protected preparation and the completed-work operation.
- * Required
- * notification delivery and best-effort surcharge work run after commit; their
- * failure never turns a committed save into a failure.
+ * Required notification delivery and best-effort surcharge work run after
+ * commit; their failure never turns a committed save into a failure.
  */
 
 export type ManualCommandRejection = ManualPreparationRejection | ManualWorkRejection;

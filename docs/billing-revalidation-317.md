@@ -8,8 +8,13 @@ billing writers that can change its outcome take exclusive organization configur
 protection before they write. Trial provisioning keeps running in the public guard before the
 transaction, now in its own protected transaction.
 
-Nothing is switched on in this slice. Legacy manual input, clock-in/out and every other
-billing caller keep their existing gates. When billing is disabled
+The in-transaction read only matters in adopted organizations: legacy manual input,
+clock-in/out and every other billing caller keep their existing gates. Writer protection
+is live without a flag, however. Billing webhooks and first-time trial provisioning now
+wait for in-flight work transactions that hold the shared organization configuration
+guard (manual, completed-work, web clock-in/out, import and demo work). These transactions
+are short, so the wait is brief. It also covers `GET /api/billing/subscription` for an
+organization that has no subscription yet, because that request provisions the trial. When billing is disabled
 (`BILLING_ENABLED !== "true"`), the in-transaction read allows access, as the public guard
 does. The activation blockers at the end of this record are tracked in #327, #329 and #331.
 
@@ -73,8 +78,12 @@ three attempts). The write is then scoped to the locked organizations. If no loc
 exists, nothing is locked or written; before this change, the update matched no row either.
 
 The following writers are left unprotected because they do not change an input of the access
-evaluation: `updateSeatCount`, `invoice.finalized` and `payment_intent.payment_failed`
-(metadata only), and the Stripe event idempotency rows.
+evaluation: `updateSeatCount`, seat delivery, `invoice.finalized` and
+`payment_intent.payment_failed` (metadata only), and the Stripe event idempotency rows.
+
+The subscription row is also deleted, unprotected, by the `onDelete: "cascade"` of an
+organization deletion. It does not go through a billing owner. It is listed as an activation
+blocker below.
 
 Trial provisioning must never run under a shared work guard: a session that holds the shared
 key and then requests the exclusive one can deadlock against another such session. The work
@@ -114,7 +123,8 @@ client, seat sync, billing email, notifications and the Next cache are replaced.
   back and rejects. The waiting submission then commits under the unchanged `active` billing.
 - Non-provisioning: while an exclusive writer holds protection, the subscription is removed
   after the public guard passed. The submission is refused with `subscription_required`, and no
-  row is created.
+  row is created. The test removes the row with a direct `DELETE`, because no application code
+  deletes subscriptions (only the organization cascade does).
 - Provisioning: an organization without a subscription provisions its trial through the public
   guard, after an in-flight work transaction ends. The submission then commits. Reading an
   existing subscription does not wait for work transactions.
@@ -146,6 +156,13 @@ This slice closes on implementation. The items below are activation gates for #3
   adopting it there is outside this ticket.
 - **Other configuration writers** (#311–#316, #318) do not yet take exclusive protection. The
   billing writers are the first holders of the exclusive key.
+- **Organization deletion** removes the subscription through the foreign-key cascade, without
+  protection. Organization deletion and cleanup paths must take exclusive organization
+  configuration protection (#258 "cleanup/cascade paths").
+- **Provisioning under a shared guard** is prevented only by construction and a comment:
+  work transactions receive the read-only helper, and every `requireBillingForMutation` caller
+  runs before its transaction. A caller that provisions while holding the shared key would wait
+  on its own session until the statement timeout.
 - **Rollback**: reverting the build removes the in-transaction read and the writer protection.
   No schema or data changes, so a rollback leaves nothing to clean up.
 - **Not verified here:** a real Stripe webhook delivery end to end (signature, retries), which
