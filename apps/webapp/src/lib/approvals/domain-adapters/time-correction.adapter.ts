@@ -18,6 +18,8 @@ import {
 	instantFromTimeCorrectionBoundary,
 	validateTimeCorrectionTimezoneEvidence,
 } from "@/lib/time-tracking/time-correction-temporal";
+import type { TimeCorrectionLifecycleReference } from "@/lib/time-tracking/correction-lifecycle-work";
+import { assertCorrectionWorkCoordinated } from "@/lib/time-tracking/correction-work-fence";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import type {
 	CancelledTimeCorrectionSourceEvidence,
@@ -41,6 +43,7 @@ import {
 	type TimeCorrectionWorkflowPayload,
 } from "./time-correction-contract";
 import type {
+	ApprovalDecisionEvidenceRecordInput,
 	ApprovalDomainAdapter,
 	ApprovalDomainAdapterContext,
 	ApprovalTerminalAdapterInput,
@@ -128,10 +131,38 @@ export interface DeleteCancelledTimeCorrectionInput {
 	workPeriodId: string;
 	expectedSource: CancelledTimeCorrectionSourceEvidence;
 	correction: TimeCorrectionWorkflowPayload["timeCorrection"];
+	/** The cancelled lifecycle; adopted organizations record it (#301). */
+	lifecycle?: TimeCorrectionLifecycleReference;
+}
+
+/** Decision evidence hooks (#301); the production runtime supplies them. */
+export interface TimeCorrectionDecisionEvidenceDependencies {
+	preflight(
+		dbService: ApprovalDbService,
+		input: {
+			organizationId: string;
+			workflow: ApprovalWorkflowSnapshot;
+			reviewedBindingId: string | null;
+		},
+	): Promise<void>;
+	record(
+		dbService: ApprovalDbService,
+		input: {
+			organizationId: string;
+			workflow: ApprovalWorkflowSnapshot;
+			command: ApprovalDecisionEvidenceRecordInput<TimeCorrectionApprovalSource>["command"];
+			receipt: ApprovalDecisionEvidenceRecordInput<TimeCorrectionApprovalSource>["receipt"];
+			result: ApprovalDecisionEvidenceRecordInput<TimeCorrectionApprovalSource>["result"];
+			finalized: boolean;
+			reviewedBindingId: string | null;
+		},
+	): Promise<void>;
 }
 
 export interface TimeCorrectionApprovalAdapterDependencies {
 	clock: Clock;
+	/** Undefined keeps decisions without evidence hooks (tests, legacy callers). */
+	evidence?: TimeCorrectionDecisionEvidenceDependencies | null;
 	finalizeTimeCorrectionTerminal(
 		input: FinalizeTimeCorrectionTerminalInput,
 	): Promise<TimeCorrectionTerminalResult>;
@@ -518,7 +549,35 @@ function terminalEvidence(
 export function createTimeCorrectionApprovalAdapter(
 	dependencies: TimeCorrectionApprovalAdapterDependencies,
 ): ApprovalDomainAdapter<TimeCorrectionApprovalSource> {
+	const evidence = dependencies.evidence ?? null;
+	const evidenceHooks: Pick<
+		ApprovalDomainAdapter<TimeCorrectionApprovalSource>,
+		"preflightDecisionEvidence" | "recordDecisionEvidence"
+	> = evidence
+		? {
+				async preflightDecisionEvidence(input) {
+					validateContext(input);
+					await evidence.preflight(input.dbService, {
+						organizationId: input.organizationId,
+						workflow: input.workflow,
+						reviewedBindingId: input.reviewedBindingId,
+					});
+				},
+				async recordDecisionEvidence(input) {
+					await evidence.record(input.dbService, {
+						organizationId: input.organizationId,
+						workflow: input.workflow,
+						command: input.command,
+						receipt: input.receipt,
+						result: input.result,
+						finalized: input.finalization !== null,
+						reviewedBindingId: input.reviewedBindingId,
+					});
+				},
+			}
+		: {};
 	return {
+		...evidenceHooks,
 		workflowType: "time_correction",
 		sourceType: "time_entry",
 		async loadSource(input) {
@@ -1008,6 +1067,12 @@ export function createTimeCorrectionApprovalAdapter(
 		},
 		async finalizeTerminal(input) {
 			await this.preflightTerminal(input);
+			// Any approval runtime can reach this terminal; adopted organizations
+			// only finalize inside the coordinated work transaction (#301).
+			await assertCorrectionWorkCoordinated(
+				input.dbService.db,
+				input.organizationId,
+			);
 			if (input.transition.kind === "cancel_pending") {
 				if (
 					!input.source.canonicalRecordId ||
@@ -1031,6 +1096,7 @@ export function createTimeCorrectionApprovalAdapter(
 						pendingCorrections: input.source.pendingCorrections,
 					},
 					correction: input.source.correction,
+					lifecycle: { authority: "canonical", workflowId: input.workflow.id },
 				});
 				return terminalEvidence(input);
 			}

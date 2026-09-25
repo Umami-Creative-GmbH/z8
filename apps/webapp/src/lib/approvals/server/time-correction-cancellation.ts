@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -6,6 +6,7 @@ import {
 	approvalChainStageInstance,
 	approvalRequest,
 	employee,
+	timeEntry,
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
@@ -28,11 +29,21 @@ import type {
 } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import {
+	deriveTimeCorrectionOperationId,
+	loadTimeCorrectionReceipt,
+	timeCorrectionLifecycleKey,
+	type TimeCorrectionLifecycleReference,
+} from "@/lib/time-tracking/correction-lifecycle-work";
+import {
 	type CancelledTimeCorrectionSourceEvidence,
 	deleteCancelledTimeCorrectionsInTransaction,
 	finalizeTimeCorrectionTerminalInTransaction,
 	lockTimeCorrectionSubmissionSourceInTransaction,
 } from "./time-correction-approvals";
+import {
+	acquireTimeCorrectionWorkScope,
+	retryTimeCorrectionWorkTransaction,
+} from "./time-correction-work-transaction";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 
 export interface CancelPendingTimeCorrectionInput {
@@ -73,8 +84,9 @@ export async function cancelPendingTimeCorrection(
 	});
 
 	try {
-		return await runtime.repository.withTransaction(async (context) => {
-			const database = context.dbService.db as typeof db;
+		return await retryTimeCorrectionWorkTransaction(() =>
+			runtime.repository.withTransaction(async (outerContext) => {
+			const database = outerContext.dbService.db as typeof db;
 			const [requesters, memberships, periods] = await Promise.all([
 				database.query.employee.findMany({
 					where: and(
@@ -126,6 +138,15 @@ export async function cancelPendingTimeCorrection(
 				throw new Error("Time correction cancellation is unavailable");
 			}
 
+			// Shared work protocol (#301) before any row lock: adoption gate, the
+			// time-correction approval gate, configuration, access, employee key.
+			const work = await acquireTimeCorrectionWorkScope(outerContext, {
+				organizationId: input.organizationId,
+				ownerEmployeeId: input.requesterEmployeeId,
+				actorUserId: input.requesterUserId,
+			});
+			const context = work.context;
+			const adopted = work.scope.admission === "append";
 			let lockedPeriod: Awaited<
 				ReturnType<typeof lockTimeCorrectionSubmissionSourceInTransaction>
 			>;
@@ -141,10 +162,7 @@ export async function cancelPendingTimeCorrection(
 			} catch {
 				throw new Error("Time correction cancellation is unavailable");
 			}
-			const gate = await context.writeGate.acquire({
-				organizationId: input.organizationId,
-				workflowType: "time_correction",
-			});
+			const gate = work.authority;
 			const fixedGate = fixedCancellationGate(input.organizationId, gate);
 			const transactionContext: ApprovalWorkflowTransactionContext = {
 				...context,
@@ -177,6 +195,23 @@ export async function cancelPendingTimeCorrection(
 					observedWorkflow,
 				});
 				if (cancelledReplay) {
+					// Adopted cancellations retained their entries (#301): the committed
+					// receipt, not the absence of correction rows, proves the replay.
+					if (
+						adopted &&
+						(await hasAdoptedCancellationReceipt({
+							context,
+							input,
+							lifecycle: {
+								authority: "legacy",
+								approvalRequestId: cancelledReplay.approvalRequestId,
+								chainInstanceId: cancelledReplay.chainInstanceId,
+								observedWorkflowId: observedWorkflow?.id ?? null,
+							},
+						}))
+					) {
+						return { replayed: true };
+					}
 					const replayState = await captureTimeCorrectionLegacyApprovalState({
 						dbService: context.dbService as never,
 						organizationId: input.organizationId,
@@ -215,6 +250,27 @@ export async function cancelPendingTimeCorrection(
 					throw new Error("Time correction cancellation is unavailable");
 				}
 				const legacy = exactPendingLegacyEvidence(before, input);
+				// The capture normalizes request metadata to the correction payload;
+				// the durable tombstone keeps the persisted submission evidence (#301).
+				const persistedRequests = await database.query.approvalRequest.findMany({
+					where: and(
+						eq(approvalRequest.id, legacy.cycle.approvalRequestId),
+						eq(approvalRequest.organizationId, input.organizationId),
+					),
+					limit: 2,
+				});
+				const persistedRequestMetadata =
+					persistedRequests.find(
+						(request) =>
+							request.id === legacy.cycle.approvalRequestId &&
+							request.organizationId === input.organizationId,
+					)?.metadata ?? null;
+				const lifecycle: TimeCorrectionLifecycleReference = {
+					authority: "legacy",
+					approvalRequestId: legacy.cycle.approvalRequestId,
+					chainInstanceId: legacy.cycle.chainInstanceId ?? null,
+					observedWorkflowId: observedWorkflow?.id ?? null,
+				};
 				const expectedSource = cancellationSourceFromCapture({
 					state: before,
 					input,
@@ -272,8 +328,9 @@ export async function cancelPendingTimeCorrection(
 							state: before,
 							cancelledAt,
 							retainDirectCancellation: true,
+							persistedRequestMetadata,
 							directCancellationMetadata: durableRequesterCancellationMetadata(
-								before.approvalRequest?.metadata,
+								persistedRequestMetadata,
 								input,
 								cancelledAt,
 								before.chain?.id ?? null,
@@ -287,6 +344,7 @@ export async function cancelPendingTimeCorrection(
 							workPeriodId: input.workPeriodId,
 							expectedSource,
 							correction: legacy.correction,
+							lifecycle,
 						});
 					},
 				});
@@ -297,6 +355,7 @@ export async function cancelPendingTimeCorrection(
 						workPeriodId: input.workPeriodId,
 						expectedSource,
 						correction: legacy.correction,
+						lifecycle,
 					});
 				}
 				return { replayed: false };
@@ -321,7 +380,8 @@ export async function cancelPendingTimeCorrection(
 					},
 				);
 			return { replayed: execution.disposition === "replayed" };
-		});
+		}),
+		);
 	} catch (error) {
 		if (
 			error instanceof Error &&
@@ -335,6 +395,51 @@ export async function cancelPendingTimeCorrection(
 		}
 		throw error;
 	}
+}
+
+/**
+ * An adopted cancellation committed its `cancel_time_correction` receipt with
+ * the retained entries. It replays only while those entries still stand.
+ */
+async function hasAdoptedCancellationReceipt(input: {
+	context: ApprovalWorkflowTransactionContext;
+	input: CancelPendingTimeCorrectionInput;
+	lifecycle: TimeCorrectionLifecycleReference;
+}): Promise<boolean> {
+	const database = input.context.dbService.db as typeof db;
+	const receipt = await loadTimeCorrectionReceipt(database, {
+		organizationId: input.input.organizationId,
+		employeeId: input.input.requesterEmployeeId,
+		stage: "cancel",
+		operationId: deriveTimeCorrectionOperationId({
+			organizationId: input.input.organizationId,
+			stage: "cancel",
+			key: timeCorrectionLifecycleKey(input.lifecycle),
+		}),
+		workPeriodId: input.input.workPeriodId,
+	});
+	if (!receipt) return false;
+	const retained = cancellationRecord(receipt.result).retained;
+	const retainedIds = (Array.isArray(retained) ? retained : []).map((entry) =>
+		cancellationString(cancellationRecord(entry).entryId),
+	);
+	if (retainedIds.length > 0) {
+		const entries = await database.query.timeEntry.findMany({
+			where: and(
+				eq(timeEntry.organizationId, input.input.organizationId),
+				eq(timeEntry.employeeId, input.input.requesterEmployeeId),
+				inArray(timeEntry.id, retainedIds),
+			),
+			columns: { id: true, isSuperseded: true, supersededById: true },
+		});
+		if (
+			entries.length !== retainedIds.length ||
+			entries.some((entry) => !entry.isSuperseded || entry.supersededById !== null)
+		) {
+			throw new Error("Time correction cancellation is unavailable");
+		}
+	}
+	return true;
 }
 
 async function resolveCancelledLegacyReplay(input: {
@@ -758,7 +863,8 @@ function cancellationEntryFromCapture(
 		logicalRole,
 		type,
 		replacesEntryId: cancellationNullableString(entry.replacesEntryId),
-		timestamp: cancellationInstant(entry.timestamp),
+		// The legacy-state capture serializes each entry's instant as `instant`.
+		timestamp: cancellationInstant(entry.instant),
 		utcOffsetMinutes: cancellationInteger(entry.utcOffsetMinutes),
 		timezone: cancellationString(entry.timezone),
 		timezoneSource: cancellationString(entry.timezoneSource),

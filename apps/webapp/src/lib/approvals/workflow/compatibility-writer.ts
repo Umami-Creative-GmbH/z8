@@ -89,9 +89,18 @@ export async function cancelLegacyTimeCorrectionApprovalRows(input: {
 	cancelledAt: Date;
 	retainDirectCancellation: boolean;
 	directCancellationMetadata: Record<string, unknown>;
+	/**
+	 * The request row's persisted metadata for the compare-and-set. The verified
+	 * state carries the normalized correction payload, not the persisted row (#301).
+	 */
+	persistedRequestMetadata?: unknown;
 }): Promise<void> {
 	const request = input.state.approvalRequest;
 	if (!request) throw new Error("Time correction cancellation is unavailable");
+	const expectedMetadata =
+		input.persistedRequestMetadata !== undefined
+			? input.persistedRequestMetadata
+			: request.metadata;
 	if (input.state.chain) {
 		const pendingStages = input.state.chainRows.filter(
 			(stage) => stage.status === "pending",
@@ -176,9 +185,9 @@ export async function cancelLegacyTimeCorrectionApprovalRows(input: {
 					eq(approvalRequest.entityId, input.workPeriodId),
 					eq(approvalRequest.requestedBy, input.requesterEmployeeId),
 					eq(approvalRequest.status, "pending"),
-					request.metadata === null
+					expectedMetadata === null
 						? isNull(approvalRequest.metadata)
-						: eq(approvalRequest.metadata, request.metadata),
+						: eq(approvalRequest.metadata, expectedMetadata as Record<string, unknown>),
 				),
 			)
 			.returning({ id: approvalRequest.id });
@@ -197,9 +206,9 @@ export async function cancelLegacyTimeCorrectionApprovalRows(input: {
 				eq(approvalRequest.entityId, input.workPeriodId),
 				eq(approvalRequest.requestedBy, input.requesterEmployeeId),
 				eq(approvalRequest.status, "pending"),
-				request.metadata === null
+				expectedMetadata === null
 					? isNull(approvalRequest.metadata)
-					: eq(approvalRequest.metadata, request.metadata),
+					: eq(approvalRequest.metadata, expectedMetadata as Record<string, unknown>),
 			),
 		)
 		.returning({ id: approvalRequest.id });
