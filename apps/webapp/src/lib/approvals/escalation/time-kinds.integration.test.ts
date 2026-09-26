@@ -2,7 +2,8 @@
  * #326 / T61 runtime evidence: escalation transfers canonical manual time
  * submissions, policy clock-outs and time corrections through the real
  * scheduled processor and decides them through the real inbox routes and
- * bound cards; legacy time authority is held.
+ * bound cards. Legacy time authority transfers since #439
+ * (legacy-time-transfer.integration.test.ts).
  *
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
@@ -988,44 +989,6 @@ describeIntegration("escalated canonical time approvals (PostgreSQL)", () => {
 		);
 		expect(answer.body).toMatchObject({ text: "Request approved" });
 		expect(await workflowStatus(cycle.workflow_id)).toBe("approved");
-	});
-
-	it("holds legacy-authority time requests once due instead of transferring them", async () => {
-		await seed({ rollout: "legacy" });
-		const workPeriodId = await submit("manual_time_submission");
-		const { rows } = await admin.query<{ id: string; created_at: Date }>(
-			`select id, created_at at time zone 'UTC' as created_at from approval_request
-			 where organization_id = $1 and entity_type = 'time_entry' and entity_id = $2
-			   and status = 'pending'`,
-			[ids.organization, workPeriodId],
-		);
-		const request = only(rows);
-
-		const early = await escalateAt(request.created_at, 59);
-		expect(early).toMatchObject({ transferred: 0, held: {} });
-		expect(early.authorities).toMatchObject({ manual_time_submission: "legacy" });
-		const due = await escalateAt(request.created_at, 60);
-		expect(due).toMatchObject({ transferred: 0, held: { unsupported_route: 1 } });
-		expect(await journal()).toEqual([]);
-		expect((await requestRow(request.id)).approver_id).toBe(ids.manager);
-		expect(only(await openAttention())).toMatchObject({
-			reason: "unsupported_route",
-			approval_type: "manual_time_submission",
-			evidence: expect.objectContaining({ route: "legacy_time_authority" }),
-		});
-		// The held request no longer takes a place in later batches.
-		expect(await escalateAt(request.created_at, 180)).toMatchObject({ examined: 0 });
-		expect(await openAttention()).toHaveLength(1);
-
-		actAs(ids.adminUser);
-		const refused = await transferApprovalEscalationAssignment({
-			approvalRequestId: request.id,
-			recipientEmployeeId: ids.backup,
-			idempotencyKey: "e3264000-0000-4000-8000-000000000002",
-		});
-		actAs(null);
-		expect(refused).toMatchObject({ success: false });
-		expect(await journal()).toEqual([]);
 	});
 
 	it("removes a time kind's canonical journal through approval maintenance", async () => {

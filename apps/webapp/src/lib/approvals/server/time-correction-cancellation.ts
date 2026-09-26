@@ -23,6 +23,7 @@ import { normalizeTimeCorrectionWorkflowPayload } from "../domain-adapters/time-
 import { captureTimeCorrectionLegacyApprovalState } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { cancelLegacyTimeCorrectionApprovalRows } from "../workflow/compatibility-writer";
+import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type {
 	ApprovalWriteGate,
 	VerifiedLegacyApprovalState,
@@ -1142,8 +1143,15 @@ function durableRequesterCancellationMetadata(
 	if (!submission) {
 		throw new Error("Time correction cancellation is unavailable");
 	}
+	// A transferred request keeps its escalation lineage (#439): the journal
+	// and later captures still name the holders it replaced.
+	const lineage = splitLegacyEscalationLineage(metadata);
+	if (lineage.kind === "malformed") {
+		throw new Error("Time correction cancellation is unavailable");
+	}
 	return {
 		timeCorrection: correction,
+		...(lineage.kind === "lineage" ? { escalation: lineage.lineage } : {}),
 		submission,
 		cancellation: buildRequesterCancellationMarker({
 			organizationId: input.organizationId,

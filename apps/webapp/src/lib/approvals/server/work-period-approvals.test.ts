@@ -40,6 +40,20 @@ const surchargeSnapshot = {
 	resolution: { kind: "none" },
 } as const;
 
+// The legacy transfer journal and its request lock are verified against
+// PostgreSQL (#439, legacy-time-transfer.integration.test.ts); these
+// harnesses decide requests escalation never transferred.
+const legacyTransferMocks = vi.hoisted(() => ({
+	assertDecisionAuthority: vi.fn(async () => undefined),
+	wasTransferred: vi.fn(async () => false),
+}));
+
+vi.mock("../escalation/legacy-transfer-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../escalation/legacy-transfer-store")>()),
+	assertLegacyTransferDecisionAuthority: legacyTransferMocks.assertDecisionAuthority,
+	wasLegacyRequestTransferred: legacyTransferMocks.wasTransferred,
+}));
+
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
@@ -75,6 +89,7 @@ vi.mock("../workflow/transition-engine", async (importOriginal) => ({
 }));
 
 const workPeriodApprovals = await import("./work-period-approvals");
+const { ApprovalAssignmentReassignedError } = await import("../escalation/decision-authority");
 const {
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
@@ -951,6 +966,28 @@ describe("stable ordinary work-period decisions", () => {
 			});
 		return { dbService, execute };
 	}
+
+	it("refuses a replaced approver of a transferred legacy request before any mutation (#439)", async () => {
+		const { dbService, execute } = legacyManualDecision();
+		legacyTransferMocks.assertDecisionAuthority.mockRejectedValueOnce(
+			new ApprovalAssignmentReassignedError(),
+		);
+
+		await expect(execute({ kind: "approve", reason: null })).rejects.toBeInstanceOf(
+			ApprovalAssignmentReassignedError,
+		);
+
+		expect(legacyTransferMocks.assertDecisionAuthority).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			approvalRequestId: "approval-1",
+			actorEmployeeId: currentApprover.id,
+			canManageOrganizationApproval: undefined,
+		});
+		expect(dbService.updateSets).toEqual([]);
+		expect(workPeriodEvidenceMocks.prepare).not.toHaveBeenCalled();
+	});
 
 	it("records legacy decision evidence after the mutation with the finalized outcome", async () => {
 		const plan = { revision: { id: "revision-1" } };

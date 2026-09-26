@@ -401,12 +401,13 @@ Not executed: `ready` mode, bulk inbox decisions, mobile callers, bots
 Escalation now transfers every approval kind that has a real inbox and
 decision path under its current authority, and holds the rest explicitly.
 The scope was decided with the user on 2026-09-25: canonical time kinds plus
-legacy travel expenses; legacy and shadow time authority stays held.
+legacy travel expenses. Legacy and shadow time authority followed in #439
+(see [Legacy time authority](#legacy-time-authority-439)).
 
 | Kind | Canonical authority (`canonical`) | `complete` | Legacy authority (`legacy`, `shadow`, `ready`) |
 | --- | --- | --- | --- |
 | Absence | Transfer (#298) | Held | Transfer (#299) |
-| Manual time submission, policy clock-out, time correction | Transfer | Held (`time_inbox_requires_compatibility_mirror`) | Held once due (`legacy_time_authority`) |
+| Manual time submission, policy clock-out, time correction | Transfer | Held (`time_inbox_requires_compatibility_mirror`) | Transfer (#439); chain stages, unverifiable state and missing or contradicted observations held |
 | Travel expense | Held (`travel_expense_without_legacy_authority`; no canonical adapter) | Held (same) | Transfer in `legacy`; `shadow`/`ready` held (`legacy_observation_unsupported`) |
 
 In every kind, parallel pending assignments and legacy chain stages are held
@@ -426,16 +427,15 @@ discovers, within one batch limit and oldest first:
   legacy-authoritative. Compatibility representatives of canonically decided
   workflows are excluded; they are discovered through their assignments.
   Requests that already carry an open hold on a route no transfer can resolve
-  (`UNTRANSFERABLE_ESCALATION_ROUTES`: legacy time authority, expenses without
-  legacy authority, expense observation modes) are excluded too, so permanent
-  holds cannot starve the batch. Their hold stays open, and the management UI
-  offers no **Transfer…** on them.
+  (`UNTRANSFERABLE_ESCALATION_ROUTES`: expenses without legacy authority,
+  unrepresented or unclassified time requests, expense observation modes) are
+  excluded too, so permanent holds cannot starve the batch. Their hold stays
+  open, and the management UI offers no **Transfer…** on them.
 
 Each item still commits in its own transaction under the write gate of its
-own kind, which re-reads the mode. A time request found under canonical
-authority is skipped (`canonicalAuthority`); otherwise it is held once due
-(`created_at` plus the current window), never transferred. The hold names
-the time kind when the linked observation or the request metadata proves it.
+own kind, which re-reads the mode. A time request represented by a stage of a
+canonically decided workflow is skipped (`canonicalAuthority`); legacy time
+requests follow [Legacy time authority](#legacy-time-authority-439).
 
 ### Canonical time kinds
 
@@ -496,9 +496,9 @@ applies to the inbox, the expense page actions and cards alike.
 - Everything under [Activation blockers](#activation-blockers) and
   [Activation blockers (legacy)](#activation-blockers-legacy): ownership
   writer, drained cutover, policy preparation, starvation.
-- **Legacy and shadow time authority is held**, never transferred. Mirroring
-  a transfer into work-period and correction shadow observations, and adding
-  revocation to their legacy decision owners, is follow-up #439.
+- **Legacy and shadow time authority** transfers since #439; its own
+  blockers are listed under
+  [Activation blockers (#439)](#activation-blockers-439).
 - **`complete` mode and parallel assignments** are held for every canonical
   kind.
 - **Excluded holds:** a legacy request held on an untransferable route is
@@ -542,8 +542,8 @@ the real callers:
   - Delivery: the replacement card is sent and the former card retired
     ("Reassigned"). A press on the former card decides nothing; the
     replacement's press approves.
-  - Legacy time authority is held with `legacy_time_authority`, the
-    management transfer refuses it, and later runs no longer examine it.
+  - Legacy time authority was held with `legacy_time_authority` (replaced by
+    the #439 transfer; that test moved to the #439 suite).
   - Approval maintenance removes the journal.
 - **`expense-transfer.integration.test.ts` (9 tests).** It runs the real
   draft/upload/submit actions, the processor, the settings actions, the inbox
@@ -570,6 +570,108 @@ the real callers:
 
 Unit seams: `kinds.test.ts`, `decision-authority.test.ts` (revocation and
 fallback rules shared by every canonical kind).
+
+## Legacy time authority (#439)
+
+Under `legacy`, `shadow` and `ready`, the legacy owners decide manual time
+submissions, policy clock-outs and time corrections, so the authority is the
+pending `approval_request` (entity type `time_entry`). Escalation transfers it
+with the #299 atomic transfer: the conditional approver move, the lineage in
+`metadata.escalation`, the journal row and its delivery event, all in one
+transaction. The command fingerprint is `<kind>-legacy-transfer:v1`
+(`manual_time_submission`, `policy_clock_out`, `time_correction`); absence
+and expense fingerprints are unchanged.
+
+### Kind and subject
+
+A time entry's request can belong to three kinds, so the kind is established
+before the kind's write gate is taken, and verified after the row lock:
+
+1. **Resolve.** The kind of the workflow whose stage represents the request
+   (`legacy_approval_request_id`), otherwise the kind its decision owner
+   classifies it as (`classifyPersistedTimeApprovalRequest`: metadata,
+   reason, the work period's pending changes and the verified correction
+   rows). A request nothing classifies is held once due
+   (`legacy_time_unclassified`, untransferable): no owner could decide it.
+2. **Authority.** Under the kind's gate, a represented request of a
+   canonically deciding kind is `canonicalAuthority`; an unrepresented one is
+   held once due (`legacy_time_without_legacy_authority`, untransferable).
+3. **Verify.** The request is locked `FOR UPDATE` and must be its work
+   period's only pending request. The verified capture of its kind must
+   confirm the kind, requester, approver and pending status of the locked row:
+   `captureOrdinaryWorkPeriodLegacyState` for manual submissions and policy
+   clock-outs, `captureTimeCorrectionLegacyApprovalState` for corrections.
+   A capture failure or mismatch is held at once as `ambiguous_history`
+   (`legacy_state_unverifiable` or `legacy_state_mismatch`); a chain stage
+   is held once due (`legacy_chain_stage`).
+
+The lineage extends the locked row's **raw** metadata. The captures
+normalize metadata to what they verify and would drop keys other owners still
+read (`submission`, `timeCorrectionOriginalWorkMetadata`, workflow bindings).
+
+### Shadow mirroring
+
+With `mirror = legacy_to_canonical` (`shadow`, `ready`), the transfer mirrors
+into the pending observation the work period is bound to
+(`work_period.approval_workflow_id`), against that observation's version, in
+the transfer's transaction. Both captures accept a well-formed `escalation`
+key (`splitLegacyEscalationLineage`) and carry it on the captured request, so
+the planner rebuilds former holders, the current holder and `pendingSince`
+exactly as for absences. A malformed or accessor lineage fails the capture.
+Holds instead of a transfer:
+
+- No bound pending observation: `legacy_observation_missing` (once due).
+- An observation whose pending holder for the request is not the request's
+  approver: `ambiguous_history` with cause `legacy_observation_contradicted`.
+  The mirror rebuilds history from legacy rows, so it would overwrite such an
+  observation instead of reconciling it.
+- A planner or repository refusal during the mirror rolls the transaction
+  back and is held as `ambiguous_history` (`legacy_observation_rejected`), as
+  in #299.
+
+The ordinary finalizer and the correction cancellation tombstone accept and
+keep the lineage the same way, so later decisions and replays see it.
+
+### Existing `legacy_time_authority` holds
+
+`legacy_time_authority` is no longer raised and no longer untransferable.
+Open holds with that route (raised by #326 code) are re-examined by the next
+discovery. A transfer resolves them through the usual attention recovery
+(`assignment_transferred`); any other outcome overwrites the hold's evidence
+with the current route. So they cannot starve the batch for longer than one
+re-examination, and the management UI offers **Transfer…** on them.
+
+### Decision path
+
+The legacy branches of `executeOrdinaryWorkPeriodDecisionInTransaction` and
+`executeTimeCorrectionDecisionInTransaction` call
+`assertLegacyTransferDecisionAuthority` after the replay checks and before any
+evidence or mutation. It locks the addressed request like the transfer does,
+so a decision racing a transfer serializes behind it. When the request was
+ever transferred, only its current approver or explicit organization
+management decides; everyone else gets `approval_reassigned` (409). This
+covers the inbox routes, including the eligible-manager fallback, and the web
+approvals actions. Management is `canManageOrganizationTimeApproval`: the
+caller's organization-wide flag plus CASL `manage Approval`; without a check
+there is none. The shared eligible-manager fallback (`shared.ts`) also
+refuses a transferred request, for every legacy kind.
+
+Bound legacy time cards are out of scope: #432 must add the same refusal.
+
+### Activation blockers (#439)
+
+- Everything under the #298, #299 and #326 blockers above.
+- **Old binaries** decide legacy time requests without the refusal. Deploy
+  everywhere and drain old workers before an organization's ownership moves.
+- **Requester cancellation in `shadow`/`ready`** of a direct legacy
+  correction already fails without #439: the observation planner refuses the
+  retained tombstone, which also drops the original work metadata.
+  Cancellation of a transferred correction is verified under `legacy` only.
+- **Delivery:** legacy transfer events stay `pending` until legacy replacement
+  delivery exists (#408). The replacement gets no card and the former card is
+  not retired.
+- **Not executed:** bound legacy time cards (#432), bulk inbox decisions,
+  deployment.
 
 ## Verification checkpoint — 2026-09-24
 

@@ -19,7 +19,6 @@ import {
 import { createLogger } from "@/lib/logger";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
-import { TIME_APPROVAL_WORKFLOW_TYPES } from "../time-approval-kinds";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalAssignmentSnapshot,
@@ -561,15 +560,15 @@ export async function processDueEscalations(input: {
 	);
 	const legacyEntityTypes = (
 		Object.keys(LEGACY_ESCALATION_ENTITY_TYPES) as LegacyEscalationEntityType[]
-	).filter((entityType) => {
-		const workflowType = LEGACY_ESCALATION_ENTITY_TYPES[entityType];
-		if (workflowType === null) {
-			return TIME_APPROVAL_WORKFLOW_TYPES.some((time) => authorities.get(time) === "legacy");
-		}
+	).filter((entityType) =>
 		// Expenses have no canonical adapter: under any other mode their
-		// requests are held visibly, never skipped.
-		return workflowType === "travel_expense" || authorities.get(workflowType) === "legacy";
-	});
+		// requests are held visibly, never skipped. Time entries are discovered
+		// while any time kind is legacy-authoritative (#439).
+		LEGACY_ESCALATION_ENTITY_TYPES[entityType].some(
+			(workflowType) =>
+				workflowType === "travel_expense" || authorities.get(workflowType) === "legacy",
+		),
+	);
 
 	const canonicalWork = await listDueCanonicalAssignments({
 		organizationId,

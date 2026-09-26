@@ -36,6 +36,20 @@ const managerEligibilityMocks = vi.hoisted(() => ({
 	isEligibleManagerForApprovalRequest: vi.fn(),
 }));
 
+// The legacy transfer journal and its request lock are verified against
+// PostgreSQL (#439, legacy-time-transfer.integration.test.ts); these
+// harnesses decide requests escalation never transferred.
+const legacyTransferMocks = vi.hoisted(() => ({
+	assertDecisionAuthority: vi.fn(async () => undefined),
+	wasTransferred: vi.fn(async () => false),
+}));
+
+vi.mock("@/lib/approvals/escalation/legacy-transfer-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/escalation/legacy-transfer-store")>()),
+	assertLegacyTransferDecisionAuthority: legacyTransferMocks.assertDecisionAuthority,
+	wasLegacyRequestTransferred: legacyTransferMocks.wasTransferred,
+}));
+
 vi.mock("@/lib/approvals/policies/chain-service", () => ({
 	progressApprovalChainIfLinked:
 		chainServiceMocks.progressApprovalChainIfLinked,
@@ -458,6 +472,32 @@ describe("getApprovalStatusUpdate", () => {
 			approvalRequestId: "approval-1",
 			managerEmployeeId: "employee-1",
 			organizationId: "org-1",
+		});
+	});
+
+	it("never lets an eligible manager decide a request escalation transferred (#439)", async () => {
+		managerEligibilityMocks.isEligibleManagerForApprovalRequest.mockResolvedValueOnce(true);
+		legacyTransferMocks.wasTransferred.mockResolvedValueOnce(true);
+		const { dbService, run, updateEntity } = createSharedApprovalTestContext("approve", {
+			approvalRequestId: "approval-1",
+			allowAnyApprover: true,
+			transactional: true,
+		});
+		vi.mocked(dbService.db.query.approvalRequest.findFirst).mockResolvedValueOnce({
+			id: "approval-1",
+			entityId: "period-1",
+			entityType: "time_entry",
+			approverId: "replacement-employee-1",
+			organizationId: "org-1",
+			requestedBy: "requester-1",
+			status: "pending",
+		} as never);
+
+		await expect(run(undefined, "existing")).rejects.toThrow(/reassigned to another approver/);
+		expect(updateEntity).not.toHaveBeenCalled();
+		expect(legacyTransferMocks.wasTransferred).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			approvalRequestId: "approval-1",
 		});
 	});
 

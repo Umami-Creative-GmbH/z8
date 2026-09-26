@@ -58,6 +58,7 @@ import {
 	assertNotReplacedByEscalation,
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
+import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
 import {
 	type FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	type FinalizeOrdinaryWorkPeriodTerminalInput,
@@ -102,6 +103,7 @@ import {
 } from "../infrastructure/audit-logger";
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
@@ -426,6 +428,20 @@ export function isBoundTimeDecisionSignal(error: unknown): boolean {
 	);
 }
 
+/**
+ * Explicit organization approval management for a time decision: the caller
+ * asked for organization-wide approval (the inbox does for approval managers)
+ * and the actor may manage approvals. Eligible-manager fallback is not
+ * management.
+ */
+export async function canManageOrganizationTimeApproval(
+	options: ApprovalActionOptions | undefined,
+): Promise<boolean> {
+	if (options?.allowOrganizationWideApprover !== true) return false;
+	const ability = await getAbility();
+	return ability?.cannot("manage", "Approval") === false;
+}
+
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	historicalOnly?: boolean;
 	/**
@@ -441,6 +457,11 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	actor: CurrentApprover;
 	allowAnyApprover?: boolean;
 	allowOrganizationWideApprover?: boolean;
+	/**
+	 * Explicit organization approval management, checked by the trusted
+	 * caller. Absent means none (fail closed).
+	 */
+	canManageOrganizationApproval?: () => Promise<boolean>;
 	decision:
 		| { kind: "approve"; reason: string | null }
 		| { kind: "reject"; reason: string };
@@ -871,6 +892,18 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			) {
 				throw new Error(ORDINARY_DECISION_ERROR);
 			}
+			// An escalation transfer revoked the former holders' authority (#439):
+			// only the current approver or explicit organization management may
+			// decide, never an eligible manager. The request is locked like the
+			// transfer locks it, so a decision racing a transfer serializes.
+			await assertLegacyTransferDecisionAuthority(database, {
+				organizationId: input.organizationId,
+				entityType: "time_entry",
+				entityId: period.id,
+				approvalRequestId: input.approvalRequestId,
+				actorEmployeeId: actor.id,
+				canManageOrganizationApproval: input.canManageOrganizationApproval,
+			});
 			let expectedObservedVersion = observedWorkflow?.version ?? null;
 			let bootstrappedWorkflowId: string | null = null;
 			if (authority.mode !== "legacy" && !observedWorkflow) {
@@ -1837,10 +1870,14 @@ async function finalizeOrdinaryWorkPeriodTerminal(
 		if (requesterAutoCompleted !== persistedRequesterAutoCompleted)
 			throw fail();
 		try {
+			// A legacy escalation transfer (#439) adds only its well-formed
+			// lineage; the request's own keys are verified exactly as before.
+			const lineage = splitLegacyEscalationLineage(request.metadata);
+			if (lineage.kind === "malformed") throw fail();
 			const terminalMetadata =
-				request.metadata === null && input.expectedApprovalWorkflowId === null
+				lineage.metadata === null && input.expectedApprovalWorkflowId === null
 					? { timeRequest: { kind: input.kind } }
-					: request.metadata;
+					: lineage.metadata;
 			const historicalUnmarkedOrdinary =
 				input.expectedApprovalWorkflowId === null &&
 				!requesterAutoCompleted &&
@@ -2391,13 +2428,7 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 					) {
 						return false;
 					}
-					const ability = await getAbility();
-					if (
-						options?.allowOrganizationWideApprover === true &&
-						ability?.cannot("manage", "Approval") === false
-					) {
-						return true;
-					}
+					if (await canManageOrganizationTimeApproval(options)) return true;
 					const command = authorization.command;
 					if (command.type !== "approve" && command.type !== "reject") {
 						return false;
@@ -2437,6 +2468,8 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 						allowAnyApprover: options?.allowAnyApprover,
 						allowOrganizationWideApprover:
 							options?.allowOrganizationWideApprover,
+						canManageOrganizationApproval: () =>
+							canManageOrganizationTimeApproval(options),
 						decision: input.decision,
 					}),
 				dispatch: async (execution) => {

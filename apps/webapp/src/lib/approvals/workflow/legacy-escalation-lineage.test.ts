@@ -3,6 +3,7 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	appendLegacyEscalationLineage,
 	readLegacyEscalationLineage,
+	splitLegacyEscalationLineage,
 } from "./legacy-escalation-lineage";
 
 const approverA = "30000000-0000-4000-8000-00000000000a";
@@ -213,5 +214,64 @@ describe("legacy escalation lineage on approval_request.metadata", () => {
 		],
 	])("reports a %s as malformed rather than guessing", (_label, metadata) => {
 		expect(readLegacyEscalationLineage(metadata).kind).toBe("malformed");
+	});
+});
+
+describe("splitting the lineage off request metadata (#439)", () => {
+	const transferred = () =>
+		appendLegacyEscalationLineage(
+			{ timeRequest: { kind: "manual_time_submission" } },
+			{
+				pendingSince,
+				transfer: {
+					fromApproverEmployeeId: approverA,
+					toApproverEmployeeId: approverB,
+					transferredAt: firstTransfer,
+					initiator: "scheduled",
+					actorEmployeeId: null,
+				},
+			},
+		);
+
+	it("returns metadata without lineage unchanged", () => {
+		const metadata = { timeRequest: { kind: "policy_clock_out" } };
+		const split = splitLegacyEscalationLineage(metadata);
+		expect(split).toEqual({ kind: "none", metadata });
+		expect(split.kind === "none" && split.metadata).toBe(metadata);
+		expect(splitLegacyEscalationLineage(null)).toEqual({ kind: "none", metadata: null });
+	});
+
+	it("separates a well-formed lineage from the kind's own keys", () => {
+		const metadata = transferred();
+		const split = splitLegacyEscalationLineage(metadata);
+		expect(split).toEqual({
+			kind: "lineage",
+			metadata: { timeRequest: { kind: "manual_time_submission" } },
+			lineage: metadata.escalation,
+		});
+		// The caller's metadata is never mutated.
+		expect(Object.hasOwn(metadata, "escalation")).toBe(true);
+	});
+
+	it("keeps the remaining keys' descriptors for strict validators", () => {
+		const metadata = transferred();
+		Object.defineProperty(metadata, "hidden", { value: 1, enumerable: false });
+		const split = splitLegacyEscalationLineage(metadata);
+		if (split.kind !== "lineage") throw new Error("expected lineage");
+		const rest = split.metadata as Record<string, unknown>;
+		expect(Object.getOwnPropertyDescriptor(rest, "hidden")?.enumerable).toBe(false);
+		expect(Object.hasOwn(rest, "escalation")).toBe(false);
+	});
+
+	it("refuses a malformed or accessor lineage", () => {
+		expect(splitLegacyEscalationLineage({ escalation: { version: 2 } })).toEqual({
+			kind: "malformed",
+		});
+		const accessor = { timeRequest: { kind: "manual_time_submission" } };
+		Object.defineProperty(accessor, "escalation", {
+			enumerable: true,
+			get: () => transferred().escalation,
+		});
+		expect(splitLegacyEscalationLineage(accessor)).toEqual({ kind: "malformed" });
 	});
 });

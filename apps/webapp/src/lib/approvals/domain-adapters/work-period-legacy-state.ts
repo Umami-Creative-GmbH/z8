@@ -21,6 +21,7 @@ import {
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type {
 	JsonObject,
 	LegacyApprovalChainRowSnapshot,
@@ -484,10 +485,16 @@ function decodeRequest(
 	) {
 		return fail();
 	}
+	// A legacy escalation transfer (#439) adds only its lineage; every other
+	// key is verified exactly as before and the lineage travels alongside.
+	const lineage = splitLegacyEscalationLineage(
+		raw.metadata === null ? null : record(raw.metadata),
+	);
+	if (lineage.kind === "malformed") return fail();
 	const rawMetadata =
-		raw.metadata === null
+		lineage.metadata === null
 			? { timeRequest: { kind: expectedKind } }
-			: record(raw.metadata);
+			: record(lineage.metadata);
 	const markerDescriptor = Object.getOwnPropertyDescriptor(
 		rawMetadata,
 		"ordinarySubmission",
@@ -625,6 +632,7 @@ function decodeRequest(
 			...(requesterAutoApproved
 				? { autoApproval: { reason: "requester_is_approver" } }
 				: {}),
+			...(lineage.kind === "lineage" ? { escalation: lineage.lineage } : {}),
 		} as unknown as JsonObject,
 		updatedAt: requiredTimestampWithoutTimeZone(raw.updatedAt),
 	};

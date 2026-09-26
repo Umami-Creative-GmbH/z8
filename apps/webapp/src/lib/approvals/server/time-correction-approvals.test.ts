@@ -68,6 +68,20 @@ vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (import
 	),
 );
 
+// The legacy transfer journal and its request lock are verified against
+// PostgreSQL (#439, legacy-time-transfer.integration.test.ts); these
+// harnesses decide requests escalation never transferred.
+const legacyTransferMocks = vi.hoisted(() => ({
+	assertDecisionAuthority: vi.fn(async () => undefined),
+	wasTransferred: vi.fn(async () => false),
+}));
+
+vi.mock("@/lib/approvals/escalation/legacy-transfer-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/escalation/legacy-transfer-store")>()),
+	assertLegacyTransferDecisionAuthority: legacyTransferMocks.assertDecisionAuthority,
+	wasLegacyRequestTransferred: legacyTransferMocks.wasTransferred,
+}));
+
 vi.mock("@/env", () => ({
 	env: testEnv,
 }));
@@ -97,6 +111,7 @@ import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/dom
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
+import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import {
 	approveTimeCorrectionWithCurrentApproverEffect,
@@ -4813,6 +4828,35 @@ describe("time correction transaction boundaries", () => {
 			await expect(fixture.decide("approve")).rejects.toMatchObject({
 				conflictType: "approval_status",
 			});
+			expect(fixture.terminalFinalizations()).toBe(0);
+		},
+	);
+
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"refuses a replaced approver of a transferred request before %s decision mutation (#439)",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			await fixture.execute();
+			const before = structuredClone(fixture.requests);
+			legacyTransferMocks.assertDecisionAuthority.mockRejectedValueOnce(
+				new ApprovalAssignmentReassignedError(),
+			);
+
+			await expect(fixture.decide("approve")).rejects.toMatchObject({
+				conflictType: "approval_reassigned",
+			});
+			expect(legacyTransferMocks.assertDecisionAuthority).toHaveBeenLastCalledWith(
+				expect.anything(),
+				{
+					organizationId: "org-1",
+					entityType: "time_entry",
+					entityId: fixture.ids.period,
+					approvalRequestId: fixture.ids.request,
+					actorEmployeeId: fixture.ids.manager,
+					canManageOrganizationApproval: undefined,
+				},
+			);
+			expect(fixture.requests).toEqual(before);
 			expect(fixture.terminalFinalizations()).toBe(0);
 		},
 	);

@@ -19,6 +19,11 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
+	ApprovalAssignmentReassignedError,
+	approvalReassignedConflict,
+} from "../escalation/decision-authority";
+import { wasLegacyRequestTransferred } from "../escalation/legacy-transfer-store";
+import {
 	ApprovalAuditLogger,
 	ApprovalAuditLoggerLive,
 	createApprovalAuditLogger,
@@ -344,6 +349,24 @@ function executeApprovalWithCurrentEmployee<T>(
 							action,
 						}),
 					),
+				);
+			}
+			// Eligible-manager status never bypasses an escalation replacement
+			// (#255 §4, #439): the owners refuse it first; this keeps the fallback
+			// itself closed for every legacy kind.
+			const transferred = yield* _(
+				Effect.tryPromise({
+					try: () =>
+						wasLegacyRequestTransferred(dbService.db, {
+							organizationId: currentEmployee.organizationId,
+							approvalRequestId: approval.id,
+						}),
+					catch: (error) => error as AnyAppError,
+				}),
+			);
+			if (transferred) {
+				return yield* _(
+					Effect.fail(approvalReassignedConflict(new ApprovalAssignmentReassignedError())),
 				);
 			}
 		}
