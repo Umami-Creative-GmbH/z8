@@ -45,6 +45,11 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+// Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
+vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/intents")>()),
+	recordLegacyDeliveryIntent: async () => false,
+}));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester:
 		callerMocks.getPrimaryEligibleManagerIdForRequester,
@@ -92,8 +97,12 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: vi.fn(() => ({
 		error: loggerErrorMock,
 		info: vi.fn(),
+		warn: vi.fn(),
 	})),
 }));
+
+// The post-commit delivery fast path is best effort and outside these submissions.
+vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
 
 import {
 	createRequestedAbsenceRecordsInTransaction,

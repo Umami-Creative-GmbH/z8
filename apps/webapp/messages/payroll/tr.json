@@ -19,7 +19,11 @@
       "refreshAfterClearFailed": "Engel kaldırıldı ancak bordro yenilenemedi",
       "unknownEmployee": "Bilinmeyen çalışan",
       "unresolvedWorkMinutes": "Çalışma dakikalarının incelenmesi gerekiyor",
-      "offboardingClockRepair": "Ayrılışta çıkış kaydının düzeltilmesi gerekiyor"
+      "offboardingClockRepair": "Ayrılışta çıkış kaydının düzeltilmesi gerekiyor",
+      "openWork": "Çıkış kaydı olmayan çalışma",
+      "pendingWorkApproval": "Onay bekleyen çalışma",
+      "uncertainHistoricalWork": "Geçmiş çalışmanın incelenmesi gerekiyor",
+      "openWorkDiagnostics": "Çalışma tanılamasını aç"
     },
     "description": "Seçilen dönem için bordro toplamlarını, hazırlık durumunu ve dışa aktarımları gözden geçirin.",
     "employeeTotals": {
@@ -49,6 +53,7 @@
       "endDateAfterStart": "Bitiş tarihi, başlangıç tarihinden sonra veya aynı gün olmalıdır",
       "exportBlockedByUnresolvedWorkMinutes": "Dışa aktarma engellendi: önce incelenmesi gereken çalışma dakikalarını çözün",
       "exportBlockedByOffboardingClockRepair": "Dışa aktarma engellendi: önce ayrılıştaki çıkış kaydını düzeltin",
+      "exportBlockedByUncertainWork": "Dışa aktarma engellendi: önce seçilen kapsamdaki belirsiz çalışmayı çözün",
       "exportFormatNotConfigured": "Maaş bordrosu dışa aktarma formatı yapılandırılmamış",
       "invalidBlockerId": "Geçersiz bordro engel kimliği",
       "invalidBlockerType": "Geçersiz bordro engel türü",

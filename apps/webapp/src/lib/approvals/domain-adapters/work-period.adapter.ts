@@ -1,13 +1,16 @@
+import type { ReviewedDecisionTarget } from "../evidence/work-period-evidence";
 import { sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "../approval-database-row";
 import type {
+	ApprovalDbService,
 	ApprovalSourceIdentity,
 	ApprovalWorkflowSnapshot,
 	JsonObject,
 } from "../workflow/ports";
 import { normalizeStableData } from "../workflow/stable-data";
 import type {
+	ApprovalDecisionEvidenceRecordInput,
 	ApprovalDomainAdapter,
 	ApprovalDomainAdapterContext,
 	ApprovalTerminalAdapterInput,
@@ -25,6 +28,42 @@ export interface OrdinaryWorkPeriodApprovalAdapterDependencies {
 	finalizeTerminal(
 		input: FinalizeOrdinaryWorkPeriodTerminalAdapterInput,
 	): Promise<WorkPeriodApprovalResult>;
+	/**
+	 * Decision evidence (#302). Without hooks the adapter records none; the
+	 * production runtime supplies them unless a caller passes `null`.
+	 */
+	evidence?: OrdinaryWorkPeriodDecisionEvidenceHooks | null;
+}
+
+type DecisionRecord =
+	ApprovalDecisionEvidenceRecordInput<OrdinaryWorkPeriodApprovalSource>;
+
+/** Evidence helpers bound to the engine's decision transaction. */
+export interface OrdinaryWorkPeriodDecisionEvidenceHooks {
+	preflight(
+		dbService: ApprovalDbService,
+		input: {
+			organizationId: string;
+			kind: OrdinaryWorkPeriodApprovalKind;
+			workflow: ApprovalWorkflowSnapshot;
+			reviewedBindingId: string | null;
+			/** The deciding actor and exact assignment a reviewed binding must name. */
+			target: ReviewedDecisionTarget;
+		},
+	): Promise<void>;
+	record(
+		dbService: ApprovalDbService,
+		input: {
+			organizationId: string;
+			kind: OrdinaryWorkPeriodApprovalKind;
+			workflow: ApprovalWorkflowSnapshot;
+			command: DecisionRecord["command"];
+			receipt: DecisionRecord["receipt"];
+			result: DecisionRecord["result"];
+			finalization: ApprovalTerminalFinalizationResult | null;
+			reviewedBindingId: string | null;
+		},
+	): Promise<void>;
 }
 
 export class OrdinaryWorkPeriodApprovalAdapterError extends Error {
@@ -194,6 +233,7 @@ function terminalResult(
 	kind: OrdinaryWorkPeriodApprovalKind,
 	input: ApprovalTerminalAdapterInput<OrdinaryWorkPeriodApprovalSource>,
 	maintenance: WorkPeriodApprovalResult["maintenance"],
+	workOutcome: WorkPeriodApprovalResult["outcome"],
 ): ApprovalTerminalFinalizationResult {
 	const status = input.transition.to;
 	return normalizeStableData({
@@ -226,6 +266,7 @@ function terminalResult(
 		},
 		finalizedAt: input.finalizedAt,
 		...(maintenance ? { maintenance } : {}),
+		...(workOutcome ? { workOutcome } : {}),
 	}) as ApprovalTerminalFinalizationResult;
 }
 
@@ -233,7 +274,43 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 	kind: OrdinaryWorkPeriodApprovalKind,
 	dependencies: OrdinaryWorkPeriodApprovalAdapterDependencies,
 ): ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource> {
+	const evidence = dependencies.evidence ?? null;
+	const evidenceHooks: Pick<
+		ApprovalDomainAdapter<OrdinaryWorkPeriodApprovalSource>,
+		"preflightDecisionEvidence" | "recordDecisionEvidence"
+	> = evidence
+		? {
+				async preflightDecisionEvidence(input) {
+					validateContext(kind, input);
+					await evidence.preflight(input.dbService, {
+						organizationId: input.organizationId,
+						kind,
+						workflow: input.workflow,
+						reviewedBindingId: input.reviewedBindingId,
+						target: {
+							actorEmployeeId:
+								input.actor.kind === "employee" ? input.actor.employeeId : null,
+							stageId: input.command.stageId,
+							assignmentId: input.command.assignmentId,
+						},
+					});
+				},
+				async recordDecisionEvidence(input) {
+					await evidence.record(input.dbService, {
+						organizationId: input.organizationId,
+						kind,
+						workflow: input.workflow,
+						command: input.command,
+						receipt: input.receipt,
+						result: input.result,
+						finalization: input.finalization,
+						reviewedBindingId: input.reviewedBindingId,
+					});
+				},
+			}
+		: {};
 	return {
+		...evidenceHooks,
 		workflowType: kind,
 		sourceType: "time_entry",
 		async loadSource(input) {
@@ -434,7 +511,12 @@ export function createOrdinaryWorkPeriodApprovalAdapter(
 				transition,
 				finalizedAt: input.finalizedAt,
 			});
-			return terminalResult(kind, input, finalized.maintenance);
+			return terminalResult(
+				kind,
+				input,
+				finalized.maintenance,
+				finalized.outcome,
+			);
 		},
 		async projectDisplay(input) {
 			validateContext(kind, input);

@@ -17,6 +17,7 @@ import {
 	type InvitationDetails,
 } from "./accept-invitation-form-body";
 import { AuthFormWrapper } from "./auth-form-wrapper";
+import { clearManualRecoveries } from "./time-tracking/manual-command-recovery";
 
 type InvitationState = "ready" | "accepting" | "success";
 
@@ -158,6 +159,8 @@ export function AcceptInvitationForm({
 		await authClient.signOut({
 			fetchOptions: {
 				onSuccess: () => {
+					// Sign-out ends this tab's manual-entry recovery (#310).
+					clearManualRecoveries();
 					router.push(withCallbackUrl("/sign-in", callbackUrl));
 				},
 			},

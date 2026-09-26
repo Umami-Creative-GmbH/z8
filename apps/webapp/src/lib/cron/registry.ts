@@ -13,10 +13,13 @@
 
 import type { JobsOptions } from "bullmq";
 import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
+import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/scheduled-job";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { SCIMMaintenanceResult } from "@/lib/jobs/scim-maintenance";
+import type { TravelExpenseReceiptCleanupJobResult } from "@/lib/jobs/travel-expense-receipt-cleanup";
+import type { WorkBalanceRebuildResult } from "@/lib/work-balance/rebuild-intents";
 
 // ============================================
 // TYPES
@@ -115,6 +118,8 @@ export interface ExecutionCleanupResult {
 export interface BreakEnforcementResult {
 	processedCount: number;
 	adjustedCount: number;
+	/** Adjustment intents still held by unresolved review or another blocker (#305). */
+	deferredCount: number;
 	errors: Array<{ workPeriodId: string; error: string }>;
 }
 
@@ -146,6 +151,7 @@ export interface WorkBalanceRefreshResult {
 	skipped: number;
 	batchLimit: number;
 	errors: Array<{ employeeId: string; organizationId: string; error: string }>;
+	rebuildIntents: WorkBalanceRebuildResult;
 }
 
 /** Result from Teams daily digest job */
@@ -320,9 +326,23 @@ export const CRON_JOBS = {
 		defaultJobOptions: { attempts: 2, priority: 9 },
 	},
 
+	"cron:travel-expense-receipt-cleanup": {
+		schedule: "*/15 * * * *", // Every 15 minutes
+		description:
+			"Delete private receipt objects that were rejected, failed or abandoned before attaching to a travel expense claim",
+		processor: async (): Promise<TravelExpenseReceiptCleanupJobResult> => {
+			const { runTravelExpenseReceiptCleanupJob } = await import(
+				"@/lib/jobs/travel-expense-receipt-cleanup"
+			);
+			return runTravelExpenseReceiptCleanupJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 9 },
+	},
+
 	"cron:break-enforcement": {
 		schedule: "* * * * *", // Every minute
-		description: "Check break compliance for active work periods",
+		description:
+			"Recover committed automatic break adjustments (any date) and check today's legacy work periods",
 		processor: async ({ manualParams }) => {
 			const { runBreakEnforcementCheck } = await import(
 				"@/lib/effect/services/break-enforcement.service"
@@ -497,6 +517,19 @@ export const CRON_JOBS = {
 			return runApprovalEscalationJob();
 		},
 		defaultJobOptions: { attempts: 2, priority: 6 },
+	},
+
+	"cron:approval-delivery": {
+		schedule: "* * * * *", // Every minute: the first retry is due after 1 minute
+		description:
+			"Deliver, refresh and retry approval cards for organizations whose delivery moved to the approval delivery owner",
+		processor: async (): Promise<ApprovalDeliveryJobResult> => {
+			const { runApprovalDeliveryJob } = await import(
+				"@/lib/approvals/delivery/scheduled-job"
+			);
+			return runApprovalDeliveryJob();
+		},
+		defaultJobOptions: { attempts: 1, priority: 6 },
 	},
 
 	"cron:slack-escalation": {

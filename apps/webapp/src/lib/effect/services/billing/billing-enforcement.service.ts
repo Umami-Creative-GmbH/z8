@@ -1,17 +1,20 @@
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { BillingError, DatabaseError } from "../../errors";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
-import { countBillableSeats } from "./billable-seat-count";
+import { provisionLocalTrial } from "./billing-configuration";
 
 export type { BillingAccessResult } from "./billing-access";
 
 export interface CheckBillingAccessOptions {
 	now?: Date;
+	/**
+	 * Provisions the default local trial in its own protected transaction. Work
+	 * transactions use `readBillingAccessInTransaction` instead.
+	 */
 	createTrialIfMissing?: boolean;
 }
 
@@ -28,39 +31,11 @@ function checkBillingAccess(
 
 		const sub = yield* Effect.tryPromise({
 			try: async () => {
+				if (createTrialIfMissing) return provisionLocalTrial(organizationId, now);
 				const existing = await db.query.subscription.findFirst({
 					where: eq(subscription.organizationId, organizationId),
 				});
-
-				if (existing || !createTrialIfMissing) return existing ?? null;
-
-				const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
-				const currentSeats = await countBillableSeats(db, organizationId);
-				const inserted = await db
-					.insert(subscription)
-					.values({
-						organizationId,
-						stripeCustomerId: null,
-						status: "trialing",
-						trialStart: now,
-						trialEnd,
-						currentSeats,
-					})
-					.onConflictDoNothing({ target: subscription.organizationId })
-					.returning();
-
-				const localTrial = inserted[0];
-				if (localTrial) return localTrial;
-
-				const raced = await db.query.subscription.findFirst({
-					where: eq(subscription.organizationId, organizationId),
-				});
-
-				if (!raced) {
-					throw new Error("Local trial insert returned no row");
-				}
-
-				return raced;
+				return existing ?? null;
 			},
 			catch: (error) =>
 				new DatabaseError({

@@ -305,13 +305,25 @@ export const approvalEscalationAttentionEvent = pgTable(
 // receipt (#255 §2). Held outcomes are attention incidents, not journal rows.
 // The journal links the canonical transition instead of copying it, and is
 // immutable once written.
+//
+// Legacy-authoritative transfers (#299) have no canonical workflow: they name
+// the legacy `approval_request` (by value, like legacy evidence) and the
+// replaced holder's lineage position, and the row itself is the operation's
+// replay receipt. A shadow/ready observation is recorded separately as
+// `observed_*`, never as the transfer's workflow.
 
 export type ApprovalEscalationTransferInitiator = "scheduled" | "human";
+
+export type ApprovalEscalationTransferAuthorityMode = "canonical" | "legacy";
 
 /** How the source assignment's actionable instant was established. */
 export type ApprovalEscalationActionableEvidence =
 	| "assignment_assigned_at"
-	| "rollout_fallback";
+	| "rollout_fallback"
+	// Legacy-authoritative requests (#299): the request's persisted creation
+	// for its original approver, the journaled transfer for a replacement.
+	| "legacy_request_created_at"
+	| "legacy_transfer_at";
 
 export const approvalEscalationTransfer = pgTable(
 	"approval_escalation_transfer",
@@ -326,12 +338,22 @@ export const approvalEscalationTransfer = pgTable(
 		initiator: text("initiator")
 			.$type<ApprovalEscalationTransferInitiator>()
 			.notNull(),
-		authorityMode: text("authority_mode").$type<"canonical">().notNull(),
+		authorityMode: text("authority_mode")
+			.$type<ApprovalEscalationTransferAuthorityMode>()
+			.notNull(),
 		workflowType: approvalWorkflowTypeEnum("workflow_type").notNull(),
-		workflowId: uuid("workflow_id").notNull(),
-		stageId: uuid("stage_id").notNull(),
-		sourceAssignmentId: uuid("source_assignment_id").notNull(),
-		replacementAssignmentId: uuid("replacement_assignment_id").notNull(),
+		// Canonical transfers only.
+		workflowId: uuid("workflow_id"),
+		stageId: uuid("stage_id"),
+		sourceAssignmentId: uuid("source_assignment_id"),
+		replacementAssignmentId: uuid("replacement_assignment_id"),
+		// Legacy transfers only: the request and the replaced holder's position
+		// in its lineage (0 = original approver).
+		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
+		legacySourceSequence: integer("legacy_source_sequence"),
+		// Shadow/ready observation of a legacy transfer, by value.
+		observedWorkflowId: uuid("observed_workflow_id"),
+		observedEventId: uuid("observed_event_id"),
 		// Null only for a human transfer whose lineage could not be established.
 		lineageRootAssignmentId: uuid("lineage_root_assignment_id"),
 		sourceApproverEmployeeId: uuid("source_approver_employee_id").notNull(),
@@ -348,7 +370,7 @@ export const approvalEscalationTransfer = pgTable(
 		).$type<ApprovalEscalationActionableEvidence>(),
 		deadlineAt: timestamp("deadline_at", { withTimezone: true }),
 		policyRevision: integer("policy_revision"),
-		workflowEventId: uuid("workflow_event_id").notNull(),
+		workflowEventId: uuid("workflow_event_id"),
 		receiptIdempotencyKey: text("receipt_idempotency_key").notNull(),
 		receiptActorFingerprint: text("receipt_actor_fingerprint").notNull(),
 		receiptCommandFingerprint: text("receipt_command_fingerprint").notNull(),
@@ -380,6 +402,14 @@ export const approvalEscalationTransfer = pgTable(
 			table.organizationId,
 			table.sourceAssignmentId,
 		),
+		// One committed transfer per replaced legacy holder.
+		uniqueIndex("approvalEscalationTransfer_org_legacy_source_idx")
+			.on(
+				table.organizationId,
+				table.legacyApprovalRequestId,
+				table.legacySourceSequence,
+			)
+			.where(sql`authority_mode = 'legacy'`),
 		index("approvalEscalationTransfer_org_workflow_idx").on(
 			table.organizationId,
 			table.workflowId,
@@ -454,11 +484,11 @@ export const approvalEscalationTransfer = pgTable(
 		),
 		check(
 			"approval_escalation_transfer_mode_check",
-			sql`${table.authorityMode} IN ('canonical')`,
+			sql`(${table.authorityMode} = 'canonical' AND ${table.workflowId} IS NOT NULL AND ${table.stageId} IS NOT NULL AND ${table.sourceAssignmentId} IS NOT NULL AND ${table.replacementAssignmentId} IS NOT NULL AND ${table.workflowEventId} IS NOT NULL AND ${table.legacyApprovalRequestId} IS NULL AND ${table.legacySourceSequence} IS NULL AND ${table.observedWorkflowId} IS NULL AND ${table.observedEventId} IS NULL) OR (${table.authorityMode} = 'legacy' AND ${table.workflowId} IS NULL AND ${table.stageId} IS NULL AND ${table.sourceAssignmentId} IS NULL AND ${table.replacementAssignmentId} IS NULL AND ${table.workflowEventId} IS NULL AND ${table.lineageRootAssignmentId} IS NULL AND ${table.legacyApprovalRequestId} IS NOT NULL AND ${table.legacySourceSequence} >= 0 AND (${table.observedWorkflowId} IS NULL) = (${table.observedEventId} IS NULL))`,
 		),
 		check(
 			"approval_escalation_transfer_evidence_check",
-			sql`${table.actionableEvidence} IS NULL OR ${table.actionableEvidence} IN ('assignment_assigned_at', 'rollout_fallback')`,
+			sql`${table.actionableEvidence} IS NULL OR (${table.authorityMode} = 'canonical' AND ${table.actionableEvidence} IN ('assignment_assigned_at', 'rollout_fallback')) OR (${table.authorityMode} = 'legacy' AND ${table.actionableEvidence} IN ('legacy_request_created_at', 'legacy_transfer_at'))`,
 		),
 		check(
 			"approval_escalation_transfer_actor_check",
@@ -466,7 +496,7 @@ export const approvalEscalationTransfer = pgTable(
 		),
 		check(
 			"approval_escalation_transfer_deadline_check",
-			sql`(${table.initiator} = 'scheduled' AND ${table.actionableAt} IS NOT NULL AND ${table.actionableEvidence} IS NOT NULL AND ${table.deadlineAt} IS NOT NULL AND ${table.policyRevision} IS NOT NULL AND ${table.lineageRootAssignmentId} IS NOT NULL) OR (${table.initiator} = 'human' AND ${table.actionableAt} IS NULL AND ${table.actionableEvidence} IS NULL AND ${table.deadlineAt} IS NULL)`,
+			sql`(${table.initiator} = 'scheduled' AND ${table.actionableAt} IS NOT NULL AND ${table.actionableEvidence} IS NOT NULL AND ${table.deadlineAt} IS NOT NULL AND ${table.policyRevision} IS NOT NULL AND (${table.lineageRootAssignmentId} IS NOT NULL OR ${table.authorityMode} = 'legacy')) OR (${table.initiator} = 'human' AND ${table.actionableAt} IS NULL AND ${table.actionableEvidence} IS NULL AND ${table.deadlineAt} IS NULL)`,
 		),
 		check(
 			"approval_escalation_transfer_distinct_check",
@@ -478,14 +508,18 @@ export const approvalEscalationTransfer = pgTable(
 /** Frozen facts of a committed transfer for replacement delivery (#300). */
 export interface ApprovalEscalationTransferEventPayload {
 	schemaVersion: 1;
+	authorityMode: ApprovalEscalationTransferAuthorityMode;
 	workflowType: string;
-	workflowId: string;
+	/** Canonical transfers; null for a legacy transfer. */
+	workflowId: string | null;
 	sourceType: string;
 	sourceId: string;
 	legacyApprovalRequestId: string | null;
-	stageId: string;
-	sourceAssignmentId: string;
-	replacementAssignmentId: string;
+	/** Legacy transfers: the replaced holder's lineage position. */
+	legacySourceSequence: number | null;
+	stageId: string | null;
+	sourceAssignmentId: string | null;
+	replacementAssignmentId: string | null;
 	formerApproverEmployeeId: string;
 	replacementApproverEmployeeId: string;
 	requesterEmployeeId: string;

@@ -15,6 +15,18 @@ export type DepartureTaskHandler = (
 	context: DepartureTaskContext,
 ) => Promise<void>;
 
+/**
+ * Thrown by a handler whose work cannot succeed without an admin decision
+ * (for example a missing approval replacement). The task fails immediately
+ * and stays visible for review instead of retrying with backoff.
+ */
+export class DepartureTaskNeedsResolutionError extends Error {
+	constructor(readonly reason: string) {
+		super(`needs_admin_resolution:${reason}`);
+		this.name = "DepartureTaskNeedsResolutionError";
+	}
+}
+
 /** Kinds whose payload carries private data that is cleared once delivered. */
 const PRIVATE_PAYLOAD_KINDS = new Set<DepartureTaskKind>(["session_revocation"]);
 
@@ -59,7 +71,9 @@ export async function runDepartureTaskDelivery(input: {
 					recordProgress: (patch) => input.outbox.recordProgress(claim, input.now, patch),
 				});
 			} catch (error) {
-				const outcome = await input.outbox.defer(claim, input.now, error, { terminal: false });
+				const outcome = await input.outbox.defer(claim, input.now, error, {
+					terminal: error instanceof DepartureTaskNeedsResolutionError,
+				});
 				result[outcome === "failed" ? "failed" : "deferred"] += 1;
 				continue;
 			}

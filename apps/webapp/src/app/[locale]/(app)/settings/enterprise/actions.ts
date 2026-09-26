@@ -51,6 +51,10 @@ import {
 	updateSocialOAuthConfig,
 } from "@/lib/social-oauth";
 import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
+import {
+	type EnterpriseIdentitySetupRecord,
+	getOrCreateEnterpriseIdentitySetupRecord,
+} from "./identity-setup-record";
 
 export async function requireEnterpriseOrgAdmin() {
 	const authContext = await requireUser();
@@ -68,9 +72,6 @@ export async function requireEnterpriseOrgAdmin() {
 }
 
 const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
-
-type EnterpriseIdentitySetupRecord =
-	typeof enterpriseIdentitySetup.$inferSelect;
 
 export interface EnterpriseIdentitySetupRoleTemplateResponse {
 	id: string;
@@ -179,43 +180,6 @@ function normalizeEnterpriseIdentitySetupRecord(
 		enforcement: record.enforcement ?? defaults.enforcement,
 		activatedAt: toIsoFromDate(record.activatedAt),
 	};
-}
-
-export async function getOrCreateEnterpriseIdentitySetupRecord(
-	organizationId: string,
-	userId: string,
-): Promise<EnterpriseIdentitySetupRecord> {
-	const existing = await db.query.enterpriseIdentitySetup.findFirst({
-		where: eq(enterpriseIdentitySetup.organizationId, organizationId),
-	});
-
-	if (existing) return existing;
-
-	const defaultState = createDefaultEnterpriseIdentitySetupState({
-		organizationId,
-	});
-	const [created] = await db
-		.insert(enterpriseIdentitySetup)
-		.values({
-			organizationId,
-			currentStep: defaultState.currentStep,
-			ssoTest: defaultState.ssoTest,
-			scim: defaultState.scim,
-			enforcement: defaultState.enforcement,
-			createdBy: userId,
-			updatedBy: userId,
-		})
-		.onConflictDoNothing({ target: enterpriseIdentitySetup.organizationId })
-		.returning();
-
-	if (created) return created;
-
-	const raced = await db.query.enterpriseIdentitySetup.findFirst({
-		where: eq(enterpriseIdentitySetup.organizationId, organizationId),
-	});
-
-	if (!raced) throw new Error("Unable to initialize enterprise identity setup");
-	return raced;
 }
 
 async function getSetupResponse(

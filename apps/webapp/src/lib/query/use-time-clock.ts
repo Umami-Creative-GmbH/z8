@@ -10,6 +10,10 @@ import {
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	frozenClockCommandsAvailable,
+	prepareBrowserClockCommand,
+} from "@/lib/time-tracking/browser-clock-command";
 import { postClockIn, postClockOut } from "@/lib/time-tracking/time-clock-client";
 import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
@@ -33,6 +37,18 @@ function getCurrentEpochSecond() {
 
 function getServerEpochSecond() {
 	return 0;
+}
+
+function subscribeToNothing() {
+	return () => {};
+}
+
+function getBrowserOrigin(): string | null {
+	return window.location.origin;
+}
+
+function getServerOrigin(): string | null {
+	return null;
 }
 
 function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
@@ -95,8 +111,56 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 	const activeOrganizationId = session?.session.activeOrganizationId;
 
 	// Offline support
-	const { isOnline, isOffline, pendingCount, isSyncing, queueClockEvent } =
-		useOfflineClock();
+	const {
+		isOnline,
+		isOffline,
+		pendingCount,
+		isSyncing,
+		queueClockEvent,
+		commandCapabilities,
+		submitClockCommand,
+	} = useOfflineClock();
+	// Null on the server and during hydration, so both render the same capture mode.
+	const origin = useSyncExternalStore(subscribeToNothing, getBrowserOrigin, getServerOrigin);
+	const pageSession =
+		session?.user?.id && activeOrganizationId && origin
+			? {
+					userId: session.user.id,
+					organizationId: activeOrganizationId,
+					origin,
+				}
+			: null;
+	const canFreeze =
+		pageSession !== null && frozenClockCommandsAvailable(commandCapabilities, pageSession);
+
+	/**
+	 * The frozen v2 command for this action (#279), or null to keep the legacy
+	 * path. Identity, instant and zone are fixed here, before anything is sent.
+	 */
+	function prepareFrozenCommand(
+		kind: "clock_in" | "clock_out",
+		params?: {
+			workLocationType?: WorkLocationType;
+			browserTimezone?: string | null;
+			projectId?: string;
+			workCategoryId?: string;
+		},
+	) {
+		if (!canFreeze || !pageSession) return null;
+		const prepared = prepareBrowserClockCommand({
+			kind,
+			operationId: crypto.randomUUID(),
+			capabilities: commandCapabilities,
+			session: pageSession,
+			now: systemClock.nowInstant(),
+			timezone: resolveBrowserTimezone(params),
+			workLocationType: params?.workLocationType,
+			knownWorkPeriodId: statusQuery.data?.activeWorkPeriod?.id ?? null,
+			projectId: params?.projectId,
+			workCategoryId: params?.workCategoryId,
+		});
+		return prepared.ok ? prepared.request : null;
+	}
 
 	// Query for time clock status
 	const statusQuery = useQuery({
@@ -117,6 +181,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
 		}) => {
+			const frozen = prepareFrozenCommand("clock_in", params);
+			if (frozen) return submitClockCommand(frozen);
+
 			// When offline, queue the event for later sync
 			if (isOffline) {
 				if (!activeOrganizationId) {
@@ -175,6 +242,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			browserTimezone?: string | null;
 			submissionId?: string;
 		}) => {
+			const frozen = prepareFrozenCommand("clock_out", params);
+			if (frozen) return submitClockCommand(frozen);
+
 			// When offline, queue the event for later sync
 			if (isOffline) {
 				if (!activeOrganizationId) {
@@ -241,7 +311,13 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 
 	// Add break mutation (online only - break changes must be confirmed immediately)
 	const addBreakMutation = useMutation({
-		mutationFn: async ({ breakMinutes }: { breakMinutes: number }) => {
+		mutationFn: async ({
+			breakMinutes,
+			submissionId,
+		}: {
+			breakMinutes: number;
+			submissionId: string;
+		}) => {
 			if (isOffline) {
 				return {
 					success: false as const,
@@ -249,7 +325,10 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				};
 			}
 
-			return addBreakToActiveSession(breakMinutes);
+			return addBreakToActiveSession(breakMinutes, {
+				submissionId,
+				browserTimezone: getBrowserTimezone(),
+			});
 		},
 		onSuccess: (result) => {
 			if (result.success) {
@@ -289,7 +368,11 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Offline state
 		isOnline,
 		isOffline,
-		captureMode: isOffline ? ("local-review" as const) : ("server" as const),
+		captureMode: !isOffline
+			? ("server" as const)
+			: canFreeze
+				? ("local-queue" as const)
+				: ("local-review" as const),
 		pendingCount,
 		isSyncing,
 
@@ -307,7 +390,9 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				...(params ?? {}),
 				...(!isOffline ? { submissionId: crypto.randomUUID() } : {}),
 			}),
-		addBreak: addBreakMutation.mutateAsync,
+		// One identity per request, as for clock-out; the server replays a committed identity.
+		addBreak: (params: { breakMinutes: number }) =>
+			addBreakMutation.mutateAsync({ ...params, submissionId: crypto.randomUUID() }),
 		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,
 		isClockingOut: clockOutMutation.isPending,

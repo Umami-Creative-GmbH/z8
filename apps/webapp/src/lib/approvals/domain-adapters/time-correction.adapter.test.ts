@@ -14,6 +14,15 @@ import {
 } from "./time-correction.adapter";
 import type { ApprovalTerminalAdapterInput } from "./types";
 
+const { assertCorrectionWorkCoordinated } = vi.hoisted(() => ({
+	assertCorrectionWorkCoordinated: vi.fn(),
+}));
+
+// The adoption fence reads the append control; these source-shape tests have no database.
+vi.mock("@/lib/time-tracking/correction-work-fence", () => ({
+	assertCorrectionWorkCoordinated,
+}));
+
 const ids = {
 	workflow: "10000000-0000-4000-8000-000000000001",
 	period: "20000000-0000-4000-8000-000000000001",
@@ -135,6 +144,7 @@ function createFixture() {
 			isActive: true,
 			user: { id: requesterUserId, name: "Avery Requester" },
 		},
+		actor: { id: actorEmployeeId, organizationId, isActive: true },
 		membership: {
 			id: "member-1",
 			organizationId,
@@ -199,15 +209,7 @@ function createFixture() {
 						return Promise.resolve(
 							[
 								value.requester,
-								...(actorEmployeeId === value.requester.id
-									? []
-									: [
-											{
-												id: actorEmployeeId,
-												organizationId,
-												isActive: true,
-											},
-										]),
+								...(actorEmployeeId === value.requester.id ? [] : [value.actor]),
 							].sort((left, right) => left.id.localeCompare(right.id)),
 						);
 					}
@@ -562,6 +564,15 @@ describe("time correction approval adapter", () => {
 		}
 	});
 
+	it("loads a departed requester's submitted correction for an active approver", async () => {
+		const fixture = createFixture();
+		fixture.value.requester.isActive = false;
+
+		const { source } = await loadSource(fixture);
+
+		expect(source.employeeId).toBe(ids.employee);
+	});
+
 	it("loads and approves an active correction before canonical materialization", async () => {
 		const fixture = createFixture();
 		const activeCorrection = {
@@ -855,9 +866,9 @@ describe("time correction approval adapter", () => {
 				(value.period.deletedAt = new Date()),
 		],
 		[
-			"inactive requester",
+			"inactive actor",
 			(value: ReturnType<typeof createFixture>["value"]) =>
-				(value.requester.isActive = false),
+				(value.actor.isActive = false),
 		],
 		[
 			"foreign requester",
@@ -1173,7 +1184,39 @@ describe("time correction approval adapter", () => {
 				pendingCorrections: source.pendingCorrections,
 			},
 			correction,
+			lifecycle: { authority: "canonical", workflowId: ids.workflow },
 		});
+		expect(finalizeTimeCorrectionTerminal).not.toHaveBeenCalled();
+	});
+
+	it("refuses a terminal outside the coordinated work transaction before delegating", async () => {
+		const { adapter, source, deleteCancelledCorrections, finalizeTimeCorrectionTerminal } =
+			await loadSource();
+		const dbService = { db: {} } as never;
+		assertCorrectionWorkCoordinated.mockRejectedValueOnce(
+			new Error("Adopted correction lifecycles must run inside the coordinated work transaction"),
+		);
+
+		await expect(
+			adapter.finalizeTerminal({
+				...context(source, { status: "cancelled", version: 5, cancelledAt: finalizedAt }),
+				actor: { kind: "employee" as const, employeeId: ids.employee, userId: requesterUserId },
+				dbService,
+				finalizationCause: "command" as const,
+				transition: {
+					kind: "cancel_pending" as const,
+					from: "pending" as const,
+					to: "cancelled" as const,
+					reason: "withdrawn",
+				},
+				finalizedAt,
+			}),
+		).rejects.toThrow("coordinated work transaction");
+		expect(assertCorrectionWorkCoordinated).toHaveBeenLastCalledWith(
+			(dbService as { db: object }).db,
+			organizationId,
+		);
+		expect(deleteCancelledCorrections).not.toHaveBeenCalled();
 		expect(finalizeTimeCorrectionTerminal).not.toHaveBeenCalled();
 	});
 

@@ -8,6 +8,7 @@ import * as z from "zod";
 import { type user as authUser, member } from "@/db/auth-schema";
 import { employee, team, teamMembership, teamPermissions } from "@/db/schema";
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -697,19 +698,33 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 					);
 				}
 
-				// Check if team has members
-				const members = yield* _(
-					dbService.query("getTeamMemberships", async () => {
-						return await dbService.db.query.teamMembership.findMany({
-							where: and(
-								eq(teamMembership.organizationId, targetTeam.organizationId),
-								eq(teamMembership.teamId, teamId),
-							),
-						});
-					}),
+				// Deletion cascades into employee teams and team permissions across the
+				// organization, so it takes the organization-wide protection.
+				const deleted = yield* _(
+					dbService.query("deleteTeam", () =>
+						withAuthorizationMutation(
+							{ organizationId: targetTeam.organizationId, organizationWide: true },
+							async (tx) => {
+								const members = await tx.query.teamMembership.findMany({
+									where: and(
+										eq(teamMembership.organizationId, targetTeam.organizationId),
+										eq(teamMembership.teamId, teamId),
+									),
+								});
+								if (members.length > 0) return false;
+								await tx
+									.delete(team)
+									.where(
+										and(eq(team.id, teamId), eq(team.organizationId, targetTeam.organizationId)),
+									);
+								return true;
+							},
+							dbService.db,
+						),
+					),
 				);
 
-				if (members.length > 0) {
+				if (!deleted) {
 					yield* _(
 						Effect.fail(
 							new ValidationError({
@@ -720,13 +735,6 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 						),
 					);
 				}
-
-				// Delete team
-				yield* _(
-					dbService.query("deleteTeam", async () => {
-						await dbService.db.delete(team).where(eq(team.id, teamId));
-					}),
-				);
 
 				logger.info({ teamId }, "Team deleted successfully");
 
@@ -1074,31 +1082,39 @@ export async function addTeamMember(
 					}
 				}
 
+				// The target's team feeds manual target facts; both writes commit under
+				// the employee's configuration/access protection.
 				yield* _(
-					dbService.query("addTeamMembership", async () => {
-						await dbService.db
-							.insert(teamMembership)
-							.values({
-								organizationId: targetTeam.organizationId,
-								teamId,
-								employeeId: targetEmployee.id,
-								createdBy: session.user.id,
-							})
-							.onConflictDoNothing();
-					}),
-				);
+					dbService.query("addTeamMembership", () =>
+						withAuthorizationMutation(
+							{ organizationId: targetTeam.organizationId, employeeIds: [targetEmployee.id] },
+							async (tx) => {
+								await tx
+									.insert(teamMembership)
+									.values({
+										organizationId: targetTeam.organizationId,
+										teamId,
+										employeeId: targetEmployee.id,
+										createdBy: session.user.id,
+									})
+									.onConflictDoNothing();
 
-				// Keep legacy employee.teamId populated only for employees without a compatibility team.
-				if (!targetEmployee.teamId) {
-					yield* _(
-						dbService.query("setEmployeePrimaryTeamCompatibility", async () => {
-							await dbService.db
-								.update(employee)
-								.set({ teamId, updatedAt: currentTimestamp() })
-								.where(eq(employee.id, targetEmployee.id));
-						}),
-					);
-				}
+								// Keep legacy employee.teamId populated only for employees without a compatibility team.
+								if (targetEmployee.teamId) return;
+								await tx
+									.update(employee)
+									.set({ teamId, updatedAt: currentTimestamp() })
+									.where(
+										and(
+											eq(employee.id, targetEmployee.id),
+											eq(employee.organizationId, targetTeam.organizationId),
+										),
+									);
+							},
+							dbService.db,
+						),
+					),
+				);
 
 				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
 				revalidateTag(CACHE_TAGS.EMPLOYEES(targetTeam.organizationId), "max");
@@ -1227,45 +1243,57 @@ export async function removeTeamMember(
 				);
 
 				yield* _(
-					dbService.query("removeTeamMembership", async () => {
-						await dbService.db
-							.delete(teamMembership)
-							.where(
-								and(
-									eq(teamMembership.organizationId, targetTeam.organizationId),
-									eq(teamMembership.teamId, teamId),
-									eq(teamMembership.employeeId, employeeId),
-								),
-							);
-					}),
+					dbService.query("removeTeamMembership", () =>
+						withAuthorizationMutation(
+							{ organizationId: targetTeam.organizationId, employeeIds: [employeeId] },
+							async (tx) => {
+								await tx
+									.delete(teamMembership)
+									.where(
+										and(
+											eq(teamMembership.organizationId, targetTeam.organizationId),
+											eq(teamMembership.teamId, teamId),
+											eq(teamMembership.employeeId, employeeId),
+										),
+									);
+
+								// Re-read under protection: the compatibility team may have moved.
+								const current = await tx.query.employee.findFirst({
+									where: and(
+										eq(employee.id, employeeId),
+										eq(employee.organizationId, targetTeam.organizationId),
+									),
+									columns: { teamId: true },
+								});
+								if (current?.teamId !== teamId) return;
+
+								const remainingMemberships = await tx.query.teamMembership.findMany({
+									where: and(
+										eq(teamMembership.organizationId, targetTeam.organizationId),
+										eq(teamMembership.employeeId, employeeId),
+									),
+								});
+								const nextTeamId =
+									remainingMemberships
+										.flatMap((membership) =>
+											membership.teamId !== teamId ? [membership.teamId] : [],
+										)
+										.toSorted()[0] ?? null;
+
+								await tx
+									.update(employee)
+									.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
+									.where(
+										and(
+											eq(employee.id, employeeId),
+											eq(employee.organizationId, targetTeam.organizationId),
+										),
+									);
+							},
+							dbService.db,
+						),
+					),
 				);
-
-				if (targetEmployee?.teamId === teamId) {
-					const remainingMemberships = yield* _(
-						dbService.query("getRemainingTeamMemberships", async () => {
-							return await dbService.db.query.teamMembership.findMany({
-								where: and(
-									eq(teamMembership.organizationId, targetTeam.organizationId),
-									eq(teamMembership.employeeId, employeeId),
-								),
-							});
-						}),
-					);
-
-					const nextTeamId =
-						remainingMemberships
-							.flatMap((membership) => (membership.teamId !== teamId ? [membership.teamId] : []))
-							.toSorted()[0] ?? null;
-
-					yield* _(
-						dbService.query("updateEmployeePrimaryTeamCompatibility", async () => {
-							await dbService.db
-								.update(employee)
-								.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
-								.where(eq(employee.id, employeeId));
-						}),
-					);
-				}
 
 				revalidateTag(CACHE_TAGS.TEAMS(targetTeam.organizationId), "max");
 				revalidateTag(CACHE_TAGS.EMPLOYEES(targetTeam.organizationId), "max");

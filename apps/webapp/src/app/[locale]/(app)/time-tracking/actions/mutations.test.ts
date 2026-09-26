@@ -100,6 +100,9 @@ vi.mock("./shared", () => ({
 	logger: mockState.logger,
 }));
 
+vi.mock("../actions", () => ({ updateWorkPeriodProject: vi.fn() }));
+vi.mock("./work-period-split", () => ({ splitOwnWorkPeriod: vi.fn() }));
+
 const { approveWorkPeriod } = await import("./mutations");
 
 describe("approveWorkPeriod", () => {

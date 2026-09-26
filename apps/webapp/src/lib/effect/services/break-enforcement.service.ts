@@ -1,18 +1,19 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import {
-	timeEntry,
-	type WorkPeriodAutoAdjustmentReason,
-	workPeriod,
-} from "@/db/schema";
+import { workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
+import {
+	type AutomaticBreakAdjustmentOutcome,
+	type LegacyBreakPlan,
+	processAutomaticBreakIntents,
+	runAutomaticBreakAdjustment,
+} from "@/lib/time-tracking/automatic-break-adjustment";
 import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
-import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
-import { type DatabaseError, NotFoundError } from "../errors";
+import { DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
+import { SurchargeService, SurchargeServiceLive } from "./surcharge.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
@@ -40,6 +41,36 @@ export interface BreakEnforcementResult {
 		regulationName: string;
 		originalDurationMinutes: number;
 		adjustedDurationMinutes: number;
+	};
+}
+
+/** The legacy cron's `createdBy`; it names no user, so it triggers nothing. */
+const SYSTEM_CRON_ACTOR = "system-cron";
+
+/** The adapter result of one routed adjustment. */
+export function breakEnforcementResultOf(
+	workPeriodId: string,
+	outcome: AutomaticBreakAdjustmentOutcome,
+): BreakEnforcementResult {
+	if (outcome.kind !== "adjusted") {
+		return {
+			wasAdjusted: false,
+			affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(workPeriodId),
+		};
+	}
+	return {
+		wasAdjusted: true,
+		affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
+			outcome.workPeriodId,
+			outcome.generatedWorkPeriodId,
+		),
+		adjustment: {
+			breakMinutes: outcome.breakMinutes,
+			breakInsertedAt: outcome.breakStartAt,
+			regulationName: outcome.regulationName,
+			originalDurationMinutes: outcome.originalDurationMinutes,
+			adjustedDurationMinutes: outcome.adjustedDurationMinutes,
+		},
 	};
 }
 
@@ -171,76 +202,6 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			});
 
 		/**
-		 * Create a time entry for break enforcement
-		 */
-		const createBreakTimeEntry = (params: {
-			employeeId: string;
-			organizationId: string;
-			type: "clock_in" | "clock_out";
-			timestamp: Date;
-			createdBy: string;
-			timezone: string;
-			notes?: string;
-		}): Effect.Effect<typeof timeEntry.$inferSelect, DatabaseError> =>
-			Effect.gen(function* (_) {
-				// Get previous entry for blockchain linking (scoped to employee + org)
-				const previousEntry = yield* _(
-					dbService.query("getPreviousEntryForBreak", async () => {
-						const [entry] = await dbService.db
-							.select()
-							.from(timeEntry)
-							.where(
-								and(
-									eq(timeEntry.employeeId, params.employeeId),
-									eq(timeEntry.organizationId, params.organizationId),
-								),
-							)
-							.orderBy(desc(timeEntry.createdAt))
-							.limit(1);
-						return entry;
-					}),
-				);
-
-				// Calculate hash
-				const hash = calculateHash({
-					employeeId: params.employeeId,
-					type: params.type,
-					timestamp: params.timestamp.toISOString(),
-					previousHash: previousEntry?.hash || null,
-				});
-
-				// Create time entry
-				const timezoneCapture = resolveFallbackTimezoneCapture({
-					timestamp: params.timestamp,
-					timezone: params.timezone,
-					timezoneSource: "user_setting",
-				});
-				const entry = yield* _(
-					dbService.query("createBreakTimeEntry", async () => {
-						const [newEntry] = await dbService.db
-							.insert(timeEntry)
-							.values({
-								employeeId: params.employeeId,
-								organizationId: params.organizationId,
-								type: params.type,
-								timestamp: params.timestamp,
-								hash,
-								previousHash: previousEntry?.hash || null,
-								ipAddress: "system",
-								deviceInfo: "break-enforcement",
-								createdBy: params.createdBy,
-								notes: params.notes,
-								...timezoneCapture,
-							})
-							.returning();
-						return newEntry;
-					}),
-				);
-
-				return entry;
-			});
-
-		/**
 		 * Internal function to calculate break deficit
 		 * Can be called directly without going through the service interface
 		 */
@@ -290,18 +251,22 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			});
 
 		/**
-		 * Internal function to enforce breaks after clock-out
-		 * Can be called directly without going through the service interface
+		 * The established legacy plan from plain reads: the period, today's breaks and the
+		 * effective policy, with the established placement and arithmetic. Only a legacy
+		 * organization's adjustment uses it; its writes run in the coordinated owner.
 		 */
-		const enforceBreaksAfterClockOutInternal = (
+		const planLegacyBreakEnforcement = (
 			input: EnforceBreaksInput,
-		): Effect.Effect<BreakEnforcementResult, NotFoundError | DatabaseError> =>
+		): Effect.Effect<LegacyBreakPlan | null, NotFoundError | DatabaseError> =>
 			Effect.gen(function* (_) {
-				// Get the work period
 				const period = yield* _(
 					dbService.query("getWorkPeriodForEnforcement", async () => {
 						return await dbService.db.query.workPeriod.findFirst({
-							where: eq(workPeriod.id, input.workPeriodId),
+							where: and(
+								eq(workPeriod.id, input.workPeriodId),
+								eq(workPeriod.organizationId, input.organizationId),
+								eq(workPeriod.employeeId, input.employeeId),
+							),
 						});
 					}),
 				);
@@ -319,13 +284,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				}
 
 				// Skip if already auto-adjusted
-				if (period.wasAutoAdjusted) {
-					return {
-						wasAdjusted: false,
-						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
-							input.workPeriodId,
-						),
-					};
+				if (period.wasAutoAdjusted || !period.endTime || !period.clockOutId) {
+					return null;
 				}
 
 				// Calculate breaks taken today
@@ -349,12 +309,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					!deficitResult.regulationId ||
 					!deficitResult.regulationName
 				) {
-					return {
-						wasAdjusted: false,
-						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
-							input.workPeriodId,
-						),
-					};
+					return null;
 				}
 
 				// Determine where to insert the break
@@ -369,14 +324,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 				// Calculate break insertion point
 				const startDT = dateFromDB(period.startTime);
-				if (!startDT || !period.endTime) {
-					return {
-						wasAdjusted: false,
-						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
-							input.workPeriodId,
-						),
-					};
-				}
+				if (!startDT) return null;
 
 				const breakStartDT = startDT.plus({ minutes: insertAfterMinutes });
 				const breakEndDT = breakStartDT.plus({
@@ -385,146 +333,92 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				const breakStartDate = dateToDB(breakStartDT);
 				const breakEndDate = dateToDB(breakEndDT);
 
-				if (!breakStartDate || !breakEndDate) {
-					return {
-						wasAdjusted: false,
-						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
-							input.workPeriodId,
-						),
-					};
-				}
+				if (!breakStartDate || !breakEndDate) return null;
 
 				// Validate break times are within the work period
 				if (
 					breakStartDate <= period.startTime ||
 					breakEndDate >= period.endTime
 				) {
-					return {
-						wasAdjusted: false,
-						affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
-							input.workPeriodId,
-						),
-					};
+					return null;
 				}
 
-				// Store original values for audit trail
-				const originalEndTime = period.endTime;
 				const originalDurationMinutes =
 					period.durationMinutes || input.sessionDurationMinutes;
 
-				// Create clock-out entry for first period at break start
-				const firstClockOut = yield* _(
-					createBreakTimeEntry({
-						employeeId: input.employeeId,
-						organizationId: input.organizationId,
-						type: "clock_out",
-						timestamp: breakStartDate,
-						createdBy: input.createdBy,
-						timezone: input.timezone,
-						notes: "Auto-adjusted: break enforcement",
-					}),
-				);
-
-				// Create clock-in entry for second period at break end
-				const secondClockIn = yield* _(
-					createBreakTimeEntry({
-						employeeId: input.employeeId,
-						organizationId: input.organizationId,
-						type: "clock_in",
-						timestamp: breakEndDate,
-						createdBy: input.createdBy,
-						timezone: input.timezone,
-						notes: "Auto-adjusted: break enforcement",
-					}),
-				);
-
 				// Calculate new durations
-				const firstDurationMs =
-					breakStartDate.getTime() - period.startTime.getTime();
-				const firstDurationMinutes = Math.floor(firstDurationMs / 60000);
-
-				const secondDurationMs =
-					period.endTime.getTime() - breakEndDate.getTime();
-				const secondDurationMinutes = Math.floor(secondDurationMs / 60000);
-
-				// Build auto-adjustment reason
-				const adjustmentReason: WorkPeriodAutoAdjustmentReason = {
-					type: "break_enforcement",
-					regulationId: deficitResult.regulationId,
-					regulationName: deficitResult.regulationName,
-					breakInsertedMinutes: deficitResult.deficit,
-					breakInsertedAt: breakStartDate.toISOString(),
-					originalDurationMinutes,
-					adjustedDurationMinutes: firstDurationMinutes + secondDurationMinutes,
-					ruleApplied: deficitResult.applicableRule,
-				};
-
-				// Update the original work period to end at break start
-				yield* _(
-					dbService.query("updateFirstWorkPeriod", async () => {
-						await dbService.db
-							.update(workPeriod)
-							.set({
-								clockOutId: firstClockOut.id,
-								endTime: breakStartDate,
-								durationMinutes: firstDurationMinutes,
-								wasAutoAdjusted: true,
-								autoAdjustmentReason: adjustmentReason,
-								autoAdjustedAt: new Date(),
-								originalEndTime: originalEndTime,
-								originalDurationMinutes: originalDurationMinutes,
-								updatedAt: new Date(),
-							})
-							.where(eq(workPeriod.id, period.id));
-					}),
+				const firstDurationMinutes = Math.floor(
+					(breakStartDate.getTime() - period.startTime.getTime()) / 60000,
 				);
-
-				// Create a new work period for the second segment
-				const insertedPeriodId = yield* _(
-					dbService.query("createSecondWorkPeriod", async () => {
-						const [insertedPeriod] = await dbService.db
-							.insert(workPeriod)
-							.values({
-								employeeId: input.employeeId,
-								organizationId: input.organizationId,
-								clockInId: secondClockIn.id,
-								clockOutId: period.clockOutId,
-								startTime: breakEndDate,
-								endTime: period.endTime,
-								durationMinutes: secondDurationMinutes,
-								projectId: period.projectId,
-								isActive: false,
-								wasAutoAdjusted: true,
-								autoAdjustmentReason: adjustmentReason,
-								autoAdjustedAt: new Date(),
-								originalEndTime: null, // Only first period has original values
-								originalDurationMinutes: null,
-							})
-							.returning({ id: workPeriod.id });
-						if (!insertedPeriod) {
-							throw new Error(
-								"Break enforcement did not create a second work period",
-							);
-						}
-						return insertedPeriod.id;
-					}),
+				const secondDurationMinutes = Math.floor(
+					(period.endTime.getTime() - breakEndDate.getTime()) / 60000,
 				);
 
 				return {
-					wasAdjusted: true,
-					affectedWorkPeriodIds: resolveAffectedWorkPeriodIds(
-						input.workPeriodId,
-						insertedPeriodId,
-					),
-					adjustment: {
-						breakMinutes: deficitResult.deficit,
-						breakInsertedAt: breakStartDate.toISOString(),
-						regulationName: deficitResult.regulationName,
-						originalDurationMinutes,
-						adjustedDurationMinutes:
-							firstDurationMinutes + secondDurationMinutes,
+					expected: {
+						clockInId: period.clockInId,
+						clockOutId: period.clockOutId,
+						startTime: period.startTime,
+						endTime: period.endTime,
+						durationMinutes: period.durationMinutes,
 					},
-				};
+					breakStart: breakStartDate,
+					breakEnd: breakEndDate,
+					timezone: input.timezone,
+					firstDurationMinutes,
+					secondDurationMinutes,
+					reason: {
+						type: "break_enforcement",
+						regulationId: deficitResult.regulationId,
+						regulationName: deficitResult.regulationName,
+						breakInsertedMinutes: deficitResult.deficit,
+						breakInsertedAt: breakStartDate.toISOString(),
+						originalDurationMinutes,
+						adjustedDurationMinutes: firstDurationMinutes + secondDurationMinutes,
+						ruleApplied: deficitResult.applicableRule,
+					},
+				} satisfies LegacyBreakPlan;
+			});
+
+		/**
+		 * Enforces breaks after a clock-out through the one automatic adjustment owner
+		 * (#305): adopted organizations run the completed-work operation and keep a
+		 * durable intent while review blocks it; legacy organizations run the established
+		 * plan with atomic, coordinated writes. A committed closure is never undone.
+		 */
+		const enforceBreaksAfterClockOutInternal = (
+			input: EnforceBreaksInput,
+		): Effect.Effect<BreakEnforcementResult, NotFoundError | DatabaseError> =>
+			Effect.gen(function* (_) {
+				const outcome = yield* _(
+					Effect.tryPromise({
+						try: () =>
+							runAutomaticBreakAdjustment({
+								organizationId: input.organizationId,
+								employeeId: input.employeeId,
+								workPeriodId: input.workPeriodId,
+								trigger: {
+									userId:
+										input.createdBy === SYSTEM_CRON_ACTOR ? null : input.createdBy,
+									closureEntryId: null,
+								},
+								planLegacy: () =>
+									Effect.runPromise(planLegacyBreakEnforcement(input)),
+							}),
+						catch: (cause) =>
+							cause instanceof NotFoundError
+								? cause
+								: new DatabaseError({
+										message:
+											cause instanceof Error
+												? cause.message
+												: "Automatic break adjustment failed",
+										operation: "adjustAutomaticBreak",
+										cause,
+									}),
+					}),
+				);
+				return breakEnforcementResultOf(input.workPeriodId, outcome);
 			});
 
 		return BreakEnforcementService.of({
@@ -555,7 +449,13 @@ export const BreakEnforcementServiceLive = Layer.effect(
 							// We'll filter by organization when processing each period
 
 							return await dbService.db.query.workPeriod.findMany({
-								where: and(...conditions),
+								where: (period) =>
+									and(
+										...conditions,
+										// Adopted organizations commit a durable intent with every
+										// ordinary closure; `processAutomaticBreakIntents` owns them.
+										sql`not exists (select 1 from time_entry_append_control control where control.organization_id = ${period.organizationId} and control.mode = 'active')`,
+									),
 								with: {
 									employee: {
 										columns: {
@@ -585,7 +485,7 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						// Filter by organization if specified
 						if (
 							input.organizationId &&
-							period.employee?.organizationId !== input.organizationId
+							period.organizationId !== input.organizationId
 						) {
 							continue;
 						}
@@ -594,11 +494,11 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 						const enforcementResultEffect = enforceBreaksAfterClockOutInternal({
 							employeeId: period.employeeId,
-							organizationId: period.employee?.organizationId || "",
+							organizationId: period.organizationId,
 							workPeriodId: period.id,
 							sessionDurationMinutes: period.durationMinutes || 0,
 							timezone: period.employee?.userSettings?.timezone || "UTC",
-							createdBy: "system-cron",
+							createdBy: SYSTEM_CRON_ACTOR,
 						});
 
 						const enforcementResult = yield* _(
@@ -656,8 +556,34 @@ export async function runBreakEnforcementCheck(options?: {
 }): Promise<{
 	processedCount: number;
 	adjustedCount: number;
+	/** Intents still held by unresolved review or another blocker. */
+	deferredCount: number;
 	errors: Array<{ workPeriodId: string; error: string }>;
 }> {
+	// Committed intents first, whatever the work's date: deferred adjustments recover
+	// here once their review resolves, and lost immediate runs are retried.
+	const recovered = await processAutomaticBreakIntents({
+		organizationId: options?.organizationId,
+		afterAdjusted: async (outcome, target) => {
+			if (!outcome.surchargeSnapshot) return;
+			const snapshot = outcome.surchargeSnapshot;
+			await Effect.runPromise(
+				Effect.gen(function* (_) {
+					const surchargeService = yield* _(SurchargeService);
+					yield* _(
+						surchargeService.reconcileWorkPeriods({
+							organizationId: target.organizationId,
+							employeeId: target.employeeId,
+							surchargePeriodIds: [outcome.workPeriodId, outcome.generatedWorkPeriodId],
+							staleSurchargePeriodIds: [],
+							surchargeSnapshot: snapshot,
+						}),
+					);
+				}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive)),
+			);
+		},
+	});
+
 	const effect = Effect.gen(function* (_) {
 		const breakService = yield* _(BreakEnforcementService);
 
@@ -673,7 +599,13 @@ export async function runBreakEnforcementCheck(options?: {
 		Effect.provide(DatabaseServiceLive),
 	);
 
-	return Effect.runPromise(effect);
+	const daily = await Effect.runPromise(effect);
+	return {
+		processedCount: recovered.processed + daily.processedCount,
+		adjustedCount: recovered.adjusted + daily.adjustedCount,
+		deferredCount: recovered.deferred,
+		errors: [...recovered.errors, ...daily.errors],
+	};
 }
 
 // ============================================

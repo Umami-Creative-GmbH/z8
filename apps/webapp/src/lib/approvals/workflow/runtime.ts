@@ -15,9 +15,22 @@ import {
 	createOrdinaryWorkPeriodApprovalAdapter,
 	type OrdinaryWorkPeriodApprovalAdapterDependencies,
 } from "../domain-adapters/work-period.adapter";
+import {
+	preflightCanonicalTimeCorrectionDecisionEvidence,
+	recordCanonicalTimeCorrectionDecisionEvidence,
+} from "../evidence/time-correction-evidence";
+import {
+	preflightCanonicalWorkPeriodDecisionEvidence,
+	recordCanonicalWorkPeriodDecisionEvidence,
+} from "../evidence/work-period-evidence";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
-import { APPROVAL_ESCALATION_SYSTEM_ID } from "./ports";
+import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
+import {
+	APPROVAL_ESCALATION_SYSTEM_ID,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	isOffboardingHandoverPrincipal,
+} from "./ports";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalMaterializedTransitionPlan,
@@ -96,7 +109,8 @@ export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandAct
 				if (
 					input.principal.systemId !== "approval-expiry" &&
 					input.principal.systemId !== "approval-activation" &&
-					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID
+					input.principal.systemId !== APPROVAL_ESCALATION_SYSTEM_ID &&
+					input.principal.systemId !== EMPLOYEE_OFFBOARDING_SYSTEM_ID
 				) {
 					return runtimeFailure("unknown system actor");
 				}
@@ -156,6 +170,11 @@ export function createApprovalWorkflowAuthorization(input: {
 		workflow: import("./ports").ApprovalWorkflowSnapshot;
 		command: import("./state-machine").ApprovalWorkflowCommand;
 	}) => Promise<boolean>;
+	/** Verifies departure-handover evidence; required to admit that principal. */
+	offboardingAuthority?: Pick<
+		ReturnType<typeof createOffboardingReassignmentAuthority>,
+		"authorize"
+	>;
 }): ApprovalWorkflowAuthorization {
 	return {
 		async authorize(request) {
@@ -176,6 +195,23 @@ export function createApprovalWorkflowAuthorization(input: {
 				)
 			) {
 				return runtimeFailure("authorization scope mismatch");
+			}
+			if (
+				request.principal &&
+				isOffboardingHandoverPrincipal(request.principal)
+			) {
+				// Evidence-bearing; never the generic system grant.
+				if (!input.offboardingAuthority) {
+					return runtimeFailure("offboarding authority unavailable");
+				}
+				return input.offboardingAuthority.authorize({
+					dbService: request.dbService,
+					organizationId: request.organizationId,
+					workflow,
+					principal: request.principal,
+					command,
+					replay: request.replay ?? null,
+				});
 			}
 			if (request.actor.kind === "system") return "system";
 			if (
@@ -428,6 +464,7 @@ export function createApprovalWorkflowRuntime(_input: {
 		actorResolver: createDatabaseApprovalCommandActorResolver(),
 		authorization: createApprovalWorkflowAuthorization({
 			canManageApproval: _input.canManageApproval,
+			offboardingAuthority: createOffboardingReassignmentAuthority({ clock }),
 		}),
 		sourceLoader: createRegistryApprovalSourceLoader(_input.adapterRegistry),
 		resultBuilder: createApprovalTransitionResultBuilder(),
@@ -451,20 +488,57 @@ export function createProductionApprovalWorkflowRuntime(input: {
 	repository: ApprovalWorkflowRepository;
 	transitionEngine: ApprovalTransitionEngine;
 } {
+	// Production decisions participate in manual/policy clock-out evidence
+	// (#302); an explicit null opts a caller out.
+	const ordinaryWorkPeriod: OrdinaryWorkPeriodApprovalAdapterDependencies = {
+		...input.adapters.ordinaryWorkPeriod,
+		evidence:
+			input.adapters.ordinaryWorkPeriod.evidence === undefined
+				? {
+						preflight: (dbService, evidenceInput) =>
+							preflightCanonicalWorkPeriodDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+						record: (dbService, evidenceInput) =>
+							recordCanonicalWorkPeriodDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+					}
+				: input.adapters.ordinaryWorkPeriod.evidence,
+	};
+	// Production decisions also participate in time correction evidence (#301).
+	const timeCorrection: TimeCorrectionApprovalAdapterDependencies = {
+		...input.adapters.timeCorrection,
+		evidence:
+			input.adapters.timeCorrection.evidence === undefined
+				? {
+						preflight: (dbService, evidenceInput) =>
+							preflightCanonicalTimeCorrectionDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+						record: (dbService, evidenceInput) =>
+							recordCanonicalTimeCorrectionDecisionEvidence(
+								dbService.db as never,
+								evidenceInput,
+							),
+					}
+				: input.adapters.timeCorrection.evidence,
+	};
 	return createApprovalWorkflowRuntime({
 		db: input.db,
 		adapterRegistry: createProductionApprovalDomainAdapterRegistry({
 			absence: createAbsenceApprovalAdapter(input.adapters.absence),
-			timeCorrection: createTimeCorrectionApprovalAdapter(
-				input.adapters.timeCorrection,
-			),
+			timeCorrection: createTimeCorrectionApprovalAdapter(timeCorrection),
 			manualTimeSubmission: createOrdinaryWorkPeriodApprovalAdapter(
 				"manual_time_submission",
-				input.adapters.ordinaryWorkPeriod,
+				ordinaryWorkPeriod,
 			),
 			policyClockOut: createOrdinaryWorkPeriodApprovalAdapter(
 				"policy_clock_out",
-				input.adapters.ordinaryWorkPeriod,
+				ordinaryWorkPeriod,
 			),
 		}),
 		canManageApproval: input.canManageApproval,

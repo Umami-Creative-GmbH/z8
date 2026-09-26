@@ -8,7 +8,56 @@
       "historicalApproval": "Dini früeher erfassti Genehmigung isch verifiziert worde. Das isch es früehers Resultat; es isch kei neue Entscheid troffe worde. Meh Details findsch bim Aatrag in Z8.",
       "historicalRejection": "Dini früeher erfassti Ablehnig isch verifiziert worde. Das isch es früehers Resultat; es isch kei neue Entscheid troffe worde. Meh Details findsch bim Aatrag in Z8.",
       "unboundCallback": "Die Charte cha d’ursprünglich prüefte Agabe nöd belege. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
-      "alreadyProcessed": "Die Freigab isch bereits bearbeitet worde."
+      "alreadyProcessed": "Die Freigab isch bereits bearbeitet worde.",
+      "boundReviewRequired": "Die Charte passt nüme zum aktuelle Aatrag oder zur aktuelle Zuewiisig, oder d’Aktion het nöd chöne verifiziert werde. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
+      "invocationConflict": "De Tastedruck isch scho mit ere andere Aktion erfasst worde. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
+      "outcomeUnknown": "S Resultat vo däm Tastedruck het nöd chöne bestätigt wärde. Prüefed Sie de Antrag in Z8, bevor Sie nomal drucked.",
+      "card": {
+        "absenceTitle": "Abwäseheitsaatrag zur Genehmigung",
+        "boundHint": "Genehmige oder Ablehne entscheidet genau über de Aatrag obe. Isch er gänderet oder neu zuegwise worde, wird nüt entschide und du wirsch bitte, ihn in Z8 z’prüefe.",
+        "reviewOnlyHint": "Genehmig oder lehn dä Aatrag in Z8 ab. Über die Nachricht chan er nöd entschide werde.",
+        "approve": "Genehmige",
+        "reject": "Ablehne",
+        "unavailable": "Nöd verfüegbar",
+        "employee": "Mitarbeiter",
+        "requestedBy": "Beaatreit vo",
+        "submittedBy": "Iigreicht vo",
+        "category": "Kategorie",
+        "currentCategoryName": "Aktuelle Kategoriename",
+        "dates": "Zitruum",
+        "coverage": "Umfang",
+        "submittedAt": "Iigreicht",
+        "fullDays": "Ganzi Täg",
+        "fullDay": "ganztags",
+        "morning": "am Morge",
+        "afternoon": "am Namittag",
+        "halfDayPeriods": "Fangt {start} aa, hört {end} uf",
+        "explicitTimes": "{start} – {end} (Ortsziit, Ziitzone nöd erfasst)",
+        "explicitTimesOvernight": "{start} – {end} am nächschte Tag (Ortsziit, Ziitzone nöd erfasst)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Aatrag genehmigt",
+        "requestRejectedTitle": "Aatrag abglehnt",
+        "stepApprovedTitle": "Genehmigung erfasst",
+        "requestApproved": "Genehmigt vo {actor} am {time}. De Aatrag isch genehmigt.",
+        "requestRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch abglehnt.",
+        "stepApproved": "Genehmigt vo {actor} am {time}. De Aatrag wartet no uf wiiteri Genehmigunge.",
+        "replayed": "De Tastedruck isch scho erfasst worde; das isch sis ursprünglichs Ergebnis, es isch nüt Neus entschide worde.",
+        "stepRejectedTitle": "Ablehnig erfasst",
+        "stepRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch no nöd abgschlosse; prüef sin aktuelle Status in Z8.",
+        "recordedTitle": "Entscheid erfasst",
+        "recorded": "Erfasst vo {actor} am {time}. Prüef de aktuelle Status vom Aatrag in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Aatrag zruggzoge",
+        "withdrawn": "De Aatrag isch zruggzoge worde. Über die Charte bruchts kei Entscheid meh.",
+        "reassignedTitle": "Neu zuegwise",
+        "reassigned": "Die Gnehmigung isch öpper anderem zuegwise worde. Über die Charte bruchts kei Entscheid meh vo dir, und da isch nüt entschide worde. Lueg de aktuell Stand in Z8 aa.",
+        "inactiveTitle": "Nüm entscheidbar",
+        "inactive": "De Aatrag bruucht über die Charte kei Entscheid meh vo dir. Da isch nüt entschide worde. Lueg de aktuell Stand in Z8 aa.",
+        "currentApproved": "Aktuelle Stand vom Aatrag: gnehmigt.",
+        "currentRejected": "Aktuelle Stand vom Aatrag: abglehnt."
+      }
     },
     "cmd": {
       "billingRequired": "D'Abrechnig isch erforderlich, zum d'Ziiterfassig wiiter z'nutze. Bitt en Organisations-Admin, d'Abrechnig z'aktualisiere.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "Du bisch sit {time} am Schaffe ({hours}h {minutes}m).",
+        "alreadyInNow": "Sie sind scho igstämplet.",
+        "appendReview": "Ihre Ziitverlauf muess prüeft wärde, bevor Sie chönd istämple. Bitte wändet Sie sich a Ihre Administrator.",
         "cannotNow": "Cha momentan nöd iistemple.",
+        "committed": "Igstämplet.",
+        "failed": "Istämple het nöd klappt. Bitte versueched Sie's nomal.",
         "noProfile": "Mitarbeiterprofil nöd gfunde.",
-        "success": "Iigestemplet am {time}."
+        "success": "Iigestemplet am {time}.",
+        "unconfirmed": "Ihres Istämple het nöd chönne bestätigt wärde. Prüefed Sie Ihre Status, bevor Sie's nomal versueched."
       },
       "clockout": {
+        "appendReview": "Ihre Ziitverlauf muess prüeft wärde, bevor Sie chönd usstämple. Bitte wändet Sie sich a Ihre Administrator.",
         "cannotNow": "Cha momentan nöd uusstemple.",
+        "committed": "Usgstämplet.",
+        "failed": "Usstämple het nöd klappt. Bitte versueched Sie's nomal.",
         "noProfile": "Mitarbeiterprofil nöd gfunde.",
         "notClockedIn": "Du bisch aktuell nöd iigestemplet.",
-        "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht überprüft werden. Bitte versuche es erneut.",
         "success": "Uusgestemplet am {time}. Duur: {hours}h {minutes}m.",
-        "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
+        "successAt": "Usgstämplet um {time}.",
+        "unconfirmed": "Ihres Usstämple het nöd chönne bestätigt wärde. Prüefed Sie Ihre Status, bevor Sie's nomal versueched."
       },
       "compliance": {
         "error": "Compliance-Date chönd nöd abgruefe werde. Bitte versuechs spöter no einisch.",
@@ -95,7 +152,8 @@
       "typeHelp": "Gib /help ii, zum d'Befehl z'gseh.",
       "unconfigured": "D'Z8-Integration vo dinere Organisation wird grad iigrichtet. Bitte wart, bis din Admin d'Konfiguration abschliesst.",
       "welcome": "Willkomme bi Z8! Zum dis Konto z'verbinde, gang in dim Z8-Dashboard uf Iistellige > Integratione > Telegram und generier en Link-Code. Schick dänn: /link DEIN_CODE",
-      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh."
+      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh.",
+      "replyUndelivered": "Ihre Befehl isch verarbeitet worde, aber d'Antwort het nöd chönne azeigt wärde. Prüefed Sie Ihre Status, bevor Sie ihn wiederholed."
     }
   }
 }

@@ -29,6 +29,10 @@ const modularMutationsSource = readFileSync(
 	fileURLToPath(new URL("./mutations.ts", import.meta.url)),
 	"utf8",
 );
+const splitSource = readFileSync(
+	fileURLToPath(new URL("./work-period-split.ts", import.meta.url)),
+	"utf8",
+);
 const legacySource = readFileSync(
 	fileURLToPath(new URL("../actions.ts", import.meta.url)),
 	"utf8",
@@ -344,7 +348,7 @@ describe("time correction request safety", () => {
 	it("applies direct same-day corrections through the shared locked service in one transaction", () => {
 		const body = functionBody(modularSource, "editSameDayTimeEntry");
 
-		expect(body).toContain("db.transaction");
+		expect(body).toContain("withCompletedWorkTransaction");
 		expect(body).toContain("canonicalTimeEntryClient.createCorrectionEntry");
 		expect(body).toContain("workPeriodId: selectedWorkPeriod.id");
 		expect(body).toContain("tx,");
@@ -363,11 +367,8 @@ describe("time correction request safety", () => {
 
 	it.each([
 		["legacy notes", legacySource, "updateWorkPeriodNotes"],
-		["legacy split", legacySource, "splitWorkPeriod"],
 		["legacy project", legacySource, "updateWorkPeriodProject"],
 		["modular notes", modularMutationsSource, "updateWorkPeriodNotes"],
-		["modular split", modularMutationsSource, "splitWorkPeriod"],
-		["modular project", modularMutationsSource, "updateWorkPeriodProject"],
 	])(
 		"excludes deleted work periods from %s calendar mutations",
 		(_name, source, functionName) => {
@@ -376,6 +377,24 @@ describe("time correction request safety", () => {
 			expect(body).toContain("isNull(workPeriod.deletedAt)");
 		},
 	);
+
+	it("keeps one split mutation: both calendar entry points delegate to the coordinated split", () => {
+		for (const source of [legacySource, modularMutationsSource]) {
+			const body = functionBody(source, "splitWorkPeriod");
+			expect(body).toContain("return splitOwnWorkPeriod({");
+			expect(body).not.toContain("createTimeEntry(");
+		}
+		expect(functionBody(splitSource, "splitOwnWorkPeriod")).toContain(
+			"isNull(workPeriod.deletedAt)",
+		);
+	});
+
+	it("keeps one project mutation: the modular export delegates to the calendar action", () => {
+		const body = functionBody(modularMutationsSource, "updateWorkPeriodProject");
+
+		expect(body).toContain("updateWorkPeriodProjectAction(workPeriodId, projectId)");
+		expect(body).not.toContain(".update(workPeriod)");
+	});
 
 	it("creates deterministic inactive rows before invoking the shared boundary in the repository transaction", () => {
 		const transactionBody = functionBody(modularSource, "submitCorrection");

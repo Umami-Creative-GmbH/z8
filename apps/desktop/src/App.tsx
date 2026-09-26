@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import {
   IconSettings,
   IconWifiOff,
@@ -26,7 +27,15 @@ import { useWorkLocation } from "./hooks/useWorkLocation";
 import type { ClockCommandOutcome } from "./types";
 
 function showClockOutcome(result: ClockCommandOutcome, successMessage: string) {
-  if (result.outcome === "retainedForReview") {
+  if (result.outcome === "savedOnDevice") {
+    toast.info("Clock action saved on this device", {
+      description: "It is sent unchanged as soon as the server can accept it.",
+    });
+  } else if (result.outcome === "needsReview") {
+    toast.warning("Clock action needs review", {
+      description: "The server did not save it. The action stays on this device; check your time entries in Z8.",
+    });
+  } else if (result.outcome === "retainedForReview") {
     toast.warning("Clock outcome needs review", {
       description: "The local record was retained. Check your time entries in Z8 before recording replacement work.",
     });
@@ -91,7 +100,7 @@ function AppContent() {
   } = useOrganizations();
   const {
     isClockedIn,
-    activeWorkPeriod,
+    startTime,
     clockIn,
     clockOut,
     clockOutWithBreak,
@@ -99,11 +108,16 @@ function AppContent() {
     isClockingOut,
     isError,
     canClock,
+    canRecordBreak,
     isStatusCurrent,
     needsStatusRefresh,
     actionError,
-    recovery,
-    recoveryError,
+    journal,
+    journalError,
+    retrySavedCommand,
+    archiveSavedCommand,
+    isUpdatingSavedCommand,
+    savedCommandError,
     refetch,
   } = useClock({
     enabled: isAuthenticated,
@@ -128,12 +142,12 @@ function AppContent() {
   };
 
   const handleIdleBreak = async () => {
-    if (!idleEvent || !canClock || isSwitching) return;
+    if (!idleEvent || !canRecordBreak || isSwitching) return;
 
     setIsProcessingIdle(true);
     try {
       const handled = await presentClockAction(() => clockOutWithBreak({
-        breakStartTime: idleEvent.idleStartTime,
+        breakId: idleEvent.id,
         workLocationType,
       }), "Break recorded, clocked back in");
       if (handled) dismissIdle();
@@ -143,6 +157,7 @@ function AppContent() {
   };
 
   const handleIdleResume = () => {
+    if (idleEvent) void invoke("dismiss_idle_break", { breakId: idleEvent.id });
     dismissIdle();
     toast.info("Continuing work session");
   };
@@ -225,18 +240,22 @@ function AppContent() {
         )}
         <ClockButton
           isClockedIn={isClockedIn}
-          startTime={activeWorkPeriod?.startTime ?? null}
+          startTime={startTime}
           onClockIn={handleClockIn}
           onClockOut={handleClockOut}
           isLoading={isClockBusy}
           disabled={!canClock || isSwitching}
         />
         <ClockRecoveryNotice
-          recovery={recovery}
-          recoveryError={recoveryError}
+          journal={journal}
+          journalError={journalError}
           actionError={actionError}
+          savedCommandError={savedCommandError}
           needsStatusRefresh={needsStatusRefresh}
           onRefresh={refetch}
+          onRetry={retrySavedCommand}
+          onArchive={archiveSavedCommand}
+          isUpdating={isUpdatingSavedCommand}
         />
       </main>
 
@@ -247,7 +266,7 @@ function AppContent() {
 
       {/* Idle Dialog */}
       <IdleDialog
-        isOpen={isIdleDialogOpen && canClock && !isSwitching}
+        isOpen={isIdleDialogOpen && canRecordBreak && !isSwitching}
         idleEvent={idleEvent}
         onBreak={handleIdleBreak}
         onResume={handleIdleResume}

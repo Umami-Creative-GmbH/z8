@@ -23,6 +23,10 @@ const checks: Array<{ file: string; patterns: RegExp[] }> = [
 		patterns: [/aria-label="Upload organization logo"/, />Edit</, /\? "member" : "members"/],
 	},
 	{
+		file: "src/components/settings/project-management.tsx",
+		patterns: [/\? "member" : "members"/],
+	},
+	{
 		file: "src/components/organization/team-card.tsx",
 		patterns: [/>Manage Members</, />Fallback manager</, /: "Not assigned"/],
 	},

@@ -19,8 +19,8 @@ const { findFirst, insertValues, onConflictDoNothing, returning, select, selectF
 		selectWhere: vi.fn(),
 	}));
 
-vi.mock("@/db", () => ({
-	db: {
+vi.mock("@/db", () => {
+	const db = {
 		query: {
 			subscription: {
 				findFirst,
@@ -30,8 +30,12 @@ vi.mock("@/db", () => ({
 			values: insertValues,
 		})),
 		select,
-	},
-}));
+		// Trial provisioning runs in its own transaction under configuration protection.
+		execute: vi.fn(async () => undefined),
+		transaction: vi.fn(async (callback: (transaction: unknown) => unknown) => callback(db)),
+	};
+	return { db };
+});
 
 const { countBillableSeats } = vi.hoisted(() => ({ countBillableSeats: vi.fn() }));
 

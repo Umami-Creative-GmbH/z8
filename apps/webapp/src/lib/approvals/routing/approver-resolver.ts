@@ -3,6 +3,8 @@ import {
 	type EligibleManagerLink,
 	type EligibleTeam,
 	type EligibleTeamMembership,
+	type RequesterEligibilityMode,
+	requesterMayBeResolved,
 	resolveDirectEligibleManagers,
 	resolveEligibleManagers,
 	resolvePrimaryEligibleManager,
@@ -20,6 +22,8 @@ export interface ApprovalStageReviewerDirectory {
 	managerLinks: EligibleManagerLink[];
 	teamMemberships: EligibleTeamMembership[];
 	teams: EligibleTeam[];
+	/** Replacements captured by effective departures, keyed by departed employee. */
+	departureReplacements?: Array<{ employeeId: string; replacementEmployeeId: string }>;
 }
 
 export type ApprovalStageReviewerResolution =
@@ -65,6 +69,42 @@ function activeOrganizationAdminIds(
 	);
 }
 
+/**
+ * An explicit approver who has departed is replaced by the replacement their
+ * effective departure captured, if that person is active and is not the
+ * requester (which would silently auto-approve). Otherwise the stage has no
+ * primary candidate and its configured fallback decides, visibly failing
+ * with `fail` rather than waiting on a departed person.
+ */
+function specificApproverIds(
+	directory: ApprovalStageReviewerDirectory,
+	context: ApprovalRoutingContext,
+	approverEmployeeId: string | undefined,
+): string[] {
+	if (!approverEmployeeId) return [];
+	if (
+		activeEmployeeInOrganization(
+			directory.employees,
+			context.organizationId,
+			approverEmployeeId,
+		)
+	) {
+		return [approverEmployeeId];
+	}
+	const replacementId = directory.departureReplacements?.find(
+		(replacement) => replacement.employeeId === approverEmployeeId,
+	)?.replacementEmployeeId;
+	return replacementId &&
+		replacementId !== context.requesterEmployeeId &&
+		activeEmployeeInOrganization(
+			directory.employees,
+			context.organizationId,
+			replacementId,
+		)
+		? [replacementId]
+		: [];
+}
+
 function resolveDisposition(
 	candidateIds: string[],
 	context: ApprovalRoutingContext,
@@ -93,10 +133,13 @@ export function resolveApprovalStageReviewers({
 	context,
 	stage,
 	directory,
+	requesterMode = "new_submission",
 }: {
 	context: ApprovalRoutingContext;
 	stage: ApprovalStageResolverSnapshot;
 	directory: ApprovalStageReviewerDirectory;
+	/** `existing_workflow` only for a stage of an already persisted workflow. */
+	requesterMode?: RequesterEligibilityMode;
 }): ApprovalStageReviewerResolution {
 	if (
 		stage.approverType !== "direct_manager" &&
@@ -132,21 +175,25 @@ export function resolveApprovalStageReviewers({
 		);
 	}
 
-	const requesterIsActive = Boolean(
-		activeEmployeeInOrganization(
-			directory.employees,
-			context.organizationId,
-			context.requesterEmployeeId,
-		),
+	const requester = directory.employees.find(
+		(employee) =>
+			employee.id === context.requesterEmployeeId &&
+			employee.organizationId === context.organizationId,
 	);
+	const requesterResolvable = requesterMayBeResolved({
+		requesterExistsInOrganization: requester !== undefined,
+		requesterIsActive: requester?.isActive === true,
+		mode: requesterMode,
+	});
 
 	const managerInput = {
 		...directory,
 		organizationId: context.organizationId,
 		requesterEmployeeId: context.requesterEmployeeId,
+		requesterMode,
 	};
 
-	const primaryCandidateIds = requesterIsActive
+	const primaryCandidateIds = requesterResolvable
 		? (() => {
 				switch (stage.approverType) {
 					case "direct_manager": {
@@ -159,9 +206,11 @@ export function resolveApprovalStageReviewers({
 							return [];
 						}
 
+						// The intermediate manager is a current approver, never historical.
 						const result = resolveDirectEligibleManagers({
 							...managerInput,
 							requesterEmployeeId: primary.managerId,
+							requesterMode: "new_submission",
 						});
 						return result.ok ? result.managerIds : [];
 					}
@@ -171,14 +220,11 @@ export function resolveApprovalStageReviewers({
 							context.organizationId,
 						);
 					case "specific_employee":
-						return stage.approverEmployeeId &&
-							activeEmployeeInOrganization(
-								directory.employees,
-								context.organizationId,
-								stage.approverEmployeeId,
-							)
-							? [stage.approverEmployeeId]
-							: [];
+						return specificApproverIds(
+							directory,
+							context,
+							stage.approverEmployeeId,
+						);
 				}
 			})()
 		: [];

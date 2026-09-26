@@ -2,11 +2,8 @@ import { eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-	getAbsenceCategories,
-	getAbsenceEntries,
-	getVacationBalance,
-} from "@/app/[locale]/(app)/absences/actions";
+import { getAbsenceEntries, getVacationBalance } from "@/app/[locale]/(app)/absences/actions";
+import { getAbsenceCategories } from "@/app/[locale]/(app)/absences/queries";
 import { requestAbsenceForEmployeeEffect } from "@/app/[locale]/(app)/absences/request-absence-effect";
 import {
 	MobileApiError,

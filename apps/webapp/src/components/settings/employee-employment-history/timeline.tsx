@@ -11,6 +11,7 @@ import {
 	formatCurrency,
 	formatDate,
 	formatWeeklyHours,
+	groupHistoryByEmployment,
 	isCurrentConfirmed,
 } from "./utils";
 
@@ -92,6 +93,7 @@ export function EmploymentHistoryTimeline({
 	t: Translate;
 	policyNameById: Map<string, string>;
 }) {
+	const stints = groupHistoryByEmployment(history);
 	return (
 		<div className="space-y-3">
 			<div className="text-sm font-medium">
@@ -103,23 +105,60 @@ export function EmploymentHistoryTimeline({
 				</div>
 			) : (
 				<div className="space-y-3">
-					{history.map((entry) => (
-						<TimelineRow
-							key={entry.id}
-							entry={entry}
-							canManage={canManage}
-							isMutating={isMutating}
-							now={now}
-							onConfirm={onConfirm}
-							onCancel={onCancel}
-							t={t}
-							policyNameById={policyNameById}
-						/>
+					{stints.map((stint) => (
+						<section
+							key={stint.period?.id ?? "unknown"}
+							className="space-y-3"
+							aria-label={stints.length > 1 ? stintLabel(stint, t) : undefined}
+						>
+							{stints.length > 1 && (
+								<div className="text-sm font-medium text-muted-foreground">
+									{stintLabel(stint, t)}
+								</div>
+							)}
+							{stint.entries.map((entry) => (
+								<TimelineRow
+									key={entry.id}
+									entry={entry}
+									canManage={canManage}
+									isMutating={isMutating}
+									now={now}
+									onConfirm={onConfirm}
+									onCancel={onCancel}
+									t={t}
+									policyNameById={policyNameById}
+								/>
+							))}
+							{stint.gapBefore && (
+								<div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
+									{t(
+										"settings.employees.offboarding.employmentGap",
+										"Not employed {startDate} – {endDate}",
+										{
+											startDate: formatDate(stint.gapBefore.from) ?? "",
+											endDate: formatDate(stint.gapBefore.to) ?? "",
+										},
+									)}
+								</div>
+							)}
+						</section>
 					))}
 				</div>
 			)}
 		</div>
 	);
+}
+
+function stintLabel(stint: ReturnType<typeof groupHistoryByEmployment>[number], t: Translate) {
+	const unknown = t("settings.employees.offboarding.unknownLegacyDate", "Date not recorded");
+	return t("settings.employees.offboarding.employmentStint", "Employment {startDate} – {endDate}", {
+		startDate: formatDate(stint.period?.startedAt) ?? unknown,
+		endDate: stint.period?.endedAt
+			? (formatDate(stint.period.endedAt) ?? unknown)
+			: stint.period?.status === "open"
+				? t("common.present", "Present")
+				: unknown,
+	});
 }
 
 function TimelineRow({
@@ -179,54 +218,96 @@ function TimelineRow({
 						{formatDate(entry.validFrom)} -{" "}
 						{entry.validUntil ? formatDate(entry.validUntil) : t("common.present", "Present")}
 					</div>
-					{entry.probationStartsOn && entry.probationEndsOn && (
-						<div className="text-xs text-muted-foreground">
-							{t("settings.employmentHistory.probationRange", "Probation {startDate} - {endDate}", {
-								startDate: formatDate(entry.probationStartsOn) ?? "",
-								endDate: formatDate(entry.probationEndsOn) ?? "",
-							})}
-						</div>
-					)}
-					{entry.changeReason && (
-						<div className="text-sm text-muted-foreground">{entry.changeReason}</div>
-					)}
-					{policyName && (
-						<div className="text-xs text-muted-foreground">
-							{t("settings.employmentHistory.policyValue", "Policy: {policyName}", { policyName })}
-						</div>
-					)}
+					<TimelineRowNotes entry={entry} policyName={policyName || null} t={t} />
 				</div>
-				{canManage && (canConfirm(entry) || canCancel(entry, now)) && (
-					<div className="flex gap-2">
-						{canConfirm(entry) && (
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => onConfirm(entry.id)}
-								disabled={isMutating}
-							>
-								{isMutating ? (
-									<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-								) : (
-									<IconCheck className="mr-2 size-4" aria-hidden="true" />
-								)}
-								{t("common.confirm", "Confirm")}
-							</Button>
-						)}
-						{canCancel(entry, now) && (
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={() => onCancel(entry.id)}
-								disabled={isMutating}
-							>
-								<IconX className="mr-2 size-4" aria-hidden="true" />
-								{t("common.cancel", "Cancel")}
-							</Button>
-						)}
-					</div>
+				{canManage && (
+					<TimelineRowActions
+						entry={entry}
+						isMutating={isMutating}
+						now={now}
+						onConfirm={onConfirm}
+						onCancel={onCancel}
+						t={t}
+					/>
 				)}
 			</div>
+		</div>
+	);
+}
+
+/** Probation, change reason and work policy of one history entry, when recorded. */
+function TimelineRowNotes({
+	entry,
+	policyName,
+	t,
+}: {
+	entry: EmploymentHistoryEntry;
+	policyName: string | null;
+	t: Translate;
+}) {
+	return (
+		<>
+			{entry.probationStartsOn && entry.probationEndsOn && (
+				<div className="text-xs text-muted-foreground">
+					{t("settings.employmentHistory.probationRange", "Probation {startDate} - {endDate}", {
+						startDate: formatDate(entry.probationStartsOn) ?? "",
+						endDate: formatDate(entry.probationEndsOn) ?? "",
+					})}
+				</div>
+			)}
+			{entry.changeReason && (
+				<div className="text-sm text-muted-foreground">{entry.changeReason}</div>
+			)}
+			{policyName && (
+				<div className="text-xs text-muted-foreground">
+					{t("settings.employmentHistory.policyValue", "Policy: {policyName}", { policyName })}
+				</div>
+			)}
+		</>
+	);
+}
+
+function TimelineRowActions({
+	entry,
+	isMutating,
+	now,
+	onConfirm,
+	onCancel,
+	t,
+}: {
+	entry: EmploymentHistoryEntry;
+	isMutating: boolean;
+	now: DateTime;
+	onConfirm: (historyId: string) => void;
+	onCancel: (historyId: string) => void;
+	t: Translate;
+}) {
+	const confirmable = canConfirm(entry);
+	const cancellable = canCancel(entry, now);
+	if (!confirmable && !cancellable) return null;
+	return (
+		<div className="flex gap-2">
+			{confirmable && (
+				<Button
+					size="sm"
+					variant="outline"
+					onClick={() => onConfirm(entry.id)}
+					disabled={isMutating}
+				>
+					{isMutating ? (
+						<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconCheck className="mr-2 size-4" aria-hidden="true" />
+					)}
+					{t("common.confirm", "Confirm")}
+				</Button>
+			)}
+			{cancellable && (
+				<Button size="sm" variant="ghost" onClick={() => onCancel(entry.id)} disabled={isMutating}>
+					<IconX className="mr-2 size-4" aria-hidden="true" />
+					{t("common.cancel", "Cancel")}
+				</Button>
+			)}
 		</div>
 	);
 }

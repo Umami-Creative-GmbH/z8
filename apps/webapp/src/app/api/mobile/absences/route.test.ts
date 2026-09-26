@@ -32,8 +32,11 @@ vi.mock("@/app/api/mobile/shared", () => ({
 	requireMobileEmployee: mockState.requireMobileEmployee,
 }));
 
-vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
+vi.mock("@/app/[locale]/(app)/absences/queries", () => ({
 	getAbsenceCategories: mockState.getAbsenceCategories,
+}));
+
+vi.mock("@/app/[locale]/(app)/absences/actions", () => ({
 	getAbsenceEntries: mockState.getAbsenceEntries,
 	getVacationBalance: mockState.getVacationBalance,
 }));

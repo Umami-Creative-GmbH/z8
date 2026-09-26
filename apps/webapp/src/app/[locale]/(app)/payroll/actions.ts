@@ -6,7 +6,7 @@ import { DateTime } from "luxon";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
-import { type AuthContext, getAuthContext } from "@/lib/auth-helpers";
+import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
@@ -204,11 +204,15 @@ export async function startScopedPayrollExportAction(
 			employeeIds: scopedEmployeeIds,
 		};
 
+		// Only an organization administrator executes eligible historical repairs (#322),
+		// as for the repair route; other payroll users collect without repair.
+		const ability = await getAbility();
 		const { jobId, isAsync } = await createExportJob({
 			organizationId: authContext.employee.organizationId,
 			formatId,
 			requestedById: authContext.employee.id,
 			filters,
+			repairActorUserId: ability?.can("manage", "OrgSettings") ? authContext.user.id : null,
 		});
 
 		if (isAsync) {

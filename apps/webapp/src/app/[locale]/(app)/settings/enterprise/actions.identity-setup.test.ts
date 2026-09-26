@@ -189,6 +189,20 @@ describe("enterprise identity setup action contracts", () => {
 		expect(source).not.toContain("export function ");
 	});
 
+	// #443: the setup-record writer takes the organization from its caller.
+	it("keeps the unauthenticated setup-record writer out of the server action module", async () => {
+		const recordSource = readFileSync(
+			join(dirname(fileURLToPath(import.meta.url)), "identity-setup-record.ts"),
+			"utf8",
+		);
+
+		expect(await import("./actions")).not.toHaveProperty(
+			"getOrCreateEnterpriseIdentitySetupRecord",
+		);
+		expect(recordSource).toContain('import "server-only";');
+		expect(recordSource).not.toContain('"use server"');
+	});
+
 	it("refreshes domain verification from org-scoped Better Auth providers", () => {
 		const actionSource = getFunctionSource(
 			"refreshEnterpriseIdentityDomainStatusAction",

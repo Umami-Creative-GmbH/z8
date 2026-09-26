@@ -5,13 +5,14 @@ import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import {
 	absenceEntry,
-	approvalRequest,
+	auditLog,
 	employee,
 	employeeManagers,
 	employeeVacationAllowance,
-	timeEntry,
-	workPeriod,
 } from "@/db/schema";
+import { deleteEmployeeApprovalLifecycles } from "@/lib/approvals/maintenance";
+import { withDemoConfigurationMutation } from "./demo-configuration";
+import { deleteDemoEmployeeHistories } from "./demo-work";
 
 export interface DeleteNonAdminResult {
 	employeesDeleted: number;
@@ -21,6 +22,10 @@ export interface DeleteNonAdminResult {
 	workPeriodsDeleted: number;
 	absencesDeleted: number;
 	approvalRequestsDeleted: number;
+	/** Approval lifecycles of any kind that named a deleted employee (#306). */
+	approvalLifecyclesDeleted: number;
+	/** Audit entries kept, with their reference to a deleted employee cleared. */
+	auditEntriesDetached: number;
 	managerAssignmentsDeleted: number;
 	vacationAllowancesDeleted: number;
 }
@@ -41,6 +46,8 @@ export async function deleteNonAdminEmployeesData(
 		workPeriodsDeleted: 0,
 		absencesDeleted: 0,
 		approvalRequestsDeleted: 0,
+		approvalLifecyclesDeleted: 0,
+		auditEntriesDetached: 0,
 		managerAssignmentsDeleted: 0,
 		vacationAllowancesDeleted: 0,
 	};
@@ -60,16 +67,19 @@ export async function deleteNonAdminEmployeesData(
 	}
 
 	const employeeIds = nonAdminEmployees.map((e) => e.id);
-	const userIds = nonAdminEmployees.map((e) => e.userId);
 
-	// Step 2: Delete approval requests for these employees
-	const approvalRequestsToDelete = await db.query.approvalRequest.findMany({
-		where: inArray(approvalRequest.requestedBy, employeeIds),
-	});
-	if (approvalRequestsToDelete.length > 0) {
-		await db.delete(approvalRequest).where(inArray(approvalRequest.requestedBy, employeeIds));
-		result.approvalRequestsDeleted = approvalRequestsToDelete.length;
-	}
+	// Step 2: Remove every approval lifecycle naming these employees in any role
+	// (requester, approver, decider, card recipient, ...) through the privileged
+	// owner's verified links, in one transaction. Sources keep their outcomes; the
+	// remaining employees' work history and receipts are not touched (#306).
+	const approvals = await db.transaction((transaction) =>
+		deleteEmployeeApprovalLifecycles(transaction, { organizationId, employeeIds }),
+	);
+	result.approvalLifecyclesDeleted = approvals.lifecycles.length;
+	result.approvalRequestsDeleted = approvals.lifecycles.reduce(
+		(total, lifecycle) => total + lifecycle.legacyRequests.length,
+		0,
+	);
 
 	// Step 3: Delete absence entries
 	const absencesToDelete = await db.query.absenceEntry.findMany({
@@ -80,23 +90,16 @@ export async function deleteNonAdminEmployeesData(
 		result.absencesDeleted = absencesToDelete.length;
 	}
 
-	// Step 4: Delete work periods (must be before time entries due to FK)
-	const workPeriodsToDelete = await db.query.workPeriod.findMany({
-		where: inArray(workPeriod.employeeId, employeeIds),
+	// Steps 4-5: Delete each employee's time history atomically under its employee
+	// key (position, receipts, periods, canonical work records, entries). Admin
+	// employees' histories are never touched.
+	const deleted = await deleteDemoEmployeeHistories({
+		organizationId,
+		triggeringUserId: currentUserId,
+		employeeIds,
 	});
-	if (workPeriodsToDelete.length > 0) {
-		await db.delete(workPeriod).where(inArray(workPeriod.employeeId, employeeIds));
-		result.workPeriodsDeleted = workPeriodsToDelete.length;
-	}
-
-	// Step 5: Delete time entries
-	const timeEntriesToDelete = await db.query.timeEntry.findMany({
-		where: inArray(timeEntry.employeeId, employeeIds),
-	});
-	if (timeEntriesToDelete.length > 0) {
-		await db.delete(timeEntry).where(inArray(timeEntry.employeeId, employeeIds));
-		result.timeEntriesDeleted = timeEntriesToDelete.length;
-	}
+	result.workPeriodsDeleted = deleted.workPeriodsDeleted;
+	result.timeEntriesDeleted = deleted.timeEntriesDeleted;
 
 	// Step 6: Delete employee vacation allowances
 	const allowancesToDelete = await db.query.employeeVacationAllowance.findMany({
@@ -109,56 +112,82 @@ export async function deleteNonAdminEmployeesData(
 		result.vacationAllowancesDeleted = allowancesToDelete.length;
 	}
 
-	// Step 7: Delete manager assignments (both as employee and manager)
-	const managerAssignmentsToDelete = await db
-		.select()
-		.from(employeeManagers)
-		.where(inArray(employeeManagers.employeeId, employeeIds));
-	const managerAssignmentsAsManager = await db
-		.select()
-		.from(employeeManagers)
-		.where(inArray(employeeManagers.managerId, employeeIds));
+	// Steps 7-11 change who manages, who belongs and who exists: one batch under
+	// exclusive organization configuration protection and the guards of every
+	// employee's user, including the deleted users, whose cascades reach their
+	// other organizations and settings (#318).
+	await withDemoConfigurationMutation(organizationId, async (tx, organizationEmployees) => {
+		// Only employees still in the organization under protection: their users'
+		// guards are held. One who left meanwhile is not touched here.
+		const selected = new Set(nonAdminEmployees.map((e) => e.id));
+		const protectedEmployees = organizationEmployees.filter((e) => selected.has(e.id));
+		const employeeIds = protectedEmployees.map((e) => e.id);
+		const userIds = protectedEmployees.map((e) => e.userId);
+		if (employeeIds.length === 0) return;
 
-	if (managerAssignmentsToDelete.length > 0) {
-		await db.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
-	}
-	if (managerAssignmentsAsManager.length > 0) {
-		await db.delete(employeeManagers).where(inArray(employeeManagers.managerId, employeeIds));
-	}
-	result.managerAssignmentsDeleted =
-		managerAssignmentsToDelete.length + managerAssignmentsAsManager.length;
+		// Step 7: Delete manager assignments (both as employee and manager)
+		const managerAssignmentsToDelete = await tx
+			.select()
+			.from(employeeManagers)
+			.where(inArray(employeeManagers.employeeId, employeeIds));
+		const managerAssignmentsAsManager = await tx
+			.select()
+			.from(employeeManagers)
+			.where(inArray(employeeManagers.managerId, employeeIds));
 
-	// Step 8: Delete employee records
-	await db.delete(employee).where(inArray(employee.id, employeeIds));
-	result.employeesDeleted = employeeIds.length;
+		if (managerAssignmentsToDelete.length > 0) {
+			await tx.delete(employeeManagers).where(inArray(employeeManagers.employeeId, employeeIds));
+		}
+		if (managerAssignmentsAsManager.length > 0) {
+			await tx.delete(employeeManagers).where(inArray(employeeManagers.managerId, employeeIds));
+		}
+		result.managerAssignmentsDeleted =
+			managerAssignmentsToDelete.length + managerAssignmentsAsManager.length;
 
-	// Step 9: Delete organization memberships
-	const membersToDelete = await db.query.member.findMany({
-		where: and(eq(member.organizationId, organizationId), inArray(member.userId, userIds)),
+		// Step 8: Keep the audit trail, detached from the employees being deleted.
+		const detached = await tx
+			.update(auditLog)
+			.set({ employeeId: null })
+			.where(
+				and(eq(auditLog.organizationId, organizationId), inArray(auditLog.employeeId, employeeIds)),
+			)
+			.returning({ id: auditLog.id });
+		result.auditEntriesDetached = detached.length;
+
+		// Step 9: Delete employee records
+		await tx
+			.delete(employee)
+			.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds)));
+		result.employeesDeleted = employeeIds.length;
+
+		// Step 10: Delete organization memberships
+		const membersToDelete = await tx.query.member.findMany({
+			where: and(eq(member.organizationId, organizationId), inArray(member.userId, userIds)),
+		});
+		if (membersToDelete.length > 0) {
+			await tx
+				.delete(member)
+				.where(and(eq(member.organizationId, organizationId), inArray(member.userId, userIds)));
+			result.membersDeleted = membersToDelete.length;
+		}
+
+		// Step 11: Delete user accounts (only demo users with @demo.invalid email)
+		// This prevents accidentally deleting real user accounts
+		const demoUsers = await tx.query.user.findMany({
+			where: and(
+				inArray(user.id, userIds),
+				// Only delete users with demo email addresses
+			),
+		});
+
+		// Filter to only delete demo users (email ends with @demo.invalid)
+		const demoUserIds = demoUsers.filter((u) => u.email?.endsWith("@demo.invalid")).map((u) => u.id);
+
+		if (demoUserIds.length > 0) {
+			await tx.delete(user).where(inArray(user.id, demoUserIds));
+			result.usersDeleted = demoUserIds.length;
+		}
 	});
-	if (membersToDelete.length > 0) {
-		await db
-			.delete(member)
-			.where(and(eq(member.organizationId, organizationId), inArray(member.userId, userIds)));
-		result.membersDeleted = membersToDelete.length;
-	}
-
-	// Step 10: Delete user accounts (only demo users with @demo.invalid email)
-	// This prevents accidentally deleting real user accounts
-	const demoUsers = await db.query.user.findMany({
-		where: and(
-			inArray(user.id, userIds),
-			// Only delete users with demo email addresses
-		),
-	});
-
-	// Filter to only delete demo users (email ends with @demo.invalid)
-	const demoUserIds = demoUsers.filter((u) => u.email?.endsWith("@demo.invalid")).map((u) => u.id);
-
-	if (demoUserIds.length > 0) {
-		await db.delete(user).where(inArray(user.id, demoUserIds));
-		result.usersDeleted = demoUserIds.length;
-	}
 
 	return result;
 }

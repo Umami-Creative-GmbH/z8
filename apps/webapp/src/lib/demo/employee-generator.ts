@@ -1,9 +1,9 @@
 import "server-only";
 
 import { faker } from "@faker-js/faker";
-import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { withDemoConfigurationMutation } from "./demo-configuration";
 
 export interface GenerateEmployeesOptions {
 	organizationId: string;
@@ -74,44 +74,51 @@ export async function generateDemoEmployees(
 		const memberId = `demo_member_${faker.string.alphanumeric(16)}`;
 
 		try {
-			// Insert user
-			await db.insert(user).values({
-				id: userId,
-				name: `${firstName} ${lastName}`,
-				email,
-				emailVerified: false,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			});
+			// The user, membership and employee commit together, under the demo batch
+			// protection and the new user's guard (#318).
+			await withDemoConfigurationMutation(
+				organizationId,
+				async (tx) => {
+					await tx.insert(user).values({
+						id: userId,
+						name: `${firstName} ${lastName}`,
+						email,
+						emailVerified: false,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+					});
+
+					// Insert member (organization membership)
+					await tx.insert(member).values({
+						id: memberId,
+						organizationId,
+						userId,
+						role: isManager ? "admin" : "member",
+						createdAt: new Date(),
+					});
+
+					// Insert employee
+					const startDate = faker.date.past({ years: 3 });
+					const gender = faker.helpers.arrayElement(["male", "female", "other"] as const);
+					const birthday = faker.date.birthdate({ min: 22, max: 55, mode: "age" });
+
+					await tx.insert(employee).values({
+						userId,
+						organizationId,
+						firstName,
+						lastName,
+						gender,
+						birthday,
+						role: isManager ? "manager" : "employee",
+						employeeNumber: `EMP${String(faker.number.int({ min: 1000, max: 9999 }))}`,
+						position: faker.helpers.arrayElement(positions),
+						startDate,
+						isActive: true,
+					});
+				},
+				{ userIds: [userId] },
+			);
 			usersCreated++;
-
-			// Insert member (organization membership)
-			await db.insert(member).values({
-				id: memberId,
-				organizationId,
-				userId,
-				role: isManager ? "admin" : "member",
-				createdAt: new Date(),
-			});
-
-			// Insert employee
-			const startDate = faker.date.past({ years: 3 });
-			const gender = faker.helpers.arrayElement(["male", "female", "other"] as const);
-			const birthday = faker.date.birthdate({ min: 22, max: 55, mode: "age" });
-
-			await db.insert(employee).values({
-				userId,
-				organizationId,
-				firstName,
-				lastName,
-				gender,
-				birthday,
-				role: isManager ? "manager" : "employee",
-				employeeNumber: `EMP${String(faker.number.int({ min: 1000, max: 9999 }))}`,
-				position: faker.helpers.arrayElement(positions),
-				startDate,
-				isActive: true,
-			});
 			employeesCreated++;
 			if (isManager) managersCreated++;
 		} catch (error) {

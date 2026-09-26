@@ -167,8 +167,8 @@ describe("absence approval adapter", () => {
 		).toEqual({
 			organizationId,
 			workflowType: "absence",
-			sourceType: "absence_entry",
-			sourceId: absenceId,
+			// The stage activation resolver's routing contract.
+			source: { type: "absence_entry", id: absenceId },
 			requesterEmployeeId: employeeId,
 			teamIds: [teamId],
 			locationId: null,

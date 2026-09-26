@@ -47,7 +47,7 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: vi.fn(),
 }));
 
-vi.mock("./actions", () => ({
+vi.mock("./actions/queries", () => ({
 	getActiveWorkPeriod: vi.fn(),
 	getTimeSummary: vi.fn(),
 	getWorkPeriods: vi.fn(),

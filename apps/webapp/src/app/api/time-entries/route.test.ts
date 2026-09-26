@@ -9,6 +9,9 @@ const mockState = vi.hoisted(() => {
 		}
 	}
 	class ClockingConflictError extends Error {}
+	class ClockingAppendAdoptedError extends Error {
+		readonly code = "append_adopted";
+	}
 	class ClockingAccessError extends Error {}
 
 	const limit = vi.fn();
@@ -34,6 +37,7 @@ const mockState = vi.hoisted(() => {
 	return {
 		UnsupportedAuthorizationConditionError,
 		ClockingAccessError,
+		ClockingAppendAdoptedError,
 		ClockingConflictError,
 		preserveLateClockEvidence: vi.fn(),
 		accessibleByDrizzle: vi.fn(),
@@ -115,6 +119,7 @@ vi.mock("@/db/schema", () => ({
 		teamId: "projectAssignment.teamId",
 	},
 	timeEntry: {
+		id: "timeEntry.id",
 		employeeId: "timeEntry.employeeId",
 		organizationId: "timeEntry.organizationId",
 	},
@@ -175,6 +180,7 @@ vi.mock("@/lib/effect/services/time-entry.service", () => ({
 
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	ClockingAccessError: mockState.ClockingAccessError,
+	ClockingAppendAdoptedError: mockState.ClockingAppendAdoptedError,
 	ClockingConflictError: mockState.ClockingConflictError,
 	clockingService: {
 		clockIn: mockState.clockingClockIn,
@@ -454,6 +460,30 @@ describe("POST /api/time-entries", () => {
 		expect(mockState.clockingClockIn).toHaveBeenCalledTimes(1);
 	});
 
+	it("refuses a fresh legacy write in an adopted organization with a retaining 409", async () => {
+		mockState.clockingClockIn.mockRejectedValueOnce(
+			new mockState.ClockingAppendAdoptedError(
+				"This organization only accepts coordinated clock commands",
+			),
+		);
+
+		const response = await POST(
+			new Request("https://z8.test/api/time-entries", {
+				body: JSON.stringify({
+					type: "clock_in",
+					timestamp: "2026-05-04T09:00:00.000Z",
+				}),
+				method: "POST",
+			}) as never,
+		);
+
+		expect(response.status).toBe(409);
+		expect(await response.json()).toEqual({
+			error: "This organization only accepts coordinated clock commands",
+			code: "append_adopted",
+		});
+	});
+
 	it("passes offline location to the clocking service", async () => {
 		const response = await POST(
 			new Request("https://z8.test/api/time-entries", {
@@ -535,6 +565,64 @@ describe("POST /api/time-entries", () => {
 				hold: "legacy-extension-queue",
 			});
 			expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+		});
+
+		describe("committed action-id recovery before fresh age admission (#275)", () => {
+			const actionId = "6f1c2a4e-8b3d-4c5e-9f70-1a2b3c4d5e6f";
+			const staleReplay = () =>
+				new Request("https://z8.test/api/time-entries", {
+					body: JSON.stringify({
+						id: actionId,
+						type: "clock_in",
+						// Older than the seven-day replay window.
+						timestamp: new Date(Date.now() - 8 * 24 * 60 * 60_000).toISOString(),
+						browserTimezone: "Europe/Berlin",
+						utcOffsetMinutes: 120,
+						replay: true,
+					}),
+					method: "POST",
+				}) as never;
+
+			it("replays a committed action with the legacy matcher even beyond the age window", async () => {
+				mockState.limit.mockReset();
+				mockState.limit
+					.mockResolvedValueOnce([{ id: "employee-1", organizationId: "org-1", teamId: "team-1" }])
+					.mockResolvedValueOnce([{ id: actionId }])
+					.mockResolvedValue([]);
+				mockState.clockingClockIn.mockResolvedValueOnce({ entry: { id: actionId } });
+
+				const response = await POST(staleReplay());
+
+				expect(response.status).toBe(201);
+				expect(await response.json()).toEqual({ entry: { id: actionId } });
+				expect(mockState.clockingClockIn).toHaveBeenCalledWith(
+					expect.objectContaining({ actionId, organizationId: "org-1", employeeId: "employee-1" }),
+				);
+			});
+
+			it("keeps the age window for an action id with no committed entry", async () => {
+				const response = await POST(staleReplay());
+
+				expect(response.status).toBe(409);
+				expect(await response.json()).toEqual({
+					error: "Clock instant is outside the allowed capture window",
+					hold: "legacy-extension-queue",
+				});
+				expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+			});
+
+			it("keeps current billing checks ahead of committed recovery", async () => {
+				mockState.isBillingMutationAllowed.mockReturnValue(false);
+				mockState.requireBillingForMutation.mockResolvedValue({
+					canAccess: false,
+					reason: "subscription_required",
+				});
+
+				const response = await POST(staleReplay());
+
+				expect(response.status).toBe(402);
+				expect(mockState.clockingClockIn).not.toHaveBeenCalled();
+			});
 		});
 
 		it("recognizes X1/X2 extension replays, which send no id, by their extension origin", async () => {

@@ -1402,6 +1402,38 @@ function PayrollBlockersAlert({
 									: ""
 							}`;
 							break;
+						case "open_work":
+							blockerType = t("payroll.blockers.openWork", "Work without clock-out");
+							actionLabel = t("payroll.blockers.openCalendar", "Open calendar");
+							href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+								formattedDate && blocker.date
+									? `?date=${encodeURIComponent(blocker.date)}`
+									: ""
+							}`;
+							break;
+						case "pending_work_approval":
+						case "pending_work_correction":
+							blockerType =
+								blocker.type === "pending_work_approval"
+									? t("payroll.blockers.pendingWorkApproval", "Work awaiting approval")
+									: t("payroll.blockers.pendingTimeCorrection", "Pending time correction");
+							actionLabel = t(
+								"payroll.blockers.openApprovals",
+								"Open approvals",
+							);
+							href = "/approvals/inbox?types=time_entry";
+							break;
+						case "uncertain_historical_work":
+							blockerType = t(
+								"payroll.blockers.uncertainHistoricalWork",
+								"Historical work needs review",
+							);
+							actionLabel = t(
+								"payroll.blockers.openWorkDiagnostics",
+								"Open work diagnostics",
+							);
+							href = "/settings/work-diagnostics";
+							break;
 						case "pending_time_correction":
 							blockerType = t(
 								"payroll.blockers.pendingTimeCorrection",

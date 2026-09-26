@@ -15,7 +15,9 @@ import {
 	completeRemovedMemberCleanupPostCommit,
 	revokeRemovedMemberAccessInTransaction,
 } from "@/lib/auth/member-removal-cleanup";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { syncBillingSeatsAfterMemberChange } from "@/lib/billing/seat-sync-trigger";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type AuthorizationError,
 	type DatabaseError,
@@ -207,87 +209,93 @@ export const PendingMemberServiceLive = Layer.effect(
 			pendingMember: PendingMember,
 			input: ApproveMemberInput,
 		) =>
-			dbService.db.transaction(async (tx) => {
-				const targetUser = await tx.query.user.findFirst({
-					where: eq(user.id, pendingMember.userId),
-					columns: { email: true },
-				});
-				if (!targetUser) throw new Error("Pending member user not found");
-
-				await acquireEmployeeIdentityLock(tx, {
-					organizationId: input.organizationId,
-					normalizedEmail: normalizeInvitationEmail(targetUser.email),
-				});
-
-				if (input.assignedTeamId) {
-					const assignedTeam = await tx.query.team.findFirst({
-						where: and(
-							eq(team.id, input.assignedTeamId),
-							eq(team.organizationId, input.organizationId),
-						),
+			// Approval grants membership and activates the employee, so the member's
+			// configuration/access protection precedes the identity lock (#313).
+			withAuthorizationMutation(
+				{ organizationId: input.organizationId, userIds: [pendingMember.userId] },
+				async (tx) => {
+					const targetUser = await tx.query.user.findFirst({
+						where: eq(user.id, pendingMember.userId),
+						columns: { email: true },
 					});
-					if (!assignedTeam)
-						throw new Error("Assigned team not found in organization");
-				}
+					if (!targetUser) throw new Error("Pending member user not found");
 
-				const [approvedMember] = await tx
-					.update(member)
-					.set({ status: "approved" })
-					.where(
-						and(
-							eq(member.id, input.memberId),
-							eq(member.organizationId, input.organizationId),
-							eq(member.status, "pending"),
-						),
-					)
-					.returning();
-				if (!approvedMember) return null;
-
-				const [[approval], existingEmployee] = await Promise.all([
-					tx
-						.insert(memberApproval)
-						.values({
-							memberId: input.memberId,
-							organizationId: input.organizationId,
-							status: "approved",
-							assignedTeamId: input.assignedTeamId,
-							approvedBy: input.approvedBy,
-							notes: input.notes,
-						})
-						.returning(),
-					tx.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, approvedMember.userId),
-							eq(employee.organizationId, input.organizationId),
-						),
-					}),
-				]);
-
-				if (!existingEmployee) {
-					await tx.insert(employee).values({
-						userId: approvedMember.userId,
+					await acquireEmployeeIdentityLock(tx, {
 						organizationId: input.organizationId,
-						teamId: input.assignedTeamId,
-						role: "employee",
-						isActive: true,
+						normalizedEmail: normalizeInvitationEmail(targetUser.email),
 					});
-				} else if (!existingEmployee.isActive) {
-					await tx
-						.update(employee)
-						.set({
-							isActive: true,
-							teamId: input.assignedTeamId ?? existingEmployee.teamId,
-						})
+
+					if (input.assignedTeamId) {
+						const assignedTeam = await tx.query.team.findFirst({
+							where: and(
+								eq(team.id, input.assignedTeamId),
+								eq(team.organizationId, input.organizationId),
+							),
+						});
+						if (!assignedTeam)
+							throw new Error("Assigned team not found in organization");
+					}
+
+					const [approvedMember] = await tx
+						.update(member)
+						.set({ status: "approved" })
 						.where(
 							and(
-								eq(employee.id, existingEmployee.id),
+								eq(member.id, input.memberId),
+								eq(member.organizationId, input.organizationId),
+								eq(member.status, "pending"),
+							),
+						)
+						.returning();
+					if (!approvedMember) return null;
+
+					const [[approval], existingEmployee] = await Promise.all([
+						tx
+							.insert(memberApproval)
+							.values({
+								memberId: input.memberId,
+								organizationId: input.organizationId,
+								status: "approved",
+								assignedTeamId: input.assignedTeamId,
+								approvedBy: input.approvedBy,
+								notes: input.notes,
+							})
+							.returning(),
+						tx.query.employee.findFirst({
+							where: and(
+								eq(employee.userId, approvedMember.userId),
 								eq(employee.organizationId, input.organizationId),
 							),
-						);
-				}
+						}),
+					]);
 
-				return approval;
-			});
+					if (!existingEmployee) {
+						await tx.insert(employee).values({
+							userId: approvedMember.userId,
+							organizationId: input.organizationId,
+							teamId: input.assignedTeamId,
+							role: "employee",
+							isActive: true,
+						});
+					} else if (!existingEmployee.isActive) {
+						await tx
+							.update(employee)
+							.set({
+								isActive: true,
+								teamId: input.assignedTeamId ?? existingEmployee.teamId,
+							})
+							.where(
+								and(
+									eq(employee.id, existingEmployee.id),
+									eq(employee.organizationId, input.organizationId),
+								),
+							);
+					}
+
+					return approval;
+				},
+				dbService.db,
+			);
 
 		const rejectPendingMemberAtomically = async (input: RejectMemberInput) => {
 			const result = await dbService.db.transaction(async (tx) => {
@@ -307,6 +315,9 @@ export const PendingMemberServiceLive = Layer.effect(
 					return null;
 				}
 
+				// Rejection removes the membership and revokes the user's access: their
+				// exclusive guard precedes the identity lock and the member row lock (#318).
+				await acquireExclusiveUserConfigurationAccessGuards(tx, [candidate.userId]);
 				const userRecord = await tx.query.user.findFirst({
 					where: eq(user.id, candidate.userId),
 				});

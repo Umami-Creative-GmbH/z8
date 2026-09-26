@@ -8,7 +8,56 @@
       "historicalApproval": "Ihre zuvor erfasste Genehmigung wurde verifiziert. Dies ist ein früheres Ergebnis; es wurde keine neue Entscheidung getroffen. Weitere Einzelheiten finden Sie beim Antrag in Z8.",
       "historicalRejection": "Ihre zuvor erfasste Ablehnung wurde verifiziert. Dies ist ein früheres Ergebnis; es wurde keine neue Entscheidung getroffen. Weitere Einzelheiten finden Sie beim Antrag in Z8.",
       "unboundCallback": "Diese Karte kann die ursprünglich geprüften Angaben nicht belegen. Es wurde keine Entscheidung getroffen. Prüfen Sie den Antrag in Z8.",
-      "alreadyProcessed": "Diese Genehmigung wurde bereits bearbeitet."
+      "alreadyProcessed": "Diese Genehmigung wurde bereits bearbeitet.",
+      "boundReviewRequired": "Diese Karte passt nicht mehr zum aktuellen Antrag oder zur aktuellen Zuweisung, oder die Aktion konnte nicht verifiziert werden. Es wurde keine Entscheidung getroffen. Prüfen Sie den Antrag in Z8.",
+      "invocationConflict": "Dieser Tastendruck wurde bereits mit einer anderen Aktion erfasst. Es wurde keine Entscheidung getroffen. Prüfen Sie den Antrag in Z8.",
+      "outcomeUnknown": "Das Ergebnis dieses Tastendrucks konnte nicht bestätigt werden. Prüfen Sie den Antrag in Z8, bevor Sie erneut drücken.",
+      "card": {
+        "absenceTitle": "Abwesenheitsantrag zur Genehmigung",
+        "boundHint": "Genehmigen oder Ablehnen entscheidet genau über den oben gezeigten Antrag. Wurde er geändert oder neu zugewiesen, wird nichts entschieden und Sie werden gebeten, ihn in Z8 zu prüfen.",
+        "reviewOnlyHint": "Genehmigen oder lehnen Sie diesen Antrag in Z8 ab. Über diese Nachricht kann er nicht entschieden werden.",
+        "approve": "Genehmigen",
+        "reject": "Ablehnen",
+        "unavailable": "Nicht verfügbar",
+        "employee": "Mitarbeiter",
+        "requestedBy": "Beantragt von",
+        "submittedBy": "Eingereicht von",
+        "category": "Kategorie",
+        "currentCategoryName": "Aktueller Kategoriename",
+        "dates": "Zeitraum",
+        "coverage": "Umfang",
+        "submittedAt": "Eingereicht",
+        "fullDays": "Ganze Tage",
+        "fullDay": "ganztags",
+        "morning": "vormittags",
+        "afternoon": "nachmittags",
+        "halfDayPeriods": "Beginnt {start}, endet {end}",
+        "explicitTimes": "{start} – {end} (Ortszeit, Zeitzone nicht erfasst)",
+        "explicitTimesOvernight": "{start} – {end} am Folgetag (Ortszeit, Zeitzone nicht erfasst)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Antrag genehmigt",
+        "requestRejectedTitle": "Antrag abgelehnt",
+        "stepApprovedTitle": "Genehmigung erfasst",
+        "requestApproved": "Genehmigt von {actor} am {time}. Der Antrag ist genehmigt.",
+        "requestRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist abgelehnt.",
+        "stepApproved": "Genehmigt von {actor} am {time}. Der Antrag wartet noch auf weitere Genehmigungen.",
+        "replayed": "Dieser Tastendruck wurde bereits erfasst; dies ist sein ursprüngliches Ergebnis, es wurde nichts Neues entschieden.",
+        "stepRejectedTitle": "Ablehnung erfasst",
+        "stepRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist noch nicht abgeschlossen; prüfen Sie seinen aktuellen Status in Z8.",
+        "recordedTitle": "Entscheidung erfasst",
+        "recorded": "Erfasst von {actor} am {time}. Prüfen Sie den aktuellen Status des Antrags in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Antrag zurückgezogen",
+        "withdrawn": "Dieser Antrag wurde zurückgezogen. Über diese Karte ist keine Entscheidung mehr nötig.",
+        "reassignedTitle": "Neu zugewiesen",
+        "reassigned": "Diese Genehmigung wurde einer anderen Person zugewiesen. Über diese Karte ist keine Entscheidung mehr von Ihnen nötig, und hier wurde nichts entschieden. Prüfen Sie den aktuellen Stand in Z8.",
+        "inactiveTitle": "Nicht mehr entscheidbar",
+        "inactive": "Dieser Antrag braucht über diese Karte keine Entscheidung mehr von Ihnen. Hier wurde nichts entschieden. Prüfen Sie den aktuellen Stand in Z8.",
+        "currentApproved": "Aktueller Stand des Antrags: genehmigt.",
+        "currentRejected": "Aktueller Stand des Antrags: abgelehnt."
+      }
     },
     "cmd": {
       "billingRequired": "Zahlungsdaten sind erforderlich, um die Zeiterfassung weiterhin zu nutzen. Bitten Sie einen Organisationsadministrator, die Zahlungsdaten zu aktualisieren.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "Sie sind bereits seit {time} eingestempelt ({hours}h {minutes}m).",
+        "alreadyInNow": "Sie sind bereits eingestempelt.",
+        "appendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie einstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
         "cannotNow": "Einstempeln zu diesem Zeitpunkt nicht möglich.",
+        "committed": "Eingestempelt.",
+        "failed": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
-        "success": "Eingestempelt um {time}."
+        "success": "Eingestempelt um {time}.",
+        "unconfirmed": "Ihr Einstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen."
       },
       "clockout": {
+        "appendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie ausstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
         "cannotNow": "Ausstempeln zu diesem Zeitpunkt nicht möglich.",
+        "committed": "Ausgestempelt.",
+        "failed": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
         "notClockedIn": "Sie sind derzeit nicht eingestempelt.",
-        "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht verifiziert werden. Bitte versuchen Sie es erneut.",
         "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m.",
-        "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
+        "successAt": "Ausgestempelt um {time}.",
+        "unconfirmed": "Ihr Ausstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen."
       },
       "compliance": {
         "error": "Compliance-Daten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",
@@ -95,7 +152,8 @@
       "typeHelp": "Geben Sie /help ein, um die verfügbaren Befehle anzuzeigen.",
       "unconfigured": "Die Z8-Integration Ihrer Organisation wird gerade eingerichtet. Bitte warten Sie, bis Ihr Administrator die Konfiguration abgeschlossen hat.",
       "welcome": "Willkommen bei Z8! Um Ihr Konto zu verbinden, gehen Sie in Ihrem Z8-Dashboard zu Einstellungen > Integrationen > Telegram und generieren Sie einen Link-Code. Senden Sie dann: /link IHR_CODE",
-      "welcomeTeams": "Willkommen bei Z8! Geben Sie „help“ ein, um die verfügbaren Befehle anzuzeigen."
+      "welcomeTeams": "Willkommen bei Z8! Geben Sie „help“ ein, um die verfügbaren Befehle anzuzeigen.",
+      "replyUndelivered": "Ihr Befehl wurde verarbeitet, aber die Antwort konnte nicht angezeigt werden. Prüfen Sie Ihren Status, bevor Sie ihn wiederholen."
     }
   }
 }

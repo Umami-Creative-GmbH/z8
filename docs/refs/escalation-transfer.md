@@ -13,6 +13,7 @@ Module: `apps/webapp/src/lib/approvals/escalation/`
 
 | File | Responsibility |
 | --- | --- |
+| `kinds.ts` | Client-safe: the admitted kinds per authority and the canonical replacement-route rule (#326) |
 | `transfer-evaluation.ts` | Pure: lineage/allowance/actionable-instant classification, candidate order, due decision, operation identity |
 | `candidates.ts` | Requester-manager eligibility plus an actual inbox/decision path per candidate |
 | `transfer-store.ts` | Journal reads and the atomic journal + delivery-event insert |
@@ -65,7 +66,9 @@ Supporting changes outside the module:
 3. Each assignment commits in its **own transaction**, which re-reads ownership
    `FOR SHARE`, acquires the absence write gate, reloads the snapshot and
    revalidates that the source is still a pending assignment of the active
-   human stage. Legacy-authoritative modes are skipped (#299).
+   human stage. Legacy-authoritative modes are skipped here; they are
+   discovered and transferred by the legacy path (see
+   [Legacy-authoritative transfers](#legacy-authoritative-transfers--299--t35)).
 4. An exact committed operation (journal row for the operation key) replays
    before any fresh check.
 5. Decision (all holds commit an attention incident and return normally):
@@ -161,8 +164,9 @@ the source assignment.
 fallback decide an assignment whose lineage contains an escalation; explicit
 organization `manage Approval` remains a separate, audited path. Bot cards stay
 review-only for absences, and after the mirror retargets the representative a
-former assignee's bot action is `unauthorized`. Old-card retirement and
-replacement delivery are #300.
+former assignee's bot action is `unauthorized`. Replacement delivery and
+old-card retirement (#300) are described in
+[approval-delivery.md](approval-delivery.md#escalation-replacement-delivery--300--t36).
 
 ## Scheduling
 
@@ -188,11 +192,14 @@ not part of this lifecycle and are not deleted.
   policy preparation for every activated organization are separate authorized
   work. Until then this module never transfers.
 - **Scope:** canonical absences in `canonical` mode with one pending assignment
-  per stage. Legacy absences (#299), other kinds (#326), `complete` mode (the
-  absence inbox has no canonical discovery) and parallel assignments are held
-  or skipped, not transferred.
-- **Delivery:** no replacement notification or old-card retirement yet (#300);
-  the replacement finds the approval in the web inbox.
+  per stage. Legacy absences are covered by #299 below and the other admitted
+  kinds by [#326](#admitted-kinds-326--t61); `complete` mode (the absence inbox
+  has no canonical discovery) and parallel assignments are held, not
+  transferred.
+- **Delivery:** replacement cards and old-card retirement (#300) exist for
+  Telegram only and need a delivery control; see the #300 blockers in
+  `approval-delivery.md`. Otherwise the replacement finds the approval in the
+  web inbox.
 - **Starvation:** persistent holds are re-examined each run and count towards
   the batch limit. Organizations with more held assignments than the limit need
   a larger limit or a follow-up cursor.
@@ -202,6 +209,477 @@ not part of this lifecycle and are not deleted.
   running app, and cleanup through the maintenance path on real rows. Only the
   migration's constraints and triggers were checked against PostgreSQL (see
   below); pure and mocked unit tests do not prove the other runtime guarantees.
+
+## Legacy-authoritative transfers (#299 / T35)
+
+While an organization's absences are decided by the legacy owners (rollout mode
+`legacy`, `shadow` or `ready`), the authority is the single pending
+`approval_request`. The same module transfers it; nothing is active before the
+ownership switch described above.
+
+| File | Responsibility |
+| --- | --- |
+| `workflow/legacy-escalation-lineage.ts` | The lineage a legacy request carries in `approval_request.metadata.escalation` |
+| `transfer-evaluation.ts` | `classifyLegacyAssignmentEvidence`, `legacyAutomaticEscalationOperationKey` |
+| `legacy-transfer.ts` | Authority selection for discovery, subject loading, the atomic legacy transfer, scheduled and human preparation |
+| `legacy-transfer-store.ts` | Journal reads for a legacy request, decision-path transfer lookup |
+| `transfer-context.ts` | Ownership/policy reads, escalation runtime, race classification (shared with the canonical path) |
+| `transfer.ts` | `processDueEscalations` (selects canonical or legacy discovery), `escalateLegacyApprovalByManager`, `listLegacyHumanEscalationCandidates` |
+
+### Authority selection and processing
+
+`processDueEscalations` reads the absence rollout mode once for discovery: a
+mode that decides canonically discovers canonical assignments as before;
+`legacy`/`shadow`/`ready` discover pending legacy absence requests created at
+least one window ago, oldest first (`summary.authority`). Each request then
+commits in its own transaction, which re-reads ownership `FOR SHARE`, acquires
+the absence write gate (the authoritative mode check; a request found under
+canonical authority is skipped as `canonicalAuthority`), locks the request
+`FOR UPDATE` and captures the verified legacy state
+(`captureAbsenceLegacyApprovalState`).
+
+| Condition | Outcome |
+| --- | --- |
+| Legacy state cannot be verified or does not match the request | hold `ambiguous_history` at once |
+| A `teams_escalation` row exists for the request (Teams mutated approvers without journal evidence) | hold `ambiguous_history` |
+| Journal and the request's lineage disagree, lineage unreadable, or current approver is not the last replacement | hold `ambiguous_history` |
+| Policy disabled or before the exact deadline | not due |
+| Chain stage (the stage row binds the approver) | hold `unsupported_route` once due |
+| Shadow/ready request without an observed pending workflow | hold `unsupported_route` (`legacy_observation_missing`) |
+| Lineage already had a scheduled transfer | hold `replacement_overdue` |
+| No eligible candidate | hold `no_eligible_backup` |
+| Otherwise | transfer to the first ordered candidate |
+
+Exact committed replay (journal row for the operation key) precedes every fresh
+check. A conditional update that finds the request decided or moved is a race
+(`raced`), never a failure.
+
+### Evidence
+
+- **Actionable instant:** the request's persisted `created_at` for its original
+  approver (`legacy_request_created_at`; no other writer changes a legacy
+  absence approver except the Teams checker, which is held), the journaled
+  `transferred_at` for a replacement (`legacy_transfer_at`). Deadlines use the
+  current policy exactly as for canonical assignments.
+- **Lineage allowance:** only a journaled `scheduled` legacy transfer consumes it;
+  human transfers never do.
+- **Candidates:** the same requester-manager eligibility and decision-path check
+  as canonical transfers. A legacy absence has no parallel requests, so there
+  are no siblings to preserve or exclude.
+
+### The atomic transfer
+
+In one transaction, through the legacy write coordinator:
+
+1. `approval_request.approver_id` moves from the source to the replacement with a
+   conditional update (still pending, still the source approver), and
+   `metadata.escalation` appends `{sequence, from, to, transferredAt, initiator,
+   actorEmployeeId}` (recording the request's observed pending instant before
+   the first transfer). Other metadata is kept.
+2. In `shadow`/`ready`, the change is mirrored into the observed workflow: the
+   planner rebuilds every earlier holder as a cancelled assignment and the
+   current holder as an `escalation` replacement, and emits
+   `assignment.escalated` like the canonical transition. Later decisions rebuild
+   the same history from the request's lineage. A contradictory observation
+   rolls the transfer back; the scheduled path then commits an
+   `ambiguous_history` hold (`legacy_observation_rejected`) in a fresh
+   transaction, the human path returns `unsupported`.
+3. The journal row (`authority_mode = 'legacy'`) with its delivery event. It
+   names the legacy request by value (`legacy_approval_request_id`) and the
+   replaced holder's position (`legacy_source_sequence`), never a canonical
+   workflow, stage or assignment; any observation is recorded separately as
+   `observed_workflow_id`/`observed_event_id`. The row is the replay receipt:
+   operation key, `v2` system or `v1` employee actor fingerprint and
+   `absence-legacy-transfer:v1` command fingerprint.
+4. Human transfers write the `approval_escalation.transferred` audit row; the
+   scheduled capability is attributed by the journal only (no fabricated user).
+   Open `no_eligible_backup`/`unsupported_route`/`replacement_overdue`
+   incidents for the source holder are resolved.
+
+Operation identity: `escalation:auto:legacy:v1:{request}:{sequence}:{sourceApprover}`
+for automatic transfers; human transfers share the canonical
+`escalation:human:v1:{userId}:{idempotencyKey}` namespace, with the request
+fingerprint naming `legacy:{request}`.
+
+`0080_legacy_escalation_transfer.sql` makes the canonical columns nullable,
+adds the legacy and observation columns, and replaces the mode, evidence and
+deadline checks so canonical rows keep every canonical identity and legacy rows
+carry none. A legacy source position is unique per organization and request.
+
+### Decision path
+
+`executeAbsenceDecisionInTransaction` (legacy branch), after exact replay and
+before any fresh evidence check or mutation: when the addressed request was
+ever transferred and the actor is not its current approver, the decision is
+refused with `ApprovalAssignmentReassignedError` (409 `approval_reassigned`)
+unless the trusted caller's explicit organization `manage Approval` check
+passes. Eligible-manager fallback therefore never bypasses a replacement; the
+replacement decides as the request's approver. Untransferred requests keep
+the unchanged legacy authorization. The check locks the request row like the
+transfer does, so a decision and a transfer serialize and a transfer that
+commits first is always seen. Former holders and other eligible managers still
+see the request in the inbox (as #298 does for canonical assignments); acting
+on it returns the stale "reassigned" outcome.
+
+### Management UI
+
+Attention items for legacy requests (subject `legacy_assignment`) offer
+**Transfer…** like canonical ones; the settings actions accept either an
+`assignmentId` or an `approvalRequestId`.
+
+### Cleanup
+
+Approval maintenance links legacy journal rows to their request and observed
+workflow, deletes them explicitly (delivery events cascade), reports them in
+`escalationTransfers`, and accepts a legacy transfer ID directly after a
+cancellation removed the request.
+
+### Activation blockers (legacy)
+
+- Everything under [Activation blockers](#activation-blockers) (ownership
+  writer, delivery, starvation).
+- Legacy chain stages are held, not transferred.
+- Shadow/ready requests submitted before shadowing have no observation and are
+  held (`legacy_observation_missing`).
+- Replacement notification and old-card retirement: since #408, escalation's
+  replacement pass expands legacy absence and expense transfer events into
+  their legacy delivery lifecycle (replacement card, "Reassigned" former
+  cards); see
+  [Legacy escalation replacement delivery](approval-delivery.md#legacy-escalation-replacement-delivery--408)
+  and its activation blockers. Without a delivery control for the kind the
+  replacement finds the request in the web inbox as its approver.
+- Old binaries: pre-deployment binaries decide legacy absences without the
+  transfer check. Deploy before activation and drain old workers.
+- The approval write-boundary scanner cannot read sources on Windows; the new
+  `approval_request` update exception is verified by CI only.
+- Cutover from `shadow`/`ready` to `canonical`: canonical lineage classification
+  reads canonical journal rows only, so a still-pending absence whose observed
+  workflow carries a mirrored legacy transfer is held as `unjournaled_escalation`
+  (conservative) rather than recognized through `observed_event_id`. This joins
+  #288's in-flight classification (blocker 2).
+- A contradicted observation is held only for evidence refusals (planner,
+  write-boundary, capture, repository `malformed`/`source_conflict`), after
+  re-checking ownership, pause and policy; persistence invariants are retried
+  as failures.
+
+### Verification — 2026-09-25
+
+Unit seams: `legacy-escalation-lineage.test.ts` (representation),
+`legacy-transfer-evaluation.test.ts` (classification, holds, deadline, identity),
+`legacy-observation-planner-escalation.test.ts` (shadow history across transfer
+and decision), `server/absence-approvals.test.ts` (reassigned refusal, explicit
+management, replay first), `maintenance.test.ts` (legacy journal cleanup).
+
+PostgreSQL 16 runtime evidence (`escalation/legacy-transfer.integration.test.ts`,
+disposable label-owned database, full migration chain including `0080`, run
+together with #288's suite: 23/23) through the real callers
+(`requestAbsenceEffect`, `processDueEscalations`, the escalation settings
+actions, `approveAbsenceEffect`, `deleteApproval`):
+
+- Not due one minute before the deadline; transferred exactly at it with system
+  attribution, no audit row, no canonical workflow; the former holder (still an
+  eligible manager) is refused as reassigned; the replacement approves.
+- A later run holds `replacement_overdue` without a second transfer.
+- Two simultaneous scheduled runs commit exactly one transfer; a transfer racing
+  the current holder's decision leaves exactly one winner; an eligible
+  non-holder's decision waits on an in-flight transfer and is then refused as
+  reassigned (this test fails without the row lock).
+- Human transfer through the settings action: candidates, audit row, exact
+  replay, idempotency mismatch; a human transfer does not consume the allowance;
+  explicit management decides.
+- `shadow`: the observed workflow shows the cancelled original (unchanged
+  `assigned_at`) and the escalated replacement with the journaled observed
+  event; after the replacement's approval the history is intact.
+- Teams attempt and chain stage are held; canonical mode selects canonical
+  discovery; maintenance removes the journal and its event; the migration's
+  checks reject a legacy row naming a workflow and a duplicate lineage position,
+  and journal rows stay immutable.
+
+Not executed: `ready` mode, bulk inbox decisions, mobile callers, bots
+(absence cards stay review-only), deployment, and the write-boundary scanner.
+
+## Admitted kinds (#326 / T61)
+
+Escalation now transfers every approval kind that has a real inbox and
+decision path under its current authority, and holds the rest explicitly.
+The scope was decided with the user on 2026-09-25: canonical time kinds plus
+legacy travel expenses. Legacy and shadow time authority followed in #439
+(see [Legacy time authority](#legacy-time-authority-439)).
+
+| Kind | Canonical authority (`canonical`) | `complete` | Legacy authority (`legacy`, `shadow`, `ready`) |
+| --- | --- | --- | --- |
+| Absence | Transfer (#298) | Held | Transfer (#299) |
+| Manual time submission, policy clock-out, time correction | Transfer | Held (`time_inbox_requires_compatibility_mirror`) | Transfer (#439); chain stages, unverifiable state and missing or contradicted observations held |
+| Travel expense | Held (`travel_expense_without_legacy_authority`; no canonical adapter) | Held (same) | Transfer in `legacy`; `shadow`/`ready` held (`legacy_observation_unsupported`) |
+
+In every kind, parallel pending assignments and legacy chain stages are held
+as before. `kinds.ts` names the admitted kinds and the canonical route rule;
+the management UI offers **Transfer…** for exactly these kinds.
+
+### Discovery
+
+`processDueEscalations` reads the rollout mode of each discovered kind once
+(`summary.authorities`, which replaces the absence-only `authority`) and
+discovers, within one batch limit and oldest first:
+
+- pending assignments of active human stages of every admitted kind that
+  decides canonically, and
+- pending legacy requests: absences under legacy authority, travel expenses
+  (under every mode), and time entries while any time kind is
+  legacy-authoritative. Compatibility representatives of canonically decided
+  workflows are excluded; they are discovered through their assignments.
+  Requests that already carry an open hold on a route no transfer can resolve
+  (`UNTRANSFERABLE_ESCALATION_ROUTES`: expenses without legacy authority,
+  unrepresented or unclassified time requests, expense observation modes) are
+  excluded too, so permanent holds cannot starve the batch. Their hold stays
+  open, and the management UI offers no **Transfer…** on them.
+
+Each item still commits in its own transaction under the write gate of its
+own kind, which re-reads the mode. A time request represented by a stage of a
+canonically decided workflow is skipped (`canonicalAuthority`); legacy time
+requests follow [Legacy time authority](#legacy-time-authority-439).
+
+### Canonical time kinds
+
+The canonical path is kind-agnostic: the workflow `escalate` transition
+replaces the one pending assignment, the canonical-to-legacy mirror moves the
+compatibility representative (including its pinned assignment metadata), and
+the journal records the kind. Lineage, actionable instant, deadline, allowance,
+candidate eligibility, replay and races are the #298 rules unchanged.
+
+Revocation on the decision path, in both time decision owners
+(`executeOrdinaryWorkPeriodDecisionInTransaction` and
+`executeTimeCorrectionDecisionInTransaction`):
+
+- A fresh decision of the pending replacement by an employee escalation
+  replaced in that stage returns `approval_reassigned` (409,
+  `assertNotReplacedByEscalation`), before any authorization.
+- Eligible-manager fallback on a lineage that contains an escalation never
+  decides. An eligible manager gets `approval_reassigned`; anyone else stays
+  unauthorized.
+- Explicit organization management still decides. It needs CASL
+  `manage Approval`, and on the work-period path also the inbox's
+  organization-wide flag.
+- Bound time cards: a card bound to a replaced assignment decides nothing.
+  The outcome is `review_required` with reason `stale` or `reassigned`.
+
+The replacement finds the approval in the web inbox and decides it through the
+existing routes. Replacement cards and former-card retirement use the #300
+escalation delivery unchanged (the event names the kind and the delivery
+control is per kind); they were verified with Telegram.
+
+### Legacy travel expenses
+
+The legacy path now loads its subject per kind. For travel expenses, the
+request is transferable when all of these hold:
+
+- it is the claim's only pending request;
+- the claim is still `submitted` by the requester;
+- no approval chain instance exists for the claim;
+- the rollout mirrors nothing.
+
+The transfer is the #299 atomic transfer: a conditional update of
+`approval_request.approver_id`, the lineage in `metadata.escalation`, and the
+journal row with its delivery event. The journal row names
+`workflow_type = 'travel_expense'`, the claim as source, and the command
+fingerprint `travel_expense-legacy-transfer:v1`. Absence rows keep
+`absence-legacy-transfer:v1`.
+
+`executeTravelExpenseDecisionInTransaction` looks up the addressed request (or
+the claim's pending request) with the same row lock as the transfer. When that
+request was ever transferred and the actor is not its current approver, the
+result is `approval_reassigned` unless the trusted caller's explicit
+organization management check passes. Bound expense cards never carry
+management; their result is `review_required` with reason `reassigned`. This
+applies to the inbox, the expense page actions and cards alike.
+
+### Activation blockers (#326)
+
+- Everything under [Activation blockers](#activation-blockers) and
+  [Activation blockers (legacy)](#activation-blockers-legacy): ownership
+  writer, drained cutover, policy preparation, starvation.
+- **Legacy and shadow time authority** transfers since #439; its own
+  blockers are listed under
+  [Activation blockers (#439)](#activation-blockers-439).
+- **`complete` mode and parallel assignments** are held for every canonical
+  kind.
+- **Excluded holds:** a legacy request held on an untransferable route is
+  not re-examined, so a later change of its approver does not refresh that
+  hold until an attention recheck or disposition closes it.
+- **Expense delivery:** since #408 the replacement gets its card and the
+  former holder's cards are retired as "Reassigned" (see
+  [Legacy escalation replacement delivery](approval-delivery.md#legacy-escalation-replacement-delivery--408));
+  pressing a former card decides nothing. Expense `shadow`/`ready` modes and
+  approval chains are held.
+- **Providers:** replacement cards for time kinds were exercised with Telegram
+  only. Slack, Teams and Discord use the same #300 owner but have no runtime
+  evidence for time kinds.
+- **Old binaries:** pre-deployment binaries decide time kinds and expenses
+  without the revocation checks. Deploy everywhere and drain old workers
+  before an organization's ownership moves.
+- **Not executed:** bulk inbox decisions, the #301/#302 web decision pages
+  outside the inbox routes, and deployment.
+
+### Verification — 2026-09-25
+
+PostgreSQL 16 (disposable label-owned runner, full migration chain) through
+the real callers:
+
+- **`time-kinds.integration.test.ts` (11 tests).** Submissions run through
+  the real actions: `createManualTimeEntry`, `clockIn`/`clockOut` with a
+  forced policy clock-out, and `requestTimeCorrection`. Transfers run through
+  `processDueEscalations`; decisions through the real inbox list and
+  approve/reject routes with CASL abilities; cards through the delivery owner,
+  escalation replacement delivery and the Telegram webhook. The suite covers:
+  - For each time kind: nothing is discovered one minute before the deadline,
+    and the transfer happens exactly at it with system attribution.
+  - The compatibility representative follows the transfer.
+  - The former holder and another eligible manager get 409 "reassigned".
+  - The replacement lists the approval and approves it.
+  - The replacement can also reject; a later run holds `replacement_overdue`.
+  - Explicit management decides.
+  - Two concurrent runs commit exactly one transfer, and a transfer racing
+    the holder's decision has exactly one winner.
+  - A human transfer is recorded with audit and exact replay, and it does not
+    consume the automatic allowance.
+  - Delivery: the replacement card is sent and the former card retired
+    ("Reassigned"). A press on the former card decides nothing; the
+    replacement's press approves.
+  - Legacy time authority was held with `legacy_time_authority` (replaced by
+    the #439 transfer; that test moved to the #439 suite).
+  - Approval maintenance removes the journal.
+- **`expense-transfer.integration.test.ts` (9 tests).** It runs the real
+  draft/upload/submit actions, the processor, the settings actions, the inbox
+  approve route, the expense page action, delivery and the Telegram webhook.
+  The suite covers:
+  - Nothing is discovered before the deadline; the transfer happens exactly
+    at it.
+  - The lineage lands on the request, and the event stays pending.
+  - The former holder is refused through the inbox and the expense page, and
+    another eligible manager is refused too.
+  - The replacement approves, and the decision evidence names them.
+  - `replacement_overdue` is held on a later run.
+  - The former holder's card press decides nothing and records no invocation.
+  - The management transfer has audit and replay and does not consume the
+    allowance; explicit management decides.
+  - Concurrent runs commit one transfer, and a transfer racing a decision has
+    one winner.
+  - A chain stage is held, and maintenance cleans up the journal.
+  - Under a `canonical` expense rollout the request is held visibly
+    (`travel_expense_without_legacy_authority`) and later runs skip it.
+- **Regressions:** run together with #299's legacy absence suite, #300's
+  replacement delivery, #296's expense suite, #325's time presentation and
+  #301/#302's correction and work-period suites: 9 files, 349 tests passed.
+
+Unit seams: `kinds.test.ts`, `decision-authority.test.ts` (revocation and
+fallback rules shared by every canonical kind).
+
+## Legacy time authority (#439)
+
+Under `legacy`, `shadow` and `ready`, the legacy owners decide manual time
+submissions, policy clock-outs and time corrections, so the authority is the
+pending `approval_request` (entity type `time_entry`). Escalation transfers it
+with the #299 atomic transfer: the conditional approver move, the lineage in
+`metadata.escalation`, the journal row and its delivery event, all in one
+transaction. The command fingerprint is `<kind>-legacy-transfer:v1`
+(`manual_time_submission`, `policy_clock_out`, `time_correction`); absence
+and expense fingerprints are unchanged.
+
+### Kind and subject
+
+A time entry's request can belong to three kinds, so the kind is established
+before the kind's write gate is taken, and verified after the row lock:
+
+1. **Resolve.** The kind of the workflow whose stage represents the request
+   (`legacy_approval_request_id`), otherwise the kind its decision owner
+   classifies it as (`classifyPersistedTimeApprovalRequest`: metadata,
+   reason, the work period's pending changes and the verified correction
+   rows). A request nothing classifies is held once due
+   (`legacy_time_unclassified`, untransferable): no owner could decide it.
+2. **Authority.** Under the kind's gate, a represented request of a
+   canonically deciding kind is `canonicalAuthority`; an unrepresented one is
+   held once due (`legacy_time_without_legacy_authority`, untransferable).
+3. **Verify.** The request is locked `FOR UPDATE` and must be its work
+   period's only pending request. The verified capture of its kind must
+   confirm the kind, requester, approver and pending status of the locked row:
+   `captureOrdinaryWorkPeriodLegacyState` for manual submissions and policy
+   clock-outs, `captureTimeCorrectionLegacyApprovalState` for corrections.
+   A capture failure or mismatch is held at once as `ambiguous_history`
+   (`legacy_state_unverifiable` or `legacy_state_mismatch`); a chain stage
+   is held once due (`legacy_chain_stage`).
+
+The lineage extends the locked row's **raw** metadata. The captures
+normalize metadata to what they verify and would drop keys other owners still
+read (`submission`, `timeCorrectionOriginalWorkMetadata`, workflow bindings).
+
+### Shadow mirroring
+
+With `mirror = legacy_to_canonical` (`shadow`, `ready`), the transfer mirrors
+into the pending observation the work period is bound to
+(`work_period.approval_workflow_id`), against that observation's version, in
+the transfer's transaction. Both captures accept a well-formed `escalation`
+key (`splitLegacyEscalationLineage`) and carry it on the captured request, so
+the planner rebuilds former holders, the current holder and `pendingSince`
+exactly as for absences. A malformed or accessor lineage fails the capture.
+Holds instead of a transfer:
+
+- No bound pending observation: `legacy_observation_missing` (once due).
+- An observation whose pending holder for the request is not the request's
+  approver: `ambiguous_history` with cause `legacy_observation_contradicted`.
+  The mirror rebuilds history from legacy rows, so it would overwrite such an
+  observation instead of reconciling it.
+- A planner or repository refusal during the mirror rolls the transaction
+  back and is held as `ambiguous_history` (`legacy_observation_rejected`), as
+  in #299.
+
+The ordinary finalizer and the correction cancellation tombstone accept and
+keep the lineage the same way, so later decisions and replays see it.
+
+### Existing `legacy_time_authority` holds
+
+`legacy_time_authority` is no longer raised and no longer untransferable.
+Open holds with that route (raised by #326 code) are re-examined by the next
+discovery. A transfer resolves them through the usual attention recovery
+(`assignment_transferred`); any other outcome overwrites the hold's evidence
+with the current route. So they cannot starve the batch for longer than one
+re-examination, and the management UI offers **Transfer…** on them.
+
+### Decision path
+
+The legacy branches of `executeOrdinaryWorkPeriodDecisionInTransaction` and
+`executeTimeCorrectionDecisionInTransaction` call
+`assertLegacyTransferDecisionAuthority` after the replay checks and before any
+evidence or mutation. It locks the addressed request like the transfer does,
+so a decision racing a transfer serializes behind it. When the request was
+ever transferred, only its current approver or explicit organization
+management decides; everyone else gets `approval_reassigned` (409). This
+covers the inbox routes, including the eligible-manager fallback, and the web
+approvals actions. Management is `canManageOrganizationTimeApproval`: the
+caller's organization-wide flag plus CASL `manage Approval`; without a check
+there is none. The shared eligible-manager fallback (`shared.ts`) also
+refuses a transferred request, for every legacy kind.
+
+Bound legacy time cards (#432) reach the same legacy decision branches with
+no management callback, so a card is refused the same way; a card press
+racing a transfer serializes behind it and is then refused (verified in
+`legacy-time-bound-approval.integration.test.ts`).
+
+### Activation blockers (#439)
+
+- Everything under the #298, #299 and #326 blockers above.
+- **Old binaries** decide legacy time requests without the refusal. Deploy
+  everywhere and drain old workers before an organization's ownership moves.
+- **Requester cancellation in `shadow`/`ready`** of a direct legacy
+  correction failed before #463: the retained tombstone dropped the original
+  work metadata, and the observation planner refused the tombstone. #463
+  keeps the metadata and plans the tombstone as `workflow.cancelled` with the
+  lineage holders intact. Cancellation of a transferred correction is verified
+  under `legacy`, `shadow` and `ready`.
+- **Delivery:** legacy transfer events stay `pending` until legacy replacement
+  delivery exists (#408). The replacement gets no card and the former card is
+  not retired.
+- **Not executed:** bulk inbox decisions, deployment. Bound legacy time cards
+  were verified together with #439 by #432.
 
 ## Verification checkpoint — 2026-09-24
 

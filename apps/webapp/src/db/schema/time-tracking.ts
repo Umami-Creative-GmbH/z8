@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
 	boolean,
+	check,
 	date,
 	foreignKey,
 	index,
@@ -175,6 +176,9 @@ export const workPeriod = pgTable(
 		// Legacy-to-canonical linkage used during big-bang cutover.
 		canonicalRecordId: uuid("canonical_record_id"),
 		approvalWorkflowId: uuid("approval_workflow_id"),
+		// Explicit work-graph revision (#256 §6). Advanced by completed-work operations;
+		// writers that have not adopted them leave it unchanged (#327).
+		graphRevision: integer("graph_revision").default(0).notNull(),
 
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
@@ -378,5 +382,47 @@ export const employeeWorkBalancePeriod = pgTable(
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
+	],
+);
+
+/**
+ * Durable balance-rebuild intent (#311). A configuration change that invalidates
+ * balance projections commits one row per affected organization with the change;
+ * `processWorkBalanceRebuildIntents` executes it separately and deletes it.
+ * An organization timezone intent (`user_id` null) covers every projection of the
+ * organization; a user timezone intent (#312) covers that user's employees in it.
+ * While a row exists, the projections it covers are not current.
+ */
+export const workBalanceRebuildIntent = pgTable(
+	"work_balance_rebuild_intent",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		reason: text("reason").notNull(),
+		/** The user whose employees are affected; null for the whole organization. */
+		userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+		requestedBy: text("requested_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		requestedAt: timestamp("requested_at", { withTimezone: true }).notNull(),
+		attempts: integer("attempts").default(0).notNull(),
+		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+		lastError: text("last_error"),
+	},
+	(table) => [
+		index("workBalanceRebuildIntent_org_requested_idx").on(
+			table.organizationId,
+			table.requestedAt,
+		),
+		check(
+			"work_balance_rebuild_intent_reason_check",
+			sql`${table.reason} IN ('organization_timezone', 'user_timezone')`,
+		),
+		check(
+			"work_balance_rebuild_intent_scope_check",
+			sql`(${table.reason} = 'user_timezone') = (${table.userId} IS NOT NULL)`,
+		),
 	],
 );

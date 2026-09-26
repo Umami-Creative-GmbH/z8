@@ -21,8 +21,40 @@ const mocks = vi.hoisted(() => ({
 	runTracedEmployeeAction: vi.fn(),
 }));
 
+// Protection is covered by authorization-mutation.test.ts and the PostgreSQL
+// suite; here it records its scope and opens the fake transaction.
+const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: async (
+		scope: unknown,
+		mutation: (tx: unknown) => Promise<unknown>,
+		database: { transaction: (run: (tx: unknown) => Promise<unknown>) => Promise<unknown> },
+	) => {
+		protection.scopes.push(scope);
+		return database.transaction(mutation);
+	},
+}));
+
+// The coordinated auth transaction (#314) is covered by auth-mutation-coordination
+// tests and the PostgreSQL suite; here it records that removal ran inside it.
+const coordination = vi.hoisted(() => ({ inside: false, removalsInside: 0 }));
 vi.mock("@/lib/auth", () => ({
-	auth: { api: { removeMember: mocks.authRemoveMember } },
+	auth: {
+		api: {
+			removeMember: (input: unknown) => {
+				if (coordination.inside) coordination.removalsInside += 1;
+				return mocks.authRemoveMember(input);
+			},
+		},
+	},
+	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+		coordination.inside = true;
+		try {
+			return await mutation();
+		} finally {
+			coordination.inside = false;
+		}
+	},
 }));
 
 vi.mock("@/lib/auth/member-removal-cleanup", () => ({
@@ -476,6 +508,15 @@ describe("employee lifecycle actions", () => {
 		const result = await deactivateEmployeeAction(employeeId);
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
 		expect(update).not.toHaveBeenCalled();
+	});
+
+	it("changes the target's active state under its configuration/access protection", async () => {
+		protection.scopes.length = 0;
+		setup();
+
+		await deactivateEmployeeAction(employeeId);
+
+		expect(protection.scopes).toEqual([{ organizationId, employeeIds: [employeeId] }]);
 	});
 
 	it("serializes the owner check and state update with an organization lock", async () => {
@@ -958,10 +999,12 @@ describe("removeEmployeeAccessAction", () => {
 
 	it("delegates removal by membership ID with the actor organization and request headers", async () => {
 		const { requestHeaders } = setupRemoval();
+		coordination.removalsInside = 0;
 
 		const result = await removeEmployeeAccessAction(employeeId);
 
 		expect(result).toEqual({ success: true, data: undefined });
+		expect(coordination.removalsInside).toBe(1);
 		expect(mocks.authRemoveMember).toHaveBeenCalledExactlyOnceWith({
 			body: {
 				organizationId,

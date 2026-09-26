@@ -1,7 +1,10 @@
 import {
+	compareInstants,
 	instantToCanonicalString,
 	isInstant,
+	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { parseRequesterCancellationMarker } from "../domain-adapters/time-correction-cancellation-marker";
 import {
 	deriveApprovalAssignmentId,
 	deriveApprovalEventId,
@@ -21,6 +24,10 @@ import type {
 	ObservedLegacyTransition,
 	ObservedLegacyTransitionPlan,
 } from "./ports";
+import {
+	type LegacyEscalationLineageTransfer,
+	readLegacyEscalationLineage,
+} from "./legacy-escalation-lineage";
 import type { ApprovalLegacyObservationPlanner } from "./repository";
 import { normalizeStableData } from "./stable-data";
 import { assertValidApprovalWorkflowSnapshot } from "./state-machine";
@@ -196,18 +203,63 @@ function validateDirectRequest(input: ObservedLegacyTransition): void {
 			!canonicalUuid(request.requestedBy) ||
 			!canonicalUuid(request.approverId) ||
 			!isInstant(request.updatedAt) ||
+			(request.metadata !== null && !record(request.metadata))
+		) {
+			fail("invalid_evidence");
+		}
+		if (directRequesterCancellation(input, request)) continue;
+		if (
 			!(["pending", "approved", "rejected"] as const).includes(
 				request.status,
 			) ||
 			(request.status === "approved" && !isInstant(request.approvedAt)) ||
 			(request.status !== "approved" && request.approvedAt !== null) ||
 			(request.status === "rejected" && !nonEmpty(request.rejectionReason)) ||
-			(request.status !== "rejected" && request.rejectionReason !== null) ||
-			(request.metadata !== null && !record(request.metadata))
+			(request.status !== "rejected" && request.rejectionReason !== null)
 		) {
 			fail("invalid_evidence");
 		}
 	}
+}
+
+/**
+ * A requester's retained cancellation of a direct time correction (#301): the
+ * row stays `rejected` without a reason, `approvedAt` holds the cancellation
+ * instant, and the metadata carries the requester marker. The capture already
+ * reads it as cancelled; a marker that does not match the request fails (#463).
+ */
+function directRequesterCancellation(
+	input: ObservedLegacyTransition,
+	request: NonNullable<ObservedLegacyTransition["before"]["approvalRequest"]>,
+): boolean {
+	if (
+		input.source.workflowType !== "time_correction" ||
+		request.metadata === null ||
+		!Object.hasOwn(request.metadata, "cancellation")
+	) {
+		return false;
+	}
+	let marker: ReturnType<typeof parseRequesterCancellationMarker>;
+	let cancelledAt: ReturnType<typeof parseInstant>;
+	try {
+		marker = parseRequesterCancellationMarker(request.metadata.cancellation);
+		cancelledAt = parseInstant(marker.cancelledAt);
+	} catch {
+		return fail("invalid_evidence");
+	}
+	if (
+		request.status !== "rejected" ||
+		request.rejectionReason !== null ||
+		!isInstant(request.approvedAt) ||
+		compareInstants(cancelledAt, request.approvedAt) !== 0 ||
+		marker.organizationId !== input.organizationId ||
+		marker.workPeriodId !== input.source.sourceId ||
+		marker.requesterEmployeeId !== request.requestedBy ||
+		marker.chainInstanceId !== null
+	) {
+		return fail("invalid_evidence");
+	}
+	return true;
 }
 
 interface LegacyEventDraft {
@@ -1110,6 +1162,46 @@ function buildChainPlan(
 	};
 }
 
+/** Escalation lineage a direct request carries (#299); malformed evidence fails. */
+function directRequestLineage(
+	request: ObservedLegacyTransition["before"]["approvalRequest"],
+): {
+	pendingSince: ApprovalWorkflowSnapshot["submittedAt"] | null;
+	transfers: LegacyEscalationLineageTransfer[];
+} {
+	if (request === null) return { pendingSince: null, transfers: [] };
+	const lineage = readLegacyEscalationLineage(request.metadata);
+	if (lineage.kind === "malformed") return fail("invalid_evidence");
+	return lineage.kind === "lineage"
+		? { pendingSince: lineage.pendingSince, transfers: lineage.transfers }
+		: { pendingSince: null, transfers: [] };
+}
+
+function lineagePrefixKept(
+	prefix: readonly LegacyEscalationLineageTransfer[],
+	lineage: readonly LegacyEscalationLineageTransfer[],
+): boolean {
+	return prefix.every((transfer, index) => {
+		const kept = lineage[index];
+		return (
+			kept !== undefined &&
+			canonicalEvidence(transfer) === canonicalEvidence(kept)
+		);
+	});
+}
+
+function lineageTransferActor(
+	transfer: LegacyEscalationLineageTransfer,
+): ApprovalAssignmentActorIdentity {
+	return transfer.initiator === "scheduled"
+		? { kind: "system", employeeId: null, userId: null }
+		: {
+				kind: "employee",
+				employeeId: transfer.actorEmployeeId ?? fail("invalid_evidence"),
+				userId: null,
+			};
+}
+
 function buildPlan(
 	input: ObservedLegacyTransition,
 ): ObservedLegacyTransitionPlan {
@@ -1128,11 +1220,33 @@ function buildPlan(
 	}
 	const beforeRequest = input.before.approvalRequest;
 	const afterRequest = input.after.approvalRequest;
+	const beforeLineage = directRequestLineage(beforeRequest);
+	const afterLineage = directRequestLineage(afterRequest);
+	const lastTransfer = afterLineage.transfers.at(-1);
+	// A legacy escalation transfer moves the pending request to its replacement
+	// in place and appends exactly one lineage entry naming that change.
+	const escalationTransfer =
+		beforeRequest?.status === "pending" &&
+		afterRequest?.status === "pending" &&
+		input.expectedVersion !== null &&
+		lastTransfer !== undefined &&
+		afterLineage.transfers.length === beforeLineage.transfers.length + 1 &&
+		lineagePrefixKept(beforeLineage.transfers, afterLineage.transfers) &&
+		lastTransfer.fromApproverEmployeeId === beforeRequest.approverId &&
+		lastTransfer.toApproverEmployeeId === afterRequest.approverId;
+	const lineageUnchanged =
+		beforeRequest === null ||
+		afterRequest === null ||
+		(beforeLineage.transfers.length === afterLineage.transfers.length &&
+			lineagePrefixKept(beforeLineage.transfers, afterLineage.transfers));
 	const initial = beforeRequest === null && afterRequest?.status === "pending";
 	const initialAutoApproved =
 		beforeRequest === null &&
 		afterRequest?.status === "approved" &&
 		afterRequest.approverId === afterRequest.requestedBy;
+	// A retained tombstone is `rejected` in storage but closes as cancelled.
+	const requesterCancellation =
+		afterRequest !== null && directRequesterCancellation(input, afterRequest);
 	const terminal =
 		beforeRequest?.status === "pending" &&
 		(afterRequest === null ||
@@ -1152,14 +1266,19 @@ function buildPlan(
 		(!initial &&
 			!initialAutoApproved &&
 			!terminal &&
-			!approvedOwnerCancellation) ||
-		((initial || initialAutoApproved) && input.expectedVersion !== null) ||
+			!approvedOwnerCancellation &&
+			!escalationTransfer) ||
+		((initial || initialAutoApproved) &&
+			(input.expectedVersion !== null ||
+				afterLineage.transfers.length !== 0)) ||
 		(terminal && input.expectedVersion === null) ||
+		(!escalationTransfer && !lineageUnchanged) ||
 		(beforeRequest !== null &&
 			afterRequest !== null &&
 			(beforeRequest.id !== afterRequest.id ||
 				beforeRequest.requestedBy !== afterRequest.requestedBy ||
-				beforeRequest.approverId !== afterRequest.approverId ||
+				(!escalationTransfer &&
+					beforeRequest.approverId !== afterRequest.approverId) ||
 				beforeRequest.entityType !== afterRequest.entityType ||
 				beforeRequest.entityId !== afterRequest.entityId))
 	) {
@@ -1169,14 +1288,24 @@ function buildPlan(
 	if (!request) return fail("ambiguous_transition");
 	const status = initial
 		? ("pending" as const)
-		: afterRequest === null
+		: afterRequest === null || requesterCancellation
 			? ("cancelled" as const)
 			: afterRequest.status;
 	if (!status) return fail("invalid_lifecycle");
-	const transitionAt = afterRequest?.updatedAt ?? input.after.capturedAt;
+	const transitionAt =
+		escalationTransfer && lastTransfer
+			? lastTransfer.transferredAt
+			: requesterCancellation
+				? (afterRequest?.approvedAt ?? fail("invalid_evidence"))
+				: (afterRequest?.updatedAt ?? input.after.capturedAt);
+	const lineage = afterRequest !== null ? afterLineage : beforeLineage;
+	const pendingSince =
+		lineage.pendingSince ?? beforeRequest?.updatedAt ?? request.updatedAt;
 	const cancellationReason = approvedOwnerCancellation
 		? "Legacy approved request cancelled by owner"
-		: "Legacy pending request disappeared";
+		: requesterCancellation
+			? "Legacy pending request cancelled by requester"
+			: "Legacy pending request disappeared";
 	const version =
 		input.expectedVersion === null ? 1 : input.expectedVersion + 1;
 	const workflowId = deriveApprovalWorkflowId({
@@ -1193,15 +1322,56 @@ function buildPlan(
 		workflowId,
 		allocationKey: request.id,
 	});
+	// Earlier holders of an escalated request are rebuilt from its lineage, so
+	// every later observation reproduces the same cancelled history rows.
+	const holderIds = [
+		assignmentId,
+		...lineage.transfers.map((transfer) =>
+			deriveApprovalAssignmentId({
+				organizationId: input.organizationId,
+				workflowId,
+				allocationKey: `${request.id}:escalation:${transfer.sequence}`,
+			}),
+		),
+	];
+	const formerHolders: ApprovalAssignmentSnapshot[] = lineage.transfers.map(
+		(transfer, index) => {
+			const replaced = lineage.transfers[index - 1];
+			return {
+				id: holderIds[index] ?? fail("invalid_evidence"),
+				organizationId: input.organizationId,
+				workflowId,
+				stageId,
+				sequence: index + 1,
+				approverEmployeeId: transfer.fromApproverEmployeeId,
+				status: "cancelled",
+				assignedAt: replaced ? replaced.transferredAt : pendingSince,
+				resolvedAt: transfer.transferredAt,
+				resolvedBy: lineageTransferActor(transfer),
+				reassignedByEmployeeId: replaced ? replaced.actorEmployeeId : null,
+				reassignedFromAssignmentId: replaced
+					? (holderIds[index - 1] ?? fail("invalid_evidence"))
+					: null,
+				reassignmentMetadata: replaced ? { kind: "escalation" } : null,
+			};
+		},
+	);
+	const currentHolder = lineage.transfers.at(-1);
+	if (
+		currentHolder &&
+		currentHolder.toApproverEmployeeId !== request.approverId
+	) {
+		fail("invalid_evidence");
+	}
 	const assignment: ApprovalAssignmentSnapshot = {
-		id: assignmentId,
+		id: holderIds.at(-1) ?? fail("invalid_evidence"),
 		organizationId: input.organizationId,
 		workflowId,
 		stageId,
-		sequence: 1,
+		sequence: lineage.transfers.length + 1,
 		approverEmployeeId: request.approverId,
 		status: approvedOwnerCancellation ? "approved" : status,
-		assignedAt: beforeRequest?.updatedAt ?? request.updatedAt,
+		assignedAt: currentHolder ? currentHolder.transferredAt : pendingSince,
 		resolvedAt:
 			status === "pending"
 				? null
@@ -1214,9 +1384,13 @@ function buildPlan(
 				: approvedOwnerCancellation
 					? { kind: "employee", employeeId: request.approverId, userId: null }
 					: assignmentActorFromEventActor(input.actor),
-		reassignedByEmployeeId: null,
-		reassignedFromAssignmentId: null,
-		reassignmentMetadata: null,
+		reassignedByEmployeeId: currentHolder
+			? currentHolder.actorEmployeeId
+			: null,
+		reassignedFromAssignmentId: currentHolder
+			? (holderIds.at(-2) ?? fail("invalid_evidence"))
+			: null,
+		reassignmentMetadata: currentHolder ? { kind: "escalation" } : null,
 	};
 	const stage: ApprovalStageSnapshot = {
 		id: stageId,
@@ -1230,7 +1404,7 @@ function buildPlan(
 		},
 		activationMode: initialAutoApproved ? "requester_auto_approve" : "human",
 		status: approvedOwnerCancellation ? "approved" : status,
-		activatedAt: beforeRequest?.updatedAt ?? request.updatedAt,
+		activatedAt: pendingSince,
 		decidedAt:
 			status === "pending"
 				? null
@@ -1244,7 +1418,7 @@ function buildPlan(
 					? (afterRequest?.rejectionReason ?? "Legacy request rejected")
 					: null,
 		legacyApprovalRequestId: request.id,
-		assignments: initialAutoApproved ? [] : [assignment],
+		assignments: initialAutoApproved ? [] : [...formerHolders, assignment],
 	};
 	const contextSnapshot = normalizeStableData(
 		input.after.sourceSnapshot,
@@ -1267,7 +1441,7 @@ function buildPlan(
 		},
 		contextSnapshot,
 		displaySnapshot,
-		submittedAt: beforeRequest?.updatedAt ?? request.updatedAt,
+		submittedAt: pendingSince,
 		completedAt: status === "pending" ? null : transitionAt,
 		cancelledAt: status === "cancelled" ? transitionAt : null,
 		decisionReason:
@@ -1330,6 +1504,27 @@ function buildPlan(
 				occurredAt: transitionAt,
 			},
 		);
+	} else if (escalationTransfer && lastTransfer) {
+		// Mirrors the canonical `escalate` transition's event.
+		drafts.push({
+			eventType: "assignment.escalated",
+			previousState: { status: "pending" },
+			resultingState: {
+				status: "pending",
+				targetEmployeeId: lastTransfer.toApproverEmployeeId,
+			},
+			reason: "escalation",
+			metadata: {
+				kind: "escalation",
+				sourceEmployeeId: lastTransfer.fromApproverEmployeeId,
+				stageId,
+			},
+			references: {
+				sourceAssignmentId: holderIds.at(-2) ?? fail("invalid_evidence"),
+				targetAssignmentId: assignment.id,
+			},
+			occurredAt: transitionAt,
+		});
 	} else if (approvedOwnerCancellation) {
 		drafts.push({
 			eventType: "workflow.cancelled",

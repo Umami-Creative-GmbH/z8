@@ -94,6 +94,15 @@
       "category": "Kategorie",
       "currentCategoryName": "Aktueller Kategoriename",
       "submittedTitle": "Eingereichter Antrag"
+    },
+    "review": {
+      "title": "Genehmigung prüfen",
+      "showDetails": "Details anzeigen",
+      "switchOrganizationTitle": "Organisation wechseln, um zu prüfen",
+      "switchOrganizationBody": "Diese Genehmigung gehört zu {organization}. Wechseln Sie zu dieser Organisation, um sie zu prüfen; Ihr Zugriff wird nach dem Wechsel erneut geprüft.",
+      "switchOrganizationAction": "Zu {organization} wechseln",
+      "unavailableTitle": "Diese Genehmigung ist nicht verfügbar",
+      "unavailableBody": "Sie können diese Genehmigung hier nicht prüfen. Sie wurde möglicherweise entschieden, neu zugewiesen, zurückgezogen oder entfernt, oder Ihr Zugriff hat sich geändert. Ein Link allein gewährt keinen Zugriff. Ihr Genehmigungseingang zeigt alles, was derzeit auf Sie wartet."
     }
   },
   "fastLanes": {

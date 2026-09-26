@@ -62,6 +62,13 @@ export async function listApprovals(
 			to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at_utc
 		from approval_submitted_revision
 		where organization_id = ${organizationId} and authority = 'legacy'
+		union all
+		-- Legacy escalation transfers likewise outlive a cancelled request.
+		select 'legacy_transfer' as storage_type, id, organization_id, 'transferred',
+			'approval_request', legacy_approval_request_id,
+			to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at_utc
+		from approval_escalation_transfer
+		where organization_id = ${organizationId} and authority_mode = 'legacy'
 		order by created_at_utc, storage_type, id
 		`),
 	);
@@ -104,6 +111,38 @@ async function resolveLifecycle(
 			from approval_submitted_revision
 			where organization_id = ${organizationId} and authority = 'legacy'
 				and observed_workflow_id is not null
+			-- Legacy escalation transfers record the request they moved and the
+			-- shadow observation they mirrored into.
+			union all
+			select 'legacy_transfer', id, 'legacy', legacy_approval_request_id from approval_escalation_transfer
+			where organization_id = ${organizationId} and authority_mode = 'legacy'
+			union all
+			select 'legacy_transfer', id, 'workflow', observed_workflow_id from approval_escalation_transfer
+			where organization_id = ${organizationId} and authority_mode = 'legacy'
+				and observed_workflow_id is not null
+			-- A legacy delivery cycle (#384) records its requests by value, so a
+			-- request deleted by ordinary cancellation stays linked. The cycle is
+			-- the legacy chain or the single request one submission created.
+			union all
+			select 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_approval_request_id
+			from approval_delivery_intent
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_approval_request_id
+			from approval_delivery_work
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_approval_request_id
+			from approval_delivery_message
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select distinct 'legacy_cycle', legacy_cycle_id, 'chain', legacy_cycle_id
+			from approval_delivery_intent
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select distinct 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_cycle_id
+			from approval_delivery_intent
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
 		), links as (
 			select from_kind, from_id, to_kind, to_id from edges
 			union all
@@ -158,6 +197,8 @@ export interface DeletedApprovalEvidenceRecords {
 	submittedRevisions: string[];
 	decisionEvidence: string[];
 	reviewBindings: string[];
+	/** Provider invocation associations of the lifecycle's decisions (#290). */
+	invocations: string[];
 }
 
 export interface DeletedApprovalRecords {
@@ -167,6 +208,16 @@ export interface DeletedApprovalRecords {
 	evidence: DeletedApprovalEvidenceRecords;
 	/** Escalation transfer journal entries; their delivery events cascade. */
 	escalationTransfers: string[];
+	/**
+	 * Approval-card delivery (#291): outstanding and past work, every tracked
+	 * remote message, and the lifecycle intents of legacy lifecycles (#296).
+	 */
+	delivery: { work: string[]; messages: string[]; intents: string[] };
+	/**
+	 * Escalation attention incidents of the lifecycle (#306): durable recovery
+	 * state for a lifecycle that no longer exists. Their events cascade.
+	 */
+	attention: string[];
 }
 
 export async function deleteApproval(
@@ -179,6 +230,21 @@ export async function deleteApproval(
 	);
 }
 
+// Privileged maintenance only: do not race submissions or stage linking. Keep FK
+// checks enabled so an unexpected dependency rolls everything back.
+async function lockApprovalTopology(transaction: ApprovalTransactionClient): Promise<void> {
+	await transaction.execute(sql`set local lock_timeout = '10s'`);
+	await transaction.execute(sql`set local statement_timeout = '30s'`);
+	await transaction.execute(sql`
+		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
+			approval_workflow, approval_workflow_stage, approval_submitted_revision,
+			approval_review_binding, approval_decision_evidence, approval_escalation_transfer,
+			approval_invocation, approval_delivery_work, approval_delivery_message,
+			approval_delivery_intent, approval_escalation_attention
+			in share row exclusive mode
+	`);
+}
+
 // The caller owns the transaction so platform-admin audit logging can be atomic
 // with deletion. Authorization is enforced at the CLI/server-action boundary.
 export async function deleteApprovalInTransaction(
@@ -186,18 +252,9 @@ export async function deleteApprovalInTransaction(
 	organizationId: string,
 	id: string,
 ): Promise<DeletedApprovalRecords> {
-	// Privileged maintenance only: do not race submissions or stage linking.
-	// Keep FK checks enabled so an unexpected dependency rolls everything back.
-	await transaction.execute(sql`set local lock_timeout = '10s'`);
-	await transaction.execute(sql`set local statement_timeout = '30s'`);
-	await transaction.execute(sql`
-		lock table approval_request, approval_chain_instance, approval_chain_stage_instance,
-			approval_workflow, approval_workflow_stage, approval_submitted_revision,
-			approval_review_binding, approval_decision_evidence, approval_escalation_transfer
-			in share row exclusive mode
-	`);
+	await lockApprovalTopology(transaction);
 
-	const matches = rows(
+	let matches = rows(
 		await transaction.execute(sql`
 			select 'legacy' as storage_type, id from approval_request
 			where organization_id = ${organizationId} and id = ${id}::uuid
@@ -208,8 +265,24 @@ export async function deleteApprovalInTransaction(
 			select 'legacy_evidence' as storage_type, id from approval_submitted_revision
 			where organization_id = ${organizationId} and id = ${id}::uuid
 				and authority = 'legacy'
+			union all
+			select 'legacy_transfer' as storage_type, id from approval_escalation_transfer
+			where organization_id = ${organizationId} and id = ${id}::uuid
+				and authority_mode = 'legacy'
 		`),
 	);
+	if (matches.length === 0) {
+		// A legacy delivery cycle (#384) whose requests ordinary cancellation
+		// deleted, and which captured no revision, is addressed by its cycle.
+		matches = rows(
+			await transaction.execute(sql`
+				select 'legacy_cycle' as storage_type, legacy_cycle_id as id
+				from approval_delivery_intent
+				where organization_id = ${organizationId} and legacy_cycle_id = ${id}::uuid
+				limit 1
+			`),
+		);
+	}
 	if (matches.length === 0) {
 		throw new ApprovalMaintenanceError(
 			"APPROVAL_NOT_FOUND",
@@ -223,7 +296,13 @@ export async function deleteApprovalInTransaction(
 		);
 	}
 	const kind = matches[0].storage_type;
-	if (kind !== "legacy" && kind !== "workflow" && kind !== "legacy_evidence") {
+	if (
+		kind !== "legacy" &&
+		kind !== "workflow" &&
+		kind !== "legacy_evidence" &&
+		kind !== "legacy_transfer" &&
+		kind !== "legacy_cycle"
+	) {
 		throw new Error("Unexpected approval storage type");
 	}
 
@@ -232,6 +311,8 @@ export async function deleteApprovalInTransaction(
 	const workflowIds: string[] = [];
 	const chainIds: string[] = [];
 	const legacyRevisionIds: string[] = [];
+	const legacyTransferIds: string[] = [];
+	const legacyCycleIds: string[] = [];
 	for (const row of lifecycle) {
 		switch (row.kind) {
 			case "legacy":
@@ -246,6 +327,12 @@ export async function deleteApprovalInTransaction(
 			case "legacy_evidence":
 				legacyRevisionIds.push(rowId(row));
 				break;
+			case "legacy_transfer":
+				legacyTransferIds.push(rowId(row));
+				break;
+			case "legacy_cycle":
+				legacyCycleIds.push(rowId(row));
+				break;
 		}
 	}
 
@@ -259,11 +346,52 @@ export async function deleteApprovalInTransaction(
 	}
 
 	const deletedIds = async (query: SQL) => rows(await transaction.execute(query)).map(rowId);
+	// Attention incidents record the workflow, assignment (or lineage root) or legacy
+	// request they concern by value. Remove the lifecycle's incidents first, so no
+	// recheck or delivery recovery acts for a purged lifecycle; their events cascade.
+	const lifecycleAssignments = sql`select id from approval_stage_assignment
+		where organization_id = ${organizationId} and workflow_id = any(${sql.param(workflowIds)}::uuid[])`;
+	const attention =
+		workflowIds.length === 0 && legacyIds.length === 0
+			? []
+			: await deletedIds(sql`
+				delete from approval_escalation_attention
+				where organization_id = ${organizationId} and (
+					workflow_id = any(${sql.param(workflowIds)}::uuid[])
+					or approval_request_id = any(${sql.param(legacyIds)}::uuid[])
+					or assignment_id in (${lifecycleAssignments})
+					or lineage_root_assignment_id in (${lifecycleAssignments})
+				)
+				returning id
+			`);
 	// Chains cascade to their stages, removing the non-cascading legacy request FK.
 	const chains = chainIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_chain_instance
 			where organization_id = ${organizationId} and id = any(${sql.param(chainIds)}::uuid[])
 			returning id
+		`);
+	// Delivery of legacy lifecycles (#296) follows the lifecycle's legacy requests
+	// and, for cycles (#384), the cycle; the rows keep both by value, so they
+	// outlive ordinary cancellation until this purge. Escalation's legacy
+	// replacement work and transfer intents (#408) also follow their transfer.
+	// Delete and report them before the journal they would cascade from; a late
+	// send completing afterwards finds no work to record its message for.
+	const hasLegacyDelivery =
+		legacyIds.length > 0 || legacyCycleIds.length > 0 || legacyTransferIds.length > 0;
+	const legacyDeliveryScope = sql`organization_id = ${organizationId} and (
+		legacy_approval_request_id = any(${sql.param(legacyIds)}::uuid[])
+		or legacy_cycle_id = any(${sql.param(legacyCycleIds)}::uuid[]))`;
+	const legacyTransferScope = sql`(${legacyDeliveryScope})
+		or (organization_id = ${organizationId}
+			and escalation_transfer_id = any(${sql.param(legacyTransferIds)}::uuid[]))`;
+	const legacyDeliveryWork = !hasLegacyDelivery ? [] : await deletedIds(sql`
+			delete from approval_delivery_work where lifecycle = 'legacy' and (${legacyTransferScope}) returning id
+		`);
+	const legacyDeliveryMessages = !hasLegacyDelivery ? [] : await deletedIds(sql`
+			delete from approval_delivery_message where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
+		`);
+	const deliveryIntents = !hasLegacyDelivery ? [] : await deletedIds(sql`
+			delete from approval_delivery_intent where ${legacyTransferScope} returning id
 		`);
 	const legacyRequests = legacyIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_request
@@ -275,15 +403,43 @@ export async function deleteApprovalInTransaction(
 	// FKs also prevent a late capture from recreating purged evidence.
 	const evidenceScope = sql`organization_id = ${organizationId}
 		and workflow_id = any(${sql.param(workflowIds)}::uuid[])`;
+	// Delivery work and tracked messages follow the same workflow links. Delete
+	// them explicitly, before the escalation journal their replacement delivery
+	// work cascades from, so the audit records the work and the remote message
+	// identities; a late send completing afterwards cannot record a message (its
+	// FKs fail).
+	const deliveryWork = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_work where ${evidenceScope} returning id
+		`);
+	const deliveryMessages = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_delivery_message where ${evidenceScope} returning id
+		`);
 	// Escalation journals follow the same verified workflow links; their FKs to the
 	// workflow, its assignments and events likewise prevent late recreation.
 	const escalationTransfers = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_escalation_transfer where ${evidenceScope} returning id
 		`);
+	// Legacy transfers have no workflow; they follow the links they recorded.
+	// Their delivery events cascade.
+	if (legacyTransferIds.length > 0) {
+		escalationTransfers.push(
+			...(await deletedIds(sql`
+				delete from approval_escalation_transfer
+				where organization_id = ${organizationId} and authority_mode = 'legacy'
+					and id = any(${sql.param(legacyTransferIds)}::uuid[])
+				returning id
+			`)),
+		);
+	}
+	// Invocation associations reference their decision and binding; delete them
+	// first so the audit records them and a late redelivery cannot replay.
+	const invocations: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
+			delete from approval_invocation where ${evidenceScope} returning id
+		`);
 	const decisionEvidence: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_decision_evidence where ${evidenceScope} returning id
 		`);
-	const reviewBindings = workflowIds.length === 0 ? [] : await deletedIds(sql`
+	const reviewBindings: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_review_binding where ${evidenceScope} returning id
 		`);
 	const submittedRevisions: string[] = workflowIds.length === 0 ? [] : await deletedIds(sql`
@@ -293,9 +449,26 @@ export async function deleteApprovalInTransaction(
 	const legacyScope = sql`organization_id = ${organizationId} and authority = 'legacy'
 		and submitted_revision_id = any(${sql.param(legacyRevisionIds)}::uuid[])`;
 	if (legacyRevisionIds.length > 0) {
+		// Invocations and bindings of legacy card decisions (#296): dependants
+		// first, so the audit records them and a late redelivery cannot replay.
+		invocations.push(
+			...(await deletedIds(sql`
+				delete from approval_invocation
+				where organization_id = ${organizationId} and authority = 'legacy'
+					and decision_evidence_id in (
+						select id from approval_decision_evidence where ${legacyScope}
+					)
+				returning id
+			`)),
+		);
 		decisionEvidence.push(
 			...(await deletedIds(sql`
 				delete from approval_decision_evidence where ${legacyScope} returning id
+			`)),
+		);
+		reviewBindings.push(
+			...(await deletedIds(sql`
+				delete from approval_review_binding where ${legacyScope} returning id
 			`)),
 		);
 		submittedRevisions.push(
@@ -323,7 +496,223 @@ export async function deleteApprovalInTransaction(
 			submittedRevisions: submittedRevisions.sort(),
 			decisionEvidence: decisionEvidence.sort(),
 			reviewBindings: reviewBindings.sort(),
+			invocations: invocations.sort(),
 		},
 		escalationTransfers: escalationTransfers.sort(),
+		delivery: {
+			work: [...deliveryWork, ...legacyDeliveryWork].sort(),
+			messages: [...deliveryMessages, ...legacyDeliveryMessages].sort(),
+			intents: deliveryIntents.sort(),
+		},
+		attention: attention.sort(),
+	};
+}
+
+export interface DeletedEmployeeApprovalLifecycles {
+	/** One entry per purged lifecycle, keyed by the root that selected it. */
+	lifecycles: Array<{ approvalId: string } & DeletedApprovalRecords>;
+	/** Attention incidents naming the employees whose lifecycle was already gone. */
+	attention: string[];
+}
+
+/**
+ * Removes every approval lifecycle, of any kind, that names one of the given
+ * employees in any role (requester, subject, submitter, approver, assignee,
+ * deciding or invoking actor, card recipient, escalation participant), so the
+ * employees can be deleted (#306). Each lifecycle is found through a row that
+ * references an employee and purged through `deleteApprovalInTransaction`, i.e.
+ * along its verified links only: other cycles of the same source stay, sources
+ * keep their business outcomes, and work history and receipts are not touched.
+ * Runs in the caller's transaction.
+ */
+export async function deleteEmployeeApprovalLifecycles(
+	transaction: ApprovalTransactionClient,
+	input: { organizationId: string; employeeIds: readonly string[] },
+): Promise<DeletedEmployeeApprovalLifecycles> {
+	if (input.employeeIds.length === 0) return { lifecycles: [], attention: [] };
+	const org = input.organizationId;
+	const employees = sql`${sql.param([...input.employeeIds])}::uuid[]`;
+	// Lock before scanning, so no new reference to the employees appears meanwhile.
+	await lockApprovalTopology(transaction);
+	// Every employee reference of the approval tables, mapped to an ID that
+	// `deleteApprovalInTransaction` addresses: a workflow, a legacy request, a
+	// legacy submitted revision or a legacy transfer.
+	const roots = rows(
+		await transaction.execute(sql`
+			select distinct id from (
+				select id from approval_workflow where organization_id = ${org}
+					and requester_employee_id = any(${employees})
+				union all
+				select workflow_id from approval_stage_assignment where organization_id = ${org}
+					and (approver_employee_id = any(${employees})
+						or reassigned_by_employee_id = any(${employees})
+						or resolved_by_actor_id = any(${employees}))
+				union all
+				select workflow_id from approval_workflow_event where organization_id = ${org}
+					and actor_employee_id = any(${employees})
+				union all
+				select o.workflow_id from approval_outbox_delivery d
+				join approval_outbox o on o.organization_id = d.organization_id and o.id = d.outbox_id
+				where d.organization_id = ${org} and d.recipient_employee_id = any(${employees})
+				union all
+				select id from approval_request where organization_id = ${org}
+					and (requested_by = any(${employees}) or approver_id = any(${employees}))
+				union all
+				select s.approval_request_id from approval_chain_stage_instance s
+				join approval_chain_instance c
+					on c.organization_id = s.organization_id and c.id = s.chain_instance_id
+				where s.organization_id = ${org} and s.approval_request_id is not null
+					and (c.requester_employee_id = any(${employees})
+						or s.decided_by = any(${employees})
+						or s.resolved_approver_employee_id = any(${employees}))
+				union all
+				select case when authority = 'legacy' then id else workflow_id end
+				from approval_submitted_revision where organization_id = ${org}
+					and (subject_employee_id = any(${employees})
+						or requester_employee_id = any(${employees})
+						or submitter_employee_id = any(${employees}))
+				union all
+				select case when authority = 'legacy' then submitted_revision_id else workflow_id end
+				from approval_decision_evidence where organization_id = ${org}
+					and actor_employee_id = any(${employees})
+				union all
+				select case when authority = 'legacy' then submitted_revision_id else workflow_id end
+				from approval_review_binding where organization_id = ${org}
+					and recipient_employee_id = any(${employees})
+				union all
+				select case when i.authority = 'legacy' then d.submitted_revision_id else i.workflow_id end
+				from approval_invocation i
+				left join approval_decision_evidence d
+					on d.organization_id = i.organization_id and d.id = i.decision_evidence_id
+				where i.organization_id = ${org} and i.actor_employee_id = any(${employees})
+				union all
+				select case when authority_mode = 'legacy' then id else workflow_id end
+				from approval_escalation_transfer where organization_id = ${org}
+					and (requester_employee_id = any(${employees})
+						or source_approver_employee_id = any(${employees})
+						or replacement_approver_employee_id = any(${employees})
+						or actor_employee_id = any(${employees}))
+				union all
+				-- A legacy delivery cycle (#384) is addressed by its cycle: its
+				-- requests may have been deleted by ordinary cancellation.
+				select case when lifecycle = 'legacy'
+					then coalesce(legacy_cycle_id, legacy_approval_request_id) else workflow_id end
+				from approval_delivery_work where organization_id = ${org}
+					and recipient_employee_id = any(${employees})
+				union all
+				select case when lifecycle = 'legacy'
+					then coalesce(legacy_cycle_id, legacy_approval_request_id) else workflow_id end
+				from approval_delivery_message where organization_id = ${org}
+					and recipient_employee_id = any(${employees})
+				union all
+				select coalesce(workflow_id, approval_request_id)
+				from approval_escalation_attention where organization_id = ${org}
+					and current_approver_employee_id = any(${employees})
+			) as references_to_employees (id)
+			where id is not null
+			order by id
+		`),
+	).map(rowId);
+
+	const lifecycles: DeletedEmployeeApprovalLifecycles["lifecycles"] = [];
+	for (const approvalId of roots) {
+		try {
+			const deleted = await deleteApprovalInTransaction(transaction, org, approvalId);
+			lifecycles.push({ approvalId, ...deleted });
+		} catch (error) {
+			// Removed with an earlier root's lifecycle, or an attention link that dangles.
+			if (error instanceof ApprovalMaintenanceError && error.code === "APPROVAL_NOT_FOUND") {
+				continue;
+			}
+			throw error;
+		}
+	}
+	// Incidents whose lifecycle no longer exists still name the employee.
+	const attention = rows(
+		await transaction.execute(sql`
+			delete from approval_escalation_attention
+			where organization_id = ${org} and current_approver_employee_id = any(${employees})
+			returning id
+		`),
+	).map(rowId);
+	return { lifecycles, attention: attention.sort() };
+}
+
+/**
+ * Whole-history cleanup participation for manual time submission, policy
+ * clock-out (#302) and time correction (#301) evidence. Paths that delete an organization's (or some
+ * employees') work history remove the lifecycle evidence describing it before
+ * the history and the employees, dependants first, so employee FKs never block
+ * the delete. It runs in the caller's transaction when the caller has one; the
+ * demo cleanup paths call it per employee inside its coordinated history
+ * transaction (#285). Other kinds are untouched.
+ */
+export async function deleteWorkPeriodApprovalEvidence(
+	transaction: ApprovalTransactionClient,
+	input: { organizationId: string; employeeIds: readonly string[] | "all" },
+): Promise<DeletedApprovalEvidenceRecords> {
+	const none: DeletedApprovalEvidenceRecords = {
+		submittedRevisions: [],
+		decisionEvidence: [],
+		reviewBindings: [],
+		invocations: [],
+	};
+	if (input.employeeIds !== "all" && input.employeeIds.length === 0) return none;
+	// Any lifecycle naming a deleted employee as subject, requester, submitter or
+	// deciding actor goes: those references are FKs without cascade.
+	const employees = input.employeeIds === "all" ? null : sql.param([...input.employeeIds]);
+	const subjects =
+		employees === null
+			? sql`true`
+			: sql`(subject_employee_id = any(${employees}::uuid[])
+				or requester_employee_id = any(${employees}::uuid[])
+				or submitter_employee_id = any(${employees}::uuid[])
+				or id in (
+					select submitted_revision_id from approval_decision_evidence
+					where organization_id = ${input.organizationId}
+						and actor_employee_id = any(${employees}::uuid[])
+				))`;
+	const revisionIds = rows(
+		await transaction.execute(sql`
+			select id from approval_submitted_revision
+			where organization_id = ${input.organizationId}
+				and workflow_type in ('manual_time_submission', 'policy_clock_out', 'time_correction')
+				and source_type = 'time_entry'
+				and ${subjects}
+			for update
+		`),
+	).map(rowId);
+	if (revisionIds.length === 0) return none;
+	const deletedIds = async (query: SQL) => rows(await transaction.execute(query)).map(rowId);
+	const scope = sql`organization_id = ${input.organizationId}`;
+	const revisions = sql`${sql.param(revisionIds)}::uuid[]`;
+	const invocations = await deletedIds(sql`
+		delete from approval_invocation
+		where ${scope} and decision_evidence_id in (
+			select id from approval_decision_evidence
+			where ${scope} and submitted_revision_id = any(${revisions})
+		)
+		returning id
+	`);
+	const decisionEvidence = await deletedIds(sql`
+		delete from approval_decision_evidence
+		where ${scope} and submitted_revision_id = any(${revisions})
+		returning id
+	`);
+	const reviewBindings = await deletedIds(sql`
+		delete from approval_review_binding
+		where ${scope} and submitted_revision_id = any(${revisions})
+		returning id
+	`);
+	const submittedRevisions = await deletedIds(sql`
+		delete from approval_submitted_revision
+		where ${scope} and id = any(${revisions})
+		returning id
+	`);
+	return {
+		submittedRevisions: submittedRevisions.sort(),
+		decisionEvidence: decisionEvidence.sort(),
+		reviewBindings: reviewBindings.sort(),
+		invocations: invocations.sort(),
 	};
 }

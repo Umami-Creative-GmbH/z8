@@ -3,6 +3,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovedCancellationAuthorization } from "../domain-adapters/registry";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
 import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
+import type { RequesterEligibilityMode } from "../policies/manager-eligibility";
 import type { ApprovalProjectionWriteInput } from "../projection/contracts";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 import type {
@@ -99,7 +100,37 @@ export type ApprovalWorkflowPrincipal =
 				| "approval-expiry"
 				| "approval-activation"
 				| typeof APPROVAL_ESCALATION_SYSTEM_ID;
-	  };
+	  }
+	| OffboardingHandoverPrincipal;
+
+/**
+ * Narrow departure-handover capability (#341). It carries the persisted
+ * evidence the engine re-verifies in its own transaction and may only
+ * reassign the exact captured pending assignment of an effective departure.
+ * It never approves, rejects, cancels or expires, and never impersonates the
+ * admin who initiated the departure.
+ */
+export const EMPLOYEE_OFFBOARDING_SYSTEM_ID = "employee-offboarding";
+
+export interface OffboardingHandoverPrincipal {
+	kind: "system";
+	systemId: typeof EMPLOYEE_OFFBOARDING_SYSTEM_ID;
+	departureId: string;
+	employmentPeriodId: string;
+	assignmentId: string;
+	handoverTaskId: string;
+	/** Current worker lease; never part of the stable command fingerprint. */
+	claimToken: string;
+}
+
+export function isOffboardingHandoverPrincipal(
+	principal: ApprovalWorkflowPrincipal,
+): principal is OffboardingHandoverPrincipal {
+	return (
+		principal.kind === "system" &&
+		principal.systemId === EMPLOYEE_OFFBOARDING_SYSTEM_ID
+	);
+}
 
 /**
  * Narrow scheduled-escalation capability (#255 §3). It may only replace one
@@ -109,7 +140,9 @@ export type ApprovalWorkflowPrincipal =
  */
 export const APPROVAL_ESCALATION_SYSTEM_ID = "approval-escalation";
 
-export type ApprovalSystemCapability = typeof APPROVAL_ESCALATION_SYSTEM_ID;
+export type ApprovalSystemCapability =
+	| typeof APPROVAL_ESCALATION_SYSTEM_ID
+	| typeof EMPLOYEE_OFFBOARDING_SYSTEM_ID;
 
 export interface ApprovalWorkflowCommandRequest {
 	/** Legacy card access may return an exact receipt, but never execute a new command. */
@@ -316,6 +349,13 @@ export interface ApprovalCommandResult {
 	outbox: ApprovalOutboxWriteInput[];
 }
 
+export type ApprovalWorkflowAuthorizationGrant =
+	| "active_assignment"
+	| "requester"
+	| "manage_approval"
+	| "system"
+	| "offboarding_reassignment";
+
 export interface ApprovalWorkflowAuthorization {
 	authorize(input: {
 		dbService: ApprovalDbService;
@@ -323,7 +363,14 @@ export interface ApprovalWorkflowAuthorization {
 		workflow: ApprovalWorkflowSnapshot;
 		actor: ApprovalCommandActor;
 		command: ApprovalWorkflowCommand;
-	}): Promise<"active_assignment" | "requester" | "manage_approval" | "system">;
+		/** The engine always passes the request principal; a system actor carries no evidence. */
+		principal?: ApprovalWorkflowPrincipal;
+		/**
+		 * A completed receipt being replayed. Evidence-bearing principals are
+		 * re-verified against it instead of against the current pending state.
+		 */
+		replay?: ApprovalCommandResult;
+	}): Promise<ApprovalWorkflowAuthorizationGrant>;
 }
 
 export interface ApprovalTransitionResultBuilder {
@@ -663,6 +710,12 @@ export interface StageActivationInput {
 	stage: ApprovalStageSnapshot;
 	actor: ApprovalEventActorIdentity;
 	routingContext: JsonObject;
+	/**
+	 * Set by the transition engine for stages of a persisted workflow, whose
+	 * requester may have departed since submission. Defaults to
+	 * `new_submission`.
+	 */
+	requesterMode?: RequesterEligibilityMode;
 }
 
 export interface ResolvedStage {

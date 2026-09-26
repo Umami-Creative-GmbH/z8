@@ -8,7 +8,56 @@
       "historicalApproval": "Daha önce kaydedilen onayınız doğrulandı. Bu geçmiş bir sonuçtur; yeni bir karar verilmedi. Ayrıntılar için Z8’deki talebi inceleyin.",
       "historicalRejection": "Daha önce kaydedilen ret kararınız doğrulandı. Bu geçmiş bir sonuçtur; yeni bir karar verilmedi. Ayrıntılar için Z8’deki talebi inceleyin.",
       "unboundCallback": "Bu kart, başlangıçta incelenen bilgileri doğrulayamıyor. Hiçbir karar verilmedi. Talebi Z8’de inceleyin.",
-      "alreadyProcessed": "Bu onay zaten işleme alınmış."
+      "alreadyProcessed": "Bu onay zaten işleme alınmış.",
+      "boundReviewRequired": "Bu kart artık mevcut talep veya atamayla eşleşmiyor ya da işlem doğrulanamadı. Karar verilmedi. Talebi Z8'de inceleyin.",
+      "invocationConflict": "Bu tuşa basma zaten farklı bir işlemle kaydedildi. Karar verilmedi. Talebi Z8'de inceleyin.",
+      "outcomeUnknown": "Bu basışın sonucu doğrulanamadı. Tekrar basmadan önce talebi Z8'de kontrol edin.",
+      "card": {
+        "absenceTitle": "Onay bekleyen izin talebi",
+        "boundHint": "Onayla veya Reddet yalnızca yukarıda gösterilen talep hakkında karar verir. Talep değiştiyse veya yeniden atandıysa hiçbir karar verilmez ve talebi Z8'de incelemeniz istenir.",
+        "reviewOnlyHint": "Bu talebi Z8'de onaylayın veya reddedin. Bu mesajdan karar verilemez.",
+        "approve": "Onayla",
+        "reject": "Reddet",
+        "unavailable": "Mevcut değil",
+        "employee": "Çalışan",
+        "requestedBy": "Talep eden",
+        "submittedBy": "Gönderen",
+        "category": "Kategori",
+        "currentCategoryName": "Güncel kategori adı",
+        "dates": "Tarihler",
+        "coverage": "Kapsam",
+        "submittedAt": "Gönderildi",
+        "fullDays": "Tam günler",
+        "fullDay": "tam gün",
+        "morning": "sabah",
+        "afternoon": "öğleden sonra",
+        "halfDayPeriods": "{start} başlar, {end} biter",
+        "explicitTimes": "{start} – {end} (yerel saat, saat dilimi kaydedilmedi)",
+        "explicitTimesOvernight": "{start} – ertesi gün {end} (yerel saat, saat dilimi kaydedilmedi)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Talep onaylandı",
+        "requestRejectedTitle": "Talep reddedildi",
+        "stepApprovedTitle": "Onay kaydedildi",
+        "requestApproved": "{actor} tarafından {time} tarihinde onaylandı. Talep onaylandı.",
+        "requestRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep reddedildi.",
+        "stepApproved": "{actor} tarafından {time} tarihinde onaylandı. Talep hâlâ başka onaylar bekliyor.",
+        "replayed": "Bu tuşa basma zaten kaydedilmişti; bu, orijinal sonucudur ve yeni bir karar verilmedi.",
+        "stepRejectedTitle": "Ret kaydedildi",
+        "stepRejected": "{actor} tarafından {time} tarihinde reddedildi. Talep henüz kesinleşmedi; güncel durumunu Z8'de inceleyin.",
+        "recordedTitle": "Karar kaydedildi",
+        "recorded": "{actor} tarafından {time} tarihinde kaydedildi. Talebin güncel durumunu Z8'de inceleyin."
+      },
+      "status": {
+        "withdrawnTitle": "Talep geri çekildi",
+        "withdrawn": "Bu talep geri çekildi. Bu karttan karar verilmesi gerekmiyor.",
+        "reassignedTitle": "Yeniden atandı",
+        "reassigned": "Bu onay başka bir onaylayana yeniden atandı. Bu karttan kararınız gerekmiyor ve burada karar verilmedi. Güncel durumunu Z8'de inceleyin.",
+        "inactiveTitle": "Artık işlem gerektirmiyor",
+        "inactive": "Bu talep artık bu karttan kararınızı gerektirmiyor. Burada karar verilmedi. Güncel durumunu Z8'de inceleyin.",
+        "currentApproved": "Talebin güncel durumu: onaylandı.",
+        "currentRejected": "Talebin güncel durumu: reddedildi."
+      }
     },
     "cmd": {
       "billingRequired": "Zaman takibini kullanmaya devam etmek için faturalandırma gereklidir. Faturalandırmayı güncellemesi için bir kuruluş yöneticisinden talepte bulunun.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "{time} saatinden beri mesaiye devam ediyorsunuz ({hours}s {minutes}dk).",
+        "alreadyInNow": "Zaten giriş yaptınız.",
+        "appendReview": "Giriş yapabilmeniz için zaman geçmişinizin incelenmesi gerekiyor. Lütfen yöneticinize başvurun.",
         "cannotNow": "Şu anda mesaiye başlanamıyor.",
+        "committed": "Giriş yapıldı.",
+        "failed": "Giriş yapılamadı. Lütfen tekrar deneyin.",
         "noProfile": "Çalışan profili bulunamadı.",
-        "success": "{time} saatinde mesaiye başlandı."
+        "success": "{time} saatinde mesaiye başlandı.",
+        "unconfirmed": "Girişiniz doğrulanamadı. Tekrar denemeden önce durumunuzu kontrol edin."
       },
       "clockout": {
+        "appendReview": "Çıkış yapabilmeniz için zaman geçmişinizin incelenmesi gerekiyor. Lütfen yöneticinize başvurun.",
         "cannotNow": "Şu anda mesai bitirilemiyor.",
+        "committed": "Çıkış yapıldı.",
+        "failed": "Çıkış yapılamadı. Lütfen tekrar deneyin.",
         "noProfile": "Çalışan profili bulunamadı.",
         "notClockedIn": "Şu anda mesaide değilsiniz.",
-        "policyCheckFailed": "Zaman onay politikası doğrulanamadı. Lütfen tekrar deneyin.",
         "success": "{time} saatinde mesai bitirildi. Süre: {hours}s {minutes}dk.",
-        "unsupportedApproval": "Onay gerektiren zaman değişiklikleri bu eylem için henüz desteklenmiyor"
+        "successAt": "Çıkış saati: {time}.",
+        "unconfirmed": "Çıkışınız doğrulanamadı. Tekrar denemeden önce durumunuzu kontrol edin."
       },
       "compliance": {
         "error": "Uyumluluk verileri alınamadı. Lütfen daha sonra tekrar deneyin.",
@@ -95,7 +152,8 @@
       "typeHelp": "Kullanılabilir komutları görmek için /help yazın.",
       "unconfigured": "Organizasyonunuzun Z8 entegrasyonu kuruluyor. Lütfen yöneticinizin yapılandırmayı tamamlamasını bekleyin.",
       "welcome": "Z8'e hoş geldiniz! Hesabınızı bağlamak için Z8 panonuzda Ayarlar > Entegrasyonlar > Telegram bölümüne gidin ve bir bağlantı kodu oluşturun. Ardından şunu gönderin: /link KODUNUZ",
-      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın."
+      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın.",
+      "replyUndelivered": "Komutunuz işlendi ancak yanıtı gösterilemedi. Tekrarlamadan önce durumunuzu kontrol edin."
     }
   }
 }

@@ -10,6 +10,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
+import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { RateHistoryCard } from "@/components/settings/rate-history-card";
@@ -104,49 +105,23 @@ export function EmployeeDetailPageClient({
 	accessTier,
 	currentUserId,
 	currentMemberRole,
+	highlightedReviewId = null,
 }: {
 	params: Promise<{ employeeId: string }>;
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	currentMemberRole: string;
+	highlightedReviewId?: string | null;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
 	const { push } = useRouter();
 
-	const {
-		employee,
-		schedule,
-		availableManagers,
-		rateHistory,
-		employmentHistory,
-		workPolicies,
-		isLoading,
-		isLoadingRateHistory,
-		hasEmployee,
-		updateEmployee,
-		isUpdating,
-		updateRate,
-		isUpdatingRate,
-		createEmploymentHistory,
-		isCreatingEmploymentHistory,
-		confirmEmploymentHistory,
-		isConfirmingEmploymentHistory,
-		cancelEmploymentHistory,
-		isCancelingEmploymentHistory,
-		requestWorkBalanceRecalculation,
-		isRequestingWorkBalanceRecalculation,
-		refetch,
-	} = useEmployee({ employeeId, accessTier });
+	const employeeData = useEmployee({ employeeId, accessTier });
+	const { employee, schedule, isLoading, hasEmployee, updateEmployee, isUpdating } =
+		employeeData;
 	const canManageEmployeeDetails =
 		accessTier === "orgAdmin" || accessTier === "manager";
-	const canManageManagerAssignments = accessTier === "orgAdmin";
-	const canManageSkills = accessTier === "orgAdmin" || accessTier === "manager";
-	const canManageRates = accessTier === "orgAdmin" || accessTier === "manager";
-	const canManageCustomRoles = accessTier === "orgAdmin";
-	const canManageEmploymentHistory = accessTier === "orgAdmin";
-	const isMutatingEmploymentHistory =
-		isConfirmingEmploymentHistory || isCancelingEmploymentHistory;
 
 	const form = useForm({
 		defaultValues: defaultFormValues,
@@ -191,28 +166,6 @@ export function EmployeeDetailPageClient({
 			syncEmployeeForm(form, employee);
 		}
 	}, [employee, form]);
-
-	const handleWorkBalanceRecalculation = async () => {
-		const result = await requestWorkBalanceRecalculation().catch(() => null);
-
-		if (result?.success) {
-			toast.success(
-				t(
-					"settings.workBalanceRecalculation.requestSuccess",
-					"Work balance recalculation queued",
-				),
-			);
-			return;
-		}
-
-		toast.error(
-			result?.error ||
-				t(
-					"settings.workBalanceRecalculation.requestError",
-					"Failed to queue work balance recalculation",
-				),
-		);
-	};
 
 	if (!hasEmployee && !isLoading) {
 		return (
@@ -293,64 +246,125 @@ export function EmployeeDetailPageClient({
 				/>
 			)}
 
-			{canShowRealEmployeeSections &&
-				canManageManagerAssignments &&
-				availableManagers.length > 0 && (
-					<ManagerAssignment
-						employeeId={employeeId}
-						currentManagers={employee.managers || []}
-						availableManagers={availableManagers}
-						onSuccess={refetch}
-					/>
-				)}
-
 			{canShowRealEmployeeSections && (
-				<EmployeeCustomRolesCard
+				<EmployeeRecordSections
+					employee={employee}
 					employeeId={employeeId}
-					organizationId={employee.organizationId}
-					isAdmin={canManageCustomRoles}
+					accessTier={accessTier}
+					highlightedReviewId={highlightedReviewId}
+					data={employeeData}
 				/>
 			)}
+		</div>
+	);
+}
 
-			{canShowRealEmployeeSections && (
-				<EmployeeSkillsCard
+/** Sections that exist only for a real employee record, not an invitation draft. */
+function EmployeeRecordSections({
+	employee,
+	employeeId,
+	accessTier,
+	highlightedReviewId,
+	data,
+}: {
+	employee: EmployeeDetail;
+	employeeId: string;
+	accessTier: SettingsAccessTier;
+	highlightedReviewId: string | null;
+	data: ReturnType<typeof useEmployee>;
+}) {
+	const { t } = useTranslate();
+	const isOrgAdmin = accessTier === "orgAdmin";
+	const isOrgAdminOrManager = isOrgAdmin || accessTier === "manager";
+	const { availableManagers, workPolicies } = data;
+
+	const handleWorkBalanceRecalculation = async () => {
+		const result = await data.requestWorkBalanceRecalculation().catch(() => null);
+
+		if (result?.success) {
+			toast.success(
+				t(
+					"settings.workBalanceRecalculation.requestSuccess",
+					"Work balance recalculation queued",
+				),
+			);
+			return;
+		}
+
+		toast.error(
+			result?.error ||
+				t(
+					"settings.workBalanceRecalculation.requestError",
+					"Failed to queue work balance recalculation",
+				),
+		);
+	};
+
+	return (
+		<>
+			{isOrgAdmin && availableManagers.length > 0 && (
+				<ManagerAssignment
 					employeeId={employeeId}
+					currentManagers={employee.managers || []}
+					availableManagers={availableManagers}
+					onSuccess={data.refetch}
+				/>
+			)}
+
+			<EmployeeCustomRolesCard
+				employeeId={employeeId}
+				organizationId={employee.organizationId}
+				isAdmin={isOrgAdmin}
+			/>
+
+			<EmployeeSkillsCard
+				employeeId={employeeId}
+				organizationId={employee.organizationId}
+				canManageSkills={isOrgAdminOrManager}
+			/>
+
+			{isOrgAdminOrManager && (
+				<EmployeeOffboardingSection
 					organizationId={employee.organizationId}
-					canManageSkills={canManageSkills}
+					employeeId={employeeId}
+					highlightedReviewId={highlightedReviewId}
+					managers={availableManagers.map((manager) => ({
+						id: manager.id,
+						name: buildAuthUserDisplayName(manager.user) || manager.id,
+					}))}
+					workPolicies={workPolicies.map((policy) => ({ id: policy.id, name: policy.name }))}
 				/>
 			)}
 
-			{canShowRealEmployeeSections && (
-				<EmployeeEmploymentHistoryCard
-					history={employmentHistory}
-					canManage={canManageEmploymentHistory}
-					onCreate={createEmploymentHistory}
-					onConfirm={confirmEmploymentHistory}
-					onCancel={cancelEmploymentHistory}
-					isCreating={isCreatingEmploymentHistory}
-					isMutating={isMutatingEmploymentHistory}
-					workPolicies={workPolicies}
-				/>
-			)}
+			<EmployeeEmploymentHistoryCard
+				history={data.employmentHistory}
+				canManage={isOrgAdmin}
+				onCreate={data.createEmploymentHistory}
+				onConfirm={data.confirmEmploymentHistory}
+				onCancel={data.cancelEmploymentHistory}
+				isCreating={data.isCreatingEmploymentHistory}
+				isMutating={data.isConfirmingEmploymentHistory || data.isCancelingEmploymentHistory}
+				workPolicies={workPolicies}
+			/>
 
-			{canShowRealEmployeeSections && accessTier === "orgAdmin" && (
+			{isOrgAdmin && (
 				<WorkBalanceRecalculationCard
 					employeeName={buildAuthUserDisplayName(employee.user) || employee.id}
-					isPending={isRequestingWorkBalanceRecalculation}
+					isPending={data.isRequestingWorkBalanceRecalculation}
 					onRecalculate={handleWorkBalanceRecalculation}
 					t={t}
 				/>
 			)}
 
-			{canShowRealEmployeeSections && employee.contractType === "hourly" && (
+			{employee.contractType === "hourly" && (
 				<RateHistoryCard
-					rateHistory={rateHistory}
-					isLoading={isLoadingRateHistory}
-					isAdmin={canManageRates}
-					onAddRate={updateRate}
-					isAddingRate={isUpdatingRate}
+					rateHistory={data.rateHistory}
+					isLoading={data.isLoadingRateHistory}
+					isAdmin={isOrgAdminOrManager}
+					onAddRate={data.updateRate}
+					isAddingRate={data.isUpdatingRate}
 				/>
 			)}
-		</div>
+		</>
 	);
 }

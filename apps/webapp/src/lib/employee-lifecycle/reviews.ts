@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gte, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employeeDepartureEvent, employeeDepartureReview } from "@/db/schema/employee-lifecycle";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { memberIsAccessibleOwnerOrAdmin } from "./authority-sql";
 import { LATE_CLOCK_EVIDENCE_PROVENANCE } from "./late-clock-evidence";
 
 export type OpenDepartureClockRepair = {
@@ -59,6 +61,27 @@ export async function findOpenDepartureClockRepairs(
 		);
 }
 
+/**
+ * Accessible organization owners and admins resolve departure follow-up work
+ * (reviews, replacement assignment, retries). Evaluated in the caller's
+ * transaction at the caller's instant, never from client-supplied role claims.
+ */
+export async function actorMayResolveDepartureWork(
+	tx: Pick<typeof rootDatabase, "execute">,
+	organizationId: string,
+	actorUserId: string,
+	now: Instant,
+): Promise<boolean> {
+	const authority = await tx.execute<{ allowed: boolean }>(sql`
+		SELECT EXISTS (
+			SELECT 1 FROM member m
+			WHERE m.organization_id = ${organizationId} AND m.user_id = ${actorUserId}
+				AND ${memberIsAccessibleOwnerOrAdmin(sql`${dateFromInstant(now)}::timestamptz`)}
+		) AS allowed
+	`);
+	return authority.rows[0]?.allowed === true;
+}
+
 export type ResolveDepartureReviewErrorCode =
 	| "review_not_found"
 	| "review_already_resolved"
@@ -86,28 +109,17 @@ export async function resolveDepartureReview(
 		reviewId: string;
 		actorUserId: string;
 		resolution: string;
-		now: Date;
+		now: Instant;
 	},
 ): Promise<void> {
 	const resolution = input.resolution.trim();
 	if (!resolution) throw new ResolveDepartureReviewError("resolution_required");
+	const at = dateFromInstant(input.now);
 
 	await database.transaction(async (tx) => {
-		const authority = await tx.execute<{ allowed: boolean }>(sql`
-			SELECT EXISTS (
-				SELECT 1 FROM member m
-				WHERE m.organization_id = ${input.organizationId} AND m.user_id = ${input.actorUserId}
-					AND m.status = 'approved'
-					AND ('owner' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*'))
-						OR 'admin' = ANY(regexp_split_to_array(COALESCE(m.role, ''), '\s*,\s*')))
-					AND NOT EXISTS (
-						SELECT 1 FROM employee e
-						WHERE e.organization_id = m.organization_id AND e.user_id = m.user_id
-							AND e.is_active = false
-					)
-			) AS allowed
-		`);
-		if (authority.rows[0]?.allowed !== true) {
+		if (
+			!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId, input.now))
+		) {
 			throw new ResolveDepartureReviewError("actor_not_authorized");
 		}
 
@@ -140,7 +152,7 @@ export async function resolveDepartureReview(
 			.set({
 				status: "resolved",
 				resolvedBy: input.actorUserId,
-				resolvedAt: input.now,
+				resolvedAt: at,
 				resolution,
 			})
 			.where(
@@ -158,8 +170,45 @@ export async function resolveDepartureReview(
 			requestId: randomUUID(),
 			kind: "review_resolved",
 			actorUserId: input.actorUserId,
-			occurredAt: input.now,
+			occurredAt: at,
 			metadata: { reviewId: review.id, reviewKind: review.kind, resolution },
 		});
+	});
+}
+
+export class RetryDepartureTaskError extends Error {
+	constructor(readonly code: "actor_not_authorized" | "task_not_retryable") {
+		super(code);
+		this.name = "RetryDepartureTaskError";
+	}
+}
+
+/**
+ * Scoped manual retry of one failed follow-up task: it is queued again with a
+ * fresh attempt budget. Only failed work can be retried, so a retry can never
+ * race a worker that currently owns the task, and nothing outside this
+ * organization's task is touched. An ambiguous delivery marker is cleared,
+ * because retrying is the admin's explicit decision to send again.
+ */
+export async function retryDepartureTask(
+	database: Pick<typeof rootDatabase, "transaction">,
+	input: { organizationId: string; taskId: string; actorUserId: string; now: Instant },
+): Promise<void> {
+	const at = dateFromInstant(input.now);
+	await database.transaction(async (tx) => {
+		if (
+			!(await actorMayResolveDepartureWork(tx, input.organizationId, input.actorUserId, input.now))
+		) {
+			throw new RetryDepartureTaskError("actor_not_authorized");
+		}
+		const retried = await tx.execute(sql`
+			UPDATE employee_departure_task
+			SET status = 'pending', claim_token = NULL, attempt_count = 0, last_error = NULL,
+				available_at = ${at}, updated_at = ${at}, payload = payload - 'attemptedAt'
+			WHERE organization_id = ${input.organizationId} AND id = ${input.taskId}::uuid
+				AND status = 'failed'
+			RETURNING id
+		`);
+		if (retried.rows.length !== 1) throw new RetryDepartureTaskError("task_not_retryable");
 	});
 }

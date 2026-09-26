@@ -61,6 +61,8 @@
     "deadline": "Scadenza",
     "errors": {
       "clockInFailed": "Timbratura entrata non riuscita",
+      "appendReviewRequired": "La timbratura di entrata richiede una verifica della cronologia",
+      "appendReviewRequiredDesc": "Non è stato possibile verificare le tue registrazioni precedenti, quindi la nuova timbratura non è stata salvata. Contatta il tuo amministratore.",
       "clockOutFailed": "Timbratura uscita non riuscita",
       "holidayBlocked": "Impossibile timbrare l'uscita il {holidayName}",
       "holidayBlockedDesc": "Questo giorno è segnato come festivo e le voci orarie non sono consentite",
@@ -87,14 +89,52 @@
       "dateLabel": "Data",
       "description": "Crea una voce di tempo per una data passata. Potrebbe essere richiesta l'approvazione in base alla policy della tua organizzazione.",
       "errors": {
+        "collision": "Questa voce è in conflitto con un invio precedente o con lavoro modificato. Controlla le tue voci esistenti.",
         "createFailed": "Impossibile creare la voce di tempo",
         "futureDate": "Impossibile creare voci per date future",
+        "futureTime": "Non è possibile creare voci per orari futuri",
+        "historyReview": "Questo storico dei tempi deve essere verificato prima di salvare nuove voci. Contatta l'amministratore.",
         "invalidTime": "Inserisci un orario completo e valido",
         "invalidTimeRange": "L'orario di uscita deve essere successivo all'orario di ingresso",
+        "nonexistentTime": "Questo orario non esiste in questa data perché gli orologi vanno avanti.",
+        "occurrenceRequired": "Questo orario si ripete in questa data. Scegli quello che intendi.",
+        "overlap": "Questo orario si sovrappone a lavoro registrato. Scegli un intervallo senza sovrapposizioni.",
+        "reconfirm": "Il fuso orario o gli orari sono cambiati. Controlla la voce e inviala di nuovo.",
+        "refresh": "Le impostazioni delle voci manuali sono cambiate. Controlla la voce e inviala di nuovo.",
         "tooLong": "Il periodo di lavoro non può superare le 24 ore"
+      },
+      "occurrence": {
+        "earlier": "Prima, {offset}",
+        "later": "Seconda, {offset}",
+        "legend": "{time} si ripete in questa data. Quale intendi?"
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Descrivi il lavoro svolto...",
+      "recovery": {
+        "check": "Verifica stato",
+        "checkFailed": "Impossibile verificare questa voce ora. Riprova più tardi.",
+        "contextMismatch": "Hai effettuato l'accesso con un altro account o un'altra organizzazione. Torna indietro per gestire questa voce.",
+        "description": "Queste voci sono state inviate da questa scheda senza un risultato confermato. Nulla viene reinviato se non lo scegli tu.",
+        "discard": "Ignora",
+        "editAsNew": "Modifica come nuova voce",
+        "notCommitted": "Nessun salvataggio trovato.",
+        "notCommittedToast": "Non è stato trovato alcun salvataggio per questa voce. Riprovala identica o modificala come nuova voce.",
+        "retry": "Riprova identica",
+        "saved": "Questa voce è stata salvata.",
+        "savedForApproval": "Questa voce è stata salvata e inviata per l'approvazione. Stato attuale: {status}.",
+        "status": {
+          "approved": "approvata",
+          "pending": "in attesa",
+          "rejected": "rifiutata"
+        },
+        "stillUncertain": "Ancora non confermata. La voce resta; riprova quando sarai di nuovo online.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Voci non confermate",
+        "uncertain": "Non confermata. Potrebbe essere già salvata.",
+        "uncertainToast": "Non è stato possibile confermare se questa voce è stata salvata. Resta in Voci non confermate, dove puoi riprovarla identica o verificarne lo stato.",
+        "unsupported": "Impossibile verificarne lo stato. Potrebbe essere già salvata.",
+        "unsupportedToast": "Impossibile verificare ora lo stato di questa voce. Riprovando si invia esattamente la stessa voce."
+      },
       "submit": "Crea voce",
       "submitting": "Creazione in corso...",
       "success": {

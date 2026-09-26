@@ -67,11 +67,14 @@ vi.mock("@/lib/time-tracking/timezone-utils", () => ({
 	getTimezoneAbbreviation: (timezone: string) => timezone,
 }));
 
+const toastError = vi.hoisted(() => vi.fn());
+
 vi.mock("sonner", () => ({
-	toast: { error: vi.fn(), info: toastInfo, success: vi.fn() },
+	toast: { error: toastError, info: toastInfo, success: vi.fn() },
 }));
 
-vi.mock("@/lib/time-tracking/timezone-capture", () => ({
+vi.mock("@/lib/time-tracking/timezone-capture", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/timezone-capture")>()),
 	getBrowserTimezone,
 }));
 
@@ -175,6 +178,8 @@ vi.mock("@/app/[locale]/(app)/settings/profile/actions", () => ({
 	updateTimezone,
 }));
 
+const RECOVERY_CONTEXT = { userId: "user-current", organizationId: "org-1" };
+
 function buildTargetContext(
 	targetEmployeeId: string | undefined,
 	overrides: Partial<ManualEntryTargetContext> = {},
@@ -185,6 +190,8 @@ function buildTargetContext(
 		isOwnEntry: !targetEmployeeId,
 		timezone: "UTC",
 		timezoneSource: "employee",
+		manualCommandVersion: 1,
+		recoveryContext: RECOVERY_CONTEXT,
 		projects: [
 			{
 				id: "project-1",
@@ -263,6 +270,8 @@ function jsonRoundTrip<Value>(value: Value): Value {
 afterEach(() => {
 	vi.useRealTimers();
 	vi.restoreAllMocks();
+	// Frozen commands live in the tab's session storage (#310).
+	window.sessionStorage.clear();
 });
 
 describe("ManualTimeEntryDialog layout", () => {
@@ -1275,6 +1284,247 @@ describe("ManualTimeEntryDialog target context", () => {
 			expect(
 				targetContextState.getManualEntryTargetContext.mock.calls.length,
 			).toBeGreaterThan(callsBeforeSubmit),
+		);
+	});
+});
+
+describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
+	const submissionId = "10000000-0000-4000-8000-000000000308";
+
+	beforeEach(() => {
+		createManualTimeEntry.mockReset();
+		createManualTimeEntry.mockResolvedValue({ success: true, data: {} });
+		getBrowserTimezone.mockReset();
+		getBrowserTimezone.mockReturnValue("America/New_York");
+		toastError.mockReset();
+		targetContextState.getManualEntryTargetContext.mockReset();
+		targetContextState.getManualEntryTargetContext.mockImplementation(async () =>
+			targetContextState.current
+				? { success: true, data: targetContextState.current }
+				: { success: false, error: "Failed to load entry options" },
+		);
+		vi.spyOn(crypto, "randomUUID").mockReturnValue(submissionId);
+	});
+
+	function renderBerlinOnBehalf(date: string, clockIn: string, clockOut: string) {
+		return renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				employeeTimezone: "Europe/Berlin",
+				targetEmployeeId: "employee-2",
+				defaultDate: date,
+				defaultClockInTime: clockIn,
+				defaultClockOutTime: clockOut,
+			},
+			{ manualCommandVersion: 2 },
+		);
+	}
+
+	function enterReasonAndSubmit() {
+		fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Forgot to clock out" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+	}
+
+	it("asks which occurrence of a repeated time is meant and sends it with its offset", async () => {
+		renderBerlinOnBehalf("2025-10-26", "01:00", "02:30");
+
+		expect(
+			screen.getByText("02:30 occurs twice on this date. Which one do you mean?"),
+		).toBeTruthy();
+		enterReasonAndSubmit();
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				"This time occurs twice on this date. Choose which one you mean.",
+			),
+		);
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+
+		fireEvent.click(screen.getByRole("radio", { name: "Second, UTC+01:00" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() =>
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				{
+					version: 2,
+					submissionId,
+					targetEmployeeId: "employee-2",
+					date: "2025-10-26",
+					clockIn: { time: "01:00", occurrence: null, displayedOffsetMinutes: 120 },
+					clockOut: { time: "02:30", occurrence: "later", displayedOffsetMinutes: 60 },
+					zone: { basis: "target", timezone: "Europe/Berlin" },
+					browserTimezone: null,
+					reason: "Forgot to clock out",
+					projectId: null,
+					workCategoryId: null,
+				},
+				RECOVERY_CONTEXT,
+			),
+		);
+		expect(screen.getByRole("radio", { name: "First, UTC+02:00" })).toBeTruthy();
+	});
+
+	it("orders repeated-hour times by UTC, so a later-looking start can still be valid", async () => {
+		renderBerlinOnBehalf("2025-10-26", "02:40", "02:10");
+		const [first] = screen.getAllByRole("radio", { name: "First, UTC+02:00" });
+		const seconds = screen.getAllByRole("radio", { name: "Second, UTC+01:00" });
+		fireEvent.click(first as HTMLElement);
+		fireEvent.click(seconds[1] as HTMLElement);
+
+		enterReasonAndSubmit();
+
+		await waitFor(() =>
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					clockIn: { time: "02:40", occurrence: "earlier", displayedOffsetMinutes: 120 },
+					clockOut: { time: "02:10", occurrence: "later", displayedOffsetMinutes: 60 },
+				}),
+				RECOVERY_CONTEXT,
+			),
+		);
+	});
+
+	it("flags a spring-forward time as soon as it is entered and never sends it", async () => {
+		renderBerlinOnBehalf("2026-03-29", "02:30", "05:00");
+
+		expect(screen.getByRole("alert").textContent).toBe(
+			"This time doesn't exist on this date because the clocks move forward.",
+		);
+		enterReasonAndSubmit();
+
+		await waitFor(() => expect(toastError).toHaveBeenCalled());
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("freezes a self entry continued once in the browser zone as a browser-basis command", async () => {
+		renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				employeeTimezone: "Europe/Berlin",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "10:15",
+				defaultClockOutTime: "15:45",
+			},
+			{ manualCommandVersion: 2 },
+		);
+
+		enterReasonAndSubmit();
+		fireEvent.click(await screen.findByRole("button", { name: "Continue once" }));
+
+		await waitFor(() =>
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					version: 2,
+					targetEmployeeId: "employee-current",
+					zone: { basis: "browser", timezone: "America/New_York" },
+					browserTimezone: "America/New_York",
+					clockIn: { time: "10:15", occurrence: null, displayedOffsetMinutes: -240 },
+				}),
+				RECOVERY_CONTEXT,
+			),
+		);
+		expect(updateTimezone).not.toHaveBeenCalled();
+	});
+
+	it("shows a time that repeats only in the browser zone for review before continuing once", async () => {
+		renderDialog(
+			{
+				open: true,
+				hideTrigger: true,
+				employeeTimezone: "UTC",
+				defaultDate: "2025-11-02",
+				defaultClockInTime: "00:30",
+				defaultClockOutTime: "01:30",
+			},
+			{ manualCommandVersion: 2 },
+		);
+		// Unambiguous in the saved UTC zone: no choice is offered yet.
+		expect(screen.queryByRole("radio")).toBeNull();
+
+		enterReasonAndSubmit();
+		fireEvent.click(await screen.findByRole("button", { name: "Continue once" }));
+
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				"This time occurs twice on this date. Choose which one you mean.",
+			),
+		);
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+		fireEvent.click(await screen.findByRole("radio", { name: "Second, UTC-05:00" }));
+		fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+
+		await waitFor(() =>
+			expect(createManualTimeEntry).toHaveBeenCalledWith(
+				expect.objectContaining({
+					zone: { basis: "browser", timezone: "America/New_York" },
+					browserTimezone: "America/New_York",
+					clockIn: { time: "00:30", occurrence: null, displayedOffsetMinutes: -240 },
+					clockOut: { time: "01:30", occurrence: "later", displayedOffsetMinutes: -300 },
+				}),
+				RECOVERY_CONTEXT,
+			),
+		);
+	});
+
+	it("drops an occurrence choice when its time changes", async () => {
+		renderBerlinOnBehalf("2025-10-26", "01:00", "02:30");
+		fireEvent.click(screen.getByRole("radio", { name: "Second, UTC+01:00" }));
+
+		fireEvent.change(screen.getByLabelText("Clock Out"), { target: { value: "02:45" } });
+
+		expect(
+			screen.getByRole("radio", { name: "Second, UTC+01:00" }).getAttribute("aria-checked"),
+		).toBe("false");
+		enterReasonAndSubmit();
+		await waitFor(() => expect(toastError).toHaveBeenCalled());
+		expect(createManualTimeEntry).not.toHaveBeenCalled();
+	});
+
+	it("clears confirmations and refreshes the context when the server asks for reconfirmation", async () => {
+		createManualTimeEntry.mockResolvedValue({
+			success: false,
+			error: "The timezone or times changed.",
+			code: "reconfirmation_required",
+			rejection: { reason: "reconfirmation_required", detail: "zone_changed", timezone: "Europe/Paris" },
+		});
+		renderBerlinOnBehalf("2025-10-26", "01:00", "02:30");
+		const callsBefore = targetContextState.getManualEntryTargetContext.mock.calls.length;
+		fireEvent.click(screen.getByRole("radio", { name: "Second, UTC+01:00" }));
+
+		enterReasonAndSubmit();
+
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				"The timezone or times changed. Review the entry and submit it again.",
+			),
+		);
+		await waitFor(() =>
+			expect(targetContextState.getManualEntryTargetContext.mock.calls.length).toBeGreaterThan(
+				callsBefore,
+			),
+		);
+		expect(
+			screen.getByRole("radio", { name: "Second, UTC+01:00" }).getAttribute("aria-checked"),
+		).toBe("false");
+	});
+
+	it("asks the user to review when the organization's command version changed", async () => {
+		createManualTimeEntry.mockResolvedValue({
+			success: false,
+			error: "Manual entry settings changed.",
+			code: "manual_entry_not_adopted",
+		});
+		renderBerlinOnBehalf("2026-05-12", "10:15", "15:45");
+
+		enterReasonAndSubmit();
+
+		await waitFor(() =>
+			expect(toastError).toHaveBeenCalledWith(
+				"Manual entry settings changed. Review the entry and submit it again.",
+			),
 		);
 	});
 });

@@ -360,6 +360,14 @@
       "teamMemberAdded": {
         "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
+      },
+      "employeeOffboardingReview": {
+        "title": "Offboarding benötigt eine Prüfung",
+        "clock_out": "{employeeName}: Prüfung erforderlich: Ausstempeln beim Offboarding (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Zeiterfassung muss korrigiert werden (Austritt wirksam {cutoff}, {timezone}).",
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben brauchen eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss geprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Vertragsbedingungen müssen geprüft werden (Austritt wirksam {cutoff}, {timezone})."
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -448,12 +456,17 @@
       "refresh": "Status aktualisieren",
       "refreshing": "{count} gespeicherte(r) Datensatz/Datensätze wird/werden überprüft…",
       "reviewRequired": "{count} Datensatz/Datensätze lokal gespeichert – Überprüfung erforderlich",
-      "unverified": "Stempelnachweis auf diesem Gerät gespeichert. Stellen Sie eine Verbindung her, um alle gespeicherten Datensätze zu überprüfen."
+      "unverified": "Stempelnachweis auf diesem Gerät gespeichert. Stellen Sie eine Verbindung her, um alle gespeicherten Datensätze zu überprüfen.",
+      "offlineWaiting": "Offline — {count} Stempelung(en) werden gesendet, sobald Sie wieder online sind",
+      "waiting": "{count} Stempelung(en) auf diesem Gerät gespeichert, noch nicht gesendet"
     },
     "capture": {
       "description": "Ereignis zur Überprüfung auf diesem Gerät speichern. Der Serverstatus der Zeiterfassung ändert sich nicht.",
       "end": "Ausstempeln zur Überprüfung speichern",
-      "start": "Einstempeln zur Überprüfung speichern"
+      "start": "Einstempeln zur Überprüfung speichern",
+      "queueDescription": "Sie sind offline. Stempelungen werden auf diesem Gerät gespeichert und automatisch gesendet, sobald Sie wieder online sind.",
+      "queueStart": "Einstempeln speichern",
+      "queueEnd": "Ausstempeln speichern"
     },
     "recovery": {
       "archive": "Nachweise archivieren und aufbewahren",
@@ -467,7 +480,20 @@
       "loadError": "Gespeicherte Datensätze konnten nicht gelesen werden",
       "loading": "Gespeicherte Datensätze werden gelesen…",
       "review": "Gespeicherte Datensätze überprüfen",
-      "title": "Gespeicherte Stempelzeit-Datensätze"
+      "title": "Gespeicherte Stempelzeit-Datensätze",
+      "descriptionOutcomes": "Diese Einträge sind auf diesem Gerät gespeichert. Sofern ein Eintrag nicht als auf dem Server gespeichert angezeigt wird, ist sein Ergebnis auf dem Server nicht bestätigt. Prüfen Sie vorhandene Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzeinträge erfassen. Archivieren behält die Nachweise und storniert keine Arbeit auf dem Server.",
+      "command": {
+        "pending": "Wartet auf Senden — auf dem Server nicht bestätigt",
+        "committed": "Auf dem Server gespeichert",
+        "rejected": "Nicht gespeichert — vom Server abgelehnt ({code})",
+        "review": "Prüfung nötig — vom Server nicht angenommen ({code})",
+        "exhausted": "Senden nach wiederholten Fehlern gestoppt — auf dem Server nicht bestätigt",
+        "pausedContext": "Pausiert — melden Sie sich mit dem Konto und der Organisation an, für die gespeichert wurde",
+        "waitingPredecessor": "Wartet auf eine frühere Stempelung auf diesem Gerät",
+        "blockedPredecessor": "Pausiert — eine frühere Stempelung auf diesem Gerät muss geprüft werden",
+        "pausedServer": "Pausiert — der Server nimmt diese Stempelung noch nicht an",
+        "pausedAccess": "Pausiert — melden Sie sich erneut mit Zugriff auf das Stempeln in dieser Organisation an"
+      }
     }
   },
   "presence": {

@@ -1,7 +1,8 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
+import { appendLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import { createLegacyApprovalObservationPlanner } from "../workflow/legacy-observation-planner";
 import type {
 	LegacyApprovalRequestSnapshot,
@@ -474,6 +475,54 @@ describe("captureTimeCorrectionLegacyApprovalState", () => {
 		).rejects.toMatchObject({
 			name: "TimeCorrectionLegacyStateCaptureError",
 		});
+	});
+
+	it("carries a well-formed escalation lineage on the captured request (#439)", async () => {
+		const metadata = appendLegacyEscalationLineage(
+			{ timeCorrection: { action: "edit", clockInCorrectionId } },
+			{
+				pendingSince: parseInstant("2026-07-20T08:30:00Z"),
+				transfer: {
+					fromApproverEmployeeId: secondApproverId,
+					toApproverEmployeeId: approverId,
+					transferredAt: parseInstant("2026-07-20T09:30:00Z"),
+					initiator: "scheduled",
+					actorEmployeeId: null,
+				},
+			},
+		);
+		const { state } = await capture(
+			envelope({ approvalRequests: [request(metadata)] }),
+		);
+
+		expect(state.approvalRequest?.metadata).toEqual(metadata);
+		expect(state.sourceSnapshot).not.toHaveProperty("escalation");
+		expect(JSON.stringify(state.displaySnapshot)).not.toContain("escalation");
+	});
+
+	it("rejects a malformed or accessor escalation lineage (#439)", async () => {
+		await expect(
+			capture(
+				envelope({
+					approvalRequests: [
+						request({
+							timeCorrection: { action: "edit", clockInCorrectionId },
+							escalation: { version: 2 },
+						}),
+					],
+				}),
+			),
+		).rejects.toMatchObject({ name: "TimeCorrectionLegacyStateCaptureError" });
+		const lineageGetter = vi.fn(() => ({ version: 1 }));
+		const metadata = { timeCorrection: { action: "edit", clockInCorrectionId } };
+		Object.defineProperty(metadata, "escalation", {
+			enumerable: true,
+			get: lineageGetter,
+		});
+		await expect(
+			capture(envelope({ approvalRequests: [request(metadata)] })),
+		).rejects.toMatchObject({ name: "TimeCorrectionLegacyStateCaptureError" });
+		expect(lineageGetter).not.toHaveBeenCalled();
 	});
 
 	it("captures a later cycle whose logical endpoints are active correction rows", async () => {
@@ -1602,6 +1651,37 @@ describe("captureTimeCorrectionLegacyApprovalState", () => {
 		expect(state.approvalRequest?.updatedAt.toString()).toBe(
 			"2026-07-20T08:30:00Z",
 		);
+	});
+
+	it("reads defaultNow() chain timestamps at millisecond precision", async () => {
+		const value = envelope({
+			chains: [chain({ createdAt: "2026-07-20 08:00:00.123456" })],
+			chainRows: [
+				stage(1, { createdAt: "2026-07-20 08:01:00.654321" }),
+				stage(2, { createdAt: "2026-07-20T08:02:00.000999" }),
+			],
+		});
+		value.identityEvidence = { employees: employeesFor(value) };
+
+		const { state } = await capture(value);
+
+		expect(state.chain?.createdAt.toString()).toBe("2026-07-20T08:00:00.123Z");
+		expect(state.chainRows.map((row) => row.createdAt.toString())).toEqual([
+			"2026-07-20T08:01:00.654Z",
+			"2026-07-20T08:02:00Z",
+		]);
+	});
+
+	it("rejects chain timestamps with more than microsecond precision", async () => {
+		const value = envelope({
+			chains: [chain({ createdAt: "2026-07-20 08:00:00.123456789" })],
+			chainRows: [stage(1), stage(2)],
+		});
+		value.identityEvidence = { employees: employeesFor(value) };
+
+		await expect(capture(value)).rejects.toMatchObject({
+			name: "TimeCorrectionLegacyStateCaptureError",
+		});
 	});
 
 	it("captures every scoped source request without an arbitrary SQL limit", async () => {

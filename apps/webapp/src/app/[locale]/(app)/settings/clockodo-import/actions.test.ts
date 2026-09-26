@@ -26,10 +26,6 @@ vi.mock("@/lib/clockodo/client", () => ({
 	ClockodoClient: vi.fn(),
 }));
 
-vi.mock("@/lib/clockodo/import-orchestrator", () => ({
-	orchestrateImport: vi.fn(),
-}));
-
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: vi.fn(),

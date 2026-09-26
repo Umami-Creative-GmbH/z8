@@ -7,6 +7,7 @@ import {
 	disposeApprovalEscalationAttention,
 	getApprovalEscalationOverview,
 	recheckApprovalEscalationAttention,
+	retryApprovalEscalationDelivery,
 	reviewApprovalEscalationPolicyConflicts,
 	transferApprovalEscalationAssignment,
 	updateApprovalEscalationPolicy,
@@ -51,6 +52,7 @@ export function ApprovalEscalationManagement({
 
 	const policyMutation = useMutation({
 		mutationFn: updateApprovalEscalationPolicy,
+		onSettled: () => invalidate(),
 	});
 	const reviewMutation = useMutation({
 		mutationFn: reviewApprovalEscalationPolicyConflicts,
@@ -71,9 +73,11 @@ export function ApprovalEscalationManagement({
 	});
 	const disposeMutation = useMutation({
 		mutationFn: disposeApprovalEscalationAttention,
+		onSettled: () => invalidate(),
 	});
 	const transferMutation = useMutation({
 		mutationFn: transferApprovalEscalationAssignment,
+		onSettled: () => invalidate(),
 	});
 	const recheckMutation = useMutation({
 		mutationFn: recheckApprovalEscalationAttention,
@@ -121,7 +125,6 @@ export function ApprovalEscalationManagement({
 						"No changes to save",
 					),
 		);
-		await invalidate();
 		return true;
 	}
 
@@ -133,7 +136,6 @@ export function ApprovalEscalationManagement({
 			.catch(() => ({ success: false as const, error: requestFailed() }));
 		if (!result.success) {
 			toast.error(result.error);
-			await invalidate();
 			return false;
 		}
 		toast.success(
@@ -142,9 +144,26 @@ export function ApprovalEscalationManagement({
 				"Approval assignment transferred",
 			),
 		);
-		await invalidate();
 		return true;
 	}
+
+	const retryDeliveryMutation = useMutation({
+		mutationFn: retryApprovalEscalationDelivery,
+		onSuccess: async (result) => {
+			if (!result.success) {
+				toast.error(result.error);
+			} else {
+				toast.success(
+					t(
+						"settings.approvalEscalation.toast.deliveryRetried",
+						"Delivery retry scheduled",
+					),
+				);
+			}
+			await invalidate();
+		},
+		onError: () => toast.error(requestFailed()),
+	});
 
 	async function handleDispose(
 		attentionId: string,
@@ -155,13 +174,11 @@ export function ApprovalEscalationManagement({
 			.catch(() => ({ success: false as const, error: requestFailed() }));
 		if (!result.success) {
 			toast.error(result.error);
-			await invalidate();
 			return false;
 		}
 		toast.success(
 			t("settings.approvalEscalation.toast.disposed", "Attention item closed"),
 		);
-		await invalidate();
 		return true;
 	}
 
@@ -202,9 +219,13 @@ export function ApprovalEscalationManagement({
 						isRechecking={recheckMutation.isPending}
 						isDisposing={disposeMutation.isPending}
 						isTransferring={transferMutation.isPending}
+						isRetryingDelivery={retryDeliveryMutation.isPending}
 						onRecheck={() => recheckMutation.mutate()}
 						onDispose={handleDispose}
 						onTransfer={handleTransfer}
+						onRetryDelivery={(attentionId) =>
+							retryDeliveryMutation.mutate({ attentionId })
+						}
 					/>
 					<EscalationPolicyCard
 						key={overview.policy.revision}

@@ -108,6 +108,38 @@ export function ApprovalMaintenanceCard() {
 						"Escalation transfer",
 					),
 				})),
+				...result.data.delivery.messages.map((id) => ({
+					id,
+					kind: "delivery_message",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.deliveryMessage",
+						"Delivered message",
+					),
+				})),
+				...result.data.delivery.work.map((id) => ({
+					id,
+					kind: "delivery_work",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.deliveryWork",
+						"Delivery work",
+					),
+				})),
+				...result.data.delivery.intents.map((id) => ({
+					id,
+					kind: "delivery_intent",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.deliveryIntent",
+						"Delivery intent",
+					),
+				})),
+				...result.data.attention.map((id) => ({
+					id,
+					kind: "escalation_attention",
+					label: t(
+						"admin:admin.settings.approvalMaintenance.escalationAttention",
+						"Escalation attention",
+					),
+				})),
 			]
 		: [];
 

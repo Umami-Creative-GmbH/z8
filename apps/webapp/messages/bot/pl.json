@@ -8,7 +8,56 @@
       "historicalApproval": "Zweryfikowano Twoje wcześniej zapisane zatwierdzenie. Jest to wcześniejszy wynik; nie podjęto nowej decyzji. Szczegóły znajdziesz we wniosku w Z8.",
       "historicalRejection": "Zweryfikowano Twoje wcześniej zapisane odrzucenie. Jest to wcześniejszy wynik; nie podjęto nowej decyzji. Szczegóły znajdziesz we wniosku w Z8.",
       "unboundCallback": "Ta karta nie pozwala zweryfikować pierwotnie rozpatrywanych danych. Nie podjęto żadnej decyzji. Sprawdź wniosek w Z8.",
-      "alreadyProcessed": "To zatwierdzenie zostało już przetworzone."
+      "alreadyProcessed": "To zatwierdzenie zostało już przetworzone.",
+      "boundReviewRequired": "Ta karta nie odpowiada już bieżącemu wnioskowi lub przydziałowi albo nie udało się zweryfikować działania. Nie podjęto żadnej decyzji. Sprawdź wniosek w Z8.",
+      "invocationConflict": "To naciśnięcie zostało już zarejestrowane z inną akcją. Nie podjęto żadnej decyzji. Sprawdź wniosek w Z8.",
+      "outcomeUnknown": "Nie udało się potwierdzić wyniku tego kliknięcia. Sprawdź wniosek w Z8, zanim klikniesz ponownie.",
+      "card": {
+        "absenceTitle": "Wniosek o nieobecność do zatwierdzenia",
+        "boundHint": "Zatwierdź lub odrzuć rozstrzyga dokładnie wniosek pokazany powyżej. Jeśli został zmieniony lub przekazany, nic nie zostanie rozstrzygnięte i poprosimy o sprawdzenie go w Z8.",
+        "reviewOnlyHint": "Zatwierdź lub odrzuć ten wniosek w Z8. Nie można go rozstrzygnąć z tej wiadomości.",
+        "approve": "Zatwierdź",
+        "reject": "Odrzuć",
+        "unavailable": "Niedostępne",
+        "employee": "Pracownik",
+        "requestedBy": "Wnioskujący",
+        "submittedBy": "Złożone przez",
+        "category": "Kategoria",
+        "currentCategoryName": "Aktualna nazwa kategorii",
+        "dates": "Daty",
+        "coverage": "Zakres",
+        "submittedAt": "Złożono",
+        "fullDays": "Pełne dni",
+        "fullDay": "cały dzień",
+        "morning": "rano",
+        "afternoon": "po południu",
+        "halfDayPeriods": "Zaczyna się {start}, kończy {end}",
+        "explicitTimes": "{start} – {end} (czas lokalny, strefa nie zapisana)",
+        "explicitTimesOvernight": "{start} – {end} następnego dnia (czas lokalny, strefa nie zapisana)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Wniosek zatwierdzony",
+        "requestRejectedTitle": "Wniosek odrzucony",
+        "stepApprovedTitle": "Zatwierdzenie zapisane",
+        "requestApproved": "Zatwierdzone przez {actor} {time}. Wniosek jest zatwierdzony.",
+        "requestRejected": "Odrzucone przez {actor} {time}. Wniosek jest odrzucony.",
+        "stepApproved": "Zatwierdzone przez {actor} {time}. Wniosek czeka jeszcze na dalsze zatwierdzenia.",
+        "replayed": "To naciśnięcie zostało już zarejestrowane; to jego pierwotny wynik i nie podjęto nowej decyzji.",
+        "stepRejectedTitle": "Odrzucenie zapisane",
+        "stepRejected": "Odrzucone przez {actor} {time}. Wniosek nie jest jeszcze ostateczny; sprawdź jego aktualny status w Z8.",
+        "recordedTitle": "Decyzja zapisana",
+        "recorded": "Zapisane przez {actor} {time}. Sprawdź aktualny status wniosku w Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Wniosek wycofany",
+        "withdrawn": "Ten wniosek został wycofany. Z tej karty nie jest potrzebna żadna decyzja.",
+        "reassignedTitle": "Przekazano dalej",
+        "reassigned": "To zatwierdzenie przekazano innej osobie zatwierdzającej. Z tej karty nie jest potrzebna Twoja decyzja i nie podjęto tu żadnej decyzji. Sprawdź jego aktualny status w Z8.",
+        "inactiveTitle": "Nie wymaga już działania",
+        "inactive": "Ten wniosek nie wymaga już Twojej decyzji z tej karty. Nie podjęto tu żadnej decyzji. Sprawdź jego aktualny status w Z8.",
+        "currentApproved": "Aktualny status wniosku: zatwierdzony.",
+        "currentRejected": "Aktualny status wniosku: odrzucony."
+      }
     },
     "cmd": {
       "billingRequired": "Aby kontynuować korzystanie z rejestracji czasu pracy, wymagane jest opłacenie subskrypcji. Poproś administratora organizacji o aktualizację danych rozliczeniowych.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "Jesteś w pracy od {time} ({hours} godz. {minutes} min).",
+        "alreadyInNow": "Rozpoczęcie pracy jest już zarejestrowane.",
+        "appendReview": "Twoja historia czasu wymaga weryfikacji, zanim będzie można zarejestrować rozpoczęcie pracy. Skontaktuj się z administratorem.",
         "cannotNow": "Nie można teraz rozpocząć pracy.",
+        "committed": "Zarejestrowano rozpoczęcie pracy.",
+        "failed": "Nie udało się zarejestrować rozpoczęcia pracy. Spróbuj ponownie.",
         "noProfile": "Nie znaleziono profilu pracownika.",
-        "success": "Rozpoczęto pracę o {time}."
+        "success": "Rozpoczęto pracę o {time}.",
+        "unconfirmed": "Nie udało się potwierdzić rozpoczęcia pracy. Sprawdź swój status przed ponowną próbą."
       },
       "clockout": {
+        "appendReview": "Twoja historia czasu wymaga weryfikacji, zanim będzie można zarejestrować zakończenie pracy. Skontaktuj się z administratorem.",
         "cannotNow": "Nie można teraz zakończyć pracy.",
+        "committed": "Zarejestrowano zakończenie pracy.",
+        "failed": "Nie udało się zarejestrować zakończenia pracy. Spróbuj ponownie.",
         "noProfile": "Nie znaleziono profilu pracownika.",
         "notClockedIn": "Obecnie nie jesteś w pracy.",
-        "policyCheckFailed": "Nie można zweryfikować polityki zatwierdzania czasu. Spróbuj ponownie.",
         "success": "Zakończono pracę o {time}. Czas trwania: {hours} godz. {minutes} min.",
-        "unsupportedApproval": "Zmiany czasu wymagające zatwierdzenia nie są jeszcze obsługiwane dla tej akcji"
+        "successAt": "Zakończenie pracy zarejestrowano o {time}.",
+        "unconfirmed": "Nie udało się potwierdzić zakończenia pracy. Sprawdź swój status przed ponowną próbą."
       },
       "compliance": {
         "error": "Nie udało się pobrać danych o zgodności. Spróbuj ponownie później.",
@@ -95,7 +152,8 @@
       "typeHelp": "Wpisz /help, aby zobaczyć dostępne polecenia.",
       "unconfigured": "Integracja Z8 Twojej organizacji jest w trakcie konfiguracji. Poczekaj, aż administrator zakończy proces.",
       "welcome": "Witamy w Z8! Aby połączyć swoje konto, przejdź do Ustawienia > Integracje > Telegram w panelu Z8 i wygeneruj kod łączenia. Następnie wyślij: /link TWÓJ_KOD",
-      "welcomeTeams": "Witamy w Z8! Wpisz „help”, aby zobaczyć dostępne polecenia."
+      "welcomeTeams": "Witamy w Z8! Wpisz „help”, aby zobaczyć dostępne polecenia.",
+      "replyUndelivered": "Polecenie zostało przetworzone, ale nie udało się wyświetlić odpowiedzi. Sprawdź swój status, zanim je powtórzysz."
     }
   }
 }

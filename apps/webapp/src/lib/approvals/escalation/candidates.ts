@@ -79,25 +79,25 @@ export async function loadEscalationCandidateFacts(
 
 	const employeeById = new Map(employees.map((row) => [row.id, row]));
 	const linkByManager = new Map(links.map((link) => [link.managerId, link]));
-	const facts: EscalationCandidateFact[] = [];
-	for (const managerId of eligible.managerIds) {
-		const manager = employeeById.get(managerId);
-		const link = linkByManager.get(managerId);
-		facts.push({
-			employeeId: managerId,
-			isPrimary: link?.isPrimary === true,
-			relationshipSince: link ? instantFromDate(link.assignedAt) : null,
-			hasDecisionPath: manager
-				? await hasApprovalDecisionPath(executor, {
-						organizationId,
-						requesterEmployeeId,
-						managerEmployeeId: managerId,
-						managerUserId: manager.userId,
-					})
-				: false,
-		});
-	}
-	return facts;
+	return Promise.all(
+		eligible.managerIds.map(async (managerId): Promise<EscalationCandidateFact> => {
+			const manager = employeeById.get(managerId);
+			const link = linkByManager.get(managerId);
+			return {
+				employeeId: managerId,
+				isPrimary: link?.isPrimary === true,
+				relationshipSince: link ? instantFromDate(link.assignedAt) : null,
+				hasDecisionPath: manager
+					? await hasApprovalDecisionPath(executor, {
+							organizationId,
+							requesterEmployeeId,
+							managerEmployeeId: managerId,
+							managerUserId: manager.userId,
+						})
+					: false,
+			};
+		}),
+	);
 }
 
 /**
@@ -105,7 +105,7 @@ export async function loadEscalationCandidateFacts(
  * under the existing authorization model: an active approved member whose
  * current abilities admit the inbox and this requester's approvals.
  */
-async function hasApprovalDecisionPath(
+export async function hasApprovalDecisionPath(
 	executor: EscalationCandidateExecutor,
 	input: {
 		organizationId: string;

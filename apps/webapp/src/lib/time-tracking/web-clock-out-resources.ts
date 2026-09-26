@@ -1,7 +1,6 @@
 import "server-only";
 
 import { type SQL, sql } from "drizzle-orm";
-import { routeWorkPeriodApprovalParticipants } from "@/lib/approvals/server/work-period-resource-routing";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import type {
 	WebClockOutTransactionInput,
@@ -25,11 +24,12 @@ type Resource = Readonly<{
 /** Concrete table order for this legacy caller, not a configurable lock framework. */
 function resourceQueries(
 	input: WebClockOutTransactionInput,
-	employeeIds = [input.employeeId],
-	userIds = [input.userId],
+	employeeIds: readonly string[],
+	userIds: readonly string[],
 ) {
 	const org = input.organizationId;
-	const employeeScope = sql`select id from employee where organization_id = ${org} and id = ${input.employeeId}::uuid and user_id = ${input.userId} and is_active = true`;
+	const ownerUserId = input.ownerUserId ?? input.userId;
+	const employeeScope = sql`select id from employee where organization_id = ${org} and id = ${input.employeeId}::uuid and user_id = ${ownerUserId} and is_active = true`;
 	const sourceScope = sql`select id from work_period where organization_id = ${org} and employee_id = ${input.employeeId}::uuid and (clock_out_id = ${input.submissionId}::uuid or id = ${input.workPeriodId ?? null}::uuid)`;
 	const teamScope = sql`select team_id from employee where organization_id = ${org} and id in (${employeeScope})`;
 	const assignments = sql`organization_id = ${org} and is_active = true and (
@@ -68,7 +68,7 @@ function resourceQueries(
 		},
 		{
 			table: "user_settings",
-			scope: sql`user_id = ${input.userId} and exists (${employeeScope})`,
+			scope: sql`user_id = ${ownerUserId} and exists (${employeeScope})`,
 		},
 		{
 			table: "employee",
@@ -79,14 +79,6 @@ function resourceQueries(
 		},
 		// Assignment candidates include expired/future rows: their IDs are protected
 		// before the existing event-time snapshot resolver selects effective rows.
-		{
-			table: "approval_policy",
-			scope: sql`organization_id = ${org} and is_active = true and ${input.requiresApproval === true}`,
-		},
-		{
-			table: "approval_policy_stage",
-			scope: sql`organization_id = ${org} and policy_id in (select id from approval_policy where organization_id = ${org} and is_active = true) and ${input.requiresApproval === true}`,
-		},
 		{ table: "work_policy_assignment", scope: assignments },
 		{
 			table: "work_policy",
@@ -155,17 +147,12 @@ export async function routeWebClockOutResources(
 	db: WorkTransactionClient,
 	input: WebClockOutTransactionInput,
 ): Promise<readonly Resource[]> {
-	const participants = input.requiresApproval
-		? await routeWorkPeriodApprovalParticipants({
-				db,
-				organizationId: input.organizationId,
-				requesterEmployeeId: input.employeeId,
-			})
-		: { employeeIds: [input.employeeId], userIds: [input.userId] };
+	const ownerUserId = input.ownerUserId ?? input.userId;
+	// The work's owner and the acting human; a live clock-out routes no approver.
 	const definitions = resourceQueries(
 		input,
-		participants.employeeIds,
-		[...new Set([input.userId, ...participants.userIds])].sort(),
+		[input.employeeId],
+		[...new Set([input.userId, ownerUserId])].sort(),
 	);
 	const result = await db.execute(
 		sql`/* web-clock-out:route */ ${sql.join(
@@ -188,14 +175,14 @@ export async function routeWebClockOutResources(
 	);
 	if (!result || !Array.isArray(result.rows))
 		throw new Error("Work resource routing is unavailable");
-	const tableOrder = definitions.map(({ table }) => table);
+	const tableRank = new Map(definitions.map(({ table }, index) => [table, index]));
 	const resources = result.rows
 		.map((value): Resource => {
 			const row = value as Record<string, unknown>;
 			if (
 				!row ||
 				typeof row.table !== "string" ||
-				!tableOrder.includes(row.table) ||
+				!tableRank.has(row.table) ||
 				typeof row.id !== "string" ||
 				typeof row.binding !== "string" ||
 				typeof row.source !== "boolean"
@@ -211,7 +198,7 @@ export async function routeWebClockOutResources(
 		})
 		.sort(
 			(a, b) =>
-				tableOrder.indexOf(a.table) - tableOrder.indexOf(b.table) ||
+				(tableRank.get(a.table) ?? 0) - (tableRank.get(b.table) ?? 0) ||
 				(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
 		);
 	for (const table of ["organization", "member"]) {
@@ -223,7 +210,8 @@ export async function routeWebClockOutResources(
 		!resources.some(
 			(row) => row.table === "employee" && row.id === input.employeeId,
 		) ||
-		!resources.some((row) => row.table === "user" && row.id === input.userId)
+		!resources.some((row) => row.table === "user" && row.id === input.userId) ||
+		!resources.some((row) => row.table === "user" && row.id === ownerUserId)
 	) {
 		throw new Error("Active organization-scoped clocking access required");
 	}

@@ -1,12 +1,15 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
 import {
 	APPROVAL_EVIDENCE_MODES,
 	type ApprovalEvidenceMode,
+	approvalChainStageInstance,
 	approvalDecisionEvidence,
 	approvalEvidenceControl,
+	approvalRequest,
 	approvalReviewBinding,
 	approvalStageAssignment,
 	approvalSubmittedRevision,
+	approvalWorkflow,
 	employee,
 } from "@/db/schema";
 import {
@@ -28,6 +31,24 @@ import {
 	fingerprintAbsenceMaterialFacts,
 } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
+import {
+	fingerprintTravelExpenseMaterialFacts,
+	TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION,
+	type TravelExpenseSubmittedFacts,
+	type TravelExpenseSubmittedLabels,
+} from "./travel-expense-facts";
+import {
+	fingerprintTimeCorrectionFacts,
+	TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION,
+	type TimeCorrectionSubmittedFacts,
+} from "./time-correction-facts";
+import {
+	fingerprintWorkPeriodMaterialFacts,
+	WORK_PERIOD_EVIDENCE_SCHEMA_VERSION,
+	type WorkPeriodEvidenceKind,
+	type WorkPeriodSubmittedFacts,
+	type WorkPeriodSubmittedLabels,
+} from "./work-period-facts";
 
 /**
  * Evidence capture is additive and inactive by default. The mode is read in the
@@ -408,6 +429,25 @@ export async function findDecisionEvidenceByReceipt(
 	return row ? parseDecisionEvidence(row, input) : null;
 }
 
+export async function findDecisionEvidenceById(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string; id: string },
+): Promise<DecisionEvidenceRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalDecisionEvidence)
+		.where(
+			and(
+				eq(approvalDecisionEvidence.organizationId, input.organizationId),
+				eq(approvalDecisionEvidence.workflowId, input.workflowId),
+				eq(approvalDecisionEvidence.id, input.id),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	return row ? parseDecisionEvidence(row, input) : null;
+}
+
 export interface ReviewBindingTarget {
 	organizationId: string;
 	recipientEmployeeId: string;
@@ -443,8 +483,19 @@ export async function issueReviewBinding(
 			),
 		)
 		.limit(1);
-	const current = await loadCurrentAbsenceSubmittedRevision(database, target);
-	if (assignments.length !== 1 || current?.id !== target.submittedRevisionId) {
+	// Kind-agnostic: the workflow's latest revision, whatever its kind (#325).
+	const current = await database
+		.select({ id: approvalSubmittedRevision.id })
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, target.organizationId),
+				eq(approvalSubmittedRevision.workflowId, target.workflowId),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	if (assignments.length !== 1 || current[0]?.id !== target.submittedRevisionId) {
 		throw new ApprovalEvidenceError("binding_mismatch", { field: "target" });
 	}
 	await database
@@ -473,6 +524,125 @@ export async function issueReviewBinding(
 	if (!id)
 		throw new ApprovalEvidenceError("invariant", { field: "review_binding" });
 	return id;
+}
+
+export interface ReviewBindingRecord extends ReviewBindingTarget {
+	id: string;
+}
+
+/**
+ * Organization-scoped handle lookup. The handle names a target; it is neither
+ * authority nor invocation identity, and every field is revalidated under the
+ * decision transaction.
+ */
+export async function loadReviewBinding(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<ReviewBindingRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	if (!row || row.organizationId !== input.organizationId) return null;
+	// A legacy binding never names a canonical target (#296).
+	if (
+		row.authority !== "canonical" ||
+		!row.workflowId ||
+		!row.stageId ||
+		!row.assignmentId
+	) {
+		return null;
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		recipientEmployeeId: row.recipientEmployeeId,
+		workflowId: row.workflowId,
+		stageId: row.stageId,
+		assignmentId: row.assignmentId,
+		submittedRevisionId: row.submittedRevisionId,
+	};
+}
+
+/**
+ * Which authority a binding handle belongs to, so a card action reaches only
+ * that authority's decision owner. Organization-scoped; null when unknown.
+ */
+export async function loadReviewBindingAuthority(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<"canonical" | "legacy" | null> {
+	const rows = await database
+		.select({ authority: approvalReviewBinding.authority })
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	const authority = rows[0]?.authority;
+	return authority === "canonical" || authority === "legacy" ? authority : null;
+}
+
+/**
+ * The kind a binding decides, so a card action reaches that kind's decision
+ * owner: the workflow's kind for a canonical binding (#325), the legacy
+ * revision's kind for a legacy one (#384). Bindings and revisions are
+ * immutable, so routing on them keeps exact replays intact. Organization-scoped;
+ * null when unknown.
+ */
+export async function loadReviewBindingWorkflowType(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<ApprovalWorkflowType | null> {
+	const canonical = await database
+		.select({ workflowType: approvalWorkflow.workflowType })
+		.from(approvalReviewBinding)
+		.innerJoin(
+			approvalWorkflow,
+			and(
+				eq(approvalWorkflow.id, approvalReviewBinding.workflowId),
+				eq(approvalWorkflow.organizationId, approvalReviewBinding.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+				eq(approvalReviewBinding.authority, "canonical"),
+			),
+		)
+		.limit(1);
+	if (canonical[0]) return canonical[0].workflowType;
+	const legacy = await database
+		.select({ workflowType: approvalSubmittedRevision.workflowType })
+		.from(approvalReviewBinding)
+		.innerJoin(
+			approvalSubmittedRevision,
+			and(
+				eq(approvalSubmittedRevision.id, approvalReviewBinding.submittedRevisionId),
+				eq(approvalSubmittedRevision.organizationId, approvalReviewBinding.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+			),
+		)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+				eq(approvalReviewBinding.authority, "legacy"),
+			),
+		)
+		.limit(1);
+	return legacy[0]?.workflowType ?? null;
 }
 
 /** Transaction-time check that a supplied handle names exactly this target. */
@@ -664,12 +834,15 @@ export interface LegacyDecisionEvidenceInput
 		chainStageId: string | null;
 		observedWorkflowId: string | null;
 	};
+	/** The legacy binding a bound card decision was reviewed through (#296). */
+	reviewedBindingId?: string | null;
 }
 
 export interface LegacyDecisionEvidenceRecord
 	extends LegacyDecisionEvidenceInput {
 	id: string;
 	authority: "legacy";
+	reviewedBindingId: string | null;
 }
 
 function parseLegacyDecisionEvidence(
@@ -683,7 +856,6 @@ function parseLegacyDecisionEvidence(
 		!row.legacyApprovalRequestId ||
 		row.stageId !== null ||
 		row.assignmentId !== null ||
-		row.reviewedBindingId !== null ||
 		row.schemaVersion !== ABSENCE_EVIDENCE_SCHEMA_VERSION ||
 		!Array.isArray(row.eventIds) ||
 		row.eventIds.length !== 0 ||
@@ -722,6 +894,7 @@ function parseLegacyDecisionEvidence(
 		decidedAt: instantFromDate(row.decidedAt),
 		result: row.result as JsonObject,
 		labels: { actorName: row.labels.actorName },
+		reviewedBindingId: row.reviewedBindingId,
 	};
 }
 
@@ -760,7 +933,7 @@ export async function recordLegacyDecisionEvidence(
 			eventIds: [],
 			result: input.result,
 			labels: input.labels,
-			reviewedBindingId: null,
+			reviewedBindingId: input.reviewedBindingId ?? null,
 			schemaVersion: ABSENCE_EVIDENCE_SCHEMA_VERSION,
 		})
 		.returning();
@@ -826,4 +999,881 @@ export async function findLegacyDecisionEvidenceByRequest(
 	}
 	const row = rows[0];
 	return row ? parseLegacyDecisionEvidence(row, input.organizationId) : null;
+}
+
+export async function findLegacyDecisionEvidenceById(
+	database: ApprovalDatabase,
+	input: { organizationId: string; id: string },
+): Promise<LegacyDecisionEvidenceRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalDecisionEvidence)
+		.where(
+			and(
+				eq(approvalDecisionEvidence.organizationId, input.organizationId),
+				eq(approvalDecisionEvidence.authority, "legacy"),
+				eq(approvalDecisionEvidence.id, input.id),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	return row ? parseLegacyDecisionEvidence(row, input.organizationId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Legacy reviewed bindings (#296). A legacy binding names the exact legacy
+// request a recipient reviewed (the assignment equivalent) and the legacy
+// submitted revision the card showed. It is a handle, not authority: the legacy
+// decision owner revalidates everything under its transaction.
+// ---------------------------------------------------------------------------
+
+export interface LegacyReviewBindingTarget {
+	organizationId: string;
+	recipientEmployeeId: string;
+	legacyApprovalRequestId: string;
+	submittedRevisionId: string;
+}
+
+export interface LegacyReviewBindingRecord extends LegacyReviewBindingTarget {
+	id: string;
+	authority: "legacy";
+}
+
+/**
+ * Whether a legacy request belongs to the lifecycle a legacy revision was
+ * captured for: the request routing created, or a stage request of the chain
+ * it recorded. Verified links only, never a shared subject ID alone.
+ */
+export async function isLegacyRequestInRevisionLifecycle(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		approvalRequestId: string;
+		revision: {
+			sourceType: string;
+			sourceId: string;
+			legacy: LegacyLifecycleReference;
+		};
+	},
+): Promise<boolean> {
+	const requests = await database
+		.select({
+			entityType: approvalRequest.entityType,
+			entityId: approvalRequest.entityId,
+		})
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	const request = requests[0];
+	if (
+		!request ||
+		request.entityType !== input.revision.sourceType ||
+		request.entityId !== input.revision.sourceId
+	) {
+		return false;
+	}
+	if (input.approvalRequestId === input.revision.legacy.approvalRequestId) {
+		return true;
+	}
+	const chainInstanceId = input.revision.legacy.chainInstanceId;
+	if (!chainInstanceId) return false;
+	const stages = await database
+		.select({ id: approvalChainStageInstance.id })
+		.from(approvalChainStageInstance)
+		.where(
+			and(
+				eq(approvalChainStageInstance.organizationId, input.organizationId),
+				eq(approvalChainStageInstance.chainInstanceId, chainInstanceId),
+				eq(approvalChainStageInstance.approvalRequestId, input.approvalRequestId),
+			),
+		)
+		.limit(1);
+	return stages.length === 1;
+}
+
+/**
+ * Issues (or reuses) the handle for one recipient's review of an exact pending
+ * legacy request and the current legacy revision of its lifecycle. The caller
+ * has verified that the revision still matches the live source.
+ */
+export async function issueLegacyReviewBinding(
+	database: ApprovalDatabase,
+	target: LegacyReviewBindingTarget & {
+		revision: {
+			sourceType: string;
+			sourceId: string;
+			legacy: LegacyLifecycleReference;
+		};
+	},
+): Promise<string> {
+	const pending = await database
+		.select({ id: approvalRequest.id })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, target.legacyApprovalRequestId),
+				eq(approvalRequest.organizationId, target.organizationId),
+				eq(approvalRequest.approverId, target.recipientEmployeeId),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.limit(1);
+	const revisions = await database
+		.select({ id: approvalSubmittedRevision.id })
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.id, target.submittedRevisionId),
+				eq(approvalSubmittedRevision.organizationId, target.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, target.revision.sourceType),
+				eq(approvalSubmittedRevision.sourceId, target.revision.sourceId),
+			),
+		)
+		.limit(1);
+	if (
+		pending.length !== 1 ||
+		revisions.length !== 1 ||
+		!(await isLegacyRequestInRevisionLifecycle(database, {
+			organizationId: target.organizationId,
+			approvalRequestId: target.legacyApprovalRequestId,
+			revision: target.revision,
+		}))
+	) {
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "target" });
+	}
+	const values = {
+		organizationId: target.organizationId,
+		authority: "legacy" as const,
+		recipientEmployeeId: target.recipientEmployeeId,
+		legacyApprovalRequestId: target.legacyApprovalRequestId,
+		submittedRevisionId: target.submittedRevisionId,
+	};
+	await database.insert(approvalReviewBinding).values(values).onConflictDoNothing();
+	const rows = await database
+		.select({ id: approvalReviewBinding.id })
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.organizationId, target.organizationId),
+				eq(approvalReviewBinding.authority, "legacy"),
+				eq(approvalReviewBinding.recipientEmployeeId, target.recipientEmployeeId),
+				eq(
+					approvalReviewBinding.legacyApprovalRequestId,
+					target.legacyApprovalRequestId,
+				),
+				eq(approvalReviewBinding.submittedRevisionId, target.submittedRevisionId),
+			),
+		)
+		.limit(1);
+	const id = rows[0]?.id;
+	if (!id) {
+		throw new ApprovalEvidenceError("invariant", { field: "review_binding" });
+	}
+	return id;
+}
+
+/** Organization-scoped legacy handle lookup; a canonical handle is not one. */
+export async function loadLegacyReviewBinding(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bindingId: string },
+): Promise<LegacyReviewBindingRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalReviewBinding)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+				eq(approvalReviewBinding.authority, "legacy"),
+			),
+		)
+		.limit(1);
+	const row = rows[0];
+	if (
+		!row ||
+		row.organizationId !== input.organizationId ||
+		row.authority !== "legacy" ||
+		!row.legacyApprovalRequestId ||
+		row.workflowId !== null ||
+		row.assignmentId !== null
+	) {
+		return null;
+	}
+	return {
+		id: row.id,
+		authority: "legacy",
+		organizationId: row.organizationId,
+		recipientEmployeeId: row.recipientEmployeeId,
+		legacyApprovalRequestId: row.legacyApprovalRequestId,
+		submittedRevisionId: row.submittedRevisionId,
+	};
+}
+
+/**
+ * The source a legacy submitted revision was captured for. Revisions survive
+ * ordinary cancellation, so a legacy handle still names its source after the
+ * pending request was deleted.
+ */
+export async function loadLegacySubmittedRevisionSource(
+	database: ApprovalDatabase,
+	input: { organizationId: string; submittedRevisionId: string },
+): Promise<{ workflowType: ApprovalWorkflowType; sourceType: string; sourceId: string } | null> {
+	const rows = await database
+		.select({
+			workflowType: approvalSubmittedRevision.workflowType,
+			sourceType: approvalSubmittedRevision.sourceType,
+			sourceId: approvalSubmittedRevision.sourceId,
+		})
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.id, input.submittedRevisionId),
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+			),
+		)
+		.limit(1);
+	return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Travel expense claims (#295). Expense approvals are legacy-authoritative
+// only (no canonical adapter), so their submitted revision is a legacy row
+// linked to the approval request routing created for the claim.
+// ---------------------------------------------------------------------------
+
+export interface LegacyTravelExpenseSubmittedRevisionRecord {
+	id: string;
+	authority: "legacy";
+	organizationId: string;
+	claimId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	requesterEmployeeId: string;
+	submitter: SubmitterIdentity;
+	materialFingerprint: string;
+	facts: TravelExpenseSubmittedFacts;
+	labels: TravelExpenseSubmittedLabels;
+	provenance: "captured_at_submission";
+	submittedAt: Instant;
+	legacy: LegacyLifecycleReference;
+}
+
+function isStringRecord(value: unknown): value is Record<string, string> {
+	return (
+		isRecord(value) &&
+		Object.values(value).every((entry) => typeof entry === "string")
+	);
+}
+
+function parseLegacyTravelExpenseRevision(
+	row: SubmittedRevisionRow,
+	scope: { organizationId: string; claimId: string },
+): LegacyTravelExpenseSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	if (
+		row.organizationId !== scope.organizationId ||
+		row.authority !== "legacy" ||
+		row.workflowId !== null ||
+		!row.legacyApprovalRequestId ||
+		row.workflowType !== "travel_expense" ||
+		row.sourceType !== "travel_expense_claim" ||
+		row.sourceId !== scope.claimId ||
+		row.schemaVersion !== TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		(row.submitterActorKind !== "employee" &&
+			row.submitterActorKind !== "system") ||
+		!isRecord(facts) ||
+		facts.kind !== "travel_expense" ||
+		facts.schemaVersion !== TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.claimId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isRecord(facts.tripDates) ||
+		!isRecord(facts.money) ||
+		!isRecord(facts.receipts) ||
+		!Array.isArray(facts.receipts.manifest) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName) ||
+		!nullableString(labels.requesterName) ||
+		!nullableString(labels.submitterName) ||
+		!nullableString(labels.projectName) ||
+		!isStringRecord(labels.receiptFileNames)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as TravelExpenseSubmittedFacts;
+	if (
+		fingerprintTravelExpenseMaterialFacts(parsedFacts) !==
+		row.materialFingerprint
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "material_fingerprint",
+		});
+	}
+	return {
+		id: row.id,
+		authority: "legacy",
+		organizationId: row.organizationId,
+		claimId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		requesterEmployeeId: row.requesterEmployeeId,
+		submitter: {
+			kind: row.submitterActorKind,
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: labels as unknown as TravelExpenseSubmittedLabels,
+		provenance: "captured_at_submission",
+		submittedAt: instantFromDate(row.submittedAt),
+		legacy: {
+			approvalRequestId: row.legacyApprovalRequestId,
+			chainInstanceId: row.legacyChainInstanceId,
+			observedWorkflowId: row.observedWorkflowId,
+		},
+	};
+}
+
+/** The latest submitted revision of one claim, scoped to its organization. */
+export async function loadLegacyTravelExpenseSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; claimId: string },
+): Promise<LegacyTravelExpenseSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, "travel_expense_claim"),
+				eq(approvalSubmittedRevision.sourceId, input.claimId),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseLegacyTravelExpenseRevision(row, input) : null;
+}
+
+/**
+ * Written by the expense submission owner inside the transaction that submits
+ * the claim and creates its legacy approval rows. A failure rolls back the
+ * whole submission.
+ */
+export async function captureLegacyTravelExpenseSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: TravelExpenseSubmittedFacts;
+		labels: TravelExpenseSubmittedLabels;
+		submitter: SubmitterIdentity;
+		legacy: LegacyLifecycleReference;
+	},
+): Promise<LegacyTravelExpenseSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const materialFingerprint = fingerprintTravelExpenseMaterialFacts(
+		input.facts,
+	);
+	await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: "legacy",
+			workflowId: null,
+			legacyApprovalRequestId: input.legacy.approvalRequestId,
+			legacyChainInstanceId: input.legacy.chainInstanceId,
+			observedWorkflowId: input.legacy.observedWorkflowId,
+			workflowType: "travel_expense",
+			sourceType: "travel_expense_claim",
+			sourceId: input.facts.claimId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: TRAVEL_EXPENSE_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint,
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.onConflictDoNothing();
+	const revision = await loadLegacyTravelExpenseSubmittedRevision(database, {
+		organizationId: input.organizationId,
+		claimId: input.facts.claimId,
+	});
+	if (
+		revision?.revision !== 1 ||
+		revision.requestCycleKey !== input.requestCycleKey ||
+		revision.materialFingerprint !== materialFingerprint ||
+		revision.legacy.approvalRequestId !== input.legacy.approvalRequestId
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "legacy_submitted_revision",
+		});
+	}
+	return revision;
+}
+
+// ---------------------------------------------------------------------------
+// Manual time submissions and policy clock-outs (#302). Canonical lifecycles
+// reference their workflow; legacy lifecycles reference the legacy request or
+// chain routing created, exactly as for absences.
+// ---------------------------------------------------------------------------
+
+export const WORK_PERIOD_EVIDENCE_WORKFLOW_TYPES = [
+	"manual_time_submission",
+	"policy_clock_out",
+] as const satisfies readonly WorkPeriodEvidenceKind[];
+
+export type WorkPeriodEvidenceLifecycle =
+	| { authority: "canonical"; workflowId: string }
+	| { authority: "legacy"; legacy: LegacyLifecycleReference };
+
+export interface WorkPeriodSubmittedRevisionRecord {
+	id: string;
+	organizationId: string;
+	lifecycle: WorkPeriodEvidenceLifecycle;
+	workflowType: WorkPeriodEvidenceKind;
+	workPeriodId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	requesterEmployeeId: string;
+	submitter: SubmitterIdentity;
+	materialFingerprint: string;
+	facts: WorkPeriodSubmittedFacts;
+	labels: WorkPeriodSubmittedLabels;
+	provenance: "captured_at_submission";
+	submittedAt: Instant;
+}
+
+function workPeriodLifecycle(row: SubmittedRevisionRow): WorkPeriodEvidenceLifecycle | null {
+	if (row.authority === "canonical" && row.workflowId) {
+		return { authority: "canonical", workflowId: row.workflowId };
+	}
+	if (row.authority === "legacy" && !row.workflowId && row.legacyApprovalRequestId) {
+		return {
+			authority: "legacy",
+			legacy: {
+				approvalRequestId: row.legacyApprovalRequestId,
+				chainInstanceId: row.legacyChainInstanceId,
+				observedWorkflowId: row.observedWorkflowId,
+			},
+		};
+	}
+	return null;
+}
+
+function parseWorkPeriodRevision(
+	row: SubmittedRevisionRow,
+	organizationId: string,
+): WorkPeriodSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	const lifecycle = workPeriodLifecycle(row);
+	if (
+		!lifecycle ||
+		row.organizationId !== organizationId ||
+		(row.workflowType !== "manual_time_submission" &&
+			row.workflowType !== "policy_clock_out") ||
+		row.sourceType !== "time_entry" ||
+		row.schemaVersion !== WORK_PERIOD_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		row.submitterActorKind !== "employee" ||
+		!isRecord(facts) ||
+		facts.kind !== row.workflowType ||
+		facts.schemaVersion !== WORK_PERIOD_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.workPeriodId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isRecord(facts.interval) ||
+		!isRecord(facts.policy) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName) ||
+		!nullableString(labels.requesterName) ||
+		!nullableString(labels.submitterName)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "work_period_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as WorkPeriodSubmittedFacts;
+	if (fingerprintWorkPeriodMaterialFacts(parsedFacts) !== row.materialFingerprint) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "material_fingerprint",
+		});
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		lifecycle,
+		workflowType: row.workflowType,
+		workPeriodId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		requesterEmployeeId: row.requesterEmployeeId,
+		submitter: {
+			kind: row.submitterActorKind,
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: labels as unknown as WorkPeriodSubmittedLabels,
+		provenance: "captured_at_submission",
+		submittedAt: instantFromDate(row.submittedAt),
+	};
+}
+
+/**
+ * Written by the ordinary work-period submission owner inside its transaction,
+ * after routing created the lifecycle. The insert is not idempotent: a second
+ * capture for the same cycle is a contradiction and rolls the submission back.
+ */
+export async function captureWorkPeriodSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		lifecycle: WorkPeriodEvidenceLifecycle;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: WorkPeriodSubmittedFacts;
+		labels: WorkPeriodSubmittedLabels;
+		submitter: { kind: "employee"; employeeId: string; userId: string };
+	},
+): Promise<WorkPeriodSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const legacy = input.lifecycle.authority === "legacy" ? input.lifecycle.legacy : null;
+	const inserted = await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: input.lifecycle.authority,
+			workflowId:
+				input.lifecycle.authority === "canonical" ? input.lifecycle.workflowId : null,
+			legacyApprovalRequestId: legacy?.approvalRequestId ?? null,
+			legacyChainInstanceId: legacy?.chainInstanceId ?? null,
+			observedWorkflowId: legacy?.observedWorkflowId ?? null,
+			workflowType: input.facts.kind,
+			sourceType: "time_entry",
+			sourceId: input.facts.workPeriodId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: WORK_PERIOD_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint: fingerprintWorkPeriodMaterialFacts(input.facts),
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "work_period_submitted_revision",
+		});
+	}
+	return parseWorkPeriodRevision(row, input.organizationId);
+}
+
+/** The canonical lifecycle revision, scoped to its organization and workflow. */
+export async function loadCanonicalWorkPeriodSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string },
+): Promise<WorkPeriodSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.workflowId, input.workflowId),
+				inArray(approvalSubmittedRevision.workflowType, [
+					...WORK_PERIOD_EVIDENCE_WORKFLOW_TYPES,
+				]),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseWorkPeriodRevision(row, input.organizationId) : null;
+}
+
+/**
+ * The legacy lifecycle a request belongs to: the request routing created, or
+ * any stage request of the chain it created. A shared work-period ID alone
+ * never links two cycles.
+ */
+export async function loadLegacyWorkPeriodSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workPeriodId: string;
+		approvalRequestId: string;
+		chainInstanceId: string | null;
+	},
+): Promise<WorkPeriodSubmittedRevisionRecord | null> {
+	const lifecycle = input.chainInstanceId
+		? or(
+				eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId),
+				eq(approvalSubmittedRevision.legacyChainInstanceId, input.chainInstanceId),
+			)
+		: eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId);
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, "time_entry"),
+				eq(approvalSubmittedRevision.sourceId, input.workPeriodId),
+				lifecycle,
+			),
+		)
+		.limit(2);
+	if (rows.length > 1) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "work_period_submitted_revision",
+		});
+	}
+	const row = rows[0];
+	return row ? parseWorkPeriodRevision(row, input.organizationId) : null;
+}
+
+// ---------------------------------------------------------------------------
+// Approval-based time corrections (#301). Canonical lifecycles reference their
+// workflow; legacy lifecycles reference the request or chain routing created.
+// ---------------------------------------------------------------------------
+
+export interface TimeCorrectionSubmittedRevisionRecord {
+	id: string;
+	organizationId: string;
+	lifecycle: WorkPeriodEvidenceLifecycle;
+	workPeriodId: string;
+	requestCycleKey: string;
+	revision: number;
+	subjectEmployeeId: string;
+	requesterEmployeeId: string;
+	submitter: SubmitterIdentity;
+	materialFingerprint: string;
+	facts: TimeCorrectionSubmittedFacts;
+	labels: WorkPeriodSubmittedLabels;
+	provenance: "captured_at_submission";
+	submittedAt: Instant;
+}
+
+function parseTimeCorrectionRevision(
+	row: SubmittedRevisionRow,
+	organizationId: string,
+): TimeCorrectionSubmittedRevisionRecord {
+	const facts = row.facts;
+	const labels = row.labels;
+	const lifecycle = workPeriodLifecycle(row);
+	if (
+		!lifecycle ||
+		row.organizationId !== organizationId ||
+		row.workflowType !== "time_correction" ||
+		row.sourceType !== "time_entry" ||
+		row.schemaVersion !== TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION ||
+		row.provenance !== "captured_at_submission" ||
+		row.submitterActorKind !== "employee" ||
+		!isRecord(facts) ||
+		facts.kind !== "time_correction" ||
+		facts.schemaVersion !== TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION ||
+		facts.organizationId !== row.organizationId ||
+		facts.workPeriodId !== row.sourceId ||
+		facts.subjectEmployeeId !== row.subjectEmployeeId ||
+		facts.requesterEmployeeId !== row.requesterEmployeeId ||
+		!isRecord(facts.baseline) ||
+		!isRecord(facts.requested) ||
+		!isRecord(facts.changeMask) ||
+		!isRecord(labels) ||
+		!nullableString(labels.subjectName) ||
+		!nullableString(labels.requesterName) ||
+		!nullableString(labels.submitterName)
+	) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "time_correction_submitted_revision",
+		});
+	}
+	const parsedFacts = facts as unknown as TimeCorrectionSubmittedFacts;
+	if (fingerprintTimeCorrectionFacts(parsedFacts) !== row.materialFingerprint) {
+		throw new ApprovalEvidenceError("invariant", { field: "material_fingerprint" });
+	}
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		lifecycle,
+		workPeriodId: row.sourceId,
+		requestCycleKey: row.requestCycleKey,
+		revision: row.revision,
+		subjectEmployeeId: row.subjectEmployeeId,
+		requesterEmployeeId: row.requesterEmployeeId,
+		submitter: {
+			kind: row.submitterActorKind,
+			employeeId: row.submitterEmployeeId,
+			userId: row.submitterUserId,
+		},
+		materialFingerprint: row.materialFingerprint,
+		facts: parsedFacts,
+		labels: labels as unknown as WorkPeriodSubmittedLabels,
+		provenance: "captured_at_submission",
+		submittedAt: instantFromDate(row.submittedAt),
+	};
+}
+
+/**
+ * Written by the correction submission owner inside its transaction, after
+ * routing created the lifecycle. A second capture for the same cycle is a
+ * contradiction and rolls the submission back.
+ */
+export async function captureTimeCorrectionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		lifecycle: WorkPeriodEvidenceLifecycle;
+		requestCycleKey: string;
+		submittedAt: Instant;
+		facts: TimeCorrectionSubmittedFacts;
+		labels: WorkPeriodSubmittedLabels;
+		submitter: { kind: "employee"; employeeId: string; userId: string };
+	},
+): Promise<TimeCorrectionSubmittedRevisionRecord> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const legacy = input.lifecycle.authority === "legacy" ? input.lifecycle.legacy : null;
+	const inserted = await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: input.lifecycle.authority,
+			workflowId:
+				input.lifecycle.authority === "canonical" ? input.lifecycle.workflowId : null,
+			legacyApprovalRequestId: legacy?.approvalRequestId ?? null,
+			legacyChainInstanceId: legacy?.chainInstanceId ?? null,
+			observedWorkflowId: legacy?.observedWorkflowId ?? null,
+			workflowType: "time_correction",
+			sourceType: "time_entry",
+			sourceId: input.facts.workPeriodId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: input.submitter.kind,
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION,
+			materialFingerprint: fingerprintTimeCorrectionFacts(input.facts),
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "time_correction_submitted_revision",
+		});
+	}
+	return parseTimeCorrectionRevision(row, input.organizationId);
+}
+
+/** The canonical lifecycle revision, scoped to its organization and workflow. */
+export async function loadCanonicalTimeCorrectionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: { organizationId: string; workflowId: string },
+): Promise<TimeCorrectionSubmittedRevisionRecord | null> {
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.workflowId, input.workflowId),
+				eq(approvalSubmittedRevision.workflowType, "time_correction"),
+			),
+		)
+		.orderBy(desc(approvalSubmittedRevision.revision))
+		.limit(1);
+	const row = rows[0];
+	return row ? parseTimeCorrectionRevision(row, input.organizationId) : null;
+}
+
+/**
+ * The legacy lifecycle a request belongs to: the request routing created, or
+ * any stage request of the chain it created. A shared period ID alone never
+ * links two cycles.
+ */
+export async function loadLegacyTimeCorrectionSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workPeriodId: string;
+		approvalRequestId: string;
+		chainInstanceId: string | null;
+	},
+): Promise<TimeCorrectionSubmittedRevisionRecord | null> {
+	const lifecycle = input.chainInstanceId
+		? or(
+				eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId),
+				eq(approvalSubmittedRevision.legacyChainInstanceId, input.chainInstanceId),
+			)
+		: eq(approvalSubmittedRevision.legacyApprovalRequestId, input.approvalRequestId);
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.workflowType, "time_correction"),
+				eq(approvalSubmittedRevision.sourceType, "time_entry"),
+				eq(approvalSubmittedRevision.sourceId, input.workPeriodId),
+				lifecycle,
+			),
+		)
+		.limit(2);
+	if (rows.length > 1) {
+		throw new ApprovalEvidenceError("invariant", {
+			field: "time_correction_submitted_revision",
+		});
+	}
+	const row = rows[0];
+	return row ? parseTimeCorrectionRevision(row, input.organizationId) : null;
 }

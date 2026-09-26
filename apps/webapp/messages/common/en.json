@@ -360,6 +360,14 @@
       "teamMemberAdded": {
         "message": "You have been added to the {teamName} team by {performedByName}.",
         "title": "Added to team"
+      },
+      "employeeOffboardingReview": {
+        "title": "Employee offboarding needs review",
+        "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
+        "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone})."
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",
@@ -448,12 +456,17 @@
       "refresh": "Refresh status",
       "refreshing": "Checking {count} saved record(s)…",
       "reviewRequired": "{count} record(s) saved locally — review required",
-      "unverified": "Clock evidence saved on this device. Connect to review all saved records."
+      "unverified": "Clock evidence saved on this device. Connect to review all saved records.",
+      "offlineWaiting": "Offline — {count} clock action(s) will be sent when you're back online",
+      "waiting": "{count} clock action(s) saved on this device, not sent yet"
     },
     "capture": {
       "description": "Save the event on this device for review. Server clock status will not change.",
       "end": "Save clock-out for review",
-      "start": "Save clock-in for review"
+      "start": "Save clock-in for review",
+      "queueDescription": "You're offline. Clock actions are saved on this device and sent automatically when you're back online.",
+      "queueStart": "Save clock-in",
+      "queueEnd": "Save clock-out"
     },
     "recovery": {
       "archive": "Archive and retain evidence",
@@ -467,7 +480,20 @@
       "loadError": "Could not read saved records",
       "loading": "Reading saved records…",
       "review": "Review saved records",
-      "title": "Saved clock records"
+      "title": "Saved clock records",
+      "descriptionOutcomes": "These records are saved on this device. Unless a record says it was saved on the server, its server outcome is not confirmed. Check existing time entries with your manager before submitting replacement work. Archiving keeps the evidence and does not cancel work on the server.",
+      "command": {
+        "pending": "Waiting to be sent — not confirmed on server",
+        "committed": "Saved on the server",
+        "rejected": "Not saved — the server refused it ({code})",
+        "review": "Needs review — the server did not accept it ({code})",
+        "exhausted": "Sending stopped after repeated failures — not confirmed on server",
+        "pausedContext": "Paused — sign in to the account and organization it was saved for",
+        "waitingPredecessor": "Waiting for an earlier clock action on this device",
+        "blockedPredecessor": "Paused — an earlier clock action on this device needs review",
+        "pausedServer": "Paused — the server does not accept this clock action yet",
+        "pausedAccess": "Paused — sign in again with access to clock in this organization"
+      }
     }
   },
   "presence": {

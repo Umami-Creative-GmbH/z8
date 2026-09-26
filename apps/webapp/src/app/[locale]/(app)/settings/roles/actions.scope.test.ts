@@ -31,6 +31,11 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
+// Role mutations are services mocked below; protection is covered by its own suites.
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: vi.fn(),
+}));
+
 vi.mock("@/lib/auth-helpers", () => ({
 	getSettingsAccessTierForUser: vi.fn(async () => mockState.settingsAccessTier),
 }));

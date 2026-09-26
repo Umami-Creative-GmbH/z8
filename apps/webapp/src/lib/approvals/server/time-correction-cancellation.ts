@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -6,6 +6,7 @@ import {
 	approvalChainStageInstance,
 	approvalRequest,
 	employee,
+	timeEntry,
 	workPeriod,
 } from "@/db/schema";
 import { instantFromDB, instantToDB } from "@/lib/datetime/drizzle-adapter";
@@ -16,23 +17,39 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
+import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
+import { kickApprovalDelivery } from "../delivery/kick";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import { buildRequesterCancellationMarker } from "../domain-adapters/time-correction-cancellation-marker";
-import { normalizeTimeCorrectionWorkflowPayload } from "../domain-adapters/time-correction-contract";
+import {
+	normalizeTimeCorrectionOriginalWorkMetadata,
+	normalizeTimeCorrectionWorkflowPayload,
+} from "../domain-adapters/time-correction-contract";
 import { captureTimeCorrectionLegacyApprovalState } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { cancelLegacyTimeCorrectionApprovalRows } from "../workflow/compatibility-writer";
+import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type {
 	ApprovalWriteGate,
 	VerifiedLegacyApprovalState,
 } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import {
+	deriveTimeCorrectionOperationId,
+	loadTimeCorrectionReceipt,
+	timeCorrectionLifecycleKey,
+	type TimeCorrectionLifecycleReference,
+} from "@/lib/time-tracking/correction-lifecycle-work";
+import {
 	type CancelledTimeCorrectionSourceEvidence,
 	deleteCancelledTimeCorrectionsInTransaction,
 	finalizeTimeCorrectionTerminalInTransaction,
 	lockTimeCorrectionSubmissionSourceInTransaction,
 } from "./time-correction-approvals";
+import {
+	acquireTimeCorrectionWorkScope,
+	retryTimeCorrectionWorkTransaction,
+} from "./time-correction-work-transaction";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 
 export interface CancelPendingTimeCorrectionInput {
@@ -72,9 +89,13 @@ export async function cancelPendingTimeCorrection(
 		clock: systemClock,
 	});
 
+	// Set by the committed attempt: a legacy cycle's withdrawal intent (#432).
+	let deliveryIntent = false;
 	try {
-		return await runtime.repository.withTransaction(async (context) => {
-			const database = context.dbService.db as typeof db;
+		const cancelled = await retryTimeCorrectionWorkTransaction(() =>
+			runtime.repository.withTransaction(async (outerContext) => {
+			deliveryIntent = false;
+			const database = outerContext.dbService.db as typeof db;
 			const [requesters, memberships, periods] = await Promise.all([
 				database.query.employee.findMany({
 					where: and(
@@ -126,6 +147,15 @@ export async function cancelPendingTimeCorrection(
 				throw new Error("Time correction cancellation is unavailable");
 			}
 
+			// Shared work protocol (#301) before any row lock: adoption gate, the
+			// time-correction approval gate, configuration, access, employee key.
+			const work = await acquireTimeCorrectionWorkScope(outerContext, {
+				organizationId: input.organizationId,
+				ownerEmployeeId: input.requesterEmployeeId,
+				actorUserId: input.requesterUserId,
+			});
+			const context = work.context;
+			const adopted = work.scope.admission === "append";
 			let lockedPeriod: Awaited<
 				ReturnType<typeof lockTimeCorrectionSubmissionSourceInTransaction>
 			>;
@@ -141,10 +171,7 @@ export async function cancelPendingTimeCorrection(
 			} catch {
 				throw new Error("Time correction cancellation is unavailable");
 			}
-			const gate = await context.writeGate.acquire({
-				organizationId: input.organizationId,
-				workflowType: "time_correction",
-			});
+			const gate = work.authority;
 			const fixedGate = fixedCancellationGate(input.organizationId, gate);
 			const transactionContext: ApprovalWorkflowTransactionContext = {
 				...context,
@@ -177,6 +204,23 @@ export async function cancelPendingTimeCorrection(
 					observedWorkflow,
 				});
 				if (cancelledReplay) {
+					// Adopted cancellations retained their entries (#301): the committed
+					// receipt, not the absence of correction rows, proves the replay.
+					if (
+						adopted &&
+						(await hasAdoptedCancellationReceipt({
+							context,
+							input,
+							lifecycle: {
+								authority: "legacy",
+								approvalRequestId: cancelledReplay.approvalRequestId,
+								chainInstanceId: cancelledReplay.chainInstanceId,
+								observedWorkflowId: observedWorkflow?.id ?? null,
+							},
+						}))
+					) {
+						return { replayed: true };
+					}
 					const replayState = await captureTimeCorrectionLegacyApprovalState({
 						dbService: context.dbService as never,
 						organizationId: input.organizationId,
@@ -215,6 +259,27 @@ export async function cancelPendingTimeCorrection(
 					throw new Error("Time correction cancellation is unavailable");
 				}
 				const legacy = exactPendingLegacyEvidence(before, input);
+				// The capture normalizes request metadata to the correction payload;
+				// the durable tombstone keeps the persisted submission evidence (#301).
+				const persistedRequests = await database.query.approvalRequest.findMany({
+					where: and(
+						eq(approvalRequest.id, legacy.cycle.approvalRequestId),
+						eq(approvalRequest.organizationId, input.organizationId),
+					),
+					limit: 2,
+				});
+				const persistedRequestMetadata =
+					persistedRequests.find(
+						(request) =>
+							request.id === legacy.cycle.approvalRequestId &&
+							request.organizationId === input.organizationId,
+					)?.metadata ?? null;
+				const lifecycle: TimeCorrectionLifecycleReference = {
+					authority: "legacy",
+					approvalRequestId: legacy.cycle.approvalRequestId,
+					chainInstanceId: legacy.cycle.chainInstanceId ?? null,
+					observedWorkflowId: observedWorkflow?.id ?? null,
+				};
 				const expectedSource = cancellationSourceFromCapture({
 					state: before,
 					input,
@@ -251,7 +316,9 @@ export async function cancelPendingTimeCorrection(
 							workPeriodId: input.workPeriodId,
 							capturedAt,
 							expectedCorrection: legacy.correction,
-							expectedLegacyCycle: legacy.cycle,
+							expectedLegacyCycle: legacy.cycle.chainInstanceId
+								? { chainInstanceId: legacy.cycle.chainInstanceId }
+								: legacy.cycle,
 							...(before.chain === null
 								? {
 										priorVerifiedDirectRequest: {
@@ -272,8 +339,9 @@ export async function cancelPendingTimeCorrection(
 							state: before,
 							cancelledAt,
 							retainDirectCancellation: true,
+							persistedRequestMetadata,
 							directCancellationMetadata: durableRequesterCancellationMetadata(
-								before.approvalRequest?.metadata,
+								persistedRequestMetadata,
 								input,
 								cancelledAt,
 								before.chain?.id ?? null,
@@ -287,6 +355,7 @@ export async function cancelPendingTimeCorrection(
 							workPeriodId: input.workPeriodId,
 							expectedSource,
 							correction: legacy.correction,
+							lifecycle,
 						});
 					},
 				});
@@ -297,8 +366,24 @@ export async function cancelPendingTimeCorrection(
 						workPeriodId: input.workPeriodId,
 						expectedSource,
 						correction: legacy.correction,
+						lifecycle,
 					});
 				}
+				// The cycle is withdrawn with the correction (#432): a lifecycle
+				// intent, written only while a delivery control exists, lets the
+				// delivery owner refresh the cycle's sent cards.
+				deliveryIntent = await recordLegacyDeliveryIntent(database, {
+					organizationId: input.organizationId,
+					workflowType: "time_correction",
+					sourceType: "time_entry",
+					sourceId: input.workPeriodId,
+					approvalRequestId: legacy.cycle.approvalRequestId,
+					cycleId: legacyDeliveryCycleId({
+						chainInstanceId: legacy.cycle.chainInstanceId ?? null,
+						approvalRequestId: legacy.cycle.approvalRequestId,
+					}),
+					event: "withdrawn",
+				});
 				return { replayed: false };
 			}
 
@@ -321,7 +406,13 @@ export async function cancelPendingTimeCorrection(
 					},
 				);
 			return { replayed: execution.disposition === "replayed" };
-		});
+		}),
+		);
+		if (deliveryIntent) {
+			// The withdrawal intent committed; this only runs the owner sooner.
+			kickApprovalDelivery({ organizationId: input.organizationId });
+		}
+		return cancelled;
 	} catch (error) {
 		if (
 			error instanceof Error &&
@@ -335,6 +426,51 @@ export async function cancelPendingTimeCorrection(
 		}
 		throw error;
 	}
+}
+
+/**
+ * An adopted cancellation committed its `cancel_time_correction` receipt with
+ * the retained entries. It replays only while those entries still stand.
+ */
+async function hasAdoptedCancellationReceipt(input: {
+	context: ApprovalWorkflowTransactionContext;
+	input: CancelPendingTimeCorrectionInput;
+	lifecycle: TimeCorrectionLifecycleReference;
+}): Promise<boolean> {
+	const database = input.context.dbService.db as typeof db;
+	const receipt = await loadTimeCorrectionReceipt(database, {
+		organizationId: input.input.organizationId,
+		employeeId: input.input.requesterEmployeeId,
+		stage: "cancel",
+		operationId: deriveTimeCorrectionOperationId({
+			organizationId: input.input.organizationId,
+			stage: "cancel",
+			key: timeCorrectionLifecycleKey(input.lifecycle),
+		}),
+		workPeriodId: input.input.workPeriodId,
+	});
+	if (!receipt) return false;
+	const retained = cancellationRecord(receipt.result).retained;
+	const retainedIds = (Array.isArray(retained) ? retained : []).map((entry) =>
+		cancellationString(cancellationRecord(entry).entryId),
+	);
+	if (retainedIds.length > 0) {
+		const entries = await database.query.timeEntry.findMany({
+			where: and(
+				eq(timeEntry.organizationId, input.input.organizationId),
+				eq(timeEntry.employeeId, input.input.requesterEmployeeId),
+				inArray(timeEntry.id, retainedIds),
+			),
+			columns: { id: true, isSuperseded: true, supersededById: true },
+		});
+		if (
+			entries.length !== retainedIds.length ||
+			entries.some((entry) => !entry.isSuperseded || entry.supersededById !== null)
+		) {
+			throw new Error("Time correction cancellation is unavailable");
+		}
+	}
+	return true;
 }
 
 async function resolveCancelledLegacyReplay(input: {
@@ -758,7 +894,8 @@ function cancellationEntryFromCapture(
 		logicalRole,
 		type,
 		replacesEntryId: cancellationNullableString(entry.replacesEntryId),
-		timestamp: cancellationInstant(entry.timestamp),
+		// The legacy-state capture serializes each entry's instant as `instant`.
+		timestamp: cancellationInstant(entry.instant),
 		utcOffsetMinutes: cancellationInteger(entry.utcOffsetMinutes),
 		timezone: cancellationString(entry.timezone),
 		timezoneSource: cancellationString(entry.timezoneSource),
@@ -1034,8 +1171,28 @@ function durableRequesterCancellationMetadata(
 	if (!submission) {
 		throw new Error("Time correction cancellation is unavailable");
 	}
+	// Later captures of the tombstone verify the correction against the work
+	// metadata it replaced, so the tombstone keeps it (#463).
+	const originalWorkMetadata = Object.hasOwn(
+		metadata,
+		"timeCorrectionOriginalWorkMetadata",
+	)
+		? normalizeTimeCorrectionOriginalWorkMetadata(
+				metadata.timeCorrectionOriginalWorkMetadata,
+			)
+		: null;
+	// A transferred request keeps its escalation lineage (#439): the journal
+	// and later captures still name the holders it replaced.
+	const lineage = splitLegacyEscalationLineage(metadata);
+	if (lineage.kind === "malformed") {
+		throw new Error("Time correction cancellation is unavailable");
+	}
 	return {
 		timeCorrection: correction,
+		...(originalWorkMetadata
+			? { timeCorrectionOriginalWorkMetadata: { ...originalWorkMetadata } }
+			: {}),
+		...(lineage.kind === "lineage" ? { escalation: lineage.lineage } : {}),
 		submission,
 		cancellation: buildRequesterCancellationMarker({
 			organizationId: input.organizationId,

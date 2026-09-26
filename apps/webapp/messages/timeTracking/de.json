@@ -61,6 +61,8 @@
     "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Fehler beim Einstempeln",
+      "appendReviewRequired": "Einstempeln erfordert eine Prüfung Ihres Zeitverlaufs",
+      "appendReviewRequiredDesc": "Ihre bisherigen Zeiteinträge konnten nicht verifiziert werden, daher wurde das Einstempeln nicht gespeichert. Bitte wenden Sie sich an Ihre Administration.",
       "clockOutFailed": "Fehler beim Ausstempeln",
       "holidayBlocked": "Ausstempeln am {holidayName} nicht möglich",
       "holidayBlockedDesc": "Dieser Tag ist als Feiertag markiert und Zeiteinträge sind nicht erlaubt",
@@ -87,14 +89,52 @@
       "dateLabel": "Datum",
       "description": "Erstellen Sie einen Zeiteintrag für ein vergangenes Datum. Je nach Änderungsrichtlinie Ihrer Organisation kann eine Genehmigung erforderlich sein.",
       "errors": {
+        "collision": "Dieser Eintrag widerspricht einer früheren Übermittlung oder geänderter Arbeit. Prüfe deine vorhandenen Einträge.",
         "createFailed": "Zeiteintrag konnte nicht erstellt werden",
         "futureDate": "Einträge für zukünftige Daten können nicht erstellt werden",
+        "futureTime": "Für zukünftige Zeiten können keine Einträge erstellt werden",
+        "historyReview": "Dieser Zeitverlauf muss geprüft werden, bevor neue Einträge gespeichert werden können. Wende dich an deine Administration.",
         "invalidTime": "Gib eine vollständige, gültige Uhrzeit ein",
         "invalidTimeRange": "Die Zeit für das Ausstempeln muss nach der Zeit für das Einstempeln liegen",
+        "nonexistentTime": "Diese Uhrzeit gibt es an diesem Datum nicht, weil die Uhren vorgestellt werden.",
+        "occurrenceRequired": "Diese Uhrzeit kommt an diesem Datum zweimal vor. Wähle aus, welche du meinst.",
+        "overlap": "Diese Zeit überschneidet sich mit erfasster Arbeit. Wähle einen Zeitraum ohne Überschneidung.",
+        "reconfirm": "Die Zeitzone oder die Zeiten haben sich geändert. Prüfe den Eintrag und sende ihn erneut.",
+        "refresh": "Die Einstellungen für manuelle Einträge haben sich geändert. Prüfe den Eintrag und sende ihn erneut.",
         "tooLong": "Die Arbeitsdauer darf 24 Stunden nicht überschreiten"
+      },
+      "occurrence": {
+        "earlier": "Erste, {offset}",
+        "later": "Zweite, {offset}",
+        "legend": "{time} kommt an diesem Datum zweimal vor. Welche Uhrzeit meinst du?"
       },
       "reasonLabel": "Grund",
       "reasonPlaceholder": "Beschreiben Sie, woran Sie gearbeitet haben …",
+      "recovery": {
+        "check": "Status prüfen",
+        "checkFailed": "Dieser Eintrag konnte gerade nicht geprüft werden. Versuche es später erneut.",
+        "contextMismatch": "Du bist mit einem anderen Konto oder einer anderen Organisation angemeldet. Wechsle zurück, um diesen Eintrag zu bearbeiten.",
+        "description": "Diese Einträge wurden aus diesem Tab gesendet, ohne dass ein Ergebnis bestätigt wurde. Es wird nichts erneut gesendet, solange du es nicht auswählst.",
+        "discard": "Verwerfen",
+        "editAsNew": "Als neuen Eintrag bearbeiten",
+        "notCommitted": "Keine Speicherung gefunden.",
+        "notCommittedToast": "Für diesen Eintrag wurde keine Speicherung gefunden. Sende ihn genau so erneut oder bearbeite ihn als neuen Eintrag.",
+        "retry": "Genau so erneut senden",
+        "saved": "Dieser Eintrag wurde gespeichert.",
+        "savedForApproval": "Dieser Eintrag wurde gespeichert und zur Genehmigung eingereicht. Aktueller Status: {status}.",
+        "status": {
+          "approved": "genehmigt",
+          "pending": "ausstehend",
+          "rejected": "abgelehnt"
+        },
+        "stillUncertain": "Immer noch nicht bestätigt. Der Eintrag bleibt erhalten; versuche es erneut, sobald du wieder online bist.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Unbestätigte Einträge",
+        "uncertain": "Nicht bestätigt. Möglicherweise bereits gespeichert.",
+        "uncertainToast": "Wir konnten nicht bestätigen, ob dieser Eintrag gespeichert wurde. Er bleibt unter „Unbestätigte Einträge“, wo du ihn genau so erneut senden oder seinen Status prüfen kannst.",
+        "unsupported": "Der Status kann nicht geprüft werden. Möglicherweise bereits gespeichert.",
+        "unsupportedToast": "Der Status dieses Eintrags kann gerade nicht geprüft werden. Erneutes Senden schickt genau denselben Eintrag."
+      },
       "submit": "Eintrag erstellen",
       "submitting": "Wird erstellt …",
       "success": {
@@ -165,7 +205,11 @@
     "workLocationHome": "Homeoffice",
     "workLocationOffice": "Büro",
     "workLocationOther": "Sonstiges",
-    "workLocationRemote": "Mobil"
+    "workLocationRemote": "Mobil",
+    "clockInSavedForSending": "Einstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
+    "clockOutSavedForSending": "Ausstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
+    "clockInSavedHeld": "Einstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge.",
+    "clockOutSavedHeld": "Ausstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge."
   },
   "wellness": {
     "water": {

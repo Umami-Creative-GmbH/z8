@@ -183,10 +183,6 @@ export function ChangePolicyTable({
 				<div className="text-center">
 					{row.original.noApprovalRequired ? (
 						<span className="text-muted-foreground">N/A</span>
-					) : row.original.selfServiceDays === 0 && row.original.approvalDays === 0 ? (
-						<Badge variant="destructive">
-							{t("settings.changePolicies.allClockOuts", "All clock-outs")}
-						</Badge>
 					) : (
 						<Badge variant="outline">{formatDays(row.original.approvalDays)}</Badge>
 					)}

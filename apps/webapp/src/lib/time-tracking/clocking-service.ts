@@ -15,10 +15,12 @@ import {
 export {
 	type ClockingAction,
 	ClockingAccessError,
+	ClockingAppendAdoptedError,
 	ClockingConflictError,
 	type ClockingDependencies,
 	ClockingOrganizationError,
 	createClockingService,
+	TimeEntryAppendReviewRequiredError,
 } from "./clocking-core";
 
 export const clockingService = createClockingService({

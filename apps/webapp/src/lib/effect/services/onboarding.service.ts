@@ -15,13 +15,15 @@ import {
 	workPolicyScheduleDay,
 } from "@/db/schema";
 import { env } from "@/env";
-import { auth } from "@/lib/auth";
+import { auth, runAuthMutation } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
 	isOrganizationCreationDisabled,
 	normalizeOrganizationCreationFlag,
 } from "@/lib/organization/creation-policy";
 import { isTimeFormat } from "@/lib/user-preferences/time-format";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { isWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	OnboardingHolidaySetupFormValues,
@@ -196,20 +198,10 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("startOnboarding", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "welcome",
-								onboardingStartedAt: new Date(),
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: "welcome",
-									onboardingStartedAt: new Date(),
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "welcome",
+							onboardingStartedAt: new Date(),
+						});
 					});
 				}),
 
@@ -219,18 +211,9 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("updateOnboardingStep", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: step,
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: step,
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: step,
+						});
 					});
 				}),
 
@@ -240,22 +223,11 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("completeOnboarding", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingComplete: true,
-								onboardingStep: null,
-								onboardingCompletedAt: new Date(),
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingComplete: true,
-									onboardingStep: null,
-									onboardingCompletedAt: new Date(),
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingComplete: true,
+							onboardingStep: null,
+							onboardingCompletedAt: new Date(),
+						});
 					});
 				}),
 
@@ -286,17 +258,20 @@ export const OnboardingServiceLive = Layer.effect(
 							.where(eq(user.id, session.user.id));
 					});
 
-					// Create organization using Better Auth server-side API
+					// Create organization using Better Auth server-side API. The organization,
+					// its owner and its approval rollout rows commit together (#359).
 					const result = yield* Effect.tryPromise({
 						try: async () => {
 							const hdrs = await headers();
-							const orgResult = await auth.api.createOrganization({
-								headers: hdrs,
-								body: {
-									name: data.name,
-									slug: data.slug,
-								},
-							});
+							const orgResult = await runAuthMutation(() =>
+								auth.api.createOrganization({
+									headers: hdrs,
+									body: {
+										name: data.name,
+										slug: data.slug,
+									},
+								}),
+							);
 
 							return orgResult;
 						},
@@ -319,18 +294,9 @@ export const OnboardingServiceLive = Layer.effect(
 					// Update onboarding step on userSettings and reset canCreateOrganizations on user
 					yield* dbService.query("updateOnboardingStepAfterOrgCreation", async () => {
 						// Update onboarding step in userSettings
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "profile",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: "profile",
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "profile",
+						});
 						// Reset canCreateOrganizations on user table
 						await dbService.db
 							.update(user)
@@ -349,18 +315,9 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("skipOrganizationSetup", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "profile",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: "profile",
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "profile",
+						});
 					});
 				}),
 
@@ -389,23 +346,6 @@ export const OnboardingServiceLive = Layer.effect(
 					}
 
 					const nextStep = yield* dbService.query("updateProfile", async () => {
-						// Find employee record - prioritize the one with the active organization
-						let emp = activeOrgId
-							? await dbService.db.query.employee.findFirst({
-									where: and(
-										eq(employee.userId, session.user.id),
-										eq(employee.organizationId, activeOrgId),
-									),
-								})
-							: null;
-
-						// Fallback only when there is no active organization to scope the employee lookup.
-						if (!emp && !activeOrgId) {
-							emp = await dbService.db.query.employee.findFirst({
-								where: eq(employee.userId, session.user.id),
-							});
-						}
-
 						await auth.api.updateUser({
 							body: toAuthStructuredName({
 								firstName: data.firstName,
@@ -420,19 +360,41 @@ export const OnboardingServiceLive = Layer.effect(
 							birthday: data.birthday || null,
 						};
 
-						if (emp) {
-							// Update existing employee record
-							await dbService.db.update(employee).set(profileData).where(eq(employee.id, emp.id));
-						} else if (activeOrgId) {
-							// Create new employee record (only if we have an organization)
-							await dbService.db.insert(employee).values({
-								userId: session.user.id,
-								organizationId: activeOrgId,
-								...profileData,
-							});
-						}
-						// If no existing employee and no active org, skip employee creation
-						// The employee will be created when they join an organization
+						// Creating the user's employee is a manual dependency: the lookup and the
+						// write run under the user's exclusive configuration/access guard (#318).
+						await dbService.db.transaction(async (tx) => {
+							await acquireExclusiveUserConfigurationAccessGuards(tx, [session.user.id]);
+							// Find employee record - prioritize the one with the active organization
+							let emp = activeOrgId
+								? await tx.query.employee.findFirst({
+										where: and(
+											eq(employee.userId, session.user.id),
+											eq(employee.organizationId, activeOrgId),
+										),
+									})
+								: null;
+
+							// Fallback only when there is no active organization to scope the employee lookup.
+							if (!emp && !activeOrgId) {
+								emp = await tx.query.employee.findFirst({
+									where: eq(employee.userId, session.user.id),
+								});
+							}
+
+							if (emp) {
+								// Update existing employee record
+								await tx.update(employee).set(profileData).where(eq(employee.id, emp.id));
+							} else if (activeOrgId) {
+								// Create new employee record (only if we have an organization)
+								await tx.insert(employee).values({
+									userId: session.user.id,
+									organizationId: activeOrgId,
+									...profileData,
+								});
+							}
+							// If no existing employee and no active org, skip employee creation
+							// The employee will be created when they join an organization
+						});
 
 						const membership = activeOrgId
 							? await dbService.db.query.member.findFirst({
@@ -446,24 +408,12 @@ export const OnboardingServiceLive = Layer.effect(
 						const nextStep = isAdmin ? "work_schedule" : "wellness";
 
 						// Update onboarding step in userSettings
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: nextStep,
-								weekStartDay: data.weekStartDay,
-								timeFormat: data.timeFormat,
-								helpImproveProduct: data.helpImproveProduct,
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: nextStep,
-									weekStartDay: data.weekStartDay,
-									timeFormat: data.timeFormat,
-									helpImproveProduct: data.helpImproveProduct,
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: nextStep,
+							weekStartDay: data.weekStartDay,
+							timeFormat: data.timeFormat,
+							helpImproveProduct: data.helpImproveProduct,
+						});
 
 						return isAdmin ? "/onboarding/work-schedule" : "/onboarding/wellness";
 					});
@@ -489,18 +439,9 @@ export const OnboardingServiceLive = Layer.effect(
 						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
 						const nextStep = isAdmin ? "work_schedule" : "wellness";
 
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: nextStep,
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: nextStep,
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: nextStep,
+						});
 
 						return isAdmin ? "/onboarding/work-schedule" : "/onboarding/wellness";
 					});
@@ -517,33 +458,31 @@ export const OnboardingServiceLive = Layer.effect(
 					const activeOrgId = session.session.activeOrganizationId;
 
 					yield* dbService.query("setWorkSchedule", async () => {
-						// Find or create employee record
-						let emp = activeOrgId
-							? await dbService.db.query.employee.findFirst({
-									where: and(
-										eq(employee.userId, session.user.id),
-										eq(employee.organizationId, activeOrgId),
-									),
-								})
-							: null;
+						// Find or create employee record under the user's exclusive
+						// configuration/access guard (#318).
+						await dbService.db.transaction(async (tx) => {
+							await acquireExclusiveUserConfigurationAccessGuards(tx, [session.user.id]);
+							const emp =
+								(activeOrgId
+									? await tx.query.employee.findFirst({
+											where: and(
+												eq(employee.userId, session.user.id),
+												eq(employee.organizationId, activeOrgId),
+											),
+										})
+									: null) ??
+								(await tx.query.employee.findFirst({
+									where: eq(employee.userId, session.user.id),
+								}));
 
-						if (!emp) {
-							emp = await dbService.db.query.employee.findFirst({
-								where: eq(employee.userId, session.user.id),
-							});
-						}
-
-						if (!emp && activeOrgId) {
-							// Create employee record with organizationId if available
-							const result = await dbService.db
-								.insert(employee)
-								.values({
+							if (!emp && activeOrgId) {
+								// Create employee record with organizationId if available
+								await tx.insert(employee).values({
 									userId: session.user.id,
 									organizationId: activeOrgId,
-								})
-								.returning();
-							emp = result[0];
-						}
+								});
+							}
+						});
 
 						// Determine next step based on admin status
 						// Admins go to vacation_policy, employees go to wellness
@@ -559,18 +498,9 @@ export const OnboardingServiceLive = Layer.effect(
 						const nextStep = isAdmin ? "vacation_policy" : "wellness";
 
 						// Update onboarding step in userSettings
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: nextStep,
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: nextStep,
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: nextStep,
+						});
 					});
 				}),
 
@@ -594,18 +524,9 @@ export const OnboardingServiceLive = Layer.effect(
 						const isAdmin = membership?.role === "owner" || membership?.role === "admin";
 						const nextStep = isAdmin ? "vacation_policy" : "wellness";
 
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: nextStep,
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									onboardingStep: nextStep,
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: nextStep,
+						});
 					});
 				}),
 
@@ -618,16 +539,9 @@ export const OnboardingServiceLive = Layer.effect(
 					yield* dbService.query("createVacationPolicy", async () => {
 						if (!activeOrgId) {
 							// Skip if no active organization
-							await dbService.db
-								.insert(userSettings)
-								.values({
-									userId: session.user.id,
-									onboardingStep: "holiday_setup",
-								})
-								.onConflictDoUpdate({
-									target: userSettings.userId,
-									set: { onboardingStep: "holiday_setup" },
-								});
+							await writeUserSettings(dbService.db, session.user.id, {
+								onboardingStep: "holiday_setup",
+							});
 							return;
 						}
 
@@ -652,16 +566,9 @@ export const OnboardingServiceLive = Layer.effect(
 						});
 
 						// Update onboarding step in userSettings
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "holiday_setup",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "holiday_setup" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "holiday_setup",
+						});
 					});
 				}),
 
@@ -671,16 +578,9 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("skipVacationPolicySetup", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "holiday_setup",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "holiday_setup" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "holiday_setup",
+						});
 					});
 				}),
 
@@ -692,16 +592,9 @@ export const OnboardingServiceLive = Layer.effect(
 
 					yield* dbService.query("createHolidayPreset", async () => {
 						if (!activeOrgId) {
-							await dbService.db
-								.insert(userSettings)
-								.values({
-									userId: session.user.id,
-									onboardingStep: "work_templates",
-								})
-								.onConflictDoUpdate({
-									target: userSettings.userId,
-									set: { onboardingStep: "work_templates" },
-								});
+							await writeUserSettings(dbService.db, session.user.id, {
+								onboardingStep: "work_templates",
+							});
 							return;
 						}
 
@@ -731,16 +624,9 @@ export const OnboardingServiceLive = Layer.effect(
 							});
 						}
 
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "work_templates",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "work_templates" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "work_templates",
+						});
 					});
 				}),
 
@@ -750,16 +636,9 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("skipHolidaySetup", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "work_templates",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "work_templates" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "work_templates",
+						});
 					});
 				}),
 
@@ -841,16 +720,9 @@ export const OnboardingServiceLive = Layer.effect(
 							}
 						}
 
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "wellness",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "wellness" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "wellness",
+						});
 					});
 				}),
 
@@ -864,16 +736,9 @@ export const OnboardingServiceLive = Layer.effect(
 					);
 
 					yield* dbService.query("skipWorkTemplateSetup", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "wellness",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "wellness" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "wellness",
+						});
 					});
 				}),
 
@@ -884,26 +749,13 @@ export const OnboardingServiceLive = Layer.effect(
 
 					yield* dbService.query("configureWellness", async () => {
 						// Upsert water reminder settings and onboarding step to userSettings
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								waterReminderEnabled: data.enableWaterReminder,
-								waterReminderPreset: data.waterReminderPreset,
-								waterReminderIntervalMinutes: data.waterReminderIntervalMinutes,
-								waterReminderDailyGoal: data.waterReminderDailyGoal,
-								onboardingStep: "notifications",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: {
-									waterReminderEnabled: data.enableWaterReminder,
-									waterReminderPreset: data.waterReminderPreset,
-									waterReminderIntervalMinutes: data.waterReminderIntervalMinutes,
-									waterReminderDailyGoal: data.waterReminderDailyGoal,
-									onboardingStep: "notifications",
-								},
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							waterReminderEnabled: data.enableWaterReminder,
+							waterReminderPreset: data.waterReminderPreset,
+							waterReminderIntervalMinutes: data.waterReminderIntervalMinutes,
+							waterReminderDailyGoal: data.waterReminderDailyGoal,
+							onboardingStep: "notifications",
+						});
 					});
 				}),
 
@@ -913,16 +765,9 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("skipWellnessSetup", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "notifications",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "notifications" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "notifications",
+						});
 					});
 				}),
 
@@ -996,16 +841,9 @@ export const OnboardingServiceLive = Layer.effect(
 							),
 						);
 
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "complete",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "complete" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "complete",
+						});
 					});
 				}),
 
@@ -1015,16 +853,9 @@ export const OnboardingServiceLive = Layer.effect(
 					const session = yield* authService.getSession();
 
 					yield* dbService.query("skipNotificationsSetup", async () => {
-						await dbService.db
-							.insert(userSettings)
-							.values({
-								userId: session.user.id,
-								onboardingStep: "complete",
-							})
-							.onConflictDoUpdate({
-								target: userSettings.userId,
-								set: { onboardingStep: "complete" },
-							});
+						await writeUserSettings(dbService.db, session.user.id, {
+							onboardingStep: "complete",
+						});
 					});
 				}),
 

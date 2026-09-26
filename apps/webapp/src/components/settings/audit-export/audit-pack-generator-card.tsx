@@ -1,12 +1,14 @@
 "use client";
 
 import {
+	IconAlertTriangle,
 	IconCheck,
 	IconClock,
 	IconDownload,
 	IconFileZip,
 	IconLoader2,
 	IconRefresh,
+	IconShieldCheck,
 	IconX,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
@@ -585,18 +587,14 @@ function RecentAuditPackRequests({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colRequested", "Requested")}
-							</TableHead>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colRange", "Range")}
-							</TableHead>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colStatus", "Status")}
-							</TableHead>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colRecords", "Records")}
-							</TableHead>
+							{[
+								t("settings.auditExport.auditPack.colRequested", "Requested"),
+								t("settings.auditExport.auditPack.colRange", "Range"),
+								t("settings.auditExport.auditPack.colStatus", "Status"),
+								t("settings.auditExport.auditPack.colRecords", "Records"),
+							].map((heading) => (
+								<TableHead key={heading}>{heading}</TableHead>
+							))}
 							<TableHead className="text-right">
 								{t("settings.auditExport.auditPack.colActions", "Actions")}
 							</TableHead>
@@ -617,6 +615,12 @@ function RecentAuditPackRequests({
 								</TableCell>
 								<TableCell className="text-sm">
 									{request.artifact?.entryCount ?? "-"}
+									{request.artifact ? (
+										<AppendAssuranceNote
+											assurance={request.artifact.appendAssurance}
+											t={t}
+										/>
+									) : null}
 								</TableCell>
 								<TableCell className="text-right">
 									{request.status === "completed" ? (
@@ -660,6 +664,64 @@ function RecentAuditPackRequests({
 				</Table>
 			)}
 		</div>
+	);
+}
+
+/** Discloses the pack's append assurance scope; never implies more than was assessed. */
+function AppendAssuranceNote({
+	assurance,
+	t,
+}: {
+	assurance: NonNullable<AuditPackRequestInfo["artifact"]>["appendAssurance"];
+	t: Translate;
+}) {
+	if (!assurance) {
+		return (
+			<p className="text-xs text-muted-foreground">
+				{t(
+					"settings.auditExport.auditPack.lineageNotRecorded",
+					"Lineage assurance not recorded",
+				)}
+			</p>
+		);
+	}
+	if (assurance.employeeCount === 0) return null;
+
+	const limited = assurance.none;
+	const continued = assurance.postAnchor ?? 0;
+	if (limited > 0) {
+		return (
+			<p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+				<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
+				{t(
+					"settings.auditExport.auditPack.lineageLimited",
+					"Limited lineage assurance for {limited} of {total} employees. See append-assurance.json in the pack.",
+					{ limited, total: assurance.employeeCount },
+				)}
+			</p>
+		);
+	}
+	if (continued > 0) {
+		return (
+			<p className="flex items-center gap-1 text-xs text-muted-foreground">
+				<IconAlertTriangle className="size-3 shrink-0" aria-hidden="true" />
+				{t(
+					"settings.auditExport.auditPack.lineageContinued",
+					"Continuity from an approved anchor for {continued} of {total} employees; history before the anchor is not verified. See append-assurance.json in the pack.",
+					{ continued, total: assurance.employeeCount },
+				)}
+			</p>
+		);
+	}
+	return (
+		<p className="flex items-center gap-1 text-xs text-muted-foreground">
+			<IconShieldCheck className="size-3 shrink-0" aria-hidden="true" />
+			{t(
+				"settings.auditExport.auditPack.lineageVerified",
+				"Lineage verified from stored evidence for {total} employees. Its limitations are listed in append-assurance.json.",
+				{ total: assurance.employeeCount },
+			)}
+		</p>
 	);
 }
 

@@ -1,15 +1,33 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
+import { parseSchedulerFocus } from "@/components/scheduling/scheduler/shift-scheduler-utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
 
-async function SchedulingPageContent() {
-	const [authContext, t] = await Promise.all([
+type SchedulingSearchParams = {
+	employeeId?: string | string[];
+	date?: string | string[];
+};
+
+type SchedulingPageProps = {
+	/** `?employeeId=&date=` opens the schedule on one employee around one date. */
+	searchParams?: Promise<SchedulingSearchParams>;
+};
+
+function single(value: string | string[] | undefined): string | undefined {
+	return typeof value === "string" ? value : undefined;
+}
+
+async function SchedulingPageContent({
+	searchParams,
+}: SchedulingPageProps = {}) {
+	const [authContext, t, query] = await Promise.all([
 		getAuthContext(),
 		getTranslate(),
+		searchParams ?? Promise.resolve<SchedulingSearchParams>({}),
 	]);
 
 	if (!authContext?.employee) {
@@ -23,6 +41,10 @@ async function SchedulingPageContent() {
 	});
 
 	const isManager = emp.role === "manager" || emp.role === "admin";
+	const focus = parseSchedulerFocus({
+		employeeId: single(query.employeeId),
+		date: single(query.date),
+	});
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-2">
@@ -47,10 +69,15 @@ async function SchedulingPageContent() {
 				</div>
 
 				<ShiftScheduler
+					// A new focus from the URL opens a fresh schedule view.
+					key={`${focus.employeeId ?? ""}:${focus.date ?? ""}`}
 					organizationId={emp.organizationId}
 					organizationTimezone={org?.timezone ?? "UTC"}
 					employeeId={emp.id}
 					isManager={isManager}
+					// Only managers see other employees' shifts to filter by.
+					focusEmployeeId={isManager ? focus.employeeId : null}
+					focusDate={focus.date}
 				/>
 			</div>
 		</div>
@@ -73,10 +100,10 @@ function SchedulingPageLoading() {
 	);
 }
 
-export default function SchedulingPage() {
+export default function SchedulingPage(props: SchedulingPageProps) {
 	return (
 		<Suspense fallback={<SchedulingPageLoading />}>
-			<SchedulingPageContent />
+			<SchedulingPageContent {...props} />
 		</Suspense>
 	);
 }

@@ -9,12 +9,10 @@ import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import { ConflictError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
-import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
-import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
-import { createTimeEntry, validateProjectAssignment } from "./entry-helpers";
+import { getCurrentEmployee, getCurrentSession } from "./auth";
+import { updateWorkPeriodProject as updateWorkPeriodProjectAction } from "../actions";
 import { logger } from "./shared";
+import { splitOwnWorkPeriod } from "./work-period-split";
 
 export async function approveWorkPeriod(input: {
 	workPeriodId: string;
@@ -192,175 +190,19 @@ export async function splitWorkPeriod(
 	beforeNotes?: string,
 	afterNotes?: string,
 	disambiguation?: "earlier" | "later",
+	submissionId?: string,
 ): Promise<
 	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
 > {
-	const session = await getCurrentSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
-	const timezone = await getUserTimezone(session.user.id);
-
-	try {
-		const [selectedWorkPeriod] = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.employeeId, currentEmployee.id),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.limit(1);
-
-		if (!selectedWorkPeriod) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return {
-				success: false,
-				error: "You can only split your own work periods",
-			};
-		}
-
-		if (!selectedWorkPeriod.endTime || !selectedWorkPeriod.clockOutId) {
-			return { success: false, error: "Cannot split an active work period" };
-		}
-
-		const resolvedSplit = resolveWorkPeriodSplit({
-			startTime: selectedWorkPeriod.startTime,
-			endTime: selectedWorkPeriod.endTime,
-			splitDate: splitDateKey,
-			splitTime,
-			timezone,
-			disambiguation,
-		});
-		if (!resolvedSplit.success) {
-			return {
-				success: false,
-				error:
-					resolvedSplit.code === "ambiguous"
-						? "Split time is ambiguous"
-						: resolvedSplit.code === "nonexistent"
-							? "Split time does not exist on this date"
-							: "Split time must be between work period start and end times",
-			};
-		}
-		const splitDate = resolvedSplit.splitTime;
-
-		const validation = await validateTimeEntryRange(
-			currentEmployee.organizationId,
-			selectedWorkPeriod.startTime,
-			selectedWorkPeriod.endTime,
-		);
-		if (!validation.isValid) {
-			return {
-				success: false,
-				error: validation.error || "Cannot split work period",
-				holidayName: validation.holidayName,
-			};
-		}
-		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: splitDate,
-			timezone,
-			timezoneSource: "user_setting",
-		});
-
-		const firstClockOut = await createTimeEntry({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			type: "clock_out",
-			timestamp: splitDate,
-			createdBy: session.user.id,
-			...splitTimezoneCapture,
-			notes: beforeNotes,
-		});
-		const secondClockIn = await createTimeEntry({
-			employeeId: currentEmployee.id,
-			organizationId: currentEmployee.organizationId,
-			type: "clock_in",
-			timestamp: splitDate,
-			createdBy: session.user.id,
-			...splitTimezoneCapture,
-			notes: afterNotes,
-		});
-
-		if (beforeNotes && selectedWorkPeriod.clockOutId) {
-			await db
-				.update(timeEntry)
-				.set({ isSuperseded: true, supersededById: firstClockOut.id })
-				.where(eq(timeEntry.id, selectedWorkPeriod.clockOutId));
-		}
-
-		await db
-			.update(workPeriod)
-			.set({
-				clockOutId: firstClockOut.id,
-				endTime: splitDate,
-				durationMinutes: resolvedSplit.firstDurationMinutes,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, selectedWorkPeriod.id),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
-
-		const [secondWorkPeriod] = await db
-			.insert(workPeriod)
-			.values({
-				employeeId: currentEmployee.id,
-				organizationId: currentEmployee.organizationId,
-				clockInId: secondClockIn.id,
-				clockOutId: selectedWorkPeriod.clockOutId,
-				startTime: splitDate,
-				endTime: selectedWorkPeriod.endTime,
-				durationMinutes: resolvedSplit.secondDurationMinutes,
-				isActive: false,
-			})
-			.returning();
-
-		if (afterNotes && selectedWorkPeriod.clockOutId) {
-			await db
-				.update(timeEntry)
-				.set({ notes: afterNotes })
-				.where(eq(timeEntry.id, selectedWorkPeriod.clockOutId));
-		}
-
-		logger.info(
-			{
-				originalPeriodId: workPeriodId,
-				firstPeriodId: selectedWorkPeriod.id,
-				secondPeriodId: secondWorkPeriod.id,
-				splitTime,
-			},
-			"Work period split successfully",
-		);
-
-		return {
-			success: true,
-			data: {
-				firstPeriodId: selectedWorkPeriod.id,
-				secondPeriodId: secondWorkPeriod.id,
-			},
-		};
-	} catch (error) {
-		logger.error({ error }, "Split work period error");
-		return {
-			success: false,
-			error: "Failed to split work period. Please try again.",
-		};
-	}
+	return splitOwnWorkPeriod({
+		workPeriodId,
+		splitDateKey,
+		splitTime,
+		beforeNotes,
+		afterNotes,
+		disambiguation,
+		submissionId,
+	});
 }
 
 export async function updateTimeEntryNotes(
@@ -406,79 +248,12 @@ export async function updateTimeEntryNotes(
 	}
 }
 
+/** One implementation: the calendar action owns project changes (#286). */
 export async function updateWorkPeriodProject(
 	workPeriodId: string,
 	projectId: string | null,
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
-	const session = await getCurrentSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const currentEmployee = await getCurrentEmployee();
-	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	try {
-		const [selectedWorkPeriod] = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.employeeId, currentEmployee.id),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.limit(1);
-
-		if (!selectedWorkPeriod) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		if (selectedWorkPeriod.employeeId !== currentEmployee.id) {
-			return {
-				success: false,
-				error: "You can only update your own work periods",
-			};
-		}
-
-		if (projectId) {
-			const projectValidation = await validateProjectAssignment(
-				projectId,
-				currentEmployee.id,
-				currentEmployee.teamId,
-				currentEmployee.organizationId,
-			);
-			if (!projectValidation.isValid) {
-				return {
-					success: false,
-					error: projectValidation.error || "Cannot assign to this project",
-				};
-			}
-		}
-
-		await db
-			.update(workPeriod)
-			.set({
-				projectId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.organizationId, currentEmployee.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
-
-		return { success: true, data: { workPeriodId, projectId } };
-	} catch (error) {
-		logger.error({ error }, "Failed to update work period project");
-		return { success: false, error: "Failed to update project assignment" };
-	}
+	return updateWorkPeriodProjectAction(workPeriodId, projectId);
 }

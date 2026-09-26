@@ -100,6 +100,7 @@
         "recentlyClosed": "Kürzlich geschlossen ({count})",
         "recheck": "Erneut prüfen",
         "resolved": "Gelöst",
+        "retryDelivery": "Zustellung erneut versuchen",
         "title": "Erfordert Aufmerksamkeit",
         "transfer": "Übertragen…",
         "unknownApprover": "Nicht erfasst"
@@ -195,6 +196,7 @@
       },
       "title": "Genehmigungseskalation",
       "toast": {
+        "deliveryRetried": "Erneute Zustellung eingeplant",
         "disposed": "Fall geschlossen",
         "rechecked": "{checked} Fälle geprüft, {resolved} gelöst",
         "requestFailed": "Die Anfrage ist fehlgeschlagen. Bitte erneut versuchen.",
@@ -294,7 +296,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Alle Ausstempelungen",
       "allManagers": "Alle Manager",
       "approvalDaysDescription": "Über den Self-Service hinaus können Mitarbeiter innerhalb dieses Zeitfensters Änderungen anfordern (erfordert Genehmigung). 0 = kein zusätzliches Zeitfenster.",
       "approvalDaysLabel": "Genehmigungszeitfenster (Tage)",
@@ -385,8 +386,7 @@
       "trustModeDescription": "Mitarbeitern erlauben, Einträge ohne Genehmigungsanforderungen zu bearbeiten",
       "trustModeLabel": "Vertrauensmodus",
       "updated": "Richtlinie erfolgreich aktualisiert",
-      "updateFailed": "Richtlinie konnte nicht aktualisiert werden",
-      "zeroDayPolicy": "Jedes Ausstempeln erfordert die Genehmigung eines Managers (strengster Modus)."
+      "updateFailed": "Richtlinie konnte nicht aktualisiert werden"
     },
     "coverageRules": {
       "addRule": "Regel hinzufügen",

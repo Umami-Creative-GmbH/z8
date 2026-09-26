@@ -27,7 +27,8 @@ const onConflictDoUpdateMock = vi.fn();
 const attachInvitationToEmployeeDraftMock = vi.fn();
 const persistEmployeeInvitationDraftMock = vi.fn();
 const syncInvitationTargetTeamMock = vi.fn();
-const requestOrganizationWorkBalanceFullRebuildMock = vi.fn();
+const changeOrganizationTimezoneMock = vi.fn();
+const processWorkBalanceRebuildIntentsMock = vi.fn();
 const transactionClient = {
 	update: vi.fn(() => ({
 		set: updateSetMock.mockReturnValue({ where: updateWhereMock }),
@@ -62,14 +63,27 @@ vi.mock("next/headers", () => ({
 	headers: headersMock,
 }));
 
+// Records that role updates run inside the coordinated auth transaction (#314).
+const authCoordination = vi.hoisted(() => ({ inside: false, updatesInside: 0 }));
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
 			getSession: getSessionMock,
 			createInvitation: createInvitationMock,
 			cancelInvitation: cancelInvitationMock,
-			updateMemberRole: updateMemberRoleMock,
+			updateMemberRole: (input: unknown) => {
+				if (authCoordination.inside) authCoordination.updatesInside += 1;
+				return updateMemberRoleMock(input);
+			},
 		},
+	},
+	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+		authCoordination.inside = true;
+		try {
+			return await mutation();
+		} finally {
+			authCoordination.inside = false;
+		}
 	},
 }));
 
@@ -103,9 +117,14 @@ vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({
 	canAccessOrganizationWithSso: canAccessOrganizationWithSsoMock,
 }));
 
-vi.mock("@/lib/work-balance/service", () => ({
-	requestOrganizationWorkBalanceFullRebuild:
-		requestOrganizationWorkBalanceFullRebuildMock,
+vi.mock("@/lib/timezone/organization-timezone-change", () => ({
+	changeOrganizationTimezone: changeOrganizationTimezoneMock,
+}));
+
+vi.mock("@/lib/work-balance/rebuild-intents", () => ({
+	processWorkBalanceRebuildIntents: processWorkBalanceRebuildIntentsMock,
+	failureMessage: (error: unknown) =>
+		error instanceof Error ? error.message : String(error),
 }));
 
 vi.mock("@/db", () => ({
@@ -216,7 +235,8 @@ describe("organization invitation actions", () => {
 		attachInvitationToEmployeeDraftMock.mockReset();
 		persistEmployeeInvitationDraftMock.mockReset();
 		syncInvitationTargetTeamMock.mockReset();
-		requestOrganizationWorkBalanceFullRebuildMock.mockReset();
+		changeOrganizationTimezoneMock.mockReset();
+		processWorkBalanceRebuildIntentsMock.mockReset();
 		transactionMock.mockClear();
 		getSessionMock.mockResolvedValue({
 			user: { id: "user-admin" },
@@ -261,7 +281,14 @@ describe("organization invitation actions", () => {
 			onConflictDoUpdate: onConflictDoUpdateMock,
 		});
 		onConflictDoUpdateMock.mockResolvedValue({ organizationId: "org-1" });
-		requestOrganizationWorkBalanceFullRebuildMock.mockResolvedValue(undefined);
+		changeOrganizationTimezoneMock.mockResolvedValue({
+			status: "changed",
+			rebuild: "intent",
+		});
+		processWorkBalanceRebuildIntentsMock.mockResolvedValue({
+			organizationsRebuilt: 1,
+			failures: [],
+		});
 	});
 
 	async function runInvitationActorAction(
@@ -420,12 +447,14 @@ describe("organization invitation actions", () => {
 				status: "approved",
 			});
 		updateMemberRoleMock.mockResolvedValue({});
+		authCoordination.updatesInside = 0;
 
 		const result = await updateMemberRole("org-1", "target-member", {
 			role: "admin",
 		});
 
 		expect(result).toMatchObject({ success: true });
+		expect(authCoordination.updatesInside).toBe(1);
 		expect(updateMemberRoleMock).toHaveBeenCalledExactlyOnceWith({
 			body: {
 				organizationId: "org-1",
@@ -655,25 +684,96 @@ describe("organization invitation actions", () => {
 		expect(source).not.toContain("export async function toggleEmployeeStatus(");
 	});
 
-	it("requests balance rebuilds after changing the organization timezone", async () => {
-		memberFindFirstMock.mockResolvedValue({
-			id: "member-owner",
-			userId: "user-admin",
-			organizationId: "org-1",
-			role: "owner",
+	describe("updateOrganizationTimezone", () => {
+		beforeEach(() => {
+			memberFindFirstMock.mockResolvedValue({
+				id: "member-owner",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role: "owner",
+			});
 		});
 
-		const result = await updateOrganizationTimezone(
-			"org-1",
-			"America/New_York",
-		);
+		it("saves through the protected writer, then rebuilds its organization separately", async () => {
+			const result = await updateOrganizationTimezone(
+				"org-1",
+				"America/New_York",
+			);
 
-		expect(result).toMatchObject({ success: true });
-		expect(requestOrganizationWorkBalanceFullRebuildMock).toHaveBeenCalledWith(
-			{ organizationId: "org-1" },
-			{ dbClient: transactionClient },
-		);
-		expect(transactionMock).toHaveBeenCalledTimes(1);
+			expect(result).toMatchObject({ success: true });
+			expect(changeOrganizationTimezoneMock).toHaveBeenCalledWith({
+				organizationId: "org-1",
+				actorUserId: "user-admin",
+				timezone: "America/New_York",
+			});
+			expect(processWorkBalanceRebuildIntentsMock).toHaveBeenCalledWith({
+				organizationId: "org-1",
+			});
+			expect(
+				changeOrganizationTimezoneMock.mock.invocationCallOrder[0],
+			).toBeLessThan(
+				processWorkBalanceRebuildIntentsMock.mock.invocationCallOrder[0] ?? 0,
+			);
+		});
+
+		it("keeps a committed save successful when its rebuild fails", async () => {
+			processWorkBalanceRebuildIntentsMock.mockResolvedValueOnce({
+				organizationsRebuilt: 0,
+				failures: [{ organizationId: "org-1", error: "lock timeout" }],
+			});
+			await expect(
+				updateOrganizationTimezone("org-1", "America/New_York"),
+			).resolves.toMatchObject({ success: true });
+
+			processWorkBalanceRebuildIntentsMock.mockRejectedValueOnce(
+				new Error("connection lost"),
+			);
+			await expect(
+				updateOrganizationTimezone("org-1", "America/New_York"),
+			).resolves.toMatchObject({ success: true });
+			expect(loggerWarnMock).toHaveBeenCalledTimes(2);
+		});
+
+		it("runs no separate rebuild for an unchanged or legacy save", async () => {
+			changeOrganizationTimezoneMock.mockResolvedValueOnce({
+				status: "unchanged",
+			});
+			await updateOrganizationTimezone("org-1", "Europe/Berlin");
+			changeOrganizationTimezoneMock.mockResolvedValueOnce({
+				status: "changed",
+				rebuild: "in_transaction",
+			});
+			await updateOrganizationTimezone("org-1", "America/New_York");
+
+			expect(processWorkBalanceRebuildIntentsMock).not.toHaveBeenCalled();
+		});
+
+		it("reports an owner revoked under protection as unauthorized", async () => {
+			changeOrganizationTimezoneMock.mockResolvedValueOnce({
+				status: "not_authorized",
+			});
+
+			await expect(
+				updateOrganizationTimezone("org-1", "America/New_York"),
+			).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(processWorkBalanceRebuildIntentsMock).not.toHaveBeenCalled();
+		});
+
+		it("refuses an invalid zone and a non-owner before the writer", async () => {
+			await expect(
+				updateOrganizationTimezone("org-1", "Mars/Olympus"),
+			).resolves.toMatchObject({ success: false });
+			memberFindFirstMock.mockResolvedValue({
+				id: "member-admin",
+				userId: "user-admin",
+				organizationId: "org-1",
+				role: "admin",
+			});
+			await expect(
+				updateOrganizationTimezone("org-1", "America/New_York"),
+			).resolves.toMatchObject({ success: false, code: "AuthorizationError" });
+			expect(changeOrganizationTimezoneMock).not.toHaveBeenCalled();
+		});
 	});
 
 	it("rejects a direct invite target team outside the organization", async () => {
@@ -1883,7 +1983,7 @@ describe("organization invitation actions", () => {
 			code: "ValidationError",
 			error: "Timezone must be a valid timezone",
 		});
-		expect(updateSetMock).not.toHaveBeenCalled();
+		expect(changeOrganizationTimezoneMock).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -1900,6 +2000,8 @@ describe("organization invitation actions", () => {
 		const result = await updateOrganizationTimezone("org-1", timezone);
 
 		expect(result).toMatchObject({ success: true });
-		expect(updateSetMock).toHaveBeenCalledWith({ timezone });
+		expect(changeOrganizationTimezoneMock).toHaveBeenCalledWith(
+			expect.objectContaining({ timezone }),
+		);
 	});
 });

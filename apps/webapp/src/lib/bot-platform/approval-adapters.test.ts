@@ -88,6 +88,11 @@ vi.mock("@/lib/approvals/workflow/runtime", () => ({
 vi.mock("@/lib/approvals/domain-adapters/work-period-legacy-state", () => ({
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: state.legacyEvidence,
 }));
+vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) =>
+	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
+		await importOriginal(),
+	),
+);
 vi.mock(
 	"@/lib/approvals/domain-adapters/legacy-write-coordinator",
 	async (importOriginal) => {
@@ -133,6 +138,38 @@ vi.mock("@/lib/bot-platform/i18n", () => ({
 	getBotTranslate: async () => (_key: string, fallback: string) => fallback,
 }));
 vi.mock("@/lib/logger", () => ({ createLogger: () => state.logger }));
+// Bound-card admission (#290) reads evidence and controls; it is exercised
+// against PostgreSQL in telegram/bound-approval.integration.test.ts. Here no
+// card is admitted, so every adapter must behave review-only.
+vi.mock("@/lib/approvals/presentation/bound-card", () => ({
+	prepareBoundAbsenceCard: async () => null,
+	prepareBoundLegacyAbsenceCard: async () => null,
+}));
+// Legacy absence cards (#384): legacy-bound-approval.integration.test.ts. The
+// fixtures here model canonical absence authority.
+vi.mock("@/lib/approvals/evidence/legacy-absence", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-absence")>()),
+	hasLegacyAbsenceAuthority: async () => false,
+}));
+// Legacy time cards (#432): legacy-time-bound-approval.integration.test.ts. The
+// time fixtures here have no legacy revision, so they keep the existing path.
+vi.mock("@/lib/approvals/evidence/legacy-time", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-time")>()),
+	isLegacyTimeAuthorityRequest: async () => false,
+}));
+// Historical replays here were never card decisions: no evidence names a binding.
+vi.mock("@/lib/approvals/evidence/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/store")>()),
+	findLegacyDecisionEvidenceByRequest: async () => null,
+}));
+// Expense card admission (#296) likewise: expense-review-decision.integration.test.ts.
+vi.mock("@/lib/approvals/presentation/travel-expense-card", () => ({
+	prepareBoundTravelExpenseCard: async () => null,
+}));
+vi.mock("@/lib/app-url", () => ({
+	getOrganizationBaseUrl: async (organizationId: string) =>
+		`https://${organizationId}.z8.test`,
+}));
 vi.mock("@/lib/slack/user-resolver", () => ({
 	resolveSlackUser: state.resolve,
 }));
@@ -156,8 +193,14 @@ vi.mock("@/lib/discord/api", () => ({
 	sendMessage: state.sends.discord,
 	createInteractionResponse: state.replies.discord,
 }));
+// No approval delivery owner is active in these adapter tests.
+vi.mock("@/lib/approvals/delivery/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/store")>()),
+	isApprovalNotificationDeliveredByOwner: async () => false,
+}));
 vi.mock("@/lib/teams/bot-adapter", () => ({
 	sendAdaptiveCard: state.sends.teams,
+	sendProactiveMessage: state.sends.teams,
 }));
 vi.mock("@/lib/slack/conversation-manager", () => ({
 	getChannelIdForUser: async () => "channel",
@@ -167,6 +210,7 @@ vi.mock("@/lib/telegram/conversation-manager", () => ({
 }));
 vi.mock("@/lib/discord/conversation-manager", () => ({
 	getChannelIdForUser: async () => "channel",
+	resolveApprovalDMChannel: async () => ({ kind: "ok", result: "channel" }),
 }));
 vi.mock("@/lib/teams/conversation-manager", () => ({
 	getConversationReferenceForUser: async () => ({
@@ -415,7 +459,9 @@ describe.each(platformCases)(
 			expect(state.sends[platform]).toHaveBeenCalledOnce();
 			const output = JSON.stringify(state.sends[platform].mock.calls);
 			expect(output).toContain("Review required");
-			expect(output).toContain("/approvals/inbox");
+			// Exact item on the organization's origin, never the generic inbox.
+			expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
+			expect(output).not.toContain("/approvals/inbox");
 			expect(output).not.toMatch(
 				/SECRET|private@example|correctedTime|Time Correction|callback_data|approval_approve|Action.Submit|Action.Http/,
 			);
@@ -458,6 +504,7 @@ describe.each(platformCases)(
 				expect(state.replies[platform]).toHaveBeenCalledOnce();
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("No decision was made");
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
 				expect(output).not.toMatch(/SECRET|successfully|resolvedAt/);
 				expect(state.history).toHaveBeenCalledWith(
 					expect.anything(),
@@ -553,6 +600,7 @@ describe.each(platformCases)(
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("previously recorded");
 				expect(output).toContain("no new decision was made");
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
 				expect(output).not.toMatch(/SECRET|2026|Request approved|successfully/);
 				expect(state.track).not.toHaveBeenCalled();
 			},
@@ -741,7 +789,12 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 				typeof handleTelegramUpdate
 			>[1],
 		);
-		expect(state.acknowledge).toHaveBeenCalledExactlyOnceWith("token", "query");
+		// No committed or verified outcome, so the acknowledgment carries no text.
+		expect(state.acknowledge).toHaveBeenCalledExactlyOnceWith(
+			"token",
+			"query",
+			undefined,
+		);
 		expect(state.track).not.toHaveBeenCalled();
 	});
 });

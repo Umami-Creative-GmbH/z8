@@ -42,7 +42,11 @@ const mockState = vi.hoisted(() => {
 		employeeUpdateWhere,
 		userSettingsValues,
 		userSettingsOnConflictDoUpdate,
-		requestUserWorkBalanceFullRebuild: vi.fn(),
+		writeUserSettings: vi.fn(),
+		changeUserTimezone: vi.fn(),
+		processWorkBalanceRebuildIntents: vi.fn(),
+		loggerWarn: vi.fn(),
+		loggerError: vi.fn(),
 	};
 });
 
@@ -60,8 +64,26 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/work-balance/service", () => ({
-	requestUserWorkBalanceFullRebuild: mockState.requestUserWorkBalanceFullRebuild,
+vi.mock("@/lib/user-preferences/user-settings-mutation", () => ({
+	writeUserSettings: mockState.writeUserSettings,
+}));
+
+vi.mock("@/lib/timezone/user-timezone-change", () => ({
+	changeUserTimezone: mockState.changeUserTimezone,
+}));
+
+vi.mock("@/lib/work-balance/rebuild-intents", () => ({
+	processWorkBalanceRebuildIntents: mockState.processWorkBalanceRebuildIntents,
+	failureMessage: (error: unknown) => (error instanceof Error ? error.message : String(error)),
+}));
+
+vi.mock("@/lib/logger", () => ({
+	createLogger: () => ({
+		warn: mockState.loggerWarn,
+		error: mockState.loggerError,
+		info: vi.fn(),
+		debug: vi.fn(),
+	}),
 }));
 
 vi.mock("@/db/schema", async () => {
@@ -179,9 +201,14 @@ vi.mock("@/lib/effect/result", async () => {
 	};
 });
 
-const { updateProfile, updateProfileDetails, updateProfileImage, updateTimezone } = await import(
-	"./actions"
-);
+const {
+	updateProfile,
+	updateProfileDetails,
+	updateProfileImage,
+	updateTimeFormat,
+	updateTimezone,
+	updateWeekStartDay,
+} = await import("./actions");
 
 describe("profile actions", () => {
 	beforeEach(() => {
@@ -194,24 +221,109 @@ describe("profile actions", () => {
 		mockState.employeeFindFirst.mockResolvedValue(null);
 		mockState.employeeUpdateWhere.mockResolvedValue(undefined);
 		mockState.userSettingsOnConflictDoUpdate.mockResolvedValue(undefined);
-		mockState.requestUserWorkBalanceFullRebuild.mockResolvedValue(undefined);
+		mockState.writeUserSettings.mockResolvedValue(undefined);
+		mockState.changeUserTimezone.mockResolvedValue({
+			status: "changed",
+			rebuildOrganizationIds: [],
+		});
+		mockState.processWorkBalanceRebuildIntents.mockResolvedValue({
+			organizationsRebuilt: 1,
+			failures: [],
+		});
 		mockState.dbTransaction.mockClear();
 	});
 
-	it("requests balance rebuilds after changing the user timezone", async () => {
-		await expect(updateTimezone("America/New_York")).resolves.toEqual({
-			success: true,
-			data: undefined,
-		});
-		expect(mockState.requestUserWorkBalanceFullRebuild).toHaveBeenCalledWith(
-			{
+	describe("updateTimezone", () => {
+		it("delegates the change to the protected user timezone writer", async () => {
+			await expect(updateTimezone("America/New_York")).resolves.toEqual({
+				success: true,
+				data: undefined,
+			});
+			expect(mockState.changeUserTimezone).toHaveBeenCalledWith({
 				userId: "user-1",
-			},
-			{
-				dbClient: mockState.transactionClient,
-			},
-		);
-		expect(mockState.dbTransaction).toHaveBeenCalledTimes(1);
+				timezone: "America/New_York",
+			});
+			expect(mockState.processWorkBalanceRebuildIntents).not.toHaveBeenCalled();
+		});
+
+		it("runs each adopted organization's rebuild only after the change committed", async () => {
+			mockState.changeUserTimezone.mockResolvedValue({
+				status: "changed",
+				rebuildOrganizationIds: ["org-a", "org-b"],
+			});
+
+			await expect(updateTimezone("America/New_York")).resolves.toMatchObject({ success: true });
+
+			expect(mockState.processWorkBalanceRebuildIntents.mock.calls).toEqual([
+				[{ organizationId: "org-a" }],
+				[{ organizationId: "org-b" }],
+			]);
+			expect(mockState.changeUserTimezone.mock.invocationCallOrder[0]).toBeLessThan(
+				mockState.processWorkBalanceRebuildIntents.mock.invocationCallOrder[0] ?? 0,
+			);
+		});
+
+		it("keeps a committed change saved when its rebuild fails or throws", async () => {
+			mockState.changeUserTimezone.mockResolvedValue({
+				status: "changed",
+				rebuildOrganizationIds: ["org-a", "org-b"],
+			});
+			mockState.processWorkBalanceRebuildIntents
+				.mockResolvedValueOnce({
+					organizationsRebuilt: 0,
+					failures: [{ organizationId: "org-a", error: "deadlock detected" }],
+				})
+				.mockRejectedValueOnce(new Error("connection terminated"));
+
+			await expect(updateTimezone("America/New_York")).resolves.toEqual({
+				success: true,
+				data: undefined,
+			});
+			// The second organization still ran after the first failed.
+			expect(mockState.processWorkBalanceRebuildIntents).toHaveBeenCalledTimes(2);
+			expect(mockState.loggerWarn).toHaveBeenCalledTimes(2);
+		});
+
+		it("creates no rebuild work when the zone is unchanged", async () => {
+			mockState.changeUserTimezone.mockResolvedValue({ status: "unchanged" });
+
+			await expect(updateTimezone("Europe/Berlin")).resolves.toMatchObject({ success: true });
+			expect(mockState.processWorkBalanceRebuildIntents).not.toHaveBeenCalled();
+		});
+
+		it("reports a rolled-back change without the database message", async () => {
+			mockState.changeUserTimezone.mockRejectedValue(
+				new Error('insert into "work_balance_rebuild_intent" failed: injected'),
+			);
+
+			const result = await updateTimezone("America/New_York");
+
+			expect(result).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error: "Failed to update timezone",
+			});
+			expect(mockState.processWorkBalanceRebuildIntents).not.toHaveBeenCalled();
+		});
+
+		it("rejects an invalid zone before the writer", async () => {
+			await expect(updateTimezone("Mars/Olympus_Mons")).resolves.toMatchObject({
+				success: false,
+				code: "ValidationError",
+			});
+			expect(mockState.changeUserTimezone).not.toHaveBeenCalled();
+		});
+	});
+
+	it("saves week start and time format through the protected settings writer", async () => {
+		await expect(updateWeekStartDay("monday")).resolves.toMatchObject({ success: true });
+		await expect(updateTimeFormat("12h")).resolves.toMatchObject({ success: true });
+
+		expect(mockState.writeUserSettings.mock.calls).toEqual([
+			[expect.anything(), "user-1", { weekStartDay: "monday" }],
+			[expect.anything(), "user-1", { timeFormat: "12h" }],
+		]);
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
 	});
 
 	it("derives the Better Auth name from structured profile details", async () => {
@@ -248,15 +360,10 @@ describe("profile actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.userSettingsValues).toHaveBeenCalledWith({
-			userId: "user-1",
+		expect(mockState.writeUserSettings).toHaveBeenCalledWith(expect.anything(), "user-1", {
 			helpImproveProduct: false,
 		});
-		expect(mockState.userSettingsOnConflictDoUpdate).toHaveBeenCalledWith(
-			expect.objectContaining({
-				set: { helpImproveProduct: false },
-			}),
-		);
+		expect(mockState.dbInsert).not.toHaveBeenCalled();
 	});
 
 	it("preserves the product improvement preference when omitted", async () => {
@@ -270,9 +377,7 @@ describe("profile actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
-		expect(mockState.userSettingsValues).not.toHaveBeenCalled();
-		expect(mockState.userSettingsOnConflictDoUpdate).not.toHaveBeenCalled();
+		expect(mockState.writeUserSettings).not.toHaveBeenCalled();
 	});
 
 	it("uses stored structured names when only the profile image changes", async () => {
@@ -447,7 +552,7 @@ describe("profile actions", () => {
 		"Europe/Berlin ",
 		"+05:45",
 		"Not/A_Zone",
-	])("rejects invalid timezone %j before upserting user settings", async (timezone) => {
+	])("rejects invalid timezone %j before the timezone writer", async (timezone) => {
 		const result = await updateTimezone(timezone);
 
 		expect(result).toEqual({
@@ -455,20 +560,17 @@ describe("profile actions", () => {
 			error: timezone === "" ? "Timezone is required" : "Timezone must be a valid timezone",
 			code: "ValidationError",
 		});
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
+		expect(mockState.changeUserTimezone).not.toHaveBeenCalled();
 	});
 
 	it.each([
 		"UTC",
 		"Europe/Berlin",
 		"America/New_York",
-	])("upserts valid timezone %s", async (timezone) => {
+	])("saves valid timezone %s", async (timezone) => {
 		const result = await updateTimezone(timezone);
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(mockState.userSettingsValues).toHaveBeenCalledWith({
-			userId: "user-1",
-			timezone,
-		});
+		expect(mockState.changeUserTimezone).toHaveBeenCalledWith({ userId: "user-1", timezone });
 	});
 });

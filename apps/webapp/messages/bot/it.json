@@ -8,7 +8,56 @@
       "historicalApproval": "La sua approvazione registrata in precedenza è stata verificata. Si tratta di un risultato precedente; non è stata presa alcuna nuova decisione. Consulti la richiesta in Z8 per ulteriori dettagli.",
       "historicalRejection": "Il suo rifiuto registrato in precedenza è stato verificato. Si tratta di un risultato precedente; non è stata presa alcuna nuova decisione. Consulti la richiesta in Z8 per ulteriori dettagli.",
       "unboundCallback": "Questa scheda non consente di verificare i dati originariamente esaminati. Non è stata presa alcuna decisione. Esamini la richiesta in Z8.",
-      "alreadyProcessed": "Questa approvazione è già stata elaborata."
+      "alreadyProcessed": "Questa approvazione è già stata elaborata.",
+      "boundReviewRequired": "Questa scheda non corrisponde più alla richiesta o all’assegnazione attuale, oppure l’azione non è stata verificata. Nessuna decisione è stata presa. Esamina la richiesta in Z8.",
+      "invocationConflict": "Questa pressione è già stata registrata con un’altra azione. Nessuna decisione è stata presa. Esamina la richiesta in Z8.",
+      "outcomeUnknown": "Non è stato possibile confermare il risultato di questa pressione. Controlla la richiesta in Z8 prima di premere di nuovo.",
+      "card": {
+        "absenceTitle": "Richiesta di assenza da approvare",
+        "boundHint": "Approva o rifiuta decide esattamente la richiesta mostrata sopra. Se è stata modificata o riassegnata, non viene deciso nulla e ti verrà chiesto di esaminarla in Z8.",
+        "reviewOnlyHint": "Approva o rifiuta questa richiesta in Z8. Non può essere decisa da questo messaggio.",
+        "approve": "Approva",
+        "reject": "Rifiuta",
+        "unavailable": "Non disponibile",
+        "employee": "Dipendente",
+        "requestedBy": "Richiesto da",
+        "submittedBy": "Inviato da",
+        "category": "Categoria",
+        "currentCategoryName": "Nome attuale della categoria",
+        "dates": "Date",
+        "coverage": "Copertura",
+        "submittedAt": "Inviato",
+        "fullDays": "Giorni interi",
+        "fullDay": "giornata intera",
+        "morning": "di mattina",
+        "afternoon": "di pomeriggio",
+        "halfDayPeriods": "Inizia {start}, termina {end}",
+        "explicitTimes": "{start} – {end} (ora locale, fuso non registrato)",
+        "explicitTimesOvernight": "{start} – {end} del giorno successivo (ora locale, fuso non registrato)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Richiesta approvata",
+        "requestRejectedTitle": "Richiesta rifiutata",
+        "stepApprovedTitle": "Approvazione registrata",
+        "requestApproved": "Approvata da {actor} il {time}. La richiesta è approvata.",
+        "requestRejected": "Rifiutata da {actor} il {time}. La richiesta è rifiutata.",
+        "stepApproved": "Approvata da {actor} il {time}. La richiesta attende ancora altre approvazioni.",
+        "replayed": "Questa pressione era già stata registrata; questo è il suo risultato originale e non è stato deciso nulla di nuovo.",
+        "stepRejectedTitle": "Rifiuto registrato",
+        "stepRejected": "Rifiutata da {actor} il {time}. La richiesta non è ancora definitiva; controllane lo stato attuale in Z8.",
+        "recordedTitle": "Decisione registrata",
+        "recorded": "Registrata da {actor} il {time}. Controlla lo stato attuale della richiesta in Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Richiesta ritirata",
+        "withdrawn": "Questa richiesta è stata ritirata. Non serve alcuna decisione da questa scheda.",
+        "reassignedTitle": "Riassegnata",
+        "reassigned": "Questa approvazione è stata riassegnata a un'altra persona. Non serve la tua decisione da questa scheda e qui non è stato deciso nulla. Controlla lo stato attuale in Z8.",
+        "inactiveTitle": "Non più da decidere",
+        "inactive": "Questa richiesta non richiede più la tua decisione da questa scheda. Qui non è stato deciso nulla. Controlla lo stato attuale in Z8.",
+        "currentApproved": "Stato attuale della richiesta: approvata.",
+        "currentRejected": "Stato attuale della richiesta: respinta."
+      }
     },
     "cmd": {
       "billingRequired": "[bot] La fatturazione è necessaria per continuare a usare il monitoraggio del tempo. Chiedi a un amministratore dell'organizzazione di aggiornare la fatturazione.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "Sei già in servizio dalle {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Hai già timbrato l'entrata.",
+        "appendReview": "La cronologia dei tuoi tempi deve essere verificata prima di poter timbrare l'entrata. Contatta il tuo amministratore.",
         "cannotNow": "Impossibile timbrare l'ingresso in questo momento.",
+        "committed": "Entrata timbrata.",
+        "failed": "Impossibile timbrare l'entrata. Riprova.",
         "noProfile": "Profilo dipendente non trovato.",
-        "success": "Ingresso registrato alle {time}."
+        "success": "Ingresso registrato alle {time}.",
+        "unconfirmed": "Non è stato possibile confermare la timbratura di entrata. Controlla il tuo stato prima di riprovare."
       },
       "clockout": {
+        "appendReview": "La cronologia dei tuoi tempi deve essere verificata prima di poter timbrare l'uscita. Contatta il tuo amministratore.",
         "cannotNow": "Impossibile timbrare l'uscita in questo momento.",
+        "committed": "Uscita timbrata.",
+        "failed": "Impossibile timbrare l'uscita. Riprova.",
         "noProfile": "Profilo dipendente non trovato.",
         "notClockedIn": "Al momento non sei in servizio.",
-        "policyCheckFailed": "Impossibile verificare la politica di approvazione dell'orario. Riprova.",
         "success": "Uscita registrata alle {time}. Durata: {hours}h {minutes}m.",
-        "unsupportedApproval": "Le modifiche all'orario che richiedono approvazione non sono ancora supportate per questa azione"
+        "successAt": "Uscita timbrata alle {time}.",
+        "unconfirmed": "Non è stato possibile confermare la timbratura di uscita. Controlla il tuo stato prima di riprovare."
       },
       "compliance": {
         "error": "Impossibile recuperare i dati di conformità. Riprova più tardi.",
@@ -95,7 +152,8 @@
       "typeHelp": "Digita /help per vedere i comandi disponibili.",
       "unconfigured": "L'integrazione Z8 della tua organizzazione è in fase di configurazione. Attendi che l'amministratore completi la procedura.",
       "welcome": "Benvenuto su Z8! Per collegare il tuo account, vai su Impostazioni > Integrazioni > Telegram nel tuo pannello di controllo Z8 e genera un codice di collegamento. Quindi invia: /link IL_TUO_CODICE",
-      "welcomeTeams": "Benvenuto su Z8! Digita \"help\" per vedere i comandi disponibili."
+      "welcomeTeams": "Benvenuto su Z8! Digita \"help\" per vedere i comandi disponibili.",
+      "replyUndelivered": "Il tuo comando è stato elaborato, ma non è stato possibile mostrare la risposta. Controlla il tuo stato prima di ripeterlo."
     }
   }
 }
