@@ -2,7 +2,8 @@ import { and, asc, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { approvalEscalationTransfer, approvalRequest } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import type { TransferableLegacyEntityType } from "./kinds";
+import { ApprovalAssignmentReassignedError } from "./decision-authority";
+import type { LegacyEscalationEntityType } from "./kinds";
 import type { LegacyJournalTransferFact } from "./transfer-evaluation";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -77,7 +78,7 @@ export async function findLegacyTransferredApprovalRequest(
 	executor: LegacyTransferExecutor,
 	input: {
 		organizationId: string;
-		entityType: TransferableLegacyEntityType;
+		entityType: LegacyEscalationEntityType;
 		entityId: string;
 		approvalRequestId?: string;
 	},
@@ -98,6 +99,19 @@ export async function findLegacyTransferredApprovalRequest(
 		.limit(1)
 		.for("update");
 	if (!request) return null;
+	return (await wasLegacyRequestTransferred(executor, {
+		organizationId: input.organizationId,
+		approvalRequestId: request.id,
+	}))
+		? { approvalRequestId: request.id, currentApproverEmployeeId: request.approverId }
+		: null;
+}
+
+/** Whether escalation ever transferred this legacy request. */
+export async function wasLegacyRequestTransferred(
+	executor: LegacyTransferExecutor,
+	input: { organizationId: string; approvalRequestId: string },
+): Promise<boolean> {
 	const [transfer] = await executor
 		.select({ id: approvalEscalationTransfer.id })
 		.from(approvalEscalationTransfer)
@@ -105,11 +119,38 @@ export async function findLegacyTransferredApprovalRequest(
 			and(
 				eq(approvalEscalationTransfer.organizationId, input.organizationId),
 				eq(approvalEscalationTransfer.authorityMode, "legacy"),
-				eq(approvalEscalationTransfer.legacyApprovalRequestId, request.id),
+				eq(approvalEscalationTransfer.legacyApprovalRequestId, input.approvalRequestId),
 			),
 		)
 		.limit(1);
-	return transfer
-		? { approvalRequestId: request.id, currentApproverEmployeeId: request.approverId }
-		: null;
+	return transfer !== undefined;
+}
+
+/**
+ * Refuses a fresh legacy decision by anyone escalation replaced (#255 §4,
+ * #439): once a transfer moved the request, only its current approver or
+ * explicit organization management may decide it, and eligible-manager
+ * fallback never bypasses the replacement. The request row is locked like the
+ * transfer locks it, so a decision racing a transfer serializes behind it.
+ */
+export async function assertLegacyTransferDecisionAuthority(
+	executor: LegacyTransferExecutor,
+	input: {
+		organizationId: string;
+		entityType: LegacyEscalationEntityType;
+		entityId: string;
+		approvalRequestId: string;
+		actorEmployeeId: string;
+		/** Explicit organization management, checked by the trusted caller; absent fails closed. */
+		canManageOrganizationApproval?: () => Promise<boolean>;
+	},
+): Promise<void> {
+	const transferred = await findLegacyTransferredApprovalRequest(executor, input);
+	if (
+		transferred &&
+		transferred.currentApproverEmployeeId !== input.actorEmployeeId &&
+		!(await input.canManageOrganizationApproval?.())
+	) {
+		throw new ApprovalAssignmentReassignedError();
+	}
 }

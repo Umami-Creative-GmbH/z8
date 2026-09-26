@@ -6,6 +6,7 @@ import {
 	isLegacyEscalationEntityType,
 	isUntransferableEscalationRoute,
 	LEGACY_ESCALATION_ENTITY_TYPES,
+	legacyEntityTypeAdmits,
 	unsupportedCanonicalReplacementRoute,
 } from "./kinds";
 
@@ -24,12 +25,16 @@ describe("admitted escalation kinds (#326)", () => {
 		}
 	});
 
-	it("transfers legacy absence and expense requests and only discovers time requests", () => {
+	it("transfers legacy absence, expense and time requests (#439)", () => {
 		expect(LEGACY_ESCALATION_ENTITY_TYPES).toEqual({
-			absence_entry: "absence",
-			travel_expense_claim: "travel_expense",
-			time_entry: null,
+			absence_entry: ["absence"],
+			travel_expense_claim: ["travel_expense"],
+			time_entry: ["manual_time_submission", "policy_clock_out", "time_correction"],
 		});
+		expect(legacyEntityTypeAdmits("time_entry", "policy_clock_out")).toBe(true);
+		expect(legacyEntityTypeAdmits("time_entry", "absence")).toBe(false);
+		expect(legacyEntityTypeAdmits("absence_entry", "time_correction")).toBe(false);
+		expect(isLegacyEscalationEntityType("time_entry")).toBe(true);
 		expect(isLegacyEscalationEntityType("travel_expense_claim")).toBe(true);
 		expect(isLegacyEscalationEntityType("shift_request")).toBe(false);
 		expect(isLegacyEscalationEntityType("toString")).toBe(false);
@@ -45,7 +50,10 @@ describe("admitted escalation kinds (#326)", () => {
 		]);
 		expect(isEscalationWorkflowType("travel_expense")).toBe(true);
 		expect(isEscalationWorkflowType(null)).toBe(false);
-		expect(isUntransferableEscalationRoute("legacy_time_authority")).toBe(true);
+		// #326 holds of legacy time requests are re-evaluated since #439.
+		expect(isUntransferableEscalationRoute("legacy_time_authority")).toBe(false);
+		expect(isUntransferableEscalationRoute("legacy_time_without_legacy_authority")).toBe(true);
+		expect(isUntransferableEscalationRoute("legacy_time_unclassified")).toBe(true);
 		expect(isUntransferableEscalationRoute("travel_expense_without_legacy_authority")).toBe(true);
 		expect(isUntransferableEscalationRoute("legacy_chain_stage")).toBe(false);
 		expect(isUntransferableEscalationRoute(undefined)).toBe(false);

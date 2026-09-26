@@ -109,6 +109,38 @@ export function readLegacyEscalationLineage(
 	return { kind: "lineage", pendingSince, transfers };
 }
 
+export type SplitLegacyEscalationLineage<M> =
+	| { kind: "none"; metadata: M }
+	| { kind: "lineage"; metadata: unknown; lineage: unknown }
+	| { kind: "malformed" };
+
+/**
+ * Separates the lineage from a request's own metadata (#439). Kinds whose
+ * legacy validators accept an exact key set check the rest as before and
+ * carry the verified lineage alongside; a malformed or accessor lineage is
+ * refused. The remaining keys keep their descriptors and prototype, and the
+ * input is never mutated.
+ */
+export function splitLegacyEscalationLineage<M>(metadata: M): SplitLegacyEscalationLineage<M> {
+	if (!isRecord(metadata)) return { kind: "none", metadata };
+	const descriptors = Object.getOwnPropertyDescriptors(metadata);
+	const descriptor = descriptors[LINEAGE_KEY];
+	if (!descriptor) return { kind: "none", metadata };
+	if (
+		!descriptor.enumerable ||
+		!("value" in descriptor) ||
+		readLegacyEscalationLineage({ [LINEAGE_KEY]: descriptor.value }).kind !== "lineage"
+	) {
+		return { kind: "malformed" };
+	}
+	const { [LINEAGE_KEY]: _lineage, ...rest } = descriptors;
+	return {
+		kind: "lineage",
+		metadata: Object.create(Object.getPrototypeOf(metadata), rest),
+		lineage: descriptor.value,
+	};
+}
+
 /**
  * Metadata after one more transfer. Unrelated metadata is kept; the original
  * pending instant is recorded by the first transfer and never rewritten.

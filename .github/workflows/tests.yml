@@ -185,6 +185,7 @@ jobs:
             src/lib/approvals/escalation/replacement-delivery.integration.test.ts \
             src/lib/approvals/escalation/time-kinds.integration.test.ts \
             src/lib/approvals/escalation/expense-transfer.integration.test.ts \
+            src/lib/approvals/escalation/legacy-time-transfer.integration.test.ts \
             "src/app/[locale]/(app)/time-tracking/actions/correction-lifecycle.integration.test.ts" \
             "src/app/[locale]/(app)/time-tracking/actions/clocking.time-presentation.integration.test.ts" \
             src/lib/approvals/pilot/readiness.integration.test.ts \

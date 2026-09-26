@@ -95,6 +95,7 @@ import {
 	assertNotReplacedByEscalation,
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
+import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	prepareLegacyTimeCorrectionDecisionEvidence,
@@ -124,7 +125,6 @@ import type {
 	ApprovalPolicyOvertimeRisk,
 } from "../policies/types";
 import { mapSequentially } from "../sequential";
-import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
@@ -148,7 +148,9 @@ import type {
 	CurrentApprover,
 	PendingApprovalRequest,
 } from "./types";
+import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
 import {
+	canManageOrganizationTimeApproval,
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
 	isBoundTimeDecisionSignal,
@@ -1541,18 +1543,6 @@ function sameCorrectionPayload(
 		);
 	} catch {
 		return false;
-	}
-}
-
-/** Correction entry IDs a request's metadata names, or none when it is malformed. */
-function namedCorrectionEntryIds(metadata: unknown): string[] {
-	try {
-		const correction = correctionPayload(metadata);
-		return [correction.clockInCorrectionId, correction.clockOutCorrectionId].filter(
-			(id): id is string => Boolean(id),
-		);
-	} catch {
-		return [];
 	}
 }
 
@@ -4639,6 +4629,11 @@ export interface ExecuteTimeCorrectionDecisionInput {
 	}): Promise<unknown>;
 	captureLegacyState?: typeof captureTimeCorrectionLegacyApprovalState;
 	nowInstant?: () => Instant;
+	/**
+	 * Explicit organization approval management, checked by the trusted
+	 * caller. Absent means none (fail closed).
+	 */
+	canManageOrganizationApproval?: () => Promise<boolean>;
 }
 
 function decisionFingerprint(reason: string | undefined): string {
@@ -4913,69 +4908,11 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					entityType: "approval_request",
 				});
 			}
-			let kind = classifyTimeApprovalRequest({
-				metadata: request.metadata,
-				reason: request.reason,
-				pendingChanges: period.pendingChanges,
+			const kind = await classifyPersistedTimeApprovalRequest(transactionDb, {
+				organizationId: input.organizationId,
+				request,
+				period,
 			});
-			if (kind === "unclassified") {
-				const endpointIds = [period.clockInId, period.clockOutId].filter(
-					(id): id is string => Boolean(id),
-				);
-				// A pending correction's own rows are inactive (superseded without a
-				// successor) until approval; the request names them exactly (#301).
-				const namedPendingIds = namedCorrectionEntryIds(request.metadata);
-				const correctionEvidence = endpointIds.length
-					? await transactionDb.query.timeEntry.findMany({
-							where: and(
-								eq(timeEntry.organizationId, input.organizationId),
-								eq(timeEntry.employeeId, request.requestedBy),
-								eq(timeEntry.type, "correction"),
-								or(
-									and(
-										eq(timeEntry.isSuperseded, false),
-										or(
-											inArray(timeEntry.id, endpointIds),
-											inArray(timeEntry.replacesEntryId, endpointIds),
-										),
-									),
-									...(namedPendingIds.length > 0
-										? [
-												and(
-													eq(timeEntry.isSuperseded, true),
-													isNull(timeEntry.supersededById),
-													inArray(timeEntry.id, namedPendingIds),
-													inArray(timeEntry.replacesEntryId, endpointIds),
-												),
-											]
-										: []),
-								),
-							),
-						})
-					: [];
-				kind = classifyTimeApprovalRequest({
-					metadata: request.metadata,
-					reason: request.reason,
-					pendingChanges: period.pendingChanges,
-					verifiedRelationalCorrectionIds: correctionEvidence.map(
-						(entry) => entry.id,
-					),
-					verifiedRelationalCorrectionIdsByEndpoint: {
-						clockIn: correctionEvidence.flatMap((entry) =>
-							entry.id === period.clockInId ||
-							entry.replacesEntryId === period.clockInId
-								? [entry.id]
-								: [],
-						),
-						clockOut: correctionEvidence.flatMap((entry) =>
-							entry.id === period.clockOutId ||
-							entry.replacesEntryId === period.clockOutId
-								? [entry.id]
-								: [],
-						),
-					},
-				});
-			}
 			if (kind === "unclassified") {
 				throw new ValidationError({
 					message:
@@ -5056,6 +4993,18 @@ export async function executeTimeCorrectionDecisionInTransaction(
 						conflictType: "approval_status",
 					});
 				}
+				// An escalation transfer revoked the former holders' authority
+				// (#439): only the current approver or explicit organization
+				// management may decide, never an eligible manager. The request is
+				// locked like the transfer locks it, so the two serialize.
+				await assertLegacyTransferDecisionAuthority(transactionDb, {
+					organizationId: input.organizationId,
+					entityType: "time_entry",
+					entityId: period.id,
+					approvalRequestId: request.id,
+					actorEmployeeId: actor.id,
+					canManageOrganizationApproval: input.canManageOrganizationApproval,
+				});
 				const stage =
 					await transactionDb.query.approvalChainStageInstance.findFirst({
 						where: and(
@@ -5441,6 +5390,8 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							action,
 							reason,
 							query: dbService.query,
+							canManageOrganizationApproval: () =>
+								canManageOrganizationTimeApproval(options),
 							processLegacy: async (
 								transactionDbService,
 								actor,
@@ -5510,6 +5461,8 @@ export function decideTimeCorrectionWithStableTargetEffect(
 					actor: currentEmployee,
 					allowAnyApprover: options?.allowAnyApprover,
 					allowOrganizationWideApprover: options?.allowOrganizationWideApprover,
+					canManageOrganizationApproval: () =>
+						canManageOrganizationTimeApproval(options),
 					decision:
 						action === "approve"
 							? { kind: "approve", reason: reason ?? null }

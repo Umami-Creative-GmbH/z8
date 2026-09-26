@@ -18,6 +18,7 @@ import {
 } from "@/lib/time-tracking/work-location";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
+import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type {
 	JsonObject,
 	LegacyApprovalChainRowSnapshot,
@@ -566,6 +567,11 @@ function decodeRequest(
 	cancellationMetadata: JsonObject | null,
 ): LegacyApprovalRequestSnapshot {
 	const raw = record(value);
+	// A legacy escalation transfer (#439) adds only its lineage; it travels
+	// beside the verified payload so the observation can rebuild the holders.
+	const lineage = splitLegacyEscalationLineage(record(raw.metadata));
+	if (lineage.kind === "malformed") return fail();
+	const metadata = cancellationMetadata ?? (payload as unknown as JsonObject);
 	const status = requestStatus(raw.status);
 	const approvedAt = nullableInstant(raw.approvedAt);
 	const rejectionReason = nullableString(raw.rejectionReason);
@@ -590,7 +596,10 @@ function decodeRequest(
 		reason: nullableString(raw.reason),
 		rejectionReason,
 		approvedAt,
-		metadata: cancellationMetadata ?? (payload as unknown as JsonObject),
+		metadata:
+			lineage.kind === "lineage"
+				? ({ ...metadata, escalation: lineage.lineage } as JsonObject)
+				: metadata,
 		updatedAt: requiredInstant(raw.updatedAt),
 	};
 }
