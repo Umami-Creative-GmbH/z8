@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Tüm çıkışlar",
       "allManagers": "Tüm yöneticiler",
       "approvalDaysDescription": "Self-servis dışında, çalışanlar bu pencere içerisinde değişiklik talep edebilir (onay gerektirir). 0 = ek pencere yok.",
       "approvalDaysLabel": "Onay Penceresi (gün)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Çalışanların girişleri herhangi bir onay gerekmeksizin düzenlemesine izin ver",
       "trustModeLabel": "Güven Modu",
       "updated": "Politika başarıyla güncellendi",
-      "updateFailed": "Politika güncellenemedi",
-      "zeroDayPolicy": "Her çıkış işlemi yönetici onayı gerektirecektir (en katı mod)."
+      "updateFailed": "Politika güncellenemedi"
     },
     "coverageRules": {
       "addRule": "Kural Ekle",

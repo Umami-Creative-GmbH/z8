@@ -7,7 +7,6 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import {
-	onClockOutApproved,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
 	onManualEntryApproved,
@@ -99,50 +98,6 @@ async function sendPendingApprovalNotifications(params: {
 	if (rejected) throw rejected.reason;
 
 	return { employeeUserId, employeeName };
-}
-
-export async function sendClockOutApprovalNotifications(params: {
-	workPeriodId: string;
-	employeeId: string;
-	managerId: string;
-	organizationId: string;
-	startTime: Date;
-	endTime: Date;
-	durationMinutes: number;
-	dedupeKey: string;
-}) {
-	await sendPendingApprovalNotifications({
-		...params,
-	});
-}
-
-export async function sendClockOutApprovedNotification(params: {
-	workPeriodId: string;
-	employeeId: string;
-	managerId: string;
-	organizationId: string;
-	startTime: Date;
-	endTime: Date;
-	dedupeKey: string;
-}) {
-	const { employeeUserId, employeeName } =
-		await getApprovalNotificationParticipants(
-			params.employeeId,
-			params.managerId,
-			params.organizationId,
-		);
-	if (!employeeUserId) return;
-
-	await onClockOutApproved({
-		workPeriodId: params.workPeriodId,
-		employeeUserId,
-		organizationId: params.organizationId,
-		approverName: employeeName,
-		startTime: params.startTime,
-		endTime: params.endTime,
-		idempotencyKey: `${params.dedupeKey}:employee:approved`,
-		durable: true,
-	});
 }
 
 export async function sendManualEntryApprovalNotifications(params: {

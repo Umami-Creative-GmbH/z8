@@ -256,19 +256,6 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(guardIndex).toBeLessThan(writeIndex);
 	});
 
-	it("lets the shared clock-out boundary resolve policy routing without a default manager", () => {
-		const body = functionBody("clockOutAs", clockingSource);
-
-		expect(body).not.toContain(
-			'error: "No manager assigned to approve time changes"',
-		);
-		expect(body).toContain(
-			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
-		);
-		expect(body).toContain("defaultApproverId: null");
-		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
-	});
-
 	it("keeps manual source rows pending until approval routing resolves", () => {
 		const body = functionBody("createManualTimeEntry", clockingSource);
 
@@ -284,7 +271,6 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		"clockOutAs",
 		"createManualTimeEntry",
 	])("creates approval requests from approval-required %s through the shared boundary", (name) => {
 		const body = functionBody(name, clockingSource);
@@ -299,7 +285,6 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		["clockOutAs", "clockingService.clockOut({"],
 		["createManualTimeEntry", "createTimeEntry("],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
 		expectPolicyCheckFailureBeforeWrite(name, writeMarker, clockingSource);

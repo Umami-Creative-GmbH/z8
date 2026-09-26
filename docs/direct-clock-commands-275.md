@@ -93,8 +93,8 @@ collision, never new work.
 
    Outside the window: `admission_window` with `too_old` or `in_future` (422).
    Older uncommitted work stays with the client for review.
-4. Holiday validity in the event zone, target resolution, attribution eligibility and
-   the policy clock-out approval decision (as in #274).
+4. Holiday validity in the event zone, target resolution and attribution eligibility.
+   A live clock-out never routes approval (#361).
 5. The fresh transaction, through the existing owners: replay again, then refuse with
    `not_adopted` unless the append control is active, then the operation.
 

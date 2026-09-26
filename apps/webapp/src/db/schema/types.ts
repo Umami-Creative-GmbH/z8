@@ -110,7 +110,7 @@ export type WorkPeriodPendingChanges = {
 	requestedAt: string; // ISO timestamp
 	requestedBy: string; // User ID
 	reason?: string;
-	// For 0-day policy where clock-out itself triggers approval
+	// A historical policy clock-out submitted for approval; live clock-outs no longer route one (#361)
 	isNewClockOut?: boolean;
 	// For manual work periods submitted for approval
 	isManualEntry?: boolean;

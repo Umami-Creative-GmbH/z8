@@ -268,7 +268,6 @@ async function runAttempt<T>(
 							compatibilityWriter: approval.compatibilityWriter.withWriteGate(writeGate),
 						},
 						admission,
-						requiresApproval: routeApproval,
 						assertParticipant,
 						assertApprovalPolicy,
 						requireApprovalScope() {

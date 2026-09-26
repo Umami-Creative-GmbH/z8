@@ -24,9 +24,7 @@ import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceApproval: false,
 	logs: [] as { context: unknown; message: unknown }[],
-	notifications: [] as { event: string; managerId: string }[],
 }));
 
 vi.mock("@/db", async () => {
@@ -75,25 +73,6 @@ vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
 }));
 
-vi.mock("./approvals", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async (params: { managerId: string }) => {
-		harness.notifications.push({ event: "pending", managerId: params.managerId });
-	},
-	sendClockOutApprovedNotification: async (params: { managerId: string }) => {
-		harness.notifications.push({ event: "approved", managerId: params.managerId });
-	},
-}));
-
-vi.mock("./policy-helpers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("./policy-helpers")>();
-	return {
-		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceApproval || (await original.checkClockOutNeedsApproval(employeeId)),
-	};
-});
-
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
 	const record = (context: unknown, message?: unknown) => {
@@ -139,6 +118,8 @@ const ids = {
 	project: "e3040000-0000-4000-8000-000000000021",
 	assignment: "e3040000-0000-4000-8000-000000000031",
 	category: "e3040000-0000-4000-8000-000000000041",
+	changePolicy: "e3040000-0000-4000-8000-000000000051",
+	changePolicyAssignment: "e3040000-0000-4000-8000-000000000052",
 } as const;
 const collision =
 	"This clock-out conflicts with an earlier request or changed work. Please refresh and try again.";
@@ -326,8 +307,6 @@ describeIntegration("web active breaks through the close/resume operation on Pos
 
 	beforeEach(async () => {
 		harness.logs.length = 0;
-		harness.notifications.length = 0;
-		harness.forceApproval = false;
 		await seed();
 	});
 
@@ -458,33 +437,37 @@ describeIntegration("web active breaks through the close/resume operation on Pos
 		expect(await snapshot()).toEqual(after);
 	});
 
-	it("routes the closed segment to required approval without promoting it", async () => {
-		harness.forceApproval = true;
+	it("never routes the closed segment to approval, even under a same-day-only change policy", async () => {
 		await admin.query(
 			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
 			 values ($1, $2, $3, true, $4, now(), now())`,
 			[ids.managerLink, ids.requester, ids.manager, ids.managerUser],
 		);
+		await admin.query(
+			`insert into change_policy
+			 (id, organization_id, name, self_service_days, approval_days, no_approval_required,
+			  created_by, updated_at)
+			 values ($1, $2, 'Same day only', 0, 0, false, $3, now())`,
+			[ids.changePolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into change_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, priority, created_by, updated_at)
+			 values ($1, $2, $3, 'organization', 0, $4, now())`,
+			[ids.changePolicyAssignment, ids.changePolicy, ids.organization, ids.managerUser],
+		);
 		await startWork();
-		const submissionId = randomUUID();
 
-		await expect(addBreak(15, submissionId)).resolves.toMatchObject({ success: true });
+		await expect(addBreak(15, randomUUID())).resolves.toMatchObject({ success: true });
 
 		const [closed, resumed] = await periods();
-		expect(closed).toMatchObject({ is_active: false, approval_status: "pending" });
+		expect(closed).toMatchObject({ is_active: false, approval_status: "approved" });
 		expect(resumed).toMatchObject({ is_active: true });
 		const { rows: requests } = await admin.query(
-			"select entity_id, status from approval_request where organization_id = $1",
+			"select id from approval_request where organization_id = $1",
 			[ids.organization],
 		);
-		expect(only(requests)).toEqual({ entity_id: closed?.id, status: "pending" });
-		expect(harness.notifications).toEqual([{ event: "pending", managerId: ids.manager }]);
-
-		// Replay repeats no effects.
-		const after = await snapshot();
-		await expect(addBreak(15, submissionId)).resolves.toMatchObject({ success: true });
-		expect(await snapshot()).toEqual(after);
-		expect(harness.notifications).toHaveLength(1);
+		expect(requests).toEqual([]);
 	});
 
 	it.each([

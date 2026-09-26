@@ -266,10 +266,10 @@ Runtime findings:
    row can only come from an organization inserted outside the application (test fixtures).
    The first write then bootstraps it and serializes same-organization writers until it
    commits, as before #359.
-2. **The approval branch is dormant in production.** `ChangePolicyServiceLive.checkClockOutNeedsApproval`
-   returns `false` unconditionally, so real web clock-outs never take the approval
-   path. The suite asserts this and forces only that decision for the approval
-   scenarios.
+2. **The approval branch was removed (#361).** Live clock-outs never route
+   approval. The coordinator no longer routes approval policies, stages or
+   participants and fails closed if a live clock-out would activate one; it keeps
+   the policy clock-out write gate for replays of committed historical submissions.
 3. Pre-existing and unrelated: pg reports a deprecation for concurrent relational
    queries on one transaction client (drizzle `query` builder). Not caused by this
    slice.

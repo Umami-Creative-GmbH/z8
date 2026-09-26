@@ -87,14 +87,6 @@ vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
-	>()),
-	sendClockOutApprovalNotifications: async () => {},
-	sendClockOutApprovedNotification: async () => {},
-}));
-
 const legacyMobileRoute = await import("./route");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;

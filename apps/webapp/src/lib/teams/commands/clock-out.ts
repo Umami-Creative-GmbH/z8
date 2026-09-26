@@ -29,16 +29,6 @@ const logger = createLogger("BotCommand:ClockOut");
 const replies: ClockCommandReplies = {
 	failures: {
 		not_clocked_in: (t) => t("bot.cmd.clockout.notClockedIn", "You are not currently clocked in."),
-		approval_unavailable: (t) =>
-			t(
-				"bot.cmd.clockout.policyCheckFailed",
-				"Could not verify time approval policy. Please try again.",
-			),
-		approval_required: (t) =>
-			t(
-				"bot.cmd.clockout.unsupportedApproval",
-				"Time changes requiring approval are not supported for this action yet",
-			),
 		append_review_required: (t) =>
 			t(
 				"bot.cmd.clockout.appendReview",
@@ -87,8 +77,6 @@ export const clockOutCommand: BotCommand = {
 					submissionId: randomUUID(),
 					deviceInfo: `${ctx.platform}-bot`,
 				},
-				// Approval-routed clock-out stays unsupported from bots.
-				{ refuseApprovalRouting: true },
 			);
 			if (!result.success) return clockFailureReply(result, replies, t);
 

@@ -84,11 +84,9 @@
         "failed": "Usstämple het nöd klappt. Bitte versueched Sie's nomal.",
         "noProfile": "Mitarbeiterprofil nöd gfunde.",
         "notClockedIn": "Du bisch aktuell nöd iigestemplet.",
-        "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht überprüft werden. Bitte versuche es erneut.",
         "success": "Uusgestemplet am {time}. Duur: {hours}h {minutes}m.",
         "successAt": "Usgstämplet um {time}.",
-        "unconfirmed": "Ihres Usstämple het nöd chönne bestätigt wärde. Prüefed Sie Ihre Status, bevor Sie's nomal versueched.",
-        "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
+        "unconfirmed": "Ihres Usstämple het nöd chönne bestätigt wärde. Prüefed Sie Ihre Status, bevor Sie's nomal versueched."
       },
       "compliance": {
         "error": "Compliance-Date chönd nöd abgruefe werde. Bitte versuechs spöter no einisch.",

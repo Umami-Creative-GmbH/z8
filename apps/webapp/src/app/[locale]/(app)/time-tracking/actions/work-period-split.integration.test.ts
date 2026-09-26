@@ -73,11 +73,6 @@ vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
 }));
 
-vi.mock("./policy-helpers", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./policy-helpers")>()),
-	checkClockOutNeedsApproval: async () => false,
-}));
-
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
 	const record = (context: unknown, message?: unknown) => {

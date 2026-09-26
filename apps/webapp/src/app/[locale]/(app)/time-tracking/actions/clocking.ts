@@ -27,6 +27,7 @@ import {
 	insertOrdinaryWorkPeriodSourceInTransaction,
 	type WorkPeriodPostCommitDescriptor,
 } from "@/lib/approvals/server/work-period-submission";
+import { POLICY_CLOCK_OUT_APPROVAL_REASON } from "@/lib/approvals/time-request-kind";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
@@ -76,7 +77,6 @@ import {
 	closeAndResumeWork,
 	replayCloseResumeWork,
 } from "@/lib/time-tracking/close-resume-work";
-import { resolvePolicyClockOutBreakSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-break-snapshot";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -109,8 +109,6 @@ import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/wo
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalWorkRecordClient } from "../actions.canonical";
 import {
-	sendClockOutApprovalNotifications,
-	sendClockOutApprovedNotification,
 	sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification,
 } from "./approvals";
@@ -135,10 +133,7 @@ import {
 	resolveManualEntryTarget,
 	resolveManualEntryTargetZone,
 } from "./manual-entry-target";
-import {
-	checkClockOutNeedsApproval,
-	getEditCapabilityForPeriod,
-} from "./policy-helpers";
+import { getEditCapabilityForPeriod } from "./policy-helpers";
 import { getActiveWorkPeriod, getTimeSummary } from "./queries";
 import {
 	BREAK_WARNING_THRESHOLD_MINUTES,
@@ -174,8 +169,6 @@ const APPEND_REVIEW_REQUIRED_ERROR =
 	"Your time history needs review before you can clock in. Please contact your administrator.";
 const CLOCK_OUT_COLLISION_ERROR =
 	"This clock-out conflicts with an earlier request or changed work. Please refresh and try again.";
-const CLOCK_OUT_APPROVAL_UNSUPPORTED_ERROR =
-	"Time changes requiring approval are not supported for this action yet";
 const CLOCK_OUT_APPEND_REVIEW_REQUIRED_ERROR =
 	"Your time history needs review before you can clock out. Please contact your administrator.";
 const CANONICAL_UUID =
@@ -917,8 +910,6 @@ export type ClockCommandFailure =
 	| "already_clocked_in"
 	| "rejected"
 	| "billing_required"
-	| "approval_required"
-	| "approval_unavailable"
 	| "append_review_required"
 	| "collision"
 	| "failed"
@@ -1177,13 +1168,8 @@ export type ClockOutCommitOutcome = {
 	entry: unknown;
 	disposition: "executed" | "replayed";
 	durationMinutes: number;
-	approvalSubmission:
-		| {
-				result: { kind: string };
-				disposition: "executed" | "replayed";
-				postCommit: WorkPeriodPostCommitDescriptor | null;
-		  }
-		| undefined;
+	/** The replayed historical policy clock-out submission, if the closure had one. */
+	approvalSubmission: { result: { kind: string } } | undefined;
 	workPeriodId: string;
 	startTime: Date;
 	endTime: Date;
@@ -1193,8 +1179,7 @@ export type ClockOutCommitOutcome = {
 };
 
 /**
- * Post-commit work shared by every live clock-out adapter: approval
- * notification dispatch through the approval owner, then the best-effort
+ * Post-commit work shared by every live clock-out adapter: the best-effort
  * compliance, break, surcharge, balance, budget and cache follow-ups. None of
  * them can turn the committed closure into a failure.
  */
@@ -1202,74 +1187,15 @@ export async function completeClockOutAfterCommit(input: {
 	outcome: ClockOutCommitOutcome;
 	employee: { id: string; organizationId: string };
 	userId: string;
-	needsClockOutApproval: boolean;
 	timezone: string;
 	projectId: string | null | undefined;
 }): Promise<ClockOutResult> {
-	const { outcome, employee, userId, needsClockOutApproval, timezone, projectId } =
-		input;
+	const { outcome, employee, userId, timezone, projectId } = input;
 	const entry = outcome.entry as Awaited<ReturnType<typeof createTimeEntry>>;
 	const { durationMinutes, approvalSubmission, workPeriodId } = outcome;
 	const approvalResult = approvalSubmission?.result;
 	const approvalAutoCompleted = approvalResult?.kind === "auto_completed";
-	if (
-		needsClockOutApproval &&
-		approvalSubmission?.disposition === "executed"
-	) {
-		await completeOrdinaryWorkPeriodDecisionAfterCommit({
-			execute: async () => approvalSubmission,
-			dispatchPending: true,
-			dispatch: async (execution) => {
-				const descriptor = execution.postCommit;
-				const managerId = descriptor?.approverEmployeeId;
-				if (!descriptor) return;
-				if (!managerId) {
-					logger.warn(
-						{ organizationId: employee.organizationId },
-						"Clock-out approval has no notification recipient",
-					);
-					return;
-				}
-				const params = {
-					workPeriodId: workPeriodId,
-					employeeId: employee.id,
-					managerId,
-					organizationId: employee.organizationId,
-					startTime: outcome.startTime,
-					endTime: outcome.endTime,
-					durationMinutes,
-					dedupeKey: descriptor.dedupeKey,
-				};
-				await (descriptor.event === "approved"
-					? sendClockOutApprovedNotification(params)
-					: sendClockOutApprovalNotifications(params));
-			},
-			maintain: reconcileOrdinaryWorkPeriodMaintenanceAfterCommit,
-			onDispatchError: (error) =>
-				logger.error(
-					{
-						error,
-						organizationId: employee.organizationId,
-						workPeriodId: workPeriodId,
-					},
-					"Failed to dispatch clock-out approval notification after commit",
-				),
-			onMaintenanceError: (error) =>
-				logger.error(
-					{
-						error,
-						organizationId: employee.organizationId,
-						workPeriodId: workPeriodId,
-					},
-					"Failed to reconcile clock-out approval maintenance after commit",
-				),
-		});
-	}
-
-	const shouldRunPostCommitEffects =
-		outcome.disposition === "executed" &&
-		(!needsClockOutApproval ||
-			approvalSubmission?.disposition === "executed");
+	const shouldRunPostCommitEffects = outcome.disposition === "executed";
 	let complianceWarnings: Awaited<
 		ReturnType<typeof checkComplianceAfterClockOut>
 	> = [];
@@ -1295,7 +1221,7 @@ export async function completeClockOutAfterCommit(input: {
 		wasAdjusted: false,
 		affectedWorkPeriodIds: [workPeriodId],
 	};
-	if (shouldRunPostCommitEffects && !needsClockOutApproval) {
+	if (shouldRunPostCommitEffects) {
 		await bestEffort(
 			async () => {
 				breakEnforcementResult = await enforceBreaksAfterClockOut({
@@ -1311,7 +1237,7 @@ export async function completeClockOutAfterCommit(input: {
 			{ workPeriodId: workPeriodId },
 		);
 	}
-	if (shouldRunPostCommitEffects && !needsClockOutApproval) {
+	if (shouldRunPostCommitEffects) {
 		await bestEffort(
 			() =>
 				outcome.surchargeSnapshot
@@ -1329,11 +1255,7 @@ export async function completeClockOutAfterCommit(input: {
 	}
 
 	// The operation commits this refresh intent with the work itself.
-	if (
-		shouldRunPostCommitEffects &&
-		!needsClockOutApproval &&
-		!outcome.balanceRefreshCommitted
-	) {
+	if (shouldRunPostCommitEffects && !outcome.balanceRefreshCommitted) {
 		await markWorkBalanceDirtyAfterClockOutBestEffort(
 			{
 				employeeId: employee.id,
@@ -1415,24 +1337,16 @@ export async function clockOut(
 	);
 }
 
-export type ClockOutOptions = {
-	/**
-	 * Rejects a closure the policy routes to approval, before any write. Bots
-	 * set it: approval-routed clock-out stays unsupported there (#277).
-	 */
-	refuseApprovalRouting?: boolean;
-};
-
 /**
  * Shared live clock-out for an adapter-authenticated actor (web, mobile, bots).
- * The committed result carries the stored duration for adapters that report it.
+ * A live clock-out never routes approval (#361). The committed result carries
+ * the stored duration for adapters that report it.
  */
 export async function clockOutAs(
 	actor: ClockActor,
 	projectId: string | null | undefined,
 	workCategoryId: string | null | undefined,
 	actionContext: ClockOutActionContext,
-	options: ClockOutOptions = {},
 ): Promise<
 	ClockCommandResult<ClockOutResult, { durationMinutes: number | null }>
 > {
@@ -1466,7 +1380,11 @@ export async function clockOutAs(
 		writer: writer.writer,
 	};
 
-	/** Receipt-less committed clock-outs keep their exact legacy matching rules. */
+	/**
+	 * Receipt-less committed clock-outs keep their exact legacy matching rules,
+	 * including a historical policy clock-out's approval submission, which only
+	 * replays.
+	 */
 	const replayLegacyClockOut = async (coordination: WorkTransactionContext) => {
 		const context = coordination.approval;
 		const evidence = await findPolicyClockOutSubmissionEvidence({
@@ -1492,7 +1410,7 @@ export async function clockOutAs(
 				requesterUserId: actor.userId,
 				teamId: currentEmployee.teamId,
 				defaultApproverId: null,
-				reason: "Clock-out requires approval (0-day policy)",
+				reason: POLICY_CLOCK_OUT_APPROVAL_REASON,
 				overtimeRisk: "warning",
 				kind: "policy_clock_out",
 				metadata: {},
@@ -1628,27 +1546,6 @@ export async function clockOutAs(
 		};
 	}
 
-	let needsClockOutApproval = false;
-	try {
-		needsClockOutApproval = await checkClockOutNeedsApproval(
-			currentEmployee.id,
-		);
-	} catch (error) {
-		logger.warn({ error }, "Failed to check clock-out approval requirement");
-		return {
-			success: false,
-			error: APPROVAL_POLICY_CHECK_ERROR,
-			failure: "approval_unavailable",
-		};
-	}
-	if (needsClockOutApproval && options.refuseApprovalRouting) {
-		return {
-			success: false,
-			error: CLOCK_OUT_APPROVAL_UNSUPPORTED_ERROR,
-			failure: "approval_required",
-		};
-	}
-
 	// Set once the closure has committed: a later failure must not report the
 	// saved work as unsaved.
 	let committed: { data: ClockOutResult; durationMinutes: number } | null =
@@ -1677,19 +1574,11 @@ export async function clockOutAs(
 				source: clockSource(actionContext.deviceInfo ?? "web"),
 				projectId,
 				workCategoryId,
-				approvalStatus: needsClockOutApproval ? "pending" : "approved",
-				// The canonical record and policy evidence reuse the closer's locked
+				approvalStatus: "approved",
+				// The canonical record and surcharge evidence reuse the closer's locked
 				// start and derived duration, so both representations agree (#388).
 				beforePeriodClose: async ({ activePeriod, durationMinutes }) => {
-					const breakPolicySnapshot = needsClockOutApproval
-						? await resolvePolicyClockOutBreakSnapshotInTransaction({
-								dbService: { db: coordination.db },
-								organizationId: currentEmployee.organizationId,
-								employeeId: currentEmployee.id,
-								endTime: actionInstant,
-							})
-						: null;
-					const surchargeSnapshot =
+					immediateSurchargeSnapshot =
 						await resolvePolicyClockOutSurchargeSnapshotInTransaction({
 							dbService: { db: coordination.db },
 							organizationId: currentEmployee.organizationId,
@@ -1697,8 +1586,6 @@ export async function clockOutAs(
 							startTime: instantFromDate(activePeriod.startTime),
 							endTime: actionInstant,
 						});
-					if (!needsClockOutApproval)
-						immediateSurchargeSnapshot = surchargeSnapshot;
 					const canonicalRecord =
 						await canonicalWorkRecordClient.createForCompletedPeriod(
 							{
@@ -1707,7 +1594,7 @@ export async function clockOutAs(
 								startAt: activePeriod.startTime,
 								endAt: now,
 								durationMinutes,
-								approvalState: needsClockOutApproval ? "pending" : "approved",
+								approvalState: "approved",
 								createdBy: actor.userId,
 								workCategoryId: workCategoryId ?? null,
 								workLocationType: activeWorkPeriod.workLocationType ?? null,
@@ -1716,50 +1603,8 @@ export async function clockOutAs(
 							},
 							coordination.db,
 						);
-					return {
-						canonicalRecordId: canonicalRecord.id,
-						pendingChanges:
-							breakPolicySnapshot && surchargeSnapshot
-								? {
-										originalStartTime: activePeriod.startTime.toISOString(),
-										originalEndTime: now.toISOString(),
-										originalDurationMinutes: durationMinutes,
-										requestedAt: now.toISOString(),
-										requestedBy: actor.userId,
-										isNewClockOut: true,
-										ordinarySubmission: {
-											submissionId,
-											kind: "policy_clock_out" as const,
-										},
-										breakPolicySnapshot,
-										surchargeSnapshot,
-									}
-								: null,
-					};
+					return { canonicalRecordId: canonicalRecord.id, pendingChanges: null };
 				},
-				afterPeriodClose: needsClockOutApproval
-					? async ({ transaction }) => {
-							if (transaction !== context.dbService.db) {
-								throw new Error("Clock-out transaction context changed");
-							}
-							return executeOrdinaryWorkPeriodSubmissionInTransaction({
-								dbService: approvalDbServiceForTransaction(context.dbService),
-								context,
-								coordination,
-								organizationId: currentEmployee.organizationId,
-								workPeriodId: activeWorkPeriod.id,
-								submissionId: requireCanonicalSubmissionId(submissionId),
-								requesterEmployeeId: currentEmployee.id,
-								requesterUserId: actor.userId,
-								teamId: currentEmployee.teamId,
-								defaultApproverId: null,
-								reason: "Clock-out requires approval (0-day policy)",
-								overtimeRisk: "warning",
-								kind: "policy_clock_out",
-								metadata: {},
-							});
-						}
-					: undefined,
 			});
 			if (clockOutResult.disposition !== "replayed") {
 				return clockOutResult;
@@ -1791,7 +1636,7 @@ export async function clockOutAs(
 					requesterUserId: actor.userId,
 					teamId: currentEmployee.teamId,
 					defaultApproverId: null,
-					reason: "Clock-out requires approval (0-day policy)",
+					reason: POLICY_CLOCK_OUT_APPROVAL_REASON,
 					overtimeRisk: "warning",
 					kind: "policy_clock_out",
 					metadata: {},
@@ -1807,7 +1652,6 @@ export async function clockOutAs(
 				submissionId,
 				workPeriodId: activeWorkPeriod.id,
 				endTime: actionInstant,
-				requiresApproval: needsClockOutApproval,
 				projectId,
 				workCategoryId,
 			},
@@ -1860,13 +1704,13 @@ export async function clockOutAs(
 		}
 		// One shape for post-commit work. The operation reports its committed
 		// receipt facts; the legacy closure keeps its preflight snapshot facts.
-		const outcome =
+		const outcome: ClockOutCommitOutcome =
 			result.kind === "operation"
 				? {
 						entry: result.closed.entry,
 						disposition: result.closed.disposition,
 						durationMinutes: result.closed.result.segment.durationMinutes,
-						approvalSubmission: result.closed.approvalSubmission ?? undefined,
+						approvalSubmission: undefined,
 						workPeriodId: result.closed.result.workPeriodId,
 						startTime: dateFromInstant(
 							parseInstant(result.closed.result.segment.startAt),
@@ -1881,16 +1725,12 @@ export async function clockOutAs(
 						entry: result.closed.entry,
 						disposition: result.closed.disposition,
 						durationMinutes: result.closed.durationMinutes,
-						approvalSubmission: result.closed.transactionResult as
-							| {
-									result: { kind: string };
-									disposition: "executed" | "replayed";
-									postCommit: WorkPeriodPostCommitDescriptor | null;
-							  }
-							| undefined,
+						approvalSubmission: result.closed
+							.transactionResult as ClockOutCommitOutcome["approvalSubmission"],
 						workPeriodId: activeWorkPeriod.id,
 						startTime: activeWorkPeriod.startTime,
 						endTime: now,
+						// Assigned inside the closer's callback, which narrowing cannot see.
 						surchargeSnapshot:
 							immediateSurchargeSnapshot as PolicyClockOutSurchargeSnapshot | null,
 						balanceRefreshCommitted: false,
@@ -1912,7 +1752,6 @@ export async function clockOutAs(
 				outcome,
 				employee: currentEmployee,
 				userId: actor.userId,
-				needsClockOutApproval,
 				timezone,
 				projectId,
 			}),
@@ -1964,18 +1803,6 @@ export async function clockOutAs(
 				success: false,
 				error: CLOCK_OUT_APPEND_REVIEW_REQUIRED_ERROR,
 				failure: "append_review_required",
-			};
-		}
-		if (
-			error instanceof ValidationError &&
-			Object.getPrototypeOf(error) !== ValidationError.prototype &&
-			error.field === "managerId" &&
-			error.message === "No manager assigned to approve time changes"
-		) {
-			return {
-				success: false,
-				error: error.message,
-				failure: "approval_unavailable",
 			};
 		}
 		logger.error({ error }, "Clock out error");
@@ -2032,13 +1859,6 @@ function describeBreakFailure(error: unknown): string | null {
 	if (error instanceof TimeEntryAppendReviewRequiredError) {
 		return CLOCK_OUT_APPEND_REVIEW_REQUIRED_ERROR;
 	}
-	if (
-		error instanceof ValidationError &&
-		error.field === "managerId" &&
-		error.message === "No manager assigned to approve time changes"
-	) {
-		return error.message;
-	}
 	return null;
 }
 
@@ -2047,8 +1867,8 @@ function describeBreakFailure(error: unknown): string | null {
  * `now - breakMinutes` and resumes it now. Every organization runs it under the
  * clock-out owner and refuses it while the work has unresolved review.
  * Organizations whose append control is active run the shared close/resume
- * operation (#281): approval participation, append progression, canonical
- * record, carried attribution and one receipt. The others keep their
+ * operation (#281): append progression, canonical record, carried attribution
+ * and one receipt. The break never routes approval (#361). The others keep their
  * established writes.
  */
 export async function addBreakToActiveSession(
@@ -2144,14 +1964,6 @@ export async function addBreakToActiveSession(
 		};
 	}
 
-	let needsClockOutApproval = false;
-	try {
-		needsClockOutApproval = await checkClockOutNeedsApproval(currentEmployee.id);
-	} catch (error) {
-		logger.warn({ error }, "Failed to check clock-out approval requirement");
-		return { success: false, error: APPROVAL_POLICY_CHECK_ERROR };
-	}
-
 	// Each endpoint is captured in the zone at its own instant.
 	const capture = (timestamp: Date) =>
 		resolveTimeEntryTimezoneCapture({
@@ -2173,7 +1985,6 @@ export async function addBreakToActiveSession(
 				submissionId: operationId,
 				workPeriodId: activeWorkPeriod.id,
 				endTime: breakStartInstant,
-				requiresApproval: needsClockOutApproval,
 			},
 			createOrdinaryApprovalRuntime,
 			async (coordination) => {
@@ -2242,7 +2053,7 @@ export async function addBreakToActiveSession(
 					entry: closed.entry,
 					disposition: closed.disposition,
 					durationMinutes: closed.result.segment.durationMinutes,
-					approvalSubmission: closed.approvalSubmission ?? undefined,
+					approvalSubmission: undefined,
 					workPeriodId: closed.result.workPeriodId,
 					startTime: dateFromInstant(parseInstant(closed.result.segment.startAt)),
 					endTime: dateFromInstant(parseInstant(closed.result.segment.endAt)),
@@ -2251,7 +2062,6 @@ export async function addBreakToActiveSession(
 				},
 				employee: currentEmployee,
 				userId: actorUserId,
-				needsClockOutApproval,
 				timezone,
 				projectId: closed.result.attribution.projectId,
 			});

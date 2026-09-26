@@ -2,7 +2,6 @@ import "server-only";
 
 import { db } from "@/db";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
-import type { StageActivationInput } from "@/lib/approvals/workflow/ports";
 import type {
 	ApprovalWorkflowDatabase,
 	ApprovalWorkflowRepository,
@@ -35,8 +34,6 @@ export interface WorkTransactionContext extends WorkTransactionScope {
 	 * is the adopted completed-work contract (#274); `legacy` keeps the prefactor path.
 	 */
 	readonly admission: WorkTransactionAdmission;
-	/** The routed policy clock-out approval decision the participants were scoped for. */
-	readonly requiresApproval: boolean;
 	assertParticipant(organizationId: string, employeeId: string): void;
 	assertApprovalPolicy(
 		organizationId: string,
@@ -58,9 +55,16 @@ export interface WebClockOutTransactionInput {
 	submissionId: string;
 	workPeriodId?: string;
 	endTime?: Instant;
-	requiresApproval?: boolean;
 	projectId?: string | null;
 	workCategoryId?: string | null;
+}
+
+/**
+ * Live clock-outs never route approval (#361): no approval policy, stage or
+ * participant is routed or locked, so activating one would act on unprotected rows.
+ */
+function refuseApprovalRouting(): never {
+	throw new Error("Live clock-out does not route approval");
 }
 
 type ApprovalRuntimeFactory = (database: ApprovalWorkflowDatabase) => {
@@ -90,7 +94,6 @@ async function runAttempt<T>(
 	return db.transaction(async (transaction) => {
 		const routed = await routeWebClockOutResources(transaction, input);
 		let active = true;
-		let scopeChanged = false;
 		const assertActive = () => {
 			if (!active) throw new Error("Work transaction is no longer active");
 		};
@@ -133,6 +136,8 @@ async function runAttempt<T>(
 					routed,
 					await routeWebClockOutResources(transaction, input),
 				);
+				// The policy clock-out write gate stays: replay of a committed clock-out
+				// that carries historical approval evidence reads through it.
 				const writeGate: ApprovalWorkflowTransactionContext["writeGate"] = {
 					async acquire(scope) {
 						assertActive();
@@ -145,76 +150,14 @@ async function runAttempt<T>(
 						return authority;
 					},
 				};
-				const assertParticipant = (
-					organizationId: string,
-					employeeId: string,
-				) => {
-					assertActive();
-					if (
-						organizationId !== input.organizationId ||
-						!routed.some(
-							(row) => row.table === "employee" && row.id === employeeId,
-						)
-					) {
-						scopeChanged = true;
-						throw new WorkTransactionScopeChanged();
-					}
-				};
-				const assertApprovalPolicy = (
-					organizationId: string,
-					policyId: string,
-					stageIds: readonly string[],
-				) => {
-					assertActive();
-					if (
-						organizationId !== input.organizationId ||
-						!routed.some(
-							(row) => row.table === "approval_policy" && row.id === policyId,
-						) ||
-						stageIds.some(
-							(id) =>
-								!routed.some(
-									(row) =>
-										row.table === "approval_policy_stage" && row.id === id,
-								),
-						)
-					) {
-						scopeChanged = true;
-						throw new WorkTransactionScopeChanged();
-					}
-				};
 				return operation(
 					sealWorkTransactionScope({
 						db: transaction,
 						approval: {
 							...approval,
 							activationResolver: {
-								async resolve(activation: StageActivationInput) {
-									const policy = activation.workflow.policySnapshot;
-									if (typeof policy.id === "string") {
-										assertApprovalPolicy(
-											activation.organizationId,
-											policy.id,
-											Array.isArray(policy.stages)
-												? policy.stages.flatMap((stage) =>
-														stage &&
-														typeof stage === "object" &&
-														!Array.isArray(stage) &&
-														typeof stage.id === "string"
-															? [stage.id]
-															: [],
-													)
-												: [],
-										);
-									}
-									const result =
-										await approval.activationResolver.resolve(activation);
-									for (const assignment of result.assignments)
-										assertParticipant(
-											result.organizationId,
-											assignment.approverEmployeeId,
-										);
-									return result;
+								async resolve() {
+									return refuseApprovalRouting();
 								},
 							},
 							writeGate,
@@ -222,9 +165,8 @@ async function runAttempt<T>(
 								approval.compatibilityWriter.withWriteGate(writeGate),
 						},
 						admission,
-						requiresApproval: input.requiresApproval === true,
-						assertParticipant,
-						assertApprovalPolicy,
+						assertParticipant: refuseApprovalRouting,
+						assertApprovalPolicy: refuseApprovalRouting,
 						assertEmployee(organizationId: string, employeeId: string) {
 							assertActive();
 							if (
@@ -239,11 +181,6 @@ async function runAttempt<T>(
 					}),
 				);
 			});
-		} catch (error) {
-			// Approval/Effect boundaries redact internal errors. Keep the restart
-			// signal even when one of those boundaries wraps the original cause.
-			if (scopeChanged) throw new WorkTransactionScopeChanged();
-			throw error;
 		} finally {
 			active = false;
 		}

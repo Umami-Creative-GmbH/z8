@@ -110,7 +110,7 @@ describe("bot clock-out command", () => {
 			submissionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
 			deviceInfo: "telegram-bot",
 		});
-		expect(first?.[4]).toEqual({ refuseApprovalRouting: true });
+		expect(first).toHaveLength(4);
 		// An unkeyed repeat is a new command, never a replay of the first.
 		expect(second?.[3].submissionId).not.toBe(first?.[3].submissionId);
 	});
@@ -149,8 +149,6 @@ describe("bot clock-out command", () => {
 			"billing_required",
 			"Billing is required to continue using time tracking. Ask an organization admin to update billing.",
 		],
-		["approval_required", "Time changes requiring approval are not supported for this action yet"],
-		["approval_unavailable", "Could not verify time approval policy. Please try again."],
 		[
 			"append_review_required",
 			"Your time history needs review before you can clock out. Please contact your administrator.",
