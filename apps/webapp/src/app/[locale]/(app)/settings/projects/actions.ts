@@ -26,6 +26,7 @@ import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-
 import {
 	ensureSettingsActorCanAccessCustomerTarget,
 	ensureSettingsActorCanAccessProjectTarget,
+	ensureSettingsActorCanManageProjectManagers,
 	filterItemsToManagedProjects,
 	getManagedProjectIdsForSettingsActor,
 	getProjectSettingsActorContext,
@@ -732,8 +733,8 @@ export async function addProjectManager(
 				const dbService = actor.dbService;
 
 				yield* _(
-					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
-						message: "You do not have access to update this project",
+					ensureSettingsActorCanManageProjectManagers(actor, existingProject, {
+						message: "Only organization admins can change project managers",
 						resource: "projectManager",
 						action: "create",
 					}),
@@ -870,26 +871,26 @@ export async function removeProjectManager(
 				const session = actor.session;
 
 				yield* _(
-					ensureSettingsActorCanAccessProjectTarget(actor, existingProject, {
-						message: "You do not have access to update this project",
+					ensureSettingsActorCanManageProjectManagers(actor, existingProject, {
+						message: "Only organization admins can change project managers",
 						resource: "projectManager",
 						action: "delete",
 					}),
 				);
 
 				// Remove the manager
-				yield* _(
+				const removed = yield* _(
 					Effect.tryPromise({
-						try: async () => {
-							await db
+						try: () =>
+							db
 								.delete(projectManager)
 								.where(
 									and(
-										eq(projectManager.projectId, projectId),
+										eq(projectManager.projectId, existingProject.id),
 										eq(projectManager.employeeId, employeeId),
 									),
-								);
-						},
+								)
+								.returning({ id: projectManager.id }),
 						catch: (error) =>
 							new DatabaseError({
 								message:
@@ -899,6 +900,16 @@ export async function removeProjectManager(
 							}),
 					}),
 				);
+				if (removed.length === 0) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Project manager not found",
+								entityType: "projectManager",
+							}),
+						),
+					);
+				}
 
 				// Log audit (fire-and-forget)
 				logAudit({

@@ -191,6 +191,28 @@ export function ensureSettingsActorCanAccessProjectTarget(
 	});
 }
 
+/**
+ * Adding or removing project managers is reserved for org admins (#367):
+ * a manager-tier project manager may manage assignments, not other managers.
+ */
+export function ensureSettingsActorCanManageProjectManagers(
+	actor: ProjectSettingsActor,
+	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
+	options: {
+		message: string;
+		resource: string;
+		action: string;
+	},
+) {
+	return Effect.gen(function* (_) {
+		yield* _(ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options));
+
+		if (actor.accessTier !== "orgAdmin") {
+			return yield* _(Effect.fail(actorAuthorizationError(actor, options)));
+		}
+	});
+}
+
 export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActor) {
 	return Effect.gen(function* (_) {
 		if (actor.accessTier === "orgAdmin") {
