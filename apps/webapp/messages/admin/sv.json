@@ -325,8 +325,12 @@
         "approvalHint": "En äldre godkännandebegäran eller ett kanoniskt arbetsflödes-UUID.",
         "approvalId": "Godkännande-ID",
         "chain": "Godkännandekedja",
+        "decisionEvidence": "Beslutsunderlag",
         "delete": "Tvinga borttagning",
         "deleting": "Tar bort…",
+        "deliveryIntent": "Leveransavsikt",
+        "deliveryMessage": "Levererat meddelande",
+        "deliveryWork": "Leveransarbete",
         "description": "Ta bort ett godkännande och dess länkade godkännandeposter permanent. Källposter och deras statusar bevaras.",
         "errors": {
           "ambiguous": "Detta ID finns i båda godkännandelagren. Inget godkännande togs bort.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Ange ett organisations-ID.",
           "unauthorized": "Plattformsadministratörsbehörighet krävs."
         },
+        "escalationAttention": "Eskaleringsuppmärksamhet",
+        "escalationTransfer": "Eskaleringsöverföring",
         "legacy": "Äldre begäran",
         "organizationHint": "Organisationen som äger godkännandet.",
         "organizationId": "Organisations-ID",
+        "reviewBinding": "Granskningsbindning",
+        "submittedRevision": "Inskickad version",
         "success": "Godkännande borttaget. Borttagna poster:",
         "title": "Tvinga borttagning av godkännande",
         "workflow": "Arbetsflöde"

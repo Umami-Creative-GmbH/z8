@@ -1,66 +1,12 @@
 {
   "bot": {
     "approval": {
-      "reviewRequiredTitle": "Examen requis",
-      "reviewRequired": "Cette carte ne permet pas de vérifier les informations initialement soumises. Ouvrez la boîte de réception des approbations dans Z8 pour examiner la demande. Aucune décision n’a été prise depuis cette carte.",
+      "outcomeUnknown": "Le résultat de cet appui n'a pas pu être confirmé. Vérifiez la demande dans Z8 avant d'appuyer à nouveau.",
       "reviewInZ8": "Examiner dans Z8",
-      "historicalTitle": "Décision antérieure",
-      "historicalApproval": "Votre approbation précédemment enregistrée a été vérifiée. Il s’agit d’un résultat antérieur ; aucune nouvelle décision n’a été prise. Consultez la demande dans Z8 pour plus de détails.",
-      "historicalRejection": "Votre refus précédemment enregistré a été vérifié. Il s’agit d’un résultat antérieur ; aucune nouvelle décision n’a été prise. Consultez la demande dans Z8 pour plus de détails.",
-      "unboundCallback": "Cette carte ne permet pas de vérifier les informations initialement examinées. Aucune décision n’a été prise. Examinez la demande dans Z8.",
-      "alreadyProcessed": "Cette approbation a déjà été traitée.",
-      "boundReviewRequired": "Cette carte ne correspond plus à la demande ou à l’attribution actuelle, ou l’action n’a pas pu être vérifiée. Aucune décision n’a été prise. Examinez la demande dans Z8.",
-      "invocationConflict": "Cet appui a déjà été enregistré avec une autre action. Aucune décision n’a été prise. Examinez la demande dans Z8.",
-      "outcomeUnknown": "Le résultat de cette action n'a pas pu être confirmé. Vérifiez la demande dans Z8 avant d'appuyer à nouveau.",
-      "card": {
-        "absenceTitle": "Demande d’absence à approuver",
-        "boundHint": "Approuver ou refuser décide exactement de la demande affichée ci-dessus. Si elle a été modifiée ou réattribuée, rien n’est décidé et vous êtes invité à l’examiner dans Z8.",
-        "reviewOnlyHint": "Approuvez ou refusez cette demande dans Z8. Elle ne peut pas être décidée depuis ce message.",
-        "approve": "Approuver",
-        "reject": "Refuser",
-        "unavailable": "Indisponible",
-        "employee": "Employé",
-        "requestedBy": "Demandé par",
-        "submittedBy": "Soumis par",
-        "category": "Catégorie",
-        "currentCategoryName": "Nom actuel de la catégorie",
-        "dates": "Dates",
-        "coverage": "Couverture",
-        "submittedAt": "Soumis",
-        "fullDays": "Journées entières",
-        "fullDay": "journée entière",
-        "morning": "le matin",
-        "afternoon": "l’après-midi",
-        "halfDayPeriods": "Commence {start}, se termine {end}",
-        "explicitTimes": "{start} – {end} (heure locale, fuseau non enregistré)",
-        "explicitTimesOvernight": "{start} – {end} le lendemain (heure locale, fuseau non enregistré)"
-      },
-      "outcome": {
-        "requestApprovedTitle": "Demande approuvée",
-        "requestRejectedTitle": "Demande refusée",
-        "stepApprovedTitle": "Approbation enregistrée",
-        "requestApproved": "Approuvée par {actor} le {time}. La demande est approuvée.",
-        "requestRejected": "Refusée par {actor} le {time}. La demande est refusée.",
-        "stepApproved": "Approuvée par {actor} le {time}. La demande attend encore d’autres approbations.",
-        "replayed": "Cet appui a déjà été enregistré ; ceci est son résultat d’origine et rien de nouveau n’a été décidé.",
-        "stepRejectedTitle": "Refus enregistré",
-        "stepRejected": "Refusée par {actor} le {time}. La demande n’est pas encore définitive ; consultez son statut actuel dans Z8.",
-        "recordedTitle": "Décision enregistrée",
-        "recorded": "Enregistrée par {actor} le {time}. Consultez le statut actuel de la demande dans Z8."
-      },
-      "status": {
-        "withdrawnTitle": "Demande retirée",
-        "withdrawn": "Cette demande a été retirée. Aucune décision n'est nécessaire depuis cette carte.",
-        "reassignedTitle": "Réattribuée",
-        "reassigned": "Cette approbation a été réattribuée à une autre personne. Aucune décision n'est nécessaire de votre part depuis cette carte, et aucune n'a été prise ici. Consultez son statut actuel dans Z8.",
-        "inactiveTitle": "Plus d'action requise",
-        "inactive": "Cette demande ne nécessite plus votre décision depuis cette carte. Aucune décision n'a été prise ici. Consultez son statut actuel dans Z8.",
-        "currentApproved": "Statut actuel de la demande : approuvée.",
-        "currentRejected": "Statut actuel de la demande : refusée."
-      }
+      "reviewRequired": "Cette carte ne permet pas d'établir les faits initialement soumis pour examen. Ouvrez la boîte de réception des approbations dans Z8 pour examiner la demande. Aucune décision n'a été prise depuis cette carte.",
+      "reviewRequiredTitle": "Examen requis"
     },
     "cmd": {
-      "billingRequired": "La facturation est requise pour continuer à utiliser le suivi du temps. Demandez à un administrateur d'organisation de mettre à jour la facturation.",
       "clockedin": {
         "header": "{active} sur {total} membres de l'équipe sont actuellement pointés :",
         "noneActive": "Aucun de vos {total} membres d'équipe n'est actuellement pointé.",
@@ -68,25 +14,25 @@
       },
       "clockin": {
         "alreadyIn": "Vous avez déjà pointé depuis {time} ({hours}h {minutes}m).",
-        "alreadyInNow": "Vous avez déjà pointé votre arrivée.",
-        "appendReview": "Votre historique de temps doit être vérifié avant que vous puissiez pointer votre arrivée. Veuillez contacter votre administrateur.",
+        "alreadyInNow": "Vous avez déjà pointé à l'arrivée.",
+        "appendReview": "Votre historique des heures doit être vérifié avant que vous ne puissiez pointer à l'arrivée. Veuillez contacter votre administrateur.",
         "cannotNow": "Impossible de pointer à l'entrée pour le moment.",
-        "committed": "Arrivée pointée.",
-        "failed": "Impossible de pointer l'arrivée. Veuillez réessayer.",
+        "committed": "Pointage d'arrivée enregistré.",
+        "failed": "Impossible de pointer à l'arrivée. Veuillez réessayer.",
         "noProfile": "Profil de l'employé introuvable.",
         "success": "Pointage à l'entrée effectué à {time}.",
         "unconfirmed": "Votre pointage d'arrivée n'a pas pu être confirmé. Vérifiez votre statut avant de réessayer."
       },
       "clockout": {
-        "appendReview": "Votre historique de temps doit être vérifié avant que vous puissiez pointer votre départ. Veuillez contacter votre administrateur.",
+        "appendReview": "Votre historique des heures doit être vérifié avant que vous ne puissiez pointer au départ. Veuillez contacter votre administrateur.",
         "cannotNow": "Impossible de pointer à la sortie pour le moment.",
-        "committed": "Départ pointé.",
-        "failed": "Impossible de pointer le départ. Veuillez réessayer.",
+        "committed": "Pointage de sortie enregistré.",
+        "failed": "Impossible d'enregistrer la sortie. Veuillez réessayer.",
         "noProfile": "Profil de l'employé introuvable.",
         "notClockedIn": "Vous n'êtes pas actuellement pointé.",
         "success": "Pointage à la sortie effectué à {time}. Durée : {hours}h {minutes}m.",
-        "successAt": "Départ pointé à {time}.",
-        "unconfirmed": "Votre pointage de départ n'a pas pu être confirmé. Vérifiez votre statut avant de réessayer."
+        "successAt": "Pointage de sortie enregistré à {time}.",
+        "unconfirmed": "Votre pointage de sortie n'a pas pu être confirmé. Vérifiez votre statut avant de réessayer."
       },
       "compliance": {
         "error": "Échec de la récupération des données de conformité. Veuillez réessayer plus tard.",
@@ -144,6 +90,7 @@
       "notLinked": "Votre compte Telegram n'est pas lié à Z8. Allez dans Paramètres > Intégrations > Telegram dans votre tableau de bord Z8 pour générer un code de liaison, puis envoyez : /link VOTRE_CODE",
       "notLinkedTeams": "Je n'ai pas pu trouver votre compte Z8. Assurez-vous que votre adresse e-mail Teams correspond à celle de votre compte Z8.",
       "noUser": "Impossible d'identifier votre compte utilisateur.",
+      "replyUndelivered": "Votre commande a été traitée, mais sa réponse n'a pas pu être affichée. Vérifiez votre statut avant de la relancer.",
       "setupBody": "Votre organisation doit être connectée à Z8. Cliquez ci-dessous pour commencer le processus de configuration.",
       "setupButton": "Terminer la configuration",
       "setupNote": "Seuls les administrateurs de l'organisation peuvent terminer cette configuration.",
@@ -152,8 +99,7 @@
       "typeHelp": "Tapez /help pour voir les commandes disponibles.",
       "unconfigured": "L'intégration Z8 de votre organisation est en cours de configuration. Veuillez attendre que votre administrateur termine la configuration.",
       "welcome": "Bienvenue sur Z8 ! Pour connecter votre compte, allez dans Paramètres > Intégrations > Telegram dans votre tableau de bord Z8 et générez un code de lien. Envoyez ensuite : /link VOTRE_CODE",
-      "welcomeTeams": "Bienvenue sur Z8 ! Tapez « help » pour voir les commandes disponibles.",
-      "replyUndelivered": "Votre commande a été traitée, mais sa réponse n'a pas pu être affichée. Vérifiez votre statut avant de la répéter."
+      "welcomeTeams": "Bienvenue sur Z8 ! Tapez « help » pour voir les commandes disponibles."
     }
   }
 }

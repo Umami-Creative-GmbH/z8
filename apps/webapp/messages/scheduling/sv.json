@@ -29,6 +29,11 @@
         "restTime": "Vilotid: {count}",
         "title": "Efterlevnadsvarningar i detta datumintervall"
       },
+      "focus": {
+        "anonymous": "Visar en anställds arbetspass",
+        "employee": "Visar arbetspass för {name}",
+        "showAll": "Visa alla arbetspass"
+      },
       "loading": "Läser in schema...",
       "publish": {
         "failed": "Det gick inte att publicera arbetspassen",

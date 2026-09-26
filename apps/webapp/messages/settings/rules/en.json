@@ -114,12 +114,6 @@
         "none": "No messaging channels are connected.",
         "title": "Channel delivery preferences"
       },
-      "conflict": {
-        "differingTimeouts": "Channels used different timeouts; the shortest one became the response window.",
-        "disabledActiveSource": "Some active channels had escalations turned off. They still do not deliver escalation messages.",
-        "inactiveSourceEnabled": "Some inactive channels had escalations turned on. They did not count toward the policy.",
-        "invalidTimeout": "A channel had an invalid timeout and was not used for the response window."
-      },
       "description": "Review the organization escalation policy, how it was migrated from channel settings, and conditions that need an approval manager.",
       "dispose": {
         "confirm": "Close item",
@@ -127,12 +121,6 @@
         "noteLabel": "Disposition note",
         "noteRequired": "Enter a disposition note.",
         "title": "Close attention item"
-      },
-      "event": {
-        "alerted": "Admins alerted",
-        "disposed": "Disposed",
-        "raised": "Raised",
-        "resolved": "Resolved"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Escalation settings could not be loaded.",
@@ -178,14 +166,6 @@
         "windowInvalid": "Enter a whole number of hours between 1 and 720.",
         "windowLabel": "Response window"
       },
-      "reason": {
-        "ambiguousHistory": "Ambiguous escalation history",
-        "deliveryExhausted": "Delivery retries exhausted",
-        "deliveryUnavailable": "No delivery destination available",
-        "noEligibleBackup": "No eligible backup approver",
-        "replacementOverdue": "Replacement approver is overdue",
-        "unsupportedRoute": "Unsupported decision path"
-      },
       "revisions": {
         "changedBy": "Changed by",
         "migration": "Settings migration",
@@ -228,16 +208,13 @@
       "activeStatus": "Active status",
       "addPolicy": "Add Policy",
       "approvalType": {
-        "absenceRequests": "Absence requests",
         "absence": "Absence",
         "complianceException": "Compliance exception",
         "manualTimeSubmission": "Manual time submission",
         "policyClockOut": "Policy clock-out",
         "shiftRequest": "Shift request",
         "timeCorrection": "Time correction",
-        "travelExpense": "Travel expense",
-        "timeEntryChanges": "Time entry changes",
-        "travelExpenses": "Travel expenses"
+        "travelExpense": "Travel expense"
       },
       "approvalTypes": "Approval types",
       "conditionsCount": "Conditions count",
@@ -274,21 +251,6 @@
       "toast": {
         "created": "Approval policy created",
         "saveFailed": "Approval policy could not be saved."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Send the request to the default manager when this stage cannot resolve an approver.",
-          "label": "Default manager"
-        },
-        "fail": {
-          "description": "Reject the request when this stage cannot resolve an approver.",
-          "label": "Fail request"
-        },
-        "label": "Fallback behavior",
-        "organizationAdmin": {
-          "description": "Send the request to an organization admin when this stage cannot resolve an approver.",
-          "label": "Organization admin"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Active policies require at least one approval stage.",

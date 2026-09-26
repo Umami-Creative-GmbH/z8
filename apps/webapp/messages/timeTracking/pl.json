@@ -12,12 +12,8 @@
     "clockIn": "Rozpocznij pracę",
     "clockingIn": "Rozpoczynanie pracy…",
     "clockingOut": "Kończenie pracy…",
-    "clockInQueued": "Rozpoczęcie pracy w kolejce do synchronizacji",
-    "clockInSavedForReview": "Rozpoczęcie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "clockInSuccess": "Pomyślnie rozpoczęto pracę",
     "clockOut": "Zakończ pracę",
-    "clockOutQueued": "Zakończenie pracy w kolejce do synchronizacji",
-    "clockOutSavedForReview": "Zakończenie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "clockOutSuccess": "Pomyślnie zakończono pracę",
     "compliance": {
       "violation": "Naruszenie przepisów",
@@ -26,16 +22,13 @@
     "correction": {
       "clockIn": "Rozpocznij pracę",
       "clockInDate": "Data rozpoczęcia pracy",
-      "clockInTime": "Godzina rozpoczęcia pracy",
       "clockOut": "Zakończ pracę",
       "clockOutDate": "Data zakończenia pracy",
-      "clockOutTime": "Godzina zakończenia pracy",
       "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
       "editEntry": "Edytuj wpis czasu",
       "editTitle": "Edytuj wpis czasu",
       "errors": {
         "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
-        "noChanges": "Należy zmienić co najmniej jedną wartość korekty",
         "submitFailed": "Nie udało się przesłać korekty",
         "updateFailed": "Nie udało się zaktualizować wpisu czasu"
       },
@@ -51,7 +44,7 @@
       "submitRequest": "Prześlij prośbę",
       "submitting": "Przesyłanie…",
       "success": {
-        "applied": "Korekta została pomyślnie zastosowana",
+        "applied": "Pomyślnie zastosowano korektę",
         "submitted": "Prośba o korektę została przesłana do zatwierdzenia przez przełożonego",
         "updated": "Wpis czasu został pomyślnie zaktualizowany"
       },
@@ -61,8 +54,6 @@
     "deadline": "Termin",
     "errors": {
       "clockInFailed": "Nie udało się rozpocząć pracy",
-      "appendReviewRequired": "Rozpoczęcie pracy wymaga weryfikacji historii czasu",
-      "appendReviewRequiredDesc": "Nie udało się zweryfikować Twoich wcześniejszych wpisów czasu, więc nowe rozpoczęcie pracy nie zostało zapisane. Skontaktuj się z administratorem.",
       "clockOutFailed": "Nie udało się zakończyć pracy",
       "holidayBlocked": "Nie można zakończyć pracy w dniu {holidayName}",
       "holidayBlockedDesc": "Ten dzień jest oznaczony jako święto i wpisywanie czasu pracy jest niedozwolone",
@@ -75,65 +66,41 @@
       "clockInLabel": "Rozpocznij pracę",
       "clockOutLabel": "Zakończ pracę",
       "context": {
-        "choicesCleared": "Wybrany projekt lub kategoria nie są już dostępne i zostały usunięte.",
+        "choicesCleared": "Wybrany projekt lub kategoria nie są już dostępne i zostały wyczyszczone.",
         "loadFailed": "Nie udało się wczytać strefy czasowej i opcji dla tego wpisu.",
         "loading": "Wczytywanie opcji wpisu…",
-        "notAuthorized": "Nie możesz tworzyć wpisów czasu dla tego pracownika.",
-        "organizationFallback": "{employee} nie ma własnej strefy czasowej, więc używana jest strefa organizacji.",
+        "notAuthorized": "Nie możesz tworzyć wpisów czasu pracy dla tego pracownika.",
+        "organizationFallback": "{employee} nie ma ustawionej osobistej strefy czasowej, dlatego używana jest strefa czasowa organizacji.",
         "retry": "Spróbuj ponownie",
-        "targetChanged": "Zmieniono pracownika, więc projekt i kategoria zostały wyczyszczone.",
-        "targetTimezone": "Godziny są w strefie czasowej: {employee} – {timezone}",
-        "thisEmployee": "tego pracownika",
-        "utcFallback": "Ani {employee}, ani organizacja nie mają ustawionej strefy czasowej, więc używany jest UTC."
+        "targetChanged": "Pracownik został zmieniony, dlatego projekt i kategoria zostały wyczyszczone.",
+        "targetTimezone": "Godziny są podane w strefie czasowej pracownika {employee}: {timezone}",
+        "thisEmployee": "ten pracownik",
+        "utcFallback": "Ani {employee}, ani organizacja nie ma ustawionej strefy czasowej, dlatego używana jest strefa UTC."
       },
       "dateLabel": "Data",
       "description": "Utwórz wpis czasu dla daty z przeszłości. W zależności od polityki zmian w Twojej organizacji może być wymagane zatwierdzenie.",
       "errors": {
-        "collision": "Ten wpis koliduje z wcześniejszym zgłoszeniem lub zmienioną pracą. Sprawdź istniejące wpisy.",
         "createFailed": "Nie udało się utworzyć wpisu czasu",
         "futureDate": "Nie można tworzyć wpisów dla przyszłych dat",
-        "futureTime": "Nie można tworzyć wpisów dla przyszłych godzin",
-        "historyReview": "Ta historia czasu wymaga sprawdzenia, zanim będzie można zapisać nowe wpisy. Skontaktuj się z administratorem.",
         "invalidTime": "Wprowadź pełną, prawidłową godzinę",
         "invalidTimeRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia",
-        "nonexistentTime": "Ta godzina nie istnieje w tym dniu, ponieważ zegary są przestawiane do przodu.",
-        "occurrenceRequired": "Ta godzina występuje w tym dniu dwukrotnie. Wybierz, o którą chodzi.",
-        "overlap": "Ten czas nakłada się na zarejestrowaną pracę. Wybierz zakres bez nakładania się.",
-        "reconfirm": "Strefa czasowa lub godziny uległy zmianie. Sprawdź wpis i wyślij go ponownie.",
-        "refresh": "Ustawienia wpisów ręcznych uległy zmianie. Sprawdź wpis i wyślij go ponownie.",
         "tooLong": "Okres pracy nie może przekraczać 24 godzin"
       },
       "occurrence": {
         "earlier": "Pierwsza, {offset}",
         "later": "Druga, {offset}",
-        "legend": "{time} występuje w tym dniu dwukrotnie. O którą godzinę chodzi?"
+        "legend": "Godzina {time} występuje w tym dniu dwukrotnie. O którą chodzi?"
       },
       "reasonLabel": "Powód",
       "reasonPlaceholder": "Opisz, nad czym pracowałeś…",
       "recovery": {
-        "check": "Sprawdź stan",
-        "checkFailed": "Nie można teraz sprawdzić tego wpisu. Spróbuj później.",
-        "contextMismatch": "Jesteś zalogowany na inne konto lub w innej organizacji. Przełącz się z powrotem, aby obsłużyć ten wpis.",
-        "description": "Te wpisy wysłano z tej karty bez potwierdzonego wyniku. Nic nie zostanie wysłane ponownie bez Twojego wyboru.",
+        "check": "Sprawdź status",
+        "description": "Te wpisy zostały wysłane z tej karty bez potwierdzonego wyniku. Nic nie zostanie wysłane ponownie, chyba że podejmiesz taką decyzję.",
         "discard": "Odrzuć",
         "editAsNew": "Edytuj jako nowy wpis",
-        "notCommitted": "Nie znaleziono zapisu.",
-        "notCommittedToast": "Nie znaleziono zapisu tego wpisu. Ponów go bez zmian lub edytuj jako nowy wpis.",
-        "retry": "Ponów bez zmian",
-        "saved": "Ten wpis został zapisany.",
-        "savedForApproval": "Ten wpis został zapisany i przesłany do zatwierdzenia. Jego obecny stan: {status}.",
-        "status": {
-          "approved": "zatwierdzony",
-          "pending": "oczekujący",
-          "rejected": "odrzucony"
-        },
-        "stillUncertain": "Nadal niepotwierdzony. Wpis zostaje zachowany; spróbuj ponownie po powrocie do sieci.",
+        "retry": "Ponów dokładnie",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Niepotwierdzone wpisy",
-        "uncertain": "Niepotwierdzony. Może być już zapisany.",
-        "uncertainToast": "Nie udało się potwierdzić, czy ten wpis został zapisany. Pozostaje w sekcji Niepotwierdzone wpisy, gdzie możesz ponowić go bez zmian lub sprawdzić jego stan.",
-        "unsupported": "Nie można sprawdzić jego stanu. Może być już zapisany.",
-        "unsupportedToast": "Nie można teraz sprawdzić stanu tego wpisu. Ponowienie wysyła dokładnie ten sam wpis."
+        "title": "Niepotwierdzone wpisy"
       },
       "submit": "Utwórz wpis",
       "submitting": "Tworzenie…",
@@ -200,12 +167,7 @@
     },
     "unknownCategory": "Nieznana kategoria",
     "unknownProject": "Nieznany projekt",
-    "workCategory": "Kategoria pracy",
-    "workLocation": "Miejsce pracy",
-    "workLocationHome": "Dom",
-    "workLocationOffice": "Biuro",
-    "workLocationOther": "Inne",
-    "workLocationRemote": "Zdalnie"
+    "workCategory": "Kategoria pracy"
   },
   "wellness": {
     "water": {

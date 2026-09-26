@@ -418,20 +418,37 @@
       "archived": "Arkiverade stämplingsbevis behålls på denna enhet",
       "offline": "Du är offline",
       "offlineSaved": "Offline — {count} post(er) sparade lokalt för granskning",
+      "offlineWaiting": "Offline – {count} stämplingsåtgärd(er) skickas när du är online igen",
       "refresh": "Uppdatera status",
       "refreshing": "Kontrollerar {count} sparad(e) post(er)…",
       "reviewRequired": "{count} post(er) sparade lokalt — granskning krävs",
-      "unverified": "Stämplingsbevis har sparats på denna enhet. Anslut för att granska alla sparade poster."
+      "unverified": "Stämplingsbevis har sparats på denna enhet. Anslut för att granska alla sparade poster.",
+      "waiting": "{count} stämplingsåtgärd(er) sparade på denna enhet, inte skickade ännu"
     },
     "capture": {
       "description": "Spara händelsen på denna enhet för granskning. Stämplingsstatusen på servern ändras inte.",
       "end": "Spara utstämpling för granskning",
+      "queueDescription": "Du är offline. Stämplingsåtgärder sparas på denna enhet och skickas automatiskt när du är online igen.",
+      "queueEnd": "Spara utstämpling",
+      "queueStart": "Spara instämpling",
       "start": "Spara instämpling för granskning"
     },
     "recovery": {
       "archive": "Arkivera och behåll bevis",
       "archived": "Arkiverad — bevis behålls",
-      "description": "Dessa poster är sparade på denna enhet. Serverstatus är okänd. Kontrollera befintliga tidsrapporter med din chef innan du skickar in ersättningsarbete. Arkivering behåller bevisen och avbryter inte arbete på servern.",
+      "command": {
+        "blockedPredecessor": "Pausad – en tidigare stämplingsåtgärd på denna enhet behöver granskas",
+        "committed": "Sparad på servern",
+        "exhausted": "Sändningen avbröts efter upprepade fel – inte bekräftad på servern",
+        "pausedAccess": "Pausad – logga in igen med behörighet att stämpla i denna organisation",
+        "pausedContext": "Pausad – logga in på det konto och den organisation den sparades för",
+        "pausedServer": "Pausad – servern accepterar inte denna stämplingsåtgärd ännu",
+        "pending": "Väntar på att skickas – inte bekräftad på servern",
+        "rejected": "Inte sparad – servern avvisade den ({code})",
+        "review": "Behöver granskas – servern accepterade den inte ({code})",
+        "waitingPredecessor": "Väntar på en tidigare stämplingsåtgärd på denna enhet"
+      },
+      "descriptionOutcomes": "Dessa poster är sparade på denna enhet. Om det inte står att en post har sparats på servern är dess serverstatus inte bekräftad. Kontrollera befintliga tidsregistreringar med din chef innan du skickar in ersättande arbete. Arkivering sparar underlaget och raderar inte arbete på servern.",
       "empty": "Inga tillgängliga poster. Äldre poster utan kontobevis kräver granskning på organisationsnivå; poster utan organisationsbevis kräver separat auktoriserad återställning.",
       "evidence": "Ursprungliga bevis och återställningsstatus",
       "export": "Exportera tillgängliga bevis",
@@ -542,8 +559,5 @@
     "notCalculated": "Inte beräknat ännu",
     "pendingDescription": "Processen kommer att beräkna detta saldo snart.",
     "updatedEveryThreeHours": "Uppdateras var tredje timme"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Läser in företagsråd"
   }
 }

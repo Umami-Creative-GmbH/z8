@@ -29,6 +29,11 @@
         "restTime": "Tiempo de descanso: {count}",
         "title": "Advertencias de cumplimiento en este rango de fechas"
       },
+      "focus": {
+        "anonymous": "Mostrando los turnos de un empleado",
+        "employee": "Mostrando turnos de {name}",
+        "showAll": "Mostrar todos los turnos"
+      },
       "loading": "Cargando programación...",
       "publish": {
         "failed": "Error al publicar los turnos",

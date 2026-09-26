@@ -59,6 +59,15 @@
     "requester": "Innsender",
     "requestingCorrection": "ber om en tidskorrigering for",
     "requestingOff": "ber om",
+    "review": {
+      "showDetails": "Vis detaljer",
+      "switchOrganizationAction": "Bytt til {organization}",
+      "switchOrganizationBody": "Denne godkjenningen tilhører {organization}. Bytt til den organisasjonen for å gå gjennom den; tilgangen din kontrolleres på nytt etter at du har byttet.",
+      "switchOrganizationTitle": "Bytt organisasjon for å gå gjennom",
+      "title": "Godkjenningsgjennomgang",
+      "unavailableBody": "Du kan ikke gå gjennom denne godkjenningen her. Den kan ha blitt avgjort, tildelt på nytt, trukket tilbake eller fjernet, eller tilgangen din kan ha blitt endret. En lenke alene gir aldri tilgang. Godkjenningsinnboksen din viser alt som for øyeblikket venter på deg.",
+      "unavailableTitle": "Denne godkjenningen er ikke tilgjengelig"
+    },
     "searchLabel": "Søk i godkjenninger",
     "searchPlaceholder": "Søk etter navn eller e-post…",
     "selectAll": "Velg alle",

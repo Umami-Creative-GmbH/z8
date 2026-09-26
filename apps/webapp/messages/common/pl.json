@@ -165,7 +165,6 @@
     "moveDown": "Przesuń w dół",
     "moveUp": "Przesuń w górę",
     "name": "Nazwa",
-    "never": "Nigdy",
     "new": "Nowy",
     "next": "Dalej",
     "notApplicable": "N/D",
@@ -290,16 +289,8 @@
     "trust-center": "Centrum zaufania"
   },
   "loading": {
-    "application": "Ładowanie aplikacji",
-    "authentication": "Ładowanie uwierzytelniania",
-    "calendar": "Ładowanie kalendarza",
-    "chart": "Ładowanie wykresu",
-    "licenses": "Ładowanie licencji",
-    "platformAnalytics": "Ładowanie analityki platformy",
-    "settings": "Ładowanie ustawień",
-    "setup": "Ładowanie konfiguracji",
-    "teamAbsences": "Ładowanie nieobecności zespołu",
-    "workerQueue": "Ładowanie kolejki zadań"
+    "chart": "Wczytywanie wykresu",
+    "settings": "Wczytywanie ustawień"
   },
   "nav": {
     "absences": "Nieobecności",
@@ -335,14 +326,6 @@
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
-        "title": "Wniosek o nieobecność wysłany"
-      },
-      "teamMemberRemoved": {
-        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
-        "title": "Usunięto z zespołu"
-      },
       "passwordChanged": {
         "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
         "title": "Hasło zmienione"
@@ -434,25 +417,38 @@
     "banner": {
       "archived": "Zarchiwizowane dowody rejestracji czasu zachowane na tym urządzeniu",
       "offline": "Jesteś offline",
-      "offlineWithPending": "Offline - {count} zdarzenie(-a) oczekujące",
-      "pending": "{count} zdarzenie(-a) oczekujące na synchronizację",
-      "retry": "Ponów próbę",
-      "syncing": "Synchronizowanie {count} zdarzenia(-e)...",
       "offlineSaved": "Offline — {count} wpis(ów) zapisano lokalnie do weryfikacji",
+      "offlineWaiting": "Offline — {count} akcji rejestracji czasu zostanie wysłanych po powrocie do trybu online",
       "refresh": "Odśwież status",
       "refreshing": "Sprawdzanie {count} zapisanych wpisów…",
       "reviewRequired": "{count} wpis(ów) zapisano lokalnie — wymagana weryfikacja",
-      "unverified": "Dowód rejestracji czasu zapisano na tym urządzeniu. Połącz się z siecią, aby przejrzeć wszystkie zapisane wpisy."
+      "unverified": "Dowód rejestracji czasu zapisano na tym urządzeniu. Połącz się z siecią, aby przejrzeć wszystkie zapisane wpisy.",
+      "waiting": "{count} akcji rejestracji czasu zapisanych na tym urządzeniu, jeszcze niewysłanych"
     },
     "capture": {
       "description": "Zapisz zdarzenie na tym urządzeniu do weryfikacji. Stan rejestracji czasu na serwerze nie ulegnie zmianie.",
       "end": "Zapisz odbicie wyjścia do weryfikacji",
+      "queueDescription": "Jesteś offline. Akcje rejestracji czasu są zapisywane na tym urządzeniu i zostaną wysłane automatycznie po powrocie do trybu online.",
+      "queueEnd": "Zapisz wyjście",
+      "queueStart": "Zapisz wejście",
       "start": "Zapisz odbicie wejścia do weryfikacji"
     },
     "recovery": {
       "archive": "Zarchiwizuj i zachowaj dowody",
       "archived": "Zarchiwizowano — dowody zachowane",
-      "description": "Te wpisy są zapisane na tym urządzeniu. Stan zapisu na serwerze jest nieznany. Przed przesłaniem zastępczych wpisów skonsultuj się z przełożonym. Archiwizacja zachowuje dowody i nie anuluje pracy na serwerze.",
+      "command": {
+        "blockedPredecessor": "Wstrzymano — wcześniejsza akcja rejestracji czasu na tym urządzeniu wymaga weryfikacji",
+        "committed": "Zapisano na serwerze",
+        "exhausted": "Wysyłanie zatrzymane po wielokrotnych niepowodzeniach — niepotwierdzone na serwerze",
+        "pausedAccess": "Wstrzymano — zaloguj się ponownie z uprawnieniami do rejestracji czasu w tej organizacji",
+        "pausedContext": "Wstrzymano — zaloguj się na konto i do organizacji, dla których to zapisano",
+        "pausedServer": "Wstrzymano — serwer nie akceptuje jeszcze tej akcji rejestracji czasu",
+        "pending": "Oczekuje na wysłanie — niepotwierdzone na serwerze",
+        "rejected": "Nie zapisano — serwer odrzucił żądanie ({code})",
+        "review": "Wymaga weryfikacji — serwer nie zaakceptował ({code})",
+        "waitingPredecessor": "Oczekiwanie na wcześniejszą akcję rejestracji czasu na tym urządzeniu"
+      },
+      "descriptionOutcomes": "Te wpisy są zapisane na tym urządzeniu. Dopóki wpis nie wskazuje, że został zapisany na serwerze, jego wynik na serwerze nie jest potwierdzony. Przed przesłaniem pracy zastępczej sprawdź istniejące wpisy czasu pracy ze swoim przełożonym. Archiwizacja zachowuje dowody i nie anuluje pracy na serwerze.",
       "empty": "Brak dostępnych wpisów. Starsze wpisy bez dowodów powiązanych z kontem wymagają weryfikacji na poziomie organizacji; wpisy bez dowodów organizacji wymagają osobno autoryzowanego odzyskiwania.",
       "evidence": "Pierwotne dowody i stan odzyskiwania",
       "export": "Eksportuj dostępne dowody",
@@ -555,12 +551,8 @@
   "validation": {
     "first-name-required": "Imię jest wymagane",
     "invalid-email": "Nieprawidłowy adres e-mail",
-    "invalid-password": "Nieprawidłowe hasło",
     "last-name-required": "Nazwisko jest wymagane",
     "password-required": "Hasło jest wymagane"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Ładowanie portalu rady zakładowej"
   },
   "workBalance": {
     "label": "Bilans całkowity",

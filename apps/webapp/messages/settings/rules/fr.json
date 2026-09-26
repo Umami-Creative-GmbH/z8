@@ -77,6 +77,129 @@
       },
       "updateCategory": "Mettre à jour la catégorie"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Administrateurs alertés le {date}",
+        "approvalType": "Approbation",
+        "attempts": "Tentatives",
+        "channel": "Canal",
+        "currentApprover": "Attribution actuelle",
+        "description": "Les conditions d'escalade non résolues restent ici jusqu'à ce qu'elles soient résolues ou qu'un responsable des approbations les clôture. Les alertes envoyées aux administrateurs ne les clôturent pas.",
+        "details": "Preuves, tentatives et historique",
+        "dispose": "Fermer…",
+        "disposed": "Fermé par le responsable",
+        "empty": "Rien ne nécessite d'attention.",
+        "evidence": "Preuves",
+        "firstRaised": "Signalé pour la première fois",
+        "history": "Historique",
+        "lastObserved": "Observé pour la dernière fois",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "Aucune tentative associée enregistrée.",
+        "openApproval": "Approbations ouvertes",
+        "policyRevision": "Révision de la politique",
+        "recentlyClosed": "Récemment fermées ({count})",
+        "recheck": "Revérifier",
+        "resolved": "Résolu",
+        "retryDelivery": "Réessayer la distribution",
+        "title": "Attention requise",
+        "transfer": "Transférer…",
+        "unknownApprover": "Non enregistré"
+      },
+      "channels": {
+        "delivers": "Distribue les escalades",
+        "description": "L'interrupteur d'escalade de chaque canal détermine s'il distribue les messages d'escalade. Les délais d'expiration des canaux ne constituent plus des échéances une fois que la politique de l'organisation prend en charge l'escalade.",
+        "differs": "Diffère de la politique de {hours} h",
+        "inactive": "Inactif",
+        "legacyTimeout": "Délai d'expiration du canal",
+        "none": "Aucun canal de messagerie n'est connecté.",
+        "title": "Préférences de distribution par canal"
+      },
+      "description": "Examinez la politique d'escalade de l'organisation, la façon dont elle a été migrée depuis les paramètres des canaux et les conditions nécessitant un responsable d'approbation.",
+      "dispose": {
+        "confirm": "Clôturer l'élément",
+        "description": "La clôture enregistre votre décision dans le journal d'audit. Elle ne réassigne pas l'approbation et n'autorise pas d'autre escalade automatique.",
+        "noteLabel": "Note de traitement",
+        "noteRequired": "Saisissez une note de traitement.",
+        "title": "Clôturer l'élément requérant une attention"
+      },
+      "hoursValue": "{hours} h",
+      "loadFailed": "Impossible de charger les paramètres d'escalade.",
+      "migration": {
+        "channel": "Canal",
+        "conflictsTitle": "Paramètres en conflit",
+        "disabledOutcome": "Désactivé car aucun canal actif n'escaladait les approbations.",
+        "enabledOutcome": "Activé car au moins un canal actif escaladait les approbations. Le délai d'attente actif le plus court est devenu la fenêtre de réponse.",
+        "escalations": "Escalades",
+        "markReviewed": "Marquer comme examiné",
+        "migratedAt": "Migré le {date}.",
+        "noSources": "Aucun canal de messagerie n'était connecté lors de la migration de la politique.",
+        "reviewed": "Examiné",
+        "reviewedBy": "Examiné par {name} le {date}",
+        "status": "Statut",
+        "timeout": "Délai d'expiration",
+        "title": "Migration des paramètres",
+        "used": "Utilisé",
+        "usedNo": "Non utilisé",
+        "usedYes": "Utilisé"
+      },
+      "navDescription": "Politique d'escalade de l'organisation et approbations nécessitant une attention particulière",
+      "off": "Désactivé",
+      "on": "Activé",
+      "ownership": {
+        "legacyDescription": "Cette politique d'organisation est prête pour le passage à l'escalade partagée. D'ici là, chaque canal connecté continue d'utiliser ses propres paramètres d'escalade.",
+        "legacyTitle": "L'automatisation du canal gère toujours l'escalade",
+        "pausedDescription": "Aucun nouveau transfert automatique n'a lieu. Les attributions existantes et la récupération de la distribution restent inchangées.",
+        "pausedTitle": "L'escalade automatique est suspendue"
+      },
+      "policy": {
+        "description": "Une seule fenêtre de réponse s'applique à chaque type d'approbation et canal. Les canaux ne font que distribuer les messages.",
+        "disabled": "Désactivé",
+        "enabled": "Activé",
+        "enabledDescription": "Remplacer un approbateur en retard par un responsable suppléant éligible du demandeur.",
+        "enabledLabel": "Escalader les approbations en retard",
+        "hours": "heures",
+        "reasonLabel": "Motif de la modification (facultatif)",
+        "revision": "Révision {revision}",
+        "save": "Enregistrer la politique",
+        "title": "Politique de l'organisation",
+        "windowDescription": "Mesuré en heures écoulées à partir du moment où l'attribution actuelle a pu être traitée. La modifier décale les échéances en attente sans réinitialiser leur décompte.",
+        "windowInvalid": "Saisissez un nombre entier d'heures compris entre 1 et 720.",
+        "windowLabel": "Délai de réponse"
+      },
+      "revisions": {
+        "changedBy": "Modifié par",
+        "migration": "Migration des paramètres",
+        "policy": "Politique",
+        "revision": "Révision",
+        "title": "Historique de la politique",
+        "when": "Date"
+      },
+      "title": "Escalade de l'approbation",
+      "toast": {
+        "deliveryRetried": "Nouvelle tentative de distribution planifiée",
+        "disposed": "Élément nécessitant une attention fermé",
+        "rechecked": "{checked} éléments vérifiés, {resolved} résolus",
+        "requestFailed": "La requête a échoué. Réessayez.",
+        "reviewed": "Conflits marqués comme examinés",
+        "saved": "Politique d'escalade enregistrée",
+        "transferred": "Attribution de l'approbation transférée",
+        "unchanged": "Aucune modification à enregistrer"
+      },
+      "transfer": {
+        "confirm": "Transférer",
+        "currentApprover": "Actuellement attribué à {name}.",
+        "description": "L'approbateur actuel perd cette attribution et le responsable suppléant sélectionné peut prendre une décision depuis sa boîte de réception des approbations. L'approbation reste en attente, les autres attributions demeurent inchangées et le transfert est consigné dans le journal d'audit.",
+        "loadFailed": "Impossible de charger les responsables éligibles.",
+        "loading": "Chargement des responsables éligibles…",
+        "noCandidates": "Aucun responsable suppléant éligible n'est disponible. Seuls les responsables actifs du demandeur ayant accès à la boîte d'approbation peuvent prendre le relais.",
+        "primary": "Responsable principal",
+        "reasonLabel": "Motif (facultatif)",
+        "recipientLabel": "Transférer à",
+        "recipientRequired": "Choisissez un responsable suppléant.",
+        "recommended": "Suivant dans l'ordre",
+        "title": "Transférer l'attribution d'approbation"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Les demandes éligibles peuvent correspondre à cette politique.",
       "activeLabel": "Politique active",
@@ -85,16 +208,13 @@
       "activeStatus": "Statut actif",
       "addPolicy": "Ajouter une politique",
       "approvalType": {
-        "absenceRequests": "Demandes d'absence",
         "absence": "Absence",
         "complianceException": "Exception de conformité",
-        "manualTimeSubmission": "Saisie manuelle du temps",
+        "manualTimeSubmission": "Saisie manuelle des heures",
         "policyClockOut": "Pointage de sortie selon la politique",
         "shiftRequest": "Demande de quart",
-        "timeCorrection": "Correction de temps",
-        "travelExpense": "Frais de déplacement",
-        "timeEntryChanges": "Modifications des saisies de temps",
-        "travelExpenses": "Frais de déplacement"
+        "timeCorrection": "Correction du temps",
+        "travelExpense": "Frais de déplacement"
       },
       "approvalTypes": "Types d'approbation",
       "conditionsCount": "Nombre de conditions",
@@ -131,21 +251,6 @@
       "toast": {
         "created": "Politique d'approbation créée",
         "saveFailed": "La politique d'approbation n'a pas pu être enregistrée."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Envoyez la demande au responsable par défaut lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Responsable par défaut"
-        },
-        "fail": {
-          "description": "Rejetez la demande lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Rejeter la demande"
-        },
-        "label": "Comportement de secours",
-        "organizationAdmin": {
-          "description": "Envoyez la demande à un administrateur de l'organisation lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Administrateur de l'organisation"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Les politiques actives nécessitent au moins une étape d'approbation.",

@@ -273,6 +273,131 @@
     "payrollReadiness": {
       "description": "Sjekk om en lønnsperiode er klar før du eksporterer tids-, fraværs- og lønnsdata.",
       "title": "Lønnsklarhet"
+    },
+    "workDiagnostics": {
+      "description": "Finn manglende eller motstridende timeregistreringer og problemer med timeregistreringskjeden",
+      "pageDescription": "Diagnostikk på oppføringsnivå for historisk arbeid: manglende eller motstridende representasjoner, adopsjonsopprinnelse, mistenkte manuelle registreringsfeil og kvalitetssikring av timeregistreringskjede.",
+      "proposals": {
+        "addChange": "Legg til endring",
+        "after": "Ny verdi",
+        "anchor": "Ankeroppføring",
+        "anchorReason": "Hvorfor dette ankeret er egnet",
+        "anchorSummary": "Anker {entry} ({hash})",
+        "appendNotAdopted": "Fortsettelser gjelder bare når denne organisasjonen bruker bevisbasert tilføyelsesgodkjenning.",
+        "apply": "Bruk",
+        "approve": "Godkjenn dette forslaget",
+        "approvedBy": "godkjent av {name}",
+        "authorized": "Iverksetting autorisert",
+        "before": "Før",
+        "candidates": "Konkurrerende hoder",
+        "changes": "Endringer",
+        "confirmReject": "Avvis forslag",
+        "consequences": "Konsekvenser",
+        "continuationDescription": "Fremtidige oppføringer fortsetter fra den valgte eksisterende oppføringen. Ingenting kjedes om eller fjernes, og historikk før ankeret beholder sine problemer.",
+        "continuationTitle": "Foreslå en tilføyingsfortsettelse",
+        "description": "Konflikter utenfor ren bevisreparasjon, og historikk som ikke kan godtas automatisk, krever et eksplisitt forslag. En administrator godkjenner det nøyaktige forslaget; iverksetting kontrollerer bevisene på nytt og stopper hvis noe har endret seg. En fortsettelse garanterer bare kontinuitet etter ankeret; tidligere historikk forblir ubekreftet.",
+        "employee": "Ansatt",
+        "empty": "Ingen forslag ennå.",
+        "emptyValue": "(tom)",
+        "evidence": "Bevis",
+        "evidenceNote": "Bevis for de nye verdiene",
+        "evidenceRequired": "Beskriv bevisene som etablerer de nye verdiene.",
+        "failed": "Forespørselen kunne ikke fullføres.",
+        "field": {
+          "durationMinutes": "Lagrede minutter",
+          "endAt": "Slutt (UTC-tidspunkt)",
+          "projectId": "Prosjekt-ID",
+          "startAt": "Start (UTC-tidspunkt)",
+          "workCategoryId": "Arbeidskategori-ID",
+          "workLocationType": "Arbeidssted"
+        },
+        "fieldName": "Felt",
+        "findings": "Funn nå",
+        "inactive": "Applikasjonen er ikke autorisert",
+        "inspect": "Bevis, usikkerhet og konsekvenser",
+        "issues": "Uløst historikk",
+        "kind": {
+          "continuation": "Legg til fortsettelse",
+          "fieldRepair": "Feltreparasjon"
+        },
+        "limitations": "Aksepterte begrensninger",
+        "listTitle": "Forslag",
+        "minutesInvalid": "Angi hele minutter (0 eller flere).",
+        "noRepairTargets": "Ingen arbeid i dette omfanget har funn som en eksplisitt reparasjon kan løse.",
+        "notAuthorized": "Bruk av forslag er ikke autorisert for denne organisasjonen.",
+        "propose": "Opprett forslag",
+        "proposeContinuation": "Opprett fortsettelsesforslag",
+        "proposedBy": "Foreslått av {name}",
+        "reason": "Årsak",
+        "reasonRequired": "Angi årsaken.",
+        "refused": "Dette forslaget kan ikke opprettes fra gjeldende grunnlag: {reasons}",
+        "reject": "Avvis",
+        "rejectNote": "Hvorfor er det avvist?",
+        "remaining": "Gjenværende funn etter",
+        "removeChange": "Fjern endring",
+        "repairTitle": "Foreslå en feltreparasjon",
+        "representation": "Representasjon",
+        "resolvedBy": "løst av {name}",
+        "staleResult": "Grunnlaget er endret siden dette forslaget ble opprettet. Ingenting annet ble skrevet; opprett et nytt forslag basert på gjeldende grunnlag.",
+        "status": {
+          "applied": "Iverksatt",
+          "approved": "Godkjent",
+          "proposed": "Venter på godkjenning",
+          "rejected": "Avvist",
+          "stale": "Utdatert"
+        },
+        "target": {
+          "timeRecord": "Timeregistrering",
+          "workPeriod": "Arbeidsperiode"
+        },
+        "title": "Forslag til reparasjon og videreføring",
+        "valueRequired": "Angi den nye verdien.",
+        "work": "Arbeidsperiode"
+      },
+      "repair": {
+        "actor": {
+          "completingEntry": "Oppretter av utstempling",
+          "unknown": "Ukjent (historisk)"
+        },
+        "alreadyApplied": "Allerede reparert.",
+        "applied": "{count} arbeidsperioder reparert.",
+        "apply": "Reparer {count} arbeidsperioder",
+        "authorized": "Autorisert",
+        "description": "Fyller bare ut verdier som annen dokumentasjon for det samme arbeidet entydig fastslår. Identitet, lagrede minutter, metadata, slettinger og godkjenningshistorikk beholdes. Konflikter og hull uten dokumentasjon holdes tilbake for gjennomgang.",
+        "employee": "Ansatt",
+        "empty": "Ingen historiske hull i dette omfanget kan repareres fra dokumentasjon.",
+        "failed": "Reparasjonen kunne ikke utføres.",
+        "fill": {
+          "canonicalCompletion": "Fullfør timeregistrering",
+          "canonicalDetail": "Gjenopprett arbeidsdetaljer",
+          "canonicalDuration": "Kopier minutter til registrering",
+          "canonicalLink": "Koble timeregistrering",
+          "canonicalMetadata": "Gjenopprett metadata",
+          "canonicalRecord": "Opprett timeregistrering",
+          "periodCompletion": "Fullfør arbeidsperiode",
+          "periodDuration": "Kopier minutter til periode"
+        },
+        "fills": "Reparasjoner",
+        "heldTitle": "Holdt tilbake for gjennomgang",
+        "hold": {
+          "activeWork": "Arbeidet er fortsatt aktivt",
+          "conflictingEvidence": "Annen dokumentasjon om dette arbeidet er motstridende; må gjennomgås",
+          "noRestorableEvidence": "Ingen dokumentasjon fastslår den manglende verdien",
+          "originalActorUnrepresentable": "Ingen oppføring angir hvem som utførte arbeidet",
+          "originalRuleUnknown": "Ingen representasjon inneholder minuttene; den opprinnelige avrundingen er ukjent",
+          "referenceOutsideOrganization": "Et referert prosjekt eller en kategori tilhører ikke denne organisasjonen"
+        },
+        "inactive": "Ikke autorisert",
+        "inactiveDescription": "Reparasjon krever egen autorisasjon for denne organisasjonen. Planen forblir lesbar.",
+        "notAuthorized": "Reparasjon er ikke autorisert for denne organisasjonen.",
+        "originalActor": "Opprinnelig aktør",
+        "reason": "Årsak",
+        "reasonRequired": "Angi årsaken til denne reparasjonen.",
+        "stale": "Dokumentasjonen ble endret etter at denne planen ble lest. Ingenting ble skrevet; se over den oppdaterte planen.",
+        "title": "Reparasjon av historiske hull",
+        "work": "Arbeidsperiode"
+      },
+      "title": "Arbeidsdiagnostikk"
     }
   }
 }

@@ -12,7 +12,7 @@
       "title": "Employee Groups"
     },
     "employees": {
-      "description": "Manage employees, members, and invites",
+      "description": "Manage employee profiles, teams, and permissions",
       "details": "Employee Details",
       "detailView": {
         "loadingEmployeeData": "Loading employee data",
@@ -78,7 +78,7 @@
         "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Employee actions for {name}",
+        "actionsLabel": "Employee actions for ${target.displayName}",
         "deactivate": "Deactivate",
         "deactivateDescription": "This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
         "deactivateError": "Failed to deactivate employee",
@@ -86,8 +86,6 @@
         "deactivateTitle": "Deactivate employee?",
         "deactivating": "Deactivating...",
         "deactivatingStatus": "Deactivating employee",
-        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
-        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access.",
         "reactivate": "Reactivate",
         "reactivateDescription": "This restores access to this organization using the existing employee record.",
         "reactivateError": "Failed to reactivate employee",
@@ -104,13 +102,6 @@
         "removing": "Removing access...",
         "removingStatus": "Removing organization access"
       },
-      "tabs": {
-        "employees": "Employees",
-        "invitations": "Invitations",
-        "inviteCodes": "Invite Codes",
-        "members": "Members"
-      },
-      "title": "Employees",
       "offboarding": {
         "acknowledgeDuties": "Admins will resolve the {count} open approval duties.",
         "acknowledgeRequired": "Choose a replacement or confirm admins will resolve the open duties.",
@@ -123,8 +114,8 @@
         },
         "cancelDeparture": "Cancel departure",
         "cancelDescription": "The employee keeps access and their seat. The canceled departure stays in the audit history.",
-        "cancelTitle": "Cancel this departure?",
         "canceled": "Departure canceled",
+        "cancelTitle": "Cancel this departure?",
         "changeReason": "Note",
         "chooseReplacement": "Choose a replacement",
         "clockReview": "Needs review: offboarding clock-out",
@@ -136,8 +127,6 @@
         "editDeparture": "Edit departure",
         "effective": "Departure effective",
         "effectiveDescription": "Access ended at {cutoff} ({timezone}).",
-        "employmentGap": "Not employed {startDate} – {endDate}",
-        "employmentStint": "Employment {startDate} – {endDate}",
         "exceptions": {
           "finalOwner": "Assign and activate another approved owner before this employee leaves.",
           "futureAbsences": "Absences after the cutoff remain recorded. Review them in absences.",
@@ -194,10 +183,10 @@
           "targetIsRequester": "The replacement requested this approval and cannot decide it."
         },
         "rehire": "Rehire employee",
+        "rehired": "Employee rehired",
         "rehireDescription": "A new employment period starts now. Confirm every term; nothing is copied from the previous employment.",
         "rehireFailed": "The employee could not be rehired.",
         "rehirePanelDescription": "Start a new employment period with confirmed terms.",
-        "rehired": "Employee rehired",
         "reinviteBeforeRehire": "This person is no longer an approved organization member. Send a new invitation first; access returns only after the invitation is accepted and the rehire is confirmed.",
         "replacement": "Replacement for approvals",
         "replacementHelp": "Open approval duties move to this person when the departure takes effect.",
@@ -216,9 +205,9 @@
           "employee": "Employee",
           "manager": "Manager"
         },
+        "saved": "Departure saved",
         "saveFailed": "The departure could not be saved.",
         "saveSchedule": "Save departure",
-        "saved": "Departure saved",
         "saving": "Saving…",
         "schedule": "Schedule departure",
         "scheduledDescription": "Access and paid-seat usage end at {cutoff} ({timezone}).",
@@ -243,7 +232,14 @@
         "title": "Employment and departure",
         "unknownLegacyDate": "Date not recorded",
         "weeklyHoursInvalid": "Enter weekly hours between 0 and 168."
-      }
+      },
+      "tabs": {
+        "employees": "Employees",
+        "invitations": "Invitations",
+        "inviteCodes": "Invite Codes",
+        "members": "Members"
+      },
+      "title": "Employees"
     },
     "employmentHistory": {
       "addChange": "Add Change",

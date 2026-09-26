@@ -12,12 +12,18 @@
       "dateUnavailable": "Dato utilgjengelig",
       "missingClockOut": "Manglende utstempling",
       "needReview": "{count} lønnsblokkeringer må gjennomgås",
+      "offboardingClockRepair": "Offboarding-utstempling må korrigeres",
       "openApprovals": "Åpne godkjenninger",
       "openCalendar": "Åpne kalender",
+      "openWork": "Arbeid uten utstempling",
+      "openWorkDiagnostics": "Åpne arbeidsdiagnostikk",
       "pendingAbsence": "Ventende fravær",
       "pendingTimeCorrection": "Ventende tidskorrigering",
+      "pendingWorkApproval": "Arbeid som venter på godkjenning",
       "refreshAfterClearFailed": "Blokkering fjernet, men lønn kunne ikke oppdateres",
-      "unknownEmployee": "Ukjent ansatt"
+      "uncertainHistoricalWork": "Historisk arbeid må gjennomgås",
+      "unknownEmployee": "Ukjent ansatt",
+      "unresolvedWorkMinutes": "Arbeidsminutter må gjennomgås"
     },
     "description": "Gå gjennom lønnstotaler, status og eksporter for den valgte perioden.",
     "employeeTotals": {

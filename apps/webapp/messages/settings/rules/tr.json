@@ -77,6 +77,129 @@
       },
       "updateCategory": "Kategoriyi Güncelle"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Yöneticiler {date} tarihinde uyarıldı",
+        "approvalType": "Onay",
+        "attempts": "Denemeler",
+        "channel": "Kanal",
+        "currentApprover": "Mevcut atama",
+        "description": "Çözümlenmemiş eskalasyon koşulları, çözülene veya bir onay yöneticisi tarafından kapatılana kadar burada kalır. Yöneticilere gönderilen uyarılar bunları kapatmaz.",
+        "details": "Kanıt, denemeler ve geçmiş",
+        "dispose": "Kapat…",
+        "disposed": "Yönetici tarafından kapatıldı",
+        "empty": "İlgilenilmesi gereken bir durum yok.",
+        "evidence": "Kanıt",
+        "firstRaised": "İlk bildirilme",
+        "history": "Geçmiş",
+        "lastObserved": "Son görülme",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "Kaydedilmiş ilgili deneme yok.",
+        "openApproval": "Açık onaylar",
+        "policyRevision": "Politika revizyonu",
+        "recentlyClosed": "Yakın zamanda kapatılanlar ({count})",
+        "recheck": "Yeniden kontrol et",
+        "resolved": "Çözüldü",
+        "retryDelivery": "Teslimatı yeniden dene",
+        "title": "Dikkat gerektiriyor",
+        "transfer": "Aktar…",
+        "unknownApprover": "Kaydedilmedi"
+      },
+      "channels": {
+        "delivers": "Eskalasyonları teslim eder",
+        "description": "Her kanalın eskalasyon anahtarı, eskalasyon iletilerini teslim edip etmeyeceğini belirler. Eskalasyon kuruluş politikasının yönetimine geçtiğinde, kanal zaman aşımları artık son tarih değildir.",
+        "differs": "{hours} sa. politikasından farklı",
+        "inactive": "Etkin değil",
+        "legacyTimeout": "Kanal zaman aşımı",
+        "none": "Hiçbir mesajlaşma kanalı bağlı değil.",
+        "title": "Kanal teslimat tercihleri"
+      },
+      "description": "Kuruluş eskalasyon politikasını, bunun kanal ayarlarından nasıl aktarıldığını ve bir onay yöneticisi gerektiren koşulları gözden geçirin.",
+      "dispose": {
+        "confirm": "Öğeyi kapat",
+        "description": "Kapatma işlemi, kararınızı denetim günlüğüne kaydeder. Onayı yeniden atamaz veya başka bir otomatik eskalasyona izin vermez.",
+        "noteLabel": "Sonuçlandırma notu",
+        "noteRequired": "Bir sonuçlandırma notu girin.",
+        "title": "Dikkat gerektiren öğeyi kapat"
+      },
+      "hoursValue": "{hours} sa.",
+      "loadFailed": "Eskalasyon ayarları yüklenemedi.",
+      "migration": {
+        "channel": "Kanal",
+        "conflictsTitle": "Çakışan ayarlar",
+        "disabledOutcome": "Hiçbir etkin kanal onayları eskale etmediği için devre dışı bırakıldı.",
+        "enabledOutcome": "En az bir etkin kanal onayları eskale ettiği için etkinleştirildi. En kısa etkin zaman aşımı, yanıt süresi aralığı oldu.",
+        "escalations": "Eskalasyonlar",
+        "markReviewed": "İncelendi olarak işaretle",
+        "migratedAt": "{date} tarihinde taşındı.",
+        "noSources": "İlke taşındığında bağlı hiçbir mesajlaşma kanalı yoktu.",
+        "reviewed": "İncelendi",
+        "reviewedBy": "{date} tarihinde {name} tarafından incelendi",
+        "status": "Durum",
+        "timeout": "Zaman aşımı",
+        "title": "Ayar geçişi",
+        "used": "Kullanımda",
+        "usedNo": "Kullanımda değil",
+        "usedYes": "Kullanımda"
+      },
+      "navDescription": "Kuruluş eskalasyon ilkesi ve ilgilenilmesi gereken onaylar",
+      "off": "Kapalı",
+      "on": "Açık",
+      "ownership": {
+        "legacyDescription": "Bu kuruluş ilkesi, paylaşılan eskalasyona geçiş için hazırlandı. O zamana kadar, bağlı her kanal kendi eskalasyon ayarlarını kullanmaya devam eder.",
+        "legacyTitle": "Eskalasyonu hâlâ kanal otomasyonu yönetir",
+        "pausedDescription": "Yeni otomatik aktarım gerçekleşmez. Mevcut atamalar ve teslim kurtarma değişmez.",
+        "pausedTitle": "Otomatik eskalasyon duraklatıldı"
+      },
+      "policy": {
+        "description": "Tüm onay türleri ve kanallar için tek bir yanıt penceresi geçerlidir. Kanallar yalnızca iletileri teslim eder.",
+        "disabled": "Devre dışı",
+        "enabled": "Etkin",
+        "enabledDescription": "Geciken bir onaylayıcıyı, talep sahibinin uygun bir yedek yöneticisiyle değiştirin.",
+        "enabledLabel": "Geciken onayları üst seviyeye ilet",
+        "hours": "saat",
+        "reasonLabel": "Değişiklik nedeni (isteğe bağlı)",
+        "revision": "Revizyon {revision}",
+        "save": "Politikayı kaydet",
+        "title": "Kuruluş politikası",
+        "windowDescription": "Mevcut atamanın işlem yapılabilir hale gelmesinden itibaren geçen saat cinsinden ölçülür. Bunu değiştirmek, sayaçları yeniden başlatmadan bekleyen son tarihleri kaydırır.",
+        "windowInvalid": "1 ile 720 arasında bir tam saat girin.",
+        "windowLabel": "Yanıt penceresi"
+      },
+      "revisions": {
+        "changedBy": "Değiştiren",
+        "migration": "Ayar taşıma",
+        "policy": "Politika",
+        "revision": "Revizyon",
+        "title": "Politika geçmişi",
+        "when": "Zaman"
+      },
+      "title": "Onay Eskalasyonu",
+      "toast": {
+        "deliveryRetried": "Teslimat yeniden denemesi planlandı",
+        "disposed": "Dikkat öğesi kapatıldı",
+        "rechecked": "{checked} öge denetlendi, {resolved} çözüldü",
+        "requestFailed": "İstek başarısız oldu. Tekrar deneyin.",
+        "reviewed": "Çakışmalar incelendi olarak işaretlendi",
+        "saved": "Eskalasyon politikası kaydedildi",
+        "transferred": "Onay ataması aktarıldı",
+        "unchanged": "Kaydedilecek değişiklik yok"
+      },
+      "transfer": {
+        "confirm": "Aktar",
+        "currentApprover": "Şu anda {name} adlı kişiye atanmış.",
+        "description": "Mevcut onaylayan bu atamayı kaybeder ve seçilen yedek yönetici onay gelen kutusundan bunu karara bağlayabilir. Onay beklemede kalır, diğer atamalar değişmez ve aktarım denetim günlüğüne kaydedilir.",
+        "loadFailed": "Uygun yöneticiler yüklenemedi.",
+        "loading": "Uygun yöneticiler yükleniyor…",
+        "noCandidates": "Uygun bir yedek yönetici bulunamadı. Yalnızca talep sahibinin onay gelen kutusu erişimine sahip etkin yöneticileri görevi devralabilir.",
+        "primary": "Birincil yönetici",
+        "reasonLabel": "Neden (isteğe bağlı)",
+        "recipientLabel": "Şuraya aktar",
+        "recipientRequired": "Bir yedek yönetici seçin.",
+        "recommended": "Sıradaki",
+        "title": "Onay atamasını aktar"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Uygun talepler bu politikayla eşleşebilir.",
       "activeLabel": "Aktif politika",
@@ -85,16 +208,13 @@
       "activeStatus": "Aktif durum",
       "addPolicy": "Politika Ekle",
       "approvalType": {
-        "absenceRequests": "İzin talepleri",
         "absence": "Devamsızlık",
         "complianceException": "Uyumluluk istisnası",
-        "manualTimeSubmission": "Manuel süre gönderimi",
-        "policyClockOut": "Politikaya göre çıkış kaydı",
+        "manualTimeSubmission": "Manuel zaman bildirimi",
+        "policyClockOut": "Politika çıkış kaydı",
         "shiftRequest": "Vardiya talebi",
-        "timeCorrection": "Süre düzeltmesi",
-        "travelExpense": "Seyahat gideri",
-        "timeEntryChanges": "Zaman çizelgesi değişiklikleri",
-        "travelExpenses": "Seyahat masrafları"
+        "timeCorrection": "Zaman düzeltmesi",
+        "travelExpense": "Seyahat masrafı"
       },
       "approvalTypes": "Onay türleri",
       "conditionsCount": "Koşul sayısı",
@@ -131,21 +251,6 @@
       "toast": {
         "created": "Onay politikası oluşturuldu",
         "saveFailed": "Onay politikası kaydedilemedi."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi varsayılan yöneticiye gönderin.",
-          "label": "Varsayılan yönetici"
-        },
-        "fail": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi reddedin.",
-          "label": "Talebi reddet"
-        },
-        "label": "Alternatif davranış",
-        "organizationAdmin": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi bir kuruluş yöneticisine gönderin.",
-          "label": "Kuruluş yöneticisi"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Aktif politikalar en az bir onay aşaması gerektirir.",

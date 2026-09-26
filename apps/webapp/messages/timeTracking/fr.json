@@ -12,12 +12,8 @@
     "clockIn": "Pointer l'entrée",
     "clockingIn": "Pointage de l'entrée...",
     "clockingOut": "Pointage de la sortie...",
-    "clockInQueued": "Pointage d'entrée mis en attente pour synchronisation",
-    "clockInSavedForReview": "Pointage d'entrée enregistré sur cet appareil pour vérification ; non confirmé sur le serveur",
     "clockInSuccess": "Entrée pointée avec succès",
     "clockOut": "Pointer la sortie",
-    "clockOutQueued": "Pointage de sortie mis en attente pour synchronisation",
-    "clockOutSavedForReview": "Pointage de sortie enregistré sur cet appareil pour vérification ; non confirmé sur le serveur",
     "clockOutSuccess": "Sortie pointée avec succès",
     "compliance": {
       "violation": "Violation de conformité",
@@ -26,16 +22,13 @@
     "correction": {
       "clockIn": "Entrée",
       "clockInDate": "Date d'arrivée",
-      "clockInTime": "Heure d'arrivée",
       "clockOut": "Sortie",
       "clockOutDate": "Date de départ",
-      "clockOutTime": "Heure de départ",
       "editDescription": "Apporter des modifications à votre entrée de temps pour aujourd'hui.",
       "editEntry": "Modifier l'entrée de temps",
       "editTitle": "Modifier l'entrée de temps",
       "errors": {
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
-        "noChanges": "Au moins une valeur de correction doit être modifiée",
         "submitFailed": "Échec de l'envoi de la correction",
         "updateFailed": "Échec de la mise à jour de l'entrée de temps"
       },
@@ -61,8 +54,6 @@
     "deadline": "Échéance",
     "errors": {
       "clockInFailed": "Échec du pointage de l'entrée",
-      "appendReviewRequired": "Le pointage d'arrivée nécessite une vérification de votre historique",
-      "appendReviewRequiredDesc": "Vos saisies de temps précédentes n'ont pas pu être vérifiées ; le nouveau pointage n'a donc pas été enregistré. Veuillez contacter votre administrateur.",
       "clockOutFailed": "Échec du pointage de la sortie",
       "holidayBlocked": "Impossible de pointer la sortie le {holidayName}",
       "holidayBlockedDesc": "Ce jour est marqué comme férié et les entrées de temps ne sont pas autorisées",
@@ -75,65 +66,41 @@
       "clockInLabel": "Pointer l'entrée",
       "clockOutLabel": "Pointer la sortie",
       "context": {
-        "choicesCleared": "Un projet ou une catégorie sélectionné(e) n'est plus disponible et a été retiré(e).",
-        "loadFailed": "Impossible de charger le fuseau horaire et les choix pour cette saisie.",
+        "choicesCleared": "Un projet ou une catégorie sélectionné(e) n'est plus disponible et a été effacé(e).",
+        "loadFailed": "Impossible de charger le fuseau horaire et les options pour cette saisie.",
         "loading": "Chargement des options de saisie…",
         "notAuthorized": "Vous ne pouvez pas créer de saisies de temps pour cet employé.",
-        "organizationFallback": "{employee} n'a pas de fuseau horaire personnel ; le fuseau horaire de l'organisation est utilisé.",
+        "organizationFallback": "{employee} n'a pas de fuseau horaire personnel, le fuseau horaire de l'organisation est donc utilisé.",
         "retry": "Réessayer",
-        "targetChanged": "L'employé a changé ; le projet et la catégorie ont été réinitialisés.",
+        "targetChanged": "L'employé a changé, le projet et la catégorie ont donc été réinitialisés.",
         "targetTimezone": "Les heures sont dans le fuseau horaire de {employee} : {timezone}",
         "thisEmployee": "cet employé",
-        "utcFallback": "Ni {employee} ni l'organisation n'ont défini de fuseau horaire ; UTC est utilisé."
+        "utcFallback": "Ni {employee} ni l'organisation n'ont de fuseau horaire défini, UTC est donc utilisé."
       },
       "dateLabel": "Date",
       "description": "Créez une saisie de temps pour une date passée. Une approbation peut être requise selon la politique de changement de votre organisation.",
       "errors": {
-        "collision": "Cette entrée est en conflit avec un envoi précédent ou un travail modifié. Vérifiez vos entrées existantes.",
         "createFailed": "Échec de la création de la saisie de temps",
         "futureDate": "Impossible de créer des saisies pour des dates futures",
-        "futureTime": "Impossible de créer des entrées pour des heures futures",
-        "historyReview": "Cet historique de temps doit être vérifié avant d'enregistrer de nouvelles entrées. Contactez votre administrateur.",
         "invalidTime": "Saisissez une heure complète et valide",
         "invalidTimeRange": "L'heure de sortie doit être postérieure à l'heure d'entrée",
-        "nonexistentTime": "Cette heure n'existe pas à cette date, car les horloges avancent.",
-        "occurrenceRequired": "Cette heure revient deux fois à cette date. Choisissez celle que vous voulez dire.",
-        "overlap": "Cette plage chevauche du travail enregistré. Choisissez une plage sans chevauchement.",
-        "reconfirm": "Le fuseau horaire ou les heures ont changé. Vérifiez l'entrée et envoyez-la à nouveau.",
-        "refresh": "Les paramètres des entrées manuelles ont changé. Vérifiez l'entrée et envoyez-la à nouveau.",
         "tooLong": "La période de travail ne peut pas dépasser 24 heures"
       },
       "occurrence": {
-        "earlier": "Première, {offset}",
-        "later": "Seconde, {offset}",
-        "legend": "{time} revient deux fois à cette date. Laquelle voulez-vous dire ?"
+        "earlier": "Premier, {offset}",
+        "later": "Deuxième, {offset}",
+        "legend": "{time} apparaît deux fois à cette date. De laquelle s'agit-il ?"
       },
       "reasonLabel": "Motif",
       "reasonPlaceholder": "Décrivez votre travail…",
       "recovery": {
         "check": "Vérifier le statut",
-        "checkFailed": "Impossible de vérifier cette saisie pour le moment. Réessayez plus tard.",
-        "contextMismatch": "Vous êtes connecté à un autre compte ou une autre organisation. Revenez-y pour traiter cette saisie.",
-        "description": "Ces saisies ont été envoyées depuis cet onglet sans résultat confirmé. Rien n'est renvoyé sans votre choix.",
+        "description": "Ces saisies ont été envoyées depuis cet onglet sans résultat confirmé. Rien ne sera renvoyé à moins que vous ne le décidiez.",
         "discard": "Ignorer",
-        "editAsNew": "Modifier comme nouvelle saisie",
-        "notCommitted": "Aucun enregistrement trouvé.",
-        "notCommittedToast": "Aucun enregistrement n'a été trouvé pour cette saisie. Renvoyez-la à l'identique ou modifiez-la comme nouvelle saisie.",
-        "retry": "Renvoyer à l'identique",
-        "saved": "Cette saisie a été enregistrée.",
-        "savedForApproval": "Cette saisie a été enregistrée et soumise pour approbation. Son statut actuel : {status}.",
-        "status": {
-          "approved": "approuvée",
-          "pending": "en attente",
-          "rejected": "refusée"
-        },
-        "stillUncertain": "Toujours non confirmée. La saisie est conservée ; réessayez une fois de nouveau en ligne.",
+        "editAsNew": "Modifier en tant que nouvelle saisie",
+        "retry": "Réessayer à l'identique",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Saisies non confirmées",
-        "uncertain": "Non confirmée. Elle est peut-être déjà enregistrée.",
-        "uncertainToast": "Impossible de confirmer si cette saisie a été enregistrée. Elle est conservée dans Saisies non confirmées, où vous pouvez la renvoyer à l'identique ou vérifier son statut.",
-        "unsupported": "Son statut ne peut pas être vérifié. Elle est peut-être déjà enregistrée.",
-        "unsupportedToast": "Le statut de cette saisie ne peut pas être vérifié pour le moment. Un nouvel envoi transmet exactement la même saisie."
+        "title": "Entrées non confirmées"
       },
       "submit": "Créer la saisie",
       "submitting": "Création en cours…",
@@ -200,12 +167,7 @@
     },
     "unknownCategory": "Catégorie inconnue",
     "unknownProject": "Projet inconnu",
-    "workCategory": "Catégorie de travail",
-    "workLocation": "Lieu de travail",
-    "workLocationHome": "Domicile",
-    "workLocationOffice": "Bureau",
-    "workLocationOther": "Autre",
-    "workLocationRemote": "À distance"
+    "workCategory": "Catégorie de travail"
   },
   "wellness": {
     "water": {

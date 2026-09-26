@@ -22,6 +22,7 @@
         "invalidDateRange": "Please select a valid date range",
         "jobCompleted": "Audit pack generation completed",
         "jobFailed": "Audit pack generation failed",
+        "lineageContinued": "Continuity from an approved anchor for {continued} of {total} employees; history before the anchor is not verified. See append-assurance.json in the pack.",
         "lineageLimited": "Limited lineage assurance for {limited} of {total} employees. See append-assurance.json in the pack.",
         "lineageNotRecorded": "Lineage assurance not recorded",
         "lineageVerified": "Lineage verified from stored evidence for {total} employees. Its limitations are listed in append-assurance.json.",

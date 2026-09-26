@@ -106,17 +106,6 @@
         "email": "Correo electrónico de Clockodo",
         "title": "Credenciales de Clockodo"
       },
-      "entity": {
-        "absences": "Ausencias",
-        "entries": "Entradas de tiempo",
-        "holidayQuotas": "Cuotas de vacaciones",
-        "nonBusinessDays": "Días no laborables",
-        "services": "Servicios / Categorías de trabajo",
-        "surcharges": "Recargos",
-        "targetHours": "Horas objetivo / Políticas de trabajo",
-        "teams": "Equipos",
-        "users": "Usuarios / Empleados"
-      },
       "errors": {
         "connectionFailed": "Error al conectar con Clockodo",
         "fetchUsersFailed": "Error al obtener los datos del usuario",

@@ -29,6 +29,11 @@
         "restTime": "Temps de repos : {count}",
         "title": "Avertissements de conformité dans cette plage de dates"
       },
+      "focus": {
+        "anonymous": "Affichage des quarts de travail d'un employé",
+        "employee": "Affichage des quarts de travail pour {name}",
+        "showAll": "Afficher tous les quarts de travail"
+      },
       "loading": "Chargement du planning...",
       "publish": {
         "failed": "Échec de la publication des quarts",

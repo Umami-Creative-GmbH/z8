@@ -394,13 +394,13 @@
             "lastUsedAria": "Last used: {value} UTC",
             "revoke": "Revoke",
             "status": {
-              "active": "Active",
-              "revoked": "Revoked"
+              "active": "active",
+              "revoked": "revoked"
             },
             "title": "Credentials",
             "unused": "Not yet used"
           },
-          "description": "Connect your identity provider to provision and manage workforce access.",
+          "description": "SCIM verification updates after your identity provider sends a test user or group change.",
           "dialog": {
             "cancel": "Cancel",
             "decommission": {
@@ -511,7 +511,7 @@
           "review": "Review & Activate",
           "review.description": "Guard activation",
           "scim": "SCIM Provisioning",
-          "scim.description": "Connect and manage your SCIM provisioning connection",
+          "scim.description": "Issue provisioning token",
           "sso": "SSO Configuration",
           "sso.description": "Register OIDC or SAML",
           "ssoTest": "Test User",
@@ -564,8 +564,6 @@
           "customDomain": "Users signing in via your custom domain will use your OAuth app"
         },
         "keyId": "Key ID",
-        "lastTested": "Last Tested",
-        "notTested": "Not Tested",
         "privateKey": "Private Key (.p8)",
         "removed": "{provider} OAuth removed",
         "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
@@ -574,8 +572,7 @@
         "title": "Social Login Providers",
         "unverified": "Unverified",
         "updateConfigError": "Failed to update config",
-        "updated": "{provider} OAuth updated successfully",
-        "working": "Working"
+        "updated": "{provider} OAuth updated successfully"
       },
       "sso": {
         "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",

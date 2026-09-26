@@ -59,6 +59,15 @@
     "requester": "Förfrågare",
     "requestingCorrection": "begär en tidskorrigering för",
     "requestingOff": "begär",
+    "review": {
+      "showDetails": "Visa detaljer",
+      "switchOrganizationAction": "Växla till {organization}",
+      "switchOrganizationBody": "Detta godkännande tillhör {organization}. Växla till den organisationen för att granska det; din behörighet kontrolleras igen efter växlingen.",
+      "switchOrganizationTitle": "Växla organisation för att granska",
+      "title": "Granskning av godkännande",
+      "unavailableBody": "Du kan inte granska detta godkännande här. Det kan ha beslutats, tilldelats på nytt, dragits tillbaka eller tagits bort, eller så kan din behörighet ha ändrats. En länk ger aldrig ensam åtkomst. Din inkorg för godkännanden visar allt som för närvarande väntar på dig.",
+      "unavailableTitle": "Detta godkännande är inte tillgängligt"
+    },
     "searchLabel": "Sök godkännanden",
     "searchPlaceholder": "Sök efter namn eller e-postadress…",
     "selectAll": "Markera alla",

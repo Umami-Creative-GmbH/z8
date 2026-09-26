@@ -325,8 +325,12 @@
         "approvalHint": "A legacy approval request or canonical workflow UUID.",
         "approvalId": "Approval ID",
         "chain": "Approval chain",
+        "decisionEvidence": "Decision evidence",
         "delete": "Force delete",
         "deleting": "Deleting…",
+        "deliveryIntent": "Delivery intent",
+        "deliveryMessage": "Delivered message",
+        "deliveryWork": "Delivery work",
         "description": "Permanently remove an approval and its linked approval records. Source records and their statuses are preserved.",
         "errors": {
           "ambiguous": "This ID exists in both approval stores. No approval was deleted.",
@@ -337,19 +341,16 @@
           "organizationRequired": "Enter an organization ID.",
           "unauthorized": "Platform admin access required."
         },
+        "escalationAttention": "Escalation attention",
+        "escalationTransfer": "Escalation transfer",
         "legacy": "Legacy request",
         "organizationHint": "The organization that owns the approval.",
         "organizationId": "Organization ID",
+        "reviewBinding": "Review binding",
+        "submittedRevision": "Submitted revision",
         "success": "Approval deleted. Removed records:",
         "title": "Force delete approval",
-        "workflow": "Workflow",
-        "submittedRevision": "Submitted revision",
-        "decisionEvidence": "Decision evidence",
-        "reviewBinding": "Review binding",
-        "escalationTransfer": "Escalation transfer",
-        "deliveryMessage": "Delivered message",
-        "deliveryWork": "Delivery work",
-        "escalationAttention": "Escalation attention"
+        "workflow": "Workflow"
       },
       "cookieConsent": {
         "description": "Injected on authentication pages for GDPR compliance",

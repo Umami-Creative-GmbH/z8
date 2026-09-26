@@ -29,6 +29,11 @@
         "restTime": "Hviletid: {count}",
         "title": "Samsvarsadvarsler i dette datointervallet"
       },
+      "focus": {
+        "anonymous": "Viser skift for én ansatt",
+        "employee": "Viser skift for {name}",
+        "showAll": "Vis alle skift"
+      },
       "loading": "Laster vaktplan...",
       "publish": {
         "failed": "Kunne ikke publisere vakter",

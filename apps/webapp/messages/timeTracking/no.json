@@ -12,10 +12,8 @@
     "clockIn": "Stemple inn",
     "clockingIn": "Stempler inn…",
     "clockingOut": "Stempler ut…",
-    "clockInSavedForReview": "Innstempling lagret på denne enheten for gjennomgang; ikke bekreftet på serveren",
     "clockInSuccess": "Stemplet inn",
     "clockOut": "Stemple ut",
-    "clockOutSavedForReview": "Utstempling lagret på denne enheten for gjennomgang; ikke bekreftet på serveren",
     "clockOutSuccess": "Stemplet ut",
     "compliance": {
       "violation": "Regelverksbrudd",
@@ -56,8 +54,6 @@
     "deadline": "Frist",
     "errors": {
       "clockInFailed": "Kunne ikke stemple inn",
-      "appendReviewRequired": "Innstempling krever gjennomgang av tidshistorikken din",
-      "appendReviewRequiredDesc": "De tidligere tidsregistreringene dine kunne ikke verifiseres, så den nye innstemplingen ble ikke lagret. Kontakt administratoren din.",
       "clockOutFailed": "Kunne ikke stemple ut",
       "holidayBlocked": "Kan ikke stemple ut på {holidayName}",
       "holidayBlockedDesc": "Denne dagen er markert som en helligdag, og tidsregistreringer er ikke tillatt",
@@ -71,64 +67,40 @@
       "clockOutLabel": "Stemple ut",
       "context": {
         "choicesCleared": "Et valgt prosjekt eller en valgt kategori er ikke lenger tilgjengelig og ble fjernet.",
-        "loadFailed": "Kunne ikke laste tidssonen og valgene for denne registreringen.",
-        "loading": "Laster registreringsvalg…",
-        "notAuthorized": "Du kan ikke opprette tidsregistreringer for denne ansatte.",
+        "loadFailed": "Kunne ikke laste inn tidssonen og valgene for denne oppføringen.",
+        "loading": "Laster inn alternativer for oppføring…",
+        "notAuthorized": "Du kan ikke opprette timeregistreringer for denne ansatte.",
         "organizationFallback": "{employee} har ingen personlig tidssone, så organisasjonens tidssone brukes.",
         "retry": "Prøv igjen",
-        "targetChanged": "Den ansatte ble endret, så prosjekt og kategori ble tilbakestilt.",
-        "targetTimezone": "Tidene er i tidssonen til {employee}: {timezone}",
+        "targetChanged": "Den ansatte ble endret, så prosjektet og kategorien ble fjernet.",
+        "targetTimezone": "Tidspunkter er i tidssonen til {employee}: {timezone}",
         "thisEmployee": "denne ansatte",
-        "utcFallback": "Verken {employee} eller organisasjonen har angitt en tidssone, så UTC brukes."
+        "utcFallback": "Verken {employee} eller organisasjonen har en angitt tidssone, så UTC brukes."
       },
       "dateLabel": "Dato",
       "description": "Opprett en timeregistrering for en tidligere dato. Godkjenning kan være påkrevd basert på organisasjonens retningslinjer for endring.",
       "errors": {
-        "collision": "Denne oppføringen er i konflikt med en tidligere innsending eller endret arbeid. Sjekk de eksisterende oppføringene dine.",
         "createFailed": "Kunne ikke opprette timeregistrering",
         "futureDate": "Kan ikke opprette registreringer for fremtidige datoer",
-        "futureTime": "Kan ikke opprette oppføringer for fremtidige tidspunkter",
-        "historyReview": "Denne tidshistorikken må gjennomgås før nye oppføringer kan lagres. Kontakt administratoren din.",
         "invalidTime": "Angi et fullstendig, gyldig klokkeslett",
         "invalidTimeRange": "Tidspunkt for utstempling må være etter innstempling",
-        "nonexistentTime": "Dette klokkeslettet finnes ikke på denne datoen fordi klokkene stilles frem.",
-        "occurrenceRequired": "Dette klokkeslettet forekommer to ganger på denne datoen. Velg hvilket du mener.",
-        "overlap": "Denne tiden overlapper registrert arbeid. Velg et tidsrom uten overlapp.",
-        "reconfirm": "Tidssonen eller tidene er endret. Se over oppføringen og send den på nytt.",
-        "refresh": "Innstillingene for manuelle oppføringer er endret. Se over oppføringen og send den på nytt.",
         "tooLong": "Arbeidsperioden kan ikke overstige 24 timer"
       },
       "occurrence": {
         "earlier": "Første, {offset}",
         "later": "Andre, {offset}",
-        "legend": "{time} forekommer to ganger på denne datoen. Hvilket mener du?"
+        "legend": "{time} forekommer to ganger på denne datoen. Hvilken mener du?"
       },
       "reasonLabel": "Årsak",
       "reasonPlaceholder": "Beskriv hva du jobbet med…",
       "recovery": {
         "check": "Sjekk status",
-        "checkFailed": "Kunne ikke sjekke oppføringen akkurat nå. Prøv igjen senere.",
-        "contextMismatch": "Du er logget inn på en annen konto eller organisasjon. Bytt tilbake for å håndtere oppføringen.",
         "description": "Disse oppføringene ble sendt fra denne fanen uten et bekreftet resultat. Ingenting sendes på nytt med mindre du velger det.",
         "discard": "Avvis",
         "editAsNew": "Rediger som ny oppføring",
-        "notCommitted": "Ingen lagring funnet.",
-        "notCommittedToast": "Ingen lagring ble funnet for oppføringen. Prøv nøyaktig på nytt, eller rediger den som en ny oppføring.",
         "retry": "Prøv nøyaktig på nytt",
-        "saved": "Oppføringen ble lagret.",
-        "savedForApproval": "Oppføringen ble lagret og sendt til godkjenning. Nåværende status: {status}.",
-        "status": {
-          "approved": "godkjent",
-          "pending": "venter",
-          "rejected": "avvist"
-        },
-        "stillUncertain": "Fortsatt ikke bekreftet. Oppføringen beholdes; prøv igjen når du er tilkoblet igjen.",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Ubekreftede oppføringer",
-        "uncertain": "Ikke bekreftet. Den kan allerede være lagret.",
-        "uncertainToast": "Vi kunne ikke bekrefte om oppføringen ble lagret. Den beholdes under Ubekreftede oppføringer, der du kan prøve nøyaktig på nytt eller sjekke statusen.",
-        "unsupported": "Statusen kan ikke sjekkes. Den kan allerede være lagret.",
-        "unsupportedToast": "Statusen til oppføringen kan ikke sjekkes akkurat nå. Et nytt forsøk sender nøyaktig samme oppføring."
+        "title": "Ubekreftede oppføringer"
       },
       "submit": "Opprett registrering",
       "submitting": "Oppretter…",

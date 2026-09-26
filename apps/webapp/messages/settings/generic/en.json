@@ -293,16 +293,6 @@
         "commitQueued": "Queued {count} accepted rows for commit",
         "committing": "Committing...",
         "description": "Review staged import rows, resolve blocking issues, and commit accepted records when the batch is ready.",
-        "hold": {
-          "appendReviewRequired": "The employee's time history needs review before new entries can be added.",
-          "invalidInterval": "The provider times lack an explicit offset, are not in order, or lie in the future.",
-          "label": "Held for review",
-          "occupancyConflict": "The time overlaps work already recorded for this employee.",
-          "operationCollision": "This row conflicts with its earlier committed import.",
-          "providerDurationMismatch": "The provider duration differs from the start and end times.",
-          "sourceCollision": "This provider record has already been imported.",
-          "unlocatedBreak": "The provider reports breaks without their times, so the worked interval is unknown."
-        },
         "issueGroups": {
           "currentMarkers": "Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
           "description": "Grouped review areas help keep quality checks visible before accepted rows are committed.",
@@ -464,7 +454,7 @@
       "title": "Notification Settings"
     },
     "organizations": {
-      "description": "Manage organization details and configuration",
+      "description": "Manage organization members, invitations, and details",
       "notFound": {
         "description": "The organization could not be found or you don't have access to it.",
         "title": "Organization Not Found"
@@ -635,8 +625,8 @@
         "employeePicker": "Employee to assign",
         "employees": "Employees",
         "manage": "Manage members of {name}",
-        "managerAddFailed": "Failed to add project manager",
         "managerAdded": "Project manager added",
+        "managerAddFailed": "Failed to add project manager",
         "managerPicker": "Project manager to add",
         "managers": "Project managers",
         "managersReadOnly": "Only organization admins can change project managers.",
@@ -893,7 +883,6 @@
         "failed": "Failed",
         "failedDescription": "Recently failed",
         "paused": "Paused",
-        "pausedDescription": "Paused jobs",
         "queueState": "Queue",
         "queueStateDescription": "Whether workers can take waiting jobs",
         "running": "Running",

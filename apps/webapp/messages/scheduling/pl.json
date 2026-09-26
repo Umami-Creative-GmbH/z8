@@ -29,6 +29,11 @@
         "restTime": "Czas odpoczynku: {count}",
         "title": "Ostrzeżenia o zgodności w tym zakresie dat"
       },
+      "focus": {
+        "anonymous": "Wyświetlanie zmian jednego pracownika",
+        "employee": "Wyświetlanie zmian dla: {name}",
+        "showAll": "Pokaż wszystkie zmiany"
+      },
       "loading": "Ładowanie harmonogramu...",
       "publish": {
         "failed": "Nie udało się opublikować zmian",

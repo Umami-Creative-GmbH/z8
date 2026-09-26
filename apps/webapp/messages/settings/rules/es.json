@@ -77,6 +77,129 @@
       },
       "updateCategory": "Actualizar categoría"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Administradores alertados {date}",
+        "approvalType": "Aprobación",
+        "attempts": "Intentos",
+        "channel": "Canal",
+        "currentApprover": "Asignación actual",
+        "description": "Las condiciones de escalado sin resolver permanecen aquí hasta que se resuelvan o un gestor de aprobaciones las cierre. Las alertas a administradores no las cierran.",
+        "details": "Pruebas, intentos e historial",
+        "dispose": "Cerrar…",
+        "disposed": "Cerrado por el gestor",
+        "empty": "Nada requiere atención.",
+        "evidence": "Pruebas",
+        "firstRaised": "Detectado por primera vez",
+        "history": "Historial",
+        "lastObserved": "Observado por última vez",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "No se han registrado intentos relacionados.",
+        "openApproval": "Aprobaciones abiertas",
+        "policyRevision": "Revisión de política",
+        "recentlyClosed": "Cerrados recientemente ({count})",
+        "recheck": "Volver a comprobar",
+        "resolved": "Resuelto",
+        "retryDelivery": "Reintentar entrega",
+        "title": "Requiere atención",
+        "transfer": "Transferir…",
+        "unknownApprover": "No registrado"
+      },
+      "channels": {
+        "delivers": "Entrega escalamientos",
+        "description": "El interruptor de escalamiento de cada canal determina si entrega mensajes de escalamiento. Los tiempos de espera del canal dejan de ser fechas límite una vez que la política de la organización asume el escalamiento.",
+        "differs": "Difiere de la política de {hours} h",
+        "inactive": "Inactivo",
+        "legacyTimeout": "Tiempo de espera del canal",
+        "none": "No hay canales de mensajería conectados.",
+        "title": "Preferencias de entrega del canal"
+      },
+      "description": "Revise la política de escalamiento de la organización, cómo se migró desde la configuración de los canales y las condiciones que requieren un gestor de aprobaciones.",
+      "dispose": {
+        "confirm": "Cerrar elemento",
+        "description": "Al cerrar se registra su decisión en el registro de auditoría. No reasigna la aprobación ni permite otro escalamiento automático.",
+        "noteLabel": "Nota de resolución",
+        "noteRequired": "Ingrese una nota de resolución.",
+        "title": "Cerrar elemento de atención"
+      },
+      "hoursValue": "{hours} h",
+      "loadFailed": "No se pudo cargar la configuración de escalamiento.",
+      "migration": {
+        "channel": "Canal",
+        "conflictsTitle": "Configuración en conflicto",
+        "disabledOutcome": "Desactivado porque ningún canal activo escaló aprobaciones.",
+        "enabledOutcome": "Activado porque al menos un canal activo escaló aprobaciones. El tiempo de espera activo más corto se convirtió en la ventana de respuesta.",
+        "escalations": "Escalamientos",
+        "markReviewed": "Marcar como revisado",
+        "migratedAt": "Migrado el {date}.",
+        "noSources": "No había canales de mensajería conectados cuando se migró la política.",
+        "reviewed": "Revisado",
+        "reviewedBy": "Revisado por {name} el {date}",
+        "status": "Estado",
+        "timeout": "Tiempo de espera",
+        "title": "Migración de la configuración",
+        "used": "Usado",
+        "usedNo": "No usado",
+        "usedYes": "Usado"
+      },
+      "navDescription": "Política de escalamiento de la organización y aprobaciones que requieren atención",
+      "off": "Desactivado",
+      "on": "Activado",
+      "ownership": {
+        "legacyDescription": "Esta política de la organización está preparada para el cambio al escalamiento compartido. Hasta entonces, cada canal conectado seguirá utilizando su propia configuración de escalamiento.",
+        "legacyTitle": "La automatización del canal sigue gestionando el escalamiento",
+        "pausedDescription": "No se producen nuevas transferencias automáticas. Las asignaciones existentes y la recuperación de entregas no se verán afectadas.",
+        "pausedTitle": "El escalamiento automático está en pausa"
+      },
+      "policy": {
+        "description": "Se aplica una sola ventana de respuesta a cada tipo de aprobación y canal. Los canales solo entregan mensajes.",
+        "disabled": "Deshabilitado",
+        "enabled": "Habilitado",
+        "enabledDescription": "Reemplazar a un aprobador vencido por un responsable de respaldo elegible del solicitante.",
+        "enabledLabel": "Escalar aprobaciones vencidas",
+        "hours": "horas",
+        "reasonLabel": "Motivo del cambio (opcional)",
+        "revision": "Revisión {revision}",
+        "save": "Guardar directiva",
+        "title": "Directiva de la organización",
+        "windowDescription": "Medido en horas transcurridas desde que la asignación actual pasó a ser procesable. Al cambiarlo, se modifican las fechas límite pendientes sin reiniciar sus temporizadores.",
+        "windowInvalid": "Introduzca un número entero de horas entre 1 y 720.",
+        "windowLabel": "Ventana de respuesta"
+      },
+      "revisions": {
+        "changedBy": "Modificado por",
+        "migration": "Migración de configuración",
+        "policy": "Directiva",
+        "revision": "Revisión",
+        "title": "Historial de directivas",
+        "when": "Cuándo"
+      },
+      "title": "Escalamiento de aprobación",
+      "toast": {
+        "deliveryRetried": "Reintento de entrega programado",
+        "disposed": "Elemento de atención cerrado",
+        "rechecked": "Se verificaron {checked} elementos, {resolved} resueltos",
+        "requestFailed": "Error en la solicitud. Inténtelo de nuevo.",
+        "reviewed": "Conflictos marcados como revisados",
+        "saved": "Directiva de escalamiento guardada",
+        "transferred": "Asignación de aprobación transferida",
+        "unchanged": "No hay cambios para guardar"
+      },
+      "transfer": {
+        "confirm": "Transferir",
+        "currentApprover": "Asignado actualmente a {name}.",
+        "description": "El aprobador actual pierde esta asignación y el administrador de respaldo seleccionado puede decidirla desde su bandeja de entrada de aprobaciones. La aprobación permanece pendiente, las demás asignaciones no cambian y la transferencia se registra en el registro de auditoría.",
+        "loadFailed": "No se pudieron cargar los administradores elegibles.",
+        "loading": "Cargando responsables elegibles…",
+        "noCandidates": "No hay ningún responsable sustituto elegible disponible. Solo los responsables activos del solicitante con acceso a la bandeja de entrada de aprobaciones pueden asumir la tarea.",
+        "primary": "Responsable principal",
+        "reasonLabel": "Motivo (opcional)",
+        "recipientLabel": "Transferir a",
+        "recipientRequired": "Elige un responsable sustituto.",
+        "recommended": "Siguiente en el orden",
+        "title": "Transferir asignación de aprobación"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Las solicitudes elegibles pueden coincidir con esta política.",
       "activeLabel": "Política activa",
@@ -85,16 +208,13 @@
       "activeStatus": "Estado activo",
       "addPolicy": "Añadir política",
       "approvalType": {
-        "absenceRequests": "Solicitudes de ausencia",
         "absence": "Ausencia",
         "complianceException": "Excepción de cumplimiento",
-        "manualTimeSubmission": "Envío manual de tiempo",
-        "policyClockOut": "Salida de reloj según la política",
+        "manualTimeSubmission": "Envío manual de horas",
+        "policyClockOut": "Fichaje de salida por política",
         "shiftRequest": "Solicitud de turno",
         "timeCorrection": "Corrección de tiempo",
-        "travelExpense": "Gasto de viaje",
-        "timeEntryChanges": "Cambios en el registro de tiempo",
-        "travelExpenses": "Gastos de viaje"
+        "travelExpense": "Gasto de viaje"
       },
       "approvalTypes": "Tipos de aprobación",
       "conditionsCount": "Número de condiciones",
@@ -131,21 +251,6 @@
       "toast": {
         "created": "Política de aprobación creada",
         "saveFailed": "No se pudo guardar la política de aprobación."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Envíe la solicitud al gerente predeterminado cuando esta etapa no pueda resolver un aprobador.",
-          "label": "Gerente predeterminado"
-        },
-        "fail": {
-          "description": "Rechace la solicitud cuando esta etapa no pueda resolver un aprobador.",
-          "label": "Rechazar solicitud"
-        },
-        "label": "Comportamiento alternativo",
-        "organizationAdmin": {
-          "description": "Envíe la solicitud a un administrador de la organización cuando esta etapa no pueda resolver un aprobador.",
-          "label": "Administrador de la organización"
-        }
       },
       "validation": {
         "activePolicyRequiresStage": "Las políticas activas requieren al menos una etapa de aprobación.",
