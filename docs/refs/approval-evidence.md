@@ -1706,7 +1706,7 @@ No application endpoint changes the mode.
    records the committed segments but does not change how splits are made
    (including the second segment's minutes, derived by subtraction).
 6. Presentation and canonical bindings: implemented by #325 (see its
-   section); legacy-authority time cards stay review-only.
+   section); legacy bindings and cycle delivery by #432.
 7. Not verified on PostgreSQL: mobile and offline clock-out callers (same
    owner), bots deciding time approvals, multi-stage chains, `shadow`/`ready`
    modes, concurrent decision races, and old binaries (pre-deployment binaries
@@ -1838,7 +1838,7 @@ and the zero-length canonical sentinel. Legacy rows also record
 1. **In-flight classification.** Enabling capture holds every pending correction
    submitted before capture (`evidence_required`) until it is drained or cancelled.
 2. **Presentation** and canonical bindings: implemented by #325 (see its
-   section); legacy-authority time cards stay review-only.
+   section); legacy bindings and cycle delivery by #432.
 3. **Demo corrections** (#285) capture no evidence.
 4. Not verified on PostgreSQL: multi-stage chains, `shadow`/`ready` modes, bots
    deciding corrections, and old binaries (pre-deployment binaries submit and
@@ -1872,8 +1872,8 @@ Manual time submissions, policy clock-outs and time corrections (edit,
 metadata-only and deletion) are now presented from the evidence #301/#302/#303
 capture, and decided from cards through reviewed bindings. The scope agreed on
 2026-09-25 is **canonical authority only** for bound cards and card decisions;
-legacy-authoritative time approvals stay review-only on every bot (follow-up
-ticket, see blockers). Authenticated review works for both authorities.
+legacy-authoritative time approvals got bound cards later, in #432 (see
+"Legacy time approval cards"). Authenticated review works for both authorities.
 Everything is **inactive for every organization**: no migration and no control
 row is added; the existing tables and checks already admit the three kinds.
 
@@ -2036,10 +2036,9 @@ No application endpoint changes either control.
 
 ### Activation blockers (#325, unresolved)
 
-1. **Legacy authority.** Legacy-authoritative time approvals (every
-   organization today) stay review-only on bots: no legacy binding, no legacy
-   delivery intent, and legacy delivery assumes one lifecycle per source while a
-   work period has several approval cycles. Follow-up: #432.
+1. **Legacy authority.** Resolved in code by #432 (see "Legacy time approval
+   cards, bound decisions and cycle delivery"): legacy bindings, legacy card
+   decisions and cycle-keyed legacy delivery for the three kinds.
 2. **Canonical-only (`complete`) references.** Presentation starts from the
    compatibility request; a `complete`-mode workflow without one is delivered as
    `unsupported_route` attention (same limit as absences).

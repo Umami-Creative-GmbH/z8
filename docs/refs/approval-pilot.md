@@ -78,16 +78,16 @@ drains). It is never cleared by the report.
 
 | Code | Severity | Meaning and action |
 | --- | --- | --- |
-| `authority_not_canonical` | blocker | Time cards need canonical authority: legacy time approvals stay review-only on bots (#432). Absences are admitted under both authorities (legacy since #384, see [Legacy absence cards](#legacy-absence-cards-384--459)). |
+| `authority_not_canonical` | blocker | A kind whose cards need canonical authority is decided by legacy authority. No kind raises it since #432: absences (legacy since #384, see [Legacy absence cards](#legacy-absence-cards-384--459)) and time kinds (legacy since #432, see [Legacy time cards](#legacy-time-cards-432)) are admitted under both authorities. |
 | `authority_complete_unsupported` | blocker | Absence and time kinds in `complete` mode: presentation starts from the stage's compatibility request, which `complete` no longer writes, so the owner's work becomes `unsupported_route` attention instead of a card (#325 blocker 2). |
 | `authority_not_legacy` | blocker | Expense cards exist only under legacy authority (#296); a canonical expense rollout has no card path. |
 | `evidence_capture_inactive` | blocker | Turn on `approval_evidence_control` first (#287, #295). |
 | `presentation_not_actionable` | blocker | Actionable providers need `approval_presentation_control = actionable` (#290, #293, #292, #296, #325). Slack needs none: it is always review-only. |
-| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. Time cards are admitted on Telegram, plus the Slack review-only summary; Teams and Discord share the bound path but were never exercised for time kinds (#325 blocker 3). Legacy absence cards are admitted on Telegram only (#384 blocker 7): the owner would deliver a legacy cycle to Teams, Discord and Slack too, but those cards were never exercised under legacy authority. |
-| `presentation_actionable_unverified` | blocker | An `actionable` row on an unverified combination (expense on Teams, Slack or Discord; a time kind on Teams or Discord) would make unverified cards actionable. Remove it. Not raised for legacy absences: their Teams and Discord cards stay review-only in code whatever the row says (`LEGACY_ABSENCE_ACTIONABLE_PROVIDERS`), and the row belongs to canonical absence cards, which it admits after the cutover. |
+| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. Time cards are admitted on Telegram, plus the Slack review-only summary; Teams and Discord share the bound path but were never exercised for time kinds (#325 blocker 3). Legacy absence cards are admitted on Telegram only (#384 blocker 7): the owner would deliver a legacy cycle to Teams, Discord and Slack too, but those cards were never exercised under legacy authority. Legacy time cards likewise (#432 blocker 6); Slack has no legacy time review-only summary. |
+| `presentation_actionable_unverified` | blocker | An `actionable` row on an unverified combination (expense on Teams, Slack or Discord; a time kind on Teams or Discord) would make unverified cards actionable. Remove it. Not raised for legacy absences or legacy time kinds: their Teams and Discord cards stay review-only in code whatever the row says (`LEGACY_ABSENCE_ACTIONABLE_PROVIDERS`, `LEGACY_TIME_ACTIONABLE_PROVIDERS`), and the row belongs to the kind's canonical cards, which it admits after the cutover. |
 | `provider_not_configured` | blocker | No active integration with approvals enabled (for Teams: no such tenant). |
 | `escalation_delivery_disabled` | hold | Absence and time kinds under canonical authority (the canonical kinds escalation transfers, #326), while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
-| `escalation_replacement_unsupported` | hold | Legacy absences while escalation owns transfers (owner `escalation`, not paused, policy enabled), on every configured provider: a legacy transfer sends the new holder no card and leaves the former holder's card unrefreshed; that card decides nothing (#384 blocker 5, #408). The backup decides in the web inbox. |
+| `escalation_replacement_unsupported` | hold | Legacy absences and legacy time kinds (#432 blocker 4) while escalation owns transfers (owner `escalation`, not paused, policy enabled), on every configured provider: a legacy transfer sends the new holder no card and leaves the former holder's card unrefreshed; that card decides nothing (#384 blocker 5, #408). The backup decides in the web inbox. |
 | `legacy_chain_mode_unverified` | hold | Legacy absences in `shadow` or `ready` mode. Chain submissions work there since #453, but chain cards were verified in `legacy` mode only (#384 blocker 4). The count, when present, is the number of pending chain cycles; zero pending chains does not mean none will be submitted, so check whether the organization's absence policies route to chains before accepting. |
 | `evidence_held` | hold | Pending lifecycles held for evidence (count = `notCaptured` + `materialChange` + `authorityChange`), now or, while capture is still off, as soon as it is turned on. A held lifecycle is refused for approve and reject everywhere, the web inbox included. Absences leave the hold by cancellation and resubmission; held expense claims have no cancellation path and raise no attention record (#296 blocker 4), so they are not in `attention_open`. Otherwise drain them, or record reconstructed revisions through a separately authorized step (not implemented). Nothing backfills them. |
 | `card_review_only` | hold | Time kinds: pending lifecycles counted as `reviewOnly`. Their approvers get a review-only card and decide in the web inbox. |
@@ -269,6 +269,58 @@ the source here (#384 verified several cycles with a seeded second cycle).
 Card sending, pressing, replay, refresh and cleanup were verified by the #384
 suite and are not repeated.
 
+## Legacy time cards (#432)
+
+Organizations whose manual time submissions, policy clock-outs or time
+corrections are decided by legacy authority (rollout `legacy`, `shadow`,
+`ready`, or no rollout row for the kind) get Telegram cards bound to the exact
+legacy request and its legacy submitted revision (#432; design and activation
+SQL in [Approval evidence](approval-evidence.md#legacy-time-approval-cards-bound-decisions-and-cycle-delivery-432)).
+The report admits them under exactly the #432 gates. Before #432 it blocked
+them with `authority_not_canonical`.
+
+| Gate | Report |
+| --- | --- |
+| The kind's rollout not `canonical`/`complete` | `authority` is `legacy` |
+| `approval_evidence_control = capture` for the kind | `evidence_capture_inactive` |
+| Telegram `approval_presentation_control = actionable` (shared with canonical time cards) | `presentation_not_actionable` |
+| Active Telegram bot with approvals enabled | `provider_not_configured` |
+| Teams, Discord and Slack **not** admitted (#432 blocker 6) | `combination_unverified` |
+| No replacement cards after legacy transfers (#432 blocker 4, #408) | `escalation_replacement_unsupported` |
+| Held evidence: no revision, a material change (#432 blocker 5) | `evidence_held` |
+| Facts the card cannot state | `card_review_only` |
+| Cycles submitted before the delivery control (#432 blocker 2) | `in_flight_before_activation` |
+
+Under legacy authority the report classifies the kind's pending legacy
+requests, not its pending shadow observations: each against the legacy
+revision of its cycle, through the legacy card's own revision and fact gates
+(`classifyLegacyTimeCard`). A request without a legacy revision is attributed
+to a kind by the decision owner's own classification and held as not captured.
+The in-flight count is the legacy counterpart of the absence one, keyed like
+the owner's lifecycles: pending cycles whose legacy revision names the kind
+and that have no intent of that cycle created at or after the Telegram
+control's `activated_at`; an uncaptured cycle is held as evidence instead.
+Old-path cards of pending legacy time requests count as
+`legacy_cards_historical_only` under the kind of their cycle's legacy revision.
+
+Chains are verified in `legacy`, `shadow` and `ready` modes (#432), so there is
+no chain-mode hold for time kinds. The report cannot see the remaining #432
+blockers: the drain of old binaries, shadow cancellation (#463), ingress
+durability and the scanner gap. Record their evidence separately.
+
+### Verification (#432)
+
+- `lib/approvals/pilot/readiness.integration.test.ts`: a prepared `legacy`
+  organization is `ready` on Telegram for all three time kinds; Slack is
+  `combination_unverified`; an actionable Teams row left from canonical
+  authority is not flagged.
+- `lib/telegram/legacy-time-bound-approval.integration.test.ts`, with requests
+  submitted through the real time actions: evidence current, not captured
+  (submitted before capture) and material change per kind; one captured cycle
+  submitted before activation in flight and one after it not; Teams
+  unverified; `escalation_replacement_unsupported` once escalation owns
+  transfers.
+
 ## Time approval cards (#330 / T65)
 
 Cards for manual time submissions, policy clock-outs and time corrections
@@ -287,7 +339,7 @@ holds:
 
 | Gate | Where it comes from |
 | --- | --- |
-| Rollout `canonical` (not `legacy`, `shadow`, `ready` or `complete`) | #325; legacy authority → #432, `complete` → blocker 2 |
+| Rollout `canonical` (not `complete`), or legacy authority under the #432 gates | #325; legacy authority → [Legacy time cards](#legacy-time-cards-432), `complete` → blocker 2 |
 | `approval_evidence_control = capture` | #301/#302 (transaction-owned submitted and resulting evidence) |
 | Telegram `approval_presentation_control = actionable`; Slack none | #325 activation SQL |
 | Teams and Discord **not** admitted | #325 blocker 3 (`combination_unverified`) |
@@ -353,9 +405,10 @@ With a real bot and tenant:
 - **`complete` mode** is now a blocker for absences too
   (`authority_complete_unsupported`). The owner's missing-compatibility path is
   kind-independent, so the #328 verdicts under `complete` were too optimistic.
-- **Legacy time authority** (every organization today) stays review-only on
-  bots and is held by escalation (`legacy_time_authority`, #439). Bound legacy
-  cards and cycle-keyed delivery are #432.
+- **Legacy time authority** (every organization today) gets bound Telegram
+  cards and cycle-keyed delivery since #432 (see
+  [Legacy time cards](#legacy-time-cards-432)); escalation transfers it since
+  #439, without replacement cards (#408).
 
 ### Pause and rollback
 
@@ -372,7 +425,8 @@ PostgreSQL 16, both suites in `test:approval-workflow-repository:integration`:
   - Telegram and Slack are admitted for all three time kinds;
   - Teams and Discord are `combination_unverified`, and an actionable Teams
     row is flagged;
-  - legacy authority is `authority_not_canonical`;
+  - legacy authority admits Telegram only (#432; Slack `combination_unverified`,
+    no flag for an actionable Teams row);
   - `complete` mode is `authority_complete_unsupported`, for time kinds and
     absences;
   - time kinds get `escalation_delivery_disabled` once escalation owns

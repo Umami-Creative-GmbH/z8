@@ -6,7 +6,8 @@ Discord cards (#292, see its section at the end) for canonical absences, and,
 since #296, Telegram cards for legacy-authoritative expense claims and, since
 #384, legacy-authoritative absences (see "Legacy lifecycles"). Since #325 it also delivers canonical manual time submissions,
 policy clock-outs and time corrections (Telegram verified; see "Time approval
-presentation and bound decisions" in [approval evidence](approval-evidence.md)). It is **inactive for every organization**: migrations
+presentation and bound decisions" in [approval evidence](approval-evidence.md)),
+and since #432 their legacy-authoritative cycles (see "Submission cycles"). It is **inactive for every organization**: migrations
 `0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql`,
 `0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql`,
 `0094_discord_approval_delivery.sql` and `0108_legacy_absence_presentation.sql`
@@ -126,8 +127,8 @@ leaves draft once) and its legacy requests stand in for assignments.
 
 ### Submission cycles (#384)
 
-A source can have several independent submission cycles (time kinds, #432;
-legacy absences create one per source). A cycle-keyed legacy lifecycle is one
+A source can have several independent submission cycles (a work period's
+submission and each correction, #432; legacy absences create one per source). A cycle-keyed legacy lifecycle is one
 cycle: `legacy_cycle_id` names the legacy chain instance, or the single legacy
 request, that one submission created, on intents, work and messages. Rows
 without it keep the source-scoped expense lifecycle above, unchanged.
@@ -136,6 +137,11 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   decided request's cycle) and ordinary cancellation (`withdrawn`, one per
   cycle, written before the pending requests are deleted) write the cycle's
   intents, only while a delivery control exists for `(organization, absence)`.
+  Legacy time kinds (#432) do the same: the ordinary (manual submission, policy
+  clock-out) and correction submission owners write `submitted`, both decision
+  owners (web and card) `decided`, and requester correction cancellation
+  `withdrawn`, each keyed by the work period and the cycle, only while a
+  delivery control exists for `(organization, kind)`.
 - **Membership.** The cycle's live requests are its single request, or the stage
   requests of its chain. Initial cards, cancellation of initial work and
   refreshes are scoped to the cycle's rows.
@@ -149,7 +155,9 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   earlier stages, and the version counts only changes it could have delivered.
 - **State.** The cycle's status is its chain's, or its single request's; a
   deleted absence or request reads as `cancelled` (the card says the request
-  was withdrawn).
+  was withdrawn). A time cycle with a `withdrawn` intent reads as `cancelled`:
+  cancelling a direct legacy correction keeps its request as a tombstone that
+  looks rejected (#301).
 - **Surviving cancellation.** Ordinary absence cancellation deletes the absence
   and its pending legacy requests. The delivery rows' request FKs are dropped
   (`0108`), so the cycle's work, messages and intents stay until privileged
@@ -159,6 +167,9 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   or after the provider's control activation), so the old path sends neither a
   card nor a message for it. A notification naming an exact request checks
   that request's cycle; one naming only the absence checks any of its cycles.
+  A legacy time cycle (#432) likewise, while its kind has legacy authority; a
+  notification naming only the work period checks the cycles of its pending
+  requests.
 
 ## Sending and refreshing
 
