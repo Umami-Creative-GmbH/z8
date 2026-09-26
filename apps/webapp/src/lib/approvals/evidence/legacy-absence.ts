@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { absenceEntry, approvalWorkflowRollout } from "@/db/schema";
+import {
+	type ApprovalPresentationProvider,
+	absenceEntry,
+	approvalWorkflowRollout,
+} from "@/db/schema";
 import {
 	type Instant,
 	instantFromDate,
@@ -63,6 +67,17 @@ export async function hasLegacyAbsenceAuthority(
 		.limit(1);
 	return rollout?.mode !== "canonical" && rollout?.mode !== "complete";
 }
+
+/**
+ * Providers whose legacy absence cards may carry controls and whose presses
+ * may decide (#384). Teams and Discord share the bound path but are not
+ * verified under legacy authority, so even an `actionable` presentation
+ * control (for example one left from canonical authority) keeps them
+ * review-only. Slack never decides.
+ */
+export const LEGACY_ABSENCE_ACTIONABLE_PROVIDERS: readonly ApprovalPresentationProvider[] = [
+	"telegram",
+];
 
 const LEGACY_DECISION_COMMAND_VERSION = "absence-legacy-decision:v1";
 const LEGACY_SUBMISSION_COMMAND = "absence-legacy-submission:v1";

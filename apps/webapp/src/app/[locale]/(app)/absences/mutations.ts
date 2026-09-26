@@ -14,7 +14,10 @@ import {
 	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
-import { recordLegacyDeliveryIntent } from "@/lib/approvals/delivery/intents";
+import {
+	legacyDeliveryCycleId,
+	recordLegacyDeliveryIntent,
+} from "@/lib/approvals/delivery/intents";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
@@ -207,11 +210,25 @@ async function cancelLegacyApprovalRows(
 	// pending ones are deleted and their chain links cleared.
 	const cycles =
 		input.chains.length === 0
-			? input.requests.map((request) => ({ cycleId: request.id, requestId: request.id }))
+			? input.requests.map((request) => ({
+					cycleId: legacyDeliveryCycleId({
+						chainInstanceId: null,
+						approvalRequestId: request.id,
+					}),
+					requestId: request.id,
+				}))
 			: input.chains.flatMap((chain) => {
 					const stage = (chain.stages ?? []).find((row) => row.approvalRequestId);
 					return stage?.approvalRequestId
-						? [{ cycleId: chain.id, requestId: stage.approvalRequestId }]
+						? [
+								{
+									cycleId: legacyDeliveryCycleId({
+										chainInstanceId: chain.id,
+										approvalRequestId: stage.approvalRequestId,
+									}),
+									requestId: stage.approvalRequestId,
+								},
+							]
 						: [];
 				});
 	let deliveryIntent = false;

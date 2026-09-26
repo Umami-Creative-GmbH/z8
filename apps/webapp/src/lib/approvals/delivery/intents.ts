@@ -99,8 +99,19 @@ export async function recordLegacyAbsenceDecisionIntent(
 }
 
 /**
- * The submission cycle a legacy request belongs to (#384): the chain instance
- * it is a stage of, or the request itself. Read while the request's chain link
+ * The identity of a legacy submission cycle (#384): the chain instance one
+ * submission created, or its single legacy request when it created no chain.
+ */
+export function legacyDeliveryCycleId(input: {
+	chainInstanceId: string | null;
+	approvalRequestId: string;
+}): string {
+	return input.chainInstanceId ?? input.approvalRequestId;
+}
+
+/**
+ * The submission cycle a legacy request belongs to: the chain instance it is
+ * a stage of, or the request itself. Read while the request's chain link
  * exists (cancellation clears the link of pending stages).
  */
 export async function resolveLegacyDeliveryCycle(
@@ -116,7 +127,9 @@ export async function resolveLegacyDeliveryCycle(
 			limit 1
 		`),
 	);
-	return typeof stage?.chain_instance_id === "string"
-		? stage.chain_instance_id
-		: input.approvalRequestId;
+	return legacyDeliveryCycleId({
+		chainInstanceId:
+			typeof stage?.chain_instance_id === "string" ? stage.chain_instance_id : null,
+		approvalRequestId: input.approvalRequestId,
+	});
 }

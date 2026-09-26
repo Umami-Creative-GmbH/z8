@@ -611,7 +611,10 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 	}
 
 	/** The pending-approval notification the existing path sends to the approver. */
-	async function oldPathNotification(absenceId: string) {
+	async function oldPathNotification(
+		entityId: string,
+		entityType: "absence_entry" | "approval_request" = "absence_entry",
+	) {
 		const before = calls.length;
 		await sendTelegramNotification({
 			userId: ids.managerUser,
@@ -619,8 +622,8 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 			type: "approval_request_submitted",
 			title: "Absence request",
 			message: "Avery Requester requested an absence",
-			entityType: "absence_entry",
-			entityId: absenceId,
+			entityType,
+			entityId,
 		});
 		return calls.slice(before).filter((call) => call.method === "sendMessage");
 	}
@@ -1036,6 +1039,44 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 			ids.manager,
 		]);
 
+		// A committed #299 escalation transfer (the request moved and journaled,
+		// as the transfer writes them): the former holder's card decides nothing,
+		// and the replacement decides on the web.
+		const moved = await submit({ startDate: "2026-09-21", endDate: "2026-09-22" });
+		const movedCard = await sendCard(moved.requestId);
+		await admin.query("update approval_request set approver_id = $2 where id = $1", [
+			moved.requestId,
+			ids.secondManager,
+		]);
+		await admin.query(
+			`insert into approval_escalation_transfer
+			 (organization_id, operation_key, initiator, authority_mode, workflow_type,
+			  legacy_approval_request_id, legacy_source_sequence,
+			  source_approver_employee_id, replacement_approver_employee_id, requester_employee_id,
+			  receipt_idempotency_key, receipt_actor_fingerprint, receipt_command_fingerprint,
+			  request_fingerprint, actor_kind, actor_user_id, actor_employee_id, transferred_at)
+			 values ($1, 't384-transfer', 'human', 'legacy', 'absence', $2, 0,
+			  $3, $4, $5, 't384-transfer', 'v1', 'v1', 'v1', 'user', $6, $7, now())`,
+			[
+				ids.organization,
+				moved.requestId,
+				ids.manager,
+				ids.secondManager,
+				ids.requester,
+				ids.finalUser,
+				ids.finalApprover,
+			],
+		);
+		const movedPending = await state(moved.absenceId);
+		await pressOnce(movedCard, "t384-transferred");
+		expect(await state(moved.absenceId)).toEqual(movedPending);
+		actAs(ids.secondManagerUser);
+		expect(
+			(await approveAbsenceEffect(moved.absenceId, { approvalRequestId: moved.requestId })).success,
+		).toBe(true);
+		harness.userId = null;
+		expect((await state(moved.absenceId)).absence).toBe("approved");
+
 		// Pausing the provider stops fresh presses on sent cards; a committed
 		// press still replays.
 		const committed = await submit({ startDate: "2026-08-24", endDate: "2026-08-25" });
@@ -1198,6 +1239,7 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 		expect(harness.kicks).toContainEqual({ organizationId: ids.organization });
 		// The owner delivers this cycle: the old path sends neither card nor message.
 		expect(await oldPathNotification(absenceId)).toEqual([]);
+		expect(await oldPathNotification(requestId, "approval_request")).toEqual([]);
 
 		const initial = await runOwner();
 		const card = only(initial.sent);
@@ -1288,12 +1330,16 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 		const final = await runOwner();
 		// The stage-one card keeps its own step and states the request's outcome;
 		// the final approver (no settings) reads the default locale.
-		const texts = final.edits.map((call) => String(call.body.text));
-		expect(texts).toHaveLength(2);
-		expect(texts[0]).toContain("Genehmigung erfasst");
-		expect(texts[0]).toContain("Aktueller Stand des Antrags: abgelehnt");
-		expect(texts[1]).toContain("Request rejected");
-		expect(texts[1]).toContain("Rejected by Frankie Final");
+		const texts = Object.fromEntries(
+			final.edits.map((call) => [String(call.body.chat_id), String(call.body.text)]),
+		);
+		expect(Object.keys(texts).sort()).toEqual(
+			[String(MANAGER_CHAT_ID), String(FINAL_CHAT_ID)].sort(),
+		);
+		expect(texts[String(MANAGER_CHAT_ID)]).toContain("Genehmigung erfasst");
+		expect(texts[String(MANAGER_CHAT_ID)]).toContain("Aktueller Stand des Antrags: abgelehnt");
+		expect(texts[String(FINAL_CHAT_ID)]).toContain("Request rejected");
+		expect(texts[String(FINAL_CHAT_ID)]).toContain("Rejected by Frankie Final");
 		expect((await messages(absenceId)).map((row) => row.status_version)).toEqual([3, 3]);
 	});
 
@@ -1457,4 +1503,44 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 		expect(versions).toEqual({ [requestId]: 2, [secondId]: 2 });
 		expect((await runOwner()).edits).toEqual([]);
 	});
+
+	for (const mode of ["shadow", "ready"] as const) {
+		it(`delivers, decides and refreshes a ${mode}-mode card under legacy authority`, async () => {
+			await seed({ mode, delivery: true });
+			const { absenceId, requestId } = await submit();
+			const card = only((await runOwner()).sent);
+			const [message] = await messages(absenceId);
+			expect(message).toMatchObject({
+				legacy_cycle_id: requestId,
+				binding_id: bindingOf(card.callbackData[0]),
+			});
+			const pressed = await press(
+				callback({
+					data: card.callbackData[1] ?? "",
+					queryId: `t384-${mode}-press`,
+					updateId: 6301,
+					messageId: Number(message?.remote_message_id),
+				}),
+			);
+			expect(only(pressed.answers).body).toMatchObject({ text: "Antrag abgelehnt" });
+			expect(await state(absenceId)).toMatchObject({
+				absence: "rejected",
+				requests: "rejected",
+				decisions: "1",
+				invocations: "1",
+			});
+			// The mirrored observation follows; it never became the authority.
+			const { rows } = await admin.query(
+				`select d.workflow_id, d.observed_workflow_id is not null as observed
+				 from approval_decision_evidence d where d.legacy_approval_request_id = $1`,
+				[requestId],
+			);
+			expect(only(rows)).toEqual({ workflow_id: null, observed: true });
+			const refreshed = await runOwner();
+			expect(only(refreshed.edits).body.text).toContain("Antrag abgelehnt");
+			expect(await messages(absenceId)).toMatchObject([
+				{ controls: "none", state: "retired", status_version: 2 },
+			]);
+		});
+	}
 });

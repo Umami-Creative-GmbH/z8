@@ -140,9 +140,13 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   requests of its chain. Initial cards, cancellation of initial work and
   refreshes are scoped to the cycle's rows.
 - **Version.** The number of the cycle's intents. Every lifecycle change writes
-  one and only the purge deletes them, so the version only increases, also
-  across cancellation (which deletes the pending requests). A two-stage chain
-  moves 1 → 2 → 3; a withdrawal adds one.
+  one while a control exists and only the purge deletes them, so the version
+  only increases, also across cancellation (which deletes the pending
+  requests). A two-stage chain moves 1 → 2 → 3; a withdrawal adds one. A cycle
+  submitted before the control has no `submitted` intent; its first owned
+  intent (a decision) makes it version 1. The owner plans only from intents
+  created at or after the control's activation, so it never sends that cycle's
+  earlier stages, and the version counts only changes it could have delivered.
 - **State.** The cycle's status is its chain's, or its single request's; a
   deleted absence or request reads as `cancelled` (the card says the request
   was withdrawn).
@@ -153,7 +157,8 @@ without it keep the source-scoped expense lifecycle above, unchanged.
 - **Old path.** `isApprovalNotificationDeliveredByOwner` treats a legacy absence
   cycle as owner-delivered when the owner owns one of its intents (created at
   or after the provider's control activation), so the old path sends neither a
-  card nor a message for it.
+  card nor a message for it. A notification naming an exact request checks
+  that request's cycle; one naming only the absence checks any of its cycles.
 
 ## Sending and refreshing
 

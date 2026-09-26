@@ -78,7 +78,10 @@ import {
 	renderAbsenceRequestPendingApproval,
 	renderAbsenceRequestSubmitted,
 } from "@/lib/email/render";
-import { recordLegacyDeliveryIntent } from "@/lib/approvals/delivery/intents";
+import {
+	legacyDeliveryCycleId,
+	recordLegacyDeliveryIntent,
+} from "@/lib/approvals/delivery/intents";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { createLogger } from "@/lib/logger";
 import {
@@ -654,10 +657,13 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 								sourceType: "absence_entry",
 								sourceId: newAbsence.id,
 								approvalRequestId: approvalWorkflowResult.approvalRequestId,
-								cycleId:
-									approvalWorkflowResult.kind === "chain_created"
-										? approvalWorkflowResult.chainInstanceId
-										: approvalWorkflowResult.approvalRequestId,
+								cycleId: legacyDeliveryCycleId({
+									chainInstanceId:
+										approvalWorkflowResult.kind === "chain_created"
+											? approvalWorkflowResult.chainInstanceId
+											: null,
+									approvalRequestId: approvalWorkflowResult.approvalRequestId,
+								}),
 								event: "submitted",
 							});
 						}

@@ -990,6 +990,10 @@ revision; the review link is the exact legacy request.
   owner runs with that request and without any any-approver or organization
   option, so eligible-manager fallback and management authority are
   unreachable; after a #299 transfer the former holder is refused.
+- The binding must name the cycle's current legacy revision; this is checked
+  before the #299 transfer and authority checks. A revision cannot disappear
+  while its binding exists (the binding cascades with it), so a press whose
+  revision was purged finds no binding.
 - Refusals (reassigned, decided, deleted by cancellation, material change,
   paused provider, other tenant or recipient) decide nothing; the webhook turns
   a still-pending card into a review notice and the owner refreshes decided or
@@ -1087,7 +1091,7 @@ PostgreSQL 16 (`lib/telegram/legacy-bound-approval.integration.test.ts`, part of
 `rejectAbsenceEffect`, `cancelAbsenceRequest`, `sendTelegramNotification` and
 `deleteApproval`. Only the session, billing guard, e-mail and notification
 fan-out, calendar queue, work-balance marking, the vault, the post-commit fast
-path and the Telegram transport are replaced. 15/15 passing:
+path and the Telegram transport are replaced. 17/17 passing:
 
 - `legacy`, `shadow` and `ready` cards bound to the exact legacy request and
   legacy revision (no workflow, stage or assignment), German locale, logical
@@ -1103,15 +1107,20 @@ path and the Telegram transport are replaced. 15/15 passing:
   card cannot decide stage two; the final approver's own card decides;
 - a web decision, an in-place material change, another recipient, another
   organization's bot, a reassigned request (former holder still an eligible
-  manager) and a paused provider decide nothing; the committed press still
+  manager), a committed #299 transfer journal (the replacement then decides on
+  the web) and a paused provider decide nothing; the committed press still
   replays; the same card decides once re-admitted;
+- `shadow` and `ready`: the owner delivers the bound card, a press rejects
+  under legacy authority (observation recorded as observation only) and the
+  owner refreshes the card;
 - legacy→canonical and canonical→legacy cutover between render and press
   decide nothing;
 - an injected invocation failure rolls back request, absence, evidence and
   invocation; three concurrent deliveries then commit exactly once;
 - owner delivery: `submitted` intent keyed by the cycle, the old path silent for
-  the owned cycle (and notifying without a control), one bound card, a press
-  refreshed by the owner to "approved";
+  the owned cycle, whether the notification names the absence or the exact
+  request (and notifying without a control), one bound card, a press refreshed
+  by the owner to "approved";
 - web decisions on a chain refresh stage one and send stage two's card in the
   same cycle; the final rejection refreshes both cards;
 - cancellation: `withdrawn` intent, card refreshed to "withdrawn", binding,

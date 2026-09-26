@@ -20,7 +20,10 @@ import {
 	compareLiveAbsenceWithRevision,
 } from "../evidence/absence-facts";
 import { readApprovalPresentationMode } from "../evidence/invocation";
-import { hasLegacyAbsenceAuthority } from "../evidence/legacy-absence";
+import {
+	hasLegacyAbsenceAuthority,
+	LEGACY_ABSENCE_ACTIONABLE_PROVIDERS,
+} from "../evidence/legacy-absence";
 import {
 	type AbsenceSubmittedRevisionRecord,
 	isLegacyRequestInRevisionLifecycle,
@@ -403,14 +406,6 @@ function absenceCardDraft(input: {
 }
 
 /**
- * Providers whose legacy absence cards may carry controls (#384). Teams and
- * Discord share the bound path but are not verified under legacy authority, so
- * even an `actionable` control (for example one left from canonical authority)
- * keeps their legacy absence cards review-only.
- */
-const LEGACY_ABSENCE_CARD_PROVIDERS: readonly ApprovalPresentationProvider[] = ["telegram"];
-
-/**
  * Prepares an actionable card for one recipient's exact pending legacy absence
  * request (the stage's request for chains), bound to that request and the
  * legacy submitted revision of its submission cycle (#384), or returns null so
@@ -434,7 +429,7 @@ export async function prepareBoundLegacyAbsenceCard(
 	},
 ): Promise<ApprovalActionableCard | null> {
 	const { organizationId } = input;
-	if (!LEGACY_ABSENCE_CARD_PROVIDERS.includes(input.provider)) return null;
+	if (!LEGACY_ABSENCE_ACTIONABLE_PROVIDERS.includes(input.provider)) return null;
 	const [request] = await database
 		.select({ absenceId: approvalRequest.entityId })
 		.from(approvalRequest)

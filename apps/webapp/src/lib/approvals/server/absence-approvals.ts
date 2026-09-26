@@ -68,6 +68,7 @@ import { findLegacyTransferredRequest } from "../escalation/legacy-transfer-stor
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	findLegacyAbsenceDecisionReplay,
+	LEGACY_ABSENCE_ACTIONABLE_PROVIDERS,
 	type LegacyObservedMirror,
 	prepareLegacyAbsenceDecisionEvidence,
 	recordLegacyAbsenceDecisionEvidence,
@@ -90,6 +91,7 @@ import {
 	type DecisionEvidenceRecord,
 	findDecisionEvidenceByReceipt,
 	type LegacyDecisionEvidenceRecord,
+	loadLegacyAbsenceSubmittedRevision,
 	loadLegacyReviewBinding,
 	loadLegacySubmittedRevisionSource,
 	loadReviewBinding,
@@ -229,14 +231,6 @@ export interface AbsenceInvocationOutcome {
 	replayed: boolean;
 	evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 }
-
-/**
- * Invocation schemes whose presses may decide legacy absences (#384): only
- * Telegram is verified; its cards are the only legacy absence cards bound.
- */
-const LEGACY_ABSENCE_INVOCATION_SCHEMES: readonly ApprovalInvocationIdentity["scheme"][] = [
-	"telegram_callback_query",
-];
 
 interface ExecuteAbsenceDecisionInput {
 	runtime: AbsenceDecisionRuntime;
@@ -510,7 +504,9 @@ export async function executeAbsenceDecisionInTransaction(
 			}
 			if (
 				invocation &&
-				!LEGACY_ABSENCE_INVOCATION_SCHEMES.includes(invocation.identity.scheme)
+				!LEGACY_ABSENCE_ACTIONABLE_PROVIDERS.includes(
+					approvalInvocationProvider(invocation.identity.scheme),
+				)
 			) {
 				throw new ApprovalInvocationNotAdmittedError();
 			}
@@ -528,6 +524,17 @@ export async function executeAbsenceDecisionInTransaction(
 					binding.legacyApprovalRequestId !== input.approvalRequestId)
 			) {
 				throw new ApprovalEvidenceError("binding_mismatch");
+			}
+			if (binding) {
+				// The binding names the cycle's current revision (checked before
+				// any authority question, #384 step 5); a missing revision holds.
+				const current = await loadLegacyAbsenceSubmittedRevision(transactionDb, {
+					organizationId: input.organizationId,
+					absenceId: input.absenceId,
+				});
+				if (current?.id !== binding.submittedRevisionId) {
+					throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
+				}
 			}
 			let expectedVersion: number | null = null;
 			if (gate.mode !== "legacy") {
@@ -615,8 +622,8 @@ export async function executeAbsenceDecisionInTransaction(
 				captureState,
 			});
 			if (binding && binding.submittedRevisionId !== evidencePlan?.revision.id) {
-				// The card showed another (or no) submitted revision of this cycle.
-				throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
+				// Checked above; the plan must hold the same revision.
+				throw new ApprovalEvidenceError("invariant", { field: "revision" });
 			}
 			// The exact legacy request the unchanged owner decides: the caller's,
 			// or the actor's own pending request (the owner rechecks it).
@@ -2242,10 +2249,11 @@ function classifyBoundLegacyAbsenceError(
 		? Cause.squash(error[Runtime.FiberFailureCauseId])
 		: error;
 	// No longer the approver, already decided, or deleted by cancellation.
-	if (failure instanceof AuthorizationError || failure instanceof NotFoundError) {
-		return { status: "review_required", reason: "stale" };
-	}
-	if (failure instanceof ConflictError) {
+	if (
+		failure instanceof AuthorizationError ||
+		failure instanceof NotFoundError ||
+		failure instanceof ConflictError
+	) {
 		return { status: "review_required", reason: "stale" };
 	}
 	const classified = classifyBoundAbsenceError(failure);

@@ -92,6 +92,8 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 }): Promise<boolean> {
 	if (!input.entityId) return false;
 	let absenceId: string | null = null;
+	// The exact legacy request, when the notification names one: its cycle.
+	let absenceRequestId: string | null = null;
 	// Time kinds (#325): the canonical workflow of exactly this cycle names the
 	// kind; a legacy request (no mirroring stage) keeps the existing path.
 	let timeWorkflowType: ApprovalWorkflowType | null = null;
@@ -126,7 +128,10 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 			),
 			columns: { id: true, entityType: true, entityId: true },
 		});
-		if (request?.entityType === "absence_entry") absenceId = request.entityId;
+		if (request?.entityType === "absence_entry") {
+			absenceId = request.entityId;
+			absenceRequestId = request.id;
+		}
 		if (request?.entityType === "time_entry") {
 			const [mirrored] = await db
 				.select({ workflowType: approvalWorkflow.workflowType })
@@ -164,7 +169,9 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 	if (!owner) {
 		// Legacy absence authority (#384): the owner delivers a cycle whose
 		// lifecycle intent it owns (written while the provider's control was
-		// active), so the existing path stays silent for it.
+		// active), so the existing path stays silent for it. A notification naming
+		// an exact request counts only that request's cycle; one naming only the
+		// absence counts any of its cycles.
 		const [delivered] = rows(
 			await db.execute(sql`
 				select 1 as delivered
@@ -180,6 +187,16 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 					and i.workflow_type = 'absence'
 					and i.source_type = 'absence_entry'
 					and i.source_id = ${absenceId}::uuid
+					${
+						absenceRequestId
+							? sql`and i.legacy_cycle_id = coalesce((
+								select s.chain_instance_id from approval_chain_stage_instance s
+								where s.organization_id = i.organization_id
+									and s.approval_request_id = ${absenceRequestId}::uuid
+								limit 1
+							), ${absenceRequestId}::uuid)`
+							: sql``
+					}
 					and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
 				limit 1
 			`),
@@ -1028,10 +1045,10 @@ export async function loadLegacyDeliveryState(input: {
 		// Ordinary cancellation deletes the absence and its pending requests
 		// (withdrawn); the cycle's delivery rows outlive them until privileged
 		// cleanup.
-		const [absence] = rows(
+		const [cycle] = rows(
 			await db.execute(sql`
 				select a.id as source_id, c.status::text as chain_status,
-					q.status::text as root_status, r.status as request_status, r.approver_id,
+					root.status::text as root_status, r.status as request_status, r.approver_id,
 					${legacyLifecycleVersionSql(input.organizationId, input.lifecycle)} as version
 				from (select 1) as lifecycle
 				left join absence_entry a
@@ -1039,8 +1056,8 @@ export async function loadLegacyDeliveryState(input: {
 					and a.id = ${input.lifecycle.sourceId}::uuid
 				left join approval_chain_instance c
 					on c.organization_id = ${input.organizationId} and c.id = ${cycleId}::uuid
-				left join approval_request q
-					on q.organization_id = ${input.organizationId} and q.id = ${cycleId}::uuid
+				left join approval_request root
+					on root.organization_id = ${input.organizationId} and root.id = ${cycleId}::uuid
 				left join approval_request r
 					on r.organization_id = ${input.organizationId}
 					and r.id = ${input.approvalRequestId}::uuid
@@ -1048,9 +1065,9 @@ export async function loadLegacyDeliveryState(input: {
 					and r.entity_id = ${input.lifecycle.sourceId}::uuid
 			`),
 		);
-		if (!absence) return null;
-		const cycleStatus = absence.source_id
-			? (nullableText(absence.chain_status) ?? nullableText(absence.root_status) ?? "cancelled")
+		if (!cycle) return null;
+		const cycleStatus = cycle.source_id
+			? (nullableText(cycle.chain_status) ?? nullableText(cycle.root_status) ?? "cancelled")
 			: "cancelled";
 		return {
 			lifecycleStatus:
@@ -1060,9 +1077,9 @@ export async function loadLegacyDeliveryState(input: {
 				cycleStatus === "cancelled"
 					? cycleStatus
 					: "unknown",
-			version: Number(absence.version),
-			requestStatus: nullableText(absence.request_status) ?? "cancelled",
-			approverEmployeeId: nullableText(absence.approver_id),
+			version: Number(cycle.version),
+			requestStatus: nullableText(cycle.request_status) ?? "cancelled",
+			approverEmployeeId: nullableText(cycle.approver_id),
 		};
 	}
 	if (
