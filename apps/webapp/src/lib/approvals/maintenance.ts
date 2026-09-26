@@ -372,20 +372,26 @@ export async function deleteApprovalInTransaction(
 		`);
 	// Delivery of legacy lifecycles (#296) follows the lifecycle's legacy requests
 	// and, for cycles (#384), the cycle; the rows keep both by value, so they
-	// outlive ordinary cancellation until this purge. Delete and report them; a
-	// late send completing afterwards finds no work to record its message for.
-	const hasLegacyDelivery = legacyIds.length > 0 || legacyCycleIds.length > 0;
+	// outlive ordinary cancellation until this purge. Escalation's legacy
+	// replacement work and transfer intents (#408) also follow their transfer.
+	// Delete and report them before the journal they would cascade from; a late
+	// send completing afterwards finds no work to record its message for.
+	const hasLegacyDelivery =
+		legacyIds.length > 0 || legacyCycleIds.length > 0 || legacyTransferIds.length > 0;
 	const legacyDeliveryScope = sql`organization_id = ${organizationId} and (
 		legacy_approval_request_id = any(${sql.param(legacyIds)}::uuid[])
 		or legacy_cycle_id = any(${sql.param(legacyCycleIds)}::uuid[]))`;
+	const legacyTransferScope = sql`(${legacyDeliveryScope})
+		or (organization_id = ${organizationId}
+			and escalation_transfer_id = any(${sql.param(legacyTransferIds)}::uuid[]))`;
 	const legacyDeliveryWork = !hasLegacyDelivery ? [] : await deletedIds(sql`
-			delete from approval_delivery_work where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
+			delete from approval_delivery_work where lifecycle = 'legacy' and (${legacyTransferScope}) returning id
 		`);
 	const legacyDeliveryMessages = !hasLegacyDelivery ? [] : await deletedIds(sql`
 			delete from approval_delivery_message where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
 		`);
 	const deliveryIntents = !hasLegacyDelivery ? [] : await deletedIds(sql`
-			delete from approval_delivery_intent where ${legacyDeliveryScope} returning id
+			delete from approval_delivery_intent where ${legacyTransferScope} returning id
 		`);
 	const legacyRequests = legacyIds.length === 0 ? [] : await deletedIds(sql`
 			delete from approval_request

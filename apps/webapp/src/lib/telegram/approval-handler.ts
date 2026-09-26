@@ -43,14 +43,19 @@ const TELEGRAM_TEXT_LIMIT = 4096;
 
 const logger = createLogger("TelegramApprovalHandler");
 
+/**
+ * Returns the acknowledgment text when the press landed on a card whose
+ * holder escalation replaced (#408); the owner, which adopted the card, is
+ * its only writer then.
+ */
 export async function handleApprovalCallback(
 	query: TelegramCallbackQuery,
 	data: ApprovalCallbackData,
 	telegramUserId: string,
 	bot: ResolvedTelegramBot,
-): Promise<void> {
+): Promise<string | undefined> {
 	const user = await resolveTelegramUser(telegramUserId, bot.organizationId);
-	if (user.status !== "found") return;
+	if (user.status !== "found") return undefined;
 	try {
 		const { attemptBotApproval } = await import(
 			"@/lib/bot-platform/approval-decision"
@@ -63,8 +68,21 @@ export async function handleApprovalCallback(
 			platform: "telegram",
 		});
 		if (result.status !== "review_required" && result.status !== "historical")
-			return;
-		if (!query.message) return;
+			return undefined;
+		if (!query.message) return undefined;
+		const receiverScope = telegramReceiverScope(bot.botToken);
+		const adopted = receiverScope
+			? await findApprovalDeliveryMessageByRemoteIdentity({
+					organizationId: bot.organizationId,
+					provider: "telegram",
+					receiverScope,
+					destinationId: String(query.message.chat.id),
+					remoteMessageId: String(query.message.message_id),
+				})
+			: null;
+		if (adopted && adopted.recipientUserId === user.user.userId) {
+			return (await reassignedAcknowledgment(adopted, bot, user.user.userId)) ?? undefined;
+		}
 		const tracked = await db.query.telegramApprovalMessage.findFirst({
 			where: and(
 				eq(telegramApprovalMessage.organizationId, bot.organizationId),
@@ -74,13 +92,13 @@ export async function handleApprovalCallback(
 				eq(telegramApprovalMessage.messageId, String(query.message.message_id)),
 			),
 		});
-		if (!tracked) return;
+		if (!tracked) return undefined;
 		const notice = await approvalAttemptNotice(
 			result,
 			{ userId: user.user.userId, organizationId: bot.organizationId },
 			{ kind: "compatibility", approvalRequestId: tracked.approvalRequestId },
 		);
-		if (!notice) return;
+		if (!notice) return undefined;
 		await editMessageText(bot.botToken, {
 			chat_id: tracked.chatId,
 			message_id: Number(tracked.messageId),
@@ -92,6 +110,32 @@ export async function handleApprovalCallback(
 			"Failed to review Telegram approval card",
 		);
 	}
+	return undefined;
+}
+
+/**
+ * The acknowledgment of a press on a card whose assignment or legacy holder
+ * was replaced (escalation or reassignment): "Reassigned", with the review
+ * link on the card left to the owner. Null otherwise.
+ */
+async function reassignedAcknowledgment(
+	message: ApprovalDeliveryMessageRecord,
+	bot: ResolvedTelegramBot,
+	recipientUserId: string,
+): Promise<string | null> {
+	if (!(await isApprovalDeliveryAssignmentReplaced(message))) return null;
+	const display = await resolveRecipientDisplayContext({
+		userId: recipientUserId,
+		organizationId: bot.organizationId,
+	});
+	if (!display) return null;
+	const reassigned = await approvalStatusNotice(
+		{ workflowStatus: "pending", evidence: null, reassigned: true },
+		display,
+		bot.organizationId,
+		approvalDeliveryMessageReviewReference(message),
+	);
+	return reassigned.title;
 }
 
 function telegramCardText(card: ApprovalCardDraft): string {
@@ -243,23 +287,9 @@ async function updateDeliveredBoundCard(
 			approvalDeliveryMessageReviewReference(message),
 		);
 		if (!notice) return undefined;
-		if (
-			result.status === "review_required" &&
-			(await isApprovalDeliveryAssignmentReplaced(message))
-		) {
-			const display = await resolveRecipientDisplayContext({
-				userId: recipientUserId,
-				organizationId: bot.organizationId,
-			});
-			if (display) {
-				const reassigned = await approvalStatusNotice(
-					{ workflowStatus: "pending", evidence: null, reassigned: true },
-					display,
-					bot.organizationId,
-					approvalDeliveryMessageReviewReference(message),
-				);
-				return reassigned.title;
-			}
+		if (result.status === "review_required") {
+			const reassigned = await reassignedAcknowledgment(message, bot, recipientUserId);
+			if (reassigned) return reassigned;
 		}
 		const remoteMessageId = Number(message.remoteMessageId);
 		if (

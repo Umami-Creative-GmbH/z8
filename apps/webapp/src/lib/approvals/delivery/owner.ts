@@ -5,6 +5,7 @@ import {
 	type ApprovalDeliveryProvider,
 	approvalStageAssignment,
 	approvalWorkflow,
+	approvalWorkflowRollout,
 	approvalWorkflowStage,
 	employee,
 } from "@/db/schema";
@@ -35,6 +36,7 @@ import {
 	renewApprovalDeliveryLease,
 	retireApprovalDeliveryMessage,
 	scheduleApprovalMessageRefreshes,
+	type UntrackedApprovalCard,
 } from "./store";
 
 const logger = createLogger("ApprovalDeliveryOwner");
@@ -91,6 +93,18 @@ export interface ApprovalDeliveryAdapter {
 		message: ApprovalDeliveryMessageRecord;
 		notice: ApprovalNotice;
 	}): Promise<ApprovalRefreshResult>;
+	/**
+	 * The cards the provider's old notification path sent for one legacy
+	 * request to one recipient, which no delivery work produced (#408).
+	 * Escalation adopts them to retire them after a legacy transfer, with the
+	 * identity only this provider's current installation can edit. Providers
+	 * without such a tracked path omit it.
+	 */
+	listUntrackedLegacyCards?(input: {
+		organizationId: string;
+		approvalRequestId: string;
+		recipientUserId: string;
+	}): Promise<UntrackedApprovalCard[]>;
 }
 
 export async function loadApprovalDeliveryAdapter(
@@ -350,6 +364,28 @@ async function finishSimply(
 }
 
 /**
+ * Escalation's work acts only under the authority its transfer committed
+ * under (#408): legacy replacement and retirement work while the kind has
+ * legacy authority, canonical escalation work while it has canonical
+ * authority. After a cutover between planning and send it acts under neither.
+ */
+async function escalationAuthorityHolds(work: ClaimedApprovalDeliveryWork): Promise<boolean> {
+	if (!work.escalationTransferId) return true;
+	const [rollout] = await db
+		.select({ mode: approvalWorkflowRollout.lifecycleMode })
+		.from(approvalWorkflowRollout)
+		.where(
+			and(
+				eq(approvalWorkflowRollout.organizationId, work.organizationId),
+				eq(approvalWorkflowRollout.workflowType, work.workflowType),
+			),
+		)
+		.limit(1);
+	const canonical = rollout?.mode === "canonical" || rollout?.mode === "complete";
+	return work.lifecycle === "legacy" ? !canonical : canonical;
+}
+
+/**
  * Initial or replacement card for one assignment. Current state is rechecked
  * before any fresh details leave: a no-longer-pending assignment is obsolete
  * (for a replacement: authority moved on), and preferences,
@@ -362,6 +398,9 @@ async function processInitial(
 	clock: () => Instant,
 ): Promise<ApprovalDeliveryOutcome> {
 	let now = clock();
+	if (!(await escalationAuthorityHolds(work))) {
+		return finishSimply(work, "cancelled", "authority_changed");
+	}
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
 	if (
@@ -459,7 +498,17 @@ async function processInitial(
 	if (recorded.kind !== "purged") {
 		await scheduleApprovalMessageRefreshes(
 			work.legacy
-				? { organizationId: work.organizationId, legacy: work.legacy }
+				? {
+						organizationId: work.organizationId,
+						legacy: work.legacy,
+						...(work.escalationTransferId
+							? {
+									approvalRequestId: work.legacy.approvalRequestId,
+									recipientEmployeeId: work.recipientEmployeeId,
+									escalationTransferId: work.escalationTransferId,
+								}
+							: {}),
+					}
 				: {
 						organizationId: work.organizationId,
 						workflowId: work.workflowId ?? "",
@@ -493,12 +542,25 @@ async function processRefresh(
 		: null;
 	if (!message) return finishSimply(work, "cancelled", "purged");
 	if (message.state === "gone") return finishSimply(work, "delivered", "gone");
+	if (!(await escalationAuthorityHolds(work))) {
+		return finishSimply(work, "cancelled", "authority_changed");
+	}
 	const state = await loadWorkState(work);
 	if (!state) return finishSimply(work, "cancelled", "purged");
 	if (message.statusVersion >= state.workflowVersion) {
 		return finishSimply(work, "delivered", "current");
 	}
-	if (state.workflowStatus === "pending" && state.assignmentStatus === "pending") {
+	// A replaced assignment (escalation or reassignment) says so on its cards.
+	// A legacy transfer (#408) keeps the same request with its replacement, so
+	// the former holder's card is replaced whatever the request's status: it
+	// never shows the replacement's decision and never regains controls.
+	const replaced = await isApprovalDeliveryAssignmentReplaced(message);
+	const legacyReplaced = work.legacy !== null && replaced;
+	if (
+		state.workflowStatus === "pending" &&
+		state.assignmentStatus === "pending" &&
+		!legacyReplaced
+	) {
 		return finishSimply(work, "delivered", "still_actionable");
 	}
 	// Fresh details only for a recipient who is still an active member;
@@ -507,9 +569,10 @@ async function processRefresh(
 		userId: message.recipientUserId,
 		organizationId: work.organizationId,
 	});
-	const decided = state.assignmentStatus === "approved" || state.assignmentStatus === "rejected";
-	// A replaced assignment (escalation or reassignment) says so on its cards.
-	const reassigned = !decided && (await isApprovalDeliveryAssignmentReplaced(message));
+	const decided =
+		!legacyReplaced &&
+		(state.assignmentStatus === "approved" || state.assignmentStatus === "rejected");
+	const reassigned = !decided && replaced;
 	const evidence =
 		!display || !decided
 			? null
