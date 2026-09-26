@@ -139,6 +139,10 @@ vi.mock("./shared", async (importOriginal) => {
 });
 
 const { clockIn, clockOut } = await import("./clocking");
+const { db } = await import("@/db");
+const { createOrganizationApprovalRollouts } = await import(
+	"@/lib/approvals/workflow/organization-rollout"
+);
 const { checkClockOutNeedsApproval: productionClockOutApprovalDecision } =
 	await import("./policy-helpers");
 
@@ -377,7 +381,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		).length;
 	}
 
-	async function clockInRequester(userId = ids.requesterUser) {
+	async function clockInRequester(userId: string = ids.requesterUser) {
 		actAs(userId);
 		const result = await clockIn("office", {
 			instant: clockInAt,
@@ -396,7 +400,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 
 	function clockOutRequester(
 		submissionId: string = randomUUID(),
-		userId = ids.requesterUser,
+		userId: string = ids.requesterUser,
 		instant: Instant = clockOutAt,
 	) {
 		actAs(userId);
@@ -407,7 +411,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		});
 	}
 
-	async function workState(employeeId = ids.requester) {
+	async function workState(employeeId: string = ids.requester) {
 		const { rows } = await admin.query<{
 			open_periods: number;
 			closed_periods: number;
@@ -457,7 +461,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 	}
 
 	/** One genesis, no dangling link, and no fork in the employee hash chain. */
-	async function expectCoherentChain(employeeId = ids.requester) {
+	async function expectCoherentChain(employeeId: string = ids.requester) {
 		const { rows } = await admin.query<{
 			genesis: number;
 			dangling: number;
@@ -935,32 +939,66 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		await expect(requester).resolves.toMatchObject({ success: true });
 	});
 
-	it("serializes same-organization writers behind an uncommitted first rollout bootstrap", async () => {
+	async function policyClockOutRollouts() {
+		const { rows } = await admin.query<{
+			lifecycle_mode: string;
+			side_effect_mode: string;
+		}>(
+			`select lifecycle_mode, side_effect_mode from approval_workflow_rollout
+			 where organization_id = $1 and workflow_type = 'policy_clock_out'`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
+	// #359: organization creation pre-creates the rollout rows, so the first
+	// policy clock-out no longer bootstraps one and holds other employees behind it.
+	it("does not serialize a distinct employee behind the organization's first clock-out once its rollout rows exist", async () => {
 		await seed({ rolloutBootstrapped: false });
+		await createOrganizationApprovalRollouts(db, ids.organization);
 		await clockInRequester();
 		await clockInRequester(ids.peerUser);
 		const blocker = await holdAdvisory(keys.employee);
 
-		const requester = clockOutRequester();
-		const requesterPid = await waitForWaiter(blocker.pid);
-		let peerSettled = false;
-		const peer = clockOutRequester(randomUUID(), ids.peerUser).finally(() => {
-			peerSettled = true;
+		let requesterSettled = false;
+		const requester = clockOutRequester().finally(() => {
+			requesterSettled = true;
 		});
-		// The distinct employee waits on the requester's uncommitted rollout row,
-		// not on the requester's employee key.
-		await waitForWaiter(requesterPid);
-		expect(peerSettled).toBe(false);
+		const requesterPid = await waitForWaiter(blocker.pid);
+		// The requester already passed its write gate and waits on its employee key.
+		expect(await advisoryHeld(requesterPid, keys.writeGate)).toEqual([
+			"ShareLock:held",
+		]);
+
+		await expect(
+			clockOutRequester(randomUUID(), ids.peerUser),
+		).resolves.toMatchObject({ success: true });
+		expect(requesterSettled).toBe(false);
+		expect(await workState(ids.peer)).toMatchObject({
+			open_periods: 0,
+			clock_outs: 1,
+		});
 
 		await blocker.commit();
 		await expect(requester).resolves.toMatchObject({ success: true });
-		await expect(peer).resolves.toMatchObject({ success: true });
-		const { rows } = await admin.query<{ count: number }>(
-			`select count(*)::int as count from approval_workflow_rollout
-			 where organization_id = $1 and workflow_type = 'policy_clock_out'`,
-			[ids.organization],
-		);
-		expect(only(rows).count).toBe(1);
+		expect(await policyClockOutRollouts()).toEqual([
+			{ lifecycle_mode: "legacy", side_effect_mode: "legacy" },
+		]);
+	});
+
+	it("still bootstraps a missing rollout row in the write gate", async () => {
+		await seed({ rolloutBootstrapped: false });
+		await clockInRequester();
+		expect(await policyClockOutRollouts()).toEqual([]);
+
+		await expect(clockOutRequester()).resolves.toMatchObject({
+			success: true,
+		});
+
+		expect(await policyClockOutRollouts()).toEqual([
+			{ lifecycle_mode: "legacy", side_effect_mode: "legacy" },
+		]);
+		expect(await workState()).toMatchObject({ open_periods: 0, clock_outs: 1 });
 	});
 
 	it("restarts the whole transaction when protected configuration changes while waiting", async () => {

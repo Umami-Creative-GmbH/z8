@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 	acquireUsers: vi.fn(),
 	revoke: vi.fn(),
 	postCommit: vi.fn(),
+	createRollouts: vi.fn(),
 }));
 
 vi.mock("@/lib/authorization/authorization-mutation", () => ({
@@ -16,6 +17,9 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 }));
 vi.mock("@/lib/time-tracking/work-transaction", () => ({
 	acquireExclusiveUserConfigurationAccessGuards: mocks.acquireUsers,
+}));
+vi.mock("@/lib/approvals/workflow/organization-rollout", () => ({
+	createOrganizationApprovalRollouts: mocks.createRollouts,
 }));
 vi.mock("./member-removal-cleanup", () => ({
 	revokeRemovedMemberAccessInTransaction: mocks.revoke,
@@ -108,12 +112,46 @@ describe("coordinated organization hooks", () => {
 		["beforeAcceptInvitation", { invitation: {}, user, organization }],
 		["beforeDeleteOrganization", { organization, user }],
 		["afterRemoveMember", { member, user, organization }],
+		["beforeCreateOrganization", { organization: { name: "Org", slug: "org" }, user }],
+		["afterCreateOrganization", { organization, member, user }],
 	] as const)("fails closed when %s runs outside a coordinated transaction", async (name, data) => {
 		const hook = hooks()[name] as (input: unknown) => Promise<unknown>;
 
 		await expect(hook(data)).rejects.toBeInstanceOf(UncoordinatedAuthMutationError);
 		expect(mocks.protect).not.toHaveBeenCalled();
 		expect(mocks.revoke).not.toHaveBeenCalled();
+		expect(mocks.createRollouts).not.toHaveBeenCalled();
+	});
+
+	it("creates the organization's approval rollout rows in its creation transaction", async () => {
+		const auth = coordinatedAuth();
+		const organizationHooks = hooks();
+		mocks.createRollouts.mockImplementation(async () => {
+			mocks.events.push("rollouts");
+		});
+		await runCoordinatedAuthMutation(auth.context, async () => {
+			await organizationHooks.beforeCreateOrganization!({
+				organization: { name: "Org", slug: "org" },
+				user,
+			});
+			await organizationHooks.afterCreateOrganization!({ organization, member, user });
+			mocks.events.push("creation-end");
+		});
+
+		expect(mocks.createRollouts).toHaveBeenCalledExactlyOnceWith(auth.transaction, "org-1");
+		expect(mocks.events).toEqual(["rollouts", "creation-end", "commit"]);
+	});
+
+	it("rolls back the organization when its rollout rows cannot be written", async () => {
+		const auth = coordinatedAuth();
+		mocks.createRollouts.mockRejectedValueOnce(new Error("rollout write failed"));
+
+		await expect(
+			runCoordinatedAuthMutation(auth.context, () =>
+				hooks().afterCreateOrganization!({ organization, member, user }),
+			),
+		).rejects.toThrow("rollout write failed");
+		expect(auth.outcome).toEqual({ committed: 0, rolledBack: 1 });
 	});
 
 	it("protects the removed, added and accepting users and the deleted organization", async () => {
@@ -205,6 +243,7 @@ describe("coordinated auth HTTP mutations", () => {
 	const adminEndpoints = adminPlugin().endpoints;
 
 	it.each([
+		organizationEndpoints.createOrganization.path,
 		organizationEndpoints.updateMemberRole.path,
 		organizationEndpoints.removeMember.path,
 		organizationEndpoints.leaveOrganization.path,
@@ -221,6 +260,7 @@ describe("coordinated auth HTTP mutations", () => {
 
 	it("resolves every coordinated endpoint to an HTTP path", () => {
 		expect(organizationEndpoints.updateMemberRole.path).toBe("/organization/update-member-role");
+		expect(organizationEndpoints.createOrganization.path).toBe("/organization/create");
 		expect(isCoordinatedAuthMutationPath("/organization/get-full-organization")).toBe(false);
 	});
 

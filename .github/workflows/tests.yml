@@ -186,6 +186,7 @@ jobs:
             "src/app/[locale]/(app)/time-tracking/actions/clocking.time-presentation.integration.test.ts" \
             src/lib/approvals/pilot/readiness.integration.test.ts \
             src/lib/approvals/lifecycle-cleanup.integration.test.ts \
+            src/lib/auth/organization-creation.integration.test.ts \
             src/lib/approvals/evidence/legacy-absence.integration.test.ts \
             src/lib/travel-expenses/expense-submission.integration.test.ts \
             src/lib/effect/services/billing/billable-seat-count.integration.test.ts \
