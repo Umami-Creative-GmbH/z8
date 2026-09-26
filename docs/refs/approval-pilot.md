@@ -38,7 +38,9 @@ lifecycle by its submitted evidence. The same review preparation that the inbox
 and the decision owner use does the classification, so a held lifecycle here
 is exactly one that cannot be decided from a card. For the time kinds the
 lifecycles are the pending canonical workflows, the only ones a time card
-represents, checked with the time card's own gates. Legacy time requests are
+represents, checked with the time card's own revision and fact gates
+(`classifyCanonicalTimeCard` in `presentation/time-card.ts`, which the card
+path itself uses). Legacy time requests are
 classified by the [time pilot report](time-pilot.md) (#329):
 
 | Class | Meaning |
@@ -47,6 +49,7 @@ classified by the [time pilot report](time-pilot.md) (#329):
 | `notCaptured` | No submitted revision (e.g. submitted before capture). Held while capture is on. |
 | `materialChange` | Live facts changed after submission. Held until a supported resubmission. |
 | `authorityChange` | Evidence of another authority (legacy revision under canonical authority). Held. For time kinds: a workflow without its own canonical revision whose mirrored request has a legacy capture, e.g. a request submitted under `shadow` before the cutover. |
+| `reviewOnly` | Time kinds only: current evidence the card cannot state (no employee name captured, an unnamed or deleted category, a change the mask names but the proposal lacks). The card is review-only; the web inbox still decides. Not held. |
 
 **Card combinations** (kind × Telegram, Teams, Slack, Discord): whether the
 delivery owner owns the combination (`approval_delivery_control` and its
@@ -81,8 +84,9 @@ drains). It is never cleared by the report.
 | `provider_not_configured` | blocker | No active integration with approvals enabled (for Teams: no such tenant). |
 | `escalation_delivery_disabled` | hold | Absence and time kinds (the canonical kinds escalation transfers, #326), while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
 | `evidence_held` | hold | Pending lifecycles held for evidence (count = `notCaptured` + `materialChange` + `authorityChange`), now or, while capture is still off, as soon as it is turned on. A held lifecycle is refused for approve and reject everywhere, the web inbox included. Absences leave the hold by cancellation and resubmission; held expense claims have no cancellation path and raise no attention record (#296 blocker 4), so they are not in `attention_open`. Otherwise drain them, or record reconstructed revisions through a separately authorized step (not implemented). Nothing backfills them. |
+| `card_review_only` | hold | Time kinds: pending lifecycles counted as `reviewOnly`. Their approvers get a review-only card and decide in the web inbox. |
 | `in_flight_before_activation` | hold | Pending lifecycles without a lifecycle intent at or after `activated_at` (or, before activation, every pending lifecycle). The owner never sends them a card. See [In-flight decision](#in-flight-decision). |
-| `legacy_cards_historical_only` | hold | Unanswered cards of the pre-owner path (`telegram_approval_message`, `teams_approval_card`, `slack_approval_message`, `discord_approval_message`) on pending approvals. They are not refreshed. A press revalidates at commit and decides nothing on its own. A time card counts under the kind of the canonical workflow whose stage mirrors its request. |
+| `legacy_cards_historical_only` | hold | Unanswered cards of the pre-owner path (`telegram_approval_message`, `teams_approval_card`, `slack_approval_message`, `discord_approval_message`) on pending approvals. They are not refreshed. A press revalidates at commit and decides nothing on its own. A time card counts under the kind of the canonical workflow whose stage mirrors its request. A card on a legacy time request without a mirroring workflow (submitted under `legacy`, before `shadow`) has no kind and is **not counted anywhere**; check `telegram_approval_message` and the other card tables directly if such requests are still pending (the time pilot report lists them as pending legacy approvals). |
 | `delivery_awaiting_repair` | hold | Work waiting for a destination (unlinked recipient, closed DMs, stale workspace DM). It re-arms when the recipient reaches the bot. |
 | `delivery_exhausted` | hold | Retries exhausted; an escalation incident exists. Use **Retry delivery** on the escalation page once the cause is fixed. |
 | `delivery_failed` | hold | Work that failed permanently. Investigate before expanding. |
@@ -273,6 +277,9 @@ With a real bot and tenant:
   pilot whether request-time labels must be captured (#325 blocker 4).
 - **Ingress**: nothing is stored durably before the webhook acknowledgment
   (as for #290).
+- **`complete` mode** is now a blocker for absences too
+  (`authority_complete_unsupported`). The owner's missing-compatibility path is
+  kind-independent, so the #328 verdicts under `complete` were too optimistic.
 - **Legacy time authority** (every organization today) stays review-only on
   bots and is held by escalation (`legacy_time_authority`, #439). Bound legacy
   cards and cycle-keyed delivery are #432.
@@ -300,8 +307,9 @@ PostgreSQL 16, both suites in `test:approval-workflow-repository:integration`:
 - `time-tracking/actions/clocking.time-presentation.integration.test.ts`, with
   requests submitted through the real `createManualTimeEntry`,
   `clockIn`/`clockOut` and `requestTimeCorrection`:
-  - `notCaptured` (submitted before capture), `current`, and `materialChange`
-    (a corrected entry changed after submission);
+  - `notCaptured` (submitted before capture), `current`, `materialChange`
+    (a corrected entry changed after submission) and `reviewOnly` (a policy
+    clock-out captured without the employee's name);
   - an old-path Telegram card counted under its mirroring kind;
   - in-flight lifecycles after a late activation;
   - a request submitted under `shadow` is `authorityChange` both before and

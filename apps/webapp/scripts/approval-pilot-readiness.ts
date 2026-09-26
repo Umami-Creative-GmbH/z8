@@ -91,6 +91,7 @@ export function formatApprovalPilotReadiness(report: ApprovalPilotReadiness): st
 				"not captured": kind.pending.notCaptured,
 				"material change": kind.pending.materialChange,
 				"authority change": kind.pending.authorityChange,
+				"review only": kind.pending.reviewOnly,
 			})}`,
 		);
 	}

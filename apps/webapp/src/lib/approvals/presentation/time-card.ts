@@ -377,28 +377,91 @@ async function loadTimeCardFacts(
 		workflowType,
 	});
 	if (evidenceMode !== "capture") return null;
-	const scope = { organizationId: target.organizationId, workflowId: target.workflowId };
-	if (workflowType === "time_correction") {
+	const revision = await loadCanonicalTimeCardRevision(database, {
+		organizationId: target.organizationId,
+		workflowId: target.workflowId,
+		workflowType,
+		sourceId: workflow.sourceId,
+	});
+	if (revision.status !== "current") return null;
+	const facts = revision.facts(input.display, input.t);
+	return facts ? { facts, submittedRevisionId: revision.submittedRevisionId, workflowType } : null;
+}
+
+type CanonicalTimeCardRevision =
+	| { status: "not_captured" | "material_change" }
+	| {
+			status: "current";
+			submittedRevisionId: string;
+			/** Null when the card cannot state the facts: it is then review-only. */
+			facts: (display: DisplayContext, t: BotTranslateFn) => ApprovalCardFact[] | null;
+	  };
+
+/**
+ * The revision gates of a canonical time card: the workflow's own submitted
+ * revision, of its kind and source, still matching the live graph.
+ */
+async function loadCanonicalTimeCardRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workflowId: string;
+		workflowType: TimeApprovalWorkflowType;
+		sourceId: string;
+	},
+): Promise<CanonicalTimeCardRevision> {
+	const scope = { organizationId: input.organizationId, workflowId: input.workflowId };
+	if (input.workflowType === "time_correction") {
 		const revision = await loadCanonicalTimeCorrectionSubmittedRevision(database, scope);
-		if (!revision || revision.workPeriodId !== workflow.sourceId) return null;
+		if (!revision || revision.workPeriodId !== input.sourceId) return { status: "not_captured" };
 		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
-		if (comparison.kind !== "current") return null;
-		const names = await loadTimeCorrectionCategoryNames(database, target.organizationId, revision);
-		const facts = buildTimeCorrectionCardFacts(revision, names, input.display, input.t);
-		return facts ? { facts, submittedRevisionId: revision.id, workflowType } : null;
+		if (comparison.kind !== "current") return { status: "material_change" };
+		const names = await loadTimeCorrectionCategoryNames(database, input.organizationId, revision);
+		return {
+			status: "current",
+			submittedRevisionId: revision.id,
+			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t),
+		};
 	}
 	const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, scope);
 	if (
 		!revision ||
-		revision.workflowType !== workflowType ||
-		revision.workPeriodId !== workflow.sourceId
+		revision.workflowType !== input.workflowType ||
+		revision.workPeriodId !== input.sourceId
 	) {
-		return null;
+		return { status: "not_captured" };
 	}
 	const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
-	if (comparison.kind !== "current") return null;
-	const facts = buildWorkPeriodCardFacts(revision, input.display, input.t);
-	return facts ? { facts, submittedRevisionId: revision.id, workflowType } : null;
+	if (comparison.kind !== "current") return { status: "material_change" };
+	return {
+		status: "current",
+		submittedRevisionId: revision.id,
+		facts: (display, t) => buildWorkPeriodCardFacts(revision, display, t),
+	};
+}
+
+/** Only the recipient's rendering differs between cards; whether facts exist does not. */
+const NEUTRAL_DISPLAY: DisplayContext = { locale: "en", timezone: "UTC", timeFormat: "24h" };
+const FALLBACK_TEXT: BotTranslateFn = (_key, fallback) => fallback;
+
+/**
+ * How a pending canonical time workflow would present on a card, by the same
+ * revision and fact gates as the card itself, for the pilot readiness report
+ * (#330). `review_only`: the evidence is current but the card cannot state its
+ * facts (no subject name, an unnamed category, a contradictory change).
+ */
+export async function classifyCanonicalTimeCard(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workflowId: string;
+		workflowType: TimeApprovalWorkflowType;
+		sourceId: string;
+	},
+): Promise<"current" | "review_only" | "not_captured" | "material_change"> {
+	const revision = await loadCanonicalTimeCardRevision(database, input);
+	if (revision.status !== "current") return revision.status;
+	return revision.facts(NEUTRAL_DISPLAY, FALLBACK_TEXT) ? "current" : "review_only";
 }
 
 /**

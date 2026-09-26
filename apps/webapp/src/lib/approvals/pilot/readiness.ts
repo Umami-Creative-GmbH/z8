@@ -15,17 +15,12 @@ import {
 } from "@/db/schema";
 import { isCanonicalEscalationWorkflowType } from "../escalation/kinds";
 import { readApprovalPresentationMode } from "../evidence/invocation";
-import {
-	loadCanonicalTimeCorrectionSubmittedRevision,
-	loadCanonicalWorkPeriodSubmittedRevision,
-	readApprovalEvidenceMode,
-} from "../evidence/store";
-import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
-import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
+import { readApprovalEvidenceMode } from "../evidence/store";
 import {
 	type AbsenceReviewEvidence,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
+import { classifyCanonicalTimeCard } from "../presentation/time-card";
 import { prepareTimeReviewEvidence } from "../presentation/time-review";
 import {
 	prepareTravelExpenseReviewEvidence,
@@ -93,11 +88,26 @@ const PILOT_ADMISSION: Record<PilotWorkflowType, PilotAdmission> = {
 	time_correction: TIME_ADMISSION,
 };
 
+/**
+ * The authority whose lifecycles a kind's cards decide: absence (#290) and
+ * time (#325) cards bind canonical assignments (legacy absences are #384,
+ * legacy time approvals #432); expense cards exist only under legacy
+ * authority (#296).
+ */
+const CARD_AUTHORITY: Record<PilotWorkflowType, "canonical" | "legacy"> = {
+	absence: "canonical",
+	travel_expense: "legacy",
+	manual_time_submission: "canonical",
+	policy_clock_out: "canonical",
+	time_correction: "canonical",
+};
+
 export type PilotFindingCode =
 	| "authority_complete_unsupported"
 	| "authority_not_canonical"
 	| "authority_not_legacy"
 	| "attention_open"
+	| "card_review_only"
 	| "combination_unverified"
 	| "delivery_awaiting_repair"
 	| "delivery_exhausted"
@@ -151,6 +161,12 @@ export interface PilotPendingEvidence {
 	materialChange: number;
 	/** Evidence of another authority that the current one cannot bind to. */
 	authorityChange: number;
+	/**
+	 * Time kinds: current evidence the card cannot state (no subject name, an
+	 * unnamed category, a contradictory change). The card is review-only; the
+	 * web inbox still decides.
+	 */
+	reviewOnly: number;
 }
 
 export interface PilotKindReadiness {
@@ -459,9 +475,8 @@ function classifyTravelExpense(evidence: TravelExpenseReviewEvidence): EvidenceC
 }
 
 /**
- * One pending canonical time workflow, through the gates the time card
- * preparation applies (#325): its own canonical revision, of this kind and
- * source, still matching the live graph. Without one, a legacy capture of the
+ * One pending canonical time workflow, through the time card's own revision
+ * and fact gates (#325). Without its own revision, a legacy capture of the
  * mirrored request is evidence of another authority, which a canonical
  * binding cannot name.
  */
@@ -470,24 +485,15 @@ async function classifyTimeWorkflow(
 	organizationId: string,
 	workflow: { id: string; workflowType: TimeApprovalWorkflowType; sourceId: string },
 ): Promise<EvidenceClass> {
-	const scope = { organizationId, workflowId: workflow.id };
-	if (workflow.workflowType === "time_correction") {
-		const revision = await loadCanonicalTimeCorrectionSubmittedRevision(database, scope);
-		if (revision && revision.workPeriodId === workflow.sourceId) {
-			const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
-			return comparison.kind === "current" ? "current" : "materialChange";
-		}
-	} else {
-		const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, scope);
-		if (
-			revision &&
-			revision.workflowType === workflow.workflowType &&
-			revision.workPeriodId === workflow.sourceId
-		) {
-			const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
-			return comparison.kind === "current" ? "current" : "materialChange";
-		}
-	}
+	const card = await classifyCanonicalTimeCard(database, {
+		organizationId,
+		workflowId: workflow.id,
+		workflowType: workflow.workflowType,
+		sourceId: workflow.sourceId,
+	});
+	if (card === "current") return "current";
+	if (card === "review_only") return "reviewOnly";
+	if (card === "material_change") return "materialChange";
 	const mirrors = await database
 		.select({ approvalRequestId: approvalWorkflowStage.legacyApprovalRequestId })
 		.from(approvalWorkflowStage)
@@ -587,6 +593,7 @@ async function classifyPendingEvidence(
 		notCaptured: count("notCaptured"),
 		materialChange: count("materialChange"),
 		authorityChange: count("authorityChange"),
+		reviewOnly: count("reviewOnly"),
 	};
 }
 
@@ -716,10 +723,7 @@ async function assess(
 		});
 		// Findings every provider of the kind shares.
 		const kindFindings: PilotFinding[] = [];
-		// Absence and time cards need canonical authority (legacy absences are
-		// #384, legacy time approvals #432); expense cards exist only under
-		// legacy authority (#296).
-		const needsCanonical = workflowType !== "travel_expense";
+		const needsCanonical = CARD_AUTHORITY[workflowType] === "canonical";
 		const authorityAdmitted = needsCanonical ? canonical : !canonical;
 		if (!authorityAdmitted) {
 			kindFindings.push({
@@ -737,6 +741,9 @@ async function assess(
 		}
 		const held = pending.notCaptured + pending.materialChange + pending.authorityChange;
 		if (held > 0) kindFindings.push({ code: "evidence_held", severity: "hold", count: held });
+		if (pending.reviewOnly > 0) {
+			kindFindings.push({ code: "card_review_only", severity: "hold", count: pending.reviewOnly });
+		}
 		for (const provider of APPROVAL_DELIVERY_PROVIDERS) {
 			const findings: PilotFinding[] = [...kindFindings];
 			const admission = PILOT_ADMISSION[workflowType][provider];
