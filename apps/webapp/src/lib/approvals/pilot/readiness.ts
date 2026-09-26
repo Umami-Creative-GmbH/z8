@@ -15,6 +15,7 @@ import {
 } from "@/db/schema";
 import { isCanonicalEscalationWorkflowType } from "../escalation/kinds";
 import { readApprovalPresentationMode } from "../evidence/invocation";
+import { LEGACY_ABSENCE_ACTIONABLE_PROVIDERS } from "../evidence/legacy-absence";
 import { readApprovalEvidenceMode } from "../evidence/store";
 import {
 	type AbsenceReviewEvidence,
@@ -35,10 +36,10 @@ import {
 
 /**
  * Read-only readiness report for the approval card pilots: one organization's
- * absence and expense (#328 / T63) and time approval (#330 / T65) card
- * combinations, classified from a single consistent snapshot. It changes
- * nothing; repairs, backfills and control changes stay with the separately
- * authorized adoption writer.
+ * absence and expense (#328 / T63; legacy absences #459) and time approval
+ * (#330 / T65) card combinations, classified from a single consistent
+ * snapshot. It changes nothing; repairs, backfills and control changes stay
+ * with the separately authorized adoption writer.
  */
 
 export const PILOT_WORKFLOW_TYPES = [
@@ -65,10 +66,10 @@ const TIME_ADMISSION: PilotAdmission = {
 };
 
 /**
- * Card combinations the pilot admits: absence cards on every provider (Slack
- * review-only, #294), expense cards on Telegram only (#296), time cards on
- * Telegram plus Slack review-only summaries (#325). Anything else has no
- * verified card path and must not be activated.
+ * Card combinations the pilot admits: canonical absence cards on every
+ * provider (Slack review-only, #294), expense cards on Telegram only (#296),
+ * time cards on Telegram plus Slack review-only summaries (#325). Anything else
+ * has no verified card path and must not be activated.
  */
 const PILOT_ADMISSION: Record<PilotWorkflowType, PilotAdmission> = {
 	absence: {
@@ -89,18 +90,39 @@ const PILOT_ADMISSION: Record<PilotWorkflowType, PilotAdmission> = {
 };
 
 /**
- * The authority whose lifecycles a kind's cards decide: absence (#290) and
- * time (#325) cards bind canonical assignments (legacy absences are #384,
- * legacy time approvals #432); expense cards exist only under legacy
- * authority (#296).
+ * Legacy absence cards (#384): only Telegram was exercised. The owner delivers
+ * a legacy cycle to every provider with a delivery control, but Teams and
+ * Discord cards stay review-only in code even with an `actionable` control,
+ * and neither they nor the Slack summary were run under legacy authority.
  */
-const CARD_AUTHORITY: Record<PilotWorkflowType, "canonical" | "legacy"> = {
-	absence: "canonical",
-	travel_expense: "legacy",
-	manual_time_submission: "canonical",
-	policy_clock_out: "canonical",
-	time_correction: "canonical",
+const LEGACY_ABSENCE_ADMISSION = Object.fromEntries(
+	APPROVAL_DELIVERY_PROVIDERS.map((provider) => [
+		provider,
+		LEGACY_ABSENCE_ACTIONABLE_PROVIDERS.includes(provider) ? "actionable" : "unverified",
+	]),
+) as PilotAdmission;
+
+type PilotAuthority = "canonical" | "legacy";
+
+/**
+ * The authorities whose lifecycles a kind's cards decide: absence cards bind
+ * canonical assignments (#290) or exact legacy requests (#384), time cards
+ * canonical assignments only (#325; legacy time approvals are #432), and
+ * expense cards exist only under legacy authority (#296).
+ */
+const CARD_AUTHORITY: Record<PilotWorkflowType, readonly PilotAuthority[]> = {
+	absence: ["canonical", "legacy"],
+	travel_expense: ["legacy"],
+	manual_time_submission: ["canonical"],
+	policy_clock_out: ["canonical"],
+	time_correction: ["canonical"],
 };
+
+function admissionOf(workflowType: PilotWorkflowType, authority: PilotAuthority): PilotAdmission {
+	return workflowType === "absence" && authority === "legacy"
+		? LEGACY_ABSENCE_ADMISSION
+		: PILOT_ADMISSION[workflowType];
+}
 
 export type PilotFindingCode =
 	| "authority_complete_unsupported"
@@ -119,10 +141,12 @@ export type PilotFindingCode =
 	| "escalation_paused"
 	| "escalation_policy_conflicts_unreviewed"
 	| "escalation_policy_missing"
+	| "escalation_replacement_unsupported"
 	| "evidence_capture_inactive"
 	| "evidence_held"
 	| "in_flight_before_activation"
 	| "legacy_cards_historical_only"
+	| "legacy_chain_mode_unverified"
 	| "legacy_transfer_without_replacement"
 	| "presentation_actionable_unverified"
 	| "presentation_not_actionable"
@@ -172,7 +196,7 @@ export interface PilotPendingEvidence {
 export interface PilotKindReadiness {
 	workflowType: PilotWorkflowType;
 	/** The authority that decides this kind now. */
-	authority: "canonical" | "legacy";
+	authority: PilotAuthority;
 	/** Stored rollout mode; null when the organization has no rollout row. */
 	lifecycleMode: string | null;
 	evidenceMode: ApprovalEvidenceMode;
@@ -358,6 +382,84 @@ async function countLegacyExpenseInFlight(
 	return Number(row?.count ?? 0);
 }
 
+/**
+ * Legacy absence counterpart (#384), keyed like the owner's lifecycles: pending
+ * submission cycles (the chain instance, or the single request, that one
+ * submission created) of pending absences without an intent of that cycle at
+ * or after activation. The owner plans a cycle only from such intents, so
+ * these cycles stay web-inbox-only; a later decision's intent (the next chain
+ * stage) is carded normally.
+ */
+async function countLegacyAbsenceInFlight(
+	database: ApprovalDatabase,
+	input: PilotScope,
+): Promise<number> {
+	const [row] = rows(
+		await database.execute(sql`
+			select count(distinct coalesce(s.chain_instance_id, r.id))::int as count
+			from approval_request r
+			join absence_entry a on a.id = r.entity_id and a.organization_id = r.organization_id
+			left join approval_chain_stage_instance s
+				on s.organization_id = r.organization_id and s.approval_request_id = r.id
+			where r.organization_id = ${input.organizationId}
+				and r.entity_type = 'absence_entry'
+				and r.status = 'pending'
+				and a.status = 'pending'
+				and not exists (
+					select 1 from approval_delivery_intent i
+					join approval_delivery_control c
+						on c.organization_id = i.organization_id
+						and c.workflow_type = i.workflow_type
+						and c.provider = ${input.provider}
+					where i.organization_id = r.organization_id
+						and i.workflow_type = 'absence'
+						and i.source_type = 'absence_entry'
+						and i.source_id = a.id
+						and i.legacy_cycle_id = coalesce(s.chain_instance_id, r.id)
+						and c.activated_at <= i.created_at
+				)
+		`),
+	);
+	return Number(row?.count ?? 0);
+}
+
+/** Lifecycles of an admitted combination that the owner will never card. */
+function countInFlight(
+	database: ApprovalDatabase,
+	input: PilotScope,
+	authority: PilotAuthority,
+): Promise<number> {
+	if (authority === "canonical") return countCanonicalInFlight(database, input);
+	return input.workflowType === "absence"
+		? countLegacyAbsenceInFlight(database, input)
+		: countLegacyExpenseInFlight(database, input);
+}
+
+/**
+ * Pending absence cycles routed to a legacy chain. Chain cards were verified
+ * in `legacy` mode only (#384 blocker 4); `shadow`/`ready` chain submissions
+ * work since #453, but their cards were never exercised.
+ */
+async function countLegacyAbsenceChains(
+	database: ApprovalDatabase,
+	organizationId: string,
+): Promise<number> {
+	const [row] = rows(
+		await database.execute(sql`
+			select count(distinct s.chain_instance_id)::int as count
+			from approval_request r
+			join absence_entry a on a.id = r.entity_id and a.organization_id = r.organization_id
+			join approval_chain_stage_instance s
+				on s.organization_id = r.organization_id and s.approval_request_id = r.id
+			where r.organization_id = ${organizationId}
+				and r.entity_type = 'absence_entry'
+				and r.status = 'pending'
+				and a.status = 'pending'
+		`),
+	);
+	return Number(row?.count ?? 0);
+}
+
 interface DeliveryWorkHealth {
 	byStatus: Partial<Record<ApprovalDeliveryStatus, number>>;
 	/** Claimed work whose lease ran out: its worker died or stalled mid-send. */
@@ -461,11 +563,18 @@ async function countLegacyCards(database: ApprovalDatabase, input: PilotScope): 
 
 type EvidenceClass = Exclude<keyof PilotPendingEvidence, "total">;
 
-function classifyAbsence(evidence: AbsenceReviewEvidence | null): EvidenceClass {
+function classifyAbsence(
+	evidence: AbsenceReviewEvidence | null,
+	authority: PilotAuthority,
+): EvidenceClass {
 	// null: the entity could not be matched to its evidence, which the
 	// decision owner cannot bind either.
 	if (!evidence || evidence.status === "not_captured") return "notCaptured";
-	if (evidence.authorityChange) return "authorityChange";
+	// Each owner binds only its own authority's revision: the preparation flags
+	// a legacy revision under canonical authority, and the legacy owner (#288)
+	// finds no legacy revision for a canonical one after a rollback, so it
+	// holds it as evidence required.
+	if (evidence.authorityChange || evidence.authority !== authority) return "authorityChange";
 	return evidence.comparison.kind === "material_change" ? "materialChange" : "current";
 }
 
@@ -535,6 +644,7 @@ async function classifyPendingEvidence(
 	database: ApprovalDatabase,
 	organizationId: string,
 	workflowType: PilotWorkflowType,
+	authority: PilotAuthority,
 ): Promise<PilotPendingEvidence> {
 	const classes: EvidenceClass[] = [];
 	if (isTimeApprovalWorkflowType(workflowType)) {
@@ -565,7 +675,10 @@ async function classifyPendingEvidence(
 		});
 		for (const entity of pending) {
 			classes.push(
-				classifyAbsence(await prepareAbsenceReviewEvidence({ organizationId, entity }, database)),
+				classifyAbsence(
+					await prepareAbsenceReviewEvidence({ organizationId, entity }, database),
+					authority,
+				),
 			);
 		}
 	} else {
@@ -708,29 +821,35 @@ async function assess(
 	const combinations: PilotCombinationReadiness[] = [];
 	for (const workflowType of PILOT_WORKFLOW_TYPES) {
 		const lifecycleMode = await loadLifecycleMode(database, organizationId, workflowType);
-		const canonical = lifecycleMode === "canonical" || lifecycleMode === "complete";
+		const authority: PilotAuthority =
+			lifecycleMode === "canonical" || lifecycleMode === "complete" ? "canonical" : "legacy";
 		const evidenceMode = await readApprovalEvidenceMode(database, {
 			organizationId,
 			workflowType,
 		});
-		const pending = await classifyPendingEvidence(database, organizationId, workflowType);
+		const pending = await classifyPendingEvidence(
+			database,
+			organizationId,
+			workflowType,
+			authority,
+		);
 		kinds.push({
 			workflowType,
-			authority: canonical ? "canonical" : "legacy",
+			authority,
 			lifecycleMode,
 			evidenceMode,
 			pending,
 		});
 		// Findings every provider of the kind shares.
 		const kindFindings: PilotFinding[] = [];
-		const needsCanonical = CARD_AUTHORITY[workflowType] === "canonical";
-		const authorityAdmitted = needsCanonical ? canonical : !canonical;
+		const authorityAdmitted = CARD_AUTHORITY[workflowType].includes(authority);
+		const legacyAbsence = workflowType === "absence" && authority === "legacy";
 		if (!authorityAdmitted) {
 			kindFindings.push({
-				code: needsCanonical ? "authority_not_canonical" : "authority_not_legacy",
+				code: authority === "legacy" ? "authority_not_canonical" : "authority_not_legacy",
 				severity: "blocker",
 			});
-		} else if (needsCanonical && lifecycleMode === "complete") {
+		} else if (authority === "canonical" && lifecycleMode === "complete") {
 			// Presentation starts from the stage's compatibility request, which
 			// `complete` no longer writes: the owner's work becomes
 			// `unsupported_route` attention instead of a card.
@@ -744,9 +863,18 @@ async function assess(
 		if (pending.reviewOnly > 0) {
 			kindFindings.push({ code: "card_review_only", severity: "hold", count: pending.reviewOnly });
 		}
+		if (legacyAbsence && (lifecycleMode === "shadow" || lifecycleMode === "ready")) {
+			const chains = await countLegacyAbsenceChains(database, organizationId);
+			kindFindings.push({
+				code: "legacy_chain_mode_unverified",
+				severity: "hold",
+				...(chains > 0 ? { count: chains } : {}),
+			});
+		}
+		const admissions = admissionOf(workflowType, authority);
 		for (const provider of APPROVAL_DELIVERY_PROVIDERS) {
 			const findings: PilotFinding[] = [...kindFindings];
-			const admission = PILOT_ADMISSION[workflowType][provider];
+			const admission = admissions[provider];
 			const presentation = await readApprovalPresentationMode(database, {
 				organizationId,
 				workflowType,
@@ -754,7 +882,10 @@ async function assess(
 			});
 			if (admission === "unverified") {
 				findings.push({ code: "combination_unverified", severity: "blocker" });
-				if (presentation === "actionable") {
+				// Legacy absence cards on these providers stay review-only in code
+				// whatever the row says, and the row is shared with canonical
+				// absence cards, which it does admit.
+				if (presentation === "actionable" && !legacyAbsence) {
 					findings.push({ code: "presentation_actionable_unverified", severity: "blocker" });
 				}
 			} else if (admission === "actionable" && presentation !== "actionable") {
@@ -763,7 +894,12 @@ async function assess(
 			const integration = configured.get(provider);
 			if (!integration) {
 				findings.push({ code: "provider_not_configured", severity: "blocker" });
+			} else if (legacyAbsence && transfersActive) {
+				// Legacy transfers get no replacement card and leave the former
+				// holder's card unrefreshed (#384 blocker 5, #408).
+				findings.push({ code: "escalation_replacement_unsupported", severity: "hold" });
 			} else if (
+				authority === "canonical" &&
 				isCanonicalEscalationWorkflowType(workflowType) &&
 				transfersActive &&
 				!integration.escalations
@@ -777,9 +913,7 @@ async function assess(
 			const inFlight =
 				!authorityAdmitted || admission === "unverified"
 					? 0
-					: canonical
-						? await countCanonicalInFlight(database, scope)
-						: await countLegacyExpenseInFlight(database, scope);
+					: await countInFlight(database, scope, authority);
 			if (inFlight > 0) {
 				findings.push({ code: "in_flight_before_activation", severity: "hold", count: inFlight });
 			}

@@ -1,12 +1,14 @@
 # Approval card pilots — #328 / T63, #330 / T65
 
 The limited organization pilots of approval cards: absence and expense cards
-(#328), which run independently of timekeeping work, and time approval cards and
-their escalation (#330, see [Time approval cards](#time-approval-cards-330--t65)).
+(#328), which run independently of timekeeping work, legacy absence cards (#384,
+see [Legacy absence cards](#legacy-absence-cards-384--459)), and time approval
+cards and their escalation (#330, see
+[Time approval cards](#time-approval-cards-330--t65)).
 This page covers the readiness report,
 the order of the operator steps, the in-flight decision and the evidence each
 step needs. The activation SQL itself lives with each slice:
-[Approval evidence](approval-evidence.md) (#287, #290, #293, #296, #325),
+[Approval evidence](approval-evidence.md) (#287, #290, #293, #296, #325, #384),
 [Approval card delivery](approval-delivery.md) (#291–#294, #300),
 [Escalation transfer](escalation-transfer.md) (#326) and
 [Legacy escalation fencing](legacy-escalation-fencing.md) (#271).
@@ -36,7 +38,9 @@ The report classifies three things separately.
 (the rollout's `lifecycle_mode`), the evidence mode, and every pending
 lifecycle by its submitted evidence. The same review preparation that the inbox
 and the decision owner use does the classification, so a held lifecycle here
-is exactly one that cannot be decided from a card. For the time kinds the
+is exactly one that cannot be decided from a card. Absences are classified
+against the revision of the authority deciding them now: the #288 legacy owner
+binds only a legacy revision, the canonical owner only a canonical one. For the time kinds the
 lifecycles are the pending canonical workflows, the only ones a time card
 represents, checked with the time card's own revision and fact gates
 (`classifyCanonicalTimeCard` in `presentation/time-card.ts`, which the card
@@ -48,7 +52,7 @@ classified by the [time pilot report](time-pilot.md) (#329):
 | `current` | Evidenced and still matching; decidable from a bound card. |
 | `notCaptured` | No submitted revision (e.g. submitted before capture). Held while capture is on. |
 | `materialChange` | Live facts changed after submission. Held until a supported resubmission. |
-| `authorityChange` | Evidence of another authority (legacy revision under canonical authority). Held. For time kinds: a workflow without its own canonical revision whose mirrored request has a legacy capture, e.g. a request submitted under `shadow` before the cutover. |
+| `authorityChange` | Evidence of another authority (a legacy revision under canonical authority, or a canonical revision under legacy authority after a rollback, which the legacy owner holds as evidence required). Held. For time kinds: a workflow without its own canonical revision whose mirrored request has a legacy capture, e.g. a request submitted under `shadow` before the cutover. |
 | `reviewOnly` | Time kinds only: current evidence the card cannot state (no employee name captured, an unnamed or deleted category, a change the mask names but the proposal lacks). The card is review-only; the web inbox still decides. Not held. |
 
 **Card combinations** (kind × Telegram, Teams, Slack, Discord): whether the
@@ -74,18 +78,20 @@ drains). It is never cleared by the report.
 
 | Code | Severity | Meaning and action |
 | --- | --- | --- |
-| `authority_not_canonical` | blocker | Absence and time cards need canonical authority. Legacy absences are #384; legacy time approvals stay review-only on bots (#432). |
+| `authority_not_canonical` | blocker | Time cards need canonical authority: legacy time approvals stay review-only on bots (#432). Absences are admitted under both authorities (legacy since #384, see [Legacy absence cards](#legacy-absence-cards-384--459)). |
 | `authority_complete_unsupported` | blocker | Absence and time kinds in `complete` mode: presentation starts from the stage's compatibility request, which `complete` no longer writes, so the owner's work becomes `unsupported_route` attention instead of a card (#325 blocker 2). |
 | `authority_not_legacy` | blocker | Expense cards exist only under legacy authority (#296); a canonical expense rollout has no card path. |
 | `evidence_capture_inactive` | blocker | Turn on `approval_evidence_control` first (#287, #295). |
 | `presentation_not_actionable` | blocker | Actionable providers need `approval_presentation_control = actionable` (#290, #293, #292, #296, #325). Slack needs none: it is always review-only. |
-| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. Time cards are admitted on Telegram, plus the Slack review-only summary; Teams and Discord share the bound path but were never exercised for time kinds (#325 blocker 3). |
-| `presentation_actionable_unverified` | blocker | An `actionable` row on an unverified combination (expense on Teams, Slack or Discord; a time kind on Teams or Discord) would make unverified cards actionable. Remove it. |
+| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. Time cards are admitted on Telegram, plus the Slack review-only summary; Teams and Discord share the bound path but were never exercised for time kinds (#325 blocker 3). Legacy absence cards are admitted on Telegram only (#384 blocker 7): the owner would deliver a legacy cycle to Teams, Discord and Slack too, but those cards were never exercised under legacy authority. |
+| `presentation_actionable_unverified` | blocker | An `actionable` row on an unverified combination (expense on Teams, Slack or Discord; a time kind on Teams or Discord) would make unverified cards actionable. Remove it. Not raised for legacy absences: their Teams and Discord cards stay review-only in code whatever the row says (`LEGACY_ABSENCE_ACTIONABLE_PROVIDERS`), and the row belongs to canonical absence cards, which it admits after the cutover. |
 | `provider_not_configured` | blocker | No active integration with approvals enabled (for Teams: no such tenant). |
-| `escalation_delivery_disabled` | hold | Absence and time kinds (the canonical kinds escalation transfers, #326), while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
+| `escalation_delivery_disabled` | hold | Absence and time kinds under canonical authority (the canonical kinds escalation transfers, #326), while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
+| `escalation_replacement_unsupported` | hold | Legacy absences while escalation owns transfers (owner `escalation`, not paused, policy enabled), on every configured provider: a legacy transfer sends the new holder no card and leaves the former holder's card unrefreshed; that card decides nothing (#384 blocker 5, #408). The backup decides in the web inbox. |
+| `legacy_chain_mode_unverified` | hold | Legacy absences in `shadow` or `ready` mode. Chain submissions work there since #453, but chain cards were verified in `legacy` mode only (#384 blocker 4). The count, when present, is the number of pending chain cycles; zero pending chains does not mean none will be submitted, so check whether the organization's absence policies route to chains before accepting. |
 | `evidence_held` | hold | Pending lifecycles held for evidence (count = `notCaptured` + `materialChange` + `authorityChange`), now or, while capture is still off, as soon as it is turned on. A held lifecycle is refused for approve and reject everywhere, the web inbox included. Absences leave the hold by cancellation and resubmission; held expense claims have no cancellation path and raise no attention record (#296 blocker 4), so they are not in `attention_open`. Otherwise drain them, or record reconstructed revisions through a separately authorized step (not implemented). Nothing backfills them. |
 | `card_review_only` | hold | Time kinds: pending lifecycles counted as `reviewOnly`. Their approvers get a review-only card and decide in the web inbox. |
-| `in_flight_before_activation` | hold | Pending lifecycles without a lifecycle intent at or after `activated_at` (or, before activation, every pending lifecycle). The owner never sends them a card. See [In-flight decision](#in-flight-decision). |
+| `in_flight_before_activation` | hold | Pending lifecycles without a lifecycle intent at or after `activated_at` (or, before activation, every pending lifecycle). The owner never sends them a card. Legacy absences count by submission cycle (the chain instance, or the single request): a cycle whose next stage was decided after activation has an owned intent and is carded from then on. See [In-flight decision](#in-flight-decision). |
 | `legacy_cards_historical_only` | hold | Unanswered cards of the pre-owner path (`telegram_approval_message`, `teams_approval_card`, `slack_approval_message`, `discord_approval_message`) on pending approvals. They are not refreshed. A press revalidates at commit and decides nothing on its own. A time card counts under the kind of the canonical workflow whose stage mirrors its request. A card on a legacy time request without a mirroring workflow (submitted under `legacy`, before `shadow`) has no kind and is **not counted anywhere**; check `telegram_approval_message` and the other card tables directly if such requests are still pending (the time pilot report lists them as pending legacy approvals). |
 | `delivery_awaiting_repair` | hold | Work waiting for a destination (unlinked recipient, closed DMs, stale workspace DM). It re-arms when the recipient reaches the bot. |
 | `delivery_exhausted` | hold | Retries exhausted; an escalation incident exists. Use **Retry delivery** on the escalation page once the cause is fixed. |
@@ -116,8 +122,8 @@ would need its own authorized preparation step.
 For each pilot organization, record the report (`--json`) before and after
 every step.
 
-1. **Deploy.** Apply every migration through `0096` through the authorized
-   deployment. Deploy one release to every worker and app instance. Record the
+1. **Deploy.** Apply every migration through `0096` (through `0108` for
+   legacy absence cards) through the authorized deployment. Deploy one release to every worker and app instance. Record the
    deployed versions: the report cannot see them.
 2. **Drain.** Confirm that no pre-gate binary and no active legacy escalation
    job remains (#271 items 1–2). Set `RETIRE_LEGACY_ESCALATION_SCHEDULERS=true`
@@ -129,7 +135,8 @@ every step.
    lifecycles that can no longer be decided until they drain or are
    resubmitted.
 4. **Presentation.** Insert the `actionable` rows: absences on Telegram, Teams
-   and Discord; expenses on **Telegram only**.
+   and Discord (legacy absences: **Telegram only**); expenses on **Telegram
+   only**.
 5. **Escalation.** Prepare the policy and review its conflicts. Then, after
    step 2, switch the owner exclusively: `owner = 'escalation'` and
    `escalation_owned_since`. No application endpoint does this. Legacy-authority
@@ -196,6 +203,71 @@ required environment, the text and JSON output, and pool cleanup on failure.
 Not verified here: any real organization's data, deployed versions, worker
 drain, scheduler retirement, live providers and the pilot itself. Those remain
 the open items on #328 (now #423).
+
+## Legacy absence cards (#384 / #459)
+
+Organizations whose absences are decided by legacy authority (rollout `legacy`,
+`shadow`, `ready`, or no rollout row) get Telegram cards bound to the exact
+legacy request and its legacy submitted revision (#384; design and activation
+SQL in [Approval evidence](approval-evidence.md#legacy-absence-cards-bound-decisions-and-cycle-delivery-384)).
+Since #459 the report admits them under exactly the #384 gates. Before #459 it
+blocked them with `authority_not_canonical`.
+
+| Gate | Report |
+| --- | --- |
+| Rollout not `canonical`/`complete` | `authority` is `legacy` |
+| `approval_evidence_control = capture` | `evidence_capture_inactive` |
+| Telegram `approval_presentation_control = actionable` (shared with canonical absence cards) | `presentation_not_actionable` |
+| Active Telegram bot with approvals enabled | `provider_not_configured` |
+| Teams, Discord and Slack **not** admitted (#384 blocker 7) | `combination_unverified` |
+| Chains verified in `legacy` mode only (#384 blocker 4) | `legacy_chain_mode_unverified` |
+| No replacement cards after legacy transfers (#384 blocker 5, #408) | `escalation_replacement_unsupported` |
+| Held evidence: no revision, a material change (#384 blocker 6), or a canonical revision after a rollback | `evidence_held` |
+| Cycles submitted before the delivery control (#384 blocker 3) | `in_flight_before_activation` |
+
+Pending legacy absences are classified like legacy expense claims: against the
+legacy revision the #288 owner binds. A shadow observation is never consulted.
+The in-flight count is the legacy counterpart of the expense one, keyed like
+the owner's lifecycles: pending cycles of pending absences without an intent of
+that cycle created at or after the Telegram control's `activated_at`. Old-path
+cards of pending legacy requests are counted as `legacy_cards_historical_only`,
+as before.
+
+The report cannot see the remaining #384 blockers: the `0108` deployment, the
+drain of old binaries (they decide and cancel without intents and route a
+legacy binding to the expense owner), ingress durability, and the scanner gap.
+Record their evidence separately. The cutover to `canonical` hands the same
+Telegram presentation and delivery controls to canonical absence cards; the
+report then applies the canonical absence admission.
+
+### Verification (#459)
+
+`readiness.integration.test.ts`, PostgreSQL 16, with absences submitted through
+the real `requestAbsenceEffect` legacy branch and a stage decided through the
+real `approveAbsenceEffect`:
+
+- an unprepared organization with no rollout row is legacy-authoritative and
+  names only the missing #384 gates;
+- a prepared `legacy` organization is `ready` on Telegram; Teams, Discord and
+  Slack are `combination_unverified`, with no `presentation_actionable_unverified`
+  for a Teams row left from canonical authority; `shadow` and `ready` hold
+  `legacy_chain_mode_unverified`; after the cutover the canonical admission
+  applies;
+- evidence: not captured (submitted before capture), current (`legacy` and
+  `shadow` submissions), material change, and a canonical submission after a
+  rollback to legacy (`authorityChange`);
+- in flight: a single request and a two-stage chain submitted before
+  activation count; a chain submitted after activation does not (its intent
+  is keyed by the chain instance); deciding stage one on the web writes the
+  cycle's `decided` intent and removes it from the count; `shadow` counts the
+  pending chains;
+- once escalation owns transfers: `escalation_replacement_unsupported` instead
+  of `escalation_delivery_disabled`.
+
+Absences have one cycle per source, so the cycle key is not distinguished from
+the source here (#384 verified several cycles with a seeded second cycle).
+Card sending, pressing, replay, refresh and cleanup were verified by the #384
+suite and are not repeated.
 
 ## Time approval cards (#330 / T65)
 

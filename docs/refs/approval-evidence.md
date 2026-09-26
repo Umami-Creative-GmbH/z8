@@ -1062,14 +1062,19 @@ application endpoint changes either control.
    inserting either control.
 3. **In-flight classification.** Absences submitted before capture have no
    revision and get review-only cards; cycles submitted before the delivery
-   control have no intent and stay with the old notification path. The pilot
-   readiness report (#328) does not classify legacy absence cycles yet.
-4. **Shadow/ready chains.** A legacy chain submission fails in `shadow` and
+   control have no intent and stay with the old notification path. Since #459
+   the pilot readiness report classifies legacy absence evidence and counts
+   these cycles (`in_flight_before_activation`); see
+   [Approval card pilots](approval-pilot.md#legacy-absence-cards-384--459).
+4. **Shadow/ready chains.** A legacy chain submission failed in `shadow` and
    `ready` (sub-millisecond chain times in the observation; pre-existing, found
-   here). Chains are verified in `legacy` mode only.
+   here). The submission is fixed by #453, but chain cards are verified in
+   `legacy` mode only. The readiness report holds `shadow`/`ready`
+   (`legacy_chain_mode_unverified`).
 5. **Replacement cards** after a legacy escalation transfer (#408): the former
    holder's card decides nothing, but nobody refreshes it and the new holder
-   gets no card from the owner.
+   gets no card from the owner. The readiness report holds this while
+   escalation owns transfers (`escalation_replacement_unsupported`).
 6. **In-place material changes** commit no intent, so the card is not
    refreshed; pressing it decides nothing.
 7. Only Telegram is admitted (in code). Teams, Discord and Slack stay
