@@ -166,7 +166,7 @@ export async function getTeamNeighborhood(
 function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
 	return Effect.gen(function* (_) {
 		const session = yield* _(
-			Effect.promise(async () => getRequestSession()),
+			Effect.promise(() => getRequestSession()),
 		);
 
 		if (!session?.user) {

@@ -93,7 +93,7 @@ export async function getCalendarManagedEmployees(): Promise<
 > {
 	const effect = Effect.gen(function* (_) {
 		const session = yield* _(
-			Effect.promise(async () => getRequestSession()),
+			Effect.promise(() => getRequestSession()),
 		);
 		if (!session?.user) {
 			return yield* _(

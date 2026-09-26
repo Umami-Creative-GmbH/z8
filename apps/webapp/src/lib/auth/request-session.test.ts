@@ -68,11 +68,11 @@ function listSourceFiles(directory: string): string[] {
 }
 
 describe("request-time session lookups", () => {
-	it("go through getRequestSession everywhere a page or layout can reach them", () => {
+	it("call getSession only through getRequestSession outside route handlers", () => {
 		// Route handlers and the proxy never run inside a prerender.
 		const isRouteBoundary = (file: string) =>
 			file.startsWith("app/api/") || file.endsWith("/route.ts") || file === "proxy.ts";
-		const allowed = new Set(["lib/auth/request-session.ts", "lib/auth-client.ts"]);
+		const allowed = new Set(["lib/auth/request-session.ts"]);
 
 		const offenders = listSourceFiles(sourceRoot)
 			.map((file) => path.relative(sourceRoot, file).split(path.sep).join("/"))

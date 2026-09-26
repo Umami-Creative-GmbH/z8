@@ -68,7 +68,7 @@ function requireAuthClient(): AuthClient {
 	if (!client) {
 		throw new Error(
 			"Auth client operations can only be performed on the client side. " +
-				"For server-side session access, use auth.api.getSession() from @/lib/auth instead.",
+				"For server-side session access, use getRequestSession() from @/lib/auth/request-session instead.",
 		);
 	}
 	return client;
@@ -79,7 +79,7 @@ function requireAuthClient(): AuthClient {
  * This allows importing authClient without immediately triggering initialization.
  *
  * IMPORTANT: Only use this in client components (files with "use client").
- * For server components, use auth.api.getSession() from @/lib/auth.
+ * For server components, use getRequestSession() from @/lib/auth/request-session.
  */
 export const authClient = new Proxy({} as AuthClient, {
 	get(_, prop: keyof AuthClient) {
@@ -90,7 +90,7 @@ export const authClient = new Proxy({} as AuthClient, {
 /**
  * Hook to get the current session.
  * Must be used in a client component.
- * For server components, use auth.api.getSession() from @/lib/auth.
+ * For server components, use getRequestSession() from @/lib/auth/request-session.
  */
 export function useSession() {
 	return authClientInstance.useSession();
