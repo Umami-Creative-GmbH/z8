@@ -3,8 +3,11 @@ import type { EditCapability } from "@/lib/effect/services/change-policy.service
 /**
  * What the current viewer may do with the clock-in/clock-out times of a work period.
  *
- * - `admin`: organization owners/admins edit any completed entry in the organization
- *   directly, regardless of age or date changes.
+ * - `admin`: organization owners/admins edit their own completed entries directly,
+ *   regardless of age or date changes.
+ * - `on_behalf`: an organization owner/admin or an eligible manager changes another
+ *   employee's entry. The change goes through that employee's approval chain; an
+ *   editor who is the current approver approves it right away (#507).
  * - `self_service`: the employee may edit their own entry directly as long as the
  *   local dates stay the same; date changes are routed through approval.
  * - `approval`: every change to the employee's own entry creates an approval request.
@@ -12,6 +15,7 @@ import type { EditCapability } from "@/lib/effect/services/change-policy.service
  */
 export type WorkPeriodTimeEditAccess =
 	| { kind: "admin" }
+	| { kind: "on_behalf" }
 	| { kind: "self_service" }
 	| { kind: "approval" }
 	| {
@@ -30,19 +34,22 @@ export type WorkPeriodTimeEditAccess =
 
 export type WorkPeriodTimeEditRoute =
 	| "admin_direct"
+	| "on_behalf_request"
 	| "self_service_direct"
 	| "approval_request";
 
 export function resolveWorkPeriodTimeEditAccess(input: {
 	isOrgAdmin: boolean;
 	isOwnEntry: boolean;
+	/** The viewer may change this other employee's entries (admin/owner or eligible manager). */
+	canEditOnBehalf: boolean;
 	isCompleted: boolean;
 	approvalStatus: "approved" | "pending" | "rejected" | null;
 	hasPendingCorrection: boolean;
 	/** Resolved change-policy capability; only consulted for non-admin owners. */
 	capability: EditCapability | null;
 }): WorkPeriodTimeEditAccess {
-	if (!input.isOrgAdmin && !input.isOwnEntry) {
+	if (!input.isOwnEntry && !input.canEditOnBehalf) {
 		return { kind: "blocked", reason: "not_owner" };
 	}
 	if (!input.isCompleted) {
@@ -53,6 +60,9 @@ export function resolveWorkPeriodTimeEditAccess(input: {
 	}
 	if (input.approvalStatus === "pending") {
 		return { kind: "blocked", reason: "pending_approval" };
+	}
+	if (!input.isOwnEntry) {
+		return { kind: "on_behalf" };
 	}
 	if (input.isOrgAdmin) {
 		return { kind: "admin" };
@@ -81,6 +91,8 @@ export function resolveWorkPeriodTimeEditRoute(
 	switch (access.kind) {
 		case "admin":
 			return "admin_direct";
+		case "on_behalf":
+			return "on_behalf_request";
 		case "self_service":
 			return change.datesChanged ? "approval_request" : "self_service_direct";
 		case "approval":

@@ -439,6 +439,7 @@ export async function POST(request: NextRequest) {
 				organizationId: activeOrgId,
 				employeeId: currentEmployee.id,
 				userId: session.user.id,
+				actorEmployeeId: currentEmployee.id,
 				submissionId,
 				workPeriodId: selectedWorkPeriod.id,
 				expectedClockInId: selectedWorkPeriod.clockInId,

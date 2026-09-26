@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
-import { getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
+import { formatWorkPeriodEditedBy, getWorkPeriodDialogMetadata } from "./work-period-dialog-utils";
 import {
 	ApprovalStatusBanner,
 	NotesEditSection,
@@ -41,6 +41,8 @@ interface WorkPeriodEditDialogProps {
 	onSplitClick?: () => void;
 	onDeleteClick?: () => void;
 	displayContext: DisplayContext;
+	/** Open the time form right away (context menu "Edit"). */
+	initialTimeEditing?: boolean;
 }
 
 interface WorkPeriodEditState {
@@ -114,10 +116,12 @@ export function WorkPeriodEditDialog({
 	onSplitClick,
 	onDeleteClick,
 	displayContext,
+	initialTimeEditing = false,
 }: WorkPeriodEditDialogProps) {
 	const { t } = useTranslate();
 	const projectsEnabled = useProjectsEnabled();
 	const metadata = getWorkPeriodDialogMetadata(event);
+	const editedBy = formatWorkPeriodEditedBy(event, displayContext.timezone, t);
 	const approvalStatus = metadata.approvalStatus ?? "approved";
 	const [state, dispatch] = useReducer(workPeriodEditReducer, metadata, createInitialState);
 
@@ -179,8 +183,10 @@ export function WorkPeriodEditDialog({
 						event={event}
 						displayContext={displayContext}
 						onTimesUpdated={onTimesUpdated}
+						initialEditing={initialTimeEditing}
 						t={t}
 					/>
+					{editedBy ? <p className="text-xs italic text-muted-foreground">{editedBy}</p> : null}
 					<WorkPeriodDurationSection metadata={metadata} t={t} />
 					<ProjectEditSection
 						projectsEnabled={projectsEnabled}

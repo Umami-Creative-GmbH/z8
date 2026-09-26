@@ -205,7 +205,10 @@
         "saveFailed": "Failed to update time entry",
         "submitForApproval": "Submit for approval",
         "submitted": "Change submitted for manager approval",
-        "timezoneNote": "Times are in the employee's timezone ({timezone})"
+        "timezoneNote": "Times are in the employee's timezone ({timezone})",
+        "onBehalfHint": "This change follows the employee's approval chain. If you are their approver, it applies right away.",
+        "submitOnBehalf": "Submit change",
+        "submittedOnBehalf": "Change submitted to the employee's approver"
       }
     },
     "employeeSelector": {
@@ -304,6 +307,14 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "contextMenu": {
+      "delete": "Delete",
+      "edit": "Edit",
+      "label": "Time entry actions"
+    },
+    "workPeriod": {
+      "editedBy": "(edited by {name} at {date})"
     }
   }
 }

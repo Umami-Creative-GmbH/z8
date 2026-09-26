@@ -1605,4 +1605,129 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		);
 		expect(rows).toHaveLength(0);
 	});
+
+	describe("on-behalf changes by managers and admins (#507)", () => {
+		function editAs(
+			userId: string,
+			workPeriodId: string,
+			roles: { isOrgAdmin?: boolean } = {},
+		) {
+			actAs(userId, roles);
+			return updateWorkPeriodTimes({
+				workPeriodId,
+				submissionId: randomUUID(),
+				clockInDate: "2026-07-22",
+				clockInTime: "07:30",
+				clockOutDate: "2026-07-22",
+				clockOutTime: "10:00",
+				reason: "Started early on site",
+			});
+		}
+
+		async function pendingCount(workPeriodId: string) {
+			const { rows } = await admin.query<{ count: number }>(
+				`select count(*)::int as count from approval_request
+				 where organization_id = $1 and entity_id = $2 and status = 'pending'`,
+				[ids.organization, workPeriodId],
+			);
+			return only(rows).count;
+		}
+
+		it.each(["legacy", "canonical"] as const)(
+			"applies a manager's edit of a report's work as the configured approver (%s)",
+			async (mode) => {
+				if (mode === "canonical") await setCorrectionRollout("canonical");
+				const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+
+				await expect(editAs(ids.managerUser, work.id)).resolves.toEqual({
+					success: true,
+					data: { status: "applied" },
+				});
+
+				const edited = await period(work.id);
+				expect(edited.start_time.toISOString()).toBe("2026-07-22T07:30:00.000Z");
+				expect(edited).toMatchObject({ duration_minutes: 150, record_duration: 150 });
+				// The correction is the requester's work record, created by the manager.
+				const { rows } = await admin.query(
+					"select type, employee_id, created_by from time_entry where id = $1",
+					[edited.clock_in_id],
+				);
+				expect(only(rows)).toEqual({
+					type: "correction",
+					employee_id: ids.requester,
+					created_by: ids.managerUser,
+				});
+				expect(await pendingCount(work.id)).toBe(0);
+				const [submission] = await receipts("submit_time_correction");
+				expect(submission).toMatchObject({ actor_user_id: ids.managerUser });
+				const [finalized] = await receipts("finalize_time_correction");
+				expect(finalized).toMatchObject({
+					actor_user_id: ids.managerUser,
+					result: { transition: "approved" },
+				});
+			},
+		);
+
+		it("leaves an admin's change pending for the requester's manager, who then approves it", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+
+			await expect(editAs(ids.adminUser, work.id, { isOrgAdmin: true })).resolves.toEqual({
+				success: true,
+				data: { status: "pending" },
+			});
+			expect((await period(work.id)).start_time.toISOString()).toBe(
+				"2026-07-22T08:00:00.000Z",
+			);
+			const { rows } = await admin.query(
+				`select requested_by, approver_id from approval_request
+				 where organization_id = $1 and entity_id = $2 and status = 'pending'`,
+				[ids.organization, work.id],
+			);
+			expect(only(rows)).toEqual({ requested_by: ids.requester, approver_id: ids.manager });
+
+			await expect(approve(await pendingApprovalId(work.id))).resolves.toBeDefined();
+			expect((await period(work.id)).start_time.toISOString()).toBe(
+				"2026-07-22T07:30:00.000Z",
+			);
+		});
+
+		it("lets a manager delete a report's work through the same approval", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			actAs(ids.managerUser);
+
+			await expect(
+				requestTimeEntryDeletion({
+					workPeriodId: work.id,
+					submissionId: randomUUID(),
+					reason: "Duplicate of the site log",
+				}),
+			).resolves.toMatchObject({ success: true, data: { status: "approved" } });
+
+			expect((await period(work.id)).deleted_at).not.toBeNull();
+			expect(await pendingCount(work.id)).toBe(0);
+		});
+
+		it("refuses the requester's own manager link once it is removed", async () => {
+			const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+			await admin.query("delete from employee_managers where id = $1", [ids.managerLink]);
+			const before = await snapshot();
+
+			await expect(editAs(ids.managerUser, work.id)).resolves.toMatchObject({
+				success: false,
+				code: "not_owner",
+			});
+			actAs(ids.managerUser);
+			await expect(
+				requestTimeEntryDeletion({
+					workPeriodId: work.id,
+					submissionId: randomUUID(),
+					reason: "Duplicate",
+				}),
+			).resolves.toMatchObject({
+				success: false,
+				error: "You can only change time entries of employees you manage",
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+	});
 });

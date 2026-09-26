@@ -1,4 +1,6 @@
+import type { TFnType } from "@tolgee/react";
 import type { CalendarEvent } from "@/lib/calendar/types";
+import { formatWorkPeriodEditedDate } from "@/lib/calendar/work-period-edited-by";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type DisplayContext,
@@ -23,12 +25,29 @@ export interface WorkPeriodDialogMetadata {
 		surchargeMinutes: number;
 	}>;
 	approvalStatus?: "approved" | "pending" | "rejected";
+	editedByName?: string;
+	editedAt?: Date;
 }
 
 export function getWorkPeriodDialogMetadata(
 	event: CalendarEvent,
 ): WorkPeriodDialogMetadata {
 	return event.metadata as WorkPeriodDialogMetadata;
+}
+
+/** "(edited by John Doe at dd.mm.yyyy)" when someone other than the employee last edited it. */
+export function formatWorkPeriodEditedBy(
+	event: CalendarEvent,
+	timeZone: string,
+	t: TFnType,
+): string | null {
+	if (event.type !== "work_period") return null;
+	const { editedByName, editedAt } = getWorkPeriodDialogMetadata(event);
+	if (!editedByName || !editedAt) return null;
+	return t("calendar.workPeriod.editedBy", "(edited by {name} at {date})", {
+		name: editedByName,
+		date: formatWorkPeriodEditedDate(editedAt, timeZone),
+	});
 }
 
 export function formatDuration(minutes: number): string {

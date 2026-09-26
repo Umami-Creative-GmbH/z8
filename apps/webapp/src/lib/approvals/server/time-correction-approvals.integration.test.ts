@@ -971,6 +971,7 @@ describeIntegration(
 					organizationId: ids.organization,
 					employeeId: ids.requester,
 					userId: ids.requesterUser,
+					actorEmployeeId: ids.requester,
 					workPeriodId: ids.period,
 					expectedClockInId: ids.originalIn,
 					expectedClockOutId: ids.originalOut,
