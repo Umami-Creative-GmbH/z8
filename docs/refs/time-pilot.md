@@ -221,7 +221,7 @@ rollback and proving it is #331.
   Stored export inputs stay with their jobs (#322).
 - **Historical repair:** delete the control row to stop further repair. Applied
   repairs are ordinary receipted values. They are not reverted (#320).
-- **Evidence capture** stays on, as in the [non-time pilot](approval-pilot.md#pause-and-rollback).
+- **Evidence capture** stays on, as in the [approval card pilots](approval-pilot.md#pause-and-rollback).
 
 ## Verification (#329)
 

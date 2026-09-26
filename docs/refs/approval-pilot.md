@@ -1,11 +1,14 @@
-# Non-time approval pilot — #328 / T63
+# Approval card pilots — #328 / T63, #330 / T65
 
-The limited organization pilot of absence and expense approval cards. It runs
-independently of timekeeping work. This page covers the readiness report,
+The limited organization pilots of approval cards: absence and expense cards
+(#328), which run independently of timekeeping work, and time approval cards and
+their escalation (#330, see [Time approval cards](#time-approval-cards-330--t65)).
+This page covers the readiness report,
 the order of the operator steps, the in-flight decision and the evidence each
 step needs. The activation SQL itself lives with each slice:
-[Approval evidence](approval-evidence.md) (#287, #290, #293, #296),
-[Approval card delivery](approval-delivery.md) (#291–#294, #300) and
+[Approval evidence](approval-evidence.md) (#287, #290, #293, #296, #325),
+[Approval card delivery](approval-delivery.md) (#291–#294, #300),
+[Escalation transfer](escalation-transfer.md) (#326) and
 [Legacy escalation fencing](legacy-escalation-fencing.md) (#271).
 
 Nothing here activates anything. Every control change stays with the
@@ -28,18 +31,22 @@ report. `--json` prints the full report for the evidence record. The owner is
 
 The report classifies three things separately.
 
-**Kinds** (`absence`, `travel_expense`): the authority deciding the kind now
+**Kinds** (`absence`, `travel_expense`, `manual_time_submission`,
+`policy_clock_out`, `time_correction`): the authority deciding the kind now
 (the rollout's `lifecycle_mode`), the evidence mode, and every pending
 lifecycle by its submitted evidence. The same review preparation that the inbox
 and the decision owner use does the classification, so a held lifecycle here
-is exactly one that cannot be decided from a card:
+is exactly one that cannot be decided from a card. For the time kinds the
+lifecycles are the pending canonical workflows, the only ones a time card
+represents, checked with the time card's own gates. Legacy time requests are
+classified by the [time pilot report](time-pilot.md) (#329):
 
 | Class | Meaning |
 | --- | --- |
 | `current` | Evidenced and still matching; decidable from a bound card. |
 | `notCaptured` | No submitted revision (e.g. submitted before capture). Held while capture is on. |
 | `materialChange` | Live facts changed after submission. Held until a supported resubmission. |
-| `authorityChange` | Evidence of another authority (legacy revision under canonical authority). Held. |
+| `authorityChange` | Evidence of another authority (legacy revision under canonical authority). Held. For time kinds: a workflow without its own canonical revision whose mirrored request has a legacy capture, e.g. a request submitted under `shadow` before the cutover. |
 
 **Card combinations** (kind × Telegram, Teams, Slack, Discord): whether the
 delivery owner owns the combination (`approval_delivery_control` and its
@@ -64,17 +71,18 @@ drains). It is never cleared by the report.
 
 | Code | Severity | Meaning and action |
 | --- | --- | --- |
-| `authority_not_canonical` | blocker | Absence cards need canonical authority; legacy absences are #384. |
+| `authority_not_canonical` | blocker | Absence and time cards need canonical authority. Legacy absences are #384; legacy time approvals stay review-only on bots (#432). |
+| `authority_complete_unsupported` | blocker | Absence and time kinds in `complete` mode: presentation starts from the stage's compatibility request, which `complete` no longer writes, so the owner's work becomes `unsupported_route` attention instead of a card (#325 blocker 2). |
 | `authority_not_legacy` | blocker | Expense cards exist only under legacy authority (#296); a canonical expense rollout has no card path. |
 | `evidence_capture_inactive` | blocker | Turn on `approval_evidence_control` first (#287, #295). |
-| `presentation_not_actionable` | blocker | Actionable providers need `approval_presentation_control = actionable` (#290, #293, #292, #296). Slack needs none: it is always review-only. |
-| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. |
-| `presentation_actionable_unverified` | blocker | An `actionable` expense row on Teams, Slack or Discord would make unverified cards actionable. Remove it. |
+| `presentation_not_actionable` | blocker | Actionable providers need `approval_presentation_control = actionable` (#290, #293, #292, #296, #325). Slack needs none: it is always review-only. |
+| `combination_unverified` | blocker | Pilot decision: expense delivery is admitted on Telegram only, the one verified path (#296). #296 forbids only the actionable Teams row; Discord and Slack expense cards would be review-only but have never been exercised, so the pilot does not activate them either. Time cards are admitted on Telegram, plus the Slack review-only summary; Teams and Discord share the bound path but were never exercised for time kinds (#325 blocker 3). |
+| `presentation_actionable_unverified` | blocker | An `actionable` row on an unverified combination (expense on Teams, Slack or Discord; a time kind on Teams or Discord) would make unverified cards actionable. Remove it. |
 | `provider_not_configured` | blocker | No active integration with approvals enabled (for Teams: no such tenant). |
-| `escalation_delivery_disabled` | hold | Absences only, while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
+| `escalation_delivery_disabled` | hold | Absence and time kinds (the canonical kinds escalation transfers, #326), while escalation owns transfers (owner `escalation`, not paused, policy enabled): the integration has `enable_escalations` off (Teams: on for no tenant). Channels are frozen when a transfer is expanded (#300), so a backup gets no replacement card here, only the web inbox. |
 | `evidence_held` | hold | Pending lifecycles held for evidence (count = `notCaptured` + `materialChange` + `authorityChange`), now or, while capture is still off, as soon as it is turned on. A held lifecycle is refused for approve and reject everywhere, the web inbox included. Absences leave the hold by cancellation and resubmission; held expense claims have no cancellation path and raise no attention record (#296 blocker 4), so they are not in `attention_open`. Otherwise drain them, or record reconstructed revisions through a separately authorized step (not implemented). Nothing backfills them. |
 | `in_flight_before_activation` | hold | Pending lifecycles without a lifecycle intent at or after `activated_at` (or, before activation, every pending lifecycle). The owner never sends them a card. See [In-flight decision](#in-flight-decision). |
-| `legacy_cards_historical_only` | hold | Unanswered cards of the pre-owner path (`telegram_approval_message`, `teams_approval_card`, `slack_approval_message`, `discord_approval_message`) on pending approvals. They are not refreshed. A press revalidates at commit and decides nothing on its own. |
+| `legacy_cards_historical_only` | hold | Unanswered cards of the pre-owner path (`telegram_approval_message`, `teams_approval_card`, `slack_approval_message`, `discord_approval_message`) on pending approvals. They are not refreshed. A press revalidates at commit and decides nothing on its own. A time card counts under the kind of the canonical workflow whose stage mirrors its request. |
 | `delivery_awaiting_repair` | hold | Work waiting for a destination (unlinked recipient, closed DMs, stale workspace DM). It re-arms when the recipient reaches the bot. |
 | `delivery_exhausted` | hold | Retries exhausted; an escalation incident exists. Use **Retry delivery** on the escalation page once the cause is fixed. |
 | `delivery_failed` | hold | Work that failed permanently. Investigate before expanding. |
@@ -183,4 +191,123 @@ required environment, the text and JSON output, and pool cleanup on failure.
 
 Not verified here: any real organization's data, deployed versions, worker
 drain, scheduler retirement, live providers and the pilot itself. Those remain
-the open items on #328.
+the open items on #328 (now #423).
+
+## Time approval cards (#330 / T65)
+
+Cards for manual time submissions, policy clock-outs and time corrections
+(#325), and their escalation (#326), use the same report. Everything stays
+**inactive for every organization**. Scope decided on 2026-09-26: the code part
+of #330 is the time kinds in this report plus this section. #330 closes on
+implementation. Its operational items (the #325 activation comment and the
+checks below) are tracked in
+[#448](https://github.com/Umami-Creative-GmbH/z8/issues/448), together with the
+time pilot.
+
+### Admission
+
+A time kind's combination is `ready` only when every gate the report sees
+holds:
+
+| Gate | Where it comes from |
+| --- | --- |
+| Rollout `canonical` (not `legacy`, `shadow`, `ready` or `complete`) | #325; legacy authority → #432, `complete` → blocker 2 |
+| `approval_evidence_control = capture` | #301/#302 (transaction-owned submitted and resulting evidence) |
+| Telegram `approval_presentation_control = actionable`; Slack none | #325 activation SQL |
+| Teams and Discord **not** admitted | #325 blocker 3 (`combination_unverified`) |
+| Active Telegram (or Slack) integration with approvals enabled | integration settings |
+| No held or in-flight lifecycle, or an explicit operator decision | `evidence_held`, `in_flight_before_activation` |
+
+The report does not see the writer and worker gates for time: the append
+admission, the drain of old binaries, and deployment. Those are in the
+[time pilot report](time-pilot.md) and [#447](https://github.com/Umami-Creative-GmbH/z8/issues/447).
+Run both reports for a time-card pilot organization. The time pilot report must
+not be `blocked`.
+
+### Sequence
+
+Run it after the time pilot's own adoption steps ([time pilot](time-pilot.md#pilot-sequence)):
+
+1. **Evidence capture** for the three kinds, under each kind's exclusive
+   rollout lock (`:22:manual_time_submission`, `:16:policy_clock_out`,
+   `:15:time_correction`). Re-run the report. A request submitted before capture
+   is `notCaptured` and held (`evidence_required`): it cannot be decided
+   anywhere, the web inbox included (see [Known holds](#known-holds-and-open-decisions)).
+2. **Presentation**: insert `approval_presentation_control (org, kind,
+   'telegram', 'actionable')` under the same lock (SQL in
+   [Approval evidence](approval-evidence.md#time-approval-presentation-and-bound-decisions-325--t60)). Do not insert Teams
+   or Discord rows for time kinds.
+3. **Escalation**: if escalation owns transfers, enable escalations on the
+   Telegram bot, otherwise `escalation_delivery_disabled` holds: a backup gets
+   only the web inbox.
+4. **Delivery**: insert `approval_delivery_control (org, kind, 'telegram')`
+   (and `'slack'` for review-only summaries). Tell approvers of the
+   `in_flight_before_activation` lifecycles to use the web inbox. The
+   [in-flight decision](#in-flight-decision) applies unchanged.
+5. **Observe** with the live checks below, and re-run the report.
+
+### Live checks (not provable by the report or the PostgreSQL suites)
+
+With a real bot and tenant:
+
+- the card text is in the recipient's locale and hour cycle, the endpoints are
+  in their captured offsets, and no reason text is shown;
+- one press makes one decision, and a redelivered press replays it;
+- the owner refreshes the card after a web decision;
+- an intermediate chain step shows "Approval recorded";
+- a press after the entry changed decides nothing;
+- the pause (`review_only`) stops sent cards from deciding;
+- a scheduled transfer delivers the replacement card and retires the former
+  card, and only the replacement's press decides (#326);
+- the Slack summary has no controls.
+
+### Known holds and open decisions
+
+- **Policy clock-out cards** only arise if live clock-out approval is enabled,
+  and it is dormant today (#361).
+- **Held requests** (material change, or no revision) have no durable
+  administrative attention, and manual and policy clock-out approvals have no
+  user cancel or resubmit path (#302 blockers). They count under
+  `evidence_held`; nothing reconstructs or repairs them.
+- **Category names** on correction cards are current names. Decide before the
+  pilot whether request-time labels must be captured (#325 blocker 4).
+- **Ingress**: nothing is stored durably before the webhook acknowledgment
+  (as for #290).
+- **Legacy time authority** (every organization today) stays review-only on
+  bots and is held by escalation (`legacy_time_authority`, #439). Bound legacy
+  cards and cycle-keyed delivery are #432.
+
+### Pause and rollback
+
+As [above](#pause-and-rollback): `review_only` stops sent time cards at the next
+press, and deleting the delivery control stops new cards. Committed invocations,
+decision evidence and transfer receipts keep replaying, and historical-only
+access to old cards is unchanged by any admission change.
+
+### Verification (#330)
+
+PostgreSQL 16, both suites in `test:approval-workflow-repository:integration`:
+
+- `lib/approvals/pilot/readiness.integration.test.ts`:
+  - Telegram and Slack are admitted for all three time kinds;
+  - Teams and Discord are `combination_unverified`, and an actionable Teams
+    row is flagged;
+  - legacy authority is `authority_not_canonical`;
+  - `complete` mode is `authority_complete_unsupported`, for time kinds and
+    absences;
+  - time kinds get `escalation_delivery_disabled` once escalation owns
+    transfers.
+- `time-tracking/actions/clocking.time-presentation.integration.test.ts`, with
+  requests submitted through the real `createManualTimeEntry`,
+  `clockIn`/`clockOut` and `requestTimeCorrection`:
+  - `notCaptured` (submitted before capture), `current`, and `materialChange`
+    (a corrected entry changed after submission);
+  - an old-path Telegram card counted under its mirroring kind;
+  - in-flight lifecycles after a late activation;
+  - a request submitted under `shadow` is `authorityChange` both before and
+    after the cutover to `canonical`.
+
+Card sending, pressing, replay, refresh, escalation transfer and replacement
+delivery for time kinds were already verified by the #325 and #326 suites.
+They are not repeated here. Nothing in these suites proves a real provider,
+deployed build or pilot organization.

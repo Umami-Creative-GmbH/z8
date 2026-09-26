@@ -1580,7 +1580,9 @@ No application endpoint changes either control.
 4. **Category names** are current names; request-time names are not captured.
 5. Everything in the #301/#302/#303 blockers: in-flight classification, held
    requests without durable attention, dormant live clock-out approval (#361),
-   old binaries, ingress, and the pilot (#330).
+   old binaries, ingress, and the pilot (#330: readiness report and runbook in
+   [Approval card pilots](approval-pilot.md#time-approval-cards-330--t65),
+   operations on #448).
 6. The approval write-boundary scanner cannot read sources on Windows; this
    slice adds no writer (it reuses the invocation and binding stores).
 

@@ -278,7 +278,7 @@ canonical absence submissions then send no Telegram card at all.
 7. **Activation handover.** Pending workflows whose intents predate
    `activated_at` get no card from the owner (in-flight classification).
    Decided for the pilot (#328, 2026-09-25): web inbox only, no backfill. The
-   readiness report counts them; see [Non-time approval pilot](approval-pilot.md).
+   readiness report counts them; see [Approval card pilots](approval-pilot.md).
 8. **Refresh incidents** close through the existing attention recheck once the
    approval is settled. The exhausted work row stays visible.
 9. **Ingress.** No durable acceptance before the webhook acknowledgment.

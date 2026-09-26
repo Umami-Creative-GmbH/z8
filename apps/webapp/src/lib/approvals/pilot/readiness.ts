@@ -1,4 +1,4 @@
-import { and, eq, type SQL, sql } from "drizzle-orm";
+import { and, eq, isNotNull, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	APPROVAL_DELIVERY_PROVIDERS,
@@ -9,41 +9,73 @@ import {
 	approvalDeliveryControl,
 	approvalEscalationControl,
 	approvalEscalationPolicy,
+	approvalWorkflow,
+	approvalWorkflowStage,
 	travelExpenseClaim,
 } from "@/db/schema";
+import { isCanonicalEscalationWorkflowType } from "../escalation/kinds";
 import { readApprovalPresentationMode } from "../evidence/invocation";
-import { readApprovalEvidenceMode } from "../evidence/store";
+import {
+	loadCanonicalTimeCorrectionSubmittedRevision,
+	loadCanonicalWorkPeriodSubmittedRevision,
+	readApprovalEvidenceMode,
+} from "../evidence/store";
+import { compareTimeCorrectionWithSubmittedRevision } from "../evidence/time-correction-evidence";
+import { compareWorkPeriodWithSubmittedRevision } from "../evidence/work-period-evidence";
 import {
 	type AbsenceReviewEvidence,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
+import { prepareTimeReviewEvidence } from "../presentation/time-review";
 import {
 	prepareTravelExpenseReviewEvidence,
 	type TravelExpenseReviewEvidence,
 } from "../presentation/travel-expense-review";
 import type { ApprovalDatabase } from "../server/types";
+import {
+	isTimeApprovalWorkflowType,
+	TIME_APPROVAL_WORKFLOW_TYPES,
+	type TimeApprovalWorkflowType,
+} from "../time-approval-kinds";
 
 /**
- * Read-only readiness report for the non-time approval pilot (#328 / T63):
- * one organization's absence and expense card combinations, classified from a
- * single consistent snapshot. It changes nothing; repairs, backfills and
- * control changes stay with the separately authorized adoption writer.
+ * Read-only readiness report for the approval card pilots: one organization's
+ * absence and expense (#328 / T63) and time approval (#330 / T65) card
+ * combinations, classified from a single consistent snapshot. It changes
+ * nothing; repairs, backfills and control changes stay with the separately
+ * authorized adoption writer.
  */
 
-export const PILOT_WORKFLOW_TYPES = ["absence", "travel_expense"] as const;
+export const PILOT_WORKFLOW_TYPES = [
+	"absence",
+	"travel_expense",
+	...TIME_APPROVAL_WORKFLOW_TYPES,
+] as const;
 export type PilotWorkflowType = (typeof PILOT_WORKFLOW_TYPES)[number];
 
 export type PilotVerdict = "ready" | "hold" | "blocked";
 
+type PilotAdmission = Record<ApprovalDeliveryProvider, "actionable" | "review_only" | "unverified">;
+
+/**
+ * Time cards (#325): only Telegram was exercised, plus the Slack review-only
+ * summary through the shared preparation. Teams and Discord share the bound
+ * path but were never run for time kinds.
+ */
+const TIME_ADMISSION: PilotAdmission = {
+	telegram: "actionable",
+	teams: "unverified",
+	discord: "unverified",
+	slack: "review_only",
+};
+
 /**
  * Card combinations the pilot admits: absence cards on every provider (Slack
- * review-only, #294), expense cards on Telegram only (#296). Anything else has
- * no verified card path and must not be activated.
+ * review-only, #294), expense cards on Telegram only (#296), time cards on
+ * Telegram plus Slack review-only summaries (#325). Anything else has no
+ * verified card path and must not be activated.
  */
-const PILOT_ADMISSION: Record<
-	PilotWorkflowType,
-	Record<ApprovalDeliveryProvider, "actionable" | "review_only" | "unverified">
-> = {
+const PILOT_ADMISSION: Record<PilotWorkflowType, PilotAdmission> = {
 	absence: {
 		telegram: "actionable",
 		teams: "actionable",
@@ -56,9 +88,13 @@ const PILOT_ADMISSION: Record<
 		discord: "unverified",
 		slack: "unverified",
 	},
+	manual_time_submission: TIME_ADMISSION,
+	policy_clock_out: TIME_ADMISSION,
+	time_correction: TIME_ADMISSION,
 };
 
 export type PilotFindingCode =
+	| "authority_complete_unsupported"
 	| "authority_not_canonical"
 	| "authority_not_legacy"
 	| "attention_open"
@@ -369,14 +405,29 @@ const LEGACY_CARD_TABLES: Record<ApprovalDeliveryProvider, SQL> = {
 const LEGACY_ENTITY_TYPES: Record<PilotWorkflowType, string> = {
 	absence: "absence_entry",
 	travel_expense: "travel_expense_claim",
+	manual_time_submission: "time_entry",
+	policy_clock_out: "time_entry",
+	time_correction: "time_entry",
 };
 
 /**
  * Unanswered old-path cards of still-pending approvals. They stay
  * historical-only: not refreshed by the owner, and a press revalidates at
- * commit instead of deciding from the card.
+ * commit instead of deciding from the card. The `time_entry` request type
+ * serves three kinds, so a time card counts under the kind of the canonical
+ * workflow whose stage mirrors its request.
  */
 async function countLegacyCards(database: ApprovalDatabase, input: PilotScope): Promise<number> {
+	const timeKind = isTimeApprovalWorkflowType(input.workflowType)
+		? sql`and exists (
+				select 1 from approval_workflow_stage s
+				join approval_workflow w
+					on w.id = s.workflow_id and w.organization_id = s.organization_id
+				where s.organization_id = r.organization_id
+					and s.legacy_approval_request_id = r.id
+					and w.workflow_type = ${input.workflowType}
+			)`
+		: sql``;
 	const [row] = rows(
 		await database.execute(sql`
 			select count(*)::int as count from ${LEGACY_CARD_TABLES[input.provider]} card
@@ -386,6 +437,7 @@ async function countLegacyCards(database: ApprovalDatabase, input: PilotScope): 
 				and card.status = 'sent'
 				and r.status = 'pending'
 				and r.entity_type = ${LEGACY_ENTITY_TYPES[input.workflowType]}
+				${timeKind}
 		`),
 	);
 	return Number(row?.count ?? 0);
@@ -407,9 +459,71 @@ function classifyTravelExpense(evidence: TravelExpenseReviewEvidence): EvidenceC
 }
 
 /**
+ * One pending canonical time workflow, through the gates the time card
+ * preparation applies (#325): its own canonical revision, of this kind and
+ * source, still matching the live graph. Without one, a legacy capture of the
+ * mirrored request is evidence of another authority, which a canonical
+ * binding cannot name.
+ */
+async function classifyTimeWorkflow(
+	database: ApprovalDatabase,
+	organizationId: string,
+	workflow: { id: string; workflowType: TimeApprovalWorkflowType; sourceId: string },
+): Promise<EvidenceClass> {
+	const scope = { organizationId, workflowId: workflow.id };
+	if (workflow.workflowType === "time_correction") {
+		const revision = await loadCanonicalTimeCorrectionSubmittedRevision(database, scope);
+		if (revision && revision.workPeriodId === workflow.sourceId) {
+			const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
+			return comparison.kind === "current" ? "current" : "materialChange";
+		}
+	} else {
+		const revision = await loadCanonicalWorkPeriodSubmittedRevision(database, scope);
+		if (
+			revision &&
+			revision.workflowType === workflow.workflowType &&
+			revision.workPeriodId === workflow.sourceId
+		) {
+			const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
+			return comparison.kind === "current" ? "current" : "materialChange";
+		}
+	}
+	const mirrors = await database
+		.select({ approvalRequestId: approvalWorkflowStage.legacyApprovalRequestId })
+		.from(approvalWorkflowStage)
+		.where(
+			and(
+				eq(approvalWorkflowStage.organizationId, organizationId),
+				eq(approvalWorkflowStage.workflowId, workflow.id),
+				eq(approvalWorkflowStage.status, "pending"),
+				isNotNull(approvalWorkflowStage.legacyApprovalRequestId),
+			),
+		)
+		.limit(2);
+	const approvalRequestId = mirrors.length === 1 ? mirrors[0]?.approvalRequestId : null;
+	if (approvalRequestId) {
+		const evidence = await prepareTimeReviewEvidence(
+			{
+				organizationId,
+				approvalRequestId,
+				workPeriodId: workflow.sourceId,
+				requestPending: true,
+				kind: workflow.workflowType,
+			},
+			database,
+		);
+		if (evidence.status === "evidenced") return "authorityChange";
+	}
+	return "notCaptured";
+}
+
+/**
  * Submitted evidence of every pending lifecycle of the kind, through the same
  * review preparation that the inbox and the decision owner use, so a held
- * lifecycle here is exactly one that cannot be decided from a card.
+ * lifecycle here is exactly one that cannot be decided from a card. Time kinds
+ * count their pending canonical workflows, the only lifecycles a time card
+ * represents; legacy time requests are classified by the time pilot report
+ * (#329).
  */
 async function classifyPendingEvidence(
 	database: ApprovalDatabase,
@@ -417,7 +531,25 @@ async function classifyPendingEvidence(
 	workflowType: PilotWorkflowType,
 ): Promise<PilotPendingEvidence> {
 	const classes: EvidenceClass[] = [];
-	if (workflowType === "absence") {
+	if (isTimeApprovalWorkflowType(workflowType)) {
+		const pending = await database
+			.select({ id: approvalWorkflow.id, sourceId: approvalWorkflow.sourceId })
+			.from(approvalWorkflow)
+			.where(
+				and(
+					eq(approvalWorkflow.organizationId, organizationId),
+					eq(approvalWorkflow.workflowType, workflowType),
+					eq(approvalWorkflow.sourceType, "time_entry"),
+					eq(approvalWorkflow.status, "pending"),
+				),
+			)
+			.orderBy(approvalWorkflow.id);
+		for (const workflow of pending) {
+			classes.push(
+				await classifyTimeWorkflow(database, organizationId, { ...workflow, workflowType }),
+			);
+		}
+	} else if (workflowType === "absence") {
 		const pending = await database.query.absenceEntry.findMany({
 			where: and(
 				eq(absenceEntry.organizationId, organizationId),
@@ -584,14 +716,21 @@ async function assess(
 		});
 		// Findings every provider of the kind shares.
 		const kindFindings: PilotFinding[] = [];
-		// Absence cards need canonical authority (legacy absences are #384);
-		// expense cards exist only under legacy authority (#296).
-		const authorityAdmitted = workflowType === "absence" ? canonical : !canonical;
+		// Absence and time cards need canonical authority (legacy absences are
+		// #384, legacy time approvals #432); expense cards exist only under
+		// legacy authority (#296).
+		const needsCanonical = workflowType !== "travel_expense";
+		const authorityAdmitted = needsCanonical ? canonical : !canonical;
 		if (!authorityAdmitted) {
 			kindFindings.push({
-				code: workflowType === "absence" ? "authority_not_canonical" : "authority_not_legacy",
+				code: needsCanonical ? "authority_not_canonical" : "authority_not_legacy",
 				severity: "blocker",
 			});
+		} else if (needsCanonical && lifecycleMode === "complete") {
+			// Presentation starts from the stage's compatibility request, which
+			// `complete` no longer writes: the owner's work becomes
+			// `unsupported_route` attention instead of a card.
+			kindFindings.push({ code: "authority_complete_unsupported", severity: "blocker" });
 		}
 		if (evidenceMode !== "capture") {
 			kindFindings.push({ code: "evidence_capture_inactive", severity: "blocker" });
@@ -617,7 +756,11 @@ async function assess(
 			const integration = configured.get(provider);
 			if (!integration) {
 				findings.push({ code: "provider_not_configured", severity: "blocker" });
-			} else if (workflowType === "absence" && transfersActive && !integration.escalations) {
+			} else if (
+				isCanonicalEscalationWorkflowType(workflowType) &&
+				transfersActive &&
+				!integration.escalations
+			) {
 				// Channels are frozen at transfer expansion (#300): a backup reached
 				// through this provider gets no replacement card, only the web inbox.
 				findings.push({ code: "escalation_delivery_disabled", severity: "hold" });
