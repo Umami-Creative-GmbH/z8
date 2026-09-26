@@ -3,6 +3,7 @@
 import { and, eq, isNull } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
+import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
 	approvalWorkflow,
@@ -13,6 +14,7 @@ import {
 	editSameDayTimeEntry,
 	requestTimeCorrectionEffect,
 } from "@/lib/approvals/server/time-correction-submission";
+import { resolveOnBehalfCorrectionAuthority } from "@/lib/approvals/server/time-correction-on-behalf";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
 	isBillingMutationAllowed,
@@ -98,7 +100,7 @@ function blockedAccessError(
 		case "not_owner":
 			return {
 				success: false,
-				error: "You can only edit your own time entries",
+				error: "You can only edit your own time entries or those of employees you manage",
 				code: access.reason,
 			};
 		case "running":
@@ -157,6 +159,30 @@ async function hasPendingTimeCorrection(
 	return Boolean(legacyPending || canonicalPending);
 }
 
+async function isEligibleOnBehalfEditor(input: {
+	organizationId: string;
+	actorUserId: string;
+	actorEmployeeId: string;
+	ownerEmployeeId: string;
+}): Promise<boolean> {
+	const actorMember = await db.query.member.findFirst({
+		where: and(
+			eq(member.userId, input.actorUserId),
+			eq(member.organizationId, input.organizationId),
+			eq(member.status, "approved"),
+		),
+		columns: { role: true },
+	});
+	const authority = await resolveOnBehalfCorrectionAuthority({
+		db,
+		organizationId: input.organizationId,
+		actorEmployeeId: input.actorEmployeeId,
+		actorMemberRole: actorMember?.role,
+		ownerEmployeeId: input.ownerEmployeeId,
+	});
+	return authority !== null;
+}
+
 async function loadTimeEditTarget(
 	workPeriodId: string,
 ): Promise<
@@ -193,7 +219,18 @@ async function loadTimeEditTarget(
 
 	const isOwnEntry = period.employeeId === currentEmployee.id;
 	const isOrgAdmin = await isOrgAdminCasl(organizationId);
-	if (!isOwnEntry && !isOrgAdmin) {
+	// Admins/owners and eligible managers change other employees' entries on
+	// their behalf, through the owner's approval chain (#507).
+	const canEditOnBehalf =
+		!isOwnEntry &&
+		(isOrgAdmin ||
+			(await isEligibleOnBehalfEditor({
+				organizationId,
+				actorUserId: session.user.id,
+				actorEmployeeId: currentEmployee.id,
+				ownerEmployeeId: period.employeeId,
+			})));
+	if (!isOwnEntry && !canEditOnBehalf) {
 		return blockedAccessError({ kind: "blocked", reason: "not_owner" });
 	}
 
@@ -222,7 +259,7 @@ async function loadTimeEditTarget(
 	let capability: Awaited<
 		ReturnType<typeof getEditCapabilityForPeriod>
 	> | null = null;
-	if (!isOrgAdmin && period.endTime) {
+	if (isOwnEntry && !isOrgAdmin && period.endTime) {
 		try {
 			capability = await getEditCapabilityForPeriod({
 				employeeId: currentEmployee.id,
@@ -241,6 +278,7 @@ async function loadTimeEditTarget(
 	const access = resolveWorkPeriodTimeEditAccess({
 		isOrgAdmin,
 		isOwnEntry,
+		canEditOnBehalf,
 		isCompleted: Boolean(period.endTime && period.clockOutId),
 		approvalStatus: period.approvalStatus ?? null,
 		hasPendingCorrection: pendingCorrection,
@@ -473,7 +511,10 @@ async function applyAdminEdit(
 /**
  * Edits the clock-in/clock-out date and time of a completed work period.
  *
- * - Organization owners/admins: applied immediately, no age limit, any employee.
+ * - Organization owners/admins, own entries: applied immediately, no age limit.
+ * - Owners/admins and eligible managers, another employee's entry: submitted as that
+ *   employee's time correction; it applies once their approval chain approves it,
+ *   right away when the editor is the current approver (#507).
  * - Employees: follow their resolved change policy. Same-day time edits inside the
  *   self-service window apply directly; everything else inside the approval window
  *   creates a time-correction approval request; older entries are rejected.
@@ -519,6 +560,9 @@ export async function updateWorkPeriodTimes(
 	}
 	if (route === "admin_direct") {
 		return applyAdminEdit(target, input, reason);
+	}
+	if (route === "on_behalf_request" && !reason) {
+		return { success: false, error: "Reason is required" };
 	}
 
 	// Employee edits reuse the existing correction flows, which keep metadata unchanged.

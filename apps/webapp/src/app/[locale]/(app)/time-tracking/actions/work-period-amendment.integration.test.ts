@@ -155,7 +155,17 @@ const ids = {
 	projectUnassigned: "e2860000-0000-4000-8000-000000000023",
 	assignmentA: "e2860000-0000-4000-8000-000000000031",
 	assignmentB: "e2860000-0000-4000-8000-000000000032",
+	adminAssignmentA: "e2860000-0000-4000-8000-000000000033",
+	adminAssignmentB: "e2860000-0000-4000-8000-000000000034",
 } as const;
+
+interface WorkOwner {
+	userId: string;
+	isOrgAdmin?: boolean;
+}
+const requesterOwner: WorkOwner = { userId: ids.requesterUser };
+/** The admin direct edit (#286) applies to an admin's own work; another employee's goes to approval (#507). */
+const adminOwner: WorkOwner = { userId: ids.adminUser, isOrgAdmin: true };
 const collision =
 	"This change conflicts with an earlier request or changed work. Please refresh and try again.";
 const occupied = "The time range overlaps other recorded work";
@@ -192,8 +202,13 @@ describeIntegration(
 		}
 
 		/** Real adopted clock-in and clock-out: a complete graph with a receipt. */
-		async function recordWork(start: Instant, end: Instant, projectId?: string) {
-			actAs(ids.requesterUser);
+		async function recordWork(
+			start: Instant,
+			end: Instant,
+			projectId?: string,
+			owner: WorkOwner = requesterOwner,
+		) {
+			actAs(owner.userId, { isOrgAdmin: owner.isOrgAdmin });
 			await expect(
 				clockIn("office", { instant: start, browserTimezone: "UTC" }),
 			).resolves.toMatchObject({ success: true });
@@ -205,9 +220,11 @@ describeIntegration(
 				}),
 			).resolves.toMatchObject({ success: true });
 			const { rows } = await admin.query<{ id: string; clock_in_id: string; clock_out_id: string }>(
-				`select id, clock_in_id, clock_out_id from work_period
-			 where employee_id = $1 and start_time = $2 and deleted_at is null`,
-				[ids.requester, new Date(start.epochMilliseconds)],
+				`select wp.id, wp.clock_in_id, wp.clock_out_id from work_period wp
+			 join employee e on e.id = wp.employee_id
+			 where e.user_id = $1 and wp.organization_id = $3 and wp.start_time = $2
+			   and wp.deleted_at is null`,
+				[owner.userId, new Date(start.epochMilliseconds), ids.organization],
 			);
 			return only(rows);
 		}
@@ -408,6 +425,19 @@ describeIntegration(
 					ids.projectB,
 				],
 			);
+			await admin.query(
+				`insert into project_assignment (id, project_id, organization_id, assignment_type, employee_id, created_by)
+			 values ($1, $2, $4, 'employee', $5, $6), ($3, $7, $4, 'employee', $5, $6)`,
+				[
+					ids.adminAssignmentA,
+					ids.projectA,
+					ids.adminAssignmentB,
+					ids.organization,
+					ids.admin,
+					ids.adminUser,
+					ids.projectB,
+				],
+			);
 			await setAdmission("active");
 		}
 
@@ -445,12 +475,13 @@ describeIntegration(
 				dayStart,
 				dayStart.add({ minutes: 60, seconds: 40 }),
 				ids.projectA,
+				adminOwner,
 			);
 			const submissionId = randomUUID();
 			const { rows: before } = await admin.query<{ hash: string; version: number }>(
 				`select te.hash, p.version from time_entry_append_position p
 			 join time_entry te on te.id = p.tip_entry_id where p.employee_id = $1`,
-				[ids.requester],
+				[ids.admin],
 			);
 			const tip = only(before);
 
@@ -488,7 +519,7 @@ describeIntegration(
 				`select id, type, replaces_entry_id, is_superseded, superseded_by_id, previous_entry_id,
 			        previous_hash, created_by
 			 from time_entry where employee_id = $1 order by created_at, id`,
-				[ids.requester],
+				[ids.admin],
 			);
 			expect(entries).toHaveLength(3);
 			const correction = only(entries.filter((entry) => entry.type === "correction"));
@@ -508,7 +539,7 @@ describeIntegration(
 			const { rows: positions } = await admin.query(
 				`select tip_entry_id, version, entry_count, last_operation
 			 from time_entry_append_position where employee_id = $1`,
-				[ids.requester],
+				[ids.admin],
 			);
 			expect(only(positions)).toEqual({
 				tip_entry_id: correction.id,
@@ -518,7 +549,7 @@ describeIntegration(
 			});
 			const { rows: balances } = await admin.query(
 				`select is_dirty, dirty_from_date::text from employee_work_balance where employee_id = $1`,
-				[ids.requester],
+				[ids.admin],
 			);
 			expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
 
@@ -541,7 +572,7 @@ describeIntegration(
 					},
 				},
 				result: {
-					owner: { employeeId: ids.requester },
+					owner: { employeeId: ids.admin },
 					actor: { kind: "human", userId: ids.adminUser },
 					authority: "organization_admin",
 					changes: {
@@ -626,7 +657,12 @@ describeIntegration(
 		});
 
 		it("replays an exact retry without writes and treats a changed command as a collision", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ minutes: 60, seconds: 40 }));
+			const period = await recordWork(
+				dayStart,
+				dayStart.add({ minutes: 60, seconds: 40 }),
+				undefined,
+				adminOwner,
+			);
 			const submissionId = randomUUID();
 			await expect(
 				adminEdit(period.id, { clockOutTime: "09:31" }, submissionId),
@@ -650,7 +686,7 @@ describeIntegration(
 
 			// A later attribution change advances the revision but leaves the
 			// committed endpoints standing: the old retry still replays, writing nothing.
-			actAs(ids.requesterUser);
+			actAs(ids.adminUser, { isOrgAdmin: true });
 			await expect(updateWorkPeriodProject(period.id, ids.projectB)).resolves.toMatchObject({
 				success: true,
 			});
@@ -663,7 +699,7 @@ describeIntegration(
 		});
 
 		it("never recreates corrected or deleted work from an old token", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			const first = randomUUID();
 			await expect(adminEdit(period.id, { clockOutTime: "09:30" }, first)).resolves.toMatchObject({
 				success: true,
@@ -690,8 +726,13 @@ describeIntegration(
 		});
 
 		it("checks the resulting interval symmetrically, excluding only the replaced source", async () => {
-			const morning = await recordWork(dayStart, dayStart.add({ hours: 2 }));
-			const noon = await recordWork(dayStart.add({ hours: 4 }), dayStart.add({ hours: 5 }));
+			const morning = await recordWork(dayStart, dayStart.add({ hours: 2 }), undefined, adminOwner);
+			const noon = await recordWork(
+				dayStart.add({ hours: 4 }),
+				dayStart.add({ hours: 5 }),
+				undefined,
+				adminOwner,
+			);
 			const before = await snapshot();
 
 			await expect(adminEdit(morning.id, { clockOutTime: "12:30" })).resolves.toEqual({
@@ -729,8 +770,8 @@ describeIntegration(
 		});
 
 		it("treats active work as occupying from its start onward", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
-			actAs(ids.requesterUser);
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
+			actAs(ids.adminUser, { isOrgAdmin: true });
 			await expect(
 				clockIn("office", { instant: dayStart.add({ hours: 3 }), browserTimezone: "UTC" }),
 			).resolves.toMatchObject({ success: true });
@@ -746,8 +787,10 @@ describeIntegration(
 			const period = await recordWork(
 				dayStart.subtract({ hours: 12 }),
 				dayStart.subtract({ hours: 11 }),
+				undefined,
+				adminOwner,
 			);
-			actAs(ids.requesterUser);
+			actAs(ids.adminUser, { isOrgAdmin: true });
 			await expect(
 				clockIn("office", {
 					instant: dayStart.subtract({ hours: 10 }),
@@ -763,7 +806,7 @@ describeIntegration(
 		});
 
 		it("rejects stale sources and serializes concurrent edits of one period", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			const results = await Promise.all([
 				adminEdit(period.id, { clockOutTime: "09:30" }),
 				adminEdit(period.id, { clockOutTime: "09:40" }),
@@ -775,7 +818,7 @@ describeIntegration(
 			});
 			const { rows } = await admin.query<{ count: number }>(
 				"select count(*)::int as count from time_entry where employee_id = $1 and type = 'correction'",
-				[ids.requester],
+				[ids.admin],
 			);
 			expect(only(rows).count).toBe(1);
 			expect((await graph(period.id)).graph_revision).toBe(2);
@@ -792,7 +835,12 @@ describeIntegration(
 			["employee_work_balance", "insert"],
 			["completed_work_operation", "insert"],
 		])("rolls back the whole graph when the %s %s fails", async (table, event) => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), ids.projectA);
+			const period = await recordWork(
+				dayStart,
+				dayStart.add({ hours: 1 }),
+				ids.projectA,
+				adminOwner,
+			);
 			const before = await snapshot();
 			await admin.query(
 				`create function t286_fail() returns trigger language plpgsql as $$
@@ -806,7 +854,7 @@ describeIntegration(
 					table === "time_record_allocation"
 						? await (async () => {
 								// Project changes exercise the allocation writes.
-								actAs(ids.requesterUser);
+								actAs(ids.adminUser, { isOrgAdmin: true });
 								return updateWorkPeriodProject(period.id, ids.projectB);
 							})()
 						: await adminEdit(period.id, { clockOutTime: "09:30" });
@@ -1003,7 +1051,12 @@ describeIntegration(
 		});
 
 		it("holds work whose canonical project allocation disagrees with the period for review", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), ids.projectA);
+			const period = await recordWork(
+				dayStart,
+				dayStart.add({ hours: 1 }),
+				ids.projectA,
+				adminOwner,
+			);
 			// The legacy project change moved only the period (the historical divergence).
 			await admin.query("update work_period set project_id = $2 where id = $1", [
 				period.id,
@@ -1019,7 +1072,7 @@ describeIntegration(
 		});
 
 		it("holds work without a canonical record for review instead of rebuilding it", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			await admin.query("update work_period set canonical_record_id = null where id = $1", [
 				period.id,
 			]);
@@ -1033,7 +1086,7 @@ describeIntegration(
 		});
 
 		it("keeps the legacy writes for inactive organizations and still replays committed receipts", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			const submissionId = randomUUID();
 			await expect(
 				adminEdit(period.id, { clockOutTime: "09:30" }, submissionId),
@@ -1061,7 +1114,7 @@ describeIntegration(
 		});
 
 		it("removes amendment receipts with the organization's time data", async () => {
-			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }));
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			await expect(adminEdit(period.id, { clockOutTime: "09:30" })).resolves.toMatchObject({
 				success: true,
 			});

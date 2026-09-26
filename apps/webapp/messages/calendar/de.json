@@ -205,7 +205,10 @@
         "saveFailed": "Aktualisieren des Zeiteintrags fehlgeschlagen",
         "submitForApproval": "Zur Genehmigung einreichen",
         "submitted": "Änderung zur Genehmigung eingereicht",
-        "timezoneNote": "Zeiten in der Zeitzone des Mitarbeitenden ({timezone})"
+        "timezoneNote": "Zeiten in der Zeitzone des Mitarbeitenden ({timezone})",
+        "onBehalfHint": "Diese Änderung durchläuft die Genehmigungskette der Person. Wenn Sie die genehmigende Person sind, wird sie sofort übernommen.",
+        "submitOnBehalf": "Änderung einreichen",
+        "submittedOnBehalf": "Änderung an die genehmigende Person übermittelt"
       }
     },
     "employeeSelector": {
@@ -304,6 +307,14 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "contextMenu": {
+      "delete": "Löschen",
+      "edit": "Bearbeiten",
+      "label": "Aktionen für den Zeiteintrag"
+    },
+    "workPeriod": {
+      "editedBy": "(bearbeitet von {name} am {date})"
     }
   }
 }

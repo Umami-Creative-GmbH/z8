@@ -49,6 +49,11 @@ import {
 	resolveClickableCalendarEvent,
 } from "./schedule-x-calendar-utils";
 import { useScheduleXDomLifecycle } from "./use-schedule-x-dom-lifecycle";
+import { formatWorkPeriodEditedBy } from "./work-period-dialog-utils";
+import {
+	type WorkPeriodActions,
+	WorkPeriodContextMenu,
+} from "./work-period-context-menu";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -62,6 +67,8 @@ interface ScheduleXCalendarWrapperProps {
 	onEventClick?: (event: CalendarEvent) => void;
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
+	/** Right-click Edit / Delete on completed work periods (#507). */
+	workPeriodActions?: WorkPeriodActions;
 	onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
@@ -89,6 +96,7 @@ export function ScheduleXCalendarWrapper({
 	onEventClick,
 	clockOutAllowedWorkPeriodIds = EMPTY_CLOCK_OUT_ALLOWED_WORK_PERIOD_IDS,
 	onRunningPeriodClockOutRequest,
+	workPeriodActions,
 	onRangeChange,
 	onTimeRangeSelect,
 	onRefresh,
@@ -143,7 +151,10 @@ export function ScheduleXCalendarWrapper({
 	const baseScheduleXEvents = calendarEventsToScheduleX(
 		filterEventsForScheduleXView(liveEvents, viewMode),
 		timeZone,
-		{ clockOutAllowedWorkPeriodIds },
+		{
+			clockOutAllowedWorkPeriodIds,
+			editedByLabel: (event) => formatWorkPeriodEditedBy(event, timeZone, t),
+		},
 	);
 
 	// Generate break events only for day/week view
@@ -335,19 +346,30 @@ export function ScheduleXCalendarWrapper({
 	}
 
 	return (
-		<ScheduleXCalendarBody
-			calendar={calendar}
-			calendarContainerRef={calendarContainerRef}
-			dateRangeDisplay={dateRangeDisplay}
-			mobileDateRangeDisplay={mobileDateRangeDisplay}
-			onNavigateNext={navigateNext}
-			onNavigatePrevious={navigatePrevious}
-			onNavigateToday={navigateToday}
-			onRefresh={onRefresh}
-			onViewModeChange={handleViewModeChange}
-			t={t}
-			viewMode={viewMode}
-		/>
+		<>
+			<ScheduleXCalendarBody
+				calendar={calendar}
+				calendarContainerRef={calendarContainerRef}
+				dateRangeDisplay={dateRangeDisplay}
+				mobileDateRangeDisplay={mobileDateRangeDisplay}
+				onNavigateNext={navigateNext}
+				onNavigatePrevious={navigatePrevious}
+				onNavigateToday={navigateToday}
+				onRefresh={onRefresh}
+				onViewModeChange={handleViewModeChange}
+				t={t}
+				viewMode={viewMode}
+			/>
+			{workPeriodActions && (viewMode === "day" || viewMode === "week") ? (
+				<WorkPeriodContextMenu
+					containerRef={calendarContainerRef}
+					events={events}
+					canManage={workPeriodActions.canManage}
+					onEdit={workPeriodActions.onEdit}
+					onDelete={workPeriodActions.onDelete}
+				/>
+			) : null}
+		</>
 	);
 }
 

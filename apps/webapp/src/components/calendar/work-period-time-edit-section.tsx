@@ -33,6 +33,11 @@ import { formatEventTimeRange } from "./work-period-dialog-utils";
 
 type TimeEditFormValues = WorkPeriodTimeEditValues & { reason: string };
 
+/** Routes that submit a time correction, which always carries a reason. */
+function routeNeedsReason(route: WorkPeriodTimeEditRoute | null): boolean {
+	return route === "approval_request" || route === "on_behalf_request";
+}
+
 function isChronological(values: WorkPeriodTimeEditValues): boolean {
 	try {
 		const clockIn = Temporal.PlainDateTime.from(
@@ -88,6 +93,16 @@ function RouteHint({
 				{t(
 					"calendar.edit.time.approvalHint",
 					"This change will be sent to your manager for approval.",
+				)}
+			</p>
+		);
+	}
+	if (route === "on_behalf_request") {
+		return (
+			<p className="text-xs text-amber-600 dark:text-amber-400">
+				{t(
+					"calendar.edit.time.onBehalfHint",
+					"This change follows the employee's approval chain. If you are their approver, it applies right away.",
 				)}
 			</p>
 		);
@@ -159,7 +174,7 @@ function WorkPeriodTimeEditForm({
 				return;
 			}
 			const route = routeFor(value);
-			if (route === "approval_request" && !value.reason.trim()) {
+			if (routeNeedsReason(route) && !value.reason.trim()) {
 				toast.error(
 					t(
 						"calendar.edit.time.reasonRequired",
@@ -187,14 +202,20 @@ function WorkPeriodTimeEditForm({
 			}
 
 			submissionIdRef.current = null;
-			toast.success(
-				result.data.status === "pending"
-					? t(
-							"calendar.edit.time.submitted",
-							"Change submitted for manager approval",
-						)
-					: t("calendar.edit.time.saved", "Time entry updated"),
-			);
+			let message = t("calendar.edit.time.saved", "Time entry updated");
+			if (result.data.status === "pending") {
+				message =
+					route === "on_behalf_request"
+						? t(
+								"calendar.edit.time.submittedOnBehalf",
+								"Change submitted to the employee's approver",
+							)
+						: t(
+								"calendar.edit.time.submitted",
+								"Change submitted for manager approval",
+							);
+			}
+			toast.success(message);
 			onSaved();
 		},
 	});
@@ -307,7 +328,7 @@ function WorkPeriodTimeEditForm({
 							{(field) => (
 								<div className="space-y-1.5">
 									<Label htmlFor={reasonId}>
-										{route === "approval_request"
+										{routeNeedsReason(route)
 											? t("calendar.edit.time.reasonLabel", "Reason")
 											: t("calendar.edit.time.noteLabel", "Note (optional)")}
 									</Label>
@@ -319,7 +340,7 @@ function WorkPeriodTimeEditForm({
 										onChange={(event) => field.handleChange(event.target.value)}
 										onBlur={field.handleBlur}
 										placeholder={
-											route === "approval_request"
+											routeNeedsReason(route)
 												? t(
 														"calendar.edit.time.reasonPlaceholder",
 														"Explain why this correction is needed…",
@@ -329,7 +350,7 @@ function WorkPeriodTimeEditForm({
 														"Add a note about this change…",
 													)
 										}
-										required={route === "approval_request"}
+										required={routeNeedsReason(route)}
 										rows={2}
 										className="resize-none"
 									/>
@@ -357,7 +378,9 @@ function WorkPeriodTimeEditForm({
 											"calendar.edit.time.submitForApproval",
 											"Submit for approval",
 										)
-									: t("common.save", "Save")}
+									: route === "on_behalf_request"
+										? t("calendar.edit.time.submitOnBehalf", "Submit change")
+										: t("common.save", "Save")}
 							</Button>
 							<Button
 								type="button"
@@ -381,15 +404,18 @@ export function WorkPeriodTimeSection({
 	event,
 	displayContext,
 	onTimesUpdated,
+	initialEditing = false,
 	t,
 }: {
 	event: CalendarEvent;
 	displayContext: DisplayContext;
 	onTimesUpdated?: () => void;
+	/** Open the time form right away, e.g. from the calendar context menu. */
+	initialEditing?: boolean;
 	t: TFnType;
 }) {
 	const queryClient = useQueryClient();
-	const [isEditing, setIsEditing] = useState(false);
+	const [isEditing, setIsEditing] = useState(initialEditing);
 	const queryKey = queryKeys.calendar.workPeriodTimeEdit(event.id);
 	const { data: context } = useQuery({
 		queryKey,
@@ -421,7 +447,7 @@ export function WorkPeriodTimeSection({
 				) : null}
 			</div>
 
-			{isEditing && context ? (
+			{isEditing && context && canEdit ? (
 				<WorkPeriodTimeEditForm
 					workPeriodId={event.id}
 					context={context}

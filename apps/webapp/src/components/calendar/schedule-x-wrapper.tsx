@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import dynamic from "next/dynamic";
 import type { CalendarEvent, DailyWorkHoursSummaries } from "@/lib/calendar/types";
 import type { ViewMode } from "./schedule-x-calendar";
+import type { WorkPeriodActions } from "./work-period-context-menu";
 
 function CalendarLoading() {
 	const { t } = useTranslate();
@@ -37,6 +38,7 @@ interface ScheduleXWrapperProps {
 	onEventClick?: (event: CalendarEvent) => void;
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest?: (event: CalendarEvent) => void;
+	workPeriodActions?: WorkPeriodActions;
 	onRangeChange?: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect?: (range: { start: Date; end: Date }) => void;
 	onRefresh?: () => void;
