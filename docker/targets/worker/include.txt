@@ -1,3 +1,4 @@
 src/worker.ts
+src/worker-preload.mjs
 scripts/obliterate-job-queue.ts
 tsconfig.json

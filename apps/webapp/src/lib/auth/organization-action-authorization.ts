@@ -1,9 +1,8 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthorizationError } from "@/lib/effect/errors";
 import {
 	DatabaseService,
@@ -31,9 +30,7 @@ export function requireActiveOrganizationActionActor(input: {
 		const ssoAllowed = yield* _(
 			Effect.tryPromise({
 				try: async () => {
-					const session = await auth.api.getSession({
-						headers: await headers(),
-					});
+					const session = await getRequestSession();
 					return (
 						session?.user.id === input.userId &&
 						(await canAccessOrganizationWithSso(

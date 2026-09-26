@@ -3,10 +3,9 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { unstable_cache } from "next/cache";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -31,7 +30,7 @@ export type { CurrentTeamEmployee, ManagedEmployee } from "./team-members-data";
  * Get current employee from session (reuse pattern from absences)
  */
 export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return null;
 	}
@@ -94,7 +93,7 @@ export async function getCalendarManagedEmployees(): Promise<
 > {
 	const effect = Effect.gen(function* (_) {
 		const session = yield* _(
-			Effect.promise(async () => auth.api.getSession({ headers: await headers() })),
+			Effect.promise(() => getRequestSession()),
 		);
 		if (!session?.user) {
 			return yield* _(
@@ -205,7 +204,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		// Get current employee
 		const currentEmp = yield* _(
 			Effect.promise(async () => {
-				const session = await auth.api.getSession({ headers: await headers() });
+				const session = await getRequestSession();
 				if (!session?.user) return null;
 
 				const activeOrgId = session.session?.activeOrganizationId;

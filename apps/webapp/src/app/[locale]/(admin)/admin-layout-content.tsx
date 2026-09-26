@@ -1,11 +1,10 @@
 import { IconShield } from "@tabler/icons-react";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 import { PlatformAdminHeaderActions } from "./platform-admin-header-actions";
@@ -35,8 +34,7 @@ export async function AdminLayoutContent({
 }: {
 	children: React.ReactNode;
 }) {
-	const headersList = await headers();
-	const session = await auth.api.getSession({ headers: headersList });
+	const session = await getRequestSession();
 
 	// Redirect if not authenticated
 	if (!session?.user) {

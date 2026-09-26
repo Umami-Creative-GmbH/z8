@@ -11,6 +11,7 @@
 - `apps/webapp/src/lib/auth.ts`: server auth config, plugins, additional fields, trusted origins, secondary storage.
 - `apps/webapp/src/lib/auth-client.ts`: client auth setup and inferred field typing.
 - `apps/webapp/src/app/api/auth/[...all]/route.ts`: Next.js auth route bridge.
+- `apps/webapp/src/lib/auth/request-session.ts`: `getRequestSession()`, the only server-side session lookup for pages, layouts, server actions and shared helpers. It awaits `connection()` first so runtime prefetches never start the session query. Only route handlers and the proxy call `auth.api.getSession` directly.
 - `apps/webapp/src/lib/auth-helpers.ts`: app auth context and active-org checks.
 - `apps/webapp/src/lib/effect/services/auth.service.ts`: Effect wrapper for session access.
 

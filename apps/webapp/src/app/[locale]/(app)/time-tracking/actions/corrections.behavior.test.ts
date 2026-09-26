@@ -63,6 +63,10 @@ vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => ({
 vi.mock("next/headers", () => ({
 	headers: vi.fn().mockResolvedValue(new Headers()),
 }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 
 vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: state.getSession } },

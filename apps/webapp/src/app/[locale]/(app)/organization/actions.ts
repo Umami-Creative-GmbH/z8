@@ -3,10 +3,9 @@
 import { and, asc, count, eq, ilike, inArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team, teamMembership } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
@@ -167,7 +166,7 @@ export async function getTeamNeighborhood(
 function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
 	return Effect.gen(function* (_) {
 		const session = yield* _(
-			Effect.promise(async () => auth.api.getSession({ headers: await headers() })),
+			Effect.promise(() => getRequestSession()),
 		);
 
 		if (!session?.user) {

@@ -19,6 +19,10 @@ vi.mock("@/lib/queue", () => ({
 	addOrganizationDeletionNotificationJob: vi.fn(),
 }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		$context: Promise.resolve({

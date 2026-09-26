@@ -3,7 +3,6 @@
 import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { headers } from "next/headers";
 import * as z from "zod";
 import { db } from "@/db";
 import {
@@ -18,7 +17,7 @@ import {
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
@@ -104,7 +103,7 @@ export async function addBreakToActiveSession(
 	breakMinutes: number,
 	actionContext?: AddBreakActionContext,
 ) {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -169,7 +168,7 @@ export async function requestTimeCorrectionEffect(
 export async function getCurrentEmployee(): Promise<
 	typeof employee.$inferSelect | null
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return null;
 	}
@@ -202,7 +201,7 @@ export async function getTimeClockStatus(): Promise<{
 	isClockedIn: boolean;
 	activeWorkPeriod: { id: string; startTime: Date } | null;
 }> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return {
 			hasEmployee: false,
@@ -418,7 +417,7 @@ export async function requestTimeCorrection(
 ): Promise<
 	ServerActionResult<{ approvalId: string; status: "approved" | "pending" }>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -458,7 +457,7 @@ export async function getBreakReminderStatus(): Promise<
 		} | null;
 	}>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -582,7 +581,7 @@ export async function updateWorkPeriodNotes(
 	workPeriodId: string,
 	notes: string,
 ): Promise<ServerActionResult<{ workPeriodId: string }>> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -697,7 +696,7 @@ export async function updateTimeEntryNotes(
 	entryId: string,
 	notes: string,
 ): Promise<ServerActionResult<{ entryId: string }>> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -768,7 +767,7 @@ export interface AssignedProject {
 export async function getAssignedProjects(): Promise<
 	ServerActionResult<AssignedProject[]>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -898,7 +897,7 @@ export async function updateWorkPeriodProject(
 ): Promise<
 	ServerActionResult<{ workPeriodId: string; projectId: string | null }>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -1002,7 +1001,7 @@ export async function getWorkPeriodEditCapability(
 		policyName: string | null;
 	}>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
 	}
@@ -1100,7 +1099,7 @@ export async function createManualTimeEntry(
 	data: ManualTimeEntryInput | ManualTimeEntryCommand,
 	recoveryContext?: ManualEntryRecoveryContext,
 ): Promise<ManualTimeEntryResult> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED };
 	}
@@ -1153,7 +1152,7 @@ export async function lookupManualTimeEntry(
 	command: unknown,
 	recoveryContext: ManualEntryRecoveryContext,
 ): Promise<ManualTimeEntryLookup> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return { status: "refused", error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED };
 	}

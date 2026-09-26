@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { Suspense } from "react";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,7 +6,7 @@ import {
 	approvalReviewPath,
 	parseApprovalReviewTarget,
 } from "@/lib/approvals/presentation/review-navigation";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { ApprovalReviewOutcome } from "./approval-review-view";
 
 // Ensure handlers are registered
@@ -18,8 +17,7 @@ interface ApprovalReviewPageProps {
 }
 
 async function ApprovalReviewContent({ params }: ApprovalReviewPageProps) {
-	const [routeParams, headersList] = await Promise.all([params, headers()]);
-	const session = await auth.api.getSession({ headers: headersList });
+	const [routeParams, session] = await Promise.all([params, getRequestSession()]);
 	const target = parseApprovalReviewTarget(routeParams);
 	// The app layout sends signed-out visitors to sign-in with this path as the
 	// callback; without a session nothing is looked up here.
