@@ -4,6 +4,43 @@ How an employee's working time is started, ended and kept as work records, with 
 
 ## Language
 
+### Coordinating writers
+
+**Work transaction**:
+One atomic change to time data, carried out under the acquisition protocol for a declared scope.
+_Avoid_: coordinated transaction, outer transaction
+
+**Coordinator**:
+The single owner of a work transaction: it establishes the scope, takes every guard in rank order and hands the writer a sealed scope.
+_Avoid_: transaction owner, wrapper
+
+**Acquisition protocol**:
+The fixed order in which a work transaction takes its guards, so that concurrent writers can never wait on each other in a cycle.
+_Avoid_: lock order, #264 order
+
+**Rank**:
+A guard's position in the acquisition protocol: adoption gate, approval write gate, organization configuration, user configuration/access, employee coordination, source identity, then rows. A work transaction never takes a guard of lower rank after one of higher rank.
+
+**Guard**:
+A named protection a work transaction holds until commit, either shared (many readers) or exclusive (one writer).
+_Avoid_: lock (when the rank matters)
+
+**Adoption gate**:
+The organization-wide guard every writer of time data holds shared, and that switching an organization's admission holds exclusively. A work transaction reads the admission once, under this gate; in an adopted organization, writers outside a work transaction are refused.
+
+**Scope**:
+The organization, users and employees a work transaction protects, as decided by scope routing.
+
+**Scope routing**:
+Deciding, from current data, which users and employees a write depends on, and which of those employees are its write targets.
+
+**Write target**:
+An employee whose work a work transaction may change. Every write target is in the scope, but not every employee in the scope is a write target: some are protected only because authorization reads them.
+
+**Scope change**:
+The routed scope differs once the guards are held, so the work transaction restarts rather than take an earlier-ranked guard late.
+_Avoid_: scope drift
+
 ### Work
 
 **Work period**:
