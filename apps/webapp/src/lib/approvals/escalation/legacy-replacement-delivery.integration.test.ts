@@ -1,7 +1,8 @@
 /**
  * #408 runtime evidence: replacement cards and "Reassigned" retirement of the
  * former holder's cards for legacy-authoritative escalation transfers of
- * absences (#299/#384) and travel expenses (#326/#296).
+ * absences (#299/#384) and travel expenses (#326/#296), and the expansion gate
+ * of legacy time transfers (#439/#470).
  *
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
@@ -1701,6 +1702,134 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 			["replacement", "cancelled", "authority_changed"],
 			["refresh", "cancelled", "authority_changed"],
 		]);
+	});
+
+	// Only the expansion gate: sending, retirement and decisions of legacy time
+	// cards are verified through the real time callers in
+	// `lib/telegram/legacy-time-bound-approval.integration.test.ts` (#470).
+	it("expands a legacy time event that waited before #470 into its request's cycle, never under canonical authority", async () => {
+		await seed();
+		const kinds = { manual_time_submission: "legacy", time_correction: "canonical" } as const;
+		const events: Record<string, { requestId: string; workPeriodId: string; transferId: string }> =
+			{};
+		for (const [kind, mode] of Object.entries(kinds)) {
+			await admin.query(
+				`insert into approval_workflow_rollout
+				 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+				 values ($1, $2, $3, $4, now(), now())`,
+				[ids.organization, kind, mode, mode],
+			);
+			await admin.query(
+				`insert into approval_delivery_control (organization_id, workflow_type, provider, activated_at)
+				 values ($1, $2, 'telegram', '2026-07-01T00:00:00Z')`,
+				[ids.organization, kind],
+			);
+			// A pending time event committed by #439 before this release, which
+			// left it waiting.
+			const {
+				rows: [request],
+			} = await admin.query<{ id: string; entity_id: string }>(
+				`insert into approval_request
+				 (organization_id, entity_type, entity_id, requested_by, approver_id, status, updated_at)
+				 values ($1, 'time_entry', gen_random_uuid(), $2, $3, 'pending', now())
+				 returning id, entity_id`,
+				[ids.organization, ids.requester, ids.backup],
+			);
+			if (!request) throw new Error("request not seeded");
+			const {
+				rows: [transfer],
+			} = await admin.query<{ id: string }>(
+				`insert into approval_escalation_transfer
+				 (organization_id, operation_key, initiator, authority_mode, workflow_type,
+				  legacy_approval_request_id, legacy_source_sequence,
+				  source_approver_employee_id, replacement_approver_employee_id, requester_employee_id,
+				  receipt_idempotency_key, receipt_actor_fingerprint, receipt_command_fingerprint,
+				  request_fingerprint, actor_kind, actor_user_id, actor_employee_id, transferred_at)
+				 values ($1, $2, 'human', 'legacy', $3, $4, 0, $5, $6, $7, $2, 'v1', 'v1', 'v1', 'user',
+				  $8, $9, now())
+				 returning id`,
+				[
+					ids.organization,
+					`t470-${kind}`,
+					kind,
+					request.id,
+					ids.manager,
+					ids.backup,
+					ids.requester,
+					ids.adminUser,
+					ids.admin,
+				],
+			);
+			if (!transfer) throw new Error("transfer not seeded");
+			await admin.query(
+				`insert into approval_escalation_transfer_event
+				 (organization_id, transfer_id, event_type, payload)
+				 values ($1, $2, 'assignment_transferred', $3::jsonb)`,
+				[
+					ids.organization,
+					transfer.id,
+					JSON.stringify({
+						authorityMode: "legacy",
+						workflowType: kind,
+						sourceType: "time_entry",
+						sourceId: request.entity_id,
+						legacyApprovalRequestId: request.id,
+					}),
+				],
+			);
+			events[kind] = {
+				requestId: request.id,
+				workPeriodId: request.entity_id,
+				transferId: transfer.id,
+			};
+		}
+		const manual = events.manual_time_submission;
+		const correction = events.time_correction;
+		if (!manual || !correction) throw new Error("events not seeded");
+
+		expect(
+			await expandEscalationTransferEvents({ organizationId: ids.organization, limit: 10 }),
+		).toEqual({ expanded: 1, planned: 1 });
+		expect(await transferEvent(manual.transferId)).toMatchObject({ expansion_status: "expanded" });
+		expect(await transferEvent(correction.transferId)).toMatchObject({
+			expansion_status: "pending",
+		});
+		const { rows: planned } = await admin.query(
+			`select lifecycle, workflow_type, workflow_id, legacy_source_type, legacy_source_id,
+			        legacy_cycle_id, effect, recipient_employee_id, escalation_transfer_id
+			 from approval_delivery_work where organization_id = $1`,
+			[ids.organization],
+		);
+		expect(planned).toEqual([
+			{
+				lifecycle: "legacy",
+				workflow_type: "manual_time_submission",
+				workflow_id: null,
+				legacy_source_type: "time_entry",
+				legacy_source_id: manual.workPeriodId,
+				legacy_cycle_id: manual.requestId,
+				effect: "replacement",
+				recipient_employee_id: ids.backup,
+				escalation_transfer_id: manual.transferId,
+			},
+		]);
+		const { rows: intents } = await admin.query(
+			`select workflow_type, event, legacy_cycle_id, escalation_transfer_id
+			 from approval_delivery_intent where organization_id = $1`,
+			[ids.organization],
+		);
+		expect(intents).toEqual([
+			{
+				workflow_type: "manual_time_submission",
+				event: "transferred",
+				legacy_cycle_id: manual.requestId,
+				escalation_transfer_id: manual.transferId,
+			},
+		]);
+		// A rerun expands nothing more; the canonical kind's event keeps waiting.
+		expect(
+			await expandEscalationTransferEvents({ organizationId: ids.organization, limit: 10 }),
+		).toEqual({ expanded: 0, planned: 0 });
 	});
 
 	it("withdraws the replacement's card when the absence is cancelled; the former card stays Reassigned", async () => {

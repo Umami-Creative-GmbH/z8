@@ -13,7 +13,9 @@
  * correction cancellation, the real Telegram preparation/render (old path or
  * delivery owner), the real webhook update handler deciding through the shared
  * bot attempt and the legacy branches of the work-period and correction
- * decision owners, `processDueEscalations` (#439) and approval maintenance.
+ * decision owners, `processDueEscalations` (#439), escalation's replacement
+ * pass (`processEscalationReplacementDeliveries`, #470) and approval
+ * maintenance.
  * Only the request/session, billing, notification fan-out, the Next cache, the
  * bot token vault, the post-commit delivery fast path and the Telegram HTTP
  * transport (fetch) are replaced. Live clock-outs never route approval (#361),
@@ -202,6 +204,9 @@ const { approveTimeCorrection: approveOnWeb, rejectTimeCorrection: rejectOnWeb }
 const { cancelMyTimeCorrectionRequest } = await import("@/app/[locale]/(app)/my-requests/actions");
 await import("@/lib/approvals/init");
 const { processDueEscalations } = await import("@/lib/approvals/escalation/transfer");
+const { processEscalationReplacementDeliveries } = await import(
+	"@/lib/approvals/escalation/replacement-delivery"
+);
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
 const { prepareApprovalPresentation } = await import("@/lib/approvals/presentation");
@@ -416,6 +421,7 @@ describeIntegration(
 				presentation?: "actionable" | "review_only" | null;
 				delivery?: boolean;
 				twoStageChain?: boolean;
+				/** Escalation owns transfers, and the bot delivers escalations (#470). */
 				escalation?: boolean;
 			} = {},
 		) {
@@ -616,8 +622,8 @@ describeIntegration(
 				`insert into telegram_bot_config
 			 (organization_id, bot_token, bot_username, webhook_secret, setup_status,
 			  enable_approvals, enable_escalations, updated_at)
-			 values ($1, 'vault:managed', 't432_bot', 't432-secret', 'active', true, false, $2)`,
-				[ids.organization, timestamp],
+			 values ($1, 'vault:managed', 't432_bot', 't432-secret', 'active', true, $2, $3)`,
+				[ids.organization, options.escalation ?? false, timestamp],
 			);
 		}
 
@@ -1321,7 +1327,8 @@ describeIntegration(
 				{ code: "provider_not_configured", severity: "blocker" },
 			]);
 
-			// Legacy transfers get no replacement card (#408).
+			// Legacy time transfers get replacement cards since #470, through the
+			// channels frozen at expansion: only escalation delivery can hold them.
 			await admin.query(
 				`insert into approval_escalation_control
 			 (organization_id, owner, automation_paused, escalation_owned_since)
@@ -1334,12 +1341,25 @@ describeIntegration(
 			 values ($1, true, 1, 1, '{"source":"t432"}'::jsonb)`,
 				[ids.organization],
 			);
-			const escalated = await assessApprovalPilotReadiness({ organizationId: ids.organization });
-			expect(
-				escalated.combinations.find(
-					(entry) => entry.workflowType === "time_correction" && entry.provider === "telegram",
-				)?.findings,
-			).toContainEqual({ code: "escalation_replacement_unsupported", severity: "hold" });
+			const telegramFindings = async () =>
+				(await assessApprovalPilotReadiness({ organizationId: ids.organization })).combinations
+					.filter(
+						(entry) =>
+							entry.provider === "telegram" && TIME_KINDS.includes(entry.workflowType as TimeKind),
+					)
+					.flatMap((entry) => entry.findings.map((finding) => finding.code));
+			const escalated = await telegramFindings();
+			expect(escalated).not.toContain("escalation_replacement_unsupported");
+			expect(escalated.filter((code) => code === "escalation_delivery_disabled")).toHaveLength(
+				TIME_KINDS.length,
+			);
+			await admin.query(
+				"update telegram_bot_config set enable_escalations = true where organization_id = $1",
+				[ids.organization],
+			);
+			const enabled = await telegramFindings();
+			expect(enabled).not.toContain("escalation_replacement_unsupported");
+			expect(enabled).not.toContain("escalation_delivery_disabled");
 		});
 
 		it("decides nothing for stale, changed, foreign, reassigned or paused presses", async () => {
@@ -1619,6 +1639,362 @@ describeIntegration(
 				}
 				expect(await state(workPeriodId)).toMatchObject({ requests: "pending", invocations: "0" });
 				expect((await pendingRequest(workPeriodId)).approver_id).toBe(ids.backup);
+			});
+		});
+
+		describe("replacement delivery after a legacy transfer (#470)", () => {
+			/** One scheduled escalation pass an hour after the request was created. */
+			async function escalate(workPeriodId: string) {
+				const request = await pendingRequest(workPeriodId);
+				return processDueEscalations({
+					organizationId: ids.organization,
+					now: parseInstant(new Date(request.created_at.getTime() + 60 * 60_000).toISOString()),
+				});
+			}
+
+			/** One pass of escalation's replacement delivery; returns what reached Telegram. */
+			async function replace() {
+				const before = calls.length;
+				const summary = await processEscalationReplacementDeliveries({
+					organizationId: ids.organization,
+				});
+				const after = calls.slice(before);
+				return {
+					summary,
+					sent: after.filter((call) => call.method === "sendMessage").map(parseSent),
+					edits: after.filter((call) => call.method === "editMessageText"),
+				};
+			}
+
+			async function transferOf(requestId: string) {
+				const { rows } = await admin.query<{ id: string; expansion_status: string }>(
+					`select t.id, e.expansion_status
+				 from approval_escalation_transfer t
+				 join approval_escalation_transfer_event e on e.transfer_id = t.id
+				 where t.organization_id = $1 and t.legacy_approval_request_id = $2`,
+					[ids.organization, requestId],
+				);
+				return only(rows);
+			}
+
+			async function work(requestId: string) {
+				const { rows } = await admin.query<{
+					effect: string;
+					status: string;
+					last_outcome: string | null;
+					recipient_employee_id: string;
+					escalation_transfer_id: string | null;
+					legacy_cycle_id: string | null;
+				}>(
+					`select effect, status, last_outcome, recipient_employee_id, escalation_transfer_id,
+				        legacy_cycle_id
+				 from approval_delivery_work
+				 where organization_id = $1 and legacy_approval_request_id = $2
+				 order by created_at, array_position(array['initial', 'replacement', 'refresh'], effect), id`,
+					[ids.organization, requestId],
+				);
+				return rows;
+			}
+
+			const hasControls = (call: TelegramCall) =>
+				JSON.stringify(call.body.reply_markup ?? {}).includes("callback_data");
+
+			describe.each(MODES)("under %s authority", (mode) => {
+				it.each(TIME_KINDS)(
+					"sends the new holder a bound %s card, retires the former card as Reassigned and lets only the new holder decide",
+					async (kind) => {
+						await seed({ mode, delivery: true, escalation: true });
+						const { workPeriodId, requestId } = await submit(kind);
+						const managerCard = await deliveredCard(only((await runOwner()).sent));
+						expect(await escalate(workPeriodId)).toMatchObject({ transferred: 1 });
+						const transfer = await transferOf(requestId);
+						expect(transfer.expansion_status).toBe("pending");
+
+						// The former holder presses before the retirement reaches Telegram.
+						const before = await state(workPeriodId);
+						const former = await press(managerCard);
+						expect(only(former.answers).body).toMatchObject({ text: "Reassigned" });
+						expect(former.edits).toEqual([]);
+						expect(await state(workPeriodId)).toEqual(before);
+
+						const replaced = await replace();
+						expect(replaced.summary).toMatchObject({
+							expanded: 1,
+							planned: 2,
+							outcomes: { delivered: 2 },
+						});
+						const backupSent = only(replaced.sent);
+						expect(backupSent.chatId).toBe(TELEGRAM.backup.chat);
+						expect(backupSent.text).toContain(TITLES[kind]);
+						expect(backupSent.buttons.map((button) => button.text)).toEqual([
+							"Approve",
+							"Reject",
+							"Review in Z8",
+						]);
+						const retirement = only(replaced.edits);
+						expect(retirement.body).toMatchObject({
+							chat_id: String(TELEGRAM.manager.chat),
+							message_id: managerCard.messageId,
+						});
+						expect(String(retirement.body.text)).toContain("Reassigned");
+						expect(String(retirement.body.text)).not.toContain("Blake");
+						expect(hasControls(retirement)).toBe(false);
+						expect((await transferOf(requestId)).expansion_status).toBe("expanded");
+
+						// The transfer is a lifecycle intent of the request's own cycle.
+						expect((await intents()).map((row) => [row.event, row.legacy_cycle_id])).toEqual([
+							["submitted", requestId],
+							["transferred", requestId],
+						]);
+						const { rows: bindings } = await admin.query<{ recipient_employee_id: string }>(
+							`select b.recipient_employee_id from approval_review_binding b
+						 where b.id = $1 and b.legacy_approval_request_id = $2 and b.authority = 'legacy'`,
+							[bindingOf(backupSent.callbackData[0]), requestId],
+						);
+						expect(only(bindings)).toEqual({ recipient_employee_id: ids.backup });
+						expect(await messages(workPeriodId)).toMatchObject([
+							{
+								recipient_employee_id: ids.manager,
+								legacy_cycle_id: requestId,
+								workflow_type: kind,
+								controls: "none",
+								state: "retired",
+								status_version: 2,
+							},
+							{
+								recipient_employee_id: ids.backup,
+								legacy_cycle_id: requestId,
+								workflow_type: kind,
+								binding_id: bindingOf(backupSent.callbackData[0]),
+								controls: "actionable",
+								state: "current",
+								status_version: 2,
+							},
+						]);
+						expect(
+							(await work(requestId)).map((row) => [
+								row.effect,
+								row.status,
+								row.escalation_transfer_id,
+								row.recipient_employee_id,
+								row.legacy_cycle_id,
+							]),
+						).toEqual([
+							["initial", "delivered", null, ids.manager, requestId],
+							["replacement", "delivered", transfer.id, ids.backup, requestId],
+							["refresh", "delivered", transfer.id, ids.manager, requestId],
+						]);
+
+						// Reruns of both passes send and edit nothing more.
+						expect(await replace()).toMatchObject({ sent: [], edits: [] });
+						expect(await runOwner()).toMatchObject({ sent: [], edits: [] });
+
+						const decided = await press(await deliveredCard(backupSent, "backup"));
+						expect(only(decided.answers).body).toMatchObject({ text: "Request approved" });
+						expect(await state(workPeriodId)).toMatchObject({
+							period: "approved",
+							decisions: "1",
+							invocations: "1",
+						});
+						const { rows: actors } = await admin.query(
+							"select actor_employee_id from approval_invocation where legacy_approval_request_id = $1",
+							[requestId],
+						);
+						expect(only(actors)).toEqual({ actor_employee_id: ids.backup });
+						// A late press on the retired former card decides nothing.
+						const late = await press(managerCard);
+						expect(late.edits).toEqual([]);
+						expect(await state(workPeriodId)).toMatchObject({ decisions: "1", invocations: "1" });
+
+						// The owner refreshes the new holder's card with the decision; the
+						// former card stays Reassigned and never regains controls.
+						const refreshed = await runOwner();
+						const texts = Object.fromEntries(
+							refreshed.edits.map((call) => [String(call.body.chat_id), String(call.body.text)]),
+						);
+						expect(texts[String(TELEGRAM.backup.chat)]).toContain("Request approved");
+						expect(texts[String(TELEGRAM.manager.chat)]).toContain("Reassigned");
+						expect(texts[String(TELEGRAM.manager.chat)]).not.toContain("approved");
+						expect(refreshed.edits.some(hasControls)).toBe(false);
+						// submitted, transferred, decided
+						expect(await messages(workPeriodId)).toMatchObject([
+							{ controls: "none", status_version: 3 },
+							{ controls: "none", status_version: 3 },
+						]);
+						expect(await runOwner()).toMatchObject({ sent: [], edits: [] });
+						expect(await replace()).toMatchObject({ sent: [], edits: [] });
+						// Legacy authority throughout: no canonical delivery row exists.
+						const { rows: canonical } = await admin.query(
+							`select count(*)::int as count from approval_delivery_work
+						 where organization_id = $1 and lifecycle <> 'legacy'`,
+							[ids.organization],
+						);
+						expect(only(canonical)).toEqual({ count: 0 });
+					},
+				);
+			});
+
+			it.each(TIME_KINDS)(
+				"adopts and retires the old path's %s card of the former holder",
+				async (kind) => {
+					// No delivery control at submission: the old path sends the manager's
+					// bound card and tracks it in its own table.
+					await seed({ escalation: true });
+					const { workPeriodId, requestId } = await submit(kind);
+					const oldCard = await sendCard(requestId);
+					expect(oldCard.callbackData).toHaveLength(2);
+					await admin.query(
+						`insert into approval_delivery_control (organization_id, workflow_type, provider, activated_at)
+					 values ($1, $2, 'telegram', now())`,
+						[ids.organization, kind],
+					);
+					expect(await escalate(workPeriodId)).toMatchObject({ transferred: 1 });
+					expect(await messages(workPeriodId)).toEqual([]);
+
+					const replaced = await replace();
+					const backupSent = only(replaced.sent);
+					expect(backupSent.chatId).toBe(TELEGRAM.backup.chat);
+					expect(backupSent.callbackData).toHaveLength(2);
+					const retirement = only(replaced.edits);
+					expect(retirement.body).toMatchObject({
+						chat_id: String(TELEGRAM.manager.chat),
+						message_id: oldCard.messageId,
+					});
+					expect(String(retirement.body.text)).toContain("Reassigned");
+					expect(hasControls(retirement)).toBe(false);
+					// The cycle is the request itself: only the transfer is recorded.
+					expect(await messages(workPeriodId)).toMatchObject([
+						{
+							recipient_employee_id: ids.manager,
+							remote_message_id: String(oldCard.messageId),
+							legacy_cycle_id: requestId,
+							binding_id: null,
+							controls: "none",
+							state: "retired",
+							status_version: 1,
+						},
+						{
+							recipient_employee_id: ids.backup,
+							legacy_cycle_id: requestId,
+							controls: "actionable",
+							state: "current",
+							status_version: 1,
+						},
+					]);
+
+					// Bound and unbound (pre-binding) presses on the old card decide nothing.
+					const before = await state(workPeriodId);
+					const bound = await press(oldCard);
+					expect(only(bound.answers).body).toMatchObject({ text: "Reassigned" });
+					expect(bound.edits).toEqual([]);
+					const unbound = await press({
+						...oldCard,
+						callbackData: [JSON.stringify({ a: "ap", id: requestId })],
+					});
+					expect(only(unbound.answers).body).toMatchObject({ text: "Reassigned" });
+					expect(unbound.edits).toEqual([]);
+					expect(await state(workPeriodId)).toEqual(before);
+					// Reruns adopt and retire nothing again.
+					expect(await replace()).toMatchObject({ sent: [], edits: [] });
+					expect(await messages(workPeriodId)).toHaveLength(2);
+				},
+			);
+
+			it("keeps another cycle of the work period untouched and withdraws the new holder's card with the correction", async () => {
+				await seed({ delivery: true, escalation: true });
+				// Cycle one: the manual submission, approved by card.
+				const date = dayOf(day);
+				const manual = await submit("manual_time_submission");
+				await press(await deliveredCard(only((await runOwner()).sent)));
+				expect(only((await runOwner()).edits).body.text).toContain("Request approved");
+
+				// Cycle two: a correction of the same period, transferred.
+				await requestEdit(manual.workPeriodId, date);
+				const correction = (await pendingRequest(manual.workPeriodId)).id;
+				const correctionCard = await deliveredCard(only((await runOwner()).sent));
+				expect(await escalate(manual.workPeriodId)).toMatchObject({ transferred: 1 });
+				const replaced = await replace();
+				expect(only(replaced.sent).chatId).toBe(TELEGRAM.backup.chat);
+				expect(only(replaced.edits).body).toMatchObject({
+					message_id: correctionCard.messageId,
+				});
+				const versions = async () =>
+					(await messages(manual.workPeriodId)).map((row) => [
+						row.legacy_cycle_id,
+						row.recipient_employee_id,
+						row.status_version,
+					]);
+				expect(await versions()).toEqual([
+					[manual.requestId, ids.manager, 2],
+					[correction, ids.manager, 2],
+					[correction, ids.backup, 2],
+				]);
+
+				// The requester withdraws the transferred correction.
+				actAs(ids.requesterUser);
+				expect(await cancelMyTimeCorrectionRequest(manual.workPeriodId)).toEqual({
+					success: true,
+				});
+				actAs(null);
+				const withdrawn = await runOwner();
+				const texts = Object.fromEntries(
+					withdrawn.edits.map((call) => [String(call.body.chat_id), String(call.body.text)]),
+				);
+				expect(texts[String(TELEGRAM.backup.chat)]).toContain("Request withdrawn");
+				expect(texts[String(TELEGRAM.manager.chat)]).toContain("Reassigned");
+				expect(withdrawn.edits.some(hasControls)).toBe(false);
+				// Only the correction cycle moved on (submitted, transferred, withdrawn).
+				expect(await versions()).toEqual([
+					[manual.requestId, ids.manager, 2],
+					[correction, ids.manager, 3],
+					[correction, ids.backup, 3],
+				]);
+				expect(await replace()).toMatchObject({ sent: [], edits: [] });
+			});
+
+			it("cancels the replacement when the correction is withdrawn before the pass sends it", async () => {
+				await seed({ delivery: true, escalation: true });
+				const { workPeriodId, requestId } = await submit("time_correction");
+				const managerCard = await deliveredCard(only((await runOwner()).sent));
+				expect(await escalate(workPeriodId)).toMatchObject({ transferred: 1 });
+				actAs(ids.requesterUser);
+				expect(await cancelMyTimeCorrectionRequest(workPeriodId)).toEqual({ success: true });
+				actAs(null);
+
+				const replaced = await replace();
+				expect(replaced.sent).toEqual([]);
+				const retirement = only(replaced.edits);
+				expect(retirement.body).toMatchObject({ message_id: managerCard.messageId });
+				expect(String(retirement.body.text)).toContain("Reassigned");
+				expect(await work(requestId)).toMatchObject([
+					{ effect: "initial", status: "delivered" },
+					{ effect: "replacement", status: "cancelled", last_outcome: "obsolete" },
+					{ effect: "refresh", status: "delivered" },
+				]);
+				expect(await runOwner()).toMatchObject({ sent: [], edits: [] });
+				expect(await replace()).toMatchObject({ sent: [], edits: [] });
+			});
+
+			it("waits under canonical authority and expands once back under legacy authority", async () => {
+				await seed({ delivery: true, escalation: true });
+				const { workPeriodId, requestId } = await submit("policy_clock_out");
+				await runOwner();
+				expect(await escalate(workPeriodId)).toMatchObject({ transferred: 1 });
+
+				await setMode("canonical");
+				expect(await replace()).toMatchObject({
+					summary: { expanded: 0, planned: 0 },
+					sent: [],
+					edits: [],
+				});
+				expect((await transferOf(requestId)).expansion_status).toBe("pending");
+
+				await setMode("legacy");
+				const resumed = await replace();
+				expect(resumed.summary).toMatchObject({ expanded: 1, outcomes: { delivered: 2 } });
+				expect(only(resumed.sent).chatId).toBe(TELEGRAM.backup.chat);
+				expect((await transferOf(requestId)).expansion_status).toBe("expanded");
+				expect(await replace()).toMatchObject({ summary: { expanded: 0 }, sent: [] });
 			});
 		});
 
