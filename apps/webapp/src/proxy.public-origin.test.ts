@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/env", () => ({ env: mocks.env }));
-// next-intl's locale-prefix redirect resolves against request.url, like the proxy did.
+// Like next-intl, the stub resolves its locale-prefix redirect against request.url.
 vi.mock("next-intl/middleware", () => ({
 	default: () => (request: NextRequest) =>
 		/^\/[a-z]{2,3}(?:\/|$)/.test(request.nextUrl.pathname)
@@ -190,6 +190,28 @@ describe("proxy redirects use the public origin", () => {
 		mocks.env.PLATFORM_DOMAIN = "platform.example.com";
 		const response = await proxy(
 			listeningRequest("/de/time-tracking", { host: "unverified.example.org" }),
+		);
+		expect(response.headers.get("location")).toBe(
+			"https://platform.example.com/de/sign-in?callbackUrl=%2Ftime-tracking",
+		);
+	});
+
+	it("falls back to the configured origin when domain validation fails", async () => {
+		mocks.getDomainConfig.mockRejectedValue(new Error("database unavailable"));
+		const response = await proxy(
+			listeningRequest("/de/time-tracking", { host: "time.customer.test" }),
+		);
+		expect(response.headers.get("location")).toBe(
+			"https://z8.example.com/de/sign-in?callbackUrl=%2Ftime-tracking",
+		);
+	});
+
+	it("skips a malformed setting when falling back", async () => {
+		mocks.env.APP_URL = undefined;
+		mocks.env.MAIN_DOMAIN = "*.example.com";
+		mocks.env.PLATFORM_DOMAIN = "platform.example.com";
+		const response = await proxy(
+			listeningRequest("/de/time-tracking", { host: "platform.example.com" }),
 		);
 		expect(response.headers.get("location")).toBe(
 			"https://platform.example.com/de/sign-in?callbackUrl=%2Ftime-tracking",

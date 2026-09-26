@@ -133,7 +133,9 @@ export async function resolvePublicRedirectOrigin(
 		for (const { value, allowBareHost } of configuredOriginSettings()) {
 			try {
 				return configuredOrigin(value, allowBareHost).origin;
-			} catch {}
+			} catch {
+				// A malformed setting must not strand the redirect; try the next one.
+			}
 		}
 		return new URL(request.url).origin;
 	}

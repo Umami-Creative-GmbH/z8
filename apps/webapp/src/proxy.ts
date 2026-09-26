@@ -64,6 +64,22 @@ async function publicRedirectUrl(
 	return new URL(path, await resolvePublicRedirectOrigin(request));
 }
 
+// next-intl resolves its locale-prefix redirect against request.url too.
+async function rebaseLocaleRedirect(
+	response: NextResponse,
+	request: NextRequest,
+): Promise<void> {
+	const location = response.headers.get("location");
+	if (!location) return;
+	const target = new URL(location, request.url);
+	if (target.origin !== new URL(request.url).origin) return;
+	const publicUrl = await publicRedirectUrl(
+		`${target.pathname}${target.search}${target.hash}`,
+		request,
+	);
+	response.headers.set("location", publicUrl.toString());
+}
+
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
@@ -168,18 +184,7 @@ export async function proxy(request: NextRequest) {
 
 	// If i18n middleware redirected (e.g., for locale prefix), return immediately
 	if (response.status === 307 || response.status === 308) {
-		// next-intl resolves its locale redirect against request.url too.
-		const location = response.headers.get("location");
-		if (location) {
-			const target = new URL(location, request.url);
-			if (target.origin === new URL(request.url).origin) {
-				const publicUrl = await publicRedirectUrl(
-					`${target.pathname}${target.search}${target.hash}`,
-					request,
-				);
-				response.headers.set("location", publicUrl.toString());
-			}
-		}
+		await rebaseLocaleRedirect(response, request);
 		if (isSetupPage) applySetupResponseHeaders(response);
 		return response;
 	}
