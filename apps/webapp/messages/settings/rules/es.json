@@ -210,8 +210,8 @@
       "approvalType": {
         "absence": "Ausencia",
         "complianceException": "Excepción de cumplimiento",
-        "manualTimeSubmission": "Envío manual de horas",
-        "policyClockOut": "Fichaje de salida por política",
+        "manualTimeSubmission": "Envío manual de tiempo",
+        "policyClockOut": "Salida de reloj según la política",
         "shiftRequest": "Solicitud de turno",
         "timeCorrection": "Corrección de tiempo",
         "travelExpense": "Gasto de viaje"
@@ -255,6 +255,21 @@
       "validation": {
         "activePolicyRequiresStage": "Las políticas activas requieren al menos una etapa de aprobación.",
         "specificEmployeeRequiresId": "Las etapas para empleados específicos requieren un ID de empleado aprobador."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Envíe la solicitud al gerente predeterminado cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Gerente predeterminado"
+        },
+        "fail": {
+          "description": "Rechace la solicitud cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Rechazar solicitud"
+        },
+        "label": "Comportamiento alternativo",
+        "organizationAdmin": {
+          "description": "Envíe la solicitud a un administrador de la organización cuando esta etapa no pueda resolver un aprobador.",
+          "label": "Administrador de la organización"
+        }
       }
     },
     "changePolicies": {

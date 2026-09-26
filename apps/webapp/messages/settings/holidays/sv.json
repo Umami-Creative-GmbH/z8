@@ -189,7 +189,7 @@
         "presetName": "Namn på förinställning",
         "presetNameHint": "Det här namnet används för att identifiera förinställningen när den tilldelas team eller anställda",
         "presetNamePlaceholder": "t.ex. Tyskland - Bayern",
-        "presetSuccess": "Skapade förinställningen \"{name}\" med ${holidaysToImport.length} helgdagar",
+        "presetSuccess": "Skapade förinställningen \"{name}\" med {count} helgdagar",
         "region": "Region",
         "searchCountry": "Sök länder...",
         "searchRegion": "Sök regioner...",

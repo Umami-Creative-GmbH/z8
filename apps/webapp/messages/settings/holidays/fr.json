@@ -189,7 +189,7 @@
         "presetName": "Nom du préréglage",
         "presetNameHint": "Ce nom sera utilisé pour identifier le préréglage lors de l'attribution aux équipes ou aux employés",
         "presetNamePlaceholder": "par ex., Allemagne - Bavière",
-        "presetSuccess": "Préréglage \"{name}\" créé avec ${holidaysToImport.length} jours fériés",
+        "presetSuccess": "Préréglage \"{name}\" créé avec {count} jours fériés",
         "region": "Région",
         "searchCountry": "Rechercher des pays...",
         "searchRegion": "Rechercher des régions...",

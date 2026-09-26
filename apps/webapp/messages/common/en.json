@@ -233,6 +233,12 @@
       "tue": "Tue",
       "we": "We",
       "wed": "Wed"
+    },
+    "deployment": {
+      "skew": {
+        "description": "Reload the page to continue. Your last action was not saved.",
+        "title": "Z8 was updated"
+      }
     }
   },
   "employeeSelect": {
@@ -257,7 +263,7 @@
     "noEmployee": {
       "contactAdmin": "Contact Administrator",
       "createOrg": "Create Organization",
-      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
+      "description": "You need an employee profile to {feature}. Please create an organization or contact your administrator.",
       "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
       "emailSubject": "Employee Profile Setup Required",
       "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
@@ -290,7 +296,15 @@
   },
   "loading": {
     "chart": "Loading chart",
-    "settings": "Loading settings"
+    "settings": "Loading settings",
+    "application": "Loading application",
+    "authentication": "Loading authentication",
+    "calendar": "Loading calendar",
+    "licenses": "Loading licenses",
+    "platformAnalytics": "Loading platform analytics",
+    "setup": "Loading setup",
+    "teamAbsences": "Loading team absences table",
+    "workerQueue": "Loading worker queue"
   },
   "nav": {
     "absences": "Absences",
@@ -337,6 +351,22 @@
       "teamMemberAdded": {
         "message": "You have been added to the {teamName} team by {performedByName}.",
         "title": "Added to team"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
+        "title": "Absence request submitted"
+      },
+      "teamMemberRemoved": {
+        "message": "You have been removed from the {teamName} team by {performedByName}.",
+        "title": "Removed from team"
+      },
+      "employeeOffboardingReview": {
+        "title": "Employee offboarding needs review",
+        "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
+        "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone})."
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",
@@ -559,5 +589,8 @@
     "notCalculated": "Not calculated yet",
     "pendingDescription": "The worker will calculate this balance soon.",
     "updatedEveryThreeHours": "Updated every 3 hours"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Loading works council"
   }
 }

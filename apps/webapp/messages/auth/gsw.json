@@ -145,7 +145,15 @@
     "wrong-account": "Falsches Konto",
     "wrong-account-description": "Ihr sind mit ere andere E-Mail-Adrässe aagmäldet. Mälded eu ab und verwänded die iigladeni E-Mail-Adrässe, zum die Iiladig aaznäh.",
     "wrong-account-description-short": "Verwänded die iigladeni E-Mail-Adrässe, zum d'Kontene z'wächsle und wiiterz'fahre.",
-    "you-are-invited": "Ihr sind iiglade"
+    "you-are-invited": "Ihr sind iiglade",
+    "confirm-password": "Passwort bestätige",
+    "first-name": "Vorname",
+    "first-name-placeholder": "Hans…",
+    "invited-email-locked": "Verwend die iigladene E-Mail-Adress für das Konto, damit du de Organisation automatisch biiträte chasch.",
+    "last-name": "Nachname",
+    "last-name-placeholder": "Müller…",
+    "secure-password-description": "Wähled es Passwort, wo ihr im hektische Alltag schnell erchenned, ohni d'Sicherheit z'gfährde.",
+    "secure-password-heading": "Es sichers Passwort festlegge"
   },
   "profile": {
     "change-password": "Passwort ändere",

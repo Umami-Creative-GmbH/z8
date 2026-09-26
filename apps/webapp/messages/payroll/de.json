@@ -12,7 +12,7 @@
       "dateUnavailable": "Datum nicht verfügbar",
       "missingClockOut": "Fehlendes Ausstempeln",
       "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden",
-      "offboardingClockRepair": "Offboarding-Ausstempeln muss korrigiert werden",
+      "offboardingClockRepair": "Ausstempeln beim Austritt muss korrigiert werden",
       "openApprovals": "Offene Genehmigungen",
       "openCalendar": "Kalender öffnen",
       "openWork": "Arbeit ohne Ausstempeln",
@@ -21,9 +21,9 @@
       "pendingTimeCorrection": "Ausstehende Zeitkorrektur",
       "pendingWorkApproval": "Arbeit wartet auf Genehmigung",
       "refreshAfterClearFailed": "Blocker entfernt, aber die Gehaltsabrechnung konnte nicht aktualisiert werden",
-      "uncertainHistoricalWork": "Historische Arbeit muss überprüft werden",
+      "uncertainHistoricalWork": "Historische Arbeit muss geprüft werden",
       "unknownEmployee": "Unbekannter Mitarbeiter",
-      "unresolvedWorkMinutes": "Arbeitsminuten müssen überprüft werden"
+      "unresolvedWorkMinutes": "Arbeitsminuten müssen geprüft werden"
     },
     "description": "Überprüfen Sie die Lohnabrechnungssummen, die Bereitschaft und die Exporte für den ausgewählten Zeitraum.",
     "employeeTotals": {
@@ -51,6 +51,9 @@
       "employeeIdsMustBeArray": "employeeIds muss ein Array sein",
       "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
       "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
+      "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigiere zuerst das Ausstempeln beim Austritt",
+      "exportBlockedByUncertainWork": "Export blockiert: Bitte zuerst die unsichere Arbeit im gewählten Umfang klären",
+      "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Bitte zuerst die zu prüfenden Arbeitsminuten klären",
       "exportFormatNotConfigured": "Das Lohnabrechnungs-Exportformat ist nicht konfiguriert",
       "invalidBlockerId": "Ungültige Gehaltsabrechnungs-Blocker-ID",
       "invalidBlockerType": "Ungültiger Gehaltsabrechnungs-Blockertyp",

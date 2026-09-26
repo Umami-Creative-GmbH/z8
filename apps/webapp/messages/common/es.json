@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Contactar con el administrador",
       "createOrg": "Crear organización",
-      "description": "Necesita un perfil de empleado para ${feature}. Por favor cree una organización o contacte a su administrador.",
+      "description": "Necesita un perfil de empleado para {feature}. Por favor cree una organización o contacte a su administrador.",
       "emailBody": "Hola,\n\nnecesito que se configure un perfil de empleado para acceder a las funciones de la plataforma. ¿Podría ayudarme con esto?\n\n¡Gracias!",
       "emailSubject": "Configuración del perfil de empleado requerida",
       "helpText": "Si fue invitado a una organización, pida a su administrador que configure su perfil de empleado.",
@@ -290,7 +290,15 @@
   },
   "loading": {
     "chart": "Cargando gráfico",
-    "settings": "Cargando configuración"
+    "settings": "Cargando ajustes",
+    "application": "Cargando aplicación",
+    "authentication": "Cargando autenticación",
+    "calendar": "Cargando calendario",
+    "licenses": "Cargando licencias",
+    "platformAnalytics": "Cargando analíticas de la plataforma",
+    "setup": "Cargando configuración",
+    "teamAbsences": "Cargando ausencias del equipo",
+    "workerQueue": "Cargando cola de trabajos"
   },
   "nav": {
     "absences": "Ausencias",
@@ -337,6 +345,14 @@
       "teamMemberAdded": {
         "message": "Has sido añadido al equipo {teamName} por {performedByName}.",
         "title": "Añadido al equipo"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
+        "title": "Solicitud de ausencia enviada"
+      },
+      "teamMemberRemoved": {
+        "message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
+        "title": "Eliminado del equipo"
       }
     },
     "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
@@ -559,5 +575,8 @@
     "notCalculated": "Aún no calculado",
     "pendingDescription": "El trabajador calculará este saldo pronto.",
     "updatedEveryThreeHours": "Actualizado cada 3 horas"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Cargando el portal del comité de empresa"
   }
 }

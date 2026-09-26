@@ -112,7 +112,7 @@ export function ApprovalInboxTable({
 									className="grid min-w-0 gap-4 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 md:grid-cols-[minmax(12rem,1.1fr)_minmax(12rem,1.4fr)_8rem] md:items-center"
 									aria-label={t(
 										"approvals:approvals.openDetailsFor",
-										`Open details for ${item.summary.title}`,
+										"Open details for {title}",
 										{ title: item.summary.title },
 									)}
 								>

@@ -145,7 +145,15 @@
     "wrong-account": "Yanlış hesap",
     "wrong-account-description": "Farklı bir e-posta ile giriş yapmışsınız. Oturumu kapatın ve bu daveti kabul etmek için davet edilen e-posta adresini kullanın.",
     "wrong-account-description-short": "Hesapları değiştirmek ve devam etmek için davet edilen e-posta adresini kullanın.",
-    "you-are-invited": "Davet edildiniz"
+    "you-are-invited": "Davet edildiniz",
+    "confirm-password": "Şifreyi Onayla",
+    "first-name": "Ad",
+    "first-name-placeholder": "John…",
+    "invited-email-locked": "Organizasyona otomatik olarak katılabilmek için bu hesapta davet edilen e-posta adresini kullanın.",
+    "last-name": "Soyad",
+    "last-name-placeholder": "Doe…",
+    "secure-password-description": "Güvenlikten ödün vermeden yoğun iş günlerinde hızlıca tanıyabileceğiniz bir parola kullanın.",
+    "secure-password-heading": "Güvenli bir parola belirleyin"
   },
   "profile": {
     "change-password": "Parolayı Değiştir",

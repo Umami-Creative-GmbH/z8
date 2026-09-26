@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktiere",
       "createOrg": "Organisation erstelle",
-      "description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
+      "description": "Du bruchsch es Mitarbeiterprofil für {feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
       "emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
       "emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
       "helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
@@ -289,8 +289,16 @@
     "trust-center": "Trust Center"
   },
   "loading": {
-    "chart": "Diagramm wird geladen",
-    "settings": "Einstellungen werden geladen"
+    "chart": "Diagramm wird glade",
+    "settings": "Istellige wärde glade",
+    "application": "Awändig wird glade",
+    "authentication": "Amäldig wird glade",
+    "calendar": "Kaländer wird glade",
+    "licenses": "Lizänze wärde glade",
+    "platformAnalytics": "Plattform-Analyse wird glade",
+    "setup": "Iirichtig wird glade",
+    "teamAbsences": "Team-Abweseheite wärde glade",
+    "workerQueue": "Uuftragswarteschlange wird glade"
   },
   "nav": {
     "absences": "Abweseheite",
@@ -337,6 +345,14 @@
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
         "title": "Zum Team hinzugefügt"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+        "title": "Abwäseheitsaafrag ygreicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+        "title": "Us em Team entfernt"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
@@ -559,5 +575,8 @@
     "notCalculated": "No nöd berächnet",
     "pendingDescription": "De Arbeiter wird die Bilanz bald berächne.",
     "updatedEveryThreeHours": "Wird alli 3 Stunde aktualisiert"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird glade"
   }
 }

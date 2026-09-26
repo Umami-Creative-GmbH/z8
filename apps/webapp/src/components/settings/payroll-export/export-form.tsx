@@ -609,6 +609,33 @@ function FiltersSection({
 	);
 }
 
+const FILTER_TEXT = {
+	employees: {
+		label: { key: "settings.payrollExport.export.employees", fallback: "Employees" },
+		all: { key: "settings.payrollExport.export.allEmployees", fallback: "All Employees" },
+		selected: {
+			key: "settings.payrollExport.export.employeesSelected",
+			fallback: "{{count}} selected",
+		},
+		idPrefix: "emp",
+	},
+	teams: {
+		label: { key: "settings.payrollExport.export.teams", fallback: "Teams" },
+		all: { key: "settings.payrollExport.export.allTeams", fallback: "All Teams" },
+		selected: { key: "settings.payrollExport.export.teamsSelected", fallback: "{{count}} selected" },
+		idPrefix: "team",
+	},
+	projects: {
+		label: { key: "settings.payrollExport.export.projects", fallback: "Projects" },
+		all: { key: "settings.payrollExport.export.allProjects", fallback: "All Projects" },
+		selected: {
+			key: "settings.payrollExport.export.projectsSelected",
+			fallback: "{{count}} selected",
+		},
+		idPrefix: "project",
+	},
+} as const;
+
 function FilterPopover({
 	kind,
 	items,
@@ -630,28 +657,19 @@ function FilterPopover({
 	onClear: () => void;
 	t: Translate;
 }) {
-	const labels =
-		kind === "employees"
-			? ["Employees", "All Employees", "emp"]
-			: kind === "teams"
-				? ["Teams", "All Teams", "team"]
-				: ["Projects", "All Projects", "project"];
+	const text = FILTER_TEXT[kind];
 	const selected = new Set(selectedIds);
 	return (
 		<div className="space-y-2">
 			<Label className="text-sm text-muted-foreground">
-				{t(`settings.payrollExport.export.${kind}`, labels[0])}
+				{t(text.label.key, text.label.fallback)}
 			</Label>
 			<Popover>
 				<PopoverTrigger asChild>
 					<Button variant="outline" className="w-full justify-start">
 						{selectedIds.length
-							? t(
-									`settings.payrollExport.export.${kind}Selected`,
-									"{{count}} selected",
-									{ count: selectedIds.length },
-								)
-							: t(`settings.payrollExport.export.all${labels[0]}`, labels[1])}
+							? t(text.selected.key, text.selected.fallback, { count: selectedIds.length })
+							: t(text.all.key, text.all.fallback)}
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-[300px] p-0" align="start">
@@ -659,12 +677,12 @@ function FilterPopover({
 						{items.map((item) => (
 							<div key={item.id} className="flex items-center gap-x-2 py-1">
 								<Checkbox
-									id={`${labels[2]}-${item.id}`}
+									id={`${text.idPrefix}-${item.id}`}
 									checked={selected.has(item.id)}
 									onCheckedChange={() => onToggle(item.id)}
 								/>
 								<label
-									htmlFor={`${labels[2]}-${item.id}`}
+									htmlFor={`${text.idPrefix}-${item.id}`}
 									className="cursor-pointer text-sm"
 								>
 									{item.name ?? (

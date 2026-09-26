@@ -1,10 +1,62 @@
 {
   "bot": {
     "approval": {
-      "outcomeUnknown": "No se pudo confirmar el resultado de esta acción. Verifique la solicitud en Z8 antes de volver a presionar.",
+      "outcomeUnknown": "No se pudo confirmar el resultado de esta pulsación. Revisa la solicitud en Z8 antes de volver a pulsar.",
       "reviewInZ8": "Revisar en Z8",
-      "reviewRequired": "Esta tarjeta no puede establecer los hechos enviados originalmente para revisión. Abra la bandeja de entrada de aprobaciones en Z8 para revisar la solicitud. No se tomó ninguna decisión desde esta tarjeta.",
-      "reviewRequiredTitle": "Revisión requerida"
+      "reviewRequired": "Esta tarjeta no permite verificar los datos enviados originalmente para su revisión. Abra la bandeja de aprobaciones en Z8 para revisar la solicitud. No se ha tomado ninguna decisión desde esta tarjeta.",
+      "reviewRequiredTitle": "Revisión necesaria",
+      "historicalTitle": "Decisión anterior",
+      "historicalApproval": "Se ha verificado su aprobación registrada anteriormente. Es un resultado anterior; no se ha tomado ninguna nueva decisión. Consulte la solicitud en Z8 para obtener más detalles.",
+      "historicalRejection": "Se ha verificado su rechazo registrado anteriormente. Es un resultado anterior; no se ha tomado ninguna nueva decisión. Consulte la solicitud en Z8 para obtener más detalles.",
+      "unboundCallback": "Esta tarjeta no permite verificar los datos revisados originalmente. No se ha tomado ninguna decisión. Revise la solicitud en Z8.",
+      "boundReviewRequired": "Esta tarjeta ya no coincide con la solicitud o la asignación actual, o no se pudo verificar la acción. No se tomó ninguna decisión. Revisa la solicitud en Z8.",
+      "invocationConflict": "Esta pulsación ya se registró con otra acción. No se tomó ninguna decisión. Revisa la solicitud en Z8.",
+      "card": {
+        "absenceTitle": "Solicitud de ausencia para aprobar",
+        "boundHint": "Aprobar o rechazar decide exactamente la solicitud mostrada arriba. Si cambió o se reasignó, no se decide nada y se te pedirá revisarla en Z8.",
+        "reviewOnlyHint": "Aprueba o rechaza esta solicitud en Z8. No se puede decidir desde este mensaje.",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "unavailable": "No disponible",
+        "employee": "Empleado",
+        "requestedBy": "Solicitado por",
+        "submittedBy": "Enviado por",
+        "category": "Categoría",
+        "currentCategoryName": "Nombre actual de la categoría",
+        "dates": "Fechas",
+        "coverage": "Cobertura",
+        "submittedAt": "Enviado",
+        "fullDays": "Días completos",
+        "fullDay": "día completo",
+        "morning": "por la mañana",
+        "afternoon": "por la tarde",
+        "halfDayPeriods": "Empieza {start}, termina {end}",
+        "explicitTimes": "{start} – {end} (hora local, zona no registrada)",
+        "explicitTimesOvernight": "{start} – {end} del día siguiente (hora local, zona no registrada)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Solicitud aprobada",
+        "requestRejectedTitle": "Solicitud rechazada",
+        "stepApprovedTitle": "Aprobación registrada",
+        "requestApproved": "Aprobada por {actor} el {time}. La solicitud está aprobada.",
+        "requestRejected": "Rechazada por {actor} el {time}. La solicitud está rechazada.",
+        "stepApproved": "Aprobada por {actor} el {time}. La solicitud aún espera más aprobaciones.",
+        "replayed": "Esta pulsación ya se había registrado; este es su resultado original y no se decidió nada nuevo.",
+        "stepRejectedTitle": "Rechazo registrado",
+        "stepRejected": "Rechazada por {actor} el {time}. La solicitud aún no es definitiva; revisa su estado actual en Z8.",
+        "recordedTitle": "Decisión registrada",
+        "recorded": "Registrada por {actor} el {time}. Revisa el estado actual de la solicitud en Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Solicitud retirada",
+        "withdrawn": "Esta solicitud se retiró. No se necesita ninguna decisión desde esta tarjeta.",
+        "reassignedTitle": "Reasignada",
+        "reassigned": "Esta aprobación se reasignó a otra persona. Ya no necesitas decidir desde esta tarjeta y aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
+        "inactiveTitle": "Ya no requiere acción",
+        "inactive": "Esta solicitud ya no necesita tu decisión desde esta tarjeta. Aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
+        "currentApproved": "Estado actual de la solicitud: aprobada.",
+        "currentRejected": "Estado actual de la solicitud: rechazada."
+      }
     },
     "cmd": {
       "clockedin": {
@@ -14,25 +66,25 @@
       },
       "clockin": {
         "alreadyIn": "Ya tienes el turno iniciado desde las {time} ({hours}h {minutes}m).",
-        "alreadyInNow": "Ya ha registrado su entrada.",
-        "appendReview": "Su historial de horas necesita revisión antes de que pueda registrar su entrada. Póngase en contacto con su administrador.",
+        "alreadyInNow": "Ya has fichado la entrada.",
+        "appendReview": "Tu historial de tiempo necesita revisión antes de que puedas fichar la entrada. Contacta con tu administrador.",
         "cannotNow": "No se puede iniciar el turno en este momento.",
-        "committed": "Entrada registrada.",
-        "failed": "No se pudo registrar la entrada. Inténtelo de nuevo.",
+        "committed": "Entrada fichada.",
+        "failed": "No se pudo fichar la entrada. Inténtalo de nuevo.",
         "noProfile": "No se encontró el perfil del empleado.",
         "success": "Turno iniciado a las {time}.",
-        "unconfirmed": "No se pudo confirmar su registro de entrada. Compruebe su estado antes de intentarlo de nuevo."
+        "unconfirmed": "No se pudo confirmar tu fichaje de entrada. Comprueba tu estado antes de volver a intentarlo."
       },
       "clockout": {
-        "appendReview": "Su historial de horas necesita revisión antes de que pueda registrar su salida. Póngase en contacto con su administrador.",
+        "appendReview": "Tu historial de tiempo necesita revisión antes de que puedas fichar la salida. Contacta con tu administrador.",
         "cannotNow": "No se puede finalizar el turno en este momento.",
-        "committed": "Salida registrada.",
-        "failed": "No se pudo registrar la salida. Inténtalo de nuevo.",
+        "committed": "Salida fichada.",
+        "failed": "No se pudo fichar la salida. Inténtalo de nuevo.",
         "noProfile": "No se encontró el perfil del empleado.",
         "notClockedIn": "No tienes un turno iniciado actualmente.",
         "success": "Turno finalizado a las {time}. Duración: {hours}h {minutes}m.",
-        "successAt": "Salida registrada a las {time}.",
-        "unconfirmed": "No se pudo confirmar tu registro de salida. Comprueba tu estado antes de intentarlo de nuevo."
+        "successAt": "Salida fichada a las {time}.",
+        "unconfirmed": "No se pudo confirmar tu fichaje de salida. Comprueba tu estado antes de volver a intentarlo."
       },
       "compliance": {
         "error": "Error al recuperar los datos de cumplimiento. Por favor, inténtalo de nuevo más tarde.",
@@ -64,7 +116,8 @@
         "header": "{outCount} de {total} miembros del equipo están fuera hoy:",
         "noneOut": "Los {total} miembros de tu equipo están disponibles hoy.",
         "noTeam": "No tienes ningún miembro del equipo asignado."
-      }
+      },
+      "billingRequired": "[bot] Se requiere facturación para seguir usando el seguimiento de tiempo. Pide a un administrador de la organización que actualice la facturación."
     },
     "language": {
       "changed": "Idioma cambiado a {language}.",
@@ -90,7 +143,7 @@
       "notLinked": "Tu cuenta de Telegram no está vinculada a Z8. Ve a Ajustes > Integraciones > Telegram en tu panel de Z8 para generar un código de vinculación, luego envía: /link TU_CÓDIGO",
       "notLinkedTeams": "No pude encontrar tu cuenta de Z8. Asegúrate de que tu correo electrónico de Teams coincida con el correo de tu cuenta de Z8.",
       "noUser": "No se pudo identificar tu cuenta de usuario.",
-      "replyUndelivered": "Se procesó tu comando, pero no se pudo mostrar la respuesta. Comprueba tu estado antes de repetirlo.",
+      "replyUndelivered": "Tu comando se procesó, pero no se pudo mostrar la respuesta. Comprueba tu estado antes de repetirlo.",
       "setupBody": "Tu organización debe estar conectada a Z8. Haz clic abajo para iniciar el proceso de configuración.",
       "setupButton": "Completar configuración",
       "setupNote": "Solo los administradores de la organización pueden completar esta configuración.",

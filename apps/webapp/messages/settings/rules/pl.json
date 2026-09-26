@@ -209,12 +209,12 @@
       "addPolicy": "Dodaj politykę",
       "approvalType": {
         "absence": "Nieobecność",
-        "complianceException": "Wyjątek dotyczący zgodności",
-        "manualTimeSubmission": "Ręczne przesyłanie czasu pracy",
-        "policyClockOut": "Wyrejestrowanie zgodnie z zasadami",
+        "complianceException": "Wyjątek zgodności",
+        "manualTimeSubmission": "Ręczne przesłanie czasu",
+        "policyClockOut": "Wyjście zgodne z zasadą",
         "shiftRequest": "Wniosek o zmianę",
         "timeCorrection": "Korekta czasu",
-        "travelExpense": "Wydatek podróżny"
+        "travelExpense": "Wydatek na podróż"
       },
       "approvalTypes": "Typy zatwierdzeń",
       "conditionsCount": "Liczba warunków",
@@ -255,6 +255,21 @@
       "validation": {
         "activePolicyRequiresStage": "Aktywne zasady wymagają co najmniej jednego etapu zatwierdzania.",
         "specificEmployeeRequiresId": "Etapy dla konkretnego pracownika wymagają podania identyfikatora pracownika zatwierdzającego."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Wyślij wniosek do domyślnego przełożonego, gdy ten etap nie może wskazać osoby zatwierdzającej.",
+          "label": "Domyślny przełożony"
+        },
+        "fail": {
+          "description": "Odrzuć wniosek, gdy ten etap nie może wskazać osoby zatwierdzającej.",
+          "label": "Odrzuć wniosek"
+        },
+        "label": "Zachowanie awaryjne",
+        "organizationAdmin": {
+          "description": "Wyślij wniosek do administratora organizacji, gdy ten etap nie może wskazać osoby zatwierdzającej.",
+          "label": "Administrator organizacji"
+        }
       }
     },
     "changePolicies": {

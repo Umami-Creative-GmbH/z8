@@ -152,7 +152,7 @@ function LifecycleActionsMenu({
 						size="icon"
 						aria-label={t(
 							"settings.employees.lifecycle.actionsLabel",
-							`Employee actions for ${target.displayName}`,
+							"Employee actions for {name}",
 							{ name: target.displayName },
 						)}
 					>

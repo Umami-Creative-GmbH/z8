@@ -233,6 +233,12 @@
       "tue": "Di",
       "we": "Mi",
       "wed": "Mi"
+    },
+    "deployment": {
+      "skew": {
+        "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
+        "title": "Z8 wurde aktualisiert"
+      }
     }
   },
   "employeeSelect": {
@@ -257,7 +263,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
-      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um {feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
       "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
       "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
       "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
@@ -290,7 +296,15 @@
   },
   "loading": {
     "chart": "Diagramm wird geladen",
-    "settings": "Einstellungen werden geladen"
+    "settings": "Einstellungen werden geladen",
+    "application": "Anwendung wird geladen",
+    "authentication": "Authentifizierung wird geladen",
+    "calendar": "Kalender wird geladen",
+    "licenses": "Lizenzen werden geladen",
+    "platformAnalytics": "Plattformanalyse wird geladen",
+    "setup": "Einrichtung wird geladen",
+    "teamAbsences": "Team-Abwesenheiten werden geladen",
+    "workerQueue": "Auftragswarteschlange wird geladen"
   },
   "nav": {
     "absences": "Abwesenheiten",
@@ -327,16 +341,32 @@
     },
     "content": {
       "passwordChanged": {
-        "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
+        "message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
         "title": "Passwort geändert"
       },
       "shiftAssigned": {
-        "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
+        "message": "Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
         "title": "Schicht zugewiesen"
       },
       "teamMemberAdded": {
-        "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
+        "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+        "title": "Abwesenheitsanfrage eingereicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+        "title": "Aus dem Team entfernt"
+      },
+      "employeeOffboardingReview": {
+        "title": "Offboarding benötigt eine Prüfung",
+        "clock_out": "{employeeName}: Prüfung erforderlich: Ausstempeln beim Offboarding (Austritt wirksam {cutoff}, {timezone}).",
+        "clock_repair": "{employeeName}: Zeiterfassung muss korrigiert werden (Austritt wirksam {cutoff}, {timezone}).",
+        "approval_handover": "{employeeName}: Genehmigungsaufgaben brauchen eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "future_work": "{employeeName}: Zukünftige Arbeit muss geprüft werden (Austritt wirksam {cutoff}, {timezone}).",
+        "employment_terms": "{employeeName}: Zukünftige Vertragsbedingungen müssen geprüft werden (Austritt wirksam {cutoff}, {timezone})."
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -418,17 +448,17 @@
       "archived": "Archivierte Stempelnachweise auf diesem Gerät aufbewahrt",
       "offline": "Sie sind offline",
       "offlineSaved": "Offline – {count} Datensatz/Datensätze lokal zur Überprüfung gespeichert",
-      "offlineWaiting": "Offline — {count} Stempelaktion(en) werden gesendet, sobald Sie wieder online sind",
+      "offlineWaiting": "Offline — {count} Stempelung(en) werden gesendet, sobald Sie wieder online sind",
       "refresh": "Status aktualisieren",
       "refreshing": "{count} gespeicherte(r) Datensatz/Datensätze wird/werden überprüft…",
       "reviewRequired": "{count} Datensatz/Datensätze lokal gespeichert – Überprüfung erforderlich",
       "unverified": "Stempelnachweis auf diesem Gerät gespeichert. Stellen Sie eine Verbindung her, um alle gespeicherten Datensätze zu überprüfen.",
-      "waiting": "{count} Stempelaktion(en) auf diesem Gerät gespeichert, noch nicht gesendet"
+      "waiting": "{count} Stempelung(en) auf diesem Gerät gespeichert, noch nicht gesendet"
     },
     "capture": {
       "description": "Ereignis zur Überprüfung auf diesem Gerät speichern. Der Serverstatus der Zeiterfassung ändert sich nicht.",
       "end": "Ausstempeln zur Überprüfung speichern",
-      "queueDescription": "Sie sind offline. Stempelaktionen werden auf diesem Gerät gespeichert und automatisch gesendet, sobald Sie wieder online sind.",
+      "queueDescription": "Sie sind offline. Stempelungen werden auf diesem Gerät gespeichert und automatisch gesendet, sobald Sie wieder online sind.",
       "queueEnd": "Ausstempeln speichern",
       "queueStart": "Einstempeln speichern",
       "start": "Einstempeln zur Überprüfung speichern"
@@ -437,18 +467,18 @@
       "archive": "Nachweise archivieren und aufbewahren",
       "archived": "Archiviert – Nachweis aufbewahrt",
       "command": {
-        "blockedPredecessor": "Pausiert — eine frühere Stempelaktion auf diesem Gerät muss überprüft werden",
+        "blockedPredecessor": "Pausiert — eine frühere Stempelung auf diesem Gerät muss geprüft werden",
         "committed": "Auf dem Server gespeichert",
         "exhausted": "Senden nach wiederholten Fehlern gestoppt — auf dem Server nicht bestätigt",
-        "pausedAccess": "Pausiert — melden Sie sich erneut mit Berechtigung zum Stempeln in dieser Organisation an",
-        "pausedContext": "Pausiert — melden Sie sich bei dem Konto und der Organisation an, für die dies gespeichert wurde",
-        "pausedServer": "Pausiert — der Server akzeptiert diese Stempelaktion noch nicht",
-        "pending": "Wartet auf das Senden — auf dem Server nicht bestätigt",
+        "pausedAccess": "Pausiert — melden Sie sich erneut mit Zugriff auf das Stempeln in dieser Organisation an",
+        "pausedContext": "Pausiert — melden Sie sich mit dem Konto und der Organisation an, für die gespeichert wurde",
+        "pausedServer": "Pausiert — der Server nimmt diese Stempelung noch nicht an",
+        "pending": "Wartet auf Senden — auf dem Server nicht bestätigt",
         "rejected": "Nicht gespeichert — vom Server abgelehnt ({code})",
-        "review": "Überprüfung erforderlich — vom Server nicht akzeptiert ({code})",
-        "waitingPredecessor": "Wartet auf eine frühere Stempelaktion auf diesem Gerät"
+        "review": "Prüfung nötig — vom Server nicht angenommen ({code})",
+        "waitingPredecessor": "Wartet auf eine frühere Stempelung auf diesem Gerät"
       },
-      "descriptionOutcomes": "Diese Datensätze sind auf diesem Gerät gespeichert. Sofern bei einem Datensatz nicht angegeben ist, dass er auf dem Server gespeichert wurde, ist das serverseitige Ergebnis nicht bestätigt. Überprüfen Sie bestehende Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzarbeitszeiten übermitteln. Durch das Archivieren bleibt der Nachweis erhalten und die Arbeit auf dem Server wird nicht storniert.",
+      "descriptionOutcomes": "Diese Einträge sind auf diesem Gerät gespeichert. Sofern ein Eintrag nicht als auf dem Server gespeichert angezeigt wird, ist sein Ergebnis auf dem Server nicht bestätigt. Prüfen Sie vorhandene Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzeinträge erfassen. Archivieren behält die Nachweise und storniert keine Arbeit auf dem Server.",
       "empty": "Keine zugänglichen Datensätze. Ältere Datensätze ohne Kontonachweis erfordern eine Überprüfung auf Organisationsebene; Datensätze ohne Organisationsnachweis erfordern eine separat autorisierte Wiederherstellung.",
       "evidence": "Ursprünglicher Nachweis und Wiederherstellungsstatus",
       "export": "Zugängliche Nachweise exportieren",
@@ -559,5 +589,8 @@
     "notCalculated": "Noch nicht berechnet",
     "pendingDescription": "Der Worker wird diese Bilanz in Kürze berechnen.",
     "updatedEveryThreeHours": "Wird alle 3 Stunden aktualisiert"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird geladen"
   }
 }

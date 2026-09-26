@@ -50,7 +50,7 @@ export function NoEmployeeError({
 					<CardDescription className="text-base">
 						{t(
 							"errors.noEmployee.description",
-							`You need an employee profile to ${feature}. Please create an organization or contact your administrator.`,
+							"You need an employee profile to {feature}. Please create an organization or contact your administrator.",
 							{ feature },
 						)}
 					</CardDescription>

@@ -30,7 +30,8 @@
       "errors": {
         "invalidTimeRange": "L'ora di uscita deve essere successiva all'ora di entrata",
         "submitFailed": "Invio correzione non riuscito",
-        "updateFailed": "Aggiornamento voce oraria non riuscito"
+        "updateFailed": "Aggiornamento voce oraria non riuscito",
+        "noChanges": "È necessario modificare almeno un valore della correzione"
       },
       "noteLabel": "Nota (opzionale)",
       "notePlaceholder": "Aggiungi una nota su questa modifica...",
@@ -48,7 +49,9 @@
         "submitted": "Richiesta di correzione inviata per approvazione del manager",
         "updated": "Voce oraria aggiornata con successo"
       },
-      "timezoneNote": "Gli orari sono nel tuo fuso orario locale ({timezone})"
+      "timezoneNote": "Gli orari sono nel tuo fuso orario locale ({timezone})",
+      "clockInTime": "Ora di entrata",
+      "clockOutTime": "Ora di uscita"
     },
     "currentlyClockedIn": "Attualmente hai timbrato l'entrata",
     "deadline": "Scadenza",
@@ -59,7 +62,9 @@
       "holidayBlockedDesc": "Questo giorno è segnato come festivo e le voci orarie non sono consentite",
       "notesSaveFailed": "Salvataggio note non riuscito",
       "restPeriodBlocked": "Periodo di riposo non completato",
-      "restPeriodBlockedDesc": "Devi completare il periodo di riposo obbligatorio prima di timbrare l'ingresso. Richiedi un'eccezione se necessario."
+      "restPeriodBlockedDesc": "Devi completare il periodo di riposo obbligatorio prima di timbrare l'ingresso. Richiedi un'eccezione se necessario.",
+      "appendReviewRequired": "La timbratura di entrata richiede una verifica della cronologia",
+      "appendReviewRequiredDesc": "Non è stato possibile verificare le tue registrazioni precedenti, quindi la nuova timbratura non è stata salvata. Contatta il tuo amministratore."
     },
     "manualEntry": {
       "addButton": "Aggiungi voce manuale",
@@ -68,14 +73,14 @@
       "context": {
         "choicesCleared": "Un progetto o una categoria selezionati non sono più disponibili e sono stati rimossi.",
         "loadFailed": "Impossibile caricare il fuso orario e le opzioni per questa voce.",
-        "loading": "Caricamento opzioni voce…",
-        "notAuthorized": "Non puoi creare voci orarie per questo dipendente.",
-        "organizationFallback": "{employee} non ha un fuso orario personale, quindi viene utilizzato quello dell'organizzazione.",
+        "loading": "Caricamento delle opzioni della voce…",
+        "notAuthorized": "Non puoi creare registrazioni orarie per questo dipendente.",
+        "organizationFallback": "{employee} non ha un fuso orario personale, quindi viene usato quello dell'organizzazione.",
         "retry": "Riprova",
-        "targetChanged": "Il dipendente è cambiato, quindi il progetto e la categoria sono stati cancellati.",
+        "targetChanged": "Il dipendente è cambiato, quindi progetto e categoria sono stati azzerati.",
         "targetTimezone": "Gli orari sono nel fuso orario di {employee}: {timezone}",
         "thisEmployee": "questo dipendente",
-        "utcFallback": "Né {employee} né l'organizzazione hanno un fuso orario impostato, quindi viene utilizzato UTC."
+        "utcFallback": "Né {employee} né l'organizzazione hanno impostato un fuso orario, quindi viene usato UTC."
       },
       "dateLabel": "Data",
       "description": "Crea una voce di tempo per una data passata. Potrebbe essere richiesta l'approvazione in base alla policy della tua organizzazione.",
@@ -84,23 +89,47 @@
         "futureDate": "Impossibile creare voci per date future",
         "invalidTime": "Inserisci un orario completo e valido",
         "invalidTimeRange": "L'orario di uscita deve essere successivo all'orario di ingresso",
-        "tooLong": "Il periodo di lavoro non può superare le 24 ore"
+        "tooLong": "Il periodo di lavoro non può superare le 24 ore",
+        "collision": "Questa voce è in conflitto con un invio precedente o con lavoro modificato. Controlla le tue voci esistenti.",
+        "futureTime": "Non è possibile creare voci per orari futuri",
+        "historyReview": "Questo storico dei tempi deve essere verificato prima di salvare nuove voci. Contatta l'amministratore.",
+        "nonexistentTime": "Questo orario non esiste in questa data perché gli orologi vanno avanti.",
+        "occurrenceRequired": "Questo orario si ripete in questa data. Scegli quello che intendi.",
+        "overlap": "Questo orario si sovrappone a lavoro registrato. Scegli un intervallo senza sovrapposizioni.",
+        "reconfirm": "Il fuso orario o gli orari sono cambiati. Controlla la voce e inviala di nuovo.",
+        "refresh": "Le impostazioni delle voci manuali sono cambiate. Controlla la voce e inviala di nuovo."
       },
       "occurrence": {
-        "earlier": "Primo, {offset}",
-        "later": "Secondo, {offset}",
-        "legend": "{time} si verifica due volte in questa data. A quale ti riferisci?"
+        "earlier": "Prima, {offset}",
+        "later": "Seconda, {offset}",
+        "legend": "{time} si ripete in questa data. Quale intendi?"
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Descrivi il lavoro svolto...",
       "recovery": {
-        "check": "Controlla stato",
-        "description": "Queste voci sono state inviate da questa scheda senza un risultato confermato. Non verrà inviato nuovamente nulla a meno che tu non scelga di farlo.",
+        "check": "Verifica stato",
+        "description": "Queste voci sono state inviate da questa scheda senza un risultato confermato. Nulla viene reinviato se non lo scegli tu.",
         "discard": "Ignora",
         "editAsNew": "Modifica come nuova voce",
-        "retry": "Riprova esattamente",
+        "retry": "Riprova identica",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Registrazioni non confermate"
+        "title": "Voci non confermate",
+        "checkFailed": "Impossibile verificare questa voce ora. Riprova più tardi.",
+        "contextMismatch": "Hai effettuato l'accesso con un altro account o un'altra organizzazione. Torna indietro per gestire questa voce.",
+        "notCommitted": "Nessun salvataggio trovato.",
+        "notCommittedToast": "Non è stato trovato alcun salvataggio per questa voce. Riprovala identica o modificala come nuova voce.",
+        "saved": "Questa voce è stata salvata.",
+        "savedForApproval": "Questa voce è stata salvata e inviata per l'approvazione. Stato attuale: {status}.",
+        "status": {
+          "approved": "approvata",
+          "pending": "in attesa",
+          "rejected": "rifiutata"
+        },
+        "stillUncertain": "Ancora non confermata. La voce resta; riprova quando sarai di nuovo online.",
+        "uncertain": "Non confermata. Potrebbe essere già salvata.",
+        "uncertainToast": "Non è stato possibile confermare se questa voce è stata salvata. Resta in Voci non confermate, dove puoi riprovarla identica o verificarne lo stato.",
+        "unsupported": "Impossibile verificarne lo stato. Potrebbe essere già salvata.",
+        "unsupportedToast": "Impossibile verificare ora lo stato di questa voce. Riprovando si invia esattamente la stessa voce."
       },
       "submit": "Crea voce",
       "submitting": "Creazione in corso...",
@@ -167,7 +196,14 @@
     },
     "unknownCategory": "Categoria sconosciuta",
     "unknownProject": "Progetto sconosciuto",
-    "workCategory": "Categoria lavorativa"
+    "workCategory": "Categoria lavorativa",
+    "clockInSavedForReview": "Timbratura di ingresso salvata su questo dispositivo per la revisione; non confermata sul server",
+    "clockOutSavedForReview": "Timbratura di uscita salvata su questo dispositivo per la revisione; non confermata sul server",
+    "workLocation": "Luogo di lavoro",
+    "workLocationHome": "Casa",
+    "workLocationOffice": "Ufficio",
+    "workLocationOther": "Altro",
+    "workLocationRemote": "Da remoto"
   },
   "wellness": {
     "water": {

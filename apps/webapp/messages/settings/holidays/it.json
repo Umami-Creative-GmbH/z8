@@ -189,7 +189,7 @@
         "presetName": "Nome preimpostazione",
         "presetNameHint": "Questo nome verrà utilizzato per identificare il preset quando assegnato a team o dipendenti",
         "presetNamePlaceholder": "es. Germania - Baviera",
-        "presetSuccess": "Preset \"{name}\" creato con ${holidaysToImport.length} festività",
+        "presetSuccess": "Preset \"{name}\" creato con {count} festività",
         "region": "Regione",
         "searchCountry": "Cerca paesi...",
         "searchRegion": "Cerca regioni...",

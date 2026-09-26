@@ -145,7 +145,15 @@
     "wrong-account": "Mauvais compte",
     "wrong-account-description": "Vous êtes connecté avec une adresse e-mail différente. Déconnectez-vous et utilisez l'adresse e-mail invitée pour accepter cette invitation.",
     "wrong-account-description-short": "Utilisez l'adresse e-mail invitée pour changer de compte et continuer.",
-    "you-are-invited": "Vous êtes invité"
+    "you-are-invited": "Vous êtes invité",
+    "confirm-password": "Confirmer le mot de passe",
+    "first-name": "Prénom",
+    "first-name-placeholder": "Jean…",
+    "invited-email-locked": "Utilisez l'adresse e-mail invitée pour ce compte afin de pouvoir rejoindre l'organisation automatiquement.",
+    "last-name": "Nom",
+    "last-name-placeholder": "Dupont…",
+    "secure-password-description": "Utilisez un mot de passe que vous pouvez reconnaître rapidement pendant les journées de travail chargées sans compromettre la sécurité.",
+    "secure-password-heading": "Définir un mot de passe sécurisé"
   },
   "profile": {
     "change-password": "Changer le mot de passe",

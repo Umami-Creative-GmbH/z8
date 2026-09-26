@@ -78,7 +78,7 @@
         "title": "Einladungen"
       },
       "lifecycle": {
-        "actionsLabel": "Mitarbeiteraktionen für ${target.displayName}",
+        "actionsLabel": "Mitarbeiteraktione für {name}",
         "deactivate": "Deaktivieren",
         "deactivateDescription": "Dies sperrt den Zugriff auf diese Organisation und beendet laufende Sitzungen. Die Mitarbeiterhistorie bleibt erhalten.",
         "deactivateError": "Mitarbeiter konnte nicht deaktiviert werden",
@@ -100,7 +100,9 @@
         "removeSuccess": "Zuegang zur Organisation isch entzoge worde",
         "removeTitle": "Zuegang zur Organisation entzieh?",
         "removing": "Zuegang wird entzoge...",
-        "removingStatus": "Zuegang zur Organisation wird entzoge"
+        "removingStatus": "Zuegang zur Organisation wird entzoge",
+        "finalOwnerDeactivateGuidance": "Wis zerscht en andere bestätigte Bsitzer zue und aktivier en, bevor du dä Mitarbeiter deaktiviersch.",
+        "finalOwnerRemoveGuidance": "Wis zerscht en andere bestätigte Bsitzer zue und aktivier en, bevor du däm Mitarbeiter de Zuegriff entziehsch."
       },
       "offboarding": {
         "acknowledgeDuties": "Admins werded die {count} offnige Freigabepflichte erledige.",
@@ -569,7 +571,7 @@
       "catalogDescription": "Definier Fähigkeite, wo für Teilberiich und Schichtvorlage verlangt wärde chönd",
       "category": "Kategorie",
       "confirmDelete": "Bisch sicher, dass die Fähigkeit lösche wotsch?",
-      "confirmRemove": "Wotsch \"${skillName}\" vo däm Aagstellte entferne?",
+      "confirmRemove": "Wotsch \"{skillName}\" vo däm Aagstellte entferne?",
       "createError": "Fähigkeit hät nöd chöne erstellt wärde",
       "createSkill": "Fähigkeit erstelle",
       "createSkillDescription": "Erstell e neui Fähigkeit, wo Aagstellte zuegwise wärde chan",

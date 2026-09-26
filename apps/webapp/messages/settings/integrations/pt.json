@@ -171,6 +171,17 @@
         "skippedCount": "{count} ignorado(s)",
         "status": "Status",
         "title": "Mapear Usuários"
+      },
+      "entity": {
+        "absences": "Ausências",
+        "entries": "Registros de tempo",
+        "holidayQuotas": "Cotas de férias",
+        "nonBusinessDays": "Dias não úteis",
+        "services": "Serviços / Categorias de trabalho",
+        "surcharges": "Sobretaxas",
+        "targetHours": "Horas meta / Políticas de trabalho",
+        "teams": "Equipes",
+        "users": "Usuários / Funcionários"
       }
     },
     "discord": {

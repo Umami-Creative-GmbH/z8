@@ -99,7 +99,7 @@ export function ApprovalSprintCard({
 							{getPriorityLabel(t, item.triage.priority)}
 						</Badge>
 						<Badge variant="outline">
-							{t("approvals:sprint.age", `${item.timing.ageDays}d old`, {
+							{t("approvals:sprint.age", "{ageDays}d old", {
 								ageDays: item.timing.ageDays,
 							})}
 						</Badge>

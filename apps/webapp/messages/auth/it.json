@@ -145,7 +145,15 @@
     "wrong-account": "Account errato",
     "wrong-account-description": "Hai effettuato l'accesso con un'email diversa. Disconnettiti e usa l'indirizzo email dell'invito per accettare questo invito.",
     "wrong-account-description-short": "Usa l'indirizzo email dell'invito per cambiare account e continuare.",
-    "you-are-invited": "Sei stato invitato"
+    "you-are-invited": "Sei stato invitato",
+    "confirm-password": "Conferma Password",
+    "first-name": "Nome",
+    "first-name-placeholder": "Mario…",
+    "invited-email-locked": "Usa l'indirizzo email invitato per questo account in modo da poterti unire automaticamente all'organizzazione.",
+    "last-name": "Cognome",
+    "last-name-placeholder": "Rossi…",
+    "secure-password-description": "Usa una password che puoi riconoscere rapidamente durante le giornate lavorative intense senza compromettere la sicurezza.",
+    "secure-password-heading": "Imposta una password sicura"
   },
   "profile": {
     "change-password": "Cambia password",

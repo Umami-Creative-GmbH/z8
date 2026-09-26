@@ -91,7 +91,32 @@
         "edit": {
           "description": "Individuells Ferie-Guthabe für {{name}} konfiguriere",
           "title": "Ferie-Guthabe bearbeite"
-        }
+        },
+        "actions": {
+          "edit": "Bearbeiten"
+        },
+        "allowancesForYear": "Urlaubsansprüche für {{year}}",
+        "defaultAllowanceDescription": "Standardanspruch: {{days}} Tage pro Jahr",
+        "defaultPolicy": "Standard",
+        "description": "Individuelli Ferie-Guthabe für einzelni Aagstellti konfiguriere",
+        "employeeCount": "{{count}} Aagstellti",
+        "emptyDescription": "Füeg Aagstellti zu dinere Organisation zue, zum ihri Ferie-Guthabe z'verwalte.",
+        "emptyTitle": "Kei Aagstellti gfunde",
+        "noOrgPolicyConfigured": " (Kei Organisations-Richtlinie konfiguriert)",
+        "primaryManager": "Primär",
+        "table": {
+          "actions": "Aaktione",
+          "adjustments": "Aapassige",
+          "carryover": "Übertrag",
+          "customDays": "Benutzerdefinierte Tage",
+          "defaultDays": "Standardtage",
+          "employee": "Mitarbeiter",
+          "managers": "Manager",
+          "policy": "Richtlinie",
+          "team": "Team",
+          "totalAvailable": "Gesamt verfügbar"
+        },
+        "title": "Urlaubsansprüche der Mitarbeiter"
       },
       "expires": "Läuft ab",
       "fallsBackToDefault": "Greift auf den Unternehmensstandard zurück",

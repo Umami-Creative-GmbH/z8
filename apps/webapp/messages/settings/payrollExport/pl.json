@@ -47,7 +47,23 @@
           "missingConfiguration": "konfiguracja",
           "missingCredentials": "poświadczenia"
         },
-        "year": "Rok"
+        "year": "Rok",
+        "allEmployees": "Wszyscy pracownicy",
+        "allProjects": "Wszystkie projekty",
+        "allTeams": "Wszystkie zespoły",
+        "employees": "Pracownicy",
+        "employeesSelected": "Wybrano {{count}}",
+        "exportButtonDatev": "Eksport do DATEV",
+        "exportButtonLexware": "Eksport do Lexware",
+        "exportButtonPersonio": "Eksport do Personio",
+        "exportButtonSage": "Eksport do Sage",
+        "exportButtonSuccessFactorsApi": "Eksport do SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Eksportuj plik CSV SAP SuccessFactors",
+        "exportButtonWorkday": "Eksport do Workday",
+        "projects": "Projekty",
+        "projectsSelected": "Wybrano {{count}}",
+        "teams": "Zespoły",
+        "teamsSelected": "Wybrano {{count}}"
       },
       "history": {
         "description": "Wyświetl i pobierz poprzednie eksporty DATEV",

@@ -47,7 +47,23 @@
           "missingConfiguration": "yapılandırma",
           "missingCredentials": "kimlik bilgileri"
         },
-        "year": "Yıl"
+        "year": "Yıl",
+        "allEmployees": "Tüm Çalışanlar",
+        "allProjects": "Tüm Projeler",
+        "allTeams": "Tüm Ekipler",
+        "employees": "Çalışanlar",
+        "employeesSelected": "{{count}} seçildi",
+        "exportButtonDatev": "DATEV'e aktar",
+        "exportButtonLexware": "Lexware'e aktar",
+        "exportButtonPersonio": "Personio'ya aktar",
+        "exportButtonSage": "Sage'e aktar",
+        "exportButtonSuccessFactorsApi": "SAP SuccessFactors'a aktar (API)",
+        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV dışa aktarımı",
+        "exportButtonWorkday": "Workday'e aktar",
+        "projects": "Projeler",
+        "projectsSelected": "{{count}} seçildi",
+        "teams": "Ekipler",
+        "teamsSelected": "{{count}} seçildi"
       },
       "history": {
         "description": "Önceki DATEV dışa aktarımlarını görüntüleyin ve indirin",

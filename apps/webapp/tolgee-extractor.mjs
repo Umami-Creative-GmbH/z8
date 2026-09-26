@@ -124,10 +124,19 @@ const NESTED_NAMESPACE_PREFIXES = [
 	["settings.clockinImport.", "settings/integrations"],
 ];
 
+// Must match `defaultNamespace` in tolgee.config.cjs and the runtime default namespace.
+// Keys that resolve to no namespace are pulled into root messages/<locale>.json files,
+// which the app never loads.
+const DEFAULT_NAMESPACE = "common";
+
+// A dotted translation key, optionally namespace-prefixed ("approvals:approvals.title").
+// Segments may contain "_" and "-" (e.g. "...employeeOffboardingReview.clock_out").
+const KEY_SOURCE = "(?:[a-zA-Z][\\w/-]*:)?[a-zA-Z][\\w-]*(?:\\.[\\w-]+)+";
+
 /**
  * Infer namespace from a translation key
  * @param {string} keyName - The full key name (e.g., "settings.employees.title")
- * @returns {string|undefined} - The namespace or undefined for default
+ * @returns {string|undefined} - The mapped namespace, or undefined when no prefix matches
  */
 function inferNamespace(keyName) {
 	if (keyName.startsWith("billing.suspended.") || keyName.startsWith("billing.trialBanner.")) {
@@ -163,9 +172,13 @@ function resolveKeyAndNamespace(keyName, namespace) {
 		}
 	}
 
+	const inferredNamespace = inferNamespace(finalKeyName);
 	return {
 		keyName: finalKeyName,
-		namespace: finalNamespace || inferNamespace(finalKeyName),
+		namespace: finalNamespace || inferredNamespace || DEFAULT_NAMESPACE,
+		// True when the namespace came from an explicit "ns:" prefix/option or a known key prefix.
+		// Heuristic extractors use this to ignore dotted strings that are not translation keys.
+		hasKnownNamespace: Boolean(finalNamespace || inferredNamespace),
 	};
 }
 
@@ -179,57 +192,187 @@ function isDynamicKey(keyName) {
 	return keyName.includes("${") || keyName.includes("}");
 }
 
-export default function extractor(code, _fileName) {
+/**
+ * Test files mock translators with throwaway keys; extracting them would push junk keys
+ * (often into the unnamespaced root catalog) and let `sync` treat them as real usage.
+ */
+function isTestFile(fileName) {
+	return /(?:\.test\.[cm]?[jt]sx?|\.fixture\.[cm]?[jt]sx?)$|[\\/]__tests__[\\/]/.test(fileName ?? "");
+}
+
+export default function extractor(code, fileName) {
 	const keys = [];
 	const warnings = [];
 
-	// Extract translation keys from properties ending in "Key" (e.g. titleKey: "tour.sidebar.title")
-	// This runs for ALL files, not just those with translation imports, since these
-	// keys are defined in data files and consumed dynamically via t(step.titleKey).
-	keys.push(...extractKeyProperties(code));
-	keys.push(...extractKeyMappingObjects(code));
-
-	// Track if file has valid t-function sources
-	let hasValidTSource = false;
-
-	// Check for imports that provide t-function
-	const validImportPatterns = [
-		// Server: import { getTranslate } from "@/tolgee/server"
-		/import\s+\{[^}]*\bgetTranslate\b[^}]*\}\s+from\s+["']@\/tolgee\/server["']/,
-		// Client: import { useTranslate } from "@tolgee/react"
-		/import\s+\{[^}]*\buseTranslate\b[^}]*\}\s+from\s+["']@tolgee\/react["']/,
-		// Direct SDK imports (fallback)
-		/import\s+\{[^}]*\b(getTranslate|useTranslate)\b[^}]*\}\s+from\s+["']@tolgee\/(react|next|web)(\/server)?["']/,
-		// Bot: import { getBotTranslate } from "@/lib/bot-platform/i18n"
-		/import\s+\{[^}]*\bgetBotTranslate\b[^}]*\}\s+from\s+["']@\/lib\/bot-platform\/i18n["']/,
-	];
-
-	for (const pattern of validImportPatterns) {
-		if (pattern.test(code)) {
-			hasValidTSource = true;
-			break;
-		}
-	}
-
-	// Also check for T component import
-	const hasTComponent =
-		/import\s+\{[^}]*\bT\b[^}]*\}\s+from\s+["'](@\/tolgee\/server|@tolgee\/(react|next|web)(\/server)?)["']/.test(
-			code,
-		);
-	const hasNamespacedInjectedTranslator = /\bt\s*\(\s*["'`]teamsBot:/.test(code);
-
-	if (!hasValidTSource && !hasTComponent && !hasNamespacedInjectedTranslator) {
-		// No valid translation imports, skip this file
+	if (isTestFile(fileName)) {
 		return { keys, warnings };
 	}
 
-	// Extract all t() calls
+	// Extract translation keys from properties ending in "Key" (e.g. titleKey: "tour.sidebar.title")
+	// These keys are defined in data files and consumed dynamically via t(step.titleKey).
+	keys.push(...extractKeyProperties(code));
+	keys.push(...extractKeyMappingObjects(code));
+	keys.push(...extractKeyFallbackObjects(code));
+	keys.push(...extractKeyFallbackTuples(code));
+	keys.push(...extractJsxKeyAttributes(code));
+	keys.push(...extractNamespacedKeyLiterals(code));
+
+	// Extract all t() calls. There is deliberately no import gate: many helpers receive `t`
+	// as a parameter (TFnType, BotTranslateFn, `tolgee.t`, local Translate aliases) and never
+	// import a translator. Skipping them made `tolgee sync` delete their keys as unused.
 	keys.push(...extractTCalls(code));
 
 	// Extract all <T> components
 	keys.push(...extractTComponents(code));
 
-	return { keys, warnings };
+	// A template-literal default (`Hello ${name}`) is interpolated by JS at runtime, but the
+	// extractor sees its source text and would push "${name}" to Tolgee as the English copy.
+	for (const key of keys) {
+		if (key.defaultValue?.includes("${")) {
+			key.defaultValue = undefined;
+			key.templateDefault = true;
+		}
+	}
+
+	const uniqueKeys = dedupeKeys(keys);
+	for (const key of uniqueKeys) {
+		if (key.templateDefault) {
+			warnings.push({
+				warning: `Template literal default for "${key.keyName}" ignored; use ICU {placeholders}`,
+				line: key.line,
+			});
+		}
+	}
+
+	return { keys: uniqueKeys.map(({ templateDefault: _, ...key }) => key), warnings };
+}
+
+/**
+ * Several extractors can match the same call (e.g. `t("approvals:approvals.title", "Title")` is
+ * also a namespaced literal). Keep one entry per namespace and key, preferring one with a default.
+ */
+function dedupeKeys(keys) {
+	const byId = new Map();
+	for (const key of keys) {
+		const id = `${key.namespace}\u0000${key.keyName}`;
+		const existing = byId.get(id);
+		if (!existing || (existing.defaultValue === undefined && key.defaultValue !== undefined)) {
+			byId.set(id, key);
+		}
+	}
+	return [...byId.values()];
+}
+
+/**
+ * Find the string value of the first `name: "..."` (or `name="..."` in JSX) inside `source`.
+ */
+function findStringProperty(source, names, separator) {
+	const match = source.match(new RegExp(`\\b(?:${names.join("|")})\\s*${separator}\\s*["'\`]`));
+	if (!match) return undefined;
+	return extractString(source, match.index + match[0].length - 1)?.value;
+}
+
+function toKeyResult(rawKey, defaultValue, line) {
+	const resolved = resolveKeyAndNamespace(rawKey);
+	if (!resolved.hasKnownNamespace || isDynamicKey(resolved.keyName)) return undefined;
+	return { keyName: resolved.keyName, defaultValue, namespace: resolved.namespace, line };
+}
+
+/**
+ * Extract `{ key: "some.key", fallback: "Default" }` entries from lookup tables of any name,
+ * e.g. `const PERIOD_TEXT: Record<DayPeriod, { key: string; fallback: string }> = {...}`.
+ * The default is read from a sibling `fallback`, `default`, `defaultValue` or `label`.
+ */
+function extractKeyFallbackObjects(code) {
+	const results = [];
+	const pattern = new RegExp(`\\bkey\\s*:\\s*(["'])(${KEY_SOURCE})\\1`, "g");
+
+	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
+		const objectStart = code.lastIndexOf("{", match.index);
+		const objectEnd = code.indexOf("}", match.index);
+		const objectContent =
+			objectStart >= 0 && objectEnd >= 0 ? code.slice(objectStart, objectEnd + 1) : "";
+		const defaultValue = findStringProperty(
+			objectContent,
+			["fallback", "default", "defaultValue", "label"],
+			":",
+		);
+		const result = toKeyResult(match[2], defaultValue, getLineNumber(code, match.index));
+		if (result) results.push(result);
+	}
+
+	return results;
+}
+
+/**
+ * Extract `["some.key", "Default", ...]` tuples, e.g. message tables consumed as
+ * `const [key, fallback] = MESSAGES[code]; t(key, fallback)`.
+ */
+function extractKeyFallbackTuples(code) {
+	const results = [];
+	const pattern = new RegExp(`\\[\\s*(["'])(${KEY_SOURCE})\\1\\s*,\\s*(?=["'\`])`, "g");
+
+	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
+		const defaultValue = extractString(code, match.index + match[0].length)?.value;
+		const result = toKeyResult(match[2], defaultValue, getLineNumber(code, match.index));
+		if (result) results.push(result);
+	}
+
+	return results;
+}
+
+const KNOWN_NAMESPACES = new Set([
+	DEFAULT_NAMESPACE,
+	"billing",
+	"teamsBot",
+	...Object.values(NAMESPACE_PREFIXES),
+	...NESTED_NAMESPACE_PREFIXES.map(([, namespace]) => namespace),
+]);
+
+/**
+ * Extract any string literal carrying an explicit known namespace ("approvals:approvals.title"),
+ * e.g. keys passed through local helpers like `text("approvals:approvals.evidence.entry", "Entry")`.
+ * A directly following string argument is used as the default.
+ */
+function extractNamespacedKeyLiterals(code) {
+	const results = [];
+	const pattern = new RegExp(`(["'])(${KEY_SOURCE})\\1(\\s*,\\s*(?=["'\`]))?`, "g");
+
+	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
+		const namespace = match[2].slice(0, match[2].indexOf(":"));
+		if (!match[2].includes(":") || !KNOWN_NAMESPACES.has(namespace)) continue;
+		const defaultValue = match[3]
+			? extractString(code, match.index + match[0].length)?.value
+			: undefined;
+		const result = toKeyResult(match[2], defaultValue, getLineNumber(code, match.index));
+		if (result) results.push(result);
+	}
+
+	return results;
+}
+
+/**
+ * Extract JSX key props such as
+ * `<LocalizedLoadingLabel translationKey="common:loading.calendar" fallback="Loading calendar" />`.
+ */
+function extractJsxKeyAttributes(code) {
+	const results = [];
+	const pattern = new RegExp(`\\b(\\w*Key)\\s*=\\s*(["'])(${KEY_SOURCE})\\2`, "g");
+
+	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
+		const tagStart = code.lastIndexOf("<", match.index);
+		const tagEnd = code.indexOf(">", match.index);
+		const attributes = tagStart >= 0 && tagEnd >= 0 ? code.slice(tagStart, tagEnd) : "";
+		const defaultValue = findStringProperty(
+			attributes,
+			["fallback", "defaultValue", `${match[1].slice(0, -3)}Default`],
+			"=",
+		);
+		const result = toKeyResult(match[3], defaultValue, getLineNumber(code, match.index));
+		if (result) results.push(result);
+	}
+
+	return results;
 }
 
 /**
@@ -598,8 +741,7 @@ function extractKeyMappingObjects(code) {
 function extractKeyProperties(code) {
 	const results = [];
 	// Match properties like: titleKey: "some.dotted.key" or descriptionKey: 'some.dotted.key'
-	const pattern =
-		/(\w+Key)\s*:\s*["']([a-z][a-z0-9A-Z]*(?::[a-z][a-z0-9A-Z]*)?(?:\.[a-z][a-z0-9A-Z]*)*)["']/g;
+	const pattern = new RegExp(`(\\w+Key)\\s*:\\s*["'](${KEY_SOURCE})["']`, "g");
 
 	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
 		const keyValue = match[2];

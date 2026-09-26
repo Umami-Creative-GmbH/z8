@@ -12,7 +12,12 @@ import type { EmployeeDirectoryRow } from "./employee-action-types";
 import type { EmployeeTableFeatures } from "./employee-table-features";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>
+			(fallback ?? _key).replace(/\{(\w+)\}/g, (match, name: string) =>
+				values?.[name] === undefined ? match : String(values[name]),
+			),
+	}),
 }));
 
 vi.mock("@/components/user-avatar", () => ({

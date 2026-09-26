@@ -145,7 +145,15 @@
     "wrong-account": "Falsches Konto",
     "wrong-account-description": "Sie sind mit einer anderen E-Mail-Adresse angemeldet. Melden Sie sich ab und verwenden Sie die eingeladene E-Mail-Adresse, um diese Einladung anzunehmen.",
     "wrong-account-description-short": "Verwenden Sie die eingeladene E-Mail-Adresse, um das Konto zu wechseln und fortzufahren.",
-    "you-are-invited": "Sie wurden eingeladen"
+    "you-are-invited": "Sie wurden eingeladen",
+    "confirm-password": "Passwort bestätigen",
+    "first-name": "Vorname",
+    "first-name-placeholder": "John…",
+    "invited-email-locked": "Verwende die eingeladene E-Mail-Adresse für dieses Konto, damit du der Organisation automatisch beitreten kannst.",
+    "last-name": "Nachname",
+    "last-name-placeholder": "Doe…",
+    "secure-password-description": "Verwenden Sie ein Passwort, das Sie an arbeitsreichen Tagen schnell wiedererkennen, ohne die Sicherheit zu gefährden.",
+    "secure-password-heading": "Sicheres Passwort festlegen"
   },
   "profile": {
     "change-password": "Passwort ändern",

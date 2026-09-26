@@ -6,7 +6,12 @@ import type { ApprovalInboxFastLaneGroup, ApprovalInboxItem } from "@/lib/approv
 import { ApprovalFastLanes } from "./approval-fast-lanes";
 
 vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+	useTranslate: () => ({
+		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>
+			(fallback ?? _key).replace(/\{(\w+)\}/g, (match, name: string) =>
+				values?.[name] === undefined ? match : String(values[name]),
+			),
+	}),
 }));
 
 function createApproval(

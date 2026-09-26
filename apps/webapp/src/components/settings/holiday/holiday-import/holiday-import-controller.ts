@@ -350,7 +350,7 @@ export function useHolidayImportController({
 				),
 				success: t(
 					"settings.holidays.import.presetSuccess",
-					`Created preset "{name}" with ${holidays.length} holidays`,
+					'Created preset "{name}" with {count} holidays',
 					{ name: state.presetName, count: holidays.length },
 				),
 			},
