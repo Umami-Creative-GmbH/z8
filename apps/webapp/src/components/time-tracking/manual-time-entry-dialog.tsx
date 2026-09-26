@@ -4,7 +4,7 @@ import { IconAlertCircle, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
@@ -422,8 +422,17 @@ function useManualEntryForm({
 	targetEmployeeId?: string;
 	isTimezoneContinuationPendingRef: React.RefObject<boolean>;
 }) {
+	const defaultsZone = effectiveTimezone ?? "UTC";
+	const { defaultDate, defaultClockInTime, defaultClockOutTime } = defaults;
+	// Read the clock when the zone or the caller's defaults change, not on every render:
+	// TanStack re-applies changed defaults to an untouched form.
+	const defaultValues = useMemo(
+		() =>
+			getDefaultValues(defaultsZone, { defaultDate, defaultClockInTime, defaultClockOutTime }),
+		[defaultsZone, defaultDate, defaultClockInTime, defaultClockOutTime],
+	);
 	return useForm({
-		defaultValues: getDefaultValues(effectiveTimezone ?? "UTC", defaults),
+		defaultValues,
 		onSubmit: async ({ value }) => {
 			if (isTimezoneContinuationPendingRef.current || !effectiveTimezone) {
 				return;
@@ -1703,12 +1712,15 @@ export function ManualTimeEntryDialog({
 	const handleOpenChange = (isOpen: boolean) => {
 		if (!isOpen) setContinueOnceZone(null);
 		if (isOpen) {
+			// Fresh values for this opening; the form's memoized defaults stay in place so
+			// TanStack does not re-apply them over these values on the next render.
 			form.reset(
 				getDefaultValues(defaultsTimezone, {
 					defaultDate,
 					defaultClockInTime,
 					defaultClockOutTime,
 				}),
+				{ keepDefaultValues: true },
 			);
 			revalidation.clearMessage();
 		}
@@ -1726,6 +1738,7 @@ export function ManualTimeEntryDialog({
 					defaultClockInTime,
 					defaultClockOutTime,
 				}),
+				{ keepDefaultValues: true },
 			);
 			revalidation.clearMessage();
 			// Another dialog in this tab may have settled a frozen command.
