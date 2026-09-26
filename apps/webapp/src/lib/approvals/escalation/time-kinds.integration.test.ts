@@ -14,9 +14,10 @@
  * owner, escalation replacement delivery, the Telegram webhook handler and
  * approval maintenance. Only the request/session, billing, notification
  * fan-out, the Next cache, the bot token vault, the delivery fast path and the
- * Telegram HTTP transport (fetch) are replaced. Clock-out and manual approval
- * are forced as in the #325 suite. Every control row is inserted directly:
- * production has no setter.
+ * Telegram HTTP transport (fetch) are replaced. Live clock-outs never route
+ * approval (#361), so a policy clock-out is a historical one seeded through the
+ * real ordinary submission; manual approval is forced as in the #325 suite.
+ * Every control row is inserted directly: production has no setter.
  */
 
 import { randomUUID } from "node:crypto";
@@ -33,7 +34,6 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceClockOutApproval: false,
 }));
 
 vi.mock("@/db", async () => {
@@ -140,8 +140,6 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	...(await importOriginal<
 		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
 	>()),
-	sendClockOutApprovalNotifications: async () => undefined,
-	sendClockOutApprovedNotification: async () => undefined,
 	sendManualEntryApprovalNotifications: async () => undefined,
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
@@ -153,8 +151,6 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (impo
 		>();
 	return {
 		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceClockOutApproval || (await original.checkClockOutNeedsApproval(employeeId)),
 		getEditCapabilityForPeriod: async () => ({ type: "approval_required" as const }),
 	};
 });
@@ -199,6 +195,9 @@ const { processEscalationReplacementDeliveries } = await import("./replacement-d
 const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
+const { submitHistoricalPolicyClockOut } = await import(
+	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
+);
 const { db } = await import("@/db");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -523,8 +522,8 @@ describeIntegration("escalated canonical time approvals (PostgreSQL)", () => {
 		}
 	}
 
+	/** Real clock-in and clock-out; with approval, a historical policy clock-out. */
 	async function recordWork(start: Instant, end: Instant, options: { approval: boolean }) {
-		harness.forceClockOutApproval = options.approval;
 		actAs(ids.requesterUser);
 		await expect(
 			clockIn("office", { instant: start, browserTimezone: "UTC" }),
@@ -536,14 +535,22 @@ describeIntegration("escalated canonical time approvals (PostgreSQL)", () => {
 				browserTimezone: "UTC",
 			}),
 		).resolves.toMatchObject({ success: true });
-		harness.forceClockOutApproval = false;
 		actAs(null);
 		const { rows } = await admin.query<{ id: string }>(
 			`select id from work_period
 			 where employee_id = $1 and start_time = $2 and deleted_at is null`,
 			[ids.requester, new Date(start.epochMilliseconds)],
 		);
-		return only(rows).id;
+		const workPeriodId = only(rows).id;
+		if (options.approval) {
+			await submitHistoricalPolicyClockOut({
+				organizationId: ids.organization,
+				employeeId: ids.requester,
+				userId: ids.requesterUser,
+				workPeriodId,
+			});
+		}
+		return workPeriodId;
 	}
 
 	async function submitManual(date = "2026-07-20") {
@@ -719,7 +726,6 @@ describeIntegration("escalated canonical time approvals (PostgreSQL)", () => {
 
 	beforeEach(() => {
 		actAs(null);
-		harness.forceClockOutApproval = false;
 		calls.length = 0;
 		installTelegramTransport();
 	});

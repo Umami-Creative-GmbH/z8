@@ -12,9 +12,10 @@
  * provisioning, notification delivery and Next cache boundaries are replaced.
  * Append admission, evidence capture and rollout modes are enabled per test
  * organization by inserting their control rows directly: production has no
- * setter. Live clock-out approval is production-false today
- * (`checkClockOutNeedsApproval`), so only that decision is forced; routing,
- * approval, split and evidence collaborators are real.
+ * setter. Live clock-outs never route approval (#361), so each policy clock-out
+ * is a historical one: a real clock-out, then its policy submission seeded through
+ * the real ordinary submission; routing, approval, split and evidence
+ * collaborators are real.
  */
 
 import { randomUUID } from "node:crypto";
@@ -29,7 +30,6 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceClockOutApproval: false,
 }));
 
 vi.mock("@/db", async () => {
@@ -93,21 +93,6 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	);
 });
 
-vi.mock("./approvals", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async () => undefined,
-	sendClockOutApprovedNotification: async () => undefined,
-}));
-
-vi.mock("./policy-helpers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("./policy-helpers")>();
-	return {
-		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceClockOutApproval || (await original.checkClockOutNeedsApproval(employeeId)),
-	};
-});
-
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
 	return {
@@ -128,6 +113,9 @@ await import("@/lib/approvals/init");
 const { approveApprovalInboxItem } = await import("@/lib/approvals/inbox/decision-service");
 const { derivePolicyClockOutBreakOperationId } = await import(
 	"@/lib/time-tracking/policy-clock-out-terminal-break"
+);
+const { submitHistoricalPolicyClockOut } = await import(
+	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -265,6 +253,41 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 		);
 	}
 
+	async function seedBreakPolicy() {
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into work_policy
+			 (id, organization_id, name, schedule_enabled, regulation_enabled, is_active, created_by, updated_at)
+			 values ($1, $2, 'T303 break', false, true, true, $3, $4)`,
+			[ids.policy, ids.organization, ids.managerUser, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
+			 values ($1, $2, 360, $3)`,
+			[ids.regulation, ids.policy, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_break_rule
+			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
+			 values ($1, $2, 360, 30, $3)`,
+			[ids.breakRule, ids.regulation, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active, created_by, updated_at)
+			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
+			[
+				ids.policyAssignment,
+				ids.policy,
+				ids.organization,
+				ids.requester,
+				ids.managerUser,
+				timestamp,
+			],
+		);
+	}
+
+	/** A real clock-out, submitted as a historical policy clock-out. */
 	async function policyClockOut(endAt: Instant = clockOutAt) {
 		actAs(ids.requesterUser);
 		await expect(
@@ -281,7 +304,15 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 			instant: endAt,
 			browserTimezone: "UTC",
 		});
-		expect(result).toMatchObject({ success: true, data: { pendingApproval: true } });
+		expect(result).toMatchObject({ success: true });
+		await seedBreakPolicy();
+		const submitted = await submitHistoricalPolicyClockOut({
+			organizationId: ids.organization,
+			employeeId: ids.requester,
+			userId: ids.requesterUser,
+			workPeriodId: period.id,
+		});
+		expect(submitted.result.kind).toMatch(/_created$/);
 		return { periodId: period.id, clockInId: period.clock_in_id, submissionId };
 	}
 
@@ -383,36 +414,6 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 			 values ($1, $2, $3, true, $4, now(), now())`,
 			[ids.managerLink, ids.requester, ids.manager, ids.managerUser],
 		);
-		await admin.query(
-			`insert into work_policy
-			 (id, organization_id, name, schedule_enabled, regulation_enabled, is_active, created_by, updated_at)
-			 values ($1, $2, 'T303 break', false, true, true, $3, $4)`,
-			[ids.policy, ids.organization, ids.managerUser, timestamp],
-		);
-		await admin.query(
-			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
-			 values ($1, $2, 360, $3)`,
-			[ids.regulation, ids.policy, timestamp],
-		);
-		await admin.query(
-			`insert into work_policy_break_rule
-			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-			 values ($1, $2, 360, 30, $3)`,
-			[ids.breakRule, ids.regulation, timestamp],
-		);
-		await admin.query(
-			`insert into work_policy_assignment
-			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active, created_by, updated_at)
-			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
-			[
-				ids.policyAssignment,
-				ids.policy,
-				ids.organization,
-				ids.requester,
-				ids.managerUser,
-				timestamp,
-			],
-		);
 		await setRollout("legacy");
 		await setAppend("active");
 	}
@@ -435,7 +436,6 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 	});
 
 	beforeEach(async () => {
-		harness.forceClockOutApproval = true;
 		await seed();
 	});
 
@@ -773,47 +773,6 @@ describeIntegration("policy clock-out terminal break splits on PostgreSQL", () =
 		const receipt = only(await receipts());
 		expect(receipt.result).toMatchObject({
 			decision: { lifecycle: { authority: "legacy", approvalRequestId: secondStage } },
-		});
-	});
-
-	it("splits a self-approved clock-out under the clock-out's own coordination", async () => {
-		// The requester is their own approver, so routing auto-completes the request.
-		await admin.query("update employee set role = 'manager' where id = $1", [ids.requester]);
-		await admin.query("update employee_managers set manager_id = $1 where id = $2", [
-			ids.requester,
-			ids.managerLink,
-		]);
-		actAs(ids.requesterUser);
-		await expect(
-			clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
-		).resolves.toMatchObject({ success: true });
-		await expect(
-			clockOut(undefined, undefined, {
-				submissionId: randomUUID(),
-				instant: clockOutAt,
-				browserTimezone: "UTC",
-			}),
-		).resolves.toMatchObject({ success: true });
-
-		expect(
-			(await periods()).map((period) => [period.approval_status, period.duration_minutes]),
-		).toEqual([
-			["approved", 360],
-			["approved", 31],
-		]);
-		const { rows: requests } = await admin.query<{ id: string; status: string }>(
-			"select id, status from approval_request where organization_id = $1",
-			[ids.organization],
-		);
-		const request = only(requests);
-		expect(request.status).toBe("approved");
-		expect(only(await receipts()).result).toMatchObject({
-			actors: {
-				triggeredBy: { kind: "human", userId: ids.requesterUser, employeeId: ids.requester },
-			},
-			decision: {
-				lifecycle: { authority: "legacy", approvalRequestId: request.id, observedWorkflowId: null },
-			},
 		});
 	});
 

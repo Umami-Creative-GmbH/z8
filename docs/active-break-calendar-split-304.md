@@ -48,9 +48,8 @@ running work at `now - breakMinutes` and resumes it at `now`.
 - **Adopted.** `closeAndResumeWork` runs with writer `web_clock_out` and the command
   `{ version, operationId, breakMinutes, browserTimezone, deviceInfo: "web" }`. Its
   behavior:
-  - It takes the clock-out approval decision, so a policy that requires approval
-    leaves the closed segment `pending` with its request. The legacy break marks it
-    `approved`; the adopted break does not promote it.
+  - It never routes approval (#361): the closed segment is approved work, as in the
+    legacy break.
   - The resumed work carries the closed work's project and category, and its
     location when the command names none. `startLiveWorkGraph` records carried
     attribution in the start result. The desktop break (#281) now carries project

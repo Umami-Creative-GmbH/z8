@@ -97,7 +97,6 @@ vi.mock("@/lib/billing/guard", () => ({
 
 vi.mock("./policy-helpers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./policy-helpers")>()),
-	checkClockOutNeedsApproval: async () => false,
 	getEditCapabilityForPeriod: async () => ({ type: "direct", reason: "no_policy" }),
 }));
 

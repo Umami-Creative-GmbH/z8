@@ -145,7 +145,9 @@ function ChangePolicyDialogFields({
 				)}
 			</form.Field>
 
-			<form.Subscribe<ChangePolicyFormValues["noApprovalRequired"]> selector={(state) => state.values.noApprovalRequired}>
+			<form.Subscribe<ChangePolicyFormValues["noApprovalRequired"]>
+				selector={(state) => state.values.noApprovalRequired}
+			>
 				{(noApprovalRequired: ChangePolicyFormValues["noApprovalRequired"]) =>
 					!noApprovalRequired && (
 						<>
@@ -209,10 +211,7 @@ function ChangePolicyDialogFields({
 							>
 								selector={(state) => [state.values.selfServiceDays, state.values.approvalDays]}
 							>
-								{([
-									selfServiceDays,
-									approvalDays,
-								]: [
+								{([selfServiceDays, approvalDays]: [
 									ChangePolicyFormValues["selfServiceDays"],
 									ChangePolicyFormValues["approvalDays"],
 								]) => (
@@ -220,50 +219,41 @@ function ChangePolicyDialogFields({
 										<p className="font-medium mb-1">
 											{t("settings.changePolicies.policySummary", "Policy Summary:")}
 										</p>
-										{selfServiceDays === 0 && approvalDays === 0 ? (
-											<p className="text-muted-foreground">
-												{t(
-													"settings.changePolicies.zeroDayPolicy",
-													"Every clock-out will require manager approval (strictest mode).",
-												)}
-											</p>
-										) : (
-											<ul className="text-muted-foreground space-y-1">
-												<li>
-													•{" "}
-													{selfServiceDays === 0
-														? t("settings.changePolicies.sameDayFree", "Same-day edits are free")
-														: t(
-																"settings.changePolicies.daysFree",
-																"Edits within {days} days are free",
-																{ days: selfServiceDays },
-															)}
-												</li>
-												{approvalDays > 0 && (
-													<li>
-														•{" "}
-														{t(
-															"settings.changePolicies.daysApproval",
-															"Days {start}-{end} require approval",
-															{
-																start: selfServiceDays + 1,
-																end: selfServiceDays + approvalDays,
-															},
+										<ul className="text-muted-foreground space-y-1">
+											<li>
+												•{" "}
+												{selfServiceDays === 0
+													? t("settings.changePolicies.sameDayFree", "Same-day edits are free")
+													: t(
+															"settings.changePolicies.daysFree",
+															"Edits within {days} days are free",
+															{ days: selfServiceDays },
 														)}
-													</li>
-												)}
+											</li>
+											{approvalDays > 0 && (
 												<li>
 													•{" "}
 													{t(
-														"settings.changePolicies.beyondWindow",
-														"Beyond {days} days: only admins/team leads can edit",
+														"settings.changePolicies.daysApproval",
+														"Days {start}-{end} require approval",
 														{
-															days: selfServiceDays + approvalDays,
+															start: selfServiceDays + 1,
+															end: selfServiceDays + approvalDays,
 														},
 													)}
 												</li>
-											</ul>
-										)}
+											)}
+											<li>
+												•{" "}
+												{t(
+													"settings.changePolicies.beyondWindow",
+													"Beyond {days} days: only admins/team leads can edit",
+													{
+														days: selfServiceDays + approvalDays,
+													},
+												)}
+											</li>
+										</ul>
 									</div>
 								)}
 							</form.Subscribe>
@@ -410,7 +400,9 @@ export function ChangePolicyDialog({
 						>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						<form.Subscribe<[boolean, boolean]> selector={(state) => [state.isDirty, state.isSubmitting]}>
+						<form.Subscribe<[boolean, boolean]>
+							selector={(state) => [state.isDirty, state.isSubmitting]}
+						>
 							{([isDirty, _isSubmitting]: [boolean, boolean]) => (
 								<Button type="submit" disabled={(!isDirty && isEditing) || isPending}>
 									{isPending && <IconLoader2 className="size-4 mr-2 animate-spin" />}

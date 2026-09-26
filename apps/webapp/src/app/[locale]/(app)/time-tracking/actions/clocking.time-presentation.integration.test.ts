@@ -15,10 +15,11 @@
  * the delivered card, and the real inbox detail renders the review. Only the
  * request/session, billing, notification fan-out, the Next cache, the bot
  * token vault, the delivery fast path and the Telegram HTTP transport (fetch)
- * are replaced. Live clock-out approval is production-false today, and manual
- * and correction approval depend on the change policy, so those decisions are
- * forced as in the #302 and #301 suites. Every control row is inserted
- * directly: production has no setter.
+ * are replaced. Live clock-outs never route approval (#361), so a policy
+ * clock-out is a historical one seeded through the real ordinary submission.
+ * Manual and correction approval depend on the change policy, so those
+ * decisions are forced as in the #302 and #301 suites. Every control row is
+ * inserted directly: production has no setter.
  */
 
 import { randomUUID } from "node:crypto";
@@ -34,7 +35,6 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceClockOutApproval: false,
 }));
 
 vi.mock("@/db", async () => {
@@ -135,8 +135,6 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 
 vi.mock("./approvals", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async () => undefined,
-	sendClockOutApprovedNotification: async () => undefined,
 	sendManualEntryApprovalNotifications: async () => undefined,
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
@@ -145,8 +143,6 @@ vi.mock("./policy-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./policy-helpers")>();
 	return {
 		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceClockOutApproval || (await original.checkClockOutNeedsApproval(employeeId)),
 		getEditCapabilityForPeriod: async () => ({ type: "approval_required" as const }),
 	};
 });
@@ -186,6 +182,9 @@ const { prepareApprovalPresentation } = await import("@/lib/approvals/presentati
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { sendTelegramNotification } = await import("@/lib/notifications/telegram-channel");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
+const { submitHistoricalPolicyClockOut } = await import(
+	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
+);
 const { workPeriodReceiptKeyDigest } = await import(
 	"@/lib/approvals/evidence/work-period-evidence"
 );
@@ -553,9 +552,16 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		);
 	}
 
-	/** Real clock-in and clock-out; with approval forced it is a policy clock-out. */
-	async function recordWork(start: Instant, end: Instant, options: { approval: boolean }) {
-		harness.forceClockOutApproval = options.approval;
+	/**
+	 * Real clock-in and clock-out; with approval it is then submitted as a historical
+	 * policy clock-out. A break policy takes effect only after the clock-out, so its
+	 * break is still owed at approval.
+	 */
+	async function recordWork(
+		start: Instant,
+		end: Instant,
+		options: { approval: boolean; breakPolicy?: boolean },
+	) {
 		actAs(ids.requesterUser);
 		await expect(
 			clockIn("office", { instant: start, browserTimezone: "UTC" }),
@@ -567,14 +573,23 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 				browserTimezone: "UTC",
 			}),
 		).resolves.toMatchObject({ success: true });
-		harness.forceClockOutApproval = false;
 		harness.userId = null;
 		const { rows } = await admin.query<{ id: string; clock_in_id: string; clock_out_id: string }>(
 			`select id, clock_in_id, clock_out_id from work_period
 			 where employee_id = $1 and start_time = $2 and deleted_at is null`,
 			[ids.requester, new Date(start.epochMilliseconds)],
 		);
-		return only(rows);
+		const work = only(rows);
+		if (options.breakPolicy) await seedBreakPolicy();
+		if (options.approval) {
+			await submitHistoricalPolicyClockOut({
+				organizationId: ids.organization,
+				employeeId: ids.requester,
+				userId: ids.requesterUser,
+				workPeriodId: work.id,
+			});
+		}
+		return work;
 	}
 
 	/** The pending compatibility request and canonical workflow of a period's cycle. */
@@ -693,7 +708,6 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
-		harness.forceClockOutApproval = false;
 		calls.length = 0;
 		installTelegramTransport();
 	});
@@ -711,10 +725,12 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 
 	it("delivers a bound policy clock-out card, decides it by one press and reviews every resulting segment", async () => {
 		await seed();
-		await seedBreakPolicy();
 		const start = parseInstant("2026-07-22T08:00:00Z");
 		// 7h 0m 40s without a break: approval inserts 30 minutes at 6h.
-		const work = await recordWork(start, start.add({ hours: 7, seconds: 40 }), { approval: true });
+		const work = await recordWork(start, start.add({ hours: 7, seconds: 40 }), {
+			approval: true,
+			breakPolicy: true,
+		});
 		const cycle = await pendingCycle(work.id, "policy_clock_out");
 
 		expect((await deliver()).outcomes).toEqual({ delivered: 1 });

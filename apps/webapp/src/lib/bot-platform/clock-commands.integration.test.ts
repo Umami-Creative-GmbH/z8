@@ -24,7 +24,6 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 
 const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
-	forceApproval: false,
 	telegram: [] as string[],
 	discord: [] as unknown[],
 	discordFailures: 0,
@@ -74,18 +73,6 @@ vi.mock("@/lib/billing/guard", () => ({
 	requireBillingForMutation: async () => ({ canAccess: true }),
 	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
 }));
-
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => {
-	const original =
-		await importOriginal<
-			typeof import("@/app/[locale]/(app)/time-tracking/actions/policy-helpers")
-		>();
-	return {
-		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceApproval || (await original.checkClockOutNeedsApproval(employeeId)),
-	};
-});
 
 vi.mock("@/lib/telegram/api", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/telegram/api")>()),
@@ -164,6 +151,8 @@ const ids = {
 	teamsTenant: "t277-tenant",
 	platformUser: "277001",
 	project: "e7700000-0000-4000-8000-000000000010",
+	changePolicy: "e7700000-0000-4000-8000-000000000020",
+	changePolicyAssignment: "e7700000-0000-4000-8000-000000000021",
 } as const;
 
 const botSettings = {
@@ -487,7 +476,6 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 	});
 
 	beforeEach(async () => {
-		harness.forceApproval = false;
 		harness.telegram.length = 0;
 		harness.discord.length = 0;
 		harness.discordFailures = 0;
@@ -770,16 +758,33 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		expect(await receipts()).toHaveLength(1);
 	});
 
-	it("refuses approval-routed clock-out before writing", async () => {
+	it("never routes a bot clock-out to approval, even under a same-day-only change policy", async () => {
+		await admin.query(
+			`insert into change_policy
+			 (id, organization_id, name, self_service_days, approval_days, no_approval_required,
+			  created_by, updated_at)
+			 values ($1, $2, 'Same day only', 0, 0, false, $3, now())`,
+			[ids.changePolicy, ids.organization, ids.user],
+		);
+		await admin.query(
+			`insert into change_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, priority, created_by, updated_at)
+			 values ($1, $2, $3, 'organization', 0, $4, now())`,
+			[ids.changePolicyAssignment, ids.changePolicy, ids.organization, ids.user],
+		);
 		await send("slack", "clockin", clockInAt);
-		harness.forceApproval = true;
-		const before = await snapshot();
+		const period = await activePeriod();
 
-		await expect(send("slack", "clockout", clockInAt.add({ hours: 1 }))).resolves.toBe(
-			"Time changes requiring approval are not supported for this action yet",
+		await expect(send("slack", "clockout", clockInAt.add({ hours: 1 }))).resolves.toContain(
+			"Clocked out at",
 		);
 
-		expect(await snapshot()).toEqual(before);
+		expect(await closedGraph(period.id)).toMatchObject({
+			is_active: false,
+			approval_status: "approved",
+			record_state: "approved",
+		});
+		expect((await snapshot()).approval_requests).toBe(0);
 	});
 
 	it.each(platforms)(

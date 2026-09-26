@@ -296,7 +296,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "All clock-outs",
       "allManagers": "All managers",
       "approvalDaysDescription": "Beyond self-service, employees can request changes within this window (requires approval). 0 = no additional window.",
       "approvalDaysLabel": "Approval Window (days)",
@@ -387,8 +386,7 @@
       "trustModeDescription": "Allow employees to edit entries without any approval requirements",
       "trustModeLabel": "Trust Mode",
       "updated": "Policy updated successfully",
-      "updateFailed": "Failed to update policy",
-      "zeroDayPolicy": "Every clock-out will require manager approval (strictest mode)."
+      "updateFailed": "Failed to update policy"
     },
     "coverageRules": {
       "addRule": "Add Rule",

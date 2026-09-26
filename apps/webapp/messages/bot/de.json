@@ -84,11 +84,9 @@
         "failed": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
         "notClockedIn": "Sie sind derzeit nicht eingestempelt.",
-        "policyCheckFailed": "Zeitfreigaberichtlinie konnte nicht verifiziert werden. Bitte versuchen Sie es erneut.",
         "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m.",
         "successAt": "Ausgestempelt um {time}.",
-        "unconfirmed": "Ihr Ausstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
-        "unsupportedApproval": "Zeitänderungen, die eine Genehmigung erfordern, werden für diese Aktion noch nicht unterstützt"
+        "unconfirmed": "Ihr Ausstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen."
       },
       "compliance": {
         "error": "Compliance-Daten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",

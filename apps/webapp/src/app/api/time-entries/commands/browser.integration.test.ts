@@ -90,14 +90,6 @@ vi.mock("@/lib/domain/request-origin", () => ({
 	},
 }));
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
-	>()),
-	sendClockOutApprovalNotifications: async () => {},
-	sendClockOutApprovedNotification: async () => {},
-}));
-
 const commands = await import("./route");
 const lookupRoute = await import("./[operationId]/route");
 

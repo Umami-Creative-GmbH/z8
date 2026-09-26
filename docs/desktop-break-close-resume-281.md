@@ -109,13 +109,13 @@ and writes its own receipt. Their behavior and receipts are unchanged.
 A failure at any step rolls back every write. Before the transaction, the server checks
 the target (`target_unknown` / `target_not_active`, never a different active period),
 delayed admission for the idle start, the return and the confirmation, holidays in each
-endpoint's own zone, and the approval decision. Replay, lookup and the race recheck work
+endpoint's own zone. The break never routes approval (#361). Replay, lookup and the race recheck work
 as in #275: an exact committed receipt replays without writes and returns no post-commit
 advice; a changed command under the same identity is a `collision`. Lookup reports
 `standing` only while both the closure and the resumed start still stand.
 
 After the commit, the closure gets the same follow-ups as a clock-out:
-compliance, break enforcement, surcharges and approval notification.
+compliance, break enforcement and surcharges.
 
 ## Desktop
 

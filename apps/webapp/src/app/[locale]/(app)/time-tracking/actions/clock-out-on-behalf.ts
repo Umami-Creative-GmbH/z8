@@ -374,9 +374,6 @@ async function closeFresh(
 			...transactionInput(actor, target, command),
 			workPeriodId: period.id,
 			endTime: eventInstant,
-			// On-behalf closure never routes the policy clock-out approval: the
-			// authorized actor's closure is approved work, as before adoption.
-			requiresApproval: false,
 			projectId: attributionValue(command.project),
 			workCategoryId: attributionValue(command.workCategory),
 		},
@@ -444,7 +441,6 @@ async function closeFresh(
 			outcome,
 			employee: { id: owner.id, organizationId },
 			userId: actor.userId,
-			needsClockOutApproval: false,
 			timezone: zone.timezone,
 			projectId:
 				result.kind === "operation" ? result.closed.result.attribution.projectId : result.projectId,

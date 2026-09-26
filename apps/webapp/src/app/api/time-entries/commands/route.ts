@@ -100,8 +100,6 @@ const REJECTION_STATUS: Record<
 	invalid_interval: 422,
 	clock_discontinuity: 422,
 	attribution_not_allowed: 422,
-	approval_routing: 422,
-	approval_policy_unavailable: 503,
 };
 
 export async function POST(request: Request) {

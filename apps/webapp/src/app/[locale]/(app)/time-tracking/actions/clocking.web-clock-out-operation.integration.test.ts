@@ -8,8 +8,7 @@
  * request/session, external billing provisioning, notification delivery, and Next
  * cache boundaries are replaced. Adoption is enabled per test organization by
  * inserting its append control row directly: production has no activation setter.
- * `checkClockOutNeedsApproval` is production-false today, so approval scenarios
- * force only that decision and keep the real routing and approval collaborators.
+ * Live clock-outs never route approval (#361).
  */
 
 import { randomUUID } from "node:crypto";
@@ -24,9 +23,7 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceApproval: false,
 	logs: [] as { context: unknown; message: unknown }[],
-	notifications: [] as { event: string; managerId: string }[],
 }));
 
 vi.mock("@/db", async () => {
@@ -75,25 +72,6 @@ vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
 }));
 
-vi.mock("./approvals", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async (params: { managerId: string }) => {
-		harness.notifications.push({ event: "pending", managerId: params.managerId });
-	},
-	sendClockOutApprovedNotification: async (params: { managerId: string }) => {
-		harness.notifications.push({ event: "approved", managerId: params.managerId });
-	},
-}));
-
-vi.mock("./policy-helpers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("./policy-helpers")>();
-	return {
-		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceApproval || (await original.checkClockOutNeedsApproval(employeeId)),
-	};
-});
-
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
 	const record = (context: unknown, message?: unknown) => {
@@ -140,7 +118,6 @@ const ids = {
 	requester: "e1000000-0000-4000-8000-000000000001",
 	manager: "e1000000-0000-4000-8000-000000000002",
 	peer: "e1000000-0000-4000-8000-000000000003",
-	managerLink: "e2000000-0000-4000-8000-000000000001",
 	projectA: "e3000000-0000-4000-8000-000000000001",
 	projectB: "e3000000-0000-4000-8000-000000000002",
 	assignmentB: "e3000000-0000-4000-8000-000000000003",
@@ -367,9 +344,7 @@ describeIntegration("web clock-out through the completed-work operation on Postg
 	});
 
 	beforeEach(async () => {
-		harness.forceApproval = false;
 		harness.logs.length = 0;
-		harness.notifications.length = 0;
 		await seed();
 	});
 
@@ -760,81 +735,6 @@ describeIntegration("web clock-out through the completed-work operation on Postg
 		await admin.query("drop function t274_fail() cascade");
 
 		expect(result).toEqual({ success: false, error: genericFailure });
-		expect(await snapshot()).toEqual(before);
-	});
-
-	it("commits required approval participation with the work and replays its original outcome", async () => {
-		harness.forceApproval = true;
-		await admin.query(
-			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
-			 values ($1, $2, $3, true, $4, now(), now())`,
-			[ids.managerLink, ids.requester, ids.manager, ids.managerUser],
-		);
-		const period = await clockInRequester();
-		const submissionId = randomUUID();
-
-		const result = await clockOutRequester({ submissionId });
-
-		expect(result).toMatchObject({ success: true, data: { pendingApproval: true } });
-		expect(await closedGraph(period.id)).toMatchObject({
-			approval_status: "pending",
-			record_state: "pending",
-			duration_minutes: 61,
-		});
-		const committed = await receipt(submissionId);
-		expect(committed.result).toMatchObject({
-			approvalState: "pending",
-			approval: {
-				participation: "policy_clock_out",
-				disposition: "executed",
-				outcome: expect.stringMatching(/_created$/),
-				approvalRequestId: expect.any(String),
-			},
-		});
-		expect(harness.notifications).toEqual([{ event: "pending", managerId: ids.manager }]);
-		const after = await snapshot();
-		expect(after.approval_requests).toBe(1);
-
-		await expect(clockOutRequester({ submissionId })).resolves.toEqual(result);
-		expect(await snapshot()).toEqual(after);
-		expect(harness.notifications).toHaveLength(1);
-	});
-
-	it("rolls back work and approval together when the approval request write fails", async () => {
-		harness.forceApproval = true;
-		await admin.query(
-			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
-				 values ($1, $2, $3, true, $4, now(), now())`,
-			[ids.managerLink, ids.requester, ids.manager, ids.managerUser],
-		);
-		await clockInRequester();
-		const before = await snapshot();
-		await admin.query(
-			`create function t274_fail() returns trigger language plpgsql as $$
-				 begin raise exception 't274 injected approval failure'; end $$`,
-		);
-		await admin.query(
-			"create trigger t274_fail before insert on approval_request for each row execute function t274_fail()",
-		);
-
-		const result = await clockOutRequester();
-		await admin.query("drop function t274_fail() cascade");
-
-		expect(result).toEqual({ success: false, error: genericFailure });
-		expect(await snapshot()).toEqual(before);
-		expect(harness.notifications).toEqual([]);
-	});
-
-	it("rolls back the closure when required approval cannot be routed", async () => {
-		harness.forceApproval = true;
-		await clockInRequester();
-		const before = await snapshot();
-
-		await expect(clockOutRequester()).resolves.toEqual({
-			success: false,
-			error: "No manager assigned to approve time changes",
-		});
-
 		expect(await snapshot()).toEqual(before);
 	});
 

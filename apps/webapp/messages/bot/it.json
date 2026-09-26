@@ -84,11 +84,9 @@
         "failed": "Impossibile timbrare l'uscita. Riprova.",
         "noProfile": "Profilo dipendente non trovato.",
         "notClockedIn": "Al momento non sei in servizio.",
-        "policyCheckFailed": "Impossibile verificare la politica di approvazione dell'orario. Riprova.",
         "success": "Uscita registrata alle {time}. Durata: {hours}h {minutes}m.",
         "successAt": "Uscita timbrata alle {time}.",
-        "unconfirmed": "Non è stato possibile confermare la timbratura di uscita. Controlla il tuo stato prima di riprovare.",
-        "unsupportedApproval": "Le modifiche all'orario che richiedono approvazione non sono ancora supportate per questa azione"
+        "unconfirmed": "Non è stato possibile confermare la timbratura di uscita. Controlla il tuo stato prima di riprovare."
       },
       "compliance": {
         "error": "Impossibile recuperare i dati di conformità. Riprova più tardi.",

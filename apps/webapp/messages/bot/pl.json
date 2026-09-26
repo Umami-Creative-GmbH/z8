@@ -84,11 +84,9 @@
         "failed": "Nie udało się zarejestrować zakończenia pracy. Spróbuj ponownie.",
         "noProfile": "Nie znaleziono profilu pracownika.",
         "notClockedIn": "Obecnie nie jesteś w pracy.",
-        "policyCheckFailed": "Nie można zweryfikować polityki zatwierdzania czasu. Spróbuj ponownie.",
         "success": "Zakończono pracę o {time}. Czas trwania: {hours} godz. {minutes} min.",
         "successAt": "Zakończenie pracy zarejestrowano o {time}.",
-        "unconfirmed": "Nie udało się potwierdzić zakończenia pracy. Sprawdź swój status przed ponowną próbą.",
-        "unsupportedApproval": "Zmiany czasu wymagające zatwierdzenia nie są jeszcze obsługiwane dla tej akcji"
+        "unconfirmed": "Nie udało się potwierdzić zakończenia pracy. Sprawdź swój status przed ponowną próbą."
       },
       "compliance": {
         "error": "Nie udało się pobrać danych o zgodności. Spróbuj ponownie później.",

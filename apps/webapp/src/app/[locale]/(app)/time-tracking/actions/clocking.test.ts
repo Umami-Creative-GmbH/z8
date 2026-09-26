@@ -23,12 +23,9 @@ const mockState = vi.hoisted(() => ({
 	findWorkCategory: vi.fn(),
 	employeeHasAccessToCategory: vi.fn(),
 	createTimeEntry: vi.fn(),
-	checkClockOutNeedsApproval: vi.fn(),
 	getEditCapabilityForPeriod: vi.fn(),
 	isOrgAdminCasl: vi.fn(),
 	createClockOutApprovalRequest: vi.fn(),
-	sendClockOutApprovalNotifications: vi.fn(),
-	sendClockOutApprovedNotification: vi.fn(),
 	createManualEntryApprovalRequest: vi.fn(),
 	executeOrdinarySubmission: vi.fn(),
 	useRealOrdinarySubmission: false,
@@ -407,9 +404,6 @@ vi.mock("../actions.canonical", () => ({
 vi.mock("./approvals", () => ({
 	createClockOutApprovalRequest: mockState.createClockOutApprovalRequest,
 	createManualEntryApprovalRequest: mockState.createManualEntryApprovalRequest,
-	sendClockOutApprovalNotifications:
-		mockState.sendClockOutApprovalNotifications,
-	sendClockOutApprovedNotification: mockState.sendClockOutApprovedNotification,
 	sendManualEntryApprovalNotifications:
 		mockState.sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification:
@@ -437,7 +431,6 @@ vi.mock("./entry-helpers", () => ({
 }));
 
 vi.mock("./policy-helpers", () => ({
-	checkClockOutNeedsApproval: mockState.checkClockOutNeedsApproval,
 	getEditCapabilityForPeriod: mockState.getEditCapabilityForPeriod,
 }));
 
@@ -1173,7 +1166,6 @@ describe("clockOut", () => {
 			type: "clock_out",
 			timestamp: new Date("2026-05-04T10:00:00.000Z"),
 		});
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
 		mockState.calculateAndPersistSurcharges.mockResolvedValue(undefined);
 		mockState.reconcileImmediateSurcharges.mockResolvedValue(undefined);
 		mockState.checkComplianceAfterClockOut.mockResolvedValue([]);
@@ -1192,8 +1184,6 @@ describe("clockOut", () => {
 			kind: "default_created",
 			approvalRequestId: "approval-1",
 		});
-		mockState.sendClockOutApprovalNotifications.mockResolvedValue(undefined);
-		mockState.sendClockOutApprovedNotification.mockResolvedValue(undefined);
 		mockState.executeOrdinarySubmission.mockImplementation(async (input) => {
 			const result = await mockState.createClockOutApprovalRequest(input);
 			return {
@@ -1263,9 +1253,7 @@ describe("clockOut", () => {
 		});
 	});
 
-	it("coordinates approval before closing work through the web action", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-
+	it("acquires the policy clock-out write gate before closing work", async () => {
 		const result = await clockOut();
 
 		expect(result.success).toBe(true);
@@ -1278,88 +1266,72 @@ describe("clockOut", () => {
 		).toBeLessThan(mockState.clockingClockOut.mock.invocationCallOrder[0]);
 	});
 
-	it.each([false, true])(
-		"composes the real closer and approval failure in the outer transaction (approval: %s)",
-		async (approvalRequired) => {
-			mockState.checkClockOutNeedsApproval.mockResolvedValue(approvalRequired);
-			mockState.useRealOrdinarySubmission = true;
-			mockState.findManagerLinks.mockResolvedValue([]);
-			let contextAfterCommit:
-				| Parameters<
-						NonNullable<
-							import("@/lib/time-tracking/clocking-service").ClockingDependencies["storeForCoordinatedTransaction"]
-						>
-				  >[0]
-				| undefined;
-			const service = createClockingService({
-				transaction: async () => {
-					throw new Error("Nested clocking transaction");
-				},
-				storeForCoordinatedTransaction: (context) => {
-					contextAfterCommit = context;
-					return {
-						transaction: context.db,
-						acquireAdoptionGate: async () => undefined,
-						readAppendAdmission: async () => "legacy" as const,
-						hasCompletedWorkEndingAfter: async () => false,
-						lockEmployee: async () => {
-							throw new Error("Late employee acquisition");
-						},
-						isOrganizationMember: async (employeeId, organizationId) =>
-							employeeId === "employee-1" && organizationId === "org-1",
-						getEntryByActionId: async () => null,
-						getActivePeriod: async () => ({
-							id: "period-1",
-							startTime: new Date("2026-05-04T09:00:00Z"),
-						}),
-						getLatestHash: async () => null,
-						insertEntry: async (values) => ({
-							...values,
-							id: defaultSubmissionId,
-						}),
-						insertActivePeriod: async () => {
-							throw new Error("Unexpected opening");
-						},
-						closeActivePeriod: async (_id, _employee, _org, patch) => {
-							expect(patch.durationMinutes).toBe(60);
-							return { id: "period-1" };
-						},
-					};
-				},
-			});
-			mockState.clockingClockOut.mockImplementation(service.clockOut);
-
-			const result = await clockOut(undefined, undefined, {
-				browserTimezone: "Europe/Berlin",
-			});
-
-			expect(mockState.transaction).toHaveBeenCalledTimes(2); // lookup and fresh attempt
-			expect(contextAfterCommit?.admission).toBe("legacy");
-			expect(() =>
-				contextAfterCommit?.assertEmployee("org-1", "employee-1"),
-			).toThrow("no longer active");
-			if (approvalRequired) {
-				expect(result).toEqual({
-					success: false,
-					error: "No manager assigned to approve time changes",
-				});
-				expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-				expect(
-					mockState.sendClockOutApprovalNotifications,
-				).not.toHaveBeenCalled();
-			} else {
-				expect(result).toMatchObject({
-					success: true,
-					data: {
-						id: defaultSubmissionId,
-						timestamp: new Date("2026-05-04T10:00:00Z"),
-						timezone: "Europe/Berlin",
-						utcOffsetMinutes: 120,
+	it("composes the real closer in the outer transaction", async () => {
+		mockState.useRealOrdinarySubmission = true;
+		let contextAfterCommit:
+			| Parameters<
+					NonNullable<
+						import("@/lib/time-tracking/clocking-service").ClockingDependencies["storeForCoordinatedTransaction"]
+					>
+			  >[0]
+			| undefined;
+		const service = createClockingService({
+			transaction: async () => {
+				throw new Error("Nested clocking transaction");
+			},
+			storeForCoordinatedTransaction: (context) => {
+				contextAfterCommit = context;
+				return {
+					transaction: context.db,
+					acquireAdoptionGate: async () => undefined,
+					readAppendAdmission: async () => "legacy" as const,
+					hasCompletedWorkEndingAfter: async () => false,
+					lockEmployee: async () => {
+						throw new Error("Late employee acquisition");
 					},
-				});
-			}
-		},
-	);
+					isOrganizationMember: async (employeeId, organizationId) =>
+						employeeId === "employee-1" && organizationId === "org-1",
+					getEntryByActionId: async () => null,
+					getActivePeriod: async () => ({
+						id: "period-1",
+						startTime: new Date("2026-05-04T09:00:00Z"),
+					}),
+					getLatestHash: async () => null,
+					insertEntry: async (values) => ({
+						...values,
+						id: defaultSubmissionId,
+					}),
+					insertActivePeriod: async () => {
+						throw new Error("Unexpected opening");
+					},
+					closeActivePeriod: async (_id, _employee, _org, patch) => {
+						expect(patch.durationMinutes).toBe(60);
+						return { id: "period-1" };
+					},
+				};
+			},
+		});
+		mockState.clockingClockOut.mockImplementation(service.clockOut);
+
+		const result = await clockOut(undefined, undefined, {
+			browserTimezone: "Europe/Berlin",
+		});
+
+		expect(mockState.transaction).toHaveBeenCalledTimes(2); // lookup and fresh attempt
+		expect(contextAfterCommit?.admission).toBe("legacy");
+		expect(() =>
+			contextAfterCommit?.assertEmployee("org-1", "employee-1"),
+		).toThrow("no longer active");
+		expect(result).toMatchObject({
+			success: true,
+			data: {
+				id: defaultSubmissionId,
+				timestamp: new Date("2026-05-04T10:00:00Z"),
+				timezone: "Europe/Berlin",
+				utcOffsetMinutes: 120,
+			},
+		});
+	});
 
 	it("rolls back and reroutes changed protected resources before closing work", async () => {
 		let transactions = 0;
@@ -1397,200 +1369,6 @@ describe("clockOut", () => {
 		expect(mockState.clockingClockOut).toHaveBeenCalledTimes(1);
 	});
 
-	it.each(["default", "manager-change", "policy-change"])(
-		"commits through the real approval runtime and restarts late scope changes (%s)",
-		async (scenario) => {
-			const changeManager = scenario === "manager-change";
-			const changePolicy = scenario === "policy-change";
-			mockState.useRealApprovalRuntime = true;
-			mockState.useRealOrdinarySubmission = true;
-			mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-			const inserted: Record<string, unknown>[] = [];
-			const statements: { sql: string; params: unknown[] }[] = [];
-			let managerId = "manager-1";
-			let directoryReads = 0;
-			let policyId = "policy-1";
-			let policyReads = 0;
-			mockState.findManagerLinks.mockImplementation(async () => [
-				{ employeeId: "employee-1", managerId, isPrimary: true },
-			]);
-			const original = mockState.transaction.getMockImplementation()!;
-			mockState.transaction.mockImplementation((callback) =>
-				original(
-					async (tx: {
-						execute(query: SQL): Promise<unknown>;
-						query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
-						insert?: () => {
-							values(values: Record<string, unknown>): {
-								returning(): Promise<{ id: string }[]>;
-							};
-						};
-					}) => {
-						const execute = tx.execute;
-						tx.execute = async (query: SQL) => {
-							const compiled = new PgDialect().sqlToQuery(query);
-							statements.push(compiled);
-							if (compiled.sql.includes("select lifecycle_mode"))
-								return { rows: [{ lifecycle_mode: "legacy" }] };
-							if (compiled.sql.includes("web-clock-out:route"))
-								return {
-									rows: [
-										...clockOutRoutingRows(),
-										...(changePolicy
-											? [
-													{
-														table: "approval_policy",
-														id: policyId,
-														binding: policyId,
-														source: false,
-													},
-													{
-														table: "approval_policy_stage",
-														id: "policy-stage-1",
-														binding: "stage",
-														source: false,
-													},
-												]
-											: []),
-										{
-											table: "employee",
-											id: managerId,
-											binding: "manager",
-											source: false,
-										},
-									],
-								};
-							return execute(query);
-						};
-						tx.query.employee.findMany.mockImplementation(async () => {
-							directoryReads += 1;
-							if (changeManager && directoryReads === 4)
-								managerId = "manager-2";
-							return [
-								{
-									id: "employee-1",
-									userId: "user-1",
-									organizationId: "org-1",
-									isActive: true,
-									role: "employee",
-								},
-								{
-									id: "manager-1",
-									organizationId: "org-1",
-									isActive: true,
-									role: "manager",
-								},
-								{
-									id: "manager-2",
-									organizationId: "org-1",
-									isActive: true,
-									role: "manager",
-								},
-							];
-						});
-						if (changePolicy)
-							tx.query.approvalPolicy.findMany.mockImplementation(async () => {
-								policyReads += 1;
-								if (policyReads === 4) policyId = "policy-2";
-								return [
-									{
-										id: policyId,
-										organizationId: "org-1",
-										name: "Clock-out",
-										isActive: true,
-										priority: 1,
-										conditions: [],
-										stages: [
-											{
-												id: "policy-stage-1",
-												stepOrder: 1,
-												label: "Manager",
-												approverType: "specific_employee",
-												approverEmployeeId: "manager-1",
-												fallbackBehavior: "fail",
-											},
-										],
-									},
-								];
-							});
-						tx.query.approvalRequest.findFirst = vi.fn(async () => ({
-							id: "approval-1",
-							approverId: managerId,
-						}));
-						tx.insert = () => ({
-							values: (values: Record<string, unknown>) => {
-								inserted.push(values);
-								return { returning: async () => [{ id: "approval-1" }] };
-							},
-						});
-						return callback(tx);
-					},
-				),
-			);
-			const service = createClockingService({
-				transaction: async () => {
-					throw new Error("Nested clocking transaction");
-				},
-				storeForCoordinatedTransaction: (context) => ({
-					transaction: context.db,
-					acquireAdoptionGate: async () => undefined,
-					readAppendAdmission: async () => "legacy" as const,
-					hasCompletedWorkEndingAfter: async () => false,
-					lockEmployee: async () => {
-						throw new Error("Late employee acquisition");
-					},
-					isOrganizationMember: async () => true,
-					getEntryByActionId: async () => null,
-					getActivePeriod: async () => ({
-						id: "period-1",
-						startTime: new Date("2026-05-04T09:00:00Z"),
-					}),
-					getLatestHash: async () => null,
-					insertEntry: async (values) => ({
-						...values,
-						id: defaultSubmissionId,
-					}),
-					insertActivePeriod: async () => {
-						throw new Error("Unexpected opening");
-					},
-					closeActivePeriod: async () => ({ id: "period-1" }),
-				}),
-			});
-			mockState.clockingClockOut.mockImplementation(service.clockOut);
-
-			const result = await clockOut();
-
-			expect(result).toMatchObject({
-				success: true,
-				data: { id: defaultSubmissionId, pendingApproval: true },
-			});
-			expect(mockState.transaction).toHaveBeenCalledTimes(
-				scenario === "default" ? 2 : 3,
-			);
-			expect(inserted).toContainEqual(
-				expect.objectContaining({
-					entityId: "period-1",
-					approverId: managerId,
-					status: "pending",
-				}),
-			);
-			expect(
-				mockState.sendClockOutApprovalNotifications,
-			).toHaveBeenCalledOnce();
-			const managerLock = statements.findIndex(
-				({ sql, params }) =>
-					sql.includes("pg_advisory_xact_lock(") && params[0] === "manager-1",
-			);
-			const rowLock = statements.findIndex(
-				({ sql }) =>
-					sql.includes('from "organization"') &&
-					sql.includes("web-clock-out:lock"),
-			);
-			expect(managerLock).toBeGreaterThan(-1);
-			expect(statements[rowLock].sql).toContain("for no key update");
-		},
-	);
-
 	it("rejects suspended organizations before creating a clock-out entry", async () => {
 		mockState.requireBillingForMutation.mockResolvedValue({
 			canAccess: false,
@@ -1610,167 +1388,6 @@ describe("clockOut", () => {
 		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
 	});
 
-	it("routes approval-required live clock-out through the primary manager link", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-
-		const result = await clockOut();
-
-		expect(result.success).toBe(true);
-		expect(mockState.checkClockOutNeedsApproval).toHaveBeenCalledWith(
-			"employee-1",
-		);
-		expect(result.success && result.data.pendingApproval).toBe(true);
-		expect(mockState.updateSet).toHaveBeenCalledWith(
-			expect.objectContaining({
-				approvalStatus: "pending",
-				pendingChanges: expect.objectContaining({
-					originalStartTime: "2026-05-04T09:00:00.000Z",
-					originalEndTime: "2026-05-04T10:00:00.000Z",
-					originalDurationMinutes: 60,
-					requestedBy: "user-1",
-					isNewClockOut: true,
-				}),
-			}),
-		);
-		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
-			expect.objectContaining({
-				workPeriodId: "period-1",
-				requesterEmployeeId: "employee-1",
-				defaultApproverId: null,
-				organizationId: "org-1",
-				kind: "policy_clock_out",
-				dbService: expect.anything(),
-				context: expect.anything(),
-			}),
-		);
-		expect(mockState.findManagerLinks).toHaveBeenCalled();
-		const submission = mockState.executeOrdinarySubmission.mock.calls[0][0];
-		expect(submission.dbService.db).toBe(submission.context.dbService.db);
-		expect(mockState.clockingClockOut.mock.calls[0][0].coordination.db).toBe(
-			submission.context.dbService.db,
-		);
-		expect(mockState.clockingClockOut).toHaveBeenCalledWith(
-			expect.objectContaining({ actionId: defaultSubmissionId }),
-		);
-		expect(mockState.revalidatePath).toHaveBeenCalledOnce();
-		expect(mockState.revalidatePath).toHaveBeenCalledWith("/time-tracking");
-		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-		expect(mockState.sendClockOutApprovalNotifications).toHaveBeenCalledWith(
-			expect.objectContaining({ dedupeKey: "clock-out-submission:result" }),
-		);
-	});
-
-	it("does not report a pending clock-out when its approval auto-completes", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.createClockOutApprovalRequest.mockResolvedValue({
-			kind: "auto_completed",
-			approvalRequestId: "approval-1",
-			chainInstanceId: null,
-			reason: "requester_is_approver",
-		});
-
-		const result = await clockOut();
-
-		expect(result.success).toBe(true);
-		expect(result.success && result.data.pendingApproval).toBe(false);
-		expect(mockState.createClockOutApprovalRequest).toHaveBeenCalledOnce();
-		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-	});
-
-	it.each([
-		{ label: "pending", autoCompleted: false },
-		{ label: "requester auto-completed", autoCompleted: true },
-	])(
-		"preserves policy clock-out parity and exact replay when $label",
-		async ({ autoCompleted }) => {
-			mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-			if (autoCompleted) {
-				mockState.createClockOutApprovalRequest.mockResolvedValue({
-					kind: "auto_completed",
-					approvalRequestId: "approval-1",
-					chainInstanceId: null,
-					reason: "requester_is_approver",
-				});
-			}
-			mockState.enforceBreaksAfterClockOut.mockImplementation(async () => {
-				mockState.updateSet({
-					endTime: new Date("2026-05-04T09:30:00.000Z"),
-					durationMinutes: 30,
-				});
-				return { wasAdjusted: true, adjustment: { breakMinutes: 30 } };
-			});
-
-			const first = await clockOut();
-
-			expect(first.success).toBe(true);
-			expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-			expect(mockState.updateSet).toHaveBeenCalledTimes(1);
-			expect(mockState.updateSet).toHaveBeenCalledWith(
-				expect.objectContaining({
-					pendingChanges: expect.objectContaining({
-						originalEndTime: "2026-05-04T10:00:00.000Z",
-						originalDurationMinutes: 60,
-					}),
-				}),
-			);
-			expect(mockState.createCanonicalWorkRecord).toHaveBeenCalledWith(
-				expect.objectContaining({
-					endAt: new Date("2026-05-04T10:00:00.000Z"),
-					durationMinutes: 60,
-				}),
-				expect.anything(),
-			);
-
-			mockState.findPolicyPeriods.mockResolvedValue([
-				policyReplayPeriod(
-					defaultSubmissionId,
-					autoCompleted ? null : undefined,
-				),
-			]);
-			setPolicyCanonicalEvidence({
-				approvalState: autoCompleted ? "approved" : "pending",
-			});
-			mockState.findApprovalRequests.mockResolvedValue([
-				{
-					metadata: autoCompleted
-						? requesterAutoApprovalMetadata("policy_clock_out", "period-1")
-						: approvalRequestMetadata("policy_clock_out", "period-1"),
-				},
-			]);
-			mockState.executeOrdinarySubmission.mockResolvedValueOnce({
-				result: autoCompleted
-					? { kind: "auto_completed", approvalRequestId: "approval-1" }
-					: { kind: "default_created", approvalRequestId: "approval-1" },
-				disposition: "replayed",
-				postCommit: null,
-			});
-
-			const replay = await clockOut();
-
-			expect(replay.success).toBe(true);
-			expect(mockState.clockingClockOut).toHaveBeenCalledOnce();
-			expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-		},
-	);
-
-	it("keeps committed clock-out success when post-commit notification fails", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.sendClockOutApprovalNotifications.mockRejectedValueOnce(
-			new Error("notification unavailable"),
-		);
-
-		const result = await clockOut();
-
-		expect(result.success).toBe(true);
-		expect(mockState.logger.error).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-1",
-				workPeriodId: "period-1",
-			}),
-			"Failed to dispatch clock-out approval notification after commit",
-		);
-	});
-
 	it("reports committed work as saved when a post-commit step throws", async () => {
 		mockState.validateProjectAssignment.mockResolvedValue({ isValid: true });
 		mockState.checkProjectBudgetAfterClockOut.mockImplementation(() => {
@@ -1787,27 +1404,8 @@ describe("clockOut", () => {
 		);
 	});
 
-	it("does not repeat post-commit effects for an observed clock-out replay", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.executeOrdinarySubmission.mockResolvedValueOnce({
-			result: { kind: "default_created", approvalRequestId: "approval-1" },
-			disposition: "replayed",
-			postCommit: null,
-		});
-		const result = await clockOut();
-
-		expect(result.success).toBe(true);
-		expect(mockState.sendClockOutApprovalNotifications).not.toHaveBeenCalled();
-		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
-		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-		expect(mockState.revalidatePath).not.toHaveBeenCalled();
-	});
-
 	it("recovers an exact completed policy source while a later period is active", async () => {
 		const submissionId = "10000000-0000-4000-8000-000000000099";
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.getActiveWorkPeriod.mockResolvedValue({
 			id: "period-2",
 			startTime: new Date("2026-05-04T11:00:00.000Z"),
@@ -1877,7 +1475,6 @@ describe("clockOut", () => {
 		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
 		expect(mockState.createClockOutApprovalRequest).not.toHaveBeenCalled();
 		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledOnce();
-		expect(mockState.sendClockOutApprovalNotifications).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
@@ -1967,7 +1564,6 @@ describe("clockOut", () => {
 	});
 
 	it("preserves auto-completed approval outcome for an in-transaction clock-out replay", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.findPolicyPeriods
 			.mockResolvedValueOnce([])
 			.mockResolvedValueOnce([policyReplayPeriod(defaultSubmissionId)]);
@@ -1997,7 +1593,6 @@ describe("clockOut", () => {
 
 	it("uses persisted policy evidence after an in-transaction replay despite policy drift", async () => {
 		const submissionId = defaultSubmissionId;
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
 		mockState.findPolicyPeriods
 			.mockResolvedValueOnce([])
 			.mockResolvedValueOnce([policyReplayPeriod(submissionId)]);
@@ -2199,7 +1794,6 @@ describe("clockOut", () => {
 		});
 		expect(durableState.approvalWrites).toEqual([]);
 		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
-		expect(mockState.sendClockOutApprovalNotifications).not.toHaveBeenCalled();
 		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
@@ -2365,31 +1959,6 @@ describe("clockOut", () => {
 		},
 	);
 
-	it("lets the shared boundary resolve a custom policy without a default manager", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.findManagerLinks.mockResolvedValue([]);
-		mockState.createClockOutApprovalRequest.mockResolvedValue({
-			kind: "chain_created",
-			approvalRequestId: "approval-1",
-			chainInstanceId: "chain-1",
-		});
-
-		const result = await clockOut(undefined, undefined, {
-			submissionId: "10000000-0000-4000-8000-000000000099",
-		});
-
-		expect(result).toMatchObject({
-			success: true,
-			data: { pendingApproval: true },
-		});
-		expect(mockState.executeOrdinarySubmission).toHaveBeenCalledWith(
-			expect.objectContaining({
-				defaultApproverId: null,
-				submissionId: "10000000-0000-4000-8000-000000000099",
-			}),
-		);
-	});
-
 	it("rejects a noncanonical clock-out submission id before source writes", async () => {
 		const result = await clockOut(undefined, undefined, {
 			submissionId: "a0000000-0000-4000-8000-000000000099".toUpperCase(),
@@ -2451,65 +2020,6 @@ describe("clockOut", () => {
 		);
 		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
 		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
-	});
-
-	it("rejects approval-required clock-out when no manager is assigned", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.findManagerLinks.mockResolvedValue([]);
-		mockState.useRealOrdinarySubmission = true;
-
-		const result = await clockOut();
-
-		expect(result).toEqual({
-			success: false,
-			error: "No manager assigned to approve time changes",
-		});
-	});
-
-	it.each([
-		new ValidationError({
-			field: "managerId",
-			message: "private manager resolution detail",
-		}),
-		new ValidationError({
-			field: "approvalPolicyStage.approverType",
-			message: "No manager assigned to approve time changes",
-		}),
-		new ValidationError({
-			field: "managerId",
-			message: "No manager assigned to approve time changes",
-		}),
-		Object.assign(Object.create(ValidationError.prototype), {
-			field: "managerId",
-			message: "No manager assigned to approve time changes",
-		}),
-	])("redacts non-canonical clock-out validation errors %#", async (error) => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.executeOrdinarySubmission.mockRejectedValueOnce(error);
-
-		const result = await clockOut();
-
-		expect(result).toEqual({
-			success: false,
-			error: "Failed to clock out. Please try again.",
-		});
-		expect(JSON.stringify(result)).not.toContain(error.message);
-	});
-
-	it("fails closed when the clock-out approval check fails before mutating", async () => {
-		mockState.checkClockOutNeedsApproval.mockRejectedValueOnce(
-			new Error("policy unavailable"),
-		);
-
-		const result = await clockOut();
-
-		expect(result).toEqual({
-			success: false,
-			error: "Could not verify time approval policy. Please try again.",
-		});
-		expect(mockState.clockingClockOut).not.toHaveBeenCalled();
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.updateSet).not.toHaveBeenCalled();
 	});
 
 	it("marks the work balance dirty from the active period start date after closing the period", async () => {
@@ -2688,7 +2198,8 @@ describe("clockOut", () => {
 		expect(mockState.createCanonicalWorkRecord).not.toHaveBeenCalled();
 		expect(mockState.closeActiveWork).toHaveBeenCalledTimes(1);
 		const [context, input] = mockState.closeActiveWork.mock.calls[0];
-		expect(context).toMatchObject({ admission: "append", requiresApproval: false });
+		expect(context).toMatchObject({ admission: "append" });
+		expect(context).not.toHaveProperty("requiresApproval");
 		expect(input).toMatchObject({
 			organizationId: "org-1",
 			employeeId: "employee-1",
@@ -2768,80 +2279,6 @@ describe("clockOut", () => {
 		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
 	});
 
-	it("rolls back the live clock-out source rows when approval creation fails", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		const durableState = {
-			entries: [] as string[],
-			periods: [] as string[],
-			canonicalRecords: [] as string[],
-			approvals: [] as string[],
-		};
-		mockState.createCanonicalWorkRecord.mockImplementation(async () => {
-			durableState.canonicalRecords.push("canonical-1");
-			return { id: "canonical-1" };
-		});
-		mockState.createClockOutApprovalRequest.mockImplementation(async () => {
-			durableState.approvals.push("approval-1");
-			throw new Error("approval creation failed");
-		});
-		mockState.clockingClockOut.mockImplementation(async (input) => {
-			const snapshot = Object.fromEntries(
-				Object.entries(durableState).map(([key, rows]) => [key, rows.length]),
-			) as Record<keyof typeof durableState, number>;
-			try {
-				const activePeriod = {
-					id: "period-1",
-					startTime: new Date("2026-05-04T09:00:00.000Z"),
-				};
-				const durationMinutes = 60;
-				const transaction = input.transaction;
-				const periodPatch = await input.beforePeriodClose?.({
-					transaction,
-					activePeriod,
-					durationMinutes,
-				});
-				durableState.entries.push("clock-out-1");
-				durableState.periods.push("period-1");
-				const entry = { id: "clock-out-1", type: "clock_out" };
-				const period = { id: "period-1", ...periodPatch };
-				const transactionResult = await input.afterPeriodClose?.({
-					transaction,
-					activePeriod,
-					durationMinutes,
-					entry,
-					period,
-				});
-				return {
-					entry,
-					period,
-					activePeriod,
-					durationMinutes,
-					transactionResult,
-				};
-			} catch (error) {
-				for (const key of Object.keys(durableState) as Array<
-					keyof typeof durableState
-				>) {
-					durableState[key].length = snapshot[key];
-				}
-				throw error;
-			}
-		});
-
-		const result = await clockOut();
-
-		expect(result).toEqual({
-			success: false,
-			error: "Failed to clock out. Please try again.",
-		});
-		expect(durableState).toEqual({
-			entries: [],
-			periods: [],
-			canonicalRecords: [],
-			approvals: [],
-		});
-	});
-
 	it("stores browser-derived timezone capture when clocking out with a valid browser timezone", async () => {
 		const result = await clockOut(undefined, undefined, {
 			browserTimezone: "America/New_York",
@@ -2875,22 +2312,6 @@ describe("clockOut", () => {
 		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
 	});
 
-	it("does not mark work balance dirty when rejecting approval-required clock-out without a manager", async () => {
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
-		mockState.findManagerLinks.mockResolvedValue([]);
-		mockState.useRealOrdinarySubmission = true;
-
-		const result = await clockOut();
-
-		expect(result).toEqual({
-			success: false,
-			error: "No manager assigned to approve time changes",
-		});
-		expect(mockState.calculateAndPersistSurcharges).not.toHaveBeenCalled();
-		expect(mockState.checkComplianceAfterClockOut).not.toHaveBeenCalled();
-		expect(mockState.enforceBreaksAfterClockOut).not.toHaveBeenCalled();
-		expect(mockState.markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
-	});
 });
 
 vi.mock("@/lib/auth-helpers", () => ({

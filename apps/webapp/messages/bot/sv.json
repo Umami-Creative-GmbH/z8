@@ -28,11 +28,9 @@
         "failed": "Det gick inte att stämpla ut. Försök igen.",
         "noProfile": "Medarbetarprofilen hittades inte.",
         "notClockedIn": "Du är för närvarande inte instämplad.",
-        "policyCheckFailed": "Kunde inte verifiera policyn för tidsgodkännande. Försök igen.",
         "success": "Utstämplad {time}. Varaktighet: {hours}h {minutes}m.",
         "successAt": "Utstämplad kl. {time}.",
-        "unconfirmed": "Din utstämpling kunde inte bekräftas. Kontrollera din status innan du försöker igen.",
-        "unsupportedApproval": "Tidsändringar som kräver godkännande stöds inte för denna åtgärd ännu"
+        "unconfirmed": "Din utstämpling kunde inte bekräftas. Kontrollera din status innan du försöker igen."
       },
       "compliance": {
         "error": "Det gick inte att hämta efterlevnadsdata. Försök igen senare.",

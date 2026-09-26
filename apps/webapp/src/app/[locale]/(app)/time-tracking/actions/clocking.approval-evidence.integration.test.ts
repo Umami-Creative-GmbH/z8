@@ -10,10 +10,11 @@
  * request/session, billing provisioning, notification delivery and Next cache
  * boundaries are replaced. Evidence capture, append admission and rollout modes
  * are enabled per test organization by inserting their control rows directly:
- * production has no setter. Live clock-out approval is production-false today
- * (`checkClockOutNeedsApproval`), and manual approval depends on the change
- * policy, so approval scenarios force only those decisions and keep the real
- * routing, approval and evidence collaborators. Append admission is active, so
+ * production has no setter. Live clock-outs never route approval (#361), so a
+ * policy clock-out is a historical one: a real clock-out, then its policy
+ * submission seeded through the real ordinary submission. Manual approval depends
+ * on the change policy, so manual scenarios force only that decision and keep the
+ * real routing, approval and evidence collaborators. Append admission is active, so
  * manual entries are strict version-2 commands (#308) through the public action;
  * their approval comes from a real change policy.
  */
@@ -30,7 +31,6 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceClockOutApproval: false,
 	forceManualApproval: false,
 }));
 
@@ -97,8 +97,6 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 
 vi.mock("./approvals", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async () => undefined,
-	sendClockOutApprovedNotification: async () => undefined,
 	sendManualEntryApprovalNotifications: async () => undefined,
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
@@ -107,8 +105,6 @@ vi.mock("./policy-helpers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./policy-helpers")>();
 	return {
 		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceClockOutApproval || (await original.checkClockOutNeedsApproval(employeeId)),
 		getEditCapabilityForPeriod: async (
 			params: Parameters<typeof original.getEditCapabilityForPeriod>[0],
 		) =>
@@ -145,6 +141,9 @@ const { deleteApproval, deleteWorkPeriodApprovalEvidence } = await import(
 );
 const { workPeriodReceiptKeyDigest } = await import(
 	"@/lib/approvals/evidence/work-period-evidence"
+);
+const { submitHistoricalPolicyClockOut } = await import(
+	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -317,9 +316,14 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 		);
 	}
 
+	/**
+	 * A real clock-out, submitted as a historical policy clock-out. A break policy
+	 * takes effect only after the clock-out, so its break is still owed at approval.
+	 */
 	async function policyClockOut(
 		clockOutAt: Instant = clockInAt.add({ minutes: 60, seconds: 40 }),
 		startAt: Instant = clockInAt,
+		options: { breakPolicy?: boolean } = {},
 	) {
 		actAs(ids.requesterUser);
 		await expect(
@@ -336,7 +340,19 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 			instant: clockOutAt,
 			browserTimezone: "UTC",
 		});
-		return { period, submissionId, result };
+		expect(result).toMatchObject({ success: true });
+		if (options.breakPolicy) await seedBreakPolicy();
+		const submission = await submitPolicyClockOut(period.id);
+		return { period, submissionId, result, submission };
+	}
+
+	function submitPolicyClockOut(workPeriodId: string) {
+		return submitHistoricalPolicyClockOut({
+			organizationId: ids.organization,
+			employeeId: ids.requester,
+			userId: ids.requesterUser,
+			workPeriodId,
+		});
 	}
 
 	/** Approval for any past manual entry, through the real change policy. */
@@ -494,7 +510,6 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 	});
 
 	beforeEach(async () => {
-		harness.forceClockOutApproval = false;
 		harness.forceManualApproval = false;
 		await seed();
 	});
@@ -506,15 +521,18 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 		await pool.end();
 	});
 
-	it("captures the submitted policy clock-out interval with the operation and replays nothing", async () => {
-		harness.forceClockOutApproval = true;
+	it("captures the submitted policy clock-out interval and replays nothing", async () => {
 		await setCapture("policy_clock_out", "capture");
 		await linkManager();
-		await seedBreakPolicy();
 
-		const { period, submissionId, result } = await policyClockOut();
+		const { period, submissionId, submission } = await policyClockOut(undefined, undefined, {
+			breakPolicy: true,
+		});
 
-		expect(result).toMatchObject({ success: true, data: { pendingApproval: true } });
+		expect(submission).toMatchObject({
+			disposition: "executed",
+			result: { kind: "default_created" },
+		});
 		const pending = await request(period.id);
 		const revision = only(await revisions());
 		expect(revision).toMatchObject({
@@ -572,93 +590,37 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 			requesterName: "Requester",
 			submitterName: "Requester",
 		});
-		const { rows: receipts } = await admin.query<{ result: { approval: unknown } }>(
-			"select result from completed_work_operation where id = $1",
-			[submissionId],
-		);
-		// The receipt keeps the original participation; the current state is a separate read.
-		expect(only(receipts).result.approval).toEqual({
-			participation: "policy_clock_out",
-			disposition: "executed",
-			outcome: "default_created",
-			approvalRequestId: pending.id,
-			submittedRevisionId: revision.id,
-		});
+		expect(submission.evidence).toEqual({ submittedRevisionId: revision.id });
 		expect(await decisions()).toEqual([]);
 
+		// The exact resubmission matches the committed request and writes nothing.
 		const before = await snapshot();
-		actAs(ids.requesterUser);
-		await expect(
-			clockOut(undefined, undefined, {
-				submissionId,
-				instant: clockInAt.add({ minutes: 60, seconds: 40 }),
-				browserTimezone: "UTC",
-			}),
-		).resolves.toEqual(result);
+		await expect(submitPolicyClockOut(period.id)).resolves.toMatchObject({
+			disposition: "replayed",
+			result: { kind: "default_created", approvalRequestId: pending.id },
+		});
 		expect(await snapshot()).toEqual(before);
 	});
 
-	it("captures nothing while capture is inactive and keeps the receipt honest", async () => {
-		harness.forceClockOutApproval = true;
+	it("captures nothing while capture is inactive", async () => {
 		await linkManager();
 
-		const { submissionId, result } = await policyClockOut();
+		const { submission } = await policyClockOut();
 
-		expect(result).toMatchObject({ success: true, data: { pendingApproval: true } });
+		expect(submission.result.kind).toBe("default_created");
+		expect(submission.evidence).toBeUndefined();
 		expect(await revisions()).toEqual([]);
-		const { rows } = await admin.query<{ result: { approval: { submittedRevisionId: unknown } } }>(
-			"select result from completed_work_operation where id = $1",
-			[submissionId],
-		);
-		expect(only(rows).result.approval.submittedRevisionId).toBeNull();
-	});
-
-	it("rolls back the whole closure when approval cannot be routed or evidence cannot be written", async () => {
-		harness.forceClockOutApproval = true;
-		await setCapture("policy_clock_out", "capture");
-		actAs(ids.requesterUser);
-		await expect(
-			clockIn("office", { instant: clockInAt, browserTimezone: "UTC" }),
-		).resolves.toMatchObject({ success: true });
-		const before = await snapshot();
-
-		// Unroutable: no manager. Nothing is captured for an uncommitted submission.
-		await expect(
-			clockOut(undefined, undefined, {
-				submissionId: randomUUID(),
-				instant: clockInAt.add({ minutes: 61 }),
-				browserTimezone: "UTC",
-			}),
-		).resolves.toEqual({ success: false, error: "No manager assigned to approve time changes" });
-		expect(await snapshot()).toEqual(before);
-
-		await linkManager();
-		const routable = await snapshot();
-		await admin.query(
-			`create function t302_fail() returns trigger language plpgsql as $$
-			 begin raise exception 't302 injected revision failure'; end $$`,
-		);
-		await admin.query(
-			"create trigger t302_fail before insert on approval_submitted_revision for each row execute function t302_fail()",
-		);
-		await expect(
-			clockOut(undefined, undefined, {
-				submissionId: randomUUID(),
-				instant: clockInAt.add({ minutes: 61 }),
-				browserTimezone: "UTC",
-			}),
-		).resolves.toEqual({ success: false, error: "Failed to clock out. Please try again." });
-		await admin.query("drop function t302_fail() cascade");
-		expect(await snapshot()).toEqual(routable);
 	});
 
 	it("records the approval and every resulting break segment without rewriting the submission", async () => {
-		harness.forceClockOutApproval = true;
 		await setCapture("policy_clock_out", "capture");
 		await linkManager();
-		await seedBreakPolicy();
 		// 7h 0m 40s without a break: the policy inserts 30 minutes at 6h.
-		const { period, submissionId } = await policyClockOut(clockInAt.add({ hours: 7, seconds: 40 }));
+		const { period, submissionId } = await policyClockOut(
+			clockInAt.add({ hours: 7, seconds: 40 }),
+			clockInAt,
+			{ breakPolicy: true },
+		);
 		const pending = await request(period.id);
 		const revisionBefore = only(await revisions());
 
@@ -767,7 +729,6 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 	});
 
 	it("records a rejection at its persisted time with the unchanged segment", async () => {
-		harness.forceClockOutApproval = true;
 		await setCapture("policy_clock_out", "capture");
 		await linkManager();
 		const { period, submissionId } = await policyClockOut();
@@ -811,7 +772,6 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 	});
 
 	it("holds decisions on changed or unevidenced submissions and rolls back failed evidence", async () => {
-		harness.forceClockOutApproval = true;
 		await linkManager();
 		// Submitted while capture was inactive: held once capture is active.
 		const unevidenced = await policyClockOut();
@@ -869,14 +829,13 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 	});
 
 	it("captures and decides a canonical policy clock-out lifecycle", async () => {
-		harness.forceClockOutApproval = true;
 		await setRollout("policy_clock_out", "canonical");
 		await setCapture("policy_clock_out", "capture");
 		await linkManager();
 
-		const { period, result } = await policyClockOut();
+		const { period, submission } = await policyClockOut();
 
-		expect(result).toMatchObject({ success: true, data: { pendingApproval: true } });
+		expect(submission.result.kind).toMatch(/_created$/);
 		const { rows: workflows } = await admin.query<{ id: string; submitted_at: Date }>(
 			"select id, submitted_at from approval_workflow where organization_id = $1 and source_id = $2",
 			[ids.organization, period.id],
@@ -991,7 +950,6 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 	});
 
 	it("removes lifecycle evidence with privileged cleanup and with the organization's history", async () => {
-		harness.forceClockOutApproval = true;
 		harness.forceManualApproval = true;
 		await setCapture("policy_clock_out", "capture");
 		await setCapture("manual_time_submission", "capture");
@@ -1017,7 +975,6 @@ describeIntegration("manual and policy clock-out approval lifecycle evidence on 
 	});
 
 	it("removes evidence a deleted employee decided even when its subject stays", async () => {
-		harness.forceClockOutApproval = true;
 		await setCapture("policy_clock_out", "capture");
 		await linkManager();
 		const { period } = await policyClockOut();

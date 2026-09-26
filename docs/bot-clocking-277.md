@@ -98,10 +98,9 @@ runs them itself.
 
 ### Approval
 
-Approval-routed live clock-out stays unsupported from bots, as before (`3c123396`).
-The core evaluates the same policy check as the web and, when called with
-`refuseApprovalRouting`, returns `approval_required` before any write. No new
-live-clock-out approval policy is introduced.
+Live clock-outs never route approval (#361), from bots or any other adapter. The
+former `refuseApprovalRouting` option and its `approval_required` and
+`approval_unavailable` replies were removed with the dormant policy check.
 
 ### Replies and transport
 
@@ -207,7 +206,7 @@ the refactored web core. The label-owned containers were verified and removed.
 
 - `lib/teams/commands/clock-commands.test.ts` (replaces the static source checks in
   `clock-out.test.ts`): the actor passed to the core, omitted attribution, a
-  distinct operation ID per invocation, `refuseApprovalRouting`, the wording of every
+  distinct operation ID per invocation, no approval option (#361), the wording of every
   outcome, committed replies surviving a formatting failure, and org-scoped actor
   refusal.
 - `lib/bot-platform/command-reply-delivery.test.ts`: Discord and Teams reply

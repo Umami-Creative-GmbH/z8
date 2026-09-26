@@ -84,11 +84,9 @@
         "failed": "Não foi possível registrar a saída. Tente novamente.",
         "noProfile": "Perfil do funcionário não encontrado.",
         "notClockedIn": "Você não está registrado no momento.",
-        "policyCheckFailed": "Não foi possível verificar a política de aprovação de tempo. Por favor, tente novamente.",
         "success": "Saída registrada às {time}. Duração: {hours}h {minutes}m.",
         "successAt": "Saída registrada às {time}.",
-        "unconfirmed": "Não foi possível confirmar seu registro de saída. Verifique seu status antes de tentar novamente.",
-        "unsupportedApproval": "Alterações de tempo que exigem aprovação ainda não são suportadas para esta ação"
+        "unconfirmed": "Não foi possível confirmar seu registro de saída. Verifique seu status antes de tentar novamente."
       },
       "compliance": {
         "error": "Falha ao recuperar dados de conformidade. Tente novamente mais tarde.",

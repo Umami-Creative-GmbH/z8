@@ -1,7 +1,6 @@
 import "server-only";
 
 import { type SQL, sql } from "drizzle-orm";
-import { routeWorkPeriodApprovalParticipants } from "@/lib/approvals/server/work-period-resource-routing";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import type {
 	WebClockOutTransactionInput,
@@ -25,8 +24,8 @@ type Resource = Readonly<{
 /** Concrete table order for this legacy caller, not a configurable lock framework. */
 function resourceQueries(
 	input: WebClockOutTransactionInput,
-	employeeIds = [input.employeeId],
-	userIds = [input.userId],
+	employeeIds: readonly string[],
+	userIds: readonly string[],
 ) {
 	const org = input.organizationId;
 	const ownerUserId = input.ownerUserId ?? input.userId;
@@ -80,14 +79,6 @@ function resourceQueries(
 		},
 		// Assignment candidates include expired/future rows: their IDs are protected
 		// before the existing event-time snapshot resolver selects effective rows.
-		{
-			table: "approval_policy",
-			scope: sql`organization_id = ${org} and is_active = true and ${input.requiresApproval === true}`,
-		},
-		{
-			table: "approval_policy_stage",
-			scope: sql`organization_id = ${org} and policy_id in (select id from approval_policy where organization_id = ${org} and is_active = true) and ${input.requiresApproval === true}`,
-		},
 		{ table: "work_policy_assignment", scope: assignments },
 		{
 			table: "work_policy",
@@ -157,17 +148,11 @@ export async function routeWebClockOutResources(
 	input: WebClockOutTransactionInput,
 ): Promise<readonly Resource[]> {
 	const ownerUserId = input.ownerUserId ?? input.userId;
-	const participants = input.requiresApproval
-		? await routeWorkPeriodApprovalParticipants({
-				db,
-				organizationId: input.organizationId,
-				requesterEmployeeId: input.employeeId,
-			})
-		: { employeeIds: [input.employeeId], userIds: [ownerUserId] };
+	// The work's owner and the acting human; a live clock-out routes no approver.
 	const definitions = resourceQueries(
 		input,
-		participants.employeeIds,
-		[...new Set([input.userId, ownerUserId, ...participants.userIds])].sort(),
+		[input.employeeId],
+		[...new Set([input.userId, ownerUserId])].sort(),
 	);
 	const result = await db.execute(
 		sql`/* web-clock-out:route */ ${sql.join(

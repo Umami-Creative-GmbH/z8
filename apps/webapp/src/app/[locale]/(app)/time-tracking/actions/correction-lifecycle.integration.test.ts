@@ -129,7 +129,6 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 
 vi.mock("./policy-helpers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./policy-helpers")>()),
-	checkClockOutNeedsApproval: async () => false,
 	getEditCapabilityForPeriod: async () => ({ type: "approval_required" }),
 }));
 
