@@ -35,27 +35,28 @@ first, or no compatible rollback exists). The overall verdict is the worst secti
 | Approval cards | Delivery controls, presentation controls, open delivery work by provider and effect |
 | Escalation | Ownership, whether automation is paused, and pending time/expense approvals with a committed transfer |
 | Durable work | Balance rebuild intents, break adjustment intents, payroll jobs in flight with stored input, held import rows |
-| Schema floor | Committed rows that only a schema and release from a given migration on can keep reading |
+| Floors | Committed rows that pin the oldest schema a rollback may keep, and the rows that also pin the oldest code it may target |
 
 ### Findings
 
 | Code | Severity | Meaning and required action |
 | --- | --- | --- |
 | `append_pause_unavailable` | blocker | Append admission is active, and there is no compatible pause for it (see [Append adoption has no pause](#append-adoption-has-no-pause)). |
-| `adopted_history_unfenced` | blocker | The organization was adopted and then returned to inactive. Legacy writers now commit against the kept positions, and re-activation holds the affected employees for review. |
+| `adopted_history_unfenced` | blocker | The organization was adopted and then returned to inactive. Legacy writers now commit against the kept positions, and re-activation holds the affected employees for review. This is also the state that #276 and #277 require before their code rollbacks, so such an organization never reports `ready`. That follows from the [append blocker](#append-adoption-has-no-pause). |
 | `continuation_positions` | hold | Positions admitted by an authorized continuation (#323). An older release holds these employees' appends, which is safe. Never drop the position, because that loses its provenance. |
-| `delivery_pause_gap` | hold | Each delivery control. Deleting it stops the owner, and canonical submissions then send no card on that provider at all (#291, #292, #293, #294, #296). Accept and communicate the gap, or keep the owner running. |
+| `delivery_pause_gap` | hold | Delivery controls whose deletion leaves no card at all: expenses (#296) and absences under canonical authority (#291, #292, #293, #294). Accept and communicate the gap, or keep the owner running. Time kinds (#325) and legacy-authority absences (#384) fall back to the existing notification path and are not counted. |
 | `presentation_actionable` | hold | Sent cards still decide. Set `review_only` before a binary rollback, so older binaries show review notices instead of failures (#325, #384). |
-| `replacement_work_pending` | blocker | A pre-#300 worker cancels replacement cards as `purged`. Let the work finish, or delete the delivery controls of escalation-owned organizations. |
-| `delivery_work_pending` | hold | An older worker without the provider's adapter exhausts this work (`ambiguous:internal_error`). Delete the controls first, or accept the exhausted incidents. |
+| `replacement_work_pending` | blocker | Unfinished replacement work on a provider that still has a delivery control. A pre-#300 worker cancels replacement cards as `purged`. Let the work finish, or delete the delivery controls; either clears the finding. |
+| `delivery_work_pending` | hold | Unfinished Slack, Teams or Discord work on a provider that still has a delivery control. An older worker without that adapter exhausts it (`ambiguous:internal_error`). Delete the controls first, or accept the exhausted incidents. Telegram has had an adapter since #291. |
 | `escalation_automation_running` | hold | Escalation owns the organization and automation runs. Pause it before a code rollback (#300, #326, #439). |
-| `transferred_approvals_pending` | blocker | Pending time or expense approvals with a committed transfer. Pre-#326 owners lack the revocation checks, and pre-#439 legacy time owners reject the transfer lineage, so after a code rollback the replacement could no longer decide. Let the replacements decide them first. |
+| `legacy_transfers_pending` | blocker | Pending legacy-authority time approvals with a committed transfer. Pre-#439 decision owners reject the transfer lineage, so after a code rollback the replacement could no longer decide. Let the replacements decide them first. |
+| `canonical_transfers_pending` | hold | Pending canonical time or expense approvals with a committed transfer. Pre-#326 owners lack the revocation checks, so a former holder who is still an eligible manager could decide again. Let them be decided, or accept that exposure explicitly (#326). |
 | `rebuild_intents_pending` | blocker | Balance rebuild intents. Pre-#421 binaries ignore them, and pre-#428 binaries widen user intents. Drain them (`processWorkBalanceRebuildIntents`). |
 | `payroll_jobs_in_flight` | blocker | Export jobs not yet finished that have stored input. A release without #322 ignores stored inputs, so a retry would reread work. Drain or complete them. |
 | `break_adjustments_pending` | hold | Automatic break adjustment intents. A binary without #441 ignores them, and they stay inert until re-adoption. |
 | `import_rows_held` | hold | Import rows held by the reviewed-import commit. Older code neither clears nor re-commits them. Never reset them by hand (#284). |
 
-### Schema floor
+### Schema and release floors
 
 Every committed value that a migration admitted pins that migration:
 
@@ -64,11 +65,22 @@ Every committed value that a migration admitted pins that migration:
 - legacy card lifecycles (0093), replacement work (0096) and cycle-keyed legacy delivery (0108);
 - rebuild intents (0099, 0101), the historical repair control (0102), payroll inputs and control (0104), proposals and continuation positions (0105), and break adjustment intents (0106).
 
-`schemaFloor.migration` is the newest pinned migration. Never narrow a CHECK or drop a
-column or table below it. A code rollback target older than it cannot read or replay the
-pinned rows. Committed receipts of an unknown kind stop replaying, and cards of an
-unknown provider stop updating. Pins are constraints on the target, not findings: they
-never change the verdict.
+`floor.schema` is the newest pinned migration. Never narrow a CHECK or drop a column or
+table below it: the rows would be rejected, or lose the remote identities and replay
+evidence they hold.
+
+`floor.release` is the newest pin that also limits the code a rollback may target
+(`limits: "release"`):
+
+- receipt kinds and writers, because older code cannot replay committed receipts it
+  does not know (#275, #281);
+- cycle-keyed legacy delivery, because binaries below #384 plan cycle rows source-wide;
+- any value this release does not know, which a newer release committed. It pins as
+  `unknown (newer than this release)`.
+
+The other pins are rows that earlier releases ignore safely (#296, #305, #311, #320,
+#322, #323). They limit only the schema. Pins are constraints on the target, not
+findings: they never change the verdict.
 
 ### Not visible to the report
 
@@ -93,19 +105,19 @@ Expansion stays per combination and uses the existing pilot reports:
 
 Expand only a combination that both reports show as `ready` and whose deployment,
 drain, old-consumer and live-provider evidence is recorded (steps that neither report
-can see). Before each expansion, run this report for the organization and record its
-schema floor. That floor is the oldest release you could still roll back to without
-losing replay. An expansion that raises the floor narrows the compatible rollback
-targets, so record that too.
+can see). Before each expansion, run this report for the organization and record both
+floors. The release floor is the oldest code you could still roll back to without
+losing replay. An expansion that raises it narrows the compatible rollback targets, so
+record that too.
 
 ## Pauses (no code change)
 
 | Switch | Effect | Keeps |
 | --- | --- | --- |
 | `approval_presentation_control.mode = 'review_only'` | Sent cards stop deciding at the next press, which becomes a review notice. Slack is always review-only. | Committed invocations replay exactly (#292, #293, #296, #325, #384). |
-| Delete `approval_delivery_control (org, kind, provider)` | The owner stops planning new work for that combination. Legacy absence cycles fall back to the old notification path with review-only cards. | Unfinished work and tracked messages stay for recovery. **Gap:** canonical submissions and expenses get no card on that provider. |
+| Delete `approval_delivery_control (org, kind, provider)` | The owner stops planning new work for that combination. Time kinds resume the existing notification path for new cycles (#325). Legacy absence cycles fall back to it with review-only cards (#384). | Unfinished work and tracked messages stay for recovery. **Gap:** canonical absence submissions and expenses get no card on that provider. |
 | `approval_escalation_control.automation_paused = true` | No new transfers of any kind. | Committed transfers, journal rows, assignments and replacement delivery (#255 §7). |
-| `approval_evidence_control` stays `capture` | Turning capture off stops the `evidence_required` hold, but lifecycles with a revision stay enforced (#302). | Committed evidence. Keep capture on. |
+| `approval_evidence_control` back to `inactive` | Stops new capture and the `evidence_required` hold. Lifecycles that already have a revision stay enforced (material-change hold), and their decisions still work (#302). Expense bound cards stop being issued (#296). The pilot runbooks keep capture on during a pause ([approval-pilot.md](approval-pilot.md#pause-and-rollback)). | Committed evidence rows, which are immutable. |
 | Delete `payroll_work_collection_control` | Restores the legacy workspace and export reads. | Jobs created under the control keep their stored input (#322). |
 | Delete `historical_work_repair_control` | Stops further repair and proposal application. | Applied repairs are receipted values and are never reverted automatically (#320, #323). |
 | `DISABLE_ORGANIZATION_CREATION` | Pauses organization creation for a code rollback window (#359). | The 0107 rollout rows (`legacy`/`legacy`). Do not delete them. |
@@ -139,8 +151,8 @@ back only by moving forward.
 - Continuation positions (#323) and the kept positions must never be dropped.
 
 Until that decision exists, the only compatible rollback for an adopted organization
-is a release at or above the report's schema floor, which still contains every writer
-that participates in adoption.
+is a release at or above the report's release floor that still contains every writer
+participating in adoption.
 
 ## Code rollback
 
@@ -154,8 +166,9 @@ Before rolling any binary back:
    before #293, Discord before #292, `travel_expense` before #296, and legacy absence
    (both controls) before #384.
 3. Pause escalation automation.
-4. Choose a target at or above the schema floor. For adopted organizations, also stay
-   at or above every writer they use (see above).
+4. Choose a code target at or above the release floor. For adopted organizations, also
+   stay at or above every writer they use (see above). Keep the schema at or above the
+   schema floor.
 5. Never narrow a provider, scheme, receipt kind or writer CHECK, and never drop a
    table or column, while rows use the value:
    - approval delivery providers `('telegram', 'teams', 'slack', 'discord')`, as one union;
@@ -185,6 +198,29 @@ Before rolling any binary back:
   400 → 409 fence (#266, #282).
 - **Mobile (retired).** The legacy `/api/mobile/*` routes keep their current behaviour,
   including the committed clock-out replay fix (#283, #400).
+
+### Further per-slice consequences
+
+- **#284:** an old worker locks the import-only key again, which no longer serializes
+  with live clocking. An older `clearOrganizationTimeData` leaves canonical records of
+  removed periods orphaned. Held rows stay `blocked`; never reset them by hand.
+- **#285:** after a rollback to inactive, demo cleanup leaves balances to the existing
+  refresh paths. A legacy demo write holds the next adopted write on
+  `unexpected_history_change` until an authorized continuation (#323).
+- **#292:** the old path sends approval notices to the stored `discord_conversation`
+  channel again, which can be a server channel.
+- **#294:** `delivery_unavailable` incidents include the delivery channel in their
+  dedupe key. After a rollback, old code neither resolves nor deduplicates them.
+- **#300:** after a roll-forward, cancelled replacement work is not re-armed. **Retry
+  delivery** only re-arms `awaiting_repair`, `exhausted` and `failed` work, so
+  `cancelled` work needs a new decision.
+- **#301:** a pre-#422 binary brings back the four legacy correction defects and late
+  approval-gate acquisition.
+- **#302:** a binary without #391 submits and decides without evidence, ignores
+  existing revisions, and writes no legacy receipt row for those decisions. Prove how a
+  later roll-forward treats lifecycles decided that way.
+- **#325:** rolled-back binaries write raw command fingerprints (with reason text) into
+  canonical time-kind decision evidence again; #433 writes a digest. Both stay readable.
 
 ### Behaviour that a code rollback reverts
 
@@ -271,26 +307,28 @@ Real callers write the work:
 - `processWorkBalanceRebuildIntents`.
 
 Controls are inserted and changed by operator SQL, because production has no setter.
-Every report call asserts that nothing it reads changed.
+Every report call asserts that no row of the tables it reads changed.
 
 The suite verifies:
 
 - An organization that never adopted anything reports `ready`, with no schema floor.
   Legacy clock-outs commit no receipt. Another organization's controls, intents and
   escalation never count, and an unknown organization is refused.
-- An adopted organization reports `append_pause_unavailable`, and its position pins
-  0079.
+- An adopted organization reports `append_pause_unavailable`. Its position pins the
+  schema at 0079, and its clock-out receipts pin the release at 0083.
 - Returning append to `inactive` removes no committed row, and a committed clock-out
   still replays exactly with nothing written. The legacy writer then commits work
   without a receipt or a position advance. After re-activation, the time pilot report
   shows `continuity_interrupted`. This is the evidence for the scoped blocker.
 - The documented card and escalation pauses (`review_only`, deleting the delivery
   controls, `automation_paused`) clear `delivery_pause_gap`,
-  `presentation_actionable` and `escalation_automation_running`. The receipts,
-  positions, requests, evidence and transfer journal stay row-for-row identical, and
-  the schema floor does not change.
+  `presentation_actionable` and `escalation_automation_running`. The pause gap counts
+  the canonical absence controls and not the time-kind control. The committed
+  receipts, positions and work stay row-for-row identical, and both floors are
+  unchanged. That test commits no approval, delivery or transfer rows; the next case
+  covers the transfer journal.
 - A legacy manual time approval transferred at its deadline reports
-  `transferred_approvals_pending`. Pausing automation stops the next due transfer
+  `legacy_transfers_pending`. Pausing automation stops the next due transfer
   and keeps the journal. The former holder can no longer approve. Once the
   replacement approves, the section is `ready`.
 - A real organization timezone change under adoption leaves a rebuild intent, which
@@ -301,7 +339,10 @@ Unit tests (`readiness.test.ts`, `readiness-cli.test.ts`) cover every finding, t
 pin-to-migration map, the schema floor and the CLI. They also cover the findings that
 the PostgreSQL suite does not produce through callers:
 
-- replacement and provider delivery work;
+- replacement and provider delivery work, and how deleting the controls clears it;
+- the pause-gap scoping by kind and authority;
+- canonical transfers;
+- values committed by a newer release;
 - legacy and cycle card lifecycles;
 - continuation positions;
 - payroll jobs in flight;

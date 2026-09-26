@@ -253,10 +253,17 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 		"approval_delivery_work",
 		"approval_delivery_message",
 		"approval_escalation_control",
+		"approval_invocation",
+		"approval_review_binding",
+		"approval_delivery_intent",
 		"work_balance_rebuild_intent",
 		"work_break_adjustment_intent",
 		"payroll_export_job",
+		"payroll_export_work_input",
+		"payroll_work_collection_control",
 		"import_staged_row",
+		"historical_work_proposal",
+		"historical_work_repair_control",
 	];
 
 	async function readReport() {
@@ -528,7 +535,7 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 			durable: { rebuildIntents: { organization: 0, user: 0 }, findings: [] },
 		});
 		// Legacy clock-outs commit no receipt: nothing pins the schema.
-		expect(report.schemaFloor).toEqual({ migration: null, pins: [] });
+		expect(report.floor).toEqual({ schema: null, release: null, pins: [] });
 		await expect(
 			assessOrganizationRollbackReadiness({ organizationId: "t331-missing-org" }),
 		).rejects.toThrow("Unknown organization t331-missing-org");
@@ -547,11 +554,14 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 			findings: [{ code: "append_pause_unavailable", severity: "blocker" }],
 		});
 		expect(report.append.activatedAt).toMatch(/^2\d{3}-/);
-		expect(report.schemaFloor.pins).toContainEqual({
+		expect(report.floor.pins).toContainEqual({
 			migration: "0079_time_entry_append_position",
 			subject: "append positions",
 			rows: 1,
+			limits: "schema",
 		});
+		// Adopted receipts need a release that can replay them.
+		expect(report.floor.release).toBe("0083_completed_work_operation");
 	});
 
 	it("returning append to inactive keeps positions and receipts but reopens legacy writers", async () => {
@@ -600,9 +610,17 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 		await setAppendMode("active");
 		await ownEscalation();
 		await liveWork("2026-07-06T06:00:00Z", "2026-07-06T14:00:00Z");
+		// Canonical absence submissions have no fallback notification path.
+		await admin.query(
+			`insert into approval_workflow_rollout
+			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+			 values ($1, 'absence', 'canonical', 'canonical', now(), now())`,
+			[ids.organization],
+		);
 		await admin.query(
 			`insert into approval_delivery_control (organization_id, workflow_type, provider)
-			 values ($1, 'absence', 'telegram'), ($1, 'absence', 'slack')`,
+			 values ($1, 'absence', 'telegram'), ($1, 'absence', 'slack'),
+			  ($1, 'manual_time_submission', 'telegram')`,
 			[ids.organization],
 		);
 		await admin.query(
@@ -642,7 +660,7 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 		expect(after.escalation).toMatchObject({ automationPaused: true, findings: [] });
 		// Only append adoption still blocks, and the pinned rows are unchanged.
 		expect(after.verdict).toBe("blocked");
-		expect(after.schemaFloor).toEqual(before.schemaFloor);
+		expect(after.floor).toEqual(before.floor);
 		expect(await tableRows(PRESERVED_TABLES)).toEqual(committed);
 	});
 
@@ -661,7 +679,7 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 			],
 			findings: [
 				{ code: "escalation_automation_running", severity: "hold" },
-				{ code: "transferred_approvals_pending", severity: "blocker", count: 1 },
+				{ code: "legacy_transfers_pending", severity: "blocker", count: 1 },
 			],
 		});
 
@@ -675,7 +693,7 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 		expect(await escalateAt(second.created_at, 120)).toMatchObject({ transferred: 0 });
 		expect(await tableRows(["approval_escalation_transfer"])).toEqual(journal);
 		expect((await readReport()).escalation.findings).toEqual([
-			{ code: "transferred_approvals_pending", severity: "blocker", count: 1 },
+			{ code: "legacy_transfers_pending", severity: "blocker", count: 1 },
 		]);
 
 		// The replacement decides it; the former holder no longer could.
@@ -701,17 +719,18 @@ describeIntegration("rollback readiness on PostgreSQL", () => {
 			verdict: "blocked",
 			findings: [{ code: "rebuild_intents_pending", severity: "blocker", count: 1 }],
 		});
-		expect(pending.schemaFloor.pins).toContainEqual({
+		expect(pending.floor.pins).toContainEqual({
 			migration: "0099_work_balance_rebuild_intent",
 			subject: "organization rebuild intents",
 			rows: 1,
+			limits: "schema",
 		});
 
 		// The drain before a code rollback: the real consumer processes the intent.
 		await processWorkBalanceRebuildIntents({ organizationId: ids.organization });
 		const drained = await readReport();
 		expect(drained.durable).toMatchObject({ verdict: "ready", findings: [] });
-		expect(drained.schemaFloor.pins.map((pin) => pin.subject)).not.toContain(
+		expect(drained.floor.pins.map((pin) => pin.subject)).not.toContain(
 			"organization rebuild intents",
 		);
 		// The other organization's intent is untouched by this organization's drain.

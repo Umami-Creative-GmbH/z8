@@ -2,7 +2,11 @@ import type {
 	ApprovalDeliveryEffect,
 	ApprovalDeliveryProvider,
 } from "@/db/schema/approval-delivery";
-import type { ApprovalPresentationMode } from "@/db/schema/approval-evidence";
+import type {
+	ApprovalPresentationMode,
+	ApprovalPresentationProvider,
+	approvalInvocation,
+} from "@/db/schema/approval-evidence";
 import type { CompletedWorkOperationKind, CompletedWorkWriter } from "@/db/schema/completed-work";
 import {
 	TIME_ENTRY_APPEND_ADMISSIONS,
@@ -33,7 +37,8 @@ export type RollbackFindingCode =
 	| "delivery_work_pending"
 	// Escalation (#326, #439)
 	| "escalation_automation_running"
-	| "transferred_approvals_pending"
+	| "legacy_transfers_pending"
+	| "canonical_transfers_pending"
 	// Durable work an older release ignores or leaves alone
 	| "rebuild_intents_pending"
 	| "payroll_jobs_in_flight"
@@ -48,10 +53,7 @@ export interface RollbackFinding {
 	count?: number;
 }
 
-export type ApprovalInvocationScheme =
-	| "telegram_callback_query"
-	| "teams_adaptive_card_action"
-	| "discord_interaction";
+export type ApprovalInvocationScheme = (typeof approvalInvocation.$inferSelect)["scheme"];
 
 // ---------------------------------------------------------------------------
 // Snapshot (what the reader collects)
@@ -72,13 +74,21 @@ export interface RollbackSnapshot {
 		writers: Partial<Record<CompletedWorkWriter, number>>;
 	};
 	cards: {
-		deliveryControls: Array<{ workflowType: string; provider: ApprovalDeliveryProvider }>;
+		deliveryControls: Array<{
+			workflowType: string;
+			provider: ApprovalDeliveryProvider;
+			/** The kind's stored rollout mode; null without a rollout row. */
+			lifecycleMode: string | null;
+		}>;
 		presentationControls: Array<{
 			workflowType: string;
-			provider: string;
+			provider: ApprovalPresentationProvider;
 			mode: ApprovalPresentationMode;
 		}>;
-		/** Delivery work still `pending` or `processing`. */
+		/**
+		 * Unfinished delivery work: pending, processing, or awaiting repair, exhausted
+		 * or failed (still retryable). Older planners also cancel the retryable states.
+		 */
 		openWork: Array<{
 			provider: ApprovalDeliveryProvider;
 			effect: ApprovalDeliveryEffect;
@@ -138,7 +148,7 @@ export interface RollbackAppendReadiness extends Section {
 export interface RollbackCardReadiness extends Section {
 	deliveryControls: RollbackSnapshot["cards"]["deliveryControls"];
 	/** Presentation combinations whose sent cards still decide. */
-	actionable: Array<{ workflowType: string; provider: string }>;
+	actionable: Array<{ workflowType: string; provider: ApprovalPresentationProvider }>;
 	openWork: RollbackSnapshot["cards"]["openWork"];
 }
 
@@ -155,11 +165,17 @@ export interface RollbackDurableReadiness extends Section {
 	heldImportRows: number;
 }
 
-/** Committed rows that only a schema and release from `migration` on can keep reading. */
+/**
+ * Committed rows that need the schema from `migration` on. `release` pins also
+ * need code from that migration on: older code cannot replay them (receipts),
+ * mishandles them (cycle-keyed delivery), or never knew them (newer values).
+ * `schema` pins are rows older code ignores safely.
+ */
 export interface RollbackPin {
 	migration: string;
 	subject: string;
 	rows: number;
+	limits: "schema" | "release";
 }
 
 export interface RollbackReadiness {
@@ -171,11 +187,11 @@ export interface RollbackReadiness {
 	escalation: RollbackEscalationReadiness;
 	durable: RollbackDurableReadiness;
 	/**
-	 * The newest migration among the pins: never narrow or drop the schema
-	 * below it, and a code rollback target older than it cannot read or replay
-	 * the pinned rows. Null when nothing is pinned.
+	 * `schema`: the newest pinned migration; never narrow or drop the schema
+	 * below it. `release`: the newest `release` pin; a code rollback target older
+	 * than it cannot replay or mishandles committed rows. Null when nothing pins.
 	 */
-	schemaFloor: { migration: string | null; pins: RollbackPin[] };
+	floor: { schema: string | null; release: string | null; pins: RollbackPin[] };
 }
 
 // ---------------------------------------------------------------------------
@@ -231,12 +247,22 @@ const PROVIDER_MIGRATIONS: Record<ApprovalDeliveryProvider, string> = {
 
 const INVOCATION_SCHEMES: Record<
 	ApprovalInvocationScheme,
-	{ provider: string; migration: string }
+	{ provider: ApprovalDeliveryProvider; migration: string }
 > = {
 	telegram_callback_query: { provider: "telegram", migration: "0081_approval_invocation" },
 	teams_adaptive_card_action: { provider: "teams", migration: "0091_teams_approval_actions" },
 	discord_interaction: { provider: "discord", migration: "0094_discord_approval_delivery" },
 };
+
+/**
+ * A value this release does not know was committed by a newer release. It sorts
+ * after every numbered migration, so it becomes the floor: no older target fits.
+ */
+const UNKNOWN_MIGRATION = "unknown (newer than this release)";
+
+function migrationOf(migrations: Readonly<Record<string, string>>, value: string): string {
+	return Object.hasOwn(migrations, value) ? migrations[value] : UNKNOWN_MIGRATION;
+}
 
 // ---------------------------------------------------------------------------
 // Assessment
@@ -288,23 +314,59 @@ function assessAppend({ append }: RollbackSnapshot): RollbackAppendReadiness {
 	);
 }
 
+/**
+ * Whether deleting the control leaves the combination without any card. Time
+ * kinds (#325) and legacy-authority absences (#384) fall back to the existing
+ * notification path; canonical absence submissions and expenses never used it.
+ */
+function pauseLeavesNoCard(control: RollbackSnapshot["cards"]["deliveryControls"][number]) {
+	if (control.workflowType === "travel_expense") return true;
+	return (
+		control.workflowType === "absence" &&
+		(control.lifecycleMode === "canonical" || control.lifecycleMode === "complete")
+	);
+}
+
 function assessCards({ cards }: RollbackSnapshot): RollbackCardReadiness {
 	const actionable = cards.presentationControls
 		.filter((control) => control.mode === "actionable")
 		.map(({ workflowType, provider }) => ({ workflowType, provider }));
-	const sum = (effects: readonly ApprovalDeliveryEffect[]) =>
+	// Older workers only claim work of providers that still have a control, so
+	// deleting the controls is the documented remedy for both work findings.
+	const controlled = new Set(cards.deliveryControls.map((control) => control.provider));
+	const unfinished = (
+		effects: readonly ApprovalDeliveryEffect[],
+		provider: (value: ApprovalDeliveryProvider) => boolean,
+	) =>
 		cards.openWork
-			.filter((work) => effects.includes(work.effect))
+			.filter(
+				(work) =>
+					effects.includes(work.effect) && controlled.has(work.provider) && provider(work.provider),
+			)
 			.reduce((total, work) => total + work.count, 0);
 	const findings: RollbackFinding[] = [];
-	// Deleting a control stops the owner, and canonical submissions then send no card at all.
-	counted(findings, "delivery_pause_gap", "hold", cards.deliveryControls.length);
+	counted(
+		findings,
+		"delivery_pause_gap",
+		"hold",
+		cards.deliveryControls.filter(pauseLeavesNoCard).length,
+	);
 	// Set `review_only` first so older binaries show review notices instead of failures.
 	counted(findings, "presentation_actionable", "hold", actionable.length);
 	// A pre-#300 worker cancels replacement cards as `purged`.
-	counted(findings, "replacement_work_pending", "blocker", sum(["replacement"]));
-	// An older worker without the provider's adapter exhausts it.
-	counted(findings, "delivery_work_pending", "hold", sum(["initial", "refresh"]));
+	counted(
+		findings,
+		"replacement_work_pending",
+		"blocker",
+		unfinished(["replacement"], () => true),
+	);
+	// An older worker without the provider's adapter exhausts it; Telegram has one since #291.
+	counted(
+		findings,
+		"delivery_work_pending",
+		"hold",
+		unfinished(["initial", "refresh"], (provider) => provider !== "telegram"),
+	);
 	return section(
 		{ deliveryControls: cards.deliveryControls, actionable, openWork: cards.openWork },
 		findings,
@@ -316,14 +378,16 @@ function assessEscalation({ escalation }: RollbackSnapshot): RollbackEscalationR
 	if (escalation.owner === "escalation" && !escalation.automationPaused) {
 		findings.push({ code: "escalation_automation_running", severity: "hold" });
 	}
-	// Older decision owners lack the revocation checks (#326) or reject the
-	// transfer lineage (#439): let the replacements decide these first.
-	counted(
-		findings,
-		"transferred_approvals_pending",
-		"blocker",
-		escalation.pendingTransferred.reduce((total, group) => total + group.count, 0),
-	);
+	const pending = (authorityMode: "canonical" | "legacy") =>
+		escalation.pendingTransferred
+			.filter((group) => group.authorityMode === authorityMode)
+			.reduce((total, group) => total + group.count, 0);
+	// Pre-#439 legacy time owners reject the transfer lineage: the replacement
+	// could no longer decide. Let the replacements decide these first.
+	counted(findings, "legacy_transfers_pending", "blocker", pending("legacy"));
+	// Pre-#326 owners lack the revocation checks: a former holder could decide
+	// again through eligible-manager fallback. Decide first, or accept that exposure.
+	counted(findings, "canonical_transfers_pending", "hold", pending("canonical"));
 	return section(
 		{
 			owner: escalation.owner,
@@ -360,10 +424,22 @@ function assessDurable({ durable }: RollbackSnapshot): RollbackDurableReadiness 
 	);
 }
 
-function assessSchemaFloor(snapshot: RollbackSnapshot): RollbackReadiness["schemaFloor"] {
+function assessFloor(snapshot: RollbackSnapshot): RollbackReadiness["floor"] {
 	const pins: RollbackPin[] = [];
-	const pin = (migration: string, subject: string, rows: number) => {
-		if (rows > 0) pins.push({ migration, subject, rows });
+	const pin = (
+		migration: string,
+		subject: string,
+		rows: number,
+		limits: RollbackPin["limits"] = "schema",
+	) => {
+		if (rows <= 0) return;
+		// A value this release does not know always limits the release too.
+		pins.push({
+			migration,
+			subject,
+			rows,
+			limits: migration === UNKNOWN_MIGRATION ? "release" : limits,
+		});
 	};
 	const { append, receipts, cards, durable } = snapshot;
 
@@ -378,33 +454,36 @@ function assessSchemaFloor(snapshot: RollbackSnapshot): RollbackReadiness["schem
 		append.positions.authorized_continuation,
 	);
 	for (const [kind, rows] of Object.entries(receipts.kinds)) {
-		pin(
-			RECEIPT_KIND_MIGRATIONS[kind as CompletedWorkOperationKind],
-			`receipt kind ${kind}`,
-			rows ?? 0,
-		);
+		pin(migrationOf(RECEIPT_KIND_MIGRATIONS, kind), `receipt kind ${kind}`, rows ?? 0, "release");
 	}
 	for (const [writer, rows] of Object.entries(receipts.writers)) {
 		pin(
-			RECEIPT_WRITER_MIGRATIONS[writer as CompletedWorkWriter],
+			migrationOf(RECEIPT_WRITER_MIGRATIONS, writer),
 			`receipt writer ${writer}`,
 			rows ?? 0,
+			"release",
 		);
 	}
 	for (const [provider, rows] of Object.entries(cards.messages)) {
+		pin(migrationOf(PROVIDER_MIGRATIONS, provider), `${provider} delivery messages`, rows ?? 0);
+	}
+	for (const [scheme, rows] of Object.entries(cards.invocations)) {
+		const known = INVOCATION_SCHEMES[scheme as ApprovalInvocationScheme];
 		pin(
-			PROVIDER_MIGRATIONS[provider as ApprovalDeliveryProvider],
-			`${provider} delivery messages`,
+			known?.migration ?? UNKNOWN_MIGRATION,
+			`${known?.provider ?? scheme} invocations`,
 			rows ?? 0,
 		);
 	}
-	for (const [scheme, rows] of Object.entries(cards.invocations)) {
-		const { provider, migration } = INVOCATION_SCHEMES[scheme as ApprovalInvocationScheme];
-		pin(migration, `${provider} invocations`, rows ?? 0);
-	}
 	pin("0093_legacy_expense_presentation", "legacy card lifecycles", cards.legacyLifecycleRows);
 	pin("0096_escalation_replacement_delivery", "replacement delivery work", cards.replacementRows);
-	pin("0108_legacy_absence_presentation", "cycle-keyed legacy delivery", cards.cycleRows);
+	// Binaries below #384 plan cycle rows source-wide.
+	pin(
+		"0108_legacy_absence_presentation",
+		"cycle-keyed legacy delivery",
+		cards.cycleRows,
+		"release",
+	);
 	pin(
 		"0099_work_balance_rebuild_intent",
 		"organization rebuild intents",
@@ -421,7 +500,11 @@ function assessSchemaFloor(snapshot: RollbackSnapshot): RollbackReadiness["schem
 		(left, right) =>
 			left.migration.localeCompare(right.migration) || left.subject.localeCompare(right.subject),
 	);
-	return { migration: pins.at(-1)?.migration ?? null, pins };
+	return {
+		schema: pins.at(-1)?.migration ?? null,
+		release: pins.filter((entry) => entry.limits === "release").at(-1)?.migration ?? null,
+		pins,
+	};
 }
 
 const VERDICT_ORDER: readonly RollbackVerdict[] = ["ready", "hold", "blocked"];
@@ -442,6 +525,6 @@ export function assessRollbackReadiness(snapshot: RollbackSnapshot): RollbackRea
 		organizationId: snapshot.organizationId,
 		verdict,
 		...sections,
-		schemaFloor: assessSchemaFloor(snapshot),
+		floor: assessFloor(snapshot),
 	};
 }

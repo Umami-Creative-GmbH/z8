@@ -11,7 +11,8 @@ Reports, from one read-only snapshot, what a compatible rollback of the
 organization (#331) must first drain, pause or accept: append adoption,
 approval cards and their delivery, escalation transfers and durable work an
 older release would ignore. It also lists the committed rows that pin the
-oldest schema and release a rollback may target. Nothing is changed.
+oldest schema a rollback may keep and the oldest code it may target. Nothing
+is changed.
 
 Options:
   --organization-id  Required organization scope
@@ -67,7 +68,7 @@ function listed(items: readonly string[]): string {
 }
 
 export function formatRollbackReadiness(report: RollbackReadiness): string[] {
-	const { append, cards, escalation, durable, schemaFloor } = report;
+	const { append, cards, escalation, durable, floor } = report;
 	const { total, ...admitted } = append.positions;
 	const lines = [
 		`Rollback readiness for organization ${report.organizationId} (read-only snapshot): ${report.verdict.toUpperCase()}`,
@@ -109,10 +110,12 @@ export function formatRollbackReadiness(report: RollbackReadiness): string[] {
 			"held import rows": durable.heldImportRows,
 		})})`,
 		...findingLines(durable.findings),
-		schemaFloor.migration === null
-			? "Schema floor: none (no committed rows pin a migration)"
-			: `Schema floor: ${schemaFloor.migration} (never narrow or drop below it; older code cannot read these rows)`,
-		...schemaFloor.pins.map((pin) => `    ${pin.migration}: ${pin.subject} (${pin.rows})`),
+		`Schema floor: ${floor.schema ?? "none"} (never narrow or drop the schema below it)`,
+		`Release floor: ${floor.release ?? "none"} (the oldest code a rollback may target)`,
+		...floor.pins.map(
+			(pin) =>
+				`    ${pin.migration}: ${pin.subject} (${pin.rows})${pin.limits === "release" ? ", limits the release" : ""}`,
+		),
 		"",
 		"Not visible to this report: deployed builds, old clients and their device queues (browser",
 		"workers, desktop stores, retired extension and mobile readers), BullMQ queues, sent",

@@ -1,15 +1,20 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import type {
 	ApprovalDeliveryEffect,
 	ApprovalDeliveryProvider,
 } from "@/db/schema/approval-delivery";
-import type { ApprovalPresentationMode } from "@/db/schema/approval-evidence";
+import type {
+	ApprovalPresentationMode,
+	ApprovalPresentationProvider,
+} from "@/db/schema/approval-evidence";
 import {
 	TIME_ENTRY_APPEND_ADMISSIONS,
 	type TimeEntryAppendAdmission,
+	timeEntryAppendControl,
 } from "@/db/schema/time-entry-append";
 import { TIME_APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/time-approval-kinds";
+import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	assessRollbackReadiness,
 	type RollbackReadiness,
@@ -49,11 +54,11 @@ async function readAppend(
 	transaction: Transaction,
 	organizationId: string,
 ): Promise<RollbackSnapshot["append"]> {
-	const [control] = await select(
-		transaction,
-		sql`select mode, updated_at from time_entry_append_control
-			where organization_id = ${organizationId}`,
-	);
+	const [control] = await transaction
+		.select({ mode: timeEntryAppendControl.mode, updatedAt: timeEntryAppendControl.updatedAt })
+		.from(timeEntryAppendControl)
+		.where(eq(timeEntryAppendControl.organizationId, organizationId))
+		.limit(1);
 	const active = control?.mode === "active";
 	const counts = grouped<TimeEntryAppendAdmission>(
 		await select(
@@ -66,12 +71,7 @@ async function readAppend(
 	return {
 		mode: active ? "active" : "inactive",
 		// The control has no application setter, so its last update is the activation.
-		activatedAt: active
-			? (control.updated_at instanceof Date
-					? control.updated_at
-					: new Date(String(control.updated_at))
-				).toISOString()
-			: null,
+		activatedAt: active ? (instantFromDB(control.updatedAt)?.toString() ?? null) : null,
 		positions: Object.fromEntries(
 			TIME_ENTRY_APPEND_ADMISSIONS.map((admission) => [admission, counts[admission] ?? 0]),
 		) as Record<TimeEntryAppendAdmission, number>,
@@ -108,8 +108,13 @@ async function readCards(
 ): Promise<RollbackSnapshot["cards"]> {
 	const deliveryControls = await select(
 		transaction,
-		sql`select workflow_type, provider from approval_delivery_control
-			where organization_id = ${organizationId} order by workflow_type, provider`,
+		sql`select control.workflow_type, control.provider, rollout.lifecycle_mode
+			from approval_delivery_control control
+			left join approval_workflow_rollout rollout
+				on rollout.organization_id = control.organization_id
+					and rollout.workflow_type = control.workflow_type
+			where control.organization_id = ${organizationId}
+			order by control.workflow_type, control.provider`,
 	);
 	const presentationControls = await select(
 		transaction,
@@ -119,7 +124,8 @@ async function readCards(
 	const openWork = await select(
 		transaction,
 		sql`select provider, effect, count(*)::int as count from approval_delivery_work
-			where organization_id = ${organizationId} and status in ('pending', 'processing')
+			where organization_id = ${organizationId}
+				and status not in ('delivered', 'suppressed', 'cancelled')
 			group by provider, effect order by provider, effect`,
 	);
 	const [lineage] = await select(
@@ -149,10 +155,11 @@ async function readCards(
 		deliveryControls: deliveryControls.map((row) => ({
 			workflowType: String(row.workflow_type),
 			provider: String(row.provider) as ApprovalDeliveryProvider,
+			lifecycleMode: row.lifecycle_mode === null ? null : String(row.lifecycle_mode),
 		})),
 		presentationControls: presentationControls.map((row) => ({
 			workflowType: String(row.workflow_type),
-			provider: String(row.provider),
+			provider: String(row.provider) as ApprovalPresentationProvider,
 			mode: String(row.mode) as ApprovalPresentationMode,
 		})),
 		openWork: openWork.map((row) => ({
@@ -244,7 +251,8 @@ async function readDurable(
 				where job.organization_id = ${organizationId}
 					and job.status in ('pending', 'processing')
 					and exists (select 1 from payroll_export_work_input input
-						where input.job_id = job.id)) as payroll_jobs,
+						where input.job_id = job.id
+							and input.organization_id = job.organization_id)) as payroll_jobs,
 			(select count(*)::int from payroll_export_work_input
 				where organization_id = ${organizationId}) as payroll_inputs,
 			exists (select 1 from payroll_work_collection_control
