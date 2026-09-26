@@ -248,10 +248,14 @@ export function createReviewNotificationHandler(deps: {
 		const channel = claim.payload.channel;
 		const recipientUserId = claim.payload.recipientUserId;
 		if (channel === undefined && recipientUserId === undefined) {
-			const preferences = new Map<string, Record<NotificationChannel, boolean>>();
-			for (const recipient of recipients) {
-				preferences.set(recipient.userId, await deps.transport.preferences(recipient.userId));
-			}
+			const preferences = new Map<string, Record<NotificationChannel, boolean>>(
+				await Promise.all(
+					recipients.map(
+						async (recipient) =>
+							[recipient.userId, await deps.transport.preferences(recipient.userId)] as const,
+					),
+				),
+			);
 			const plan = planReviewNotificationDeliveries(recipients, preferences);
 			for (const delivery of plan.deliveries) {
 				await deps.database.execute(sql`

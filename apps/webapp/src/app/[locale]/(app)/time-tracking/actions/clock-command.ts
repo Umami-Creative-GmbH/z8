@@ -381,12 +381,12 @@ async function submitFresh(
 					[occurredAt, command.timezone],
 				]
 			: [[occurredAt, command.timezone]];
-	for (const [instant, timezone] of endpoints) {
-		const validity = await validateTimeEntry(
-			actor.organizationId,
-			dateFromInstant(instant),
-			timezone,
-		);
+	const validities = await Promise.all(
+		endpoints.map(([instant, timezone]) =>
+			validateTimeEntry(actor.organizationId, dateFromInstant(instant), timezone),
+		),
+	);
+	for (const validity of validities) {
 		if (!validity.isValid) {
 			throw new ClockCommandRejectedError({
 				code: "not_allowed_at_time",

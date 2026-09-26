@@ -194,12 +194,14 @@ export function WorkRepairPanel({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("settings.workDiagnostics.repair.employee", "Employee")}</TableHead>
-								<TableHead>{t("settings.workDiagnostics.repair.work", "Work period")}</TableHead>
-								<TableHead>{t("settings.workDiagnostics.repair.fills", "Repairs")}</TableHead>
-								<TableHead>
-									{t("settings.workDiagnostics.repair.originalActor", "Original actor")}
-								</TableHead>
+								{[
+									t("settings.workDiagnostics.repair.employee", "Employee"),
+									t("settings.workDiagnostics.repair.work", "Work period"),
+									t("settings.workDiagnostics.repair.fills", "Repairs"),
+									t("settings.workDiagnostics.repair.originalActor", "Original actor"),
+								].map((heading) => (
+									<TableHead key={heading}>{heading}</TableHead>
+								))}
 							</TableRow>
 						</TableHeader>
 						<TableBody>

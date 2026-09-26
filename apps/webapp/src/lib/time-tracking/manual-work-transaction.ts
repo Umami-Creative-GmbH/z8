@@ -226,10 +226,11 @@ async function runAttempt<T>(
 					stageIds: readonly string[],
 				) => {
 					assertActive();
+					const routedStageIds = new Set(routed.stageIds);
 					if (
 						organizationId !== input.organizationId ||
 						!routed.policyIds.includes(policyId) ||
-						stageIds.some((id) => !routed.stageIds.includes(id))
+						stageIds.some((id) => !routedStageIds.has(id))
 					) {
 						widen();
 					}

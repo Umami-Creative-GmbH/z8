@@ -339,13 +339,15 @@ function assessCards({ cards }: RollbackSnapshot): RollbackCardReadiness {
 	const unfinished = (
 		effects: readonly ApprovalDeliveryEffect[],
 		provider: (value: ApprovalDeliveryProvider) => boolean,
-	) =>
-		cards.openWork
+	) => {
+		const wanted = new Set(effects);
+		return cards.openWork
 			.filter(
 				(work) =>
-					effects.includes(work.effect) && controlled.has(work.provider) && provider(work.provider),
+					wanted.has(work.effect) && controlled.has(work.provider) && provider(work.provider),
 			)
 			.reduce((total, work) => total + work.count, 0);
+	};
 	const findings: RollbackFinding[] = [];
 	counted(
 		findings,

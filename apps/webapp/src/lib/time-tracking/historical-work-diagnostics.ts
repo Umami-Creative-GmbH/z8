@@ -627,6 +627,8 @@ export function assessHistoricalWork(
 						shape: "missing",
 						details: { field, periodValue },
 					});
+					// One membership check against one record's few canonical values.
+					// react-doctor-disable-next-line react-doctor/js-set-map-lookups
 				} else if (periodValue !== null && !canonicalValues.includes(periodValue)) {
 					push({
 						...common,

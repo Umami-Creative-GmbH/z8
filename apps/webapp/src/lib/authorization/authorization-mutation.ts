@@ -88,7 +88,8 @@ export async function protectAuthorizationMutation(
 	await acquireExclusiveUserConfigurationAccessGuards(transaction, userIds);
 	if (!scope.route && !scope.employeeIds?.length) return;
 	const confirmed = await resolveUsers(transaction, scope);
-	if (confirmed.some((userId) => !userIds.includes(userId))) {
+	const guarded = new Set(userIds);
+	if (confirmed.some((userId) => !guarded.has(userId))) {
 		throw new AuthorizationScopeChanged();
 	}
 }

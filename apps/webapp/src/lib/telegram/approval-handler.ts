@@ -57,6 +57,8 @@ export async function handleApprovalCallback(
 	const user = await resolveTelegramUser(telegramUserId, bot.organizationId);
 	if (user.status !== "found") return undefined;
 	try {
+		// The attempt below records its outcome whether or not a card is edited afterwards.
+		// react-doctor-disable-next-line react-doctor/async-defer-await
 		const { attemptBotApproval } = await import(
 			"@/lib/bot-platform/approval-decision"
 		);

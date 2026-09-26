@@ -216,8 +216,10 @@ export async function attemptBoundBotApproval(
 	// immutable and outlive their committed invocations, so routing on them
 	// keeps exact replays intact.
 	const scope = { organizationId: input.organizationId, bindingId: input.bindingId };
-	const authority = await loadReviewBindingAuthority(db, scope);
-	const workflowType = await loadReviewBindingWorkflowType(db, scope);
+	const [authority, workflowType] = await Promise.all([
+		loadReviewBindingAuthority(db, scope),
+		loadReviewBindingWorkflowType(db, scope),
+	]);
 	const result =
 		authority === "legacy"
 			? workflowType === "absence"

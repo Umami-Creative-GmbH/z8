@@ -88,7 +88,8 @@ function exactRecord(value: unknown, keys: readonly string[], field: string) {
 		throw new InvalidCommandField(field);
 	}
 	const own = Object.keys(value);
-	if (own.length !== keys.length || own.some((key) => !keys.includes(key))) {
+	const allowed = new Set<string>(keys);
+	if (own.length !== keys.length || own.some((key) => !allowed.has(key))) {
 		throw new InvalidCommandField(field);
 	}
 	return value as Record<string, unknown>;
