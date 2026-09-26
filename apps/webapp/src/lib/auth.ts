@@ -57,6 +57,7 @@ import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
 } from "@/lib/scim/auth-configuration";
+import { guardSCIMSubjectAcquisitions } from "@/lib/scim/projection-guards";
 import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
 import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
 import { turnstileAuthGuard } from "@/lib/turnstile/auth-plugin";
@@ -475,12 +476,15 @@ export const auth = betterAuth({
 		},
 	},
 	database: makeEmailLookupCaseInsensitiveAdapter(
-		// Hooks and SCIM callbacks take their guards on Better Auth's transaction (#314).
-		drizzleAdapter(captureAuthTransactions(db), {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
+		// Hooks and SCIM callbacks take their guards on Better Auth's transaction (#314);
+		// SCIM subject locks take them in the plugin's sorted user order (#429).
+		guardSCIMSubjectAcquisitions(
+			drizzleAdapter(captureAuthTransactions(db), {
+				provider: "pg",
+				schema: authDatabaseSchema,
+				transaction: true,
+			}),
+		),
 	),
 	plugins: [
 		turnstileAuthGuard(),

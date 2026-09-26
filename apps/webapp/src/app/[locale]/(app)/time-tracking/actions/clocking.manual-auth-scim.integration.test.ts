@@ -1,7 +1,8 @@
 /**
  * #314 / T49 runtime evidence: Better Auth, SCIM and SSO writers of membership,
  * role, active state and global access participate in the manual work
- * transaction's configuration/access protocol.
+ * transaction's configuration/access protocol. #429: multi-user SCIM
+ * projections take every projected user's guard in user-ID order first.
  *
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
@@ -157,6 +158,8 @@ const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
 const { createSCIMCallbackModelRegistration, createZ8SCIMPlugin } = await import(
 	"@/lib/scim/auth-configuration"
 );
+const { guardSCIMSubjectAcquisitions } = await import("@/lib/scim/projection-guards");
+const { getSCIMCredentialExpiresAt, SCIM_SCOPES } = await import("@/lib/scim/constants");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -242,11 +245,13 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	const auth = betterAuth({
 		baseURL: origin,
 		secret: "t314-auth-coordination-integration-secret",
-		database: drizzleAdapter(captureAuthTransactions(db), {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
+		database: guardSCIMSubjectAcquisitions(
+			drizzleAdapter(captureAuthTransactions(db), {
+				provider: "pg",
+				schema: authDatabaseSchema,
+				transaction: true,
+			}),
+		),
 		session: { cookieCache: { enabled: false } },
 		plugins: [
 			bearer(),
@@ -348,6 +353,37 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 		throw new Error(`No transaction waited on ${key}`);
 	}
 
+	/** Waits until a transaction waits on one of these advisory keys. */
+	async function waitForWaiterOnAny(keys: string[]) {
+		for (let attempt = 0; attempt < 100; attempt += 1) {
+			for (const key of keys) {
+				if ((await advisoryLocks(key, false)) > 0) return;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error(`No transaction waited on any of ${keys.join(", ")}`);
+	}
+
+	async function advisoryLocks(key: string, granted: boolean) {
+		const { rows } = await admin.query<{ locks: number }>(
+			`select count(*)::int as locks from pg_locks l, (select hashtextextended($1, 0) as k) h
+			 where l.locktype = 'advisory' and l.granted = $2
+			   and l.classid = ((h.k >> 32) & 4294967295)::oid
+			   and l.objid = (h.k & 4294967295)::oid`,
+			[key, granted],
+		);
+		return rows[0]?.locks ?? 0;
+	}
+
+	/** Which of these users' configuration/access guards some transaction holds. */
+	async function guardedUsers(userIds: string[]) {
+		const guarded: string[] = [];
+		for (const userId of userIds) {
+			if ((await advisoryLocks(userGuard(userId), true)) > 0) guarded.push(userId);
+		}
+		return guarded;
+	}
+
 	/** Waits until some transaction waits on a row or transaction lock. */
 	async function waitForRowWaiter() {
 		for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -396,6 +432,15 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	}
 
 	async function cleanup() {
+		await admin.query("delete from scim_group where provisioning_domain_id = $1", [
+			ids.organization,
+		]);
+		await admin.query("delete from scim_connection_binding where provisioning_domain_id = $1", [
+			ids.organization,
+		]);
+		await admin.query("delete from scim_managed_connection where provisioning_domain_id = $1", [
+			ids.organization,
+		]);
 		await admin.query("delete from organization where id = $1", [ids.organization]);
 		await admin.query('delete from "user" where id = any($1::text[])', [users]);
 		await admin.query("drop trigger if exists t314_fail_employee_update on employee");
@@ -502,6 +547,69 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			],
 		);
 	}
+
+	/** SCIM users projected in one transaction, in ascending user-ID order. */
+	const scimMembers = [ids.adminUser, ids.employeeUser];
+	const scimSource = (userId: string) => `t429-scim-user-${userId}`;
+
+	/** A managed SCIM connection with an active source for the admin and the employee. */
+	async function seedScimManagedSources() {
+		const timestamp = new Date("2026-01-01T00:00:00Z");
+		const created = await auth.api.createSCIMManagedConnection({
+			body: {
+				creationRequestId: "t429-scim-request",
+				provisioningDomainId: ids.organization,
+				actorId: ids.ownerUser,
+				scopes: SCIM_SCOPES,
+				expiresAt: getSCIMCredentialExpiresAt(),
+			},
+		});
+		const { connectionId } = created.connection;
+		await admin.query(
+			`insert into role_template (id, organization_id, name, is_global, is_active, employee_role,
+				team_permissions, created_at, created_by, updated_at)
+			 values ($1, $2, 'T429 SCIM default', false, true, 'employee', '{}'::jsonb, $3, $4, $3)`,
+			[ids.roleTemplate, ids.organization, timestamp, ids.ownerUser],
+		);
+		await admin.query(
+			`insert into scim_provider_config (organization_id, creation_request_id, connection_id, state,
+				auto_activate_users, deprovision_action, default_role_template_id, created_at, created_by, updated_at)
+			 values ($1, 't429-scim-request', $2, 'active', true, 'suspend', $3, $4, $5, $4)`,
+			[ids.organization, connectionId, ids.roleTemplate, timestamp, ids.ownerUser],
+		);
+		for (const userId of scimMembers) {
+			await admin.query(
+				`insert into scim_subject (id, user_id, revision, created_at, updated_at)
+				 values ('t429-scim-subject-' || $1, $1, 0, $2, $2)`,
+				[userId, timestamp],
+			);
+			await admin.query(
+				`insert into scim_user (id, connection_id, provisioning_domain_id, user_id, connection_user_key,
+					user_name, user_name_key, primary_email, work_email_value_index, email_value_index,
+					display_name, formatted_name, serialized_emails, active, order_key, created_at, updated_at)
+				 values ($1, $2, $3, $4, 't429-connection-user-' || $4, $5, 't429-user-name-' || $4, $5,
+					't429-email-index', 't429-email-index', $4, $4, '[]', true, 't429-order-' || $4, $6, $6)`,
+				[
+					scimSource(userId),
+					connectionId,
+					ids.organization,
+					userId,
+					`${userId}@t314.example.test`,
+					timestamp,
+				],
+			);
+		}
+		return { connectionId, token: created.token };
+	}
+
+	const scimRequest = (token: string, path: string, body: unknown) =>
+		auth.handler(
+			new Request(`${origin}/api/auth/scim/v2${path}`, {
+				method: "POST",
+				headers: { authorization: `Bearer ${token}`, "content-type": "application/scim+json" },
+				body: JSON.stringify(body),
+			}),
+		);
 
 	beforeAll(async () => {
 		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
@@ -870,6 +978,76 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			await replay;
 			await expect(pending).resolves.toMatchObject({ success: false });
 			expect(await workFor(ids.employee)).toEqual([]);
+		});
+
+		describe("multi-user projections (#429)", () => {
+			it("orders a group change listing members in descending ID order against their submission", async () => {
+				const scim = await seedScimManagedSources();
+				expect([ids.employeeUser, ids.adminUser].sort()).toEqual(scimMembers);
+				// Pauses the group change on the first member it projects, the employee.
+				const row = await hold("select id from employee where id = $1 for update", [ids.employee]);
+				const groupChange = scimRequest(scim.token, "/Groups", {
+					schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+					displayName: "T429 descending members",
+					members: [{ value: scimSource(ids.employeeUser) }, { value: scimSource(ids.adminUser) }],
+				});
+				await waitForRowWaiter();
+				const guardedDuringFirstProjection = await guardedUsers(scimMembers);
+
+				// The admin submits for the employee: shared guards on both members, in ID order.
+				const pending = submit(manualCommand(), ids.adminUser);
+				await waitForWaiterOnAny(scimMembers.map(userGuard));
+				await row.release();
+
+				// Without sorted guards, PostgreSQL aborts one side here as a deadlock.
+				expect((await groupChange).status).toBe(201);
+				await expect(pending).resolves.toMatchObject({ success: true });
+				expect(await workFor(ids.employee)).toHaveLength(1);
+				expect(guardedDuringFirstProjection).toEqual(scimMembers);
+			});
+
+			it("holds every replayed user's guard before projecting the first", async () => {
+				await seedScimManagedSources();
+				const row = await hold("select id from employee where id = $1 for update", [ids.admin]);
+				const replay = auth.api.reconcileSCIMProjection({
+					body: { provisioningDomainId: ids.organization },
+				});
+				await waitForRowWaiter();
+				const guardedDuringFirstProjection = await guardedUsers(scimMembers);
+				await row.release();
+
+				await replay;
+				expect(guardedDuringFirstProjection).toEqual(scimMembers);
+			});
+
+			it("holds every decommissioned user's guard before deprovisioning the first", async () => {
+				const scim = await seedScimManagedSources();
+				// The connection's first request binds it and projects both members.
+				const grouped = await scimRequest(scim.token, "/Groups", {
+					schemas: ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+					displayName: "T429 members",
+					members: scimMembers.map((userId) => ({ value: scimSource(userId) })),
+				});
+				expect(grouped.status).toBe(201);
+				const row = await hold("select id from member where id = $1 for update", [
+					memberId(ids.adminUser),
+				]);
+				const decommission = auth.api.decommissionSCIMManagedConnection({
+					body: {
+						connectionId: scim.connectionId,
+						provisioningDomainId: ids.organization,
+						actorId: ids.ownerUser,
+					},
+				});
+				await waitForRowWaiter();
+				const guardedDuringFirstProjection = await guardedUsers(scimMembers);
+				await row.release();
+
+				await decommission;
+				expect(guardedDuringFirstProjection).toEqual(scimMembers);
+				expect(await membership(ids.adminUser)).toMatchObject({ status: "suspended" });
+				expect(await membership(ids.employeeUser)).toMatchObject({ status: "suspended" });
+			});
 		});
 	});
 
