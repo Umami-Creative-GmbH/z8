@@ -11,7 +11,7 @@ against adopted data. Pausing escalation stops new transfers and keeps assignmen
 and delivery recovery.
 
 Nothing here activates, pauses or deploys anything. Every switch below is a separately
-authorized operator step. Record its evidence on the T66 operations tracker (see
+authorized operator step. Record its evidence on the T66 operations tracker, #467 (see
 [Verification](#verification-331)).
 
 ## Readiness report
@@ -244,7 +244,7 @@ behaviour, so confirm it is acceptable for the rollback window.
 ## Moved items
 
 Each #331 comment below holds the source slice's full rollback checklist. These
-comments move verbatim to the T66 operations tracker when #331 closes.
+comments moved verbatim to the T66 operations tracker, #467.
 
 | Slice | Area | Comment |
 | --- | --- | --- |
@@ -351,7 +351,7 @@ the PostgreSQL suite does not produce through callers:
 
 ### Not proven here (operations)
 
-The following remain operational and are tracked on the T66 operations tracker:
+The following remain operational and are tracked on the T66 operations tracker, #467:
 
 - The mixed-version rehearsal: an older release against a database with these
   migrations and rows, for each rollback target (#300, #326, #359 and others).
