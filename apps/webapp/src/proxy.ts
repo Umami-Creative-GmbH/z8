@@ -6,6 +6,7 @@ import {
 	classifyDomainHost,
 	resolvePlatformOrganization,
 } from "@/lib/domain/platform-domain";
+import { resolvePublicRedirectOrigin } from "@/lib/domain/request-origin";
 import {
 	checkRateLimit,
 	createRateLimitResponse,
@@ -53,6 +54,31 @@ const SESSION_COOKIE_NAMES = [
 	"better-auth.session_token",
 	"better-auth.session_data",
 ];
+
+// Next 16 builds the proxy's request.url from its listening address, so browser
+// redirects resolve against the validated public origin instead.
+async function publicRedirectUrl(
+	path: string,
+	request: NextRequest,
+): Promise<URL> {
+	return new URL(path, await resolvePublicRedirectOrigin(request));
+}
+
+// next-intl resolves its locale-prefix redirect against request.url too.
+async function rebaseLocaleRedirect(
+	response: NextResponse,
+	request: NextRequest,
+): Promise<void> {
+	const location = response.headers.get("location");
+	if (!location) return;
+	const target = new URL(location, request.url);
+	if (target.origin !== new URL(request.url).origin) return;
+	const publicUrl = await publicRedirectUrl(
+		`${target.pathname}${target.search}${target.hash}`,
+		request,
+	);
+	response.headers.set("location", publicUrl.toString());
+}
 
 export async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
@@ -113,7 +139,7 @@ export async function proxy(request: NextRequest) {
 		const { isPlatformConfigured } = await import("@/lib/setup/config-cache");
 		const configured = await isPlatformConfigured();
 		if (!configured) {
-			const setupUrl = new URL(`/${locale}/setup`, request.url);
+			const setupUrl = await publicRedirectUrl(`/${locale}/setup`, request);
 			return NextResponse.redirect(setupUrl);
 		}
 	} else {
@@ -121,7 +147,10 @@ export async function proxy(request: NextRequest) {
 		const { isPlatformConfigured } = await import("@/lib/setup/config-cache");
 		const configured = await isPlatformConfigured();
 		if (configured) {
-			const homeUrl = new URL(`/${setupLocale || locale}/`, request.url);
+			const homeUrl = await publicRedirectUrl(
+				`/${setupLocale || locale}/`,
+				request,
+			);
 			const response = NextResponse.redirect(homeUrl);
 			applySetupResponseHeaders(response);
 			return response;
@@ -155,6 +184,7 @@ export async function proxy(request: NextRequest) {
 
 	// If i18n middleware redirected (e.g., for locale prefix), return immediately
 	if (response.status === 307 || response.status === 308) {
+		await rebaseLocaleRedirect(response, request);
 		if (isSetupPage) applySetupResponseHeaders(response);
 		return response;
 	}
@@ -188,7 +218,7 @@ export async function proxy(request: NextRequest) {
 		if (!isPublicRoute) {
 			const locale =
 				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
-			const signInUrl = new URL(`/${locale}/sign-in`, request.url);
+			const signInUrl = await publicRedirectUrl(`/${locale}/sign-in`, request);
 			signInUrl.searchParams.set("callbackUrl", pathWithoutLocale);
 			return NextResponse.redirect(signInUrl);
 		}
@@ -197,7 +227,7 @@ export async function proxy(request: NextRequest) {
 		if (isAuthRoute) {
 			const locale =
 				pathname.match(/^\/([a-z]{2})(?:\/|$)/)?.[1] || DEFAULT_LANGUAGE;
-			const dashboardUrl = new URL(`/${locale}/`, request.url);
+			const dashboardUrl = await publicRedirectUrl(`/${locale}/`, request);
 			return NextResponse.redirect(dashboardUrl);
 		}
 	}
