@@ -677,9 +677,8 @@ bound card.
    (ownership writer, drained cutover) and the pilot gates.
 3. ~~**Legacy-authoritative transfers** (#299)~~ — resolved by #408 for
    absences and travel expenses (see
-   [Legacy escalation replacement delivery](#legacy-escalation-replacement-delivery--408)).
-   Legacy time transfers (#439) still wait (`pending`) until #432 gives time
-   kinds a legacy delivery lifecycle.
+   [Legacy escalation replacement delivery](#legacy-escalation-replacement-delivery--408)),
+   and by #470 for legacy time transfers (#439).
 4. **Adapter coverage.** All four adapters (Telegram, Slack, Teams, Discord)
    implement the escalation-delivery checks. Slack replacement cards are
    review-only, like every Slack card (#294). The PostgreSQL suite covers
@@ -749,9 +748,11 @@ cascades from).
 ## Legacy escalation replacement delivery — #408
 
 A committed legacy-authoritative escalation transfer (#299 absences, #326
-travel expenses) moves the **same** legacy request to its replacement. Since
-#408, escalation's replacement pass expands its event into the legacy
-delivery lifecycle (#296, cycle-keyed for absences since #384): the
+travel expenses, #439 manual time submissions, policy clock-outs and time
+corrections) moves the **same** legacy request to its replacement. Since
+#408 (#470 for time kinds), escalation's replacement pass expands its event
+into the legacy delivery lifecycle (#296, cycle-keyed for absences since #384
+and for time kinds since #432): the
 replacement gets its own card, and the former holder's cards are edited into
 **Reassigned**. It reuses #300's pass, transport, tracking, leases, retries,
 attention and recovery, and it is inactive wherever the kind has no delivery
@@ -763,7 +764,7 @@ legacy transfer (one transaction, unchanged)                escalation/legacy-tr
 after commit: kickApprovalDelivery (best effort) · cron:approval-delivery (every minute)
 
 processEscalationReplacementDeliveries(org, limit)      escalation/replacement-delivery.ts
-  expand pending legacy events (absence / travel_expense, kind under legacy authority)
+  expand pending legacy events (absence / travel_expense / time kinds, kind under legacy authority)
     transferred intent  once per transfer, born expanded  → lifecycle version + 1
     replacement         per frozen channel      dedupe replacement:<transfer>:<provider>
     adoption            old-path cards of the former holder (telegram_approval_message)
@@ -775,7 +776,7 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 ### Representation
 
 - Work and messages carry `lifecycle = 'legacy'`, the kind, the source, the
-  exact legacy request and (absences) the submission cycle, never a workflow,
+  exact legacy request and (absences, time kinds) the submission cycle, never a workflow,
   stage or assignment. Replacement work names its transfer
   (`escalation_transfer_id`), and through it the lineage position
   (`legacy_source_sequence`); its recipient is the replacement. A shadow/ready
@@ -806,8 +807,12 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
   expansion never repeats the transfer. Events that #300 left `pending` expand
   once this ships.
 - The pass expands a legacy event only while the kind has legacy authority
-  (rollout not `canonical`/`complete`) and only for absence and travel expense
-  subjects. Otherwise the event waits (`pending`). Without any delivery control
+  (rollout not `canonical`/`complete`) and only for absence, travel expense
+  and (#470) time subjects (`time_entry` with a time kind). Otherwise the event
+  waits (`pending`). A time event is delivered in the cycle its request's
+  delivery rows recorded, else the request itself: #439 transfers only direct
+  requests, never chain stages. Another cycle of the same work period is
+  untouched. Without any delivery control
   for the kind the event expands to nothing: no card of the kind is owned and
   nothing could be claimed.
 - Transfer-linked work is claimed only by escalation's pass. The #291 owner
@@ -830,8 +835,8 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
   presentation checks membership and entitlement.
 - Absence cards are actionable through #384's legacy bindings when its gates
   hold (Telegram only), review-only otherwise; expense cards follow #296's
-  legacy binding rules. The binding names the replacement, never the former
-  holder.
+  legacy binding rules; time cards follow #432's (`prepareBoundLegacyTimeCard`,
+  Telegram only). The binding names the replacement, never the former holder.
 - Outcomes, retries (1 min, 5 min, 30 min, 2 h, 12 h), `awaiting_repair`,
   exhaustion, **Retry delivery** and destination repair follow the table above.
   Attention uses the `legacy_assignment` subject (request and replacement).
@@ -887,7 +892,10 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
    actionable: an unlinked retirement it claims finishes as `still_actionable`
    without editing the card, which is never corrected afterwards. Deploy to
    every worker and drain old workers before an organization with a delivery
-   control for absences or travel expenses lets escalation own transfers.
+   control for absences or travel expenses lets escalation own transfers. A
+   pre-#470 replacement pass leaves legacy time events `pending`, so their
+   new holder gets no card until a #470 worker expands them (once). Pre-#432
+   binaries are covered by the #432 blockers.
 4. **Old-path cards are adopted at expansion only.** An old-path card still in
    flight when the transfer expands, or one sent through a provider without a
    delivery control for the kind, is not adopted: it keeps its controls on
@@ -896,11 +904,13 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
    replacement cards are review-only; Teams and Discord share the code path
    but stay unadmitted for legacy kinds (review-only), with typecheck and
    shared-code evidence only.
-6. **Legacy time transfers** (#439) wait until #432 adds a legacy delivery
-   lifecycle for time kinds.
+6. ~~**Legacy time transfers** (#439)~~: resolved by #470, which depends on
+   #432's legacy time cards and must not be deployed without them.
 7. **Pilot report.** The readiness report still holds
-   `escalation_replacement_unsupported` and `legacy_transfer_without_replacement`
-   for legacy kinds; revisit them in the pilot (#423).
+   `escalation_replacement_unsupported` for legacy absences, and
+   `legacy_transfer_without_replacement` for any legacy event still pending;
+   revisit them in the pilot (#423). Since #470 legacy time kinds are held
+   only by `escalation_delivery_disabled` (frozen channels).
 8. A cutover cancels planned work; a later rollback does not re-plan it (the
    former card keeps its last state and decides nothing). A retirement the
    delivery owner planned itself (a former card that landed after the
@@ -969,3 +979,37 @@ action, `processEscalationReplacementDeliveries`, `handleTelegramUpdate`,
 
 Unit seam: `maintenance.test.ts` (legacy replacement work and transfer intents
 are deleted through the transfer, before the journal).
+
+### Verification (#470)
+
+Legacy time transfers, in `lib/telegram/legacy-time-bound-approval.integration.test.ts`
+(the #432 suite: real time submission actions, the delivery owner,
+`processDueEscalations`, `processEscalationReplacementDeliveries`,
+`sendApprovalMessageToManager`, `handleTelegramUpdate` and
+`cancelMyTimeCorrectionRequest`), 15 cases:
+
+- `legacy`, `shadow` and `ready` × manual submission, policy clock-out and
+  correction: after a scheduled transfer, a press on the former holder's card
+  decides nothing and is acknowledged as Reassigned. The pass records the
+  `transferred` intent in the request's cycle, sends the backup one bound
+  actionable card and edits the former card into Reassigned without controls.
+  Reruns of both passes send nothing. The backup decides from the card (the
+  invocation names the backup), a late former press decides nothing, and the
+  owner's refresh shows the decision on the backup's card while the former
+  card stays Reassigned. No canonical delivery row is written.
+- Each kind: the old path's bound card of the former holder (sent before the
+  kind's delivery control) is adopted and retired. Bound and unbound presses
+  on it decide nothing.
+- Two cycles on one work period: the transferred correction's cards move on
+  while the approved manual cycle's card is untouched. The requester's
+  withdrawal refreshes the backup's card to withdrawn and keeps the former card
+  Reassigned.
+- A correction withdrawn before the pass: the replacement is cancelled
+  (`obsolete`), nothing is sent, and the former card is still retired.
+- Cutover: the event waits under canonical authority and expands once back
+  under legacy authority.
+
+The #408 suite adds the expansion gate for a legacy time event committed
+before #470 (seeded rows): it expands into its request's cycle under legacy
+authority and keeps waiting under canonical authority in the same pass.
+Reverting the expansion change makes all 15 time cases fail.

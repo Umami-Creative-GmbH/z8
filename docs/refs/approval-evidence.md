@@ -1302,12 +1302,14 @@ admit canonical cards. No application endpoint changes either control.
 3. **Shadow requester cancellation** of direct legacy corrections works since
    #463 (merged first); #432 verifies withdrawal and cleanup in `legacy`,
    `shadow` and `ready`.
-4. **Replacement cards** after a legacy time transfer: #408 built legacy
-   replacement delivery for absences and expenses only, and parks legacy time
-   transfer events. The former holder's card decides nothing, but nobody
-   refreshes it and the new holder gets no card from the owner (the
-   verification renders one through the old path). The readiness report holds
-   this while escalation owns transfers (`escalation_replacement_unsupported`).
+4. ~~**Replacement cards** after a legacy time transfer~~: resolved by #470.
+   Escalation's replacement pass expands legacy time transfer events into the
+   request's cycle, sends the new holder a bound card and retires the former
+   holder's cards as Reassigned (see
+   [Approval card delivery](approval-delivery.md#legacy-escalation-replacement-delivery--408)).
+   The readiness report no longer holds legacy time kinds with
+   `escalation_replacement_unsupported`. The #408 activation blockers now apply
+   to time kinds too.
 5. **In-place material changes** commit no intent, so the card is not
    refreshed; pressing it decides nothing.
 6. Only Telegram is admitted (in code). Teams, Discord and Slack stay
@@ -1378,7 +1380,12 @@ Telegram transport are replaced. 37/37 passing:
 - a decided cycle purged by its request, another cycle kept;
 - the pilot readiness report: legacy evidence (current, not captured, material
   change) per kind, in-flight cycles before activation, Teams unverified, and
-  the escalation replacement hold.
+  (since #470) no replacement hold once escalation owns transfers, only
+  `escalation_delivery_disabled` while the bot's escalations are off.
+
+Legacy time replacement delivery (#470) is verified in the same suite (15
+further cases; see
+[Approval card delivery](approval-delivery.md#verification-470)).
 
 The whole approval runner list passes (83 files before merging #408, and the
 affected suites again after it), including #290, #291, #296, #301, #302, #325
