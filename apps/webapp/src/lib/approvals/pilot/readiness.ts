@@ -996,7 +996,7 @@ async function assess(
 		const legacyAbsence = workflowType === "absence" && authority === "legacy";
 		// Legacy absence (#384) and time (#432) cards: unverified providers stay
 		// review-only in code, and legacy transfers get no replacement card.
-		const legacyCardPath =
+		const legacyCardsInCode =
 			authority === "legacy" && (legacyAbsence || isTimeApprovalWorkflowType(workflowType));
 		if (!authorityAdmitted) {
 			kindFindings.push({
@@ -1039,7 +1039,7 @@ async function assess(
 				// Legacy absence and time cards on these providers stay review-only
 				// in code whatever the row says, and the row is shared with the
 				// kind's canonical cards.
-				if (presentation === "actionable" && !legacyCardPath) {
+				if (presentation === "actionable" && !legacyCardsInCode) {
 					findings.push({ code: "presentation_actionable_unverified", severity: "blocker" });
 				}
 			} else if (admission === "actionable" && presentation !== "actionable") {
@@ -1048,7 +1048,7 @@ async function assess(
 			const integration = configured.get(provider);
 			if (!integration) {
 				findings.push({ code: "provider_not_configured", severity: "blocker" });
-			} else if (legacyCardPath && transfersActive) {
+			} else if (legacyCardsInCode && transfersActive) {
 				// Legacy transfers get no replacement card and leave the former
 				// holder's card unrefreshed (#384 blocker 5, #408).
 				findings.push({ code: "escalation_replacement_unsupported", severity: "hold" });

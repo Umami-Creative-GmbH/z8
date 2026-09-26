@@ -100,7 +100,7 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 	let timeWorkflowType: ApprovalWorkflowType | null = null;
 	// Legacy time cycles (#432): the work period and the exact request, when the
 	// notification names one; otherwise every pending request of the period.
-	let timeLegacy: { workPeriodId: string; requestIds: string[] } | null = null;
+	let legacyTimeCandidates: { workPeriodId: string; requestIds: string[] } | null = null;
 	if (input.entityType === "absence_entry") {
 		absenceId = input.entityId;
 	} else if (input.entityType === "work_period") {
@@ -115,7 +115,10 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 					eq(approvalRequest.status, "pending"),
 				),
 			);
-		timeLegacy = { workPeriodId: input.entityId, requestIds: pending.map((row) => row.id) };
+		legacyTimeCandidates = {
+			workPeriodId: input.entityId,
+			requestIds: pending.map((row) => row.id),
+		};
 		// The notification names only the period: its linked workflow counts only
 		// while that cycle is still pending (the one being notified about).
 		const [linked] = await db
@@ -149,7 +152,7 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 			absenceRequestId = request.id;
 		}
 		if (request?.entityType === "time_entry") {
-			timeLegacy = { workPeriodId: request.entityId, requestIds: [request.id] };
+			legacyTimeCandidates = { workPeriodId: request.entityId, requestIds: [request.id] };
 			const [mirrored] = await db
 				.select({ workflowType: approvalWorkflow.workflowType })
 				.from(approvalWorkflowStage)
@@ -171,12 +174,12 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 		}
 	}
 	if (
-		timeLegacy &&
-		timeLegacy.requestIds.length > 0 &&
+		legacyTimeCandidates &&
+		legacyTimeCandidates.requestIds.length > 0 &&
 		(await isLegacyTimeCycleDeliveredByOwner({
 			organizationId: input.organizationId,
 			provider: input.provider,
-			...timeLegacy,
+			...legacyTimeCandidates,
 		}))
 	) {
 		return true;

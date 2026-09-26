@@ -1770,8 +1770,9 @@ describeIntegration(
 				]);
 			});
 
-			it("withdraws a cancelled correction cycle's cards and keeps its history until privileged cleanup", async () => {
-				await seed({ delivery: true });
+			// Shadow and ready cancellation works since #463.
+			it.each(MODES)("withdraws a cancelled correction cycle's cards in %s mode and keeps its history until privileged cleanup", async (mode) => {
+				await seed({ mode, delivery: true });
 				const { workPeriodId, requestId } = await submit("time_correction");
 				const sent = only((await runOwner()).sent);
 				const card = await deliveredCard(sent);
