@@ -1,11 +1,15 @@
 import { eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { DatabaseError, NotFoundError } from "../../errors";
 import { countBillableSeats } from "./billable-seat-count";
+import {
+	provisionLocalTrial,
+	withOrganizationBillingMutation,
+	withStripeSubscriptionMutation,
+} from "./billing-configuration";
 
 export interface SubscriptionInfo {
 	id: string;
@@ -213,41 +217,7 @@ export const SubscriptionServiceLive = Layer.succeed(
 
 		ensureLocalTrial: ({ organizationId, now = new Date() }) =>
 			Effect.tryPromise({
-				try: async () => {
-					const existing = await db.query.subscription.findFirst({
-						where: eq(subscription.organizationId, organizationId),
-					});
-
-					if (existing) return mapToSubscriptionInfo(existing);
-
-					const trialEnd = DateTime.fromJSDate(now, { zone: "utc" }).plus({ days: 14 }).toJSDate();
-					const currentSeats = await countBillableOrganizationMembers(organizationId);
-					const inserted = await db
-						.insert(subscription)
-						.values({
-							organizationId,
-							stripeCustomerId: null,
-							status: "trialing",
-							trialStart: now,
-							trialEnd,
-							currentSeats,
-						})
-						.onConflictDoNothing({ target: subscription.organizationId })
-						.returning();
-
-					const localTrial = inserted[0];
-					if (localTrial) return mapToSubscriptionInfo(localTrial);
-
-					const raced = await db.query.subscription.findFirst({
-						where: eq(subscription.organizationId, organizationId),
-					});
-
-					if (!raced) {
-						throw new Error("Local trial insert returned no row");
-					}
-
-					return mapToSubscriptionInfo(raced);
-				},
+				try: async () => mapToSubscriptionInfo(await provisionLocalTrial(organizationId, now)),
 				catch: (error) =>
 					new DatabaseError({
 						message: "Failed to ensure local trial subscription",
@@ -259,45 +229,46 @@ export const SubscriptionServiceLive = Layer.succeed(
 
 		create: (params) =>
 			Effect.tryPromise({
-				try: async () => {
-					const existing = await db.query.subscription.findFirst({
-						where: eq(subscription.organizationId, params.organizationId),
-					});
+				try: () =>
+					withOrganizationBillingMutation(params.organizationId, async (transaction) => {
+						const existing = await transaction.query.subscription.findFirst({
+							where: eq(subscription.organizationId, params.organizationId),
+						});
 
-					if (existing) {
-						await db
-							.update(subscription)
-							.set({
-								stripeCustomerId: params.stripeCustomerId,
-								stripeSubscriptionId: params.stripeSubscriptionId,
-								stripePriceId: params.stripePriceId,
-								status: params.status,
-								billingInterval: params.billingInterval,
-								trialStart: params.trialEnd ? new Date() : null,
-								trialEnd: params.trialEnd,
-								currentPeriodStart: params.currentPeriodStart,
-								currentPeriodEnd: params.currentPeriodEnd,
-								currentSeats: params.seats,
-								updatedAt: new Date(),
-							})
-							.where(eq(subscription.organizationId, params.organizationId));
-						return;
-					}
+						if (existing) {
+							await transaction
+								.update(subscription)
+								.set({
+									stripeCustomerId: params.stripeCustomerId,
+									stripeSubscriptionId: params.stripeSubscriptionId,
+									stripePriceId: params.stripePriceId,
+									status: params.status,
+									billingInterval: params.billingInterval,
+									trialStart: params.trialEnd ? new Date() : null,
+									trialEnd: params.trialEnd,
+									currentPeriodStart: params.currentPeriodStart,
+									currentPeriodEnd: params.currentPeriodEnd,
+									currentSeats: params.seats,
+									updatedAt: new Date(),
+								})
+								.where(eq(subscription.organizationId, params.organizationId));
+							return;
+						}
 
-					await db.insert(subscription).values({
-						organizationId: params.organizationId,
-						stripeCustomerId: params.stripeCustomerId,
-						stripeSubscriptionId: params.stripeSubscriptionId,
-						stripePriceId: params.stripePriceId,
-						status: params.status,
-						billingInterval: params.billingInterval,
-						trialStart: params.trialEnd ? new Date() : null,
-						trialEnd: params.trialEnd,
-						currentPeriodStart: params.currentPeriodStart,
-						currentPeriodEnd: params.currentPeriodEnd,
-						currentSeats: params.seats,
-					});
-				},
+						await transaction.insert(subscription).values({
+							organizationId: params.organizationId,
+							stripeCustomerId: params.stripeCustomerId,
+							stripeSubscriptionId: params.stripeSubscriptionId,
+							stripePriceId: params.stripePriceId,
+							status: params.status,
+							billingInterval: params.billingInterval,
+							trialStart: params.trialEnd ? new Date() : null,
+							trialEnd: params.trialEnd,
+							currentPeriodStart: params.currentPeriodStart,
+							currentPeriodEnd: params.currentPeriodEnd,
+							currentSeats: params.seats,
+						});
+					}),
 				catch: (error) =>
 					new DatabaseError({
 						message: "Failed to create subscription",
@@ -310,19 +281,24 @@ export const SubscriptionServiceLive = Layer.succeed(
 		updateFromStripe: (params) =>
 			Effect.tryPromise({
 				try: async () => {
-					await db
-						.update(subscription)
-						.set({
-							status: params.status,
-							currentPeriodStart: params.currentPeriodStart,
-							currentPeriodEnd: params.currentPeriodEnd,
-							cancelAt: params.cancelAt,
-							canceledAt: params.canceledAt,
-							stripePriceId: params.stripePriceId,
-							billingInterval: params.billingInterval,
-							updatedAt: new Date(),
-						})
-						.where(eq(subscription.stripeSubscriptionId, params.stripeSubscriptionId));
+					await withStripeSubscriptionMutation(
+						params.stripeSubscriptionId,
+						async (transaction, scope) => {
+							await transaction
+								.update(subscription)
+								.set({
+									status: params.status,
+									currentPeriodStart: params.currentPeriodStart,
+									currentPeriodEnd: params.currentPeriodEnd,
+									cancelAt: params.cancelAt,
+									canceledAt: params.canceledAt,
+									stripePriceId: params.stripePriceId,
+									billingInterval: params.billingInterval,
+									updatedAt: new Date(),
+								})
+								.where(scope);
+						},
+					);
 				},
 				catch: (error) =>
 					new DatabaseError({
@@ -355,23 +331,24 @@ export const SubscriptionServiceLive = Layer.succeed(
 
 		setStripeCustomerId: (organizationId, stripeCustomerId) =>
 			Effect.tryPromise({
-				try: async () => {
-					await db
-						.insert(subscription)
-						.values({
-							organizationId,
-							stripeCustomerId,
-							status: "incomplete",
-							currentSeats: 0,
-						})
-						.onConflictDoUpdate({
-							target: subscription.organizationId,
-							set: {
+				try: () =>
+					withOrganizationBillingMutation(organizationId, async (transaction) => {
+						await transaction
+							.insert(subscription)
+							.values({
+								organizationId,
 								stripeCustomerId,
-								updatedAt: new Date(),
-							},
-						});
-				},
+								status: "incomplete",
+								currentSeats: 0,
+							})
+							.onConflictDoUpdate({
+								target: subscription.organizationId,
+								set: {
+									stripeCustomerId,
+									updatedAt: new Date(),
+								},
+							});
+					}),
 				catch: (error) =>
 					new DatabaseError({
 						message: "Failed to set Stripe customer ID",

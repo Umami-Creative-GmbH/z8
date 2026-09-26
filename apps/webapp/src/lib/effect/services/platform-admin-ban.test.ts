@@ -6,6 +6,13 @@ const mocks = vi.hoisted(() => ({
 	revoke: vi.fn(),
 	audit: vi.fn(),
 	getSession: vi.fn(),
+	guard: vi.fn(),
+	transaction: vi.fn(),
+	events: [] as string[],
+}));
+
+vi.mock("@/lib/time-tracking/work-transaction", () => ({
+	acquireExclusiveUserConfigurationAccessGuards: mocks.guard,
 }));
 
 vi.mock("@/lib/queue", () => ({
@@ -20,8 +27,8 @@ vi.mock("@/lib/auth", () => ({
 		api: { getSession: mocks.getSession },
 	},
 }));
-vi.mock("@/db", () => ({
-	db: {
+vi.mock("@/db", () => {
+	const client = {
 		select: () => ({
 			from: () => ({
 				where: () => ({ limit: async () => [{ id: "user-1" }] }),
@@ -31,8 +38,21 @@ vi.mock("@/db", () => ({
 			set: (value: unknown) => ({ where: async () => mocks.update(value) }),
 		}),
 		insert: () => ({ values: mocks.audit }),
-	},
-}));
+	};
+	const transactionClient = { ...client, name: "ban transaction" };
+	return {
+		db: {
+			...client,
+			transaction: async (callback: (tx: typeof transactionClient) => Promise<unknown>) => {
+				mocks.transaction(transactionClient);
+				mocks.events.push("begin");
+				const result = await callback(transactionClient);
+				mocks.events.push("commit");
+				return result;
+			},
+		},
+	};
+});
 
 const { PlatformAdminService, PlatformAdminServiceLive, requirePlatformAdmin } =
 	await import("./platform-admin.service");
@@ -43,9 +63,26 @@ const ban = () =>
 			yield* service.banUser("user-1", "Policy violation", null, "admin-1");
 		}).pipe(Effect.provide(PlatformAdminServiceLive)),
 	);
+const unban = () =>
+	Effect.runPromise(
+		Effect.gen(function* () {
+			const service = yield* PlatformAdminService;
+			yield* service.unbanUser("user-1", "admin-1");
+		}).pipe(Effect.provide(PlatformAdminServiceLive)),
+	);
 
 beforeEach(() => {
 	vi.resetAllMocks();
+	mocks.events.length = 0;
+	mocks.guard.mockImplementation(async () => {
+		mocks.events.push("guard");
+	});
+	mocks.update.mockImplementation(async () => {
+		mocks.events.push("update");
+	});
+	mocks.revoke.mockImplementation(async () => {
+		mocks.events.push("revoke");
+	});
 	mocks.getSession.mockResolvedValue({
 		user: {
 			id: "admin-1",
@@ -77,6 +114,26 @@ describe("platform account ban lifecycle", () => {
 		mocks.revoke.mockRejectedValue(new Error("storage unavailable"));
 		await expect(ban()).rejects.toThrow("Failed to ban user");
 		expect(mocks.audit).not.toHaveBeenCalled();
+	});
+	it("changes the ban under the user's exclusive access protection, then revokes after commit", async () => {
+		await ban();
+
+		// Manual interpretation re-reads ban status under the user's shared guard.
+		const [transactionClient] = mocks.transaction.mock.calls[0] ?? [];
+		expect(mocks.guard).toHaveBeenCalledWith(transactionClient, ["user-1"]);
+		expect(mocks.events).toEqual(["begin", "guard", "update", "commit", "revoke"]);
+	});
+	it("lifts a ban under the same protection", async () => {
+		await unban();
+
+		const [transactionClient] = mocks.transaction.mock.calls[0] ?? [];
+		expect(mocks.guard).toHaveBeenCalledWith(transactionClient, ["user-1"]);
+		expect(mocks.events).toEqual(["begin", "guard", "update", "commit"]);
+		expect(mocks.update).toHaveBeenCalledWith({
+			banned: false,
+			banReason: null,
+			banExpires: null,
+		});
 	});
 	it("honors an expired platform admin ban", async () => {
 		await expect(requirePlatformAdmin()).resolves.toMatchObject({

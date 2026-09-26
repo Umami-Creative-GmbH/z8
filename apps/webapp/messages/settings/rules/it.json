@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Tutte le uscite",
       "allManagers": "Tutti i manager",
       "approvalDaysDescription": "Oltre al self-service, i dipendenti possono richiedere modifiche entro questa finestra (richiede approvazione). 0 = nessuna finestra aggiuntiva.",
       "approvalDaysLabel": "Finestra di approvazione (giorni)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Consenti ai dipendenti di modificare le voci senza requisiti di approvazione",
       "trustModeLabel": "Modalità attendibile",
       "updated": "Policy aggiornata correttamente",
-      "updateFailed": "Aggiornamento policy non riuscito",
-      "zeroDayPolicy": "Ogni uscita richiederà l'approvazione del manager (modalità più rigorosa)."
+      "updateFailed": "Aggiornamento policy non riuscito"
     },
     "coverageRules": {
       "addRule": "Aggiungi regola",

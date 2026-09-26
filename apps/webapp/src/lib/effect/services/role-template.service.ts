@@ -9,6 +9,7 @@ import {
 	userLifecycleEvent,
 	userRoleTemplateAssignment,
 } from "@/db/schema";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { createLogger } from "@/lib/logger";
 import { createSCIMProjectionRecoveryStore } from "@/lib/scim/projection-recovery";
 import { requestSCIMProjectionReplayAfter } from "@/lib/scim/role-projection-replay";
@@ -460,66 +461,60 @@ export const RoleTemplateServiceLive = Layer.succeed(
 					);
 				}
 
-				// Update employee role
+				// The employee role and org-wide flags feed the user's principal; they
+				// commit together under the user's configuration/access protection (#313).
 				yield* Effect.tryPromise(() =>
-					db
-						.update(employee)
-						.set({ role: template.employeeRole })
-						.where(eq(employee.id, employeeRecord.id)),
-				);
+					withAuthorizationMutation({ organizationId, userIds: [userId] }, async (tx) => {
+						await tx
+							.update(employee)
+							.set({ role: template.employeeRole })
+							.where(
+								and(eq(employee.id, employeeRecord.id), eq(employee.organizationId, organizationId)),
+							);
 
-				// Apply team permissions if specified
-				if (template.teamPermissions) {
-					const permissions = template.teamPermissions as {
-						canCreateTeams?: boolean;
-						canManageTeamMembers?: boolean;
-						canManageTeamSettings?: boolean;
-						canApproveTeamRequests?: boolean;
-					};
+						// Apply team permissions if specified
+						if (!template.teamPermissions) return;
+						const permissions = template.teamPermissions as {
+							canCreateTeams?: boolean;
+							canManageTeamMembers?: boolean;
+							canManageTeamSettings?: boolean;
+							canApproveTeamRequests?: boolean;
+						};
+						const flags = {
+							canCreateTeams: permissions.canCreateTeams ?? false,
+							canManageTeamMembers: permissions.canManageTeamMembers ?? false,
+							canManageTeamSettings: permissions.canManageTeamSettings ?? false,
+							canApproveTeamRequests: permissions.canApproveTeamRequests ?? false,
+						};
 
-					// Upsert org-wide team permissions
-					const existingPermission = yield* Effect.tryPromise(() =>
-						db.query.teamPermissions.findFirst({
-							where: and(
-								eq(teamPermissions.employeeId, employeeRecord.id),
-								eq(teamPermissions.organizationId, organizationId),
-								isNull(teamPermissions.teamId),
-							),
-						}),
-					);
-
-					if (existingPermission) {
-						yield* Effect.tryPromise(() =>
-							db
+						// Upsert org-wide team permissions
+						const [existingPermission] = await tx
+							.select({ id: teamPermissions.id })
+							.from(teamPermissions)
+							.where(
+								and(
+									eq(teamPermissions.employeeId, employeeRecord.id),
+									eq(teamPermissions.organizationId, organizationId),
+									isNull(teamPermissions.teamId),
+								),
+							)
+							.limit(1);
+						if (existingPermission) {
+							await tx
 								.update(teamPermissions)
-								.set({
-									canCreateTeams: permissions.canCreateTeams ?? false,
-									canManageTeamMembers:
-										permissions.canManageTeamMembers ?? false,
-									canManageTeamSettings:
-										permissions.canManageTeamSettings ?? false,
-									canApproveTeamRequests:
-										permissions.canApproveTeamRequests ?? false,
-								})
-								.where(eq(teamPermissions.id, existingPermission.id)),
-						);
-					} else {
-						yield* Effect.tryPromise(() =>
-							db.insert(teamPermissions).values({
+								.set(flags)
+								.where(eq(teamPermissions.id, existingPermission.id));
+						} else {
+							await tx.insert(teamPermissions).values({
 								employeeId: employeeRecord.id,
 								organizationId,
 								teamId: null,
-								canCreateTeams: permissions.canCreateTeams ?? false,
-								canManageTeamMembers: permissions.canManageTeamMembers ?? false,
-								canManageTeamSettings:
-									permissions.canManageTeamSettings ?? false,
-								canApproveTeamRequests:
-									permissions.canApproveTeamRequests ?? false,
+								...flags,
 								grantedBy: employeeRecord.id,
-							}),
-						);
-					}
-				}
+							});
+						}
+					}, db),
+				);
 
 				// Record template assignment (upsert)
 				yield* Effect.tryPromise(() =>

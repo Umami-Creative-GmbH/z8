@@ -79,7 +79,9 @@ function renderCard({
 	onCreate = vi.fn(),
 	onCancel = vi.fn(),
 	workPolicies = [],
+	history = [...baseHistory],
 }: {
+	history?: EmployeeEmploymentHistoryCardProps["history"];
 	canManage?: boolean;
 	onCreate?: EmployeeEmploymentHistoryCardProps["onCreate"];
 	onCancel?: EmployeeEmploymentHistoryCardProps["onCancel"];
@@ -87,7 +89,7 @@ function renderCard({
 } = {}) {
 	return render(
 		<EmployeeEmploymentHistoryCard
-			history={[...baseHistory]}
+			history={history}
 			canManage={canManage}
 			onCreate={onCreate}
 			onConfirm={vi.fn()}
@@ -200,5 +202,42 @@ describe("EmployeeEmploymentHistoryCard", () => {
 		fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
 
 		expect(onCancel).toHaveBeenCalledWith("history-pending");
+	});
+
+	it("groups terms by employment stint with the gap between them and unknown legacy dates", () => {
+		renderCard({
+			history: [
+				{
+					...baseHistory[0],
+					id: "history-rehired",
+					validFrom: new Date("2026-06-01T00:00:00.000Z"),
+					employmentPeriodId: "period-2",
+					employmentPeriod: {
+						id: "period-2",
+						status: "open",
+						startedAt: new Date("2026-06-01T00:00:00.000Z"),
+						endedAt: null,
+					},
+				},
+				{
+					...baseHistory[0],
+					id: "history-first-stint",
+					validUntil: new Date("2026-03-31T22:00:00.000Z"),
+					employmentPeriodId: "period-1",
+					employmentPeriod: {
+						id: "period-1",
+						status: "closed",
+						startedAt: null,
+						endedAt: new Date("2026-03-31T22:00:00.000Z"),
+					},
+				},
+			],
+		});
+
+		expect(screen.getByRole("region", { name: /Employment Jun 1, 2026 – Present/ })).toBeTruthy();
+		expect(
+			screen.getByRole("region", { name: /Employment Date not recorded – Mar 31, 2026/ }),
+		).toBeTruthy();
+		expect(screen.getByText("Not employed Mar 31, 2026 – Jun 1, 2026")).toBeTruthy();
 	});
 });

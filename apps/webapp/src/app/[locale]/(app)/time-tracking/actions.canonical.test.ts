@@ -56,70 +56,10 @@ describe("time-tracking canonical action routing", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("routes standard time entry writes through canonical client", async () => {
-		const createTimeEntrySpy = vi
-			.spyOn(canonicalActions.canonicalTimeEntryClient, "createTimeEntry")
-			.mockResolvedValue({ id: "entry-1" } as never);
-		const createCorrectionSpy = vi
-			.spyOn(canonicalActions.canonicalTimeEntryClient, "createCorrectionEntry")
-			.mockResolvedValue({ id: "entry-corr" } as never);
-
-		const result = await actions.createTimeEntry({
-			employeeId: "emp-1",
-			organizationId: "org-1",
-			type: "clock_in",
-			timestamp: new Date("2026-01-01T08:00:00.000Z"),
-			createdBy: "user-1",
-			notes: "start",
-		});
-
-		expect(result).toEqual({ id: "entry-1" });
-		expect(createTimeEntrySpy).toHaveBeenCalledWith(
-			expect.objectContaining({
-				employeeId: "emp-1",
-				organizationId: "org-1",
-				type: "clock_in",
-				createdBy: "user-1",
-				ipAddress: "203.0.113.10",
-				deviceInfo: "vitest-agent",
-			}),
-		);
-		expect(createCorrectionSpy).not.toHaveBeenCalled();
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
-	});
-
-	it("routes correction writes through canonical correction client", async () => {
-		const createTimeEntrySpy = vi
-			.spyOn(canonicalActions.canonicalTimeEntryClient, "createTimeEntry")
-			.mockResolvedValue({ id: "entry-1" } as never);
-		const createCorrectionSpy = vi
-			.spyOn(canonicalActions.canonicalTimeEntryClient, "createCorrectionEntry")
-			.mockResolvedValue({ id: "entry-corr" } as never);
-
-		const result = await actions.createTimeEntry({
-			employeeId: "emp-1",
-			organizationId: "org-1",
-			type: "correction",
-			timestamp: new Date("2026-01-01T08:30:00.000Z"),
-			createdBy: "user-1",
-			replacesEntryId: "entry-old",
-			workPeriodId: "period-1",
-		});
-
-		expect(result).toEqual({ id: "entry-corr" });
-		expect(createCorrectionSpy).toHaveBeenCalledWith(
-			expect.objectContaining({
-				employeeId: "emp-1",
-				organizationId: "org-1",
-				replacesEntryId: "entry-old",
-				workPeriodId: "period-1",
-				notes: "",
-				ipAddress: "203.0.113.10",
-				deviceInfo: "vitest-agent",
-			}),
-		);
-		expect(createTimeEntrySpy).not.toHaveBeenCalled();
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
+	// #327: the unauthenticated raw entry writer exported from the actions module
+	// had no caller; correction entries are written by their owners only.
+	it("exposes no raw time entry writer as a server action", () => {
+		expect(actions).not.toHaveProperty("createTimeEntry");
 	});
 
 	it("delegates a correction with its work period through the real service", async () => {
@@ -197,13 +137,13 @@ describe("time-tracking canonical action routing", () => {
 		};
 
 		await expect(
-			actions.createTimeEntry(
+			canonicalActions.canonicalTimeEntryClient.createCorrectionEntry(
 				{
 					employeeId: "emp-1",
 					organizationId: "org-1",
-					type: "correction",
 					timestamp: new Date("2026-01-01T08:30:00.000Z"),
 					createdBy: "user-1",
+					notes: "",
 					replacesEntryId: "entry-old",
 					workPeriodId: "period-1",
 					utcOffsetMinutes: 0,

@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 
 import { Effect } from "effect";
 import {
@@ -17,16 +17,6 @@ export async function getEditCapabilityForPeriod(params: {
 		const policyService = yield* _(ChangePolicyService);
 
 		return yield* _(policyService.getEditCapability(params));
-	}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
-
-	return Effect.runPromise(effect);
-}
-
-export async function checkClockOutNeedsApproval(employeeId: string): Promise<boolean> {
-	const effect = Effect.gen(function* (_) {
-		const policyService = yield* _(ChangePolicyService);
-
-		return yield* _(policyService.checkClockOutNeedsApproval(employeeId));
 	}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
 
 	return Effect.runPromise(effect);

@@ -37,6 +37,7 @@ import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manage
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import {
 	buildTeamStreakLeaders,
 	collectUniqueTeamIds,
@@ -1637,26 +1638,11 @@ export async function updateWidgetOrder(
 		// Upsert user settings with the new widget order
 		yield* _(
 			Effect.tryPromise({
-				try: async () => {
-					// Try to update existing settings first
-					const updated = await dbService.db
-						.update(userSettings)
-						.set({
-							dashboardWidgetOrder: widgetOrder,
-							updatedAt: currentTimestamp(),
-						})
-						.where(eq(userSettings.userId, session.user.id))
-						.returning();
-
-					// If no row was updated, insert a new one
-					if (updated.length === 0) {
-						await dbService.db.insert(userSettings).values({
-							userId: session.user.id,
-							dashboardWidgetOrder: widgetOrder,
-							updatedAt: currentTimestamp(),
-						});
-					}
-				},
+				try: () =>
+					writeUserSettings(dbService.db, session.user.id, {
+						dashboardWidgetOrder: widgetOrder,
+						updatedAt: currentTimestamp(),
+					}),
 				catch: (error) =>
 					new NotFoundError({
 						message: `Failed to update widget layout: ${error}`,

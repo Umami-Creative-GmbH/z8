@@ -10,9 +10,14 @@ const mockState = vi.hoisted(() => {
 	const returning = vi.fn(async () => [{ id: "holiday-1" }]);
 	const values = vi.fn(() => ({ returning }));
 	const insert = vi.fn(() => ({ values }));
+	const execute = vi.fn(async () => []);
+	const transaction = vi.fn(async (callback: (tx: unknown) => unknown) =>
+		callback({ execute, insert, select }),
+	);
 
 	return {
 		connection: vi.fn(),
+		execute,
 		from,
 		getAbility: vi.fn(),
 		getSession: vi.fn(),
@@ -23,6 +28,7 @@ const mockState = vi.hoisted(() => {
 		orderBy,
 		returning,
 		select,
+		transaction,
 		values,
 		where,
 	};
@@ -44,6 +50,7 @@ vi.mock("@/db", () => ({
 	db: {
 		insert: mockState.insert,
 		select: mockState.select,
+		transaction: mockState.transaction,
 	},
 }));
 
@@ -91,6 +98,7 @@ vi.mock("@/lib/authorization", () => ({
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
 }));
 
 const { GET, POST } = await import("./route");
@@ -149,6 +157,15 @@ describe("POST /api/org-admin/holidays", () => {
 			{ column: "holidayCategory.organizationId", value: "org-1" },
 		]);
 		expect(mockState.insert).not.toHaveBeenCalled();
+		// The organization's exclusive configuration guard came first.
+		expect(mockState.execute).toHaveBeenCalledWith(
+			expect.objectContaining({
+				values: [JSON.stringify(["work-organization-configuration", "org-1"])],
+			}),
+		);
+		expect(mockState.execute.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.select.mock.invocationCallOrder[0] ?? 0,
+		);
 	});
 });
 

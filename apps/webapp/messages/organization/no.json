@@ -256,6 +256,7 @@
       "title": "Team"
     },
     "timezone": {
+      "balances-recalculating": "Arbeidssaldoer beregnes på nytt for den nye tidssonen og er skjult til de er klare.",
       "default": "Standard tidssone",
       "description": "Angi standard tidssone for organisasjonen din. Dette brukes til fraværsregistrering, rapporter og andre datobaserte funksjoner. Enkeltbrukere kan overstyre dette i profilinnstillingene sine.",
       "owner-only": "Kun organisasjonseiere kan endre tidssoneinnstillingen.",

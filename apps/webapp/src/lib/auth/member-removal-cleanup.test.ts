@@ -4,6 +4,17 @@ import { describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { completeRemovedMemberCleanup } from "./member-removal-cleanup";
 
+const guardedEvents = vi.hoisted(() => ({ current: [] as string[] }));
+const protectAuthorizationMutation = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	protectAuthorizationMutation: protectAuthorizationMutation.mockImplementation(
+		async () => {
+			guardedEvents.current.push("user-guarded");
+		},
+	),
+}));
+
 function compilePredicate(table: unknown, predicate: unknown) {
 	return new PgDialect().sqlToQuery(
 		sql`select * from ${table as never} where ${predicate as SQL}`,
@@ -17,6 +28,7 @@ function setup(
 	} = {},
 ) {
 	const events: string[] = [];
+	guardedEvents.current = events;
 	const userFindFirst = vi.fn().mockImplementation(async () => {
 		events.push("user-email-loaded");
 		return { email: "  Person@Example.COM " };
@@ -106,6 +118,7 @@ describe("completeRemovedMemberCleanup", () => {
 
 		expect(harness.events).toEqual([
 			"transaction-started",
+			"user-guarded",
 			"user-email-loaded",
 			"identity-locked",
 			"replacement-checked",
@@ -119,6 +132,13 @@ describe("completeRemovedMemberCleanup", () => {
 		expect(
 			harness.reconcileBillingSeatsForOrganization,
 		).toHaveBeenCalledExactlyOnceWith("org-1", { strict: true });
+		expect(protectAuthorizationMutation).toHaveBeenLastCalledWith(
+			expect.anything(),
+			{
+				organizationId: "org-1",
+				userIds: ["user-1"],
+			},
+		);
 	});
 
 	it("serializes replacement membership before preserving employee and session access", async () => {
@@ -146,6 +166,7 @@ describe("completeRemovedMemberCleanup", () => {
 		expect(harness.update).not.toHaveBeenCalled();
 		expect(harness.events).toEqual([
 			"transaction-started",
+			"user-guarded",
 			"user-email-loaded",
 			"identity-locked",
 			"replacement-checked",
@@ -169,6 +190,7 @@ describe("completeRemovedMemberCleanup", () => {
 		expect(harness.reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
 		expect(harness.events).toEqual([
 			"transaction-started",
+			"user-guarded",
 			"user-email-loaded",
 			"identity-locked",
 			"replacement-checked",

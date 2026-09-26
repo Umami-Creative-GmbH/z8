@@ -21,6 +21,12 @@ import {
 // Types
 // ============================================
 
+/**
+ * Reader for the effective-assignment queries: the global client by default, or
+ * a caller's transaction when a protected operation must read under its guards.
+ */
+export type WorkCategoryReader = Pick<typeof db, "query" | "select">;
+
 export interface WorkCategorySetRecord {
 	id: string;
 	organizationId: string;
@@ -213,8 +219,11 @@ export async function getOrganizationCategories(
 /**
  * Get all categories in a set (through junction table)
  */
-export async function getCategoriesInSet(setId: string): Promise<SetCategoryRecord[]> {
-	return db
+export async function getCategoriesInSet(
+	setId: string,
+	reader: WorkCategoryReader = db,
+): Promise<SetCategoryRecord[]> {
+	return reader
 		.select({
 			id: workCategory.id,
 			organizationId: workCategory.organizationId,
@@ -325,9 +334,11 @@ export async function getWorkCategorySetAssignments(
 export async function getEffectiveWorkCategorySetForEmployee(
 	employeeId: string,
 	organizationId: string,
+	reader: WorkCategoryReader = db,
+	now: Date = new Date(),
 ): Promise<ResolvedWorkCategorySet> {
 	// Get employee with their team info
-	const employeeRecord = await db.query.employee.findFirst({
+	const employeeRecord = await reader.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 		columns: {
 			id: true,
@@ -340,8 +351,6 @@ export async function getEffectiveWorkCategorySetForEmployee(
 		return { set: null, source: "none", assignment: null };
 	}
 
-	const now = new Date();
-
 	// Helper function to check date constraints
 	const isEffective = (effectiveFrom: Date | null, effectiveUntil: Date | null) => {
 		const fromOk = !effectiveFrom || effectiveFrom <= now;
@@ -350,7 +359,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 	};
 
 	// 1. Check for employee-specific assignment (priority 2)
-	const employeeAssignment = await db.query.workCategorySetAssignment.findFirst({
+	const employeeAssignment = await reader.query.workCategorySetAssignment.findFirst({
 		where: and(
 			eq(workCategorySetAssignment.organizationId, organizationId),
 			eq(workCategorySetAssignment.employeeId, employeeId),
@@ -376,7 +385,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 
 	// 2. Check for team assignment (priority 1) if employee has a team
 	if (employeeRecord.teamId) {
-		const teamAssignment = await db.query.workCategorySetAssignment.findFirst({
+		const teamAssignment = await reader.query.workCategorySetAssignment.findFirst({
 			where: and(
 				eq(workCategorySetAssignment.organizationId, organizationId),
 				eq(workCategorySetAssignment.teamId, employeeRecord.teamId),
@@ -402,7 +411,7 @@ export async function getEffectiveWorkCategorySetForEmployee(
 	}
 
 	// 3. Check for organization default (priority 0)
-	const orgAssignment = await db.query.workCategorySetAssignment.findFirst({
+	const orgAssignment = await reader.query.workCategorySetAssignment.findFirst({
 		where: and(
 			eq(workCategorySetAssignment.organizationId, employeeRecord.organizationId),
 			eq(workCategorySetAssignment.assignmentType, "organization"),
@@ -434,14 +443,21 @@ export async function getEffectiveWorkCategorySetForEmployee(
 export async function getAvailableCategoriesForEmployee(
 	employeeId: string,
 	organizationId: string,
+	reader: WorkCategoryReader = db,
+	now: Date = new Date(),
 ): Promise<SetCategoryRecord[]> {
-	const { set } = await getEffectiveWorkCategorySetForEmployee(employeeId, organizationId);
+	const { set } = await getEffectiveWorkCategorySetForEmployee(
+		employeeId,
+		organizationId,
+		reader,
+		now,
+	);
 
 	if (!set) {
 		return [];
 	}
 
-	const categories = await getCategoriesInSet(set.id);
+	const categories = await getCategoriesInSet(set.id, reader);
 	return categories.filter((category) => category.organizationId === organizationId);
 }
 
@@ -452,7 +468,14 @@ export async function employeeHasAccessToCategory(
 	employeeId: string,
 	categoryId: string,
 	organizationId: string,
+	reader: WorkCategoryReader = db,
+	now: Date = new Date(),
 ): Promise<boolean> {
-	const availableCategories = await getAvailableCategoriesForEmployee(employeeId, organizationId);
+	const availableCategories = await getAvailableCategoriesForEmployee(
+		employeeId,
+		organizationId,
+		reader,
+		now,
+	);
 	return availableCategories.some((c) => c.id === categoryId);
 }

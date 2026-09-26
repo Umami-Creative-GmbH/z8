@@ -126,7 +126,21 @@ export interface DiscordButton {
 	style: number;
 	label: string;
 	custom_id?: string;
+	/** Link buttons (style LINK) only; they never send an interaction. */
+	url?: string;
 	disabled?: boolean;
+}
+
+/** Which mentions a message may notify; approval messages allow none. */
+export interface DiscordAllowedMentions {
+	parse: Array<"roles" | "users" | "everyone">;
+}
+
+export interface DiscordMessagePayload {
+	content?: string;
+	embeds?: DiscordEmbed[];
+	components?: DiscordActionRow[];
+	allowed_mentions?: DiscordAllowedMentions;
 }
 
 export interface DiscordSlashCommandDefinition {

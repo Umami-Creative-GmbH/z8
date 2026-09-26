@@ -66,6 +66,15 @@ These occurrences have concrete ordering constraints:
 - `src/lib/time-record/migration/backfill.ts`: the three legacy-link update loops use the same transaction connection. Parallel promises do not make those database statements concurrent. **Rejected as a promise-parallelization fix.**
 - `src/lib/vault/secrets.ts`: the documented provider contract stores secrets sequentially because providers may not support atomic multi-write. **Rejected without a provider-contract change.**
 
+Transaction-scoped and ordered server work is excepted in `doctor.config.ts` (PR #484
+review, September 26, 2026, React Doctor 0.9.14). Awaits on one PostgreSQL transaction or
+snapshot connection serialize in the driver, so `Promise.all` gains nothing and their order
+carries lock acquisition and read-your-writes. The second group covers ordered side effects
+outside one transaction (sweep before claim, count after cleanup, after-commit hooks). Reads
+that were independent and ran on the pool were parallelized instead: bot approval routing,
+clock command endpoint validation, review notification preferences, and the work-diagnostics
+page. Remove a file from the exception list when it stops using one connection.
+
 Other import, seed, demo-generation, and carryover candidates require measurements
 and verification of cancellation, error ordering, transaction boundaries, and
 service limits. **Needs evidence**, not an exception or a confirmed performance defect.

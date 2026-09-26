@@ -10,12 +10,12 @@ import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { getTranslate } from "@/tolgee/server";
 import {
-	getAbsenceCategories,
 	getAbsenceEntries,
 	getCurrentEmployee,
 	getHolidays,
 	getVacationBalance,
 } from "./actions";
+import { getAbsenceCategories } from "./queries";
 
 async function AbsencesPageContent() {
 	// Auth is checked in layout - session is guaranteed to exist

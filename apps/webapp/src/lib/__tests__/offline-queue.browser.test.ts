@@ -23,7 +23,7 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 		server = createServer(async (request, response) => {
 			const pathname = new URL(request.url!, "http://localhost").pathname;
 			if (
-				["/sw.js", "/lib/offline-queue-db.js", "/lib/sync-service.js"].includes(
+				["/sw.js", "/lib/offline-queue-db.js", "/lib/sync-service.js", "/lib/clock-command-dispatch.js"].includes(
 					pathname,
 				)
 			) {
@@ -104,7 +104,7 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 		await page.evaluate(`(async () => {
 			await OfflineQueueDB.enqueue({ type: 'clock_in', timestamp: 123, organizationId: 'org-1' });
 			await new Promise((resolve, reject) => {
-				const request = indexedDB.open('z8-offline-queue', 1);
+				const request = indexedDB.open('z8-offline-queue');
 				request.onsuccess = () => {
 					const db = request.result, tx = db.transaction('clock-events', 'readwrite');
 					const store = tx.objectStore('clock-events'); store.clear();
@@ -242,7 +242,7 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 			await page.evaluate(
 				`sendWorker({ type: 'GET_QUEUE_COUNT', context: { userId: 'user-1', organizationId: 'org-1' } })`,
 			),
-		).toEqual({ count: 0, reviewCount: 0, savedCount: 1 });
+		).toEqual({ count: 0, reviewCount: 0, waitingCount: 0, savedCount: 1 });
 		expect(
 			await page.evaluate(
 				`sendWorker({ type: 'GET_QUEUE_RECORDS', context: { userId: 'user-1', organizationId: 'org-1' } })`,
@@ -263,6 +263,85 @@ describe.skipIf(!executablePath)("browser clock queue persistence", () => {
 				`sendWorker({ type: 'GET_QUEUE_RECORDS', context: { userId: 'user-1', organizationId: 'org-1' } })`,
 			),
 		).toMatchObject({ success: false });
+	});
+
+	it("captures during real network loss and keeps pending records across worker restart and reconnect", async () => {
+		await startWorker();
+		// Chromium's own network emulation, not a navigator.onLine override. The worker
+		// target sends the fetch, so it is taken offline as well as the page.
+		const workerTarget = await browser.waitForTarget(
+			(target) =>
+				target.type() === "service_worker" &&
+				target.url() === `${origin}/sw.js`,
+		);
+		const sessions = [
+			await page.createCDPSession(),
+			await workerTarget.createCDPSession(),
+		];
+		for (const session of sessions) {
+			await session.send("Network.enable");
+			await session.send("Network.emulateNetworkConditions", {
+				offline: true,
+				latency: 0,
+				downloadThroughput: -1,
+				uploadThroughput: -1,
+			});
+		}
+
+		const captured = await page.evaluate(`(async () => {
+			const onLine = navigator.onLine;
+			const response = await fetch('/api/time-entries', {
+				method: 'POST',
+				body: JSON.stringify({ type: 'clock_in', organizationId: 'org-1', userId: 'user-1' }),
+			});
+			return { onLine, status: response.status, result: await response.json() };
+		})()`);
+		expect(captured).toMatchObject({
+			onLine: false,
+			status: 202,
+			result: { queued: true, commitment: "unknown", reviewRequired: true },
+		});
+		expect(clockPosts).toBe(0);
+
+		// Reconnect, then stop the worker while the record is still pending. Nothing on
+		// this bare page syncs on reconnect, so the stored record is what restarts.
+		for (const session of sessions) {
+			await session.send("Network.emulateNetworkConditions", {
+				offline: false,
+				latency: 0,
+				downloadThroughput: -1,
+				uploadThroughput: -1,
+			});
+			await session.detach();
+		}
+		expect(clockPosts).toBe(0);
+		const control = await page.createCDPSession();
+		await control.send("ServiceWorker.enable");
+		await control.send("ServiceWorker.stopAllWorkers");
+		await control.detach();
+		await page.reload();
+		await startWorker();
+		expect(await page.evaluate("navigator.onLine")).toBe(true);
+		expect(await page.evaluate(`sendWorker({ type: 'TRIGGER_SYNC' })`)).toEqual(
+			{
+				success: true,
+				accepted: true,
+			},
+		);
+
+		// Reconnection submits nothing: the record stays pending review, unchanged.
+		expect(clockPosts).toBe(0);
+		await page.addScriptTag({ url: `${origin}/lib/offline-queue-db.js` });
+		expect(await page.evaluate(`OfflineQueueDB.getRecords()`)).toEqual([
+			expect.objectContaining({
+				type: "clock_in",
+				organizationId: "org-1",
+				recovery: expect.objectContaining({
+					state: "review_required",
+					commitment: "unknown",
+				}),
+			}),
+		]);
 	});
 
 	it("retains exact intercepted request bytes and incoming identity without inventing event context", async () => {

@@ -13,7 +13,7 @@ import {
 	team,
 } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
-import { auth } from "@/lib/auth";
+import { auth, runAuthMutation } from "@/lib/auth";
 import {
 	isInvitationActionable,
 	normalizeInvitationEmail,
@@ -24,6 +24,7 @@ import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-ac
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	type AnyAppError,
+	AuthorizationError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
@@ -36,6 +37,7 @@ import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
+import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	type InvitationData,
@@ -45,7 +47,10 @@ import {
 	updateMemberRoleSchema,
 	updateOrganizationSchema,
 } from "@/lib/validations/invitation";
-import { requestOrganizationWorkBalanceFullRebuild } from "@/lib/work-balance/service";
+import {
+	failureMessage,
+	processWorkBalanceRebuildIntents,
+} from "@/lib/work-balance/rebuild-intents";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import { isOrganizationFeature } from "./organization-features";
 
@@ -877,14 +882,18 @@ export async function updateMemberRole(
 				yield* _(
 					Effect.tryPromise({
 						try: async () => {
-							await auth.api.updateMemberRole({
-								body: {
-									organizationId,
-									memberId,
-									role: validatedData.role,
-								},
-								headers: await headers(),
-							});
+							const requestHeaders = await headers();
+							// The role update commits with its access guard (#314).
+							await runAuthMutation(() =>
+								auth.api.updateMemberRole({
+									body: {
+										organizationId,
+										memberId,
+										role: validatedData.role,
+									},
+									headers: requestHeaders,
+								}),
+							);
 						},
 						catch: () => {
 							return new ValidationError({
@@ -1281,32 +1290,78 @@ export async function updateOrganizationTimezone(
 					);
 				}
 
-				// Update the organization timezone
-				yield* _(
+				// Protected change (#311): the zone and, once adopted, its durable
+				// balance-rebuild intent commit together.
+				const change = yield* _(
 					Effect.tryPromise({
-						try: async () => {
-							await db.transaction(async (tx) => {
-								await tx
-									.update(authSchema.organization)
-									.set({ timezone })
-									.where(eq(authSchema.organization.id, organizationId));
-								await requestOrganizationWorkBalanceFullRebuild(
-									{ organizationId },
-									{ dbClient: tx },
-								);
-							});
-						},
+						try: () =>
+							changeOrganizationTimezone({
+								organizationId,
+								actorUserId: session.user.id,
+								timezone,
+							}),
+						// Nothing was committed; keep statement text out of the response.
 						catch: (error) => {
+							logger.error(
+								{ error, organizationId, timezone },
+								"Organization timezone change rolled back",
+							);
 							return new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to update organization timezone",
+								message: "Failed to update organization timezone",
 								field: "timezone",
 							});
 						},
 					}),
 				);
+				if (change.status === "not_found") {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Organization not found",
+								entityType: "organization",
+								entityId: organizationId,
+							}),
+						),
+					);
+				}
+				if (change.status === "not_authorized") {
+					return yield* _(
+						Effect.fail(
+							new AuthorizationError({
+								message: "Only owners can change organization timezone",
+								userId: session.user.id,
+								resource: "organization",
+								action: "update",
+							}),
+						),
+					);
+				}
+
+				// The save is committed. Rebuilding runs separately; a failure stays on
+				// the intent for the balance worker and does not fail the save.
+				if (change.status === "changed" && change.rebuild === "intent") {
+					const rebuild = yield* _(
+						Effect.promise(() =>
+							processWorkBalanceRebuildIntents({ organizationId }).catch(
+								(error: unknown) => ({
+									organizationsRebuilt: 0,
+									failures: [
+										{
+											organizationId,
+											error: failureMessage(error),
+										},
+									],
+								}),
+							),
+						),
+					);
+					if (rebuild.failures.length > 0) {
+						logger.warn(
+							{ organizationId, failures: rebuild.failures },
+							"Organization timezone saved; balance rebuild is pending retry",
+						);
+					}
+				}
 
 				logger.info(
 					{

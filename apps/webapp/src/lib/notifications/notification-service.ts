@@ -63,6 +63,140 @@ export function getTimeAgo(date: Date): string {
 	return `${months} month${months === 1 ? "" : "s"} ago`;
 }
 
+export type NotificationChannelPreferences = Record<NotificationChannel, boolean>;
+
+/** Channel preferences for one notification type; a missing preference means enabled. */
+export async function loadNotificationChannelPreferences(
+	userId: string,
+	type: NotificationType,
+): Promise<NotificationChannelPreferences> {
+	const preferences = await db.query.notificationPreference.findMany({
+		where: and(
+			eq(notificationPreference.userId, userId),
+			eq(notificationPreference.notificationType, type),
+		),
+	});
+	const enabled = (channel: NotificationChannel) => {
+		const preference = preferences.find((p) => p.channel === channel);
+		return !preference || preference.enabled;
+	};
+	return {
+		in_app: enabled("in_app"),
+		push: enabled("push"),
+		email: enabled("email"),
+		teams: enabled("teams"),
+		telegram: enabled("telegram"),
+		discord: enabled("discord"),
+		slack: enabled("slack"),
+	};
+}
+
+export type InAppNotificationResult =
+	| { kind: "created"; notification: Notification }
+	| { kind: "duplicate" };
+
+/**
+ * Awaited in-app insert. With an idempotency key a repeated call reports
+ * `duplicate` instead of inserting a second row, so durable callers can
+ * retry safely without the fan-out side effects of `createNotification`.
+ */
+export async function insertInAppNotification(
+	params: CreateNotificationParams,
+): Promise<InAppNotificationResult> {
+	const insert = db.insert(notification).values({
+		userId: params.userId,
+		organizationId: params.organizationId,
+		type: params.type,
+		title: params.title,
+		message: params.message,
+		entityType: params.entityType,
+		entityId: params.entityId,
+		actionUrl: params.actionUrl,
+		metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+		idempotencyKey: params.idempotencyKey,
+	});
+	const [inserted] = params.idempotencyKey
+		? await insert
+				.onConflictDoNothing({
+					target: [notification.organizationId, notification.idempotencyKey],
+					where: sql`${notification.idempotencyKey} is not null`,
+				})
+				.returning()
+		: await insert.returning();
+	return inserted ? { kind: "created", notification: inserted } : { kind: "duplicate" };
+}
+
+export type ExternalNotificationChannel = Exclude<NotificationChannel, "in_app">;
+
+/**
+ * Awaited delivery through one external transport. `unavailable` means the
+ * transport is not configured for this deployment or organization, which is
+ * distinct from a transport failure (thrown) and from preference suppression
+ * (decided by the caller before delivery).
+ */
+export async function deliverNotificationToChannel(
+	channel: ExternalNotificationChannel,
+	params: CreateNotificationParams,
+	notificationId: string | null,
+): Promise<"sent" | "unavailable"> {
+	const botChannelPayload = {
+		userId: params.userId,
+		organizationId: params.organizationId,
+		type: params.type,
+		title: params.title,
+		message: params.message,
+		entityType: params.entityType,
+		entityId: params.entityId,
+		actionUrl: params.actionUrl,
+		metadata: params.metadata,
+	};
+	switch (channel) {
+		case "push": {
+			if (!isPushAvailable()) return "unavailable";
+			await sendPushToUser(params.userId, {
+				title: params.title,
+				body: params.message,
+				icon: "/icons/icon-192x192.png",
+				badge: "/icons/badge-72x72.png",
+				tag: params.type,
+				data: {
+					notificationId: notificationId ?? undefined,
+					type: params.type,
+					actionUrl: params.actionUrl,
+					url: params.actionUrl,
+				},
+			});
+			return "sent";
+		}
+		case "email":
+			await sendEmailNotification({
+				userId: params.userId,
+				type: params.type,
+				title: params.title,
+				message: params.message,
+				metadata: params.metadata,
+				organizationId: params.organizationId,
+			});
+			return "sent";
+		case "teams":
+			if (!(await isTeamsAvailable(params.organizationId))) return "unavailable";
+			await sendTeamsNotification(botChannelPayload);
+			return "sent";
+		case "telegram":
+			if (!(await isTelegramAvailable(params.organizationId))) return "unavailable";
+			await sendTelegramNotification(botChannelPayload);
+			return "sent";
+		case "discord":
+			if (!(await isDiscordAvailable(params.organizationId))) return "unavailable";
+			await sendDiscordNotification(botChannelPayload);
+			return "sent";
+		case "slack":
+			if (!(await isSlackAvailable(params.organizationId))) return "unavailable";
+			await sendSlackNotification(botChannelPayload);
+			return "sent";
+	}
+}
+
 /**
  * Create a new notification
  *
@@ -76,73 +210,24 @@ export async function createNotification(
 	options: { throwOnError?: boolean } = {},
 ): Promise<Notification | null> {
 	try {
-		// Fetch all relevant preferences for this notification type at once
-		const preferences = await db.query.notificationPreference.findMany({
-			where: and(
-				eq(notificationPreference.userId, params.userId),
-				eq(notificationPreference.notificationType, params.type),
-			),
-		});
-
-		// Check in-app preference
-		const inAppPreference = preferences.find((p) => p.channel === "in_app");
-		const inAppEnabled = !inAppPreference || inAppPreference.enabled;
-
-		// Check push preference
-		const pushPreference = preferences.find((p) => p.channel === "push");
-		const pushEnabled = !pushPreference || pushPreference.enabled;
-
-		// Check email preference
-		const emailPreference = preferences.find((p) => p.channel === "email");
-		const emailEnabled = !emailPreference || emailPreference.enabled;
-
-		// Check Teams preference
-		const teamsPreference = preferences.find((p) => p.channel === "teams");
-		const teamsEnabled = !teamsPreference || teamsPreference.enabled;
-
-		// Check Telegram preference
-		const telegramPreference = preferences.find(
-			(p) => p.channel === "telegram",
+		const channels = await loadNotificationChannelPreferences(
+			params.userId,
+			params.type,
 		);
-		const telegramEnabled = !telegramPreference || telegramPreference.enabled;
-
-		// Check Discord preference
-		const discordPreference = preferences.find((p) => p.channel === "discord");
-		const discordEnabled = !discordPreference || discordPreference.enabled;
-
-		// Check Slack preference
-		const slackPreference = preferences.find((p) => p.channel === "slack");
-		const slackEnabled = !slackPreference || slackPreference.enabled;
+		const inAppEnabled = channels.in_app;
+		const pushEnabled = channels.push;
+		const emailEnabled = channels.email;
+		const teamsEnabled = channels.teams;
+		const telegramEnabled = channels.telegram;
+		const discordEnabled = channels.discord;
+		const slackEnabled = channels.slack;
 
 		let created: Notification | null = null;
 
 		// Create in-app notification if enabled
 		if (inAppEnabled) {
-			const insert = db.insert(notification).values({
-				userId: params.userId,
-				organizationId: params.organizationId,
-				type: params.type,
-				title: params.title,
-				message: params.message,
-				entityType: params.entityType,
-				entityId: params.entityId,
-				actionUrl: params.actionUrl,
-				metadata: params.metadata ? JSON.stringify(params.metadata) : null,
-				idempotencyKey: params.idempotencyKey,
-			});
-			const [inserted] = params.idempotencyKey
-				? await insert
-						.onConflictDoNothing({
-							target: [
-								notification.organizationId,
-								notification.idempotencyKey,
-							],
-							where: sql`${notification.idempotencyKey} is not null`,
-						})
-						.returning()
-				: await insert.returning();
-
-			created = inserted ?? null;
+			const inserted = await insertInAppNotification(params);
+			created = inserted.kind === "created" ? inserted.notification : null;
 
 			if (created) {
 				logger.info(

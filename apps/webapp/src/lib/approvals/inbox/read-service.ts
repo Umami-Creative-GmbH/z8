@@ -14,6 +14,15 @@ import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
+import {
+	buildTimeReviewSections,
+	prepareTimeReviewEvidence,
+} from "../presentation/time-review";
+import {
+	buildTravelExpenseReviewSections,
+	prepareTravelExpenseReviewEvidence,
+} from "../presentation/travel-expense-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import {
@@ -74,6 +83,13 @@ interface GetApprovalInboxDetailFromRequestInput {
 	};
 	handler: ApprovalTypeHandler;
 	loadAbsenceReviewEvidence?: typeof prepareAbsenceReviewEvidence;
+	loadTravelExpenseReviewEvidence?: (input: {
+		organizationId: string;
+		claimId: string;
+	}) => ReturnType<typeof prepareTravelExpenseReviewEvidence>;
+	loadTimeReviewEvidence?: (
+		input: Parameters<typeof prepareTimeReviewEvidence>[0],
+	) => ReturnType<typeof prepareTimeReviewEvidence>;
 }
 
 const DEFAULT_LIMIT = 50;
@@ -273,6 +289,8 @@ export async function getApprovalInboxDetailFromRequest({
 	request,
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
+	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
+	loadTimeReviewEvidence = prepareTimeReviewEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
 		throw new ApprovalInboxBadRequestError("Unsupported approval type");
@@ -300,25 +318,52 @@ export async function getApprovalInboxDetailFromRequest({
 	let actions = isOrphanedTimeCorrectionDetail(detail)
 		? { ...item.capabilities, canApprove: false, canBulkApprove: false }
 		: item.capabilities;
-	const sections = buildDetailSections(detail);
+	let review: { sections: ApprovalInboxDetailSection[]; decisionsBlocked: boolean } | null =
+		null;
+	// The request's submitted revision and committed results (#325). With
+	// evidence, the live correction reconstruction (UTC clock times from current
+	// rows) would contradict the submitted proposal and is not built.
+	const timeEvidence =
+		request.entityType === "time_entry"
+			? await loadTimeReviewEvidence({
+					organizationId: request.organizationId,
+					approvalRequestId: request.id,
+					workPeriodId: request.entityId,
+					requestPending: request.status === "pending",
+					kind: timeApprovalKindOf(detail.entity),
+				})
+			: null;
+	const sections = buildDetailSections(detail, {
+		liveCorrection: !(timeEvidence?.status === "evidenced" && timeEvidence.kind === "time_correction"),
+	});
 
 	if (request.entityType === "absence_entry") {
 		const evidence = await loadAbsenceReviewEvidence({
 			organizationId: request.organizationId,
 			entity: detail.entity,
 		});
-		if (evidence) {
-			const review = buildAbsenceReviewSections(evidence);
-			sections.splice(1, 0, ...review.sections);
-			if (review.decisionsBlocked) {
-				// The server holds these decisions too; the UI only mirrors that.
-				actions = {
-					...actions,
-					canApprove: false,
-					canReject: false,
-					canBulkApprove: false,
-				};
-			}
+		if (evidence) review = buildAbsenceReviewSections(evidence);
+	} else if (request.entityType === "travel_expense_claim") {
+		// The claim's frozen submission and decision history (#296).
+		review = buildTravelExpenseReviewSections(
+			await loadTravelExpenseReviewEvidence({
+				organizationId: request.organizationId,
+				claimId: request.entityId,
+			}),
+		);
+	} else if (timeEvidence) {
+		review = buildTimeReviewSections(timeEvidence);
+	}
+	if (review) {
+		sections.splice(1, 0, ...review.sections);
+		if (review.decisionsBlocked) {
+			// The server holds these decisions too; the UI only mirrors that.
+			actions = {
+				...actions,
+				canApprove: false,
+				canReject: false,
+				canBulkApprove: false,
+			};
 		}
 	}
 
@@ -472,6 +517,7 @@ function toInboxItem(
 
 function buildDetailSections(
 	detail: ApprovalDetail,
+	options: { liveCorrection: boolean },
 ): ApprovalInboxDetailSection[] {
 	const stage = detail.approval.display.stage;
 	const useDisplayLocalTimelineIds = isOrdinaryTimeApprovalDetail(detail);
@@ -499,7 +545,7 @@ function buildDetailSections(
 		});
 	}
 
-	sections.push(...buildTimeCorrectionDetailSections(detail));
+	if (options.liveCorrection) sections.push(...buildTimeCorrectionDetailSections(detail));
 
 	if (detail.timeline.length > 0) {
 		sections.push({
@@ -537,6 +583,13 @@ function isOrdinaryTimeApprovalDetail(detail: ApprovalDetail): boolean {
 		entity.timeApprovalKind === "policy_clock_out" ||
 		entity.timeRequestHasOrdinaryEvidence === true
 	);
+}
+
+function timeApprovalKindOf(entity: unknown) {
+	if (typeof entity !== "object" || entity === null) return null;
+	const kind = (entity as { timeApprovalKind?: unknown }).timeApprovalKind;
+	if (isTimeApprovalWorkflowType(kind)) return kind;
+	return hasPendingCorrectionDetail(entity) ? "time_correction" : null;
 }
 
 function getTimeRequestWarning(entity: unknown): string | null {

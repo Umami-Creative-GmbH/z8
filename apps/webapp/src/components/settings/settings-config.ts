@@ -620,6 +620,17 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		group: "data",
 	},
 	{
+		id: "work-diagnostics",
+		titleKey: "settings.workDiagnostics.title",
+		titleDefault: "Work Diagnostics",
+		descriptionKey: "settings.workDiagnostics.description",
+		descriptionDefault: "Find missing or conflicting time records and time entry chain issues",
+		href: "/settings/work-diagnostics",
+		icon: "shield-check",
+		minimumTier: "orgAdmin",
+		group: "data",
+	},
+	{
 		id: "audit-export",
 		titleKey: "settings.auditExport.title",
 		titleDefault: "Audit Export",

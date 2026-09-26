@@ -15,10 +15,8 @@ import {
 	createSCIMManagedControlPlane,
 	createSCIMManagedControlPlaneStore,
 } from "@/lib/scim/managed-control-plane";
-import {
-	getOrCreateEnterpriseIdentitySetupRecord,
-	requireEnterpriseOrgAdmin,
-} from "./actions";
+import { requireEnterpriseOrgAdmin } from "./actions";
+import { getOrCreateEnterpriseIdentitySetupRecord } from "./identity-setup-record";
 
 const IDENTITY_SETUP_PATH = "/settings/enterprise/identity-setup";
 const connectionIdSchema = z.string().trim().min(1).max(255);

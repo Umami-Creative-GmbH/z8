@@ -13,7 +13,9 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { createLogger } from "@/lib/logger";
 import { deleteOwnedAvatarObject } from "@/lib/storage/avatar-storage";
+import { changeUserTimezone } from "@/lib/timezone/user-timezone-change";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import {
 	isTimeFormat,
@@ -21,6 +23,7 @@ import {
 	type TimeFormat,
 } from "@/lib/user-preferences/time-format";
 import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { isWeekStartDay, type WeekStartDay } from "@/lib/user-preferences/week-start";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
@@ -28,7 +31,12 @@ import {
 	profileDetailsUpdateSchema,
 	profileImageUpdateSchema,
 } from "@/lib/validations/profile";
-import { requestUserWorkBalanceFullRebuild } from "@/lib/work-balance/service";
+import {
+	failureMessage,
+	processWorkBalanceRebuildIntents,
+} from "@/lib/work-balance/rebuild-intents";
+
+const logger = createLogger("ProfileActions");
 
 type AuthProfileUpdate = {
 	firstName: string | undefined;
@@ -168,20 +176,9 @@ function updateProfilePreferences(
 	userId: string,
 	helpImproveProduct: boolean,
 ): Effect.Effect<void, unknown, unknown> {
-	return dbService.query("updateProfilePreferences", async () => {
-		await dbService.db
-			.insert(userSettings)
-			.values({
-				userId,
-				helpImproveProduct,
-			})
-			.onConflictDoUpdate({
-				target: userSettings.userId,
-				set: {
-					helpImproveProduct,
-				},
-			});
-	});
+	return dbService.query("updateProfilePreferences", () =>
+		writeUserSettings(dbService.db, userId, { helpImproveProduct }),
+	);
 }
 
 /**
@@ -415,13 +412,12 @@ export async function changePassword(data: {
 }
 
 /**
- * Update user's timezone preference in userSettings
+ * Update user's timezone preference in userSettings (#312: see `changeUserTimezone`).
  */
 export async function updateTimezone(timezone: string): Promise<ServerActionResult<void>> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
 
 		// Preserve the existing required-field error before validating the zone identifier.
 		if (!timezone || timezone.length === 0) {
@@ -447,24 +443,45 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
 			);
 		}
 
-		// Update timezone in userSettings with upsert
-		yield* _(
-			dbService.query("updateTimezone", async () => {
-				await dbService.db.transaction(async (tx) => {
-					await tx
-						.insert(userSettings)
-						.values({
-							userId: session.user.id,
-							timezone,
-						})
-						.onConflictDoUpdate({
-							target: userSettings.userId,
-							set: { timezone },
-						});
-					await requestUserWorkBalanceFullRebuild({ userId: session.user.id }, { dbClient: tx });
-				});
+		// The zone and the rebuild intents of adopted organizations commit together
+		// under the user's exclusive configuration/access protection.
+		const change = yield* _(
+			Effect.tryPromise({
+				try: () => changeUserTimezone({ userId: session.user.id, timezone }),
+				// Nothing was committed; keep statement text out of the response.
+				catch: (error) => {
+					logger.error(
+						{ error, userId: session.user.id, timezone },
+						"User timezone change rolled back",
+					);
+					return new ValidationError({
+						message: "Failed to update timezone",
+						field: "timezone",
+					});
+				},
 			}),
 		);
+
+		// The save is committed. Rebuilding runs separately per organization; a
+		// failure stays on its intent for the balance worker and does not fail the save.
+		if (change.status === "changed") {
+			for (const organizationId of change.rebuildOrganizationIds) {
+				const rebuild = yield* _(
+					Effect.promise(() =>
+						processWorkBalanceRebuildIntents({ organizationId }).catch((error: unknown) => ({
+							organizationsRebuilt: 0,
+							failures: [{ organizationId, error: failureMessage(error) }],
+						})),
+					),
+				);
+				if (rebuild.failures.length > 0) {
+					logger.warn(
+						{ userId: session.user.id, organizationId, failures: rebuild.failures },
+						"User timezone saved; balance rebuild is pending retry",
+					);
+				}
+			}
+		}
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -508,18 +525,9 @@ export async function updateWeekStartDay(
 		}
 
 		yield* _(
-			dbService.query("updateWeekStartDay", async () => {
-				await dbService.db
-					.insert(userSettings)
-					.values({
-						userId: session.user.id,
-						weekStartDay,
-					})
-					.onConflictDoUpdate({
-						target: userSettings.userId,
-						set: { weekStartDay },
-					});
-			}),
+			dbService.query("updateWeekStartDay", () =>
+				writeUserSettings(dbService.db, session.user.id, { weekStartDay }),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 
@@ -552,18 +560,9 @@ export async function updateTimeFormat(timeFormat: TimeFormat): Promise<ServerAc
 		}
 
 		yield* _(
-			dbService.query("updateTimeFormat", async () => {
-				await dbService.db
-					.insert(userSettings)
-					.values({
-						userId: session.user.id,
-						timeFormat,
-					})
-					.onConflictDoUpdate({
-						target: userSettings.userId,
-						set: { timeFormat },
-					});
-			}),
+			dbService.query("updateTimeFormat", () =>
+				writeUserSettings(dbService.db, session.user.id, { timeFormat }),
+			),
 		);
 	}).pipe(Effect.provide(AppLayer));
 

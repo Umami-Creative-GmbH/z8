@@ -114,7 +114,11 @@ type _ObservedResultIsObserveOnly = Assert<
 type _AuthorizationIncludesRequesterCancellation = Assert<
 	Equal<
 		Awaited<ReturnType<ApprovalWorkflowAuthorization["authorize"]>>,
-		"active_assignment" | "requester" | "manage_approval" | "system"
+		| "active_assignment"
+		| "requester"
+		| "manage_approval"
+		| "system"
+		| "offboarding_reassignment"
 	>
 >;
 

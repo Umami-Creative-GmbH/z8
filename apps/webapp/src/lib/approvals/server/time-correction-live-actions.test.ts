@@ -9,6 +9,12 @@ const state = vi.hoisted(() => ({
 	processApprovalWithCurrentEmployee: vi.fn(),
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/env", () => ({
 	env: {
 		BETTER_AUTH_SECRET: "test-secret-value-with-at-least-32-characters",

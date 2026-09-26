@@ -1,8 +1,9 @@
 import { eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { hydrationStats, userSettings, waterIntakeLog } from "@/db/schema";
+import { hydrationStats, type userSettings, waterIntakeLog } from "@/db/schema";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { createDefaultHydrationStats, toDateOnlyString } from "./shared";
 
 export function resetHydrationStreak(userId: string) {
@@ -108,26 +109,14 @@ export function upsertWaterReminderSettings(params: {
 		const dbService = yield* _(DatabaseService);
 
 		yield* _(
-			dbService.query("updateWaterReminderSettings", async () => {
-				await dbService.db
-					.insert(userSettings)
-					.values({
-						userId,
-						waterReminderEnabled: enabled,
-						waterReminderPreset: preset,
-						waterReminderIntervalMinutes: intervalMinutes,
-						waterReminderDailyGoal: dailyGoal,
-					})
-					.onConflictDoUpdate({
-						target: userSettings.userId,
-						set: {
-							waterReminderEnabled: enabled,
-							waterReminderPreset: preset,
-							waterReminderIntervalMinutes: intervalMinutes,
-							waterReminderDailyGoal: dailyGoal,
-						},
-					});
-			}),
+			dbService.query("updateWaterReminderSettings", () =>
+				writeUserSettings(dbService.db, userId, {
+					waterReminderEnabled: enabled,
+					waterReminderPreset: preset,
+					waterReminderIntervalMinutes: intervalMinutes,
+					waterReminderDailyGoal: dailyGoal,
+				}),
+			),
 		);
 	});
 }

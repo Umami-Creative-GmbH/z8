@@ -646,6 +646,45 @@ describe("Break Enforcement Result Types", () => {
 		).toEqual(["period-original", "period-inserted"]);
 	});
 
+	test("maps the adjustment owner's outcomes to the adapter result (#305)", async () => {
+		const { breakEnforcementResultOf } = await import("../break-enforcement.service");
+
+		expect(
+			breakEnforcementResultOf("period-original", {
+				kind: "adjusted",
+				operationId: "operation-1",
+				workPeriodId: "period-original",
+				generatedWorkPeriodId: "period-generated",
+				breakMinutes: 30,
+				breakStartAt: "2026-07-22T14:00:40Z",
+				regulationName: "German Time Law",
+				originalDurationMinutes: 420,
+				adjustedDurationMinutes: 390,
+				surchargeSnapshot: null,
+			}),
+		).toEqual({
+			wasAdjusted: true,
+			affectedWorkPeriodIds: ["period-original", "period-generated"],
+			adjustment: {
+				breakMinutes: 30,
+				breakInsertedAt: "2026-07-22T14:00:40Z",
+				regulationName: "German Time Law",
+				originalDurationMinutes: 420,
+				adjustedDurationMinutes: 390,
+			},
+		});
+		for (const outcome of [
+			{ kind: "not_required" as const },
+			{ kind: "deferred" as const, blocker: "pending_time_correction_approval" as const },
+			{ kind: "obsolete" as const, reason: "already_adjusted" as const },
+		]) {
+			expect(breakEnforcementResultOf("period-original", outcome)).toEqual({
+				wasAdjusted: false,
+				affectedWorkPeriodIds: ["period-original"],
+			});
+		}
+	});
+
 	test("should have correct structure for non-adjusted result", () => {
 		const result = { wasAdjusted: false as const };
 

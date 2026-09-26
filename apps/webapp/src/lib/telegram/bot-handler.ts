@@ -12,7 +12,8 @@ import type { BotCommandContext } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { answerCallbackQuery, editMessageText, sendMessage } from "./api";
-import { handleApprovalCallback } from "./approval-handler";
+import { handleApprovalCallback, handleBoundApprovalCallback } from "./approval-handler";
+import { parseBoundApprovalCallback } from "./bound-approval";
 import { saveConversation } from "./conversation-manager";
 import { escapeMarkdownV2, markdownToHtml } from "./formatters";
 import type {
@@ -46,7 +47,7 @@ export async function handleTelegramUpdate(
 ): Promise<void> {
 	try {
 		if (update.callback_query) {
-			await handleCallbackQuery(update.callback_query, bot);
+			await handleCallbackQuery(update.callback_query, bot, update.update_id);
 		} else if (update.message) {
 			await handleMessage(update.message, bot);
 		}
@@ -194,19 +195,24 @@ async function handleMessage(
 async function handleCallbackQuery(
 	query: TelegramUpdate["callback_query"] & {},
 	bot: ResolvedTelegramBot,
+	updateId: number | undefined,
 ): Promise<void> {
 	if (!query.data || !query.from) return;
 
 	const telegramUserId = String(query.from.id);
+	let acknowledgment: string | undefined;
 
 	try {
 		const callbackData = JSON.parse(query.data) as
 			| ApprovalCallbackData
 			| CommandCallbackData
 			| LanguageCallbackData;
+		const bound = parseBoundApprovalCallback(callbackData);
 
-		if (callbackData.a === "ap" || callbackData.a === "rj") {
-			await handleApprovalCallback(
+		if (bound) {
+			acknowledgment = await handleBoundApprovalCallback(query, bound, updateId, bot);
+		} else if (callbackData.a === "ap" || callbackData.a === "rj") {
+			acknowledgment = await handleApprovalCallback(
 				query,
 				callbackData as ApprovalCallbackData,
 				telegramUserId,
@@ -226,8 +232,9 @@ async function handleCallbackQuery(
 		logger.error({ error, data: query.data }, "Failed to parse callback data");
 	}
 
-	// Always acknowledge the callback query
-	await answerCallbackQuery(bot.botToken, query.id);
+	// Always acknowledge the callback query. The acknowledgment is protocol
+	// handling; only a committed or verified outcome supplies its text.
+	await answerCallbackQuery(bot.botToken, query.id, acknowledgment);
 }
 
 /**

@@ -53,6 +53,8 @@ export const NOTIFICATION_TYPES = [
 	"compliance_exception_expired",
 	// Approval escalation administrative attention
 	"approval_escalation_attention",
+	// Employee offboarding follow-up review
+	"employee_offboarding_review",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

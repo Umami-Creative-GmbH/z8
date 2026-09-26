@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import type { AuditPackAssuranceRecord } from "./append-lineage-evidence";
 import type {
 	ApprovalEvidence,
 	AuditTimelineEvent,
@@ -14,6 +15,8 @@ export interface AuditPackAssembleInput {
 	corrections: readonly CorrectionLinkNode[];
 	approvals: readonly ApprovalEvidence[];
 	timeline: readonly AuditTimelineEvent[];
+	/** One record per assessed employee: claims, continuity provenance, limitations. */
+	appendAssurance: readonly AuditPackAssuranceRecord[];
 	scope: Record<string, unknown>;
 }
 
@@ -59,14 +62,35 @@ function buildCsv(headers: readonly string[], rows: readonly (readonly unknown[]
 function toEntriesCsv(entries: readonly EntryChainEvidence[]): string {
 	const sortedEntries = entries.toSorted((a, b) => a.id.localeCompare(b.id));
 	return buildCsv(
-		["id", "organizationId", "occurredAt", "previousEntryId", "replacesEntryId", "supersededById"],
+		[
+			"id",
+			"organizationId",
+			"employeeId",
+			"type",
+			"occurredAt",
+			"previousEntryId",
+			"replacesEntryId",
+			"supersededById",
+			"hash",
+			"previousHash",
+			"hashStatus",
+			"appendPredecessorId",
+			"appendLinkResolution",
+		],
 		sortedEntries.map((entry) => [
 			entry.id,
 			entry.organizationId,
+			entry.employeeId,
+			entry.type,
 			entry.occurredAt,
 			entry.lineage.previousEntryId,
 			entry.lineage.replacesEntryId,
 			entry.lineage.supersededById,
+			entry.hash.stored,
+			entry.hash.previousHash,
+			entry.hash.status,
+			entry.appendLink.predecessorId,
+			entry.appendLink.resolution,
 		]),
 	);
 }
@@ -91,6 +115,7 @@ export async function assembleAuditPackZip(input: AuditPackAssembleInput): Promi
 
 	const files = [
 		{ path: "evidence/entries.json", content: stableJson(input.entries) },
+		{ path: "evidence/append-assurance.json", content: stableJson(input.appendAssurance) },
 		{ path: "evidence/corrections.json", content: stableJson(input.corrections) },
 		{ path: "evidence/approvals.json", content: stableJson(input.approvals) },
 		{ path: "evidence/audit-timeline.json", content: stableJson(input.timeline) },

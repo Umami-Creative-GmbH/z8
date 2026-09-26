@@ -49,6 +49,17 @@ export async function saveConversation(
 				isActive: true,
 			});
 		}
+		if (channelType === "im") {
+			// Approval cards waiting for a usable DM can be delivered now.
+			const { rearmApprovalDeliveryForRepairedDestination } = await import(
+				"@/lib/approvals/delivery/recovery"
+			);
+			await rearmApprovalDeliveryForRepairedDestination({
+				organizationId,
+				userId,
+				provider: "slack",
+			});
+		}
 	} catch (error) {
 		logger.error({ error, userId, channelId }, "Failed to save conversation");
 	}

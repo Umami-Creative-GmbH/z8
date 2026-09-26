@@ -19,7 +19,11 @@
       "refreshAfterClearFailed": "Blocker isch ufghobe, aber d Lohnabrächnig het nid chönne aktualisiert wärde",
       "unknownEmployee": "Unbekannte Mitarbeiter",
       "unresolvedWorkMinutes": "Arbetsminute müend prüeft wärde",
-      "offboardingClockRepair": "Usstämple bim Ustritt muess korrigiert wärde"
+      "offboardingClockRepair": "Usstämple bim Ustritt muess korrigiert wärde",
+      "openWork": "Arbet ohni Usstämple",
+      "pendingWorkApproval": "Arbet wartet uf Freigab",
+      "uncertainHistoricalWork": "Historischi Arbet muess prüeft wärde",
+      "openWorkDiagnostics": "Arbetsdiagnose öffne"
     },
     "description": "Prüef d Lohnsumme, d Bereitschaft und d Export für die gwählti Periode.",
     "employeeTotals": {
@@ -49,6 +53,7 @@
       "endDateAfterStart": "S'Änddatum mues glich oder nach em Startdatum si",
       "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Zersch d Arbetsminute kläre, wo prüeft wärde müend",
       "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigier zerscht s Usstämple bim Ustritt",
+      "exportBlockedByUncertainWork": "Export blockiert: Zersch di unsicheri Arbet im gwählte Umfang kläre",
       "exportFormatNotConfigured": "S'Format für de Lohnabrechnungs-Export isch nid konfiguriert",
       "invalidBlockerId": "Ungültigi Lohnabrächnigs-Blocker-ID",
       "invalidBlockerType": "Ungültige Lohnabrächnigs-Blocker-Typ",

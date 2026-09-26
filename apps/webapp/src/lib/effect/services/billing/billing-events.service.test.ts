@@ -26,8 +26,8 @@ const {
 	updateWhere: vi.fn(),
 }));
 
-vi.mock("@/db", () => ({
-	db: {
+vi.mock("@/db", () => {
+	const db = {
 		query: {
 			stripeEvent: {
 				findFirst: stripeEventFindFirst,
@@ -42,8 +42,15 @@ vi.mock("@/db", () => ({
 		update: vi.fn(() => ({
 			set: setValues,
 		})),
-	},
-}));
+		// Protected billing mutations resolve the owning organization, then lock it.
+		select: vi.fn(() => ({
+			from: () => ({ where: async () => [{ organizationId: "org_123" }] }),
+		})),
+		execute: vi.fn(async () => undefined),
+		transaction: vi.fn(async (callback: (transaction: unknown) => unknown) => callback(db)),
+	};
+	return { db };
+});
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),

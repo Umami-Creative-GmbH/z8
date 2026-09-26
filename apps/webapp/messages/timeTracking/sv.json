@@ -56,6 +56,8 @@
     "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Det gick inte att stämpla in",
+      "appendReviewRequired": "Instämpling kräver granskning av din tidshistorik",
+      "appendReviewRequiredDesc": "Dina tidigare tidsposter kunde inte verifieras, så den nya instämplingen sparades inte. Kontakta din administratör.",
       "clockOutFailed": "Det gick inte att stämpla ut",
       "holidayBlocked": "Det går inte att stämpla ut på {holidayName}",
       "holidayBlockedDesc": "Denna dag är markerad som en helgdag och tidsregistreringar är inte tillåtna",
@@ -82,14 +84,52 @@
       "dateLabel": "Datum",
       "description": "Skapa en tidsregistrering för ett tidigare datum. Godkännande kan krävas baserat på din organisations ändringspolicy.",
       "errors": {
+        "collision": "Den här posten står i konflikt med en tidigare inskickning eller ändrat arbete. Kontrollera dina befintliga poster.",
         "createFailed": "Det gick inte att skapa tidsregistreringen",
         "futureDate": "Det går inte att skapa registreringar för framtida datum",
+        "futureTime": "Det går inte att skapa poster för framtida tider",
+        "historyReview": "Den här tidshistoriken måste granskas innan nya poster kan sparas. Kontakta din administratör.",
         "invalidTime": "Ange en fullständig, giltig tid",
         "invalidTimeRange": "Utstämplingstiden måste vara efter instämplingstiden",
+        "nonexistentTime": "Den här tiden finns inte på det här datumet eftersom klockan ställs fram.",
+        "occurrenceRequired": "Den här tiden förekommer två gånger på det här datumet. Välj vilken du menar.",
+        "overlap": "Den här tiden överlappar registrerat arbete. Välj ett intervall utan överlappning.",
+        "reconfirm": "Tidszonen eller tiderna har ändrats. Granska posten och skicka den igen.",
+        "refresh": "Inställningarna för manuella poster har ändrats. Granska posten och skicka den igen.",
         "tooLong": "Arbetsperioden får inte överstiga 24 timmar"
+      },
+      "occurrence": {
+        "earlier": "Första, {offset}",
+        "later": "Andra, {offset}",
+        "legend": "{time} förekommer två gånger på det här datumet. Vilken menar du?"
       },
       "reasonLabel": "Anledning",
       "reasonPlaceholder": "Beskriv vad du har arbetat med…",
+      "recovery": {
+        "check": "Kontrollera status",
+        "checkFailed": "Det gick inte att kontrollera posten just nu. Försök igen senare.",
+        "contextMismatch": "Du är inloggad på ett annat konto eller en annan organisation. Byt tillbaka för att hantera posten.",
+        "description": "Dessa poster skickades från den här fliken utan ett bekräftat resultat. Inget skickas igen om du inte väljer det.",
+        "discard": "Avfärda",
+        "editAsNew": "Redigera som ny post",
+        "notCommitted": "Ingen sparning hittades.",
+        "notCommittedToast": "Ingen sparning hittades för posten. Försök igen exakt eller redigera den som en ny post.",
+        "retry": "Försök igen exakt",
+        "saved": "Posten sparades.",
+        "savedForApproval": "Posten sparades och skickades för godkännande. Aktuell status: {status}.",
+        "status": {
+          "approved": "godkänd",
+          "pending": "väntande",
+          "rejected": "avvisad"
+        },
+        "stillUncertain": "Fortfarande inte bekräftad. Posten finns kvar; försök igen när du är online igen.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Obekräftade poster",
+        "uncertain": "Inte bekräftad. Den kan redan vara sparad.",
+        "uncertainToast": "Vi kunde inte bekräfta om posten sparades. Den finns kvar under Obekräftade poster, där du kan försöka igen exakt eller kontrollera dess status.",
+        "unsupported": "Dess status kan inte kontrolleras. Den kan redan vara sparad.",
+        "unsupportedToast": "Postens status kan inte kontrolleras just nu. Ett nytt försök skickar exakt samma post."
+      },
       "submit": "Skapa registrering",
       "submitting": "Skapar…",
       "success": {

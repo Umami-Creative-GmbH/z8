@@ -61,6 +61,8 @@
     "deadline": "Son teslim tarihi",
     "errors": {
       "clockInFailed": "İşe giriş yapılamadı",
+      "appendReviewRequired": "Giriş kaydı için zaman geçmişinizin incelenmesi gerekiyor",
+      "appendReviewRequiredDesc": "Önceki zaman kayıtlarınız doğrulanamadığından yeni giriş kaydı kaydedilmedi. Lütfen yöneticinizle iletişime geçin.",
       "clockOutFailed": "İşten çıkış yapılamadı",
       "holidayBlocked": "{holidayName} tarihinde işten çıkış yapılamaz",
       "holidayBlockedDesc": "Bu gün tatil olarak işaretlenmiştir ve zaman kaydı girilmesine izin verilmemektedir",
@@ -87,14 +89,52 @@
       "dateLabel": "Tarih",
       "description": "Geçmiş bir tarih için zaman girişi oluşturun. Kuruluşunuzun değişiklik politikasına bağlı olarak onay gerekebilir.",
       "errors": {
+        "collision": "Bu kayıt önceki bir gönderimle veya değiştirilmiş çalışmayla çakışıyor. Mevcut kayıtlarınızı kontrol edin.",
         "createFailed": "Zaman girişi oluşturulamadı",
         "futureDate": "Gelecek tarihler için giriş oluşturulamaz",
+        "futureTime": "Gelecekteki saatler için kayıt oluşturulamaz",
+        "historyReview": "Yeni kayıtlar kaydedilmeden önce bu zaman geçmişinin incelenmesi gerekiyor. Yöneticinize başvurun.",
         "invalidTime": "Eksiksiz ve geçerli bir saat girin",
         "invalidTimeRange": "Çıkış saati, giriş saatinden sonra olmalıdır",
+        "nonexistentTime": "Saatler ileri alındığı için bu saat bu tarihte yok.",
+        "occurrenceRequired": "Bu saat bu tarihte iki kez geçiyor. Hangisini kastettiğinizi seçin.",
+        "overlap": "Bu süre kayıtlı çalışmayla çakışıyor. Çakışmayan bir aralık seçin.",
+        "reconfirm": "Saat dilimi veya saatler değişti. Kaydı gözden geçirip yeniden gönderin.",
+        "refresh": "Manuel kayıt ayarları değişti. Kaydı gözden geçirip yeniden gönderin.",
         "tooLong": "Çalışma süresi 24 saati aşamaz"
+      },
+      "occurrence": {
+        "earlier": "Birinci, {offset}",
+        "later": "İkinci, {offset}",
+        "legend": "{time} bu tarihte iki kez geçiyor. Hangisini kastediyorsunuz?"
       },
       "reasonLabel": "Neden",
       "reasonPlaceholder": "Ne üzerinde çalıştığınızı açıklayın…",
+      "recovery": {
+        "check": "Durumu kontrol et",
+        "checkFailed": "Bu kayıt şu anda kontrol edilemedi. Daha sonra tekrar deneyin.",
+        "contextMismatch": "Farklı bir hesapta veya kuruluşta oturum açtınız. Bu kaydı işlemek için geri geçin.",
+        "description": "Bu kayıtlar bu sekmeden onaylanmış bir sonuç olmadan gönderildi. Siz seçmedikçe hiçbir şey yeniden gönderilmez.",
+        "discard": "Kapat",
+        "editAsNew": "Yeni kayıt olarak düzenle",
+        "notCommitted": "Kayıt bulunamadı.",
+        "notCommittedToast": "Bu kayıt için kaydedilmiş bir sonuç bulunamadı. Aynen yeniden deneyin veya yeni kayıt olarak düzenleyin.",
+        "retry": "Aynen yeniden dene",
+        "saved": "Bu kayıt kaydedildi.",
+        "savedForApproval": "Bu kayıt kaydedildi ve onaya gönderildi. Güncel durumu: {status}.",
+        "status": {
+          "approved": "onaylandı",
+          "pending": "beklemede",
+          "rejected": "reddedildi"
+        },
+        "stillUncertain": "Hâlâ onaylanmadı. Kayıt tutuluyor; tekrar çevrimiçi olduğunuzda yeniden deneyin.",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Onaylanmamış kayıtlar",
+        "uncertain": "Onaylanmadı. Zaten kaydedilmiş olabilir.",
+        "uncertainToast": "Bu kaydın kaydedilip kaydedilmediğini doğrulayamadık. Onaylanmamış kayıtlar altında tutuluyor; oradan aynen yeniden deneyebilir veya durumunu kontrol edebilirsiniz.",
+        "unsupported": "Durumu kontrol edilemiyor. Zaten kaydedilmiş olabilir.",
+        "unsupportedToast": "Bu kaydın durumu şu anda kontrol edilemiyor. Yeniden denemek tam olarak aynı kaydı gönderir."
+      },
       "submit": "Giriş Oluştur",
       "submitting": "Oluşturuluyor…",
       "success": {

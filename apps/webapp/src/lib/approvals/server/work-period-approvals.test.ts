@@ -28,16 +28,41 @@ const chainProgressMocks = vi.hoisted(() => ({
 const managerEligibilityMocks = vi.hoisted(() => ({
 	isEligible: vi.fn(),
 }));
+// Evidence reads/writes are covered by the PostgreSQL suite; here they are
+// inert unless a test drives the owner's ordering through them.
+const workPeriodEvidenceMocks = vi.hoisted(() => ({
+	prepare: vi.fn(),
+	record: vi.fn(),
+}));
 const surchargeSnapshot = {
 	version: 1,
 	evaluatedAt: "2026-07-14T16:00:00Z",
 	resolution: { kind: "none" },
 } as const;
 
+// The legacy transfer journal and its request lock are verified against
+// PostgreSQL (#439, legacy-time-transfer.integration.test.ts); these
+// harnesses decide requests escalation never transferred.
+const legacyTransferMocks = vi.hoisted(() => ({
+	assertDecisionAuthority: vi.fn(async () => undefined),
+	wasTransferred: vi.fn(async () => false),
+}));
+
+vi.mock("../escalation/legacy-transfer-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../escalation/legacy-transfer-store")>()),
+	assertLegacyTransferDecisionAuthority: legacyTransferMocks.assertDecisionAuthority,
+	wasLegacyRequestTransferred: legacyTransferMocks.wasTransferred,
+}));
+
 vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
+vi.mock("./work-period-decision-transaction", async (importOriginal) =>
+	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
+		await importOriginal(),
+	),
+);
 vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 	captureOrdinaryWorkPeriodLegacyState: legacyCaptureMocks.capture,
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: legacyCaptureMocks.load,
@@ -47,6 +72,21 @@ vi.mock("../policies/chain-service", () => ({
 }));
 vi.mock("../policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest: managerEligibilityMocks.isEligible,
+}));
+vi.mock("../evidence/work-period-evidence", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../evidence/work-period-evidence")>()),
+	prepareLegacyWorkPeriodDecisionEvidence: workPeriodEvidenceMocks.prepare,
+	recordLegacyWorkPeriodDecisionEvidence: workPeriodEvidenceMocks.record,
+}));
+// Legacy card decisions and cycle intents (#432):
+// legacy-time-bound-approval.integration.test.ts.
+vi.mock("../evidence/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../evidence/store")>()),
+	findLegacyDecisionEvidenceByRequest: async () => null,
+}));
+vi.mock("../delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../delivery/intents")>()),
+	recordLegacyTimeDecisionIntent: async () => false,
 }));
 vi.mock("../workflow/state-machine", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../workflow/state-machine")>()),
@@ -59,6 +99,7 @@ vi.mock("../workflow/transition-engine", async (importOriginal) => ({
 }));
 
 const workPeriodApprovals = await import("./work-period-approvals");
+const { ApprovalAssignmentReassignedError } = await import("../escalation/decision-authority");
 const {
 	executeOrdinaryWorkPeriodDecisionInTransaction,
 	finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction,
@@ -69,6 +110,8 @@ const {
 
 describe("stable ordinary work-period decisions", () => {
 	beforeEach(() => {
+		workPeriodEvidenceMocks.prepare.mockReset().mockResolvedValue(null);
+		workPeriodEvidenceMocks.record.mockReset().mockResolvedValue(undefined);
 		legacyCaptureMocks.capture.mockReset();
 		legacyCaptureMocks.load.mockReset();
 		legacyCaptureMocks.load.mockImplementation(async (input) => ({
@@ -870,6 +913,160 @@ describe("stable ordinary work-period decisions", () => {
 		expect(
 			runtime.transitionEngine.executeInTransactionWithDisposition,
 		).not.toHaveBeenCalled();
+	});
+
+	function legacyManualDecision() {
+		legacyCaptureMocks.load.mockResolvedValue({
+			organizationId: "org-1",
+			source: {
+				organizationId: "org-1",
+				workflowType: "manual_time_submission",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+			},
+			approvalRequest: {
+				id: "approval-1",
+				organizationId: "org-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				requestedBy: "employee-1",
+				approverId: "manager-1",
+				status: "pending",
+			},
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: { timeRequest: { kind: "manual_time_submission" } },
+			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
+		});
+		const dbService = createDecisionDbService({
+			unlinked: true,
+			autoApprovalRequest: {
+				metadata: { timeRequest: { kind: "manual_time_submission" } },
+			},
+		});
+		const database = dbService.db as unknown as {
+			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+		};
+		database.query.employee.findMany = vi.fn().mockResolvedValue([currentApprover]);
+		database.query.workPeriod.findFirst.mockResolvedValue({
+			...period,
+			approvalWorkflowId: null,
+		});
+		const context = {
+			dbService: { db: dbService.db },
+			writeGate: { acquire: vi.fn().mockResolvedValue({ mode: "legacy" }) },
+			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
+			repository: { loadSnapshot: vi.fn() },
+		};
+		const runtime = {
+			repository: { withTransaction: vi.fn(async (run) => run(context)) },
+			transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+		};
+		const execute = (
+			decision: { kind: "approve"; reason: null } | { kind: "reject"; reason: string },
+		) =>
+			executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				runtime: runtime as never,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision,
+			});
+		return { dbService, execute };
+	}
+
+	it("refuses a replaced approver of a transferred legacy request before any mutation (#439)", async () => {
+		const { dbService, execute } = legacyManualDecision();
+		legacyTransferMocks.assertDecisionAuthority.mockRejectedValueOnce(
+			new ApprovalAssignmentReassignedError(),
+		);
+
+		await expect(execute({ kind: "approve", reason: null })).rejects.toBeInstanceOf(
+			ApprovalAssignmentReassignedError,
+		);
+
+		expect(legacyTransferMocks.assertDecisionAuthority).toHaveBeenCalledWith(dbService.db, {
+			organizationId: "org-1",
+			entityType: "time_entry",
+			entityId: "period-1",
+			approvalRequestId: "approval-1",
+			actorEmployeeId: currentApprover.id,
+			canManageOrganizationApproval: undefined,
+		});
+		expect(dbService.updateSets).toEqual([]);
+		expect(workPeriodEvidenceMocks.prepare).not.toHaveBeenCalled();
+	});
+
+	it("records legacy decision evidence after the mutation with the finalized outcome", async () => {
+		const plan = { revision: { id: "revision-1" } };
+		workPeriodEvidenceMocks.prepare.mockResolvedValue(plan);
+		const { dbService, execute } = legacyManualDecision();
+		let statusWhenRecorded: unknown;
+		workPeriodEvidenceMocks.record.mockImplementation(async () => {
+			statusWhenRecorded = dbService.updateSets.find(
+				(values) => "approvalStatus" in values,
+			)?.approvalStatus;
+		});
+
+		await execute({ kind: "approve", reason: null });
+
+		expect(workPeriodEvidenceMocks.prepare).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			kind: "manual_time_submission",
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+			chainInstanceId: null,
+		});
+		expect(workPeriodEvidenceMocks.record).toHaveBeenCalledOnce();
+		expect(workPeriodEvidenceMocks.record).toHaveBeenCalledWith(expect.anything(), plan, {
+			organizationId: "org-1",
+			action: "approve",
+			reason: null,
+			approvalRequestId: "approval-1",
+			idempotencyKey: "ordinary-decision:org-1:period-1:approval-1:approve:",
+			// A web decision names no binding (#432).
+			reviewedBindingId: null,
+			actor: { employeeId: currentApprover.id, userId: currentApprover.userId },
+			finalized: {
+				outcome: {
+					status: "approved",
+					adjustment: { kind: "none" },
+					resultPeriodIds: ["period-1"],
+				},
+				maintenance: expect.objectContaining({ decision: "approved" }),
+			},
+		});
+		expect(statusWhenRecorded).toBe("approved");
+	});
+
+	it("holds a legacy decision before any mutation when evidence is required", async () => {
+		const { ApprovalEvidenceError } = await import("../evidence/errors");
+		workPeriodEvidenceMocks.prepare.mockRejectedValue(
+			new ApprovalEvidenceError("evidence_required"),
+		);
+		const { dbService, execute } = legacyManualDecision();
+
+		await expect(execute({ kind: "reject", reason: "Too long" })).rejects.toMatchObject({
+			name: "ApprovalEvidenceError",
+			code: "evidence_required",
+		});
+		expect(dbService.updateSets).toEqual([]);
+		expect(workPeriodEvidenceMocks.record).not.toHaveBeenCalled();
+	});
+
+	it("fails the legacy decision transaction when its evidence cannot be recorded", async () => {
+		const { ApprovalEvidenceError } = await import("../evidence/errors");
+		workPeriodEvidenceMocks.prepare.mockResolvedValue({ revision: { id: "revision-1" } });
+		workPeriodEvidenceMocks.record.mockRejectedValue(
+			new ApprovalEvidenceError("evidence_incomplete", { field: "result_segment" }),
+		);
+		const { execute } = legacyManualDecision();
+
+		await expect(execute({ kind: "approve", reason: null })).rejects.toMatchObject({
+			code: "evidence_incomplete",
+		});
 	});
 
 	it.each([
@@ -2322,6 +2519,14 @@ describe("ordinary work-period approval finalizer", () => {
 				organizationId: "org-1",
 				employeeId: "employee-1",
 				actorUserId: "manager-user-1",
+				actorEmployeeId: "manager-1",
+				// The exact lifecycle the finalizer verified, never a generic flag.
+				lifecycle: {
+					authority: "legacy",
+					approvalRequestId: "approval-1",
+					observedWorkflowId: "workflow-1",
+				},
+				decisionRecordId: "decision-1",
 				period: expect.objectContaining({
 					id: "period-1",
 					clockOutId: "clock-out-1",
@@ -2343,11 +2548,13 @@ describe("ordinary work-period approval finalizer", () => {
 			staleSurchargePeriodIds: [],
 			surchargeSnapshot,
 		});
+		// The decision is recorded on the originating record before the split, so
+		// the generated segment's lineage can name it (#303).
 		expect(
 			vi.mocked(dbService.db.update).mock.invocationCallOrder[1],
-		).toBeLessThan(terminalBreakMocks.enforce.mock.invocationCallOrder[0]);
-		expect(terminalBreakMocks.enforce.mock.invocationCallOrder[0]).toBeLessThan(
-			vi.mocked(dbService.db.insert).mock.invocationCallOrder[0],
+		).toBeLessThan(vi.mocked(dbService.db.insert).mock.invocationCallOrder[0]);
+		expect(vi.mocked(dbService.db.insert).mock.invocationCallOrder[0]).toBeLessThan(
+			terminalBreakMocks.enforce.mock.invocationCallOrder[0],
 		);
 	});
 
@@ -2371,7 +2578,8 @@ describe("ordinary work-period approval finalizer", () => {
 			finalize(dbService, { kind: "policy_clock_out" }),
 		).rejects.toThrow("Ordinary work-period finalization conflict");
 		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
-		expect(dbService.insertedValues).toHaveLength(0);
+		// The failure propagates, so the transaction rolls the decision row back.
+		expect(dbService.insertedValues).toHaveLength(1);
 	});
 
 	it.each([

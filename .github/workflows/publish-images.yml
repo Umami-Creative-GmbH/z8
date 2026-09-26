@@ -8,6 +8,10 @@ on:
       - "v*.*.*"
     paths:
       - "apps/webapp/**"
+      - "!apps/webapp/**/*.md"
+      - "!apps/webapp/**/*.test.ts"
+      - "!apps/webapp/**/*.test.tsx"
+      - "!apps/webapp/vitest.config.ts"
       - "docker/Dockerfile.webapp"
       - "docker/Dockerfile.webapp.dockerignore"
       - "docker/Dockerfile.worker"

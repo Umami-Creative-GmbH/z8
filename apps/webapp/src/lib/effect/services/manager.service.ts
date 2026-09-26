@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
+import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { type ConflictError, type DatabaseError, NotFoundError, ValidationError } from "../errors";
 import { DatabaseService } from "./database.service";
 
@@ -130,84 +131,141 @@ export const ManagerServiceLive = Layer.effect(
 						);
 					}
 
-					// Check if assignment already exists
-					const existing = yield* _(
-						dbService.query("checkExistingAssignment", async () => {
-							return await dbService.db.query.employeeManagers.findFirst({
-								where: and(
-									eq(employeeManagers.employeeId, employeeId),
-									eq(employeeManagers.managerId, managerId),
-								),
-							});
-						}),
+					if (!employeeExists) return;
+
+					// One protected transaction: the relation feeds the manager's creation
+					// authority, so it commits under both users' exclusive protection.
+					yield* _(
+						dbService.query("assignManager", () =>
+							withAuthorizationMutation(
+								{
+									organizationId: employeeExists.organizationId,
+									employeeIds: [employeeId, managerId],
+								},
+								async (tx) => {
+									const [existing] = await tx
+										.select({ id: employeeManagers.id })
+										.from(employeeManagers)
+										.where(
+											and(
+												eq(employeeManagers.employeeId, employeeId),
+												eq(employeeManagers.managerId, managerId),
+											),
+										);
+									if (existing) {
+										await tx
+											.update(employeeManagers)
+											.set({ isPrimary })
+											.where(eq(employeeManagers.id, existing.id));
+									} else {
+										await tx.insert(employeeManagers).values({
+											employeeId,
+											managerId,
+											isPrimary,
+											assignedBy,
+										});
+									}
+
+									// If this is primary, unset other primary managers
+									if (isPrimary) {
+										await tx
+											.update(employeeManagers)
+											.set({ isPrimary: false })
+											.where(
+												and(
+													eq(employeeManagers.employeeId, employeeId),
+													eq(employeeManagers.isPrimary, true),
+												),
+											);
+										await tx
+											.update(employeeManagers)
+											.set({ isPrimary: true })
+											.where(
+												and(
+													eq(employeeManagers.employeeId, employeeId),
+													eq(employeeManagers.managerId, managerId),
+												),
+											);
+									}
+								},
+								dbService.db,
+							),
+						),
 					);
-
-					if (existing) {
-						// Update existing assignment
-						yield* _(
-							dbService.query("updateManagerAssignment", async () => {
-								await dbService.db
-									.update(employeeManagers)
-									.set({ isPrimary })
-									.where(eq(employeeManagers.id, existing.id));
-							}),
-						);
-					} else {
-						// Create new assignment
-						yield* _(
-							dbService.query("createManagerAssignment", async () => {
-								await dbService.db.insert(employeeManagers).values({
-									employeeId,
-									managerId,
-									isPrimary,
-									assignedBy,
-								});
-							}),
-						);
-					}
-
-					// If this is primary, unset other primary managers
-					if (isPrimary) {
-						yield* _(
-							dbService.query("unsetOtherPrimaryManagers", async () => {
-								await dbService.db
-									.update(employeeManagers)
-									.set({ isPrimary: false })
-									.where(
-										and(
-											eq(employeeManagers.employeeId, employeeId),
-											eq(employeeManagers.isPrimary, true),
-										),
-									);
-
-								// Set the new primary
-								await dbService.db
-									.update(employeeManagers)
-									.set({ isPrimary: true })
-									.where(
-										and(
-											eq(employeeManagers.employeeId, employeeId),
-											eq(employeeManagers.managerId, managerId),
-										),
-									);
-							}),
-						);
-					}
 				}),
 
 			removeManager: (employeeId, managerId) =>
 				Effect.gen(function* (_) {
-					// Get all managers for this employee
-					const managers = yield* _(
-						dbService.query("getAllManagersForEmployee", async () => {
-							return await dbService.db.query.employeeManagers.findMany({
-								where: eq(employeeManagers.employeeId, employeeId),
+					const target = yield* _(
+						dbService.query("getEmployeeForManagerRemoval", async () => {
+							return await dbService.db.query.employee.findFirst({
+								where: eq(employee.id, employeeId),
+								columns: { organizationId: true },
 							});
 						}),
 					);
+					if (!target) {
+						return yield* _(
+							Effect.fail(
+								new NotFoundError({
+									message: "Employee not found",
+									entityType: "employee",
+									entityId: employeeId,
+								}),
+							),
+						);
+					}
 
-					// Prevent removing last manager
-					if (managers.length <= 1) {
+					// The count check and the removal share the employee's protection, which
+					// every relation writer for this employee takes.
+					const removal = yield* _(
+						dbService.query("removeManagerAssignment", () =>
+							withAuthorizationMutation(
+								{
+									organizationId: target.organizationId,
+									employeeIds: [employeeId, managerId],
+								},
+								async (tx) => {
+									const managers = await tx
+										.select({
+											id: employeeManagers.id,
+											managerId: employeeManagers.managerId,
+											isPrimary: employeeManagers.isPrimary,
+										})
+										.from(employeeManagers)
+										.where(eq(employeeManagers.employeeId, employeeId));
+
+									// Prevent removing last manager
+									if (managers.length <= 1) return "last_manager" as const;
+
+									await tx
+										.delete(employeeManagers)
+										.where(
+											and(
+												eq(employeeManagers.employeeId, employeeId),
+												eq(employeeManagers.managerId, managerId),
+											),
+										);
+
+									// If removed manager was primary, assign primary to another manager
+									const wasPrimary = managers.find(
+										(m) => m.managerId === managerId && m.isPrimary,
+									);
+									const newPrimaryId = managers.find((m) => m.managerId !== managerId)?.id;
+									if (wasPrimary && newPrimaryId) {
+										await tx
+											.update(employeeManagers)
+											.set({ isPrimary: true })
+											.where(eq(employeeManagers.id, newPrimaryId));
+									}
+									return "removed" as const;
+								},
+								dbService.db,
+							),
+						),
+					);
+
+					if (removal === "last_manager") {
 						yield* _(
 							Effect.fail(
 								new ValidationError({
@@ -217,36 +275,6 @@ export const ManagerServiceLive = Layer.effect(
 								}),
 							),
 						);
-					}
-
-					// Remove the assignment
-					yield* _(
-						dbService.query("removeManagerAssignment", async () => {
-							await dbService.db
-								.delete(employeeManagers)
-								.where(
-									and(
-										eq(employeeManagers.employeeId, employeeId),
-										eq(employeeManagers.managerId, managerId),
-									),
-								);
-						}),
-					);
-
-					// If removed manager was primary, assign primary to another manager
-					const wasPrimary = managers.find((m) => m.managerId === managerId && m.isPrimary);
-					if (wasPrimary && managers.length > 1) {
-						const newPrimaryId = managers.find((m) => m.managerId !== managerId)?.id;
-						if (newPrimaryId) {
-							yield* _(
-								dbService.query("assignNewPrimaryManager", async () => {
-									await dbService.db
-										.update(employeeManagers)
-										.set({ isPrimary: true })
-										.where(eq(employeeManagers.id, newPrimaryId));
-								}),
-							);
-						}
 					}
 				}),
 

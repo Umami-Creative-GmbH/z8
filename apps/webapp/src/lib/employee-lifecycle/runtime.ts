@@ -7,6 +7,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { type DepartureTaskKind, employeeDeparture } from "@/db/schema/employee-lifecycle";
+import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	SeatSyncService,
@@ -21,13 +22,24 @@ import {
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
 import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
+import {
+	deliverNotificationToChannel,
+	insertInAppNotification,
+	loadNotificationChannelPreferences,
+} from "@/lib/notifications/notification-service";
+import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { secondaryStorage } from "@/lib/redis";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { createApprovalHandoverHandler, createApprovalHandoverRuntime } from "./approval-handover";
 import { createDepartureClockOut } from "./clock-out";
 import { createClockPostprocessHandler } from "./clock-postprocess";
 import { createDepartureCommands } from "./commands";
 import type { DepartureTaskHandler } from "./delivery";
 import { findDueDepartures } from "./due-departures";
+import {
+	createReviewNotificationHandler,
+	OFFBOARDING_REVIEW_NOTIFICATION_TYPE,
+} from "./notifications";
 import { createSessionRevocationHandler } from "./session-cleanup";
 import type { DepartureIdentity } from "./types";
 
@@ -77,6 +89,25 @@ export function createProductionDepartureTaskHandlers(options: {
 		session_revocation: createSessionRevocationHandler((token) =>
 			secondaryStorage.deleteOrThrow(token),
 		),
+		notify_review: createReviewNotificationHandler({
+			database: db,
+			clock: systemClock,
+			transport: {
+				preferences: (userId) =>
+					loadNotificationChannelPreferences(userId, OFFBOARDING_REVIEW_NOTIFICATION_TYPE),
+				locale: resolveRecipientNotificationLocale,
+				insertInApp: insertInAppNotification,
+				deliver: (channel, params) => deliverNotificationToChannel(channel, params, null),
+			},
+		}),
+		approval_handover: createApprovalHandoverHandler({
+			database: db,
+			clock: systemClock,
+			runtime: createApprovalHandoverRuntime(
+				db as unknown as ApprovalWorkflowDatabase,
+				systemClock,
+			),
+		}),
 		// The open clock_repair review is the durable record; nothing is safe to
 		// retry automatically against that period.
 		clock_repair: async () => {},

@@ -94,6 +94,8 @@ export interface ApprovalTerminalFinalizationResult {
 	compatibilityPayload: JsonObject;
 	finalizedAt: Instant;
 	maintenance?: JsonObject;
+	/** What finalization did to the source graph, for decision evidence. */
+	workOutcome?: JsonObject;
 }
 
 export interface ApprovalDisplayProjection {

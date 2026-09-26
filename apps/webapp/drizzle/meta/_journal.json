@@ -540,6 +540,237 @@
       "when": 1790870400000,
       "tag": "0076_billing_seat_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1790956800000,
+      "tag": "0077_employee_offboarding_review_notification",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791043200000,
+      "tag": "0078_travel_expense_submission_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1791129600000,
+      "tag": "0079_time_entry_append_position",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1791216000000,
+      "tag": "0080_legacy_escalation_transfer",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1791302400000,
+      "tag": "0081_approval_invocation",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1791388800000,
+      "tag": "0082_audit_pack_append_assurance",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1791475200000,
+      "tag": "0083_completed_work_operation",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791561600000,
+      "tag": "0084_direct_clock_commands",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1791648000000,
+      "tag": "0085_reviewed_import_operation",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1791734400000,
+      "tag": "0086_approval_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1791820800000,
+      "tag": "0087_runtime_demo_work",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1791907200000,
+      "tag": "0088_bot_clock_out_writer",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791993600000,
+      "tag": "0089_completed_work_amendment",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1792080000000,
+      "tag": "0090_approval_delivery_slack",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1792166400000,
+      "tag": "0091_teams_approval_actions",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1792252800000,
+      "tag": "0092_on_behalf_clock_out_writer",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1792339200000,
+      "tag": "0093_legacy_expense_presentation",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1792425600000,
+      "tag": "0094_discord_approval_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1792512000000,
+      "tag": "0095_manual_entry_operation",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1792598400000,
+      "tag": "0096_escalation_replacement_delivery",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1792684800000,
+      "tag": "0097_close_resume_work",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1792771200000,
+      "tag": "0098_correction_lifecycle_operation",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1792857600000,
+      "tag": "0099_work_balance_rebuild_intent",
+      "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1792944000000,
+      "tag": "0100_policy_clock_out_break_split",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1793030400000,
+      "tag": "0101_user_timezone_rebuild_intent",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1793116800000,
+      "tag": "0102_historical_gap_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1793203200000,
+      "tag": "0103_completed_work_split",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1793289600000,
+      "tag": "0104_payroll_work_collection",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1793376000000,
+      "tag": "0105_historical_work_proposals",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1793462400000,
+      "tag": "0106_automatic_break_adjustment",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1793548800000,
+      "tag": "0107_approval_workflow_rollout_precreate",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1793635200000,
+      "tag": "0108_legacy_absence_presentation",
+      "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1793721600000,
+      "tag": "0109_legacy_escalation_replacement_delivery",
+      "breakpoints": true
     }
   ]
 }

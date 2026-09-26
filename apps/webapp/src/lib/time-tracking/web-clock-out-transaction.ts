@@ -1,9 +1,7 @@
 import "server-only";
 
-import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
-import type { StageActivationInput } from "@/lib/approvals/workflow/ports";
 import type {
 	ApprovalWorkflowDatabase,
 	ApprovalWorkflowRepository,
@@ -15,22 +13,27 @@ import {
 	routeWebClockOutResources,
 	WorkTransactionScopeChanged,
 } from "./web-clock-out-resources";
+import {
+	acquireAdoptionGate,
+	acquireEmployeeCoordination,
+	acquireOrganizationConfigurationGuard,
+	acquireUserConfigurationAccessGuards,
+	readAppendAdmission,
+	sealWorkTransactionScope,
+	type WorkTransactionAdmission,
+	type WorkTransactionScope,
+} from "./work-transaction";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type WorkTransactionClient = Pick<
-	Transaction,
-	"execute" | "query" | "select" | "insert" | "update" | "delete"
->;
-
-const protectedTransaction = Symbol("protected work transaction");
+export type { WorkTransactionClient } from "./work-transaction";
 
 /** Trusted server composition only; no transaction/savepoint or adoption upgrade capability. */
-export interface WorkTransactionContext {
-	readonly [protectedTransaction]: true;
-	readonly db: WorkTransactionClient;
+export interface WorkTransactionContext extends WorkTransactionScope {
 	readonly approval: ApprovalWorkflowTransactionContext;
-	readonly admission: "legacy";
-	assertEmployee(organizationId: string, employeeId: string): void;
+	/**
+	 * Read from the organization's append control under the adoption gate. `append`
+	 * is the adopted completed-work contract (#274); `legacy` keeps the prefactor path.
+	 */
+	readonly admission: WorkTransactionAdmission;
 	assertParticipant(organizationId: string, employeeId: string): void;
 	assertApprovalPolicy(
 		organizationId: string,
@@ -42,13 +45,26 @@ export interface WorkTransactionContext {
 export interface WebClockOutTransactionInput {
 	organizationId: string;
 	employeeId: string;
+	/** The authenticated human acting; their approved membership is protected. */
 	userId: string;
+	/**
+	 * The user of the employee who owns the work, when another human acts on their
+	 * behalf (#276). Defaults to the acting user.
+	 */
+	ownerUserId?: string;
 	submissionId: string;
 	workPeriodId?: string;
 	endTime?: Instant;
-	requiresApproval?: boolean;
-	projectId?: string;
-	workCategoryId?: string;
+	projectId?: string | null;
+	workCategoryId?: string | null;
+}
+
+/**
+ * Live clock-outs never route approval (#361): no approval policy, stage or
+ * participant is routed or locked, so activating one would act on unprotected rows.
+ */
+function refuseApprovalRouting(): never {
+	throw new Error("Live clock-out does not route approval");
 }
 
 type ApprovalRuntimeFactory = (database: ApprovalWorkflowDatabase) => {
@@ -78,7 +94,6 @@ async function runAttempt<T>(
 	return db.transaction(async (transaction) => {
 		const routed = await routeWebClockOutResources(transaction, input);
 		let active = true;
-		let scopeChanged = false;
 		const assertActive = () => {
 			if (!active) throw new Error("Work transaction is no longer active");
 		};
@@ -92,34 +107,26 @@ async function runAttempt<T>(
 		});
 		try {
 			return await runtime.repository.withTransaction(async (approval) => {
-				await transaction.execute(
-					sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["completed-work-adoption", input.organizationId])}, 0))`,
-				);
-				// T08 is a legacy-only prefactor. There is deliberately no activation
-				// setter or new receipt/evidence capture before the parent gates pass.
+				await acquireAdoptionGate(transaction, input.organizationId);
+				const admission = await readAppendAdmission(transaction, input.organizationId);
 				const authority = await approval.writeGate.acquire({
 					organizationId: input.organizationId,
 					workflowType: "policy_clock_out",
 				});
-				await transaction.execute(
-					sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-organization-configuration", input.organizationId])}, 0))`,
+				await acquireOrganizationConfigurationGuard(
+					transaction,
+					input.organizationId,
 				);
-				for (const userId of routed
-					.filter((row) => row.table === "user")
-					.map((row) => row.id)
-					.sort()) {
-					await transaction.execute(
-						sql`select pg_advisory_xact_lock_shared(hashtextextended(${JSON.stringify(["work-user-configuration-access", userId])}, 0))`,
-					);
-				}
-				for (const employeeId of routed
-					.filter((row) => row.table === "employee")
-					.map((row) => row.id)
-					.sort()) {
-					await transaction.execute(
-						sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
-					);
-				}
+				await acquireUserConfigurationAccessGuards(
+					transaction,
+					routed.filter((row) => row.table === "user").map((row) => row.id),
+				);
+				await acquireEmployeeCoordination(
+					transaction,
+					routed
+						.filter((row) => row.table === "employee")
+						.map((row) => row.id),
+				);
 				assertSameWebClockOutResources(
 					routed,
 					await routeWebClockOutResources(transaction, input),
@@ -129,6 +136,8 @@ async function runAttempt<T>(
 					routed,
 					await routeWebClockOutResources(transaction, input),
 				);
+				// The policy clock-out write gate stays: replay of a committed clock-out
+				// that carries historical approval evidence reads through it.
 				const writeGate: ApprovalWorkflowTransactionContext["writeGate"] = {
 					async acquire(scope) {
 						assertActive();
@@ -141,86 +150,23 @@ async function runAttempt<T>(
 						return authority;
 					},
 				};
-				const assertParticipant = (
-					organizationId: string,
-					employeeId: string,
-				) => {
-					assertActive();
-					if (
-						organizationId !== input.organizationId ||
-						!routed.some(
-							(row) => row.table === "employee" && row.id === employeeId,
-						)
-					) {
-						scopeChanged = true;
-						throw new WorkTransactionScopeChanged();
-					}
-				};
-				const assertApprovalPolicy = (
-					organizationId: string,
-					policyId: string,
-					stageIds: readonly string[],
-				) => {
-					assertActive();
-					if (
-						organizationId !== input.organizationId ||
-						!routed.some(
-							(row) => row.table === "approval_policy" && row.id === policyId,
-						) ||
-						stageIds.some(
-							(id) =>
-								!routed.some(
-									(row) =>
-										row.table === "approval_policy_stage" && row.id === id,
-								),
-						)
-					) {
-						scopeChanged = true;
-						throw new WorkTransactionScopeChanged();
-					}
-				};
 				return operation(
-					Object.freeze({
-						[protectedTransaction]: true as const,
+					sealWorkTransactionScope({
 						db: transaction,
 						approval: {
 							...approval,
 							activationResolver: {
-								async resolve(activation: StageActivationInput) {
-									const policy = activation.workflow.policySnapshot;
-									if (typeof policy.id === "string") {
-										assertApprovalPolicy(
-											activation.organizationId,
-											policy.id,
-											Array.isArray(policy.stages)
-												? policy.stages.flatMap((stage) =>
-														stage &&
-														typeof stage === "object" &&
-														!Array.isArray(stage) &&
-														typeof stage.id === "string"
-															? [stage.id]
-															: [],
-													)
-												: [],
-										);
-									}
-									const result =
-										await approval.activationResolver.resolve(activation);
-									for (const assignment of result.assignments)
-										assertParticipant(
-											result.organizationId,
-											assignment.approverEmployeeId,
-										);
-									return result;
+								async resolve() {
+									return refuseApprovalRouting();
 								},
 							},
 							writeGate,
 							compatibilityWriter:
 								approval.compatibilityWriter.withWriteGate(writeGate),
 						},
-						admission: "legacy" as const,
-						assertParticipant,
-						assertApprovalPolicy,
+						admission,
+						assertParticipant: refuseApprovalRouting,
+						assertApprovalPolicy: refuseApprovalRouting,
 						assertEmployee(organizationId: string, employeeId: string) {
 							assertActive();
 							if (
@@ -235,11 +181,6 @@ async function runAttempt<T>(
 					}),
 				);
 			});
-		} catch (error) {
-			// Approval/Effect boundaries redact internal errors. Keep the restart
-			// signal even when one of those boundaries wraps the original cause.
-			if (scopeChanged) throw new WorkTransactionScopeChanged();
-			throw error;
 		} finally {
 			active = false;
 		}

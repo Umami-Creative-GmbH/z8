@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
+import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "@/lib/approvals/approval-database-row";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	type Instant,
 	instantToCanonicalString,
-	parseInstant,
 } from "@/lib/datetime/temporal-core";
 import type {
 	ApprovalDbService,
@@ -59,19 +59,17 @@ function nullableString(value: unknown): string | null {
 	return value === null ? null : string(value);
 }
 
+// `timestamp` columns filled by `defaultNow()` (legacy chain and stage rows)
+// carry microseconds in the JSON text. Decode them the way the UTC pg driver
+// reads every other timestamp, at millisecond precision, so the shadow mirror
+// receives DB-representable instants.
 function nullableInstant(value: unknown): Instant | null {
 	if (value === null) return null;
 	try {
-		if (value instanceof Date) {
-			return instantFromDB(value) ?? fail("malformed_evidence");
-		}
-		if (
-			typeof value === "string" &&
-			/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?$/.test(value)
-		) {
-			return parseInstant(`${value.replace(" ", "T")}Z`);
-		}
-		return fail("malformed_evidence");
+		return (
+			instantFromDB(decodeApprovalDatabaseTimestampWithoutTimeZone(value)) ??
+			fail("malformed_evidence")
+		);
 	} catch {
 		return fail("malformed_evidence");
 	}

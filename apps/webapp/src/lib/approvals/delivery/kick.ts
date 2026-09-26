@@ -1,0 +1,39 @@
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("ApprovalDeliveryKick");
+
+const KICK_LIMIT = 10;
+
+/**
+ * Best-effort fast path after a committed submission, decision or escalation
+ * transfer: run one small pass of both delivery owners for the workflow now
+ * instead of waiting for the next scheduled pass. Durability never depends on
+ * it; the lifecycle intent or transfer event was committed with the change and
+ * the scheduled job recovers anything missed.
+ */
+export function kickApprovalDelivery(input: {
+	organizationId: string;
+	workflowId?: string | null;
+}): void {
+	void (async () => {
+		const { hasApprovalDeliveryControl } = await import("./store");
+		if (!(await hasApprovalDeliveryControl(input.organizationId))) return;
+		const scope = {
+			organizationId: input.organizationId,
+			limit: KICK_LIMIT,
+			...(input.workflowId ? { workflowId: input.workflowId } : {}),
+		};
+		const { processApprovalDeliveries } = await import("./owner");
+		await processApprovalDeliveries(scope);
+		// Escalation's replacement delivery (#300) shares the work table.
+		const { processEscalationReplacementDeliveries } = await import(
+			"../escalation/replacement-delivery"
+		);
+		await processEscalationReplacementDeliveries(scope);
+	})().catch((error) => {
+		logger.warn(
+			{ error, organizationId: input.organizationId },
+			"Approval delivery fast path failed; the scheduled pass will recover",
+		);
+	});
+}

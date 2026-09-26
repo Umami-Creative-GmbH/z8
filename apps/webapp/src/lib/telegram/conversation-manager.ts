@@ -49,6 +49,17 @@ export async function saveConversation(
 				isActive: true,
 			});
 		}
+		if (chatType === "private") {
+			// Approval cards waiting for a usable destination can be delivered now.
+			const { rearmApprovalDeliveryForRepairedDestination } = await import(
+				"@/lib/approvals/delivery/recovery"
+			);
+			await rearmApprovalDeliveryForRepairedDestination({
+				organizationId,
+				userId,
+				provider: "telegram",
+			});
+		}
 	} catch (error) {
 		logger.error({ error, userId, chatId }, "Failed to save conversation");
 	}

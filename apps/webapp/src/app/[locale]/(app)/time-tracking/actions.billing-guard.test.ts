@@ -10,6 +10,10 @@ const clockingSource = readFileSync(
 	fileURLToPath(new URL("./actions/clocking.ts", import.meta.url)),
 	"utf8",
 );
+const splitSource = readFileSync(
+	fileURLToPath(new URL("./actions/work-period-split.ts", import.meta.url)),
+	"utf8",
+);
 const correctionSubmissionSource = readFileSync(
 	fileURLToPath(
 		new URL(
@@ -112,14 +116,14 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it("guards clock-in before creating time entries", () => {
 		expectBillingGuardBeforeWrite(
-			"clockIn",
+			"clockInAs",
 			"clockingService.clockIn({",
 			clockingSource,
 		);
 	});
 
 	it("captures browser timezone context in live clock-in entries", () => {
-		const body = functionBody("clockIn", clockingSource);
+		const body = functionBody("clockInAs", clockingSource);
 
 		expect(body).toContain("actionContext: ClockActionContext = {}");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
@@ -130,14 +134,14 @@ describe("legacy time-tracking action billing guards", () => {
 
 	it("guards clock-out before creating time entries", () => {
 		expectBillingGuardBeforeWrite(
-			"clockOut",
+			"clockOutAs",
 			"clockingService.clockOut({",
 			clockingSource,
 		);
 	});
 
 	it("captures browser timezone context in live clock-out entries", () => {
-		const body = functionBody("clockOut", clockingSource);
+		const body = functionBody("clockOutAs", clockingSource);
 
 		expect(body).toContain("actionContext: ClockOutActionContext");
 		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
@@ -149,7 +153,7 @@ describe("legacy time-tracking action billing guards", () => {
 	it("guards break insertion before delegating to the clocking mutation", () => {
 		expectBillingGuardBeforeWrite(
 			"addBreakToActiveSession",
-			"addBreakToActiveSessionAction(breakMinutes)",
+			"addBreakToActiveSessionAction(breakMinutes, actionContext)",
 		);
 	});
 
@@ -163,11 +167,19 @@ describe("legacy time-tracking action billing guards", () => {
 	it.each([
 		["requestTimeCorrection", "requestTimeCorrectionEffect(data)"],
 		["updateWorkPeriodNotes", ".update(timeEntry)"],
-		["splitWorkPeriod", "createTimeEntry({"],
 		["updateTimeEntryNotes", ".update(timeEntry)"],
-		["updateWorkPeriodProject", ".update(workPeriod)"],
+		["updateWorkPeriodProject", "changeWorkPeriodProject({"],
 	])("guards %s before writing time data", (name, writeMarker) => {
 		expectBillingGuardBeforeWrite(name, writeMarker);
+	});
+
+	it("guards the shared calendar split before its coordinated transaction", () => {
+		expectBillingGuardBeforeWrite(
+			"splitOwnWorkPeriod",
+			"withCompletedWorkTransaction(",
+			splitSource,
+		);
+		expect(functionBody("splitWorkPeriod")).toContain("return splitOwnWorkPeriod({");
 	});
 
 	it("guards the canonical same-day edit before writing time data", () => {
@@ -199,7 +211,11 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it("marks work balances dirty after clockOut changes payable time", () => {
-		const body = functionBody("clockOut", clockingSource);
+		// Every live clock-out adapter shares the post-commit follow-ups (#275).
+		expect(functionBody("clockOutAs", clockingSource)).toContain(
+			"await completeClockOutAfterCommit(",
+		);
+		const body = functionBody("completeClockOutAfterCommit", clockingSource);
 		expect(body).toContain(
 			"await markWorkBalanceDirtyAfterClockOutBestEffort(",
 		);
@@ -240,19 +256,6 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(guardIndex).toBeLessThan(writeIndex);
 	});
 
-	it("lets the shared clock-out boundary resolve policy routing without a default manager", () => {
-		const body = functionBody("clockOut", clockingSource);
-
-		expect(body).not.toContain(
-			'error: "No manager assigned to approve time changes"',
-		);
-		expect(body).toContain(
-			"executeOrdinaryWorkPeriodSubmissionInTransaction({",
-		);
-		expect(body).toContain("defaultApproverId: null");
-		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
-	});
-
 	it("keeps manual source rows pending until approval routing resolves", () => {
 		const body = functionBody("createManualTimeEntry", clockingSource);
 
@@ -268,7 +271,6 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		"clockOut",
 		"createManualTimeEntry",
 	])("creates approval requests from approval-required %s through the shared boundary", (name) => {
 		const body = functionBody(name, clockingSource);
@@ -283,7 +285,6 @@ describe("legacy time-tracking action billing guards", () => {
 	});
 
 	it.each([
-		["clockOut", "clockingService.clockOut({"],
 		["createManualTimeEntry", "createTimeEntry("],
 	])("fails closed when %s policy checks fail before writing", (name, writeMarker) => {
 		expectPolicyCheckFailureBeforeWrite(name, writeMarker, clockingSource);

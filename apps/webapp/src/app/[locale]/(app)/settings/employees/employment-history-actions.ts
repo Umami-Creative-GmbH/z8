@@ -6,6 +6,7 @@ import {
 	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
+	employeeEmploymentPeriod,
 	workPolicy,
 } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
@@ -226,9 +227,19 @@ async function markContractWorkBalanceDirty(input: {
 	}
 }
 
+/** Terms with the employment stint they belong to, for grouping by stint. */
+export type EmployeeEmploymentHistoryWithPeriod = EmployeeEmploymentHistory & {
+	employmentPeriod: {
+		id: string;
+		status: "open" | "closed" | "legacy_unknown";
+		startedAt: Date | null;
+		endedAt: Date | null;
+	} | null;
+};
+
 export async function listEmployeeEmploymentHistoryAction(
 	employeeId: string,
-): Promise<ServerActionResult<EmployeeEmploymentHistory[]>> {
+): Promise<ServerActionResult<EmployeeEmploymentHistoryWithPeriod[]>> {
 	"use server";
 
 	return runTracedEmployeeAction({
@@ -265,8 +276,33 @@ export async function listEmployeeEmploymentHistoryAction(
 					}),
 				);
 
+				const periods = yield* _(
+					dbService.query("listEmployeeEmploymentPeriods", async () => {
+						return await dbService.db
+							.select({
+								id: employeeEmploymentPeriod.id,
+								status: employeeEmploymentPeriod.status,
+								startedAt: employeeEmploymentPeriod.startedAt,
+								endedAt: employeeEmploymentPeriod.endedAt,
+							})
+							.from(employeeEmploymentPeriod)
+							.where(
+								and(
+									eq(employeeEmploymentPeriod.employeeId, employeeId),
+									eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
+								),
+							);
+					}),
+				);
+				const periodById = new Map(periods.map((period) => [period.id, period]));
+
 				span.setAttribute("history.count", history.length);
-				return history;
+				return history.map((entry) => ({
+					...entry,
+					employmentPeriod: entry.employmentPeriodId
+						? (periodById.get(entry.employmentPeriodId) ?? null)
+						: null,
+				}));
 			}),
 	});
 }

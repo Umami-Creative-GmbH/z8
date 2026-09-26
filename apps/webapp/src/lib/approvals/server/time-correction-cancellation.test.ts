@@ -25,9 +25,22 @@ const state = vi.hoisted(() => ({
 	captureLegacy: vi.fn(),
 	deleteCancelledCorrections: vi.fn(),
 	lockSubmissionSource: vi.fn(),
+	recordIntent: vi.fn(async (_database: unknown, _input: Record<string, unknown>) => false),
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/db", () => ({ db: {} }));
+// Withdrawal intents (#432): legacy-time-bound-approval.integration.test.ts.
+vi.mock("../delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../delivery/intents")>()),
+	recordLegacyDeliveryIntent: state.recordIntent,
+}));
+vi.mock("../delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
 	createProductionApprovalWorkflowRuntime: () => state.runtime,
 }));
@@ -231,7 +244,7 @@ function legacyState(status: "pending" | "cancelled") {
 					organizationId: ids.organization,
 					employeeId: ids.employee,
 					type: "clock_in",
-					timestamp: "2026-07-21T06:00:00Z",
+					instant: "2026-07-21T06:00:00Z",
 					utcOffsetMinutes: 120,
 					timezone: "Europe/Berlin",
 					timezoneSource: "browser",
@@ -260,7 +273,7 @@ function legacyState(status: "pending" | "cancelled") {
 						organizationId: ids.organization,
 						employeeId: ids.employee,
 						type: "correction",
-						timestamp: "2026-07-21T06:05:00Z",
+						instant: "2026-07-21T06:05:00Z",
 						utcOffsetMinutes: 120,
 						timezone: "Europe/Berlin",
 						timezoneSource: "browser",
@@ -357,7 +370,14 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 				findMany: vi.fn().mockResolvedValue([]),
 			},
 			approvalRequest: {
-				findMany: vi.fn().mockResolvedValue([]),
+				// After a capture, the persisted request row the capture described:
+				// the tombstone keeps its submission evidence (#301).
+				findMany: vi.fn(async () => {
+					const captured = (await state.captureLegacy.mock.results.at(-1)?.value) as
+						| { approvalRequest?: unknown }
+						| undefined;
+					return captured?.approvalRequest ? [captured.approvalRequest] : [];
+				}),
 			},
 			employee: {
 				findMany: vi.fn().mockResolvedValue([
@@ -943,6 +963,16 @@ describe("cancelPendingTimeCorrection", () => {
 				},
 			},
 		});
+		// The single request is the withdrawn cycle (#432).
+		expect(state.recordIntent).toHaveBeenLastCalledWith(expect.anything(), {
+			organizationId: ids.organization,
+			workflowType: "time_correction",
+			sourceType: "time_entry",
+			sourceId: ids.workPeriod,
+			approvalRequestId: expect.any(String),
+			cycleId: state.recordIntent.mock.lastCall?.[1]?.approvalRequestId,
+			event: "withdrawn",
+		});
 	});
 
 	it("retains a pure-legacy chain cancellation as a submission-linked tombstone", async () => {
@@ -1009,6 +1039,11 @@ describe("cancelPendingTimeCorrection", () => {
 					cancellation: expect.objectContaining({ chainInstanceId: chainId }),
 				}),
 			}),
+		);
+		// The chain is the withdrawn cycle (#432).
+		expect(state.recordIntent).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ cycleId: chainId, event: "withdrawn" }),
 		);
 	});
 

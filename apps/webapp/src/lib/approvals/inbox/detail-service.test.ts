@@ -7,6 +7,12 @@ import {
 } from "@/lib/approvals/inbox/read-service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 
+// No submitted revision exists (capture inactive): the live detail stays as is.
+vi.mock("@/lib/approvals/presentation/time-review", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/presentation/time-review")>()),
+	prepareTimeReviewEvidence: vi.fn(async () => ({ status: "not_captured", held: false })),
+}));
+
 const request = {
 	id: "approval-1",
 	entityType: "absence_entry",

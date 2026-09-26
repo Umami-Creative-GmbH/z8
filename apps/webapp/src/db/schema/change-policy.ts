@@ -30,7 +30,7 @@ import { employee, team } from "./organization";
  *
  * Example configurations:
  * - selfServiceDays=0, approvalDays=7: Same-day free edits, 1-7 days need approval
- * - selfServiceDays=0, approvalDays=0: Every clock-out triggers approval (strictest)
+ * - selfServiceDays=0, approvalDays=0: Same-day free edits, older entries only admins/team leads (strictest)
  * - noApprovalRequired=true: Unlimited self-service editing (trust mode)
  */
 export const changePolicy = pgTable(

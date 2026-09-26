@@ -1,6 +1,8 @@
 import {
 	type EligibleTeam,
 	type EligibleTeamMembership,
+	type RequesterEligibilityMode,
+	requesterMayBeResolved,
 	resolvePrimaryEligibleManager,
 } from "./manager-eligibility";
 import type { ApprovalPolicyStageDraft } from "./types";
@@ -30,6 +32,8 @@ interface ResolveApproverFromDirectoryInput {
 	managerLinks: ApproverDirectoryManagerLink[];
 	teamMemberships?: EligibleTeamMembership[];
 	teams?: EligibleTeam[];
+	/** Defaults to `new_submission`. */
+	requesterMode?: RequesterEligibilityMode;
 }
 
 function activeEmployeeInOrg(
@@ -60,7 +64,17 @@ export function resolveApproverFromDirectory(
 	input: ResolveApproverFromDirectoryInput,
 ): ApproverResolutionResult {
 	const { organizationId, requesterEmployeeId, stage, employees, managerLinks } = input;
-	const requester = activeEmployeeInOrg(employees, organizationId, requesterEmployeeId);
+	const requesterMode = input.requesterMode ?? "new_submission";
+	const candidate = employees.find(
+		(employee) => employee.id === requesterEmployeeId && employee.organizationId === organizationId,
+	);
+	const requester = requesterMayBeResolved({
+		requesterExistsInOrganization: candidate !== undefined,
+		requesterIsActive: candidate?.isActive === true,
+		mode: requesterMode,
+	})
+		? candidate
+		: undefined;
 
 	if (!requester) {
 		return { ok: false, reason: "Requester is not active in this organization." };
@@ -71,6 +85,7 @@ export function resolveApproverFromDirectory(
 			const manager = resolvePrimaryEligibleManager({
 				organizationId,
 				requesterEmployeeId: requester.id,
+				requesterMode,
 				employees,
 				managerLinks,
 				teamMemberships: input.teamMemberships ?? [],

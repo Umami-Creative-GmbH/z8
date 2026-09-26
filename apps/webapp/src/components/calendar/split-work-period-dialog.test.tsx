@@ -1,9 +1,12 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { splitWorkPeriod } from "@/app/[locale]/(app)/time-tracking/actions";
 import type { CalendarEvent } from "@/lib/calendar/types";
 import { SplitWorkPeriodDialog } from "./split-work-period-dialog";
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
@@ -108,5 +111,48 @@ describe("SplitWorkPeriodDialog", () => {
 
 		expect(screen.getByText("Split time does not exist on this date")).toBeTruthy();
 		expect(screen.queryByRole("radiogroup")).toBeNull();
+	});
+
+	it("keeps one split identity across retries and starts a new one after a split", async () => {
+		const split = vi.mocked(splitWorkPeriod);
+		split.mockReset();
+		split
+			.mockResolvedValueOnce({ success: false, error: "Work period changed while editing" })
+			.mockResolvedValueOnce({
+				success: true,
+				data: { firstPeriodId: "period-1", secondPeriodId: "period-2" },
+			})
+			.mockResolvedValueOnce({
+				success: true,
+				data: { firstPeriodId: "period-1", secondPeriodId: "period-3" },
+			});
+		const daytimeEvent = {
+			...event,
+			date: new Date("2026-05-04T08:00:00.000Z"),
+			endDate: new Date("2026-05-04T16:00:00.000Z"),
+			metadata: { durationMinutes: 480, employeeName: "Ada Lovelace" },
+		};
+		render(
+			<SplitWorkPeriodDialog
+				event={daytimeEvent}
+				open={true}
+				onOpenChange={vi.fn()}
+				displayContext={{ locale: "en-US", timezone: "Europe/Berlin", timeFormat: "24h" }}
+			/>,
+		);
+		fireEvent.change(screen.getByLabelText("Split at"), { target: { value: "13:30" } });
+		const confirm = screen.getByRole("button", { name: "Split Work Period" });
+
+		for (const calls of [1, 2, 3]) {
+			fireEvent.click(confirm);
+			await waitFor(() => expect(split).toHaveBeenCalledTimes(calls));
+			await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(false));
+		}
+
+		const identities = split.mock.calls.map((call) => call[6]);
+		expect(identities[0]).toMatch(/^[0-9a-f-]{36}$/);
+		// The refused attempt's retry reuses its identity; a completed split does not.
+		expect(identities[1]).toBe(identities[0]);
+		expect(identities[2]).not.toBe(identities[1]);
 	});
 });

@@ -19,12 +19,16 @@ export function normalizeEntryChainEvidence(input: EntryChainEvidenceInput): Ent
 	return {
 		id: input.id,
 		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		type: input.type,
 		occurredAt: normalizeIsoTimestamp(input.occurredAt),
 		lineage: {
 			previousEntryId: input.previousEntryId,
 			replacesEntryId: input.replacesEntryId,
 			supersededById: input.supersededById,
 		},
+		hash: input.hash,
+		appendLink: input.appendLink,
 	};
 }
 

@@ -3,8 +3,15 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager};
 
 use crate::auth;
+use crate::break_evidence::{BreakEvidence, Observation};
 use crate::clock::{ClockService, ClockStatus, WorkLocationType};
-use crate::clock_command::{self, ClockCommand, ClockCommandError, ClockCommandOutcome};
+use crate::clock_command::{
+    self, ActionEvidence, ClockCommand, ClockCommandError, ClockCommandOutcome, ClockSession,
+    STORAGE_PAUSED,
+};
+use crate::command_sync::Pacing;
+use crate::clock_journal::ClockJournal;
+use crate::command_store::CommandStore;
 use crate::offline::RecoverySummary;
 use crate::settings::Settings;
 use crate::startup;
@@ -54,6 +61,9 @@ pub async fn get_clock_status(app_handle: AppHandle) -> Result<ClockStatus, Stri
 
     // Update local state
     state.set_clocked_in(status.is_clocked_in);
+    if let Ok(store) = &state.command_store {
+        clock_command::remember_status(store, &webapp_url, &token, &status);
+    }
 
     // Update tray icon
     let _ = tray::update_tray_icon(&app_handle, status.is_clocked_in);
@@ -78,29 +88,66 @@ pub async fn clock_out(app_handle: AppHandle) -> Result<ClockCommandOutcome, Clo
     run_clock_command(app_handle, ClockCommand::ClockOut).await
 }
 
-/// Clocks out at a specific time (for break handling) then immediately clocks back in
+/// Records the confirmed idle break: close at the idle start, resume at the
+/// detected return (#281). The observed interval comes from native state, not
+/// from the webview; the confirmation only names it.
 #[tauri::command]
 pub async fn clock_out_with_break(
     app_handle: AppHandle,
-    break_start_time: String,
+    break_id: String,
     work_location_type: String,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
+    // The confirmation is observed first, before waiting on anything.
+    let confirmed = Observation::now();
     let work_location_type = WorkLocationType::from_str(&work_location_type)
         .ok_or_else(|| ClockCommandError::pre_send("Invalid work location type"))?;
-    run_clock_command(
-        app_handle,
+    let idle = app_handle
+        .state::<Arc<AppState>>()
+        .pending_break(&break_id)
+        .ok_or_else(|| {
+            ClockCommandError::pre_send(
+                "This break is no longer available. Nothing was recorded. Enter it as a time correction in Z8 if needed.",
+            )
+        })?;
+    let outcome = run_clock_command(
+        app_handle.clone(),
         ClockCommand::Break {
-            start: break_start_time,
+            evidence: BreakEvidence { idle, confirmed },
             location: work_location_type,
         },
     )
-    .await
+    .await?;
+    // Recorded, saved or retained: the same span is never offered again.
+    app_handle
+        .state::<Arc<AppState>>()
+        .clear_pending_break(&break_id);
+    Ok(outcome)
+}
+
+/// The employee was still working: the idle span is discarded.
+#[tauri::command]
+pub fn dismiss_idle_break(app_handle: AppHandle, break_id: String) {
+    app_handle
+        .state::<Arc<AppState>>()
+        .clear_pending_break(&break_id);
+}
+
+fn command_store(state: &AppState) -> Result<&parking_lot::Mutex<CommandStore>, String> {
+    state
+        .command_store
+        .as_ref()
+        .map_err(|_| STORAGE_PAUSED.to_string())
 }
 
 async fn run_clock_command(
     app_handle: AppHandle,
     command: ClockCommand,
 ) -> Result<ClockCommandOutcome, ClockCommandError> {
+    // Action time and zone are observed first, before waiting on anything.
+    let evidence = ActionEvidence {
+        occurred_at: chrono::Utc::now(),
+        timezone: iana_time_zone::get_timezone().ok(),
+    };
     let state = app_handle.state::<Arc<AppState>>();
     let _guard = state.clock_command_lock.try_lock().map_err(|_| {
         ClockCommandError::pre_send(
@@ -114,14 +161,10 @@ async fn run_clock_command(
     if webapp_url.is_empty() {
         return Err(ClockCommandError::pre_send("Webapp URL not configured"));
     }
-    let mut outcome = clock_command::execute(
-        &ClockService::new(),
-        &state.offline_queue,
-        &webapp_url,
-        &token,
-        command,
-    )
-    .await?;
+    let service = ClockService::new();
+    let session = clock_session(&state, &service, &webapp_url, &token)
+        .map_err(ClockCommandError::pre_send)?;
+    let mut outcome = clock_command::execute(&session, command, evidence).await?;
     // Do not publish an old context's current-state result into a new session.
     if state.get_session_token().as_deref() == Some(&token) && state.get_webapp_url() == webapp_url
     {
@@ -272,4 +315,99 @@ pub fn get_queue_recovery_summary(app_handle: AppHandle) -> Result<RecoverySumma
     queue
         .recovery_summary()
         .map_err(|_| "Cannot read local recovery storage. Clock actions are paused.".into())
+}
+
+fn clock_session<'a>(
+    state: &'a AppState,
+    service: &'a ClockService,
+    webapp_url: &'a str,
+    token: &'a str,
+) -> Result<ClockSession<'a>, String> {
+    Ok(ClockSession {
+        service,
+        queue: &state.offline_queue,
+        store: command_store(state)?,
+        endpoint: webapp_url,
+        token,
+    })
+}
+
+/// Sends saved clock commands of the current context and returns what the UI
+/// may show about them. While a clock action runs, it reports without sending.
+#[tauri::command]
+pub async fn sync_clock_commands(
+    app_handle: AppHandle,
+    force: bool,
+) -> Result<ClockJournal, String> {
+    let pacing = if force { Pacing::Now } else { Pacing::AfterBackoff };
+    let state = app_handle.state::<Arc<AppState>>();
+    let token = state.get_session_token().ok_or("Not authenticated")?;
+    let webapp_url = state.get_webapp_url();
+    if webapp_url.is_empty() {
+        return Err("Webapp URL not configured".into());
+    }
+    let service = ClockService::new();
+    let session = clock_session(&state, &service, &webapp_url, &token)?;
+    let journal = match state.clock_command_lock.try_lock() {
+        Ok(_guard) => clock_command::sync(&session, pacing).await,
+        Err(_) => clock_command::journal_offline(&session),
+    };
+    journal.map_err(|_| STORAGE_PAUSED.to_string())
+}
+
+/// Only the context that captured a command may act on it.
+async fn owned_command(state: &AppState, operation_id: &str) -> Result<(), String> {
+    let token = state.get_session_token().ok_or("Not authenticated")?;
+    let webapp_url = state.get_webapp_url();
+    let service = ClockService::new();
+    let session = clock_session(state, &service, &webapp_url, &token)?;
+    let context = clock_command::negotiate(&session)
+        .await
+        .ok()
+        .and_then(|negotiated| negotiated.capabilities()?.command_context())
+        .ok_or("The account and organization for this clock action cannot be confirmed.")?;
+    let command = session
+        .store
+        .lock()
+        .get(operation_id)
+        .map_err(|_| STORAGE_PAUSED.to_string())?
+        .ok_or("Clock action not found.")?;
+    if command.endpoint != webapp_url || command.context != context {
+        return Err("This clock action belongs to another account, organization or server.".into());
+    }
+    Ok(())
+}
+
+/// Exact retry of a stalled command: same identity and bytes, lookup first.
+#[tauri::command]
+pub async fn retry_clock_command(
+    app_handle: AppHandle,
+    operation_id: String,
+) -> Result<ClockJournal, String> {
+    let state = app_handle.state::<Arc<AppState>>();
+    owned_command(&state, &operation_id).await?;
+    command_store(&state)?
+        .lock()
+        .retry(&operation_id)
+        .map_err(|_| "Only a clock action that stopped retrying can be retried.".to_string())?;
+    sync_clock_commands(app_handle.clone(), true).await
+}
+
+/// Sets aside a command the server refused without saving it. The evidence
+/// stays on this device, and nothing on the server is cancelled.
+#[tauri::command]
+pub async fn archive_clock_command(
+    app_handle: AppHandle,
+    operation_id: String,
+) -> Result<ClockJournal, String> {
+    let state = app_handle.state::<Arc<AppState>>();
+    owned_command(&state, &operation_id).await?;
+    command_store(&state)?
+        .lock()
+        .archive(&operation_id, chrono::Utc::now().timestamp_millis())
+        .map_err(|_| {
+            "Only a clock action the server refused without saving work can be archived."
+                .to_string()
+        })?;
+    sync_clock_commands(app_handle.clone(), false).await
 }

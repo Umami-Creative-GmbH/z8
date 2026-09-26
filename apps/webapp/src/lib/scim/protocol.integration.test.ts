@@ -14,6 +14,7 @@ import {
 	resolveApprovalWorkflowRepositoryTestConfiguration,
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "@/lib/approvals/workflow/repository-integration-harness";
+import { captureAuthTransactions } from "@/lib/auth/auth-transaction";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
 import {
 	createSCIMCallbackModelRegistration,
@@ -25,6 +26,7 @@ import {
 	decommissionSCIMConnection,
 	runDueSCIMDecommission,
 } from "./decommission";
+import { guardSCIMSubjectAcquisitions } from "./projection-guards";
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const sentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -73,11 +75,14 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 	const auth = betterAuth({
 		baseURL: "http://localhost:3000",
 		secret: "managed-scim-protocol-integration-secret",
-		database: drizzleAdapter(database, {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
+		// As in production: SCIM callbacks guard on the captured transaction (#314).
+		database: guardSCIMSubjectAcquisitions(
+			drizzleAdapter(captureAuthTransactions(database), {
+				provider: "pg",
+				schema: authDatabaseSchema,
+				transaction: true,
+			}),
+		),
 		plugins: [
 			createZ8SCIMPlugin("p".repeat(32)),
 			organization({

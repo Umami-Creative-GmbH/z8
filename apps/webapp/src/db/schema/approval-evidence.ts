@@ -160,7 +160,9 @@ export const approvalSubmittedRevision = pgTable(
 
 // Opaque handle binding one recipient's reviewed card/view to an exact
 // assignment and submitted revision. It is neither authority nor invocation
-// identity and is never retargeted.
+// identity and is never retargeted. A legacy binding (#296) names the exact
+// legacy request (the assignment equivalent) and a legacy revision, never a
+// canonical workflow; the request is kept by value like other legacy evidence.
 export const approvalReviewBinding = pgTable(
 	"approval_review_binding",
 	{
@@ -168,10 +170,15 @@ export const approvalReviewBinding = pgTable(
 		organizationId: text("organization_id")
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
+		authority: text("authority")
+			.$type<ApprovalEvidenceAuthority>()
+			.default("canonical")
+			.notNull(),
 		recipientEmployeeId: uuid("recipient_employee_id").notNull(),
-		workflowId: uuid("workflow_id").notNull(),
-		stageId: uuid("stage_id").notNull(),
-		assignmentId: uuid("assignment_id").notNull(),
+		workflowId: uuid("workflow_id"),
+		stageId: uuid("stage_id"),
+		assignmentId: uuid("assignment_id"),
+		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
 		submittedRevisionId: uuid("submitted_revision_id").notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
@@ -182,6 +189,20 @@ export const approvalReviewBinding = pgTable(
 			table.id,
 			table.organizationId,
 		),
+		unique("approvalReviewBinding_id_organizationId_authority_idx").on(
+			table.id,
+			table.organizationId,
+			table.authority,
+		),
+		check(
+			"approval_review_binding_authority_check",
+			sql`(${table.authority} = 'canonical' AND ${table.workflowId} IS NOT NULL
+				AND ${table.stageId} IS NOT NULL AND ${table.assignmentId} IS NOT NULL
+				AND ${table.legacyApprovalRequestId} IS NULL)
+			OR (${table.authority} = 'legacy' AND ${table.workflowId} IS NULL
+				AND ${table.stageId} IS NULL AND ${table.assignmentId} IS NULL
+				AND ${table.legacyApprovalRequestId} IS NOT NULL)`,
+		),
 		uniqueIndex(
 			"approvalReviewBinding_org_recipient_assignment_revision_idx",
 		).on(
@@ -190,6 +211,27 @@ export const approvalReviewBinding = pgTable(
 			table.assignmentId,
 			table.submittedRevisionId,
 		),
+		uniqueIndex("approvalReviewBinding_org_recipient_legacy_request_revision_idx")
+			.on(
+				table.organizationId,
+				table.recipientEmployeeId,
+				table.legacyApprovalRequestId,
+				table.submittedRevisionId,
+			)
+			.where(sql`${table.authority} = 'legacy'`),
+		// A binding never crosses authorities with the revision it names.
+		foreignKey({
+			columns: [
+				table.submittedRevisionId,
+				table.organizationId,
+				table.authority,
+			],
+			foreignColumns: [
+				approvalSubmittedRevision.id,
+				approvalSubmittedRevision.organizationId,
+				approvalSubmittedRevision.authority,
+			],
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [
 				table.workflowId,
@@ -290,8 +332,7 @@ export const approvalDecisionEvidence = pgTable(
 				AND ${table.observedWorkflowId} IS NULL)
 			OR (${table.authority} = 'legacy' AND ${table.workflowId} IS NULL
 				AND ${table.legacyApprovalRequestId} IS NOT NULL
-				AND ${table.stageId} IS NULL AND ${table.assignmentId} IS NULL
-				AND ${table.reviewedBindingId} IS NULL)`,
+				AND ${table.stageId} IS NULL AND ${table.assignmentId} IS NULL)`,
 		),
 		uniqueIndex("approvalDecisionEvidence_org_workflow_receipt_idx").on(
 			table.organizationId,
@@ -304,6 +345,16 @@ export const approvalDecisionEvidence = pgTable(
 		index("approvalDecisionEvidence_org_revision_idx").on(
 			table.organizationId,
 			table.submittedRevisionId,
+		),
+		unique("approvalDecisionEvidence_id_workflow_organizationId_idx").on(
+			table.id,
+			table.workflowId,
+			table.organizationId,
+		),
+		unique("approvalDecisionEvidence_id_organizationId_authority_idx").on(
+			table.id,
+			table.organizationId,
+			table.authority,
 		),
 		// Enforced for both authorities (the workflow-scoped FK is MATCH SIMPLE and
 		// skips rows without a workflow); a decision never crosses authorities.
@@ -342,6 +393,193 @@ export const approvalDecisionEvidence = pgTable(
 				approvalReviewBinding.organizationId,
 			],
 		}),
+		// A decision's binding belongs to the same authority as the decision.
+		foreignKey({
+			columns: [table.reviewedBindingId, table.organizationId, table.authority],
+			foreignColumns: [
+				approvalReviewBinding.id,
+				approvalReviewBinding.organizationId,
+				approvalReviewBinding.authority,
+			],
+		}),
+		foreignKey({
+			columns: [table.actorEmployeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}),
+	],
+);
+
+// Per organization/kind/provider admission of actionable bot cards (#290).
+// No row keeps cards review-only; the authorized adoption writer changes it
+// under the exclusive rollout lock. Slack has no established per-invocation
+// identity (#261), so it can never be admitted.
+export const APPROVAL_PRESENTATION_PROVIDERS = [
+	"telegram",
+	"discord",
+	"teams",
+	"slack",
+] as const;
+export type ApprovalPresentationProvider =
+	(typeof APPROVAL_PRESENTATION_PROVIDERS)[number];
+export const APPROVAL_PRESENTATION_MODES = [
+	"review_only",
+	"actionable",
+] as const;
+export type ApprovalPresentationMode =
+	(typeof APPROVAL_PRESENTATION_MODES)[number];
+
+export const approvalPresentationControl = pgTable(
+	"approval_presentation_control",
+	{
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		workflowType: approvalWorkflowTypeEnum("workflow_type").notNull(),
+		provider: text("provider").$type<ApprovalPresentationProvider>().notNull(),
+		mode: text("mode")
+			.$type<ApprovalPresentationMode>()
+			.default("review_only")
+			.notNull(),
+	},
+	(table) => [
+		primaryKey({
+			name: "approval_presentation_control_pk",
+			columns: [table.organizationId, table.workflowType, table.provider],
+		}),
+		check(
+			"approval_presentation_control_provider_check",
+			sql`${table.provider} IN ('telegram', 'discord', 'teams', 'slack')`,
+		),
+		check(
+			"approval_presentation_control_mode_check",
+			sql`${table.mode} IN ('review_only', 'actionable')`,
+		),
+		check(
+			"approval_presentation_control_slack_check",
+			sql`NOT (${table.provider} = 'slack' AND ${table.mode} = 'actionable')`,
+		),
+	],
+);
+
+// Immutable association of one authenticated provider invocation with the bound
+// command it carried and the decision it committed (#257 §7, #261). Written in
+// the decision transaction; the engine receipt uses the invocation-derived key.
+// The transport delivery identity (Telegram update_id; Discord has none) is kept separately and
+// is not part of invocation identity.
+export const approvalInvocation = pgTable(
+	"approval_invocation",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		scheme: text("scheme")
+			.$type<"telegram_callback_query" | "teams_adaptive_card_action" | "discord_interaction">()
+			.notNull(),
+		schemeVersion: integer("scheme_version").notNull(),
+		receiverScope: text("receiver_scope").notNull(),
+		invocationId: text("invocation_id").notNull(),
+		deliveryId: text("delivery_id"),
+		providerActorId: text("provider_actor_id").notNull(),
+		actorEmployeeId: uuid("actor_employee_id").notNull(),
+		actorUserId: text("actor_user_id")
+			.notNull()
+			.references(() => user.id),
+		// The authority that committed the decision (#296). A legacy invocation
+		// names the legacy request it decided, never a canonical workflow.
+		authority: text("authority")
+			.$type<ApprovalEvidenceAuthority>()
+			.default("canonical")
+			.notNull(),
+		workflowId: uuid("workflow_id"),
+		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
+		reviewedBindingId: uuid("reviewed_binding_id").notNull(),
+		action: text("action").$type<"approve" | "reject">().notNull(),
+		commandFingerprint: text("command_fingerprint").notNull(),
+		receiptIdempotencyKey: text("receipt_idempotency_key").notNull(),
+		decisionEvidenceId: uuid("decision_evidence_id").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		check(
+			"approval_invocation_scheme_check",
+			sql`${table.scheme} IN ('telegram_callback_query', 'teams_adaptive_card_action', 'discord_interaction') AND ${table.schemeVersion} = 1`,
+		),
+		check(
+			"approval_invocation_action_check",
+			sql`${table.action} IN ('approve', 'reject')`,
+		),
+		check(
+			"approval_invocation_authority_check",
+			sql`(${table.authority} = 'canonical' AND ${table.workflowId} IS NOT NULL
+				AND ${table.legacyApprovalRequestId} IS NULL)
+			OR (${table.authority} = 'legacy' AND ${table.workflowId} IS NULL
+				AND ${table.legacyApprovalRequestId} IS NOT NULL)`,
+		),
+		index("approvalInvocation_org_legacy_request_idx")
+			.on(table.organizationId, table.legacyApprovalRequestId)
+			.where(sql`${table.authority} = 'legacy'`),
+		uniqueIndex("approvalInvocation_org_identity_idx").on(
+			table.organizationId,
+			table.scheme,
+			table.receiverScope,
+			table.invocationId,
+		),
+		uniqueIndex("approvalInvocation_org_workflow_receipt_idx").on(
+			table.organizationId,
+			table.workflowId,
+			table.receiptIdempotencyKey,
+		),
+		index("approvalInvocation_org_workflow_idx").on(
+			table.organizationId,
+			table.workflowId,
+		),
+		foreignKey({
+			columns: [table.workflowId, table.organizationId],
+			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.reviewedBindingId, table.organizationId],
+			foreignColumns: [
+				approvalReviewBinding.id,
+				approvalReviewBinding.organizationId,
+			],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [
+				table.decisionEvidenceId,
+				table.workflowId,
+				table.organizationId,
+			],
+			foreignColumns: [
+				approvalDecisionEvidence.id,
+				approvalDecisionEvidence.workflowId,
+				approvalDecisionEvidence.organizationId,
+			],
+		}).onDelete("cascade"),
+		// Enforced for both authorities; the workflow-scoped FKs skip legacy rows.
+		foreignKey({
+			columns: [
+				table.decisionEvidenceId,
+				table.organizationId,
+				table.authority,
+			],
+			foreignColumns: [
+				approvalDecisionEvidence.id,
+				approvalDecisionEvidence.organizationId,
+				approvalDecisionEvidence.authority,
+			],
+		}).onDelete("cascade"),
+		foreignKey({
+			columns: [table.reviewedBindingId, table.organizationId, table.authority],
+			foreignColumns: [
+				approvalReviewBinding.id,
+				approvalReviewBinding.organizationId,
+				approvalReviewBinding.authority,
+			],
+		}).onDelete("cascade"),
 		foreignKey({
 			columns: [table.actorEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],

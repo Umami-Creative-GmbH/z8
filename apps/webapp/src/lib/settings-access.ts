@@ -26,6 +26,7 @@ export const ORG_ADMIN_SETTINGS_ROUTES = [
 	"/settings/export",
 	"/settings/payroll-export",
 	"/settings/payroll-readiness",
+	"/settings/work-diagnostics",
 	"/settings/audit-export",
 	"/settings/demo",
 	"/settings/import",

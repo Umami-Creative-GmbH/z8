@@ -8,7 +8,56 @@
       "historicalApproval": "Se ha verificado su aprobación registrada anteriormente. Es un resultado anterior; no se ha tomado ninguna nueva decisión. Consulte la solicitud en Z8 para obtener más detalles.",
       "historicalRejection": "Se ha verificado su rechazo registrado anteriormente. Es un resultado anterior; no se ha tomado ninguna nueva decisión. Consulte la solicitud en Z8 para obtener más detalles.",
       "unboundCallback": "Esta tarjeta no permite verificar los datos revisados originalmente. No se ha tomado ninguna decisión. Revise la solicitud en Z8.",
-      "alreadyProcessed": "Esta aprobación ya ha sido procesada."
+      "alreadyProcessed": "Esta aprobación ya ha sido procesada.",
+      "boundReviewRequired": "Esta tarjeta ya no coincide con la solicitud o la asignación actual, o no se pudo verificar la acción. No se tomó ninguna decisión. Revisa la solicitud en Z8.",
+      "invocationConflict": "Esta pulsación ya se registró con otra acción. No se tomó ninguna decisión. Revisa la solicitud en Z8.",
+      "outcomeUnknown": "No se pudo confirmar el resultado de esta pulsación. Revisa la solicitud en Z8 antes de volver a pulsar.",
+      "card": {
+        "absenceTitle": "Solicitud de ausencia para aprobar",
+        "boundHint": "Aprobar o rechazar decide exactamente la solicitud mostrada arriba. Si cambió o se reasignó, no se decide nada y se te pedirá revisarla en Z8.",
+        "reviewOnlyHint": "Aprueba o rechaza esta solicitud en Z8. No se puede decidir desde este mensaje.",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "unavailable": "No disponible",
+        "employee": "Empleado",
+        "requestedBy": "Solicitado por",
+        "submittedBy": "Enviado por",
+        "category": "Categoría",
+        "currentCategoryName": "Nombre actual de la categoría",
+        "dates": "Fechas",
+        "coverage": "Cobertura",
+        "submittedAt": "Enviado",
+        "fullDays": "Días completos",
+        "fullDay": "día completo",
+        "morning": "por la mañana",
+        "afternoon": "por la tarde",
+        "halfDayPeriods": "Empieza {start}, termina {end}",
+        "explicitTimes": "{start} – {end} (hora local, zona no registrada)",
+        "explicitTimesOvernight": "{start} – {end} del día siguiente (hora local, zona no registrada)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Solicitud aprobada",
+        "requestRejectedTitle": "Solicitud rechazada",
+        "stepApprovedTitle": "Aprobación registrada",
+        "requestApproved": "Aprobada por {actor} el {time}. La solicitud está aprobada.",
+        "requestRejected": "Rechazada por {actor} el {time}. La solicitud está rechazada.",
+        "stepApproved": "Aprobada por {actor} el {time}. La solicitud aún espera más aprobaciones.",
+        "replayed": "Esta pulsación ya se había registrado; este es su resultado original y no se decidió nada nuevo.",
+        "stepRejectedTitle": "Rechazo registrado",
+        "stepRejected": "Rechazada por {actor} el {time}. La solicitud aún no es definitiva; revisa su estado actual en Z8.",
+        "recordedTitle": "Decisión registrada",
+        "recorded": "Registrada por {actor} el {time}. Revisa el estado actual de la solicitud en Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Solicitud retirada",
+        "withdrawn": "Esta solicitud se retiró. No se necesita ninguna decisión desde esta tarjeta.",
+        "reassignedTitle": "Reasignada",
+        "reassigned": "Esta aprobación se reasignó a otra persona. Ya no necesitas decidir desde esta tarjeta y aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
+        "inactiveTitle": "Ya no requiere acción",
+        "inactive": "Esta solicitud ya no necesita tu decisión desde esta tarjeta. Aquí no se tomó ninguna decisión. Revisa su estado actual en Z8.",
+        "currentApproved": "Estado actual de la solicitud: aprobada.",
+        "currentRejected": "Estado actual de la solicitud: rechazada."
+      }
     },
     "cmd": {
       "billingRequired": "[bot] Se requiere facturación para seguir usando el seguimiento de tiempo. Pide a un administrador de la organización que actualice la facturación.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "Ya tienes el turno iniciado desde las {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Ya has fichado la entrada.",
+        "appendReview": "Tu historial de tiempo necesita revisión antes de que puedas fichar la entrada. Contacta con tu administrador.",
         "cannotNow": "No se puede iniciar el turno en este momento.",
+        "committed": "Entrada fichada.",
+        "failed": "No se pudo fichar la entrada. Inténtalo de nuevo.",
         "noProfile": "No se encontró el perfil del empleado.",
-        "success": "Turno iniciado a las {time}."
+        "success": "Turno iniciado a las {time}.",
+        "unconfirmed": "No se pudo confirmar tu fichaje de entrada. Comprueba tu estado antes de volver a intentarlo."
       },
       "clockout": {
+        "appendReview": "Tu historial de tiempo necesita revisión antes de que puedas fichar la salida. Contacta con tu administrador.",
         "cannotNow": "No se puede finalizar el turno en este momento.",
+        "committed": "Salida fichada.",
+        "failed": "No se pudo fichar la salida. Inténtalo de nuevo.",
         "noProfile": "No se encontró el perfil del empleado.",
         "notClockedIn": "No tienes un turno iniciado actualmente.",
-        "policyCheckFailed": "No se pudo verificar la política de aprobación de tiempo. Por favor, inténtelo de nuevo.",
         "success": "Turno finalizado a las {time}. Duración: {hours}h {minutes}m.",
-        "unsupportedApproval": "Los cambios de tiempo que requieren aprobación aún no son compatibles con esta acción"
+        "successAt": "Salida fichada a las {time}.",
+        "unconfirmed": "No se pudo confirmar tu fichaje de salida. Comprueba tu estado antes de volver a intentarlo."
       },
       "compliance": {
         "error": "Error al recuperar los datos de cumplimiento. Por favor, inténtalo de nuevo más tarde.",
@@ -95,7 +152,8 @@
       "typeHelp": "Escribe /help para ver los comandos disponibles.",
       "unconfigured": "Se está configurando la integración de Z8 de tu organización. Por favor, espera a que tu administrador complete la configuración.",
       "welcome": "¡Bienvenido a Z8! Para conectar tu cuenta, ve a Configuración > Integraciones > Telegram en tu panel de Z8 y genera un código de enlace. Luego envía: /link TU_CÓDIGO",
-      "welcomeTeams": "¡Bienvenido a Z8! Escribe \"help\" para ver los comandos disponibles."
+      "welcomeTeams": "¡Bienvenido a Z8! Escribe \"help\" para ver los comandos disponibles.",
+      "replyUndelivered": "Tu comando se procesó, pero no se pudo mostrar la respuesta. Comprueba tu estado antes de repetirlo."
     }
   }
 }

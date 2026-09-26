@@ -78,6 +78,11 @@ import {
 	renderAbsenceRequestPendingApproval,
 	renderAbsenceRequestSubmitted,
 } from "@/lib/email/render";
+import {
+	legacyDeliveryCycleId,
+	recordLegacyDeliveryIntent,
+} from "@/lib/approvals/delivery/intents";
+import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { createLogger } from "@/lib/logger";
 import {
 	onAbsenceRequestPendingApproval,
@@ -469,6 +474,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 					| RequestedAbsenceApprovalWorkflowResult
 					| undefined;
 				let autoCompletion: ApprovedAbsenceResult | undefined;
+				let legacyDeliveryIntent = false;
 				if (params.approvalWorkflow) {
 					if (!approvalContext || !approvalLifecycle) {
 						throw new Error("Approval transaction context is required");
@@ -639,6 +645,28 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 								},
 							});
 						}
+						if (
+							approvalWorkflowResult.kind === "default_created" ||
+							approvalWorkflowResult.kind === "chain_created"
+						) {
+							// The cycle's first lifecycle intent, only while a delivery
+							// control exists (#384): the owner sends its cards.
+							legacyDeliveryIntent = await recordLegacyDeliveryIntent(tx, {
+								organizationId: currentEmployee.organizationId,
+								workflowType: "absence",
+								sourceType: "absence_entry",
+								sourceId: newAbsence.id,
+								approvalRequestId: approvalWorkflowResult.approvalRequestId,
+								cycleId: legacyDeliveryCycleId({
+									chainInstanceId:
+										approvalWorkflowResult.kind === "chain_created"
+											? approvalWorkflowResult.chainInstanceId
+											: null,
+									approvalRequestId: approvalWorkflowResult.approvalRequestId,
+								}),
+								event: "submitted",
+							});
+						}
 					} else {
 						const verifySourceWorkflow: StartApprovalWorkflowInput["verifySourceWorkflow"] =
 							async (workflowId) => {
@@ -768,6 +796,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 					vacationOverrideSummary,
 					approvalWorkflowResult,
 					autoCompletion,
+					legacyDeliveryIntent,
 				};
 			};
 
@@ -1269,6 +1298,18 @@ function requestAbsenceWithResolverEffect(
 								}),
 							),
 						);
+						if (newAbsence.legacyDeliveryIntent) {
+							// The legacy cycle's intent committed with the submission;
+							// this only runs the delivery owner sooner (#384).
+							kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
+						}
+					} else if (newAbsence.approvalWorkflowResult?.kind === "canonical") {
+						// The initial card's intent committed with the workflow; the
+						// delivery owner sends it (and the scheduled pass recovers it).
+						kickApprovalDelivery({
+							organizationId: currentEmployee.organizationId,
+							workflowId: newAbsence.approvalWorkflowResult.workflowId,
+						});
 					}
 				} else if (!category.requiresApproval) {
 					yield* _(

@@ -191,8 +191,14 @@ async function submitTimeCorrection({
 			values: value,
 		})
 	) {
+		// A retry of an uncertain submission reuses its identity so a committed
+		// edit replays instead of conflicting with its own result.
+		const submissionId =
+			submissionIdRef.current ?? globalThis.crypto.randomUUID();
+		submissionIdRef.current = submissionId;
 		const result = await editSameDayTimeEntry({
 			workPeriodId: workPeriod.id,
+			submissionId,
 			newClockInDate: value.clockInDate,
 			newClockInTime: value.clockInTime,
 			newClockOutDate: value.clockOutDate || undefined,
@@ -203,6 +209,7 @@ async function submitTimeCorrection({
 		});
 
 		if (result.success) {
+			submissionIdRef.current = null;
 			toast.success(
 				t(
 					"timeTracking.correction.success.updated",

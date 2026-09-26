@@ -50,6 +50,38 @@ const {
 	},
 }));
 
+// Mock-database harnesses run with time correction evidence capture inactive;
+// capture, holds and decision evidence are verified against PostgreSQL (#301).
+vi.mock("../evidence/time-correction-evidence", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../evidence/time-correction-evidence")>()),
+	prepareLegacyTimeCorrectionDecisionEvidence: async () => null,
+	recordLegacyTimeCorrectionDecisionEvidence: async () => {
+		throw new Error("No time correction evidence plan in the legacy harness");
+	},
+	preflightCanonicalTimeCorrectionDecisionEvidence: async () => undefined,
+	recordCanonicalTimeCorrectionDecisionEvidence: async () => undefined,
+}));
+
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
+// The legacy transfer journal and its request lock are verified against
+// PostgreSQL (#439, legacy-time-transfer.integration.test.ts); these
+// harnesses decide requests escalation never transferred.
+const legacyTransferMocks = vi.hoisted(() => ({
+	assertDecisionAuthority: vi.fn(async () => undefined),
+	wasTransferred: vi.fn(async () => false),
+}));
+
+vi.mock("@/lib/approvals/escalation/legacy-transfer-store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/escalation/legacy-transfer-store")>()),
+	assertLegacyTransferDecisionAuthority: legacyTransferMocks.assertDecisionAuthority,
+	wasLegacyRequestTransferred: legacyTransferMocks.wasTransferred,
+}));
+
 vi.mock("@/env", () => ({
 	env: testEnv,
 }));
@@ -79,6 +111,7 @@ import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/dom
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
+import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import {
 	approveTimeCorrectionWithCurrentApproverEffect,
@@ -4799,6 +4832,35 @@ describe("time correction transaction boundaries", () => {
 		},
 	);
 
+	it.each(["legacy", "shadow", "ready"] as const)(
+		"refuses a replaced approver of a transferred request before %s decision mutation (#439)",
+		async (mode) => {
+			const fixture = observedSubmissionHarness(mode);
+			await fixture.execute();
+			const before = structuredClone(fixture.requests);
+			legacyTransferMocks.assertDecisionAuthority.mockRejectedValueOnce(
+				new ApprovalAssignmentReassignedError(),
+			);
+
+			await expect(fixture.decide("approve")).rejects.toMatchObject({
+				conflictType: "approval_reassigned",
+			});
+			expect(legacyTransferMocks.assertDecisionAuthority).toHaveBeenLastCalledWith(
+				expect.anything(),
+				{
+					organizationId: "org-1",
+					entityType: "time_entry",
+					entityId: fixture.ids.period,
+					approvalRequestId: fixture.ids.request,
+					actorEmployeeId: fixture.ids.manager,
+					canManageOrganizationApproval: undefined,
+				},
+			);
+			expect(fixture.requests).toEqual(before);
+			expect(fixture.terminalFinalizations()).toBe(0);
+		},
+	);
+
 	it("runs actual sequential legacy request-chain mutation and finalizes only the terminal stage", async () => {
 		const fixture = observedSubmissionHarness("legacy");
 		await fixture.execute();
@@ -9066,9 +9128,12 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 
 		expect(lockedTables).toEqual([employee, workPeriod, timeEntry, timeRecord]);
 		expect(mutations).toHaveLength(6);
+		// The departed requester's rows are still locked; activity is checked
+		// on the locked actor row, not in the lock predicate.
 		expect(collectSqlColumnNames(lockWhereClauses[0])).toEqual(
-			expect.arrayContaining(["id", "organization_id", "is_active"]),
+			expect.arrayContaining(["id", "organization_id"]),
 		);
+		expect(collectSqlColumnNames(lockWhereClauses[0])).not.toContain("is_active");
 		expect(collectSqlColumnNames(lockWhereClauses[1])).toEqual(
 			expect.arrayContaining(["id", "organization_id"]),
 		);

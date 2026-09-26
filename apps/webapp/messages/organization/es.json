@@ -256,6 +256,7 @@
       "title": "Equipos"
     },
     "timezone": {
+      "balances-recalculating": "Los saldos de trabajo se están recalculando para la nueva zona horaria y permanecen ocultos hasta que estén listos.",
       "default": "Zona horaria predeterminada",
       "description": "Establezca la zona horaria predeterminada para su organización. Se utiliza para el seguimiento de ausencias, informes y otras funciones basadas en fechas. Los usuarios individuales pueden anular esto en la configuración de su perfil.",
       "owner-only": "Solo los propietarios de la organización pueden cambiar la configuración de la zona horaria.",

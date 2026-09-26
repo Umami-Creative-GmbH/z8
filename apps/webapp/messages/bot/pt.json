@@ -8,7 +8,56 @@
       "historicalApproval": "Sua aprovação registrada anteriormente foi verificada. Este é um resultado anterior; nenhuma nova decisão foi tomada. Consulte a solicitação no Z8 para mais detalhes.",
       "historicalRejection": "Sua rejeição registrada anteriormente foi verificada. Este é um resultado anterior; nenhuma nova decisão foi tomada. Consulte a solicitação no Z8 para mais detalhes.",
       "unboundCallback": "Este cartão não permite verificar os dados originalmente analisados. Nenhuma decisão foi tomada. Revise a solicitação no Z8.",
-      "alreadyProcessed": "Esta aprovação já foi processada."
+      "alreadyProcessed": "Esta aprovação já foi processada.",
+      "boundReviewRequired": "Este cartão já não corresponde ao pedido ou à atribuição atual, ou não foi possível verificar a ação. Nenhuma decisão foi tomada. Reveja o pedido no Z8.",
+      "invocationConflict": "Este toque já foi registado com outra ação. Nenhuma decisão foi tomada. Reveja o pedido no Z8.",
+      "outcomeUnknown": "Não foi possível confirmar o resultado deste clique. Verifique o pedido no Z8 antes de clicar novamente.",
+      "card": {
+        "absenceTitle": "Pedido de ausência para aprovação",
+        "boundHint": "Aprovar ou rejeitar decide exatamente o pedido mostrado acima. Se foi alterado ou reatribuído, nada é decidido e será pedido que o reveja no Z8.",
+        "reviewOnlyHint": "Aprove ou rejeite este pedido no Z8. Não pode ser decidido a partir desta mensagem.",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "unavailable": "Indisponível",
+        "employee": "Colaborador",
+        "requestedBy": "Pedido por",
+        "submittedBy": "Submetido por",
+        "category": "Categoria",
+        "currentCategoryName": "Nome atual da categoria",
+        "dates": "Datas",
+        "coverage": "Cobertura",
+        "submittedAt": "Submetido",
+        "fullDays": "Dias inteiros",
+        "fullDay": "dia inteiro",
+        "morning": "de manhã",
+        "afternoon": "à tarde",
+        "halfDayPeriods": "Começa {start}, termina {end}",
+        "explicitTimes": "{start} – {end} (hora local, fuso não registado)",
+        "explicitTimesOvernight": "{start} – {end} do dia seguinte (hora local, fuso não registado)"
+      },
+      "outcome": {
+        "requestApprovedTitle": "Pedido aprovado",
+        "requestRejectedTitle": "Pedido rejeitado",
+        "stepApprovedTitle": "Aprovação registada",
+        "requestApproved": "Aprovado por {actor} em {time}. O pedido está aprovado.",
+        "requestRejected": "Rejeitado por {actor} em {time}. O pedido está rejeitado.",
+        "stepApproved": "Aprovado por {actor} em {time}. O pedido ainda aguarda outras aprovações.",
+        "replayed": "Este toque já tinha sido registado; este é o seu resultado original e nada de novo foi decidido.",
+        "stepRejectedTitle": "Rejeição registada",
+        "stepRejected": "Rejeitado por {actor} em {time}. O pedido ainda não é definitivo; consulte o seu estado atual no Z8.",
+        "recordedTitle": "Decisão registada",
+        "recorded": "Registado por {actor} em {time}. Consulte o estado atual do pedido no Z8."
+      },
+      "status": {
+        "withdrawnTitle": "Pedido retirado",
+        "withdrawn": "Este pedido foi retirado. Não é necessária nenhuma decisão a partir deste cartão.",
+        "reassignedTitle": "Reatribuído",
+        "reassigned": "Esta aprovação foi reatribuída a outra pessoa. Não é necessária a sua decisão a partir deste cartão e nenhuma decisão foi tomada aqui. Consulte o estado atual no Z8.",
+        "inactiveTitle": "Já não requer ação",
+        "inactive": "Este pedido já não precisa da sua decisão a partir deste cartão. Nenhuma decisão foi tomada aqui. Consulte o estado atual no Z8.",
+        "currentApproved": "Estado atual do pedido: aprovado.",
+        "currentRejected": "Estado atual do pedido: rejeitado."
+      }
     },
     "cmd": {
       "billingRequired": "O faturamento é necessário para continuar usando o controle de tempo. Peça a um administrador da organização para atualizar o faturamento.",
@@ -19,17 +68,25 @@
       },
       "clockin": {
         "alreadyIn": "Você já está registrado desde as {time} ({hours}h {minutes}m).",
+        "alreadyInNow": "Você já registrou a entrada.",
+        "appendReview": "Seu histórico de tempo precisa ser revisado antes que você possa registrar a entrada. Entre em contato com o administrador.",
         "cannotNow": "Não é possível registrar entrada neste momento.",
+        "committed": "Entrada registrada.",
+        "failed": "Não foi possível registrar a entrada. Tente novamente.",
         "noProfile": "Perfil do funcionário não encontrado.",
-        "success": "Entrada registrada às {time}."
+        "success": "Entrada registrada às {time}.",
+        "unconfirmed": "Não foi possível confirmar seu registro de entrada. Verifique seu status antes de tentar novamente."
       },
       "clockout": {
+        "appendReview": "Seu histórico de tempo precisa ser revisado antes que você possa registrar a saída. Entre em contato com o administrador.",
         "cannotNow": "Não é possível registrar saída neste momento.",
+        "committed": "Saída registrada.",
+        "failed": "Não foi possível registrar a saída. Tente novamente.",
         "noProfile": "Perfil do funcionário não encontrado.",
         "notClockedIn": "Você não está registrado no momento.",
-        "policyCheckFailed": "Não foi possível verificar a política de aprovação de tempo. Por favor, tente novamente.",
         "success": "Saída registrada às {time}. Duração: {hours}h {minutes}m.",
-        "unsupportedApproval": "Alterações de tempo que exigem aprovação ainda não são suportadas para esta ação"
+        "successAt": "Saída registrada às {time}.",
+        "unconfirmed": "Não foi possível confirmar seu registro de saída. Verifique seu status antes de tentar novamente."
       },
       "compliance": {
         "error": "Falha ao recuperar dados de conformidade. Tente novamente mais tarde.",
@@ -95,7 +152,8 @@
       "typeHelp": "Digite /help para ver os comandos disponíveis.",
       "unconfigured": "A integração do Z8 da sua organização está sendo configurada. Por favor, aguarde seu administrador concluir a configuração.",
       "welcome": "Bem-vindo ao Z8! Para conectar sua conta, vá em Configurações > Integrações > Telegram no seu painel Z8 e gere um código de link. Em seguida, envie: /link SEU_CÓDIGO",
-      "welcomeTeams": "Bem-vindo ao Z8! Digite \"help\" para ver os comandos disponíveis."
+      "welcomeTeams": "Bem-vindo ao Z8! Digite \"help\" para ver os comandos disponíveis.",
+      "replyUndelivered": "Seu comando foi processado, mas a resposta não pôde ser exibida. Verifique seu status antes de repeti-lo."
     }
   }
 }

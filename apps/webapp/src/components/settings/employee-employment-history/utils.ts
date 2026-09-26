@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
-import type { EmploymentHistoryEntry, FormValues } from "./types";
+import type { EmploymentHistoryEntry, EmploymentHistoryPeriod, FormValues } from "./types";
 
 export const defaultFormValues: FormValues = {
 	validFrom: "",
@@ -88,3 +88,44 @@ export function canCancel(entry: EmploymentHistoryEntry, now: DateTime) {
 	const validFrom = toDateTime(entry.validFrom);
 	return canConfirm(entry) || (!!validFrom?.isValid && validFrom > now);
 }
+
+export type EmploymentHistoryStint = {
+	period: EmploymentHistoryPeriod | null;
+	entries: EmploymentHistoryEntry[];
+	/** The gap before this stint, back to the previous stint's end, if both are known. */
+	gapBefore: { from: Date | string; to: Date | string } | null;
+};
+
+/**
+ * Groups terms by employment period, newest stint first, keeping the
+ * incoming order inside each stint. A gap is shown only between recorded
+ * dates; an unknown legacy start never invents one.
+ */
+export function groupHistoryByEmployment(
+	history: readonly EmploymentHistoryEntry[],
+): EmploymentHistoryStint[] {
+	const stints = new Map<string, EmploymentHistoryStint>();
+	for (const entry of history) {
+		const key = entry.employmentPeriodId ?? entry.employmentPeriod?.id ?? "__unknown__";
+		const stint = stints.get(key) ?? {
+			period: entry.employmentPeriod ?? null,
+			entries: [],
+			gapBefore: null,
+		};
+		stint.entries.push(entry);
+		stints.set(key, stint);
+	}
+	const ordered = [...stints.values()].sort((left, right) => {
+		const leftStart = toDateTime(left.period?.startedAt)?.toMillis() ?? Number.NEGATIVE_INFINITY;
+		const rightStart = toDateTime(right.period?.startedAt)?.toMillis() ?? Number.NEGATIVE_INFINITY;
+		return rightStart - leftStart;
+	});
+	for (const [index, stint] of ordered.entries()) {
+		const previous = ordered[index + 1];
+		const start = stint.period?.startedAt;
+		const previousEnd = previous?.period?.endedAt;
+		if (start && previousEnd) stint.gapBefore = { from: previousEnd, to: start };
+	}
+	return ordered;
+}
+

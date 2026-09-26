@@ -42,10 +42,17 @@ export function OrganizationTimezoneCard({
 		const result = await updateOrganizationTimezone(organizationId, newTimezone);
 
 		if (result.success) {
+			// The save is committed; balances follow once they are rebuilt.
 			toast.success(
 				t("organization.timezone.updated", "Organization timezone updated to {timezone}", {
 					timezone: newTimezone,
 				}),
+				{
+					description: t(
+						"organization.timezone.balances-recalculating",
+						"Work balances are being recalculated for the new timezone and stay hidden until they are ready.",
+					),
+				},
 			);
 			startTransition(() => {
 				router.refresh();

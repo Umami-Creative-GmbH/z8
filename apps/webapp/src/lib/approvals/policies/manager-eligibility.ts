@@ -22,9 +22,30 @@ export interface EligibleTeam {
 	primaryManagerId: string | null;
 }
 
+/**
+ * `new_submission` requires an active requester. `existing_workflow` resolves
+ * the historical requester of an already persisted, organization-scoped
+ * workflow or source, so a departed employee's submitted claim stays
+ * decidable. Server loaders choose the mode; it is never client input.
+ */
+export type RequesterEligibilityMode = "new_submission" | "existing_workflow";
+
+export function requesterMayBeResolved(input: {
+	requesterExistsInOrganization: boolean;
+	requesterIsActive: boolean;
+	mode: RequesterEligibilityMode;
+}): boolean {
+	return (
+		input.requesterExistsInOrganization &&
+		(input.mode === "existing_workflow" || input.requesterIsActive)
+	);
+}
+
 export interface ResolveEligibleManagersInput {
 	organizationId: string;
 	requesterEmployeeId: string;
+	/** Defaults to `new_submission`. */
+	requesterMode?: RequesterEligibilityMode;
 	employees: EligibleManagerEmployee[];
 	managerLinks: EligibleManagerLink[];
 	teamMemberships: EligibleTeamMembership[];
@@ -58,17 +79,19 @@ function activeManagerInOrg(
 	);
 }
 
-function activeEmployeeInOrg(
-	employees: EligibleManagerEmployee[],
-	organizationId: string,
-	employeeId: string,
-) {
-	return employees.find(
+function resolvableRequester(input: ResolveEligibleManagersInput) {
+	const requester = input.employees.find(
 		(employee) =>
-			employee.id === employeeId &&
-			employee.organizationId === organizationId &&
-			employee.isActive,
+			employee.id === input.requesterEmployeeId &&
+			employee.organizationId === input.organizationId,
 	);
+	return requesterMayBeResolved({
+		requesterExistsInOrganization: requester !== undefined,
+		requesterIsActive: requester?.isActive === true,
+		mode: input.requesterMode ?? "new_submission",
+	})
+		? requester
+		: undefined;
 }
 
 function uniqueSorted(values: string[]) {
@@ -123,11 +146,7 @@ function teamManagerIds(input: ResolveEligibleManagersInput) {
 export function resolveDirectEligibleManagers(
 	input: ResolveEligibleManagersInput,
 ): EligibleManagerResult {
-	const requester = activeEmployeeInOrg(
-		input.employees,
-		input.organizationId,
-		input.requesterEmployeeId,
-	);
+	const requester = resolvableRequester(input);
 	if (!requester) {
 		return {
 			ok: false,
@@ -147,11 +166,7 @@ export function resolveDirectEligibleManagers(
 export function resolveEligibleManagers(
 	input: ResolveEligibleManagersInput,
 ): EligibleManagerResult {
-	const requester = activeEmployeeInOrg(
-		input.employees,
-		input.organizationId,
-		input.requesterEmployeeId,
-	);
+	const requester = resolvableRequester(input);
 	if (!requester) {
 		return {
 			ok: false,

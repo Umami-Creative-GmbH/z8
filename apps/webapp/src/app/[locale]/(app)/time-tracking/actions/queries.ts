@@ -1,58 +1,35 @@
-"use server";
+import "server-only";
 
 import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
-import * as z from "zod";
 import { db } from "@/db";
 import {
 	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowStage,
-	employee,
 	surchargeCalculation,
 	workPeriod,
-	workPolicy,
-	workPolicyPresence,
 } from "@/db/schema";
 import { parseOrdinaryWorkPeriodWorkflowPayload } from "@/lib/approvals/domain-adapters/work-period-contract";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError } from "@/lib/effect/errors";
-import {
-	runServerActionSafe,
-	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import type { ServerActionResult } from "@/lib/effect/result";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
 } from "@/lib/effect/services/change-policy.service";
-import {
-	DatabaseService,
-	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
-import { WorkPolicyService } from "@/lib/effect/services/work-policy.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	getMonthRangeInTimezone,
 	getTodayRangeInTimezone,
 	getWeekRangeInTimezone,
 } from "@/lib/time-tracking/timezone-utils";
 import type { TimeSummary } from "@/lib/time-tracking/types";
-import {
-	getWeekBounds,
-	type WeekStartDay,
-} from "@/lib/user-preferences/week-start";
-import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import type { WorkPeriodWithEntries } from "../types";
 import { getCurrentEmployee, getCurrentSession, getUserTimezone } from "./auth";
 import { getAssignedProjectsWithHours } from "./entry-helpers";
-import {
-	calculatePresenceStatusCounts,
-	type PresenceDayOfWeek,
-} from "./presence-status";
 import { logger } from "./shared";
 import type { AssignedProject } from "./types";
 
@@ -438,164 +415,4 @@ export async function getWorkPeriodEditCapability(
 		logger.error({ error }, "Failed to get edit capability");
 		return { success: false, error: "Failed to check edit permissions" };
 	}
-}
-
-export async function getPresenceStatus(employeeId: string): Promise<
-	ServerActionResult<{
-		required: number;
-		actual: number;
-		period: string;
-		mode: string;
-		presenceEnabled: boolean;
-	}>
-> {
-	const parsed = z
-		.object({ employeeId: z.uuid("Invalid employee ID") })
-		.safeParse({ employeeId });
-
-	if (!parsed.success) {
-		return {
-			success: false as const,
-			error: parsed.error.issues[0]?.message || "Invalid input",
-		};
-	}
-
-	const validatedEmployeeId = parsed.data.employeeId;
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
-		const activeOrganizationId = session.session.activeOrganizationId;
-
-		if (!activeOrganizationId) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "No active organization",
-						userId: session.user.id,
-						resource: "employee",
-						action: "getPresenceStatus",
-					}),
-				),
-			);
-		}
-
-		const targetEmployee = yield* _(
-			dbService.query("getEmployeeForAuth", async () => {
-				return dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, validatedEmployeeId),
-						eq(employee.organizationId, activeOrganizationId!),
-					),
-					columns: { id: true },
-				});
-			}),
-		);
-
-		if (!targetEmployee) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Employee not found in your organization",
-						userId: session.user.id,
-						resource: "employee",
-						action: "getPresenceStatus",
-					}),
-				),
-			);
-		}
-
-		const workPolicyService = yield* _(WorkPolicyService);
-		const effectivePolicy = yield* _(
-			workPolicyService.getEffectivePolicy(validatedEmployeeId),
-		);
-
-		if (!effectivePolicy) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
-		}
-
-		const policyRow = yield* _(
-			dbService.query("getWorkPolicy", async () => {
-				return dbService.db.query.workPolicy.findFirst({
-					where: eq(workPolicy.id, effectivePolicy.policyId),
-					columns: { presenceEnabled: true },
-				});
-			}),
-		);
-
-		if (!policyRow?.presenceEnabled) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
-		}
-
-		const presenceConfig = yield* _(
-			dbService.query("getPresenceConfig", async () => {
-				return dbService.db.query.workPolicyPresence.findFirst({
-					where: eq(workPolicyPresence.policyId, effectivePolicy.policyId),
-				});
-			}),
-		);
-
-		if (!presenceConfig) {
-			return {
-				required: 0,
-				actual: 0,
-				period: "weekly",
-				mode: "minimum_count",
-				presenceEnabled: false,
-			};
-		}
-
-		const weekStartDay = yield* _(
-			Effect.promise(() => getUserWeekStartDay(session.user.id)),
-		);
-		const { start: weekStart, end: weekEnd } = getWeekBounds(
-			DateTime.now(),
-			weekStartDay,
-		);
-		const workPeriods = yield* _(
-			dbService.query("getWeekWorkPeriods", async () => {
-				return dbService.db.query.workPeriod.findMany({
-					where: and(
-						eq(workPeriod.employeeId, validatedEmployeeId),
-						isNull(workPeriod.deletedAt),
-						gte(workPeriod.startTime, weekStart.toJSDate()),
-						lte(workPeriod.startTime, weekEnd.toJSDate()),
-					),
-				});
-			}),
-		);
-
-		const { actual, required } = calculatePresenceStatusCounts({
-			presenceMode: presenceConfig.presenceMode,
-			requiredOnsiteDays: presenceConfig.requiredOnsiteDays,
-			requiredOnsiteFixedDays: presenceConfig.requiredOnsiteFixedDays
-				? (JSON.parse(
-						presenceConfig.requiredOnsiteFixedDays,
-					) as PresenceDayOfWeek[])
-				: null,
-			workPeriods,
-		});
-
-		return {
-			required,
-			actual,
-			period: presenceConfig.evaluationPeriod,
-			mode: presenceConfig.presenceMode,
-			presenceEnabled: true,
-		};
-	}).pipe(Effect.provide(AppLayer));
-
-	return runServerActionSafe(effect);
 }

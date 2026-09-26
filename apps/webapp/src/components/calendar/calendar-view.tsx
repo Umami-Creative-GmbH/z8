@@ -3,7 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import type { SelectableEmployee } from "@/components/employee-select/types";
@@ -69,6 +69,9 @@ function useClockOutOnBehalf({
 	const [pendingClockOutEvent, setPendingClockOutEvent] =
 		useState<CalendarEvent | null>(null);
 	const [isClockOutPending, setIsClockOutPending] = useState(false);
+	// One identity per intended closure, resent on every retry until it succeeds,
+	// so a lost response replays the committed clock-out instead of failing (#276).
+	const operationIdsRef = useRef(new Map<string, string>());
 
 	const canClockOutRunningPeriod = (event: CalendarEvent) => {
 		return (
@@ -94,13 +97,17 @@ function useClockOutOnBehalf({
 		if (!pendingClockOutEvent || isClockOutPending) return;
 
 		setIsClockOutPending(true);
+		const workPeriodId = pendingClockOutEvent.id;
+		const operationId =
+			operationIdsRef.current.get(workPeriodId) ?? globalThis.crypto.randomUUID();
+		operationIdsRef.current.set(workPeriodId, operationId);
 
 		await (async () => {
 			try {
 				const response = await fetch("/api/time-entries/clock-out-on-behalf", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ workPeriodId: pendingClockOutEvent.id }),
+					body: JSON.stringify({ workPeriodId, operationId }),
 				});
 
 				if (!response.ok) {
@@ -122,6 +129,7 @@ function useClockOutOnBehalf({
 					return;
 				}
 
+				operationIdsRef.current.delete(workPeriodId);
 				toast.success(
 					t(
 						"calendar.clockOutOnBehalf.success",

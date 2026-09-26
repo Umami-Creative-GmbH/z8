@@ -3,7 +3,28 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
+import {
+	APPROVAL_INVOCATION_SCHEME_VERSION,
+	type ApprovalInvocationScheme,
+} from "@/lib/approvals/evidence/invocation";
+import {
+	type DecisionEvidenceRecord,
+	type LegacyDecisionEvidenceRecord,
+	loadReviewBindingAuthority,
+	loadReviewBindingWorkflowType,
+} from "@/lib/approvals/evidence/store";
+import { isTimeApprovalWorkflowType } from "@/lib/approvals/time-approval-kinds";
+import {
+	decideBoundLegacyTimeInvocation,
+	decideBoundTimeInvocation,
+} from "@/lib/approvals/server/time-bound-decision";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
+import {
+	decideBoundAbsenceInvocation,
+	decideBoundLegacyAbsenceInvocation,
+} from "@/lib/approvals/server/absence-approvals";
+import { decideBoundTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-approvals";
+import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import {
 	DatabaseService,
@@ -100,4 +121,116 @@ export async function attemptBotApproval(
 	return verified._tag === "Right"
 		? { status: "historical", action: input.action }
 		: { status: "review_required" };
+}
+
+/**
+ * Provider invocation evidence for a bound card action. Only providers with a
+ * documented per-invocation identity supply it (#261); anything missing makes
+ * the action review-only.
+ */
+export interface BotInvocationEnvelope {
+	scheme: ApprovalInvocationScheme;
+	/**
+	 * Authenticated receiver, e.g. `telegram-bot:<bot user id>` or the Teams
+	 * bot/tenant/conversation scope of a recorded activity, or
+	 * `discord-app:<application id>`.
+	 */
+	receiverScope: string;
+	invocationId: string;
+	/** Transport delivery identity (Telegram update_id; none on Discord), kept separately. */
+	deliveryId: string | null;
+	providerActorId: string;
+}
+
+type BoundBotApprovalInput = {
+	organizationId: string;
+	actorEmployeeId: string;
+	actorUserId: string;
+	/** Opaque reviewed-binding handle carried by the card. */
+	bindingId: string;
+	action: ApprovalAction;
+	platform: BotPlatform;
+	invocation: BotInvocationEnvelope | null;
+};
+
+export type BoundBotApprovalResult =
+	| {
+			status: "decided";
+			/** This invocation was already committed; the original is returned. */
+			replayed: boolean;
+			evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
+	  }
+	| { status: "review_required" }
+	| { status: "conflict" }
+	| { status: "not_found" };
+
+const INVOCATION_SCHEMES: Partial<
+	Record<BotPlatform, ApprovalInvocationScheme>
+> = {
+	telegram: "telegram_callback_query",
+	teams: "teams_adaptive_card_action",
+	discord: "discord_interaction",
+};
+
+/**
+ * A bound card action. The binding and invocation cross the shared attempt
+ * into the authoritative decision transaction, which validates organization,
+ * recipient, cycle, subject, assignment and submitted revision at commit. The
+ * provider acknowledgment is the adapter's concern and proves nothing here.
+ */
+export async function attemptBoundBotApproval(
+	input: BoundBotApprovalInput,
+): Promise<BoundBotApprovalResult> {
+	const scheme = INVOCATION_SCHEMES[input.platform];
+	if (!scheme || input.invocation?.scheme !== scheme) {
+		// No established invocation identity: never decide, never replay. An
+		// incomplete identity is refused by the decision owner's parser.
+		return { status: "review_required" };
+	}
+	const decision = {
+		database: db,
+		organizationId: input.organizationId,
+		actorEmployeeId: input.actorEmployeeId,
+		actorUserId: input.actorUserId,
+		bindingId: input.bindingId,
+		action: input.action,
+		...(input.action === "reject"
+			? { reason: `Rejected via ${platformNames[input.platform]}` }
+			: {}),
+		invocation: {
+			identity: {
+				organizationId: input.organizationId,
+				scheme,
+				schemeVersion: APPROVAL_INVOCATION_SCHEME_VERSION as typeof APPROVAL_INVOCATION_SCHEME_VERSION,
+				receiverScope: input.invocation.receiverScope,
+				invocationId: input.invocation.invocationId,
+			},
+			deliveryId: input.invocation.deliveryId,
+			providerActorId: input.invocation.providerActorId,
+		},
+	};
+	// A binding decides only under the authority it was issued for, by its
+	// kind's owner: a legacy handle reaches the legacy absence (#384), time
+	// (#432) or expense (#296) owner, never a canonical one; a canonical handle
+	// reaches its kind's owner (absence, or a time kind, #325). Bindings and their revisions are
+	// immutable and outlive their committed invocations, so routing on them
+	// keeps exact replays intact.
+	const scope = { organizationId: input.organizationId, bindingId: input.bindingId };
+	const [authority, workflowType] = await Promise.all([
+		loadReviewBindingAuthority(db, scope),
+		loadReviewBindingWorkflowType(db, scope),
+	]);
+	const result =
+		authority === "legacy"
+			? workflowType === "absence"
+				? await decideBoundLegacyAbsenceInvocation(decision)
+				: isTimeApprovalWorkflowType(workflowType)
+					? await decideBoundLegacyTimeInvocation(decision)
+					: await decideBoundTravelExpenseInvocation(decision)
+			: isTimeApprovalWorkflowType(workflowType)
+				? await decideBoundTimeInvocation(decision)
+				: await decideBoundAbsenceInvocation(decision);
+	return result.status === "review_required"
+		? { status: "review_required" }
+		: result;
 }

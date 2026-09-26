@@ -4,8 +4,10 @@ import type {
 } from "@better-auth/scim";
 import { scim } from "@better-auth/scim";
 import type { BetterAuthPlugin } from "better-auth";
+import { requireAuthTransaction } from "@/lib/auth/auth-transaction";
 import { resolveSCIMIdentity } from "./identity-resolution";
 import { reconcileSCIMLifecycle } from "./lifecycle-reconciler";
+import { protectSCIMProjectedUser } from "./projection-guards";
 import {
 	reconcileSCIMRoleProjection,
 	scimRoleProjection,
@@ -192,10 +194,22 @@ export function createSCIMCallbackModelRegistration() {
 	};
 }
 
+/**
+ * Every SCIM membership, employee, role and team-permission write for a user
+ * happens here, inside the SCIM plugin's transaction (provisioning requests,
+ * group changes, replay, recovery and decommission). The user's exclusive
+ * configuration/access guard is held first, in that transaction (#314): taken
+ * with the user's subject lock in sorted order, and re-taken here; a late user
+ * aborts the transaction instead (#429, `projection-guards.ts`).
+ */
 async function reconcileSCIMProjectedUser(
 	input: SCIMProjectedUserState,
 	context: SCIMTransactionContext,
 ) {
+	await protectSCIMProjectedUser(
+		requireAuthTransaction("SCIM user reconciliation"),
+		{ organizationId: input.provisioningDomainId, userId: input.userId },
+	);
 	await reconcileSCIMLifecycle(input, context);
 	await reconcileSCIMRoleProjection(input, context);
 }

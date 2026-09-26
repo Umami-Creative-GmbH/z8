@@ -603,3 +603,47 @@ The 2026-09-24 controls change application source (route fence, service worker)
 and add tests. Tests and typecheck ran with the user's authorization; see
 [executed verification](#executed-verification). No database, infrastructure,
 deployment or activation operation was performed.
+
+## Closure disposition (2026-09-25)
+
+#266 closes on implementation. The source investigation, the old-consumer controls
+(PR #358) and this blocker register are the delivered scope. Everything still
+**Blocked** above is activation evidence that a release/operator owner has to
+supply. It moves to the tickets that own the activation gates:
+
+| Item | Moves to |
+| --- | --- |
+| C266-B/D/E/M: owner evidence packet, deployed versions per origin, extension IDs/channels, mobile distribution, desktop install inventory, effective old-consumer update/disable | #329 (acceptance criterion 2: effective control of every old consumer) |
+| Residual destructive paths 1–6: evidence or an explicit acceptance decision | #329 |
+| C266-X: writer/worker participation, drain and in-flight classification | #327 (writers and drain) and #329 (classification and pilot) |
+| Compatible rollback without a destructive reader | #331 |
+
+The register, the evidence packet and the residual path list above stay the working
+reference for those tickets.
+
+### Release refresh
+
+The desired production release in `Umami-Creative-GmbH/z8-infra` moved on
+2026-09-24 (`c86cb472`, "update core from Z8 run 36034762525"). The core source is
+now `9ca3795f` (the `main` merge of `dev` PR #353), with
+`z8-webapp@sha256:4424955e…c510c`. `9ca3795f` contains #267 (`9454e1f6`), the
+#358 fence and worker takeover, and #360. The `main` publish run for `9ca3795f`
+succeeded.
+
+This is still **desired** state. Argo CD sync is manual, and nothing here proves
+which build each origin serves. A read-only request for `https://z8-time.app/sw.js`
+on 2026-09-25 returned 503, and `app.z8-time.app` did not answer, so the deployed
+worker's `preservation-only-v1` capability was not observed. Confirming the
+served digest per origin is the first item of the evidence packet in #329.
+
+### Extension retirement (2026-09-25)
+
+The user retired the browser extension, and #282 closes as not planned. No
+extension client will adopt version 2 commands, so the #282 references above
+(C266-E, the fence retirement trigger) no longer point at planned adoption.
+Installed X1–X3 readers remain old consumers under #329. See
+[the retirement record](../extension-clock-client-retirement-282.md).
+
+The mobile app was retired the same day (#283 and #278 close as not planned).
+C266-M no longer points at planned adoption. Installed apps remain old consumers
+under #329. See [the mobile retirement record](../mobile-clock-client-retirement-283.md).

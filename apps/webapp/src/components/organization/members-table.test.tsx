@@ -49,8 +49,21 @@ const {
 	updateMemberRoleMock: vi.fn(),
 }));
 
+const offboardingGate = vi.hoisted(() => ({ released: false }));
+
+vi.mock("@/lib/employee-lifecycle/release", () => ({
+	get EMPLOYEE_OFFBOARDING_RELEASE_READY() {
+		return offboardingGate.released;
+	},
+}));
+
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: routerRefreshMock }),
+	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
 }));
 
 vi.mock("sonner", () => ({
@@ -532,6 +545,32 @@ describe("MembersTable invitation target teams", () => {
 		expect(
 			within(menu).queryByRole("menuitem", { name: "Activate" }),
 		).toBeNull();
+	});
+
+	it("links status changes to the departure flow once offboarding is released", async () => {
+		offboardingGate.released = true;
+		try {
+			renderWithQueryClient(
+				<MembersTable
+					organizationId="org-1"
+					members={[member as never]}
+					invitations={[]}
+					currentMemberRole="owner"
+					currentUserId="owner-user"
+				/>,
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: "Actions for Active Alice" }));
+			const menu = await screen.findByRole("menu");
+			const status = within(menu).getByRole("menuitem", { name: "Deactivate" });
+
+			expect(status.getAttribute("href")).toBe(
+				`/settings/employees/${member.employee.id}#offboarding`,
+			);
+			expect(within(menu).getByRole("menuitem", { name: "Remove access" })).toBeTruthy();
+		} finally {
+			offboardingGate.released = false;
+		}
 	});
 
 	it("passes exact member and employee row metadata to shared lifecycle actions", () => {

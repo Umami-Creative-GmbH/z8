@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Wszystkie wyjścia",
       "allManagers": "Wszyscy menedżerowie",
       "approvalDaysDescription": "Poza samoobsługą pracownicy mogą wnioskować o zmiany w tym oknie (wymaga zatwierdzenia). 0 = brak dodatkowego okna.",
       "approvalDaysLabel": "Okno zatwierdzania (dni)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Pozwól pracownikom edytować wpisy bez wymogu zatwierdzania",
       "trustModeLabel": "Tryb zaufania",
       "updated": "Polityka została pomyślnie zaktualizowana",
-      "updateFailed": "Nie udało się zaktualizować polityki",
-      "zeroDayPolicy": "Każde wyjście z pracy będzie wymagało zatwierdzenia przez menedżera (najbardziej rygorystyczny tryb)."
+      "updateFailed": "Nie udało się zaktualizować polityki"
     },
     "coverageRules": {
       "addRule": "Dodaj regułę",

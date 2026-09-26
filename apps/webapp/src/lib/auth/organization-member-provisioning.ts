@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 import { normalizeInvitationEmail } from "./employee-invitation-draft";
 import { hasOrganizationRole } from "./organization-role";
@@ -185,6 +186,10 @@ export async function ensureEmployeeForOrganizationMember(
 	},
 ) {
 	const transactionResult = await dbClient.transaction(async (tx) => {
+		// Provisioning creates, reactivates, places or grants the user's employee:
+		// facts manual creation reads under the user's shared guard (#318). The
+		// exclusive guard precedes the identity lock and every row it writes.
+		await acquireExclusiveUserConfigurationAccessGuards(tx, [input.userId]);
 		const targetUser = await tx.query.user.findFirst({
 			where: eq(user.id, input.userId),
 			columns: { email: true },

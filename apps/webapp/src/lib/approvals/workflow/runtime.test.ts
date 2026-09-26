@@ -153,6 +153,16 @@ function firstPassEvent(passes: ApprovalMaterializedTransitionPlan[]) {
 	return event;
 }
 
+const offboardingPrincipal = {
+	kind: "system" as const,
+	systemId: "employee-offboarding" as const,
+	departureId: "d0000000-0000-4000-8000-000000000001",
+	employmentPeriodId: "d0000000-0000-4000-8000-000000000002",
+	assignmentId: "d0000000-0000-4000-8000-000000000003",
+	handoverTaskId: "d0000000-0000-4000-8000-000000000004",
+	claimToken: "d0000000-0000-4000-8000-000000000005",
+};
+
 describe("approval workflow runtime", () => {
 	it("exports the production runtime dependency factories", () => {
 		expect(createDatabaseApprovalCommandActorResolver).toBeTypeOf("function");
@@ -729,6 +739,64 @@ describe("approval workflow runtime", () => {
 				},
 			},
 		]);
+	});
+
+	it("resolves the offboarding principal as a system actor without querying employees", async () => {
+		const transaction = dbService();
+		await expect(
+			createDatabaseApprovalCommandActorResolver().resolve({
+				dbService: transaction.service,
+				organizationId: "org-1",
+				principal: offboardingPrincipal,
+			}),
+		).resolves.toEqual({ kind: "system", employeeId: null, userId: null });
+		expect(transaction.calls).toHaveLength(0);
+	});
+
+	it("delegates the offboarding principal to its evidence authority, never generic system", async () => {
+		const transaction = dbService();
+		const workflow = snapshot();
+		const command = {
+			type: "reassign" as const,
+			stageId: ids.stage,
+			fromEmployeeId: ids.approver,
+			toEmployeeId: ids.requester,
+		};
+		const evidenceChecks: unknown[] = [];
+		const authorization = createApprovalWorkflowAuthorization({
+			canManageApproval: async () => true,
+			offboardingAuthority: {
+				authorize: async (input) => {
+					evidenceChecks.push(input);
+					return "offboarding_reassignment";
+				},
+			},
+		});
+		const request = {
+			dbService: transaction.service,
+			organizationId: "org-1",
+			workflow,
+			actor: { kind: "system" as const, employeeId: null, userId: null },
+			command,
+			principal: offboardingPrincipal,
+		};
+
+		await expect(authorization.authorize(request)).resolves.toBe("offboarding_reassignment");
+		expect(evidenceChecks).toEqual([
+			{
+				dbService: transaction.service,
+				organizationId: "org-1",
+				workflow,
+				principal: offboardingPrincipal,
+				command,
+				replay: null,
+			},
+		]);
+		await expect(
+			createApprovalWorkflowAuthorization({ canManageApproval: async () => true }).authorize(
+				request,
+			),
+		).rejects.toThrow(/offboarding/i);
 	});
 
 	it("allows only a transaction-scoped eligible fallback manager decision", async () => {

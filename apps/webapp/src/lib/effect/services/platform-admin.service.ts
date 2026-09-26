@@ -7,6 +7,7 @@ import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { isAccountBanned } from "@/lib/auth/account-ban";
 import { addOrganizationDeletionNotificationJob } from "@/lib/queue";
+import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "../errors";
 
 // Types
@@ -330,26 +331,30 @@ export const PlatformAdminServiceLive = Layer.effect(
 			banUser: (userId, reason, expiresAt, adminId) =>
 				Effect.tryPromise({
 					try: async () => {
-						// Check if user exists
-						const [existingUser] = await db
-							.select({ id: user.id })
-							.from(user)
-							.where(eq(user.id, userId))
-							.limit(1);
+						// Manual interpretation re-reads ban status under the user's shared
+						// access guard in every organization (#312): the ban commits under
+						// the exclusive guard, so it cannot land inside a submission.
+						await db.transaction(async (tx) => {
+							await acquireExclusiveUserConfigurationAccessGuards(tx, [userId]);
+							const [existingUser] = await tx
+								.select({ id: user.id })
+								.from(user)
+								.where(eq(user.id, userId))
+								.limit(1);
 
-						if (!existingUser) {
-							throw { type: "not_found" };
-						}
+							if (!existingUser) {
+								throw { type: "not_found" };
+							}
 
-						// Update user ban status
-						await db
-							.update(user)
-							.set({
-								banned: true,
-								banReason: reason,
-								banExpires: expiresAt,
-							})
-							.where(eq(user.id, userId));
+							await tx
+								.update(user)
+								.set({
+									banned: true,
+									banReason: reason,
+									banExpires: expiresAt,
+								})
+								.where(eq(user.id, userId));
+						});
 
 						// Keep the ban committed even if revocation fails. Store-level
 						// validation denies access immediately; revocation also prevents
@@ -389,26 +394,29 @@ export const PlatformAdminServiceLive = Layer.effect(
 			unbanUser: (userId, adminId) =>
 				Effect.tryPromise({
 					try: async () => {
-						// Check if user exists
-						const [existingUser] = await db
-							.select({ id: user.id })
-							.from(user)
-							.where(eq(user.id, userId))
-							.limit(1);
+						// Same protection as banUser: restored access is ordered against
+						// in-flight manual interpretation (#312).
+						await db.transaction(async (tx) => {
+							await acquireExclusiveUserConfigurationAccessGuards(tx, [userId]);
+							const [existingUser] = await tx
+								.select({ id: user.id })
+								.from(user)
+								.where(eq(user.id, userId))
+								.limit(1);
 
-						if (!existingUser) {
-							throw { type: "not_found" };
-						}
+							if (!existingUser) {
+								throw { type: "not_found" };
+							}
 
-						// Clear ban
-						await db
-							.update(user)
-							.set({
-								banned: false,
-								banReason: null,
-								banExpires: null,
-							})
-							.where(eq(user.id, userId));
+							await tx
+								.update(user)
+								.set({
+									banned: false,
+									banReason: null,
+									banExpires: null,
+								})
+								.where(eq(user.id, userId));
+						});
 
 						// Log action
 						await db.insert(platformAdminAuditLog).values({

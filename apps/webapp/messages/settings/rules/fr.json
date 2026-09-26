@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Toutes les sorties de pointage",
       "allManagers": "Tous les managers",
       "approvalDaysDescription": "Au-delà du libre-service, les employés peuvent demander des modifications dans cette fenêtre (nécessite une approbation). 0 = aucune fenêtre supplémentaire.",
       "approvalDaysLabel": "Fenêtre d'approbation (jours)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Permettre aux employés de modifier les entrées sans aucune exigence d'approbation",
       "trustModeLabel": "Mode confiance",
       "updated": "Politique mise à jour avec succès",
-      "updateFailed": "Échec de la mise à jour de la politique",
-      "zeroDayPolicy": "Chaque pointage de sortie nécessitera l'approbation d'un responsable (mode le plus strict)."
+      "updateFailed": "Échec de la mise à jour de la politique"
     },
     "coverageRules": {
       "addRule": "Ajouter une règle",

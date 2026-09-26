@@ -7,9 +7,9 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { discordConversation } from "@/db/schema";
+import { discordConversation, discordUserMapping } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
-import { createDM } from "./api";
+import { createDM, type DiscordCallOutcome, openDMChannelWithOutcome } from "./api";
 
 const logger = createLogger("DiscordConversationManager");
 
@@ -41,7 +41,45 @@ export async function saveConversation(
 			});
 	} catch (error) {
 		logger.error({ error, userId, channelId }, "Failed to save Discord conversation");
+		return;
 	}
+	try {
+		// The recipient reached the bot again: approval cards waiting for a
+		// usable destination can be delivered now.
+		const { rearmApprovalDeliveryForRepairedDestination } = await import(
+			"@/lib/approvals/delivery/recovery"
+		);
+		await rearmApprovalDeliveryForRepairedDestination({
+			organizationId,
+			userId,
+			provider: "discord",
+		});
+	} catch (error) {
+		logger.error({ error, userId, organizationId }, "Failed to re-arm Discord approval delivery");
+	}
+}
+
+/**
+ * The recipient's private DM channel for approval cards. The destination is
+ * derived from the recipient's active account link in this organization and
+ * opened through Discord, never from a stored channel, which may belong to a
+ * server where other members would see the card.
+ */
+export async function resolveApprovalDMChannel(
+	botToken: string,
+	userId: string,
+	organizationId: string,
+): Promise<DiscordCallOutcome<string> | { kind: "missing" }> {
+	const mapping = await db.query.discordUserMapping.findFirst({
+		where: and(
+			eq(discordUserMapping.userId, userId),
+			eq(discordUserMapping.organizationId, organizationId),
+			eq(discordUserMapping.isActive, true),
+		),
+		columns: { discordUserId: true },
+	});
+	if (!mapping) return { kind: "missing" };
+	return openDMChannelWithOutcome(botToken, mapping.discordUserId);
 }
 
 /**

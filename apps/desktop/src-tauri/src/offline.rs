@@ -49,6 +49,9 @@ pub enum ReviewReason {
     RetriesExhausted,
     LegacyContextMissing,
     BreakMayBePartiallyCommitted,
+    /// The retained break's close was acknowledged by the server, so it committed;
+    /// its resume is still unknown. Nothing ever proves that a close did not commit.
+    BreakCloseAcknowledged,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -80,6 +83,14 @@ impl QueuedAction {
             Some(ActionType::ClockOutWithBreak) => {
                 self.reasons
                     .push(ReviewReason::BreakMayBePartiallyCommitted);
+                let close_acknowledged = self
+                    .payload
+                    .text()
+                    .and_then(|payload| serde_json::from_str::<serde_json::Value>(payload).ok())
+                    .is_some_and(|value| value["observedFailure"]["closeAcknowledged"] == true);
+                if close_acknowledged {
+                    self.reasons.push(ReviewReason::BreakCloseAcknowledged);
+                }
                 self.payload.text().is_some_and(|payload| {
                     // Recognize bare timestamps without inventing a default location.
                     DateTime::parse_from_rfc3339(payload).is_ok()
@@ -123,6 +134,11 @@ pub struct RecoverySummary {
     pub total: usize,
     pub malformed: usize,
     pub exhausted: usize,
+    /// Two-request breaks whose close or resume may have committed. They are
+    /// never replayed as close then resume, nor assumed uncommitted (#281).
+    pub possible_partial_breaks: usize,
+    /// Of those, breaks whose close the server acknowledged before the failure.
+    pub breaks_with_acknowledged_close: usize,
 }
 
 impl OfflineQueue {
@@ -209,6 +225,22 @@ impl OfflineQueue {
             exhausted: records
                 .iter()
                 .filter(|record| record.reasons.contains(&ReviewReason::RetriesExhausted))
+                .count(),
+            possible_partial_breaks: records
+                .iter()
+                .filter(|record| {
+                    record
+                        .reasons
+                        .contains(&ReviewReason::BreakMayBePartiallyCommitted)
+                })
+                .count(),
+            breaks_with_acknowledged_close: records
+                .iter()
+                .filter(|record| {
+                    record
+                        .reasons
+                        .contains(&ReviewReason::BreakCloseAcknowledged)
+                })
                 .count(),
         })
     }

@@ -78,6 +78,24 @@ describe("escalationAttentionDedupeKey", () => {
 			escalationAttentionDedupeKey(input({ reason: "delivery_exhausted" })),
 		).toThrow(/delivery channel/);
 	});
+
+	it("tracks an unavailable destination per channel when the channel is known", () => {
+		const slack = escalationAttentionDedupeKey(
+			input({ reason: "delivery_unavailable", deliveryChannel: "slack" }),
+		);
+		expect(slack).toBe(
+			"delivery_unavailable:assignment:assignment-1:channel:slack",
+		);
+		// A delivery that succeeds on another channel cannot close this one.
+		expect(
+			escalationAttentionDedupeKey(
+				input({ reason: "delivery_unavailable", deliveryChannel: "telegram" }),
+			),
+		).not.toBe(slack);
+		expect(
+			escalationAttentionDedupeKey(input({ reason: "delivery_unavailable" })),
+		).toBe("delivery_unavailable:assignment:assignment-1");
+	});
 });
 
 describe("classifyEscalationAttentionRecheck", () => {

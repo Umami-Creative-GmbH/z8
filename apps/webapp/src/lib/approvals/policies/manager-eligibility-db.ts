@@ -11,6 +11,7 @@ import {
 	type EligibleManagerLink,
 	type EligibleTeam,
 	type EligibleTeamMembership,
+	type RequesterEligibilityMode,
 	resolveEligibleManagers,
 	resolvePrimaryEligibleManager,
 } from "./manager-eligibility";
@@ -45,6 +46,7 @@ interface ApprovalEligibilityDb {
 function getEligibleManagerIds(input: {
 	organizationId: string;
 	requesterEmployeeId: string;
+	requesterMode: RequesterEligibilityMode;
 	employees: EligibleManagerEmployee[];
 	managerLinks: EligibleManagerLink[];
 	teamMemberships: EligibleTeamMembership[];
@@ -107,6 +109,8 @@ export async function getEligibleManagerIdsForRequester(input: {
 	db: ApprovalEligibilityDb;
 	requesterEmployeeId: string;
 	organizationId: string;
+	/** Defaults to `new_submission`; only a persisted-request loader passes `existing_workflow`. */
+	requesterMode?: RequesterEligibilityMode;
 }) {
 	const [employees, managerLinks, { memberships, teams }] = await Promise.all([
 		input.db.query.employee.findMany({
@@ -125,6 +129,7 @@ export async function getEligibleManagerIdsForRequester(input: {
 	return getEligibleManagerIds({
 		organizationId: input.organizationId,
 		requesterEmployeeId: input.requesterEmployeeId,
+		requesterMode: input.requesterMode ?? "new_submission",
 		employees: employees as EligibleManagerEmployee[],
 		managerLinks: managerLinks as EligibleManagerLink[],
 		teamMemberships: memberships,
@@ -180,10 +185,13 @@ export async function isEligibleManagerForApprovalRequest(input: {
 		return false;
 	}
 
+	// The request is persisted and organization-scoped, so its historical
+	// requester may have departed without making the claim unsettleable.
 	const eligibleManagerIds = await getEligibleManagerIdsForRequester({
 		db: input.db,
 		requesterEmployeeId: request.requestedBy,
 		organizationId: input.organizationId,
+		requesterMode: "existing_workflow",
 	});
 
 	return (
@@ -218,9 +226,12 @@ export async function getEligibleApprovalScopesForManager(input: {
 	]);
 
 	return typedEmployees.flatMap((requester: { id: string }) => {
+		// Scopes filter already persisted requests, including those of
+		// requesters who have since departed.
 		const eligibleManagerIds = getEligibleManagerIds({
 			organizationId: input.organizationId,
 			requesterEmployeeId: requester.id,
+			requesterMode: "existing_workflow",
 			employees: typedEmployees,
 			managerLinks: managerLinks as EligibleManagerLink[],
 			teamMemberships: memberships,

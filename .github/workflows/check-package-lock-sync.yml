@@ -2,17 +2,23 @@ name: Check Package Lock Sync
 
 on:
   pull_request:
+    # The generated target manifests only depend on package manifests, the lockfile, and the
+    # import statements of webapp code files (see docker/scripts/prepare-target-runtime.mjs).
+    # Tests are never reachable from a target entry point.
     paths:
       - "package.json"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
-      - "apps/webapp/**"
       - "apps/**/package.json"
       - "packages/**/package.json"
+      - "apps/webapp/**/*.ts"
+      - "apps/webapp/**/*.tsx"
+      - "apps/webapp/**/*.js"
+      - "apps/webapp/**/*.mjs"
+      - "apps/webapp/**/*.cjs"
+      - "!apps/webapp/**/*.test.ts"
+      - "!apps/webapp/**/*.test.tsx"
       - "docker/targets/**"
-      - "docker/targets/**/package.json"
-      - "docker/targets/**/pnpm-lock.yaml"
-      - "docker/targets/**/pnpm-workspace.yaml"
       - "docker/scripts/**"
       - ".github/workflows/check-package-lock-sync.yml"
 

@@ -6,6 +6,7 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
+import { PayrollWorkCollectionBlockedError } from "@/lib/payroll-collection/payroll-work-collection-blocked-error";
 import { PayrollOffboardingRepairBlockedError } from "@/lib/payroll-export/offboarding-repair-guard";
 import { PayrollWorkAllocationBlockedError } from "@/lib/payroll-export/work-allocation-blocked-error";
 import { CanonicalCutoverNotReadyError } from "@/lib/time-record/migration/cutover-state";
@@ -45,6 +46,21 @@ export function mapPayrollWorkspaceActionError(
 			details: {
 				organizationId: error.organizationId,
 				blockedRecordCount: error.blockedRecords.length,
+			},
+		});
+	}
+
+	if (error instanceof PayrollWorkCollectionBlockedError) {
+		// Counts only; the workspace lists the scoped blockers the reader may see.
+		return new ConflictError({
+			message: t(
+				"payroll.errors.exportBlockedByUncertainWork",
+				"Export blocked: resolve the uncertain work in the selected scope first",
+			),
+			conflictType: "payroll_work_collection_blocked",
+			details: {
+				organizationId: error.organizationId,
+				...error.summary(),
 			},
 		});
 	}

@@ -49,6 +49,12 @@ const state = vi.hoisted(() => ({
 	events: [] as string[],
 }));
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/datetime/temporal-core")>()),
 	systemClock: { nowInstant: state.nowInstant },
@@ -62,6 +68,11 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: state.getSession } },
 }));
 
+// Legacy submission intents (#432): legacy-time-bound-approval.integration.test.ts.
+vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/intents")>()),
+	recordLegacyDeliveryIntent: async () => false,
+}));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester: state.getManager,
 }));
@@ -541,6 +552,20 @@ function configureDirectCategoryEdit(input: {
 		.mockReset()
 		.mockImplementation((table) => rows.get(table) ?? []);
 }
+
+// Legacy organizations: the coordinated scope borrows the mocked transaction.
+vi.mock("@/lib/time-tracking/completed-work-transaction", async () => {
+	const { db } = await import("@/db");
+	return {
+		withCompletedWorkTransaction: (
+			_input: unknown,
+			operation: (scope: unknown) => Promise<unknown>,
+		) =>
+			db.transaction((tx: unknown) =>
+				operation({ admission: "legacy", db: tx, assertEmployee: () => {} }),
+			),
+	};
+});
 
 vi.mock("@/db", () => ({
 	db: {
@@ -2109,6 +2134,9 @@ describe("time correction submission actions", () => {
 			success: false,
 			error: "At least one correction value must change",
 		});
-		expect(state.directTransaction).not.toHaveBeenCalled();
+		// Decided under the coordinated transaction, before any lock or write.
+		expect(state.directSelectForUpdate).not.toHaveBeenCalled();
+		expect(state.directUpdateCalls).toEqual([]);
+		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
 	});
 });

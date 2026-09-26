@@ -9,7 +9,10 @@ import {
 	calculatePayrollWorkedMinutes,
 	filterMissingClockOutBlockers,
 	filterPendingTimeApprovalBlockers,
+	payrollBlockersFromCollection,
 } from "./summary";
+import { assessPayrollWorkCollection } from "@/lib/payroll-collection/payroll-work-collection";
+import { workPeriodsFromCollectedInput } from "@/lib/payroll-export/collected-work";
 import { isDismissiblePayrollBlockerType } from "./blocker-dismissals";
 import type { PayrollSummaryWorkRow } from "./types";
 
@@ -792,5 +795,113 @@ describe("buildOffboardingClockRepairBlockers", () => {
 			},
 		]);
 		expect(isDismissiblePayrollBlockerType("offboarding_clock_repair")).toBe(false);
+	});
+});
+
+describe("workspace under scoped collection (#322)", () => {
+	const instant = (value: string) => Temporal.Instant.from(value);
+	const employee = (id: string, timezone: string) => ({
+		id,
+		employeeNumber: null,
+		firstName: null,
+		lastName: null,
+		email: null,
+		timezone,
+	});
+	const record = (id: string, employeeId: string, overrides: object = {}) => ({
+		id,
+		employeeId,
+		startAt: instant("2026-06-30T21:30:00Z"),
+		endAt: instant("2026-06-30T22:30:00Z"),
+		durationMinutes: 61,
+		approvalState: "approved" as const,
+		updatedAt: instant("2026-06-30T22:30:00Z"),
+		workPeriod: null,
+		pendingCorrection: false,
+		workCategory: null,
+		projects: [],
+		...overrides,
+	});
+	const collection = assessPayrollWorkCollection(
+		{
+			employees: [employee("employee-1", "Europe/Berlin"), employee("employee-2", "UTC")],
+			records: [
+				record("boundary", "employee-1"),
+				record("pending", "employee-2", { approvalState: "pending" }),
+			],
+			diagnostics: {
+				completeness: { status: "incomplete", widenedTo: "organization" },
+				findings: [
+					{
+						id: "finding-1",
+						kind: "work_outside_organization_employees",
+						shape: "conflicting",
+						treatment: "investigation_required",
+						blocking: true,
+						employeeIds: [],
+						workPeriodIds: [],
+						timeRecordIds: [],
+						entryIds: [],
+						provenance: { state: "ambiguous", reason: "ownership_unestablished" },
+						relevance: { level: "organization" },
+						relevant: true,
+						details: {},
+					},
+				],
+			},
+			departureRepairs: [],
+		},
+		{
+			organizationId: "org-1",
+			startDate: "2026-06-01",
+			endDate: "2026-06-30",
+			employeeIds: ["employee-1", "employee-2"],
+			teamIds: null,
+			projectIds: null,
+		},
+	);
+
+	it("credits exactly the minutes the export formats", () => {
+		const summary = buildPayrollSummaryFromRows({
+			organizationName: "Acme GmbH",
+			period: { start: "2026-06-01", end: "2026-06-30", label: "June 2026" },
+			generatedAt: DateTime.fromISO("2026-06-30T12:00:00Z"),
+			generatedBy: { id: "payroll-1", name: "Payroll User" },
+			employees: [
+				{ id: "employee-1", name: "Ada", employeeNumber: null, teamName: null, contractType: "hourly" },
+			],
+			workRows: [],
+			collectedWork: collection.input.work,
+			absenceRows: [],
+			blockers: payrollBlockersFromCollection(collection),
+		});
+		const exportMinutes = workPeriodsFromCollectedInput(collection.input).reduce(
+			(total, line) => total + (line.durationMinutes ?? 0),
+			0,
+		);
+
+		// 23:30-00:30 Berlin with 61 stored minutes: 31 belong to June.
+		expect(exportMinutes).toBe(31);
+		expect(summary.employees[0]?.workedHours).toBe(Math.round((31 / 60) * 100) / 100);
+		expect(summary.employees[0]?.hasBlockers).toBe(true);
+	});
+
+	it("lists every export blocker as a non-dismissible workspace blocker", () => {
+		const blockers = payrollBlockersFromCollection(collection);
+
+		expect(blockers.map((blocker) => [blocker.type, blocker.employeeId])).toEqual([
+			["uncertain_historical_work", "employee-1"],
+			["pending_work_approval", "employee-2"],
+			["uncertain_historical_work", "employee-2"],
+		]);
+		// Finding IDs can name others' work: workspace IDs are opaque, distinct and stable.
+		expect(JSON.stringify(blockers)).not.toContain("finding-1");
+		expect(new Set(blockers.map((blocker) => blocker.id)).size).toBe(3);
+		expect(payrollBlockersFromCollection(collection)).toEqual(blockers);
+		expect(blockers.find((blocker) => blocker.id === "pending")).toMatchObject({
+			date: "2026-06-30",
+			time: "21:30",
+		});
+		expect(blockers.some((blocker) => isDismissiblePayrollBlockerType(blocker.type))).toBe(false);
 	});
 });

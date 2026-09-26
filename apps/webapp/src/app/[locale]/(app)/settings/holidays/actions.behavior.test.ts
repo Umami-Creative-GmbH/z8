@@ -187,6 +187,7 @@ const mockState = vi.hoisted(() => ({
 	teamRows: [{ id: "team-managed", organizationId: "org-1" }],
 	employeeRows: [{ id: "employee-managed", organizationId: "org-1" }],
 	deleteCalls: [] as Array<any>,
+	guardCalls: [] as Array<unknown>,
 	insertCalls: [] as Array<any>,
 	updateCalls: [] as Array<any>,
 	updateReturnRows: [{ id: "category-assignment-org" }],
@@ -300,6 +301,13 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employee-action-utils", async (
 								};
 							}),
 						})),
+						execute: vi.fn(async (statement: unknown) => {
+							mockState.guardCalls.push(statement);
+							return [];
+						}),
+						transaction(callback: (tx: unknown) => unknown) {
+							return callback(this);
+						},
 						delete: vi.fn((table: unknown) => ({
 							where: vi.fn((condition: unknown) => {
 								mockState.deleteCalls.push({ table, condition });
@@ -534,6 +542,7 @@ describe("holiday settings scope behavior", () => {
 		mockState.teamRows = [{ id: "team-managed", organizationId: "org-1" }];
 		mockState.employeeRows = [{ id: "employee-managed", organizationId: "org-1" }];
 		mockState.deleteCalls = [];
+		mockState.guardCalls = [];
 		mockState.insertCalls = [];
 		mockState.updateCalls = [];
 		mockState.updateReturnRows = [{ id: "category-assignment-org" }];
@@ -697,6 +706,7 @@ describe("holiday settings scope behavior", () => {
 		const result = await deleteHoliday("holiday-org");
 
 		expect(result.success).toBe(true);
+		expect(mockState.guardCalls).toHaveLength(1);
 		expect(mockState.deleteCalls).toHaveLength(1);
 		expect(mockState.updateCalls).toEqual([]);
 	});
@@ -710,6 +720,7 @@ describe("holiday settings scope behavior", () => {
 		if (result.success) {
 			expect(result.data.deleted).toBe(2);
 		}
+		expect(mockState.guardCalls).toHaveLength(1);
 		expect(mockState.deleteCalls).toHaveLength(1);
 		expect(mockState.updateCalls).toEqual([]);
 	});

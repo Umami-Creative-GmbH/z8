@@ -12,6 +12,7 @@
 - `apps/webapp/src/lib/effect/services/billing/subscription.service.ts`
 - `apps/webapp/src/lib/effect/services/billing/billing-events.service.ts`
 - `apps/webapp/src/lib/effect/services/billing/seat-sync.service.ts`
+- `apps/webapp/src/lib/effect/services/billing/billing-configuration.ts`
 - `apps/webapp/src/db/schema/billing.ts`
 
 ## API Surfaces
@@ -26,6 +27,12 @@
 2. Verify webhook signatures before processing.
 3. Keep all billing operations organization-scoped and permission-checked.
 4. Preserve webhook idempotency via persisted Stripe event records.
+5. A write that can change billing access (subscription existence, status, trial end) runs
+   through `withOrganizationBillingMutation` or `withStripeSubscriptionMutation` in
+   `billing/billing-configuration.ts`, so it takes exclusive organization configuration
+   protection first. Work transactions read billing with `readBillingAccessInTransaction`;
+   trial provisioning (`provisionLocalTrial`) never runs inside one. See
+   `docs/billing-revalidation-317.md`.
 
 ## UI Surface
 

@@ -634,7 +634,9 @@ function engineFixture(
 			| "active_assignment"
 			| "requester"
 			| "manage_approval"
-			| "system";
+			| "system"
+			| "offboarding_reassignment";
+		authorizationError?: Error;
 		actor?:
 			| { kind: "employee"; employeeId: string; userId: string }
 			| { kind: "system"; employeeId: null; userId: null };
@@ -660,9 +662,13 @@ function engineFixture(
 		activationResolutions?: Array<ResolvedStage | Error>;
 		adapter?: ApprovalDomainAdapter<unknown>;
 		source?: unknown;
+		/** Successive `loadSnapshot` results; the last one repeats. */
+		snapshotSequence?: ApprovalWorkflowSnapshot[];
+		capabilitiesError?: Error;
 	} = {},
 ) {
 	const calls: string[] = [];
+	let snapshotIndex = 0;
 	const state = {
 		committed: false,
 		rolledBack: false,
@@ -723,6 +729,7 @@ function engineFixture(
 	let transactionCalls = 0;
 	let actorResolverDbService: unknown;
 	let authorizationDbService: unknown;
+	const authorizationInputs: unknown[] = [];
 	let sourceLoaderDbService: unknown;
 	function assertInsideTransaction(): void {
 		if (!insideTransaction) throw new Error("write escaped the transaction");
@@ -752,6 +759,7 @@ function engineFixture(
 		},
 		getTrustedCapabilities: async () => {
 			calls.push("capabilities");
+			if (options.capabilitiesError) throw options.capabilitiesError;
 			return { canCancelAfterApproval: true };
 		},
 		produceRoutingContext: async () => {
@@ -838,6 +846,10 @@ function engineFixture(
 		repository: {
 			loadSnapshot: async () => {
 				calls.push("loadSnapshot");
+				const sequence = options.snapshotSequence;
+				if (sequence?.length) {
+					return sequence[Math.min(snapshotIndex++, sequence.length - 1)];
+				}
 				return options.snapshot ?? engineSnapshot();
 			},
 			claimCommand: async (input: unknown) => {
@@ -957,6 +969,8 @@ function engineFixture(
 			authorize: async (input: { dbService: unknown }) => {
 				calls.push("authorize");
 				authorizationDbService = input.dbService;
+				authorizationInputs.push(input);
+				if (options.authorizationError) throw options.authorizationError;
 				return options.authorization ?? "active_assignment";
 			},
 		},
@@ -1101,6 +1115,7 @@ function engineFixture(
 		finalizerWorkflowStatus: () => finalizerWorkflowStatus,
 		projectionDbService: () => projectionDbService,
 		activationInputs: () => activationInputs,
+		authorizationInputs: () => authorizationInputs,
 		appliedPlans,
 		resultBuilderInputs,
 		builtFinalization: () => builtFinalization,
@@ -1893,6 +1908,30 @@ describe("approval transition engine atomic orchestration", () => {
 		expect(fixture.calls).not.toContain("compatibility");
 	});
 
+	it("reports a source check that fails against a stale snapshot as a version race", async () => {
+		// A concurrent decision committed after the snapshot was read: the adapter sees the
+		// decided source, and the reloaded workflow has a newer version.
+		const fixture = engineFixture({
+			snapshotSequence: [engineSnapshot(), engineSnapshot({ version: 8 })],
+			capabilitiesError: new Error("Absence approval adapter scope or state is invalid"),
+		});
+
+		await expect(fixture.engine.execute(engineRequest())).rejects.toMatchObject({
+			code: "version_conflict",
+		});
+		expect(fixture.calls).not.toContain("applyMaterializedTransition");
+	});
+
+	it("keeps a source check failure when the workflow has not moved", async () => {
+		const fixture = engineFixture({
+			capabilitiesError: new Error("Absence approval adapter scope or state is invalid"),
+		});
+
+		await expect(fixture.engine.execute(engineRequest())).rejects.toThrow(
+			"Absence approval adapter scope or state is invalid",
+		);
+	});
+
 	it("does not materialize, finalize, or write when CAS conflicts", async () => {
 		const fixture = engineFixture({ cas: "conflict" });
 		await expect(fixture.engine.execute(engineRequest())).rejects.toMatchObject(
@@ -2082,6 +2121,149 @@ describe("approval transition engine atomic orchestration", () => {
 			}),
 		]);
 		expect(fixture.appliedPlans[0]?.resultingSnapshot.status).toBe("pending");
+	});
+
+	const offboardingPrincipal = {
+		kind: "system" as const,
+		systemId: "employee-offboarding" as const,
+		departureId: "d0000000-0000-4000-8000-000000000001",
+		employmentPeriodId: "d0000000-0000-4000-8000-000000000002",
+		assignmentId: engineIds.assignment,
+		handoverTaskId: "d0000000-0000-4000-8000-000000000003",
+		claimToken: "d0000000-0000-4000-8000-000000000004",
+	};
+	const offboardingReassign = {
+		type: "reassign" as const,
+		stageId: engineIds.stage,
+		fromEmployeeId: ids.fromEmployee,
+		toEmployeeId: ids.otherEmployee,
+	};
+
+	it("keeps expiry from reassigning and generic system grants from the handover principal", async () => {
+		const expiry = engineFixture({
+			authorization: "system",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			expiry.engine.execute(
+				engineRequest({
+					principal: { kind: "system", systemId: "approval-expiry" },
+					command: offboardingReassign,
+				}),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
+		const generic = engineFixture({
+			authorization: "system",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			generic.engine.execute(
+				engineRequest({ principal: offboardingPrincipal, command: offboardingReassign }),
+			),
+		).rejects.toMatchObject({ code: "forbidden" });
+	});
+
+	it("lets the offboarding principal reassign its captured duty with departure lineage", async () => {
+		const fixture = engineFixture({
+			authorization: "offboarding_reassignment",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+
+		await fixture.engine.execute(
+			engineRequest({
+				principal: offboardingPrincipal,
+				idempotencyKey: "offboarding:departure:assignment",
+				command: offboardingReassign,
+			}),
+		);
+
+		expect(fixture.authorizationInputs()[0]).toMatchObject({
+			principal: offboardingPrincipal,
+			command: offboardingReassign,
+		});
+		expect(fixture.receipt()).toMatchObject({
+			idempotencyKey: "offboarding:departure:assignment",
+			actorFingerprint: 'v2:["system","employee-offboarding",1]',
+		});
+		const lineage = {
+			departureId: offboardingPrincipal.departureId,
+			employmentPeriodId: offboardingPrincipal.employmentPeriodId,
+			handoverTaskId: offboardingPrincipal.handoverTaskId,
+			sourceAssignmentId: engineIds.assignment,
+		};
+		const plan = fixture.appliedPlans[0];
+		expect(plan?.resultingSnapshot.stages[0]?.assignments[1]).toMatchObject({
+			approverEmployeeId: ids.otherEmployee,
+			status: "pending",
+			reassignedFromAssignmentId: engineIds.assignment,
+			reassignedByEmployeeId: null,
+			reassignmentMetadata: { kind: "reassignment", offboarding: lineage },
+		});
+		expect(plan?.events[0]).toMatchObject({
+			eventType: "assignment.reassigned",
+			actor: { kind: "system", employeeId: null, userId: null },
+			metadata: expect.objectContaining({ offboarding: lineage }),
+		});
+		expect(JSON.stringify(plan)).not.toContain(offboardingPrincipal.claimToken);
+	});
+
+	it("re-verifies handover evidence before replaying a completed receipt", async () => {
+		const denied = engineFixture({
+			claim: "completed",
+			authorizationError: new Error("Offboarding reassignment denied: lease_not_owned"),
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			denied.engine.execute(
+				engineRequest({ principal: offboardingPrincipal, command: offboardingReassign }),
+			),
+		).rejects.toThrow(/lease_not_owned/);
+
+		const replayed = engineFixture({
+			claim: "completed",
+			authorization: "offboarding_reassignment",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			replayed.engine.execute(
+				engineRequest({ principal: offboardingPrincipal, command: offboardingReassign }),
+			),
+		).resolves.toBeDefined();
+		expect(replayed.authorizationInputs()[0]).toMatchObject({
+			principal: offboardingPrincipal,
+			replay: expect.objectContaining({ snapshot: expect.any(Object) }),
+		});
+	});
+
+	it.each([
+		{
+			type: "approve" as const,
+			stageId: engineIds.stage,
+			assignmentId: engineIds.assignment,
+		},
+		{ type: "cancel" as const, reason: "forged" },
+		{ type: "expire" as const, reason: "forged" },
+		{
+			type: "escalate" as const,
+			stageId: engineIds.stage,
+			fromEmployeeId: ids.fromEmployee,
+			toEmployeeId: ids.otherEmployee,
+		},
+	])("forbids the offboarding principal from $type even with its grant", async (command) => {
+		const fixture = engineFixture({
+			authorization: "offboarding_reassignment",
+			actor: { kind: "system", employeeId: null, userId: null },
+		});
+		await expect(
+			fixture.engine.execute(engineRequest({ principal: offboardingPrincipal, command })),
+		).rejects.toMatchObject({ code: "forbidden" });
+	});
+
+	it("forbids the offboarding grant for any other principal", async () => {
+		const fixture = engineFixture({ authorization: "offboarding_reassignment" });
+		await expect(
+			fixture.engine.execute(engineRequest({ command: offboardingReassign })),
+		).rejects.toMatchObject({ code: "forbidden" });
 	});
 
 	it.each([
@@ -2354,6 +2536,8 @@ describe("approval transition engine atomic orchestration", () => {
 				stage: expect.objectContaining({ id: engineIds.nextStage }),
 				actor: { kind: "system", employeeId: null, userId: null },
 				routingContext: {},
+				// A persisted workflow keeps its historical requester resolvable.
+				requesterMode: "existing_workflow",
 			}),
 		);
 		expect((activationInput as StageActivationInput).dbService).toBe(

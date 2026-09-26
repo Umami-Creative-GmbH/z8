@@ -23,7 +23,6 @@ vi.mock("./current-employee", () => ({
 }));
 
 vi.mock("./queries", () => ({
-	getAbsenceCategories: vi.fn(),
 	getAbsenceEntries: mockState.getAbsenceEntries,
 	getHolidays: mockState.getHolidays,
 	getVacationBalance: mockState.getVacationBalance,

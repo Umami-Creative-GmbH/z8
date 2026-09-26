@@ -50,6 +50,23 @@ export interface WorkPeriodApprovalResult {
 		endTime: Date;
 	};
 	maintenance: WorkPeriodMaintenanceFacts | null;
+	/** Present only when this call finalized the period (#302). */
+	outcome?: WorkPeriodTerminalOutcome;
+}
+
+/**
+ * What terminal finalization actually did to the work graph. Resulting segment
+ * facts are read from these periods by the evidence recorder in the same
+ * transaction; nothing here is inferred from the requested action.
+ */
+export interface WorkPeriodTerminalOutcome {
+	status: "approved" | "rejected";
+	adjustment:
+		| { kind: "none" }
+		| { kind: "break_not_required" }
+		| { kind: "break_enforced"; breakMinutes: number };
+	/** The original period first, then every period the finalization created. */
+	resultPeriodIds: string[];
 }
 
 export interface WorkPeriodMaintenanceFacts {

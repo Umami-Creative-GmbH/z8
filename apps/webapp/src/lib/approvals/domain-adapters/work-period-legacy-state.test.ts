@@ -1,8 +1,9 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
-import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { instantToCanonicalString, parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalDbService } from "../server/types";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { appendLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import * as legacyState from "./work-period-legacy-state";
 import {
 	type CaptureOrdinaryWorkPeriodLegacyPreSubmissionStateInput,
@@ -935,6 +936,69 @@ describe("captureOrdinaryWorkPeriodLegacyState", () => {
 			timeRequest: { kind: "manual_time_submission" },
 			surchargeSnapshot,
 		});
+	});
+
+	it("carries a well-formed escalation lineage beside the verified metadata (#439)", async () => {
+		const metadata = appendLegacyEscalationLineage(
+			{
+				timeRequest: { kind: "manual_time_submission" },
+				surchargeSnapshot,
+				ordinarySubmission: { key: submissionKey(), submissionId },
+			},
+			{
+				pendingSince: parseInstant("2026-07-20T14:30:00Z"),
+				transfer: {
+					fromApproverEmployeeId: nextApproverId,
+					toApproverEmployeeId: approverId,
+					transferredAt: parseInstant("2026-07-21T14:30:00Z"),
+					initiator: "scheduled",
+					actorEmployeeId: null,
+				},
+			},
+		);
+		const fake = database(
+			envelope({ approvalRequests: [request({ metadata })] }),
+		);
+
+		const state = await captureOrdinaryWorkPeriodLegacyState(
+			input(fake.dbService),
+		);
+
+		expect(state.approvalRequest?.metadata).toEqual(metadata);
+		expect(state.sourceSnapshot).toEqual({
+			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
+		});
+		expect(JSON.stringify(state.displaySnapshot)).not.toContain("escalation");
+	});
+
+	it("rejects a malformed or accessor escalation lineage (#439)", async () => {
+		await expectCaptureFailure(
+			envelope({
+				approvalRequests: [
+					request({
+						metadata: {
+							timeRequest: { kind: "manual_time_submission" },
+							surchargeSnapshot,
+							escalation: { version: 2 },
+						},
+					}),
+				],
+			}),
+		);
+		const lineageGetter = vi.fn(() => ({ version: 1 }));
+		const metadata = {
+			timeRequest: { kind: "manual_time_submission" },
+			surchargeSnapshot,
+		};
+		Object.defineProperty(metadata, "escalation", {
+			enumerable: true,
+			get: lineageGetter,
+		});
+		await expectCaptureFailure(
+			envelope({ approvalRequests: [request({ metadata })] }),
+		);
+		expect(lineageGetter).not.toHaveBeenCalled();
 	});
 
 	it("captures exact approved auto evidence with the stable marker", async () => {

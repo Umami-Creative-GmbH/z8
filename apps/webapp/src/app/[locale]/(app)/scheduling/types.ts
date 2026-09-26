@@ -1,4 +1,5 @@
 import type { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "@/db/schema";
+import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 
 export type Shift = typeof shift.$inferSelect;
@@ -46,6 +47,7 @@ export interface ShiftWithRelations extends Shift {
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		user?: AuthUserDisplayNameInput | null;
 	} | null;
 	template?: ShiftTemplate | null;
 	subarea?: SubareaInfo | null;

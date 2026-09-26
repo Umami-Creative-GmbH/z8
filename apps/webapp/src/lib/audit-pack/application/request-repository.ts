@@ -1,5 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { auditPackArtifact, auditPackRequest, db } from "@/db";
+import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
 
 export type AuditPackRequestStatus = (typeof auditPackRequest.$inferSelect)["status"];
 
@@ -47,6 +48,7 @@ export interface StoreAuditPackArtifactInput {
 	approvalEventCount: number;
 	timelineEventCount: number;
 	expandedNodeCount: number;
+	appendAssurance: AuditPackAppendAssurance;
 }
 
 class AuditPackRepositoryError extends Error {
@@ -173,6 +175,7 @@ export const auditPackRequestRepository = {
 				approvalEventCount: input.approvalEventCount,
 				timelineEventCount: input.timelineEventCount,
 				expandedNodeCount: input.expandedNodeCount,
+				appendAssurance: input.appendAssurance,
 			})
 			.onConflictDoUpdate({
 				target: auditPackArtifact.requestId,
@@ -184,6 +187,7 @@ export const auditPackRequestRepository = {
 					approvalEventCount: input.approvalEventCount,
 					timelineEventCount: input.timelineEventCount,
 					expandedNodeCount: input.expandedNodeCount,
+					appendAssurance: input.appendAssurance,
 				},
 			});
 	},

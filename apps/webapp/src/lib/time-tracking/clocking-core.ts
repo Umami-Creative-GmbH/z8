@@ -5,14 +5,30 @@
  * can use it directly. Request paths use the access-coordinated
  * `clockingService` from `./clocking-service`.
  */
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import type { TimeEntryAppendOperation } from "@/db/schema/time-entry-append";
+import type { AppendScope } from "./append-lineage";
 import { calculateHash } from "./blockchain";
+import {
+	type AppendPredecessor,
+	admitTimeEntryAppend,
+	type TimeEntryAppendAdmissionResult,
+	TimeEntryAppendReviewRequiredError,
+} from "./time-entry-append";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
-import type { WorkTransactionContext } from "./web-clock-out-transaction";
+import { deriveWorkDurationMinutes } from "./work-duration";
+import {
+	acquireAdoptionGate,
+	readAppendAdmission,
+	type WorkTransactionAdmission,
+	type WorkTransactionScope,
+} from "./work-transaction";
+
+export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 
 export class ClockingConflictError extends Error {
 	constructor(message: string) {
@@ -25,6 +41,32 @@ export class ClockingOrganizationError extends Error {
 	constructor() {
 		super("Employee does not belong to organization");
 		this.name = "ClockingOrganizationError";
+	}
+}
+
+/**
+ * A writer outside a work-transaction coordinator tried to write fresh entries
+ * into an organization that has adopted appends (#327). Its legacy head
+ * selection would interrupt the employee's append continuity, so it is refused
+ * before any write; an already-committed action still replays.
+ */
+export class ClockingAppendAdoptedError extends Error {
+	readonly code = "append_adopted";
+	constructor() {
+		super("This organization only accepts coordinated clock commands");
+		this.name = "ClockingAppendAdoptedError";
+	}
+}
+
+/** Fresh start refused because other undeleted work occupies its interval. */
+export class LiveWorkOccupiedError extends Error {
+	constructor(readonly occupant: "active_work" | "completed_work") {
+		super(
+			occupant === "active_work"
+				? "Active work period already exists"
+				: "Work already occupies this interval",
+		);
+		this.name = "LiveWorkOccupiedError";
 	}
 }
 
@@ -47,7 +89,7 @@ export type ClockingAction = {
 	timezoneSource: TimeEntryTimezoneSource;
 };
 
-type ClockingInput = {
+export type ClockingInput = {
 	employeeId: string;
 	organizationId: string;
 	createdBy: string;
@@ -57,7 +99,7 @@ type ClockingInput = {
 	notes?: string;
 	location?: string;
 	transaction?: unknown;
-	coordination?: WorkTransactionContext;
+	coordination?: WorkTransactionScope;
 };
 
 type ClockInInput = ClockingInput & {
@@ -85,7 +127,7 @@ type ClockOutInput = ClockingInput & {
 };
 
 type ActivePeriod = { id: string; startTime: Date };
-type Entry = { id: string; [key: string]: unknown };
+export type Entry = { id: string; [key: string]: unknown };
 type CompletedPeriod = {
 	id: string;
 	startTime: Date;
@@ -97,6 +139,10 @@ type CompletedPeriod = {
 
 export type ClockingStore = {
 	transaction?: unknown;
+	/** The shared organization adoption gate (#264 step 1); uncoordinated writers only. */
+	acquireAdoptionGate(organizationId: string): Promise<void>;
+	/** The organization's append admission, read under the adoption gate. */
+	readAppendAdmission(organizationId: string): Promise<WorkTransactionAdmission>;
 	lockEmployee(employeeId: string): Promise<void>;
 	isOrganizationMember(
 		employeeId: string,
@@ -118,10 +164,24 @@ export type ClockingStore = {
 		actionId: string,
 		workPeriodId?: string,
 	): Promise<CompletedPeriod | null>;
+	/**
+	 * Whether undeleted completed work of the employee ends after the instant. An
+	 * adopted live start is refused over it: active work occupies its start onward.
+	 */
+	hasCompletedWorkEndingAfter(
+		employeeId: string,
+		organizationId: string,
+		instant: Date,
+	): Promise<boolean>;
 	getLatestHash(
 		employeeId: string,
 		organizationId: string,
 	): Promise<string | null>;
+	/** Evidence-based admission; used only when the outer scope has adopted appends. */
+	admitAppend?(
+		scope: AppendScope,
+		operation: TimeEntryAppendOperation,
+	): Promise<TimeEntryAppendAdmissionResult>;
 	insertEntry(entry: Record<string, unknown>): Promise<Entry>;
 	insertActivePeriod(period: Record<string, unknown>): Promise<{ id: string }>;
 	closeActivePeriod(
@@ -136,7 +196,7 @@ export type ClockingDependencies = {
 	transaction<T>(callback: (store: ClockingStore) => Promise<T>): Promise<T>;
 	storeForTransaction?: (transaction: unknown) => ClockingStore;
 	storeForCoordinatedTransaction?: (
-		context: WorkTransactionContext,
+		context: WorkTransactionScope,
 	) => ClockingStore;
 	findApprovedMembership?: (
 		userId: string,
@@ -161,14 +221,21 @@ export type ClockingDependencies = {
 	) => Promise<void>;
 };
 
-function entryValues(
-	input: ClockingInput,
-	type: "clock_in" | "clock_out",
-	previousHash: string | null,
-) {
+/**
+ * Legacy writers link only the latest-created hash. An admitted append links its
+ * exact predecessor, persisted as both the ID and the hash link.
+ */
+type EntryLink =
+	| { kind: "legacy"; previousHash: string | null }
+	| { kind: "admitted"; predecessor: AppendPredecessor | null };
+
+function entryValues(input: ClockingInput, type: "clock_in" | "clock_out", link: EntryLink) {
 	const timestamp = dateFromInstant(input.action.instant);
+	const previousHash =
+		link.kind === "admitted" ? (link.predecessor?.hash ?? null) : link.previousHash;
 	return {
 		...(input.actionId ? { id: input.actionId } : {}),
+		...(link.kind === "admitted" ? { previousEntryId: link.predecessor?.id ?? null } : {}),
 		employeeId: input.employeeId,
 		organizationId: input.organizationId,
 		type,
@@ -191,6 +258,117 @@ function entryValues(
 	};
 }
 
+/** How a clock entry was linked: the admission mode and the exact predecessor it follows. */
+export type AppendedClockEntry = {
+	entry: Entry;
+	admission: WorkTransactionAdmission;
+	previousEntryId: string | null;
+	previousHash: string | null;
+};
+
+/**
+ * Inserts one clock entry under the caller's employee coordination. Legacy
+ * admission links the latest-created hash; append admission links the exact
+ * predecessor admitted from evidence and advances the append position.
+ */
+export async function appendClockEntry(
+	store: ClockingStore,
+	input: ClockingInput,
+	type: "clock_in" | "clock_out",
+	admission: WorkTransactionAdmission,
+): Promise<AppendedClockEntry> {
+	if (admission === "append") {
+		if (!store.admitAppend) {
+			throw new Error("Append admission is unavailable");
+		}
+		const appendAdmission = await store.admitAppend(
+			{ organizationId: input.organizationId, employeeId: input.employeeId },
+			type === "clock_in" ? "live_clock_in" : "live_clock_out",
+		);
+		if (appendAdmission.kind === "review_required") {
+			throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
+		}
+		const values = entryValues(input, type, {
+			kind: "admitted",
+			predecessor: appendAdmission.append.predecessor,
+		});
+		const entry = await store.insertEntry(values);
+		const previousEntryId = values.previousEntryId ?? null;
+		await appendAdmission.append.record({
+			id: entry.id,
+			hash: values.hash,
+			previousEntryId,
+			previousHash: values.previousHash,
+		});
+		return { entry, admission, previousEntryId, previousHash: values.previousHash };
+	}
+	const values = entryValues(input, type, {
+		kind: "legacy",
+		previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+	});
+	return {
+		entry: await store.insertEntry(values),
+		admission,
+		previousEntryId: null,
+		previousHash: values.previousHash,
+	};
+}
+
+/**
+ * Appends the entries of one operation from a single evidence-based admission
+ * (#262): each entry follows the previous one exactly and advances the position
+ * in turn. When the history requires review, nothing is written.
+ */
+export async function appendAdmittedClockEntries(
+	store: ClockingStore,
+	operation: TimeEntryAppendOperation,
+	entries: ReadonlyArray<{ input: ClockingInput; type: "clock_in" | "clock_out" }>,
+): Promise<AppendedClockEntry[]> {
+	const [first] = entries;
+	if (!first || !store.admitAppend) {
+		throw new Error("Append admission is unavailable");
+	}
+	const scope = {
+		organizationId: first.input.organizationId,
+		employeeId: first.input.employeeId,
+	};
+	if (
+		entries.some(
+			({ input }) =>
+				input.organizationId !== scope.organizationId ||
+				input.employeeId !== scope.employeeId,
+		)
+	) {
+		throw new Error("Appended entries must share one employee scope");
+	}
+	const appendAdmission = await store.admitAppend(scope, operation);
+	if (appendAdmission.kind === "review_required") {
+		throw new TimeEntryAppendReviewRequiredError(appendAdmission.requirement);
+	}
+	const appended: AppendedClockEntry[] = [];
+	for (const { input, type } of entries) {
+		const values = entryValues(input, type, {
+			kind: "admitted",
+			predecessor: appendAdmission.append.predecessor,
+		});
+		const entry = await store.insertEntry(values);
+		const previousEntryId = values.previousEntryId ?? null;
+		await appendAdmission.append.record({
+			id: entry.id,
+			hash: values.hash,
+			previousEntryId,
+			previousHash: values.previousHash,
+		});
+		appended.push({
+			entry,
+			admission: "append",
+			previousEntryId,
+			previousHash: values.previousHash,
+		});
+	}
+	return appended;
+}
+
 export function createClockingService(deps: ClockingDependencies) {
 	async function withinEmployeeTransaction<T>(
 		input: ClockingInput,
@@ -206,6 +384,11 @@ export function createClockingService(deps: ClockingDependencies) {
 					throw new Error("Clocking transaction context changed");
 				}
 			} else {
+				// Uncoordinated writers (the legacy direct route, the departure
+				// clock-out) hold the shared adoption gate, so an exclusive adoption
+				// holder drains them before a mode change becomes visible (#327).
+				// A caller-owned transaction may already hold its own locks.
+				await store.acquireAdoptionGate(input.organizationId);
 				await store.lockEmployee(input.employeeId);
 			}
 			if (
@@ -216,14 +399,22 @@ export function createClockingService(deps: ClockingDependencies) {
 			) {
 				throw new ClockingOrganizationError();
 			}
-			if (deps.assertEmployeeMayClock) {
-				// An already-recorded action replays idempotently; only new writes need access.
-				const replayed = await store.getEntryByActionId(
-					input.employeeId,
-					input.organizationId,
-					input.actionId,
-				);
-				if (!replayed) await deps.assertEmployeeMayClock(store, input);
+			// An already-recorded action replays idempotently; only new writes are
+			// admitted or need access.
+			const replayed = await store.getEntryByActionId(
+				input.employeeId,
+				input.organizationId,
+				input.actionId,
+			);
+			if (
+				!replayed &&
+				!input.coordination &&
+				(await store.readAppendAdmission(input.organizationId)) === "append"
+			) {
+				throw new ClockingAppendAdoptedError();
+			}
+			if (deps.assertEmployeeMayClock && !replayed) {
+				await deps.assertEmployeeMayClock(store, input);
 			}
 			return callback(store);
 		};
@@ -284,12 +475,23 @@ export function createClockingService(deps: ClockingDependencies) {
 				) {
 					throw new ClockingConflictError("Active work period already exists");
 				}
-				const entry = await store.insertEntry(
-					entryValues(
-						input,
-						"clock_in",
-						await store.getLatestHash(input.employeeId, input.organizationId),
-					),
+				// Adopted starts share the completed-work operations' symmetric
+				// half-open occupancy (#327, W01); legacy starts keep their rule.
+				if (
+					input.coordination?.admission === "append" &&
+					(await store.hasCompletedWorkEndingAfter(
+						input.employeeId,
+						input.organizationId,
+						dateFromInstant(input.action.instant),
+					))
+				) {
+					throw new LiveWorkOccupiedError("completed_work");
+				}
+				const { entry } = await appendClockEntry(
+					store,
+					input,
+					"clock_in",
+					input.coordination?.admission ?? "legacy",
 				);
 				const period = await store.insertActivePeriod({
 					employeeId: input.employeeId,
@@ -352,7 +554,16 @@ export function createClockingService(deps: ClockingDependencies) {
 				if (elapsedMinutes < 0) {
 					throw new ClockingConflictError("Clock-out precedes clock-in");
 				}
-				const durationMinutes = Math.round(elapsedMinutes);
+				// Positive intervals use the shared half-up rule (#252, #388). Equal
+				// endpoints keep this closer's legacy zero-minute result for its other
+				// callers until their own adoption (#275, #276). Bots left it in #277.
+				const durationMinutes =
+					elapsedMinutes === 0
+						? 0
+						: deriveWorkDurationMinutes(
+								instantFromDate(activePeriod.startTime),
+								input.action.instant,
+							);
 				if (
 					(input.beforePeriodClose || input.afterPeriodClose) &&
 					!store.transaction
@@ -367,11 +578,10 @@ export function createClockingService(deps: ClockingDependencies) {
 						})
 					: undefined;
 				const entry = await store.insertEntry(
-					entryValues(
-						input,
-						"clock_out",
-						await store.getLatestHash(input.employeeId, input.organizationId),
-					),
+					entryValues(input, "clock_out", {
+						kind: "legacy",
+						previousHash: await store.getLatestHash(input.employeeId, input.organizationId),
+					}),
 				);
 				const period = await store.closeActivePeriod(
 					activePeriod.id,
@@ -426,6 +636,8 @@ type ClockingStoreClient = Pick<
 export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingStore {
 	return {
 		transaction: tx,
+		acquireAdoptionGate: (organizationId) => acquireAdoptionGate(tx, organizationId),
+		readAppendAdmission: (organizationId) => readAppendAdmission(tx, organizationId),
 		lockEmployee: async (employeeId) => {
 			await tx.execute(
 				sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
@@ -514,6 +726,21 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				durationMinutes: period.durationMinutes,
 			};
 		},
+		hasCompletedWorkEndingAfter: async (employeeId, organizationId, instant) => {
+			const [occupant] = await tx
+				.select({ id: workPeriod.id })
+				.from(workPeriod)
+				.where(
+					and(
+						eq(workPeriod.employeeId, employeeId),
+						eq(workPeriod.organizationId, organizationId),
+						isNull(workPeriod.deletedAt),
+						gt(workPeriod.endTime, instant),
+					),
+				)
+				.limit(1);
+			return Boolean(occupant);
+		},
 		getLatestHash: async (employeeId, organizationId) => {
 			const [latest] = await tx
 				.select({ hash: timeEntry.hash })
@@ -528,6 +755,7 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 				.limit(1);
 			return latest?.hash ?? null;
 		},
+		admitAppend: (scope, operation) => admitTimeEntryAppend(tx, scope, operation),
 		insertEntry: async (values) => {
 			const [entry] = await tx
 				.insert(timeEntry)

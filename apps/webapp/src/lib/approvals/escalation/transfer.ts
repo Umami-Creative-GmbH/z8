@@ -1,25 +1,23 @@
 import { and, asc, eq, inArray, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
 import {
 	type ApprovalEscalationAttentionReason,
-	approvalEscalationControl,
-	approvalEscalationPolicy,
 	approvalRequest,
 	approvalStageAssignment,
 	approvalWorkflow,
 	approvalWorkflowStage,
 	auditLog,
-	employee,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import {
+	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
@@ -31,9 +29,7 @@ import {
 	type ApprovalWriteGateResult,
 	type JsonObject,
 } from "../workflow/ports";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import {
-	ApprovalStateMachineError,
 	type ApprovalWorkflowCommand,
 	fingerprintApprovalCommandActor,
 } from "../workflow/state-machine";
@@ -46,7 +42,36 @@ import {
 	resolveRecoveredEscalationAttentionCondition,
 } from "./attention-store";
 import { loadEscalationCandidateFacts } from "./candidates";
-import type { EscalationPolicySnapshot } from "./deadline";
+import {
+	CANONICAL_ESCALATION_WORKFLOW_TYPES,
+	type CanonicalEscalationWorkflowType,
+	ESCALATION_WORKFLOW_TYPES,
+	type EscalationWorkflowType,
+	isCanonicalEscalationWorkflowType,
+	LEGACY_ESCALATION_ENTITY_TYPES,
+	type LegacyEscalationEntityType,
+	unsupportedCanonicalReplacementRoute,
+} from "./kinds";
+import {
+	commitLegacyHumanTransfer,
+	isLegacyObservationRejection,
+	LegacyTransferRaceError,
+	legacyEscalationRequestFingerprint,
+	listDueLegacyRequestCandidates,
+	prepareLegacyHumanEscalation,
+	processDueLegacyRequest,
+} from "./legacy-transfer";
+import {
+	createEscalationRuntime,
+	type DatabaseTransaction,
+	type EscalationRuntime,
+	employeeNames,
+	fixedGateContext,
+	isTransitionRace,
+	readDecisionAuthorityForDiscovery,
+	readEscalationOwnership,
+	readEscalationPolicy,
+} from "./transfer-context";
 import {
 	automaticEscalationOperationKey,
 	type CanonicalAssignmentEvidence,
@@ -66,10 +91,6 @@ import {
 
 const logger = createLogger("ApprovalEscalationTransfer");
 
-type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-/** Kinds this slice transfers; the others are held until their own slice. */
-const SUPPORTED_WORKFLOW_TYPE = "absence" as const;
 export const DEFAULT_ESCALATION_BATCH_LIMIT = 100;
 export const MAX_ESCALATION_BATCH_LIMIT = 500;
 export const MAX_ESCALATION_REASON_LENGTH = 500;
@@ -81,10 +102,14 @@ export const MAX_ESCALATION_REASON_LENGTH = 500;
 export interface EscalationTransferView {
 	transferId: string;
 	initiator: EscalationTransferRow["initiator"];
-	workflowId: string;
-	stageId: string;
-	sourceAssignmentId: string;
-	replacementAssignmentId: string;
+	authorityMode: EscalationTransferRow["authorityMode"];
+	/** Canonical transfers name the workflow assignment they replaced. */
+	workflowId: string | null;
+	stageId: string | null;
+	sourceAssignmentId: string | null;
+	replacementAssignmentId: string | null;
+	/** Legacy transfers name the approval request they moved. */
+	legacyApprovalRequestId: string | null;
 	formerApproverEmployeeId: string;
 	replacementApproverEmployeeId: string;
 	transferredAt: string;
@@ -94,148 +119,41 @@ function toTransferView(row: EscalationTransferRow): EscalationTransferView {
 	return {
 		transferId: row.id,
 		initiator: row.initiator,
+		authorityMode: row.authorityMode,
 		workflowId: row.workflowId,
 		stageId: row.stageId,
 		sourceAssignmentId: row.sourceAssignmentId,
 		replacementAssignmentId: row.replacementAssignmentId,
+		legacyApprovalRequestId: row.legacyApprovalRequestId,
 		formerApproverEmployeeId: row.sourceApproverEmployeeId,
 		replacementApproverEmployeeId: row.replacementApproverEmployeeId,
 		transferredAt: row.transferredAt.toISOString(),
 	};
 }
 
-export type EscalationOwnership =
-	| { kind: "owned"; paused: boolean; ownedSince: Instant | null }
-	| { kind: "not_owner" | "unrecognized_owner" };
-
-/**
- * Fresh ownership read. Inside a transaction it takes a share lock so an
- * exclusive ownership switch cannot interleave with a transfer. It never
- * substitutes for the transition's own conditional writes.
- */
-async function readEscalationOwnership(
-	executor: typeof db | DatabaseTransaction,
-	organizationId: string,
-	lock: boolean,
-): Promise<EscalationOwnership> {
-	const query = executor
-		.select({
-			owner: approvalEscalationControl.owner,
-			automationPaused: approvalEscalationControl.automationPaused,
-			escalationOwnedSince: approvalEscalationControl.escalationOwnedSince,
-		})
-		.from(approvalEscalationControl)
-		.where(eq(approvalEscalationControl.organizationId, organizationId))
-		.limit(1);
-	const [control] = lock ? await query.for("share") : await query;
-	if (!control || control.owner === "legacy") return { kind: "not_owner" };
-	if (control.owner !== "escalation") return { kind: "unrecognized_owner" };
-	return {
-		kind: "owned",
-		paused: control.automationPaused,
-		ownedSince: control.escalationOwnedSince ? instantFromDate(control.escalationOwnedSince) : null,
-	};
-}
-
-async function readEscalationPolicy(
-	executor: typeof db | DatabaseTransaction,
-	organizationId: string,
-): Promise<EscalationPolicySnapshot | null> {
-	const [policy] = await executor
-		.select({
-			enabled: approvalEscalationPolicy.enabled,
-			responseWindowHours: approvalEscalationPolicy.responseWindowHours,
-			revision: approvalEscalationPolicy.revision,
-		})
-		.from(approvalEscalationPolicy)
-		.where(eq(approvalEscalationPolicy.organizationId, organizationId))
-		.limit(1);
-	return policy ?? null;
-}
-
-function refuseFinalization(): never {
-	throw new Error("Approval escalation never finalizes an approval");
-}
-
-/**
- * Workflow runtime for escalation commands. Escalation replaces an
- * assignment and never reaches terminal finalization, so every finalizer
- * refuses. Management authority is explicit, never eligible-manager fallback.
- */
-function createEscalationRuntime(
-	management: {
-		organizationId: string;
-		actorEmployeeId: string;
-	} | null,
-) {
-	return createProductionApprovalWorkflowRuntime({
-		db,
-		adapters: {
-			absence: {
-				clock: systemClock,
-				finalizeAbsenceTerminal: async () => refuseFinalization(),
-				deleteCancelledAbsence: async () => refuseFinalization(),
-			},
-			timeCorrection: {
-				clock: systemClock,
-				finalizeTimeCorrectionTerminal: async () => refuseFinalization(),
-				deleteCancelledCorrections: async () => refuseFinalization(),
-			},
-			ordinaryWorkPeriod: {
-				finalizeTerminal: async () => refuseFinalization(),
-			},
-		},
-		canManageApproval: async (input) =>
-			management !== null &&
-			input.command.type === "escalate" &&
-			input.organizationId === management.organizationId &&
-			input.workflow.organizationId === management.organizationId &&
-			input.actorEmployeeId === management.actorEmployeeId,
-		clock: systemClock,
-	});
-}
-
-type EscalationRuntime = ReturnType<typeof createEscalationRuntime>;
-
-function fixedGateContext(
-	context: ApprovalWorkflowTransactionContext,
-	organizationId: string,
-	gate: ApprovalWriteGateResult,
-): ApprovalWorkflowTransactionContext {
-	return {
-		...context,
-		writeGate: {
-			acquire: async (scope) => {
-				if (
-					scope.organizationId !== organizationId ||
-					scope.workflowType !== SUPPORTED_WORKFLOW_TYPE
-				) {
-					throw new Error("Escalation gate scope mismatch");
-				}
-				return gate;
-			},
-		},
-	};
-}
-
 interface CurrentStageAssignment {
+	workflowType: CanonicalEscalationWorkflowType;
 	snapshot: ApprovalWorkflowSnapshot;
 	requesterEmployeeId: string;
 	stage: ApprovalStageSnapshot;
 	source: ApprovalAssignmentSnapshot;
 }
 
-/** The source must still be a pending assignment of the active human stage. */
+/**
+ * The source must still be a pending assignment of the active human stage of
+ * a workflow of the kind whose gate this transaction holds.
+ */
 function currentPendingAssignment(
 	snapshot: ApprovalWorkflowSnapshot,
 	organizationId: string,
+	workflowType: CanonicalEscalationWorkflowType,
 	stageId: string,
 	assignmentId: string,
 ): CurrentStageAssignment | null {
 	const requesterEmployeeId = snapshot.requesterEmployeeId;
 	if (
 		snapshot.organizationId !== organizationId ||
-		snapshot.workflowType !== SUPPORTED_WORKFLOW_TYPE ||
+		snapshot.workflowType !== workflowType ||
 		snapshot.status !== "pending" ||
 		requesterEmployeeId === null
 	) {
@@ -253,7 +171,7 @@ function currentPendingAssignment(
 	) {
 		return null;
 	}
-	return { snapshot, requesterEmployeeId, stage, source };
+	return { workflowType, snapshot, requesterEmployeeId, stage, source };
 }
 
 function pendingSiblings(current: CurrentStageAssignment) {
@@ -262,22 +180,16 @@ function pendingSiblings(current: CurrentStageAssignment) {
 	);
 }
 
-/**
- * The replacement's web inbox discovers canonical absences through the
- * canonical-to-legacy representative, which names exactly one approver.
- * Anything else has no actual replacement inbox path yet and must be held.
- */
+/** Why the replacement would have no working inbox/decision path, if so. */
 function unsupportedReplacementRoute(
 	current: CurrentStageAssignment,
 	gate: ApprovalWriteGateResult,
 ): string | null {
-	if (gate.behavior.mirror !== "canonical_to_legacy") {
-		return "absence_inbox_requires_compatibility_mirror";
-	}
-	if (pendingSiblings(current).length > 0) {
-		return "parallel_assignments_without_replacement_inbox";
-	}
-	return null;
+	return unsupportedCanonicalReplacementRoute({
+		workflowType: current.workflowType,
+		mirror: gate.behavior.mirror,
+		pendingSiblingCount: pendingSiblings(current).length,
+	});
 }
 
 /**
@@ -429,7 +341,7 @@ async function commitCanonicalTransfer(input: CommitTransferInput): Promise<Comm
 			operationKey: input.operationKey,
 			initiator: input.initiator,
 			authorityMode: "canonical",
-			workflowType: SUPPORTED_WORKFLOW_TYPE,
+			workflowType: input.current.workflowType,
 			workflowId: snapshot.id,
 			stageId: stage.id,
 			sourceAssignmentId: source.id,
@@ -459,11 +371,13 @@ async function commitCanonicalTransfer(input: CommitTransferInput): Promise<Comm
 		},
 		event: {
 			schemaVersion: 1,
+			authorityMode: "canonical",
 			workflowType: snapshot.workflowType,
 			workflowId: snapshot.id,
 			sourceType: snapshot.sourceType,
 			sourceId: snapshot.sourceId,
 			legacyApprovalRequestId: stage.legacyApprovalRequestId,
+			legacySourceSequence: null,
 			stageId: stage.id,
 			sourceAssignmentId: source.id,
 			replacementAssignmentId,
@@ -518,16 +432,6 @@ async function commitCanonicalTransfer(input: CommitTransferInput): Promise<Comm
 	return { disposition: "executed", transfer };
 }
 
-function isTransitionRace(error: unknown): boolean {
-	return (
-		(error instanceof ApprovalTransitionEngineError && error.code === "version_conflict") ||
-		(error instanceof ApprovalStateMachineError &&
-			(error.code === "REASSIGNMENT_CONFLICT" ||
-				error.code === "STALE_STAGE" ||
-				error.code === "TERMINAL_TRANSITION"))
-	);
-}
-
 // ============================================
 // SCHEDULED: PROCESS DUE ESCALATIONS
 // ============================================
@@ -550,13 +454,21 @@ export interface ProcessDueEscalationsSummary {
 		| "ownership_changed"
 		| "policy_not_prepared"
 		| "policy_disabled";
+	/**
+	 * Discovery-time authority of each discovered kind (#299, #326): canonical
+	 * kinds' assignments or legacy kinds' pending requests were examined.
+	 */
+	authorities: Partial<Record<EscalationWorkflowType, "canonical" | "legacy">>;
 	examined: number;
 	transferred: number;
 	replayed: number;
 	held: Partial<Record<ApprovalEscalationAttentionReason, number>>;
 	notDue: number;
 	notPending: number;
+	/** Canonical discovery skipped: legacy owners decide this kind now. */
 	legacyAuthority: number;
+	/** Legacy discovery skipped: the kind's rollout moved to canonical authority. */
+	canonicalAuthority: number;
 	raced: number;
 	failed: number;
 }
@@ -568,6 +480,7 @@ function emptySummary(
 	return {
 		organizationId,
 		status,
+		authorities: {},
 		examined: 0,
 		transferred: 0,
 		replayed: 0,
@@ -575,18 +488,36 @@ function emptySummary(
 		notDue: 0,
 		notPending: 0,
 		legacyAuthority: 0,
+		canonicalAuthority: 0,
 		raced: 0,
 		failed: 0,
 	};
 }
 
+type DiscoveredWork =
+	| {
+			authority: "canonical";
+			workflowType: CanonicalEscalationWorkflowType;
+			workflowId: string;
+			stageId: string;
+			assignmentId: string;
+			pendingSince: Instant;
+	  }
+	| { authority: "legacy"; approvalRequestId: string; pendingSince: Instant };
+
+function discoveredId(work: DiscoveredWork): string {
+	return work.authority === "canonical" ? work.assignmentId : work.approvalRequestId;
+}
+
 /**
  * Bounded, organization-scoped scheduled operation (#255 §1). The scheduler
- * supplies scope and limits only: this module discovers candidates, evaluates
- * the current policy against evidenced actionable instants, selects the
- * backup and commits transfers or durable holds. Each assignment commits in
- * its own transaction; a race lost to a decision or another transfer is an
- * explicit outcome, not an infrastructure failure.
+ * supplies scope and limits only: this module discovers candidates of every
+ * admitted kind under its current authority, evaluates the current policy
+ * against evidenced actionable instants, selects the backup and commits
+ * transfers or durable holds. Canonical assignments and legacy requests are
+ * examined oldest first within one limit. Each commits in its own
+ * transaction; a race lost to a decision or another transfer is an explicit
+ * outcome, not an infrastructure failure.
  */
 export async function processDueEscalations(input: {
 	organizationId: string;
@@ -614,14 +545,138 @@ export async function processDueEscalations(input: {
 	if (!policy) return emptySummary(organizationId, "policy_not_prepared");
 	if (!policy.enabled) return emptySummary(organizationId, "policy_disabled");
 
-	// actionableAt >= assignedAt for every evidence kind, so this prefilter
-	// never skips a due assignment.
-	const assignedCutoff = dateFromInstant(now.subtract({ hours: policy.responseWindowHours }));
-	const candidates = await db
+	// actionableAt >= assignedAt (or the request's creation) for every
+	// evidence kind, so this prefilter never skips due work.
+	const cutoff = now.subtract({ hours: policy.responseWindowHours });
+	// Each kind's authority selects what is discovered; every transfer
+	// transaction re-reads the mode under that kind's write gate.
+	const authorities = await readDecisionAuthorityForDiscovery(
+		db,
+		organizationId,
+		ESCALATION_WORKFLOW_TYPES,
+	);
+	const canonicalTypes = CANONICAL_ESCALATION_WORKFLOW_TYPES.filter(
+		(workflowType) => authorities.get(workflowType) === "canonical",
+	);
+	const legacyEntityTypes = (
+		Object.keys(LEGACY_ESCALATION_ENTITY_TYPES) as LegacyEscalationEntityType[]
+	).filter((entityType) =>
+		// Expenses have no canonical adapter: under any other mode their
+		// requests are held visibly, never skipped. Time entries are discovered
+		// while any time kind is legacy-authoritative (#439).
+		LEGACY_ESCALATION_ENTITY_TYPES[entityType].some(
+			(workflowType) =>
+				workflowType === "travel_expense" || authorities.get(workflowType) === "legacy",
+		),
+	);
+
+	const canonicalWork = await listDueCanonicalAssignments({
+		organizationId,
+		workflowTypes: canonicalTypes,
+		assignedCutoff: cutoff,
+		limit,
+	});
+	const legacyWork: DiscoveredWork[] = (
+		await listDueLegacyRequestCandidates(db, {
+			organizationId,
+			entityTypes: legacyEntityTypes,
+			// Mirrored representatives of canonically decided kinds are
+			// discovered through their assignments instead.
+			excludeCanonicalWorkflowTypes: canonicalTypes,
+			createdCutoff: cutoff,
+			limit,
+		})
+	).map((request) => ({
+		authority: "legacy" as const,
+		approvalRequestId: request.approvalRequestId,
+		pendingSince: request.createdAt,
+	}));
+	const work = [...canonicalWork, ...legacyWork]
+		.sort(
+			(left, right) =>
+				compareInstants(left.pendingSince, right.pendingSince) ||
+				discoveredId(left).localeCompare(discoveredId(right)),
+		)
+		.slice(0, limit);
+
+	const summary: ProcessDueEscalationsSummary = {
+		...emptySummary(organizationId, "processed"),
+		authorities: Object.fromEntries(authorities),
+	};
+	const runtime = createEscalationRuntime(null);
+	for (const item of work) {
+		summary.examined += 1;
+		try {
+			const outcome =
+				item.authority === "canonical"
+					? await processDueAssignment(runtime, { organizationId, ...item, now })
+					: await processDueLegacyRequest(runtime, {
+							organizationId,
+							approvalRequestId: item.approvalRequestId,
+							now,
+						});
+			switch (outcome.kind) {
+				case "transferred":
+					if (outcome.disposition === "executed") {
+						summary.transferred += 1;
+						// Committed; the replacement delivery pass also runs on schedule.
+						kickApprovalDelivery(
+							item.authority === "canonical"
+								? { organizationId, workflowId: item.workflowId }
+								: { organizationId },
+						);
+					} else summary.replayed += 1;
+					break;
+				case "held":
+					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
+					break;
+				case "not_due":
+					summary.notDue += 1;
+					break;
+				case "not_pending":
+					summary.notPending += 1;
+					break;
+				case "legacy_authority":
+					summary.legacyAuthority += 1;
+					break;
+				case "canonical_authority":
+					summary.canonicalAuthority += 1;
+					break;
+				case "suppressed":
+					// Ownership moved or paused mid-run: stop without new transfers.
+					summary.status = "ownership_changed";
+					return summary;
+			}
+		} catch (error) {
+			if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
+				summary.raced += 1;
+				continue;
+			}
+			summary.failed += 1;
+			logger.error(
+				{ error, organizationId, subject: discoveredId(item) },
+				"Scheduled approval escalation failed",
+			);
+		}
+	}
+	return summary;
+}
+
+/** Pending assignments of active human stages of canonically decided kinds, oldest first. */
+async function listDueCanonicalAssignments(input: {
+	organizationId: string;
+	workflowTypes: readonly CanonicalEscalationWorkflowType[];
+	assignedCutoff: Instant;
+	limit: number;
+}): Promise<DiscoveredWork[]> {
+	if (input.workflowTypes.length === 0) return [];
+	const rows = await db
 		.select({
 			assignmentId: approvalStageAssignment.id,
 			workflowId: approvalStageAssignment.workflowId,
 			stageId: approvalStageAssignment.stageId,
+			workflowType: approvalWorkflow.workflowType,
+			assignedAt: approvalStageAssignment.assignedAt,
 		})
 		.from(approvalStageAssignment)
 		.innerJoin(
@@ -640,10 +695,10 @@ export async function processDueEscalations(input: {
 		)
 		.where(
 			and(
-				eq(approvalStageAssignment.organizationId, organizationId),
+				eq(approvalStageAssignment.organizationId, input.organizationId),
 				eq(approvalStageAssignment.status, "pending"),
-				lte(approvalStageAssignment.assignedAt, assignedCutoff),
-				eq(approvalWorkflow.workflowType, SUPPORTED_WORKFLOW_TYPE),
+				lte(approvalStageAssignment.assignedAt, dateFromInstant(input.assignedCutoff)),
+				inArray(approvalWorkflow.workflowType, [...input.workflowTypes]),
 				eq(approvalWorkflow.status, "pending"),
 				eq(approvalWorkflowStage.status, "pending"),
 				eq(approvalWorkflowStage.activationMode, "human"),
@@ -651,78 +706,44 @@ export async function processDueEscalations(input: {
 			),
 		)
 		.orderBy(asc(approvalStageAssignment.assignedAt), asc(approvalStageAssignment.id))
-		.limit(limit);
-
-	const summary = emptySummary(organizationId, "processed");
-	const runtime = createEscalationRuntime(null);
-	for (const candidate of candidates) {
-		summary.examined += 1;
-		try {
-			const outcome = await processDueAssignment(runtime, {
-				organizationId,
-				...candidate,
-				now,
-			});
-			switch (outcome.kind) {
-				case "transferred":
-					if (outcome.disposition === "executed") summary.transferred += 1;
-					else summary.replayed += 1;
-					break;
-				case "held":
-					summary.held[outcome.reason] = (summary.held[outcome.reason] ?? 0) + 1;
-					break;
-				case "not_due":
-					summary.notDue += 1;
-					break;
-				case "not_pending":
-					summary.notPending += 1;
-					break;
-				case "legacy_authority":
-					summary.legacyAuthority += 1;
-					break;
-				case "suppressed":
-					// Ownership moved or paused mid-run: stop without new transfers.
-					summary.status = "ownership_changed";
-					return summary;
-			}
-		} catch (error) {
-			if (isTransitionRace(error)) {
-				summary.raced += 1;
-				continue;
-			}
-			summary.failed += 1;
-			logger.error(
-				{ error, organizationId, assignmentId: candidate.assignmentId },
-				"Scheduled approval escalation failed",
-			);
-		}
-	}
-	return summary;
+		.limit(input.limit);
+	return rows.flatMap((row): DiscoveredWork[] =>
+		isCanonicalEscalationWorkflowType(row.workflowType)
+			? [
+					{
+						authority: "canonical",
+						workflowType: row.workflowType,
+						workflowId: row.workflowId,
+						stageId: row.stageId,
+						assignmentId: row.assignmentId,
+						pendingSince: instantFromDate(row.assignedAt),
+					},
+				]
+			: [],
+	);
 }
 
 async function processDueAssignment(
 	runtime: EscalationRuntime,
 	input: {
 		organizationId: string;
+		workflowType: CanonicalEscalationWorkflowType;
 		workflowId: string;
 		stageId: string;
 		assignmentId: string;
 		now: Instant;
 	},
 ): Promise<DueAssignmentOutcome> {
-	const { organizationId } = input;
+	const { organizationId, workflowType } = input;
 	return runtime.repository.withTransaction(async (context) => {
 		const tx = context.dbService.db as unknown as DatabaseTransaction;
 		const ownership = await readEscalationOwnership(tx, organizationId, true);
 		if (ownership.kind !== "owned" || ownership.paused) {
 			return { kind: "suppressed" };
 		}
-		const gate = await context.writeGate.acquire({
-			organizationId,
-			workflowType: SUPPORTED_WORKFLOW_TYPE,
-		});
+		const gate = await context.writeGate.acquire({ organizationId, workflowType });
 		if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
-			// Legacy-authoritative absences transfer through their own path.
+			// Legacy-authoritative kinds transfer (or are held) through their own path.
 			return { kind: "legacy_authority" };
 		}
 		const snapshot = await context.repository.loadSnapshot({
@@ -732,6 +753,7 @@ async function processDueAssignment(
 		const current = currentPendingAssignment(
 			snapshot,
 			organizationId,
+			workflowType,
 			input.stageId,
 			input.assignmentId,
 		);
@@ -801,7 +823,7 @@ async function processDueAssignment(
 				...(evidence.lineageRootAssignmentId
 					? { lineageRootAssignmentId: evidence.lineageRootAssignmentId }
 					: {}),
-				approvalType: SUPPORTED_WORKFLOW_TYPE,
+				approvalType: workflowType,
 				...(current.stage.legacyApprovalRequestId
 					? { approvalRequestId: current.stage.legacyApprovalRequestId }
 					: {}),
@@ -823,7 +845,7 @@ async function processDueAssignment(
 		});
 		const committed = await commitCanonicalTransfer({
 			runtime,
-			context: fixedGateContext(context, organizationId, gate),
+			context: fixedGateContext(context, organizationId, gate, workflowType),
 			current,
 			recipientEmployeeId: decision.recipientEmployeeId,
 			operationKey,
@@ -908,8 +930,16 @@ async function locateAssignment(
 		.select({
 			workflowId: approvalStageAssignment.workflowId,
 			stageId: approvalStageAssignment.stageId,
+			workflowType: approvalWorkflow.workflowType,
 		})
 		.from(approvalStageAssignment)
+		.innerJoin(
+			approvalWorkflow,
+			and(
+				eq(approvalWorkflow.id, approvalStageAssignment.workflowId),
+				eq(approvalWorkflow.organizationId, approvalStageAssignment.organizationId),
+			),
+		)
 		.where(
 			and(
 				eq(approvalStageAssignment.organizationId, organizationId),
@@ -918,20 +948,6 @@ async function locateAssignment(
 		)
 		.limit(1);
 	return row ?? null;
-}
-
-async function employeeNames(
-	executor: typeof db | DatabaseTransaction,
-	organizationId: string,
-	employeeIds: string[],
-): Promise<Map<string, string>> {
-	if (employeeIds.length === 0) return new Map();
-	const rows = await executor
-		.select({ id: employee.id, name: user.name })
-		.from(employee)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, employeeIds)));
-	return new Map(rows.map((row) => [row.id, row.name]));
 }
 
 type HumanPreparation =
@@ -956,23 +972,25 @@ async function prepareHumanEscalation(
 	if (ownership.kind !== "owned") return { kind: "not_owner" };
 	const located = await locateAssignment(tx, actor.organizationId, assignmentId);
 	if (!located) return { kind: "not_found" };
+	const { workflowType } = located;
+	if (!isCanonicalEscalationWorkflowType(workflowType)) {
+		return { kind: "unsupported", route: `workflow_type:${workflowType}` };
+	}
 	const gate = await context.writeGate.acquire({
 		organizationId: actor.organizationId,
-		workflowType: SUPPORTED_WORKFLOW_TYPE,
+		workflowType,
 	});
+	if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+		return { kind: "unsupported", route: "legacy_authority" };
+	}
 	const snapshot = await context.repository.loadSnapshot({
 		organizationId: actor.organizationId,
 		workflowId: located.workflowId,
 	});
-	if (snapshot.workflowType !== SUPPORTED_WORKFLOW_TYPE) {
-		return { kind: "unsupported", route: `workflow_type:${snapshot.workflowType}` };
-	}
-	if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
-		return { kind: "unsupported", route: "legacy_authority" };
-	}
 	const current = currentPendingAssignment(
 		snapshot,
 		actor.organizationId,
+		workflowType,
 		located.stageId,
 		assignmentId,
 	);
@@ -1065,7 +1083,7 @@ export async function escalateAssignmentByManager(input: {
 		actorEmployeeId: actor.employeeId,
 	});
 	try {
-		return await runtime.repository.withTransaction(
+		const result = await runtime.repository.withTransaction(
 			async (context): Promise<HumanEscalationOutcome> => {
 				const tx = context.dbService.db as unknown as DatabaseTransaction;
 				const committed = await findEscalationTransferByOperationKey(tx, {
@@ -1096,7 +1114,12 @@ export async function escalateAssignmentByManager(input: {
 				const policy = await readEscalationPolicy(tx, actor.organizationId);
 				const outcome = await commitCanonicalTransfer({
 					runtime,
-					context: fixedGateContext(context, actor.organizationId, prepared.gate),
+					context: fixedGateContext(
+						context,
+						actor.organizationId,
+						prepared.gate,
+						prepared.current.workflowType,
+					),
 					current: prepared.current,
 					recipientEmployeeId: recipient.employeeId,
 					operationKey,
@@ -1120,6 +1143,14 @@ export async function escalateAssignmentByManager(input: {
 				};
 			},
 		);
+		// Committed; the replacement delivery pass also runs on schedule.
+		if (result.kind === "transferred" && result.disposition === "executed") {
+			kickApprovalDelivery({
+				organizationId: actor.organizationId,
+				workflowId: result.transfer.workflowId,
+			});
+		}
+		return result;
 	} catch (error) {
 		if (isTransitionRace(error)) return { kind: "conflict" };
 		if (error instanceof ApprovalTransitionEngineError && error.code === "forbidden") {
@@ -1127,6 +1158,143 @@ export async function escalateAssignmentByManager(input: {
 		}
 		if (error instanceof ApprovalTransitionEngineError && error.code === "idempotency_mismatch") {
 			return { kind: "idempotency_mismatch" };
+		}
+		throw error;
+	}
+}
+
+// ============================================
+// HUMAN: LEGACY-AUTHORITATIVE REQUESTS (#299)
+// ============================================
+
+/** Eligible recipients for a management-authorized legacy transfer, recommended first. */
+export async function listLegacyHumanEscalationCandidates(input: {
+	actor: HumanEscalationActor;
+	approvalRequestId: string;
+}): Promise<EscalationCandidateListOutcome> {
+	if (!input.actor.canManageApprovals) return { kind: "forbidden" };
+	const { organizationId } = input.actor;
+	const runtime = createEscalationRuntime(null);
+	return runtime.repository.withTransaction(async (context) => {
+		const tx = context.dbService.db as unknown as DatabaseTransaction;
+		const prepared = await prepareLegacyHumanEscalation(context, {
+			organizationId,
+			approvalRequestId: input.approvalRequestId,
+			ownership: await readEscalationOwnership(tx, organizationId, true),
+		});
+		if (prepared.kind !== "ready") return prepared;
+		const currentApproverId = prepared.subject.request.approverEmployeeId;
+		const names = await employeeNames(tx, organizationId, [
+			currentApproverId,
+			...prepared.candidates.map((candidate) => candidate.employeeId),
+		]);
+		return {
+			kind: "ok",
+			currentApprover: {
+				employeeId: currentApproverId,
+				name: names.get(currentApproverId) ?? "—",
+			},
+			candidates: prepared.candidates.map((candidate, index) => ({
+				employeeId: candidate.employeeId,
+				name: names.get(candidate.employeeId) ?? "—",
+				isPrimary: candidate.isPrimary,
+				recommended: index === 0,
+			})),
+		};
+	});
+}
+
+/**
+ * Management-authorized transfer of a legacy-authoritative request. The same
+ * explicit permission, idempotency and eligible-recipient rules as the
+ * canonical entry point apply; the journal row is the replay receipt, and an
+ * exact committed operation replays before any fresh check. It never consumes
+ * the automatic allowance.
+ */
+export async function escalateLegacyApprovalByManager(input: {
+	actor: HumanEscalationActor;
+	approvalRequestId: string;
+	idempotencyKey: string;
+	recipientEmployeeId?: string;
+	reason?: string;
+}): Promise<HumanEscalationOutcome> {
+	const { actor } = input;
+	if (!actor.canManageApprovals) return { kind: "forbidden" };
+	const reason = input.reason?.trim() || null;
+	const operationKey = humanEscalationOperationKey({
+		actorUserId: actor.userId,
+		idempotencyKey: input.idempotencyKey,
+	});
+	const requestFingerprint = legacyEscalationRequestFingerprint({
+		initiator: "human",
+		actorUserId: actor.userId,
+		approvalRequestId: input.approvalRequestId,
+		requestedRecipientEmployeeId: input.recipientEmployeeId ?? null,
+		reason,
+	});
+	const runtime = createEscalationRuntime(null);
+	try {
+		const result = await runtime.repository.withTransaction(
+			async (context): Promise<HumanEscalationOutcome> => {
+				const tx = context.dbService.db as unknown as DatabaseTransaction;
+				const committed = await findEscalationTransferByOperationKey(tx, {
+					organizationId: actor.organizationId,
+					operationKey,
+				});
+				if (committed) {
+					return committed.requestFingerprint === requestFingerprint
+						? {
+								kind: "transferred",
+								disposition: "replayed",
+								transfer: toTransferView(committed),
+							}
+						: { kind: "idempotency_mismatch" };
+				}
+				const prepared = await prepareLegacyHumanEscalation(context, {
+					organizationId: actor.organizationId,
+					approvalRequestId: input.approvalRequestId,
+					ownership: await readEscalationOwnership(tx, actor.organizationId, true),
+				});
+				if (prepared.kind !== "ready") return prepared;
+				const recipient = input.recipientEmployeeId
+					? prepared.candidates.find(
+							(candidate) => candidate.employeeId === input.recipientEmployeeId,
+						)
+					: prepared.candidates[0];
+				if (!recipient) {
+					return input.recipientEmployeeId
+						? { kind: "recipient_not_eligible" }
+						: { kind: "no_eligible_backup" };
+				}
+				const transfer = await commitLegacyHumanTransfer({
+					organizationId: actor.organizationId,
+					context,
+					prepared,
+					recipientEmployeeId: recipient.employeeId,
+					operationKey,
+					requestFingerprint,
+					actor: { userId: actor.userId, employeeId: actor.employeeId },
+					policy: await readEscalationPolicy(tx, actor.organizationId),
+					reason,
+				});
+				return {
+					kind: "transferred",
+					disposition: "executed",
+					transfer: toTransferView(transfer),
+				};
+			},
+		);
+		// Committed; the replacement delivery pass (#408) also runs on schedule.
+		if (result.kind === "transferred" && result.disposition === "executed") {
+			kickApprovalDelivery({ organizationId: actor.organizationId });
+		}
+		return result;
+	} catch (error) {
+		if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
+			return { kind: "conflict" };
+		}
+		if (isLegacyObservationRejection(error)) {
+			return { kind: "unsupported", route: "legacy_observation_rejected" };
 		}
 		throw error;
 	}

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employeeDepartureReview } from "@/db/schema/employee-lifecycle";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { enqueueReviewNotifications } from "./notifications";
 
 export const LATE_CLOCK_EVIDENCE_PROVENANCE = "late_clock_evidence";
 
@@ -95,7 +96,13 @@ export async function preserveLateClockEvidence(
 			})
 			.onConflictDoNothing()
 			.returning({ id: employeeDepartureReview.id });
-		if (inserted) return { kind: "preserved", reviewId: inserted.id };
+		if (inserted) {
+			await enqueueReviewNotifications(tx, {
+				organizationId: scope.organizationId,
+				departureId: scope.departureId,
+			});
+			return { kind: "preserved", reviewId: inserted.id };
+		}
 		const existing = await tx.execute<{ id: string }>(sql`
 			SELECT id FROM employee_departure_review
 			WHERE organization_id = ${scope.organizationId} AND departure_id = ${scope.departureId}

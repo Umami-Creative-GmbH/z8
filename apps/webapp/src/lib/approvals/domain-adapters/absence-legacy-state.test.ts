@@ -303,6 +303,44 @@ describe("captureAbsenceLegacyApprovalState", () => {
 		);
 	});
 
+	it("reads defaultNow() chain timestamps at millisecond precision", async () => {
+		const fake = database({
+			source,
+			approvalRequests: [
+				{
+					...request,
+					id: secondRequestId,
+					approverId: "60000000-0000-4000-8000-000000000002",
+				},
+				{
+					...request,
+					status: "approved",
+					approvedAt: new Date("2026-07-18T08:40:00.000Z"),
+				},
+			],
+			chains: [{ ...chain, createdAt: "2026-07-18T08:00:00.123456" }],
+			chainRows: [
+				chainRow(1, { createdAt: "2026-07-18T08:01:00.654321" }),
+				chainRow(2, { createdAt: "2026-07-18T08:02:00.000999" }),
+			],
+		});
+
+		const state = await captureAbsenceLegacyApprovalState({
+			dbService: fake.dbService,
+			organizationId: "org-1",
+			absenceId,
+			capturedAt,
+		});
+
+		expect(state.chain?.createdAt).toEqual(
+			parseInstant("2026-07-18T08:00:00.123Z"),
+		);
+		expect(state.chainRows.map((row) => row.createdAt)).toEqual([
+			parseInstant("2026-07-18T08:01:00.654Z"),
+			parseInstant("2026-07-18T08:02:00Z"),
+		]);
+	});
+
 	it("captures a policy chain with rows ordered by stepOrder", async () => {
 		const currentRequest = {
 			...request,

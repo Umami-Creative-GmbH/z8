@@ -1,4 +1,7 @@
-"use server";
+import "server-only";
+
+// Post-clock-out maintenance for callers that have already authorized the
+// employee (#443): not server actions, so a client cannot run it for any ID.
 
 import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";

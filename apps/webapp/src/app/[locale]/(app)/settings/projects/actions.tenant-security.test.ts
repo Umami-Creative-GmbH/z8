@@ -14,6 +14,12 @@ const entryHelpersSource = readFileSync(
 	fileURLToPath(new URL("../../time-tracking/actions/entry-helpers.ts", import.meta.url)),
 	"utf8",
 );
+const projectEligibilitySource = readFileSync(
+	fileURLToPath(
+		new URL("../../../../../lib/time-tracking/project-eligibility.ts", import.meta.url),
+	),
+	"utf8",
+);
 const reportsSource = readFileSync(
 	fileURLToPath(new URL("../../reports/projects/actions.ts", import.meta.url)),
 	"utf8",
@@ -50,8 +56,13 @@ describe("project relationship tenant security", () => {
 		const body = functionBody(entryHelpersSource, "validateProjectAssignment");
 
 		expect(body).toContain("organizationId: string");
+		expect(body).toContain("isProjectEligible({ employeeId, teamId, organizationId }");
 		expect(body).toContain("eq(project.organizationId, organizationId)");
-		expect(body).toContain("eq(projectAssignment.organizationId, organizationId)");
+		// The shared rule scopes both the project and its assignment.
+		expect(projectEligibilitySource).toContain("eq(project.organizationId, target.organizationId)");
+		expect(projectEligibilitySource).toContain(
+			"eq(projectAssignment.organizationId, target.organizationId)",
+		);
 		const apiValidationCall = apiRouteSource.slice(
 			apiRouteSource.indexOf("validateProjectAssignment("),
 			apiRouteSource.indexOf(");", apiRouteSource.indexOf("validateProjectAssignment(")),
@@ -65,7 +76,9 @@ describe("project relationship tenant security", () => {
 		}
 
 		const assignedProjectsBody = functionBody(entryHelpersSource, "getAssignedProjectsWithHours");
-		expect(assignedProjectsBody).toContain("eq(projectAssignment.organizationId, organizationId)");
+		expect(assignedProjectsBody).toContain(
+			"listEligibleProjects({ employeeId, teamId, organizationId })",
+		);
 		expect(projectScopeSource).toContain(
 			"const authorizedEmployeeRecord = membershipRecord ? employeeRecord : null",
 		);

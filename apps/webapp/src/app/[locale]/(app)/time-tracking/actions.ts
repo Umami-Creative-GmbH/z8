@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { headers } from "next/headers";
@@ -12,32 +12,30 @@ import {
 	employee,
 	project,
 	projectAssignment,
-	surchargeCalculation,
 	timeEntry,
 	userSettings,
 	workPeriod,
 	workPolicy,
 	workPolicyPresence,
 } from "@/db/schema";
-import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import {
 	isBillingMutationAllowed,
 	requireBillingForMutation,
 } from "@/lib/billing/guard";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { AuthorizationError } from "@/lib/effect/errors";
+import {
+	AuthorizationError,
+	ConflictError,
+	NotFoundError,
+	ValidationError,
+} from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import {
-	type BreakEnforcementResult,
-	BreakEnforcementService,
-	BreakEnforcementServiceLive,
-} from "@/lib/effect/services/break-enforcement.service";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
@@ -47,32 +45,20 @@ import {
 	DatabaseService,
 	DatabaseServiceLive,
 } from "@/lib/effect/services/database.service";
-import {
-	SurchargeService,
-	SurchargeServiceLive,
-} from "@/lib/effect/services/surcharge.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
-import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
-import {
-	resolveFallbackTimezoneCapture,
-	type TimeEntryTimezoneSource,
-} from "@/lib/time-tracking/timezone-capture";
-import {
-	getMonthRangeInTimezone,
-	getTodayRangeInTimezone,
-	getWeekRangeInTimezone,
-} from "@/lib/time-tracking/timezone-utils";
-import type { TimeSummary } from "@/lib/time-tracking/types";
-import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
+import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
-import type { WeekStartDay } from "@/lib/user-preferences/week-start";
+import { changeWorkPeriodProject } from "@/lib/time-tracking/work-period-attribution";
 import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
 import {
+	type AddBreakActionContext,
 	addBreakToActiveSession as addBreakToActiveSessionAction,
 	clockIn as clockInAction,
 	clockOut as clockOutAction,
@@ -92,17 +78,32 @@ import {
 	parsePresenceFixedDays,
 	validatePresenceFixedDaysConfig,
 } from "./actions/presence-status";
+import { getActiveWorkPeriod, getTimeSummary } from "./actions/queries";
+import { splitOwnWorkPeriod } from "./actions/work-period-split";
+import {
+	createManualTimeEntryFromCommand,
+	lookupManualTimeEntryCommand,
+} from "./actions/manual-command-submission";
+import {
+	MANUAL_ENTRY_CONTEXT_MISMATCH,
+	MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+	MANUAL_ENTRY_NOT_AUTHENTICATED,
+} from "./actions/types";
 import type {
 	BrowserTimezoneContext,
 	ClockOutActionContext,
+	ManualEntryRecoveryContext,
 	ManualTimeEntryInput,
+	ManualTimeEntryLookup,
+	ManualTimeEntryResult,
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
-import { canonicalTimeEntryClient } from "./actions.canonical";
-import type { WorkPeriodWithEntries } from "./types";
 
-export async function addBreakToActiveSession(breakMinutes: number) {
+export async function addBreakToActiveSession(
+	breakMinutes: number,
+	actionContext?: AddBreakActionContext,
+) {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -122,35 +123,10 @@ export async function addBreakToActiveSession(breakMinutes: number) {
 		};
 	}
 
-	return addBreakToActiveSessionAction(breakMinutes);
+	return addBreakToActiveSessionAction(breakMinutes, actionContext);
 }
 
 const logger = createLogger("TimeTrackingActionsEffect");
-
-type ManagerResolverDb = Parameters<
-	typeof getPrimaryEligibleManagerIdForRequester
->[0]["db"];
-
-export async function resolveTimeApprovalManagerId(input: {
-	db: ManagerResolverDb;
-	requiresApproval: boolean;
-	requesterEmployeeId: string;
-	organizationId: string;
-}): Promise<string | null> {
-	if (!input.requiresApproval) {
-		return null;
-	}
-
-	const managerId = await getPrimaryEligibleManagerIdForRequester({
-		db: input.db,
-		requesterEmployeeId: input.requesterEmployeeId,
-		organizationId: input.organizationId,
-	});
-	if (!managerId) {
-		throw new Error("No manager assigned to approve time changes");
-	}
-	return managerId;
-}
 
 type ProjectAssignmentWithProject = typeof projectAssignment.$inferSelect & {
 	project: Pick<
@@ -282,156 +258,6 @@ export async function getTimeClockStatus(): Promise<{
 }
 
 /**
- * Get active work period for current employee
- */
-export async function getActiveWorkPeriod(
-	employeeId: string,
-): Promise<WorkPeriodWithEntries | null> {
-	const period = await db.query.workPeriod.findFirst({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			isNull(workPeriod.endTime),
-		),
-		with: {
-			clockIn: true,
-			clockOut: true,
-		},
-	});
-
-	if (!period) return null;
-	const typedPeriod = period as unknown as WorkPeriodWithEntries;
-
-	return {
-		...typedPeriod,
-		clockIn: typedPeriod.clockIn,
-		clockOut: typedPeriod.clockOut || undefined,
-	};
-}
-
-/**
- * Get work periods for an employee within a date range
- */
-export async function getWorkPeriods(
-	employeeId: string,
-	startDate: Date,
-	endDate: Date,
-): Promise<WorkPeriodWithEntries[]> {
-	const periods = await db.query.workPeriod.findMany({
-		where: and(
-			eq(workPeriod.employeeId, employeeId),
-			isNull(workPeriod.deletedAt),
-			gte(workPeriod.startTime, startDate),
-			lte(workPeriod.startTime, endDate),
-		),
-		with: {
-			clockIn: true,
-			clockOut: true,
-		},
-		orderBy: [desc(workPeriod.startTime)],
-	});
-
-	const typedPeriods = periods as unknown as WorkPeriodWithEntries[];
-	return typedPeriods.map((p) => ({
-		...p,
-		clockIn: p.clockIn,
-		clockOut: p.clockOut || undefined,
-	}));
-}
-
-/**
- * Get time summary for an employee (today, week, month)
- * Uses employee's timezone for day/week/month boundaries
- * Includes surcharge credits if surcharges are enabled
- */
-export async function getTimeSummary(
-	employeeId: string,
-	timezone: string = "UTC",
-	weekStartDay: WeekStartDay = "sunday",
-): Promise<TimeSummary> {
-	// Use timezone-aware boundaries for accurate day/week/month calculations
-	const { start: todayStartDT, end: todayEndDT } =
-		getTodayRangeInTimezone(timezone);
-	const { start: weekStartDT, end: weekEndDT } = getWeekRangeInTimezone(
-		new Date(),
-		timezone,
-		weekStartDay,
-	);
-	const { start: monthStartDT, end: monthEndDT } = getMonthRangeInTimezone(
-		new Date(),
-		timezone,
-	);
-
-	const todayStart = dateToDB(todayStartDT)!;
-	const todayEnd = dateToDB(todayEndDT)!;
-	const weekStart = dateToDB(weekStartDT)!;
-	const weekEnd = dateToDB(weekEndDT)!;
-	const monthStart = dateToDB(monthStartDT)!;
-	const monthEnd = dateToDB(monthEndDT)!;
-
-	// Fetch all periods for the month with their surcharge calculations
-	const periodsWithSurcharges = await db
-		.select({
-			id: workPeriod.id,
-			startTime: workPeriod.startTime,
-			durationMinutes: workPeriod.durationMinutes,
-			surchargeMinutes: surchargeCalculation.surchargeMinutes,
-		})
-		.from(workPeriod)
-		.leftJoin(
-			surchargeCalculation,
-			eq(surchargeCalculation.workPeriodId, workPeriod.id),
-		)
-		.where(
-			and(
-				eq(workPeriod.employeeId, employeeId),
-				isNull(workPeriod.deletedAt),
-				gte(workPeriod.startTime, monthStart),
-				lte(workPeriod.startTime, monthEnd),
-			),
-		);
-
-	// Calculate base minutes for each time range
-	const todayMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
-		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
-
-	const weekMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
-		.reduce((sum, p) => sum + (p.durationMinutes || 0), 0);
-
-	const monthMinutes = periodsWithSurcharges.reduce(
-		(sum, p) => sum + (p.durationMinutes || 0),
-		0,
-	);
-
-	// Calculate surcharge minutes for each time range
-	const todaySurchargeMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= todayStart && p.startTime <= todayEnd)
-		.reduce((sum, p) => sum + (p.surchargeMinutes || 0), 0);
-
-	const weekSurchargeMinutes = periodsWithSurcharges
-		.filter((p) => p.startTime >= weekStart && p.startTime <= weekEnd)
-		.reduce((sum, p) => sum + (p.surchargeMinutes || 0), 0);
-
-	const monthSurchargeMinutes = periodsWithSurcharges.reduce(
-		(sum, p) => sum + (p.surchargeMinutes || 0),
-		0,
-	);
-
-	return {
-		todayMinutes,
-		weekMinutes,
-		monthMinutes,
-		// Only include surcharge fields if there are any surcharges
-		...(monthSurchargeMinutes > 0 && {
-			todaySurchargeMinutes,
-			weekSurchargeMinutes,
-			monthSurchargeMinutes,
-		}),
-	};
-}
-
-/**
  * Clock in for current employee
  */
 export async function clockIn(
@@ -470,8 +296,8 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
  * @param workCategoryId - Optional work category ID to apply a time factor
  */
 export async function clockOut(
-	projectId: string | undefined,
-	workCategoryId: string | undefined,
+	projectId: string | null | undefined,
+	workCategoryId: string | null | undefined,
 	timezoneContext: ClockOutActionContext,
 ): Promise<ServerActionResult<ClockOutResult>> {
 	return clockOutAction(projectId, workCategoryId, timezoneContext);
@@ -545,82 +371,6 @@ async function validateProjectAssignment(
 }
 
 /**
- * Check compliance after clocking out and log any violations
- * This is a warning-only system - it logs violations but doesn't block actions
- */
-export async function checkComplianceAfterClockOut(
-	employeeId: string,
-	organizationId: string,
-	workPeriodId: string,
-	currentSessionMinutes: number,
-	timezone: string = "UTC",
-): Promise<ComplianceWarning[]> {
-	try {
-		// Get time summary for today and this week using employee's timezone
-		const timeSummary = await getTimeSummary(employeeId, timezone);
-
-		// Calculate breaks taken today (gaps between work periods)
-		const breaksTaken = await calculateBreaksTakenToday(employeeId, timezone);
-
-		// Use Effect to check compliance
-		const complianceEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
-
-			const result = yield* _(
-				workPolicyService.checkCompliance({
-					employeeId,
-					currentSessionMinutes,
-					totalDailyMinutes: timeSummary.todayMinutes,
-					totalWeeklyMinutes: timeSummary.weekMinutes,
-					breaksTakenMinutes: breaksTaken,
-				}),
-			);
-
-			// Log violations if any
-			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(
-					workPolicyService.getEffectivePolicy(employeeId),
-				);
-
-				if (effectivePolicy?.regulation) {
-					for (const warning of result.warnings) {
-						if (warning.severity === "violation") {
-							yield* _(
-								workPolicyService.logViolation({
-									employeeId,
-									organizationId,
-									policyId: effectivePolicy.policyId,
-									workPeriodId,
-									violationType: warning.type,
-									details: {
-										actualMinutes: warning.actualValue,
-										limitMinutes: warning.limitValue,
-										warningShownAt: new Date().toISOString(),
-										userContinued: true,
-									},
-								}),
-							);
-						}
-					}
-				}
-			}
-
-			return result.warnings;
-		}).pipe(
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		const warnings = await Effect.runPromise(complianceEffect);
-		return warnings;
-	} catch (error) {
-		// Log the error but don't fail the clock-out
-		logger.error({ error }, "Failed to check compliance after clock-out");
-		return [];
-	}
-}
-
-/**
  * Calculate total break minutes taken today (gaps between completed work periods)
  * Uses employee's timezone for "today" calculation
  */
@@ -661,175 +411,6 @@ async function calculateBreaksTakenToday(
 	}
 
 	return totalBreakMinutes;
-}
-
-/**
- * Calculate and persist surcharge credits for a work period
- * Only runs if surcharges are enabled for the organization
- * Errors are logged but don't fail the clock-out
- */
-export async function calculateAndPersistSurcharges(
-	workPeriodId: string,
-	organizationId: string,
-): Promise<void> {
-	try {
-		const surchargeEffect = Effect.gen(function* (_) {
-			const surchargeService = yield* _(SurchargeService);
-
-			// Check if surcharges are enabled for this organization
-			const isEnabled = yield* _(
-				surchargeService.isSurchargesEnabled(organizationId),
-			);
-			if (!isEnabled) {
-				return;
-			}
-
-			// Persist the surcharge calculation
-			yield* _(surchargeService.persistSurchargeCalculation(workPeriodId));
-		}).pipe(
-			Effect.provide(SurchargeServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		await Effect.runPromise(surchargeEffect);
-	} catch (error) {
-		// Log the error but don't fail the clock-out
-		logger.error(
-			{ error, workPeriodId },
-			"Failed to calculate surcharges after clock-out",
-		);
-	}
-}
-
-/**
- * Enforce breaks after clock-out by automatically splitting work periods
- * if they violate break requirements.
- * Errors are logged but don't fail the clock-out.
- */
-export async function enforceBreaksAfterClockOut(input: {
-	employeeId: string;
-	organizationId: string;
-	workPeriodId: string;
-	sessionDurationMinutes: number;
-	timezone: string;
-	createdBy: string;
-}): Promise<BreakEnforcementResult> {
-	try {
-		const enforcementEffect = Effect.gen(function* (_) {
-			const breakService = yield* _(BreakEnforcementService);
-
-			return yield* _(breakService.enforceBreaksAfterClockOut(input));
-		}).pipe(
-			Effect.provide(BreakEnforcementServiceLive),
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		return await Effect.runPromise(enforcementEffect);
-	} catch (error) {
-		// Log the error but don't fail the clock-out
-		logger.error(
-			{ error, workPeriodId: input.workPeriodId },
-			"Failed to enforce breaks after clock-out",
-		);
-		return {
-			wasAdjusted: false,
-			affectedWorkPeriodIds: [input.workPeriodId],
-		};
-	}
-}
-
-/**
- * Create a time entry with blockchain hash linking
- * Used for creating correction entries in the requestTimeCorrection workflow
- */
-export async function createTimeEntry(
-	params: {
-		employeeId: string;
-		organizationId: string;
-		timestamp: Date;
-		createdBy: string;
-		utcOffsetMinutes: number;
-		timezone: string;
-		timezoneSource: TimeEntryTimezoneSource;
-		notes?: string;
-	} & (
-		| {
-				type: "correction";
-				replacesEntryId: string;
-				workPeriodId: string;
-		  }
-		| {
-				type: "clock_in" | "clock_out";
-				replacesEntryId?: never;
-				workPeriodId?: never;
-		  }
-	),
-	transaction?: Parameters<Parameters<typeof db.transaction>[0]>[0],
-): Promise<typeof timeEntry.$inferSelect> {
-	const {
-		employeeId,
-		organizationId,
-		type,
-		timestamp,
-		createdBy,
-		utcOffsetMinutes,
-		timezone,
-		timezoneSource,
-		replacesEntryId,
-		workPeriodId,
-		notes,
-	} = params;
-
-	// Get request metadata
-	const headersList = await headers();
-	const ipAddress =
-		headersList.get("x-forwarded-for") ||
-		headersList.get("x-real-ip") ||
-		"unknown";
-	const userAgent = headersList.get("user-agent") || "unknown";
-
-	if (type === "correction") {
-		const correctionInput = {
-			employeeId,
-			organizationId,
-			replacesEntryId,
-			workPeriodId,
-			timestamp,
-			createdBy,
-			notes: notes ?? "",
-			ipAddress,
-			deviceInfo: userAgent,
-			utcOffsetMinutes,
-			timezone,
-			timezoneSource,
-		};
-		const correction = await (transaction
-			? canonicalTimeEntryClient.createCorrectionEntry(
-					correctionInput,
-					transaction,
-				)
-			: canonicalTimeEntryClient.createCorrectionEntry(correctionInput));
-		if (!correction) throw new Error("Correction entry was not created");
-		return correction;
-	}
-
-	const entryInput = {
-		employeeId,
-		organizationId,
-		type,
-		timestamp,
-		createdBy,
-		notes,
-		ipAddress,
-		deviceInfo: userAgent,
-		utcOffsetMinutes,
-		timezone,
-		timezoneSource,
-	};
-	return transaction
-		? canonicalTimeEntryClient.createTimeEntry(entryInput, transaction)
-		: canonicalTimeEntryClient.createTimeEntry(entryInput);
 }
 
 export async function requestTimeCorrection(
@@ -1093,205 +674,19 @@ export async function splitWorkPeriod(
 	beforeNotes?: string,
 	afterNotes?: string,
 	disambiguation?: "earlier" | "later",
+	submissionId?: string,
 ): Promise<
 	ServerActionResult<{ firstPeriodId: string; secondPeriodId: string }>
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const emp = await getCurrentEmployee();
-	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
-	}
-	const settingsData = await db.query.userSettings.findFirst({
-		where: eq(userSettings.userId, session.user.id),
-		columns: { timezone: true },
+	return splitOwnWorkPeriod({
+		workPeriodId,
+		splitDateKey,
+		splitTime,
+		beforeNotes,
+		afterNotes,
+		disambiguation,
+		submissionId,
 	});
-	const timezone = settingsData?.timezone || "UTC";
-
-	try {
-		// Get the work period with related entries
-		const [period] = await db
-			.select()
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.employeeId, emp.id),
-					eq(workPeriod.organizationId, emp.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			)
-			.limit(1);
-
-		if (!period) {
-			return { success: false, error: "Work period not found" };
-		}
-
-		// Verify ownership
-		if (period.employeeId !== emp.id) {
-			return {
-				success: false,
-				error: "You can only split your own work periods",
-			};
-		}
-
-		// Work period must be completed (have an end time)
-		if (!period.endTime || !period.clockOutId) {
-			return { success: false, error: "Cannot split an active work period" };
-		}
-
-		const resolvedSplit = resolveWorkPeriodSplit({
-			startTime: period.startTime,
-			endTime: period.endTime,
-			splitDate: splitDateKey,
-			splitTime,
-			timezone,
-			disambiguation,
-		});
-		if (!resolvedSplit.success) {
-			return {
-				success: false,
-				error:
-					resolvedSplit.code === "ambiguous"
-						? "Split time is ambiguous"
-						: resolvedSplit.code === "nonexistent"
-							? "Split time does not exist on this date"
-							: "Split time must be between work period start and end times",
-			};
-		}
-		const splitDate = resolvedSplit.splitTime;
-		const splitTimezoneCapture = resolveFallbackTimezoneCapture({
-			timestamp: splitDate,
-			timezone,
-			timezoneSource: "user_setting",
-		});
-
-		// Validate split time is between start and end
-		// Validate the split times (check for holidays)
-		const validation = await validateTimeEntryRange(
-			emp.organizationId,
-			period.startTime,
-			period.endTime,
-		);
-
-		if (!validation.isValid) {
-			return {
-				success: false,
-				error: validation.error || "Cannot split work period",
-				holidayName: validation.holidayName,
-			};
-		}
-
-		const billingAccess = await requireBillingForMutation(emp.organizationId);
-		if (!isBillingMutationAllowed(billingAccess)) {
-			return {
-				success: false,
-				error: "billing_required",
-				code: billingAccess.reason ?? "subscription_required",
-			};
-		}
-
-		// Create clock-out entry for first period at split time
-		const firstClockOut = await createTimeEntry({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			type: "clock_out",
-			timestamp: splitDate,
-			createdBy: session.user.id,
-			...splitTimezoneCapture,
-			notes: beforeNotes,
-		});
-
-		// Create clock-in entry for second period at split time
-		const secondClockIn = await createTimeEntry({
-			employeeId: emp.id,
-			organizationId: emp.organizationId,
-			type: "clock_in",
-			timestamp: splitDate,
-			createdBy: session.user.id,
-			...splitTimezoneCapture,
-			notes: afterNotes,
-		});
-
-		// Update the original work period clock-out entry with notes if provided
-		if (beforeNotes && period.clockOutId) {
-			// Mark original clock-out as superseded
-			await db
-				.update(timeEntry)
-				.set({
-					isSuperseded: true,
-					supersededById: firstClockOut.id,
-				})
-				.where(eq(timeEntry.id, period.clockOutId));
-		}
-
-		// Calculate durations
-		const { firstDurationMinutes, secondDurationMinutes } = resolvedSplit;
-
-		// Update the original work period to end at split time
-		await db
-			.update(workPeriod)
-			.set({
-				clockOutId: firstClockOut.id,
-				endTime: splitDate,
-				durationMinutes: firstDurationMinutes,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, period.id),
-					eq(workPeriod.organizationId, emp.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
-
-		// Create a new work period for the second segment
-		const [secondPeriod] = await db
-			.insert(workPeriod)
-			.values({
-				employeeId: emp.id,
-				organizationId: emp.organizationId,
-				clockInId: secondClockIn.id,
-				clockOutId: period.clockOutId, // Use original clock-out for second period
-				startTime: splitDate,
-				endTime: period.endTime,
-				durationMinutes: secondDurationMinutes,
-				isActive: false,
-			})
-			.returning();
-
-		// Update the original clock-out entry with afterNotes if provided
-		if (afterNotes && period.clockOutId) {
-			await db
-				.update(timeEntry)
-				.set({ notes: afterNotes })
-				.where(eq(timeEntry.id, period.clockOutId));
-		}
-
-		logger.info(
-			{
-				originalPeriodId: workPeriodId,
-				firstPeriodId: period.id,
-				secondPeriodId: secondPeriod.id,
-				splitTime,
-			},
-			"Work period split successfully",
-		);
-
-		return {
-			success: true,
-			data: { firstPeriodId: period.id, secondPeriodId: secondPeriod.id },
-		};
-	} catch (error) {
-		logger.error({ error }, "Split work period error");
-		return {
-			success: false,
-			error: "Failed to split work period. Please try again.",
-		};
-	}
 }
 
 /**
@@ -1565,26 +960,31 @@ export async function updateWorkPeriodProject(
 			};
 		}
 
-		// Update the work period
-		await db
-			.update(workPeriod)
-			.set({
-				projectId: projectId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(workPeriod.id, workPeriodId),
-					eq(workPeriod.organizationId, emp.organizationId),
-					isNull(workPeriod.deletedAt),
-				),
-			);
+		await changeWorkPeriodProject({
+			organizationId: emp.organizationId,
+			employeeId: emp.id,
+			actorUserId: session.user.id,
+			period,
+			projectId,
+		});
 
 		return {
 			success: true,
 			data: { workPeriodId, projectId },
 		};
 	} catch (error) {
+		const failure = describeAmendmentFailure(error);
+		if (failure) {
+			return { success: false, error: failure.message, code: failure.code };
+		}
+		if (
+			error instanceof ValidationError ||
+			error instanceof ConflictError ||
+			error instanceof AuthorizationError ||
+			error instanceof NotFoundError
+		) {
+			return { success: false, error: error.message };
+		}
 		logger.error({ error }, "Failed to update work period project");
 		return { success: false, error: "Failed to update project assignment" };
 	}
@@ -1689,30 +1089,40 @@ export async function getWorkPeriodEditCapability(
 
 /**
  * Create a manual time entry for a past date
- * Respects the organization's change policy for approval requirements
+ * Respects the organization's change policy for approval requirements.
+ * A strict version-2 command (#308) goes through the completed-work operation
+ * in adopted organizations; unversioned input keeps the legacy path.
+ *
+ * A frozen command's retry (#310) asserts the user and organization it was
+ * frozen for; another session refuses it before anything runs.
  */
 export async function createManualTimeEntry(
-	data: ManualTimeEntryInput,
-): Promise<
-	ServerActionResult<{
-		workPeriodId: string;
-		requiresApproval: boolean;
-		wasAdjusted?: boolean;
-		adjustedTimes?: {
-			clockIn: string;
-			clockOut: string;
-			durationMinutes: number;
-		};
-	}>
-> {
+	data: ManualTimeEntryInput | ManualTimeEntryCommand,
+	recoveryContext?: ManualEntryRecoveryContext,
+): Promise<ManualTimeEntryResult> {
 	const session = await auth.api.getSession({ headers: await headers() });
 	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
+		return { success: false, error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED };
 	}
 
 	const emp = await getCurrentEmployee();
 	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
+		return {
+			success: false,
+			error: "Employee profile not found",
+			code: MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+		};
+	}
+	if (
+		recoveryContext &&
+		(recoveryContext.userId !== session.user.id ||
+			recoveryContext.organizationId !== emp.organizationId)
+	) {
+		return {
+			success: false,
+			error: "You are signed in to a different account or organization.",
+			code: MANUAL_ENTRY_CONTEXT_MISMATCH,
+		};
 	}
 
 	const billingAccess = await requireBillingForMutation(emp.organizationId);
@@ -1724,7 +1134,56 @@ export async function createManualTimeEntry(
 		};
 	}
 
+	if ("version" in data) {
+		return createManualTimeEntryFromCommand({
+			value: data,
+			session: { userId: session.user.id, isPlatformAdmin: session.user.role === "admin" },
+			currentEmployee: emp,
+		});
+	}
 	return createManualTimeEntryModular(data);
+}
+
+/**
+ * Lookup-only recovery of a frozen version-2 manual command (#310). It answers
+ * under the current session, access and billing gates for exactly the asserted
+ * user and organization, and never creates work.
+ */
+export async function lookupManualTimeEntry(
+	command: unknown,
+	recoveryContext: ManualEntryRecoveryContext,
+): Promise<ManualTimeEntryLookup> {
+	const session = await auth.api.getSession({ headers: await headers() });
+	if (!session?.user) {
+		return { status: "refused", error: "Not authenticated", code: MANUAL_ENTRY_NOT_AUTHENTICATED };
+	}
+	const emp = await getCurrentEmployee();
+	if (!emp) {
+		return {
+			status: "refused",
+			error: "Employee profile not found",
+			code: MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+		};
+	}
+	if (
+		recoveryContext?.userId !== session.user.id ||
+		recoveryContext.organizationId !== emp.organizationId
+	) {
+		return {
+			status: "refused",
+			error: "You are signed in to a different account or organization.",
+			code: MANUAL_ENTRY_CONTEXT_MISMATCH,
+		};
+	}
+	const billingAccess = await requireBillingForMutation(emp.organizationId);
+	if (!isBillingMutationAllowed(billingAccess)) {
+		return {
+			status: "refused",
+			error: "billing_required",
+			code: billingAccess.reason ?? "subscription_required",
+		};
+	}
+	return lookupManualTimeEntryCommand({ value: command, currentEmployee: emp });
 }
 
 /**
@@ -1926,6 +1385,7 @@ export async function getPresenceStatus(
 							workPeriod.organizationId,
 							session.session.activeOrganizationId!,
 						),
+						isNull(workPeriod.deletedAt),
 						gte(workPeriod.startTime, periodStart.toJSDate()),
 						lte(workPeriod.startTime, periodEnd.toJSDate()),
 					),

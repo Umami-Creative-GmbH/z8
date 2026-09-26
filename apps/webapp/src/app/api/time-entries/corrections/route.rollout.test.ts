@@ -310,7 +310,18 @@ const context = {
 	activationResolver: {},
 };
 
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
+	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
+		await importOriginal(),
+	),
+);
+
 vi.mock("@/db", () => ({ db }));
+// Legacy submission intents (#432): legacy-time-bound-approval.integration.test.ts.
+vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/intents")>()),
+	recordLegacyDeliveryIntent: async () => false,
+}));
 vi.mock("next/headers", () => ({ headers: state.headers }));
 vi.mock("next/server", async () => {
 	const actual =

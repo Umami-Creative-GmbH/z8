@@ -12,21 +12,35 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { team } from "@/db/schema";
 import { env } from "@/env";
 import { accountBanPlugin } from "@/lib/auth/account-ban";
+import {
+	authMutationCoordinationPlugin,
+	createCoordinatedOrganizationHooks,
+	handleCoordinatedAuthRequest,
+} from "@/lib/auth/auth-mutation-coordination";
 import {
 	getSCIMCredentialHashSecret,
 	resolveAuthSecrets,
 } from "@/lib/auth/auth-secrets";
 import {
+	captureAuthTransactions,
+	runCoordinatedAuthMutation,
+} from "@/lib/auth/auth-transaction";
+import {
 	normalizeInvitationEmail,
 	resolveAcceptedInvitationCanCreateOrganizations,
 } from "@/lib/auth/employee-invitation-draft";
 import { createGuardedAuthSecondaryStorage } from "@/lib/auth/guarded-secondary-storage";
-import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { ensureEmployeeForOrganizationMember } from "@/lib/auth/organization-member-provisioning";
+import { rejectOrganizationSsoApprovalUpdate } from "@/lib/auth/organization-sso-approval-update-guard";
+import { rejectOrganizationTimezoneUpdate } from "@/lib/auth/organization-timezone-update-guard";
 import { socialOrgOAuthPlugin } from "@/lib/auth/social-org-oauth";
+import {
+	provisionSsoProviderOrganization,
+	ssoVerifiedDomainMembershipPlugin,
+} from "@/lib/auth/sso-organization-provisioning";
 import {
 	getAuthAllowedHosts,
 	getOrganizationPlatformOrigins,
@@ -43,6 +57,7 @@ import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
 } from "@/lib/scim/auth-configuration";
+import { guardSCIMSubjectAcquisitions } from "@/lib/scim/projection-guards";
 import { createSCIMProjectionReplayLoader } from "@/lib/scim/projection-replay-api";
 import { configureSCIMProjectionReplay } from "@/lib/scim/role-projection-replay";
 import { turnstileAuthGuard } from "@/lib/turnstile/auth-plugin";
@@ -217,6 +232,15 @@ function wrapEmailLookupCaseInsensitiveAdapter(
 		...adapter,
 		findOne: (options) =>
 			adapter.findOne(withInsensitiveUserEmailWhere(options)),
+		// Lookups inside Better Auth's own (and coordinated) transactions too.
+		transaction: (callback) =>
+			adapter.transaction((transactionAdapter) =>
+				callback({
+					...transactionAdapter,
+					findOne: (options) =>
+						transactionAdapter.findOne(withInsensitiveUserEmailWhere(options)),
+				}),
+			),
 	};
 }
 
@@ -452,11 +476,15 @@ export const auth = betterAuth({
 		},
 	},
 	database: makeEmailLookupCaseInsensitiveAdapter(
-		drizzleAdapter(db, {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
+		// Hooks and SCIM callbacks take their guards on Better Auth's transaction (#314);
+		// SCIM subject locks take them in the plugin's sorted user order (#429).
+		guardSCIMSubjectAcquisitions(
+			drizzleAdapter(captureAuthTransactions(db), {
+				provider: "pg",
+				schema: authDatabaseSchema,
+				transaction: true,
+			}),
+		),
 	),
 	plugins: [
 		turnstileAuthGuard(),
@@ -613,8 +641,17 @@ export const auth = betterAuth({
 					organizationId: data.organization.id, // Use org-specific email config
 				});
 			},
-			organizationHooks: {
-				// Update user permissions when accepting invitation
+			// Membership, role and removal writers take their configuration/access
+			// guards in their own transaction (#314); see auth-mutation-coordination.
+			organizationHooks: createCoordinatedOrganizationHooks({
+				// Timezone changes go through the protected settings writer (#311); the
+				// SSO approval setting has no protected writer and cannot change (#318).
+				beforeUpdateOrganization: async ({ organization }) => {
+					rejectOrganizationTimezoneUpdate(organization);
+					rejectOrganizationSsoApprovalUpdate(organization);
+				},
+
+				// Update user permissions when accepting invitation (after it commits)
 				afterAcceptInvitation: async ({ user, invitation, member }) => {
 					// Fetch the full invitation record to get custom invitation fields.
 					const invitationRecord = await db.query.invitation.findFirst({
@@ -663,7 +700,7 @@ export const auth = betterAuth({
 					});
 				},
 
-				// Create employee record when user is added to organization
+				// Create employee record when user is added to organization (after it commits)
 				afterAddMember: async ({ member, user, organization }) => {
 					await ensureEmployeeForOrganizationMember(db, {
 						mode: "membershipAccepted",
@@ -679,15 +716,7 @@ export const auth = betterAuth({
 						change: "added",
 					});
 				},
-
-				// Access and billing cleanup run only after membership removal commits.
-				afterRemoveMember: async ({ member, organization }) => {
-					await completeRemovedMemberCleanup({
-						organizationId: organization.id,
-						userId: member.userId,
-					});
-				},
-			},
+			}),
 		}),
 		twoFactor({
 			issuer: "Z8",
@@ -723,57 +752,23 @@ export const auth = betterAuth({
 				maxMetadataSize: 100 * 1024,
 			},
 			redirectURI: "/sso/callback",
-			// Organization provisioning: auto-add users to linked organizations
-			organizationProvisioning: {
-				disabled: false,
-				defaultRole: "member",
-				getRole: async ({ userInfo }) => {
-					// Default to member, can be customized based on userInfo attributes
-					// Example: check for admin role in SSO provider attributes
-					const role = userInfo?.attributes?.role;
-					if (role === "admin" || role === "manager") {
-						return "admin";
-					}
-					return "member";
-				},
-			},
+			// The plugin's membership insert cannot join a guarded transaction, so z8
+			// owns provider-bound and verified-domain membership (#314).
+			organizationProvisioning: { disabled: true },
 			// Capture provenance on every verified SSO login, including existing users.
 			provisionUserOnEveryLogin: true,
-			// Provision user when they sign in through SSO
-			provisionUser: async ({ user, provider }) => {
-				const providerOrganizationId = provider.organizationId;
-				// If provider is linked to an organization, check/create employee record
-				if (providerOrganizationId) {
-					// Check if org requires SSO approval
-					const org = await db.query.organization.findFirst({
-						where: eq(schema.organization.id, providerOrganizationId),
-					});
-
-					const ssoRequiresApproval =
-						(org as { ssoRequiresApproval?: boolean })?.ssoRequiresApproval ??
-						true;
-
-					const existingEmployee = await db.query.employee.findFirst({
-						where: (emp, { eq, and }) =>
-							and(
-								eq(emp.userId, user.id),
-								eq(emp.organizationId, providerOrganizationId),
-							),
-					});
-
-					if (!existingEmployee) {
-						// Create employee record - isActive depends on approval setting
-						await db.insert(employee).values({
-							userId: user.id,
-							organizationId: providerOrganizationId,
-							role: "employee",
-							isActive: !ssoRequiresApproval, // inactive if approval required
-						});
-					}
-				}
+			// Provision the provider organization's employee and membership.
+			provisionUser: async ({ user, userInfo, provider }) => {
+				await provisionSsoProviderOrganization(db, {
+					user,
+					userInfo,
+					provider,
+				});
 				await recordVerifiedSsoLogin({ user, provider });
 			},
 		}),
+		ssoVerifiedDomainMembershipPlugin(db),
+		authMutationCoordinationPlugin(),
 		// API Key plugin for organization-level API access
 		// Organization-specific data (organizationId, scopes, etc.) is stored in the metadata field
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used at runtime
@@ -794,3 +789,19 @@ export const auth = betterAuth({
 });
 
 configureSCIMProjectionReplay(createSCIMProjectionReplayLoader(auth.api));
+
+/**
+ * Runs a Better Auth membership, role or access mutation (`auth.api.*`) in
+ * one coordinated transaction; its hooks refuse to write outside one.
+ */
+export function runAuthMutation<T>(mutation: () => Promise<T>): Promise<T> {
+	return runCoordinatedAuthMutation(auth.$context, mutation);
+}
+
+/** `/api/auth` entry: coordinated mutation paths run in one transaction. */
+export function handleAuthRequest(
+	request: Request,
+	handle: (request: Request) => Promise<Response>,
+): Promise<Response> {
+	return handleCoordinatedAuthRequest(auth.$context, request, handle);
+}

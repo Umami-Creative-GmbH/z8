@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import type {
 	ClientToSWMessage,
+	ClockCommandCaptureReply,
+	ClockCommandDispatchReply,
 	OfflineQueueStatus,
 	OfflineRecoveryContext,
 	OfflineRecoveryRecord,
@@ -12,9 +14,24 @@ import type {
 	SWToClientMessage,
 } from "@/lib/offline/types";
 import { queryKeys } from "@/lib/query/keys";
+import {
+	type BrowserClockActionResult,
+	type BrowserClockCommandCapabilities,
+	type ClockCommandCaptureRequest,
+	toBrowserClockActionResult,
+} from "@/lib/time-tracking/browser-clock-command";
 import { useOnlineStatus } from "./use-online-status";
 
-async function sendMessageToSW<T>(message: ClientToSWMessage): Promise<T> {
+/** Reported by a worker that stores and sends frozen v2 clock commands (#279). */
+const FROZEN_COMMAND_MODE = "frozen-v2";
+/** Capture, then one attended send: long enough for a slow request, then "pending". */
+const DISPATCH_REPLY_TIMEOUT_MS = 45_000;
+const COMMANDS_API = "/api/time-entries/commands";
+
+async function sendMessageToSW<T>(
+	message: ClientToSWMessage,
+	timeoutMs = 10000,
+): Promise<T> {
 	const controller =
 		navigator.serviceWorker.controller ??
 		(await navigator.serviceWorker.ready).active;
@@ -28,7 +45,7 @@ async function sendMessageToSW<T>(message: ClientToSWMessage): Promise<T> {
 					"Worker acknowledgment unavailable. A save may have completed; review saved records before trying again.",
 				),
 			);
-		}, 10000);
+		}, timeoutMs);
 		channel.port1.onmessage = (event) => {
 			clearTimeout(timeoutId);
 			channel.port1.close();
@@ -48,6 +65,7 @@ async function sendMessageToSW<T>(message: ClientToSWMessage): Promise<T> {
 const EMPTY_STATUS: OfflineQueueStatus = {
 	pendingCount: 0,
 	reviewCount: 0,
+	waitingCount: 0,
 	savedCount: 0,
 	countVerified: false,
 	isSyncing: false,
@@ -58,6 +76,22 @@ const EMPTY_STATUS: OfflineQueueStatus = {
 const offlineStatusKey = (contextKey: string) =>
 	["offline-clock-status", contextKey] as const;
 
+const CAPTURE_ERRORS: Record<string, string> = {
+	clock_in_pending:
+		"An earlier clock-in on this device is not confirmed yet. Review saved records first.",
+	clock_out_pending:
+		"A clock-out for this work period is already saved on this device.",
+	no_target:
+		"No active work period is known on this device. Connect to refresh your clock status.",
+};
+
+/** Server-derived capabilities; `null` when this session cannot use them. */
+async function readCommandCapabilities(): Promise<BrowserClockCommandCapabilities | null> {
+	const response = await fetch(COMMANDS_API, { cache: "no-store" });
+	if (!response.ok) return null;
+	return (await response.json()) as BrowserClockCommandCapabilities;
+}
+
 export function useOfflineClock() {
 	const isOnline = useOnlineStatus();
 	const queryClient = useQueryClient();
@@ -66,6 +100,7 @@ export function useOfflineClock() {
 	const organizationId = session?.session.activeOrganizationId;
 	const contextKey = JSON.stringify([userId, organizationId]);
 	const [swReady, setSwReady] = useState(false);
+	const [commandsReady, setCommandsReady] = useState(false);
 	// One scoped UI snapshot for the banner and every clock caller. IndexedDB
 	// remains the evidence owner; online recovery reads refresh this cache.
 	const { data: status } = useQuery({
@@ -79,6 +114,15 @@ export function useOfflineClock() {
 	});
 	const context: OfflineRecoveryContext | null =
 		userId && organizationId ? { userId, organizationId } : null;
+	// Kept after going offline, so an offline action can still be frozen for the
+	// session it was read for. The page checks it against the session each time.
+	const { data: commandCapabilities } = useQuery({
+		queryKey: ["clock-command-capabilities", contextKey] as const,
+		queryFn: readCommandCapabilities,
+		enabled: isOnline && commandsReady && Boolean(userId && organizationId),
+		staleTime: 60_000,
+		retry: false,
+	});
 
 	function updateStatus(patch: Partial<OfflineQueueStatus>) {
 		queryClient.setQueryData<OfflineQueueStatus>(
@@ -103,6 +147,7 @@ export function useOfflineClock() {
 				const response = await sendMessageToSW<{
 					count: number;
 					reviewCount: number;
+					waitingCount?: number;
 					savedCount: number;
 				}>({
 					type: "GET_QUEUE_COUNT",
@@ -111,6 +156,7 @@ export function useOfflineClock() {
 				update({
 					pendingCount: response.count,
 					reviewCount: response.reviewCount,
+					waitingCount: response.waitingCount ?? 0,
 					savedCount: response.savedCount,
 					countVerified: true,
 				});
@@ -135,11 +181,18 @@ export function useOfflineClock() {
 					scope: "/",
 					updateViaCache: "none",
 				});
-				const version = await sendMessageToSW<{ clockQueueMode?: string }>({
+				const version = await sendMessageToSW<{
+					clockQueueMode?: string;
+					clockCommandMode?: string;
+				}>({
 					type: "GET_VERSION",
 				});
 				const ready = version.clockQueueMode === "preservation-only-v1";
-				if (mounted) setSwReady(ready);
+				const frozen = ready && version.clockCommandMode === FROZEN_COMMAND_MODE;
+				if (mounted) {
+					setSwReady(ready);
+					setCommandsReady(frozen);
+				}
 				if (!ready) {
 					reportWorkerFailure(
 						"Update Z8 before saving offline clock records. The current worker does not support recovery preservation.",
@@ -147,6 +200,11 @@ export function useOfflineClock() {
 					return;
 				}
 				await refresh();
+				// Reconnect or reload: let the worker send what it holds. The run is
+				// serialized in the worker and reads nothing remote when nothing waits.
+				if (frozen && isOnline && userId && organizationId) {
+					await sendMessageToSW({ type: "TRIGGER_SYNC" });
+				}
 			} catch (error) {
 				reportWorkerFailure(
 					error instanceof Error ? error.message : "Clock recovery unavailable",
@@ -169,9 +227,11 @@ export function useOfflineClock() {
 					break;
 				case "SYNC_SUCCESS":
 					// Scoped commitment is separate from the subsequent current-state read.
+					// Frozen-command commits arrive as a bare invalidation without scope.
 					if (
-						event.data.userId !== userId ||
-						event.data.organizationId !== organizationId
+						(event.data.userId !== undefined && event.data.userId !== userId) ||
+						(event.data.organizationId !== undefined &&
+							event.data.organizationId !== organizationId)
 					)
 						break;
 					update({ lastSyncAt: Date.now() });
@@ -262,12 +322,71 @@ export function useOfflineClock() {
 		}
 	};
 
+	/**
+	 * Freeze one clock command in the worker's store, then ask the worker to send
+	 * it now. A failed save is a failure; everything after a save is at worst
+	 * "saved, not confirmed", never a failed clock action.
+	 */
+	const submitClockCommand = async (
+		request: ClockCommandCaptureRequest,
+	): Promise<BrowserClockActionResult> => {
+		let capture: ClockCommandCaptureReply;
+		try {
+			capture = await sendMessageToSW<ClockCommandCaptureReply>({
+				type: "CAPTURE_CLOCK_COMMAND",
+				payload: request,
+			});
+		} catch {
+			const error =
+				"Could not confirm that the clock action was saved on this device. Review saved records before trying again.";
+			updateStatus({ lastError: error });
+			return { success: false, code: "capture_unconfirmed", error };
+		}
+		if (!capture.success) {
+			return {
+				success: false,
+				code: capture.code,
+				error:
+					CAPTURE_ERRORS[capture.code] ??
+					"Could not save the clock action on this device. Nothing was sent.",
+			};
+		}
+		queryClient.setQueryData<OfflineQueueStatus>(
+			offlineStatusKey(contextKey),
+			(old) => ({
+				...(old ?? EMPTY_STATUS),
+				pendingCount: (old?.pendingCount ?? 0) + 1,
+				waitingCount: (old?.waitingCount ?? 0) + 1,
+			}),
+		);
+		const dispatch = await sendMessageToSW<ClockCommandDispatchReply>(
+			{
+				type: "DISPATCH_CLOCK_COMMANDS",
+				operationId: request.operationId,
+				context: {
+					userId: request.context.userId,
+					organizationId: request.context.organizationId,
+				},
+			},
+			DISPATCH_REPLY_TIMEOUT_MS,
+		).catch(() => null);
+		const record = dispatch?.success ? dispatch.record : null;
+		if (record?.state === "rejected") {
+			// The refusal is shown now; until this is stored it stays in review.
+			void sendMessageToSW({
+				type: "ACKNOWLEDGE_CLOCK_COMMAND",
+				operationId: request.operationId,
+			}).catch(() => {});
+		}
+		return toBrowserClockActionResult(record);
+	};
+
 	const triggerSync = async () => {
 		if (!swReady || !isOnline) return;
 		try {
 			updateStatus({ lastError: null });
-			// Classification retries do not submit retained work or reset attempts.
-			await sendMessageToSW({ type: "TRIGGER_SYNC" });
+			// An explicit request also resumes commands whose automatic retries stopped.
+			await sendMessageToSW({ type: "TRIGGER_SYNC", retryExhausted: true });
 		} catch (error) {
 			updateStatus({
 				isSyncing: false,
@@ -299,9 +418,12 @@ export function useOfflineClock() {
 		status,
 		contextKey,
 		swReady,
+		commandsReady,
+		commandCapabilities: commandsReady ? (commandCapabilities ?? null) : null,
 		isOnline,
 		isOffline: !isOnline,
 		queueClockEvent,
+		submitClockCommand,
 		triggerSync,
 		readRecoveryRecords,
 		archiveRecoveryRecord,

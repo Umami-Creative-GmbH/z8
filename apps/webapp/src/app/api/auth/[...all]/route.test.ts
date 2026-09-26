@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockState = vi.hoisted(() => ({
 	classifyDomainHost: vi.fn(),
 	resolvePlatformOrganization: vi.fn(),
+	coordinated: [] as Request[],
 	handlers: {
 		GET: vi.fn(() => Response.json({ method: "GET" })),
 		POST: vi.fn(() => Response.json({ method: "POST" })),
@@ -16,7 +17,16 @@ vi.mock("better-auth/next-js", () => ({
 	toNextJsHandler: vi.fn(() => mockState.handlers),
 }));
 
-vi.mock("@/lib/auth", () => ({ auth: {} }));
+vi.mock("@/lib/auth", () => ({
+	auth: {},
+	handleAuthRequest: (
+		request: Request,
+		handle: (request: Request) => Promise<Response>,
+	) => {
+		mockState.coordinated.push(request);
+		return handle(request);
+	},
+}));
 
 vi.mock("@/lib/domain", () => ({
 	classifyDomainHost: mockState.classifyDomainHost,
@@ -125,6 +135,8 @@ describe("rejectUnsupportedPlatformHost", () => {
 			);
 			expect(mockState.handlers[method]).toHaveBeenCalledOnce();
 			expect(mockState.handlers[method]).toHaveBeenCalledWith(request);
+			// Coordinated mutation paths are selected inside handleAuthRequest (#314).
+			expect(mockState.coordinated.at(-1)).toBe(request);
 		},
 	);
 

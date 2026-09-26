@@ -13,11 +13,16 @@ import type {
 	ApprovalMaterializedTransitionPlan,
 	ApprovalTransitionResultBuilder,
 	ApprovalWorkflowAuthorization,
+	ApprovalWorkflowAuthorizationGrant,
 	ApprovalWorkflowCommandRequest,
 	ApprovalWorkflowSourceLoader,
 	ApprovalWriteGate,
 } from "./ports";
-import { APPROVAL_ESCALATION_SYSTEM_ID } from "./ports";
+import {
+	APPROVAL_ESCALATION_SYSTEM_ID,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	isOffboardingHandoverPrincipal,
+} from "./ports";
 import type { ApprovalWorkflowRepository } from "./repository";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 import {
@@ -247,12 +252,16 @@ function assertSnapshotScope(
 
 function allowsAuthorization(
 	request: ApprovalWorkflowCommandRequest,
-	authorization:
-		| "active_assignment"
-		| "requester"
-		| "manage_approval"
-		| "system",
+	authorization: ApprovalWorkflowAuthorizationGrant,
 ): boolean {
+	if (isOffboardingHandoverPrincipal(request.principal)) {
+		// The departure-handover capability only replaces its captured duty.
+		return (
+			authorization === "offboarding_reassignment" &&
+			request.command.type === "reassign"
+		);
+	}
+	if (authorization === "offboarding_reassignment") return false;
 	if (
 		request.principal.kind === "system" &&
 		request.principal.systemId === "approval-activation"
@@ -483,9 +492,15 @@ export function createApprovalTransitionEngine(
 					mode: gate.mode,
 				});
 			}
-			const systemCapability =
-				request.principal.kind === "system" &&
-				request.principal.systemId === APPROVAL_ESCALATION_SYSTEM_ID
+			const offboardingPrincipal = isOffboardingHandoverPrincipal(
+				request.principal,
+			)
+				? request.principal
+				: null;
+			const systemCapability = offboardingPrincipal
+				? EMPLOYEE_OFFBOARDING_SYSTEM_ID
+				: request.principal.kind === "system" &&
+						request.principal.systemId === APPROVAL_ESCALATION_SYSTEM_ID
 					? APPROVAL_ESCALATION_SYSTEM_ID
 					: undefined;
 			const receipt = {
@@ -501,6 +516,23 @@ export function createApprovalTransitionEngine(
 			const claim = await context.repository.claimCommand(receipt);
 			if (claim.kind === "completed") {
 				assertResultScope(request, claim.result);
+				if (offboardingPrincipal) {
+					// A handover replay still proves current evidence and the
+					// recorded transfer; the lease may have rotated since.
+					const replayAuthorization =
+						await dependencies.authorization.authorize({
+							dbService: context.dbService,
+							organizationId: request.organizationId,
+							workflow,
+							actor,
+							command: request.command,
+							principal: request.principal,
+							replay: claim.result,
+						});
+					if (!allowsAuthorization(request, replayAuthorization)) {
+						throw engineError("forbidden", { command: request.command.type });
+					}
+				}
 				return {
 					result: claim.result,
 					disposition: "replayed",
@@ -529,33 +561,41 @@ export function createApprovalTransitionEngine(
 				workflow,
 				actor,
 				command: request.command,
+				principal: request.principal,
 			});
 			if (!allowsAuthorization(request, authorization)) {
 				throw engineError("forbidden", { command: request.command.type });
 			}
 
 			const adapter = context.adapterRegistry.get(workflow.workflowType);
-			let source: unknown;
-			try {
-				source = await dependencies.sourceLoader.load({
+			// The snapshot was read before the version CAS. A concurrent command that
+			// committed meanwhile also moved the source, so a source or adapter check
+			// that fails against this stale snapshot is a version race, not a bad source.
+			const reportingVersionRace = async <T>(step: () => Promise<T>): Promise<T> => {
+				try {
+					return await step();
+				} catch (error) {
+					const current = await context.repository.loadSnapshot({
+						organizationId: request.organizationId,
+						workflowId: request.workflowId,
+					});
+					if (current.version !== workflow.version) {
+						throw engineError("version_conflict", {
+							expectedVersion: String(workflow.version),
+							actualVersion: String(current.version),
+						});
+					}
+					throw error;
+				}
+			};
+			const source = await reportingVersionRace(() =>
+				dependencies.sourceLoader.load({
 					dbService: context.dbService,
 					organizationId: request.organizationId,
 					workflow,
 					actor,
-				});
-			} catch (error) {
-				const current = await context.repository.loadSnapshot({
-					organizationId: request.organizationId,
-					workflowId: request.workflowId,
-				});
-				if (current.version !== workflow.version) {
-					throw engineError("version_conflict", {
-						expectedVersion: String(workflow.version),
-						actualVersion: String(current.version),
-					});
-				}
-				throw error;
-			}
+				}),
+			);
 			const adapterContext: ApprovalDomainAdapterContext<unknown> = {
 				organizationId: request.organizationId,
 				workflow,
@@ -568,14 +608,18 @@ export function createApprovalTransitionEngine(
 				source,
 				actor,
 			};
-			const capabilities = await adapter.getTrustedCapabilities(adapterContext);
+			const capabilities = await reportingVersionRace(() =>
+				adapter.getTrustedCapabilities(adapterContext),
+			);
 			const preflight = adapterCommand(request.command);
 			if (preflight) {
-				await adapter.preflightCommand({
-					...adapterContext,
-					command: preflight,
-					proposedStatus: proposedStatus(preflight),
-				});
+				await reportingVersionRace(() =>
+					adapter.preflightCommand({
+						...adapterContext,
+						command: preflight,
+						proposedStatus: proposedStatus(preflight),
+					}),
+				);
 			}
 			const decisionCommand =
 				request.command.type === "approve" || request.command.type === "reject"
@@ -617,6 +661,17 @@ export function createApprovalTransitionEngine(
 				request.command,
 				policy,
 				dependencies.clock.nowInstant(),
+				offboardingPrincipal
+					? {
+							// Stable lineage only; the worker lease is never recorded.
+							offboardingLineage: {
+								departureId: offboardingPrincipal.departureId,
+								employmentPeriodId: offboardingPrincipal.employmentPeriodId,
+								handoverTaskId: offboardingPrincipal.handoverTaskId,
+								sourceAssignmentId: offboardingPrincipal.assignmentId,
+							},
+						}
+					: {},
 			);
 			if (plan.expectedVersion !== request.expectedVersion) {
 				throw engineError("version_conflict", {
@@ -720,6 +775,7 @@ export function createApprovalTransitionEngine(
 					stage,
 					actor: activationActor,
 					routingContext,
+					requesterMode: "existing_workflow",
 				});
 				if (
 					resolved.organizationId !== request.organizationId ||

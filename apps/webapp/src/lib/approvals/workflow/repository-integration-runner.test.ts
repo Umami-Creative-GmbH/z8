@@ -9,9 +9,14 @@ const runnerPath = fileURLToPath(
 	),
 );
 
+async function readRunner() {
+	// Windows autocrlf checkouts read CRLF; the contract is written against LF.
+	return (await readFile(runnerPath, "utf8")).replace(/\r\n/g, "\n");
+}
+
 describe("approval workflow repository integration runner", () => {
 	it("owns a labelled PostgreSQL 16 lifecycle and passes both test gates", async () => {
-		const runner = await readFile(runnerPath, "utf8");
+		const runner = await readRunner();
 
 		expect(runner).toContain("postgres:16");
 		expect(runner).toContain(
@@ -59,7 +64,7 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 	});
 
 	it("passes the required database safety environment to the migration verifier", async () => {
-		const runner = await readFile(runnerPath, "utf8");
+		const runner = await readRunner();
 		const verifierCommandBlock = runner.match(
 			/(?:^[A-Z][A-Z_]*=.* \\\n)+^pnpm --dir "\$app_directory" exec tsx \.\/scripts\/verify-approval-migration-recovery\.ts$/m,
 		)?.[0];

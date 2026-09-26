@@ -21,6 +21,7 @@ const REVIEWED_RETAINED_CONNECTION_FILES = [
 	"src/app/[locale]/(app)/settings/payroll-readiness/page.tsx",
 	"src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
 	"src/app/[locale]/(app)/settings/wellness/page.tsx",
+	"src/app/[locale]/(app)/settings/work-diagnostics/page.tsx",
 	"src/app/[locale]/(app)/works-council/page.tsx",
 	"src/app/[locale]/(auth)/layout.tsx",
 	"src/app/[locale]/(setup)/setup/page.tsx",
@@ -154,6 +155,15 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "current-period",
 		reason: "The default payroll-readiness period must be resolved per request.",
 		operation: "const period = getPayrollReadinessPeriod(resolvedSearchParams);",
+	},
+	{
+		file: "src/app/[locale]/(app)/settings/work-diagnostics/page.tsx",
+		contentComponent: "WorkDiagnosticsContent",
+		fallbackComponent: "SettingsContentLoading",
+		reasonCategory: "current-period",
+		reason: "The default work-diagnostics period must be resolved per request.",
+		authorizationOperation: "requireOrgAdminSettingsAccess(),",
+		operation: "const period = resolvePeriod(params);",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/vacation/employees/page.tsx",
@@ -1240,7 +1250,7 @@ describe("loading frame alignment", () => {
 describe("App Router connection escape hatches", () => {
 	it("keeps the pending inventory empty and the retained inventory exact", () => {
 		expect(PENDING_CONNECTION_FILES).toHaveLength(0);
-		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(16);
+		expect(REVIEWED_RETAINED_CONNECTION_FILES).toHaveLength(17);
 	});
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {

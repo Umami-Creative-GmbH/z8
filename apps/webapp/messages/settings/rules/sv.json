@@ -135,7 +135,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Alla utstämplingar",
       "allManagers": "Alla chefer",
       "approvalDaysDescription": "Utöver självbetjäning kan anställda begära ändringar inom detta tidsfönster (kräver godkännande). 0 = inget ytterligare tidsfönster.",
       "approvalDaysLabel": "Godkännandefönster (dagar)",
@@ -226,8 +225,7 @@
       "trustModeDescription": "Tillåt anställda att redigera poster utan några godkännandekrav",
       "trustModeLabel": "Tillitsläge",
       "updated": "Policyn har uppdaterats",
-      "updateFailed": "Det gick inte att uppdatera policyn",
-      "zeroDayPolicy": "Varje utstämpling kräver godkännande av chef (strängaste läget)."
+      "updateFailed": "Det gick inte att uppdatera policyn"
     },
     "coverageRules": {
       "addRule": "Lägg till regel",

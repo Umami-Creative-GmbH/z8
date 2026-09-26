@@ -22,7 +22,7 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: () => (_key: string, fallback: string) => fallback,
 }));
 
-vi.mock("../../absences/actions", () => ({
+vi.mock("../../absences/queries", () => ({
 	getAbsenceCategories: vi.fn(async () => []),
 }));
 

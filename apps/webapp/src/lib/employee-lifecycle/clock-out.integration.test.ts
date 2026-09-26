@@ -167,4 +167,41 @@ describeLifecycleDatabase("departure clock-out", () => {
 			),
 		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "period_starts_after_cutoff" });
 	});
+
+	// #327: the departure clock-out is not a coordinated writer, so an organization
+	// that adopted appends refuses it before any write and the period stays open.
+	it("leaves adopted work open with an append_adopted timer repair", async () => {
+		const target = await fixture.seedEmployee();
+		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
+		const identity = await scheduleAt(target);
+		await fixture.pool.query(
+			"insert into time_entry_append_control (organization_id, mode) values ($1, 'active')",
+			[fixture.organizationId],
+		);
+		try {
+			await execute(identity);
+		} finally {
+			await fixture.pool.query(
+				"delete from time_entry_append_control where organization_id = $1",
+				[fixture.organizationId],
+			);
+		}
+
+		expect(
+			await row(`select end_time, is_active from work_period where id = $1`, [periodId]),
+		).toEqual({ end_time: null, is_active: true });
+		expect(
+			await row(
+				`select count(*)::int as count from time_entry where employee_id = $1 and type = 'clock_out'`,
+				[target.employeeId],
+			),
+		).toEqual({ count: 0 });
+		expect(
+			await row(
+				`select kind, subject_id, metadata->>'reason' as reason from employee_departure_review
+				 where departure_id = $1`,
+				[identity.departureId],
+			),
+		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "append_adopted" });
+	});
 });

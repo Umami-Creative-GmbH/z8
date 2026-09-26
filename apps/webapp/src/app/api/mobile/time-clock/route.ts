@@ -5,6 +5,7 @@ import {
 	clockOut,
 } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
 import {
+	hasCommittedMobileClockOut,
 	MobileApiError,
 	requireMobileEmployee,
 	requireMobileSessionContext,
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
 			);
 		}
 
-		await requireMobileEmployee(session.user.id, activeOrganizationId);
+		const employeeRecord = await requireMobileEmployee(session.user.id, activeOrganizationId);
 		let actionInstant: ReturnType<typeof parseInstant>;
 		try {
 			actionInstant = parseInstant(parsedBody.data.timestamp);
@@ -84,7 +85,18 @@ export async function POST(request: Request) {
 				{ status: 400 },
 			);
 		}
+		// Historical committed recovery precedes fresh age admission (#283): a
+		// clock-out submission that already committed replays through the unchanged
+		// legacy matcher at any age. Clock-ins carry no identity and keep the skew.
+		const committedClockOut =
+			parsedBody.data.action === "clock_out" &&
+			(await hasCommittedMobileClockOut({
+				organizationId: activeOrganizationId,
+				employeeId: employeeRecord.id,
+				submissionId: parsedBody.data.submissionId,
+			}));
 		if (
+			!committedClockOut &&
 			Math.abs(
 				Number(
 					systemClock.nowInstant().epochNanoseconds -

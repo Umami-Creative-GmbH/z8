@@ -47,6 +47,27 @@ export async function assertCanonicalCutoverReady(organizationId: string) {
 	}
 }
 
+const ABSENCE_RECONCILIATION_KEYS = [
+	"absenceCountMismatch",
+	"missingAbsenceCanonicalRecords",
+	"missingAbsenceDetailRows",
+	"missingAbsenceCanonicalLinks",
+	"missingAbsenceOrganizationIds",
+] as const satisfies readonly (keyof LegacyCanonicalReconciliation)[];
+
+/**
+ * Read-only absence readiness for organizations under scoped payroll work
+ * collection (#322). Work readiness is the collection's own scoped assessment, so
+ * the organization-wide backfill must not run and rewrite work lineage; absences
+ * keep this organization-wide check until they get a scoped one.
+ */
+export async function assertCanonicalAbsencesReady(organizationId: string) {
+	const reconciliation = await reconcileLegacyToCanonical(organizationId);
+	if (ABSENCE_RECONCILIATION_KEYS.some((key) => reconciliation[key] > 0)) {
+		throw new CanonicalCutoverNotReadyError(organizationId, reconciliation);
+	}
+}
+
 function hasReconciliationMismatch(reconciliation: Record<string, number>) {
 	return Object.values(reconciliation).some((count) => count > 0);
 }

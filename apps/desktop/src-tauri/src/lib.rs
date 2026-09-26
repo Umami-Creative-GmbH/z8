@@ -1,7 +1,13 @@
 mod auth;
+mod break_evidence;
 mod clock;
 mod clock_command;
+mod clock_journal;
+mod command_store;
+mod command_sync;
+mod command_transport;
 mod commands;
+mod frozen_command;
 mod idle;
 mod offline;
 mod settings;
@@ -98,6 +104,7 @@ pub fn run() {
             commands::clock_in,
             commands::clock_out,
             commands::clock_out_with_break,
+            commands::dismiss_idle_break,
             commands::initiate_oauth,
             commands::logout,
             commands::get_session,
@@ -107,6 +114,9 @@ pub fn run() {
             commands::set_auto_startup,
             commands::get_pending_queue_count,
             commands::get_queue_recovery_summary,
+            commands::sync_clock_commands,
+            commands::retry_clock_command,
+            commands::archive_clock_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

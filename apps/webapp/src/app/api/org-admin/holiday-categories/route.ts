@@ -6,6 +6,7 @@ import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
 
 /**
  * GET /api/org-admin/holiday-categories
@@ -82,20 +83,23 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 		}
 
-		// Create category
-		const [newCategory] = await db
-			.insert(holidayCategory)
-			.values({
-				organizationId: activeOrgId,
-				type,
-				name,
-				description: description || null,
-				color: color || null,
-				blocksTimeEntry: blocksTimeEntry ?? true,
-				excludeFromCalculations: excludeFromCalculations ?? true,
-				isActive: isActive ?? true,
-			})
-			.returning();
+		// Manual submissions read blocking categories under the configuration guard.
+		const newCategory = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
+			const [created] = await tx
+				.insert(holidayCategory)
+				.values({
+					organizationId: activeOrgId,
+					type,
+					name,
+					description: description || null,
+					color: color || null,
+					blocksTimeEntry: blocksTimeEntry ?? true,
+					excludeFromCalculations: excludeFromCalculations ?? true,
+					isActive: isActive ?? true,
+				})
+				.returning();
+			return created;
+		});
 
 		return NextResponse.json({ category: newCategory }, { status: 201 });
 	} catch (error) {

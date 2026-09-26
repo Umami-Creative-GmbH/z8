@@ -20,8 +20,9 @@ const timeClockSchema = z.discriminatedUnion("action", [
 	z.object({
 		action: z.literal("clock_out"),
 		submissionId: z.uuid(),
-		projectId: z.string().min(1).optional(),
-		workCategoryId: z.string().min(1).optional(),
+		// Omitted keeps the active period's attribution; null clears it explicitly.
+		projectId: z.string().min(1).nullable().optional(),
+		workCategoryId: z.string().min(1).nullable().optional(),
 		browserTimezone: z.string().nullish(),
 	}),
 ]);

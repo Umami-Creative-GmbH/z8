@@ -4,6 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { auditExportPackage, db } from "@/db";
+import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
 import {
 	type AuditExportConfigData,
 	configurationService,
@@ -386,6 +387,8 @@ export interface AuditPackRequestInfo {
 		approvalEventCount: number;
 		timelineEventCount: number;
 		expandedNodeCount: number;
+		/** Null for packs generated before append assurance was disclosed. */
+		appendAssurance: AuditPackAppendAssurance | null;
 		createdAt: Date;
 	} | null;
 }
@@ -538,6 +541,7 @@ export async function getAuditPackRequestsAction(
 						approvalEventCount: request.artifact.approvalEventCount,
 						timelineEventCount: request.artifact.timelineEventCount,
 						expandedNodeCount: request.artifact.expandedNodeCount,
+						appendAssurance: request.artifact.appendAssurance,
 						createdAt: request.artifact.createdAt,
 					}
 				: null,

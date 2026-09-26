@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
+import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
@@ -72,6 +73,16 @@ export async function sendTelegramNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"Telegram notification recipient has no scoped display context",
 			);
+			return;
+		}
+
+		// One owner per delivery effect (#291): where the approval delivery owner
+		// has the absence card, this path sends neither the card nor a plain
+		// message about the same request.
+		if (
+			params.type === "approval_request_submitted" &&
+			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "telegram" }))
+		) {
 			return;
 		}
 

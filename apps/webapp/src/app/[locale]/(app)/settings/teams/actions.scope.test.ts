@@ -39,6 +39,16 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 }));
 
+// Protection is covered by authorization-mutation.test.ts and the PostgreSQL
+// suite; here the mutation runs against the fake database.
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: async (
+		_scope: unknown,
+		mutation: (tx: unknown) => Promise<unknown>,
+		database: unknown,
+	) => mutation(database),
+}));
+
 vi.mock("next/cache", () => ({
 	revalidateTag: mockState.revalidateTag,
 }));
@@ -767,6 +777,7 @@ describe("team settings server scope", () => {
 				teamId: "team-b",
 				user: { name: "Target" },
 			},
+			{ teamId: "team-b" },
 		];
 		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
 		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];

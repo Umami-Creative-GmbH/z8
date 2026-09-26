@@ -9,6 +9,7 @@ import {
 } from "../domain-adapters/registry";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
+	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	type ApprovalAssignmentActorIdentity,
 	type ApprovalAssignmentChange,
 	type ApprovalAssignmentSnapshot,
@@ -1494,7 +1495,11 @@ function planReassignment(
 	snapshot: ApprovalWorkflowSnapshot,
 	command: Extract<ApprovalWorkflowCommand, { type: "reassign" | "escalate" }>,
 	now: Instant,
+	offboardingLineage: JsonObject | undefined,
 ): ApprovalTransitionPlan {
+	if (offboardingLineage && command.type !== "reassign") {
+		fail("INVALID_COMMAND", { field: "offboarding_lineage" });
+	}
 	const stage = currentStage(snapshot);
 	if (
 		stage.id !== command.stageId ||
@@ -1561,7 +1566,9 @@ function planReassignment(
 		resolvedBy: null,
 		reassignedBy: { kind: "command_actor" },
 		reassignedFrom: persistedReference(source.id),
-		reassignmentMetadata: { kind },
+		reassignmentMetadata: offboardingLineage
+			? { kind, offboarding: cloneJson(offboardingLineage) as JsonObject }
+			: { kind },
 	};
 	resultingStage.assignments.push(created);
 	const actor: ApprovalEventActorIntent = { kind: "command_actor" };
@@ -1585,6 +1592,9 @@ function planReassignment(
 					kind,
 					sourceEmployeeId: command.fromEmployeeId,
 					stageId: stage.id,
+					...(offboardingLineage
+						? { offboarding: cloneJson(offboardingLineage) as JsonObject }
+						: {}),
 				},
 				references: {
 					sourceAssignment: persistedReference(source.id),
@@ -2227,7 +2237,8 @@ export function fingerprintApprovalCommandActor(
 	if (systemCapability !== undefined) {
 		if (
 			actor.kind !== "system" ||
-			systemCapability !== APPROVAL_ESCALATION_SYSTEM_ID
+			(systemCapability !== APPROVAL_ESCALATION_SYSTEM_ID &&
+				systemCapability !== EMPLOYEE_OFFBOARDING_SYSTEM_ID)
 		) {
 			materializationConflict("command_actor_capability");
 		}
@@ -3024,11 +3035,20 @@ export function materializeApprovalTransitionPlan(
 	}
 }
 
+export interface ApprovalWorkflowTransitionOptions {
+	/**
+	 * Departure evidence recorded on a handover reassignment's new assignment
+	 * and event. Only a `reassign` command accepts it.
+	 */
+	offboardingLineage?: JsonObject;
+}
+
 export function planWorkflowTransition(
 	snapshot: ApprovalWorkflowSnapshot,
 	command: ApprovalWorkflowCommand,
 	policy: ApprovalWorkflowPolicy,
 	now: Instant,
+	options: ApprovalWorkflowTransitionOptions = {},
 ): ApprovalTransitionPlan {
 	validateSnapshot(snapshot);
 	validateCommandIdentities(command);
@@ -3090,7 +3110,12 @@ export function planWorkflowTransition(
 			return planPendingClosure(snapshot, command, now);
 		case "reassign":
 		case "escalate":
-			return planReassignment(snapshot, command, now);
+			return planReassignment(
+				snapshot,
+				command,
+				now,
+				options.offboardingLineage,
+			);
 		default:
 			return fail("INVALID_COMMAND", { field: "type" });
 	}

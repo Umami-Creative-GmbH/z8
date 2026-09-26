@@ -23,10 +23,12 @@ function functionBody(name: string) {
 
 describe("clocking service delegation", () => {
 	it.each([
-		"clockIn",
-		"clockOut",
-	])("delegates %s writes to the shared clocking service", (name) => {
-		const body = functionBody(name);
+		["clockIn", "clockInAs"],
+		["clockOut", "clockOutAs"],
+	])("delegates %s writes to the shared clocking service", (name, shared) => {
+		// The web action authenticates, then runs the live core bots share (#277).
+		expect(functionBody(name)).toContain(`await ${shared}(`);
+		const body = functionBody(shared);
 
 		expect(body).toContain(`clockingService.${name}({`);
 		expect(body).not.toContain("await db.transaction(async (tx)");
@@ -34,7 +36,7 @@ describe("clocking service delegation", () => {
 	});
 
 	it("captures browser evidence before delegating clock-in", () => {
-		const body = functionBody("clockIn");
+		const body = functionBody("clockInAs");
 
 		const captureIndex = body.indexOf("resolveTimeEntryTimezoneCapture(");
 		const delegateIndex = body.indexOf("clockingService.clockIn({");
@@ -47,12 +49,11 @@ describe("clocking service delegation", () => {
 	});
 
 	it("checks clock-out guards before shared writes", () => {
-		const body = functionBody("clockOut");
+		const body = functionBody("clockOutAs");
 		const projectValidationIndex = body.indexOf(
 			"await validateProjectAssignment(",
 		);
 		const billingIndex = body.indexOf("requireBillingForMutation(");
-		const approvalPolicyIndex = body.indexOf("checkClockOutNeedsApproval(");
 		const canonicalIndex = body.indexOf(
 			"canonicalWorkRecordClient.createForCompletedPeriod(",
 		);
@@ -60,15 +61,16 @@ describe("clocking service delegation", () => {
 
 		expect(projectValidationIndex).toBeGreaterThanOrEqual(0);
 		expect(billingIndex).toBeGreaterThan(projectValidationIndex);
-		expect(approvalPolicyIndex).toBeGreaterThan(billingIndex);
 		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
-		expect(canonicalIndex).toBeGreaterThan(approvalPolicyIndex);
+		expect(canonicalIndex).toBeGreaterThan(billingIndex);
 		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
 		expect(body).toContain("beforePeriodClose:");
-		expect(body).toContain("afterPeriodClose:");
 		expect(body).toContain("withWebClockOutTransaction(");
-		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
 		expect(body).not.toContain("createClockOutApprovalRequest(");
+		// A live clock-out never routes approval (#361): only a committed
+		// historical submission replays.
+		expect(body).not.toContain("checkClockOutNeedsApproval(");
+		expect(body).not.toContain("afterPeriodClose:");
 	});
 
 	it("creates manual source and approval state in one workflow transaction", () => {

@@ -1,6 +1,6 @@
 import { toNextJsHandler } from "better-auth/next-js";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { auth, handleAuthRequest } from "@/lib/auth";
 import { classifyDomainHost, resolvePlatformOrganization } from "@/lib/domain";
 
 const handlers = toNextJsHandler(auth);
@@ -40,7 +40,8 @@ export async function rejectUnsupportedPlatformHost(request: Request) {
 function withPlatformHostCheck(method: AuthMethod) {
 	return async (request: Request) => {
 		const response = await rejectUnsupportedPlatformHost(request);
-		return response ?? handlers[method](request);
+		// Membership, role and access mutations commit with their guards (#314).
+		return response ?? handleAuthRequest(request, handlers[method]);
 	};
 }
 

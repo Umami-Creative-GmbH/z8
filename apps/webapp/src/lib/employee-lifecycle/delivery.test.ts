@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { runDepartureTaskDelivery } from "./delivery";
+import { DepartureTaskNeedsResolutionError, runDepartureTaskDelivery } from "./delivery";
 import type { DepartureTaskClaim, DepartureTaskOutbox } from "./outbox";
 import { createSessionRevocationHandler } from "./session-cleanup";
 
@@ -64,6 +64,23 @@ describe("runDepartureTaskDelivery", () => {
 			expect.objectContaining({ message: "unsupported_departure_task_kind" }),
 			{ terminal: true },
 		);
+	});
+
+	it("fails a task terminally when its handler needs admin resolution", async () => {
+		const outbox = fakeOutbox([claim({ id: "handover", kind: "approval_handover" })]);
+		outbox.defer.mockResolvedValue("failed");
+		const needsAdmin = new DepartureTaskNeedsResolutionError("no_replacement");
+
+		const result = await runDepartureTaskDelivery({
+			outbox,
+			now: NOW,
+			handlers: { approval_handover: vi.fn().mockRejectedValue(needsAdmin) },
+		});
+
+		expect(result).toEqual({ claimed: 1, completed: 0, deferred: 0, failed: 1 });
+		expect(outbox.defer).toHaveBeenCalledWith(expect.anything(), NOW, needsAdmin, {
+			terminal: true,
+		});
 	});
 
 	it("clears the private token payload after session cleanup succeeds", async () => {

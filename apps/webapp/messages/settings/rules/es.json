@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Todos los registros de salida",
       "allManagers": "Todos los gerentes",
       "approvalDaysDescription": "Más allá del autoservicio, los empleados pueden solicitar cambios dentro de este periodo (requiere aprobación). 0 = sin periodo adicional.",
       "approvalDaysLabel": "Periodo de aprobación (días)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Permitir que los empleados editen entradas sin requisitos de aprobación",
       "trustModeLabel": "Modo de confianza",
       "updated": "Política actualizada correctamente",
-      "updateFailed": "Error al actualizar la política",
-      "zeroDayPolicy": "Cada registro de salida requerirá la aprobación del gerente (modo más estricto)."
+      "updateFailed": "Error al actualizar la política"
     },
     "coverageRules": {
       "addRule": "Añadir regla",

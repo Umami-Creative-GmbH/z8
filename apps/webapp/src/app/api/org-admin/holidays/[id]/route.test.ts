@@ -9,9 +9,14 @@ const mockState = vi.hoisted(() => {
 	const updateWhere = vi.fn(() => ({ returning }));
 	const set = vi.fn(() => ({ where: updateWhere }));
 	const update = vi.fn(() => ({ set }));
+	const execute = vi.fn(async () => []);
+	const transaction = vi.fn(async (callback: (tx: unknown) => unknown) =>
+		callback({ execute, select, update }),
+	);
 
 	return {
 		connection: vi.fn(),
+		execute,
 		from,
 		getAbility: vi.fn(),
 		getSession: vi.fn(),
@@ -20,6 +25,7 @@ const mockState = vi.hoisted(() => {
 		returning,
 		select,
 		set,
+		transaction,
 		update,
 		updateWhere,
 		where,
@@ -41,6 +47,7 @@ vi.mock("next/server", async () => {
 vi.mock("@/db", () => ({
 	db: {
 		select: mockState.select,
+		transaction: mockState.transaction,
 		update: mockState.update,
 	},
 }));
@@ -86,6 +93,7 @@ vi.mock("@/lib/authorization", () => ({
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
 }));
 
 const { PATCH } = await import("./route");
@@ -140,5 +148,14 @@ describe("PATCH /api/org-admin/holidays/[id]", () => {
 			{ column: "holidayCategory.organizationId", value: "org-1" },
 		]);
 		expect(mockState.update).not.toHaveBeenCalled();
+		// The organization's exclusive configuration guard came first.
+		expect(mockState.execute).toHaveBeenCalledWith(
+			expect.objectContaining({
+				values: [JSON.stringify(["work-organization-configuration", "org-1"])],
+			}),
+		);
+		expect(mockState.execute.mock.invocationCallOrder[0]).toBeLessThan(
+			mockState.select.mock.invocationCallOrder[0] ?? 0,
+		);
 	});
 });

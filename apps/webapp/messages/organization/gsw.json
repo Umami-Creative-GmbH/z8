@@ -256,6 +256,7 @@
       "title": "Teams"
     },
     "timezone": {
+      "balances-recalculating": "D Arbeitszytsalde wärde für di nöii Zytzone nöi berächnet und bis dänn usbländet.",
       "default": "Standard-Zytzone",
       "description": "Leg de Standard-Zytzone für dini Organisation fescht. Die wird für d'Absenzverfolgig, Berichte und anderi datumsbasierte Funktione brucht. Einzelni Benutzer chönd das in ihrne Profileistellige überschriibe.",
       "owner-only": "Nur Inhaber vo de Organisation chönd d'Zytzone-Iistellig ändere.",

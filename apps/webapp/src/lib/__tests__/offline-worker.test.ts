@@ -36,6 +36,9 @@ function worker() {
 				listeners.set(type, listener),
 			registration: { sync: { register } },
 			OfflineQueueDB: { enqueue },
+			ClockCommandDispatch: {
+				process: vi.fn().mockResolvedValue({ status: "idle", committed: [] }),
+			},
 			SyncService: {
 				notifyQueueUpdate,
 				processQueue,

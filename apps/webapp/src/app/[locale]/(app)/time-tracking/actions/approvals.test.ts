@@ -13,7 +13,6 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/lib/notifications/triggers", () => ({
-	onClockOutApproved: vi.fn(),
 	onClockOutPendingApproval: mocks.onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager: mocks.onClockOutPendingApprovalToManager,
 	onManualEntryApproved: vi.fn(),
@@ -58,9 +57,9 @@ describe("ordinary approval notifications", () => {
 				resolveManager = resolve;
 			}),
 		);
-		const { sendClockOutApprovalNotifications } = await import("./approvals");
+		const { sendManualEntryApprovalNotifications } = await import("./approvals");
 		let settled = false;
-		const pending = sendClockOutApprovalNotifications({
+		const pending = sendManualEntryApprovalNotifications({
 			workPeriodId: "period-1",
 			employeeId: "employee-1",
 			managerId: "manager-1",

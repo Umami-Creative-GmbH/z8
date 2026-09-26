@@ -402,7 +402,8 @@ interface ClockOutApprovalResultParams {
 }
 
 /**
- * Notify employee that their clock-out is pending approval (0-day policy)
+ * Notify employee that their submitted work is pending approval. Manual time
+ * entries use it; a live clock-out never routes approval (#361).
  */
 export async function onClockOutPendingApproval(
 	params: ClockOutApprovalParams,
@@ -436,7 +437,7 @@ export async function onClockOutPendingApproval(
 }
 
 /**
- * Notify manager that a clock-out needs approval (0-day policy)
+ * Notify manager that submitted work needs approval (manual time entries).
  */
 export async function onClockOutPendingApprovalToManager(
 	params: ClockOutApprovalToManagerParams,

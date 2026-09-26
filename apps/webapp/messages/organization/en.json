@@ -256,6 +256,7 @@
       "title": "Teams"
     },
     "timezone": {
+      "balances-recalculating": "Work balances are being recalculated for the new timezone and stay hidden until they are ready.",
       "default": "Default Timezone",
       "description": "Set the default timezone for your organization. This is used for absence tracking, reports, and other date-based features. Individual users can override this in their profile settings.",
       "owner-only": "Only organization owners can change the timezone setting.",

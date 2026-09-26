@@ -700,6 +700,53 @@ describe("shared time-entry approval presentation", () => {
 		});
 	});
 
+	describe("a pending correction named by its request", () => {
+		const pendingId = "60000000-0000-4000-8000-000000000001";
+		const request = {
+			metadata: {
+				timeCorrection: {
+					action: "edit",
+					workLocationType: "office",
+					workCategoryId: null,
+					clockInCorrectionId: pendingId,
+				},
+				timeCorrectionOriginalWorkMetadata: { workLocationType: "office", workCategoryId: null },
+			},
+			reason: null,
+		};
+		const pendingRow = {
+			id: pendingId,
+			timestamp: new Date("2026-05-22T13:45:00.000Z"),
+			replacesEntryId: "clock-in-original",
+			isSuperseded: true,
+			supersededById: null,
+		};
+
+		it("is classified by its inactive rows and stays actionable", () => {
+			expect(buildTimeApprovalReview(period, request, [pendingRow])).toMatchObject({
+				kind: "time_correction",
+				isActionable: true,
+				warning: null,
+			});
+		});
+
+		it("is not verified by a row another entry already superseded", () => {
+			expect(
+				buildTimeApprovalReview(period, request, [
+					{ ...pendingRow, supersededById: "70000000-0000-4000-8000-000000000001" },
+				]),
+			).toMatchObject({ kind: "unclassified", isActionable: false });
+		});
+
+		it("is not verified by a row replacing another period's entry", () => {
+			expect(
+				buildTimeApprovalReview(period, request, [
+					{ ...pendingRow, replacesEntryId: "clock-in-elsewhere" },
+				]),
+			).toMatchObject({ kind: "unclassified", isActionable: false });
+		});
+	});
+
 	it("keeps a list row unclassified when only superseded correction history exists", () => {
 		const review = buildTimeApprovalReview(
 			period,

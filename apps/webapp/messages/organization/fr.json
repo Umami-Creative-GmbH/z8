@@ -256,6 +256,7 @@
       "title": "Équipes"
     },
     "timezone": {
+      "balances-recalculating": "Les soldes de travail sont recalculés pour le nouveau fuseau horaire et restent masqués jusqu'à ce qu'ils soient prêts.",
       "default": "Fuseau horaire par défaut",
       "description": "Définissez le fuseau horaire par défaut de votre organisation. Il est utilisé pour le suivi des absences, les rapports et d'autres fonctionnalités basées sur la date. Les utilisateurs individuels peuvent le remplacer dans les paramètres de leur profil.",
       "owner-only": "Seuls les propriétaires de l'organisation peuvent modifier le paramètre de fuseau horaire.",

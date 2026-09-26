@@ -968,7 +968,10 @@ describe("CalendarView", () => {
 		);
 	});
 
-	it("confirms employee clock-out, posts only the work period id, refetches, and shows success", async () => {
+	it("confirms employee clock-out, posts the work period and its closure identity, refetches, and shows success", async () => {
+		vi.spyOn(globalThis.crypto, "randomUUID").mockReturnValueOnce(
+			"5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10",
+		);
 		vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 200 }));
 
 		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
@@ -988,11 +991,11 @@ describe("CalendarView", () => {
 			expect(fetch).toHaveBeenCalledWith("/api/time-entries/clock-out-on-behalf", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ workPeriodId: "work-running" }),
+				body: JSON.stringify({
+					workPeriodId: "work-running",
+					operationId: "5b0d1c52-4c6f-4a53-9d2e-6f1f3b2a7c10",
+				}),
 			});
-		});
-		expect(JSON.parse(vi.mocked(fetch).mock.calls[0]?.[1]?.body as string)).toEqual({
-			workPeriodId: "work-running",
 		});
 		await waitFor(() => {
 			expect(refetch).toHaveBeenCalledTimes(1);
@@ -1018,6 +1021,54 @@ describe("CalendarView", () => {
 		});
 		expect(refetch).not.toHaveBeenCalled();
 		expect(screen.getByRole("heading", { name: "Clock out employee?" })).toBeTruthy();
+	});
+
+	it("resends the same closure identity when retrying after a failed response", async () => {
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(
+				new Response(JSON.stringify({ error: "Internal server error", outcome: "unknown" }), {
+					status: 500,
+					headers: { "Content-Type": "application/json" },
+				}),
+			)
+			.mockRejectedValueOnce(new TypeError("Failed to fetch"))
+			.mockResolvedValueOnce(new Response(null, { status: 200 }))
+			.mockResolvedValueOnce(new Response(null, { status: 201 }));
+
+		render(<CalendarView organizationId="org-1" currentEmployeeId="employee-1" />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		for (const attempt of [1, 2]) {
+			fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+			await waitFor(() => {
+				expect(toastError).toHaveBeenCalledTimes(attempt);
+			});
+			await waitFor(() => {
+				expect(
+					(screen.getByRole("button", { name: "Clock Out" }) as HTMLButtonElement).disabled,
+				).toBe(false);
+			});
+		}
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+		await waitFor(() => {
+			expect(refetch).toHaveBeenCalledTimes(1);
+		});
+
+		const identities = vi
+			.mocked(fetch)
+			.mock.calls.map((call) => JSON.parse(call[1]?.body as string).operationId);
+		expect(identities[0]).toMatch(/^[0-9a-f-]{36}$/);
+		expect(identities).toEqual([identities[0], identities[0], identities[0]]);
+
+		// A committed closure's identity is never reused for a later closure.
+		fireEvent.click(screen.getByRole("button", { name: "Request running stop" }));
+		fireEvent.click(screen.getByRole("button", { name: "Clock Out" }));
+		await waitFor(() => {
+			expect(fetch).toHaveBeenCalledTimes(4);
+		});
+		expect(JSON.parse(vi.mocked(fetch).mock.calls[3]?.[1]?.body as string).operationId).not.toBe(
+			identities[0],
+		);
 	});
 
 	it("allows manager-or-above users to request clock-out for running work periods", () => {

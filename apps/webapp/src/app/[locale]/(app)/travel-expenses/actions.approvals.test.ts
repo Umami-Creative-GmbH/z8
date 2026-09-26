@@ -1,31 +1,14 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockState = vi.hoisted(() => {
-	const updateReturning = vi.fn();
-	const updateWhere = vi.fn(() => ({ returning: updateReturning }));
-	const updateSet = vi.fn(() => ({ where: updateWhere }));
-	const insertValues = vi.fn();
-	const notifyTravelExpenseRequesterAfterDecisionForApprover = vi.fn();
-
-	return {
-		getAuthContext: vi.fn(),
-		revalidatePath: vi.fn(),
-		findClaim: vi.fn(),
-		dbUpdate: vi.fn(() => ({ set: updateSet })),
-		dbInsert: vi.fn(() => ({ values: insertValues })),
-		updateReturning,
-		insertValues,
-		notifyTravelExpenseRequesterAfterDecisionForApprover,
-	};
-});
-
-vi.mock("drizzle-orm", async (importOriginal) => ({
-	...(await importOriginal<typeof import("drizzle-orm")>()),
-	and: vi.fn((...args: unknown[]) => ({ and: args })),
-	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
-	asc: vi.fn((value: unknown) => ({ asc: value })),
-	desc: vi.fn((value: unknown) => ({ desc: value })),
+const mockState = vi.hoisted(() => ({
+	getAuthContext: vi.fn(),
+	revalidatePath: vi.fn(),
+	dbUpdate: vi.fn(),
+	dbInsert: vi.fn(),
+	decide: vi.fn(),
+	loadApprover: vi.fn(),
+	databaseService: { db: { marker: "db" }, query: vi.fn() },
 }));
 
 vi.mock("next/cache", () => ({
@@ -44,55 +27,48 @@ vi.mock("@/lib/audit-logger", () => ({
 	logAudit: vi.fn().mockResolvedValue(undefined),
 }));
 
-const processApproval = vi.fn();
-
-vi.mock("@/lib/approvals/server/shared", () => ({
-	processApproval,
-}));
-
+// Every expense decision goes through the single decision owner (#296); its
+// replay, holds, evidence and delivery run against PostgreSQL in
+// lib/travel-expenses/expense-review-decision.integration.test.ts.
 vi.mock("@/lib/approvals/server/travel-expense-approvals", () => ({
 	createTravelExpenseApprovalWorkflow: vi.fn(),
-	notifyTravelExpenseRequesterAfterDecisionForApprover:
-		mockState.notifyTravelExpenseRequesterAfterDecisionForApprover,
-	persistTravelExpenseDecision: vi.fn(),
-	preflightTravelExpenseDecision: vi.fn(),
+	decideTravelExpenseClaimEffect: mockState.decide,
+	loadTravelExpenseApprover: mockState.loadApprover,
 }));
 
-vi.mock("@/db/schema", () => ({
-	travelExpenseClaim: {
-		id: "id",
-		organizationId: "organizationId",
-		status: "status",
-		approverId: "approverId",
-		submittedAt: "submittedAt",
-		createdAt: "createdAt",
-	},
-	travelExpenseAttachment: {
-		id: "id",
-	},
-	travelExpenseDecisionLog: {
-		id: "id",
-	},
-	employee: {
-		id: "id",
-		organizationId: "organizationId",
-		role: "role",
-		isActive: "isActive",
-		createdAt: "createdAt",
-	},
-}));
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const { Context } = await import("effect");
+	return { DatabaseService: Context.GenericTag<unknown>("DatabaseService") };
+});
+
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Context, Layer } = await import("effect");
+	return {
+		AppLayer: Layer.succeed(
+			Context.GenericTag<unknown>("DatabaseService"),
+			mockState.databaseService,
+		),
+	};
+});
+
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect");
+	return {
+		runServerActionSafe: async (effect: Effect.Effect<unknown, unknown, never>) => {
+			const exit = await Effect.runPromiseExit(effect);
+			if (Exit.isSuccess(exit)) return { success: true, data: exit.value };
+			const failure = Option.getOrNull(Cause.failureOption(exit.cause)) as {
+				message: string;
+				_tag: string;
+			};
+			return { success: false, error: failure.message, code: failure._tag };
+		},
+	};
+});
 
 vi.mock("@/db", () => ({
 	db: {
-		query: {
-			travelExpenseClaim: {
-				findFirst: mockState.findClaim,
-				findMany: vi.fn(),
-			},
-			employee: {
-				findFirst: vi.fn(),
-			},
-		},
+		query: {},
 		update: mockState.dbUpdate,
 		insert: mockState.dbInsert,
 	},
@@ -100,118 +76,53 @@ vi.mock("@/db", () => ({
 
 const { approveTravelExpenseClaim, rejectTravelExpenseClaim } = await import("./actions");
 
+function authAs(employeeId: string, role: "manager" | "employee") {
+	mockState.getAuthContext.mockResolvedValue({
+		user: { id: `user-${employeeId}` },
+		session: { activeOrganizationId: "org-1" },
+		employee: { id: employeeId, organizationId: "org-1", role, teamId: null },
+	});
+}
+
+function approver(employeeId: string) {
+	return {
+		id: employeeId,
+		userId: `user-${employeeId}`,
+		organizationId: "org-1",
+		user: { id: `user-${employeeId}`, name: "Approver", email: "a@example.com", image: null },
+	};
+}
+
 describe("travel expense approvals", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-1" },
-			session: { activeOrganizationId: "org-1" },
-			employee: {
-				id: "manager-1",
-				organizationId: "org-1",
-				role: "manager",
-				teamId: null,
-			},
-		});
-		mockState.insertValues.mockResolvedValue(undefined);
-		mockState.notifyTravelExpenseRequesterAfterDecisionForApprover.mockReturnValue(Effect.void);
+		authAs("manager-1", "manager");
+		mockState.loadApprover.mockImplementation((_service: unknown, id: string) =>
+			Effect.succeed(approver(id)),
+		);
+		mockState.decide.mockReturnValue(
+			Effect.succeed({ kind: "decided", evidence: null, approvalRequestId: "request-1" }),
+		);
 	});
 
-	it("approve succeeds for manager when claim is assigned and submitted", async () => {
-		processApproval.mockResolvedValue({ success: true, data: undefined });
-
+	it("approves as the session's employee through the decision owner", async () => {
 		const result = await approveTravelExpenseClaim({ claimId: "claim-1", note: "Looks good" });
 
 		expect(result).toEqual({ success: true, data: { status: "approved" } });
-		expect(processApproval).toHaveBeenCalledWith(
-			"travel_expense_claim",
-			"claim-1",
-			"approve",
-			undefined,
-			expect.any(Function),
-			expect.any(Function),
-			{ transactional: true },
+		expect(mockState.loadApprover).toHaveBeenCalledWith(mockState.databaseService, "manager-1");
+		expect(mockState.decide).toHaveBeenCalledWith(
+			mockState.databaseService,
+			approver("manager-1"),
+			{ claimId: "claim-1", action: "approve", note: "Looks good" },
 		);
+		// The owner writes; the action itself never touches claim rows.
 		expect(mockState.dbUpdate).not.toHaveBeenCalled();
 		expect(mockState.dbInsert).not.toHaveBeenCalled();
-		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).toHaveBeenCalledWith(
-			expect.objectContaining({ db: expect.any(Object), query: expect.any(Function) }),
-			"claim-1",
-			"manager-1",
-			"approve",
-		);
-	});
-
-	it("reject fails for manager when claim approverId differs", async () => {
-		processApproval.mockResolvedValue({ success: false, error: "Unauthorized" });
-
-		const result = await rejectTravelExpenseClaim({
-			claimId: "claim-2",
-			reason: "Missing receipt",
-		});
-
-		expect(result).toEqual({ success: false, error: "Unauthorized" });
-		expect(processApproval).toHaveBeenCalledWith(
-			"travel_expense_claim",
-			"claim-2",
-			"reject",
-			"Missing receipt",
-			expect.any(Function),
-			expect.any(Function),
-			{ transactional: true },
-		);
-		expect(mockState.dbUpdate).not.toHaveBeenCalled();
-		expect(mockState.dbInsert).not.toHaveBeenCalled();
-		expect(mockState.revalidatePath).not.toHaveBeenCalled();
-		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).not.toHaveBeenCalled();
-	});
-
-	it("approve allows an employee-role assigned approver to reach shared approval authorization", async () => {
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-employee-approver" },
-			session: { activeOrganizationId: "org-1" },
-			employee: {
-				id: "employee-approver-1",
-				organizationId: "org-1",
-				role: "employee",
-				teamId: null,
-			},
-		});
-		processApproval.mockResolvedValue({ success: true, data: undefined });
-
-		const result = await approveTravelExpenseClaim({ claimId: "claim-1", note: "Looks good" });
-
-		expect(result).toEqual({ success: true, data: { status: "approved" } });
-		expect(processApproval).toHaveBeenCalledWith(
-			"travel_expense_claim",
-			"claim-1",
-			"approve",
-			undefined,
-			expect.any(Function),
-			expect.any(Function),
-			{ transactional: true },
-		);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
-		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).toHaveBeenCalledWith(
-			expect.objectContaining({ db: expect.any(Object), query: expect.any(Function) }),
-			"claim-1",
-			"employee-approver-1",
-			"approve",
-		);
 	});
 
-	it("reject allows an employee-role assigned approver to reach shared approval authorization", async () => {
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-employee-approver" },
-			session: { activeOrganizationId: "org-1" },
-			employee: {
-				id: "employee-approver-1",
-				organizationId: "org-1",
-				role: "employee",
-				teamId: null,
-			},
-		});
-		processApproval.mockResolvedValue({ success: true, data: undefined });
+	it("rejects with the reason through the decision owner", async () => {
+		authAs("employee-approver-1", "employee");
 
 		const result = await rejectTravelExpenseClaim({
 			claimId: "claim-1",
@@ -219,51 +130,44 @@ describe("travel expense approvals", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { status: "rejected" } });
-		expect(processApproval).toHaveBeenCalledWith(
-			"travel_expense_claim",
-			"claim-1",
-			"reject",
-			"Missing receipt",
-			expect.any(Function),
-			expect.any(Function),
-			{ transactional: true },
+		expect(mockState.decide).toHaveBeenCalledWith(
+			mockState.databaseService,
+			approver("employee-approver-1"),
+			{ claimId: "claim-1", action: "reject", reason: "Missing receipt" },
 		);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
-		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).toHaveBeenCalledWith(
-			expect.objectContaining({ db: expect.any(Object), query: expect.any(Function) }),
-			"claim-1",
-			"employee-approver-1",
-			"reject",
-			"Missing receipt",
-		);
 	});
 
-	it("keeps random employee rejection in the shared approval path", async () => {
-		mockState.getAuthContext.mockResolvedValue({
-			user: { id: "user-random" },
-			session: { activeOrganizationId: "org-1" },
-			employee: {
-				id: "random-employee-1",
-				organizationId: "org-1",
-				role: "employee",
-				teamId: null,
-			},
-		});
-		processApproval.mockResolvedValue({ success: false, error: "Unauthorized" });
-
-		const result = await approveTravelExpenseClaim({ claimId: "claim-1" });
-
-		expect(result).toEqual({ success: false, error: "Unauthorized" });
-		expect(processApproval).toHaveBeenCalledWith(
-			"travel_expense_claim",
-			"claim-1",
-			"approve",
-			undefined,
-			expect.any(Function),
-			expect.any(Function),
-			{ transactional: true },
+	it("returns the owner's refusal unchanged and revalidates nothing", async () => {
+		const { AuthorizationError, ConflictError } = await import("@/lib/effect/errors");
+		mockState.decide.mockReturnValueOnce(
+			Effect.fail(new AuthorizationError({ message: "Unauthorized" })),
 		);
+		expect(await approveTravelExpenseClaim({ claimId: "claim-1" })).toMatchObject({
+			success: false,
+			error: "Unauthorized",
+		});
+		mockState.decide.mockReturnValueOnce(
+			Effect.fail(
+				new ConflictError({
+					message: "This claim changed after it was submitted.",
+					conflictType: "approval_evidence",
+				}),
+			),
+		);
+		expect(await rejectTravelExpenseClaim({ claimId: "claim-1", reason: "No" })).toMatchObject({
+			success: false,
+			code: "ConflictError",
+		});
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
-		expect(mockState.notifyTravelExpenseRequesterAfterDecisionForApprover).not.toHaveBeenCalled();
+	});
+
+	it("refuses without an employee context before deciding anything", async () => {
+		mockState.getAuthContext.mockResolvedValue(null);
+		expect(await approveTravelExpenseClaim({ claimId: "claim-1" })).toEqual({
+			success: false,
+			error: "Unauthorized",
+		});
+		expect(mockState.decide).not.toHaveBeenCalled();
 	});
 });

@@ -14,11 +14,13 @@ import {
 	resolveApprovalWorkflowRepositoryTestConfiguration,
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "@/lib/approvals/workflow/repository-integration-harness";
+import { captureAuthTransactions } from "@/lib/auth/auth-transaction";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
 import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
 } from "./auth-configuration";
+import { guardSCIMSubjectAcquisitions } from "./projection-guards";
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -63,11 +65,14 @@ describeIntegration("SCIM projected-user callback PostgreSQL atomicity", () => {
 	const auth = betterAuth({
 		baseURL: "http://localhost:3000",
 		secret: "scim-callback-integration-secret-value",
-		database: drizzleAdapter(database, {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
+		// As in production: SCIM callbacks guard on the captured transaction (#314).
+		database: guardSCIMSubjectAcquisitions(
+			drizzleAdapter(captureAuthTransactions(database), {
+				provider: "pg",
+				schema: authDatabaseSchema,
+				transaction: true,
+			}),
+		),
 		plugins: [
 			createZ8SCIMPlugin("s".repeat(32)),
 			organization({

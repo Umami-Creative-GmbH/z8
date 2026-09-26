@@ -32,6 +32,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
+import {
+	isEscalationWorkflowType,
+	isUntransferableEscalationRoute,
+} from "@/lib/approvals/escalation/kinds";
 import type { EscalationAttentionView } from "@/lib/approvals/escalation/management-overview";
 import type { EscalationCandidateView } from "@/lib/approvals/escalation/transfer";
 import { Link } from "@/navigation";
@@ -330,12 +334,16 @@ function DisposeAttentionDialog({
 	);
 }
 
-export interface EscalationTransferRequest {
-	assignmentId: string;
+/** A canonical workflow assignment, or a legacy-authoritative request (#299). */
+export type EscalationTransferTarget =
+	| { assignmentId: string }
+	| { approvalRequestId: string };
+
+export type EscalationTransferRequest = EscalationTransferTarget & {
 	recipientEmployeeId: string;
 	idempotencyKey: string;
 	reason?: string;
-}
+};
 
 const TRANSFERABLE_REASONS = new Set<EscalationAttentionView["reason"]>([
 	"no_eligible_backup",
@@ -344,11 +352,29 @@ const TRANSFERABLE_REASONS = new Set<EscalationAttentionView["reason"]>([
 	"ambiguous_history",
 ]);
 
-/** Human transfers are available for canonical absence assignments only. */
+/**
+ * Canonical incidents name their assignment; legacy-authoritative incidents
+ * have none and name the approval request instead.
+ */
+function transferTarget(
+	item: EscalationAttentionView | null,
+): EscalationTransferTarget | null {
+	if (item?.assignmentId) return { assignmentId: item.assignmentId };
+	if (item?.approvalRequestId) {
+		return { approvalRequestId: item.approvalRequestId };
+	}
+	return null;
+}
+
+/**
+ * Human transfers are available for the kinds escalation transfers (#326),
+ * never on a hold whose kind or mode has no transfer at all.
+ */
 function canTransfer(item: EscalationAttentionView): boolean {
 	return (
-		item.approvalType === "absence" &&
-		item.assignmentId !== null &&
+		isEscalationWorkflowType(item.approvalType) &&
+		!isUntransferableEscalationRoute(item.evidence.route) &&
+		transferTarget(item) !== null &&
 		TRANSFERABLE_REASONS.has(item.reason)
 	);
 }
@@ -513,15 +539,20 @@ function TransferAssignmentDialog({
 	onTransfer: (request: EscalationTransferRequest) => Promise<boolean>;
 }) {
 	const { t } = useTranslate();
-	const assignmentId = item?.assignmentId ?? null;
+	const target = transferTarget(item);
+	const targetKey = target
+		? "assignmentId" in target
+			? target.assignmentId
+			: target.approvalRequestId
+		: null;
 	// One key per submitted request: an uncertain retry reuses it; a changed
 	// request or a reopened dialog gets a new one.
 	const submission = useRef<{ key: string; fingerprint: string } | null>(null);
 	const candidates = useQuery({
-		queryKey: ["approval-escalation-candidates", assignmentId],
+		queryKey: ["approval-escalation-candidates", targetKey],
 		queryFn: () =>
-			listApprovalEscalationCandidates({ assignmentId: assignmentId ?? "" }),
-		enabled: assignmentId !== null,
+			listApprovalEscalationCandidates(target ?? { assignmentId: "" }),
+		enabled: target !== null,
 		staleTime: 0,
 	});
 	const close = () => {
@@ -579,13 +610,13 @@ function TransferAssignmentDialog({
 					</p>
 				) : (
 					<TransferAssignmentForm
-						key={assignmentId}
+						key={targetKey}
 						candidates={candidates.data.data.candidates}
 						currentApproverName={candidates.data.data.currentApprover.name}
 						isSubmitting={isSubmitting}
 						onCancel={close}
 						onSubmit={async (values) => {
-							if (!assignmentId) return;
+							if (!target) return;
 							const reason = values.reason.trim() || undefined;
 							const fingerprint = JSON.stringify([
 								values.recipientEmployeeId,
@@ -598,7 +629,7 @@ function TransferAssignmentDialog({
 								};
 							}
 							const succeeded = await onTransfer({
-								assignmentId,
+								...target,
 								recipientEmployeeId: values.recipientEmployeeId,
 								idempotencyKey: submission.current.key,
 								reason,
@@ -612,24 +643,37 @@ function TransferAssignmentDialog({
 	);
 }
 
+/** Delivery incidents recorded by the approval delivery owner (#291). */
+function canRetryDelivery(item: EscalationAttentionView): boolean {
+	return (
+		(item.reason === "delivery_exhausted" ||
+			item.reason === "delivery_unavailable") &&
+		typeof item.evidence.workId === "string"
+	);
+}
+
 export function EscalationAttentionCard({
 	openAttention,
 	closedAttention,
 	isRechecking,
 	isDisposing,
 	isTransferring,
+	isRetryingDelivery,
 	onRecheck,
 	onDispose,
 	onTransfer,
+	onRetryDelivery,
 }: {
 	openAttention: EscalationAttentionView[];
 	closedAttention: EscalationAttentionView[];
 	isRechecking: boolean;
 	isDisposing: boolean;
 	isTransferring: boolean;
+	isRetryingDelivery: boolean;
 	onRecheck: () => void;
 	onDispose: (attentionId: string, note: string) => Promise<boolean>;
 	onTransfer: (request: EscalationTransferRequest) => Promise<boolean>;
+	onRetryDelivery: (attentionId: string) => void;
 }) {
 	const { t } = useTranslate();
 	const displayContext = useDisplayContext();
@@ -713,6 +757,20 @@ export function EscalationAttentionCard({
 										) : null}
 									</div>
 									<div className="flex shrink-0 flex-wrap gap-2">
+										{canRetryDelivery(item) ? (
+											<Button
+												size="sm"
+												variant="outline"
+												disabled={isRetryingDelivery}
+												onClick={() => onRetryDelivery(item.id)}
+											>
+												<IconRefresh className="mr-2 size-4" aria-hidden="true" />
+												{t(
+													"settings.approvalEscalation.attention.retryDelivery",
+													"Retry delivery",
+												)}
+											</Button>
+										) : null}
 										{canTransfer(item) ? (
 											<Button
 												size="sm"

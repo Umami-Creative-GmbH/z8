@@ -19,7 +19,11 @@
       "refreshAfterClearFailed": "Blocage levé, mais la paie n'a pas pu être actualisée",
       "unknownEmployee": "Employé inconnu",
       "unresolvedWorkMinutes": "Minutes de travail à vérifier",
-      "offboardingClockRepair": "Le pointage de sortie lié au départ doit être corrigé"
+      "offboardingClockRepair": "Le pointage de sortie lié au départ doit être corrigé",
+      "openWork": "Travail sans pointage de sortie",
+      "pendingWorkApproval": "Travail en attente d'approbation",
+      "uncertainHistoricalWork": "Travail historique à vérifier",
+      "openWorkDiagnostics": "Ouvrir le diagnostic du travail"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
     "employeeTotals": {
@@ -49,6 +53,7 @@
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
       "exportBlockedByUnresolvedWorkMinutes": "Export bloqué : résolvez d'abord les minutes de travail à vérifier",
       "exportBlockedByOffboardingClockRepair": "Export bloqué : corrigez d'abord le pointage de sortie lié au départ",
+      "exportBlockedByUncertainWork": "Export bloqué : résolvez d'abord le travail incertain du périmètre sélectionné",
       "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
       "invalidBlockerId": "ID de blocage de paie invalide",
       "invalidBlockerType": "Type de blocage de paie invalide",

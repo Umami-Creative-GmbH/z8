@@ -189,6 +189,14 @@ export interface UserMappingEntry {
 	employeeName: string | null;
 }
 
+/** A saved user mapping as the (disabled) direct import action receives it. */
+export interface ImportUserMapping {
+	clockodoUserId: number;
+	employeeId: string | null;
+	userId: string | null;
+	mappingType: UserMappingType;
+}
+
 // ============================================
 // DATE RANGE TYPES
 // ============================================

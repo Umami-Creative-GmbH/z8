@@ -345,10 +345,12 @@ describeLifecycleDatabase("departure crash recovery", () => {
 			sessions: [],
 			reviews: [{ kind: "clock_out", status: "open" }],
 		});
+		// The clock-out review's notification intent commits with the departure.
 		expect(recovered.tasks.map((task) => task.kind)).toEqual([
 			"billing_sync",
 			"clock_postprocess",
 			"dispatch_departure",
+			"notify_review",
 			"session_revocation",
 		]);
 	});

@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
 
 const migration0004 = readFileSync(
 	new URL("../../../drizzle/0004_hard_bill_hollister.sql", import.meta.url),
@@ -3656,5 +3657,40 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(activityIndex?.where).toBe(
 			'"time_entry"."is_superseded" = false AND "time_entry"."type" IN (\'clock_in\', \'clock_out\')',
 		);
+	});
+});
+
+describe("approval workflow rollout pre-creation migration (#359)", () => {
+	const tag = "0107_approval_workflow_rollout_precreate";
+	const migrationUrl = new URL(`../../../drizzle/${tag}.sql`, import.meta.url);
+	const migration = existsSync(migrationUrl) ? readFileSync(migrationUrl, "utf8") : "";
+
+	it("registers the backfill after every prior migration", () => {
+		const index = migrationJournal.entries.findIndex((entry) => entry.tag === tag);
+		const latestPriorWhen = Math.max(
+			...migrationJournal.entries.slice(0, index).map((entry) => entry.when),
+		);
+
+		expect(index).toBeGreaterThan(0);
+		expect(migrationJournal.entries[index]?.when).toBeGreaterThan(latestPriorWhen);
+		expect(migration).not.toBe("");
+	});
+
+	it("backfills exactly the application's approval workflow types", () => {
+		const typeList = migration.match(/ARRAY\[([^\]]*)\]::"approval_workflow_type"\[\]/)?.[1];
+		const workflowTypes = [...(typeList ?? "").matchAll(/'([a-z_]+)'/g)].map((match) => match[1]);
+
+		expect(workflowTypes).toEqual([...APPROVAL_WORKFLOW_TYPES]);
+	});
+
+	it("only inserts missing legacy rows for every organization, idempotently", () => {
+		const statement = migration.replace(/--[^\n]*/g, "").trim();
+
+		expect(statement.split(";").filter((part) => part.trim())).toHaveLength(1);
+		expect(statement).toMatch(/^INSERT INTO "approval_workflow_rollout"/);
+		expect(statement).toMatch(/FROM "organization"/);
+		expect(statement).toMatch(/'legacy', 'legacy'/);
+		expect(statement).toMatch(/ON CONFLICT \("organization_id", "workflow_type"\) DO NOTHING;$/);
+		expect(statement).not.toMatch(/\b(UPDATE|DELETE|TRUNCATE|WHERE)\b/i);
 	});
 });

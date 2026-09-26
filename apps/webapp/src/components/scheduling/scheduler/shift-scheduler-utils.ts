@@ -2,6 +2,7 @@ import { Temporal } from "temporal-polyfill";
 import type { DateRange, ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
 export function plainDateTimeToDateKey(dateTime: Temporal.PlainDateTime): string {
 	return dateTime.toPlainDate().toString();
@@ -43,4 +44,37 @@ export function getWeekDateRange(referenceDate = Temporal.Now.plainDateISO()): D
 	const start = date.subtract({ days: date.dayOfWeek % 7 });
 
 	return { startDate: start.toString(), endDateExclusive: start.add({ days: 7 }).toString() };
+}
+
+/** A schedule opened for one employee around one date, e.g. from a departure. */
+export type SchedulerFocus = { employeeId: string | null; date: string | null };
+
+/** Reads the focus from URL parameters; malformed values are ignored. */
+export function parseSchedulerFocus(input: { employeeId?: string; date?: string }): SchedulerFocus {
+	let date: string | null = null;
+	if (input.date) {
+		try {
+			date = parsePlainDate(input.date).toString();
+		} catch {
+			date = null;
+		}
+	}
+	return { employeeId: isCanonicalUuid(input.employeeId) ? input.employeeId : null, date };
+}
+
+/** Keeps one employee's shifts; without a focus every shift is shown. */
+export function filterShiftsForEmployee<TShift extends { employeeId: string | null }>(
+	shifts: TShift[],
+	employeeId: string | null,
+): TShift[] {
+	return employeeId === null ? shifts : shifts.filter((shift) => shift.employeeId === employeeId);
+}
+
+/** The week and day the scheduler opens on: the focus date, or today. */
+export function initialSchedulerView(focusDate: string | null): {
+	dateRange: DateRange;
+	selectedDate: Temporal.PlainDate;
+} {
+	const selectedDate = focusDate ? parsePlainDate(focusDate) : Temporal.Now.plainDateISO();
+	return { dateRange: getWeekDateRange(selectedDate), selectedDate };
 }

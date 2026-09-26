@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { decodeApprovalDatabaseTimestampWithoutTimeZone } from "@/lib/approvals/approval-database-row";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	compareInstants,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/time-tracking/work-location";
 import type { ApprovalDbService } from "../server/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
+import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type {
 	JsonObject,
 	LegacyApprovalChainRowSnapshot,
@@ -359,20 +361,20 @@ function nullableInteger(value: unknown): number | null {
 	return value === null ? null : integer(value);
 }
 
+// `timestamp` columns filled by `defaultNow()` (legacy chain and stage rows)
+// carry microseconds in the JSON text. Decode them the way the UTC pg driver
+// reads every other timestamp, at millisecond precision, so the shadow mirror
+// receives DB-representable instants.
 function nullableInstant(value: unknown): Instant | null {
 	if (value === null) return null;
 	try {
-		if (value instanceof Date) return instantFromDB(value) ?? fail();
-		if (
-			typeof value === "string" &&
-			/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?$/.test(value)
-		) {
-			return parseInstant(`${value.replace(" ", "T")}Z`);
-		}
+		return (
+			instantFromDB(decodeApprovalDatabaseTimestampWithoutTimeZone(value)) ??
+			fail()
+		);
 	} catch {
 		return fail();
 	}
-	return fail();
 }
 
 function requiredInstant(value: unknown): Instant {
@@ -565,6 +567,11 @@ function decodeRequest(
 	cancellationMetadata: JsonObject | null,
 ): LegacyApprovalRequestSnapshot {
 	const raw = record(value);
+	// A legacy escalation transfer (#439) adds only its lineage; it travels
+	// beside the verified payload so the observation can rebuild the holders.
+	const lineage = splitLegacyEscalationLineage(record(raw.metadata));
+	if (lineage.kind === "malformed") return fail();
+	const metadata = cancellationMetadata ?? (payload as unknown as JsonObject);
 	const status = requestStatus(raw.status);
 	const approvedAt = nullableInstant(raw.approvedAt);
 	const rejectionReason = nullableString(raw.rejectionReason);
@@ -589,7 +596,10 @@ function decodeRequest(
 		reason: nullableString(raw.reason),
 		rejectionReason,
 		approvedAt,
-		metadata: cancellationMetadata ?? (payload as unknown as JsonObject),
+		metadata:
+			lineage.kind === "lineage"
+				? ({ ...metadata, escalation: lineage.lineage } as JsonObject)
+				: metadata,
 		updatedAt: requiredInstant(raw.updatedAt),
 	};
 }
@@ -1554,6 +1564,16 @@ export async function captureTimeCorrectionLegacyApprovalState(
 							and chain_counts."expectedChainCount" = 1
 							and chain_counts."pendingChainCount" = 0
 							and request_counts."pendingRequestCount" = 0
+							and request_counts."eligiblePendingDirectRequestCount" = 0
+							and chain.id = capture.expected_chain_id
+						)
+						or (
+							-- The chain a submission just created or a stage decision advanced.
+							capture.expected_chain_id is not null
+							and chain_counts."expectedChainCount" = 1
+							and chain.status = 'pending'
+							and chain_counts."pendingChainCount" = 1
+							and request_counts."pendingRequestCount" = 1
 							and request_counts."eligiblePendingDirectRequestCount" = 0
 							and chain.id = capture.expected_chain_id
 						)

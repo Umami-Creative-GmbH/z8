@@ -4,7 +4,12 @@
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { findOpenDepartureClockRepairs, resolveDepartureReview } from "./reviews";
+import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	findOpenDepartureClockRepairs,
+	resolveDepartureReview,
+	retryDepartureTask,
+} from "./reviews";
 import {
 	createLifecycleDatabaseFixture,
 	describeLifecycleDatabase,
@@ -169,7 +174,7 @@ describeLifecycleDatabase("departure clock repairs", () => {
 			reviewId,
 			actorUserId,
 			resolution,
-			now: new Date("2026-09-20T10:00:00Z"),
+			now: parseInstant("2026-09-20T10:00:00Z"),
 		});
 
 	it("resolves an automatic clock-out review with a note and records who did it", async () => {
@@ -229,7 +234,7 @@ describeLifecycleDatabase("departure clock repairs", () => {
 				reviewId,
 				actorUserId: otherOwner.userId,
 				resolution: "ok",
-				now: new Date("2026-09-20T10:00:00Z"),
+				now: parseInstant("2026-09-20T10:00:00Z"),
 			}),
 		).rejects.toMatchObject({ code: "review_not_found" });
 	});
@@ -249,5 +254,47 @@ describeLifecycleDatabase("departure clock repairs", () => {
 		expect(await repairsFor([target.employeeId, colleague.employeeId, foreign.employeeId])).toEqual(
 			[],
 		);
+	});
+
+	it("retries only a failed task of this organization and only for admins", async () => {
+		const target = await fixture.seedEmployee();
+		const member = await fixture.seedEmployee();
+		await review(target, { kind: "clock_out", start: null, end: "2026-09-15T00:00:00Z" });
+		const task = await fixture.pool.query<{ id: string }>(
+			`insert into employee_departure_task
+				(organization_id, employee_id, employment_period_id, departure_id, kind, dedupe_key,
+				 payload, status, attempt_count, last_error)
+			 select organization_id, employee_id, employment_period_id, id, 'notify_review',
+				'retry-' || id, '{"attemptedAt": "2026-09-15T00:00:00Z"}'::jsonb, 'failed', 8,
+				'needs_admin_resolution:delivery_ambiguous'
+			 from employee_departure where organization_id = $1 and employee_id = $2
+			 returning id`,
+			[fixture.organizationId, target.employeeId],
+		);
+		const taskId = task.rows[0]?.id ?? "";
+		const retry = (actorUserId: string, organizationId = fixture.organizationId) =>
+			retryDepartureTask(fixture.db, {
+				organizationId,
+				taskId,
+				actorUserId,
+				now: systemClock.nowInstant(),
+			});
+
+		await expect(retry(member.userId)).rejects.toMatchObject({ code: "actor_not_authorized" });
+		const foreignOrganizationId = await fixture.createOrganization();
+		await expect(retry(fixture.ownerUserId, foreignOrganizationId)).rejects.toMatchObject({
+			code: "actor_not_authorized",
+		});
+		await retry(fixture.ownerUserId);
+		const after = await fixture.pool.query(
+			`select status, attempt_count, last_error, payload from employee_departure_task where id = $1`,
+			[taskId],
+		);
+		expect(after.rows).toEqual([
+			{ status: "pending", attempt_count: 0, last_error: null, payload: {} },
+		]);
+		await expect(retry(fixture.ownerUserId)).rejects.toMatchObject({
+			code: "task_not_retryable",
+		});
 	});
 });

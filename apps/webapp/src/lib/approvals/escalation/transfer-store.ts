@@ -39,7 +39,7 @@ export async function listWorkflowEscalationTransferFacts(
 	executor: EscalationTransferExecutor,
 	input: { organizationId: string; workflowId: string },
 ): Promise<EscalationJournalTransferFact[]> {
-	return executor
+	const rows = await executor
 		.select({
 			sourceAssignmentId: approvalEscalationTransfer.sourceAssignmentId,
 			replacementAssignmentId: approvalEscalationTransfer.replacementAssignmentId,
@@ -49,9 +49,21 @@ export async function listWorkflowEscalationTransferFacts(
 		.where(
 			and(
 				eq(approvalEscalationTransfer.organizationId, input.organizationId),
+				eq(approvalEscalationTransfer.authorityMode, "canonical"),
 				eq(approvalEscalationTransfer.workflowId, input.workflowId),
 			),
 		);
+	return rows.map((row) => {
+		// The mode check constraint guarantees both for canonical rows.
+		if (!row.sourceAssignmentId || !row.replacementAssignmentId) {
+			throw new Error("Canonical escalation transfer is missing its assignments");
+		}
+		return {
+			sourceAssignmentId: row.sourceAssignmentId,
+			replacementAssignmentId: row.replacementAssignmentId,
+			initiator: row.initiator,
+		};
+	});
 }
 
 /**

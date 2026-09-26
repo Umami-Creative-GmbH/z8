@@ -56,6 +56,12 @@ describe("approval write boundary raw SQL analyzer", () => {
 			"approval_submitted_revision",
 			"approval_review_binding",
 			"approval_decision_evidence",
+			"approval_presentation_control",
+			"approval_invocation",
+			"approval_delivery_control",
+			"approval_delivery_message",
+			"approval_delivery_work",
+			"approval_delivery_intent",
 		]);
 	});
 	it.each([
@@ -1967,15 +1973,9 @@ runner.transaction(async (tx) => {
 					}),
 				],
 			},
-			{
-				relativePath: fixtures[2],
-				writes: [
-					expect.objectContaining({
-						operation: "delete",
-						table: "approval_request",
-					}),
-				],
-			},
+			// Tenant deletion removes approval rows through the organization
+			// cascade only (#306); it writes no approval table directly.
+			{ relativePath: fixtures[2], writes: [] },
 		]);
 	});
 
@@ -2692,6 +2692,91 @@ function mutate(context: { dbService: ApprovalDbService }) {
 				table: "approval_request",
 			},
 		]);
+	});
+
+	it("tracks receivers typed by exact trusted transaction exports", () => {
+		const fileName = "/repo/apps/webapp/src/lib/time-tracking/fixture.ts";
+		const source = `import { approvalRequest } from "@/db/schema";
+import type { DatabaseTransaction } from "@/lib/approvals/escalation/transfer-context";
+import type { WorkTransactionContext } from "./web-clock-out-transaction";
+import type { WorkTransactionClient, WorkTransactionScope as Scope } from "./work-transaction";
+function scoped(tx: Scope["db"]) {
+	tx.delete(approvalRequest);
+}
+function context({ db }: WorkTransactionContext) {
+	db.delete(approvalRequest);
+}
+function client(tx: WorkTransactionClient) {
+	tx.delete(approvalRequest);
+}
+function escalation(tx: DatabaseTransaction) {
+	tx.delete(approvalRequest);
+}
+function imported(scope: import("@/lib/time-tracking/work-transaction").WorkTransactionScope) {
+	scope.db.delete(approvalRequest);
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, fileName)).toEqual(
+			[6, 9, 12, 15, 18].map((line) => ({
+				column: 2,
+				fileName,
+				line,
+				operation: "delete",
+				table: "approval_request",
+			})),
+		);
+	});
+
+	it("tracks receivers typed by a union with a database receiver member", () => {
+		const source = `import { db } from "@/db";
+import { approvalRequest } from "@/db/schema";
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Executor = typeof db | Transaction;
+function viaAlias(executor: Executor) {
+	executor.delete(approvalRequest);
+}
+function optional(executor: Transaction | undefined) {
+	executor?.delete(approvalRequest);
+}
+function unrelated(executor: { delete(table: unknown): unknown } | null) {
+	executor?.delete(approvalRequest);
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, FILE_NAME)).toEqual(
+			[6, 9].map((line) => ({
+				column: 2,
+				fileName: FILE_NAME,
+				line,
+				operation: "delete",
+				table: "approval_request",
+			})),
+		);
+	});
+
+	it("does not trust transaction lookalike exports, modules, or scope members", () => {
+		const fileName = "/repo/apps/webapp/src/lib/time-tracking/fixture.ts";
+		const source = `import { approvalRequest } from "@/db/schema";
+import type { WorkTransactionContext } from "@/lib/approvals/escalation/transfer-context";
+import type { WorkTransactionScope as Lookalike } from "@/lib/time-tracking/work-transactions";
+import type { DatabaseTransaction } from "./transfer-context";
+import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+function misplaced(scope: WorkTransactionContext) {
+	scope.db.delete(approvalRequest);
+}
+function lookalike(scope: Lookalike) {
+	scope.db.delete(approvalRequest);
+}
+function relative(tx: DatabaseTransaction) {
+	tx.delete(approvalRequest);
+}
+function admission(tx: WorkTransactionAdmission) {
+	tx.delete(approvalRequest);
+}
+function member(scope: WorkTransactionScope) {
+	scope.admission.delete(approvalRequest);
+}`;
+
+		expect(analyzeApprovalWriteMutations(source, fileName)).toEqual([]);
 	});
 
 	it.each([
@@ -4125,10 +4210,26 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/maintenance.ts": {
 				approval_chain_instance: ["delete"],
 				approval_decision_evidence: ["delete"],
+				approval_delivery_intent: ["delete"],
+				approval_delivery_message: ["delete"],
+				approval_delivery_work: ["delete"],
+				approval_invocation: ["delete"],
 				approval_request: ["delete"],
 				approval_review_binding: ["delete"],
 				approval_submitted_revision: ["delete"],
 				approval_workflow: ["delete"],
+			},
+			"src/lib/approvals/delivery/store.ts": {
+				approval_delivery_intent: ["update"],
+				approval_delivery_message: ["insert", "update"],
+				approval_delivery_work: ["insert", "update"],
+				approval_outbox: ["update"],
+			},
+			"src/lib/approvals/delivery/intents.ts": {
+				approval_delivery_intent: ["insert"],
+			},
+			"src/lib/approvals/evidence/invocation.ts": {
+				approval_invocation: ["insert"],
 			},
 			"src/lib/approvals/evidence/store.ts": {
 				approval_decision_evidence: ["insert"],
@@ -4154,6 +4255,9 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/workflow/cutover.ts": {
 				approval_workflow_rollout: ["insert"],
 			},
+			"src/lib/approvals/workflow/organization-rollout.ts": {
+				approval_workflow_rollout: ["insert"],
+			},
 			"src/lib/approvals/workflow/repository.ts": {
 				approval_stage_assignment: ["insert", "update"],
 				approval_workflow: ["insert", "update"],
@@ -4174,6 +4278,9 @@ db.delete(approvalOutbox);`,
 			"src/lib/absences/sick-vacation-override.ts": {
 				approval_request: ["insert", "update"],
 			},
+			"src/lib/approvals/escalation/legacy-transfer.ts": {
+				approval_request: ["update"],
+			},
 			"src/lib/approvals/policies/chain-service.ts": {
 				approval_chain_instance: ["insert", "update"],
 				approval_chain_stage_instance: ["insert", "update"],
@@ -4185,14 +4292,8 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/server/shared.ts": {
 				approval_request: ["update"],
 			},
-			"src/lib/demo/delete-non-admin.ts": {
-				approval_request: ["delete"],
-			},
 			"src/lib/demo/demo-data.service.ts": {
 				approval_request: ["insert"],
-			},
-			"src/lib/jobs/organization-cleanup.ts": {
-				approval_request: ["delete"],
 			},
 			"src/lib/teams/jobs/escalation-checker.ts": {
 				approval_request: ["update"],
@@ -4360,7 +4461,7 @@ db.delete(approvalOutbox);`,
 						"superseded_by_id",
 						"type",
 					],
-					functionName: "submitCorrection",
+					functionName: "submitCorrectionInTransaction",
 					operation: "delete",
 					semantic: "inactive_correction",
 					table: "time_entry",
@@ -4535,40 +4636,24 @@ db.delete(approvalOutbox);`,
 					table: "time_record",
 				},
 			],
-			"src/lib/effect/services/time-record.service.ts": [
-				{
-					columns: [
-						"approval_state",
-						"duration_minutes",
-						"employee_id",
-						"end_at",
-						"organization_id",
-						"start_at",
-					],
-					functionName: "createTimeRecord",
-					operation: "insert",
-					semantic: "policy_clock_out_terminal_break",
-					table: "time_record",
-				},
-			],
 			"src/lib/time-tracking/admin-work-period-time-edit.ts": [
 				{
 					columns: ["replaces_entry_id", "type"],
-					functionName: "applyAdminWorkPeriodTimeEdit",
+					functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 					operation: "insert",
 					semantic: "correction",
 					table: "time_entry",
 				},
 				{
 					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "applyAdminWorkPeriodTimeEdit",
+					functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 					operation: "update",
 					semantic: "correction_lifecycle",
 					table: "time_entry",
 				},
 				{
 					columns: ["duration_minutes", "end_at", "start_at"],
-					functionName: "applyAdminWorkPeriodTimeEdit",
+					functionName: "applyLegacyAdminWorkPeriodTimeEdit",
 					operation: "update",
 					semantic: "ordinary_finalization",
 					table: "time_record",
@@ -4581,7 +4666,441 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"start_time",
 					],
-					functionName: "applyAdminWorkPeriodTimeEdit",
+					functionName: "applyLegacyAdminWorkPeriodTimeEdit",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/amend-completed-work.ts": [
+				{
+					columns: ["replaces_entry_id", "type"],
+					functionName: "amendCompletedWork",
+					operation: "insert",
+					semantic: "correction",
+					table: "time_entry",
+				},
+				{
+					columns: ["is_superseded", "superseded_by_id"],
+					functionName: "amendCompletedWork",
+					operation: "update",
+					semantic: "correction_lifecycle",
+					table: "time_entry",
+				},
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "amendCompletedWork",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "amendCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "amendCompletedWork",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/historical-gap-repair-executor.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "applyUnit",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes"],
+					functionName: "applyUnit",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes", "end_at"],
+					functionName: "applyUnit",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "insertProject",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "insertDetail",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: ["canonical_record_id", "duration_minutes", "end_time"],
+					functionName: "applyUnit",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/historical-work-proposals.ts": [
+				{
+					columns: ["duration_minutes", "end_at", "start_at"],
+					functionName: "applyFieldRepair",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes"],
+					functionName: "applyFieldRepair",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/close-active-work.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "closeActiveWorkGraph",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "closeActiveWorkGraph",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "closeActiveWorkGraph",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"pending_changes",
+					],
+					functionName: "closeActiveWorkGraph",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/record-imported-work.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "recordImportedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "recordImportedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "recordImportedWork",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/record-manual-work.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "recordManualWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "recordManualWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "recordManualWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"pending_changes",
+						"start_time",
+					],
+					functionName: "recordManualWork",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/split-completed-work.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes", "end_at"],
+					functionName: "splitCompletedWork",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"cost_center_id",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "splitCompletedWork",
+					operation: "insert",
+					table: "work_period",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "splitCompletedWork",
+					operation: "update",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/start-live-work.ts": [
+				{
+					columns: ["clock_in_id", "start_time"],
+					functionName: "startLiveWorkGraph",
+					operation: "insert",
+					table: "work_period",
+				},
+			],
+			"src/lib/time-tracking/automatic-break-adjustment.ts": [
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "adjustAutomaticBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: ["duration_minutes", "end_at"],
+					functionName: "adjustAutomaticBreakInTransaction",
+					operation: "update",
+					semantic: "ordinary_finalization",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"allocation_kind",
+						"cost_center_id",
+						"organization_id",
+						"project_id",
+						"record_id",
+						"weight_percent",
+					],
+					functionName: "adjustAutomaticBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_allocation",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "adjustAutomaticBreakInTransaction",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "adjustAutomaticBreakInTransaction",
+					operation: "insert",
+					table: "work_period",
+				},
+				{
+					columns: ["clock_out_id", "duration_minutes", "end_time"],
+					functionName: "adjustAutomaticBreakInTransaction",
 					operation: "update",
 					table: "work_period",
 				},
@@ -4632,33 +5151,6 @@ db.delete(approvalOutbox);`,
 					uncertainty: "dynamic_payload",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions.ts": [
-				{
-					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "splitWorkPeriod",
-					operation: "update",
-					semantic: "correction_lifecycle",
-					table: "time_entry",
-				},
-				{
-					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "splitWorkPeriod",
-					operation: "update",
-					table: "work_period",
-				},
-				{
-					columns: [
-						"clock_in_id",
-						"clock_out_id",
-						"duration_minutes",
-						"end_time",
-						"start_time",
-					],
-					functionName: "splitWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-				},
-			],
 			"src/app/[locale]/(app)/time-tracking/actions/clocking.ts": [
 				{
 					columns: [
@@ -4668,13 +5160,13 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"pending_changes",
 					],
-					functionName: "addBreakToActiveSession",
+					functionName: "addLegacyBreak",
 					operation: "update",
 					table: "work_period",
 				},
 				{
 					columns: ["clock_in_id", "start_time"],
-					functionName: "addBreakToActiveSession",
+					functionName: "addLegacyBreak",
 					operation: "insert",
 					table: "work_period",
 				},
@@ -4695,17 +5187,17 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions/mutations.ts": [
+			"src/app/[locale]/(app)/time-tracking/actions/work-period-split.ts": [
 				{
 					columns: ["is_superseded", "superseded_by_id"],
-					functionName: "splitWorkPeriod",
+					functionName: "splitLegacyWorkPeriod",
 					operation: "update",
 					semantic: "correction_lifecycle",
 					table: "time_entry",
 				},
 				{
 					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "splitWorkPeriod",
+					functionName: "splitLegacyWorkPeriod",
 					operation: "update",
 					table: "work_period",
 				},
@@ -4717,7 +5209,7 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"start_time",
 					],
-					functionName: "splitWorkPeriod",
+					functionName: "splitLegacyWorkPeriod",
 					operation: "insert",
 					table: "work_period",
 				},
@@ -4736,38 +5228,6 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
-			"src/lib/clockin/import-orchestrator.ts": [
-				{
-					columns: [],
-					functionName: "insertTimeEntry",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "insertWorkPeriod",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
-			],
-			"src/lib/clockodo/import-orchestrator.ts": [
-				{
-					columns: [],
-					functionName: "importClockodoData",
-					operation: "insert",
-					table: "time_entry",
-					uncertainty: "dynamic_payload",
-				},
-				{
-					columns: [],
-					functionName: "importClockodoData",
-					operation: "insert",
-					table: "work_period",
-					uncertainty: "dynamic_payload",
-				},
-			],
 			"src/lib/demo/demo-data.service.ts": [
 				{
 					columns: [
@@ -4781,12 +5241,56 @@ db.delete(approvalOutbox);`,
 					semantic: "inactive_correction",
 					table: "time_entry",
 				},
+			],
+			"src/lib/demo/demo-work.ts": [
 				{
 					columns: ["type"],
-					functionName: "generateDemoTimeEntries",
+					functionName: "insertDemoEntry",
 					operation: "insert",
 					table: "time_entry",
 					uncertainty: "dynamic_payload",
+				},
+				{
+					columns: [
+						"approval_state",
+						"duration_minutes",
+						"employee_id",
+						"end_at",
+						"organization_id",
+						"start_at",
+					],
+					functionName: "recordAdoptedDemoWorkDay",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record",
+				},
+				{
+					columns: [
+						"computation_metadata",
+						"organization_id",
+						"record_id",
+						"record_kind",
+						"work_category_id",
+						"work_location_type",
+					],
+					functionName: "recordAdoptedDemoWorkDay",
+					operation: "insert",
+					semantic: "policy_clock_out_terminal_break",
+					table: "time_record_work",
+				},
+				{
+					columns: [
+						"approval_status",
+						"canonical_record_id",
+						"clock_in_id",
+						"clock_out_id",
+						"duration_minutes",
+						"end_time",
+						"start_time",
+					],
+					functionName: "recordAdoptedDemoWorkDay",
+					operation: "insert",
+					table: "work_period",
 				},
 				{
 					columns: [
@@ -4796,22 +5300,22 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"start_time",
 					],
-					functionName: "generateDemoTimeEntries",
+					functionName: "recordLegacyDemoWorkDay",
 					operation: "insert",
 					table: "work_period",
 				},
 			],
-			"src/lib/effect/services/break-enforcement.service.ts": [
+			"src/lib/time-tracking/automatic-break-adjustment.ts": [
 				{
 					columns: ["type"],
-					functionName: "createBreakTimeEntry",
+					functionName: "insertEntry",
 					operation: "insert",
 					table: "time_entry",
 					uncertainty: "dynamic_payload",
 				},
 				{
 					columns: ["clock_out_id", "duration_minutes", "end_time"],
-					functionName: "enforceBreaksAfterClockOutInternal",
+					functionName: "applyLegacyAutomaticBreakInTransaction",
 					operation: "update",
 					table: "work_period",
 				},
@@ -4823,7 +5327,7 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"start_time",
 					],
-					functionName: "enforceBreaksAfterClockOutInternal",
+					functionName: "applyLegacyAutomaticBreakInTransaction",
 					operation: "insert",
 					table: "work_period",
 				},
@@ -5085,6 +5589,11 @@ export function renamedCreateTimeRecord() {
 						path: correctionPath,
 						uncertainty: "dynamic_payload",
 					}),
+					// The generic canonical creation owner was retired (#327, W18).
+					expect.objectContaining({
+						functionName: "createTimeRecord",
+						path: recordPath,
+					}),
 					expect.objectContaining({
 						functionName: "renamedCreateTimeRecord",
 						path: recordPath,
@@ -5146,10 +5655,10 @@ export function renamedCreateTimeRecord() {
 		});
 	});
 
-	it("keeps Clockodo uncertainty exceptions scoped to their named helper", () => {
-		const path = "src/lib/clockodo/import-orchestrator.ts";
+	it("keeps uncertainty exceptions scoped to their named helper", () => {
+		const path = "src/lib/time-tracking/clocking-core.ts";
 		const source = `import { db, timeEntry } from "@/db";
-export async function importClockodoData(values: object) {
+export async function insertEntry(values: object) {
   return db.transaction(async (tx) => tx.insert(timeEntry).values(values));
 }
 export async function hiddenImport(values: object) {
@@ -5221,6 +5730,30 @@ export async function hiddenImport(values: object) {
 		);
 	});
 
+	it("admits a write through every protected approval table symbol to analysis", () => {
+		const files = Object.fromEntries(
+			PROTECTED_APPROVAL_TABLES.map((table, index) => {
+				const symbol = table.replaceAll(/_([a-z])/g, (_match, letter: string) =>
+					letter.toUpperCase(),
+				);
+				return [
+					`src/write-${index}.ts`,
+					`import { db } from "@/db";\nimport { ${symbol} } from "@/db/schema";\ndb.insert(${symbol});`,
+				];
+			}),
+		);
+
+		withApprovalWriteTree(files, (workspaceRoot) => {
+			expect(
+				scanApprovalWriteInventory({ roots: ["src"], workspaceRoot })
+					.map((finding) =>
+						finding.kind === "mutation" ? finding.table : finding.detail,
+					)
+					.sort(),
+			).toEqual([...PROTECTED_APPROVAL_TABLES].sort());
+		});
+	});
+
 	it("matches the production inventory exactly to declared owners and exceptions, with no unowned writes", () => {
 		// Exact set equality catches both unowned writes and stale declarations.
 		// Scan once: a second boundary-only scan repeats the same native analysis.
@@ -5263,7 +5796,7 @@ export async function hiddenImport(values: object) {
 		expect([...actual].sort()).toEqual(
 			[...declaredApproval, ...declaredSource].sort(),
 		);
-	}, 120_000);
+	}, 300_000);
 
 	it("detects every required injected production mutation site", () => {
 		const expected = [
@@ -5296,12 +5829,6 @@ export async function hiddenImport(values: object) {
 				functionName: "applyCorrectionWritesInTransaction",
 				table: "time_record",
 				operation: "update",
-			},
-			{
-				path: "src/lib/effect/services/time-record.service.ts",
-				functionName: "createTimeRecord",
-				table: "time_record",
-				operation: "insert",
 			},
 		] as const;
 		const byPath = new Map<

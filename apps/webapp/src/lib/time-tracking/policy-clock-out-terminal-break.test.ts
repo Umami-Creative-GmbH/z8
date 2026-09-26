@@ -2,9 +2,14 @@ import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { ConflictError } from "@/lib/effect/errors";
 import { calculateHash } from "./blockchain";
 import type { PolicyClockOutBreakSnapshot } from "./policy-clock-out-break-snapshot";
-import { enforcePolicyClockOutTerminalBreakInTransaction } from "./policy-clock-out-terminal-break";
+import {
+	enforcePolicyClockOutTerminalBreakInTransaction,
+	type PolicyClockOutTerminalLifecycle,
+} from "./policy-clock-out-terminal-break";
+import { sealWorkTransactionScope } from "./work-transaction";
 
 const organizationId = "org-1";
 const employeeId = "10000000-0000-4000-8000-000000000001";
@@ -56,15 +61,39 @@ const breakPolicySnapshot = {
 	],
 } as const;
 
+const canonicalLifecycle: PolicyClockOutTerminalLifecycle = {
+	authority: "canonical",
+	workflowId: snapshot.approvalWorkflowId,
+};
+
+/** A transaction client the (mocked) decision coordinator sealed a legacy scope for. */
+function coordinated(execute: ReturnType<typeof vi.fn>) {
+	const db = { execute };
+	sealWorkTransactionScope({
+		db: db as never,
+		admission: "legacy" as const,
+		assertEmployee(scopeOrganizationId: string, scopeEmployeeId: string) {
+			if (scopeOrganizationId !== organizationId || scopeEmployeeId !== employeeId) {
+				throw new Error("Employee scope is outside the work transaction");
+			}
+		},
+	});
+	return db;
+}
+
 function input(
 	execute: ReturnType<typeof vi.fn>,
 	policySnapshot: PolicyClockOutBreakSnapshot = breakPolicySnapshot,
+	lifecycle: PolicyClockOutTerminalLifecycle = canonicalLifecycle,
 ) {
 	return {
-		dbService: { db: { execute } } as never,
+		dbService: { db: coordinated(execute) } as never,
 		organizationId,
 		employeeId,
 		actorUserId,
+		actorEmployeeId: "10000000-0000-4000-8000-000000000002",
+		lifecycle,
+		decisionRecordId: "13000000-0000-4000-8000-000000000001",
 		period: snapshot,
 		adjustedAt: parseInstant("2026-03-30T10:00:00Z"),
 		breakPolicySnapshot: policySnapshot,
@@ -88,6 +117,8 @@ function lockedSource(overrides: Record<string, unknown> = {}) {
 		clockOutType: "clock_out",
 		clockOutTimestamp: endTime,
 		clockOutTimezone: "Europe/Berlin",
+		clockOutUtcOffsetMinutes: 120,
+		graphRevision: 0,
 		employeeTimezone: "UTC",
 		canonicalId: snapshot.canonicalRecordId,
 		canonicalStartAt: startTime,
@@ -146,6 +177,11 @@ function splitDatabase(options?: {
 	gaps?: Array<{ gapStart: Date; gapEnd: Date }>;
 	policies?: Record<string, unknown>[];
 	missingAssignedPolicy?: boolean;
+	appendControl?: "active" | "inactive";
+	review?: Partial<Record<
+		"workflowMatches" | "requestMatches" | "legacyPending" | "canonicalPending",
+		boolean
+	>>;
 	failWrite?:
 		| "synthetic_clock_out"
 		| "synthetic_clock_in"
@@ -163,8 +199,23 @@ function splitDatabase(options?: {
 		const compiled = dialect.sqlToQuery(query);
 		queries.push(compiled);
 		const text = compiled.sql;
-		if (text.includes("pg_advisory_xact_lock"))
-			return { rows: [{ locked: null }] };
+		if (text.includes("from time_entry_append_control")) {
+			return { rows: options?.appendControl ? [{ mode: options.appendControl }] : [] };
+		}
+		if (text.includes("pg_advisory_xact_lock")) return { rows: [{ locked: null }] };
+		if (text.includes('as "workflowMatches"')) {
+			return {
+				rows: [
+					{
+						workflowMatches: true,
+						requestMatches: true,
+						legacyPending: false,
+						canonicalPending: false,
+						...options?.review,
+					},
+				],
+			};
+		}
 		if (text.includes('as "clockOutTimezone"')) {
 			return { rows: [lockedSource(options?.source)] };
 		}
@@ -343,11 +394,13 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 	it("does not query mutable team, assignment, policy, regulation, or rule tables", async () => {
 		const { execute, queries } = splitDatabase({ policies: [] });
 
-		await expect(
-			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
-		).resolves.toEqual({
+		const result = await enforcePolicyClockOutTerminalBreakInTransaction(
+			input(execute),
+		);
+		expect(result).toEqual({
 			kind: "adjusted",
 			breakMinutes: 60,
+			secondPeriodId: expect.any(String),
 			maintenance: {
 				organizationId,
 				employeeId,
@@ -357,6 +410,10 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 				staleSurchargePeriodIds: [],
 			},
 		});
+		// The created period is reported for the decision evidence (#302).
+		expect(result.kind === "adjusted" && result.secondPeriodId).toBe(
+			result.maintenance.surchargePeriodIds[1],
+		);
 		expect(queries.map((query) => query.sql).join("\n")).not.toMatch(
 			/work_policy|team_id|employee_row\.team_id/,
 		);
@@ -732,5 +789,137 @@ describe("enforcePolicyClockOutTerminalBreakInTransaction", () => {
 		await expect(
 			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
 		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+	});
+
+	it("runs under the coordinated transaction and never locks the employee late", async () => {
+		const { execute, queries } = splitDatabase();
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).resolves.toMatchObject({ kind: "adjusted" });
+		expect(queries.map((query) => query.sql).join("\n")).not.toContain("pg_advisory");
+	});
+
+	it("refuses an adopted organization outside a coordinated work transaction", async () => {
+		const { execute, queries } = splitDatabase({ appendControl: "active" });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction({
+				...input(execute),
+				dbService: { db: { execute } } as never,
+			}),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+		expect(queries.map((query) => query.sql).join("\n")).not.toMatch(
+			/pg_advisory|clockOutTimezone/,
+		);
+	});
+
+	it.each([
+		["no append control", undefined],
+		["an inactive append control", "inactive"],
+	] as const)("keeps the established employee locks outside the coordinators with %s", async (_label, appendControl) => {
+		const { execute, queries } = splitDatabase({ appendControl });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction({
+				...input(execute),
+				dbService: { db: { execute } } as never,
+			}),
+		).resolves.toMatchObject({ kind: "adjusted" });
+		const locks = queries.filter((query) => query.sql.includes("pg_advisory_xact_lock"));
+		expect(locks.map((query) => query.params)).toEqual([
+			[employeeId],
+			[JSON.stringify([organizationId, employeeId])],
+		]);
+	});
+
+	it("refuses a lifecycle whose workflow is not the one bound to the period", async () => {
+		const { execute } = splitDatabase();
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(
+				input(execute, breakPolicySnapshot, {
+					authority: "canonical",
+					workflowId: "50000000-0000-4000-8000-000000000099",
+				}),
+			),
+		).rejects.toThrow("Policy clock-out terminal break enforcement conflict");
+		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it("exempts only the exact resolving lifecycle from the review guard", async () => {
+		const legacyLifecycle: PolicyClockOutTerminalLifecycle = {
+			authority: "legacy",
+			approvalRequestId: "14000000-0000-4000-8000-000000000001",
+			observedWorkflowId: snapshot.approvalWorkflowId,
+		};
+		const { execute, queries } = splitDatabase();
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(
+				input(execute, breakPolicySnapshot, legacyLifecycle),
+			),
+		).resolves.toMatchObject({ kind: "adjusted" });
+		const guard = queries.find((query) => query.sql.includes('as "workflowMatches"'));
+		// A legacy lifecycle is identified by its request; its mirror is found by
+		// stage linkage, never by the workflow the period happens to be bound to.
+		expect(guard?.params).not.toContain(snapshot.approvalWorkflowId);
+		expect(guard?.params).toEqual(
+			expect.arrayContaining([
+				legacyLifecycle.approvalRequestId,
+				snapshot.id,
+				employeeId,
+				organizationId,
+				"policy_clock_out",
+			]),
+		);
+		// The guard runs under the period lock and before any split write.
+		const guardIndex = queries.findIndex((query) => query.sql.includes('as "workflowMatches"'));
+		const firstWrite = queries.findIndex((query) => /^\s*(insert|update)\b/i.test(query.sql));
+		expect(guardIndex).toBeGreaterThan(
+			queries.findIndex((query) => query.sql.includes('as "clockOutTimezone"')),
+		);
+		expect(guardIndex).toBeLessThan(firstWrite);
+	});
+
+	it.each([
+		["legacy request", { legacyPending: true }],
+		["workflow", { canonicalPending: true }],
+	] as const)("blocks the split while an unrelated %s review is pending", async (_label, review) => {
+		const { execute, queries } = splitDatabase({ review });
+
+		const failure = await enforcePolicyClockOutTerminalBreakInTransaction(input(execute)).catch(
+			(error: unknown) => error,
+		);
+		expect(failure).toBeInstanceOf(ConflictError);
+		expect(failure).toMatchObject({ conflictType: "work_period_pending_approval" });
+		expect(queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql))).toEqual([]);
+	});
+
+	it.each([
+		["workflow", { workflowMatches: false }],
+		["request", { requestMatches: false }],
+	] as const)("refuses a resolving %s that does not belong to the period", async (_label, review) => {
+		const { execute, queries } = splitDatabase({ review });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(input(execute)),
+		).rejects.toThrow("Terminal split resolving lifecycle does not match its period");
+		expect(queries.filter((query) => /^\s*(insert|update)\b/i.test(query.sql))).toEqual([]);
+	});
+
+	it("does not consult the review guard when no split is required", async () => {
+		const { execute, queries } = splitDatabase({ review: { canonicalPending: true } });
+
+		await expect(
+			enforcePolicyClockOutTerminalBreakInTransaction(
+				input(execute, {
+					version: 1,
+					evaluatedAt: "2026-03-29T08:01:00Z",
+					resolution: "none",
+				}),
+			),
+		).resolves.toMatchObject({ kind: "not_required" });
+		expect(queries.some((query) => query.sql.includes('as "workflowMatches"'))).toBe(false);
 	});
 });

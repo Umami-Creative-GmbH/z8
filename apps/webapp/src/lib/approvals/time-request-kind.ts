@@ -6,6 +6,11 @@ export type TimeApprovalKind =
 	| "policy_clock_out"
 	| "unclassified";
 
+/**
+ * The stored reason that identifies a policy clock-out request. Live clock-outs
+ * no longer route approval (#361); the value stays because historical requests
+ * carry it and are classified by it.
+ */
 export const POLICY_CLOCK_OUT_APPROVAL_REASON =
 	"Clock-out requires approval (0-day policy)";
 

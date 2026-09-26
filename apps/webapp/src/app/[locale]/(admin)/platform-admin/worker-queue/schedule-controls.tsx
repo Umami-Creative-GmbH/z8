@@ -37,6 +37,7 @@ const HIGH_RISK_CRON_JOB_NAMES = new Set<string>([
 	"cron:scim-maintenance",
 	"cron:execution-cleanup",
 	"cron:organization-cleanup",
+	"cron:travel-expense-receipt-cleanup",
 	"cron:break-enforcement",
 	"cron:teams-daily-digest",
 	"cron:teams-escalation",
@@ -197,15 +198,7 @@ export function ScheduleControls({
 
 	return (
 		<div className="space-y-2">
-			{job.hasScheduleMismatch ? (
-				<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 font-medium text-amber-700 text-xs dark:text-amber-300">
-					{labels.mismatch}
-				</p>
-			) : null}
-
-			{job.canEdit ? null : (
-				<p className="text-muted-foreground text-xs">{labels.readOnly}</p>
-			)}
+			<ScheduleNotices job={job} labels={labels} />
 
 			<div className="flex flex-wrap items-center gap-2">
 				<Button
@@ -318,47 +311,103 @@ export function ScheduleControls({
 			) : null}
 
 			{resetNeedsConfirmation ? (
-				<div className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
-					<Alert className="border-destructive/40 bg-transparent">
-						<AlertTitle>{labels.highRiskTitle}</AlertTitle>
-						<AlertDescription>{labels.highRiskDescription}</AlertDescription>
-					</Alert>
-					<div className="space-y-1.5">
-						<Label htmlFor={`cron-reset-confirmation-${job.jobName}`}>
-							{labels.confirmationLabel}
-						</Label>
-						<Input
-							id={`cron-reset-confirmation-${job.jobName}`}
-							value={resetConfirmation}
-							onChange={(event) => setResetConfirmation(event.target.value)}
-							placeholder={labels.confirmationText}
-							disabled={isSubmitting}
-						/>
-					</div>
-					<div className="flex items-center gap-2">
-						<Button
-							type="button"
-							size="sm"
-							onClick={handleReset}
-							disabled={isSubmitting || !canSubmitReset}
-						>
-							{labels.reset}
-						</Button>
-						<Button
-							type="button"
-							variant="ghost"
-							size="sm"
-							onClick={() => {
-								setIsResetConfirming(false);
-								setResetConfirmation("");
-							}}
-							disabled={isSubmitting}
-						>
-							{labels.cancel}
-						</Button>
-					</div>
-				</div>
+				<ResetConfirmationPanel
+					jobName={job.jobName}
+					labels={labels}
+					value={resetConfirmation}
+					onChange={setResetConfirmation}
+					isSubmitting={isSubmitting}
+					canSubmit={canSubmitReset}
+					onConfirm={handleReset}
+					onCancel={() => {
+						setIsResetConfirming(false);
+						setResetConfirmation("");
+					}}
+				/>
 			) : null}
+		</div>
+	);
+}
+
+function ScheduleNotices({
+	job,
+	labels,
+}: {
+	job: ScheduleControlsJob;
+	labels: ScheduleControlsLabels;
+}) {
+	return (
+		<>
+			{job.hasScheduleMismatch ? (
+				<p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 font-medium text-amber-700 text-xs dark:text-amber-300">
+					{labels.mismatch}
+				</p>
+			) : null}
+
+			{job.canEdit ? null : (
+				<p className="text-muted-foreground text-xs">{labels.readOnly}</p>
+			)}
+		</>
+	);
+}
+
+/** Typed confirmation before a high-risk schedule returns to its default. */
+function ResetConfirmationPanel({
+	jobName,
+	labels,
+	value,
+	onChange,
+	isSubmitting,
+	canSubmit,
+	onConfirm,
+	onCancel,
+}: {
+	jobName: string;
+	labels: ScheduleControlsLabels;
+	value: string;
+	onChange: (value: string) => void;
+	isSubmitting: boolean;
+	canSubmit: boolean;
+	onConfirm: () => void;
+	onCancel: () => void;
+}) {
+	return (
+		<div className="space-y-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+			<Alert className="border-destructive/40 bg-transparent">
+				<AlertTitle>{labels.highRiskTitle}</AlertTitle>
+				<AlertDescription>{labels.highRiskDescription}</AlertDescription>
+			</Alert>
+			<div className="space-y-1.5">
+				<Label htmlFor={`cron-reset-confirmation-${jobName}`}>
+					{labels.confirmationLabel}
+				</Label>
+				<Input
+					id={`cron-reset-confirmation-${jobName}`}
+					value={value}
+					onChange={(event) => onChange(event.target.value)}
+					placeholder={labels.confirmationText}
+					disabled={isSubmitting}
+				/>
+			</div>
+			<div className="flex items-center gap-2">
+				<Button
+					type="button"
+					size="sm"
+					onClick={onConfirm}
+					disabled={isSubmitting || !canSubmit}
+				>
+					{labels.reset}
+				</Button>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					onClick={onCancel}
+					disabled={isSubmitting}
+				>
+					{labels.cancel}
+				</Button>
+			</div>
 		</div>
 	);
 }

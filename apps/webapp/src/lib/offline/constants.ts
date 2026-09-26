@@ -5,11 +5,14 @@
 /** IndexedDB database name */
 export const DB_NAME = "z8-offline-queue";
 
-/** IndexedDB database version */
-export const DB_VERSION = 1;
+/** IndexedDB database version (2 adds the frozen command store, #279) */
+export const DB_VERSION = 2;
 
 /** IndexedDB object store name */
 export const STORE_NAME = "clock-events";
+
+/** IndexedDB object store for frozen v2 clock commands */
+export const COMMAND_STORE_NAME = "clock-commands";
 
 /** Maximum age of queued events before cleanup (7 days in ms) */
 export const MAX_QUEUE_AGE_MS = 7 * 24 * 60 * 60 * 1000;

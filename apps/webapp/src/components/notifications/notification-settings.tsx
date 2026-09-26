@@ -99,7 +99,11 @@ const NOTIFICATION_CATEGORIES = [
 			"common:notifications.preferences.categories.team.description",
 		descriptionFallback: "Notifications about team membership changes",
 		icon: IconUsers,
-		types: ["team_member_added", "team_member_removed"] as NotificationType[],
+		types: [
+			"team_member_added",
+			"team_member_removed",
+			"employee_offboarding_review",
+		] as NotificationType[],
 	},
 	{
 		id: "security",
@@ -198,6 +202,8 @@ const TYPE_LABELS: Record<NotificationType, string> = {
 	compliance_exception_expired: "Exception expired",
 	// Approval escalation
 	approval_escalation_attention: "Escalation needs attention",
+	// Employee offboarding follow-up (owners, admins and the primary manager)
+	employee_offboarding_review: "Offboarding needs review",
 };
 
 // Channel icons and labels

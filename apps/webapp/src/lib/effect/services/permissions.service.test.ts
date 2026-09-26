@@ -7,6 +7,20 @@ import {
 	PermissionsServiceLive,
 } from "./permissions.service";
 
+// Protection itself is covered by authorization-mutation.test.ts and the
+// PostgreSQL suite; here it runs the mutation in the fake's transaction.
+const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+vi.mock("@/lib/authorization/authorization-mutation", () => ({
+	withAuthorizationMutation: async (
+		scope: unknown,
+		mutation: (tx: unknown) => Promise<unknown>,
+		database: { transaction: (callback: (tx: unknown) => Promise<unknown>) => Promise<unknown> },
+	) => {
+		protection.scopes.push(scope);
+		return database.transaction(mutation);
+	},
+}));
+
 function collectColumnNames(value: unknown): string[] {
 	if (!value || typeof value !== "object") return [];
 	const node = value as {
@@ -317,6 +331,27 @@ describe("PermissionsService.getEmployeePermissions", () => {
 });
 
 describe("PermissionsService mutations", () => {
+	it("grants and revokes under the target employee's configuration/access protection", async () => {
+		const { db } = createMutationDb();
+		protection.scopes.length = 0;
+
+		await runWithService(db, (service) =>
+			service.grantPermissions(
+				"employee-target",
+				"org-1",
+				{ canCreateTeams: true },
+				null,
+				"employee-granter",
+			),
+		);
+		await runWithService(db, (service) =>
+			service.revokePermissions("employee-target", "org-1", null),
+		);
+
+		const scope = { organizationId: "org-1", employeeIds: ["employee-target"] };
+		expect(protection.scopes).toEqual([scope, scope]);
+	});
+
 	it("authorizes a membership admin by the scoped granter employee user ID", async () => {
 		let granterWhere: unknown;
 		let membershipWhere: unknown;

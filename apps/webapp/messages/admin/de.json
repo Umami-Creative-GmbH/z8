@@ -346,7 +346,10 @@
         "submittedRevision": "Eingereichte Revision",
         "decisionEvidence": "Entscheidungsnachweis",
         "reviewBinding": "Prüfbindung",
-        "escalationTransfer": "Eskalationsübertragung"
+        "escalationTransfer": "Eskalationsübertragung",
+        "deliveryMessage": "Zugestellte Nachricht",
+        "deliveryWork": "Zustellauftrag",
+        "escalationAttention": "Eskalationshinweis"
       },
       "cookieConsent": {
         "description": "Zur DSGVO-Konformität auf Authentifizierungsseiten eingefügt",

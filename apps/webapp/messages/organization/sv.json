@@ -256,6 +256,7 @@
       "title": "Team"
     },
     "timezone": {
+      "balances-recalculating": "Arbetssaldon räknas om för den nya tidszonen och är dolda tills de är klara.",
       "default": "Standardtidszon",
       "description": "Ange standardtidszon för din organisation. Detta används för frånvarohantering, rapporter och andra datumbaserade funktioner. Enskilda användare kan åsidosätta detta i sina profilinställningar.",
       "owner-only": "Endast organisationsägare kan ändra tidszonsinställningen.",

@@ -32,6 +32,8 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 	const {
 		isOffline,
 		pendingCount,
+		reviewCount,
+		waitingCount,
 		savedCount,
 		countVerified,
 		isSyncing,
@@ -90,6 +92,12 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 						"common:offline.banner.unverified",
 						"Clock evidence saved on this device. Connect to review all saved records.",
 					);
+				if (reviewCount === 0 && waitingCount > 0)
+					return t(
+						"common:offline.banner.offlineWaiting",
+						"Offline — {count} clock action(s) will be sent when you're back online",
+						{ count: waitingCount },
+					);
 				return t(
 					"common:offline.banner.offlineSaved",
 					"Offline — {count} record(s) saved locally for review",
@@ -106,6 +114,12 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 					},
 				);
 			case "pending":
+				if (reviewCount === 0 && waitingCount > 0)
+					return t(
+						"common:offline.banner.waiting",
+						"{count} clock action(s) saved on this device, not sent yet",
+						{ count: waitingCount },
+					);
 				if (pendingCount === 0)
 					return t(
 						"common:offline.banner.archived",
@@ -126,7 +140,8 @@ export function OfflineBanner({ className }: OfflineBannerProps) {
 	};
 
 	// Show retry button when online with pending events or error
-	const showRetryButton = isOnline && Boolean(lastError) && !isSyncing;
+	const showRetryButton =
+		isOnline && !isSyncing && (Boolean(lastError) || waitingCount > 0);
 
 	if (state === "hidden") return null;
 

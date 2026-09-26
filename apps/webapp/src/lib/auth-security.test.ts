@@ -478,7 +478,8 @@ describe("Better Auth 1.7 core configuration", () => {
 			"createZ8SCIMPlugin(getSCIMCredentialHashSecret())",
 		);
 		expect(source).toMatch(
-			/drizzleAdapter\(db,\s*\{\s*provider:\s*"pg",\s*schema:\s*authDatabaseSchema,\s*transaction:\s*true,?\s*\}\)/,
+			// The captured client publishes Better Auth's transactions to SCIM callbacks (#314).
+			/drizzleAdapter\(captureAuthTransactions\(db\),\s*\{\s*provider:\s*"pg",\s*schema:\s*authDatabaseSchema,\s*transaction:\s*true,?\s*\}\)/,
 		);
 		expect(source).toContain(
 			"configureSCIMProjectionReplay(createSCIMProjectionReplayLoader(auth.api))",

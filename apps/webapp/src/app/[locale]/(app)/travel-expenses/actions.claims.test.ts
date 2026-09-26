@@ -24,12 +24,19 @@ const mockState = vi.hoisted(() => {
 		dbUpdate: vi.fn(() => ({ set: updateSet })),
 		dbInsert: vi.fn(() => ({ values: insertValues })),
 		dbTransaction,
+		deliveryIntent: false,
+		kick: vi.fn(),
 		updateSet,
 		updateWhere,
 		updateReturning,
 		insertValues,
 		committedUpdates: [] as unknown[],
 		committedInserts: [] as unknown[],
+		lockedClaim: null as Record<string, unknown> | null,
+		lockedAttachments: [] as Array<{ id: string }>,
+		txSteps: [] as string[],
+		captureEvidence: vi.fn(),
+		acquireWriteLock: vi.fn(),
 	};
 });
 
@@ -74,6 +81,28 @@ vi.mock("@/lib/auth-helpers", () => ({
 	getAuthContext: mockState.getAuthContext,
 }));
 
+vi.mock("@/lib/approvals/evidence", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence")>()),
+	captureTravelExpenseSubmissionEvidence: mockState.captureEvidence,
+}));
+
+vi.mock("@/lib/approvals/workflow/cutover", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/workflow/cutover")>()),
+	acquireApprovalWriteLock: mockState.acquireWriteLock,
+}));
+
+// The approver's card intent (#296) commits inside the submission transaction.
+vi.mock("@/lib/approvals/delivery/intents", () => ({
+	recordLegacyDeliveryIntent: vi.fn(async (_tx: unknown, input: { event: string }) => {
+		mockState.txSteps.push(`delivery-intent:${input.event}`);
+		return mockState.deliveryIntent;
+	}),
+}));
+
+vi.mock("@/lib/approvals/delivery/kick", () => ({
+	kickApprovalDelivery: mockState.kick,
+}));
+
 vi.mock("@/lib/timezone/effective-timezone", () => ({
 	getEffectiveTimezone: mockState.getEffectiveTimezone,
 }));
@@ -95,7 +124,9 @@ vi.mock("@/db/schema", () => ({
 		createdAt: "createdAt",
 	},
 	travelExpenseAttachment: {
-		id: "id",
+		id: "attachment.id",
+		claimId: "attachment.claimId",
+		organizationId: "attachment.organizationId",
 	},
 	project: {
 		id: "project.id",
@@ -192,6 +223,8 @@ vi.mock(
 const { createTravelExpenseApprovalWorkflow } = await import(
 	"@/lib/approvals/server/travel-expense-approvals"
 );
+const { ApprovalEvidenceError } = await import("@/lib/approvals/evidence");
+const schema = await import("@/db/schema");
 const { createTravelExpenseDraft, submitTravelExpenseClaim } = await import(
 	"./actions"
 );
@@ -263,6 +296,9 @@ describe("createTravelExpenseDraft", () => {
 				employeeId: "emp-1",
 				tripStart: new Date(start),
 				tripEnd: new Date(end),
+				tripStartDate: date,
+				tripEndDate: date,
+				tripDateTimeZone: timezone,
 			}),
 		);
 	});
@@ -308,6 +344,22 @@ describe("submitTravelExpenseClaim", () => {
 			const pendingUpdates: unknown[] = [];
 			const pendingInserts: unknown[] = [];
 			const tx = {
+				select: vi.fn(() => ({
+					from: vi.fn((table: unknown) => ({
+						where: vi.fn(() => {
+							if (table === schema.travelExpenseClaim) {
+								return {
+									for: vi.fn(async (strength: string) => {
+										mockState.txSteps.push(`lock-claim:${strength}`);
+										return mockState.lockedClaim ? [mockState.lockedClaim] : [];
+									}),
+								};
+							}
+							mockState.txSteps.push("read-attachments");
+							return Promise.resolve(mockState.lockedAttachments);
+						}),
+					})),
+				})),
 				query: {
 					approvalPolicy: {
 						findMany: vi.fn().mockResolvedValue([]),
@@ -378,6 +430,22 @@ describe("submitTravelExpenseClaim", () => {
 			mockState.committedInserts.push(...pendingInserts);
 			return result;
 		});
+		mockState.txSteps = [];
+		mockState.lockedClaim = {
+			id: "claim-1",
+			employeeId: "emp-1",
+			status: "draft",
+			type: "receipt",
+			calculatedAmount: "42.00",
+		};
+		mockState.lockedAttachments = [{ id: "att-1" }];
+		mockState.acquireWriteLock.mockImplementation(async (_service, input) => {
+			mockState.txSteps.push(`rollout-lock:${input.workflowType}`);
+		});
+		mockState.captureEvidence.mockImplementation(async (_tx, input) => {
+			mockState.txSteps.push(`capture:${input.routing.kind}`);
+			return null;
+		});
 		mockState.getAuthContext.mockResolvedValue({
 			user: { id: "user-1" },
 			session: { activeOrganizationId: "org-1" },
@@ -418,7 +486,6 @@ describe("submitTravelExpenseClaim", () => {
 			status: "draft",
 			type: "receipt",
 			calculatedAmount: "42.00",
-			attachments: [{ id: "att-1" }],
 		});
 		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
@@ -441,6 +508,70 @@ describe("submitTravelExpenseClaim", () => {
 		expect(mockState.committedInserts).toHaveLength(1);
 		expect(mockState.revalidatePath).toHaveBeenCalledWith("/travel-expenses");
 		expect(mockState.logAudit).toHaveBeenCalledTimes(1);
+		expect(mockState.txSteps).toEqual([
+			"rollout-lock:travel_expense",
+			"lock-claim:update",
+			"read-attachments",
+			"capture:default_created",
+			"delivery-intent:submitted",
+		]);
+		expect(mockState.captureEvidence).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			claimId: "claim-1",
+			submitter: { employeeId: "emp-1", userId: "user-1" },
+			routing: { kind: "default_created", approvalRequestId: "approval-1" },
+		});
+		// No delivery control: no intent was written, so nothing is kicked.
+		expect(mockState.kick).not.toHaveBeenCalled();
+	});
+
+	it("rolls back the submission and explains the hold when evidence is incomplete", async () => {
+		mockState.findClaim.mockResolvedValue({
+			id: "claim-1",
+			employeeId: "emp-1",
+			organizationId: "org-1",
+			status: "draft",
+			type: "receipt",
+			calculatedAmount: "42.00",
+		});
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
+		mockState.updateReturning.mockResolvedValue([{ id: "claim-1" }]);
+		mockState.captureEvidence.mockRejectedValue(
+			new ApprovalEvidenceError("evidence_incomplete", { field: "trip_dates" }),
+		);
+
+		const result = await submitTravelExpenseClaim({ claimId: "claim-1" });
+
+		expect(result).toEqual({
+			success: false,
+			error:
+				"This claim was created before its trip dates were recorded as entered. Create a new claim to submit it.",
+		});
+		expect(mockState.committedUpdates).toEqual([]);
+		expect(mockState.committedInserts).toEqual([]);
+		expect(mockState.logAudit).not.toHaveBeenCalled();
+	});
+
+	it("reads the receipt set only under the claim lock and refuses a claim submitted meanwhile", async () => {
+		mockState.findClaim.mockResolvedValue({
+			id: "claim-1",
+			employeeId: "emp-1",
+			organizationId: "org-1",
+			status: "draft",
+			type: "receipt",
+			calculatedAmount: "42.00",
+		});
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
+		mockState.lockedClaim = { ...mockState.lockedClaim, status: "submitted" };
+
+		const result = await submitTravelExpenseClaim({ claimId: "claim-1" });
+
+		expect(result).toEqual({
+			success: false,
+			error: "Only draft claims can be submitted",
+		});
+		expect(mockState.txSteps).toEqual(["rollout-lock:travel_expense", "lock-claim:update"]);
+		expect(mockState.committedUpdates).toEqual([]);
 	});
 
 	it("returns approved status when the approval workflow auto-completes", async () => {
@@ -451,10 +582,10 @@ describe("submitTravelExpenseClaim", () => {
 			status: "draft",
 			type: "receipt",
 			calculatedAmount: "42.00",
-			attachments: [{ id: "att-1" }],
 		});
 		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.updateReturning.mockResolvedValue([{ id: "claim-auto" }]);
+		mockState.lockedClaim = { ...mockState.lockedClaim, id: "claim-auto" };
 		vi.mocked(createTravelExpenseApprovalWorkflow).mockReturnValueOnce(
 			Effect.succeed({
 				kind: "auto_completed",
@@ -467,6 +598,7 @@ describe("submitTravelExpenseClaim", () => {
 		const result = await submitTravelExpenseClaim({ claimId: "claim-auto" });
 
 		expect(result).toEqual({ success: true, data: { status: "approved" } });
+		expect(mockState.txSteps.at(-1)).toBe("capture:auto_completed");
 	});
 
 	it("fails without committing when no primary manager can be resolved", async () => {
@@ -477,7 +609,6 @@ describe("submitTravelExpenseClaim", () => {
 			status: "draft",
 			type: "receipt",
 			calculatedAmount: "42.00",
-			attachments: [{ id: "att-1" }],
 		});
 		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.findEmployeeManagers.mockResolvedValueOnce([]);
@@ -500,8 +631,10 @@ describe("submitTravelExpenseClaim", () => {
 			organizationId: "org-1",
 			status: "draft",
 			type: "receipt",
-			attachments: [],
 		});
+		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
+		mockState.lockedClaim = { ...mockState.lockedClaim, id: "claim-2" };
+		mockState.lockedAttachments = [];
 
 		const result = await submitTravelExpenseClaim({ claimId: "claim-2" });
 
@@ -509,7 +642,8 @@ describe("submitTravelExpenseClaim", () => {
 			success: false,
 			error: TRAVEL_EXPENSE_VALIDATION_MESSAGES.RECEIPT_ATTACHMENT_REQUIRED,
 		});
-		expect(mockState.dbUpdate).not.toHaveBeenCalled();
+		expect(mockState.committedUpdates).toEqual([]);
+		expect(mockState.captureEvidence).not.toHaveBeenCalled();
 		expect(mockState.logAudit).not.toHaveBeenCalled();
 	});
 
@@ -520,7 +654,6 @@ describe("submitTravelExpenseClaim", () => {
 			organizationId: "org-1",
 			status: "draft",
 			type: "receipt",
-			attachments: [{ id: "att-1" }],
 		});
 		mockState.findEmployee.mockResolvedValueOnce({ teamId: null });
 		mockState.updateReturning.mockResolvedValue([{ id: "claim-3" }]);

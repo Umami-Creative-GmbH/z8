@@ -9,7 +9,15 @@ import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Effect } from "effect";
 import { Pool, type PoolClient } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
@@ -31,6 +39,8 @@ import {
 	verifyApprovalWorkflowRepositoryTestDatabase,
 } from "../workflow/repository-integration-harness";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { resolveApprovalReviewArrival } from "../presentation/review-arrival";
+import { parseApprovalReviewTarget } from "../presentation/review-navigation";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
@@ -41,6 +51,42 @@ import {
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "./work-period-submission";
 
 configurePostgresUtcTypes();
+
+// Only the exact-item review case signs in; every other case runs without a
+// session, as before.
+const reviewSession = vi.hoisted(() => ({
+	userId: null as string | null,
+	organizationId: null as string | null,
+}));
+
+vi.mock("next/headers", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/headers")>()),
+	headers: async () => new Headers(),
+}));
+
+vi.mock("@/lib/auth", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/auth")>();
+	return {
+		...original,
+		auth: {
+			...original.auth,
+			api: {
+				...original.auth.api,
+				getSession: async () =>
+					reviewSession.userId
+						? {
+								user: { id: reviewSession.userId, role: "user" },
+								session: {
+									id: `session-${reviewSession.userId}`,
+									userId: reviewSession.userId,
+									activeOrganizationId: reviewSession.organizationId,
+								},
+							}
+						: null,
+			},
+		},
+	};
+});
 
 const integrationSource = readFileSync(
 	join(
@@ -2585,6 +2631,47 @@ describeIntegration(
 			]);
 		});
 
+		it("opens a canonical-only assignment by exact review link after rechecking entitlement", async () => {
+			await seed("manual_time_submission", false, "complete");
+			const submitted = await submit("manual_time_submission");
+			const assignmentId = submitted.result.approvalRequestId;
+			const arrive = (userId: string, kind: string) => {
+				reviewSession.userId = userId;
+				reviewSession.organizationId = ids.organization;
+				return resolveApprovalReviewArrival({
+					userId,
+					activeOrganizationId: ids.organization,
+					target: parseApprovalReviewTarget({
+						organizationId: ids.organization,
+						kind,
+						id: assignmentId,
+					}),
+				});
+			};
+			try {
+				await expect(arrive(ids.managerUser, "canonical")).resolves.toMatchObject({
+					status: "ready",
+					item: { id: assignmentId, status: "pending" },
+				});
+				// No compatibility request exists; the exact kind never retargets.
+				await expect(arrive(ids.managerUser, "compatibility")).resolves.toEqual({
+					status: "unavailable",
+				});
+				await expect(arrive(ids.requesterUser, "canonical")).resolves.toEqual({
+					status: "unavailable",
+				});
+
+				await decide(assignmentId, { kind: "approve", reason: null });
+				// A decided canonical step is not re-disclosed through its old link.
+				await expect(arrive(ids.managerUser, "canonical")).resolves.toEqual({
+					status: "unavailable",
+				});
+			} finally {
+				reviewSession.userId = null;
+				reviewSession.organizationId = null;
+			}
+		});
+
 		const submissionRollbackCases = [
 			...["legacy", "shadow", "ready"].map((mode) => ({
 				mode: mode as ApprovalWorkflowLifecycleMode,
@@ -3068,6 +3155,36 @@ describeIntegration(
 				duplicate.filter(({ status }) => status === "fulfilled"),
 			).toHaveLength(2);
 			await assertTerminalGraph("approved");
+		});
+
+		it.each([
+			["approve", "approved"],
+			["reject", "rejected"],
+		] as const)("a manager can %s ordinary time submitted before the requester departed", async (action, status) => {
+			const target = (await submit("manual_time_submission")).result
+				.approvalRequestId;
+			await pool.query(
+				"update employee set is_active = false where organization_id = $1 and id = $2",
+				[ids.organization, ids.requester],
+			);
+
+			const decided = await decide(
+				target,
+				action === "approve"
+					? { kind: "approve", reason: null }
+					: { kind: "reject", reason: "Requester departed" },
+			);
+
+			expect(decided.result.action).toBe(action);
+			await expect(
+				pool.query<{ status: string; requester_employee_id: string }>(
+					`select status, requester_employee_id from approval_workflow
+					 where organization_id = $1 and source_id = $2`,
+					[ids.organization, ids.period],
+				),
+			).resolves.toMatchObject({
+				rows: [{ status, requester_employee_id: ids.requester }],
+			});
 		});
 
 		it("Task8A split has exact period, canonical subtype, allocation, workflow, and synthetic-entry parity", async () => {

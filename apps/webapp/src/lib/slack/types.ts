@@ -90,6 +90,13 @@ export interface SlackInteractionPayload {
 		action_id: string;
 		value?: string;
 		type: string;
+		/**
+		 * Present on block actions, but with no established collision or
+		 * redelivery guarantee (#261): never an invocation identity, so it
+		 * authorizes nothing.
+		 */
+		action_ts?: string;
+		block_id?: string;
 	}>;
 }
 

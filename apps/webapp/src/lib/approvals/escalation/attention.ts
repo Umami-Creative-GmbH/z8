@@ -34,7 +34,10 @@ export interface EscalationAttentionInput {
 	subject: EscalationAttentionSubject;
 	/** Required for `ambiguous_history`, whose incident spans the whole lineage. */
 	lineageRootAssignmentId?: string;
-	/** Required for `delivery_exhausted`, which is tracked per intended channel. */
+	/**
+	 * Required for `delivery_exhausted`, which is tracked per intended channel.
+	 * A `delivery_unavailable` destination is tracked per channel when known.
+	 */
 	deliveryChannel?: ApprovalEscalationChannel;
 	approvalType?: string;
 	approvalRequestId?: string;
@@ -71,6 +74,11 @@ export function escalationAttentionDedupeKey(
 				);
 			}
 			return `${input.reason}:${subjectKey(input.subject)}:channel:${input.deliveryChannel}`;
+		case "delivery_unavailable":
+			// One provider's repaired destination says nothing about another's.
+			return input.deliveryChannel
+				? `${input.reason}:${subjectKey(input.subject)}:channel:${input.deliveryChannel}`
+				: `${input.reason}:${subjectKey(input.subject)}`;
 		default:
 			return `${input.reason}:${subjectKey(input.subject)}`;
 	}

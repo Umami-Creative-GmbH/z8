@@ -186,7 +186,7 @@ export async function uploadPrivateObject(
 	data: Buffer | Uint8Array | string,
 	contentType: string,
 	metadata?: Record<string, string>,
-): Promise<{ bucket: string }> {
+): Promise<{ bucket: string; versionId: string | null }> {
 	const config = await getStorageConfig(organizationId);
 	if (!config) {
 		throw new Error("S3 storage is not configured for this organization");
@@ -212,11 +212,41 @@ export async function uploadPrivateObject(
 		Metadata: metadata,
 	});
 
-	await client.send(command);
+	const response = await client.send(command);
 
 	logger.info({ organizationId, key }, "Export uploaded successfully");
 
-	return { bucket: config.bucket };
+	// Versioned buckets report the immutable version of the stored object.
+	return { bucket: config.bucket, versionId: response?.VersionId ?? null };
+}
+
+/**
+ * Delete one private object. A recorded bucket that no longer matches the
+ * organization's storage configuration is refused rather than deleting from
+ * the wrong bucket; a recorded version deletes exactly that version.
+ */
+export async function deletePrivateObject(input: {
+	organizationId: string;
+	key: string;
+	bucket: string | null;
+	versionId: string | null;
+}): Promise<void> {
+	const config = await getStorageConfig(input.organizationId);
+	if (!config) {
+		throw new Error("S3 storage is not configured for this organization");
+	}
+	if (input.bucket && input.bucket !== config.bucket) {
+		throw new Error("Private storage bucket changed; object cleanup needs review");
+	}
+
+	const client = createS3Client(config);
+	await client.send(
+		new DeleteObjectCommand({
+			Bucket: config.bucket,
+			Key: input.key,
+			...(input.versionId ? { VersionId: input.versionId } : {}),
+		}),
+	);
 }
 
 /**

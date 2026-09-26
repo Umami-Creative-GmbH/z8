@@ -547,7 +547,9 @@ function rejectionLayer(options: RejectionFakeOptions = {}) {
 			const query = new PgDialect().sqlToQuery(statement);
 			events.push(
 				query.sql.includes("pg_advisory_xact_lock")
-					? "identity-lock"
+					? String(query.params[0]).includes("work-user-configuration-access")
+						? "user-guard"
+						: "identity-lock"
 					: "member-lock",
 			);
 		}),
@@ -719,7 +721,7 @@ describe("PendingMemberService rejection isolation", () => {
 		expect(fake.deletedMembers).toEqual([]);
 	});
 
-	it("takes the identity advisory lock before the member row lock", async () => {
+	it("takes the user guard, then the identity advisory lock, before the member row lock", async () => {
 		const fake = rejectionLayer();
 
 		await expect(rejectWith(fake.layer)).resolves.toMatchObject({
@@ -728,6 +730,7 @@ describe("PendingMemberService rejection isolation", () => {
 
 		expect(fake.events).toEqual([
 			"transaction-start",
+			"user-guard",
 			"identity-lock",
 			"member-lock",
 			"transaction-commit",

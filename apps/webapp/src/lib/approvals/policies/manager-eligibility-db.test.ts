@@ -3,6 +3,7 @@ import {
 	getEligibleApprovalScopesForManager,
 	getEligibleManagerIdsForRequester,
 	getPrimaryEligibleManagerIdForRequester,
+	isEligibleManagerForApprovalRequest,
 } from "./manager-eligibility-db";
 
 function createPgError(code: string) {
@@ -344,6 +345,79 @@ describe("getPrimaryEligibleManagerIdForRequester", () => {
 		await expect(
 			getPrimaryEligibleManagerIdForRequester({
 				db,
+				requesterEmployeeId: "requester-1",
+				organizationId: "org-1",
+			}),
+		).resolves.toBeNull();
+	});
+});
+
+describe("departed requester eligibility", () => {
+	function departedRequesterDb(request: { requestedBy: string; approverId: string } | null) {
+		return {
+			query: {
+				approvalRequest: { findFirst: vi.fn(async () => request) },
+				employee: {
+					findMany: vi.fn(async () => [
+						{
+							id: "requester-1",
+							organizationId: "org-1",
+							isActive: false,
+							role: "employee",
+						},
+						{
+							id: "manager-1",
+							organizationId: "org-1",
+							isActive: true,
+							role: "manager",
+						},
+						{
+							id: "manager-2",
+							organizationId: "org-1",
+							isActive: true,
+							role: "manager",
+						},
+					]),
+				},
+				employeeManagers: {
+					findMany: vi.fn(async () => [
+						{ employeeId: "requester-1", managerId: "manager-1", isPrimary: true },
+						{ employeeId: "requester-1", managerId: "manager-2", isPrimary: false },
+					]),
+				},
+				teamMembership: { findMany: vi.fn(async () => []) },
+				team: { findMany: vi.fn(async () => []) },
+			},
+		};
+	}
+
+	it("lets an eligible manager settle a persisted request from a departed requester", async () => {
+		await expect(
+			isEligibleManagerForApprovalRequest({
+				db: departedRequesterDb({ requestedBy: "requester-1", approverId: "manager-1" }),
+				approvalRequestId: "request-1",
+				managerEmployeeId: "manager-2",
+				organizationId: "org-1",
+			}),
+		).resolves.toBe(true);
+	});
+
+	it("keeps a departed requester visible in a manager's existing approval scopes", async () => {
+		await expect(
+			getEligibleApprovalScopesForManager({
+				db: departedRequesterDb(null),
+				managerEmployeeId: "manager-2",
+				organizationId: "org-1",
+			}),
+		).resolves.toEqual([
+			{ requesterEmployeeId: "requester-1", eligibleApproverIds: ["manager-1", "manager-2"] },
+		]);
+	});
+
+	it("resolves no approver for a new submission from a departed requester", async () => {
+		await expect(
+			getPrimaryEligibleManagerIdForRequester({
+				db: departedRequesterDb(null),
 				requesterEmployeeId: "requester-1",
 				organizationId: "org-1",
 			}),

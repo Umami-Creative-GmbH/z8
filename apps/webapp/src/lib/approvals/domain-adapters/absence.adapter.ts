@@ -434,8 +434,7 @@ export function createAbsenceApprovalAdapter(
 			return normalizeStableData({
 				organizationId: input.organizationId,
 				workflowType: "absence",
-				sourceType: "absence_entry",
-				sourceId: input.source.id,
+				source: { type: "absence_entry", id: input.source.id },
 				requesterEmployeeId: input.source.employeeId,
 				teamIds: input.source.teamId ? [input.source.teamId] : [],
 				locationId: null,

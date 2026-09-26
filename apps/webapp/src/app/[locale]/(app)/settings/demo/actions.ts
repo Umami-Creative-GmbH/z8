@@ -367,9 +367,13 @@ export async function generateManagersStepAction(
 /**
  * Generate time entries (step 4)
  */
-export async function generateTimeEntriesStepAction(
-	input: StepGenerationInput,
-): Promise<ServerActionResult<{ timeEntriesCreated: number; workPeriodsCreated: number }>> {
+export async function generateTimeEntriesStepAction(input: StepGenerationInput): Promise<
+	ServerActionResult<{
+		timeEntriesCreated: number;
+		workPeriodsCreated: number;
+		employeesHeldForReview: number;
+	}>
+> {
 	const effect = Effect.gen(function* (_) {
 		const authService = yield* _(AuthService);
 		const session = yield* _(authService.getSession());
@@ -881,7 +885,9 @@ export async function clearTimeDataAction(
 		}
 
 		// Step 4: Clear all time data
-		const result = yield* _(Effect.promise(() => clearOrganizationTimeData(organizationId)));
+		const result = yield* _(
+			Effect.promise(() => clearOrganizationTimeData(organizationId, session.user.id)),
+		);
 
 		return result;
 	}).pipe(Effect.provide(AppLayer));

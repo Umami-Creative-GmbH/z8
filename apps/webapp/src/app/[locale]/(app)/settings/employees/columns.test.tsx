@@ -30,9 +30,26 @@ vi.mock("@/components/user-avatar", () => ({
 	),
 }));
 
+const offboardingGate = vi.hoisted(() => ({ released: false }));
+
+vi.mock("@/lib/employee-lifecycle/release", () => ({
+	get EMPLOYEE_OFFBOARDING_RELEASE_READY() {
+		return offboardingGate.released;
+	},
+}));
+
 vi.mock("@/navigation", () => ({
-	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
-		<a href={href}>{children}</a>
+	Link: ({
+		href,
+		children,
+		...props
+	}: {
+		href: string;
+		children: React.ReactNode;
+	}) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
 	),
 }));
 

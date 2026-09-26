@@ -17,6 +17,12 @@ import {
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 
+// No submitted revision exists (capture inactive): the live detail stays as is.
+vi.mock("@/lib/approvals/presentation/time-review", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/presentation/time-review")>()),
+	prepareTimeReviewEvidence: vi.fn(async () => ({ status: "not_captured", held: false })),
+}));
+
 const dbMocks = vi.hoisted(() => ({
 	approvalRequests: vi.fn(),
 	chainStages: vi.fn(),

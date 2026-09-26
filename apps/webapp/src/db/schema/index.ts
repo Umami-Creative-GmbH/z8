@@ -8,6 +8,7 @@ export * from "./absence";
 export * from "./access-policy";
 export * from "./app-auth";
 export * from "./approval";
+export * from "./approval-delivery";
 export * from "./approval-escalation";
 export * from "./approval-evidence";
 export * from "./approval-policy";
@@ -24,6 +25,7 @@ export * from "./calendar-sync";
 export * from "./change-policy";
 // Clockodo import (user mapping)
 export * from "./clockodo-import";
+export * from "./completed-work";
 // ArbZG Compliance
 export * from "./compliance";
 export * from "./cost-center";
@@ -84,6 +86,7 @@ export * from "./system";
 export * from "./teams-integration";
 // Telegram integration
 export * from "./telegram-integration";
+export * from "./time-entry-append";
 export * from "./time-record";
 export * from "./time-tracking";
 export * from "./travel-expense";

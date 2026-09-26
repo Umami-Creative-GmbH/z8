@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	requesterMayBeResolved,
 	resolveDirectEligibleManagers,
 	resolveEligibleManagers,
 	resolvePrimaryEligibleManager,
@@ -248,5 +249,79 @@ describe("resolveDirectEligibleManagers", () => {
 			ok: false,
 			reason: "Requester has no active direct manager in this organization.",
 		});
+	});
+});
+
+describe("requesterMayBeResolved", () => {
+	it.each([
+		{ exists: true, active: true, mode: "new_submission", expected: true },
+		{ exists: true, active: false, mode: "new_submission", expected: false },
+		{ exists: true, active: true, mode: "existing_workflow", expected: true },
+		{ exists: true, active: false, mode: "existing_workflow", expected: true },
+		{ exists: false, active: true, mode: "existing_workflow", expected: false },
+		{ exists: false, active: false, mode: "new_submission", expected: false },
+	] as const)("exists=$exists active=$active mode=$mode -> $expected", (row) => {
+		expect(
+			requesterMayBeResolved({
+				requesterExistsInOrganization: row.exists,
+				requesterIsActive: row.active,
+				mode: row.mode,
+			}),
+		).toBe(row.expected);
+	});
+});
+
+describe("existing workflow requester eligibility", () => {
+	const departedEmployees = [
+		...employees.filter((employee) => employee.id !== "requester"),
+		{
+			id: "requester",
+			organizationId: "org-1",
+			isActive: false,
+			role: "employee" as const,
+		},
+	];
+	const baseInput = {
+		organizationId: "org-1",
+		requesterEmployeeId: "requester",
+		employees: departedEmployees,
+		managerLinks: [
+			{ employeeId: "requester", managerId: "direct-a", isPrimary: true },
+			{ employeeId: "requester", managerId: "inactive-manager" },
+		],
+		teamMemberships: [],
+		teams: [],
+	};
+
+	it("rejects a departed requester for a new submission by default", () => {
+		expect(resolveEligibleManagers(baseInput)).toEqual({
+			ok: false,
+			reason: "Requester is not active in this organization.",
+		});
+		expect(
+			resolveDirectEligibleManagers({ ...baseInput, requesterMode: "new_submission" }),
+		).toMatchObject({ ok: false });
+	});
+
+	it("keeps active managers of a departed requester for an existing workflow", () => {
+		expect(
+			resolveEligibleManagers({ ...baseInput, requesterMode: "existing_workflow" }),
+		).toEqual({ ok: true, source: "direct", managerIds: ["direct-a"] });
+		expect(
+			resolvePrimaryEligibleManager({ ...baseInput, requesterMode: "existing_workflow" }),
+		).toMatchObject({ ok: true, managerId: "direct-a" });
+		expect(
+			resolveDirectEligibleManagers({ ...baseInput, requesterMode: "existing_workflow" }),
+		).toEqual({ ok: true, source: "direct", managerIds: ["direct-a"] });
+	});
+
+	it("still denies a historical requester from another organization", () => {
+		expect(
+			resolveEligibleManagers({
+				...baseInput,
+				organizationId: "org-2",
+				requesterMode: "existing_workflow",
+			}),
+		).toEqual({ ok: false, reason: "Requester is not active in this organization." });
 	});
 });

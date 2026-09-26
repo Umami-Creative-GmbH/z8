@@ -15,7 +15,7 @@ import { normalizeTimeFormat } from "@/lib/user-preferences/time-format";
 import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import { getTranslate } from "@/tolgee/server";
-import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions";
+import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions/queries";
 import { getCurrentEmployee } from "./actions/auth";
 import type {
 	SelectedWorkdayDate,

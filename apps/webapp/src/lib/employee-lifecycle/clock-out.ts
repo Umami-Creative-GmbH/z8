@@ -3,6 +3,7 @@ import { organization } from "@/db/auth-schema";
 import { employee, userSettings, workPeriod } from "@/db/schema";
 import { compareInstants, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
+	ClockingAppendAdoptedError,
 	type ClockingTransaction,
 	createClockingService,
 	createDatabaseClockingStore,
@@ -82,29 +83,40 @@ export function createDepartureClockOut(): DepartureClockOutPort {
 			});
 
 			let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
-			const closed = await canonicalClocking.clockOut({
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				createdBy: input.actorUserId,
-				actionId: input.clockOutActionId,
-				workPeriodId: period.id,
-				transaction: tx,
-				action: { instant: input.cutoff, ...capture },
-				source: { ipAddress: null, deviceInfo: "employee-offboarding" },
-				notes: `Employee departure ${input.departureId}`,
-				projectId: period.projectId,
-				workCategoryId: period.workCategoryId,
-				beforePeriodClose: async ({ transaction, activePeriod }) => {
-					surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
-						dbService: { db: transaction as ClockingTransaction },
-						organizationId: input.organizationId,
-						employeeId: input.employeeId,
-						startTime: instantFromDate(activePeriod.startTime),
-						endTime: input.cutoff,
-					});
-					return undefined;
-				},
-			});
+			let closed: Awaited<ReturnType<typeof canonicalClocking.clockOut>>;
+			try {
+				closed = await canonicalClocking.clockOut({
+					employeeId: input.employeeId,
+					organizationId: input.organizationId,
+					createdBy: input.actorUserId,
+					actionId: input.clockOutActionId,
+					workPeriodId: period.id,
+					transaction: tx,
+					action: { instant: input.cutoff, ...capture },
+					source: { ipAddress: null, deviceInfo: "employee-offboarding" },
+					notes: `Employee departure ${input.departureId}`,
+					projectId: period.projectId,
+					workCategoryId: period.workCategoryId,
+					beforePeriodClose: async ({ transaction, activePeriod }) => {
+						surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
+							dbService: { db: transaction as ClockingTransaction },
+							organizationId: input.organizationId,
+							employeeId: input.employeeId,
+							startTime: instantFromDate(activePeriod.startTime),
+							endTime: input.cutoff,
+						});
+						return undefined;
+					},
+				});
+			} catch (error) {
+				// Adopted organizations accept only coordinated writers (#327). Nothing
+				// was written: the period stays open for the canonical correction flow
+				// and the departure records a timer repair with its own reason.
+				if (error instanceof ClockingAppendAdoptedError) {
+					return { kind: "repair_required", workPeriodId: period.id, reason: "append_adopted" };
+				}
+				throw error;
+			}
 
 			return {
 				kind: "closed",

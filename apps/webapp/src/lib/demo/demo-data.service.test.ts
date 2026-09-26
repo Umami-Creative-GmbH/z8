@@ -10,10 +10,12 @@ import {
 	team,
 	teamMembership,
 	timeEntry,
+	timeEntryAppendControl,
 	timeRecord,
 	workPeriod,
 } from "@/db/schema";
-import { calculateHash, validateChain } from "@/lib/time-tracking/blockchain";
+import { classifyAppendLineage } from "@/lib/time-tracking/append-lineage";
+import { calculateHash } from "@/lib/time-tracking/blockchain";
 
 type RolloutMode = "legacy" | "shadow" | "ready" | "canonical" | "complete";
 
@@ -88,6 +90,10 @@ const mocks = vi.hoisted(() => ({
 	boundaryWrites: [] as string[],
 	executedSubmissionKeys: new Set<string>(),
 	lockOrder: [] as string[],
+	acquisitions: [] as string[],
+	appendControlActive: false,
+	admitAppend: vi.fn(),
+	recordAppend: vi.fn(),
 	workPeriodOrderBy: [] as unknown[],
 	mode: "legacy" as RolloutMode,
 	failBoundaryStage: null as string | null,
@@ -106,6 +112,7 @@ vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
 	deleteCancelledTimeCorrectionsInTransaction: vi.fn(),
 	finalizeTimeCorrectionTerminalInTransaction: vi.fn(),
 	executeTimeCorrectionSubmissionInTransaction: mocks.executeSubmission,
+	isPurgedTimeCorrectionConflict: vi.fn(() => false),
 	insertTimeCorrectionSourceEntry: vi.fn(async (input) => {
 		const [created] = await input.dbService.db
 			.insert(timeEntry)
@@ -133,6 +140,11 @@ vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
 	}),
 }));
 
+vi.mock("@/lib/time-tracking/time-entry-append", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/time-entry-append")>()),
+	admitTimeEntryAppend: mocks.admitAppend,
+}));
+
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
 	createProductionApprovalWorkflowRuntime: mocks.createRuntime,
 }));
@@ -142,8 +154,32 @@ vi.mock("@/lib/absences/default-absence-categories", () => ({
 		mocks.ensureDefaultAbsenceCategories,
 }));
 
+/** Advisory lock keys, from the drizzle `sql` params of `pg_advisory_xact_lock*`. */
+function advisoryLockLabel(query: { queryChunks?: unknown[] }) {
+	const text = JSON.stringify(query.queryChunks ?? []);
+	const mode = text.includes("_shared(") ? "shared" : "exclusive";
+	const key = (query.queryChunks ?? []).find((chunk) => typeof chunk === "string");
+	return `${mode}:${String(key)}`;
+}
+
+// Configuration batches (#318) are covered on PostgreSQL; here they run on the
+// mocked client with no employees in scope.
+vi.mock("./demo-configuration", async () => {
+	const { db } = await import("@/db");
+	return {
+		withDemoConfigurationMutation: (
+			_organizationId: string,
+			mutation: (transaction: unknown, employees: unknown[]) => Promise<unknown>,
+		) => mutation(db, []),
+	};
+});
+
 vi.mock("@/db", () => ({
 	db: {
+		execute: vi.fn(async (query: { queryChunks?: unknown[] }) => {
+			mocks.acquisitions.push(advisoryLockLabel(query));
+			return { rows: [] };
+		}),
 		query: {
 			employee: {
 				findFirst: vi.fn(async () =>
@@ -224,6 +260,10 @@ vi.mock("@/db", () => ({
 							mocks.fallbackQueryLimit = limit;
 							return Promise.resolve(mocks.fallbackEmployees.slice(0, limit));
 						}
+						// No append control row: the organization keeps legacy admission.
+						if (table === timeEntryAppendControl) {
+							return Promise.resolve(mocks.appendControlActive ? [{ mode: "active" }] : []);
+						}
 						return builder;
 					}),
 					for: vi.fn(async () => {
@@ -244,6 +284,7 @@ vi.mock("@/db", () => ({
 														? "timeEntry"
 														: "timeRecord";
 						mocks.lockOrder.push(label);
+						mocks.acquisitions.push(`row:${label}`);
 						if (table === employee) {
 							return mocks.transactionRequester
 								? mocks.employees.map((candidate) =>
@@ -342,6 +383,19 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+/** The approval transaction context the demo correction path composes with. */
+function transactionContext() {
+	return {
+		dbService: { db: mocks.transactionDb },
+		writeGate: {
+			acquire: async (scope: { workflowType: string }) => {
+				mocks.acquisitions.push(`approval:${scope.workflowType}`);
+				return { mode: mocks.mode };
+			},
+		},
+	};
+}
+
 describe("generateDemoPendingAbsenceApprovals", () => {
 	beforeEach(() => {
 		mocks.employees = [];
@@ -390,6 +444,10 @@ describe("generateDemoPendingAbsenceApprovals", () => {
 		mocks.boundaryWrites = [];
 		mocks.executedSubmissionKeys.clear();
 		mocks.lockOrder = [];
+		mocks.acquisitions = [];
+		mocks.appendControlActive = false;
+		mocks.admitAppend.mockReset();
+		mocks.recordAppend.mockReset();
 		mocks.workPeriodOrderBy = [];
 		mocks.failBoundaryStage = null;
 		mocks.notificationFailure = null;
@@ -523,6 +581,10 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 		mocks.boundaryWrites = [];
 		mocks.executedSubmissionKeys.clear();
 		mocks.lockOrder = [];
+		mocks.acquisitions = [];
+		mocks.appendControlActive = false;
+		mocks.admitAppend.mockReset();
+		mocks.recordAppend.mockReset();
 		mocks.workPeriodOrderBy = [];
 		mocks.mode = "legacy";
 		mocks.failBoundaryStage = null;
@@ -544,7 +606,7 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 			const boundaryCount = mocks.boundaryWrites.length;
 			mocks.transactionActive = true;
 			try {
-				return await operation({ dbService: { db: mocks.transactionDb } });
+				return await operation(transactionContext());
 			} catch (error) {
 				mocks.insertedTimeEntries.length = entryCount;
 				mocks.boundaryWrites.length = boundaryCount;
@@ -997,18 +1059,45 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 			...mocks.insertedTimeEntries[0],
 			createdAt: new Date("2026-01-06T09:00:02.000Z"),
 		};
-		await expect(
-			validateChain([
+		expect(
+			classifyAppendLineage(
 				{
-					...original,
-					previousEntryId: null,
-					previousHash: null,
-					createdAt: new Date("2026-01-05T08:00:01.000Z"),
+					organizationId: original.organizationId as string,
+					employeeId: original.employeeId as string,
 				},
-				mocks.lockedChainTail,
-				correction,
-			] as never),
-		).resolves.toBe(true);
+				[
+					{
+						...original,
+						previousEntryId: null,
+						previousHash: null,
+						createdAt: new Date("2026-01-05T08:00:01.000Z"),
+					},
+					mocks.lockedChainTail,
+					{ id: "demo-correction", ...correction },
+				] as never,
+			),
+		).toMatchObject({ kind: "lineage", entryCount: 3 });
+	});
+
+	it("takes the shared work protocol before routing, source and chain rows", async () => {
+		const { generateDemoPendingTimeCorrectionApprovals } = await import(
+			"./demo-data.service"
+		);
+		seedCorrectionEvidence();
+
+		await generateDemoPendingTimeCorrectionApprovals(options);
+
+		// Adoption gate, approval gate, configuration, sorted admin/requester/approver
+		// access, then the requester key (#285).
+		expect(mocks.acquisitions.slice(0, 7)).toEqual([
+			'shared:["completed-work-adoption","org-1"]',
+			"approval:time_correction",
+			'shared:["work-organization-configuration","org-1"]',
+			'shared:["work-user-configuration-access","user-1"]',
+			'shared:["work-user-configuration-access","user-2"]',
+			"exclusive:20000000-0000-4000-8000-000000000001",
+			"row:employee",
+		]);
 	});
 
 	it("locks employees and routing before source and hash-chain rows", async () => {
@@ -1255,6 +1344,65 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 		expect(mocks.insertedNotifications).toHaveLength(1);
 	});
 
+	it("rolls an admitted correction back instead of deleting it when the submission replays", async () => {
+		const { generateDemoPendingTimeCorrectionApprovals } = await import(
+			"./demo-data.service"
+		);
+		seedCorrectionEvidence();
+		await generateDemoPendingTimeCorrectionApprovals(options);
+		mocks.insertedTimeEntries.length = 0;
+		mocks.appendControlActive = true;
+		mocks.admitAppend.mockResolvedValue({
+			kind: "admitted",
+			append: {
+				predecessor: { id: "40000000-0000-4000-8000-0000000000aa", hash: "admitted-tip" },
+				record: mocks.recordAppend,
+			},
+		});
+		const deletesBefore = vi.mocked(db.delete).mock.calls.length;
+
+		const replay = await generateDemoPendingTimeCorrectionApprovals(options);
+
+		expect(replay).toEqual({ pendingTimeCorrectionApprovalsCreated: 0 });
+		expect(mocks.admitAppend).toHaveBeenCalledWith(
+			db,
+			{ organizationId: "org-1", employeeId: "20000000-0000-4000-8000-000000000001" },
+			"demo_correction",
+		);
+		// The admitted predecessor, not the latest-created row, was linked and recorded.
+		expect(mocks.recordAppend).toHaveBeenCalledWith(
+			expect.objectContaining({
+				previousEntryId: "40000000-0000-4000-8000-0000000000aa",
+				previousHash: "admitted-tip",
+			}),
+		);
+		// No positioned row is deleted; the transaction rolls the insert back.
+		expect(vi.mocked(db.delete).mock.calls.length).toBe(deletesBefore);
+		expect(mocks.insertedTimeEntries).toHaveLength(0);
+	});
+
+	it("holds an adopted correction whose history needs review without writing", async () => {
+		const { generateDemoPendingTimeCorrectionApprovals } = await import(
+			"./demo-data.service"
+		);
+		seedCorrectionEvidence();
+		mocks.appendControlActive = true;
+		mocks.admitAppend.mockResolvedValue({
+			kind: "review_required",
+			requirement: {
+				organizationId: "org-1",
+				employeeId: "20000000-0000-4000-8000-000000000001",
+				reasons: [{ kind: "history_without_entries" }],
+			},
+		});
+
+		const result = await generateDemoPendingTimeCorrectionApprovals(options);
+
+		expect(result).toEqual({ pendingTimeCorrectionApprovalsCreated: 0 });
+		expect(mocks.insertedTimeEntries).toHaveLength(0);
+		expect(mocks.executeSubmission).not.toHaveBeenCalled();
+	});
+
 	it("accepts deterministic replay by another admin without rewriting creator", async () => {
 		const { generateDemoPendingTimeCorrectionApprovals } = await import(
 			"./demo-data.service"
@@ -1446,7 +1594,7 @@ describe("generateDemoData", () => {
 		mocks.withTransaction.mockImplementation(async (operation) => {
 			mocks.transactionActive = true;
 			try {
-				return await operation({ dbService: { db: mocks.transactionDb } });
+				return await operation(transactionContext());
 			} finally {
 				mocks.transactionActive = false;
 			}

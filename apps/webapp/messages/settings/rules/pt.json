@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Todos os registros de saída",
       "allManagers": "Todos os gerentes",
       "approvalDaysDescription": "Além do autoatendimento, os funcionários podem solicitar alterações dentro desta janela (requer aprovação). 0 = sem janela adicional.",
       "approvalDaysLabel": "Janela de aprovação (dias)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Permitir que os funcionários editem entradas sem requisitos de aprovação",
       "trustModeLabel": "Modo de confiança",
       "updated": "Política atualizada com sucesso",
-      "updateFailed": "Falha ao atualizar política",
-      "zeroDayPolicy": "Cada registro de saída exigirá a aprovação do gerente (modo mais rigoroso)."
+      "updateFailed": "Falha ao atualizar política"
     },
     "coverageRules": {
       "addRule": "Adicionar regra",

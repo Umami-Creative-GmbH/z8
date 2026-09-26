@@ -5,14 +5,15 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - main
+    # React Doctor only analyzes component and hook source; tests and non-TS files cannot change its findings.
     paths:
-      - "apps/webapp/**"
-      - "packages/**"
+      - "apps/webapp/**/*.ts"
+      - "apps/webapp/**/*.tsx"
+      - "packages/**/*.ts"
+      - "packages/**/*.tsx"
+      - "!**/*.test.ts"
+      - "!**/*.test.tsx"
       - ".github/workflows/react-doctor.yml"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "turbo.json"
 
 permissions:
   contents: read
@@ -25,6 +26,8 @@ concurrency:
 jobs:
   react-doctor:
     name: React Doctor
+    # Drafts are reviewed once they are marked ready (ready_for_review trigger).
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
