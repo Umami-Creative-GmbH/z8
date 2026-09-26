@@ -52,6 +52,7 @@ export function ApprovalEscalationManagement({
 
 	const policyMutation = useMutation({
 		mutationFn: updateApprovalEscalationPolicy,
+		onSettled: () => invalidate(),
 	});
 	const reviewMutation = useMutation({
 		mutationFn: reviewApprovalEscalationPolicyConflicts,
@@ -72,9 +73,11 @@ export function ApprovalEscalationManagement({
 	});
 	const disposeMutation = useMutation({
 		mutationFn: disposeApprovalEscalationAttention,
+		onSettled: () => invalidate(),
 	});
 	const transferMutation = useMutation({
 		mutationFn: transferApprovalEscalationAssignment,
+		onSettled: () => invalidate(),
 	});
 	const recheckMutation = useMutation({
 		mutationFn: recheckApprovalEscalationAttention,
@@ -122,7 +125,6 @@ export function ApprovalEscalationManagement({
 						"No changes to save",
 					),
 		);
-		await invalidate();
 		return true;
 	}
 
@@ -134,7 +136,6 @@ export function ApprovalEscalationManagement({
 			.catch(() => ({ success: false as const, error: requestFailed() }));
 		if (!result.success) {
 			toast.error(result.error);
-			await invalidate();
 			return false;
 		}
 		toast.success(
@@ -143,7 +144,6 @@ export function ApprovalEscalationManagement({
 				"Approval assignment transferred",
 			),
 		);
-		await invalidate();
 		return true;
 	}
 
@@ -174,13 +174,11 @@ export function ApprovalEscalationManagement({
 			.catch(() => ({ success: false as const, error: requestFailed() }));
 		if (!result.success) {
 			toast.error(result.error);
-			await invalidate();
 			return false;
 		}
 		toast.success(
 			t("settings.approvalEscalation.toast.disposed", "Attention item closed"),
 		);
-		await invalidate();
 		return true;
 	}
 

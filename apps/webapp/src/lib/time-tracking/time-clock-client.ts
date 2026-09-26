@@ -37,6 +37,8 @@ function isActionResult(value: unknown): value is ServerActionResult<unknown> {
 }
 
 async function postTimeClock<T>(request: TimeClockRequest): Promise<ServerActionResult<T>> {
+	// Refusals arrive as action results with status 422, so the body is read on every status.
+	// react-doctor-disable-next-line react-doctor/no-fetch-response-used-without-status-check
 	const response = await fetch(TIME_CLOCK_ROUTE, {
 		method: "POST",
 		headers: { "content-type": "application/json" },

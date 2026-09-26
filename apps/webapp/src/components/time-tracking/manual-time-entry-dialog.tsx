@@ -1221,6 +1221,9 @@ function useTargetDraftRevalidation({
 		if (projectIneligible) form.setFieldValue("projectId", undefined);
 		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
 		if (projectIneligible || categoryIneligible) {
+			// The TanStack form store is external; this reports what was just cleared in it
+			// after fresh context arrived, which render cannot derive afterwards.
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
 			setMessage(
 				t(
 					"timeTracking.manualEntry.context.choicesCleared",

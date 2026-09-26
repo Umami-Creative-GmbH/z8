@@ -2709,22 +2709,7 @@ function GenerationStepItem({ step }: { step: GenerationStep }) {
 		>
 			{/* Status indicator */}
 			<div className="flex size-6 items-center justify-center">
-				{step.status === "pending" && (
-					<IconCircle className="size-5 text-muted-foreground/50" />
-				)}
-				{step.status === "in-progress" && (
-					<IconLoader2 className="size-5 animate-spin text-primary" />
-				)}
-				{step.status === "complete" && (
-					<div className="flex size-5 items-center justify-center rounded-full bg-green-500 text-white">
-						<IconCheck className="size-3" />
-					</div>
-				)}
-				{step.status === "error" && (
-					<div className="flex size-5 items-center justify-center rounded-full bg-destructive text-white">
-						<IconX className="size-3" />
-					</div>
-				)}
+				<GenerationStepStatusIcon status={step.status} />
 			</div>
 
 			{/* Content */}
@@ -2743,20 +2728,45 @@ function GenerationStepItem({ step }: { step: GenerationStep }) {
 						{step.label}
 					</span>
 				</div>
-				{step.status === "in-progress" && (
-					<p className="text-xs text-muted-foreground mt-0.5">
-						{step.description}
-					</p>
-				)}
-				{step.status === "complete" && step.result && (
-					<p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
-						{step.result}
-					</p>
-				)}
-				{step.status === "error" && step.error && (
-					<p className="text-xs text-destructive mt-0.5">{step.error}</p>
-				)}
+				<GenerationStepDetail step={step} />
 			</div>
 		</div>
 	);
+}
+
+function GenerationStepStatusIcon({ status }: { status: GenerationStep["status"] }) {
+	switch (status) {
+		case "pending":
+			return <IconCircle className="size-5 text-muted-foreground/50" />;
+		case "in-progress":
+			return <IconLoader2 className="size-5 animate-spin text-primary" />;
+		case "complete":
+			return (
+				<div className="flex size-5 items-center justify-center rounded-full bg-green-500 text-white">
+					<IconCheck className="size-3" />
+				</div>
+			);
+		case "error":
+			return (
+				<div className="flex size-5 items-center justify-center rounded-full bg-destructive text-white">
+					<IconX className="size-3" />
+				</div>
+			);
+		default:
+			return null;
+	}
+}
+
+/** The running description, the result, or the error, depending on the step's status. */
+function GenerationStepDetail({ step }: { step: GenerationStep }) {
+	if (step.status === "in-progress") {
+		return <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>;
+	}
+	if (step.status === "complete" && step.result) {
+		return <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">{step.result}</p>;
+	}
+	if (step.status === "error" && step.error) {
+		return <p className="text-xs text-destructive mt-0.5">{step.error}</p>;
+	}
+	return null;
 }

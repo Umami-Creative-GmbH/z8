@@ -33,7 +33,9 @@ export default {
 					"**/absences/mutations.ts",
 					"**/time-tracking/actions/clocking.ts",
 					"**/src/lib/approvals/delivery/store.ts",
+					"**/src/lib/approvals/domain-adapters/absence.adapter.ts",
 					"**/src/lib/approvals/escalation/legacy-transfer.ts",
+					"**/src/lib/approvals/escalation/transfer.ts",
 					"**/src/lib/approvals/evidence/store.ts",
 					"**/src/lib/approvals/maintenance.ts",
 					"**/src/lib/approvals/pilot/readiness.ts",
@@ -80,13 +82,14 @@ export default {
 			{
 				// Ordered side effects outside one transaction: sweep before claim, cancel before
 				// claim, count after cleanup, after-commit work in registration order, and one
-				// organization (or split segment) at a time so a failure stays isolated.
+				// organization, outbox task or split segment at a time so a failure stays isolated.
 				files: [
 					"**/time-tracking/actions/work-period-split.ts",
 					"**/src/lib/approvals/delivery/owner.ts",
 					"**/src/lib/approvals/delivery/scheduled-job.ts",
 					"**/src/lib/approvals/escalation/replacement-delivery.ts",
 					"**/src/lib/auth/auth-transaction.ts",
+					"**/src/lib/employee-lifecycle/delivery.ts",
 					"**/src/lib/jobs/travel-expense-receipt-cleanup.ts",
 				],
 				rules: ["react-doctor/async-await-in-loop", "react-doctor/server-sequential-independent-await"],

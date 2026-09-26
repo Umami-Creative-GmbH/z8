@@ -175,14 +175,14 @@ export async function routeWebClockOutResources(
 	);
 	if (!result || !Array.isArray(result.rows))
 		throw new Error("Work resource routing is unavailable");
-	const tableOrder = definitions.map(({ table }) => table);
+	const tableRank = new Map(definitions.map(({ table }, index) => [table, index]));
 	const resources = result.rows
 		.map((value): Resource => {
 			const row = value as Record<string, unknown>;
 			if (
 				!row ||
 				typeof row.table !== "string" ||
-				!tableOrder.includes(row.table) ||
+				!tableRank.has(row.table) ||
 				typeof row.id !== "string" ||
 				typeof row.binding !== "string" ||
 				typeof row.source !== "boolean"
@@ -198,7 +198,7 @@ export async function routeWebClockOutResources(
 		})
 		.sort(
 			(a, b) =>
-				tableOrder.indexOf(a.table) - tableOrder.indexOf(b.table) ||
+				(tableRank.get(a.table) ?? 0) - (tableRank.get(b.table) ?? 0) ||
 				(a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
 		);
 	for (const table of ["organization", "member"]) {
