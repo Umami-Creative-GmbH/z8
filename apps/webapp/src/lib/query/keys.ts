@@ -287,6 +287,8 @@ export const queryKeys = {
 			["projects", "list", orgId, params] as const,
 		detail: (projectId: string) => ["projects", "detail", projectId] as const,
 		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
+		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
+		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
 	},
 
 	// Surcharges
