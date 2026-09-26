@@ -3,11 +3,10 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import {
 	type AnyAppError,
@@ -248,7 +247,7 @@ export async function getAccessibleEmployeesAction(): Promise<
 	ServerActionResult<AccessibleEmployee[]>
 > {
 	// Early session check for prerender safety - prevents AuthenticationError during build
-	const preSession = await auth.api.getSession({ headers: await headers() });
+	const preSession = await getRequestSession();
 	if (!preSession?.user) {
 		return {
 			success: false,
@@ -353,7 +352,7 @@ export async function getAccessibleEmployeesAction(): Promise<
 export async function getCurrentEmployee(): Promise<
 	typeof employee.$inferSelect | null
 > {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return null;
 	}

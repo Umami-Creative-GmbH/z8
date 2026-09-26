@@ -2,7 +2,7 @@
 
 import { detectLanguageFromHeaders } from "@tolgee/react/server";
 import { cookies, headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { setUserLocale } from "@/lib/bot-platform/i18n";
 import { ALL_LANGUAGES, DEFAULT_LANGUAGE } from "./shared";
 
@@ -34,8 +34,7 @@ export async function getLanguage() {
 export async function persistLocaleToDb(locale: string) {
 	if (!ALL_LANGUAGES.includes(locale)) return;
 
-	const headersList = await headers();
-	const session = await auth.api.getSession({ headers: headersList });
+	const session = await getRequestSession();
 	if (!session?.user?.id) return;
 
 	await setUserLocale(session.user.id, locale);

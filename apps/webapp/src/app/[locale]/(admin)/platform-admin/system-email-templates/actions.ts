@@ -2,10 +2,9 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { type PlatformSystemEmailTemplateKey, platformSystemEmailTemplate } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { sendEmail } from "@/lib/email/email-service";
 import {
 	getPlatformSystemEmailTemplateDefinition,
@@ -130,8 +129,7 @@ async function createSystemDraft(definition: PlatformSystemEmailTemplateDefiniti
 async function requirePlatformAdminSession(): Promise<
 	{ success: true; session: PlatformAdminSession } | { success: false; errors: string[] }
 > {
-	const headersList = await headers();
-	const session = await auth.api.getSession({ headers: headersList });
+	const session = await getRequestSession();
 
 	if (session?.user?.role !== "admin") {
 		return { success: false, errors: ["Unauthorized"] };

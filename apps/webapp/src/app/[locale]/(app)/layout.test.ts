@@ -79,7 +79,7 @@ describe("authenticated app request gate", () => {
 		);
 
 		expect(source).toContain("await Promise.all([params, headers()])");
-		expect(source).toContain("auth.api.getSession({ headers: headersList })");
+		expect(source).toContain("const session = await getRequestSession();");
 		expect(source).toMatch(
 			/`\/api\/auth\/session-expired\?locale=\$\{locale\}&callbackUrl=\$\{encodeURIComponent\(pathname\)\}`/,
 		);

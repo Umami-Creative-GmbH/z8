@@ -17,7 +17,7 @@ function manualActionBody() {
 describe("monolithic manual time entry action", () => {
 	it("preserves authentication and billing snapshots before delegation", () => {
 		const body = manualActionBody();
-		const auth = body.indexOf("auth.api.getSession(");
+		const auth = body.indexOf("getRequestSession()");
 		const employee = body.indexOf("getCurrentEmployee()");
 		const billing = body.indexOf(
 			"requireBillingForMutation(emp.organizationId)",

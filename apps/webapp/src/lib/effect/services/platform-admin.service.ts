@@ -1,11 +1,11 @@
 import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { member, organization, session, user } from "@/db/auth-schema";
 import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { isAccountBanned } from "@/lib/auth/account-ban";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { addOrganizationDeletionNotificationJob } from "@/lib/queue";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { AuthorizationError, ConflictError, DatabaseError, NotFoundError } from "../errors";
@@ -173,9 +173,7 @@ export async function requirePlatformAdmin(): Promise<{
 	email: string;
 }> {
 	try {
-		const sessionData = await auth.api.getSession({
-			headers: await headers(),
-		});
+		const sessionData = await getRequestSession();
 
 		if (!sessionData?.user) {
 			throw new Error("Not authenticated");

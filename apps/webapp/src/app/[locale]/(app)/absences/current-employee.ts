@@ -1,10 +1,9 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 
 type EmployeeQueryClient = {
 	query: {
@@ -39,7 +38,7 @@ export async function findCurrentEmployeeByUserId(
  * Uses activeOrganizationId to get the correct employee record for the active org
  */
 export async function getCurrentEmployee() {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return null;
 	}

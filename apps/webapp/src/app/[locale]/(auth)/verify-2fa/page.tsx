@@ -1,10 +1,9 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { TwoFactorVerificationForm } from "@/components/two-factor-verification-form";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 
 export default function Verify2FAPage() {
 	return (
@@ -15,7 +14,7 @@ export default function Verify2FAPage() {
 }
 
 export async function Verify2FAPageContent() {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	// Pending 2FA uses Better Auth's temporary 2FA cookie before a full session exists.
 	if (session) {

@@ -45,6 +45,7 @@ describe("mapSessionUserToAuthContextUser", () => {
 const mockState = vi.hoisted(() => ({
 	selectResults: [] as unknown[][],
 	getSession: vi.fn(),
+	connection: vi.fn(async () => undefined),
 	canAccessOrganizationWithSso: vi.fn(async () => true),
 }));
 
@@ -66,6 +67,10 @@ function queryBuilder(result: unknown[]) {
 
 vi.mock("next/headers", () => ({
 	headers: vi.fn(async () => new Headers()),
+}));
+
+vi.mock("next/server", () => ({
+	connection: mockState.connection,
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -128,6 +133,26 @@ describe("getAuthContext", () => {
 			user: { id: "user-1", role: "user" },
 			session: { activeOrganizationId: "org-1" },
 		});
+	});
+
+	it("does not start the session query until the request connection opens", async () => {
+		// Runtime prefetches prerender with request data but must not start I/O;
+		// connection() hangs there, so the session query must wait behind it.
+		let openConnection: () => void = () => {};
+		mockState.connection.mockReturnValueOnce(
+			new Promise<undefined>((resolve) => {
+				openConnection = () => resolve(undefined);
+			}),
+		);
+		const { getAuthContext } = await import("./auth-helpers");
+
+		const pending = getAuthContext();
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(mockState.getSession).not.toHaveBeenCalled();
+
+		openConnection();
+		await pending;
+		expect(mockState.getSession).toHaveBeenCalledTimes(1);
 	});
 
 	it("requires current membership before exposing an employee", () => {

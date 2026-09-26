@@ -1,7 +1,6 @@
 "use server";
 
 import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -506,8 +505,8 @@ export async function recordAbsenceForEmployee(
 }
 
 async function resolveActor(): Promise<ServerActionResult<ManagerAbsenceActor>> {
-	const { auth } = await import("@/lib/auth");
-	const session = await auth.api.getSession({ headers: await headers() });
+	const { getRequestSession } = await import("@/lib/auth/request-session");
+	const session = await getRequestSession();
 	const activeOrganizationId = session?.session.activeOrganizationId;
 
 	if (!session?.user || !activeOrganizationId) {

@@ -1,10 +1,9 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 
 async function isSlugTaken(slug: string): Promise<boolean> {
 	const existingOrg = await db.query.organization.findFirst({
@@ -17,7 +16,7 @@ async function isSlugTaken(slug: string): Promise<boolean> {
  * Check if an organization slug is available (not already taken)
  */
 export async function checkSlugAvailability(slug: string): Promise<boolean> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		throw new Error("Unauthorized");
 	}
@@ -30,7 +29,7 @@ export async function checkSlugAvailability(slug: string): Promise<boolean> {
  * If the base slug is taken, appends numbers until unique
  */
 export async function generateUniqueSlug(baseName: string): Promise<string> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		throw new Error("Unauthorized");
 	}

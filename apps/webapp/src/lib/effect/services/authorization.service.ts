@@ -7,7 +7,6 @@
 
 import { and, eq } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { headers } from "next/headers";
 import { member } from "@/db/auth-schema";
 import {
 	customRole,
@@ -17,7 +16,7 @@ import {
 	employeeManagers,
 	teamPermissions,
 } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import {
 	type Action,
 	type AppAbility,
@@ -94,7 +93,7 @@ function requireSessionSsoAccess(
 ) {
 	return Effect.tryPromise({
 		try: async () => {
-			const session = await auth.api.getSession({ headers: await headers() });
+			const session = await getRequestSession();
 			if (
 				!session ||
 				session.user.id !== userId ||

@@ -5,15 +5,14 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession, type RequestSession } from "@/lib/auth/request-session";
 import { DEFAULT_TIMEZONE } from "./shared";
 
-type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
-export type AuthSession = NonNullable<SessionResult>;
+export type AuthSession = NonNullable<RequestSession>;
 export type CurrentEmployee = typeof employee.$inferSelect;
 
 export async function getCurrentSession(): Promise<AuthSession | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	return session ?? null;
 }
 

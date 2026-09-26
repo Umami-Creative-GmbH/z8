@@ -13,6 +13,10 @@ const mocks = vi.hoisted(() => ({
 	allowed: vi.fn(async (_session: unknown, orgId: string) => orgId === "open"),
 }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {

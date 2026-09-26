@@ -17,6 +17,10 @@ vi.mock("next/cache", () => ({
 vi.mock("next/headers", () => ({
 	headers: vi.fn(async () => new Headers()),
 }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => {

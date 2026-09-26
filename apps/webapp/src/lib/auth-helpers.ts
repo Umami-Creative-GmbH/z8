@@ -2,18 +2,17 @@ import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { user as authUser, invitation, member, organization } from "@/db/auth-schema";
 import { employee, userSettings } from "@/db/schema";
-import { auth } from "@/lib/auth";
 import {
 	type AuthContextUser,
 	mapSessionUserToAuthContextUser,
 } from "@/lib/auth/auth-context-user";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import { getRequestSession } from "@/lib/auth/request-session";
 import {
 	type AppAbility,
 	defineAbilityFor,
@@ -67,7 +66,7 @@ export interface UserOrganization {
  * This prevents cross-organization data leakage.
  */
 export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (
 		!session?.user ||
@@ -221,7 +220,7 @@ export async function requireSystemAdmin(): Promise<AuthContext> {
  * Optimized: Uses single batch query instead of N+1 pattern
  */
 export async function getUserOrganizations(): Promise<UserOrganization[]> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (!session?.user) {
 		return [];
@@ -331,7 +330,7 @@ export interface OnboardingStatus {
 }
 
 export async function getPendingInvitationId(): Promise<string | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (!session?.user) {
 		return null;
@@ -377,7 +376,7 @@ export async function getPendingInvitationId(): Promise<string | null> {
  * Get current user's onboarding status from userSettings
  */
 export async function getOnboardingStatus(): Promise<OnboardingStatus | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (!session?.user) {
 		return null;
@@ -433,7 +432,7 @@ export interface OrgVerificationResult {
 export async function verifyOrgMembership(
 	requestedOrgId: string | null,
 ): Promise<OrgVerificationResult | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (!session?.user) {
 		return null;
@@ -569,7 +568,7 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
 		return null;
 	}
 
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return null;
 	}
@@ -604,7 +603,7 @@ export async function getVerifiedOrgContext(requestedOrgId: string | null): Prom
  * ```
  */
 export async function getPrincipalContext(): Promise<PrincipalContext | null> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (
 		!session?.user ||
@@ -667,7 +666,7 @@ export async function getSettingsAccessInputForUser(
 			employeeRole: null,
 		};
 	}
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (
 		session?.user.id !== userId ||
 		!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))
@@ -725,7 +724,7 @@ export async function getSettingsAccessTierForUser(
 }
 
 export const getCurrentSettingsAccessTier = cache(async (): Promise<SettingsAccessTier | null> => {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 
 	if (!session?.user) {
 		return null;
@@ -846,7 +845,7 @@ export async function requireAbility(): Promise<AppAbility> {
  * ```
  */
 export async function isOrgAdminCasl(organizationId: string): Promise<boolean> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (
 		!session?.user ||
 		!(await canAccessOrganizationWithSso(session.session, organizationId))
@@ -919,7 +918,7 @@ export async function canManageCurrentOrganizationSettings(): Promise<boolean> {
  * @returns true if user is owner, false otherwise
  */
 export async function isOrgOwnerCasl(organizationId: string): Promise<boolean> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (
 		!session?.user ||
 		!(await canAccessOrganizationWithSso(session.session, organizationId))

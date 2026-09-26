@@ -102,7 +102,7 @@ describe("clocking service delegation", () => {
 		const end = monolithicSource.indexOf("export async function", start + 1);
 		const body = monolithicSource.slice(start, end);
 
-		expect(body).toContain("auth.api.getSession(");
+		expect(body).toContain("getRequestSession()");
 		expect(body).toContain("requireBillingForMutation(");
 		expect(body).toContain("createManualTimeEntryModular(data)");
 		expect(body).not.toContain("createTimeEntry(");
