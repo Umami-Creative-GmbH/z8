@@ -750,6 +750,13 @@
       "when": 1793462400000,
       "tag": "0106_automatic_break_adjustment",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1793548800000,
+      "tag": "0107_approval_workflow_rollout_precreate",
+      "breakpoints": true
     }
   ]
 }

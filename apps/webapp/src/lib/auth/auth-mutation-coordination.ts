@@ -16,6 +16,10 @@
  *   module's plugin;
  * - admin role, ban, update and removal: the user, globally.
  *
+ * Organization creation (#359) is one coordinated transaction: the
+ * organization, its owner membership (guarded like any member addition) and
+ * one approval rollout row per workflow type commit together or not at all.
+ *
  * Every hook fails closed outside a coordinated transaction
  * (`requireAuthTransaction`): server callers wrap the call in
  * `runCoordinatedAuthMutation`, and `/api/auth` wraps these paths with
@@ -27,11 +31,11 @@
  * the commit. Provisioning after a membership is added or accepted keeps its
  * existing after-commit timing.
  */
-import { queueAfterTransactionHook } from "@better-auth/core/context";
 import type { BetterAuthOptions, BetterAuthPlugin } from "better-auth";
 import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { admin } from "better-auth/plugins/admin";
 import { type OrganizationOptions, organization } from "better-auth/plugins/organization";
+import { createOrganizationApprovalRollouts } from "@/lib/approvals/workflow/organization-rollout";
 import {
 	type AuthorizationMutationScope,
 	protectAuthorizationMutation,
@@ -39,6 +43,7 @@ import {
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import {
 	type CoordinatedAuthContext,
+	queueAfterAuthTransactionCommit,
 	requireAuthTransaction,
 	runCoordinatedAuthMutation,
 	UncoordinatedAuthMutationError,
@@ -64,6 +69,7 @@ const GLOBAL_ACCESS_PATHS = new Set<string>([
 	adminEndpoints.removeUser.path,
 ]);
 const COORDINATED_AUTH_MUTATION_PATHS = new Set<string>([
+	organizationEndpoints.createOrganization.path,
 	organizationEndpoints.updateMemberRole.path,
 	organizationEndpoints.removeMember.path,
 	ORGANIZATION_LEAVE_PATH,
@@ -111,7 +117,7 @@ async function cleanUpRemovedMember(input: { organizationId: string; userId: str
 		input.userId,
 		input.organizationId,
 	);
-	await queueAfterTransactionHook(() =>
+	await queueAfterAuthTransactionCommit(() =>
 		completeRemovedMemberCleanupPostCommit({
 			organizationId: input.organizationId,
 			sessionTokens: outcome.sessionTokens,
@@ -125,6 +131,15 @@ export function createCoordinatedOrganizationHooks(
 	>,
 ): OrganizationHooks {
 	return {
+		// Refuses before the organization row is written, so an uncoordinated
+		// creation cannot leave an organization without its owner or rollout rows.
+		beforeCreateOrganization: async () => {
+			requireAuthTransaction("organization creation");
+		},
+		afterCreateOrganization: async ({ organization }) => {
+			const transaction = requireAuthTransaction("organization creation");
+			await createOrganizationApprovalRollouts(transaction, organization.id);
+		},
 		beforeUpdateOrganization: hooks.beforeUpdateOrganization,
 		beforeUpdateMemberRole: async ({ member, organization }) => {
 			await protectAuthMutation("organization member role update", {
@@ -148,7 +163,7 @@ export function createCoordinatedOrganizationHooks(
 			});
 		},
 		afterAddMember: async (data) => {
-			await queueAfterTransactionHook(() => hooks.afterAddMember(data));
+			await queueAfterAuthTransactionCommit(() => hooks.afterAddMember(data));
 		},
 		beforeAcceptInvitation: async ({ user, organization }) => {
 			await protectAuthMutation("organization invitation acceptance", {
@@ -157,7 +172,7 @@ export function createCoordinatedOrganizationHooks(
 			});
 		},
 		afterAcceptInvitation: async (data) => {
-			await queueAfterTransactionHook(() => hooks.afterAcceptInvitation(data));
+			await queueAfterAuthTransactionCommit(() => hooks.afterAcceptInvitation(data));
 		},
 		beforeDeleteOrganization: async ({ organization }) => {
 			await protectAuthMutation("organization deletion", {

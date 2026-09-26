@@ -4255,6 +4255,9 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/workflow/cutover.ts": {
 				approval_workflow_rollout: ["insert"],
 			},
+			"src/lib/approvals/workflow/organization-rollout.ts": {
+				approval_workflow_rollout: ["insert"],
+			},
 			"src/lib/approvals/workflow/repository.ts": {
 				approval_stage_assignment: ["insert", "update"],
 				approval_workflow: ["insert", "update"],
