@@ -1071,10 +1071,12 @@ application endpoint changes either control.
    here). The submission is fixed by #453, but chain cards are verified in
    `legacy` mode only. The readiness report holds `shadow`/`ready`
    (`legacy_chain_mode_unverified`).
-5. **Replacement cards** after a legacy escalation transfer (#408): the former
-   holder's card decides nothing, but nobody refreshes it and the new holder
-   gets no card from the owner. The readiness report holds this while
-   escalation owns transfers (`escalation_replacement_unsupported`).
+5. **Replacement cards** after a legacy escalation transfer: implemented by
+   #408 (the new holder gets a card, former cards are retired as "Reassigned";
+   see [Legacy escalation replacement delivery](approval-delivery.md#legacy-escalation-replacement-delivery--408)
+   and its activation blockers). The readiness report still holds this while
+   escalation owns transfers (`escalation_replacement_unsupported`) until the
+   pilot revisits it (#423).
 6. **In-place material changes** commit no intent, so the card is not
    refreshed; pressing it decides nothing.
 7. Only Telegram is admitted (in code). Teams, Discord and Slack stay

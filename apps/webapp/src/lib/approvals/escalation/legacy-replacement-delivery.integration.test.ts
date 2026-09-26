@@ -572,7 +572,11 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 		const submitted = await submitTravelExpenseClaim({ claimId });
 		actAs(null);
 		if (!submitted.success) throw new Error(`Submission failed: ${submitted.error}`);
-		return { subject: "travel_expense", sourceId: claimId, requestId: await pendingRequest(claimId) };
+		return {
+			subject: "travel_expense",
+			sourceId: claimId,
+			requestId: await pendingRequest(claimId),
+		};
 	}
 
 	function submitSubject(subject: Subject) {
@@ -722,12 +726,13 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 	const edits = () => calls.filter((call) => call.method === "editMessageText");
 	const editsOf = (messageId: string | number | undefined) =>
 		edits().filter((call) => call.body.message_id === Number(messageId));
-	const answers = () => calls.filter((call) => call.method === "answerCallbackQuery");
 	const buttonsOf = (call: TelegramCall) =>
 		(
-			(call.body.reply_markup as
-				| { inline_keyboard: Array<Array<{ callback_data?: string; url?: string }>> }
-				| undefined)?.inline_keyboard ?? []
+			(
+				call.body.reply_markup as
+					| { inline_keyboard: Array<Array<{ callback_data?: string; url?: string }>> }
+					| undefined
+			)?.inline_keyboard ?? []
 		).flat();
 	const controlsOf = (call: TelegramCall) =>
 		buttonsOf(call).filter((button) => button.callback_data);
@@ -1529,7 +1534,10 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 			await replace();
 			const card = only(sendsTo(CHAT.backup));
 			expect(controlsOf(card), subject).toEqual([]);
-			expect(buttonsOf(card).map((button) => button.url), subject).toEqual([
+			expect(
+				buttonsOf(card).map((button) => button.url),
+				subject,
+			).toEqual([
 				`https://t408.example.test/approvals/review/${ids.organization}/compatibility/${submitted.requestId}`,
 			]);
 			expect(only(await replacementWork(submitted.requestId)).status, subject).toBe("delivered");

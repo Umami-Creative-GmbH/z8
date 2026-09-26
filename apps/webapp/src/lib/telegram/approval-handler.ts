@@ -67,9 +67,9 @@ export async function handleApprovalCallback(
 			action: data.a === "ap" ? "approve" : "reject",
 			platform: "telegram",
 		});
-		if (result.status !== "review_required" && result.status !== "historical")
-			return undefined;
 		if (!query.message) return undefined;
+		// This attempt never decides. A card the owner adopted from this path
+		// (#408) is edited by the owner only.
 		const receiverScope = telegramReceiverScope(bot.botToken);
 		const adopted = receiverScope
 			? await findApprovalDeliveryMessageByRemoteIdentity({
@@ -83,6 +83,8 @@ export async function handleApprovalCallback(
 		if (adopted && adopted.recipientUserId === user.user.userId) {
 			return (await reassignedAcknowledgment(adopted, bot, user.user.userId)) ?? undefined;
 		}
+		if (result.status !== "review_required" && result.status !== "historical")
+			return undefined;
 		const tracked = await db.query.telegramApprovalMessage.findFirst({
 			where: and(
 				eq(telegramApprovalMessage.organizationId, bot.organizationId),
