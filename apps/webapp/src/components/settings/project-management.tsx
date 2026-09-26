@@ -115,6 +115,7 @@ export function ProjectManagement({
 	};
 
 	const handleMembersChanged = () => {
+		// Assignments also change which projects are bookable, so refresh every project query.
 		queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
 	};
 

@@ -187,12 +187,22 @@ describeIntegration("project membership settings on PostgreSQL", () => {
 		return sessions.run({ userId, organizationId: ids.organization }, action);
 	}
 
-	async function managerIds() {
+	async function managerIds(projectId: string = ids.project) {
 		const { rows } = await admin.query<{ employee_id: string }>(
 			"select employee_id from project_manager where project_id = $1 order by employee_id",
-			[ids.project],
+			[projectId],
 		);
 		return rows.map((row) => row.employee_id);
+	}
+
+	/** Seeds an employee assignment directly, bypassing the settings actions. */
+	async function seedEmployeeAssignment(projectId: string, employeeId: string) {
+		const { rows } = await admin.query<{ id: string }>(
+			`insert into project_assignment (project_id, organization_id, assignment_type, employee_id, created_by)
+			 values ($1, $2, 'employee', $3, $4) returning id`,
+			[projectId, ids.organization, employeeId, ids.ownerUser],
+		);
+		return rows[0]?.id ?? "";
 	}
 
 	async function assignments(projectId: string = ids.project) {
@@ -387,6 +397,12 @@ describeIntegration("project membership settings on PostgreSQL", () => {
 		});
 
 		it("rejects project manager changes on a foreign project", async () => {
+			// An existing foreign manager, so only the organization check can refuse the removal.
+			await admin.query(
+				`insert into project_manager (project_id, employee_id, assigned_by) values ($1, $2, $3)`,
+				[ids.otherProject, ids.otherEmployee, ids.otherUser],
+			);
+
 			const added = await actAs(ids.ownerUser, () =>
 				projects.addProjectManager(ids.otherProject, ids.employee),
 			);
@@ -396,6 +412,8 @@ describeIntegration("project membership settings on PostgreSQL", () => {
 
 			expect(added.success).toBe(false);
 			expect(removed.success).toBe(false);
+			expect(await managerIds(ids.otherProject)).toEqual([ids.otherEmployee]);
+			expect(audit.logAudit).not.toHaveBeenCalled();
 		});
 	});
 
@@ -422,25 +440,51 @@ describeIntegration("project membership settings on PostgreSQL", () => {
 		});
 
 		it("a manager-tier employee cannot change assignments of a project they do not manage", async () => {
-			const result = await actAs(ids.projectManagerUser, () =>
+			const existingId = await seedEmployeeAssignment(ids.unmanagedProject, ids.employee);
+
+			const added = await actAs(ids.projectManagerUser, () =>
 				projects.addProjectAssignment(ids.unmanagedProject, "employee", ids.soloEmployee),
 			);
+			const removed = await actAs(ids.projectManagerUser, () =>
+				projects.removeProjectAssignment(existingId),
+			);
 
-			expect(result.success).toBe(false);
-			expect(await assignments(ids.unmanagedProject)).toEqual([]);
+			expect(added.success).toBe(false);
+			expect(removed.success).toBe(false);
+			expect((await assignments(ids.unmanagedProject)).map((row) => row.id)).toEqual([existingId]);
+		});
+
+		it("a manager-tier project manager cannot assign foreign or inactive targets", async () => {
+			const targets = [
+				["team", ids.otherTeam],
+				["employee", ids.otherEmployee],
+				["employee", ids.inactiveEmployee],
+			] as const;
+			for (const [type, targetId] of targets) {
+				const result = await actAs(ids.projectManagerUser, () =>
+					projects.addProjectAssignment(ids.project, type, targetId),
+				);
+				expect(result.success).toBe(false);
+			}
+			expect(await assignments()).toEqual([]);
 		});
 
 		it("a member-tier employee cannot change assignments or project managers", async () => {
+			const existingId = await seedEmployeeAssignment(ids.project, ids.soloEmployee);
+
 			const results = await actAs(ids.employeeUser, () =>
 				Promise.all([
 					projects.addProjectAssignment(ids.project, "employee", ids.employee),
+					projects.removeProjectAssignment(existingId),
 					projects.addProjectManager(ids.project, ids.employee),
+					projects.removeProjectManager(ids.project, ids.projectManager),
 				]),
 			);
 
-			expect(results.map((result) => result.success)).toEqual([false, false]);
-			expect(await assignments()).toEqual([]);
+			expect(results.map((result) => result.success)).toEqual([false, false, false, false]);
+			expect((await assignments()).map((row) => row.id)).toEqual([existingId]);
 			expect(await managerIds()).toEqual([ids.projectManager]);
+			expect(audit.logAudit).not.toHaveBeenCalled();
 		});
 
 		it("rejects foreign teams, foreign employees and inactive employees as assignment targets", async () => {

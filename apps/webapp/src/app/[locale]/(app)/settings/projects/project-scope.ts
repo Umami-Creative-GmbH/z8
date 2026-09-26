@@ -22,13 +22,16 @@ export interface ProjectSettingsActor {
 	currentEmployee: typeof employee.$inferSelect | null;
 }
 
+/** What a refused project settings access reports. */
+interface AuthorizationFailureDetails {
+	message: string;
+	resource: string;
+	action: string;
+}
+
 function actorAuthorizationError(
 	actor: { session: { user: { id: string } } },
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
+	options: AuthorizationFailureDetails,
 ) {
 	return new AuthorizationError({
 		message: options.message,
@@ -157,11 +160,7 @@ export function filterItemsToManagedProjects<T extends { id: string }>(
 export function ensureSettingsActorCanAccessProjectTarget(
 	actor: ProjectSettingsActor,
 	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
+	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* (_) {
 		if (targetProject.organizationId !== actor.organizationId) {
@@ -198,11 +197,7 @@ export function ensureSettingsActorCanAccessProjectTarget(
 export function ensureSettingsActorCanManageProjectManagers(
 	actor: ProjectSettingsActor,
 	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
+	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* (_) {
 		yield* _(ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options));
@@ -272,11 +267,7 @@ function getCustomerProjects(actor: ProjectSettingsActor, customerId: string, qu
 export function ensureSettingsActorCanAccessCustomerTarget(
 	actor: ProjectSettingsActor,
 	targetCustomer: Pick<typeof customer.$inferSelect, "id" | "organizationId">,
-	options: {
-		message: string;
-		resource: string;
-		action: string;
-	},
+	options: AuthorizationFailureDetails,
 ) {
 	return Effect.gen(function* (_) {
 		if (targetCustomer.organizationId !== actor.organizationId) {

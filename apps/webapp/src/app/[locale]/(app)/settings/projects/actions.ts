@@ -33,6 +33,8 @@ import {
 	getProjectTarget,
 } from "./project-scope";
 
+const PROJECT_MANAGER_CHANGE_DENIED = "Only organization admins can change project managers";
+
 // Types for project data
 export type ProjectStatus = "planned" | "active" | "paused" | "completed" | "archived";
 export type ProjectAssignmentType = "team" | "employee";
@@ -734,7 +736,7 @@ export async function addProjectManager(
 
 				yield* _(
 					ensureSettingsActorCanManageProjectManagers(actor, existingProject, {
-						message: "Only organization admins can change project managers",
+						message: PROJECT_MANAGER_CHANGE_DENIED,
 						resource: "projectManager",
 						action: "create",
 					}),
@@ -872,7 +874,7 @@ export async function removeProjectManager(
 
 				yield* _(
 					ensureSettingsActorCanManageProjectManagers(actor, existingProject, {
-						message: "Only organization admins can change project managers",
+						message: PROJECT_MANAGER_CHANGE_DENIED,
 						resource: "projectManager",
 						action: "delete",
 					}),

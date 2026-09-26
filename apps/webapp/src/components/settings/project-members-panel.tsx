@@ -56,6 +56,15 @@ interface SelectionOption {
 	name: string;
 }
 
+/** Picker options from a selection action; a failure surfaces as a query error. */
+async function selectionOptions<T extends SelectionOption>(
+	request: Promise<ServerActionResult<T[]>>,
+): Promise<T[]> {
+	const result = await request;
+	if (!result.success) throw new Error(result.error);
+	return result.data;
+}
+
 function MemberSection({
 	title,
 	emptyText,
@@ -218,21 +227,13 @@ export function ProjectMembersPanel({
 
 	const { data: teams = [] } = useQuery({
 		queryKey: queryKeys.projects.teamSelection(organizationId),
-		queryFn: async () => {
-			const result = await getTeamsForSelection(organizationId);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => selectionOptions(getTeamsForSelection(organizationId)),
 		enabled: open,
 	});
 
 	const { data: employees = [] } = useQuery({
 		queryKey: queryKeys.projects.employeeSelection(organizationId),
-		queryFn: async () => {
-			const result = await getEmployeesForSelection(organizationId);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
-		},
+		queryFn: () => selectionOptions(getEmployeesForSelection(organizationId)),
 		enabled: open,
 	});
 
