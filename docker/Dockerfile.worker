@@ -50,7 +50,7 @@ COPY --from=assembler --chown=app:nodejs /runtime/ ./
 
 USER app
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["tsx", "src/worker.ts"]
+CMD ["tsx", "--import", "./src/worker-preload.mjs", "src/worker.ts"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD node -e "const Redis=require('ioredis');const r=new Redis({host:process.env.VALKEY_HOST||'localhost',port:process.env.VALKEY_PORT||6379,password:process.env.VALKEY_PASSWORD,lazyConnect:false});r.ping().then(()=>process.exit(0)).catch(()=>process.exit(1))"

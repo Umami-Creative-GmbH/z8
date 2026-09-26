@@ -37,6 +37,8 @@ spec:
           workingDir: /app
           command:
             - tsx
+            - --import
+            - ./src/worker-preload.mjs
             - src/worker.ts
           env:
             - name: NODE_ENV

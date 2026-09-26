@@ -57,7 +57,7 @@ Workflow details:
 ### Runtime Images
 
 - `webapp` runs as user `app`, starts through `tini`, exposes port `3000`, uses `pnpm start`, and keeps the HTTP `/api/health` probe.
-- `worker` runs as user `app`, starts through `tini`, uses `tsx src/worker.ts`, and keeps the Redis connectivity healthcheck in image metadata.
+- `worker` runs as user `app`, starts through `tini`, uses `tsx --import ./src/worker-preload.mjs src/worker.ts` (the preload lets modules marked `server-only` load outside Next.js), and keeps the Redis connectivity healthcheck in image metadata.
 - `migration` keeps the shared filesystem and sets the image default command to `node ./scripts/migrate-with-lock.js`.
 - `db-seed` runs `tsx src/db/seed/do-seed.ts` for one-shot bootstrap data when needed.
 
