@@ -33,6 +33,21 @@ function configuredOrigin(value: string, allowBareHost = false): URL {
 	return new URL(url.origin);
 }
 
+// Operator URLs first, then bare platform domains, in precedence order.
+function configuredOriginSettings(): {
+	value: string;
+	allowBareHost: boolean;
+}[] {
+	return [
+		...[env.APP_URL, env.BETTER_AUTH_URL, env.NEXT_PUBLIC_APP_URL]
+			.filter((value): value is string => !!value)
+			.map((value) => ({ value, allowBareHost: false })),
+		...[env.MAIN_DOMAIN, env.PLATFORM_DOMAIN]
+			.filter((value): value is string => !!value)
+			.map((value) => ({ value, allowBareHost: true })),
+	];
+}
+
 /** Public redirects must use a known routed Host, not Next's listening address.
  * Forwarding headers are intentionally not authority or protocol inputs.
  */
@@ -40,17 +55,9 @@ export async function resolvePublicRequestOrigin(
 	request: Pick<Request, "headers" | "url">,
 ): Promise<string> {
 	try {
-		const explicitOrigins = [
-			env.APP_URL,
-			env.BETTER_AUTH_URL,
-			env.NEXT_PUBLIC_APP_URL,
-		]
-			.filter((value): value is string => !!value)
-			.map((value) => configuredOrigin(value));
-		const domainOrigins = [env.MAIN_DOMAIN, env.PLATFORM_DOMAIN]
-			.filter((value): value is string => !!value)
-			.map((value) => configuredOrigin(value, true));
-		const knownOrigins = [...explicitOrigins, ...domainOrigins];
+		const knownOrigins = configuredOriginSettings().map(
+			({ value, allowBareHost }) => configuredOrigin(value, allowBareHost),
+		);
 		const host = request.headers.get("host");
 
 		// Server callers may have no Host. Prefer a validated operator origin;
@@ -109,5 +116,25 @@ export async function resolvePublicRequestOrigin(
 	} catch {
 		// Do not surface request URLs, configuration, or database errors to callers.
 		throw new Error("Public request origin unavailable");
+	}
+}
+
+/** Page redirects must still leave the listening address when the Host cannot be
+ * validated, e.g. behind a proxy that does not forward it. They then use the
+ * first valid configured origin; only an unconfigured instance keeps the
+ * request URL, which is Next's listening address behind a reverse proxy.
+ */
+export async function resolvePublicRedirectOrigin(
+	request: Pick<Request, "headers" | "url">,
+): Promise<string> {
+	try {
+		return await resolvePublicRequestOrigin(request);
+	} catch {
+		for (const { value, allowBareHost } of configuredOriginSettings()) {
+			try {
+				return configuredOrigin(value, allowBareHost).origin;
+			} catch {}
+		}
+		return new URL(request.url).origin;
 	}
 }
