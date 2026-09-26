@@ -45,13 +45,6 @@
       "description": "Gestisci le policy ferie e le assegnazioni per la tua organizzazione",
       "editPolicy": "Modifica \"{name}\"",
       "employees": {
-        "actions": {
-          "edit": "Modifica"
-        },
-        "allowancesForYear": "Permessi ferie per il {{year}}",
-        "defaultAllowanceDescription": "Permesso predefinito: {{days}} giorni all'anno",
-        "defaultPolicy": "Predefinito",
-        "description": "Configura permessi ferie personalizzati per i singoli dipendenti",
         "detail": {
           "addManualAdjustment": "Aggiungi rettifica manuale",
           "addManualAdjustmentDescription": "Crea una nuova voce di rettifica per circostanze speciali (ad es. giorni bonus, correzioni). Ogni rettifica viene registrata nel registro di controllo.",
@@ -99,6 +92,13 @@
           "description": "Configura indennità ferie personalizzata per {{name}}",
           "title": "Modifica indennità ferie"
         },
+        "actions": {
+          "edit": "Modifica"
+        },
+        "allowancesForYear": "Permessi ferie per il {{year}}",
+        "defaultAllowanceDescription": "Permesso predefinito: {{days}} giorni all'anno",
+        "defaultPolicy": "Predefinito",
+        "description": "Configura permessi ferie personalizzati per i singoli dipendenti",
         "employeeCount": "{{count}} dipendenti",
         "emptyDescription": "Aggiungi dipendenti alla tua organizzazione per gestire le loro indennità ferie.",
         "emptyTitle": "Nessun dipendente trovato",

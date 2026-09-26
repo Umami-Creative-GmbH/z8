@@ -18,7 +18,6 @@
     "clockIn": "Registrar entrada",
     "clockOut": "Registrar saída",
     "confirmReject": "Confirmar rejeição",
-    "correctedTimes": "Horários corrigidos",
     "date": "Data",
     "dates": "Datas",
     "days": "Dias",
@@ -40,7 +39,6 @@
     "offFrom": "ausente de",
     "openDetailsFor": "Abrir detalhes de {title}",
     "openInbox": "Abrir Caixa de Entrada",
-    "originalTimes": "Horários Originais",
     "original": "Original",
     "pendingRequests": "Solicitações Pendentes",
     "pendingRequestsDescription": "Selecione solicitações para aprovar em massa ou clique em uma linha para ver detalhes",
@@ -61,10 +59,19 @@
     "requester": "Solicitante",
     "requestingCorrection": "está solicitando uma correção de horário para",
     "requestingOff": "está solicitando",
+    "review": {
+      "showDetails": "Mostrar detalhes",
+      "switchOrganizationAction": "Alternar para {organization}",
+      "switchOrganizationBody": "Esta aprovação pertence a {organization}. Alterne para essa organização para revisá-la; seu acesso será verificado novamente após a mudança.",
+      "switchOrganizationTitle": "Alternar organização para revisar",
+      "title": "Revisão de aprovação",
+      "unavailableBody": "Você não pode revisar esta aprovação aqui. Ela pode ter sido decidida, reatribuída, retirada ou removida, ou seu acesso pode ter mudado. Um link por si só nunca concede acesso. Sua caixa de entrada de aprovações mostra tudo o que está aguardando você no momento.",
+      "unavailableTitle": "Esta aprovação não está disponível"
+    },
     "searchLabel": "Pesquisar aprovações",
     "searchPlaceholder": "Pesquisar por nome ou e-mail…",
     "selectAll": "Selecionar tudo",
-    "selectedCount": "${selectedCount} selecionado(s)",
+    "selectedCount": "{selectedCount} selecionado(s)",
     "selectRow": "Selecionar linha",
     "timeCorrectionApproved": "Correção de tempo aprovada",
     "timeCorrectionRejected": "Correção de tempo rejeitada",
@@ -72,7 +79,7 @@
     "timeCorrectionsDescription": "Revise e aprove as solicitações de correção de registro de horas dos membros da sua equipe",
     "timelineActor": "{at} por {actorName}",
     "title": "Aprovações",
-    "totalCount": "${totalCount} pendente(s)",
+    "totalCount": "{totalCount} pendente(s)",
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Visualize todos os tipos de aprovação em um só lugar com filtragem, ações em massa e rastreamento de SLA.",
     "unifiedInboxBannerTitle": "Experimente a nova Caixa de Entrada Unificada",
@@ -82,11 +89,11 @@
   },
   "fastLanes": {
     "approve": "Aprovar",
-    "approveGroup": "Aprovar ${label}",
+    "approveGroup": "Aprovar {label}",
     "confirmReject": "Confirmar rejeição",
-    "confirmRejectGroup": "Confirmar rejeição de ${label}",
+    "confirmRejectGroup": "Confirmar rejeição de {label}",
     "description": "Analise solicitações semelhantes de baixo atrito em lote.",
-    "expandGroup": "Expandir ${label}",
+    "expandGroup": "Expandir {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Ausências sem conflitos detectados.",
@@ -105,21 +112,21 @@
         "label": "Solicitações obsoletas"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} não elegível para aprovação em massa",
-    "notEligibleReject": "${notRejectableCount} não elegível para rejeição em massa",
+    "notEligibleApprove": "{notApprovableCount} não elegível para aprovação em massa",
+    "notEligibleReject": "{notRejectableCount} não elegível para rejeição em massa",
     "reject": "Rejeitar",
-    "rejectGroup": "Rejeitar ${label}",
+    "rejectGroup": "Rejeitar {label}",
     "rejectReason": "Motivo da rejeição em massa",
     "risk": {
       "high": "Alto risco",
       "low": "Baixo risco",
       "medium": "Médio risco"
     },
-    "showGroup": "Mostrar ${label}",
+    "showGroup": "Mostrar {label}",
     "title": "Vias rápidas"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}d atrás",
+    "age": "{ageDays}d atrás",
     "approve": "Aprovar",
     "approveCurrentApproval": "Aprovar aprovação atual",
     "capabilities": {
@@ -137,7 +144,7 @@
       "normal": "Prioridade normal",
       "urgent": "Prioridade urgente"
     },
-    "progress": "${currentIndex + 1} de ${visibleItems.length}",
+    "progress": "{current} de {total}",
     "reject": "Rejeitar",
     "rejectCurrentApproval": "Rejeitar aprovação atual",
     "rejectReason": "Motivo da rejeição da sprint",

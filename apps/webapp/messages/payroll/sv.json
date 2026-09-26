@@ -12,12 +12,18 @@
       "dateUnavailable": "Datum inte tillgängligt",
       "missingClockOut": "Saknad utstämpling",
       "needReview": "{count} lönehinder behöver granskas",
+      "offboardingClockRepair": "Utstämpling vid offboarding behöver åtgärdas",
       "openApprovals": "Öppna godkännanden",
       "openCalendar": "Öppna kalender",
+      "openWork": "Arbete utan utstämpling",
+      "openWorkDiagnostics": "Öppna arbetsdiagnostik",
       "pendingAbsence": "Väntande frånvaro",
       "pendingTimeCorrection": "Väntande tidskorrigering",
+      "pendingWorkApproval": "Arbete som väntar på godkännande",
       "refreshAfterClearFailed": "Blockering åtgärdad, men löneunderlaget kunde inte uppdateras",
-      "unknownEmployee": "Okänd anställd"
+      "uncertainHistoricalWork": "Historiskt arbete behöver granskas",
+      "unknownEmployee": "Okänd anställd",
+      "unresolvedWorkMinutes": "Arbetade minuter behöver granskas"
     },
     "description": "Granska lönesummor, beredskap och exporter för den valda perioden.",
     "employeeTotals": {

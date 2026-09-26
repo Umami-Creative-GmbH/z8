@@ -14,6 +14,8 @@ const state = vi.hoisted(() => ({
 	approvalRequestFindFirst: vi.fn(),
 	approvalWorkflowFindFirst: vi.fn(),
 	employeeFindFirst: vi.fn(),
+	memberFindFirst: vi.fn(),
+	resolveOnBehalfAuthority: vi.fn(),
 	getCurrentEmployee: vi.fn(),
 	getUserTimezone: vi.fn(),
 	isOrgAdmin: vi.fn(),
@@ -34,6 +36,7 @@ vi.mock("@/db", () => ({
 			approvalRequest: { findFirst: state.approvalRequestFindFirst },
 			approvalWorkflow: { findFirst: state.approvalWorkflowFindFirst },
 			employee: { findFirst: state.employeeFindFirst },
+			member: { findFirst: state.memberFindFirst },
 		},
 	},
 }));
@@ -63,6 +66,9 @@ vi.mock("@/lib/billing/guard", () => ({
 vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
 	editSameDayTimeEntry: state.editSameDay,
 	requestTimeCorrectionEffect: state.requestCorrection,
+}));
+vi.mock("@/lib/approvals/server/time-correction-on-behalf", () => ({
+	resolveOnBehalfCorrectionAuthority: state.resolveOnBehalfAuthority,
 }));
 vi.mock("@/lib/time-tracking/admin-work-period-time-edit", () => ({
 	applyAdminWorkPeriodTimeEdit: state.applyAdminEdit,
@@ -118,6 +124,8 @@ describe("work period time edit actions", () => {
 		state.approvalWorkflowFindFirst.mockResolvedValue(undefined);
 		state.getUserTimezone.mockResolvedValue("Europe/Berlin");
 		state.isOrgAdmin.mockResolvedValue(false);
+		state.memberFindFirst.mockResolvedValue({ role: "member" });
+		state.resolveOnBehalfAuthority.mockResolvedValue(null);
 		state.getEditCapability.mockResolvedValue({
 			type: "direct",
 			reason: "within_self_service",
@@ -157,7 +165,7 @@ describe("work period time edit actions", () => {
 		});
 	});
 
-	it("lets admins move another employee's old entry directly in that employee's timezone", async () => {
+	it("routes an admin's change of another employee's entry through that employee's approval chain", async () => {
 		state.isOrgAdmin.mockResolvedValue(true);
 		state.selectLimit.mockResolvedValue([
 			{ ...ownPeriod, employeeId: ids.otherEmployee },
@@ -166,12 +174,16 @@ describe("work period time edit actions", () => {
 		state.getUserTimezone.mockImplementation(async (userId: string) =>
 			userId === "user-other" ? "America/New_York" : "Europe/Berlin",
 		);
+		state.requestCorrection.mockResolvedValue({
+			success: true,
+			data: { approvalId: "approval-1", status: "approved" },
+		});
 
 		const context = await getWorkPeriodTimeEditContext(ids.period);
 		expect(context).toMatchObject({
 			success: true,
 			data: {
-				access: { kind: "admin" },
+				access: { kind: "on_behalf" },
 				timezone: "America/New_York",
 				values: { clockInDate: "2026-09-01", clockInTime: "03:00" },
 			},
@@ -183,33 +195,67 @@ describe("work period time edit actions", () => {
 			clockInTime: "08:00",
 			clockOutDate: "2026-08-03",
 			clockOutTime: "12:30",
+			reason: "  Forgot to clock in  ",
 		});
 
 		expect(result).toEqual({ success: true, data: { status: "applied" } });
 		expect(state.getEditCapability).not.toHaveBeenCalled();
-		expect(state.applyAdminEdit).toHaveBeenCalledWith(
+		expect(state.requestCorrection).toHaveBeenCalledWith({
+			workPeriodId: ids.period,
+			submissionId: ids.submission,
+			newClockInDate: "2026-08-03",
+			newClockInTime: "08:00",
+			newClockOutDate: "2026-08-03",
+			newClockOutTime: "12:30",
+			reason: "Forgot to clock in",
+			workLocationType: "remote",
+			workCategoryId: null,
+		});
+		expect(state.applyAdminEdit).not.toHaveBeenCalled();
+		expect(state.editSameDay).not.toHaveBeenCalled();
+	});
+
+	it("lets an eligible manager change a report's entry, pending the configured approver", async () => {
+		state.selectLimit.mockResolvedValue([
+			{ ...ownPeriod, employeeId: ids.otherEmployee },
+		]);
+		state.employeeFindFirst.mockResolvedValue({ userId: "user-other" });
+		state.resolveOnBehalfAuthority.mockResolvedValue("eligible_manager");
+
+		const result = await updateWorkPeriodTimes({
+			...unchangedInput(),
+			clockInTime: "08:30",
+			reason: "Started early",
+		});
+
+		expect(result).toEqual({ success: true, data: { status: "pending" } });
+		expect(state.resolveOnBehalfAuthority).toHaveBeenCalledWith(
 			expect.objectContaining({
 				organizationId: "org-1",
-				actorUserId: "user-actor",
-				workPeriodId: ids.period,
-				clockIn: new Date("2026-08-03T12:00:00.000Z"),
-				clockOut: new Date("2026-08-03T16:30:00.000Z"),
-				timezone: "America/New_York",
-				timezoneSource: "manager_target_user_setting",
-				notes: "Edited in calendar",
-				expected: expect.objectContaining({
-					employeeId: ids.otherEmployee,
-					clockInId: ids.clockIn,
-					clockOutId: ids.clockOut,
-				}),
+				actorEmployeeId: ids.actorEmployee,
+				actorMemberRole: "member",
+				ownerEmployeeId: ids.otherEmployee,
 			}),
 		);
-		expect(state.markDirty).toHaveBeenCalledWith({
-			employeeId: ids.otherEmployee,
-			organizationId: "org-1",
-			dirtyFromDate: "2026-08-03",
+		expect(state.getEditCapability).not.toHaveBeenCalled();
+		expect(state.requestCorrection).toHaveBeenCalledWith(
+			expect.objectContaining({ newClockInTime: "08:30", reason: "Started early" }),
+		);
+	});
+
+	it("requires a reason for on-behalf changes", async () => {
+		state.selectLimit.mockResolvedValue([
+			{ ...ownPeriod, employeeId: ids.otherEmployee },
+		]);
+		state.employeeFindFirst.mockResolvedValue({ userId: "user-other" });
+		state.resolveOnBehalfAuthority.mockResolvedValue("eligible_manager");
+
+		const result = await updateWorkPeriodTimes({
+			...unchangedInput(),
+			clockInTime: "08:30",
 		});
-		expect(state.editSameDay).not.toHaveBeenCalled();
+
+		expect(result).toEqual({ success: false, error: "Reason is required" });
 		expect(state.requestCorrection).not.toHaveBeenCalled();
 	});
 
@@ -307,7 +353,7 @@ describe("work period time edit actions", () => {
 		expect(state.requestCorrection).not.toHaveBeenCalled();
 	});
 
-	it("rejects non-admins editing another employee's entry", async () => {
+	it("rejects editing another employee's entry without admin or manager authority", async () => {
 		state.selectLimit.mockResolvedValue([
 			{ ...ownPeriod, employeeId: ids.otherEmployee },
 		]);

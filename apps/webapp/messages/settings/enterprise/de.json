@@ -564,8 +564,6 @@
           "customDomain": "Benutzer, die sich über Ihre benutzerdefinierte Domain anmelden, verwenden Ihre OAuth-App"
         },
         "keyId": "Key-ID",
-        "lastTested": "Zuletzt getestet",
-        "notTested": "Nicht getestet",
         "privateKey": "Privater Schlüssel (.p8)",
         "removed": "{provider} OAuth entfernt",
         "removeDialogDescription": "Sind Sie sicher, dass Sie diese OAuth-Konfiguration entfernen möchten? Benutzer werden auf die geteilten OAuth-Anmeldedaten zurückgreifen (falls verfügbar).",
@@ -574,8 +572,7 @@
         "title": "Social-Login-Anbieter",
         "unverified": "Nicht verifiziert",
         "updateConfigError": "Fehler beim Aktualisieren der Konfiguration",
-        "updated": "{provider} OAuth erfolgreich aktualisiert",
-        "working": "Funktioniert"
+        "updated": "{provider} OAuth erfolgreich aktualisiert"
       },
       "sso": {
         "addDescription": "Konfigurieren Sie einen OIDC-Identitätsanbieter für Enterprise Single Sign-On.",

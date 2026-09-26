@@ -22,6 +22,7 @@
         "invalidDateRange": "Veuillez sélectionner une plage de dates valide",
         "jobCompleted": "Génération du pack d'audit terminée",
         "jobFailed": "La génération du pack d'audit a échoué",
+        "lineageContinued": "Continuité depuis un ancrage approuvé pour {continued} sur {total} employés ; l'historique antérieur à l'ancrage n'est pas vérifié. Consultez append-assurance.json dans le pack.",
         "lineageLimited": "Garantie de traçabilité limitée pour {limited} employés sur {total}. Voir append-assurance.json dans le paquet.",
         "lineageNotRecorded": "Garantie de traçabilité non enregistrée",
         "lineageVerified": "Traçabilité vérifiée à partir des preuves enregistrées pour {total} employés. Ses limites sont listées dans append-assurance.json.",

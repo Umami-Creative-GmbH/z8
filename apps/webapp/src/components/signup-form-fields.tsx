@@ -39,65 +39,80 @@ export function SignupIdentityFields({
 			<div className="grid gap-4 md:grid-cols-2">
 				{(
 					[
-						[
-							"firstName",
-							"First Name",
-							"given-name",
-							"John…",
-							validateFirstName,
-						],
-						["lastName", "Last Name", "family-name", "Doe…", validateLastName],
+						{
+							name: "firstName",
+							labelKey: "auth.first-name",
+							labelDefault: "First Name",
+							placeholderKey: "auth.first-name-placeholder",
+							placeholderDefault: "John…",
+							autoComplete: "given-name",
+							validate: validateFirstName,
+						},
+						{
+							name: "lastName",
+							labelKey: "auth.last-name",
+							labelDefault: "Last Name",
+							placeholderKey: "auth.last-name-placeholder",
+							placeholderDefault: "Doe…",
+							autoComplete: "family-name",
+							validate: validateLastName,
+						},
 					] as const
-				).map(([name, label, autoComplete, placeholder, validate]) => (
-					<form.Field
-						key={name}
-						name={name}
-						validators={{
-							onBlur: ({ value }) => validate(value),
-							onChange: ({ value }) => validate(value),
-							onSubmit: ({ value }) => validate(value),
-						}}
-					>
-						{(field) => {
-							const errorMessage = getFieldError(field.state.meta.errors);
-							const translationName =
-								name === "firstName" ? "first-name" : "last-name";
-							return (
-								<div className="grid gap-3">
-									<Label htmlFor={name}>
-										{t(`auth.${translationName}`, label)}
-									</Label>
-									<Input
-										aria-describedby={getDescribedBy(
-											errorMessage && getFieldErrorId(name),
-										)}
-										aria-invalid={errorMessage ? "true" : "false"}
-										id={name}
-										name={field.name}
-										autoComplete={autoComplete}
-										onBlur={field.handleBlur}
-										onChange={(event) => field.handleChange(event.target.value)}
-										placeholder={t(
-											`auth.${translationName}-placeholder`,
-											placeholder,
-										)}
-										required
-										type="text"
-										value={field.state.value}
-									/>
-									{errorMessage ? (
-										<p
-											className="text-destructive text-sm"
-											id={getFieldErrorId(name)}
-										>
-											{errorMessage}
-										</p>
-									) : null}
-								</div>
-							);
-						}}
-					</form.Field>
-				))}
+				).map(
+					({
+						name,
+						labelKey,
+						labelDefault,
+						placeholderKey,
+						placeholderDefault,
+						autoComplete,
+						validate,
+					}) => (
+						<form.Field
+							key={name}
+							name={name}
+							validators={{
+								onBlur: ({ value }) => validate(value),
+								onChange: ({ value }) => validate(value),
+								onSubmit: ({ value }) => validate(value),
+							}}
+						>
+							{(field) => {
+								const errorMessage = getFieldError(field.state.meta.errors);
+								return (
+									<div className="grid gap-3">
+										<Label htmlFor={name}>{t(labelKey, labelDefault)}</Label>
+										<Input
+											aria-describedby={getDescribedBy(
+												errorMessage && getFieldErrorId(name),
+											)}
+											aria-invalid={errorMessage ? "true" : "false"}
+											id={name}
+											name={field.name}
+											autoComplete={autoComplete}
+											onBlur={field.handleBlur}
+											onChange={(event) =>
+												field.handleChange(event.target.value)
+											}
+											placeholder={t(placeholderKey, placeholderDefault)}
+											required
+											type="text"
+											value={field.state.value}
+										/>
+										{errorMessage ? (
+											<p
+												className="text-destructive text-sm"
+												id={getFieldErrorId(name)}
+											>
+												{errorMessage}
+											</p>
+										) : null}
+									</div>
+								);
+							}}
+						</form.Field>
+					),
+				)}
 			</div>
 			<form.Field
 				name="email"

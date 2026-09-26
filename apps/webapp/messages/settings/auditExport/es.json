@@ -22,6 +22,7 @@
         "invalidDateRange": "Por favor, seleccione un rango de fechas válido",
         "jobCompleted": "Generación del paquete de auditoría completada",
         "jobFailed": "Error en la generación del paquete de auditoría",
+        "lineageContinued": "Continuidad a partir de un ancla aprobada para {continued} de {total} empleados; el historial anterior al ancla no está verificado. Consulte append-assurance.json en el paquete.",
         "lineageLimited": "Garantía de trazabilidad limitada para {limited} de {total} empleados. Consulte append-assurance.json en el paquete.",
         "lineageNotRecorded": "Garantía de trazabilidad no registrada",
         "lineageVerified": "Trazabilidad verificada con la evidencia almacenada para {total} empleados. Sus limitaciones figuran en append-assurance.json.",

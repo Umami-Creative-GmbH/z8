@@ -29,6 +29,11 @@
         "restTime": "Dinlenme süresi: {count}",
         "title": "Bu Tarih Aralığındaki Uyumluluk Uyarıları"
       },
+      "focus": {
+        "anonymous": "Bir çalışanın vardiyaları gösteriliyor",
+        "employee": "{name} için vardiyalar gösteriliyor",
+        "showAll": "Tüm vardiyaları göster"
+      },
       "loading": "Çizelge yükleniyor...",
       "publish": {
         "failed": "Vardiyalar yayınlanamadı",

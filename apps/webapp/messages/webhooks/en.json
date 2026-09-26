@@ -19,6 +19,9 @@
     "enabled": "Webhook enabled",
     "events": "Events",
     "form": {
+      "events-required": "At least one event must be selected",
+      "name-required": "Name is required",
+      "url-required": "URL is required",
       "create": "Create Webhook",
       "create-description": "Configure a new webhook endpoint to receive event notifications.",
       "create-title": "Create Webhook",
@@ -29,14 +32,11 @@
       "edit-title": "Edit Webhook",
       "events": "Events to receive",
       "events-hint": "Selected events: {{count}}",
-      "events-required": "At least one event must be selected",
       "name": "Name",
       "name-placeholder": "My Webhook",
-      "name-required": "Name is required",
       "select-all": "Select All",
       "url": "Endpoint URL",
-      "url-hint": "HTTPS is required in production. Events will be sent as POST requests.",
-      "url-required": "URL is required"
+      "url-hint": "HTTPS is required in production. Events will be sent as POST requests."
     },
     "last-delivery": "Last",
     "logs": {

@@ -106,17 +106,6 @@
         "email": "Email Clockodo",
         "title": "Διαπιστευτήρια Clockodo"
       },
-      "entity": {
-        "absences": "Απουσίες",
-        "entries": "Εγγραφές χρόνου",
-        "holidayQuotas": "Ποσοστώσεις αδειών",
-        "nonBusinessDays": "Μη εργάσιμες ημέρες",
-        "services": "Υπηρεσίες / Κατηγορίες εργασίας",
-        "surcharges": "Προσαυξήσεις",
-        "targetHours": "Στοχευμένες ώρες / Πολιτικές εργασίας",
-        "teams": "Ομάδες",
-        "users": "Χρήστες / Υπάλληλοι"
-      },
       "errors": {
         "connectionFailed": "Αποτυχία σύνδεσης στο Clockodo",
         "fetchUsersFailed": "Αποτυχία ανάκτησης δεδομένων χρήστη",
@@ -182,6 +171,17 @@
         "skippedCount": "{count} παραλείφθηκε",
         "status": "Κατάσταση",
         "title": "Αντιστοίχιση χρηστών"
+      },
+      "entity": {
+        "absences": "Απουσίες",
+        "entries": "Εγγραφές χρόνου",
+        "holidayQuotas": "Ποσοστώσεις αδειών",
+        "nonBusinessDays": "Μη εργάσιμες ημέρες",
+        "services": "Υπηρεσίες / Κατηγορίες εργασίας",
+        "surcharges": "Προσαυξήσεις",
+        "targetHours": "Στοχευμένες ώρες / Πολιτικές εργασίας",
+        "teams": "Ομάδες",
+        "users": "Χρήστες / Υπάλληλοι"
       }
     },
     "discord": {

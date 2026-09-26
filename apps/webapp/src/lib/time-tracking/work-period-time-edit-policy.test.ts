@@ -9,6 +9,7 @@ import {
 const baseInput = {
 	isOrgAdmin: false,
 	isOwnEntry: true,
+	canEditOnBehalf: false,
 	isCompleted: true,
 	approvalStatus: "approved" as const,
 	hasPendingCorrection: false,
@@ -16,12 +17,11 @@ const baseInput = {
 };
 
 describe("resolveWorkPeriodTimeEditAccess", () => {
-	it("lets organization admins edit any completed entry regardless of the change policy", () => {
+	it("lets organization admins edit their own entries regardless of the change policy", () => {
 		expect(
 			resolveWorkPeriodTimeEditAccess({
 				...baseInput,
 				isOrgAdmin: true,
-				isOwnEntry: false,
 				capability: {
 					type: "forbidden",
 					reason: "beyond_approval_window",
@@ -31,10 +31,45 @@ describe("resolveWorkPeriodTimeEditAccess", () => {
 		).toEqual({ kind: "admin" });
 	});
 
-	it("blocks non-admins from editing other employees' entries", () => {
+	it("routes admin and manager changes of another employee's entry through that employee's approval chain", () => {
+		const forbidden = {
+			type: "forbidden",
+			reason: "beyond_approval_window",
+			daysBack: 400,
+		} as const;
+		expect(
+			resolveWorkPeriodTimeEditAccess({
+				...baseInput,
+				isOrgAdmin: true,
+				isOwnEntry: false,
+				canEditOnBehalf: true,
+				capability: forbidden,
+			}),
+		).toEqual({ kind: "on_behalf" });
+		expect(
+			resolveWorkPeriodTimeEditAccess({
+				...baseInput,
+				isOwnEntry: false,
+				canEditOnBehalf: true,
+				capability: forbidden,
+			}),
+		).toEqual({ kind: "on_behalf" });
+	});
+
+	it("blocks everyone else from editing other employees' entries", () => {
 		expect(
 			resolveWorkPeriodTimeEditAccess({ ...baseInput, isOwnEntry: false }),
 		).toEqual({ kind: "blocked", reason: "not_owner" });
+	});
+
+	it("blocks on-behalf edits of running or pending entries", () => {
+		const onBehalf = { ...baseInput, isOwnEntry: false, canEditOnBehalf: true };
+		expect(
+			resolveWorkPeriodTimeEditAccess({ ...onBehalf, isCompleted: false }),
+		).toEqual({ kind: "blocked", reason: "running" });
+		expect(
+			resolveWorkPeriodTimeEditAccess({ ...onBehalf, hasPendingCorrection: true }),
+		).toEqual({ kind: "blocked", reason: "pending_correction" });
 	});
 
 	it("blocks running work periods for everyone", () => {
@@ -104,6 +139,15 @@ describe("resolveWorkPeriodTimeEditRoute", () => {
 		expect(
 			resolveWorkPeriodTimeEditRoute({ kind: "admin" }, { datesChanged: true }),
 		).toBe("admin_direct");
+	});
+
+	it("sends on-behalf changes to the owner's approval chain", () => {
+		expect(
+			resolveWorkPeriodTimeEditRoute(
+				{ kind: "on_behalf" },
+				{ datesChanged: false },
+			),
+		).toBe("on_behalf_request");
 	});
 
 	it("routes self-service date changes through approval", () => {

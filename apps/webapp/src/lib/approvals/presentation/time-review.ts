@@ -64,8 +64,10 @@ type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][nu
 
 const UNAVAILABLE = { key: "approvals:approvals.evidence.unavailable", fallback: "Unavailable" };
 
-function text(key: string, fallback: string) {
-	return { key: `approvals:approvals.evidence.${key}`, fallback };
+// Keys stay full string literals so the Tolgee extractor can see them; a key assembled at
+// runtime is invisible to it and `tolgee sync` deletes it as unused.
+function text(key: `approvals:approvals.evidence.${string}`, fallback: string) {
+	return { key, fallback };
 }
 
 /**
@@ -104,7 +106,7 @@ function roleRows(
 	];
 	if (revision.requesterEmployeeId !== revision.subjectEmployeeId) {
 		rows.push({
-			label: text("requestedBy", "Requested by"),
+			label: text("approvals:approvals.evidence.requestedBy", "Requested by"),
 			value: revision.labels.requesterName ?? UNAVAILABLE,
 		});
 	}
@@ -113,7 +115,7 @@ function roleRows(
 		revision.submitter.employeeId !== revision.requesterEmployeeId
 	) {
 		rows.push({
-			label: text("submittedBy", "Submitted by"),
+			label: text("approvals:approvals.evidence.submittedBy", "Submitted by"),
 			value: revision.labels.submitterName ?? UNAVAILABLE,
 		});
 	}
@@ -147,25 +149,25 @@ function segmentText(segment: Record<string, unknown>): string | null {
 
 function outcomeValue(status: unknown) {
 	return status === "approved"
-		? text("outcomeApproved", "Approved")
+		? text("approvals:approvals.evidence.outcomeApproved", "Approved")
 		: status === "rejected"
-			? text("outcomeRejected", "Rejected")
+			? text("approvals:approvals.evidence.outcomeRejected", "Rejected")
 			: UNAVAILABLE;
 }
 
 /** The committed result graph of a work-period decision, as recorded. */
 function workPeriodResultRows(terminal: Record<string, unknown>): Row[] {
-	const rows: Row[] = [{ label: text("outcome", "Outcome"), value: outcomeValue(terminal.status) }];
+	const rows: Row[] = [{ label: text("approvals:approvals.evidence.outcome", "Outcome"), value: outcomeValue(terminal.status) }];
 	const adjustment = record(terminal.adjustment);
 	if (adjustment?.kind === "break_enforced" && typeof adjustment.breakMinutes === "number") {
 		rows.push({
-			label: text("breakInserted", "Break inserted"),
+			label: text("approvals:approvals.evidence.breakInserted", "Break inserted"),
 			value: `${adjustment.breakMinutes} min`,
 		});
 	} else if (adjustment?.kind === "break_not_required") {
 		rows.push({
-			label: text("breakAdjustment", "Break adjustment"),
-			value: text("breakNotRequired", "No break was required"),
+			label: text("approvals:approvals.evidence.breakAdjustment", "Break adjustment"),
+			value: text("approvals:approvals.evidence.breakNotRequired", "No break was required"),
 		});
 	}
 	const segments = Array.isArray(terminal.segments) ? terminal.segments : [];
@@ -223,39 +225,39 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 		const { facts } = evidence.revision;
 		const rows: Row[] = [
 			...roleRows(evidence.revision),
-			{ label: text("clockIn", "Clock in"), value: capturedEndpointText(facts.interval.clockIn) },
+			{ label: text("approvals:approvals.evidence.clockIn", "Clock in"), value: capturedEndpointText(facts.interval.clockIn) },
 			{
-				label: text("clockOut", "Clock out"),
+				label: text("approvals:approvals.evidence.clockOut", "Clock out"),
 				value: capturedEndpointText(facts.interval.clockOut),
 			},
 			{
-				label: text("submittedDuration", "Submitted duration"),
+				label: text("approvals:approvals.evidence.submittedDuration", "Submitted duration"),
 				value: minutesText(facts.interval.storedDurationMinutes),
 			},
 			{
-				label: text("elapsedTime", "Elapsed time"),
+				label: text("approvals:approvals.evidence.elapsedTime", "Elapsed time"),
 				value: elapsedText(facts.interval.elapsedSeconds),
 			},
 		];
 		if (facts.policy.kind === "policy_clock_out" && facts.policy.breakAdjustment === "may_apply") {
 			rows.push({
-				label: text("breakAdjustment", "Break adjustment"),
+				label: text("approvals:approvals.evidence.breakAdjustment", "Break adjustment"),
 				value: text(
-					"breakAdjustmentMayApply",
+					"approvals:approvals.evidence.breakAdjustmentMayApply",
 					"May apply when approved; the result is recorded separately",
 				),
 			});
 		}
 		sections.push({
 			type: "key_value",
-			title: text("submittedTimesTitle", "Submitted times"),
+			title: text("approvals:approvals.evidence.submittedTimesTitle", "Submitted times"),
 			rows,
 		});
 	}
 	if (evidence.kind === "time_correction") {
 		sections.push({
 			type: "key_value",
-			title: text("requestedCorrectionTitle", "Requested correction"),
+			title: text("approvals:approvals.evidence.requestedCorrectionTitle", "Requested correction"),
 			rows: correctionRequestRows(evidence.revision, evidence.categoryNames),
 		});
 	}
@@ -264,7 +266,7 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 		if (!terminal) continue;
 		sections.push({
 			type: "key_value",
-			title: text("resultTitle", "Result"),
+			title: text("approvals:approvals.evidence.resultTitle", "Result"),
 			rows:
 				evidence.kind === "work_period"
 					? workPeriodResultRows(terminal)
@@ -303,9 +305,9 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 }
 
 const CORRECTION_REQUESTS = {
-	edit: text("correctionEdit", "Change times"),
-	metadata_only: text("correctionMetadata", "Change work details"),
-	delete: text("correctionDelete", "Delete this entry"),
+	edit: text("approvals:approvals.evidence.correctionEdit", "Change times"),
+	metadata_only: text("approvals:approvals.evidence.correctionMetadata", "Change work details"),
+	delete: text("approvals:approvals.evidence.correctionDelete", "Delete this entry"),
 } as const;
 
 function categoryValue(
@@ -325,15 +327,15 @@ function correctionRequestRows(
 	const { baseline, requested, changeMask, intent } = revision.facts;
 	const rows: Row[] = [
 		...roleRows(revision),
-		{ label: text("request", "Request"), value: CORRECTION_REQUESTS[intent] },
+		{ label: text("approvals:approvals.evidence.request", "Request"), value: CORRECTION_REQUESTS[intent] },
 		{
-			label: text("entry", "Entry"),
+			label: text("approvals:approvals.evidence.entry", "Entry"),
 			value: `${capturedEndpointText(baseline.clockIn)} – ${baseline.clockOut ? capturedEndpointText(baseline.clockOut) : "…"}`,
 		},
 	];
 	if (baseline.storedDurationMinutes !== null) {
 		rows.push({
-			label: text("durationBefore", "Duration before"),
+			label: text("approvals:approvals.evidence.durationBefore", "Duration before"),
 			value: minutesText(baseline.storedDurationMinutes),
 		});
 	}
@@ -341,13 +343,13 @@ function correctionRequestRows(
 	if (intent === "delete") return rows;
 	if (changeMask.clockIn && requested.clockIn) {
 		rows.push({
-			label: text("clockIn", "Clock in"),
+			label: text("approvals:approvals.evidence.clockIn", "Clock in"),
 			value: `${capturedEndpointText(baseline.clockIn)} → ${capturedEndpointText(requested.clockIn)}`,
 		});
 	}
 	if (changeMask.clockOut && requested.clockOut) {
 		rows.push({
-			label: text("clockOut", "Clock out"),
+			label: text("approvals:approvals.evidence.clockOut", "Clock out"),
 			value: `${baseline.clockOut ? capturedEndpointText(baseline.clockOut) : "…"} → ${capturedEndpointText(requested.clockOut)}`,
 		});
 	}
@@ -388,17 +390,17 @@ function correctionRequestRows(
 /** The committed graph a correction's finalization left, as recorded. */
 function correctionResultRows(terminal: Record<string, unknown>): Row[] {
 	const rows: Row[] = [
-		{ label: text("outcome", "Outcome"), value: outcomeValue(terminal.transition) },
+		{ label: text("approvals:approvals.evidence.outcome", "Outcome"), value: outcomeValue(terminal.transition) },
 	];
 	if (terminal.kind === "deleted") {
-		rows.push({ label: text("entry", "Entry"), value: text("entryDeleted", "Deleted") });
+		rows.push({ label: text("approvals:approvals.evidence.entry", "Entry"), value: text("approvals:approvals.evidence.entryDeleted", "Deleted") });
 		return rows;
 	}
 	const segment = record(terminal.segment);
 	const clockIn = segment?.clockIn;
 	const clockOut = segment?.clockOut;
 	rows.push({
-		label: text("entry", "Entry"),
+		label: text("approvals:approvals.evidence.entry", "Entry"),
 		value: isEndpoint(clockIn)
 			? `${capturedEndpointText(clockIn)} – ${isEndpoint(clockOut) ? capturedEndpointText(clockOut) : "…"}`
 			: UNAVAILABLE,
@@ -406,7 +408,7 @@ function correctionResultRows(terminal: Record<string, unknown>): Row[] {
 	// The resulting stored minutes, apart from the submitted baseline's.
 	if (typeof segment?.storedDurationMinutes === "number") {
 		rows.push({
-			label: text("resultingDuration", "Resulting duration"),
+			label: text("approvals:approvals.evidence.resultingDuration", "Resulting duration"),
 			value: minutesText(segment.storedDurationMinutes),
 		});
 	}

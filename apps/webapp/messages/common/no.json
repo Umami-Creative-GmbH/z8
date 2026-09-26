@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Kontakt administrator",
       "createOrg": "Opprett organisasjon",
-      "description": "Du trenger en ansattprofil for å ${feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
+      "description": "Du trenger en ansattprofil for å {feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
       "emailBody": "Hei,nnJeg trenger en ansattprofil konfigurert for å få tilgang til plattformfunksjonene. Kan du hjelpe meg med dette?nnTakk!",
       "emailSubject": "Oppsett av ansattprofil kreves",
       "helpText": "Hvis du ble invitert til en organisasjon, kan du be administratoren din om å opprette ansattprofilen din.",
@@ -418,20 +418,37 @@
       "archived": "Arkivert stemplingsbevis beholdt på denne enheten",
       "offline": "Du er frakoblet",
       "offlineSaved": "Frakoblet — {count} oppføring(er) lagret lokalt til gjennomgang",
+      "offlineWaiting": "Frakoblet – {count} stemplingshandling(er) sendes når du er påkoblet igjen",
       "refresh": "Oppdater status",
       "refreshing": "Kontrollerer {count} lagrede oppføring(er)…",
       "reviewRequired": "{count} oppføring(er) lagret lokalt — gjennomgang kreves",
-      "unverified": "Stemplingsbevis lagret på denne enheten. Koble til for å se gjennom alle lagrede oppføringer."
+      "unverified": "Stemplingsbevis lagret på denne enheten. Koble til for å se gjennom alle lagrede oppføringer.",
+      "waiting": "{count} stemplingshandling(er) lagret på denne enheten, ikke sendt ennå"
     },
     "capture": {
       "description": "Lagre hendelsen på denne enheten for gjennomgang. Stemplingsstatus på serveren vil ikke endres.",
       "end": "Lagre utstempling til gjennomgang",
+      "queueDescription": "Du er frakoblet. Stemplingshandlinger lagres på denne enheten og sendes automatisk når du er påkoblet igjen.",
+      "queueEnd": "Lagre utstempling",
+      "queueStart": "Lagre innstempling",
       "start": "Lagre innstempling til gjennomgang"
     },
     "recovery": {
       "archive": "Arkiver og behold bevis",
       "archived": "Arkivert — bevis beholdt",
-      "description": "Disse oppføringene er lagret på denne enheten. Status på serveren er ukjent. Sjekk eksisterende timeføringer med lederen din før du sender inn erstatningsarbeid. Arkivering beholder bevisene og kansellerer ikke arbeid på serveren.",
+      "command": {
+        "blockedPredecessor": "Satt på pause – en tidligere stemplingshandling på denne enheten må gjennomgås",
+        "committed": "Lagret på serveren",
+        "exhausted": "Sending stoppet etter gjentatte feil – ikke bekreftet på serveren",
+        "pausedAccess": "Satt på pause – logg inn på nytt med tilgang til å stemple i denne organisasjonen",
+        "pausedContext": "Satt på pause – logg inn på kontoen og organisasjonen den ble lagret for",
+        "pausedServer": "Satt på pause – serveren godtar ikke denne stemplingshandlingen ennå",
+        "pending": "Venter på å bli sendt – ikke bekreftet på serveren",
+        "rejected": "Ikke lagret – serveren avviste den ({code})",
+        "review": "Må gjennomgås – serveren godtok den ikke ({code})",
+        "waitingPredecessor": "Venter på en tidligere stemplingshandling på denne enheten"
+      },
+      "descriptionOutcomes": "Disse oppføringene er lagret på denne enheten. Med mindre en oppføring sier at den ble lagret på serveren, er resultatet på serveren ikke bekreftet. Sjekk eksisterende timeregistreringer med lederen din før du sender inn erstatningsarbeid. Arkivering beholder bevisene og kansellerer ikke arbeid på serveren.",
       "empty": "Ingen tilgjengelige oppføringer. Eldre oppføringer uten kontobevis krever gjennomgang på organisasjonsnivå; oppføringer uten organisasjonsbevis krever separat autorisert gjenoppretting.",
       "evidence": "Opprinnelig bevis og gjenopprettingsstatus",
       "export": "Eksporter tilgjengelig bevis",

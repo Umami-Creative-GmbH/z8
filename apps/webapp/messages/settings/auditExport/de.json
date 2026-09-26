@@ -22,6 +22,7 @@
         "invalidDateRange": "Bitte wählen Sie einen gültigen Zeitraum aus",
         "jobCompleted": "Generierung des Audit-Pakets abgeschlossen",
         "jobFailed": "Generierung des Audit-Pakets fehlgeschlagen",
+        "lineageContinued": "Kontinuität von einem genehmigten Anker für {continued} von {total} Mitarbeitern; der Verlauf vor dem Anker ist nicht verifiziert. Siehe append-assurance.json im Paket.",
         "lineageLimited": "Eingeschränkte Nachweiskette für {limited} von {total} Mitarbeitenden. Siehe append-assurance.json im Paket.",
         "lineageNotRecorded": "Nachweiskette nicht erfasst",
         "lineageVerified": "Nachweiskette aus gespeicherten Belegen für {total} Mitarbeitende verifiziert. Die Einschränkungen stehen in append-assurance.json.",

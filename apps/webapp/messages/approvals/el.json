@@ -18,7 +18,6 @@
     "clockIn": "Έναρξη βάρδιας",
     "clockOut": "Λήξη βάρδιας",
     "confirmReject": "Επιβεβαίωση απόρριψης",
-    "correctedTimes": "Διορθωμένοι χρόνοι",
     "date": "Ημερομηνία",
     "dates": "Ημερομηνίες",
     "days": "Ημέρες",
@@ -40,7 +39,6 @@
     "offFrom": "απουσία από",
     "openDetailsFor": "Άνοιγμα λεπτομερειών για {title}",
     "openInbox": "Άνοιγμα εισερχομένων",
-    "originalTimes": "Αρχικοί χρόνοι",
     "original": "Αρχικό",
     "pendingRequests": "Εκκρεμή αιτήματα",
     "pendingRequestsDescription": "Επιλέξτε αιτήματα για μαζική έγκριση ή κάντε κλικ σε μια γραμμή για λεπτομέρειες",
@@ -61,10 +59,19 @@
     "requester": "Αιτών",
     "requestingCorrection": "ζητά διόρθωση χρόνου για",
     "requestingOff": "ζητά",
+    "review": {
+      "showDetails": "Εμφάνιση λεπτομερειών",
+      "switchOrganizationAction": "Μετάβαση σε {organization}",
+      "switchOrganizationBody": "Αυτή η έγκριση ανήκει στον οργανισμό {organization}. Μεταβείτε σε αυτόν τον οργανισμό για να την ελέγξετε. Η πρόσβασή σας ελέγχεται ξανά μετά τη μετάβαση.",
+      "switchOrganizationTitle": "Αλλαγή οργανισμού για έλεγχο",
+      "title": "Έλεγχος έγκρισης",
+      "unavailableBody": "Δεν μπορείτε να ελέγξετε αυτήν την έγκριση εδώ. Ενδέχεται να έχει ληφθεί απόφαση, να έχει εκχωρηθεί ξανά, να έχει αποσυρθεί ή αφαιρεθεί, ή η πρόσβασή σας να έχει αλλάξει. Ένας σύνδεσμος από μόνος του δεν παραχωρεί ποτέ πρόσβαση. Τα εισερχόμενα εγκρίσεών σας εμφανίζουν όλα όσα εκκρεμούν αυτήν τη στιγμή για εσάς.",
+      "unavailableTitle": "Αυτή η έγκριση δεν είναι διαθέσιμη"
+    },
     "searchLabel": "Αναζήτηση εγκρίσεων",
     "searchPlaceholder": "Αναζήτηση με όνομα ή email…",
     "selectAll": "Επιλογή όλων",
-    "selectedCount": "${selectedCount} επιλεγμένα",
+    "selectedCount": "{selectedCount} επιλεγμένα",
     "selectRow": "Επιλογή γραμμής",
     "timeCorrectionApproved": "Η διόρθωση χρόνου εγκρίθηκε",
     "timeCorrectionRejected": "Η διόρθωση χρόνου απορρίφθηκε",
@@ -72,7 +79,7 @@
     "timeCorrectionsDescription": "Ελέγξτε και εγκρίνετε αιτήματα διόρθωσης καταχώρισης χρόνου από τα μέλη της ομάδας σας",
     "timelineActor": "{at} από {actorName}",
     "title": "Εγκρίσεις",
-    "totalCount": "${totalCount} σε εκκρεμότητα",
+    "totalCount": "{totalCount} σε εκκρεμότητα",
     "type": "Τύπος",
     "unifiedInboxBannerDescription": "Δείτε όλους τους τύπους εγκρίσεων σε ένα μέρος με φιλτράρισμα, μαζικές ενέργειες και παρακολούθηση SLA.",
     "unifiedInboxBannerTitle": "Δοκιμάστε τα νέα Ενοποιημένα Εισερχόμενα",
@@ -82,11 +89,11 @@
   },
   "fastLanes": {
     "approve": "Έγκριση",
-    "approveGroup": "Έγκριση ${label}",
+    "approveGroup": "Έγκριση {label}",
     "confirmReject": "Επιβεβαίωση απόρριψης",
-    "confirmRejectGroup": "Επιβεβαίωση απόρριψης ${label}",
+    "confirmRejectGroup": "Επιβεβαίωση απόρριψης {label}",
     "description": "Επανεξέταση παρόμοιων αιτημάτων χαμηλής τριβής σε παρτίδες.",
-    "expandGroup": "Ανάπτυξη ${label}",
+    "expandGroup": "Ανάπτυξη {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Απουσίες χωρίς ανιχνευμένες συγκρούσεις.",
@@ -105,21 +112,21 @@
         "label": "Ληξιπρόθεσμα αιτήματα"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} δεν πληρούν τις προϋποθέσεις για μαζική έγκριση",
-    "notEligibleReject": "${notRejectableCount} δεν πληρούν τις προϋποθέσεις για μαζική απόρριψη",
+    "notEligibleApprove": "{notApprovableCount} δεν πληρούν τις προϋποθέσεις για μαζική έγκριση",
+    "notEligibleReject": "{notRejectableCount} δεν πληρούν τις προϋποθέσεις για μαζική απόρριψη",
     "reject": "Απόρριψη",
-    "rejectGroup": "Απόρριψη ${label}",
+    "rejectGroup": "Απόρριψη {label}",
     "rejectReason": "Αιτιολογία μαζικής απόρριψης",
     "risk": {
       "high": "Υψηλός κίνδυνος",
       "low": "Χαμηλός κίνδυνος",
       "medium": "Μεσαίος κίνδυνος"
     },
-    "showGroup": "Εμφάνιση ${label}",
+    "showGroup": "Εμφάνιση {label}",
     "title": "Γρήγορες διαδρομές"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}η παλαιότητας",
+    "age": "{ageDays}η παλαιότητας",
     "approve": "Έγκριση",
     "approveCurrentApproval": "Έγκριση τρέχουσας έγκρισης",
     "capabilities": {
@@ -137,7 +144,7 @@
       "normal": "Κανονική προτεραιότητα",
       "urgent": "Επείγουσα προτεραιότητα"
     },
-    "progress": "${currentIndex + 1} από ${visibleItems.length}",
+    "progress": "{current} από {total}",
     "reject": "Απόρριψη",
     "rejectCurrentApproval": "Απόρριψη τρέχουσας έγκρισης",
     "rejectReason": "Αιτιολογία απόρριψης κύκλου έγκρισης",

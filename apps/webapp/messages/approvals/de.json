@@ -18,7 +18,6 @@
     "clockIn": "Einstempeln",
     "clockOut": "Ausstempeln",
     "confirmReject": "Ablehnung bestätigen",
-    "correctedTimes": "Korrigierte Zeiten",
     "date": "Datum",
     "dates": "Daten",
     "days": "Tage",
@@ -40,7 +39,6 @@
     "offFrom": "frei ab",
     "openDetailsFor": "Details öffnen für {title}",
     "openInbox": "Posteingang öffnen",
-    "originalTimes": "Ursprüngliche Zeiten",
     "original": "Original",
     "pendingRequests": "Ausstehende Anfragen",
     "pendingRequestsDescription": "Wählen Sie Anfragen zur Sammelgenehmigung aus oder klicken Sie auf eine Zeile für Details",
@@ -61,10 +59,19 @@
     "requester": "Antragsteller",
     "requestingCorrection": "beantragt eine Zeitkorrektur für",
     "requestingOff": "beantragt",
+    "review": {
+      "showDetails": "Details anzeigen",
+      "switchOrganizationAction": "Zu {organization} wechseln",
+      "switchOrganizationBody": "Diese Genehmigung gehört zu {organization}. Wechseln Sie zu dieser Organisation, um sie zu prüfen; Ihr Zugriff wird nach dem Wechsel erneut geprüft.",
+      "switchOrganizationTitle": "Organisation wechseln, um zu prüfen",
+      "title": "Genehmigung prüfen",
+      "unavailableBody": "Sie können diese Genehmigung hier nicht prüfen. Sie wurde möglicherweise entschieden, neu zugewiesen, zurückgezogen oder entfernt, oder Ihr Zugriff hat sich geändert. Ein Link allein gewährt keinen Zugriff. Ihr Genehmigungseingang zeigt alles, was derzeit auf Sie wartet.",
+      "unavailableTitle": "Diese Genehmigung ist nicht verfügbar"
+    },
     "searchLabel": "Genehmigungen durchsuchen",
     "searchPlaceholder": "Suche nach Name oder E-Mail…",
     "selectAll": "Alle auswählen",
-    "selectedCount": "${selectedCount} ausgewählt",
+    "selectedCount": "{selectedCount} ausgewählt",
     "selectRow": "Zeile auswählen",
     "timeCorrectionApproved": "Zeitkorrektur genehmigt",
     "timeCorrectionRejected": "Zeitkorrektur abgelehnt",
@@ -72,7 +79,7 @@
     "timeCorrectionsDescription": "Überprüfen und genehmigen Sie Anträge auf Zeitkorrekturen Ihrer Teammitglieder",
     "timelineActor": "{at} von {actorName}",
     "title": "Genehmigungen",
-    "totalCount": "${totalCount} ausstehend",
+    "totalCount": "{totalCount} ausstehend",
     "type": "Typ",
     "unifiedInboxBannerDescription": "Sehen Sie alle Genehmigungsarten an einem Ort mit Filtern, Massenaktionen und SLA-Nachverfolgung.",
     "unifiedInboxBannerTitle": "Probieren Sie den neuen einheitlichen Posteingang aus",
@@ -94,24 +101,15 @@
       "category": "Kategorie",
       "currentCategoryName": "Aktueller Kategoriename",
       "submittedTitle": "Eingereichter Antrag"
-    },
-    "review": {
-      "title": "Genehmigung prüfen",
-      "showDetails": "Details anzeigen",
-      "switchOrganizationTitle": "Organisation wechseln, um zu prüfen",
-      "switchOrganizationBody": "Diese Genehmigung gehört zu {organization}. Wechseln Sie zu dieser Organisation, um sie zu prüfen; Ihr Zugriff wird nach dem Wechsel erneut geprüft.",
-      "switchOrganizationAction": "Zu {organization} wechseln",
-      "unavailableTitle": "Diese Genehmigung ist nicht verfügbar",
-      "unavailableBody": "Sie können diese Genehmigung hier nicht prüfen. Sie wurde möglicherweise entschieden, neu zugewiesen, zurückgezogen oder entfernt, oder Ihr Zugriff hat sich geändert. Ein Link allein gewährt keinen Zugriff. Ihr Genehmigungseingang zeigt alles, was derzeit auf Sie wartet."
     }
   },
   "fastLanes": {
     "approve": "Genehmigen",
-    "approveGroup": "${label} genehmigen",
+    "approveGroup": "{label} genehmigen",
     "confirmReject": "Ablehnung bestätigen",
-    "confirmRejectGroup": "Ablehnung von ${label} bestätigen",
+    "confirmRejectGroup": "Ablehnung von {label} bestätigen",
     "description": "Ähnliche unkomplizierte Anfragen stapelweise prüfen.",
-    "expandGroup": "${label} aufklappen",
+    "expandGroup": "{label} aufklappen",
     "groups": {
       "lowRiskAbsence": {
         "description": "Abwesenheiten ohne erkannte Konflikte.",
@@ -130,21 +128,21 @@
         "label": "Veraltete Anfragen"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} nicht für Massengenehmigung geeignet",
-    "notEligibleReject": "${notRejectableCount} nicht für Massenablehnung geeignet",
+    "notEligibleApprove": "{notApprovableCount} nicht für Massengenehmigung geeignet",
+    "notEligibleReject": "{notRejectableCount} nicht für Massenablehnung geeignet",
     "reject": "Ablehnen",
-    "rejectGroup": "${label} ablehnen",
+    "rejectGroup": "{label} ablehnen",
     "rejectReason": "Grund für Massenablehnung",
     "risk": {
       "high": "Hohes Risiko",
       "low": "Geringes Risiko",
       "medium": "Mittleres Risiko"
     },
-    "showGroup": "${label} anzeigen",
+    "showGroup": "{label} anzeigen",
     "title": "Schnellverfahren"
   },
   "sprint": {
-    "age": "${item.timing.ageDays} Tage alt",
+    "age": "{ageDays} Tage alt",
     "approve": "Genehmigen",
     "approveCurrentApproval": "Aktuelle Genehmigung bestätigen",
     "capabilities": {
@@ -162,7 +160,7 @@
       "normal": "Normale Priorität",
       "urgent": "Dringende Priorität"
     },
-    "progress": "${currentIndex + 1} von ${visibleItems.length}",
+    "progress": "{current} von {total}",
     "reject": "Ablehnen",
     "rejectCurrentApproval": "Aktuelle Genehmigung ablehnen",
     "rejectReason": "Grund für Sprint-Ablehnung",

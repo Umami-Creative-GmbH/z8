@@ -22,6 +22,7 @@
         "invalidDateRange": "Bitte wähle en gültige Datumsbereich us",
         "jobCompleted": "Generierig vom Audit-Paket isch abgschlosse",
         "jobFailed": "Generierig vom Audit-Paket isch fählgschlage",
+        "lineageContinued": "Kontinuität ab einem genehmigten Anker für {continued} von {total} Mitarbeitenden; Verlauf vor dem Anker ist nicht überprüft. Siehe append-assurance.json im Paket.",
         "lineageLimited": "Iigschränkti Nachwiischette für {limited} vo {total} Mitarbeitende. Lueg append-assurance.json im Paket.",
         "lineageNotRecorded": "Nachwiischette nöd erfasst",
         "lineageVerified": "Nachwiischette us gspeicherete Beleg für {total} Mitarbeitendi verifiziert. D Iischränkige stönd in append-assurance.json.",

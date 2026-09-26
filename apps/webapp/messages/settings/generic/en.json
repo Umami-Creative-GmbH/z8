@@ -92,7 +92,7 @@
         "description": "Select the data categories you want to export",
         "selectAll": "Select All",
         "selectAtLeastOne": "Please select at least one category",
-        "startExport": "Start Export (${selectedCategories.size})",
+        "startExport": "Start Export ({count})",
         "startingExport": "Starting Export...",
         "submitError": "Failed to start export",
         "submitSuccess": "Export started successfully",
@@ -115,7 +115,7 @@
         "downloadSuccess": "Download started",
         "emptyDescription": "No exports yet",
         "emptyHint": "Create your first export using the form above",
-        "moreCategories": "+${exp.categories.length - 3} more",
+        "moreCategories": "+{count} more",
         "statusCompleted": "Completed",
         "statusFailed": "Failed",
         "statusPending": "Pending",
@@ -140,7 +140,7 @@
         "endpointDescription": "For S3-compatible services like MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leave blank to keep existing credentials",
-        "lastVerified": "Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Last verified: {date}",
         "region": "Region",
         "regionDescription": "AWS region where your bucket is located",
         "regionPlaceholder": "us-east-1",
@@ -293,16 +293,6 @@
         "commitQueued": "Queued {count} accepted rows for commit",
         "committing": "Committing...",
         "description": "Review staged import rows, resolve blocking issues, and commit accepted records when the batch is ready.",
-        "hold": {
-          "appendReviewRequired": "The employee's time history needs review before new entries can be added.",
-          "invalidInterval": "The provider times lack an explicit offset, are not in order, or lie in the future.",
-          "label": "Held for review",
-          "occupancyConflict": "The time overlaps work already recorded for this employee.",
-          "operationCollision": "This row conflicts with its earlier committed import.",
-          "providerDurationMismatch": "The provider duration differs from the start and end times.",
-          "sourceCollision": "This provider record has already been imported.",
-          "unlocatedBreak": "The provider reports breaks without their times, so the worked interval is unknown."
-        },
         "issueGroups": {
           "currentMarkers": "Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
           "description": "Grouped review areas help keep quality checks visible before accepted rows are committed.",
@@ -316,7 +306,17 @@
           "status": "Status",
           "title": "Rows"
         },
-        "title": "Import Review"
+        "title": "Import Review",
+        "hold": {
+          "appendReviewRequired": "The employee's time history needs review before new entries can be added.",
+          "invalidInterval": "The provider times lack an explicit offset, are not in order, or lie in the future.",
+          "label": "Held for review",
+          "occupancyConflict": "The time overlaps work already recorded for this employee.",
+          "operationCollision": "This row conflicts with its earlier committed import.",
+          "providerDurationMismatch": "The provider duration differs from the start and end times.",
+          "sourceCollision": "This provider record has already been imported.",
+          "unlocatedBreak": "The provider reports breaks without their times, so the worked interval is unknown."
+        }
       },
       "title": "Import Data"
     },
@@ -635,8 +635,8 @@
         "employeePicker": "Employee to assign",
         "employees": "Employees",
         "manage": "Manage members of {name}",
-        "managerAddFailed": "Failed to add project manager",
         "managerAdded": "Project manager added",
+        "managerAddFailed": "Failed to add project manager",
         "managerPicker": "Project manager to add",
         "managers": "Project managers",
         "managersReadOnly": "Only organization admins can change project managers.",
@@ -893,7 +893,6 @@
         "failed": "Failed",
         "failedDescription": "Recently failed",
         "paused": "Paused",
-        "pausedDescription": "Paused jobs",
         "queueState": "Queue",
         "queueStateDescription": "Whether workers can take waiting jobs",
         "running": "Running",

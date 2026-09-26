@@ -12,12 +12,8 @@
     "clockIn": "Registrar Entrada",
     "clockingIn": "Registrando entrada...",
     "clockingOut": "Registrando saída...",
-    "clockInQueued": "Entrada na fila para sincronização",
-    "clockInSavedForReview": "Registro de entrada salvo neste dispositivo para revisão; não confirmado no servidor",
     "clockInSuccess": "Entrada registrada com sucesso",
     "clockOut": "Registrar Saída",
-    "clockOutQueued": "Saída na fila para sincronização",
-    "clockOutSavedForReview": "Registro de saída salvo neste dispositivo para revisão; não confirmado no servidor",
     "clockOutSuccess": "Saída registrada com sucesso",
     "compliance": {
       "violation": "Violação de Conformidade",
@@ -26,18 +22,16 @@
     "correction": {
       "clockIn": "Entrada",
       "clockInDate": "Data de entrada",
-      "clockInTime": "Hora de entrada",
       "clockOut": "Saída",
       "clockOutDate": "Data de saída",
-      "clockOutTime": "Hora de saída",
       "editDescription": "Faça alterações no seu registro de tempo para hoje.",
       "editEntry": "Editar registro de tempo",
       "editTitle": "Editar Registro de Tempo",
       "errors": {
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
-        "noChanges": "É necessário alterar pelo menos um valor da correção",
         "submitFailed": "Falha ao enviar correção",
-        "updateFailed": "Falha ao atualizar registro de tempo"
+        "updateFailed": "Falha ao atualizar registro de tempo",
+        "noChanges": "É necessário alterar pelo menos um valor da correção"
       },
       "noteLabel": "Nota (opcional)",
       "notePlaceholder": "Adicione uma nota sobre esta alteração...",
@@ -55,20 +49,22 @@
         "submitted": "Solicitação de correção enviada para aprovação do gerente",
         "updated": "Registro de tempo atualizado com sucesso"
       },
-      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})"
+      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})",
+      "clockInTime": "Hora de entrada",
+      "clockOutTime": "Hora de saída"
     },
     "currentlyClockedIn": "Você registrou a entrada atualmente",
     "deadline": "Prazo",
     "errors": {
       "clockInFailed": "Falha ao registrar entrada",
-      "appendReviewRequired": "Registrar a entrada requer uma revisão do seu histórico de tempo",
-      "appendReviewRequiredDesc": "Não foi possível verificar seus registros de tempo anteriores, então a nova entrada não foi salva. Entre em contato com seu administrador.",
       "clockOutFailed": "Falha ao registrar saída",
       "holidayBlocked": "Não é possível registrar saída em {holidayName}",
       "holidayBlockedDesc": "Este dia está marcado como feriado e registros de tempo não são permitidos",
       "notesSaveFailed": "Falha ao salvar notas",
       "restPeriodBlocked": "Período de descanso não concluído",
-      "restPeriodBlockedDesc": "Você deve completar o período de descanso obrigatório antes de registrar a entrada. Solicite uma exceção se necessário."
+      "restPeriodBlockedDesc": "Você deve completar o período de descanso obrigatório antes de registrar a entrada. Solicite uma exceção se necessário.",
+      "appendReviewRequired": "Registrar a entrada requer uma revisão do seu histórico de tempo",
+      "appendReviewRequiredDesc": "Não foi possível verificar seus registros de tempo anteriores, então a nova entrada não foi salva. Entre em contato com seu administrador."
     },
     "manualEntry": {
       "addButton": "Adicionar Entrada Manual",
@@ -89,19 +85,19 @@
       "dateLabel": "Data",
       "description": "Crie uma entrada de tempo para uma data passada. A aprovação pode ser necessária com base na política de alteração da sua organização.",
       "errors": {
-        "collision": "Esta entrada entra em conflito com um envio anterior ou com trabalho alterado. Verifique suas entradas existentes.",
         "createFailed": "Falha ao criar entrada de tempo",
         "futureDate": "Não é possível criar entradas para datas futuras",
-        "futureTime": "Não é possível criar entradas para horários futuros",
-        "historyReview": "Este histórico de tempo precisa ser revisado antes que novas entradas possam ser salvas. Contate seu administrador.",
         "invalidTime": "Introduza uma hora completa e válida",
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
+        "tooLong": "O período de trabalho não pode exceder 24 horas",
+        "collision": "Esta entrada entra em conflito com um envio anterior ou com trabalho alterado. Verifique suas entradas existentes.",
+        "futureTime": "Não é possível criar entradas para horários futuros",
+        "historyReview": "Este histórico de tempo precisa ser revisado antes que novas entradas possam ser salvas. Contate seu administrador.",
         "nonexistentTime": "Este horário não existe nesta data porque os relógios são adiantados.",
         "occurrenceRequired": "Este horário ocorre duas vezes nesta data. Escolha a qual se refere.",
         "overlap": "Este horário se sobrepõe a trabalho registrado. Escolha um intervalo sem sobreposição.",
         "reconfirm": "O fuso horário ou os horários mudaram. Revise a entrada e envie-a novamente.",
-        "refresh": "As configurações de entradas manuais mudaram. Revise a entrada e envie-a novamente.",
-        "tooLong": "O período de trabalho não pode exceder 24 horas"
+        "refresh": "As configurações de entradas manuais mudaram. Revise a entrada e envie-a novamente."
       },
       "occurrence": {
         "earlier": "Primeira, {offset}",
@@ -112,14 +108,16 @@
       "reasonPlaceholder": "Descreva no que você trabalhou…",
       "recovery": {
         "check": "Verificar estado",
-        "checkFailed": "Não foi possível verificar este registo agora. Tente mais tarde.",
-        "contextMismatch": "Tem sessão iniciada noutra conta ou organização. Volte a mudar para tratar este registo.",
         "description": "Estes registos foram enviados a partir deste separador sem um resultado confirmado. Nada é reenviado a menos que o escolha.",
         "discard": "Descartar",
         "editAsNew": "Editar como novo registo",
+        "retry": "Tentar novamente igual",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Registos não confirmados",
+        "checkFailed": "Não foi possível verificar este registo agora. Tente mais tarde.",
+        "contextMismatch": "Tem sessão iniciada noutra conta ou organização. Volte a mudar para tratar este registo.",
         "notCommitted": "Nenhum registo guardado encontrado.",
         "notCommittedToast": "Não foi encontrado nenhum registo guardado. Tente novamente igual ou edite-o como novo registo.",
-        "retry": "Tentar novamente igual",
         "saved": "Este registo foi guardado.",
         "savedForApproval": "Este registo foi guardado e enviado para aprovação. Estado atual: {status}.",
         "status": {
@@ -128,8 +126,6 @@
           "rejected": "rejeitado"
         },
         "stillUncertain": "Ainda não confirmado. O registo é mantido; tente novamente quando voltar a estar online.",
-        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Registos não confirmados",
         "uncertain": "Não confirmado. Pode já estar guardado.",
         "uncertainToast": "Não foi possível confirmar se este registo foi guardado. Fica em Registos não confirmados, onde pode tentar novamente igual ou verificar o estado.",
         "unsupported": "Não é possível verificar o estado. Pode já estar guardado.",
@@ -201,6 +197,8 @@
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
     "workCategory": "Categoria de Trabalho",
+    "clockInSavedForReview": "Registro de entrada salvo neste dispositivo para revisão; não confirmado no servidor",
+    "clockOutSavedForReview": "Registro de saída salvo neste dispositivo para revisão; não confirmado no servidor",
     "workLocation": "Local de trabalho",
     "workLocationHome": "Casa",
     "workLocationOffice": "Escritório",

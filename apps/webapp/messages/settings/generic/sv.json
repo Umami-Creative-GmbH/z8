@@ -92,7 +92,7 @@
         "description": "Välj de datakategorier du vill exportera",
         "selectAll": "Markera alla",
         "selectAtLeastOne": "Välj minst en kategori",
-        "startExport": "Starta export (${selectedCategories.size})",
+        "startExport": "Starta export ({count})",
         "startingExport": "Startar export...",
         "submitError": "Kunde inte starta exporten",
         "submitSuccess": "Exporten har startats",
@@ -115,7 +115,7 @@
         "downloadSuccess": "Nedladdningen har startat",
         "emptyDescription": "Inga exporter ännu",
         "emptyHint": "Skapa din första export med formuläret ovan",
-        "moreCategories": "+${exp.categories.length - 3} fler",
+        "moreCategories": "+{count} fler",
         "statusCompleted": "Slutförd",
         "statusFailed": "Misslyckades",
         "statusPending": "Väntar",
@@ -140,7 +140,7 @@
         "endpointDescription": "För S3-kompatibla tjänster som MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Lämna tomt för att behålla befintliga autentiseringsuppgifter",
-        "lastVerified": "Senast verifierad: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Senast verifierad: {date}",
         "region": "Region",
         "regionDescription": "AWS-region där din bucket finns",
         "regionPlaceholder": "us-east-1",
@@ -293,16 +293,6 @@
         "commitQueued": "Köade {count} godkända rader för verkställande",
         "committing": "Verkställer...",
         "description": "Granska mellanlagrade importrader, åtgärda blockerande problem och verkställ godkända poster när batchen är klar.",
-        "hold": {
-          "appendReviewRequired": "Medarbetarens tidshistorik måste granskas innan nya poster kan läggas till.",
-          "invalidInterval": "Leverantörens tider saknar en explicit förskjutning, är inte i ordning eller ligger i framtiden.",
-          "label": "Hålls kvar för granskning",
-          "occupancyConflict": "Tiden överlappar arbete som redan registrerats för den här medarbetaren.",
-          "operationCollision": "Den här raden står i konflikt med sin tidigare bekräftade import.",
-          "providerDurationMismatch": "Leverantörens varaktighet skiljer sig från start- och sluttiden.",
-          "sourceCollision": "Den här leverantörsposten har redan importerats.",
-          "unlocatedBreak": "Leverantören rapporterar raster utan deras tider, så det arbetade intervallet är okänt."
-        },
         "issueGroups": {
           "currentMarkers": "Aktuella rader innehåller {blockingRows} blockerande markeringar och {warningRows} varningsmarkeringar.",
           "description": "Grupperade granskningsområden hjälper till att hålla kvalitetskontroller synliga innan godkända rader verkställs.",
@@ -316,7 +306,17 @@
           "status": "Status",
           "title": "Rader"
         },
-        "title": "Importgranskning"
+        "title": "Importgranskning",
+        "hold": {
+          "appendReviewRequired": "Medarbetarens tidshistorik måste granskas innan nya poster kan läggas till.",
+          "invalidInterval": "Leverantörens tider saknar en explicit förskjutning, är inte i ordning eller ligger i framtiden.",
+          "label": "Hålls kvar för granskning",
+          "occupancyConflict": "Tiden överlappar arbete som redan registrerats för den här medarbetaren.",
+          "operationCollision": "Den här raden står i konflikt med sin tidigare bekräftade import.",
+          "providerDurationMismatch": "Leverantörens varaktighet skiljer sig från start- och sluttiden.",
+          "sourceCollision": "Den här leverantörsposten har redan importerats.",
+          "unlocatedBreak": "Leverantören rapporterar raster utan deras tider, så det arbetade intervallet är okänt."
+        }
       },
       "title": "Importera data"
     },
@@ -635,8 +635,8 @@
         "employeePicker": "Anställd att tilldela",
         "employees": "Anställda",
         "manage": "Hantera medlemmar i {name}",
-        "managerAddFailed": "Det gick inte att lägga till projektledaren",
         "managerAdded": "Projektledare tillagd",
+        "managerAddFailed": "Det gick inte att lägga till projektledaren",
         "managerPicker": "Projektledare att lägga till",
         "managers": "Projektledare",
         "managersReadOnly": "Endast organisationsadministratörer kan ändra projektledare.",

@@ -59,6 +59,10 @@ import {
 } from "@/lib/approvals/server/time-correction-category-authorization";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import {
+	approveOnBehalfCorrectionAsEditor,
+	resolveOnBehalfCorrectionAuthority,
+} from "@/lib/approvals/server/time-correction-on-behalf";
+import {
 	acquireTimeCorrectionWorkScope,
 	retryTimeCorrectionWorkTransaction,
 } from "@/lib/approvals/server/time-correction-work-transaction";
@@ -80,6 +84,7 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { getInstantLocalMinuteFields } from "@/lib/datetime/temporal-format";
 import {
+	AuthorizationError,
 	ConflictError,
 	DatabaseError,
 	NotFoundError,
@@ -1299,8 +1304,12 @@ async function insertOrVerifyCorrection(input: {
 export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(input: {
 	tx: typeof db;
 	organizationId: string;
+	/** The owner of the corrected work: the correction requester. */
 	employeeId: string;
+	/** The acting user; differs from the owner's user for on-behalf edits (#507). */
 	userId: string;
+	/** The acting user's employee record in the organization. */
+	actorEmployeeId: string;
 	workPeriodId: string;
 	expectedClockInId: string;
 	expectedClockOutId: string | null;
@@ -1314,7 +1323,6 @@ export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(in
 		.where(
 			and(
 				eq(employee.id, input.employeeId),
-				eq(employee.userId, input.userId),
 				eq(employee.organizationId, input.organizationId),
 				eq(employee.isActive, true),
 			),
@@ -1322,7 +1330,13 @@ export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(in
 		.orderBy(asc(employee.id))
 		.for("update");
 	const lockedEmployee = lockedEmployees[0];
-	if (lockedEmployees.length !== 1 || !lockedEmployee) {
+	const onBehalf = input.actorEmployeeId !== input.employeeId;
+	if (
+		lockedEmployees.length !== 1 ||
+		!lockedEmployee ||
+		(!onBehalf && lockedEmployee.userId !== input.userId) ||
+		(onBehalf && lockedEmployee.userId === input.userId)
+	) {
 		throw new ConflictError({
 			message: "Employee changed while requesting the correction",
 			conflictType: "time_correction_employee_stale",
@@ -1350,6 +1364,35 @@ export async function lockTimeCorrectionSubmissionActorAndPeriodInTransaction(in
 	) {
 		throw new ConflictError({
 			message: "Time correction actor changed before submission",
+			conflictType: "time_correction_actor_stale",
+		});
+	}
+	// On-behalf authority is re-read under the work transaction's guards, so a
+	// role or manager change after the pre-check refuses the submission.
+	const actorEmployee = onBehalf
+		? await input.tx.query.employee.findFirst({
+				where: and(
+					eq(employee.id, input.actorEmployeeId),
+					eq(employee.userId, input.userId),
+					eq(employee.organizationId, input.organizationId),
+					eq(employee.isActive, true),
+				),
+				columns: { id: true },
+			})
+		: null;
+	if (
+		onBehalf &&
+		(!actorEmployee ||
+			!(await resolveOnBehalfCorrectionAuthority({
+				db: input.tx,
+				organizationId: input.organizationId,
+				actorEmployeeId: input.actorEmployeeId,
+				actorMemberRole: lockedMember.role,
+				ownerEmployeeId: input.employeeId,
+			})))
+	) {
+		throw new ConflictError({
+			message: "You can no longer change this employee's time entries",
 			conflictType: "time_correction_actor_stale",
 		});
 	}
@@ -1635,8 +1678,11 @@ async function verifyAdoptedSubmissionReplay(input: AdoptedSubmissionContext) {
 export async function submitCorrection(input: {
 	dbService: ApprovalDbService;
 	organizationId: string;
+	/** The owner of the corrected work: the correction requester. */
 	employeeId: string;
 	userId: string;
+	/** The acting user's employee record; the owner unless edited on behalf (#507). */
+	actorEmployeeId: string;
 	submissionId: string;
 	workPeriodId: string;
 	expectedClockInId: string;
@@ -1699,6 +1745,7 @@ function submitCorrectionInTransaction(
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				userId: input.userId,
+				actorEmployeeId: input.actorEmployeeId,
 				workPeriodId: input.workPeriodId,
 				expectedClockInId: input.expectedClockInId,
 				expectedClockOutId: input.expectedClockOutId,
@@ -2095,6 +2142,8 @@ async function dispatchSubmissionPostCommit(input: {
 	emailService: typeof EmailService.Service;
 	organizationId: string;
 	employeeId: string;
+	/** The submitting employee; an on-behalf editor is not emailed about their own change. */
+	actorEmployeeId?: string;
 	workPeriodId: string;
 	reason: string;
 	period: typeof workPeriod.$inferSelect;
@@ -2111,7 +2160,12 @@ async function dispatchSubmissionPostCommit(input: {
 			);
 			return;
 		}
-		if (!effects.submittedToEmployeeId) return;
+		if (
+			!effects.submittedToEmployeeId ||
+			effects.submittedToEmployeeId === input.actorEmployeeId
+		) {
+			return;
+		}
 		const [managerRecord, requester] = await Promise.all([
 			input.dbService.db.query.employee.findFirst({
 				where: and(
@@ -2220,32 +2274,75 @@ async function loadSubmissionActor(
 	return employeeRecord;
 }
 
-async function loadSubmissionPeriod(
-	dbService: typeof DatabaseService.Service,
-	workPeriodId: string,
-	employeeId: string,
-	organizationId: string,
-) {
-	const [period] = await dbService.db
+/**
+ * The corrected work period and its owner. The actor corrects their own work,
+ * or, as an organization admin/owner or an eligible manager of the owner,
+ * another employee's work on their behalf (#507).
+ */
+async function loadSubmissionTarget(input: {
+	dbService: typeof DatabaseService.Service;
+	organizationId: string;
+	actorUserId: string;
+	actorEmployeeId: string;
+	workPeriodId: string;
+}) {
+	const notFound = () =>
+		new NotFoundError({
+			message: "Work period not found",
+			entityType: "workPeriod",
+			entityId: input.workPeriodId,
+		});
+	const [period] = await input.dbService.db
 		.select()
 		.from(workPeriod)
 		.where(
 			and(
-				eq(workPeriod.id, workPeriodId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.organizationId, organizationId),
+				eq(workPeriod.id, input.workPeriodId),
+				eq(workPeriod.organizationId, input.organizationId),
 				isNull(workPeriod.deletedAt),
 			),
 		)
 		.limit(1);
-	if (!period) {
-		throw new NotFoundError({
-			message: "Work period not found",
-			entityType: "workPeriod",
-			entityId: workPeriodId,
+	if (!period) throw notFound();
+	if (period.employeeId === input.actorEmployeeId) {
+		return { period, ownerUserId: input.actorUserId, onBehalf: false };
+	}
+
+	const [owner, actorMember] = await Promise.all([
+		input.dbService.db.query.employee.findFirst({
+			where: and(
+				eq(employee.id, period.employeeId),
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.isActive, true),
+			),
+			columns: { userId: true },
+		}),
+		input.dbService.db.query.member.findFirst({
+			where: and(
+				eq(member.userId, input.actorUserId),
+				eq(member.organizationId, input.organizationId),
+				eq(member.status, "approved"),
+			),
+			columns: { role: true },
+		}),
+	]);
+	if (!owner) throw notFound();
+	const authority = await resolveOnBehalfCorrectionAuthority({
+		db: input.dbService.db,
+		organizationId: input.organizationId,
+		actorEmployeeId: input.actorEmployeeId,
+		actorMemberRole: actorMember?.role,
+		ownerEmployeeId: period.employeeId,
+	});
+	if (!authority) {
+		throw new AuthorizationError({
+			message: "You can only change time entries of employees you manage",
+			userId: input.actorUserId,
+			resource: "workPeriod",
+			action: "correct",
 		});
 	}
-	return period;
+	return { period, ownerUserId: owner.userId, onBehalf: true };
 }
 
 function submissionFailure(error: unknown) {
@@ -2315,49 +2412,60 @@ function submissionEffect(
 				),
 			);
 		}
-		const period = yield* _(
+		const { period, ownerUserId, onBehalf } = yield* _(
 			Effect.tryPromise({
 				try: () =>
-					loadSubmissionPeriod(
+					loadSubmissionTarget({
 						dbService,
-						data.workPeriodId,
-						currentEmployee.id,
 						organizationId,
-					),
-				catch: () =>
-					new NotFoundError({
-						message: "Work period not found",
-						entityType: "workPeriod",
-						entityId: data.workPeriodId,
+						actorUserId: session.user.id,
+						actorEmployeeId: currentEmployee.id,
+						workPeriodId: data.workPeriodId,
 					}),
+				catch: (error) =>
+					error instanceof AuthorizationError
+						? error
+						: new NotFoundError({
+								message: "Work period not found",
+								entityType: "workPeriod",
+								entityId: data.workPeriodId,
+							}),
 			}),
 		);
+		// Wall-clock values are always the owner's, never the on-behalf editor's.
 		const timezone = yield* _(
-			Effect.promise(() => getUserTimezone(session.user.id)),
+			Effect.promise(() => getUserTimezone(ownerUserId)),
 		);
+		const fallbackTimezoneSource = onBehalf
+			? ("manager_target_user_setting" as const)
+			: ("user_setting" as const);
 
 		let correctedClockIn = period.startTime;
 		let correctedClockOut = period.endTime ?? undefined;
 		const endpoints: SubmissionEndpoint[] = [];
 		if (action === "edit") {
-			const forbiddenMessage = yield* _(
-				Effect.tryPromise({
-					try: () =>
-						getForbiddenCorrectionEditMessage({
-							employeeId: currentEmployee.id,
-							workPeriodEndTime: period.endTime,
-							timezone,
-						}),
-					catch: (cause) => {
-						logger.error({ error: cause }, "Failed to check edit capability");
-						return new DatabaseError({
-							message: "Failed to verify edit policy. Please try again.",
-							operation: "get_edit_capability",
-							cause,
-						});
-					},
-				}),
-			);
+			// The change policy governs employees' own edits; an on-behalf change
+			// goes to the owner's approval chain instead.
+			const forbiddenMessage = onBehalf
+				? null
+				: yield* _(
+					Effect.tryPromise({
+						try: () =>
+							getForbiddenCorrectionEditMessage({
+								employeeId: currentEmployee.id,
+								workPeriodEndTime: period.endTime,
+								timezone,
+							}),
+						catch: (cause) => {
+							logger.error({ error: cause }, "Failed to check edit capability");
+							return new DatabaseError({
+								message: "Failed to verify edit policy. Please try again.",
+								operation: "get_edit_capability",
+								cause,
+							});
+						},
+					}),
+				);
 			if (forbiddenMessage) {
 				return yield* _(
 					Effect.fail(
@@ -2466,7 +2574,7 @@ function submissionEffect(
 					timezoneCapture: resolveFallbackTimezoneCapture({
 						timestamp: correctedClockIn,
 						timezone,
-						timezoneSource: "user_setting",
+						timezoneSource: fallbackTimezoneSource,
 					}),
 				});
 			}
@@ -2483,7 +2591,7 @@ function submissionEffect(
 					timezoneCapture: resolveFallbackTimezoneCapture({
 						timestamp: times.correctedClockOutDate,
 						timezone,
-						timezoneSource: "user_setting",
+						timezoneSource: fallbackTimezoneSource,
 					}),
 				});
 			}
@@ -2505,7 +2613,7 @@ function submissionEffect(
 					dbService.db.query.timeEntry.findMany({
 						where: and(
 							eq(timeEntry.organizationId, organizationId),
-							eq(timeEntry.employeeId, currentEmployee.id),
+							eq(timeEntry.employeeId, period.employeeId),
 							inArray(timeEntry.id, [period.clockInId, clockOutId]),
 						),
 					}),
@@ -2531,7 +2639,7 @@ function submissionEffect(
 								browserTimezone: endpointTimezone,
 								fallbackTimezone: timezone,
 								browserSource: "browser",
-								fallbackSource: "user_setting",
+								fallbackSource: fallbackTimezoneSource,
 							})
 						: resolveFallbackTimezoneCapture({
 								timestamp: deletionTimestamp,
@@ -2541,7 +2649,7 @@ function submissionEffect(
 											TimeEntryTimezoneCapture["timezoneSource"],
 											"browser"
 										>)
-									: "user_setting",
+									: fallbackTimezoneSource,
 							});
 				endpoints.push({
 					endpointType: endpoint.endpointType,
@@ -2559,8 +2667,9 @@ function submissionEffect(
 					submitCorrection({
 						dbService,
 						organizationId,
-						employeeId: currentEmployee.id,
+						employeeId: period.employeeId,
 						userId: session.user.id,
+						actorEmployeeId: currentEmployee.id,
 						submissionId,
 						workPeriodId: period.id,
 						expectedClockInId: period.clockInId,
@@ -2595,7 +2704,8 @@ function submissionEffect(
 					dbService,
 					emailService,
 					organizationId,
-					employeeId: currentEmployee.id,
+					employeeId: period.employeeId,
+					actorEmployeeId: currentEmployee.id,
 					workPeriodId: period.id,
 					reason: data.reason,
 					period,
@@ -2605,13 +2715,28 @@ function submissionEffect(
 				}),
 			),
 		);
-		return {
-			approvalId: result.approvalRequestId,
-			status:
-				result.kind === "auto_completed"
-					? ("approved" as const)
-					: ("pending" as const),
-		};
+		if (result.kind === "auto_completed") {
+			return {
+				approvalId: result.approvalRequestId,
+				status: "approved" as const,
+			};
+		}
+		// An on-behalf editor who approves the owner's current stage decides it
+		// now, as they would from the inbox; any other approver decides later.
+		const status = onBehalf
+			? yield* _(
+					Effect.promise(() =>
+						approveOnBehalfCorrectionAsEditor({
+							dbService: dbService as ApprovalDbService,
+							organizationId,
+							workPeriodId: period.id,
+							approvalRequestId: result.approvalRequestId,
+							editorEmployeeId: currentEmployee.id,
+						}),
+					),
+				)
+			: ("pending" as const);
+		return { approvalId: result.approvalRequestId, status };
 	});
 }
 

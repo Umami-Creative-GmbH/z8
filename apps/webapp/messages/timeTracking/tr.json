@@ -12,12 +12,8 @@
     "clockIn": "İşe Giriş",
     "clockingIn": "İşe giriş yapılıyor…",
     "clockingOut": "İşten çıkış yapılıyor…",
-    "clockInQueued": "Giriş saati senkronizasyon için kuyruğa alındı",
-    "clockInSavedForReview": "Giriş kaydı incelenmek üzere bu cihaza kaydedildi; sunucuda onaylanmadı",
     "clockInSuccess": "İşe giriş başarıyla yapıldı",
     "clockOut": "İşten Çıkış",
-    "clockOutQueued": "Çıkış saati senkronizasyon için kuyruğa alındı",
-    "clockOutSavedForReview": "Çıkış kaydı incelenmek üzere bu cihaza kaydedildi; sunucuda onaylanmadı",
     "clockOutSuccess": "İşten çıkış başarıyla yapıldı",
     "compliance": {
       "violation": "Uyumluluk İhlali",
@@ -26,18 +22,16 @@
     "correction": {
       "clockIn": "İşe Giriş",
       "clockInDate": "Giriş Tarihi",
-      "clockInTime": "Giriş Saati",
       "clockOut": "İşten Çıkış",
       "clockOutDate": "Çıkış Tarihi",
-      "clockOutTime": "Çıkış Saati",
       "editDescription": "Bugünkü zaman kaydınızda değişiklik yapın.",
       "editEntry": "Zaman kaydını düzenle",
       "editTitle": "Zaman Kaydını Düzenle",
       "errors": {
         "invalidTimeRange": "İşten çıkış saati, işe giriş saatinden sonra olmalıdır",
-        "noChanges": "En az bir düzeltme değeri değiştirilmelidir",
         "submitFailed": "Düzeltme gönderilemedi",
-        "updateFailed": "Zaman kaydı güncellenemedi"
+        "updateFailed": "Zaman kaydı güncellenemedi",
+        "noChanges": "En az bir düzeltme değeri değiştirilmelidir"
       },
       "noteLabel": "Not (isteğe bağlı)",
       "notePlaceholder": "Bu değişiklik hakkında bir not ekleyin…",
@@ -55,20 +49,22 @@
         "submitted": "Düzeltme talebi yönetici onayı için gönderildi",
         "updated": "Zaman kaydı başarıyla güncellendi"
       },
-      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})"
+      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})",
+      "clockInTime": "Giriş Saati",
+      "clockOutTime": "Çıkış Saati"
     },
     "currentlyClockedIn": "Şu anda işe giriş yapmış durumdasınız",
     "deadline": "Son teslim tarihi",
     "errors": {
       "clockInFailed": "İşe giriş yapılamadı",
-      "appendReviewRequired": "Giriş kaydı için zaman geçmişinizin incelenmesi gerekiyor",
-      "appendReviewRequiredDesc": "Önceki zaman kayıtlarınız doğrulanamadığından yeni giriş kaydı kaydedilmedi. Lütfen yöneticinizle iletişime geçin.",
       "clockOutFailed": "İşten çıkış yapılamadı",
       "holidayBlocked": "{holidayName} tarihinde işten çıkış yapılamaz",
       "holidayBlockedDesc": "Bu gün tatil olarak işaretlenmiştir ve zaman kaydı girilmesine izin verilmemektedir",
       "notesSaveFailed": "Notlar kaydedilemedi",
       "restPeriodBlocked": "Dinlenme süresi tamamlanmadı",
-      "restPeriodBlockedDesc": "Giriş yapmadan önce gerekli dinlenme süresini tamamlamalısınız. Gerekirse bir istisna talebinde bulunun."
+      "restPeriodBlockedDesc": "Giriş yapmadan önce gerekli dinlenme süresini tamamlamalısınız. Gerekirse bir istisna talebinde bulunun.",
+      "appendReviewRequired": "Giriş kaydı için zaman geçmişinizin incelenmesi gerekiyor",
+      "appendReviewRequiredDesc": "Önceki zaman kayıtlarınız doğrulanamadığından yeni giriş kaydı kaydedilmedi. Lütfen yöneticinizle iletişime geçin."
     },
     "manualEntry": {
       "addButton": "Manuel Giriş Ekle",
@@ -89,19 +85,19 @@
       "dateLabel": "Tarih",
       "description": "Geçmiş bir tarih için zaman girişi oluşturun. Kuruluşunuzun değişiklik politikasına bağlı olarak onay gerekebilir.",
       "errors": {
-        "collision": "Bu kayıt önceki bir gönderimle veya değiştirilmiş çalışmayla çakışıyor. Mevcut kayıtlarınızı kontrol edin.",
         "createFailed": "Zaman girişi oluşturulamadı",
         "futureDate": "Gelecek tarihler için giriş oluşturulamaz",
-        "futureTime": "Gelecekteki saatler için kayıt oluşturulamaz",
-        "historyReview": "Yeni kayıtlar kaydedilmeden önce bu zaman geçmişinin incelenmesi gerekiyor. Yöneticinize başvurun.",
         "invalidTime": "Eksiksiz ve geçerli bir saat girin",
         "invalidTimeRange": "Çıkış saati, giriş saatinden sonra olmalıdır",
+        "tooLong": "Çalışma süresi 24 saati aşamaz",
+        "collision": "Bu kayıt önceki bir gönderimle veya değiştirilmiş çalışmayla çakışıyor. Mevcut kayıtlarınızı kontrol edin.",
+        "futureTime": "Gelecekteki saatler için kayıt oluşturulamaz",
+        "historyReview": "Yeni kayıtlar kaydedilmeden önce bu zaman geçmişinin incelenmesi gerekiyor. Yöneticinize başvurun.",
         "nonexistentTime": "Saatler ileri alındığı için bu saat bu tarihte yok.",
         "occurrenceRequired": "Bu saat bu tarihte iki kez geçiyor. Hangisini kastettiğinizi seçin.",
         "overlap": "Bu süre kayıtlı çalışmayla çakışıyor. Çakışmayan bir aralık seçin.",
         "reconfirm": "Saat dilimi veya saatler değişti. Kaydı gözden geçirip yeniden gönderin.",
-        "refresh": "Manuel kayıt ayarları değişti. Kaydı gözden geçirip yeniden gönderin.",
-        "tooLong": "Çalışma süresi 24 saati aşamaz"
+        "refresh": "Manuel kayıt ayarları değişti. Kaydı gözden geçirip yeniden gönderin."
       },
       "occurrence": {
         "earlier": "Birinci, {offset}",
@@ -112,14 +108,16 @@
       "reasonPlaceholder": "Ne üzerinde çalıştığınızı açıklayın…",
       "recovery": {
         "check": "Durumu kontrol et",
-        "checkFailed": "Bu kayıt şu anda kontrol edilemedi. Daha sonra tekrar deneyin.",
-        "contextMismatch": "Farklı bir hesapta veya kuruluşta oturum açtınız. Bu kaydı işlemek için geri geçin.",
         "description": "Bu kayıtlar bu sekmeden onaylanmış bir sonuç olmadan gönderildi. Siz seçmedikçe hiçbir şey yeniden gönderilmez.",
         "discard": "Kapat",
         "editAsNew": "Yeni kayıt olarak düzenle",
+        "retry": "Aynen yeniden dene",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Onaylanmamış kayıtlar",
+        "checkFailed": "Bu kayıt şu anda kontrol edilemedi. Daha sonra tekrar deneyin.",
+        "contextMismatch": "Farklı bir hesapta veya kuruluşta oturum açtınız. Bu kaydı işlemek için geri geçin.",
         "notCommitted": "Kayıt bulunamadı.",
         "notCommittedToast": "Bu kayıt için kaydedilmiş bir sonuç bulunamadı. Aynen yeniden deneyin veya yeni kayıt olarak düzenleyin.",
-        "retry": "Aynen yeniden dene",
         "saved": "Bu kayıt kaydedildi.",
         "savedForApproval": "Bu kayıt kaydedildi ve onaya gönderildi. Güncel durumu: {status}.",
         "status": {
@@ -128,8 +126,6 @@
           "rejected": "reddedildi"
         },
         "stillUncertain": "Hâlâ onaylanmadı. Kayıt tutuluyor; tekrar çevrimiçi olduğunuzda yeniden deneyin.",
-        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Onaylanmamış kayıtlar",
         "uncertain": "Onaylanmadı. Zaten kaydedilmiş olabilir.",
         "uncertainToast": "Bu kaydın kaydedilip kaydedilmediğini doğrulayamadık. Onaylanmamış kayıtlar altında tutuluyor; oradan aynen yeniden deneyebilir veya durumunu kontrol edebilirsiniz.",
         "unsupported": "Durumu kontrol edilemiyor. Zaten kaydedilmiş olabilir.",
@@ -201,6 +197,8 @@
     "unknownCategory": "Bilinmeyen kategori",
     "unknownProject": "Bilinmeyen proje",
     "workCategory": "Çalışma Kategorisi",
+    "clockInSavedForReview": "Giriş kaydı incelenmek üzere bu cihaza kaydedildi; sunucuda onaylanmadı",
+    "clockOutSavedForReview": "Çıkış kaydı incelenmek üzere bu cihaza kaydedildi; sunucuda onaylanmadı",
     "workLocation": "Çalışma yeri",
     "workLocationHome": "Ev",
     "workLocationOffice": "Ofis",

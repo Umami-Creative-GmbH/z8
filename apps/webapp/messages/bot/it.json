@@ -1,17 +1,16 @@
 {
   "bot": {
     "approval": {
-      "reviewRequiredTitle": "Verifica necessaria",
-      "reviewRequired": "Questa scheda non consente di verificare i dati originariamente inviati. Apra la casella delle approvazioni in Z8 per esaminare la richiesta. Non è stata presa alcuna decisione da questa scheda.",
+      "outcomeUnknown": "Non è stato possibile confermare il risultato di questa pressione. Controlla la richiesta in Z8 prima di premere di nuovo.",
       "reviewInZ8": "Esamina in Z8",
+      "reviewRequired": "Questa scheda non consente di verificare i dati originariamente inviati. Apra la casella delle approvazioni in Z8 per esaminare la richiesta. Non è stata presa alcuna decisione da questa scheda.",
+      "reviewRequiredTitle": "Verifica necessaria",
       "historicalTitle": "Decisione precedente",
       "historicalApproval": "La sua approvazione registrata in precedenza è stata verificata. Si tratta di un risultato precedente; non è stata presa alcuna nuova decisione. Consulti la richiesta in Z8 per ulteriori dettagli.",
       "historicalRejection": "Il suo rifiuto registrato in precedenza è stato verificato. Si tratta di un risultato precedente; non è stata presa alcuna nuova decisione. Consulti la richiesta in Z8 per ulteriori dettagli.",
       "unboundCallback": "Questa scheda non consente di verificare i dati originariamente esaminati. Non è stata presa alcuna decisione. Esamini la richiesta in Z8.",
-      "alreadyProcessed": "Questa approvazione è già stata elaborata.",
       "boundReviewRequired": "Questa scheda non corrisponde più alla richiesta o all’assegnazione attuale, oppure l’azione non è stata verificata. Nessuna decisione è stata presa. Esamina la richiesta in Z8.",
       "invocationConflict": "Questa pressione è già stata registrata con un’altra azione. Nessuna decisione è stata presa. Esamina la richiesta in Z8.",
-      "outcomeUnknown": "Non è stato possibile confermare il risultato di questa pressione. Controlla la richiesta in Z8 prima di premere di nuovo.",
       "card": {
         "absenceTitle": "Richiesta di assenza da approvare",
         "boundHint": "Approva o rifiuta decide esattamente la richiesta mostrata sopra. Se è stata modificata o riassegnata, non viene deciso nulla e ti verrà chiesto di esaminarla in Z8.",
@@ -60,7 +59,6 @@
       }
     },
     "cmd": {
-      "billingRequired": "[bot] La fatturazione è necessaria per continuare a usare il monitoraggio del tempo. Chiedi a un amministratore dell'organizzazione di aggiornare la fatturazione.",
       "clockedin": {
         "header": "{active} di {total} membri del team sono attualmente in servizio:",
         "noneActive": "Nessuno dei tuoi {total} membri del team è attualmente in servizio.",
@@ -118,7 +116,8 @@
         "header": "{outCount} su {total} membri del team sono assenti oggi:",
         "noneOut": "Tutti i tuoi {total} membri del team sono disponibili oggi.",
         "noTeam": "Non hai membri del team assegnati."
-      }
+      },
+      "billingRequired": "[bot] La fatturazione è necessaria per continuare a usare il monitoraggio del tempo. Chiedi a un amministratore dell'organizzazione di aggiornare la fatturazione."
     },
     "language": {
       "changed": "Lingua cambiata in {language}.",
@@ -144,6 +143,7 @@
       "notLinked": "Il tuo account Telegram non è collegato a Z8. Vai su Impostazioni > Integrazioni > Telegram nella tua dashboard Z8 per generare un codice di collegamento, quindi invia: /link TUO_CODICE",
       "notLinkedTeams": "Non sono riuscito a trovare il tuo account Z8. Assicurati che l'email di Teams corrisponda all'email del tuo account Z8.",
       "noUser": "Impossibile identificare il tuo account utente.",
+      "replyUndelivered": "Il tuo comando è stato elaborato, ma non è stato possibile mostrare la risposta. Controlla il tuo stato prima di ripeterlo.",
       "setupBody": "La tua organizzazione deve essere collegata a Z8. Clicca qui sotto per avviare il processo di configurazione.",
       "setupButton": "Completa configurazione",
       "setupNote": "Solo gli amministratori dell'organizzazione possono completare questa configurazione.",
@@ -152,8 +152,7 @@
       "typeHelp": "Digita /help per vedere i comandi disponibili.",
       "unconfigured": "L'integrazione Z8 della tua organizzazione è in fase di configurazione. Attendi che l'amministratore completi la procedura.",
       "welcome": "Benvenuto su Z8! Per collegare il tuo account, vai su Impostazioni > Integrazioni > Telegram nel tuo pannello di controllo Z8 e genera un codice di collegamento. Quindi invia: /link IL_TUO_CODICE",
-      "welcomeTeams": "Benvenuto su Z8! Digita \"help\" per vedere i comandi disponibili.",
-      "replyUndelivered": "Il tuo comando è stato elaborato, ma non è stato possibile mostrare la risposta. Controlla il tuo stato prima di ripeterlo."
+      "welcomeTeams": "Benvenuto su Z8! Digita \"help\" per vedere i comandi disponibili."
     }
   }
 }

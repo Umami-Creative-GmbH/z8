@@ -325,8 +325,12 @@
         "approvalHint": "Une demande d'approbation héritée ou un UUID de workflow canonique.",
         "approvalId": "ID d'approbation",
         "chain": "Chaîne d'approbation",
+        "decisionEvidence": "Preuve de décision",
         "delete": "Forcer la suppression",
         "deleting": "Suppression en cours…",
+        "deliveryIntent": "Intention de distribution",
+        "deliveryMessage": "Message distribué",
+        "deliveryWork": "Travail de distribution",
         "description": "Supprimer définitivement une approbation et ses enregistrements d'approbation associés. Les enregistrements sources et leurs statuts sont conservés.",
         "errors": {
           "ambiguous": "Cet ID existe dans les deux magasins d'approbation. Aucune approbation n'a été supprimée.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Saisissez un ID d'organisation.",
           "unauthorized": "Accès administrateur de la plateforme requis."
         },
+        "escalationAttention": "Attention liée à l'escalade",
+        "escalationTransfer": "Transfert d'escalade",
         "legacy": "Demande héritée",
         "organizationHint": "L'organisation propriétaire de l'approbation.",
         "organizationId": "ID d'organisation",
+        "reviewBinding": "Liaison d'examen",
+        "submittedRevision": "Révision soumise",
         "success": "Approbation supprimée. Enregistrements supprimés :",
         "title": "Forcer la suppression de l'approbation",
         "workflow": "Workflow"

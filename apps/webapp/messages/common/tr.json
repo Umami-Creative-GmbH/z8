@@ -165,7 +165,6 @@
     "moveDown": "Aşağı taşı",
     "moveUp": "Yukarı taşı",
     "name": "Ad",
-    "never": "Asla",
     "new": "Yeni",
     "next": "İleri",
     "notApplicable": "N/A",
@@ -258,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Yöneticiyle İletişime Geçin",
       "createOrg": "Organizasyon Oluştur",
-      "description": "${feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
+      "description": "{feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
       "emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
       "emailSubject": "Çalışan Profili Kurulumu Gerekli",
       "helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
@@ -290,13 +289,13 @@
     "trust-center": "Güven Merkezi"
   },
   "loading": {
+    "chart": "Grafik yükleniyor",
+    "settings": "Ayarlar yükleniyor",
     "application": "Uygulama yükleniyor",
     "authentication": "Kimlik doğrulama yükleniyor",
     "calendar": "Takvim yükleniyor",
-    "chart": "Grafik yükleniyor",
     "licenses": "Lisanslar yükleniyor",
     "platformAnalytics": "Platform analizleri yükleniyor",
-    "settings": "Ayarlar yükleniyor",
     "setup": "Kurulum yükleniyor",
     "teamAbsences": "Ekip devamsızlıkları yükleniyor",
     "workerQueue": "İş kuyruğu yükleniyor"
@@ -335,14 +334,6 @@
       "viewAll": "Tüm bildirimleri görüntüle"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
-        "title": "Devamsızlık talebi gönderildi"
-      },
-      "teamMemberRemoved": {
-        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
-        "title": "Ekipten çıkarıldı"
-      },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
         "title": "Parola değiştirildi"
@@ -354,6 +345,14 @@
       "teamMemberAdded": {
         "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
         "title": "Ekibe eklendi"
+      },
+      "absenceRequestSubmitted": {
+        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
+        "title": "Devamsızlık talebi gönderildi"
+      },
+      "teamMemberRemoved": {
+        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
+        "title": "Ekipten çıkarıldı"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
@@ -434,25 +433,38 @@
     "banner": {
       "archived": "Arşivlenen giriş-çıkış kanıtı bu cihazda saklanıyor",
       "offline": "Çevrimdışısınız",
-      "offlineWithPending": "Çevrimdışı - {count} etkinlik bekliyor",
-      "pending": "{count} etkinlik senkronizasyon bekliyor",
-      "retry": "Yeniden dene",
-      "syncing": "{count} etkinlik senkronize ediliyor...",
       "offlineSaved": "Çevrimdışı — İnceleme için yerel olarak kaydedilmiş {count} kayıt",
+      "offlineWaiting": "Çevrimdışı — Tekrar çevrimiçi olduğunuzda {count} giriş/çıkış işlemi gönderilecek",
       "refresh": "Durumu yenile",
       "refreshing": "Kaydedilen {count} kayıt kontrol ediliyor…",
       "reviewRequired": "Yerel olarak {count} kayıt kaydedildi — inceleme gerekli",
-      "unverified": "Giriş-çıkış kanıtı bu cihaza kaydedildi. Kaydedilen tüm kayıtları incelemek için bağlanın."
+      "unverified": "Giriş-çıkış kanıtı bu cihaza kaydedildi. Kaydedilen tüm kayıtları incelemek için bağlanın.",
+      "waiting": "Bu cihaza {count} giriş/çıkış işlemi kaydedildi, henüz gönderilmedi"
     },
     "capture": {
       "description": "Olayı inceleme için bu cihaza kaydedin. Sunucu giriş-çıkış durumu değişmeyecektir.",
       "end": "Çıkış kaydını inceleme için kaydet",
+      "queueDescription": "Çevrimdışısınız. Giriş/çıkış işlemleri bu cihaza kaydedilir ve tekrar çevrimiçi olduğunuzda otomatik olarak gönderilir.",
+      "queueEnd": "Çıkışı kaydet",
+      "queueStart": "Girişi kaydet",
       "start": "Giriş kaydını inceleme için kaydet"
     },
     "recovery": {
       "archive": "Arşivle ve kanıtı sakla",
       "archived": "Arşivlendi — kanıt saklandı",
-      "description": "Bu kayıtlar bu cihaza kaydedildi. Sunucuya işlenip işlenmediği bilinmiyor. Yerine çalışma göndermeden önce mevcut zaman girişlerini yöneticinizle kontrol edin. Arşivleme işlemi kanıtı saklar ve sunucudaki çalışmayı iptal etmez.",
+      "command": {
+        "blockedPredecessor": "Duraklatıldı — bu cihazdaki önceki bir giriş/çıkış işleminin incelenmesi gerekiyor",
+        "committed": "Sunucuya kaydedildi",
+        "exhausted": "Tekrarlanan hatalardan sonra gönderme durduruldu — sunucuda onaylanmadı",
+        "pausedAccess": "Duraklatıldı — bu kuruluşta giriş/çıkış yapma erişimine sahip bir hesapla yeniden oturum açın",
+        "pausedContext": "Duraklatıldı — kaydedildiği hesap ve kuruluşta oturum açın",
+        "pausedServer": "Duraklatıldı — sunucu henüz bu giriş/çıkış işlemini kabul etmiyor",
+        "pending": "Gönderilmeyi bekliyor — sunucuda onaylanmadı",
+        "rejected": "Kaydedilmedi — sunucu reddetti ({code})",
+        "review": "İnceleme gerekiyor — sunucu kabul etmedi ({code})",
+        "waitingPredecessor": "Bu cihazdaki önceki bir giriş/çıkış işlemi bekleniyor"
+      },
+      "descriptionOutcomes": "Bu kayıtlar bu cihaza kaydedilmiştir. Bir kayıtta sunucuya kaydedildiği belirtilmedikçe sunucudaki sonucu onaylanmamıştır. Yerine geçecek çalışma göndermeden önce mevcut zaman kayıtlarını yöneticinizle kontrol edin. Arşivleme kanıtı saklar ve sunucudaki çalışmayı iptal etmez.",
       "empty": "Erişilebilir kayıt yok. Hesap kanıtı olmayan eski kayıtlar kuruluş düzeyinde inceleme gerektirir; kuruluş kanıtı olmayan kayıtlar ayrı olarak yetkilendirilmiş kurtarma gerektirir.",
       "evidence": "Orijinal kanıt ve kurtarma durumu",
       "export": "Erişilebilir kanıtı dışa aktar",
@@ -555,17 +567,16 @@
   "validation": {
     "first-name-required": "Ad gerekli",
     "invalid-email": "Geçersiz e-posta adresi",
-    "invalid-password": "Geçersiz şifre",
     "last-name-required": "Soyad gerekli",
     "password-required": "Şifre gerekli"
-  },
-  "worksCouncil": {
-    "loadingLabel": "İş konseyi portalı yükleniyor"
   },
   "workBalance": {
     "label": "Tüm zamanların bakiyesi",
     "notCalculated": "Henüz hesaplanmadı",
     "pendingDescription": "Çalışan bu bakiyeyi yakında hesaplayacaktır.",
     "updatedEveryThreeHours": "Her 3 saatte bir güncellenir"
+  },
+  "worksCouncil": {
+    "loadingLabel": "İş konseyi portalı yükleniyor"
   }
 }

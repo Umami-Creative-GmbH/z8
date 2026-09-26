@@ -1,17 +1,16 @@
 {
   "bot": {
     "approval": {
-      "reviewRequiredTitle": "Revisão necessária",
-      "reviewRequired": "Este cartão não permite verificar os dados originalmente enviados para revisão. Abra a caixa de aprovações no Z8 para analisar a solicitação. Nenhuma decisão foi tomada por este cartão.",
+      "outcomeUnknown": "Não foi possível confirmar o resultado deste clique. Verifique o pedido no Z8 antes de clicar novamente.",
       "reviewInZ8": "Revisar no Z8",
+      "reviewRequired": "Este cartão não permite verificar os dados originalmente enviados para revisão. Abra a caixa de aprovações no Z8 para analisar a solicitação. Nenhuma decisão foi tomada por este cartão.",
+      "reviewRequiredTitle": "Revisão necessária",
       "historicalTitle": "Decisão anterior",
       "historicalApproval": "Sua aprovação registrada anteriormente foi verificada. Este é um resultado anterior; nenhuma nova decisão foi tomada. Consulte a solicitação no Z8 para mais detalhes.",
       "historicalRejection": "Sua rejeição registrada anteriormente foi verificada. Este é um resultado anterior; nenhuma nova decisão foi tomada. Consulte a solicitação no Z8 para mais detalhes.",
       "unboundCallback": "Este cartão não permite verificar os dados originalmente analisados. Nenhuma decisão foi tomada. Revise a solicitação no Z8.",
-      "alreadyProcessed": "Esta aprovação já foi processada.",
       "boundReviewRequired": "Este cartão já não corresponde ao pedido ou à atribuição atual, ou não foi possível verificar a ação. Nenhuma decisão foi tomada. Reveja o pedido no Z8.",
       "invocationConflict": "Este toque já foi registado com outra ação. Nenhuma decisão foi tomada. Reveja o pedido no Z8.",
-      "outcomeUnknown": "Não foi possível confirmar o resultado deste clique. Verifique o pedido no Z8 antes de clicar novamente.",
       "card": {
         "absenceTitle": "Pedido de ausência para aprovação",
         "boundHint": "Aprovar ou rejeitar decide exatamente o pedido mostrado acima. Se foi alterado ou reatribuído, nada é decidido e será pedido que o reveja no Z8.",
@@ -60,7 +59,6 @@
       }
     },
     "cmd": {
-      "billingRequired": "O faturamento é necessário para continuar usando o controle de tempo. Peça a um administrador da organização para atualizar o faturamento.",
       "clockedin": {
         "header": "{active} de {total} membros da equipe estão registrados no momento:",
         "noneActive": "Nenhum dos seus {total} membros da equipe está registrado no momento.",
@@ -118,7 +116,8 @@
         "header": "{outCount} de {total} membros da equipe ausentes hoje:",
         "noneOut": "Todos os {total} membros da sua equipe estão disponíveis hoje.",
         "noTeam": "Você não possui membros de equipe atribuídos a você."
-      }
+      },
+      "billingRequired": "O faturamento é necessário para continuar usando o controle de tempo. Peça a um administrador da organização para atualizar o faturamento."
     },
     "language": {
       "changed": "Idioma alterado para {language}.",
@@ -144,6 +143,7 @@
       "notLinked": "Sua conta do Telegram não está vinculada ao Z8. Vá em Configurações > Integrações > Telegram no seu painel do Z8 para gerar um código de vinculação e envie: /link SEU_CÓDIGO",
       "notLinkedTeams": "Não consegui encontrar sua conta Z8. Certifique-se de que seu e-mail do Teams coincide com o e-mail da sua conta Z8.",
       "noUser": "Não foi possível identificar sua conta de usuário.",
+      "replyUndelivered": "Seu comando foi processado, mas a resposta não pôde ser exibida. Verifique seu status antes de repeti-lo.",
       "setupBody": "Sua organização precisa estar conectada ao Z8. Clique abaixo para iniciar o processo de configuração.",
       "setupButton": "Concluir Configuração",
       "setupNote": "Apenas administradores da organização podem concluir esta configuração.",
@@ -152,8 +152,7 @@
       "typeHelp": "Digite /help para ver os comandos disponíveis.",
       "unconfigured": "A integração do Z8 da sua organização está sendo configurada. Por favor, aguarde seu administrador concluir a configuração.",
       "welcome": "Bem-vindo ao Z8! Para conectar sua conta, vá em Configurações > Integrações > Telegram no seu painel Z8 e gere um código de link. Em seguida, envie: /link SEU_CÓDIGO",
-      "welcomeTeams": "Bem-vindo ao Z8! Digite \"help\" para ver os comandos disponíveis.",
-      "replyUndelivered": "Seu comando foi processado, mas a resposta não pôde ser exibida. Verifique seu status antes de repeti-lo."
+      "welcomeTeams": "Bem-vindo ao Z8! Digite \"help\" para ver os comandos disponíveis."
     }
   }
 }

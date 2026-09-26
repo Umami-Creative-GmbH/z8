@@ -92,7 +92,7 @@
         "description": "Dışa aktarmak istediğiniz veri kategorilerini seçin",
         "selectAll": "Tümünü Seç",
         "selectAtLeastOne": "Lütfen en az bir kategori seçin",
-        "startExport": "Dışa Aktarmayı Başlat (${selectedCategories.size})",
+        "startExport": "Dışa Aktarmayı Başlat ({count})",
         "startingExport": "Dışa Aktarma Başlatılıyor...",
         "submitError": "Dışa aktarma başlatılamadı",
         "submitSuccess": "Dışa aktarma başarıyla başlatıldı",
@@ -115,7 +115,7 @@
         "downloadSuccess": "İndirme başlatıldı",
         "emptyDescription": "Henüz dışa aktarma yok",
         "emptyHint": "Yukarıdaki formu kullanarak ilk dışa aktarmanızı oluşturun",
-        "moreCategories": "+${exp.categories.length - 3} daha",
+        "moreCategories": "+{count} daha",
         "statusCompleted": "Tamamlandı",
         "statusFailed": "Başarısız",
         "statusPending": "Beklemede",
@@ -140,7 +140,7 @@
         "endpointDescription": "MinIO gibi S3 uyumlu hizmetler için",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Mevcut kimlik bilgilerini korumak için boş bırakın",
-        "lastVerified": "Son doğrulama: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Son doğrulama: {date}",
         "region": "Bölge",
         "regionDescription": "Bucket'ınızın bulunduğu AWS bölgesi",
         "regionPlaceholder": "us-east-1",
@@ -293,16 +293,6 @@
         "commitQueued": "{count} kabul edilen satır kayıt için sıraya alındı",
         "committing": "Kaydediliyor...",
         "description": "Hazırlanan içe aktarma satırlarını inceleyin, engelleyici sorunları çözün ve toplu işlem hazır olduğunda kabul edilen kayıtları kaydedin.",
-        "hold": {
-          "appendReviewRequired": "Yeni kayıtlar eklenmeden önce çalışanın zaman geçmişinin incelenmesi gerekiyor.",
-          "invalidInterval": "Sağlayıcının zamanlarında açık bir ofset yok, sıralı değil veya gelecekte.",
-          "label": "İnceleme için bekletildi",
-          "occupancyConflict": "Bu süre, bu çalışan için zaten kaydedilmiş çalışmayla çakışıyor.",
-          "operationCollision": "Bu satır, daha önce onaylanan içe aktarımıyla çakışıyor.",
-          "providerDurationMismatch": "Sağlayıcının süresi başlangıç ve bitiş zamanlarından farklı.",
-          "sourceCollision": "Bu sağlayıcı kaydı zaten içe aktarıldı.",
-          "unlocatedBreak": "Sağlayıcı molaları saatleri olmadan bildiriyor, bu nedenle çalışılan aralık bilinmiyor."
-        },
         "issueGroups": {
           "currentMarkers": "Mevcut satırlar {blockingRows} engelleyici ve {warningRows} uyarı işareti içeriyor.",
           "description": "Gruplandırılmış inceleme alanları, kabul edilen satırlar kaydedilmeden önce kalite kontrollerinin görünür kalmasına yardımcı olur.",
@@ -316,7 +306,17 @@
           "status": "Durum",
           "title": "Satırlar"
         },
-        "title": "İçe Aktarma İncelemesi"
+        "title": "İçe Aktarma İncelemesi",
+        "hold": {
+          "appendReviewRequired": "Yeni kayıtlar eklenmeden önce çalışanın zaman geçmişinin incelenmesi gerekiyor.",
+          "invalidInterval": "Sağlayıcının zamanlarında açık bir ofset yok, sıralı değil veya gelecekte.",
+          "label": "İnceleme için bekletildi",
+          "occupancyConflict": "Bu süre, bu çalışan için zaten kaydedilmiş çalışmayla çakışıyor.",
+          "operationCollision": "Bu satır, daha önce onaylanan içe aktarımıyla çakışıyor.",
+          "providerDurationMismatch": "Sağlayıcının süresi başlangıç ve bitiş zamanlarından farklı.",
+          "sourceCollision": "Bu sağlayıcı kaydı zaten içe aktarıldı.",
+          "unlocatedBreak": "Sağlayıcı molaları saatleri olmadan bildiriyor, bu nedenle çalışılan aralık bilinmiyor."
+        }
       },
       "title": "Veri İçe Aktar"
     },
@@ -635,8 +635,8 @@
         "employeePicker": "Atanacak çalışan",
         "employees": "Çalışanlar",
         "manage": "{name} üyelerini yönet",
-        "managerAddFailed": "Proje yöneticisi eklenemedi",
         "managerAdded": "Proje yöneticisi eklendi",
+        "managerAddFailed": "Proje yöneticisi eklenemedi",
         "managerPicker": "Eklenecek proje yöneticisi",
         "managers": "Proje yöneticileri",
         "managersReadOnly": "Proje yöneticilerini yalnızca kuruluş yöneticileri değiştirebilir.",
@@ -893,7 +893,6 @@
         "failed": "Başarısız",
         "failedDescription": "Yakın zamanda başarısız oldu",
         "paused": "Duraklatıldı",
-        "pausedDescription": "Duraklatılmış işler",
         "queueState": "Kuyruk",
         "queueStateDescription": "Çalışanların bekleyen işleri alıp alamayacağı",
         "running": "Çalışıyor",

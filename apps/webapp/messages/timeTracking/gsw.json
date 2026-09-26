@@ -12,12 +12,8 @@
     "clockIn": "Iistämple",
     "clockingIn": "Am Iistämple…",
     "clockingOut": "Am Usstämple…",
-    "clockInQueued": "Iistemplig für Synchronisierig vorgemerkt",
-    "clockInSavedForReview": "Iistämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "clockInSuccess": "Erfolgriich iigstämplet",
     "clockOut": "Usstämple",
-    "clockOutQueued": "Uusstemplig für Synchronisierig vorgemerkt",
-    "clockOutSavedForReview": "Usstämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "clockOutSuccess": "Erfolgriich usgstämplet",
     "compliance": {
       "violation": "Compliance-Verstoss",
@@ -26,18 +22,16 @@
     "correction": {
       "clockIn": "Iistämple",
       "clockInDate": "Datum vom Iistämpfle",
-      "clockInTime": "Ziit vom Iistämpfle",
       "clockOut": "Usstämple",
       "clockOutDate": "Datum vom Uusstämpfle",
-      "clockOutTime": "Ziit vom Uusstämpfle",
       "editDescription": "Änderige a dim Ziiteintrag für hüt vorneh.",
       "editEntry": "Ziiteintrag bearbeite",
       "editTitle": "Ziiteintrag bearbeite",
       "errors": {
         "invalidTimeRange": "D'Usstämplizit muess nach de Iistämplizit sii",
-        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde",
         "submitFailed": "Korrektur het nöd chönne übermittle wärde",
-        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde"
+        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde",
+        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde"
       },
       "noteLabel": "Notiz (optional)",
       "notePlaceholder": "E Notiz zu dere Änderig dezuefüege…",
@@ -55,20 +49,22 @@
         "submitted": "Korrektur-Aatrag zur Genehmigung dur de Manager iigreicht",
         "updated": "Ziiteintrag erfolgriich aktualisiert"
       },
-      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})"
+      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})",
+      "clockInTime": "Ziit vom Iistämpfle",
+      "clockOutTime": "Ziit vom Uusstämpfle"
     },
     "currentlyClockedIn": "Du bisch momentan iigstämplet",
     "deadline": "Frist",
     "errors": {
       "clockInFailed": "Iistämple nöd möglich",
-      "appendReviewRequired": "Iistemple bruucht e Prüefig vo dim Ziitverlauf",
-      "appendReviewRequiredDesc": "Dini bisherige Ziiteiträg hend nöd chöne verifiziert werde, drum isch s Iistemple nöd gspeicheret worde. Bitte wend di a dini Administration.",
       "clockOutFailed": "Usstämple nöd möglich",
       "holidayBlocked": "Am {holidayName} chasch nöd usstämple",
       "holidayBlockedDesc": "De Tag isch als Fiirtig markiert und Ziiteiträg sind nöd erlaubt",
       "notesSaveFailed": "Notize händ nöd chönne gspycheret wärde",
       "restPeriodBlocked": "Ruehziit nöd abgschlosse",
-      "restPeriodBlockedDesc": "Du muesch die erforderlechi Ruehziit iihalte, bevor du dich iistemplisch. Frag en Uusnahm aa, falls nötig."
+      "restPeriodBlockedDesc": "Du muesch die erforderlechi Ruehziit iihalte, bevor du dich iistemplisch. Frag en Uusnahm aa, falls nötig.",
+      "appendReviewRequired": "Iistemple bruucht e Prüefig vo dim Ziitverlauf",
+      "appendReviewRequiredDesc": "Dini bisherige Ziiteiträg hend nöd chöne verifiziert werde, drum isch s Iistemple nöd gspeicheret worde. Bitte wend di a dini Administration."
     },
     "manualEntry": {
       "addButton": "Manuelle Iitrag erfasse",
@@ -89,19 +85,19 @@
       "dateLabel": "Datum",
       "description": "Erfass en Ziitiitrag für es vergangnigs Datum. Je nach Richtlinie vo dinere Organisation isch e Gnehmigung nötig.",
       "errors": {
-        "collision": "De Iitrag widerspricht ere früenere Übermittlig oder gänderter Arbet. Prüef dini vorhandene Iiträg.",
         "createFailed": "Ziitiitrag hät nöd chönne erstellt werde",
         "futureDate": "Iiträg für Zuekunftsdatum chönd nöd erstellt werde",
-        "futureTime": "Für zuekünftigi Ziite chönd kei Iiträg erstellt wärde",
-        "historyReview": "Dä Ziitverlauf mues prüeft wärde, bevor neui Iiträg gspeicheret wärde chönd. Mäld dich bi dinere Administration.",
         "invalidTime": "Gib e vollständigi, gültigi Uhrziit ii",
         "invalidTimeRange": "Uusstempliziit mues nach de Iistempliziit sii",
+        "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii",
+        "collision": "De Iitrag widerspricht ere früenere Übermittlig oder gänderter Arbet. Prüef dini vorhandene Iiträg.",
+        "futureTime": "Für zuekünftigi Ziite chönd kei Iiträg erstellt wärde",
+        "historyReview": "Dä Ziitverlauf mues prüeft wärde, bevor neui Iiträg gspeicheret wärde chönd. Mäld dich bi dinere Administration.",
         "nonexistentTime": "Die Uhrziit gits a dem Datum nöd, will d Uhre vorgstellt wärde.",
         "occurrenceRequired": "Die Uhrziit chunnt a dem Datum zweimal vor. Wähl us, weli du meinsch.",
         "overlap": "Die Ziit überschniidt sich mit erfasster Arbet. Wähl en Ziitruum ohni Überschniidig.",
         "reconfirm": "D Ziitzone oder d Ziite händ sich gänderet. Prüef de Iitrag und schick en nomal.",
-        "refresh": "D Iistellige für manuelli Iiträg händ sich gänderet. Prüef de Iitrag und schick en nomal.",
-        "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
+        "refresh": "D Iistellige für manuelli Iiträg händ sich gänderet. Prüef de Iitrag und schick en nomal."
       },
       "occurrence": {
         "earlier": "Erschti, {offset}",
@@ -112,14 +108,16 @@
       "reasonPlaceholder": "Beschriib, was du gmacht häsch…",
       "recovery": {
         "check": "Status prüefe",
-        "checkFailed": "Dä Iitrag het grad nöd chöne prüeft werde. Probier's spöter nomol.",
-        "contextMismatch": "Du bisch mit emne andere Konto oder ere andere Organisation aagmeldet. Wächsle zrugg, zum dä Iitrag bearbeite.",
         "description": "Die Iiträg sind us däm Tab gschickt worde, ohni dass es Resultat bestätigt worde isch. Es wird nüt nomol gschickt, ohni dass du das uswählsch.",
         "discard": "Verwerfe",
         "editAsNew": "Als neue Iitrag bearbeite",
+        "retry": "Genau glich nomol schicke",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Unbestätigti Iiträg",
+        "checkFailed": "Dä Iitrag het grad nöd chöne prüeft werde. Probier's spöter nomol.",
+        "contextMismatch": "Du bisch mit emne andere Konto oder ere andere Organisation aagmeldet. Wächsle zrugg, zum dä Iitrag bearbeite.",
         "notCommitted": "Kei Speicherig gfunde.",
         "notCommittedToast": "Für dä Iitrag isch kei Speicherig gfunde worde. Schick ihn genau glich nomol oder bearbeit ihn als neue Iitrag.",
-        "retry": "Genau glich nomol schicke",
         "saved": "Dä Iitrag isch gspeicheret worde.",
         "savedForApproval": "Dä Iitrag isch gspeicheret und zur Gnehmigung iigreicht worde. Aktuelle Status: {status}.",
         "status": {
@@ -128,8 +126,6 @@
           "rejected": "abglehnt"
         },
         "stillUncertain": "Immer no nöd bestätigt. De Iitrag bliibt; probier's nomol, sobald du wieder online bisch.",
-        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Unbestätigti Iiträg",
         "uncertain": "Nöd bestätigt. Möglicherwiis scho gspeicheret.",
         "uncertainToast": "Mir händ nöd chöne bestätige, öb dä Iitrag gspeicheret worde isch. Er bliibt under „Unbestätigti Iiträg“, wo du ihn genau glich nomol schicke oder sin Status prüefe chasch.",
         "unsupported": "De Status cha nöd prüeft werde. Möglicherwiis scho gspeicheret.",
@@ -201,6 +197,8 @@
     "unknownCategory": "Unbekannti Kategorie",
     "unknownProject": "Unbekannts Projekt",
     "workCategory": "Arbetskategorie",
+    "clockInSavedForReview": "Iistämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
+    "clockOutSavedForReview": "Usstämple uf dem Grät zur Überprüefig gspeicheret; nöd uf em Server bestätigt",
     "workLocation": "Arbetsort",
     "workLocationHome": "Dihei",
     "workLocationOffice": "Büro",

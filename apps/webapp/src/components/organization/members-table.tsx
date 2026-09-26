@@ -495,7 +495,8 @@ function useMembersTableController({
 									}
 									aria-label={t(
 										"organization.members.invitationActionsLabel",
-										`Actions for invitation to ${row.original.email}`,
+										"Actions for invitation to {email}",
+										{ email: row.original.email },
 									)}
 								>
 									{isActioning(row.original.id) ? (
@@ -691,7 +692,8 @@ function useMembersTableController({
 									size="sm"
 									aria-label={t(
 										"organization.members.memberActionsLabel",
-										`Actions for ${row.original.user.name}`,
+										"Actions for {name}",
+										{ name: row.original.user.name },
 									)}
 								>
 									<IconDots className="size-4" />

@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -46,6 +47,11 @@ const state = vi.hoisted(() => ({
 	sendEmail: vi.fn(),
 	maintenance: vi.fn(),
 	validateRange: vi.fn(),
+	eligibleManagerIds: vi.fn(),
+	memberFindFirst: vi.fn(),
+	txEmployeeFindFirst: vi.fn(),
+	outerApprovalWorkflowFindFirst: vi.fn(),
+	decide: vi.fn(),
 	events: [] as string[],
 }));
 
@@ -79,9 +85,12 @@ vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
 }));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester: state.getManager,
+	getEligibleManagerIdsForRequester: state.eligibleManagerIds,
+	isEligibleManagerForApprovalRequest: vi.fn(async () => false),
 }));
 
 vi.mock("@/lib/approvals/server/time-correction-approvals", () => ({
+	decideTimeCorrectionWithStableTargetEffect: state.decide,
 	deleteCancelledTimeCorrectionsInTransaction: vi.fn(),
 	executeTimeCorrectionSubmissionInTransaction: state.executeSubmission,
 	finalizeTimeCorrectionTerminalInTransaction: vi.fn(),
@@ -298,6 +307,7 @@ function transactionDb() {
 		query: {
 			approvalWorkflow: { findFirst: state.txApprovalWorkflowFindFirst },
 			approvalRequest: { findMany: state.txApprovalRequestFindMany },
+			employee: { findFirst: state.txEmployeeFindFirst },
 			timeEntry: { findFirst: state.txTimeEntryFindFirst },
 			workCategory: { findFirst: state.txCategoryFindFirst
 		},
@@ -577,6 +587,8 @@ vi.mock("@/db", () => ({
 			employee: { findFirst: state.employeeFindFirst },
 			timeEntry: { findMany: state.timeEntryFindMany },
 			approvalRequest: { findFirst: state.pendingApproval },
+			approvalWorkflow: { findFirst: state.outerApprovalWorkflowFindFirst },
+			member: { findFirst: state.memberFindFirst },
 			userSettings: { findFirst: vi.fn() },
 		},
 		transaction: state.directTransaction,
@@ -2142,5 +2154,190 @@ describe("time correction submission actions", () => {
 		expect(state.directSelectForUpdate).not.toHaveBeenCalled();
 		expect(state.directUpdateCalls).toEqual([]);
 		expect(state.createCorrectionEntry).not.toHaveBeenCalled();
+	});
+});
+
+describe("on-behalf time corrections (#507)", () => {
+	const manager = {
+		id: ids.manager,
+		userId: "user-manager",
+		organizationId: "org-1",
+		teamId: null,
+		isActive: true,
+	};
+	const managerMember = {
+		...approvedMember,
+		id: "member-manager",
+		userId: "user-manager",
+		role: "member",
+	};
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		state.events.length = 0;
+	});
+
+	function configureOnBehalf(input: {
+		role: "member" | "admin";
+		authority: "legacy" | "canonical";
+		submittedToEmployeeId: string | null;
+		lockedPeriodRows: unknown[];
+	}) {
+		configure({
+			kind: "default_created",
+			authority: input.authority,
+			submittedToEmployeeId: input.submittedToEmployeeId,
+		});
+		state.getSession.mockResolvedValue({
+			user: { id: "user-manager" },
+			session: { activeOrganizationId: "org-1" },
+		});
+		state.getTimezone.mockImplementation(async (userId: string) =>
+			userId === "user-1" ? "Europe/Berlin" : "UTC",
+		);
+		state.employeeFindFirst
+			.mockReset()
+			.mockResolvedValueOnce(manager)
+			.mockResolvedValueOnce({ userId: "user-1" })
+			.mockResolvedValue({ ...manager, user: { id: "user-manager", name: "John Doe" } });
+		state.memberFindFirst.mockResolvedValue({ role: input.role });
+		state.eligibleManagerIds.mockResolvedValue(
+			input.role === "member" ? [ids.manager] : [],
+		);
+		state.txEmployeeFindFirst.mockResolvedValue({ id: ids.manager });
+		state.outerApprovalWorkflowFindFirst.mockResolvedValue(undefined);
+		state.decide.mockReturnValue(Effect.void);
+		state.txSelectForUpdate
+			.mockReset()
+			.mockResolvedValueOnce([employee])
+			.mockResolvedValueOnce([{ ...managerMember, role: input.role }])
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([period])
+			.mockResolvedValueOnce(input.lockedPeriodRows);
+	}
+
+	it("submits a manager's edit as the employee's correction and applies it when the manager is the approver", async () => {
+		configureOnBehalf({
+			role: "member",
+			authority: "legacy",
+			submittedToEmployeeId: ids.manager,
+			lockedPeriodRows: [originals[0]],
+		});
+		state.pendingApproval
+			.mockResolvedValueOnce({ id: "approval-1", approverId: ids.manager })
+			.mockResolvedValue(undefined);
+
+		const result = await modular.requestTimeCorrectionEffect({
+			workPeriodId: ids.period,
+			submissionId,
+			newClockInDate: "2026-07-01",
+			newClockInTime: "09:30",
+			reason: "Forgot to clock in",
+			...defaultCorrectionMetadata,
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { approvalId: "approval-1", status: "approved" },
+		});
+		// Wall-clock input is the owner's; the change policy is the owner's self-service rule.
+		expect(state.getTimezone).toHaveBeenCalledWith("user-1");
+		expect(state.editCapability).not.toHaveBeenCalled();
+		expect(state.executeSubmission).toHaveBeenCalledWith(
+			expect.objectContaining({ requesterEmployeeId: ids.employee }),
+		);
+		expect(state.txInsertValues).toHaveBeenCalledWith(
+			expect.objectContaining({
+				employeeId: ids.employee,
+				createdBy: "user-manager",
+				timestamp: new Date("2026-07-01T07:30:00.000Z"),
+				timezoneSource: "manager_target_user_setting",
+			}),
+		);
+		expect(state.decide).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.objectContaining({ id: ids.manager }),
+			"approval-1",
+			"approve",
+		);
+		// The approving editor is not emailed about their own change.
+		expect(state.sendEmail).not.toHaveBeenCalled();
+	});
+
+	it("leaves an admin's deletion pending for the employee's configured approver", async () => {
+		configureOnBehalf({
+			role: "admin",
+			authority: "canonical",
+			submittedToEmployeeId: null,
+			lockedPeriodRows: originals,
+		});
+		state.pendingApproval.mockResolvedValue({
+			id: "approval-1",
+			approverId: "31000000-0000-4000-8000-000000000999",
+		});
+
+		const result = await modular.requestTimeEntryDeletion({
+			workPeriodId: ids.period,
+			submissionId,
+			reason: "Duplicate entry",
+		});
+
+		expect(result).toEqual({
+			success: true,
+			data: { approvalId: "approval-1", status: "pending" },
+		});
+		expect(state.executeSubmission).toHaveBeenCalledWith(
+			expect.objectContaining({ requesterEmployeeId: ids.employee }),
+		);
+		expect(state.eligibleManagerIds).not.toHaveBeenCalled();
+		expect(state.decide).not.toHaveBeenCalled();
+	});
+
+	it("refuses changes to entries of employees the actor does not manage", async () => {
+		configureOnBehalf({
+			role: "member",
+			authority: "canonical",
+			submittedToEmployeeId: null,
+			lockedPeriodRows: originals,
+		});
+		state.eligibleManagerIds.mockResolvedValue([]);
+
+		const result = await modular.requestTimeEntryDeletion({
+			workPeriodId: ids.period,
+			submissionId,
+			reason: "Duplicate entry",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "You can only change time entries of employees you manage",
+		});
+		expect(state.withTransaction).not.toHaveBeenCalled();
+		expect(state.executeSubmission).not.toHaveBeenCalled();
+	});
+
+	it("refuses the submission when manager authority is gone under the transaction guards", async () => {
+		configureOnBehalf({
+			role: "member",
+			authority: "canonical",
+			submittedToEmployeeId: null,
+			lockedPeriodRows: originals,
+		});
+		state.eligibleManagerIds
+			.mockResolvedValueOnce([ids.manager])
+			.mockResolvedValue([]);
+
+		const result = await modular.requestTimeEntryDeletion({
+			workPeriodId: ids.period,
+			submissionId,
+			reason: "Duplicate entry",
+		});
+
+		expect(result).toMatchObject({
+			success: false,
+			error: "You can no longer change this employee's time entries",
+		});
+		expect(state.txInsertValues).not.toHaveBeenCalled();
+		expect(state.executeSubmission).not.toHaveBeenCalled();
 	});
 });

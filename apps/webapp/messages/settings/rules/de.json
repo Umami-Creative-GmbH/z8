@@ -114,12 +114,6 @@
         "none": "Keine Messaging-Kanäle verbunden.",
         "title": "Zustellung je Kanal"
       },
-      "conflict": {
-        "differingTimeouts": "Kanäle hatten unterschiedliche Zeitlimits; das kürzeste wurde zum Antwortfenster.",
-        "disabledActiveSource": "Einige aktive Kanäle hatten Eskalationen deaktiviert. Sie stellen weiterhin keine Eskalationsnachrichten zu.",
-        "inactiveSourceEnabled": "Einige inaktive Kanäle hatten Eskalationen aktiviert. Sie wurden für die Richtlinie nicht berücksichtigt.",
-        "invalidTimeout": "Ein Kanal hatte ein ungültiges Zeitlimit und wurde für das Antwortfenster nicht verwendet."
-      },
       "description": "Prüfen Sie die Eskalationsrichtlinie der Organisation, wie sie aus den Kanaleinstellungen übernommen wurde, und Fälle, die eine Genehmigungsverwaltung erfordern.",
       "dispose": {
         "confirm": "Fall schließen",
@@ -127,12 +121,6 @@
         "noteLabel": "Begründung",
         "noteRequired": "Bitte eine Begründung eingeben.",
         "title": "Fall schließen"
-      },
-      "event": {
-        "alerted": "Admins benachrichtigt",
-        "disposed": "Geschlossen",
-        "raised": "Gemeldet",
-        "resolved": "Gelöst"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Eskalationseinstellungen konnten nicht geladen werden.",
@@ -178,14 +166,6 @@
         "windowInvalid": "Bitte eine ganze Stundenzahl zwischen 1 und 720 eingeben.",
         "windowLabel": "Antwortfenster"
       },
-      "reason": {
-        "ambiguousHistory": "Unklarer Eskalationsverlauf",
-        "deliveryExhausted": "Zustellversuche ausgeschöpft",
-        "deliveryUnavailable": "Kein Zustellziel verfügbar",
-        "noEligibleBackup": "Keine berechtigte Vertretung",
-        "replacementOverdue": "Vertretung ist überfällig",
-        "unsupportedRoute": "Nicht unterstützter Entscheidungsweg"
-      },
       "revisions": {
         "changedBy": "Geändert von",
         "migration": "Übernahme der Einstellungen",
@@ -218,6 +198,26 @@
         "recipientRequired": "Bitte eine Vertretung auswählen.",
         "recommended": "Nächste in der Reihenfolge",
         "title": "Genehmigungszuständigkeit übertragen"
+      },
+      "conflict": {
+        "differingTimeouts": "Kanäle hatten unterschiedliche Zeitlimits; das kürzeste wurde zum Antwortfenster.",
+        "disabledActiveSource": "Einige aktive Kanäle hatten Eskalationen deaktiviert. Sie stellen weiterhin keine Eskalationsnachrichten zu.",
+        "inactiveSourceEnabled": "Einige inaktive Kanäle hatten Eskalationen aktiviert. Sie wurden für die Richtlinie nicht berücksichtigt.",
+        "invalidTimeout": "Ein Kanal hatte ein ungültiges Zeitlimit und wurde für das Antwortfenster nicht verwendet."
+      },
+      "event": {
+        "alerted": "Admins benachrichtigt",
+        "disposed": "Geschlossen",
+        "raised": "Gemeldet",
+        "resolved": "Gelöst"
+      },
+      "reason": {
+        "ambiguousHistory": "Unklarer Eskalationsverlauf",
+        "deliveryExhausted": "Zustellversuche ausgeschöpft",
+        "deliveryUnavailable": "Kein Zustellziel verfügbar",
+        "noEligibleBackup": "Keine berechtigte Vertretung",
+        "replacementOverdue": "Vertretung ist überfällig",
+        "unsupportedRoute": "Nicht unterstützter Entscheidungsweg"
       }
     },
     "approvalPolicies": {
@@ -228,16 +228,13 @@
       "activeStatus": "Aktiv-Status",
       "addPolicy": "Richtlinie hinzufügen",
       "approvalType": {
-        "absenceRequests": "Abwesenheitsanträge",
         "absence": "Abwesenheit",
         "complianceException": "Compliance-Ausnahme",
         "manualTimeSubmission": "Manuelle Zeiterfassung",
         "policyClockOut": "Ausstempeln gemäß Richtlinie",
         "shiftRequest": "Schichtanfrage",
         "timeCorrection": "Zeitkorrektur",
-        "travelExpense": "Reisekosten",
-        "timeEntryChanges": "Änderungen der Zeiterfassung",
-        "travelExpenses": "Reisekosten"
+        "travelExpense": "Reisekosten"
       },
       "approvalTypes": "Genehmigungsarten",
       "conditionsCount": "Anzahl der Bedingungen",
@@ -275,6 +272,10 @@
         "created": "Genehmigungsrichtlinie erstellt",
         "saveFailed": "Genehmigungsrichtlinie konnte nicht gespeichert werden."
       },
+      "validation": {
+        "activePolicyRequiresStage": "Aktive Richtlinien erfordern mindestens eine Genehmigungsstufe.",
+        "specificEmployeeRequiresId": "Stufen für spezifische Mitarbeiter erfordern eine Mitarbeiter-ID des Genehmigers."
+      },
       "fallbackBehavior": {
         "defaultManager": {
           "description": "Senden Sie die Anfrage an den Standardvorgesetzten, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
@@ -289,10 +290,6 @@
           "description": "Senden Sie die Anfrage an einen Organisationsadministrator, wenn in dieser Stufe kein Genehmiger ermittelt werden kann.",
           "label": "Organisationsadministrator"
         }
-      },
-      "validation": {
-        "activePolicyRequiresStage": "Aktive Richtlinien erfordern mindestens eine Genehmigungsstufe.",
-        "specificEmployeeRequiresId": "Stufen für spezifische Mitarbeiter erfordern eine Mitarbeiter-ID des Genehmigers."
       }
     },
     "changePolicies": {

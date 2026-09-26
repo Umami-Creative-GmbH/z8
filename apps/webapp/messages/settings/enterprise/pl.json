@@ -564,8 +564,6 @@
           "customDomain": "Użytkownicy logujący się przez Twoją domenę niestandardową będą używać Twojej aplikacji OAuth"
         },
         "keyId": "Identyfikator klucza",
-        "lastTested": "Ostatnio testowano",
-        "notTested": "Nietestowane",
         "privateKey": "Klucz prywatny (.p8)",
         "removed": "Usunięto OAuth dla {provider}",
         "removeDialogDescription": "Czy na pewno chcesz usunąć tę konfigurację OAuth? Użytkownicy powrócą do współdzielonych danych uwierzytelniających OAuth (jeśli są dostępne).",
@@ -574,8 +572,7 @@
         "title": "Dostawcy logowania społecznościowego",
         "unverified": "Niezweryfikowane",
         "updateConfigError": "Nie udało się zaktualizować konfiguracji",
-        "updated": "Pomyślnie zaktualizowano OAuth dla {provider}",
-        "working": "Pracuję"
+        "updated": "Pomyślnie zaktualizowano OAuth dla {provider}"
       },
       "sso": {
         "addDescription": "Skonfiguruj dostawcę tożsamości OIDC dla logowania jednokrotnego (SSO) w przedsiębiorstwie.",

@@ -564,8 +564,6 @@
           "customDomain": "Gli utenti che accedono tramite il tuo dominio personalizzato utilizzeranno la tua app OAuth"
         },
         "keyId": "ID chiave",
-        "lastTested": "Ultimo test",
-        "notTested": "Non testato",
         "privateKey": "Chiave privata (.p8)",
         "removed": "OAuth di {provider} rimosso",
         "removeDialogDescription": "Sei sicuro di voler rimuovere questa configurazione OAuth? Gli utenti torneranno a utilizzare le credenziali OAuth condivise (se disponibili).",
@@ -574,8 +572,7 @@
         "title": "Provider di social login",
         "unverified": "Non verificata",
         "updateConfigError": "Impossibile aggiornare la configurazione",
-        "updated": "OAuth di {provider} aggiornato correttamente",
-        "working": "In lavorazione"
+        "updated": "OAuth di {provider} aggiornato correttamente"
       },
       "sso": {
         "addDescription": "Configura un provider di identità OIDC per il single sign-on aziendale.",

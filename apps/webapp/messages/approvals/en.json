@@ -18,7 +18,6 @@
     "clockIn": "Clock in",
     "clockOut": "Clock out",
     "confirmReject": "Confirm Rejection",
-    "correctedTimes": "Corrected Times",
     "date": "Date",
     "dates": "Dates",
     "days": "Days",
@@ -40,7 +39,6 @@
     "offFrom": "off from",
     "openDetailsFor": "Open details for {title}",
     "openInbox": "Open Inbox",
-    "originalTimes": "Original Times",
     "original": "Original",
     "pendingRequests": "Pending Requests",
     "pendingRequestsDescription": "Select requests to approve in bulk, or click a row for details",
@@ -61,10 +59,19 @@
     "requester": "Requester",
     "requestingCorrection": "is requesting a time correction for",
     "requestingOff": "is requesting",
+    "review": {
+      "showDetails": "Show details",
+      "switchOrganizationAction": "Switch to {organization}",
+      "switchOrganizationBody": "This approval belongs to {organization}. Switch to that organization to review it; your access is checked again after switching.",
+      "switchOrganizationTitle": "Switch organization to review",
+      "title": "Approval review",
+      "unavailableBody": "You cannot review this approval here. It may have been decided, reassigned, withdrawn or removed, or your access may have changed. A link alone never grants access. Your approval inbox shows everything currently waiting for you.",
+      "unavailableTitle": "This approval is not available"
+    },
     "searchLabel": "Search approvals",
     "searchPlaceholder": "Search by name or email…",
     "selectAll": "Select all",
-    "selectedCount": "${selectedCount} selected",
+    "selectedCount": "{selectedCount} selected",
     "selectRow": "Select row",
     "timeCorrectionApproved": "Time correction approved",
     "timeCorrectionRejected": "Time correction rejected",
@@ -72,7 +79,7 @@
     "timeCorrectionsDescription": "Review and approve time entry correction requests from your team members",
     "timelineActor": "{at} by {actorName}",
     "title": "Approvals",
-    "totalCount": "${totalCount} pending",
+    "totalCount": "{totalCount} pending",
     "type": "Type",
     "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
@@ -128,24 +135,15 @@
       "durationBefore": "Duration before",
       "entryDeleted": "Deleted",
       "resultingDuration": "Resulting duration"
-    },
-    "review": {
-      "title": "Approval review",
-      "showDetails": "Show details",
-      "switchOrganizationTitle": "Switch organization to review",
-      "switchOrganizationBody": "This approval belongs to {organization}. Switch to that organization to review it; your access is checked again after switching.",
-      "switchOrganizationAction": "Switch to {organization}",
-      "unavailableTitle": "This approval is not available",
-      "unavailableBody": "You cannot review this approval here. It may have been decided, reassigned, withdrawn or removed, or your access may have changed. A link alone never grants access. Your approval inbox shows everything currently waiting for you."
     }
   },
   "fastLanes": {
     "approve": "Approve",
-    "approveGroup": "Approve ${label}",
+    "approveGroup": "Approve {label}",
     "confirmReject": "Confirm reject",
-    "confirmRejectGroup": "Confirm reject ${label}",
+    "confirmRejectGroup": "Confirm reject {label}",
     "description": "Review similar low-friction requests in batches.",
-    "expandGroup": "Expand ${label}",
+    "expandGroup": "Expand {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absences with no detected conflicts.",
@@ -164,21 +162,21 @@
         "label": "Stale requests"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} not eligible for bulk approve",
-    "notEligibleReject": "${notRejectableCount} not eligible for bulk reject",
+    "notEligibleApprove": "{notApprovableCount} not eligible for bulk approve",
+    "notEligibleReject": "{notRejectableCount} not eligible for bulk reject",
     "reject": "Reject",
-    "rejectGroup": "Reject ${label}",
+    "rejectGroup": "Reject {label}",
     "rejectReason": "Bulk reject reason",
     "risk": {
       "high": "High risk",
       "low": "Low risk",
       "medium": "Medium risk"
     },
-    "showGroup": "Show ${label}",
+    "showGroup": "Show {label}",
     "title": "Fast lanes"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}d old",
+    "age": "{ageDays}d old",
     "approve": "Approve",
     "approveCurrentApproval": "Approve current approval",
     "capabilities": {
@@ -196,7 +194,7 @@
       "normal": "Normal priority",
       "urgent": "Urgent priority"
     },
-    "progress": "${currentIndex + 1} of ${visibleItems.length}",
+    "progress": "{current} of {total}",
     "reject": "Reject",
     "rejectCurrentApproval": "Reject current approval",
     "rejectReason": "Sprint reject reason",

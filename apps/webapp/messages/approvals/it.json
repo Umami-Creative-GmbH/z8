@@ -18,7 +18,6 @@
     "clockIn": "Entrata",
     "clockOut": "Uscita",
     "confirmReject": "Conferma rifiuto",
-    "correctedTimes": "Orari corretti",
     "date": "Data",
     "dates": "Date",
     "days": "Giorni",
@@ -40,7 +39,6 @@
     "offFrom": "assente dal",
     "openDetailsFor": "Apri i dettagli per {title}",
     "openInbox": "Apri posta in arrivo",
-    "originalTimes": "Orari originali",
     "original": "Originale",
     "pendingRequests": "Richieste in sospeso",
     "pendingRequestsDescription": "Seleziona le richieste da approvare in blocco, o clicca su una riga per i dettagli",
@@ -61,10 +59,19 @@
     "requester": "Richiedente",
     "requestingCorrection": "sta richiedendo una correzione oraria per",
     "requestingOff": "sta richiedendo",
+    "review": {
+      "showDetails": "Mostra dettagli",
+      "switchOrganizationAction": "Passa a {organization}",
+      "switchOrganizationBody": "Questa approvazione appartiene a {organization}. Passa a tale organizzazione per esaminarla; l'accesso verrà verificato nuovamente dopo il passaggio.",
+      "switchOrganizationTitle": "Cambia organizzazione per esaminare",
+      "title": "Revisione approvazione",
+      "unavailableBody": "Non puoi esaminare questa approvazione qui. Potrebbe essere stata decisa, riassegnata, ritirata o rimossa, oppure il tuo accesso potrebbe essere cambiato. Un link da solo non concede mai l'accesso. La posta in arrivo delle approvazioni mostra tutto ciò che è attualmente in attesa.",
+      "unavailableTitle": "Questa approvazione non è disponibile"
+    },
     "searchLabel": "Cerca approvazioni",
     "searchPlaceholder": "Cerca per nome o email...",
     "selectAll": "Seleziona tutto",
-    "selectedCount": "${selectedCount} selezionati",
+    "selectedCount": "{selectedCount} selezionati",
     "selectRow": "Seleziona riga",
     "timeCorrectionApproved": "Correzione orario approvata",
     "timeCorrectionRejected": "Correzione orario respinta",
@@ -72,7 +79,7 @@
     "timeCorrectionsDescription": "Esamina e approva le richieste di correzione delle registrazioni orarie dei membri del tuo team",
     "timelineActor": "{at} da {actorName}",
     "title": "Approvazioni",
-    "totalCount": "${totalCount} in sospeso",
+    "totalCount": "{totalCount} in sospeso",
     "type": "Tipo",
     "unifiedInboxBannerDescription": "Visualizza tutti i tipi di approvazione in un unico posto con filtri, azioni collettive e monitoraggio SLA.",
     "unifiedInboxBannerTitle": "Prova la nuova Posta in arrivo unificata",
@@ -82,11 +89,11 @@
   },
   "fastLanes": {
     "approve": "Approva",
-    "approveGroup": "Approva ${label}",
+    "approveGroup": "Approva {label}",
     "confirmReject": "Conferma rifiuto",
-    "confirmRejectGroup": "Conferma rifiuto ${label}",
+    "confirmRejectGroup": "Conferma rifiuto {label}",
     "description": "Revisiona in blocco richieste simili a basso attrito.",
-    "expandGroup": "Espandi ${label}",
+    "expandGroup": "Espandi {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Assenze senza conflitti rilevati.",
@@ -105,21 +112,21 @@
         "label": "Richieste datate"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} non idonei per l'approvazione massiva",
-    "notEligibleReject": "${notRejectableCount} non idonei per il rifiuto massivo",
+    "notEligibleApprove": "{notApprovableCount} non idonei per l'approvazione massiva",
+    "notEligibleReject": "{notRejectableCount} non idonei per il rifiuto massivo",
     "reject": "Rifiuta",
-    "rejectGroup": "Rifiuta ${label}",
+    "rejectGroup": "Rifiuta {label}",
     "rejectReason": "Motivazione rifiuto in blocco",
     "risk": {
       "high": "Alto rischio",
       "low": "Basso rischio",
       "medium": "Rischio medio"
     },
-    "showGroup": "Mostra ${label}",
+    "showGroup": "Mostra {label}",
     "title": "Corsie preferenziali"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}g fa",
+    "age": "{ageDays}g fa",
     "approve": "Approva",
     "approveCurrentApproval": "Approva approvazione corrente",
     "capabilities": {
@@ -137,7 +144,7 @@
       "normal": "Priorità normale",
       "urgent": "Priorità urgente"
     },
-    "progress": "${currentIndex + 1} di ${visibleItems.length}",
+    "progress": "{current} di {total}",
     "reject": "Rifiuta",
     "rejectCurrentApproval": "Rifiuta approvazione corrente",
     "rejectReason": "Motivazione rifiuto sprint",

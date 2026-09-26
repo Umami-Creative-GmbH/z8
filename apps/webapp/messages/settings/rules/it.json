@@ -77,6 +77,129 @@
       },
       "updateCategory": "Aggiorna categoria"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Amministratori avvisati il {date}",
+        "approvalType": "Approvazione",
+        "attempts": "Tentativi",
+        "channel": "Canale",
+        "currentApprover": "Assegnazione corrente",
+        "description": "Le condizioni di escalation non risolte rimangono qui fino a quando non vengono risolte o chiuse da un responsabile delle approvazioni. Gli avvisi agli amministratori non le chiudono.",
+        "details": "Prove, tentativi e cronologia",
+        "dispose": "Chiudi…",
+        "disposed": "Chiuso dal responsabile",
+        "empty": "Nessun elemento richiede attenzione.",
+        "evidence": "Prove",
+        "firstRaised": "Segnalato per la prima volta",
+        "history": "Cronologia",
+        "lastObserved": "Ultima rilevazione",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "Nessun tentativo correlato registrato.",
+        "openApproval": "Approvazioni aperte",
+        "policyRevision": "Revisione del criterio",
+        "recentlyClosed": "Chiusi di recente ({count})",
+        "recheck": "Verifica di nuovo",
+        "resolved": "Risolto",
+        "retryDelivery": "Riprova recapito",
+        "title": "Richiede attenzione",
+        "transfer": "Trasferisci…",
+        "unknownApprover": "Non registrato"
+      },
+      "channels": {
+        "delivers": "Recapita escalation",
+        "description": "L'interruttore di escalation di ciascun canale determina se recapitare i messaggi di escalation. I timeout del canale non sono scadenze una volta che l'escalation è gestita dai criteri dell'organizzazione.",
+        "differs": "Differisce dai criteri di {hours} h",
+        "inactive": "Inattivo",
+        "legacyTimeout": "Timeout del canale",
+        "none": "Nessun canale di messaggistica collegato.",
+        "title": "Preferenze di recapito del canale"
+      },
+      "description": "Verifica i criteri di escalation dell'organizzazione, come sono stati migrati dalle impostazioni del canale e le condizioni che richiedono un responsabile dell'approvazione.",
+      "dispose": {
+        "confirm": "Chiudi elemento",
+        "description": "La chiusura registra la decisione nel registro di controllo. Non riassegna l'approvazione né consente un'ulteriore escalation automatica.",
+        "noteLabel": "Nota sull'esito",
+        "noteRequired": "Inserisci una nota sull'esito.",
+        "title": "Chiudi elemento di attenzione"
+      },
+      "hoursValue": "{hours} h",
+      "loadFailed": "Impossibile caricare le impostazioni di escalation.",
+      "migration": {
+        "channel": "Canale",
+        "conflictsTitle": "Impostazioni in conflitto",
+        "disabledOutcome": "Disattivato perché nessun canale attivo ha inoltrato approvazioni in escalation.",
+        "enabledOutcome": "Attivato perché almeno un canale attivo ha inoltrato approvazioni in escalation. Il timeout attivo più breve è diventato la finestra di risposta.",
+        "escalations": "Escalation",
+        "markReviewed": "Contrassegna come revisionato",
+        "migratedAt": "Migrato il {date}.",
+        "noSources": "Nessun canale di messaggistica era connesso al momento della migrazione del criterio.",
+        "reviewed": "Revisionato",
+        "reviewedBy": "Revisionato da {name} il {date}",
+        "status": "Stato",
+        "timeout": "Timeout",
+        "title": "Migrazione delle impostazioni",
+        "used": "Utilizzato",
+        "usedNo": "Non utilizzato",
+        "usedYes": "Utilizzato"
+      },
+      "navDescription": "Criterio di escalation dell'organizzazione e approvazioni che richiedono attenzione",
+      "off": "Disattivato",
+      "on": "Attivato",
+      "ownership": {
+        "legacyDescription": "Questo criterio dell'organizzazione è pronto per il passaggio all'escalation condivisa. Fino ad allora, ogni canale connesso continuerà a utilizzare le proprie impostazioni di escalation.",
+        "legacyTitle": "L'automazione del canale gestisce ancora l'escalation",
+        "pausedDescription": "Non viene eseguito alcun nuovo trasferimento automatico. Le assegnazioni esistenti e il ripristino del recapito rimangono invariati.",
+        "pausedTitle": "L'escalation automatica è in pausa"
+      },
+      "policy": {
+        "description": "Una singola finestra di risposta si applica a ogni tipo di approvazione e canale. I canali recapitano solo i messaggi.",
+        "disabled": "Disabilitato",
+        "enabled": "Abilitato",
+        "enabledDescription": "Sostituisci un approvatore in ritardo con un manager di backup idoneo del richiedente.",
+        "enabledLabel": "Esegui l'escalation delle approvazioni scadute",
+        "hours": "ore",
+        "reasonLabel": "Motivo della modifica (facoltativo)",
+        "revision": "Revisione {revision}",
+        "save": "Salva criterio",
+        "title": "Criterio dell'organizzazione",
+        "windowDescription": "Misurato in ore trascorse dal momento in cui l'assegnazione corrente è diventata attuabile. La modifica sposta le scadenze in sospeso senza riavviare i relativi timer.",
+        "windowInvalid": "Inserisci un numero intero di ore compreso tra 1 e 720.",
+        "windowLabel": "Finestra di risposta"
+      },
+      "revisions": {
+        "changedBy": "Modificato da",
+        "migration": "Migrazione delle impostazioni",
+        "policy": "Criterio",
+        "revision": "Revisione",
+        "title": "Cronologia del criterio",
+        "when": "Quando"
+      },
+      "title": "Escalation dell'approvazione",
+      "toast": {
+        "deliveryRetried": "Nuovo tentativo di recapito programmato",
+        "disposed": "Elemento di attenzione chiuso",
+        "rechecked": "Verificati {checked} elementi, {resolved} risolti",
+        "requestFailed": "La richiesta non è riuscita. Riprova.",
+        "reviewed": "Conflitti contrassegnati come revisionati",
+        "saved": "Criterio di escalation salvato",
+        "transferred": "Assegnazione dell'approvazione trasferita",
+        "unchanged": "Nessuna modifica da salvare"
+      },
+      "transfer": {
+        "confirm": "Trasferisci",
+        "currentApprover": "Attualmente assegnato a {name}.",
+        "description": "L'approvatore corrente perde questa assegnazione e il responsabile di backup selezionato può deciderla dalla propria cartella delle approvazioni. L'approvazione rimane in sospeso, le altre assegnazioni restano invariate e il trasferimento viene registrato nel registro di controllo.",
+        "loadFailed": "Impossibile caricare i responsabili idonei.",
+        "loading": "Caricamento responsabili idonei…",
+        "noCandidates": "Nessun responsabile di riserva idoneo disponibile. Solo i responsabili attivi del richiedente che hanno accesso alla casella delle approvazioni possono subentrare.",
+        "primary": "Responsabile principale",
+        "reasonLabel": "Motivo (facoltativo)",
+        "recipientLabel": "Trasferisci a",
+        "recipientRequired": "Scegli un responsabile di riserva.",
+        "recommended": "Successivo nell'ordine",
+        "title": "Trasferisci assegnazione approvazione"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Le richieste idonee possono corrispondere a questa policy.",
       "activeLabel": "Policy attiva",
@@ -85,16 +208,13 @@
       "activeStatus": "Stato attivo",
       "addPolicy": "Aggiungi policy",
       "approvalType": {
-        "absenceRequests": "Richieste di assenza",
         "absence": "Assenza",
         "complianceException": "Eccezione di conformità",
         "manualTimeSubmission": "Inserimento manuale delle ore",
         "policyClockOut": "Uscita con timbratura secondo la policy",
         "shiftRequest": "Richiesta di turno",
         "timeCorrection": "Correzione orario",
-        "travelExpense": "Spesa di viaggio",
-        "timeEntryChanges": "Modifiche alle registrazioni orarie",
-        "travelExpenses": "Spese di viaggio"
+        "travelExpense": "Spesa di viaggio"
       },
       "approvalTypes": "Tipi di approvazione",
       "conditionsCount": "Conteggio condizioni",
@@ -132,6 +252,10 @@
         "created": "Politica di approvazione creata",
         "saveFailed": "Impossibile salvare la politica di approvazione."
       },
+      "validation": {
+        "activePolicyRequiresStage": "Le politiche attive richiedono almeno una fase di approvazione.",
+        "specificEmployeeRequiresId": "Le fasi per dipendenti specifici richiedono un ID dipendente approvatore."
+      },
       "fallbackBehavior": {
         "defaultManager": {
           "description": "Invia la richiesta al responsabile predefinito quando questa fase non riesce a individuare un approvatore.",
@@ -146,10 +270,6 @@
           "description": "Invia la richiesta a un amministratore dell'organizzazione quando questa fase non riesce a individuare un approvatore.",
           "label": "Amministratore dell'organizzazione"
         }
-      },
-      "validation": {
-        "activePolicyRequiresStage": "Le politiche attive richiedono almeno una fase di approvazione.",
-        "specificEmployeeRequiresId": "Le fasi per dipendenti specifici richiedono un ID dipendente approvatore."
       }
     },
     "changePolicies": {

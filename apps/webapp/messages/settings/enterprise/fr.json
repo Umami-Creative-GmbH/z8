@@ -564,8 +564,6 @@
           "customDomain": "Les utilisateurs se connectant via votre domaine personnalisé utiliseront votre application OAuth"
         },
         "keyId": "ID de clé",
-        "lastTested": "Dernier test",
-        "notTested": "Non testé",
         "privateKey": "Clé privée (.p8)",
         "removed": "OAuth {provider} supprimé",
         "removeDialogDescription": "Êtes-vous sûr de vouloir supprimer cette configuration OAuth ? Les utilisateurs reviendront aux identifiants OAuth partagés (si disponibles).",
@@ -574,8 +572,7 @@
         "title": "Fournisseurs de connexion sociale",
         "unverified": "Non vérifiée",
         "updateConfigError": "Échec de la mise à jour de la configuration",
-        "updated": "OAuth {provider} mis à jour avec succès",
-        "working": "En cours"
+        "updated": "OAuth {provider} mis à jour avec succès"
       },
       "sso": {
         "addDescription": "Configurez un fournisseur d'identité OIDC pour l'authentification unique (SSO) en entreprise.",

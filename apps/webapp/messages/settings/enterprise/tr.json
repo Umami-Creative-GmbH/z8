@@ -564,8 +564,6 @@
           "customDomain": "Özel etki alanınız üzerinden oturum açan kullanıcılar OAuth uygulamanızı kullanacaktır"
         },
         "keyId": "Anahtar Kimliği",
-        "lastTested": "Son Test Edilme",
-        "notTested": "Test Edilmedi",
         "privateKey": "Özel Anahtar (.p8)",
         "removed": "{provider} OAuth kaldırıldı",
         "removeDialogDescription": "Bu OAuth yapılandırmasını kaldırmak istediğinizden emin misiniz? Kullanıcılar (varsa) paylaşılan OAuth kimlik bilgilerine geri dönecektir.",
@@ -574,8 +572,7 @@
         "title": "Sosyal Giriş Sağlayıcıları",
         "unverified": "Doğrulanmadı",
         "updateConfigError": "Yapılandırma güncellenemedi",
-        "updated": "{provider} OAuth başarıyla güncellendi",
-        "working": "Çalışıyor"
+        "updated": "{provider} OAuth başarıyla güncellendi"
       },
       "sso": {
         "addDescription": "Kurumsal çoklu oturum açma (SSO) için bir OIDC kimlik sağlayıcısı yapılandırın.",

@@ -273,6 +273,131 @@
     "payrollReadiness": {
       "description": "Kontrollera om en löneperiod är redo innan du exporterar tids-, frånvaro- och lönedata.",
       "title": "Löneberedskap"
+    },
+    "workDiagnostics": {
+      "description": "Hitta saknade eller motstridiga tidsposter och problem med tidsregistreringskedjan",
+      "pageDescription": "Diagnostik på postnivå för historiskt arbete: saknade eller motstridiga representationer, ursprung för införande, misstänkta fel vid manuell registrering och säkerställande av tidsregistreringskedjan.",
+      "proposals": {
+        "addChange": "Lägg till ändring",
+        "after": "Nytt värde",
+        "anchor": "Ankarpost",
+        "anchorReason": "Varför detta ankare är lämpligt",
+        "anchorSummary": "Ankare {entry} ({hash})",
+        "appendNotAdopted": "Fortsättningar gäller först när denna organisation använder evidensbaserat godkännande av tillägg.",
+        "apply": "Tillämpa",
+        "approve": "Godkänn detta förslag",
+        "approvedBy": "godkänd av {name}",
+        "authorized": "Tillämpning auktoriserad",
+        "before": "Före",
+        "candidates": "Konkurrerande huvuden",
+        "changes": "Ändringar",
+        "confirmReject": "Avvisa förslag",
+        "consequences": "Konsekvenser",
+        "continuationDescription": "Framtida poster fortsätter från den valda befintliga posten. Inget länkas om eller tas bort, och historiken före ankaret behåller sina problem.",
+        "continuationTitle": "Föreslå en tilläggsfortsättning",
+        "description": "Konflikter som inte kan åtgärdas enbart genom underlag, och historik som inte kan godkännas automatiskt, kräver ett uttryckligt förslag. En administratör godkänner det exakta förslaget; vid tillämpning kontrolleras underlagen på nytt och processen avbryts om något har ändrats. En fortsättning garanterar endast kontinuitet efter sitt ankare; tidigare historik förblir overifierad.",
+        "employee": "Anställd",
+        "empty": "Inga förslag ännu.",
+        "emptyValue": "(tomt)",
+        "evidence": "Underlag",
+        "evidenceNote": "Underlag för de nya värdena",
+        "evidenceRequired": "Beskriv underlaget som styrker de nya värdena.",
+        "failed": "Begäran kunde inte slutföras.",
+        "field": {
+          "durationMinutes": "Lagrade minuter",
+          "endAt": "Slut (UTC-tidpunkt)",
+          "projectId": "Projekt-ID",
+          "startAt": "Start (UTC-tidpunkt)",
+          "workCategoryId": "Arbetskategori-ID",
+          "workLocationType": "Arbetsplats"
+        },
+        "fieldName": "Fält",
+        "findings": "Aktuella iakttagelser",
+        "inactive": "Applikationen är inte auktoriserad",
+        "inspect": "Underlag, osäkerhet och konsekvenser",
+        "issues": "Olöst historik",
+        "kind": {
+          "continuation": "Bifoga fortsättning",
+          "fieldRepair": "Fältreparation"
+        },
+        "limitations": "Godkända begränsningar",
+        "listTitle": "Förslag",
+        "minutesInvalid": "Ange hela minuter (0 eller fler).",
+        "noRepairTargets": "Inget arbete inom detta omfång har observationer som en uttrycklig reparation skulle kunna åtgärda.",
+        "notAuthorized": "Tillämpning av förslag har inte godkänts för den här organisationen.",
+        "propose": "Skapa förslag",
+        "proposeContinuation": "Skapa fortsättningsförslag",
+        "proposedBy": "Föreslaget av {name}",
+        "reason": "Orsak",
+        "reasonRequired": "Ange orsaken.",
+        "refused": "Det här förslaget kan inte lämnas baserat på aktuellt underlag: {reasons}",
+        "reject": "Avvisa",
+        "rejectNote": "Varför avvisas det?",
+        "remaining": "Kvarvarande observationer efter",
+        "removeChange": "Ta bort ändring",
+        "repairTitle": "Föreslå en fältreparation",
+        "representation": "Representation",
+        "resolvedBy": "löstes av {name}",
+        "staleResult": "Underlaget har ändrats sedan det här förslaget skapades. Inget annat skrevs; skapa ett nytt förslag utifrån aktuellt underlag.",
+        "status": {
+          "applied": "Tillämpat",
+          "approved": "Godkänt",
+          "proposed": "Väntar på godkännande",
+          "rejected": "Avvisat",
+          "stale": "Inaktuell"
+        },
+        "target": {
+          "timeRecord": "Tidsregistrering",
+          "workPeriod": "Arbetsperiod"
+        },
+        "title": "Förslag på reparation och fortsättning",
+        "valueRequired": "Ange det nya värdet.",
+        "work": "Arbetsperiod"
+      },
+      "repair": {
+        "actor": {
+          "completingEntry": "Upphovsperson för utstämplingen",
+          "unknown": "Okänd (historisk)"
+        },
+        "alreadyApplied": "Redan reparerad.",
+        "applied": "{count} arbetsperioder reparerade.",
+        "apply": "Reparera {count} arbetsperioder",
+        "authorized": "Auktoriserad",
+        "description": "Fyller endast i värden som andra underlag för samma arbete entydigt fastställer. Identitet, sparade minuter, metadata, raderingar och godkännandehistorik behålls. Konflikter och luckor utan underlag hålls kvar för granskning.",
+        "employee": "Anställd",
+        "empty": "Ingen historisk lucka inom detta omfång kan repareras utifrån underlag.",
+        "failed": "Reparationen kunde inte tillämpas.",
+        "fill": {
+          "canonicalCompletion": "Komplettera tidsregistrering",
+          "canonicalDetail": "Återställ arbetsdetalj",
+          "canonicalDuration": "Kopiera minuter till registrering",
+          "canonicalLink": "Länka tidsregistrering",
+          "canonicalMetadata": "Återställ metadata",
+          "canonicalRecord": "Skapa tidsregistrering",
+          "periodCompletion": "Komplettera arbetsperiod",
+          "periodDuration": "Kopiera minuter till period"
+        },
+        "fills": "Reparationer",
+        "heldTitle": "Kvarhållen för granskning",
+        "hold": {
+          "activeWork": "Arbetet är fortfarande aktivt",
+          "conflictingEvidence": "Annat underlag för detta arbete är motstridigt; behöver granskas",
+          "noRestorableEvidence": "Inget underlag fastställer det saknade värdet",
+          "originalActorUnrepresentable": "Ingen post anger vem som utförde arbetet",
+          "originalRuleUnknown": "Ingen representation anger minuterna; den ursprungliga avrundningen är okänd",
+          "referenceOutsideOrganization": "Ett refererat projekt eller en kategori tillhör inte denna organisation"
+        },
+        "inactive": "Inte behörig",
+        "inactiveDescription": "Reparationen kräver separat behörighet för denna organisation. Planen förblir läsbar.",
+        "notAuthorized": "Reparation har inte godkänts för denna organisation.",
+        "originalActor": "Ursprunglig aktör",
+        "reason": "Anledning",
+        "reasonRequired": "Ange anledningen till denna reparation.",
+        "stale": "Underlaget har ändrats sedan denna plan lästes in. Inget sparades; granska den uppdaterade planen.",
+        "title": "Reparation av historiska luckor",
+        "work": "Arbetsperiod"
+      },
+      "title": "Arbetsdiagnostik"
     }
   }
 }

@@ -77,6 +77,129 @@
       },
       "updateCategory": "Aktualizuj kategorię"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Powiadomiono administratorów: {date}",
+        "approvalType": "Zatwierdzenie",
+        "attempts": "Próby",
+        "channel": "Kanał",
+        "currentApprover": "Bieżące przypisanie",
+        "description": "Nierozwiązane warunki eskalacji pozostają tutaj, dopóki nie zostaną rozwiązane lub zamknięte przez menedżera ds. zatwierdzeń. Alerty dla administratorów ich nie zamykają.",
+        "details": "Dowody, próby i historia",
+        "dispose": "Zamknij…",
+        "disposed": "Zamknięte przez menedżera",
+        "empty": "Nic nie wymaga uwagi.",
+        "evidence": "Dowody",
+        "firstRaised": "Zgłoszono po raz pierwszy",
+        "history": "Historia",
+        "lastObserved": "Ostatnio zaobserwowano",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "Nie zarejestrowano żadnych powiązanych prób.",
+        "openApproval": "Otwarte zatwierdzenia",
+        "policyRevision": "Wersja zasad",
+        "recentlyClosed": "Ostatnio zamknięte ({count})",
+        "recheck": "Sprawdź ponownie",
+        "resolved": "Rozwiązano",
+        "retryDelivery": "Ponów doręczenie",
+        "title": "Wymaga uwagi",
+        "transfer": "Przekaż…",
+        "unknownApprover": "Nie zarejestrowano"
+      },
+      "channels": {
+        "delivers": "Doręcza eskalacje",
+        "description": "Przełącznik eskalacji każdego kanału decyduje o tym, czy doręcza on wiadomości o eskalacji. Limity czasu kanałów przestają być ostatecznymi terminami, gdy to zasady organizacji zarządzają eskalacją.",
+        "differs": "Różni się od zasady {hours} godz.",
+        "inactive": "Nieaktywne",
+        "legacyTimeout": "Limit czasu kanału",
+        "none": "Brak połączonych kanałów obsługi wiadomości.",
+        "title": "Preferencje doręczania w kanale"
+      },
+      "description": "Przejrzyj zasady eskalacji w organizacji, sposób ich migracji z ustawień kanału oraz warunki wymagające menedżera zatwierdzeń.",
+      "dispose": {
+        "confirm": "Zamknij element",
+        "description": "Zamknięcie zapisuje Twoją decyzję w dzienniku audytu. Nie powoduje ponownego przypisania zatwierdzenia ani nie pozwala na kolejną automatyczną eskalację.",
+        "noteLabel": "Notatka o rozstrzygnięciu",
+        "noteRequired": "Wprowadź notatkę o rozstrzygnięciu.",
+        "title": "Zamknij element wymagający uwagi"
+      },
+      "hoursValue": "{hours} godz.",
+      "loadFailed": "Nie udało się załadować ustawień eskalacji.",
+      "migration": {
+        "channel": "Kanał",
+        "conflictsTitle": "Konflikt ustawień",
+        "disabledOutcome": "Wyłączono, ponieważ żaden aktywny kanał nie eskalował zatwierdzeń.",
+        "enabledOutcome": "Włączono, ponieważ co najmniej jeden aktywny kanał eskalował zatwierdzenia. Najkrótszy aktywny limit czasu stał się oknem odpowiedzi.",
+        "escalations": "Eskalacje",
+        "markReviewed": "Oznacz jako przejrzane",
+        "migratedAt": "Zmigrowano {date}.",
+        "noSources": "Żadne kanały wiadomości nie były połączone podczas migracji zasad.",
+        "reviewed": "Przejrzane",
+        "reviewedBy": "Przejrzane przez {name} w dniu {date}",
+        "status": "Status",
+        "timeout": "Limit czasu",
+        "title": "Migracja ustawień",
+        "used": "Używane",
+        "usedNo": "Nieużywane",
+        "usedYes": "Używane"
+      },
+      "navDescription": "Zasady eskalacji organizacji i zatwierdzenia wymagające uwagi",
+      "off": "Wył.",
+      "on": "Wł.",
+      "ownership": {
+        "legacyDescription": "Te zasady organizacji są przygotowane do przejścia na eskalację współdzieloną. Do tego czasu każdy połączony kanał nadal korzysta z własnych ustawień eskalacji.",
+        "legacyTitle": "Automatyzacja kanału nadal odpowiada za eskalację",
+        "pausedDescription": "Nie są wykonywane żadne nowe automatyczne przekazania. Istniejące przypisania i odzyskiwanie dostarczania pozostają bez zmian.",
+        "pausedTitle": "Automatyczna eskalacja jest wstrzymana"
+      },
+      "policy": {
+        "description": "Jedno okno odpowiedzi ma zastosowanie do każdego rodzaju zatwierdzenia i kanału. Kanały służą wyłącznie do dostarczania wiadomości.",
+        "disabled": "Wyłączone",
+        "enabled": "Włączone",
+        "enabledDescription": "Zastąp osobę zatwierdzającą po przekroczeniu terminu uprawnionym menedżerem zastępczym wnioskodawcy.",
+        "enabledLabel": "Eskaluj przeterminowane zatwierdzenia",
+        "hours": "godziny",
+        "reasonLabel": "Powód zmiany (opcjonalnie)",
+        "revision": "Wersja {revision}",
+        "save": "Zapisz politykę",
+        "title": "Polityka organizacji",
+        "windowDescription": "Mierzone w godzinach, które upłynęły od momentu, gdy bieżące przypisanie stało się aktywne. Jej zmiana przesuwa oczekujące terminy bez ponownego uruchamiania ich liczników.",
+        "windowInvalid": "Wpisz liczbę całkowitą godzin z zakresu od 1 do 720.",
+        "windowLabel": "Okno odpowiedzi"
+      },
+      "revisions": {
+        "changedBy": "Zmieniono przez",
+        "migration": "Migracja ustawień",
+        "policy": "Polityka",
+        "revision": "Wersja",
+        "title": "Historia polityki",
+        "when": "Kiedy"
+      },
+      "title": "Eskalacja zatwierdzenia",
+      "toast": {
+        "deliveryRetried": "Zaplanowano ponowną próbę doręczenia",
+        "disposed": "Zamknięto element wymagający uwagi",
+        "rechecked": "Sprawdzono elementów: {checked}, rozwiązano: {resolved}",
+        "requestFailed": "Żądanie nie powiodło się. Spróbuj ponownie.",
+        "reviewed": "Konflikty oznaczono jako przejrzane",
+        "saved": "Zapisano politykę eskalacji",
+        "transferred": "Przekazano przypisanie zatwierdzenia",
+        "unchanged": "Brak zmian do zapisania"
+      },
+      "transfer": {
+        "confirm": "Przekaż",
+        "currentApprover": "Obecnie przypisano do: {name}.",
+        "description": "Bieżący zatwierdzający traci to przypisanie, a wybrany menedżer zastępczy może podjąć decyzję ze swojej skrzynki zatwierdzeń. Zatwierdzenie pozostaje oczekujące, inne przypisania nie ulegają zmianie, a przekazanie jest rejestrowane w dzienniku audytu.",
+        "loadFailed": "Nie udało się załadować uprawnionych menedżerów.",
+        "loading": "Wczytywanie uprawnionych menedżerów…",
+        "noCandidates": "Brak dostępnego uprawnionego menedżera zastępczego. Zadanie mogą przejąć tylko aktywni menedżerowie wnioskodawcy z dostępem do skrzynki zatwierdzeń.",
+        "primary": "Główny menedżer",
+        "reasonLabel": "Powód (opcjonalnie)",
+        "recipientLabel": "Przekaż do",
+        "recipientRequired": "Wybierz menedżera zastępczego.",
+        "recommended": "Następny w kolejności",
+        "title": "Przekaż przypisanie zatwierdzenia"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Kwalifikujące się wnioski mogą pasować do tej polityki.",
       "activeLabel": "Aktywna polityka",
@@ -85,16 +208,13 @@
       "activeStatus": "Status aktywny",
       "addPolicy": "Dodaj politykę",
       "approvalType": {
-        "absenceRequests": "Wnioski o nieobecność",
         "absence": "Nieobecność",
         "complianceException": "Wyjątek zgodności",
         "manualTimeSubmission": "Ręczne przesłanie czasu",
         "policyClockOut": "Wyjście zgodne z zasadą",
         "shiftRequest": "Wniosek o zmianę",
         "timeCorrection": "Korekta czasu",
-        "travelExpense": "Wydatek na podróż",
-        "timeEntryChanges": "Zmiany w ewidencji czasu pracy",
-        "travelExpenses": "Wydatki podróżne"
+        "travelExpense": "Wydatek na podróż"
       },
       "approvalTypes": "Typy zatwierdzeń",
       "conditionsCount": "Liczba warunków",
@@ -132,6 +252,10 @@
         "created": "Zasada zatwierdzania została utworzona",
         "saveFailed": "Nie udało się zapisać zasady zatwierdzania."
       },
+      "validation": {
+        "activePolicyRequiresStage": "Aktywne zasady wymagają co najmniej jednego etapu zatwierdzania.",
+        "specificEmployeeRequiresId": "Etapy dla konkretnego pracownika wymagają podania identyfikatora pracownika zatwierdzającego."
+      },
       "fallbackBehavior": {
         "defaultManager": {
           "description": "Wyślij wniosek do domyślnego przełożonego, gdy ten etap nie może wskazać osoby zatwierdzającej.",
@@ -146,10 +270,6 @@
           "description": "Wyślij wniosek do administratora organizacji, gdy ten etap nie może wskazać osoby zatwierdzającej.",
           "label": "Administrator organizacji"
         }
-      },
-      "validation": {
-        "activePolicyRequiresStage": "Aktywne zasady wymagają co najmniej jednego etapu zatwierdzania.",
-        "specificEmployeeRequiresId": "Etapy dla konkretnego pracownika wymagają podania identyfikatora pracownika zatwierdzającego."
       }
     },
     "changePolicies": {

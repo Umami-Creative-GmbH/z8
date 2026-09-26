@@ -1,17 +1,16 @@
 {
   "bot": {
     "approval": {
-      "reviewRequiredTitle": "İnceleme gerekli",
-      "reviewRequired": "Bu kart, inceleme için başlangıçta gönderilen bilgileri doğrulayamıyor. Talebi incelemek için Z8’deki onay gelen kutusunu açın. Bu kart üzerinden hiçbir karar verilmedi.",
+      "outcomeUnknown": "Bu basışın sonucu doğrulanamadı. Tekrar basmadan önce talebi Z8'de kontrol edin.",
       "reviewInZ8": "Z8’de incele",
+      "reviewRequired": "Bu kart, inceleme için başlangıçta gönderilen bilgileri doğrulayamıyor. Talebi incelemek için Z8’deki onay gelen kutusunu açın. Bu kart üzerinden hiçbir karar verilmedi.",
+      "reviewRequiredTitle": "İnceleme gerekli",
       "historicalTitle": "Önceki karar",
       "historicalApproval": "Daha önce kaydedilen onayınız doğrulandı. Bu geçmiş bir sonuçtur; yeni bir karar verilmedi. Ayrıntılar için Z8’deki talebi inceleyin.",
       "historicalRejection": "Daha önce kaydedilen ret kararınız doğrulandı. Bu geçmiş bir sonuçtur; yeni bir karar verilmedi. Ayrıntılar için Z8’deki talebi inceleyin.",
       "unboundCallback": "Bu kart, başlangıçta incelenen bilgileri doğrulayamıyor. Hiçbir karar verilmedi. Talebi Z8’de inceleyin.",
-      "alreadyProcessed": "Bu onay zaten işleme alınmış.",
       "boundReviewRequired": "Bu kart artık mevcut talep veya atamayla eşleşmiyor ya da işlem doğrulanamadı. Karar verilmedi. Talebi Z8'de inceleyin.",
       "invocationConflict": "Bu tuşa basma zaten farklı bir işlemle kaydedildi. Karar verilmedi. Talebi Z8'de inceleyin.",
-      "outcomeUnknown": "Bu basışın sonucu doğrulanamadı. Tekrar basmadan önce talebi Z8'de kontrol edin.",
       "card": {
         "absenceTitle": "Onay bekleyen izin talebi",
         "boundHint": "Onayla veya Reddet yalnızca yukarıda gösterilen talep hakkında karar verir. Talep değiştiyse veya yeniden atandıysa hiçbir karar verilmez ve talebi Z8'de incelemeniz istenir.",
@@ -60,7 +59,6 @@
       }
     },
     "cmd": {
-      "billingRequired": "Zaman takibini kullanmaya devam etmek için faturalandırma gereklidir. Faturalandırmayı güncellemesi için bir kuruluş yöneticisinden talepte bulunun.",
       "clockedin": {
         "header": "Şu anda mesaide olan {total} ekip üyesinden {active} tanesi:",
         "noneActive": "{total} ekip üyenizden hiçbiri şu anda mesaide değil.",
@@ -118,7 +116,8 @@
         "header": "Bugün izinli olan {total} ekip üyesinden {outCount} tanesi:",
         "noneOut": "{total} ekip üyenizin tamamı bugün müsait.",
         "noTeam": "Size atanmış herhangi bir ekip üyesi bulunmuyor."
-      }
+      },
+      "billingRequired": "Zaman takibini kullanmaya devam etmek için faturalandırma gereklidir. Faturalandırmayı güncellemesi için bir kuruluş yöneticisinden talepte bulunun."
     },
     "language": {
       "changed": "Dil {language} olarak değiştirildi.",
@@ -144,6 +143,7 @@
       "notLinked": "Telegram hesabınız Z8'e bağlı değil. Bir bağlantı kodu oluşturmak için Z8 panonuzda Ayarlar > Entegrasyonlar > Telegram bölümüne gidin ve ardından şunu gönderin: /link KODUNUZ",
       "notLinkedTeams": "Z8 hesabınızı bulamadım. Teams e-postanızın Z8 hesap e-postanızla eşleştiğinden emin olun.",
       "noUser": "Kullanıcı hesabınız tanımlanamadı.",
+      "replyUndelivered": "Komutunuz işlendi ancak yanıtı gösterilemedi. Tekrarlamadan önce durumunuzu kontrol edin.",
       "setupBody": "Organizasyonunuzun Z8'e bağlanması gerekiyor. Kurulum sürecini başlatmak için aşağıya tıklayın.",
       "setupButton": "Kurulumu Tamamla",
       "setupNote": "Bu kurulumu yalnızca organizasyon yöneticileri tamamlayabilir.",
@@ -152,8 +152,7 @@
       "typeHelp": "Kullanılabilir komutları görmek için /help yazın.",
       "unconfigured": "Organizasyonunuzun Z8 entegrasyonu kuruluyor. Lütfen yöneticinizin yapılandırmayı tamamlamasını bekleyin.",
       "welcome": "Z8'e hoş geldiniz! Hesabınızı bağlamak için Z8 panonuzda Ayarlar > Entegrasyonlar > Telegram bölümüne gidin ve bir bağlantı kodu oluşturun. Ardından şunu gönderin: /link KODUNUZ",
-      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın.",
-      "replyUndelivered": "Komutunuz işlendi ancak yanıtı gösterilemedi. Tekrarlamadan önce durumunuzu kontrol edin."
+      "welcomeTeams": "Z8'e hoş geldiniz! Kullanılabilir komutları görmek için \"help\" yazın."
     }
   }
 }

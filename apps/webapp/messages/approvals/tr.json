@@ -18,7 +18,6 @@
     "clockIn": "Giriş yap",
     "clockOut": "Çıkış yap",
     "confirmReject": "Reddi Onayla",
-    "correctedTimes": "Düzeltilmiş Zamanlar",
     "date": "Tarih",
     "dates": "Tarihler",
     "days": "Günler",
@@ -40,7 +39,6 @@
     "offFrom": "başlangıç tarihi",
     "openDetailsFor": "{title} için detayları aç",
     "openInbox": "Gelen Kutusunu Aç",
-    "originalTimes": "Orijinal Zamanlar",
     "original": "Orijinal",
     "pendingRequests": "Bekleyen Talepler",
     "pendingRequestsDescription": "Toplu onaylamak için talepleri seçin veya detaylar için bir satıra tıklayın",
@@ -61,10 +59,19 @@
     "requester": "Talep eden",
     "requestingCorrection": "şunun için bir zaman düzeltmesi talep ediyor:",
     "requestingOff": "talep ediyor",
+    "review": {
+      "showDetails": "Ayrıntıları göster",
+      "switchOrganizationAction": "{organization} kuruluşuna geç",
+      "switchOrganizationBody": "Bu onay {organization} kuruluşuna ait. İncelemek için o kuruluşa geçiş yapın; geçiş yaptıktan sonra erişiminiz tekrar kontrol edilir.",
+      "switchOrganizationTitle": "İncelemek için kuruluşu değiştir",
+      "title": "Onay incelemesi",
+      "unavailableBody": "Bu onayı burada inceleyemezsiniz. Karara bağlanmış, yeniden atanmış, geri çekilmiş veya kaldırılmış olabilir ya da erişiminiz değişmiş olabilir. Yalnızca bir bağlantı hiçbir zaman erişim hakkı tanımaz. Onay gelen kutunuz şu anda sizi bekleyen her şeyi gösterir.",
+      "unavailableTitle": "Bu onay kullanılamıyor"
+    },
     "searchLabel": "Onayları ara",
     "searchPlaceholder": "İsim veya e-posta ile ara…",
     "selectAll": "Tümünü seç",
-    "selectedCount": "${selectedCount} seçildi",
+    "selectedCount": "{selectedCount} seçildi",
     "selectRow": "Satırı seç",
     "timeCorrectionApproved": "Zaman düzeltmesi onaylandı",
     "timeCorrectionRejected": "Zaman düzeltmesi reddedildi",
@@ -72,7 +79,7 @@
     "timeCorrectionsDescription": "Ekip üyelerinizden gelen zaman girişi düzeltme taleplerini inceleyin ve onaylayın",
     "timelineActor": "{at}, {actorName} tarafından",
     "title": "Onaylar",
-    "totalCount": "${totalCount} beklemede",
+    "totalCount": "{totalCount} beklemede",
     "type": "Tür",
     "unifiedInboxBannerDescription": "Tüm onay türlerini filtreleme, toplu işlemler ve SLA takibi ile tek bir yerden görüntüleyin.",
     "unifiedInboxBannerTitle": "Yeni Birleşik Gelen Kutusunu deneyin",
@@ -82,11 +89,11 @@
   },
   "fastLanes": {
     "approve": "Onayla",
-    "approveGroup": "${label} öğesini onayla",
+    "approveGroup": "{label} öğesini onayla",
     "confirmReject": "Reddetmeyi onayla",
-    "confirmRejectGroup": "${label} öğesini reddetmeyi onayla",
+    "confirmRejectGroup": "{label} öğesini reddetmeyi onayla",
     "description": "Benzer düşük sürtünmeli talepleri toplu olarak inceleyin.",
-    "expandGroup": "${label} öğesini genişlet",
+    "expandGroup": "{label} öğesini genişlet",
     "groups": {
       "lowRiskAbsence": {
         "description": "Çakışma tespit edilmeyen devamsızlıklar.",
@@ -105,21 +112,21 @@
         "label": "Eski talepler"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} toplu onay için uygun değil",
-    "notEligibleReject": "${notRejectableCount} toplu reddetme için uygun değil",
+    "notEligibleApprove": "{notApprovableCount} toplu onay için uygun değil",
+    "notEligibleReject": "{notRejectableCount} toplu reddetme için uygun değil",
     "reject": "Reddet",
-    "rejectGroup": "${label} öğesini reddet",
+    "rejectGroup": "{label} öğesini reddet",
     "rejectReason": "Toplu reddetme nedeni",
     "risk": {
       "high": "Yüksek risk",
       "low": "Düşük risk",
       "medium": "Orta risk"
     },
-    "showGroup": "${label} öğesini göster",
+    "showGroup": "{label} öğesini göster",
     "title": "Hızlı şeritler"
   },
   "sprint": {
-    "age": "${item.timing.ageDays} gün önce",
+    "age": "{ageDays} gün önce",
     "approve": "Onayla",
     "approveCurrentApproval": "Mevcut onayı onayla",
     "capabilities": {
@@ -137,7 +144,7 @@
       "normal": "Normal öncelik",
       "urgent": "Acil öncelik"
     },
-    "progress": "${visibleItems.length} üzerinden ${currentIndex + 1}",
+    "progress": "{total} üzerinden {current}",
     "reject": "Reddet",
     "rejectCurrentApproval": "Mevcut onayı reddet",
     "rejectReason": "Sprint reddetme nedeni",

@@ -12,12 +12,8 @@
     "clockIn": "Rozpocznij pracę",
     "clockingIn": "Rozpoczynanie pracy…",
     "clockingOut": "Kończenie pracy…",
-    "clockInQueued": "Rozpoczęcie pracy w kolejce do synchronizacji",
-    "clockInSavedForReview": "Rozpoczęcie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "clockInSuccess": "Pomyślnie rozpoczęto pracę",
     "clockOut": "Zakończ pracę",
-    "clockOutQueued": "Zakończenie pracy w kolejce do synchronizacji",
-    "clockOutSavedForReview": "Zakończenie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "clockOutSuccess": "Pomyślnie zakończono pracę",
     "compliance": {
       "violation": "Naruszenie przepisów",
@@ -26,18 +22,16 @@
     "correction": {
       "clockIn": "Rozpocznij pracę",
       "clockInDate": "Data rozpoczęcia pracy",
-      "clockInTime": "Godzina rozpoczęcia pracy",
       "clockOut": "Zakończ pracę",
       "clockOutDate": "Data zakończenia pracy",
-      "clockOutTime": "Godzina zakończenia pracy",
       "editDescription": "Wprowadź zmiany w dzisiejszym wpisie czasu.",
       "editEntry": "Edytuj wpis czasu",
       "editTitle": "Edytuj wpis czasu",
       "errors": {
         "invalidTimeRange": "Godzina zakończenia pracy musi być późniejsza niż godzina rozpoczęcia",
-        "noChanges": "Należy zmienić co najmniej jedną wartość korekty",
         "submitFailed": "Nie udało się przesłać korekty",
-        "updateFailed": "Nie udało się zaktualizować wpisu czasu"
+        "updateFailed": "Nie udało się zaktualizować wpisu czasu",
+        "noChanges": "Należy zmienić co najmniej jedną wartość korekty"
       },
       "noteLabel": "Notatka (opcjonalnie)",
       "notePlaceholder": "Dodaj notatkę o tej zmianie…",
@@ -55,20 +49,22 @@
         "submitted": "Prośba o korektę została przesłana do zatwierdzenia przez przełożonego",
         "updated": "Wpis czasu został pomyślnie zaktualizowany"
       },
-      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})"
+      "timezoneNote": "Czasy są podane w Twojej lokalnej strefie czasowej ({timezone})",
+      "clockInTime": "Godzina rozpoczęcia pracy",
+      "clockOutTime": "Godzina zakończenia pracy"
     },
     "currentlyClockedIn": "Aktualnie pracujesz",
     "deadline": "Termin",
     "errors": {
       "clockInFailed": "Nie udało się rozpocząć pracy",
-      "appendReviewRequired": "Rozpoczęcie pracy wymaga weryfikacji historii czasu",
-      "appendReviewRequiredDesc": "Nie udało się zweryfikować Twoich wcześniejszych wpisów czasu, więc nowe rozpoczęcie pracy nie zostało zapisane. Skontaktuj się z administratorem.",
       "clockOutFailed": "Nie udało się zakończyć pracy",
       "holidayBlocked": "Nie można zakończyć pracy w dniu {holidayName}",
       "holidayBlockedDesc": "Ten dzień jest oznaczony jako święto i wpisywanie czasu pracy jest niedozwolone",
       "notesSaveFailed": "Nie udało się zapisać notatek",
       "restPeriodBlocked": "Okres odpoczynku nie został zakończony",
-      "restPeriodBlockedDesc": "Musisz zakończyć wymagany okres odpoczynku przed rozpoczęciem pracy. W razie potrzeby poproś o wyjątek."
+      "restPeriodBlockedDesc": "Musisz zakończyć wymagany okres odpoczynku przed rozpoczęciem pracy. W razie potrzeby poproś o wyjątek.",
+      "appendReviewRequired": "Rozpoczęcie pracy wymaga weryfikacji historii czasu",
+      "appendReviewRequiredDesc": "Nie udało się zweryfikować Twoich wcześniejszych wpisów czasu, więc nowe rozpoczęcie pracy nie zostało zapisane. Skontaktuj się z administratorem."
     },
     "manualEntry": {
       "addButton": "Dodaj wpis ręczny",
@@ -89,19 +85,19 @@
       "dateLabel": "Data",
       "description": "Utwórz wpis czasu dla daty z przeszłości. W zależności od polityki zmian w Twojej organizacji może być wymagane zatwierdzenie.",
       "errors": {
-        "collision": "Ten wpis koliduje z wcześniejszym zgłoszeniem lub zmienioną pracą. Sprawdź istniejące wpisy.",
         "createFailed": "Nie udało się utworzyć wpisu czasu",
         "futureDate": "Nie można tworzyć wpisów dla przyszłych dat",
-        "futureTime": "Nie można tworzyć wpisów dla przyszłych godzin",
-        "historyReview": "Ta historia czasu wymaga sprawdzenia, zanim będzie można zapisać nowe wpisy. Skontaktuj się z administratorem.",
         "invalidTime": "Wprowadź pełną, prawidłową godzinę",
         "invalidTimeRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia",
+        "tooLong": "Okres pracy nie może przekraczać 24 godzin",
+        "collision": "Ten wpis koliduje z wcześniejszym zgłoszeniem lub zmienioną pracą. Sprawdź istniejące wpisy.",
+        "futureTime": "Nie można tworzyć wpisów dla przyszłych godzin",
+        "historyReview": "Ta historia czasu wymaga sprawdzenia, zanim będzie można zapisać nowe wpisy. Skontaktuj się z administratorem.",
         "nonexistentTime": "Ta godzina nie istnieje w tym dniu, ponieważ zegary są przestawiane do przodu.",
         "occurrenceRequired": "Ta godzina występuje w tym dniu dwukrotnie. Wybierz, o którą chodzi.",
         "overlap": "Ten czas nakłada się na zarejestrowaną pracę. Wybierz zakres bez nakładania się.",
         "reconfirm": "Strefa czasowa lub godziny uległy zmianie. Sprawdź wpis i wyślij go ponownie.",
-        "refresh": "Ustawienia wpisów ręcznych uległy zmianie. Sprawdź wpis i wyślij go ponownie.",
-        "tooLong": "Okres pracy nie może przekraczać 24 godzin"
+        "refresh": "Ustawienia wpisów ręcznych uległy zmianie. Sprawdź wpis i wyślij go ponownie."
       },
       "occurrence": {
         "earlier": "Pierwsza, {offset}",
@@ -112,14 +108,16 @@
       "reasonPlaceholder": "Opisz, nad czym pracowałeś…",
       "recovery": {
         "check": "Sprawdź stan",
-        "checkFailed": "Nie można teraz sprawdzić tego wpisu. Spróbuj później.",
-        "contextMismatch": "Jesteś zalogowany na inne konto lub w innej organizacji. Przełącz się z powrotem, aby obsłużyć ten wpis.",
         "description": "Te wpisy wysłano z tej karty bez potwierdzonego wyniku. Nic nie zostanie wysłane ponownie bez Twojego wyboru.",
         "discard": "Odrzuć",
         "editAsNew": "Edytuj jako nowy wpis",
+        "retry": "Ponów bez zmian",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Niepotwierdzone wpisy",
+        "checkFailed": "Nie można teraz sprawdzić tego wpisu. Spróbuj później.",
+        "contextMismatch": "Jesteś zalogowany na inne konto lub w innej organizacji. Przełącz się z powrotem, aby obsłużyć ten wpis.",
         "notCommitted": "Nie znaleziono zapisu.",
         "notCommittedToast": "Nie znaleziono zapisu tego wpisu. Ponów go bez zmian lub edytuj jako nowy wpis.",
-        "retry": "Ponów bez zmian",
         "saved": "Ten wpis został zapisany.",
         "savedForApproval": "Ten wpis został zapisany i przesłany do zatwierdzenia. Jego obecny stan: {status}.",
         "status": {
@@ -128,8 +126,6 @@
           "rejected": "odrzucony"
         },
         "stillUncertain": "Nadal niepotwierdzony. Wpis zostaje zachowany; spróbuj ponownie po powrocie do sieci.",
-        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Niepotwierdzone wpisy",
         "uncertain": "Niepotwierdzony. Może być już zapisany.",
         "uncertainToast": "Nie udało się potwierdzić, czy ten wpis został zapisany. Pozostaje w sekcji Niepotwierdzone wpisy, gdzie możesz ponowić go bez zmian lub sprawdzić jego stan.",
         "unsupported": "Nie można sprawdzić jego stanu. Może być już zapisany.",
@@ -201,6 +197,8 @@
     "unknownCategory": "Nieznana kategoria",
     "unknownProject": "Nieznany projekt",
     "workCategory": "Kategoria pracy",
+    "clockInSavedForReview": "Rozpoczęcie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
+    "clockOutSavedForReview": "Zakończenie pracy zapisane na tym urządzeniu do weryfikacji; niepotwierdzone na serwerze",
     "workLocation": "Miejsce pracy",
     "workLocationHome": "Dom",
     "workLocationOffice": "Biuro",

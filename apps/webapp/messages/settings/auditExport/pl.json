@@ -22,6 +22,7 @@
         "invalidDateRange": "Wybierz prawidłowy zakres dat",
         "jobCompleted": "Generowanie pakietu audytowego zakończone",
         "jobFailed": "Generowanie pakietu audytowego nie powiodło się",
+        "lineageContinued": "Ciągłość od zatwierdzonego punktu odniesienia dla {continued} z {total} pracowników; historia sprzed punktu odniesienia nie jest zweryfikowana. Zobacz append-assurance.json w pakiecie.",
         "lineageLimited": "Ograniczona gwarancja ciągłości dla {limited} z {total} pracowników. Zobacz append-assurance.json w pakiecie.",
         "lineageNotRecorded": "Gwarancja ciągłości nie została zapisana",
         "lineageVerified": "Ciągłość zweryfikowana na podstawie zapisanych dowodów dla {total} pracowników. Ograniczenia są wymienione w append-assurance.json.",

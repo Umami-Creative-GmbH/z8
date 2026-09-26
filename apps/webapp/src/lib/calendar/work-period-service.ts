@@ -21,9 +21,12 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import type { SurchargeBreakdown, WorkPeriodEvent } from "./types";
+import { resolveWorkPeriodEditedBy } from "./work-period-edited-by";
 
 const clockInEntry = alias(timeEntry, "clock_in_entry");
 const clockOutEntry = alias(timeEntry, "clock_out_entry");
+const clockInEditor = alias(user, "clock_in_editor");
+const clockOutEditor = alias(user, "clock_out_editor");
 
 interface WorkPeriodFilters {
 	organizationId: string;
@@ -111,6 +114,8 @@ export async function getWorkPeriodsForMonth(
 				user: user,
 				clockInEntry,
 				clockOutEntry,
+				clockInEditorName: clockInEditor.name,
+				clockOutEditorName: clockOutEditor.name,
 				surcharge: surchargeCalculation,
 				project: project,
 			})
@@ -119,6 +124,8 @@ export async function getWorkPeriodsForMonth(
 			.innerJoin(user, eq(employee.userId, user.id))
 			.leftJoin(clockInEntry, eq(workPeriod.clockInId, clockInEntry.id))
 			.leftJoin(clockOutEntry, eq(workPeriod.clockOutId, clockOutEntry.id))
+			.leftJoin(clockInEditor, eq(clockInEntry.createdBy, clockInEditor.id))
+			.leftJoin(clockOutEditor, eq(clockOutEntry.createdBy, clockOutEditor.id))
 			.leftJoin(
 				surchargeCalculation,
 				eq(surchargeCalculation.workPeriodId, workPeriod.id),
@@ -135,6 +142,8 @@ export async function getWorkPeriodsForMonth(
 				user,
 				clockInEntry,
 				clockOutEntry,
+				clockInEditorName,
+				clockOutEditorName,
 				surcharge,
 				project: proj,
 			}) => {
@@ -195,6 +204,23 @@ export async function getWorkPeriodsForMonth(
 					};
 				}
 
+				const editedBy = resolveWorkPeriodEditedBy({
+					ownerUserId: user.id,
+					endpoints: [
+						clockInEntry && {
+							type: clockInEntry.type,
+							createdBy: clockInEntry.createdBy,
+							createdAt: clockInEntry.createdAt,
+							editorName: clockInEditorName ?? null,
+						},
+						clockOutEntry && {
+							type: clockOutEntry.type,
+							createdBy: clockOutEntry.createdBy,
+							createdAt: clockOutEntry.createdAt,
+							editorName: clockOutEditorName ?? null,
+						},
+					],
+				});
 				const durationMinutes = period.durationMinutes ?? 0;
 				const surchargeMinutes = surcharge?.surchargeMinutes ?? 0;
 				const totalCreditedMinutes = durationMinutes + surchargeMinutes;
@@ -267,6 +293,11 @@ export async function getWorkPeriodsForMonth(
 						...(clockOutEntry && {
 							clockOutUtcOffsetMinutes: clockOutEntry.utcOffsetMinutes,
 							clockOutTimezone: clockOutEntry.timezone || undefined,
+						}),
+						// Last edit by someone other than the employee (#507)
+						...(editedBy && {
+							editedByName: editedBy.editedByName,
+							editedAt: editedBy.editedAt,
 						}),
 					},
 				};

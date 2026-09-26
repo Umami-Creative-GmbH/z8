@@ -165,7 +165,6 @@
     "moveDown": "Abewärts verschiebe",
     "moveUp": "Ufewärts verschiebe",
     "name": "Name",
-    "never": "Nie",
     "new": "Neu",
     "next": "Wiiter",
     "notApplicable": "n. v.",
@@ -258,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktiere",
       "createOrg": "Organisation erstelle",
-      "description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
+      "description": "Du bruchsch es Mitarbeiterprofil für {feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
       "emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
       "emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
       "helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
@@ -290,13 +289,13 @@
     "trust-center": "Trust Center"
   },
   "loading": {
+    "chart": "Diagramm wird glade",
+    "settings": "Istellige wärde glade",
     "application": "Awändig wird glade",
     "authentication": "Amäldig wird glade",
     "calendar": "Kaländer wird glade",
-    "chart": "Diagramm wird glade",
     "licenses": "Lizänze wärde glade",
     "platformAnalytics": "Plattform-Analyse wird glade",
-    "settings": "Istellige wärde glade",
     "setup": "Iirichtig wird glade",
     "teamAbsences": "Team-Abweseheite wärde glade",
     "workerQueue": "Uuftragswarteschlange wird glade"
@@ -335,14 +334,6 @@
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
-        "title": "Abwäseheitsaafrag ygreicht"
-      },
-      "teamMemberRemoved": {
-        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
-        "title": "Us em Team entfernt"
-      },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
         "title": "Passwort gänderet"
@@ -354,6 +345,14 @@
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
         "title": "Zum Team hinzugefügt"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+        "title": "Abwäseheitsaafrag ygreicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+        "title": "Us em Team entfernt"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",
@@ -434,25 +433,38 @@
     "banner": {
       "archived": "Archivierti Stämpfel-Bileeg uf däm Gräat bhalte",
       "offline": "Sie sind offline",
-      "offlineWithPending": "Offline - {count} Ereignis(se) usstahnd",
-      "pending": "{count} Ereignis(se) warte uf d'Synchronisierig",
-      "retry": "Widerhole",
-      "syncing": "Synchronisiere {count} Ereignis(se)...",
       "offlineSaved": "Offline — {count} Iiträg lokal für d Überprüefig gspeicheret",
+      "offlineWaiting": "Offline – {count} Stämpelaktione werded gsendet, wänn wider online bisch",
       "refresh": "Status aktualisiere",
       "refreshing": "{count} gspeichereti Iiträg werded überprüft…",
       "reviewRequired": "{count} Iiträg lokal gspeicheret — Überprüefig nötig",
-      "unverified": "Stämpfel-Bileeg uf däm Gräat gspeicheret. Verbinde, zum alli gspeicherete Iiträg z überprüefe."
+      "unverified": "Stämpfel-Bileeg uf däm Gräat gspeicheret. Verbinde, zum alli gspeicherete Iiträg z überprüefe.",
+      "waiting": "{count} Stämpelaktione uf däm Gräät gspycheret, nonig gsendet"
     },
     "capture": {
       "description": "Ereignis uf däm Gräat zur Überprüefig speichere. De Stämpfel-Status uf em Server änderet sich nöd.",
       "end": "Usstämpfle zur Überprüefig speichere",
+      "queueDescription": "Du bisch offline. Stämpelaktione werded uf däm Gräät gspycheret und automatisch gsendet, wänn wider online bisch.",
+      "queueEnd": "Usstämple spychere",
+      "queueStart": "Iistämple spychere",
       "start": "Iistämpfle zur Überprüefig speichere"
     },
     "recovery": {
       "archive": "Archiviere und Bileeg bhalte",
       "archived": "Archiviert — Bileeg bhalte",
-      "description": "Die Iiträg sind uf däm Gräat gspeicheret. Ob s uf em Server übernoo worde isch, isch nöd bekannt. Überprüef bestehendi Ziitiiträg mit dinere vorgsetzte Person, bevor du Ersatzarbete iireichsch. Bim Archiviere bliibt de Bileeg erhalte und d Arbet uf em Server wird nöd abbroche.",
+      "command": {
+        "blockedPredecessor": "Pausiert – en früeneri Stämpelaktion uf däm Gräät mues überprüeft werde",
+        "committed": "Uf em Server gspycheret",
+        "exhausted": "Sende nach mehrmaligem Fäälschlah gstoppt – nöd uf em Server bestätigt",
+        "pausedAccess": "Pausiert – mäld di nomal aa mit Zuegriff zum Stämple i dere Organisation",
+        "pausedContext": "Pausiert – mäld di bim Konto und de Organisation aa, wo's defür gspycheret worde isch",
+        "pausedServer": "Pausiert – de Server akzeptiert die Stämpelaktion no nöd",
+        "pending": "Wartet ufs Sende – nöd uf em Server bestätigt",
+        "rejected": "Nöd gspycheret – de Server het's abglehnt ({code})",
+        "review": "Mues überprüeft werde – de Server het's nöd akzeptiert ({code})",
+        "waitingPredecessor": "Wartet uf en früeneri Stämpelaktion uf däm Gräät"
+      },
+      "descriptionOutcomes": "Die Iiträg sind uf däm Gräät gspycheret. Usser wenn bimene Iitrag staht, dass er uf em Server gspycheret worde isch, isch s Ergäbnis uf em Server nöd bestätigt. Überprüef bestehendi Zytiiträg mit dinere Füehrigschraft, bevor d Ersatzarbet iireichsch. S Archiviere bhaltet de Nachwys und storniert d Arbet uf em Server nöd.",
       "empty": "Kei zuagängliche Iiträg. Älteri Iiträg ohni Konto-Bileeg bruuched e Überprüefig uf Organisations-Ebeni; Iiträg ohni Organisations-Bileeg bruuched e separat autorisierti Wiederherstellig.",
       "evidence": "Original-Bileeg und Wiederherstelligs-Status",
       "export": "Zuagänglichi Bileeg exportiere",
@@ -555,17 +567,16 @@
   "validation": {
     "first-name-required": "Vorname isch erforderlich",
     "invalid-email": "Ungültigi E-Mail-Adress",
-    "invalid-password": "Ungültigs Passwort",
     "last-name-required": "Nachname isch erforderlich",
     "password-required": "Passwort isch erforderlich"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Betriebsratsportal wird glade"
   },
   "workBalance": {
     "label": "Gsamtbilanz",
     "notCalculated": "No nöd berächnet",
     "pendingDescription": "De Arbeiter wird die Bilanz bald berächne.",
     "updatedEveryThreeHours": "Wird alli 3 Stunde aktualisiert"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird glade"
   }
 }

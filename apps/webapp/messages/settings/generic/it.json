@@ -92,7 +92,7 @@
         "description": "Seleziona le categorie di dati che desideri esportare",
         "selectAll": "Seleziona tutto",
         "selectAtLeastOne": "Seleziona almeno una categoria",
-        "startExport": "Avvia esportazione (${selectedCategories.size})",
+        "startExport": "Avvia esportazione ({count})",
         "startingExport": "Avvio esportazione in corso...",
         "submitError": "Impossibile avviare l'esportazione",
         "submitSuccess": "Esportazione avviata correttamente",
@@ -115,7 +115,7 @@
         "downloadSuccess": "Download avviato",
         "emptyDescription": "Nessun export ancora presente",
         "emptyHint": "Crea il tuo primo export usando il modulo qui sopra",
-        "moreCategories": "+${exp.categories.length - 3} altri",
+        "moreCategories": "+{count} altri",
         "statusCompleted": "Completato",
         "statusFailed": "Fallito",
         "statusPending": "In attesa",
@@ -140,7 +140,7 @@
         "endpointDescription": "Per servizi compatibili con S3 come MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Lascia vuoto per mantenere le credenziali esistenti",
-        "lastVerified": "Ultima verifica: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Ultima verifica: {date}",
         "region": "Regione",
         "regionDescription": "Regione AWS in cui si trova il tuo bucket",
         "regionPlaceholder": "us-east-1",
@@ -293,16 +293,6 @@
         "commitQueued": "Accodate {count} righe accettate per il commit",
         "committing": "Esecuzione commit...",
         "description": "Revisiona le righe di importazione in sospeso, risolvi i problemi bloccanti ed esegui il commit dei record accettati quando il batch è pronto.",
-        "hold": {
-          "appendReviewRequired": "Lo storico dei tempi del dipendente deve essere verificato prima di poter aggiungere nuove voci.",
-          "invalidInterval": "Gli orari del fornitore non hanno uno scostamento esplicito, non sono in ordine o sono nel futuro.",
-          "label": "Trattenuta per revisione",
-          "occupancyConflict": "Il tempo si sovrappone a lavoro già registrato per questo dipendente.",
-          "operationCollision": "Questa riga è in conflitto con la sua importazione confermata in precedenza.",
-          "providerDurationMismatch": "La durata del fornitore differisce dagli orari di inizio e fine.",
-          "sourceCollision": "Questo record del fornitore è già stato importato.",
-          "unlocatedBreak": "Il fornitore segnala pause senza i relativi orari, quindi l'intervallo lavorato è sconosciuto."
-        },
         "issueGroups": {
           "currentMarkers": "Le righe correnti includono {blockingRows} indicatori di problemi bloccanti e {warningRows} di avviso.",
           "description": "Le aree di revisione raggruppate aiutano a mantenere visibili i controlli di qualità prima che le righe accettate vengano sottoposte a commit.",
@@ -316,7 +306,17 @@
           "status": "Stato",
           "title": "Righe"
         },
-        "title": "Revisione importazione"
+        "title": "Revisione importazione",
+        "hold": {
+          "appendReviewRequired": "Lo storico dei tempi del dipendente deve essere verificato prima di poter aggiungere nuove voci.",
+          "invalidInterval": "Gli orari del fornitore non hanno uno scostamento esplicito, non sono in ordine o sono nel futuro.",
+          "label": "Trattenuta per revisione",
+          "occupancyConflict": "Il tempo si sovrappone a lavoro già registrato per questo dipendente.",
+          "operationCollision": "Questa riga è in conflitto con la sua importazione confermata in precedenza.",
+          "providerDurationMismatch": "La durata del fornitore differisce dagli orari di inizio e fine.",
+          "sourceCollision": "Questo record del fornitore è già stato importato.",
+          "unlocatedBreak": "Il fornitore segnala pause senza i relativi orari, quindi l'intervallo lavorato è sconosciuto."
+        }
       },
       "title": "Importa dati"
     },
@@ -635,8 +635,8 @@
         "employeePicker": "Dipendente da assegnare",
         "employees": "Dipendenti",
         "manage": "Gestisci i membri di {name}",
-        "managerAddFailed": "Impossibile aggiungere il responsabile di progetto",
         "managerAdded": "Responsabile di progetto aggiunto",
+        "managerAddFailed": "Impossibile aggiungere il responsabile di progetto",
         "managerPicker": "Responsabile di progetto da aggiungere",
         "managers": "Responsabili di progetto",
         "managersReadOnly": "Solo gli amministratori dell'organizzazione possono modificare i responsabili di progetto.",
@@ -893,7 +893,6 @@
         "failed": "Non riuscito",
         "failedDescription": "Non riuscito di recente",
         "paused": "In pausa",
-        "pausedDescription": "Lavori in pausa",
         "queueState": "Coda",
         "queueStateDescription": "Indica se i worker possono prendere in carico le attività in attesa",
         "running": "In esecuzione",

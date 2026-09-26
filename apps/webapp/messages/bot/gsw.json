@@ -1,17 +1,16 @@
 {
   "bot": {
     "approval": {
-      "reviewRequiredTitle": "Prüefig nötig",
-      "reviewRequired": "Die Charte cha d’ursprünglich zur Prüefig iigreichte Agabe nöd belege. Öffne de Genehmigungs-Iigang in Z8, zum de Aatrag prüefe. Über die Charte isch kei Entscheid troffe worde.",
+      "outcomeUnknown": "S Resultat vo däm Tastedruck het nöd chöne bestätigt wärde. Prüefed Sie de Antrag in Z8, bevor Sie nomal drucked.",
       "reviewInZ8": "In Z8 prüefe",
+      "reviewRequired": "Die Charte cha d’ursprünglich zur Prüefig iigreichte Agabe nöd belege. Öffne de Genehmigungs-Iigang in Z8, zum de Aatrag prüefe. Über die Charte isch kei Entscheid troffe worde.",
+      "reviewRequiredTitle": "Prüefig nötig",
       "historicalTitle": "Früehere Entscheid",
       "historicalApproval": "Dini früeher erfassti Genehmigung isch verifiziert worde. Das isch es früehers Resultat; es isch kei neue Entscheid troffe worde. Meh Details findsch bim Aatrag in Z8.",
       "historicalRejection": "Dini früeher erfassti Ablehnig isch verifiziert worde. Das isch es früehers Resultat; es isch kei neue Entscheid troffe worde. Meh Details findsch bim Aatrag in Z8.",
       "unboundCallback": "Die Charte cha d’ursprünglich prüefte Agabe nöd belege. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
-      "alreadyProcessed": "Die Freigab isch bereits bearbeitet worde.",
       "boundReviewRequired": "Die Charte passt nüme zum aktuelle Aatrag oder zur aktuelle Zuewiisig, oder d’Aktion het nöd chöne verifiziert werde. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
       "invocationConflict": "De Tastedruck isch scho mit ere andere Aktion erfasst worde. Es isch kei Entscheid troffe worde. Prüef de Aatrag in Z8.",
-      "outcomeUnknown": "S Resultat vo däm Tastedruck het nöd chöne bestätigt wärde. Prüefed Sie de Antrag in Z8, bevor Sie nomal drucked.",
       "card": {
         "absenceTitle": "Abwäseheitsaatrag zur Genehmigung",
         "boundHint": "Genehmige oder Ablehne entscheidet genau über de Aatrag obe. Isch er gänderet oder neu zuegwise worde, wird nüt entschide und du wirsch bitte, ihn in Z8 z’prüefe.",
@@ -60,7 +59,6 @@
       }
     },
     "cmd": {
-      "billingRequired": "D'Abrechnig isch erforderlich, zum d'Ziiterfassig wiiter z'nutze. Bitt en Organisations-Admin, d'Abrechnig z'aktualisiere.",
       "clockedin": {
         "header": "{active} vo {total} Teammitglieder sind aktuell am Schaffe:",
         "noneActive": "Keis vo dine {total} Teammitglieder isch aktuell am Schaffe.",
@@ -118,7 +116,8 @@
         "header": "{outCount} vo {total} Teammitglieder sind hüt abwesend:",
         "noneOut": "Alli {total} Teammitglieder sind hüt verfügbar.",
         "noTeam": "Es sind dir keini Teammitglieder zuegordnet."
-      }
+      },
+      "billingRequired": "D'Abrechnig isch erforderlich, zum d'Ziiterfassig wiiter z'nutze. Bitt en Organisations-Admin, d'Abrechnig z'aktualisiere."
     },
     "language": {
       "changed": "Sprach uf {language} gänderet.",
@@ -144,6 +143,7 @@
       "notLinked": "Dis Telegram-Konto isch nöd mit Z8 verknüpft. Gang in dim Z8-Dashboard uf Iistellige > Integratione > Telegram, zum en Link-Code z'generiere, und schick dänn: /link DEIN_CODE",
       "notLinkedTeams": "Ich ha dis Z8-Konto nöd gfunde. Stell sicher, dass dini Teams-E-Mail mit dinere Z8-E-Mail übereistimmt.",
       "noUser": "Benutzerkonto chönne mir nöd identifiziere.",
+      "replyUndelivered": "Ihre Befehl isch verarbeitet worde, aber d'Antwort het nöd chönne azeigt wärde. Prüefed Sie Ihre Status, bevor Sie ihn wiederholed.",
       "setupBody": "Dini Organisation muess mit Z8 verbunde werde. Klick unte, zum de Iirichtigsprozess z'starte.",
       "setupButton": "Iirichtig abschliesse",
       "setupNote": "Nur Organisations-Admins chönd die Iirichtig abschliesse.",
@@ -152,8 +152,7 @@
       "typeHelp": "Gib /help ii, zum d'Befehl z'gseh.",
       "unconfigured": "D'Z8-Integration vo dinere Organisation wird grad iigrichtet. Bitte wart, bis din Admin d'Konfiguration abschliesst.",
       "welcome": "Willkomme bi Z8! Zum dis Konto z'verbinde, gang in dim Z8-Dashboard uf Iistellige > Integratione > Telegram und generier en Link-Code. Schick dänn: /link DEIN_CODE",
-      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh.",
-      "replyUndelivered": "Ihre Befehl isch verarbeitet worde, aber d'Antwort het nöd chönne azeigt wärde. Prüefed Sie Ihre Status, bevor Sie ihn wiederholed."
+      "welcomeTeams": "Willkomme bi Z8! Gib \"help\" ii, zum d'Befehl z'gseh."
     }
   }
 }

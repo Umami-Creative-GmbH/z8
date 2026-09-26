@@ -29,6 +29,11 @@
         "restTime": "Ruehziit: {count}",
         "title": "Compliance-Warnige in däm Ziitruum"
       },
+      "focus": {
+        "anonymous": "Schichten eines Mitarbeiters werden angezeigt",
+        "employee": "Schichten für {name} werden angezeigt",
+        "showAll": "Alle Schichten anzeigen"
+      },
       "loading": "Schichtplan wird glade...",
       "publish": {
         "failed": "Schichte händ nöd chöne veröffentlicht werde",

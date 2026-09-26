@@ -29,6 +29,11 @@
         "restTime": "Tempo di riposo: {count}",
         "title": "Avvisi di conformità in questo intervallo di date"
       },
+      "focus": {
+        "anonymous": "Visualizzazione dei turni di un dipendente",
+        "employee": "Visualizzazione dei turni per {name}",
+        "showAll": "Mostra tutti i turni"
+      },
       "loading": "Caricamento programmazione...",
       "publish": {
         "failed": "Pubblicazione turni non riuscita",

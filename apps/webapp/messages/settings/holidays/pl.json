@@ -189,7 +189,7 @@
         "presetName": "Nazwa ustawienia wstępnego",
         "presetNameHint": "Ta nazwa będzie używana do identyfikacji ustawienia wstępnego podczas przypisywania do zespołów lub pracowników",
         "presetNamePlaceholder": "np. Niemcy - Bawaria",
-        "presetSuccess": "Utworzono ustawienie wstępne \"{name}\" z ${holidaysToImport.length} świętami",
+        "presetSuccess": "Utworzono ustawienie wstępne \"{name}\" z {count} świętami",
         "region": "Region",
         "searchCountry": "Szukaj krajów...",
         "searchRegion": "Szukaj regionów...",

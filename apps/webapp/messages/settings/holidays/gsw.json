@@ -189,7 +189,7 @@
         "presetName": "Vorgabename",
         "presetNameHint": "Dä Name wird brucht, zum d'Vorgab z'identifiziere, wenn sie Teams oder Aagstellte zuegwise wird",
         "presetNamePlaceholder": "z. B. Dütschland - Bayern",
-        "presetSuccess": "Vorgab \"{name}\" mit ${holidaysToImport.length} Fyrtig erstellt",
+        "presetSuccess": "Vorgab \"{name}\" mit {count} Fyrtig erstellt",
         "region": "Region",
         "searchCountry": "Länder sueche...",
         "searchRegion": "Regione sueche...",

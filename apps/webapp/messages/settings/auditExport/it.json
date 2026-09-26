@@ -22,6 +22,7 @@
         "invalidDateRange": "Seleziona un intervallo di date valido",
         "jobCompleted": "Generazione del pacchetto di audit completata",
         "jobFailed": "Generazione del pacchetto di audit non riuscita",
+        "lineageContinued": "Continuità da un'ancora approvata per {continued} su {total} dipendenti; la cronologia prima dell'ancora non è verificata. Consulta append-assurance.json nel pacchetto.",
         "lineageLimited": "Garanzia di tracciabilità limitata per {limited} dipendenti su {total}. Vedi append-assurance.json nel pacchetto.",
         "lineageNotRecorded": "Garanzia di tracciabilità non registrata",
         "lineageVerified": "Tracciabilità verificata dalle evidenze memorizzate per {total} dipendenti. I limiti sono elencati in append-assurance.json.",

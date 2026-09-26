@@ -1,10 +1,12 @@
 {
   "bot": {
     "approval": {
-      "alreadyProcessed": "Denne godkjenningen er allerede behandlet."
+      "outcomeUnknown": "Resultatet av dette trykket kunne ikke bekreftes. Sjekk forespørselen i Z8 før du trykker igjen.",
+      "reviewInZ8": "Gå gjennom i Z8",
+      "reviewRequired": "Dette kortet kan ikke fastslå opplysningene som opprinnelig ble sendt inn til gjennomgang. Åpne godkjenningsinnboksen i Z8 for å gå gjennom forespørselen. Det ble ikke tatt noen beslutning fra dette kortet.",
+      "reviewRequiredTitle": "Gjennomgang kreves"
     },
     "cmd": {
-      "billingRequired": "Fakturering kreves for å fortsette å bruke timeregistrering. Be en organisasjonsadministrator om å oppdatere fakturering.",
       "clockedin": {
         "header": "{active} av {total} teammedlemmer er for øyeblikket stemplet inn:",
         "noneActive": "Ingen av dine {total} teammedlemmer er for øyeblikket stemplet inn.",
@@ -62,7 +64,8 @@
         "header": "{outCount} av {total} teammedlemmer er borte i dag:",
         "noneOut": "Alle dine {total} teammedlemmer er tilgjengelige i dag.",
         "noTeam": "Du har ingen teammedlemmer tildelt deg."
-      }
+      },
+      "billingRequired": "Fakturering kreves for å fortsette å bruke timeregistrering. Be en organisasjonsadministrator om å oppdatere fakturering."
     },
     "language": {
       "changed": "Språk endret til {language}.",
@@ -88,6 +91,7 @@
       "notLinked": "Telegram-kontoen din er ikke koblet til Z8. Gå til Innstillinger > Integrasjoner > Telegram i Z8-dashbordet for å generere en tilkoblingskode, og send deretter: /link DIN_KODE",
       "notLinkedTeams": "Jeg fant ikke Z8-kontoen din. Sørg for at Teams-e-postadressen din samsvarer med e-postadressen til Z8-kontoen din.",
       "noUser": "Kunne ikke identifisere brukerkontoen din.",
+      "replyUndelivered": "Kommandoen din ble behandlet, men svaret kunne ikke vises. Sjekk statusen din før du gjentar den.",
       "setupBody": "Organisasjonen din må kobles til Z8. Klikk nedenfor for å starte oppsettsprosessen.",
       "setupButton": "Fullfør oppsett",
       "setupNote": "Bare organisasjonsadministratorer kan fullføre dette oppsettet.",
@@ -96,8 +100,7 @@
       "typeHelp": "Skriv /help for å se tilgjengelige kommandoer.",
       "unconfigured": "Organisasjonens Z8-integrasjon settes opp. Vennligst vent mens administratoren fullfører konfigurasjonen.",
       "welcome": "Velkommen til Z8! For å koble til kontoen din, gå til Innstillinger > Integrasjoner > Telegram i Z8-dashbordet og generer en tilkoblingskode. Send deretter: /link DIN_KODE",
-      "welcomeTeams": "Velkommen til Z8! Skriv \"help\" for å se tilgjengelige kommandoer.",
-      "replyUndelivered": "Kommandoen din ble behandlet, men svaret kunne ikke vises. Sjekk statusen din før du gjentar den."
+      "welcomeTeams": "Velkommen til Z8! Skriv \"help\" for å se tilgjengelige kommandoer."
     }
   }
 }

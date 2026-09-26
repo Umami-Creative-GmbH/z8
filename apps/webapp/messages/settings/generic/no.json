@@ -92,7 +92,7 @@
         "description": "Velg datakategoriene du vil eksportere",
         "selectAll": "Velg alle",
         "selectAtLeastOne": "Vennligst velg minst én kategori",
-        "startExport": "Start eksport (${selectedCategories.size})",
+        "startExport": "Start eksport ({count})",
         "startingExport": "Starter eksport...",
         "submitError": "Kunne ikke starte eksport",
         "submitSuccess": "Eksporten er startet",
@@ -115,7 +115,7 @@
         "downloadSuccess": "Nedlasting startet",
         "emptyDescription": "Ingen eksporter ennå",
         "emptyHint": "Opprett din første eksport ved å bruke skjemaet ovenfor",
-        "moreCategories": "+${exp.categories.length - 3} flere",
+        "moreCategories": "+{count} flere",
         "statusCompleted": "Fullført",
         "statusFailed": "Mislyktes",
         "statusPending": "Venter",
@@ -140,7 +140,7 @@
         "endpointDescription": "For S3-kompatible tjenester som MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "La stå tomt for å beholde eksisterende påloggingsinformasjon",
-        "lastVerified": "Sist verifisert: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Sist verifisert: {date}",
         "region": "Region",
         "regionDescription": "AWS-region der din bucket er plassert",
         "regionPlaceholder": "us-east-1",
@@ -293,16 +293,6 @@
         "commitQueued": "Satte {count} godtatte rader i kø for bekreftelse",
         "committing": "Fullfører...",
         "description": "Gå gjennom klargjorte importrader, løs blokkerende problemer, og overfør godkjente poster når bunken er klar.",
-        "hold": {
-          "appendReviewRequired": "Den ansattes tidshistorikk må gjennomgås før nye oppføringer kan legges til.",
-          "invalidInterval": "Leverandørens tider mangler en eksplisitt forskyvning, er ikke i rekkefølge eller ligger i fremtiden.",
-          "label": "Holdt tilbake for gjennomgang",
-          "occupancyConflict": "Tiden overlapper arbeid som allerede er registrert for denne ansatte.",
-          "operationCollision": "Denne raden er i konflikt med den tidligere bekreftede importen.",
-          "providerDurationMismatch": "Leverandørens varighet avviker fra start- og sluttidspunktet.",
-          "sourceCollision": "Denne leverandørposten er allerede importert.",
-          "unlocatedBreak": "Leverandøren rapporterer pauser uten tidspunktene, så det arbeidede intervallet er ukjent."
-        },
         "issueGroups": {
           "currentMarkers": "Gjeldende rader inneholder {blockingRows} blokkerende markører og {warningRows} advarselsmarkører.",
           "description": "Grupperte gjennomgangsområder bidrar til å holde kvalitetskontroller synlige før godkjente rader overføres.",
@@ -316,7 +306,17 @@
           "status": "Status",
           "title": "Rader"
         },
-        "title": "Importgjennomgang"
+        "title": "Importgjennomgang",
+        "hold": {
+          "appendReviewRequired": "Den ansattes tidshistorikk må gjennomgås før nye oppføringer kan legges til.",
+          "invalidInterval": "Leverandørens tider mangler en eksplisitt forskyvning, er ikke i rekkefølge eller ligger i fremtiden.",
+          "label": "Holdt tilbake for gjennomgang",
+          "occupancyConflict": "Tiden overlapper arbeid som allerede er registrert for denne ansatte.",
+          "operationCollision": "Denne raden er i konflikt med den tidligere bekreftede importen.",
+          "providerDurationMismatch": "Leverandørens varighet avviker fra start- og sluttidspunktet.",
+          "sourceCollision": "Denne leverandørposten er allerede importert.",
+          "unlocatedBreak": "Leverandøren rapporterer pauser uten tidspunktene, så det arbeidede intervallet er ukjent."
+        }
       },
       "title": "Importer data"
     },
@@ -635,8 +635,8 @@
         "employeePicker": "Ansatt som skal tildeles",
         "employees": "Ansatte",
         "manage": "Administrer medlemmer av {name}",
-        "managerAddFailed": "Kunne ikke legge til prosjektleder",
         "managerAdded": "Prosjektleder lagt til",
+        "managerAddFailed": "Kunne ikke legge til prosjektleder",
         "managerPicker": "Prosjektleder som skal legges til",
         "managers": "Prosjektledere",
         "managersReadOnly": "Bare organisasjonsadministratorer kan endre prosjektledere.",

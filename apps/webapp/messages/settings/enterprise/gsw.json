@@ -564,8 +564,6 @@
           "customDomain": "Benutzer, wo sich über dini benutzerdefinierti Domain amälde, verwänded dini OAuth-App"
         },
         "keyId": "Key-ID",
-        "lastTested": "Zuletzt teschtet",
-        "notTested": "Ned testet",
         "privateKey": "Private Key (.p8)",
         "removed": "{provider} OAuth entfernt",
         "removeDialogDescription": "Sind Sie sicher, dass Sie diese OAuth-Konfiguration entfernen möchten? Benutzer werden auf die geteilten OAuth-Anmeldedaten zurückgreifen (falls verfügbar).",
@@ -574,8 +572,7 @@
         "title": "Social-Login-Provider",
         "unverified": "Nöd verifiziert",
         "updateConfigError": "Konfiguration konnte nicht aktualisiert werden",
-        "updated": "{provider} OAuth erfolgreich aktualisiert",
-        "working": "In Bearbeitung"
+        "updated": "{provider} OAuth erfolgreich aktualisiert"
       },
       "sso": {
         "addDescription": "Konfigurieren Sie einen OIDC-Identitätsanbieter für Enterprise Single Sign-On.",

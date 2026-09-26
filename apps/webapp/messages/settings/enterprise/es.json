@@ -564,8 +564,6 @@
           "customDomain": "Los usuarios que inicien sesión a través de tu dominio personalizado usarán tu aplicación OAuth"
         },
         "keyId": "ID de clave",
-        "lastTested": "Última prueba",
-        "notTested": "No probado",
         "privateKey": "Clave privada (.p8)",
         "removed": "OAuth de {provider} eliminado",
         "removeDialogDescription": "¿Estás seguro de que quieres eliminar esta configuración de OAuth? Los usuarios volverán a utilizar las credenciales OAuth compartidas (si están disponibles).",
@@ -574,8 +572,7 @@
         "title": "Proveedores de inicio de sesión social",
         "unverified": "Sin verificar",
         "updateConfigError": "Error al actualizar la configuración",
-        "updated": "OAuth de {provider} actualizado correctamente",
-        "working": "Funcionando"
+        "updated": "OAuth de {provider} actualizado correctamente"
       },
       "sso": {
         "addDescription": "Configura un proveedor de identidad OIDC para el inicio de sesión único (SSO) empresarial.",

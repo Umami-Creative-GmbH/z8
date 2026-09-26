@@ -388,4 +388,174 @@ describe("tolgee extractor", () => {
 			]),
 		);
 	});
+
+	// A key the extractor misses is deleted from Tolgee by `tolgee sync`, together with every
+	// translation of it; the next pull then drops it from the catalogs.
+	describe("keeps keys that tolgee sync would otherwise delete", () => {
+		it("extracts t() calls in helpers that receive the translator as a parameter", () => {
+			const result = extractor(
+				`
+				import type { TFnType } from "@tolgee/react";
+
+				export function beyondWindowMessage(t: TFnType) {
+					return t("calendar.edit.time.beyondWindow", "Too far in the past");
+				}
+			`,
+				"work-period-time-edit-section.tsx",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Too far in the past",
+					keyName: "calendar.edit.time.beyondWindow",
+					namespace: "calendar",
+				}),
+			]);
+		});
+
+		it("extracts key/fallback lookup tables of any name", () => {
+			const result = extractor(
+				`
+				const REQUEST_TEXT = {
+					edit: { key: "bot.approval.card.correctionEdit", fallback: "Change times" },
+				};
+				const REVIEW_MESSAGES = {
+					clock_out: {
+						label: "Needs review: offboarding clock-out",
+						key: "common:notifications.content.employeeOffboardingReview.clock_out",
+					},
+				};
+			`,
+				"time-card.ts",
+			);
+
+			expect(result.keys).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						defaultValue: "Change times",
+						keyName: "bot.approval.card.correctionEdit",
+						namespace: "bot",
+					}),
+					expect.objectContaining({
+						defaultValue: "Needs review: offboarding clock-out",
+						keyName: "notifications.content.employeeOffboardingReview.clock_out",
+						namespace: "common",
+					}),
+				]),
+			);
+		});
+
+		it("extracts [key, fallback] message tuples", () => {
+			const result = extractor(
+				`
+				const MESSAGES = {
+					collision: [
+						"timeTracking.manualEntry.errors.collision",
+						"This entry conflicts with an earlier submission.",
+					],
+				};
+			`,
+				"manual-time-entry-dialog.tsx",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "This entry conflicts with an earlier submission.",
+					keyName: "timeTracking.manualEntry.errors.collision",
+					namespace: "timeTracking",
+				}),
+			]);
+		});
+
+		it("extracts JSX translation key props with their fallback", () => {
+			const result = extractor(
+				`<LocalizedLoadingLabel translationKey="common:loading.calendar" fallback="Loading calendar" />`,
+				"page.tsx",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Loading calendar",
+					keyName: "loading.calendar",
+					namespace: "common",
+				}),
+			]);
+		});
+
+		it("extracts namespace-qualified keys passed through local helpers", () => {
+			const result = extractor(
+				`
+				function text(key: string, fallback: string) {
+					return { key, fallback };
+				}
+				const rows = [{ label: text("approvals:approvals.evidence.clockIn", "Clock in") }];
+			`,
+				"time-review.ts",
+			);
+
+			expect(result.keys).toEqual([
+				expect.objectContaining({
+					defaultValue: "Clock in",
+					keyName: "approvals.evidence.clockIn",
+					namespace: "approvals",
+				}),
+			]);
+		});
+
+		it("ignores dotted strings without a known namespace outside t() calls", () => {
+			const result = extractor(
+				`
+				const config = { key: "row.id", fallback: "none" };
+				const pair = ["file.name", "value"];
+			`,
+				"config.ts",
+			);
+
+			expect(result.keys).toEqual([]);
+		});
+	});
+
+	it("puts keys with unmapped prefixes in the default namespace, never in a root catalog", () => {
+		const result = extractor(
+			`const label = t("worksCouncil.loadingLabel", "Loading works council");`,
+			"page.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({ keyName: "worksCouncil.loadingLabel", namespace: "common" }),
+		]);
+	});
+
+	it("skips test files so mock keys are never pushed", () => {
+		const code = `
+			import { useTranslate } from "@tolgee/react";
+			const title = t("notifications.birthday.title", "Birthday");
+		`;
+
+		expect(extractor(code, "src/lib/notifications/email-notifications.test.ts").keys).toEqual([]);
+		expect(extractor(code, "src/lib/__tests__/helpers.ts").keys).toEqual([]);
+	});
+
+	it("drops template-literal defaults with a warning instead of pushing JS source", () => {
+		const result = extractor(
+			`
+			import { useTranslate } from "@tolgee/react";
+			const label = t("approvals:fastLanes.approveGroup", \`Approve \${actionLabel}\`, {
+				label: actionLabel,
+			});
+		`,
+			"approval-fast-lanes.tsx",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				defaultValue: undefined,
+				keyName: "fastLanes.approveGroup",
+				namespace: "approvals",
+			}),
+		]);
+		expect(result.warnings).toEqual([
+			expect.objectContaining({ warning: expect.stringContaining("fastLanes.approveGroup") }),
+		]);
+	});
 });

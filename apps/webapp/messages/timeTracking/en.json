@@ -12,12 +12,8 @@
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
     "clockingOut": "Clocking Out…",
-    "clockInQueued": "Clock-in queued for sync",
-    "clockInSavedForReview": "Clock-in saved on this device for review; not confirmed on the server",
     "clockInSuccess": "Clocked in successfully",
     "clockOut": "Clock Out",
-    "clockOutQueued": "Clock-out queued for sync",
-    "clockOutSavedForReview": "Clock-out saved on this device for review; not confirmed on the server",
     "clockOutSuccess": "Clocked out successfully",
     "compliance": {
       "violation": "Compliance Violation",
@@ -26,18 +22,16 @@
     "correction": {
       "clockIn": "Clock In",
       "clockInDate": "Clock In Date",
-      "clockInTime": "Clock In Time",
       "clockOut": "Clock Out",
       "clockOutDate": "Clock Out Date",
-      "clockOutTime": "Clock Out Time",
       "editDescription": "Make changes to your time entry for today.",
       "editEntry": "Edit time entry",
       "editTitle": "Edit Time Entry",
       "errors": {
         "invalidTimeRange": "Clock out time must be after clock in time",
-        "noChanges": "At least one correction value must change",
         "submitFailed": "Failed to submit correction",
-        "updateFailed": "Failed to update time entry"
+        "updateFailed": "Failed to update time entry",
+        "noChanges": "At least one correction value must change"
       },
       "noteLabel": "Note (optional)",
       "notePlaceholder": "Add a note about this change…",
@@ -55,20 +49,22 @@
         "submitted": "Correction request submitted for manager approval",
         "updated": "Time entry updated successfully"
       },
-      "timezoneNote": "Times are in your local timezone ({timezone})"
+      "timezoneNote": "Times are in your local timezone ({timezone})",
+      "clockInTime": "Clock In Time",
+      "clockOutTime": "Clock Out Time"
     },
     "currentlyClockedIn": "You're currently clocked in",
     "deadline": "Deadline",
     "errors": {
       "clockInFailed": "Failed to clock in",
-      "appendReviewRequired": "Clock-in needs a review of your time history",
-      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
       "clockOutFailed": "Failed to clock out",
       "holidayBlocked": "Cannot clock out on {holidayName}",
       "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
       "notesSaveFailed": "Failed to save notes",
       "restPeriodBlocked": "Rest period not complete",
-      "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed."
+      "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
+      "appendReviewRequired": "Clock-in needs a review of your time history",
+      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator."
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
@@ -89,19 +85,19 @@
       "dateLabel": "Date",
       "description": "Create a time entry for a past date. Approval may be required based on your organization's change policy.",
       "errors": {
-        "collision": "This entry conflicts with an earlier submission or changed work. Check your existing entries.",
         "createFailed": "Failed to create time entry",
         "futureDate": "Cannot create entries for future dates",
-        "futureTime": "Cannot create entries for future times",
-        "historyReview": "This time history needs review before new entries can be saved. Contact your administrator.",
         "invalidTime": "Enter a complete, valid time",
         "invalidTimeRange": "Clock out time must be after clock in time",
+        "tooLong": "Work period cannot exceed 24 hours",
+        "collision": "This entry conflicts with an earlier submission or changed work. Check your existing entries.",
+        "futureTime": "Cannot create entries for future times",
+        "historyReview": "This time history needs review before new entries can be saved. Contact your administrator.",
         "nonexistentTime": "This time doesn't exist on this date because the clocks move forward.",
         "occurrenceRequired": "This time occurs twice on this date. Choose which one you mean.",
         "overlap": "This time overlaps recorded work. Choose a range that doesn't overlap existing entries.",
         "reconfirm": "The timezone or times changed. Review the entry and submit it again.",
-        "refresh": "Manual entry settings changed. Review the entry and submit it again.",
-        "tooLong": "Work period cannot exceed 24 hours"
+        "refresh": "Manual entry settings changed. Review the entry and submit it again."
       },
       "occurrence": {
         "earlier": "First, {offset}",
@@ -112,14 +108,16 @@
       "reasonPlaceholder": "Describe what you worked on…",
       "recovery": {
         "check": "Check status",
-        "checkFailed": "Couldn't check this entry right now. Try again later.",
-        "contextMismatch": "You're signed in to a different account or organization. Switch back to handle this entry.",
         "description": "These entries were sent from this tab without a confirmed result. Nothing is sent again unless you choose to.",
         "discard": "Dismiss",
         "editAsNew": "Edit as new entry",
+        "retry": "Retry exactly",
+        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
+        "title": "Unconfirmed entries",
+        "checkFailed": "Couldn't check this entry right now. Try again later.",
+        "contextMismatch": "You're signed in to a different account or organization. Switch back to handle this entry.",
         "notCommitted": "No save found.",
         "notCommittedToast": "No save was found for this entry. Retry it exactly, or edit it as a new entry.",
-        "retry": "Retry exactly",
         "saved": "This entry was saved.",
         "savedForApproval": "This entry was saved and submitted for approval. Its current status: {status}.",
         "status": {
@@ -128,8 +126,6 @@
           "rejected": "rejected"
         },
         "stillUncertain": "Still not confirmed. The entry is kept; try again when you're back online.",
-        "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Unconfirmed entries",
         "uncertain": "Not confirmed. It may already be saved.",
         "uncertainToast": "We couldn't confirm whether this entry was saved. It's kept under Unconfirmed entries, where you can retry it exactly or check its status.",
         "unsupported": "Its status can't be checked. It may already be saved.",
@@ -201,6 +197,8 @@
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
     "workCategory": "Work Category",
+    "clockInSavedForReview": "Clock-in saved on this device for review; not confirmed on the server",
+    "clockOutSavedForReview": "Clock-out saved on this device for review; not confirmed on the server",
     "workLocation": "Work location",
     "workLocationHome": "Home",
     "workLocationOffice": "Office",

@@ -45,13 +45,6 @@
       "description": "Verwalten Sie Urlaubsrichtlinien und Zuweisungen für Ihr Unternehmen",
       "editPolicy": "„{name}“ bearbeiten",
       "employees": {
-        "actions": {
-          "edit": "Bearbeiten"
-        },
-        "allowancesForYear": "Urlaubsansprüche für {{year}}",
-        "defaultAllowanceDescription": "Standardanspruch: {{days}} Tage pro Jahr",
-        "defaultPolicy": "Standard",
-        "description": "Individuelli Ferie-Guthabe für einzelni Aagstellti konfiguriere",
         "detail": {
           "addManualAdjustment": "Manuelle Aapassig hiezuetue",
           "addManualAdjustmentDescription": "Erstelle en neue Aapassigsiitrag für bsunderi Umständ (z.B. Bonus-Täg, Korrekture). Jede Aapassig wird im Audit-Log protokolliert.",
@@ -99,6 +92,13 @@
           "description": "Individuells Ferie-Guthabe für {{name}} konfiguriere",
           "title": "Ferie-Guthabe bearbeite"
         },
+        "actions": {
+          "edit": "Bearbeiten"
+        },
+        "allowancesForYear": "Urlaubsansprüche für {{year}}",
+        "defaultAllowanceDescription": "Standardanspruch: {{days}} Tage pro Jahr",
+        "defaultPolicy": "Standard",
+        "description": "Individuelli Ferie-Guthabe für einzelni Aagstellti konfiguriere",
         "employeeCount": "{{count}} Aagstellti",
         "emptyDescription": "Füeg Aagstellti zu dinere Organisation zue, zum ihri Ferie-Guthabe z'verwalte.",
         "emptyTitle": "Kei Aagstellti gfunde",

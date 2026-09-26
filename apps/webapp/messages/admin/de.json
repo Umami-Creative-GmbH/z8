@@ -325,8 +325,12 @@
         "approvalHint": "Die UUID eines bisherigen Genehmigungsantrags oder eines kanonischen Workflows.",
         "approvalId": "Genehmigungs-ID",
         "chain": "Genehmigungskette",
+        "decisionEvidence": "Entscheidungsnachweis",
         "delete": "Löschen erzwingen",
         "deleting": "Wird gelöscht…",
+        "deliveryIntent": "Zustellungsabsicht",
+        "deliveryMessage": "Zugestellte Nachricht",
+        "deliveryWork": "Zustellauftrag",
         "description": "Eine Genehmigung und ihre verknüpften Genehmigungsdatensätze dauerhaft entfernen. Die zugrunde liegenden Datensätze und deren Status bleiben erhalten.",
         "errors": {
           "ambiguous": "Diese ID existiert in beiden Genehmigungstabellen. Es wurde keine Genehmigung gelöscht.",
@@ -337,19 +341,16 @@
           "organizationRequired": "Gib eine Organisations-ID ein.",
           "unauthorized": "Zugriff als Plattformadministrator erforderlich."
         },
+        "escalationAttention": "Eskalationshinweis",
+        "escalationTransfer": "Eskalationsübertragung",
         "legacy": "Bisheriger Antrag",
         "organizationHint": "Die Organisation, zu der die Genehmigung gehört.",
         "organizationId": "Organisations-ID",
+        "reviewBinding": "Prüfbindung",
+        "submittedRevision": "Eingereichte Revision",
         "success": "Genehmigung gelöscht. Entfernte Datensätze:",
         "title": "Genehmigung zwangsweise löschen",
-        "workflow": "Workflow",
-        "submittedRevision": "Eingereichte Revision",
-        "decisionEvidence": "Entscheidungsnachweis",
-        "reviewBinding": "Prüfbindung",
-        "escalationTransfer": "Eskalationsübertragung",
-        "deliveryMessage": "Zugestellte Nachricht",
-        "deliveryWork": "Zustellauftrag",
-        "escalationAttention": "Eskalationshinweis"
+        "workflow": "Workflow"
       },
       "cookieConsent": {
         "description": "Zur DSGVO-Konformität auf Authentifizierungsseiten eingefügt",

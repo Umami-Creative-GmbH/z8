@@ -92,7 +92,7 @@
         "description": "Wähl d Datekategorie us, wo du exportiere wotsch",
         "selectAll": "Alli uswähle",
         "selectAtLeastOne": "Bitte wähl mindischtens eini Kategorie us",
-        "startExport": "Export starte (${selectedCategories.size})",
+        "startExport": "Export starte ({count})",
         "startingExport": "Export wird gstartet...",
         "submitError": "Export-Start isch fählgschlage",
         "submitSuccess": "Export erfolgriich gstartet",
@@ -115,7 +115,7 @@
         "downloadSuccess": "Download gstartet",
         "emptyDescription": "No kei Export vorhande",
         "emptyHint": "Erstell dine erschte Export mit em Formular obe",
-        "moreCategories": "+${exp.categories.length - 3} meh",
+        "moreCategories": "+{count} meh",
         "statusCompleted": "Abgschlosse",
         "statusFailed": "Fählgschlage",
         "statusPending": "Usstehend",
@@ -140,7 +140,7 @@
         "endpointDescription": "Für S3-kompatibli Dienscht wie MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leer lah, zum die bestehende Zugangsdate z'bhalte",
-        "lastVerified": "Zuletscht prüeft: ${new Date(config.lastVerifiedAt).toLocaleString()}",
+        "lastVerified": "Zuletscht prüeft: {date}",
         "region": "Region",
         "regionDescription": "AWS-Region, wo Ihr Bucket sich befindet",
         "regionPlaceholder": "us-east-1",
@@ -293,16 +293,6 @@
         "commitQueued": "{count} akzeptierte Zeilen für die Übernahme in die Warteschlange gestellt",
         "committing": "Wird übernommen...",
         "description": "Überprüfen Sie die importierten Zeilen, lösen Sie blockierende Probleme und übernehmen Sie die akzeptierten Datensätze, sobald der Stapel bereit ist.",
-        "hold": {
-          "appendReviewRequired": "De Ziitverlauf vom Mitarbeiter mues prüeft werde, bevor neui Iiträg dezuecho chönd.",
-          "invalidInterval": "D Ziite vom Aabieter händ kei explizite Versatz, sind nöd i de richtige Reiefolg oder liged i de Zuekunft.",
-          "label": "Zur Prüefig zruggbhalte",
-          "occupancyConflict": "D Ziit überschnidet sich mit Arbet, wo für dä Mitarbeiter scho erfasst isch.",
-          "operationCollision": "Die Ziile staht im Konflikt mit ihrem früener übernoh Import.",
-          "providerDurationMismatch": "D Duur vom Aabieter weicht vo Start- und Endziit ab.",
-          "sourceCollision": "Dä Datesatz vom Aabieter isch scho importiert worde.",
-          "unlocatedBreak": "De Aabieter meldet Pause ohni d Ziite, drum isch de gschaffti Ziitruum unbekannt."
-        },
         "issueGroups": {
           "currentMarkers": "Die aktuellen Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Überprüfungsbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übernommen werden.",
@@ -316,7 +306,17 @@
           "status": "Status",
           "title": "Zeilen"
         },
-        "title": "Import-Überprüfung"
+        "title": "Import-Überprüfung",
+        "hold": {
+          "appendReviewRequired": "De Ziitverlauf vom Mitarbeiter mues prüeft werde, bevor neui Iiträg dezuecho chönd.",
+          "invalidInterval": "D Ziite vom Aabieter händ kei explizite Versatz, sind nöd i de richtige Reiefolg oder liged i de Zuekunft.",
+          "label": "Zur Prüefig zruggbhalte",
+          "occupancyConflict": "D Ziit überschnidet sich mit Arbet, wo für dä Mitarbeiter scho erfasst isch.",
+          "operationCollision": "Die Ziile staht im Konflikt mit ihrem früener übernoh Import.",
+          "providerDurationMismatch": "D Duur vom Aabieter weicht vo Start- und Endziit ab.",
+          "sourceCollision": "Dä Datesatz vom Aabieter isch scho importiert worde.",
+          "unlocatedBreak": "De Aabieter meldet Pause ohni d Ziite, drum isch de gschaffti Ziitruum unbekannt."
+        }
       },
       "title": "Daten importieren"
     },
@@ -635,8 +635,8 @@
         "employeePicker": "Mitarbeiter zum Zuewiise",
         "employees": "Mitarbeiter",
         "manage": "Mitglieder vo {name} verwalte",
-        "managerAddFailed": "Projektleitig het nöd chöne hinzuegfüegt werde",
         "managerAdded": "Projektleitig hinzuegfüegt",
+        "managerAddFailed": "Projektleitig het nöd chöne hinzuegfüegt werde",
         "managerPicker": "Projektleitig zum Hinzuefüege",
         "managers": "Projektleitig",
         "managersReadOnly": "Nur Organisationsadministratore chönd d Projektleitig ändere.",
@@ -893,7 +893,6 @@
         "failed": "Fehlgschlage",
         "failedDescription": "Chürzlich fehlgschlage",
         "paused": "Pausiert",
-        "pausedDescription": "Pausierti Jobs",
         "queueState": "Warteschlange",
         "queueStateDescription": "Ob Worker wartende Aufträge übernehmen können",
         "running": "Wird ausgeführt",

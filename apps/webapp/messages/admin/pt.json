@@ -325,8 +325,12 @@
         "approvalHint": "Uma solicitação de aprovação legada ou UUID de fluxo de trabalho canônico.",
         "approvalId": "ID da aprovação",
         "chain": "Cadeia de aprovação",
+        "decisionEvidence": "Evidência da decisão",
         "delete": "Forçar exclusão",
         "deleting": "Excluindo…",
+        "deliveryIntent": "Intenção de entrega",
+        "deliveryMessage": "Mensagem entregue",
+        "deliveryWork": "Trabalho de entrega",
         "description": "Remova permanentemente uma aprovação e seus registros vinculados. Os registros de origem e seus status são preservados.",
         "errors": {
           "ambiguous": "Este ID existe em ambos os armazenamentos de aprovação. Nenhuma aprovação foi excluída.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Insira um ID da organização.",
           "unauthorized": "Acesso de administrador da plataforma necessário."
         },
+        "escalationAttention": "Atenção de escalonamento",
+        "escalationTransfer": "Transferência de escalonamento",
         "legacy": "Solicitação legada",
         "organizationHint": "A organização proprietária da aprovação.",
         "organizationId": "ID da organização",
+        "reviewBinding": "Vinculação de revisão",
+        "submittedRevision": "Revisão enviada",
         "success": "Aprovação excluída. Registros removidos:",
         "title": "Forçar exclusão da aprovação",
         "workflow": "Fluxo de trabalho"

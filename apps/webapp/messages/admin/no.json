@@ -325,8 +325,12 @@
         "approvalHint": "En foreldet godkjenningsforespørsel eller kanonisk arbeidsflyt-UUID.",
         "approvalId": "Godkjennings-ID",
         "chain": "Godkjenningskjede",
+        "decisionEvidence": "Beslutningsunderlag",
         "delete": "Tving sletting",
         "deleting": "Sletter…",
+        "deliveryIntent": "Leveringsintensjon",
+        "deliveryMessage": "Levert melding",
+        "deliveryWork": "Leveringsarbeid",
         "description": "Fjern en godkjenning og tilknyttede godkjenningsposter permanent. Kildeposter og deres statuser bevares.",
         "errors": {
           "ambiguous": "Denne ID-en finnes i begge godkjenningslagre. Ingen godkjenning ble slettet.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Angi en organisasjons-ID.",
           "unauthorized": "Krever plattformadministrator-tilgang."
         },
+        "escalationAttention": "Eskaleringsoppmerksomhet",
+        "escalationTransfer": "Eskaleringsoverføring",
         "legacy": "Foreldet forespørsel",
         "organizationHint": "Organisasjonen som eier godkjenningen.",
         "organizationId": "Organisasjons-ID",
+        "reviewBinding": "Gjennomgangsbinding",
+        "submittedRevision": "Innsendt revisjon",
         "success": "Godkjenning slettet. Fjernede poster:",
         "title": "Tving sletting av godkjenning",
         "workflow": "Arbeidsflyt"

@@ -29,6 +29,11 @@
         "restTime": "Tempo de descanso: {count}",
         "title": "Avisos de Conformidade neste Intervalo de Datas"
       },
+      "focus": {
+        "anonymous": "Exibindo turnos de um funcionário",
+        "employee": "Exibindo turnos de {name}",
+        "showAll": "Mostrar todos os turnos"
+      },
       "loading": "Carregando escala...",
       "publish": {
         "failed": "Falha ao publicar turnos",

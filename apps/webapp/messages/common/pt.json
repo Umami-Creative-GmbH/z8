@@ -165,7 +165,6 @@
     "moveDown": "Mover para baixo",
     "moveUp": "Mover para cima",
     "name": "Nome",
-    "never": "Nunca",
     "new": "Novo",
     "next": "Seguinte",
     "notApplicable": "N/D",
@@ -258,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Contactar administrador",
       "createOrg": "Criar organização",
-      "description": "Precisa de um perfil de funcionário para ${feature}. Por favor crie uma organização ou contacte o seu administrador.",
+      "description": "Precisa de um perfil de funcionário para {feature}. Por favor crie uma organização ou contacte o seu administrador.",
       "emailBody": "Olá,\n\npreciso que seja configurado um perfil de funcionário para aceder às funcionalidades da plataforma. Poderia ajudar-me com isto?\n\nObrigado!",
       "emailSubject": "Configuração do perfil de funcionário necessária",
       "helpText": "Se foi convidado para uma organização, peça ao seu administrador para configurar o seu perfil de funcionário.",
@@ -290,13 +289,13 @@
     "trust-center": "Central de Confiança"
   },
   "loading": {
+    "chart": "A carregar gráfico",
+    "settings": "A carregar definições",
     "application": "A carregar aplicação",
     "authentication": "A carregar autenticação",
     "calendar": "A carregar calendário",
-    "chart": "A carregar gráfico",
     "licenses": "A carregar licenças",
     "platformAnalytics": "A carregar análises da plataforma",
-    "settings": "A carregar definições",
     "setup": "A carregar configuração",
     "teamAbsences": "A carregar ausências da equipa",
     "workerQueue": "A carregar fila de trabalhos"
@@ -335,14 +334,6 @@
       "viewAll": "Ver todas as notificações"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
-        "title": "Solicitação de ausência enviada"
-      },
-      "teamMemberRemoved": {
-        "message": "Você foi removido da equipe {teamName} por {performedByName}.",
-        "title": "Removido da equipe"
-      },
       "passwordChanged": {
         "message": "Sua senha foi alterada com sucesso. Se você não realizou essa alteração, entre em contato com o suporte imediatamente.",
         "title": "Senha alterada"
@@ -354,6 +345,14 @@
       "teamMemberAdded": {
         "message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
         "title": "Adicionado à equipe"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
+        "title": "Solicitação de ausência enviada"
+      },
+      "teamMemberRemoved": {
+        "message": "Você foi removido da equipe {teamName} por {performedByName}.",
+        "title": "Removido da equipe"
       }
     },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
@@ -434,25 +433,38 @@
     "banner": {
       "archived": "Evidência de ponto arquivada retida neste dispositivo",
       "offline": "Você está offline",
-      "offlineWithPending": "Offline - {count} evento(s) pendente(s)",
-      "pending": "{count} evento(s) aguardando sincronização",
-      "retry": "Tentar novamente",
-      "syncing": "Sincronizando {count} evento(s)...",
       "offlineSaved": "Offline — {count} registro(s) salvo(s) localmente para revisão",
+      "offlineWaiting": "Offline — {count} registro(s) de ponto será(ão) enviado(s) quando você estiver online novamente",
       "refresh": "Atualizar status",
       "refreshing": "Verificando {count} registro(s) salvo(s)…",
       "reviewRequired": "{count} registro(s) salvo(s) localmente — revisão necessária",
-      "unverified": "Evidência de ponto salva neste dispositivo. Conecte-se para revisar todos os registros salvos."
+      "unverified": "Evidência de ponto salva neste dispositivo. Conecte-se para revisar todos os registros salvos.",
+      "waiting": "{count} registro(s) de ponto salvo(s) neste dispositivo, ainda não enviado(s)"
     },
     "capture": {
       "description": "Salve o evento neste dispositivo para revisão. O status do ponto no servidor não será alterado.",
       "end": "Salvar registro de saída para revisão",
+      "queueDescription": "Você está offline. Os registros de ponto são salvos neste dispositivo e enviados automaticamente quando você estiver online novamente.",
+      "queueEnd": "Salvar registro de saída",
+      "queueStart": "Salvar registro de entrada",
       "start": "Salvar registro de entrada para revisão"
     },
     "recovery": {
       "archive": "Arquivar e reter evidência",
       "archived": "Arquivado — evidência retida",
-      "description": "Estes registros estão salvos neste dispositivo. A confirmação no servidor é desconhecida. Verifique os lançamentos de horas existentes com seu gestor antes de enviar trabalho de substituição. O arquivamento mantém a evidência e não cancela o trabalho no servidor.",
+      "command": {
+        "blockedPredecessor": "Pausado — um registro de ponto anterior neste dispositivo precisa de revisão",
+        "committed": "Salvo no servidor",
+        "exhausted": "Envio interrompido após falhas repetidas — não confirmado no servidor",
+        "pausedAccess": "Pausado — entre novamente com acesso para registrar ponto nesta organização",
+        "pausedContext": "Pausado — acesse a conta e organização para as quais foi salvo",
+        "pausedServer": "Pausado — o servidor ainda não aceita este registro de ponto",
+        "pending": "Aguardando envio — não confirmado no servidor",
+        "rejected": "Não salvo — o servidor recusou ({code})",
+        "review": "Precisa de revisão — o servidor não aceitou ({code})",
+        "waitingPredecessor": "Aguardando um registro de ponto anterior neste dispositivo"
+      },
+      "descriptionOutcomes": "Esses registros estão salvos neste dispositivo. A menos que um registro indique que foi salvo no servidor, o resultado no servidor não está confirmado. Verifique os lançamentos de horas existentes com seu gestor antes de enviar trabalho de substituição. O arquivamento mantém o comprovante e não cancela o trabalho no servidor.",
       "empty": "Nenhum registro acessível. Registros mais antigos sem evidência de conta precisam de revisão no nível da organização; registros sem evidência da organização exigem recuperação autorizada separadamente.",
       "evidence": "Evidência original e status de recuperação",
       "export": "Exportar evidência acessível",
@@ -555,17 +567,16 @@
   "validation": {
     "first-name-required": "O nome é obrigatório",
     "invalid-email": "Email inválido",
-    "invalid-password": "Senha inválida",
     "last-name-required": "O sobrenome é obrigatório",
     "password-required": "A senha é obrigatória"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Carregando o portal do conselho de trabalhadores"
   },
   "workBalance": {
     "label": "Saldo total",
     "notCalculated": "Ainda não calculado",
     "pendingDescription": "O trabalhador calculará este saldo em breve.",
     "updatedEveryThreeHours": "Atualizado a cada 3 horas"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Carregando o portal do conselho de trabalhadores"
   }
 }

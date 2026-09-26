@@ -564,8 +564,6 @@
           "customDomain": "Users signing in via your custom domain will use your OAuth app"
         },
         "keyId": "Key ID",
-        "lastTested": "Last Tested",
-        "notTested": "Not Tested",
         "privateKey": "Private Key (.p8)",
         "removed": "{provider} OAuth removed",
         "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
@@ -574,8 +572,7 @@
         "title": "Social Login Providers",
         "unverified": "Unverified",
         "updateConfigError": "Failed to update config",
-        "updated": "{provider} OAuth updated successfully",
-        "working": "Working"
+        "updated": "{provider} OAuth updated successfully"
       },
       "sso": {
         "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",

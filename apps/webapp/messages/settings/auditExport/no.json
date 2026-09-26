@@ -22,6 +22,7 @@
         "invalidDateRange": "Vennligst velg et gyldig datointervall",
         "jobCompleted": "Generering av revisjonspakke fullført",
         "jobFailed": "Generering av revisjonspakke mislyktes",
+        "lineageContinued": "Kontinuitet fra et godkjent anker for {continued} av {total} ansatte; historikk før ankeret er ikke verifisert. Se append-assurance.json i pakken.",
         "lineageLimited": "Begrenset sporbarhetssikring for {limited} av {total} ansatte. Se append-assurance.json i pakken.",
         "lineageNotRecorded": "Sporbarhetssikring ikke registrert",
         "lineageVerified": "Sporbarhet bekreftet fra lagrede bevis for {total} ansatte. Begrensningene står i append-assurance.json.",

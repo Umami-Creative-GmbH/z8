@@ -325,8 +325,12 @@
         "approvalHint": "Una richiesta di approvazione legacy o l'UUID di un flusso di lavoro canonico.",
         "approvalId": "ID approvazione",
         "chain": "Catena di approvazione",
+        "decisionEvidence": "Prova della decisione",
         "delete": "Forza eliminazione",
         "deleting": "Eliminazione in corso…",
+        "deliveryIntent": "Intento di recapito",
+        "deliveryMessage": "Messaggio recapitato",
+        "deliveryWork": "Lavoro di recapito",
         "description": "Rimuovi definitivamente un'approvazione e i record di approvazione collegati. I record di origine e i relativi stati vengono conservati.",
         "errors": {
           "ambiguous": "Questo ID esiste in entrambi gli archivi di approvazione. Nessuna approvazione è stata eliminata.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Inserisci un ID organizzazione.",
           "unauthorized": "È richiesto l'accesso come amministratore della piattaforma."
         },
+        "escalationAttention": "Attenzione escalation",
+        "escalationTransfer": "Trasferimento escalation",
         "legacy": "Richiesta legacy",
         "organizationHint": "L'organizzazione a cui appartiene l'approvazione.",
         "organizationId": "ID organizzazione",
+        "reviewBinding": "Vincolo di revisione",
+        "submittedRevision": "Revisione inviata",
         "success": "Approvazione eliminata. Record rimossi:",
         "title": "Forza eliminazione approvazione",
         "workflow": "Flusso di lavoro"

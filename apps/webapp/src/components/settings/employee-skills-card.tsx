@@ -114,7 +114,13 @@ export function EmployeeSkillsCard({
 	});
 
 	const handleRemove = (skillId: string, skillName: string) => {
-		if (confirm(t("settings.skills.confirmRemove", `Remove "${skillName}" from this employee?`))) {
+		if (
+			confirm(
+				t("settings.skills.confirmRemove", 'Remove "{skillName}" from this employee?', {
+					skillName,
+				}),
+			)
+		) {
 			removeMutation.mutate({ skillId });
 		}
 	};

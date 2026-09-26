@@ -325,8 +325,12 @@
         "approvalHint": "Starszy wniosek o zatwierdzenie lub kanoniczny identyfikator UUID przepływu pracy.",
         "approvalId": "Identyfikator zatwierdzenia",
         "chain": "Ścieżka zatwierdzania",
+        "decisionEvidence": "Dowód decyzji",
         "delete": "Wymuś usunięcie",
         "deleting": "Usuwanie…",
+        "deliveryIntent": "Zamiar doręczenia",
+        "deliveryMessage": "Dostarczona wiadomość",
+        "deliveryWork": "Zadanie doręczenia",
         "description": "Trwale usuń zatwierdzenie i powiązane z nim rekordy zatwierdzeń. Rekordy źródłowe i ich statusy zostaną zachowane.",
         "errors": {
           "ambiguous": "Ten identyfikator istnieje w obu magazynach zatwierdzeń. Nie usunięto żadnego zatwierdzenia.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Wprowadź identyfikator organizacji.",
           "unauthorized": "Wymagany dostęp administratora platformy."
         },
+        "escalationAttention": "Uwaga dotycząca eskalacji",
+        "escalationTransfer": "Przekazanie eskalacji",
         "legacy": "Starszy wniosek",
         "organizationHint": "Organizacja, do której należy zatwierdzenie.",
         "organizationId": "Identyfikator organizacji",
+        "reviewBinding": "Wiązanie przeglądu",
+        "submittedRevision": "Przesłana wersja",
         "success": "Usunięto zatwierdzenie. Usunięte rekordy:",
         "title": "Wymuś usunięcie zatwierdzenia",
         "workflow": "Przepływ pracy"

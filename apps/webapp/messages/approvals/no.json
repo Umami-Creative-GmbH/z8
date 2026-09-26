@@ -37,7 +37,7 @@
     "notes": "Notater",
     "noTimeCorrectionApprovals": "Ingen ventende forespørsler om tidskorrigering å gjennomgå.",
     "offFrom": "fri fra",
-    "openDetailsFor": "Åpne detaljer for ${item.summary.title}",
+    "openDetailsFor": "Åpne detaljer for {title}",
     "openInbox": "Åpne innboks",
     "original": "Opprinnelig",
     "pendingRequests": "Ventende forespørsler",
@@ -59,10 +59,19 @@
     "requester": "Innsender",
     "requestingCorrection": "ber om en tidskorrigering for",
     "requestingOff": "ber om",
+    "review": {
+      "showDetails": "Vis detaljer",
+      "switchOrganizationAction": "Bytt til {organization}",
+      "switchOrganizationBody": "Denne godkjenningen tilhører {organization}. Bytt til den organisasjonen for å gå gjennom den; tilgangen din kontrolleres på nytt etter at du har byttet.",
+      "switchOrganizationTitle": "Bytt organisasjon for å gå gjennom",
+      "title": "Godkjenningsgjennomgang",
+      "unavailableBody": "Du kan ikke gå gjennom denne godkjenningen her. Den kan ha blitt avgjort, tildelt på nytt, trukket tilbake eller fjernet, eller tilgangen din kan ha blitt endret. En lenke alene gir aldri tilgang. Godkjenningsinnboksen din viser alt som for øyeblikket venter på deg.",
+      "unavailableTitle": "Denne godkjenningen er ikke tilgjengelig"
+    },
     "searchLabel": "Søk i godkjenninger",
     "searchPlaceholder": "Søk etter navn eller e-post…",
     "selectAll": "Velg alle",
-    "selectedCount": "${selectedCount} valgt",
+    "selectedCount": "{selectedCount} valgt",
     "selectRow": "Velg rad",
     "timeCorrectionApproved": "Timekorrigering godkjent",
     "timeCorrectionRejected": "Timekorrigering avvist",
@@ -70,7 +79,7 @@
     "timeCorrectionsDescription": "Gå gjennom og godkjenn forespørsler om timekorrigering fra teammedlemmene dine",
     "timelineActor": "{at} av {actorName}",
     "title": "Godkjenninger",
-    "totalCount": "${totalCount} venter",
+    "totalCount": "{totalCount} venter",
     "type": "Type",
     "unifiedInboxBannerDescription": "Se alle godkjenningstyper på ett sted med filtrering, massehandlinger og SLA-sporing.",
     "unifiedInboxBannerTitle": "Prøv den nye samlede innboksen",
@@ -80,11 +89,11 @@
   },
   "fastLanes": {
     "approve": "Godkjenn",
-    "approveGroup": "Godkjenn ${label}",
+    "approveGroup": "Godkjenn {label}",
     "confirmReject": "Bekreft avvisning",
-    "confirmRejectGroup": "Bekreft avvisning av ${label}",
+    "confirmRejectGroup": "Bekreft avvisning av {label}",
     "description": "Gjennomgå lignende forespørsler med lav friksjon i puljer.",
-    "expandGroup": "Utvid ${label}",
+    "expandGroup": "Utvid {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Fravær uten registrerte konflikter.",
@@ -103,21 +112,21 @@
         "label": "Foreldede forespørsler"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} ikke kvalifisert for massegodkjenning",
-    "notEligibleReject": "${notRejectableCount} ikke kvalifisert for masseavvisning",
+    "notEligibleApprove": "{notApprovableCount} ikke kvalifisert for massegodkjenning",
+    "notEligibleReject": "{notRejectableCount} ikke kvalifisert for masseavvisning",
     "reject": "Avvis",
-    "rejectGroup": "Avvis ${label}",
+    "rejectGroup": "Avvis {label}",
     "rejectReason": "Årsak til masseavvisning",
     "risk": {
       "high": "Høy risiko",
       "low": "Lav risiko",
       "medium": "Middels risiko"
     },
-    "showGroup": "Vis ${label}",
+    "showGroup": "Vis {label}",
     "title": "Hurtigspor"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}d gammel",
+    "age": "{ageDays}d gammel",
     "approve": "Godkjenn",
     "approveCurrentApproval": "Godkjenn gjeldende godkjenning",
     "capabilities": {
@@ -135,7 +144,7 @@
       "normal": "Normal prioritet",
       "urgent": "Haster"
     },
-    "progress": "${currentIndex + 1} av ${visibleItems.length}",
+    "progress": "{current} av {total}",
     "reject": "Avvis",
     "rejectCurrentApproval": "Avvis gjeldende godkjenning",
     "rejectReason": "Årsak til sprintavvisning",

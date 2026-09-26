@@ -129,12 +129,6 @@
     },
     "delete": "Löschen",
     "deleting": "Löschen...",
-    "deployment": {
-      "skew": {
-        "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
-        "title": "Z8 wurde aktualisiert"
-      }
-    },
     "description": "Beschreibung",
     "deselectAll": "Alle abwählen",
     "details": "Details",
@@ -171,7 +165,6 @@
     "moveDown": "Nach unten verschieben",
     "moveUp": "Nach oben verschieben",
     "name": "Name",
-    "never": "Nie",
     "new": "Neu",
     "next": "Weiter",
     "notApplicable": "n. v.",
@@ -240,6 +233,12 @@
       "tue": "Di",
       "we": "Mi",
       "wed": "Mi"
+    },
+    "deployment": {
+      "skew": {
+        "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
+        "title": "Z8 wurde aktualisiert"
+      }
     }
   },
   "employeeSelect": {
@@ -264,7 +263,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
-      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um {feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
       "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
       "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
       "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
@@ -296,13 +295,13 @@
     "trust-center": "Trust Center"
   },
   "loading": {
+    "chart": "Diagramm wird geladen",
+    "settings": "Einstellungen werden geladen",
     "application": "Anwendung wird geladen",
     "authentication": "Authentifizierung wird geladen",
     "calendar": "Kalender wird geladen",
-    "chart": "Diagramm wird geladen",
     "licenses": "Lizenzen werden geladen",
     "platformAnalytics": "Plattformanalyse wird geladen",
-    "settings": "Einstellungen werden geladen",
     "setup": "Einrichtung wird geladen",
     "teamAbsences": "Team-Abwesenheiten werden geladen",
     "workerQueue": "Auftragswarteschlange wird geladen"
@@ -341,14 +340,6 @@
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
     "content": {
-      "absenceRequestSubmitted": {
-        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
-        "title": "Abwesenheitsanfrage eingereicht"
-      },
-      "teamMemberRemoved": {
-        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
-        "title": "Aus dem Team entfernt"
-      },
       "passwordChanged": {
         "message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
         "title": "Passwort geändert"
@@ -360,6 +351,14 @@
       "teamMemberAdded": {
         "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
+        "title": "Abwesenheitsanfrage eingereicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+        "title": "Aus dem Team entfernt"
       },
       "employeeOffboardingReview": {
         "title": "Offboarding benötigt eine Prüfung",
@@ -448,30 +447,38 @@
     "banner": {
       "archived": "Archivierte Stempelnachweise auf diesem Gerät aufbewahrt",
       "offline": "Sie sind offline",
-      "offlineWithPending": "Offline - {count} Ereignis(se) ausstehend",
-      "pending": "{count} Ereignis(se) warten auf Synchronisierung",
-      "retry": "Wiederholen",
-      "syncing": "Synchronisiere {count} Ereignis(se)...",
       "offlineSaved": "Offline – {count} Datensatz/Datensätze lokal zur Überprüfung gespeichert",
+      "offlineWaiting": "Offline — {count} Stempelung(en) werden gesendet, sobald Sie wieder online sind",
       "refresh": "Status aktualisieren",
       "refreshing": "{count} gespeicherte(r) Datensatz/Datensätze wird/werden überprüft…",
       "reviewRequired": "{count} Datensatz/Datensätze lokal gespeichert – Überprüfung erforderlich",
       "unverified": "Stempelnachweis auf diesem Gerät gespeichert. Stellen Sie eine Verbindung her, um alle gespeicherten Datensätze zu überprüfen.",
-      "offlineWaiting": "Offline — {count} Stempelung(en) werden gesendet, sobald Sie wieder online sind",
       "waiting": "{count} Stempelung(en) auf diesem Gerät gespeichert, noch nicht gesendet"
     },
     "capture": {
       "description": "Ereignis zur Überprüfung auf diesem Gerät speichern. Der Serverstatus der Zeiterfassung ändert sich nicht.",
       "end": "Ausstempeln zur Überprüfung speichern",
-      "start": "Einstempeln zur Überprüfung speichern",
       "queueDescription": "Sie sind offline. Stempelungen werden auf diesem Gerät gespeichert und automatisch gesendet, sobald Sie wieder online sind.",
+      "queueEnd": "Ausstempeln speichern",
       "queueStart": "Einstempeln speichern",
-      "queueEnd": "Ausstempeln speichern"
+      "start": "Einstempeln zur Überprüfung speichern"
     },
     "recovery": {
       "archive": "Nachweise archivieren und aufbewahren",
       "archived": "Archiviert – Nachweis aufbewahrt",
-      "description": "Diese Datensätze sind auf diesem Gerät gespeichert. Die Übernahme durch den Server ist unbekannt. Prüfen Sie bestehende Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzzeiten einreichen. Durch das Archivieren bleibt der Nachweis erhalten und die Arbeit auf dem Server wird nicht storniert.",
+      "command": {
+        "blockedPredecessor": "Pausiert — eine frühere Stempelung auf diesem Gerät muss geprüft werden",
+        "committed": "Auf dem Server gespeichert",
+        "exhausted": "Senden nach wiederholten Fehlern gestoppt — auf dem Server nicht bestätigt",
+        "pausedAccess": "Pausiert — melden Sie sich erneut mit Zugriff auf das Stempeln in dieser Organisation an",
+        "pausedContext": "Pausiert — melden Sie sich mit dem Konto und der Organisation an, für die gespeichert wurde",
+        "pausedServer": "Pausiert — der Server nimmt diese Stempelung noch nicht an",
+        "pending": "Wartet auf Senden — auf dem Server nicht bestätigt",
+        "rejected": "Nicht gespeichert — vom Server abgelehnt ({code})",
+        "review": "Prüfung nötig — vom Server nicht angenommen ({code})",
+        "waitingPredecessor": "Wartet auf eine frühere Stempelung auf diesem Gerät"
+      },
+      "descriptionOutcomes": "Diese Einträge sind auf diesem Gerät gespeichert. Sofern ein Eintrag nicht als auf dem Server gespeichert angezeigt wird, ist sein Ergebnis auf dem Server nicht bestätigt. Prüfen Sie vorhandene Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzeinträge erfassen. Archivieren behält die Nachweise und storniert keine Arbeit auf dem Server.",
       "empty": "Keine zugänglichen Datensätze. Ältere Datensätze ohne Kontonachweis erfordern eine Überprüfung auf Organisationsebene; Datensätze ohne Organisationsnachweis erfordern eine separat autorisierte Wiederherstellung.",
       "evidence": "Ursprünglicher Nachweis und Wiederherstellungsstatus",
       "export": "Zugängliche Nachweise exportieren",
@@ -480,20 +487,7 @@
       "loadError": "Gespeicherte Datensätze konnten nicht gelesen werden",
       "loading": "Gespeicherte Datensätze werden gelesen…",
       "review": "Gespeicherte Datensätze überprüfen",
-      "title": "Gespeicherte Stempelzeit-Datensätze",
-      "descriptionOutcomes": "Diese Einträge sind auf diesem Gerät gespeichert. Sofern ein Eintrag nicht als auf dem Server gespeichert angezeigt wird, ist sein Ergebnis auf dem Server nicht bestätigt. Prüfen Sie vorhandene Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzeinträge erfassen. Archivieren behält die Nachweise und storniert keine Arbeit auf dem Server.",
-      "command": {
-        "pending": "Wartet auf Senden — auf dem Server nicht bestätigt",
-        "committed": "Auf dem Server gespeichert",
-        "rejected": "Nicht gespeichert — vom Server abgelehnt ({code})",
-        "review": "Prüfung nötig — vom Server nicht angenommen ({code})",
-        "exhausted": "Senden nach wiederholten Fehlern gestoppt — auf dem Server nicht bestätigt",
-        "pausedContext": "Pausiert — melden Sie sich mit dem Konto und der Organisation an, für die gespeichert wurde",
-        "waitingPredecessor": "Wartet auf eine frühere Stempelung auf diesem Gerät",
-        "blockedPredecessor": "Pausiert — eine frühere Stempelung auf diesem Gerät muss geprüft werden",
-        "pausedServer": "Pausiert — der Server nimmt diese Stempelung noch nicht an",
-        "pausedAccess": "Pausiert — melden Sie sich erneut mit Zugriff auf das Stempeln in dieser Organisation an"
-      }
+      "title": "Gespeicherte Stempelzeit-Datensätze"
     }
   },
   "presence": {
@@ -587,17 +581,16 @@
   "validation": {
     "first-name-required": "Vorname ist erforderlich",
     "invalid-email": "Ungültige E-Mail-Adresse",
-    "invalid-password": "Ungültiges Passwort",
     "last-name-required": "Nachname ist erforderlich",
     "password-required": "Passwort ist erforderlich"
-  },
-  "worksCouncil": {
-    "loadingLabel": "Betriebsratsportal wird geladen"
   },
   "workBalance": {
     "label": "Gesamtbilanz",
     "notCalculated": "Noch nicht berechnet",
     "pendingDescription": "Der Worker wird diese Bilanz in Kürze berechnen.",
     "updatedEveryThreeHours": "Wird alle 3 Stunden aktualisiert"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Betriebsratsportal wird geladen"
   }
 }

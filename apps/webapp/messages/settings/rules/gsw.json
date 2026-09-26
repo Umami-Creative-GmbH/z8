@@ -77,6 +77,129 @@
       },
       "updateCategory": "Kategorie aktualisiere"
     },
+    "approvalEscalation": {
+      "attention": {
+        "alertedAt": "Admins benachrichtigt am {date}",
+        "approvalType": "Genehmigung",
+        "attempts": "Versuche",
+        "channel": "Kanal",
+        "currentApprover": "Aktuelle Zuweisung",
+        "description": "Ungelöste Eskalationsbedingungen bleiben hier, bis sie gelöst werden oder ein Genehmigungsmanager sie schliesst. Benachrichtigungen an Admins schliessen sie nicht.",
+        "details": "Nachweise, Versuche und Verlauf",
+        "dispose": "Schliessen…",
+        "disposed": "Von Manager geschlossen",
+        "empty": "Nichts erfordert Aufmerksamkeit.",
+        "evidence": "Nachweise",
+        "firstRaised": "Erstmals gemeldet",
+        "history": "Verlauf",
+        "lastObserved": "Zuletzt beobachtet",
+        "lastObservedValue": "{date} ({count}×)",
+        "noAttempts": "Keine zugehörigen Versuche erfasst.",
+        "openApproval": "Offene Genehmigungen",
+        "policyRevision": "Richtlinienrevision",
+        "recentlyClosed": "Kürzlich geschlossen ({count})",
+        "recheck": "Erneut prüfen",
+        "resolved": "Glöst",
+        "retryDelivery": "Zuestellig nomol versueche",
+        "title": "Bruucht Ufmerksamkeit",
+        "transfer": "Überträge…",
+        "unknownApprover": "Nöd erfasst"
+      },
+      "channels": {
+        "delivers": "Stellt Eskalatione zue",
+        "description": "De Eskalations-Schalter vo jedem Kanal entscheidet, öb er Eskalations-Nochrichte zuestellt. Kanal-Timeouts sind kani Frischte meh, sobald d Organisationsrichtlinie d Eskalation übernoh hät.",
+        "differs": "Wiicht vo de {hours}-h-Richtlinie ab",
+        "inactive": "Inaktiv",
+        "legacyTimeout": "Kanal-Timeout",
+        "none": "Es sind keni Nochrichte-Kanäl verbunde.",
+        "title": "Zuestelligs-Iistellige für Kanäl"
+      },
+      "description": "Überprüef d Eskalationsrichtlinie vo de Organisation, wie si us de Kanal-Iistellige migriert worde isch, und Bedingige, wo en Gnähmigungs-Manager bruuche.",
+      "dispose": {
+        "confirm": "Iitrag schlüsse",
+        "description": "Bim Schlüsse wird dini Entscheidig im Audit-Log protokolliert. D Gnähmigung wird nöd neu zuegwise und es wird keni wiiteri automatischi Eskalation zueglah.",
+        "noteLabel": "Entscheidigsnotiz",
+        "noteRequired": "Gib en Entscheidigsnotiz ii.",
+        "title": "Ufmerksamkeits-Iitrag schlüsse"
+      },
+      "hoursValue": "{hours} h",
+      "loadFailed": "Eskalations-Iistellige händ nöd chönne glade werde.",
+      "migration": {
+        "channel": "Kanal",
+        "conflictsTitle": "Widersprüchlichi Iistellige",
+        "disabledOutcome": "Deaktiviert, will kein aktive Kanal Gnähmigunge eskaliert hät.",
+        "enabledOutcome": "Aktiviert, will mindestens ein aktive Kanal Gnähmigunge eskaliert hät. S chürzischte aktive Timeout isch zum Antwort-Ziitfenschter worde.",
+        "escalations": "Eskalatione",
+        "markReviewed": "Als überprüft markieren",
+        "migratedAt": "Migriert am {date}.",
+        "noSources": "Beim Migrieren der Richtlinie waren keine Messaging-Kanäle verbunden.",
+        "reviewed": "Überprüft",
+        "reviewedBy": "Überprüft von {name} am {date}",
+        "status": "Status",
+        "timeout": "Timeout",
+        "title": "Migration der Einstellungen",
+        "used": "Verwendet",
+        "usedNo": "Nicht verwendet",
+        "usedYes": "Verwendet"
+      },
+      "navDescription": "Organisations-Eskalationsrichtlinie und Genehmigungen, die Aufmerksamkeit erfordern",
+      "off": "Aus",
+      "on": "Ein",
+      "ownership": {
+        "legacyDescription": "Diese Organisationsrichtlinie ist für den Wechsel zur geteilten Eskalation vorbereitet. Bis dahin verwendet jeder verbundene Kanal weiterhin seine eigenen Eskalationseinstellungen.",
+        "legacyTitle": "Kanalautomatisierung steuert weiterhin die Eskalation",
+        "pausedDescription": "Es finden keine neuen automatischen Übertragungen statt. Bestehende Zuweisungen und die Wiederherstellung der Zustellung bleiben unverändert.",
+        "pausedTitle": "Automatische Eskalation ist pausiert"
+      },
+      "policy": {
+        "description": "Ein einziges Antwortfenster gilt für alle Genehmigungsarten und Kanäle. Kanäle stellen nur Nachrichten zu.",
+        "disabled": "Deaktiviert",
+        "enabled": "Aktiviert",
+        "enabledDescription": "Einen überfälligen Genehmiger durch einen berechtigten Stellvertreter-Manager des Anforderers ersetzen.",
+        "enabledLabel": "Überfällige Genehmigungen eskalieren",
+        "hours": "Stunden",
+        "reasonLabel": "Grund für die Änderung (optional)",
+        "revision": "Revision {revision}",
+        "save": "Richtlinie speichere",
+        "title": "Organisationsrichtlinie",
+        "windowDescription": "Gmässe i abglofene Schtunde sit d'aktuelli Zuewysig bearbeitbar worde isch. En Änderig verschiebt hängigi Frischte, ohni dass d'Uhr neu gschtartet wird.",
+        "windowInvalid": "Gib e ganzi Zahl a Schtunde zwüschet 1 und 720 ii.",
+        "windowLabel": "Antwortzytfänschter"
+      },
+      "revisions": {
+        "changedBy": "Gänderet vo",
+        "migration": "Istellige-Migration",
+        "policy": "Richtlinie",
+        "revision": "Revision",
+        "title": "Richtlinie-Verlauf",
+        "when": "Wänn"
+      },
+      "title": "Freigab-Eskalation",
+      "toast": {
+        "deliveryRetried": "Erneuti Zuestellig planet",
+        "disposed": "Pondänz gschlosse",
+        "rechecked": "{checked} Elemänt prüeft, {resolved} glöst",
+        "requestFailed": "D'Afrag isch fählgschlage. Probier's namal.",
+        "reviewed": "Konflikt als überprüeft markiert",
+        "saved": "Eskalationsrichtlinie gspeicheret",
+        "transferred": "Freigab-Zuewysig überträit",
+        "unchanged": "Kei Änderige zum Speichere"
+      },
+      "transfer": {
+        "confirm": "Überträge",
+        "currentApprover": "Aktuell {name} zuegwise.",
+        "description": "Die aktuelli Freigabeperson verlüürt die Zuewysig und de uswählti Backup-Manager cha drüber us sim Freigabe-Igang entscheide. D'Freigab bliibt hängig, anderi Zuewysige bliibed unveränderet und d'Überträgig wird im Audit-Log protokolliert.",
+        "loadFailed": "Berechtigti Manager händ nöd chönne glade werde.",
+        "loading": "Berechtigti Vorgesetzti wärded glade…",
+        "noCandidates": "Es isch kei berechtigte Stellverträter verfügbar. Nur aktivi Vorgesetzti vo de afragende Person mit Zuegang zum Gnähmigungs-Iigang chönd überneh.",
+        "primary": "Hauptvorgesetzte",
+        "reasonLabel": "Grund (optional)",
+        "recipientLabel": "Übertrage a",
+        "recipientRequired": "Wähl en Stellverträter us.",
+        "recommended": "Nächste ir Reihefolg",
+        "title": "Gnähmigungszueordnig übertrage"
+      }
+    },
     "approvalPolicies": {
       "activeDescription": "Zulässigi Aaträg chönd dere Richtlinie zuegordnet wärde.",
       "activeLabel": "Aktivi Richtlinie",
@@ -85,16 +208,13 @@
       "activeStatus": "Aktive Status",
       "addPolicy": "Richtlinie hinzufüege",
       "approvalType": {
-        "absenceRequests": "Abweseheitsaaträg",
         "absence": "Abweseheit",
         "complianceException": "Compliance-Uusnahm",
         "manualTimeSubmission": "Manuelli Ziiterfassig",
         "policyClockOut": "Uusstemple gemäss Richtlinie",
         "shiftRequest": "Schichtaafrag",
         "timeCorrection": "Ziitkorrektur",
-        "travelExpense": "Reisespese",
-        "timeEntryChanges": "Änderige a de Ziiterfassig",
-        "travelExpenses": "Spese"
+        "travelExpense": "Reisespese"
       },
       "approvalTypes": "Freigabetype",
       "conditionsCount": "Aazahl Bedingige",
@@ -132,6 +252,10 @@
         "created": "Freigaberichtlinie erstellt",
         "saveFailed": "Freigaberichtlinie hät nöd chönne gspeicheret werde."
       },
+      "validation": {
+        "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",
+        "specificEmployeeRequiresId": "Für spezifischi Mitarbeiter-Stufe isch en Mitarbeiter-ID vom Freigabeberechtigte nötig."
+      },
       "fallbackBehavior": {
         "defaultManager": {
           "description": "Schick de Aatrag a de Standard-Vorgesetzte, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
@@ -146,10 +270,6 @@
           "description": "Schick de Aatrag an en Organisations-Admin, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
           "label": "Organisations-Admin"
         }
-      },
-      "validation": {
-        "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",
-        "specificEmployeeRequiresId": "Für spezifischi Mitarbeiter-Stufe isch en Mitarbeiter-ID vom Freigabeberechtigte nötig."
       }
     },
     "changePolicies": {

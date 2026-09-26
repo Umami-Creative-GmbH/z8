@@ -325,8 +325,12 @@
         "approvalHint": "Eski bir onay talebi veya standart iş akışı UUID'si.",
         "approvalId": "Onay Kimliği",
         "chain": "Onay zinciri",
+        "decisionEvidence": "Karar kanıtı",
         "delete": "Zorla sil",
         "deleting": "Siliniyor…",
+        "deliveryIntent": "Teslimat amacı",
+        "deliveryMessage": "Teslim edilen mesaj",
+        "deliveryWork": "Teslimat işi",
         "description": "Bir onayı ve bağlantılı onay kayıtlarını kalıcı olarak kaldırın. Kaynak kayıtlar ve durumları korunur.",
         "errors": {
           "ambiguous": "Bu kimlik her iki onay deposunda da mevcut. Hiçbir onay silinmedi.",
@@ -337,9 +341,13 @@
           "organizationRequired": "Bir kuruluş kimliği girin.",
           "unauthorized": "Platform yöneticisi erişimi gerekiyor."
         },
+        "escalationAttention": "Eskalasyon dikkati",
+        "escalationTransfer": "Eskalasyon aktarımı",
         "legacy": "Eski talep",
         "organizationHint": "Onayın ait olduğu kuruluş.",
         "organizationId": "Kuruluş Kimliği",
+        "reviewBinding": "İnceleme bağlama",
+        "submittedRevision": "Gönderilen revizyon",
         "success": "Onay silindi. Kaldırılan kayıtlar:",
         "title": "Onayı zorla sil",
         "workflow": "İş akışı"
