@@ -14,6 +14,11 @@
  * - the capture after a cancellation expected the retained request, which the
  *   cancellation had just unlinked from its chain stage.
  *
+ * The final legacy approval's after-commit work (the requester's notification,
+ * in every rollout mode and for single-stage requests too) also used to fail:
+ * it parsed the whole request metadata as the correction payload, although
+ * legacy metadata carries submission evidence beside `timeCorrection`.
+ *
  * The real clocking, correction submission, inbox decision and cancellation
  * actions run against the database here; only the request/session, billing
  * guard, notification delivery, the Next cache and the edit-policy capability
@@ -32,6 +37,10 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
+}));
+
+const notifications = vi.hoisted(() => ({
+	onTimeCorrectionApproved: vi.fn(async (_params: { workPeriodId: string }) => undefined),
 }));
 
 vi.mock("@/db", async () => {
@@ -122,12 +131,15 @@ vi.mock("@/lib/billing/guard", () => ({
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
+	return {
+		...Object.fromEntries(
+			Object.entries(original).map(([name, value]) => [
+				name,
+				typeof value === "function" ? async () => undefined : value,
+			]),
+		),
+		onTimeCorrectionApproved: notifications.onTimeCorrectionApproved,
+	};
 });
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => ({
@@ -180,6 +192,7 @@ const ids = {
 	secondStage: "e3293000-0000-4000-8000-000000000003",
 } as const;
 type ObservingRolloutMode = "shadow" | "ready";
+type RolloutMode = "legacy" | ObservingRolloutMode;
 
 function only<T>(rows: readonly T[]): T {
 	const [row] = rows;
@@ -209,7 +222,7 @@ describeIntegration("legacy time correction chain observation (PostgreSQL)", () 
 		]);
 	}
 
-	async function seed(mode: ObservingRolloutMode) {
+	async function seed(mode: RolloutMode) {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		const users = [ids.requesterUser, ids.managerUser, ids.secondManagerUser];
@@ -347,6 +360,20 @@ describeIntegration("legacy time correction chain observation (PostgreSQL)", () 
 		return only(rows);
 	}
 
+	/** The final approval's after-commit dispatch notified the requester. */
+	function expectApprovalNotifiedOnce(workPeriodId: string) {
+		expect(notifications.onTimeCorrectionApproved).toHaveBeenCalledTimes(1);
+		expect(notifications.onTimeCorrectionApproved).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId,
+				employeeUserId: ids.requesterUser,
+				organizationId: ids.organization,
+				originalTime: new Date("2026-07-22T08:00:00Z"),
+				correctedTime: new Date("2026-07-22T08:30:00Z"),
+			}),
+		);
+	}
+
 	async function periodStart(workPeriodId: string): Promise<Date> {
 		const { rows } = await admin.query<{ start_time: Date }>(
 			`select start_time from work_period where organization_id = $1 and id = $2`,
@@ -392,6 +419,7 @@ describeIntegration("legacy time correction chain observation (PostgreSQL)", () 
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
+		notifications.onTimeCorrectionApproved.mockClear();
 	});
 
 	afterAll(async () => {
@@ -405,9 +433,19 @@ describeIntegration("legacy time correction chain observation (PostgreSQL)", () 
 		await pool.end();
 	});
 
-	/** Records work and submits a chain-routed correction moving clock-in to 08:30. */
-	async function submitChainCorrection(mode: ObservingRolloutMode) {
+	/**
+	 * Records work and submits a correction moving clock-in to 08:30. It is
+	 * chain-routed unless `singleStage` deactivates the policy, which leaves the
+	 * direct manager as the only approver.
+	 */
+	async function submitChainCorrection(mode: RolloutMode, options?: { singleStage?: boolean }) {
 		await seed(mode);
+		if (options?.singleStage) {
+			await admin.query(
+				"update approval_policy set is_active = false where organization_id = $1 and id = $2",
+				[ids.organization, ids.policy],
+			);
+		}
 		const workPeriodId = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
 
 		actAs(ids.requesterUser);
@@ -426,6 +464,7 @@ describeIntegration("legacy time correction chain observation (PostgreSQL)", () 
 			throw new Error(`Submission failed: ${submitted.error}`);
 		}
 		expect(submitted.data.status).toBe("pending");
+		if (mode === "legacy") return workPeriodId;
 
 		// The observed submission keeps the chain's own instant, only without the
 		// sub-millisecond digits the canonical model cannot represent.
@@ -459,8 +498,30 @@ describeIntegration("legacy time correction chain observation (PostgreSQL)", () 
 				submitted_matches_chain: true,
 			});
 			expect(await periodStart(workPeriodId)).toEqual(new Date("2026-07-22T08:30:00Z"));
+			expectApprovalNotifiedOnce(workPeriodId);
 		},
 	);
+
+	it("dispatches the after-commit work of a legacy-mode chain's final approval", async () => {
+		const workPeriodId = await submitChainCorrection("legacy");
+
+		await expect(approveAs(ids.managerUser, ids.manager, workPeriodId)).resolves.toBeDefined();
+		expect(notifications.onTimeCorrectionApproved).not.toHaveBeenCalled();
+
+		await expect(
+			approveAs(ids.secondManagerUser, ids.secondManager, workPeriodId),
+		).resolves.toBeDefined();
+		expect(await periodStart(workPeriodId)).toEqual(new Date("2026-07-22T08:30:00Z"));
+		expectApprovalNotifiedOnce(workPeriodId);
+	});
+
+	it("dispatches the after-commit work of a single-stage legacy-mode approval", async () => {
+		const workPeriodId = await submitChainCorrection("legacy", { singleStage: true });
+
+		await expect(approveAs(ids.managerUser, ids.manager, workPeriodId)).resolves.toBeDefined();
+		expect(await periodStart(workPeriodId)).toEqual(new Date("2026-07-22T08:30:00Z"));
+		expectApprovalNotifiedOnce(workPeriodId);
+	});
 
 	it.each<ObservingRolloutMode>(["shadow", "ready"])(
 		"observes the cancellation of a pending %s-mode chain correction",

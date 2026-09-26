@@ -4542,9 +4542,9 @@ async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	});
 	if (!request)
 		throw new Error("Committed time correction request was not found");
-	const correction = normalizeTimeCorrectionWorkflowPayload(
-		request.metadata,
-	).timeCorrection;
+	// Legacy request metadata also carries submission evidence and the original
+	// work metadata beside `timeCorrection`.
+	const correction = correctionPayload(request.metadata);
 	const result = await loadCanonicalAutoCompletionReplay({
 		dbService: input.dbService,
 		organizationId: input.actor.organizationId,

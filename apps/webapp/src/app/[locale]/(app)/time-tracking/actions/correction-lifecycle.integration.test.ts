@@ -31,6 +31,11 @@ const harness = vi.hoisted(() => ({
 	isOrgAdmin: false,
 }));
 
+const notifications = vi.hoisted(() => ({
+	onTimeCorrectionApproved: vi.fn(async (_params: { workPeriodId: string }) => undefined),
+	onTimeCorrectionRejected: vi.fn(async (_params: { workPeriodId: string }) => undefined),
+}));
+
 vi.mock("@/db", async () => {
 	const { Pool } = await import("pg");
 	const { drizzle } = await import("drizzle-orm/node-postgres");
@@ -119,12 +124,16 @@ vi.mock("@/lib/billing/guard", () => ({
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
+	return {
+		...Object.fromEntries(
+			Object.entries(original).map(([name, value]) => [
+				name,
+				typeof value === "function" ? async () => undefined : value,
+			]),
+		),
+		onTimeCorrectionApproved: notifications.onTimeCorrectionApproved,
+		onTimeCorrectionRejected: notifications.onTimeCorrectionRejected,
+	};
 });
 
 vi.mock("./policy-helpers", async (importOriginal) => ({
@@ -539,6 +548,8 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 	});
 
 	beforeEach(async () => {
+		notifications.onTimeCorrectionApproved.mockClear();
+		notifications.onTimeCorrectionRejected.mockClear();
 		await seed();
 	});
 
@@ -795,6 +806,64 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 			result: { kind: "unchanged" },
 			corrections: [{ endpoint: "clock_out", entryId: retained?.id, meaning: "rejected_inactive" }],
 		});
+		// The after-commit dispatch notified the requester.
+		expect(notifications.onTimeCorrectionApproved).not.toHaveBeenCalled();
+		expect(notifications.onTimeCorrectionRejected).toHaveBeenCalledTimes(1);
+		expect(notifications.onTimeCorrectionRejected).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: work.id,
+				employeeUserId: ids.requesterUser,
+				organizationId: ids.organization,
+			}),
+		);
+	});
+
+	// #461: the after-commit dispatch parsed the whole legacy request metadata as the
+	// strict correction payload and threw on the submission evidence beside it, which
+	// skipped the requester's notification and the work-balance dirty mark. Without
+	// adoption the dirty mark only happens after commit, so it is observable here.
+	it("runs a legacy decision's after-commit work despite the submission metadata", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await setAdmission("inactive");
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		const approvalId = await pendingApprovalId(work.id);
+		const { rows: requests } = await admin.query<{ metadata: Record<string, unknown> }>(
+			"select metadata from approval_request where organization_id = $1 and id = $2",
+			[ids.organization, approvalId],
+		);
+		expect(Object.keys(only(requests).metadata)).toEqual(
+			expect.arrayContaining([
+				"timeCorrection",
+				"submission",
+				"timeCorrectionOriginalWorkMetadata",
+			]),
+		);
+		await admin.query(
+			"delete from employee_work_balance where organization_id = $1 and employee_id = $2",
+			[ids.organization, ids.requester],
+		);
+
+		await expect(approve(approvalId)).resolves.toBeDefined();
+
+		const { rows: balances } = await admin.query(
+			`select is_dirty, dirty_from_date::text from employee_work_balance
+			 where organization_id = $1 and employee_id = $2`,
+			[ids.organization, ids.requester],
+		);
+		expect(only(balances)).toEqual({ is_dirty: true, dirty_from_date: "2026-07-22" });
+		expect(notifications.onTimeCorrectionRejected).not.toHaveBeenCalled();
+		expect(notifications.onTimeCorrectionApproved).toHaveBeenCalledTimes(1);
+		expect(notifications.onTimeCorrectionApproved).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workPeriodId: work.id,
+				employeeUserId: ids.requesterUser,
+				organizationId: ids.organization,
+				originalTime: new Date("2026-07-22T08:00:00Z"),
+				correctedTime: new Date("2026-07-22T08:30:00Z"),
+			}),
+		);
 	});
 
 	it("cancels by retaining the committed entries, replays, and keeps appending", async () => {
