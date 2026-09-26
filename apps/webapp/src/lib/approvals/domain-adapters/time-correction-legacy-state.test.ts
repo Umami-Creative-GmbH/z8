@@ -1604,6 +1604,37 @@ describe("captureTimeCorrectionLegacyApprovalState", () => {
 		);
 	});
 
+	it("reads defaultNow() chain timestamps at millisecond precision", async () => {
+		const value = envelope({
+			chains: [chain({ createdAt: "2026-07-20 08:00:00.123456" })],
+			chainRows: [
+				stage(1, { createdAt: "2026-07-20 08:01:00.654321" }),
+				stage(2, { createdAt: "2026-07-20T08:02:00.000999" }),
+			],
+		});
+		value.identityEvidence = { employees: employeesFor(value) };
+
+		const { state } = await capture(value);
+
+		expect(state.chain?.createdAt.toString()).toBe("2026-07-20T08:00:00.123Z");
+		expect(state.chainRows.map((row) => row.createdAt.toString())).toEqual([
+			"2026-07-20T08:01:00.654Z",
+			"2026-07-20T08:02:00Z",
+		]);
+	});
+
+	it("rejects chain timestamps with more than microsecond precision", async () => {
+		const value = envelope({
+			chains: [chain({ createdAt: "2026-07-20 08:00:00.123456789" })],
+			chainRows: [stage(1), stage(2)],
+		});
+		value.identityEvidence = { employees: employeesFor(value) };
+
+		await expect(capture(value)).rejects.toMatchObject({
+			name: "TimeCorrectionLegacyStateCaptureError",
+		});
+	});
+
 	it("captures every scoped source request without an arbitrary SQL limit", async () => {
 		const { fake } = await capture(envelope());
 		const query = new PgDialect().sqlToQuery(fake.calls[0]);
