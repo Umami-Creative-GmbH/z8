@@ -995,7 +995,7 @@ async function assess(
 		const authorityAdmitted = CARD_AUTHORITY[workflowType].includes(authority);
 		const legacyAbsence = workflowType === "absence" && authority === "legacy";
 		// Legacy absence (#384) and time (#432) cards: unverified providers stay
-		// review-only in code, and legacy transfers get no replacement card.
+		// review-only in code.
 		const legacyCardsInCode =
 			authority === "legacy" && (legacyAbsence || isTimeApprovalWorkflowType(workflowType));
 		if (!authorityAdmitted) {
@@ -1048,18 +1048,20 @@ async function assess(
 			const integration = configured.get(provider);
 			if (!integration) {
 				findings.push({ code: "provider_not_configured", severity: "blocker" });
-			} else if (legacyCardsInCode && transfersActive) {
-				// Legacy transfers get no replacement card and leave the former
-				// holder's card unrefreshed (#384 blocker 5, #408).
+			} else if (legacyAbsence && transfersActive) {
+				// Legacy absence replacement delivery (#408) is not yet admitted for
+				// the pilot (#423).
 				findings.push({ code: "escalation_replacement_unsupported", severity: "hold" });
 			} else if (
-				authority === "canonical" &&
-				isCanonicalEscalationWorkflowType(workflowType) &&
+				(authority === "canonical"
+					? isCanonicalEscalationWorkflowType(workflowType)
+					: isTimeApprovalWorkflowType(workflowType)) &&
 				transfersActive &&
 				!integration.escalations
 			) {
-				// Channels are frozen at transfer expansion (#300): a backup reached
-				// through this provider gets no replacement card, only the web inbox.
+				// Channels are frozen at transfer expansion (#300, and #470 for legacy
+				// time transfers): a backup reached through this provider gets no
+				// replacement card, only the web inbox.
 				findings.push({ code: "escalation_delivery_disabled", severity: "hold" });
 			}
 			const scope = { organizationId, workflowType, provider };

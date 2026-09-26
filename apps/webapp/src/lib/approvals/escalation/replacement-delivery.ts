@@ -17,6 +17,7 @@ import {
 	planReplacementDeliveryWork,
 	type UntrackedApprovalCard,
 } from "../delivery/store";
+import { isTimeApprovalWorkflowType, TIME_APPROVAL_WORKFLOW_TYPES } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 
 // ============================================
@@ -59,12 +60,10 @@ export interface EscalationTransferExpansionSummary {
  * their work has committed, so a crash re-expands them and expansion can never
  * repeat the authority transfer.
  *
- * Legacy-authoritative transfers (#408) of absences and travel expenses are
- * expanded into their legacy lifecycle while the kind has legacy authority; an
- * event waits (pending) while it does not, so it never acts under canonical
- * authority. Legacy time transfers (#439) wait too: their cycles are
- * delivered since #432, but replacement delivery was built for absences and
- * expenses only.
+ * Legacy-authoritative transfers (#408) of absences, travel expenses and
+ * (#470) time approvals (#439) are expanded into their legacy lifecycle while
+ * the kind has legacy authority; an event waits (pending) while it does not,
+ * so it never acts under canonical authority.
  */
 export async function expandEscalationTransferEvents(input: {
 	organizationId: string;
@@ -112,6 +111,10 @@ export async function expandEscalationTransferEvents(input: {
 								(t.workflow_type = 'absence' and e.payload->>'sourceType' = 'absence_entry')
 								or (t.workflow_type = 'travel_expense'
 									and e.payload->>'sourceType' = 'travel_expense_claim')
+								or (t.workflow_type = any(
+									${sql.param([...TIME_APPROVAL_WORKFLOW_TYPES])}::approval_workflow_type[]
+								)
+									and e.payload->>'sourceType' = 'time_entry')
 							)
 						)
 					)
@@ -182,8 +185,10 @@ export async function expandEscalationTransferEvents(input: {
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
- * One legacy transfer (#408) into its legacy lifecycle: absences deliver per
- * submission cycle (#384), expense claims per claim (#296). The former
+ * One legacy transfer (#408) into its legacy lifecycle: absences (#384) and
+ * time approvals (#432, #470) deliver per submission cycle, expense claims per
+ * claim (#296). A time transfer only moves a direct request (#439), so its
+ * cycle is the one its delivery recorded, or else the request itself. The former
  * holder's cards that the old notification path sent are adopted from every
  * provider that has a delivery control for the kind now (only those can be
  * claimed), so they are retired with the owner's own.
@@ -212,7 +217,7 @@ async function planLegacyTransfer(
 		sourceType: text(event.source_type, "source type"),
 		sourceId: text(event.source_id, "source"),
 		cycleId:
-			workflowType === "absence"
+			workflowType === "absence" || isTimeApprovalWorkflowType(workflowType)
 				? await resolveRecordedLegacyDeliveryCycle(transaction, {
 						organizationId: input.organizationId,
 						approvalRequestId,
