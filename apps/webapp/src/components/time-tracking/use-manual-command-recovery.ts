@@ -61,6 +61,8 @@ export function useManualCommandRecovery(scope: ManualRecoveryScope | null) {
 	const refresh = useCallback(() => {
 		setRecords(scopeKey ? listManualRecoveries(storage, JSON.parse(scopeKey)) : []);
 	}, [scopeKey, storage]);
+	// The records live in this tab's sessionStorage, which only exists after mount.
+	// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
 	useEffect(refresh, [refresh]);
 
 	async function attempt(
@@ -92,11 +94,7 @@ export function useManualCommandRecovery(scope: ManualRecoveryScope | null) {
 	): Promise<ManualAttemptOutcome> {
 		const frozen = freezeManualCommand(frozenScope, command, Temporal.Now.instant().toString());
 		setBusyId(frozen.submissionId);
-		try {
-			return await attempt(frozen, null);
-		} finally {
-			setBusyId(null);
-		}
+		return attempt(frozen, null).finally(() => setBusyId(null));
 	}
 
 	function findStored(shown: ManualRecoveryRecord) {
@@ -119,11 +117,7 @@ export function useManualCommandRecovery(scope: ManualRecoveryScope | null) {
 			return null;
 		}
 		setBusyId(record.submissionId);
-		try {
-			return await task(record);
-		} finally {
-			setBusyId(null);
-		}
+		return task(record).finally(() => setBusyId(null));
 	}
 
 	/** Resend exactly the frozen command under its identity. */

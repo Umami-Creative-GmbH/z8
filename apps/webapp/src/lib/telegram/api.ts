@@ -239,6 +239,8 @@ async function callApiWithOutcome<T>(
 	let response: Response;
 	let text: string;
 	try {
+		// The body is read inside the timeout on every status; failures are classified from it below.
+		// react-doctor-disable-next-line react-doctor/no-fetch-response-used-without-status-check
 		response = await fetch(`${TELEGRAM_API_BASE}/bot${token}/${method}`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },

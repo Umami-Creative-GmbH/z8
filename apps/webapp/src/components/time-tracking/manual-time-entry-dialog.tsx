@@ -1221,6 +1221,9 @@ function useTargetDraftRevalidation({
 		if (projectIneligible) form.setFieldValue("projectId", undefined);
 		if (categoryIneligible) form.setFieldValue("workCategoryId", undefined);
 		if (projectIneligible || categoryIneligible) {
+			// The TanStack form store is external; this reports what was just cleared in it
+			// after fresh context arrived, which render cannot derive afterwards.
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
 			setMessage(
 				t(
 					"timeTracking.manualEntry.context.choicesCleared",
@@ -1231,6 +1234,302 @@ function useTargetDraftRevalidation({
 	}, [context, form, t]);
 
 	return { message, clearMessage: () => setMessage("") };
+}
+
+type ZoneChoice = { source: string; value: string } | null;
+
+/**
+ * The zone a draft is entered in. Self entries may continue in the browser zone
+ * after updating the saved one; on-behalf entries always use the target's zone.
+ */
+function resolveManualEntryZone(
+	context: ManualEntryTargetContext | null | undefined,
+	continueOnceZone: ZoneChoice,
+	timezoneOverride: ZoneChoice,
+): { effectiveTimezone: string | null; zoneBasis: ManualZoneBasis } {
+	const contextTimezone = context?.timezone ?? null;
+	if (!contextTimezone || !context?.isOwnEntry) {
+		return { effectiveTimezone: contextTimezone, zoneBasis: "target" };
+	}
+	if (context.manualCommandVersion === 2 && continueOnceZone?.source === contextTimezone) {
+		return { effectiveTimezone: continueOnceZone.value, zoneBasis: "browser" };
+	}
+	return {
+		effectiveTimezone:
+			timezoneOverride?.source === contextTimezone ? timezoneOverride.value : contextTimezone,
+		zoneBasis: "target",
+	};
+}
+
+function announceCreatedEntry(
+	result: Extract<ManualTimeEntryResult, { success: true }>,
+	timezone: string,
+	timeFormat: ReturnType<typeof useTimeFormat>,
+	t: Translate,
+) {
+	// Show adjusted times info if times were modified
+	if (result.data?.wasAdjusted && result.data.adjustedTimes) {
+		const adjustedIn = formatTimeInZone(
+			result.data.adjustedTimes.clockIn,
+			timezone,
+			false,
+			timeFormat,
+		);
+		const adjustedOut = formatTimeInZone(
+			result.data.adjustedTimes.clockOut,
+			timezone,
+			false,
+			timeFormat,
+		);
+		toast.info(
+			t(
+				"timeTracking.manualEntry.success.adjusted",
+				"Times adjusted to {clockIn} - {clockOut} to avoid overlap",
+				{ clockIn: adjustedIn, clockOut: adjustedOut },
+			),
+			{ duration: 6000 },
+		);
+	}
+
+	toast.success(
+		result.data?.requiresApproval
+			? t(
+					"timeTracking.manualEntry.success.pendingApproval",
+					"Time entry submitted for manager approval",
+				)
+			: t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
+	);
+}
+
+function announceRefusedEntry(
+	result: Extract<ManualTimeEntryResult, { success: false }>,
+	t: Translate,
+) {
+	const message = outcomeMessage(result);
+	toast.error(
+		message
+			? t(message[0], message[1])
+			: result.error ||
+					t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry"),
+	);
+}
+
+/** Recovery of this tab's frozen commands, acting on the stored records. */
+function ConnectedManualRecoveryPanel({
+	form,
+	onCommitted,
+	recovery,
+	t,
+}: {
+	form: ReturnType<typeof useManualEntryForm>;
+	onCommitted: () => void;
+	recovery: ReturnType<typeof useManualCommandRecovery>;
+	t: Translate;
+}) {
+	function refusalMessage(code: string, error: string) {
+		return code === MANUAL_ENTRY_CONTEXT_MISMATCH
+			? t(MESSAGES.contextMismatch[0], MESSAGES.contextMismatch[1])
+			: error;
+	}
+
+	async function handleRecoveryRetry(record: ManualRecoveryRecord) {
+		const outcome: ManualAttemptOutcome | null = await recovery.retry(record);
+		if (!outcome) return;
+		const { result, verdict } = outcome;
+		if (verdict.kind === "committed" && result?.success) {
+			onCommitted();
+			toast.success(
+				result.data.requiresApproval
+					? t(
+							"timeTracking.manualEntry.success.pendingApproval",
+							"Time entry submitted for manager approval",
+						)
+					: t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
+			);
+			return;
+		}
+		if (verdict.kind === "uncertain" || !result || result.success) {
+			toast.error(t(MESSAGES.stillUncertain[0], MESSAGES.stillUncertain[1]));
+			return;
+		}
+		if (verdict.kind === "refused") {
+			toast.error(refusalMessage(verdict.code, result.error));
+			return;
+		}
+		const message = outcomeMessage(result);
+		toast.error(message ? t(message[0], message[1]) : result.error);
+	}
+
+	async function handleRecoveryLookup(record: ManualRecoveryRecord) {
+		const outcome: ManualLookupOutcome | null = await recovery.lookup(record);
+		if (!outcome) return;
+		const { result } = outcome;
+		switch (result?.status) {
+			case "committed": {
+				const { requiresApproval, currentApprovalStatus } = result.data;
+				onCommitted();
+				// The original outcome, with the current status read separately.
+				const status = APPROVAL_STATUS_MESSAGES[currentApprovalStatus];
+				toast.success(
+					requiresApproval
+						? t(MESSAGES.savedForApproval[0], MESSAGES.savedForApproval[1], {
+								status: t(status[0], status[1]),
+							})
+						: t(MESSAGES.saved[0], MESSAGES.saved[1]),
+				);
+				return;
+			}
+			case "not_committed":
+				toast.info(t(MESSAGES.notCommitted[0], MESSAGES.notCommitted[1]));
+				return;
+			case "conflict":
+				toast.error(t(MESSAGES.collision[0], MESSAGES.collision[1]));
+				return;
+			case "unsupported":
+				toast.error(t(MESSAGES.unsupported[0], MESSAGES.unsupported[1]));
+				return;
+			case "refused":
+				toast.error(refusalMessage(result.code, result.error));
+				return;
+			default:
+				toast.error(t(MESSAGES.checkFailed[0], MESSAGES.checkFailed[1]));
+		}
+	}
+
+	/** Conclusively unsaved: its values become the editable draft for a fresh submission. */
+	function handleRecoveryEditAsNew(record: ManualRecoveryRecord) {
+		const command = frozenManualCommand(record);
+		form.setFieldValue("date", command.date);
+		form.setFieldValue("clockInTime", command.clockIn.time);
+		form.setFieldValue("clockOutTime", command.clockOut.time);
+		form.setFieldValue("reason", command.reason);
+		form.setFieldValue("projectId", command.projectId ?? undefined);
+		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
+		recovery.discard(record);
+	}
+
+	return (
+		<ManualRecoveryPanel
+			busyId={recovery.busyId}
+			onDiscard={recovery.discard}
+			onEditAsNew={handleRecoveryEditAsNew}
+			onLookup={(record) => void handleRecoveryLookup(record)}
+			onRetry={(record) => void handleRecoveryRetry(record)}
+			records={recovery.records}
+			t={t}
+		/>
+	);
+}
+
+/**
+ * Continuations after the browser and saved zones disagreed: update the saved
+ * zone and submit, or submit once in the browser zone.
+ */
+function useTimezoneContinuation({
+	context,
+	pendingMismatch,
+	setPendingMismatch,
+	setTimezoneOverride,
+	setContinueOnceZone,
+	clearOccurrences,
+	submitManualEntry,
+	pendingRef,
+	t,
+}: {
+	context: ManualEntryTargetContext | null;
+	pendingMismatch: PendingMismatch | null;
+	setPendingMismatch: (mismatch: PendingMismatch | null) => void;
+	setTimezoneOverride: (zone: ZoneChoice) => void;
+	setContinueOnceZone: (zone: ZoneChoice) => void;
+	clearOccurrences: () => void;
+	submitManualEntry: SubmitManualEntry;
+	pendingRef: React.RefObject<boolean>;
+	t: Translate;
+}) {
+	const queryClient = useQueryClient();
+	const [isPending, setIsPending] = useState(false);
+	const contextTimezone = context?.timezone ?? null;
+
+	async function updateTimezoneAndSubmit() {
+		if (!pendingMismatch || pendingRef.current) return;
+
+		await runTimezoneContinuation(
+			pendingRef,
+			setIsPending,
+			async () => {
+				try {
+					const result = await updateTimezone(pendingMismatch.browserTimezone);
+					if (!result?.success) {
+						toast.error(result?.error || "Failed to update timezone");
+						return;
+					}
+
+					const { value, browserTimezone, submissionId, target } = pendingMismatch;
+					if (contextTimezone) {
+						setTimezoneOverride({
+							source: contextTimezone,
+							value: browserTimezone,
+						});
+					}
+					setPendingMismatch(null);
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.manualEntry.all,
+					});
+					if (
+						context?.manualCommandVersion === 2 &&
+						needsReviewInZone(value, browserTimezone)
+					) {
+						clearOccurrences();
+						toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
+						return;
+					}
+					await submitManualEntry(
+						value,
+						browserTimezone,
+						browserTimezone,
+						submissionId,
+						"target",
+						target,
+					);
+				} catch {
+					toast.error("An error occurred while updating timezone");
+				}
+			},
+		);
+	}
+
+	async function continueOnce() {
+		if (!pendingMismatch || pendingRef.current) return;
+
+		await runTimezoneContinuation(
+			pendingRef,
+			setIsPending,
+			async () => {
+				const { value, browserTimezone, submissionId, target } = pendingMismatch;
+				if (context?.manualCommandVersion === 2 && contextTimezone) {
+					// The form now shows the browser zone; its choices apply there.
+					setContinueOnceZone({ source: contextTimezone, value: browserTimezone });
+					if (needsReviewInZone(value, browserTimezone)) {
+						setPendingMismatch(null);
+						clearOccurrences();
+						toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
+						return;
+					}
+				}
+				await submitManualEntry(
+					value,
+					browserTimezone,
+					browserTimezone,
+					submissionId,
+					"browser",
+					target,
+				);
+				setPendingMismatch(null);
+			},
+		);
+	}
+
+	return { isPending, updateTimezoneAndSubmit, continueOnce };
 }
 
 export function ManualTimeEntryDialog({
@@ -1248,12 +1547,9 @@ export function ManualTimeEntryDialog({
 	hideTrigger = false,
 }: Props) {
 	const { t } = useTranslate();
-	const queryClient = useQueryClient();
 	const [internalOpen, setInternalOpen] = useState(false);
 	const [pendingMismatch, setPendingMismatch] =
 		useState<PendingMismatch | null>(null);
-	const [isTimezoneContinuationPending, setIsTimezoneContinuationPending] =
-		useState(false);
 	const [timezoneOverride, setTimezoneOverride] = useState<{
 		source: string;
 		value: string;
@@ -1270,24 +1566,11 @@ export function ManualTimeEntryDialog({
 	const open = controlledOpen ?? internalOpen;
 	const targetContext = useManualEntryTargetContext(targetEmployeeId, open);
 	const context = targetContext.context;
-	const contextTimezone = context?.timezone ?? null;
-	// Self entries may continue in the browser zone after updating the saved one;
-	// on-behalf entries always use the target's zone.
-	const continuesOnce = Boolean(
-		contextTimezone &&
-			context?.isOwnEntry &&
-			context.manualCommandVersion === 2 &&
-			continueOnceZone?.source === contextTimezone,
+	const { effectiveTimezone, zoneBasis } = resolveManualEntryZone(
+		context,
+		continueOnceZone,
+		timezoneOverride,
 	);
-	const effectiveTimezone =
-		continuesOnce && continueOnceZone
-			? continueOnceZone.value
-			: contextTimezone &&
-					context?.isOwnEntry &&
-					timezoneOverride?.source === contextTimezone
-				? timezoneOverride.value
-				: contextTimezone;
-	const zoneBasis: ManualZoneBasis = continuesOnce ? "browser" : "target";
 	const defaultsTimezone = effectiveTimezone ?? employeeTimezone;
 	// Callers may not know the target's name (e.g. a calendar opened by URL).
 	const resolvedTargetName =
@@ -1354,66 +1637,18 @@ export function ManualTimeEntryDialog({
 		}
 
 		if (result.success) {
-			// Show adjusted times info if times were modified
-			if (result.data?.wasAdjusted && result.data.adjustedTimes) {
-				const adjustedIn = formatTimeInZone(
-					result.data.adjustedTimes.clockIn,
-					timezone,
-					false,
-					timeFormat,
-				);
-				const adjustedOut = formatTimeInZone(
-					result.data.adjustedTimes.clockOut,
-					timezone,
-					false,
-					timeFormat,
-				);
-				toast.info(
-					t(
-						"timeTracking.manualEntry.success.adjusted",
-						"Times adjusted to {clockIn} - {clockOut} to avoid overlap",
-						{ clockIn: adjustedIn, clockOut: adjustedOut },
-					),
-					{ duration: 6000 },
-				);
-			}
-
-			if (result.data?.requiresApproval) {
-				toast.success(
-					t(
-						"timeTracking.manualEntry.success.pendingApproval",
-						"Time entry submitted for manager approval",
-					),
-				);
-			} else {
-				toast.success(
-					t(
-						"timeTracking.manualEntry.success.created",
-						"Time entry created successfully",
-					),
-				);
-			}
+			announceCreatedEntry(result, timezone, timeFormat, t);
 			handleOpenChange(false);
 			router.refresh();
 			onSuccess?.();
 			return true;
-		} else {
-			const message = outcomeMessage(result);
-			toast.error(
-				message
-					? t(message[0], message[1])
-					: result.error ||
-							t(
-								"timeTracking.manualEntry.errors.createFailed",
-								"Failed to create time entry",
-							),
-			);
-			if (needsReconfirmation(result)) clearOccurrences();
-			// The server rejected the draft; refresh the advisory context so the
-			// form reflects the target's current zone and eligible choices.
-			void targetContext.refetch();
-			return false;
 		}
+		announceRefusedEntry(result, t);
+		if (needsReconfirmation(result)) clearOccurrences();
+		// The server rejected the draft; refresh the advisory context so the
+		// form reflects the target's current zone and eligible choices.
+		void targetContext.refetch();
+		return false;
 	}
 
 	const form = useManualEntryForm({
@@ -1453,84 +1688,17 @@ export function ManualTimeEntryDialog({
 		targetEmployeeId,
 	});
 
-	async function handleUpdateTimezoneAndSubmit() {
-		if (!pendingMismatch || isTimezoneContinuationPendingRef.current) return;
-
-		await runTimezoneContinuation(
-			isTimezoneContinuationPendingRef,
-			setIsTimezoneContinuationPending,
-			async () => {
-				try {
-					const result = await updateTimezone(pendingMismatch.browserTimezone);
-					if (!result?.success) {
-						toast.error(result?.error || "Failed to update timezone");
-						return;
-					}
-
-					const { value, browserTimezone, submissionId, target } = pendingMismatch;
-					if (contextTimezone) {
-						setTimezoneOverride({
-							source: contextTimezone,
-							value: browserTimezone,
-						});
-					}
-					setPendingMismatch(null);
-					void queryClient.invalidateQueries({
-						queryKey: queryKeys.manualEntry.all,
-					});
-					if (
-						context?.manualCommandVersion === 2 &&
-						needsReviewInZone(value, browserTimezone)
-					) {
-						clearOccurrences();
-						toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
-						return;
-					}
-					await submitManualEntry(
-						value,
-						browserTimezone,
-						browserTimezone,
-						submissionId,
-						"target",
-						target,
-					);
-				} catch {
-					toast.error("An error occurred while updating timezone");
-				}
-			},
-		);
-	}
-
-	async function handleContinueOnce() {
-		if (!pendingMismatch || isTimezoneContinuationPendingRef.current) return;
-
-		await runTimezoneContinuation(
-			isTimezoneContinuationPendingRef,
-			setIsTimezoneContinuationPending,
-			async () => {
-				const { value, browserTimezone, submissionId, target } = pendingMismatch;
-				if (context?.manualCommandVersion === 2 && contextTimezone) {
-					// The form now shows the browser zone; its choices apply there.
-					setContinueOnceZone({ source: contextTimezone, value: browserTimezone });
-					if (needsReviewInZone(value, browserTimezone)) {
-						setPendingMismatch(null);
-						clearOccurrences();
-						toast.error(t(MESSAGES.occurrenceRequired[0], MESSAGES.occurrenceRequired[1]));
-						return;
-					}
-				}
-				await submitManualEntry(
-					value,
-					browserTimezone,
-					browserTimezone,
-					submissionId,
-					"browser",
-					target,
-				);
-				setPendingMismatch(null);
-			},
-		);
-	}
+	const continuation = useTimezoneContinuation({
+		context,
+		pendingMismatch,
+		setPendingMismatch,
+		setTimezoneOverride,
+		setContinueOnceZone,
+		clearOccurrences,
+		submitManualEntry,
+		pendingRef: isTimezoneContinuationPendingRef,
+		t,
+	});
 
 	const handleOpenChange = (isOpen: boolean) => {
 		if (!isOpen) setContinueOnceZone(null);
@@ -1566,93 +1734,6 @@ export function ManualTimeEntryDialog({
 		wasOpenRef.current = open;
 	});
 
-	function afterRecoveredCommit() {
-		router.refresh();
-		onSuccess?.();
-	}
-
-	function refusalMessage(code: string, error: string) {
-		return code === MANUAL_ENTRY_CONTEXT_MISMATCH
-			? t(MESSAGES.contextMismatch[0], MESSAGES.contextMismatch[1])
-			: error;
-	}
-
-	async function handleRecoveryRetry(record: ManualRecoveryRecord) {
-		const outcome: ManualAttemptOutcome | null = await recovery.retry(record);
-		if (!outcome) return;
-		const { result, verdict } = outcome;
-		if (verdict.kind === "committed" && result?.success) {
-			afterRecoveredCommit();
-			toast.success(
-				result.data.requiresApproval
-					? t(
-							"timeTracking.manualEntry.success.pendingApproval",
-							"Time entry submitted for manager approval",
-						)
-					: t("timeTracking.manualEntry.success.created", "Time entry created successfully"),
-			);
-			return;
-		}
-		if (verdict.kind === "uncertain" || !result || result.success) {
-			toast.error(t(MESSAGES.stillUncertain[0], MESSAGES.stillUncertain[1]));
-			return;
-		}
-		if (verdict.kind === "refused") {
-			toast.error(refusalMessage(verdict.code, result.error));
-			return;
-		}
-		const message = outcomeMessage(result);
-		toast.error(message ? t(message[0], message[1]) : result.error);
-	}
-
-	async function handleRecoveryLookup(record: ManualRecoveryRecord) {
-		const outcome: ManualLookupOutcome | null = await recovery.lookup(record);
-		if (!outcome) return;
-		const { result } = outcome;
-		switch (result?.status) {
-			case "committed": {
-				const { requiresApproval, currentApprovalStatus } = result.data;
-				afterRecoveredCommit();
-				// The original outcome, with the current status read separately.
-				const status = APPROVAL_STATUS_MESSAGES[currentApprovalStatus];
-				toast.success(
-					requiresApproval
-						? t(MESSAGES.savedForApproval[0], MESSAGES.savedForApproval[1], {
-								status: t(status[0], status[1]),
-							})
-						: t(MESSAGES.saved[0], MESSAGES.saved[1]),
-				);
-				return;
-			}
-			case "not_committed":
-				toast.info(t(MESSAGES.notCommitted[0], MESSAGES.notCommitted[1]));
-				return;
-			case "conflict":
-				toast.error(t(MESSAGES.collision[0], MESSAGES.collision[1]));
-				return;
-			case "unsupported":
-				toast.error(t(MESSAGES.unsupported[0], MESSAGES.unsupported[1]));
-				return;
-			case "refused":
-				toast.error(refusalMessage(result.code, result.error));
-				return;
-			default:
-				toast.error(t(MESSAGES.checkFailed[0], MESSAGES.checkFailed[1]));
-		}
-	}
-
-	/** Conclusively unsaved: its values become the editable draft for a fresh submission. */
-	function handleRecoveryEditAsNew(record: ManualRecoveryRecord) {
-		const command = frozenManualCommand(record);
-		form.setFieldValue("date", command.date);
-		form.setFieldValue("clockInTime", command.clockIn.time);
-		form.setFieldValue("clockOutTime", command.clockOut.time);
-		form.setFieldValue("reason", command.reason);
-		form.setFieldValue("projectId", command.projectId ?? undefined);
-		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
-		recovery.discard(record);
-	}
-
 	return (
 		<>
 			<ActionPanel open={open} onOpenChange={handleOpenChange}>
@@ -1677,16 +1758,16 @@ export function ManualTimeEntryDialog({
 					effectiveTimezone={effectiveTimezone}
 					form={form}
 					isContextLoading={targetContext.isLoading}
-					isTimezoneContinuationPending={isTimezoneContinuationPending}
+					isTimezoneContinuationPending={continuation.isPending}
 					onRetryContext={() => void targetContext.refetch()}
 					recoveryPanel={
-						<ManualRecoveryPanel
-							busyId={recovery.busyId}
-							onDiscard={recovery.discard}
-							onEditAsNew={handleRecoveryEditAsNew}
-							onLookup={(record) => void handleRecoveryLookup(record)}
-							onRetry={(record) => void handleRecoveryRetry(record)}
-							records={recovery.records}
+						<ConnectedManualRecoveryPanel
+							form={form}
+							onCommitted={() => {
+								router.refresh();
+								onSuccess?.();
+							}}
+							recovery={recovery}
 							t={t}
 						/>
 					}
@@ -1701,9 +1782,9 @@ export function ManualTimeEntryDialog({
 					open
 					savedTimezone={effectiveTimezone}
 					browserTimezone={pendingMismatch.browserTimezone}
-					isPending={isTimezoneContinuationPending}
-					onUpdateAndContinue={handleUpdateTimezoneAndSubmit}
-					onContinueOnce={handleContinueOnce}
+					isPending={continuation.isPending}
+					onUpdateAndContinue={continuation.updateTimezoneAndSubmit}
+					onContinueOnce={continuation.continueOnce}
 					onCancel={() => setPendingMismatch(null)}
 				/>
 			) : null}

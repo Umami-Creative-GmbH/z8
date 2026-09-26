@@ -213,6 +213,74 @@ interface LifecycleConfirmationDialogProps {
 	selectedAction: LifecycleAction | null;
 }
 
+function lifecycleDialogCopy(
+	action: LifecycleAction | null,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
+	switch (action) {
+		case "deactivate":
+			return {
+				title: t(
+					"settings.employees.lifecycle.deactivateTitle",
+					"Deactivate employee?",
+				),
+				description: t(
+					"settings.employees.lifecycle.deactivateDescription",
+					"This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
+				),
+				action: t("settings.employees.lifecycle.deactivate", "Deactivate"),
+				pending: t(
+					"settings.employees.lifecycle.deactivating",
+					"Deactivating...",
+				),
+				pendingStatus: t(
+					"settings.employees.lifecycle.deactivatingStatus",
+					"Deactivating employee",
+				),
+			};
+		case "reactivate":
+			return {
+				title: t(
+					"settings.employees.lifecycle.reactivateTitle",
+					"Reactivate employee?",
+				),
+				description: t(
+					"settings.employees.lifecycle.reactivateDescription",
+					"This restores access to this organization using the existing employee record.",
+				),
+				action: t("settings.employees.lifecycle.reactivate", "Reactivate"),
+				pending: t(
+					"settings.employees.lifecycle.reactivating",
+					"Reactivating...",
+				),
+				pendingStatus: t(
+					"settings.employees.lifecycle.reactivatingStatus",
+					"Reactivating employee",
+				),
+			};
+		default:
+			return {
+				title: t(
+					"settings.employees.lifecycle.removeTitle",
+					"Remove organization access?",
+				),
+				description: t(
+					"settings.employees.lifecycle.removeDescription",
+					"This removes organization membership and ends organization sessions. Time records, absences, balances, employment history, and audits are retained.",
+				),
+				action: t("settings.employees.lifecycle.removeAccess", "Remove access"),
+				pending: t(
+					"settings.employees.lifecycle.removing",
+					"Removing access...",
+				),
+				pendingStatus: t(
+					"settings.employees.lifecycle.removingStatus",
+					"Removing organization access",
+				),
+			};
+	}
+}
+
 function LifecycleConfirmationDialog({
 	isPending,
 	onConfirm,
@@ -221,75 +289,19 @@ function LifecycleConfirmationDialog({
 }: LifecycleConfirmationDialogProps) {
 	const { t } = useTranslate();
 	const isRemove = selectedAction === "remove";
-	const dialogTitle =
-		selectedAction === "deactivate"
-			? t(
-					"settings.employees.lifecycle.deactivateTitle",
-					"Deactivate employee?",
-				)
-			: selectedAction === "reactivate"
-				? t(
-						"settings.employees.lifecycle.reactivateTitle",
-						"Reactivate employee?",
-					)
-				: t(
-						"settings.employees.lifecycle.removeTitle",
-						"Remove organization access?",
-					);
-	const dialogDescription =
-		selectedAction === "deactivate"
-			? t(
-					"settings.employees.lifecycle.deactivateDescription",
-					"This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
-				)
-			: selectedAction === "reactivate"
-				? t(
-						"settings.employees.lifecycle.reactivateDescription",
-						"This restores access to this organization using the existing employee record.",
-					)
-				: t(
-						"settings.employees.lifecycle.removeDescription",
-						"This removes organization membership and ends organization sessions. Time records, absences, balances, employment history, and audits are retained.",
-					);
-	const actionLabel =
-		selectedAction === "deactivate"
-			? t("settings.employees.lifecycle.deactivate", "Deactivate")
-			: selectedAction === "reactivate"
-				? t("settings.employees.lifecycle.reactivate", "Reactivate")
-				: t("settings.employees.lifecycle.removeAccess", "Remove access");
-	const pendingLabel =
-		selectedAction === "deactivate"
-			? t("settings.employees.lifecycle.deactivating", "Deactivating...")
-			: selectedAction === "reactivate"
-				? t("settings.employees.lifecycle.reactivating", "Reactivating...")
-				: t("settings.employees.lifecycle.removing", "Removing access...");
-	const pendingStatus =
-		selectedAction === "deactivate"
-			? t(
-					"settings.employees.lifecycle.deactivatingStatus",
-					"Deactivating employee",
-				)
-			: selectedAction === "reactivate"
-				? t(
-						"settings.employees.lifecycle.reactivatingStatus",
-						"Reactivating employee",
-					)
-				: t(
-						"settings.employees.lifecycle.removingStatus",
-						"Removing organization access",
-					);
+	const copy = lifecycleDialogCopy(selectedAction, t);
 
 	return (
 		<AlertDialog open={selectedAction !== null} onOpenChange={onOpenChange}>
 			<AlertDialogContent>
 				<AlertDialogHeader>
-					<AlertDialogTitle>{dialogTitle}</AlertDialogTitle>
-					<AlertDialogDescription>{dialogDescription}</AlertDialogDescription>
+					<AlertDialogTitle>{copy.title}</AlertDialogTitle>
+					<AlertDialogDescription>{copy.description}</AlertDialogDescription>
 				</AlertDialogHeader>
 				{isPending && (
 					<span
 						role="status"
-						aria-label={pendingStatus}
+						aria-label={copy.pendingStatus}
 						aria-live="polite"
 						className="sr-only"
 					/>
@@ -307,7 +319,7 @@ function LifecycleConfirmationDialog({
 						{isPending && (
 							<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
 						)}
-						{isPending ? pendingLabel : actionLabel}
+						{isPending ? copy.pending : copy.action}
 					</Button>
 				</AlertDialogFooter>
 			</AlertDialogContent>

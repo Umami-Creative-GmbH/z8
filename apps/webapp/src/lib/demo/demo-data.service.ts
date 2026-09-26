@@ -595,6 +595,7 @@ export async function generateDemoPendingAbsenceApprovals(
 
 	let pendingAbsenceApprovalsCreated = 0;
 
+	const employeeById = new Map(employees.map((emp) => [emp.id, emp]));
 	for (const [index, requester] of employees.slice(0, 5).entries()) {
 		const assignedManager = managerAssignments.find(
 			(assignment) =>
@@ -605,7 +606,7 @@ export async function generateDemoPendingAbsenceApprovals(
 		const approverId =
 			assignedManager?.managerId ??
 			employees.find((emp) => emp.id !== requester.id)?.id;
-		const approver = employees.find((emp) => emp.id === approverId);
+		const approver = approverId ? employeeById.get(approverId) : undefined;
 
 		if (!approverId || !approver) {
 			continue;
@@ -2087,6 +2088,7 @@ export async function generateDemoWorkCategories(
 
 		// Create category sets and link categories
 		const createdSets: Array<{ id: string; name: string }> = [];
+		const normalWork = createdCategories.find((c) => c.name === "Normal Work");
 
 		for (let i = 0; i < setCount && i < workCategorySetTemplates.length; i++) {
 			const template = workCategorySetTemplates[i];
@@ -2110,7 +2112,6 @@ export async function generateDemoWorkCategories(
 			const categoriesForSet = createdCategories.slice(startIdx, startIdx + 6);
 
 			// Always include "Normal Work" if available
-			const normalWork = createdCategories.find((c) => c.name === "Normal Work");
 			if (normalWork && !categoriesForSet.find((c) => c.name === "Normal Work")) {
 				categoriesForSet.unshift(normalWork);
 			}
@@ -2414,9 +2415,10 @@ export async function generateDemoShifts(options: DemoDataOptions): Promise<{
 	let requestsCreated = 0;
 
 	// Create recurrence patterns for templates
+	const subareaById = new Map(subareas.map((s) => [s.id, s]));
 	for (const template of templates) {
 		const subarea = template.subareaId
-			? subareas.find((s) => s.id === template.subareaId)
+			? subareaById.get(template.subareaId)
 			: faker.helpers.arrayElement(subareas);
 
 		if (!subarea) continue;

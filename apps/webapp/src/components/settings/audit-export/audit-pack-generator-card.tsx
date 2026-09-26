@@ -587,18 +587,14 @@ function RecentAuditPackRequests({
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colRequested", "Requested")}
-							</TableHead>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colRange", "Range")}
-							</TableHead>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colStatus", "Status")}
-							</TableHead>
-							<TableHead>
-								{t("settings.auditExport.auditPack.colRecords", "Records")}
-							</TableHead>
+							{[
+								t("settings.auditExport.auditPack.colRequested", "Requested"),
+								t("settings.auditExport.auditPack.colRange", "Range"),
+								t("settings.auditExport.auditPack.colStatus", "Status"),
+								t("settings.auditExport.auditPack.colRecords", "Records"),
+							].map((heading) => (
+								<TableHead key={heading}>{heading}</TableHead>
+							))}
 							<TableHead className="text-right">
 								{t("settings.auditExport.auditPack.colActions", "Actions")}
 							</TableHead>

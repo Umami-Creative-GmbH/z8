@@ -312,8 +312,8 @@ function humanEscalationError(
  * legacy-authoritative approval request (#299).
  */
 const targetSchema = z.union([
-	z.object({ assignmentId: z.string().uuid() }).strict(),
-	z.object({ approvalRequestId: z.string().uuid() }).strict(),
+	z.strictObject({ assignmentId: z.uuid() }),
+	z.strictObject({ approvalRequestId: z.uuid() }),
 ]);
 
 export async function listApprovalEscalationCandidates(

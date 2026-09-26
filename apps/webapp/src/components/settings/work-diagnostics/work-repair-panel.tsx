@@ -138,12 +138,12 @@ export function WorkRepairPanel({
 						reason: value.reason.trim(),
 					}),
 				});
-				const body = await response.json().catch(() => null);
 				if (!response.ok) {
+					const refusal = await response.json().catch(() => null);
 					setState({
 						kind: "error",
 						message:
-							body?.code === "repair_not_authorized"
+							refusal?.code === "repair_not_authorized"
 								? t(
 										"settings.workDiagnostics.repair.notAuthorized",
 										"Repair has not been authorized for this organization.",
@@ -152,6 +152,7 @@ export function WorkRepairPanel({
 					});
 					return;
 				}
+				const body = await response.json();
 				setState({ kind: "done", outcomes: body.outcomes });
 				router.refresh();
 			} catch {
@@ -193,12 +194,14 @@ export function WorkRepairPanel({
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("settings.workDiagnostics.repair.employee", "Employee")}</TableHead>
-								<TableHead>{t("settings.workDiagnostics.repair.work", "Work period")}</TableHead>
-								<TableHead>{t("settings.workDiagnostics.repair.fills", "Repairs")}</TableHead>
-								<TableHead>
-									{t("settings.workDiagnostics.repair.originalActor", "Original actor")}
-								</TableHead>
+								{[
+									t("settings.workDiagnostics.repair.employee", "Employee"),
+									t("settings.workDiagnostics.repair.work", "Work period"),
+									t("settings.workDiagnostics.repair.fills", "Repairs"),
+									t("settings.workDiagnostics.repair.originalActor", "Original actor"),
+								].map((heading) => (
+									<TableHead key={heading}>{heading}</TableHead>
+								))}
 							</TableRow>
 						</TableHeader>
 						<TableBody>

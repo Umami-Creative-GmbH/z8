@@ -4,7 +4,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppendAssuranceReport } from "@/lib/time-tracking/append-assurance";
 import type { HistoricalWorkProposalView } from "@/lib/time-tracking/historical-work-proposals";
-import { continuationTargetsOf, WorkProposalPanel } from "./work-proposal-panel";
+import { WorkProposalPanel } from "./work-proposal-panel";
+import { continuationTargetsOf } from "./work-proposal-targets";
 
 const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
 

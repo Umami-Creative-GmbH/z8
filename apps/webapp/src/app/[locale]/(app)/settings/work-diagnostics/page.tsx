@@ -3,11 +3,11 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { Temporal } from "temporal-polyfill";
 import { WorkDiagnosticsDashboard } from "@/components/settings/work-diagnostics/work-diagnostics-dashboard";
+import { WorkProposalPanel } from "@/components/settings/work-diagnostics/work-proposal-panel";
 import {
 	continuationTargetsOf,
 	type RepairTarget,
-	WorkProposalPanel,
-} from "@/components/settings/work-diagnostics/work-proposal-panel";
+} from "@/components/settings/work-diagnostics/work-proposal-targets";
 import { WorkRepairPanel } from "@/components/settings/work-diagnostics/work-repair-panel";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -108,12 +108,13 @@ async function WorkDiagnosticsContent({ searchParams }: WorkDiagnosticsPageProps
 		params.employee && Object.hasOwn(employeeLabels, params.employee) ? params.employee : null;
 
 	// Diagnostics, append assurance and the repair plan come from one snapshot.
-	const { work, appendAssurance, repair } = await readHistoricalGapRepairPlan(db, organizationId, {
-		employeeIds: selectedEmployeeId ? [selectedEmployeeId] : employees.map((row) => row.id),
-		range: calendarDateEnvelope(period.startDate, period.endDate),
-	});
-
-	const proposals = await listHistoricalWorkProposals(db, organizationId, selectedEmployeeId);
+	const [{ work, appendAssurance, repair }, proposals] = await Promise.all([
+		readHistoricalGapRepairPlan(db, organizationId, {
+			employeeIds: selectedEmployeeId ? [selectedEmployeeId] : employees.map((row) => row.id),
+			range: calendarDateEnvelope(period.startDate, period.endDate),
+		}),
+		listHistoricalWorkProposals(db, organizationId, selectedEmployeeId),
+	]);
 	const assuranceReports = [...appendAssurance].map(([employeeId, report]) => ({
 		employeeId,
 		report,
