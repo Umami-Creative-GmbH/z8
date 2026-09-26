@@ -642,6 +642,13 @@ describeIntegration("time pilot readiness on PostgreSQL", () => {
 		expect(closed.status).toBe(201);
 
 		await importHeldRow();
+		// A receipt committed under legacy admission after the switch, as an undrained
+		// old server binary would write it. Current writers are fenced (#327).
+		await admin.query(
+			`update completed_work_operation set append_admission = 'legacy'
+			 where organization_id = $1 and writer = 'manager_on_behalf'`,
+			[ids.organization],
+		);
 		await admin.query(
 			`update time_entry set hash = 'tampered'
 			 where id = (select clock_out_id from work_period where id = $1)`,
@@ -687,6 +694,7 @@ describeIntegration("time pilot readiness on PostgreSQL", () => {
 			manager_on_behalf: 1,
 		});
 		expect(report.operations.findings).toEqual([
+			{ code: "legacy_admission_after_activation", severity: "blocker", count: 1 },
 			{ code: "server_identity_on_behalf", severity: "hold", count: 1 },
 		]);
 		expect(report.imports).toMatchObject({

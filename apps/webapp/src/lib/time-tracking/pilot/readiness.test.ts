@@ -205,12 +205,18 @@ describe("assessTimePilotReadiness", () => {
 						evidenceMode: "capture",
 						pending: { current: 1, notCaptured: 1, materialChange: 1, multiStage: 2 },
 					},
+					{
+						workflowType: "time_correction",
+						lifecycleMode: "complete",
+						evidenceMode: "capture",
+						pending: { current: 0, notCaptured: 0, materialChange: 0, multiStage: 0 },
+					},
 				],
 				unclassifiedPending: 1,
 			}),
 		);
 
-		const [manual, clockOut] = report.approvals.kinds;
+		const [manual, clockOut, correction] = report.approvals.kinds;
 		expect(manual).toMatchObject({
 			authority: "legacy",
 			pending: { total: 3, notCaptured: 3 },
@@ -230,6 +236,11 @@ describe("assessTimePilotReadiness", () => {
 				{ code: "evidence_held", severity: "hold", count: 1 },
 				{ code: "evidence_material_change", severity: "hold", count: 1 },
 			],
+		});
+		// `complete` was never exercised for time kinds either.
+		expect(correction).toMatchObject({
+			authority: "unverified",
+			findings: [{ code: "rollout_mode_unverified", severity: "blocker" }],
 		});
 		expect(report.approvals.findings).toEqual([
 			{ code: "pending_unclassified", severity: "hold", count: 1 },

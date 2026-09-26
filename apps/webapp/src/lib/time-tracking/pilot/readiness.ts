@@ -1,5 +1,6 @@
 import type { ApprovalEvidenceMode } from "@/db/schema";
-import type { CompletedWorkWriter } from "@/db/schema/completed-work";
+import type { CompletedWorkWriter, HistoricalWorkRepairMode } from "@/db/schema/completed-work";
+import type { PayrollWorkCollectionMode } from "@/db/schema/payroll-export";
 import {
 	TIME_ENTRY_APPEND_ADMISSIONS,
 	type TimeEntryAppendAdmission,
@@ -116,8 +117,8 @@ export interface TimePilotSnapshot {
 	};
 	imports: { heldRows: number; failedBatches: number; inProgressBatches: number };
 	followUps: {
-		payrollCollection: "inactive" | "active";
-		historicalRepair: "inactive" | "active";
+		payrollCollection: PayrollWorkCollectionMode;
+		historicalRepair: HistoricalWorkRepairMode;
 		pendingRebuildIntents: number;
 		/** Historical work proposals still proposed or approved (#323). */
 		openProposals: number;
@@ -156,7 +157,7 @@ export interface TimePilotHistoryReadiness extends Section {
 
 export interface TimePilotApprovalKindReadiness extends Section {
 	workflowType: TimeApprovalWorkflowType;
-	/** `unverified`: a `shadow`/`ready` rollout, not verified for time kinds. */
+	/** `unverified`: a `shadow`, `ready` or `complete` rollout, not verified for time kinds. */
 	authority: "legacy" | "canonical" | "unverified";
 	lifecycleMode: string | null;
 	evidenceMode: ApprovalEvidenceMode;
@@ -179,8 +180,8 @@ export interface TimePilotImportReadiness extends Section {
 }
 
 export interface TimePilotFollowUpReadiness extends Section {
-	payrollCollection: "inactive" | "active";
-	historicalRepair: "inactive" | "active";
+	payrollCollection: PayrollWorkCollectionMode;
+	historicalRepair: HistoricalWorkRepairMode;
 	pendingRebuildIntents: number;
 	openProposals: number;
 	pendingBreakAdjustments: number;
@@ -302,7 +303,8 @@ function assessHistory(snapshot: TimePilotSnapshot): TimePilotHistoryReadiness {
 
 function authorityOf(lifecycleMode: string | null): TimePilotApprovalKindReadiness["authority"] {
 	if (lifecycleMode === null || lifecycleMode === "legacy") return "legacy";
-	if (lifecycleMode === "canonical" || lifecycleMode === "complete") return "canonical";
+	if (lifecycleMode === "canonical") return "canonical";
+	// `shadow`, `ready` and `complete` were never exercised for time kinds.
 	return "unverified";
 }
 
@@ -342,14 +344,14 @@ function assessApprovalKind(kind: TimePilotApprovalKindEvidence): TimePilotAppro
 
 function assessApprovals(snapshot: TimePilotSnapshot): TimePilotApprovalReadiness {
 	const kinds = snapshot.approvalKinds.map(assessApprovalKind);
-	const own: TimePilotFinding[] = [];
-	counted(own, "pending_unclassified", "hold", snapshot.unclassifiedPending);
-	const all = [...kinds.flatMap((kind) => kind.findings), ...own];
+	const requestFindings: TimePilotFinding[] = [];
+	counted(requestFindings, "pending_unclassified", "hold", snapshot.unclassifiedPending);
+	const all = [...kinds.flatMap((kind) => kind.findings), ...requestFindings];
 	return {
 		kinds,
 		unclassifiedPending: snapshot.unclassifiedPending,
 		verdict: verdictOf(all),
-		findings: own,
+		findings: requestFindings,
 	};
 }
 

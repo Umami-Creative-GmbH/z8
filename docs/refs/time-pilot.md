@@ -110,9 +110,9 @@ committing.
 | `history_investigation_required` | blocker | Ambiguous provenance, for example work written after admission without a receipt. It must be resolved before activation (#319). |
 | `history_review_required` | hold | A conflict or suspected manual defect from before adoption. It needs an authorized review (#319, #323). |
 | `history_gap` | hold | A missing value from before adoption. It is the only treatment that evidence-only repair may consider (#320). Payroll collection blocks on it while it is relevant. |
-| `rollout_mode_unverified` | blocker | The kind runs `shadow` or `ready`. Only `legacy` and `canonical` single-stage lifecycles were verified for time kinds (#301, #302). |
+| `rollout_mode_unverified` | blocker | The kind runs `shadow`, `ready` or `complete`. Only `legacy` and `canonical` single-stage lifecycles were verified for time kinds (#301, #302). |
 | `multi_stage_unverified` | blocker | Pending requests sit on legacy multi-stage chains, which were not verified for time kinds (#301, #302). |
-| `evidence_capture_inactive` | hold | `approval_evidence_control` is off for the kind. The activation SQL is in [Approval evidence](approval-evidence.md#manual-time-submissions-and-policy-clock-outs-302--t38). |
+| `evidence_capture_inactive` | hold | `approval_evidence_control` is off for the kind. The activation SQL is in [Approval evidence](approval-evidence.md#manual-time-submissions-and-policy-clock-outs-302--t38). `time_correction` uses the same statement with its rollout key `:15:time_correction`. |
 | `in_flight_without_revision` | hold | Capture is still off, and these requests have no revision. Turning capture on holds them (`evidence_required`). Drain them first. Reconstructed revisions would need a separately authorized step, which is not implemented. |
 | `evidence_held` | hold | Capture is on, and these requests have no revision. Approve and reject both refuse them with `evidence_required` until they drain or are cancelled. |
 | `evidence_material_change` | hold | The live work no longer matches the revision (`material_change`). Ordinary users have no cancel or resubmit path for manual or policy clock-out requests (#302 blocker 2). |
@@ -142,6 +142,11 @@ values (:org, 'active', clock_timestamp())
 on conflict (organization_id) do update set mode = excluded.mode, updated_at = excluded.updated_at;
 commit;
 ```
+
+Activate only with this statement. The report takes the control's `updated_at` as the
+switch. An `update … set mode = 'active'` that leaves `updated_at` alone, or a row
+that was inactive before, would date the switch too early. Receipts written before the
+switch would then show as `legacy_admission_after_activation`.
 
 The key is the same `JSON.stringify(["completed-work-adoption", organizationId])`
 that `acquireAdoptionGate` hashes. `clock_timestamp()` stamps the switch after the
@@ -190,8 +195,16 @@ step.
    Run the click-throughs listed on #448. Neither the report nor the PostgreSQL
    suites replace them.
 
-A `ready` verdict covers only the gates the report can see. Record the evidence of
-steps 1, 2 and 8 separately.
+A `ready` verdict covers only the gates the report can see. It cannot see:
+
+- deployed builds, old clients and their device queues (browser IndexedDB, the desktop
+  `offline_queue.db`, installed extension storage);
+- how committed work replays: it counts receipts by writer, but it does not classify
+  receipt-less legacy commits or legacy retries that are not yet committed;
+- the canonical absence reconciliation that payroll collection needs (step 7);
+- live click-throughs, measured latency and the Tolgee sync.
+
+Record the evidence of steps 1, 2, 7 and 8 separately.
 
 ## Pause and rollback
 
@@ -232,7 +245,9 @@ produces them. The suite covers:
     and work opened before the switch is closed afterwards by an identity-less
     on-behalf clock-out;
   - approvals: current, held (`evidence_required`) and materially changed requests;
-  - writers: receipts by writer, and a server-identity on-behalf clock-out;
+  - writers: receipts by writer, a server-identity on-behalf clock-out, and a
+    receipt under legacy admission after the switch (injected: current writers are
+    fenced);
   - history: a post-adoption duration conflict (`integrity_incident`) and an
     interrupted continuity;
   - imports: a row held because it ends in the future, and the failed batch;
