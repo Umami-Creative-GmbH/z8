@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { ApprovalDeliveryIntentEvent } from "@/db/schema";
 import type { ApprovalDatabase } from "../server/types";
+import type { TimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 
 /**
@@ -92,6 +93,32 @@ export async function recordLegacyAbsenceDecisionIntent(
 		workflowType: "absence",
 		sourceType: "absence_entry",
 		sourceId: input.absenceId,
+		approvalRequestId: input.approvalRequestId,
+		cycleId: await resolveLegacyDeliveryCycle(database, input),
+		event: "decided",
+	});
+}
+
+/**
+ * The `decided` intent of a legacy time decision's submission cycle (#432):
+ * a manual time submission, policy clock-out or time correction decided on
+ * the work period, in the decision transaction. Read while the decided
+ * request's chain link exists.
+ */
+export async function recordLegacyTimeDecisionIntent(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		workflowType: TimeApprovalWorkflowType;
+		workPeriodId: string;
+		approvalRequestId: string;
+	},
+): Promise<boolean> {
+	return recordLegacyDeliveryIntent(database, {
+		organizationId: input.organizationId,
+		workflowType: input.workflowType,
+		sourceType: "time_entry",
+		sourceId: input.workPeriodId,
 		approvalRequestId: input.approvalRequestId,
 		cycleId: await resolveLegacyDeliveryCycle(database, input),
 		event: "decided",

@@ -25,6 +25,7 @@ const state = vi.hoisted(() => ({
 	captureLegacy: vi.fn(),
 	deleteCancelledCorrections: vi.fn(),
 	lockSubmissionSource: vi.fn(),
+	recordIntent: vi.fn(async (_database: unknown, _input: Record<string, unknown>) => false),
 }));
 
 vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
@@ -34,6 +35,12 @@ vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (import
 );
 
 vi.mock("@/db", () => ({ db: {} }));
+// Withdrawal intents (#432): legacy-time-bound-approval.integration.test.ts.
+vi.mock("../delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../delivery/intents")>()),
+	recordLegacyDeliveryIntent: state.recordIntent,
+}));
+vi.mock("../delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
 vi.mock("@/lib/approvals/workflow/runtime", () => ({
 	createProductionApprovalWorkflowRuntime: () => state.runtime,
 }));
@@ -956,6 +963,16 @@ describe("cancelPendingTimeCorrection", () => {
 				},
 			},
 		});
+		// The single request is the withdrawn cycle (#432).
+		expect(state.recordIntent).toHaveBeenLastCalledWith(expect.anything(), {
+			organizationId: ids.organization,
+			workflowType: "time_correction",
+			sourceType: "time_entry",
+			sourceId: ids.workPeriod,
+			approvalRequestId: expect.any(String),
+			cycleId: state.recordIntent.mock.lastCall?.[1]?.approvalRequestId,
+			event: "withdrawn",
+		});
 	});
 
 	it("retains a pure-legacy chain cancellation as a submission-linked tombstone", async () => {
@@ -1022,6 +1039,11 @@ describe("cancelPendingTimeCorrection", () => {
 					cancellation: expect.objectContaining({ chainInstanceId: chainId }),
 				}),
 			}),
+		);
+		// The chain is the withdrawn cycle (#432).
+		expect(state.recordIntent).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ cycleId: chainId, event: "withdrawn" }),
 		);
 	});
 

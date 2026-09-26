@@ -81,8 +81,9 @@ export const CANONICAL_WRITE_OWNERS = {
 		approval_delivery_work: ["insert", "update"],
 		approval_outbox: ["update"],
 	},
-	// Legacy lifecycle intents (#296), written by the legacy expense and (#384)
-	// absence submission, decision and cancellation owners in their transactions.
+	// Legacy lifecycle intents (#296), written by the legacy expense, (#384)
+	// absence and (#432) time submission, decision and cancellation owners in
+	// their transactions.
 	"src/lib/approvals/delivery/intents.ts": {
 		approval_delivery_intent: ["insert"],
 	},

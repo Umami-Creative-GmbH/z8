@@ -19,6 +19,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -81,8 +82,8 @@ export async function isApprovalDeliveryOwner(input: {
  * message about the same request. The owner must be active for the provider
  * and kind, and the absence or work period must have a canonical workflow,
  * whose committed intents the owner delivers; a legacy request (e.g. a policy
- * fallback) keeps the path. Under legacy absence authority the owner delivers
- * the cycles whose lifecycle intents it owns (#384).
+ * fallback) keeps the path. Under legacy absence (#384) or time (#432)
+ * authority the owner delivers the cycles whose lifecycle intents it owns.
  */
 export async function isApprovalNotificationDeliveredByOwner(input: {
 	organizationId: string;
@@ -97,9 +98,24 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 	// Time kinds (#325): the canonical workflow of exactly this cycle names the
 	// kind; a legacy request (no mirroring stage) keeps the existing path.
 	let timeWorkflowType: ApprovalWorkflowType | null = null;
+	// Legacy time cycles (#432): the work period and the exact request, when the
+	// notification names one; otherwise every pending request of the period.
+	let timeLegacy: { workPeriodId: string; requestIds: string[] } | null = null;
 	if (input.entityType === "absence_entry") {
 		absenceId = input.entityId;
 	} else if (input.entityType === "work_period") {
+		const pending = await db
+			.select({ id: approvalRequest.id })
+			.from(approvalRequest)
+			.where(
+				and(
+					eq(approvalRequest.organizationId, input.organizationId),
+					eq(approvalRequest.entityType, "time_entry"),
+					eq(approvalRequest.entityId, input.entityId),
+					eq(approvalRequest.status, "pending"),
+				),
+			);
+		timeLegacy = { workPeriodId: input.entityId, requestIds: pending.map((row) => row.id) };
 		// The notification names only the period: its linked workflow counts only
 		// while that cycle is still pending (the one being notified about).
 		const [linked] = await db
@@ -133,6 +149,7 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 			absenceRequestId = request.id;
 		}
 		if (request?.entityType === "time_entry") {
+			timeLegacy = { workPeriodId: request.entityId, requestIds: [request.id] };
 			const [mirrored] = await db
 				.select({ workflowType: approvalWorkflow.workflowType })
 				.from(approvalWorkflowStage)
@@ -152,6 +169,17 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 				.limit(1);
 			timeWorkflowType = mirrored?.workflowType ?? null;
 		}
+	}
+	if (
+		timeLegacy &&
+		timeLegacy.requestIds.length > 0 &&
+		(await isLegacyTimeCycleDeliveredByOwner({
+			organizationId: input.organizationId,
+			provider: input.provider,
+			...timeLegacy,
+		}))
+	) {
+		return true;
 	}
 	if (timeWorkflowType) {
 		return await isApprovalDeliveryOwner({
@@ -208,6 +236,49 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 		columns: { approvalWorkflowId: true },
 	});
 	return Boolean(absence?.approvalWorkflowId);
+}
+
+/**
+ * Legacy time authority (#432): the owner delivers a cycle whose lifecycle
+ * intent it owns (written while the provider's control was active and the
+ * kind had legacy authority), so the existing path stays silent for it. Only
+ * the cycles of the named requests count.
+ */
+async function isLegacyTimeCycleDeliveredByOwner(input: {
+	organizationId: string;
+	provider: ApprovalDeliveryProvider;
+	workPeriodId: string;
+	requestIds: string[];
+}): Promise<boolean> {
+	const [delivered] = rows(
+		await db.execute(sql`
+			select 1 as delivered
+			from approval_delivery_intent i
+			join approval_delivery_control c
+				on c.organization_id = i.organization_id
+				and c.workflow_type = i.workflow_type
+				and c.provider = ${input.provider}
+				and c.activated_at <= i.created_at
+			left join approval_workflow_rollout r
+				on r.organization_id = i.organization_id and r.workflow_type = i.workflow_type
+			where i.organization_id = ${input.organizationId}
+				and i.workflow_type in ('manual_time_submission', 'policy_clock_out', 'time_correction')
+				and i.source_type = 'time_entry'
+				and i.source_id = ${input.workPeriodId}::uuid
+				and i.legacy_cycle_id in (
+					select coalesce((
+						select s.chain_instance_id from approval_chain_stage_instance s
+						where s.organization_id = ${input.organizationId}
+							and s.approval_request_id = request.id
+						limit 1
+					), request.id)
+					from unnest(${sql.param(input.requestIds)}::uuid[]) as request(id)
+				)
+				and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
+			limit 1
+		`),
+	);
+	return delivered !== undefined;
 }
 
 /** Organizations with at least one delivery control, in stable order. */
@@ -1021,9 +1092,9 @@ export async function claimApprovalDeliveryWork(input: {
  * Current state of a legacy lifecycle's request (#296), shaped like a
  * workflow assignment: the lifecycle's status and version, and the request's
  * own status and current approver. Only kinds whose source status is known
- * here are supported; anything else is null. An absence cycle (#384) has the
- * status of its chain or single request; a request deleted by ordinary
- * cancellation reads as `cancelled` without an approver.
+ * here are supported; anything else is null. An absence (#384) or time (#432)
+ * cycle has the status of its chain or single request; a request deleted or
+ * withdrawn by ordinary cancellation reads as `cancelled` without an approver.
  */
 export async function loadLegacyDeliveryState(input: {
 	organizationId: string;
@@ -1080,6 +1151,56 @@ export async function loadLegacyDeliveryState(input: {
 			version: Number(cycle.version),
 			requestStatus: nullableText(cycle.request_status) ?? "cancelled",
 			approverEmployeeId: nullableText(cycle.approver_id),
+		};
+	}
+	if (
+		cycleId &&
+		isTimeApprovalWorkflowType(input.lifecycle.workflowType) &&
+		input.lifecycle.sourceType === "time_entry"
+	) {
+		// A time cycle (#432) has the status of its chain or single request.
+		// Requester cancellation of a correction keeps a direct request as a
+		// decided-looking tombstone, so the cycle's own `withdrawn` intent is
+		// what marks it cancelled.
+		const [cycle] = rows(
+			await db.execute(sql`
+				select c.status::text as chain_status, root.status::text as root_status,
+					r.status as request_status, r.approver_id,
+					exists (
+						select 1 from approval_delivery_intent w
+						where w.organization_id = ${input.organizationId}
+							and w.legacy_cycle_id = ${cycleId}::uuid
+							and w.event = 'withdrawn'
+					) as withdrawn,
+					${legacyLifecycleVersionSql(input.organizationId, input.lifecycle)} as version
+				from (select 1) as lifecycle
+				left join approval_chain_instance c
+					on c.organization_id = ${input.organizationId} and c.id = ${cycleId}::uuid
+				left join approval_request root
+					on root.organization_id = ${input.organizationId} and root.id = ${cycleId}::uuid
+				left join approval_request r
+					on r.organization_id = ${input.organizationId}
+					and r.id = ${input.approvalRequestId}::uuid
+					and r.entity_type = 'time_entry'
+					and r.entity_id = ${input.lifecycle.sourceId}::uuid
+			`),
+		);
+		if (!cycle) return null;
+		const withdrawn = cycle.withdrawn === true;
+		const cycleStatus = withdrawn
+			? "cancelled"
+			: (nullableText(cycle.chain_status) ?? nullableText(cycle.root_status) ?? "cancelled");
+		return {
+			lifecycleStatus:
+				cycleStatus === "pending" ||
+				cycleStatus === "approved" ||
+				cycleStatus === "rejected" ||
+				cycleStatus === "cancelled"
+					? cycleStatus
+					: "unknown",
+			version: Number(cycle.version),
+			requestStatus: withdrawn ? "cancelled" : (nullableText(cycle.request_status) ?? "cancelled"),
+			approverEmployeeId: withdrawn ? null : nullableText(cycle.approver_id),
 		};
 	}
 	if (

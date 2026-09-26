@@ -9,16 +9,24 @@ import {
 	lockApprovalInvocation,
 	readApprovalPresentationMode,
 	recordApprovalInvocation,
-	requireCanonicalInvocationDecision,
 } from "../evidence/invocation";
-import { type DecisionEvidenceRecord, findDecisionEvidenceByReceipt } from "../evidence/store";
+import { LEGACY_TIME_ACTIONABLE_PROVIDERS } from "../evidence/legacy-time";
+import {
+	type DecisionEvidenceRecord,
+	findDecisionEvidenceByReceipt,
+	type LegacyDecisionEvidenceRecord,
+	loadLegacyReviewBinding,
+	loadReviewBindingAuthority,
+} from "../evidence/store";
 import type { ApprovalWorkflowType } from "../workflow/ports";
 import type { ApprovalDatabase } from "./types";
 
 /**
- * A reviewed-binding card action of a time approval (#325): the opaque handle
- * the card carried and the authenticated provider invocation. Decided only
- * under canonical authority, against the exact bound assignment.
+ * A reviewed-binding card action of a time approval: the opaque handle the
+ * card carried and the authenticated provider invocation. A canonical binding
+ * decides only under canonical authority, against the exact bound assignment
+ * (#325); a legacy binding only under legacy authority, against the exact
+ * bound legacy request (#432).
  */
 export interface BoundTimeInvocation {
 	reviewedBindingId: string;
@@ -30,10 +38,13 @@ export interface BoundTimeInvocation {
 	};
 }
 
-/** The committed decision an exact invocation replay returns. */
+/**
+ * The committed decision an invocation is associated with: canonical evidence,
+ * or legacy evidence for a legacy binding (#432).
+ */
 export interface BoundTimeInvocationOutcome {
 	replayed: boolean;
-	evidence: DecisionEvidenceRecord;
+	evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 }
 
 /**
@@ -42,7 +53,7 @@ export interface BoundTimeInvocationOutcome {
  * entry returns the original evidence as an exact replay.
  */
 export class BoundTimeInvocationReplay extends Error {
-	constructor(readonly evidence: DecisionEvidenceRecord) {
+	constructor(readonly evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord) {
 		super("Bound time invocation replay");
 		this.name = "BoundTimeInvocationReplay";
 	}
@@ -72,7 +83,9 @@ export function boundTimeInvocationKey(bound: BoundTimeInvocation): string {
 /**
  * Receipt before fresh checks: an exact committed invocation throws its
  * replay; the same invocation with another command is a mismatch. Current
- * state is never consulted.
+ * state is never consulted. The command fingerprint includes the binding,
+ * whose authority is fixed, so the committed evidence belongs to that
+ * authority.
  */
 export async function replayCommittedTimeInvocation(
 	database: ApprovalDatabase,
@@ -82,9 +95,7 @@ export async function replayCommittedTimeInvocation(
 		identity: input.bound.invocation.identity,
 		command: input.command,
 	});
-	if (committed) {
-		throw new BoundTimeInvocationReplay(requireCanonicalInvocationDecision(committed));
-	}
+	if (committed) throw new BoundTimeInvocationReplay(committed);
 }
 
 /**
@@ -147,4 +158,95 @@ export async function recordTimeInvocationDecision(
 		decisionEvidenceId: evidence.id,
 	});
 	return { replayed: false, evidence };
+}
+
+/**
+ * Cutover safety, read under the rollout gate: a binding decides only under
+ * the authority it was issued for, so a legacy binding never decides under
+ * canonical authority, nor the other way round. A legacy card decision is
+ * admitted only for providers verified under legacy authority (#432).
+ */
+export async function assertTimeBindingAuthority(
+	database: ApprovalDatabase,
+	input: { organizationId: string; bound: BoundTimeInvocation; legacyAuthority: boolean },
+): Promise<void> {
+	const authority = await loadReviewBindingAuthority(database, {
+		organizationId: input.organizationId,
+		bindingId: input.bound.reviewedBindingId,
+	});
+	if (authority !== (input.legacyAuthority ? "legacy" : "canonical")) {
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
+	}
+	if (
+		input.legacyAuthority &&
+		!LEGACY_TIME_ACTIONABLE_PROVIDERS.includes(
+			approvalInvocationProvider(input.bound.invocation.identity.scheme),
+		)
+	) {
+		throw new ApprovalInvocationNotAdmittedError();
+	}
+}
+
+/**
+ * A legacy binding (#432) must name this organization, the deciding actor as
+ * its recipient, the exact legacy request being decided and the current
+ * legacy submitted revision of its cycle. Checked before any authority
+ * question; without a current revision it names nothing.
+ */
+export async function assertLegacyTimeBinding(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		bound: BoundTimeInvocation;
+		actorEmployeeId: string;
+		approvalRequestId: string;
+		currentRevisionId: string | null;
+	},
+): Promise<void> {
+	const binding = await loadLegacyReviewBinding(database, {
+		organizationId: input.organizationId,
+		bindingId: input.bound.reviewedBindingId,
+	});
+	if (
+		!binding ||
+		binding.recipientEmployeeId !== input.actorEmployeeId ||
+		binding.legacyApprovalRequestId !== input.approvalRequestId
+	) {
+		throw new ApprovalEvidenceError("binding_mismatch");
+	}
+	if (!input.currentRevisionId || binding.submittedRevisionId !== input.currentRevisionId) {
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
+	}
+}
+
+/**
+ * Associates a legacy card decision's invocation with the legacy decision
+ * evidence the owner recorded under the invocation's receipt, in the same
+ * transaction as the legacy mutation (#432).
+ */
+export async function recordLegacyTimeInvocationDecision(
+	database: ApprovalDatabase,
+	input: {
+		bound: BoundTimeInvocation;
+		command: ApprovalInvocationCommand;
+		approvalRequestId: string;
+		evidence: LegacyDecisionEvidenceRecord | null;
+	},
+): Promise<BoundTimeInvocationOutcome> {
+	if (
+		!input.evidence ||
+		input.evidence.reviewedBindingId !== input.bound.reviewedBindingId ||
+		input.evidence.legacy.approvalRequestId !== input.approvalRequestId
+	) {
+		throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
+	}
+	await recordApprovalInvocation(database, {
+		identity: input.bound.invocation.identity,
+		deliveryId: input.bound.invocation.deliveryId,
+		command: input.command,
+		legacyApprovalRequestId: input.approvalRequestId,
+		receiptIdempotencyKey: boundTimeInvocationKey(input.bound),
+		decisionEvidenceId: input.evidence.id,
+	});
+	return { replayed: false, evidence: input.evidence };
 }

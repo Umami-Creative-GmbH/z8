@@ -15,6 +15,7 @@ import {
 	decodeApprovalDatabaseTimestamptz,
 	decodeApprovalDatabaseTimestampWithoutTimeZone,
 } from "../approval-database-row";
+import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
@@ -1939,6 +1940,22 @@ async function executeOrdinaryWorkPeriodSubmission(
 					activation: activationEvidence(terminalFinalized),
 				})
 			: null;
+		if (result.kind === "default_created" || result.kind === "chain_created") {
+			// The cycle's first lifecycle intent, only while a delivery control
+			// exists (#432): the delivery owner sends its cards.
+			await recordLegacyDeliveryIntent(input.dbService.db, {
+				organizationId: input.organizationId,
+				workflowType: input.kind,
+				sourceType: "time_entry",
+				sourceId: input.workPeriodId,
+				approvalRequestId: result.approvalRequestId,
+				cycleId: legacyDeliveryCycleId({
+					chainInstanceId: result.kind === "chain_created" ? result.chainInstanceId : null,
+					approvalRequestId: result.approvalRequestId,
+				}),
+				event: "submitted",
+			});
+		}
 		const approverEmployeeId =
 			result.kind === "auto_completed"
 				? input.requesterEmployeeId

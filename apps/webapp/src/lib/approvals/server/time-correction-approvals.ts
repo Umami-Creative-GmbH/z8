@@ -96,7 +96,10 @@ import {
 	eligibleManagerFallbackAllowed,
 } from "../escalation/decision-authority";
 import { assertLegacyTransferDecisionAuthority } from "../escalation/legacy-transfer-store";
+import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
+import { kickApprovalDelivery } from "../delivery/kick";
 import { ApprovalEvidenceError } from "../evidence/errors";
+import { loadLegacyTimeCorrectionSubmittedRevision } from "../evidence/store";
 import {
 	prepareLegacyTimeCorrectionDecisionEvidence,
 	recordLegacyTimeCorrectionDecisionEvidence,
@@ -104,9 +107,12 @@ import {
 } from "../evidence/time-correction-evidence";
 import {
 	admitFreshTimeInvocation,
+	assertLegacyTimeBinding,
+	assertTimeBindingAuthority,
 	type BoundTimeInvocation,
 	boundTimeInvocationCommand,
 	boundTimeInvocationKey,
+	recordLegacyTimeInvocationDecision,
 	recordTimeInvocationDecision,
 	replayCommittedTimeInvocation,
 } from "./bound-time-invocation";
@@ -4522,7 +4528,7 @@ export interface TimeCorrectionDecisionRuntime {
 	transitionEngine: Pick<ApprovalTransitionEngine, "executeInTransaction">;
 }
 
-async function dispatchTimeCorrectionDecisionPostCommit(input: {
+export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	dbService: ApprovalDbService;
 	actor: CurrentApprover;
 	approvalRequestId: string;
@@ -4604,8 +4610,9 @@ export async function completeTimeCorrectionDecisionAfterCommit<
 export interface ExecuteTimeCorrectionDecisionInput {
 	runtime: TimeCorrectionDecisionRuntime;
 	/**
-	 * A reviewed-binding card action (#325). The target is then the exact bound
-	 * canonical assignment, decided under the invocation's own receipt.
+	 * A reviewed-binding card action. The target is then the exact bound
+	 * canonical assignment (#325) or, under legacy authority, the exact bound
+	 * legacy request (#432), decided under the invocation's own receipt.
 	 */
 	bound?: BoundTimeInvocation;
 	organizationId: string;
@@ -4920,8 +4927,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					field: "approvalRequest.metadata.timeRequest.kind",
 				});
 			}
-			if (input.bound && (requestRow || kind !== "time_correction")) {
-				// A time-correction binding names an exact canonical assignment.
+			if (input.bound && kind !== "time_correction") {
+				// A time-correction binding decides only a time correction.
 				throw new ApprovalEvidenceError("binding_mismatch");
 			}
 			if (kind === "manual_time_submission" || kind === "policy_clock_out") {
@@ -4964,6 +4971,10 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				compatibilityWriter:
 					context.compatibilityWriter.withWriteGate(fixedGate),
 			} as ApprovalWorkflowTransactionContext;
+			const legacyAuthority =
+				authority.mode === "legacy" ||
+				authority.mode === "shadow" ||
+				authority.mode === "ready";
 			if (input.bound && boundCommand) {
 				await admitFreshTimeInvocation(transactionDb, {
 					organizationId: input.organizationId,
@@ -4971,16 +4982,42 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					bound: input.bound,
 					command: boundCommand,
 				});
-				// Legacy authority has no reviewed-binding validation.
-				if (authority.mode === "legacy" || authority.mode === "shadow" || authority.mode === "ready") {
+				await assertTimeBindingAuthority(transactionDb, {
+					organizationId: input.organizationId,
+					bound: input.bound,
+					legacyAuthority,
+				});
+				if (legacyAuthority) {
+					// A legacy binding names the exact legacy request and the current
+					// revision of its cycle (#432), before any authority question.
+					if (!requestRow) throw new ApprovalEvidenceError("binding_mismatch");
+					const cycleStage =
+						await transactionDb.query.approvalChainStageInstance.findFirst({
+							where: and(
+								eq(approvalChainStageInstance.organizationId, input.organizationId),
+								eq(approvalChainStageInstance.approvalRequestId, request.id),
+							),
+							columns: { chainInstanceId: true },
+						});
+					const current = await loadLegacyTimeCorrectionSubmittedRevision(transactionDb, {
+						organizationId: input.organizationId,
+						workPeriodId: period.id,
+						approvalRequestId: request.id,
+						chainInstanceId: cycleStage?.chainInstanceId ?? null,
+					});
+					await assertLegacyTimeBinding(transactionDb, {
+						organizationId: input.organizationId,
+						bound: input.bound,
+						actorEmployeeId: actor.id,
+						approvalRequestId: request.id,
+						currentRevisionId: current?.id ?? null,
+					});
+				} else if (requestRow) {
+					// Canonical bindings exist only for exact canonical assignments.
 					throw new ApprovalEvidenceError("binding_mismatch");
 				}
 			}
-			if (
-				authority.mode === "legacy" ||
-				authority.mode === "shadow" ||
-				authority.mode === "ready"
-			) {
+			if (legacyAuthority) {
 				if (!requestRow) {
 					throw new NotFoundError({
 						message: "Approval not found",
@@ -5109,25 +5146,50 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const terminalResult = domainResult as
 					| TimeCorrectionApprovalResult
 					| undefined;
-				if (evidencePlan) {
-					await recordLegacyTimeCorrectionDecisionEvidence(
-						transactionDb,
-						evidencePlan,
-						{
-							organizationId: input.organizationId,
-							action: input.action,
-							reason: input.reason ?? null,
-							approvalRequestId: request.id,
-							idempotencyKey: legacyIdempotencyKey,
-							actor: { employeeId: actor.id, userId: actor.userId },
-							finalized: Boolean(terminalResult),
-						},
-					);
-				}
+				const evidence = evidencePlan
+					? await recordLegacyTimeCorrectionDecisionEvidence(
+							transactionDb,
+							evidencePlan,
+							{
+								organizationId: input.organizationId,
+								action: input.action,
+								reason: input.reason ?? null,
+								approvalRequestId: request.id,
+								// A card decision's receipt is its invocation (#290 identity).
+								idempotencyKey: input.bound
+									? boundTimeInvocationKey(input.bound)
+									: legacyIdempotencyKey,
+								reviewedBindingId: input.bound?.reviewedBindingId ?? null,
+								actor: { employeeId: actor.id, userId: actor.userId },
+								finalized: Boolean(terminalResult),
+							},
+						)
+					: null;
+				// Same transaction as the legacy mutation and its evidence (#432).
+				const invocation =
+					input.bound && boundCommand
+						? await recordLegacyTimeInvocationDecision(transactionDb, {
+								bound: input.bound,
+								command: boundCommand,
+								approvalRequestId: request.id,
+								evidence,
+							})
+						: undefined;
+				// The cycle's lifecycle intent, only while a delivery control exists
+				// (#432): the owner refreshes its sent cards and sends the next
+				// stage's card.
+				const deliveryIntent = await recordLegacyTimeDecisionIntent(transactionDb, {
+					organizationId: input.organizationId,
+					workflowType: "time_correction",
+					workPeriodId: period.id,
+					approvalRequestId: request.id,
+				});
 				return {
 					kind: "time_correction" as const,
 					domainResult,
 					commandResult: undefined,
+					...(invocation ? { invocation } : {}),
+					deliveryIntent,
 					postCommit: terminalResult
 						? {
 								authority: "legacy" as const,
@@ -5291,10 +5353,12 @@ export async function executeTimeCorrectionDecisionInTransaction(
 		}),
 		);
 	} catch (error) {
-		// A bound card action keeps its exact outcome for the card (#325).
+		// A bound card action keeps its exact outcome for the card (#325, #432).
 		if (
 			input.bound &&
-			(error instanceof ApprovalEvidenceError || isBoundTimeDecisionSignal(error))
+			(error instanceof ApprovalEvidenceError ||
+				error instanceof ApprovalAssignmentReassignedError ||
+				isBoundTimeDecisionSignal(error))
 		) {
 			throw error;
 		}
@@ -5304,6 +5368,45 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			),
 		);
 	}
+}
+
+/**
+ * The unchanged legacy correction mutation of one exact legacy request, in the
+ * decision owner's transaction. Without `allowAnyApprover` or
+ * `allowOrganizationWideApprover` only the request's current approver decides
+ * (the bound card path, #432).
+ */
+export function createLegacyTimeCorrectionDecisionProcessor(input: {
+	approvalRequestId: string;
+	action: "approve" | "reject";
+	reason: string | undefined;
+	options?: ApprovalActionOptions;
+}): ExecuteTimeCorrectionDecisionInput["processLegacy"] {
+	const { action, reason } = input;
+	return async (transactionDbService, actor, _transactionBehavior, workPeriodId) =>
+		await Effect.runPromise(
+			processApprovalWithCurrentEmployee(
+				transactionDbService,
+				actor,
+				"time_entry",
+				workPeriodId,
+				action,
+				reason,
+				action === "approve"
+					? persistApprovedTimeCorrection
+					: (service, entityId, approver, approval) =>
+							persistRejectedTimeCorrection(service, entityId, approver, reason ?? "", approval),
+				undefined,
+				{ ...input.options, approvalRequestId: input.approvalRequestId, transactional: true },
+				undefined,
+				"existing",
+			).pipe(
+				Effect.provideService(
+					ApprovalAuditLogger,
+					createApprovalAuditLogger(transactionDbService),
+				),
+			) as Effect.Effect<unknown, AnyAppError, never>,
+		);
 }
 
 export function decideTimeCorrectionWithStableTargetEffect(
@@ -5392,41 +5495,12 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							query: dbService.query,
 							canManageOrganizationApproval: () =>
 								canManageOrganizationTimeApproval(options),
-							processLegacy: async (
-								transactionDbService,
-								actor,
-								_transactionBehavior,
-								workPeriodId,
-							) =>
-								await Effect.runPromise(
-									processApprovalWithCurrentEmployee(
-										transactionDbService,
-										actor,
-										"time_entry",
-										workPeriodId,
-										action,
-										reason,
-										action === "approve"
-											? persistApprovedTimeCorrection
-											: (service, entityId, approver, approval) =>
-													persistRejectedTimeCorrection(
-														service,
-														entityId,
-														approver,
-														reason ?? "",
-														approval,
-													),
-										undefined,
-										{ ...options, approvalRequestId, transactional: true },
-										undefined,
-										"existing",
-									).pipe(
-										Effect.provideService(
-											ApprovalAuditLogger,
-											createApprovalAuditLogger(transactionDbService),
-										),
-									) as Effect.Effect<unknown, AnyAppError, never>,
-								),
+							processLegacy: createLegacyTimeCorrectionDecisionProcessor({
+								approvalRequestId,
+								action,
+								reason,
+								options,
+							}),
 							processOrdinary: async ({ workPeriodId, kind }) => {
 								throw new OrdinaryWorkPeriodDecisionDelegation(
 									workPeriodId,
@@ -5493,7 +5567,17 @@ export function decideTimeCorrectionWithStableTargetEffect(
 						);
 					}
 				}
+				if (ordinary.deliveryIntent) {
+					// The legacy cycle's intent committed with the decision (#432);
+					// this only runs the delivery owner sooner.
+					kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
+				}
 				return;
+			}
+			if ("deliveryIntent" in execution && execution.deliveryIntent) {
+				// The legacy correction cycle's intent committed with the decision
+				// (#432); this only runs the delivery owner sooner.
+				kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
 			}
 			if (
 				(execution.kind === "manual_time_submission" ||

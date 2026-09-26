@@ -151,6 +151,17 @@ vi.mock("@/lib/approvals/evidence/legacy-absence", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-absence")>()),
 	hasLegacyAbsenceAuthority: async () => false,
 }));
+// Legacy time cards (#432): legacy-time-bound-approval.integration.test.ts. The
+// time fixtures here have no legacy revision, so they keep the existing path.
+vi.mock("@/lib/approvals/evidence/legacy-time", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-time")>()),
+	isLegacyTimeAuthorityRequest: async () => false,
+}));
+// Historical replays here were never card decisions: no evidence names a binding.
+vi.mock("@/lib/approvals/evidence/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/store")>()),
+	findLegacyDecisionEvidenceByRequest: async () => null,
+}));
 // Expense card admission (#296) likewise: expense-review-decision.integration.test.ts.
 vi.mock("@/lib/approvals/presentation/travel-expense-card", () => ({
 	prepareBoundTravelExpenseCard: async () => null,

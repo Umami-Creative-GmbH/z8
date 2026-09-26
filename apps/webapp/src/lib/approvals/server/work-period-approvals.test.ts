@@ -78,6 +78,16 @@ vi.mock("../evidence/work-period-evidence", async (importOriginal) => ({
 	prepareLegacyWorkPeriodDecisionEvidence: workPeriodEvidenceMocks.prepare,
 	recordLegacyWorkPeriodDecisionEvidence: workPeriodEvidenceMocks.record,
 }));
+// Legacy card decisions and cycle intents (#432):
+// legacy-time-bound-approval.integration.test.ts.
+vi.mock("../evidence/store", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../evidence/store")>()),
+	findLegacyDecisionEvidenceByRequest: async () => null,
+}));
+vi.mock("../delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("../delivery/intents")>()),
+	recordLegacyTimeDecisionIntent: async () => false,
+}));
 vi.mock("../workflow/state-machine", async (importOriginal) => ({
 	...(await importOriginal<typeof import("../workflow/state-machine")>()),
 	fingerprintApprovalCommandActor: (actor: unknown) => JSON.stringify(actor),
@@ -1016,6 +1026,8 @@ describe("stable ordinary work-period decisions", () => {
 			reason: null,
 			approvalRequestId: "approval-1",
 			idempotencyKey: "ordinary-decision:org-1:period-1:approval-1:approve:",
+			// A web decision names no binding (#432).
+			reviewedBindingId: null,
 			actor: { employeeId: currentApprover.id, userId: currentApprover.userId },
 			finalized: {
 				outcome: {

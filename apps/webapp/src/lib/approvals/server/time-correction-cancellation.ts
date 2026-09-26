@@ -17,6 +17,8 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
+import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
+import { kickApprovalDelivery } from "../delivery/kick";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import { buildRequesterCancellationMarker } from "../domain-adapters/time-correction-cancellation-marker";
 import { normalizeTimeCorrectionWorkflowPayload } from "../domain-adapters/time-correction-contract";
@@ -84,9 +86,12 @@ export async function cancelPendingTimeCorrection(
 		clock: systemClock,
 	});
 
+	// Set by the committed attempt: a legacy cycle's withdrawal intent (#432).
+	let deliveryIntent = false;
 	try {
-		return await retryTimeCorrectionWorkTransaction(() =>
+		const cancelled = await retryTimeCorrectionWorkTransaction(() =>
 			runtime.repository.withTransaction(async (outerContext) => {
+			deliveryIntent = false;
 			const database = outerContext.dbService.db as typeof db;
 			const [requesters, memberships, periods] = await Promise.all([
 				database.query.employee.findMany({
@@ -361,6 +366,21 @@ export async function cancelPendingTimeCorrection(
 						lifecycle,
 					});
 				}
+				// The cycle is withdrawn with the correction (#432): a lifecycle
+				// intent, written only while a delivery control exists, lets the
+				// delivery owner refresh the cycle's sent cards.
+				deliveryIntent = await recordLegacyDeliveryIntent(database, {
+					organizationId: input.organizationId,
+					workflowType: "time_correction",
+					sourceType: "time_entry",
+					sourceId: input.workPeriodId,
+					approvalRequestId: legacy.cycle.approvalRequestId,
+					cycleId: legacyDeliveryCycleId({
+						chainInstanceId: legacy.cycle.chainInstanceId ?? null,
+						approvalRequestId: legacy.cycle.approvalRequestId,
+					}),
+					event: "withdrawn",
+				});
 				return { replayed: false };
 			}
 
@@ -385,6 +405,11 @@ export async function cancelPendingTimeCorrection(
 			return { replayed: execution.disposition === "replayed" };
 		}),
 		);
+		if (deliveryIntent) {
+			// The withdrawal intent committed; this only runs the owner sooner.
+			kickApprovalDelivery({ organizationId: input.organizationId });
+		}
+		return cancelled;
 	} catch (error) {
 		if (
 			error instanceof Error &&
