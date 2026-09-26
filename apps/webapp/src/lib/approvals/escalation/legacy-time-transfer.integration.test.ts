@@ -806,24 +806,59 @@ describeIntegration("escalated legacy time approvals (PostgreSQL)", () => {
 		},
 	);
 
-	it("lets the requester cancel a transferred correction and keeps its lineage", async () => {
-		const { workPeriodId, request, transfer } = await transferred("time_correction");
+	it.each(MODES)(
+		"lets the requester cancel a transferred correction under %s and keeps its lineage",
+		async (mode) => {
+			const { workPeriodId, request, transfer } = await transferred("time_correction", mode);
+			const before = mode === "legacy" ? null : await observation(workPeriodId);
 
-		actAs(ids.requesterUser);
-		expect(await cancelMyTimeCorrectionRequest(workPeriodId)).toEqual({ success: true });
-		actAs(null);
+			actAs(ids.requesterUser);
+			expect(await cancelMyTimeCorrectionRequest(workPeriodId)).toEqual({ success: true });
+			actAs(null);
 
-		// The retained tombstone still names the holders the journal replaced.
-		const cancelled = await requestRow(request.id);
-		expect(cancelled.metadata).toMatchObject({
-			cancellation: { kind: "requester" },
-			escalation: {
-				transfers: [{ fromApproverEmployeeId: ids.manager, toApproverEmployeeId: ids.backup }],
-			},
-		});
-		expect(only(await journal()).id).toBe(transfer.id);
-		expect(await escalateAt(transfer.transferred_at, 180)).toMatchObject({ examined: 0 });
-	});
+			// The retained tombstone still names the holders the journal replaced.
+			const cancelled = await requestRow(request.id);
+			expect(cancelled.metadata).toMatchObject({
+				timeCorrectionOriginalWorkMetadata: request.metadata?.timeCorrectionOriginalWorkMetadata,
+				cancellation: { kind: "requester" },
+				escalation: {
+					transfers: [{ fromApproverEmployeeId: ids.manager, toApproverEmployeeId: ids.backup }],
+				},
+			});
+			if (before) {
+				// The observation closes with the former holder's history intact.
+				const closed = await observation(workPeriodId);
+				expect(closed).toMatchObject({ id: before.id, status: "cancelled" });
+				expect(closed.version).toBe(before.version + 1);
+				expect(closed.assignments).toMatchObject([
+					{
+						id: before.assignments[0]?.id,
+						approver_employee_id: ids.manager,
+						status: "cancelled",
+						resolved_by_actor_kind: "system",
+					},
+					{
+						id: before.assignments[1]?.id,
+						approver_employee_id: ids.backup,
+						status: "cancelled",
+						resolved_by_actor_kind: "employee",
+						reassigned_from_assignment_id: before.assignments[0]?.id,
+					},
+				]);
+			}
+			expect(only(await journal()).id).toBe(transfer.id);
+			expect(await escalateAt(transfer.transferred_at, 180)).toMatchObject({ examined: 0 });
+
+			// A replay changes nothing, not even the closed observation.
+			actAs(ids.requesterUser);
+			expect(await cancelMyTimeCorrectionRequest(workPeriodId)).toEqual({ success: true });
+			actAs(null);
+			expect(await requestRow(request.id)).toEqual(cancelled);
+			if (before) {
+				expect((await observation(workPeriodId)).version).toBe(before.version + 1);
+			}
+		},
+	);
 
 	it("lets explicit organization management decide a transferred legacy approval", async () => {
 		const { workPeriodId, request } = await transferred("time_correction");

@@ -619,10 +619,12 @@ export async function processDueEscalations(input: {
 				case "transferred":
 					if (outcome.disposition === "executed") {
 						summary.transferred += 1;
-						if (item.authority === "canonical") {
-							// Committed; the replacement delivery pass also runs on schedule.
-							kickApprovalDelivery({ organizationId, workflowId: item.workflowId });
-						}
+						// Committed; the replacement delivery pass also runs on schedule.
+						kickApprovalDelivery(
+							item.authority === "canonical"
+								? { organizationId, workflowId: item.workflowId }
+								: { organizationId },
+						);
 					} else summary.replayed += 1;
 					break;
 				case "held":
@@ -1232,7 +1234,7 @@ export async function escalateLegacyApprovalByManager(input: {
 	});
 	const runtime = createEscalationRuntime(null);
 	try {
-		return await runtime.repository.withTransaction(
+		const result = await runtime.repository.withTransaction(
 			async (context): Promise<HumanEscalationOutcome> => {
 				const tx = context.dbService.db as unknown as DatabaseTransaction;
 				const committed = await findEscalationTransferByOperationKey(tx, {
@@ -1282,6 +1284,11 @@ export async function escalateLegacyApprovalByManager(input: {
 				};
 			},
 		);
+		// Committed; the replacement delivery pass (#408) also runs on schedule.
+		if (result.kind === "transferred" && result.disposition === "executed") {
+			kickApprovalDelivery({ organizationId: actor.organizationId });
+		}
+		return result;
 	} catch (error) {
 		if (error instanceof LegacyTransferRaceError || isTransitionRace(error)) {
 			return { kind: "conflict" };

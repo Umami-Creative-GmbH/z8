@@ -212,7 +212,7 @@ async function handleCallbackQuery(
 		if (bound) {
 			acknowledgment = await handleBoundApprovalCallback(query, bound, updateId, bot);
 		} else if (callbackData.a === "ap" || callbackData.a === "rj") {
-			await handleApprovalCallback(
+			acknowledgment = await handleApprovalCallback(
 				query,
 				callbackData as ApprovalCallbackData,
 				telegramUserId,

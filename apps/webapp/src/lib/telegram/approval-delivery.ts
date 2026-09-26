@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { telegramBotConfig } from "@/db/schema";
+import { telegramApprovalMessage, telegramBotConfig } from "@/db/schema";
 import type {
 	ApprovalDeliveryAdapter,
 	ApprovalDeliveryFailure,
@@ -108,5 +108,34 @@ export const telegramApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		if (failed === "current") return { kind: "current" };
 		if (failed === "gone") return { kind: "gone", reason: "message_not_editable" };
 		return failed;
+	},
+
+	async listUntrackedLegacyCards(input) {
+		const tracked = await db
+			.select({
+				chatId: telegramApprovalMessage.chatId,
+				messageId: telegramApprovalMessage.messageId,
+			})
+			.from(telegramApprovalMessage)
+			.where(
+				and(
+					eq(telegramApprovalMessage.organizationId, input.organizationId),
+					eq(telegramApprovalMessage.approvalRequestId, input.approvalRequestId),
+					eq(telegramApprovalMessage.recipientUserId, input.recipientUserId),
+				),
+			);
+		if (tracked.length === 0) return [];
+		// The old path records no bot identity; only the organization's current
+		// bot can edit a card, and a card another bot sent reads as gone.
+		const bot = await getBotConfigByOrganization(input.organizationId);
+		const receiverScope = bot ? telegramReceiverScope(bot.botToken) : null;
+		if (!receiverScope) return [];
+		return tracked.map((card) => ({
+			provider: "telegram" as const,
+			recipientUserId: input.recipientUserId,
+			receiverScope,
+			destinationId: card.chatId,
+			remoteMessageId: card.messageId,
+		}));
 	},
 };

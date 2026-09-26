@@ -147,6 +147,14 @@ suites did not show them.
   compare-and-set used it instead of the persisted request metadata, so the
   submission evidence was missing and the update matched no row. Both now use the
   persisted metadata.
+- **The direct tombstone was unreadable in `shadow`/`ready` (#463).** It kept
+  `timeCorrection`, `submission` and `cancellation` but dropped
+  `timeCorrectionOriginalWorkMetadata`, so the after-capture and a later replay
+  capture failed. The observation planner also refused the tombstone: a
+  `rejected` row without a reason and with `approvedAt` set. The tombstone now
+  keeps the work metadata. The planner accepts a time-correction tombstone whose
+  requester marker matches the request, the work period and `approvedAt`, and it
+  plans `workflow.cancelled` at that instant.
 
 ## Verification
 

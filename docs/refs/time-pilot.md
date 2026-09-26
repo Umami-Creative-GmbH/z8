@@ -208,8 +208,9 @@ Record the evidence of steps 1, 2, 7 and 8 separately.
 
 ## Pause and rollback
 
-There is no paused state for append admission, and this page adds none. Designing
-rollback and proving it is #331.
+There is no paused state for append admission, and this page adds none. The
+[rollback runbook](rollback.md#append-adoption-has-no-pause) (#331) records this as a
+scoped blocker, and `pnpm rollout:rollback-readiness` reports it.
 
 - **Do not set the append control back to `inactive` as a pause.** Legacy writers
   would resume under legacy head selection, and positions would not advance. When the

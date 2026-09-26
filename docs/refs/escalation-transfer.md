@@ -341,11 +341,13 @@ cancellation removed the request.
 - Legacy chain stages are held, not transferred.
 - Shadow/ready requests submitted before shadowing have no observation and are
   held (`legacy_observation_missing`).
-- No replacement notification or old-card retirement: #300 delivers canonical
-  transfers only, and legacy transfer events stay pending until legacy
-  replacement delivery exists (#408; its actionable cards need #384's legacy
-  bound cards). The replacement finds the request in the web inbox as its
-  approver.
+- Replacement notification and old-card retirement: since #408, escalation's
+  replacement pass expands legacy absence and expense transfer events into
+  their legacy delivery lifecycle (replacement card, "Reassigned" former
+  cards); see
+  [Legacy escalation replacement delivery](approval-delivery.md#legacy-escalation-replacement-delivery--408)
+  and its activation blockers. Without a delivery control for the kind the
+  replacement finds the request in the web inbox as its approver.
 - Old binaries: pre-deployment binaries decide legacy absences without the
   transfer check. Deploy before activation and drain old workers.
 - The approval write-boundary scanner cannot read sources on Windows; the new
@@ -504,10 +506,11 @@ applies to the inbox, the expense page actions and cards alike.
 - **Excluded holds:** a legacy request held on an untransferable route is
   not re-examined, so a later change of its approver does not refresh that
   hold until an attention recheck or disposition closes it.
-- **Expense delivery:** legacy transfer events stay `pending` until legacy
-  replacement delivery exists (#408). The replacement gets no card, and the
-  former holder's card is not retired; pressing it decides nothing. Expense
-  `shadow`/`ready` modes and approval chains are held.
+- **Expense delivery:** since #408 the replacement gets its card and the
+  former holder's cards are retired as "Reassigned" (see
+  [Legacy escalation replacement delivery](approval-delivery.md#legacy-escalation-replacement-delivery--408));
+  pressing a former card decides nothing. Expense `shadow`/`ready` modes and
+  approval chains are held.
 - **Providers:** replacement cards for time kinds were exercised with Telegram
   only. Slack, Teams and Discord use the same #300 owner but have no runtime
   evidence for time kinds.
@@ -667,9 +670,11 @@ racing a transfer serializes behind it and is then refused (verified in
 - **Old binaries** decide legacy time requests without the refusal. Deploy
   everywhere and drain old workers before an organization's ownership moves.
 - **Requester cancellation in `shadow`/`ready`** of a direct legacy
-  correction already fails without #439: the observation planner refuses the
-  retained tombstone, which also drops the original work metadata.
-  Cancellation of a transferred correction is verified under `legacy` only.
+  correction failed before #463: the retained tombstone dropped the original
+  work metadata, and the observation planner refused the tombstone. #463
+  keeps the metadata and plans the tombstone as `workflow.cancelled` with the
+  lineage holders intact. Cancellation of a transferred correction is verified
+  under `legacy`, `shadow` and `ready`.
 - **Delivery:** legacy transfer events stay `pending` until legacy replacement
   delivery exists (#408). The replacement gets no card and the former card is
   not retired.

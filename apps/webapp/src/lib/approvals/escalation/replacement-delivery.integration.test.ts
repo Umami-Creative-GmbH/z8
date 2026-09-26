@@ -883,6 +883,28 @@ describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
 		});
 	});
 
+	it("sends and edits nothing under legacy authority after a cutover between planning and send", async () => {
+		await seed();
+		const submitted = await transferred();
+		await expandEscalationTransferEvents({ organizationId: ids.organization, limit: 10 });
+		await admin.query(
+			`update approval_workflow_rollout set lifecycle_mode = 'legacy', side_effect_mode = 'legacy'
+			 where organization_id = $1 and workflow_type = 'absence'`,
+			[ids.organization],
+		);
+		await replace();
+		expect(sendsTo(BACKUP_CHAT_ID)).toHaveLength(0);
+		expect(edits()).toHaveLength(0);
+		expect(
+			(await work(submitted.workflowId))
+				.filter((row) => row.escalation_transfer_id)
+				.map((row) => [row.effect, row.status, row.last_outcome]),
+		).toEqual([
+			["replacement", "cancelled", "authority_changed"],
+			["refresh", "cancelled", "authority_changed"],
+		]);
+	});
+
 	it("tracks a replacement card that went stale in flight and retires it", async () => {
 		await seed();
 		const submitted = await transferred();

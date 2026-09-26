@@ -1,7 +1,10 @@
 import {
+	compareInstants,
 	instantToCanonicalString,
 	isInstant,
+	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { parseRequesterCancellationMarker } from "../domain-adapters/time-correction-cancellation-marker";
 import {
 	deriveApprovalAssignmentId,
 	deriveApprovalEventId,
@@ -200,18 +203,63 @@ function validateDirectRequest(input: ObservedLegacyTransition): void {
 			!canonicalUuid(request.requestedBy) ||
 			!canonicalUuid(request.approverId) ||
 			!isInstant(request.updatedAt) ||
+			(request.metadata !== null && !record(request.metadata))
+		) {
+			fail("invalid_evidence");
+		}
+		if (directRequesterCancellation(input, request)) continue;
+		if (
 			!(["pending", "approved", "rejected"] as const).includes(
 				request.status,
 			) ||
 			(request.status === "approved" && !isInstant(request.approvedAt)) ||
 			(request.status !== "approved" && request.approvedAt !== null) ||
 			(request.status === "rejected" && !nonEmpty(request.rejectionReason)) ||
-			(request.status !== "rejected" && request.rejectionReason !== null) ||
-			(request.metadata !== null && !record(request.metadata))
+			(request.status !== "rejected" && request.rejectionReason !== null)
 		) {
 			fail("invalid_evidence");
 		}
 	}
+}
+
+/**
+ * A requester's retained cancellation of a direct time correction (#301): the
+ * row stays `rejected` without a reason, `approvedAt` holds the cancellation
+ * instant, and the metadata carries the requester marker. The capture already
+ * reads it as cancelled; a marker that does not match the request fails (#463).
+ */
+function directRequesterCancellation(
+	input: ObservedLegacyTransition,
+	request: NonNullable<ObservedLegacyTransition["before"]["approvalRequest"]>,
+): boolean {
+	if (
+		input.source.workflowType !== "time_correction" ||
+		request.metadata === null ||
+		!Object.hasOwn(request.metadata, "cancellation")
+	) {
+		return false;
+	}
+	let marker: ReturnType<typeof parseRequesterCancellationMarker>;
+	let cancelledAt: ReturnType<typeof parseInstant>;
+	try {
+		marker = parseRequesterCancellationMarker(request.metadata.cancellation);
+		cancelledAt = parseInstant(marker.cancelledAt);
+	} catch {
+		return fail("invalid_evidence");
+	}
+	if (
+		request.status !== "rejected" ||
+		request.rejectionReason !== null ||
+		!isInstant(request.approvedAt) ||
+		compareInstants(cancelledAt, request.approvedAt) !== 0 ||
+		marker.organizationId !== input.organizationId ||
+		marker.workPeriodId !== input.source.sourceId ||
+		marker.requesterEmployeeId !== request.requestedBy ||
+		marker.chainInstanceId !== null
+	) {
+		return fail("invalid_evidence");
+	}
+	return true;
 }
 
 interface LegacyEventDraft {
@@ -1196,6 +1244,9 @@ function buildPlan(
 		beforeRequest === null &&
 		afterRequest?.status === "approved" &&
 		afterRequest.approverId === afterRequest.requestedBy;
+	// A retained tombstone is `rejected` in storage but closes as cancelled.
+	const requesterCancellation =
+		afterRequest !== null && directRequesterCancellation(input, afterRequest);
 	const terminal =
 		beforeRequest?.status === "pending" &&
 		(afterRequest === null ||
@@ -1237,20 +1288,24 @@ function buildPlan(
 	if (!request) return fail("ambiguous_transition");
 	const status = initial
 		? ("pending" as const)
-		: afterRequest === null
+		: afterRequest === null || requesterCancellation
 			? ("cancelled" as const)
 			: afterRequest.status;
 	if (!status) return fail("invalid_lifecycle");
 	const transitionAt =
 		escalationTransfer && lastTransfer
 			? lastTransfer.transferredAt
-			: (afterRequest?.updatedAt ?? input.after.capturedAt);
+			: requesterCancellation
+				? (afterRequest?.approvedAt ?? fail("invalid_evidence"))
+				: (afterRequest?.updatedAt ?? input.after.capturedAt);
 	const lineage = afterRequest !== null ? afterLineage : beforeLineage;
 	const pendingSince =
 		lineage.pendingSince ?? beforeRequest?.updatedAt ?? request.updatedAt;
 	const cancellationReason = approvedOwnerCancellation
 		? "Legacy approved request cancelled by owner"
-		: "Legacy pending request disappeared";
+		: requesterCancellation
+			? "Legacy pending request cancelled by requester"
+			: "Legacy pending request disappeared";
 	const version =
 		input.expectedVersion === null ? 1 : input.expectedVersion + 1;
 	const workflowId = deriveApprovalWorkflowId({

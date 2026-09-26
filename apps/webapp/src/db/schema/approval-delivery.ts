@@ -321,8 +321,17 @@ export const approvalDeliveryWork = pgTable(
 	],
 );
 
-/** `withdrawn`: ordinary cancellation deleted the cycle's pending requests (#384). */
-export const APPROVAL_DELIVERY_INTENT_EVENTS = ["submitted", "decided", "withdrawn"] as const;
+/**
+ * `withdrawn`: ordinary cancellation deleted the cycle's pending requests (#384).
+ * `transferred`: escalation moved a legacy request to its replacement (#408);
+ * written by escalation's replacement pass, once per transfer, already expanded.
+ */
+export const APPROVAL_DELIVERY_INTENT_EVENTS = [
+	"submitted",
+	"decided",
+	"withdrawn",
+	"transferred",
+] as const;
 export type ApprovalDeliveryIntentEvent = (typeof APPROVAL_DELIVERY_INTENT_EVENTS)[number];
 
 // Lifecycle intents of legacy-authoritative approvals (#296), the counterpart
@@ -346,6 +355,8 @@ export const approvalDeliveryIntent = pgTable(
 		/** The submission cycle of a cycle-keyed legacy lifecycle (#384), by value. */
 		legacyCycleId: uuid("legacy_cycle_id"),
 		event: text("event").$type<ApprovalDeliveryIntentEvent>().notNull(),
+		/** The committed legacy escalation transfer a `transferred` intent records. */
+		escalationTransferId: uuid("escalation_transfer_id"),
 		expansionStatus: text("expansion_status")
 			.$type<"pending" | "expanded">()
 			.default("pending")
@@ -366,8 +377,21 @@ export const approvalDeliveryIntent = pgTable(
 			.where(sql`${table.legacyCycleId} IS NOT NULL`),
 		check(
 			"approval_delivery_intent_event_check",
-			sql`${table.event} IN ('submitted', 'decided', 'withdrawn')`,
+			sql`${table.event} IN ('submitted', 'decided', 'withdrawn', 'transferred')`,
 		),
+		check(
+			"approval_delivery_intent_transfer_check",
+			sql`(${table.event} = 'transferred') = (${table.escalationTransferId} IS NOT NULL)`,
+		),
+		// One version step per committed transfer, however often expansion reruns.
+		uniqueIndex("approvalDeliveryIntent_org_transfer_idx")
+			.on(table.organizationId, table.escalationTransferId)
+			.where(sql`${table.escalationTransferId} IS NOT NULL`),
+		foreignKey({
+			name: "approval_delivery_intent_escalation_transfer_fk",
+			columns: [table.escalationTransferId, table.organizationId],
+			foreignColumns: [approvalEscalationTransfer.id, approvalEscalationTransfer.organizationId],
+		}).onDelete("cascade"),
 		check(
 			"approval_delivery_intent_expansion_check",
 			sql`${table.expansionStatus} IN ('pending', 'expanded')`,

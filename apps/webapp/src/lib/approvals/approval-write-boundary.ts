@@ -83,7 +83,8 @@ export const CANONICAL_WRITE_OWNERS = {
 	},
 	// Legacy lifecycle intents (#296), written by the legacy expense, (#384)
 	// absence and (#432) time submission, decision and cancellation owners in
-	// their transactions.
+	// their transactions, and (#408) by escalation's replacement pass for a
+	// legacy transfer.
 	"src/lib/approvals/delivery/intents.ts": {
 		approval_delivery_intent: ["insert"],
 	},
