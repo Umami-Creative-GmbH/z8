@@ -19,7 +19,10 @@ import {
 import { ConflictError } from "@/lib/effect/errors";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import { buildRequesterCancellationMarker } from "../domain-adapters/time-correction-cancellation-marker";
-import { normalizeTimeCorrectionWorkflowPayload } from "../domain-adapters/time-correction-contract";
+import {
+	normalizeTimeCorrectionOriginalWorkMetadata,
+	normalizeTimeCorrectionWorkflowPayload,
+} from "../domain-adapters/time-correction-contract";
 import { captureTimeCorrectionLegacyApprovalState } from "../domain-adapters/time-correction-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { cancelLegacyTimeCorrectionApprovalRows } from "../workflow/compatibility-writer";
@@ -1143,6 +1146,16 @@ function durableRequesterCancellationMetadata(
 	if (!submission) {
 		throw new Error("Time correction cancellation is unavailable");
 	}
+	// Later captures of the tombstone verify the correction against the work
+	// metadata it replaced, so the tombstone keeps it (#463).
+	const originalWorkMetadata = Object.hasOwn(
+		metadata,
+		"timeCorrectionOriginalWorkMetadata",
+	)
+		? normalizeTimeCorrectionOriginalWorkMetadata(
+				metadata.timeCorrectionOriginalWorkMetadata,
+			)
+		: null;
 	// A transferred request keeps its escalation lineage (#439): the journal
 	// and later captures still name the holders it replaced.
 	const lineage = splitLegacyEscalationLineage(metadata);
@@ -1151,6 +1164,9 @@ function durableRequesterCancellationMetadata(
 	}
 	return {
 		timeCorrection: correction,
+		...(originalWorkMetadata
+			? { timeCorrectionOriginalWorkMetadata: { ...originalWorkMetadata } }
+			: {}),
 		...(lineage.kind === "lineage" ? { escalation: lineage.lineage } : {}),
 		submission,
 		cancellation: buildRequesterCancellationMarker({

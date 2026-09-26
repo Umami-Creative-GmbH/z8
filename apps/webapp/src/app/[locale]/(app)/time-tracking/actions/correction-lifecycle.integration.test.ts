@@ -227,14 +227,14 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		);
 	}
 
-	async function setCorrectionRollout(mode: "legacy" | "canonical") {
+	async function setCorrectionRollout(mode: "legacy" | "shadow" | "ready" | "canonical") {
 		await admin.query(
 			`insert into approval_workflow_rollout
 			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
 			 values ($1, 'time_correction', $2, $3, now(), now())
 			 on conflict (organization_id, workflow_type)
 			 do update set lifecycle_mode = excluded.lifecycle_mode, side_effect_mode = excluded.side_effect_mode`,
-			[ids.organization, mode, mode],
+			[ids.organization, mode, mode === "canonical" ? "canonical" : "legacy"],
 		);
 	}
 
@@ -1236,6 +1236,105 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 			[ids.organization],
 		);
 		expect(rows).toHaveLength(0);
+	});
+
+	describe("requester cancellation of a direct legacy correction (#463)", () => {
+		/** The observation the work period is bound to, with its holders and closing event. */
+		async function observation(workPeriodId: string) {
+			const { rows } = await admin.query<{ id: string; status: string; version: number }>(
+				`select workflow.id, workflow.status, workflow.version
+				 from work_period period
+				 join approval_workflow workflow on workflow.id = period.approval_workflow_id
+				 where period.id = $1`,
+				[workPeriodId],
+			);
+			const workflow = only(rows);
+			const { rows: assignments } = await admin.query<{
+				status: string;
+				resolved_by_actor_kind: string | null;
+			}>(
+				`select status, resolved_by_actor_kind from approval_stage_assignment
+				 where workflow_id = $1 order by assignment_sequence`,
+				[workflow.id],
+			);
+			const { rows: events } = await admin.query<{ event_type: string }>(
+				`select event_type from approval_workflow_event
+				 where workflow_id = $1 and version = $2 order by event_index`,
+				[workflow.id, workflow.version],
+			);
+			return { ...workflow, assignments, events: events.map((event) => event.event_type) };
+		}
+
+		async function requestRow(requestId: string) {
+			const { rows } = await admin.query<{
+				status: string;
+				rejection_reason: string | null;
+				approved_at: Date | null;
+				metadata: Record<string, unknown>;
+			}>(
+				"select status, rejection_reason, approved_at, metadata from approval_request where id = $1",
+				[requestId],
+			);
+			return only(rows);
+		}
+
+		it.each([
+			["legacy", "active"],
+			["legacy", "inactive"],
+			["shadow", "active"],
+			["shadow", "inactive"],
+			["ready", "active"],
+			["ready", "inactive"],
+		] as const)(
+			"cancels under %s authority with %s admission and replays",
+			async (mode, admission) => {
+				await setCorrectionRollout(mode);
+				const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+				await setAdmission(admission);
+				await expect(
+					requestEdit(work.id, { clockIn: "07:30", clockOut: "10:00" }),
+				).resolves.toMatchObject({ success: true });
+				const requestId = await pendingApprovalId(work.id);
+				const submitted = await requestRow(requestId);
+				expect(submitted.metadata.timeCorrectionOriginalWorkMetadata).toBeDefined();
+				const pending = mode === "legacy" ? null : await observation(work.id);
+				expect(pending?.status ?? "pending").toBe("pending");
+
+				await expect(cancel(work.id)).resolves.toEqual({ success: true });
+
+				// The retained tombstone keeps every key the submission wrote.
+				const tombstone = await requestRow(requestId);
+				expect(tombstone).toMatchObject({ status: "rejected", rejection_reason: null });
+				expect(tombstone.approved_at).not.toBeNull();
+				expect(tombstone.metadata).toMatchObject({
+					timeCorrection: submitted.metadata.timeCorrection,
+					timeCorrectionOriginalWorkMetadata: submitted.metadata.timeCorrectionOriginalWorkMetadata,
+					submission: submitted.metadata.submission,
+					cancellation: { kind: "requester", chainInstanceId: null },
+				});
+				if (pending) {
+					expect(await observation(work.id)).toEqual({
+						id: pending.id,
+						status: "cancelled",
+						version: pending.version + 1,
+						assignments: [{ status: "cancelled", resolved_by_actor_kind: "employee" }],
+						events: ["assignment.cancelled", "stage.cancelled", "workflow.cancelled"],
+					});
+				}
+				if (admission === "active") {
+					expect(await corrections(work.id)).toMatchObject([
+						{ is_superseded: true, superseded_by_id: null },
+					]);
+				} else {
+					expect(await corrections(work.id)).toHaveLength(0);
+				}
+
+				// Replay: the retained tombstone still captures, and nothing is written.
+				const committed = await snapshot();
+				await expect(cancel(work.id)).resolves.toEqual({ success: true });
+				expect(await snapshot()).toEqual(committed);
+			},
+		);
 	});
 
 	it("captures no correction evidence while capture is inactive", async () => {
