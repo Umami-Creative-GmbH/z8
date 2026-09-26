@@ -409,6 +409,24 @@ test("trimmed runtime Dockerfiles allow pnpm to read workspace overrides", async
 	}
 });
 
+test("worker image and manifest start through the server-only preload", async () => {
+	const [result, dockerfile, workerManifest] = await Promise.all([
+		collectTarget("worker"),
+		fs.readFile(new URL("../Dockerfile.worker", import.meta.url), "utf8"),
+		fs.readFile(new URL("../../deploy/k8s/worker.yaml", import.meta.url), "utf8"),
+	]);
+
+	assert.ok(result.files.includes("src/worker-preload.mjs"));
+	assert.match(
+		dockerfile,
+		/CMD \["tsx", "--import", "\.\/src\/worker-preload\.mjs", "src\/worker\.ts"\]/,
+	);
+	assert.match(
+		workerManifest,
+		/-\s+tsx\s+-\s+--import\s+-\s+\.\/src\/worker-preload\.mjs\s+-\s+src\/worker\.ts/,
+	);
+});
+
 test("production worker and migration manifests use the trimmed runtime layout", async () => {
   const [workerManifest, migrationManifest] = await Promise.all([
     fs.readFile(new URL("../../deploy/k8s/worker.yaml", import.meta.url), "utf8"),
