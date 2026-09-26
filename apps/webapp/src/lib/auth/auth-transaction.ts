@@ -60,6 +60,8 @@ export class UncoordinatedAuthMutationError extends Error {
  */
 export function captureAuthTransactions<T extends TransactionalDatabase>(database: T): T {
 	const transaction: TransactionalDatabase["transaction"] = async (callback, config) => {
+		// Joins without a savepoint, like Better Auth's own nested `runWithTransaction`:
+		// a nested failure must propagate and roll back the whole coordinated mutation.
 		const active = currentAuthTransaction();
 		if (active) return callback(active);
 		const afterCommit: CapturedTransaction["afterCommit"] = [];

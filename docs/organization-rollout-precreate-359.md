@@ -69,7 +69,10 @@ The fix is in `lib/auth/auth-transaction.ts`:
 
 - New suite `lib/auth/organization-creation.integration.test.ts` (9 tests; registered in the
   runner and `tests.yml`). It uses a real Better Auth instance with the production
-  coordination hooks.
+  coordination hooks. Like the #314 suite, it builds that instance in the test rather than
+  loading `@/lib/auth`: the production-only plugins (Turnstile, SCIM, admin, SSO) and the
+  email-lookup adapter wrapper are absent, and onboarding's `runAuthMutation` is the same
+  one-line `runCoordinatedAuthMutation` over the test instance.
   - Over HTTP, the organization, the owner and the 7 `legacy`/`legacy` rows commit together.
     While the owner's guard is held, the uncommitted organization is not visible.
   - Onboarding creates the same row set.
