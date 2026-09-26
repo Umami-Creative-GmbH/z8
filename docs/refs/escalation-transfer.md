@@ -659,7 +659,10 @@ caller's organization-wide flag plus CASL `manage Approval`; without a check
 there is none. The shared eligible-manager fallback (`shared.ts`) also
 refuses a transferred request, for every legacy kind.
 
-Bound legacy time cards are out of scope: #432 must add the same refusal.
+Bound legacy time cards (#432) reach the same legacy decision branches with
+no management callback, so a card is refused the same way; a card press
+racing a transfer serializes behind it and is then refused (verified in
+`legacy-time-bound-approval.integration.test.ts`).
 
 ### Activation blockers (#439)
 
@@ -675,8 +678,8 @@ Bound legacy time cards are out of scope: #432 must add the same refusal.
 - **Delivery:** legacy transfer events stay `pending` until legacy replacement
   delivery exists (#408). The replacement gets no card and the former card is
   not retired.
-- **Not executed:** bound legacy time cards (#432), bulk inbox decisions,
-  deployment.
+- **Not executed:** bulk inbox decisions, deployment. Bound legacy time cards
+  were verified together with #439 by #432.
 
 ## Verification checkpoint — 2026-09-24
 

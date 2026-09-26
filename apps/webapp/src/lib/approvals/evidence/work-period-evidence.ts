@@ -819,8 +819,13 @@ export async function recordLegacyWorkPeriodDecisionEvidence(
 		action: DecisionAction;
 		reason: string | null;
 		approvalRequestId: string;
-		/** The unchanged legacy idempotency key computed by the decision owner. */
+		/**
+		 * The unchanged legacy idempotency key computed by the decision owner, or
+		 * for a card decision its invocation receipt key (#432).
+		 */
 		idempotencyKey: string;
+		/** The legacy binding a card decision was reviewed through (#432). */
+		reviewedBindingId?: string | null;
 		actor: { employeeId: string; userId: string };
 		finalized: {
 			outcome?: WorkPeriodTerminalOutcome;
@@ -979,6 +984,7 @@ export async function recordLegacyWorkPeriodDecisionEvidence(
 					: null,
 		},
 		labels: { actorName: actor.name },
+		reviewedBindingId: input.reviewedBindingId ?? null,
 	});
 }
 

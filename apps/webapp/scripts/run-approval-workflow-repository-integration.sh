@@ -155,6 +155,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/approvals/escalation/legacy-transfer.integration.test.ts \
 	src/lib/telegram/bound-approval.integration.test.ts \
 	src/lib/telegram/legacy-bound-approval.integration.test.ts \
+	src/lib/telegram/legacy-time-bound-approval.integration.test.ts \
 	src/lib/approvals/delivery/telegram-delivery.integration.test.ts \
 	src/lib/approvals/delivery/slack-delivery.integration.test.ts \
 	src/lib/teams/bound-approval.integration.test.ts \

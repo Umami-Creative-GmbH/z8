@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import {
 	type ApprovalPresentationProvider,
+	approvalRequest,
 	approvalWorkflow,
 	approvalWorkflowRollout,
 	workCategory,
@@ -15,6 +16,13 @@ import {
 } from "@/lib/datetime/temporal-format";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
+	hasLegacyTimeAuthority,
+	LEGACY_TIME_ACTIONABLE_PROVIDERS,
+	type LegacyTimeCycleRevision,
+	loadLegacyTimeCycleRevision,
+} from "../evidence/legacy-time";
+import {
+	issueLegacyReviewBinding,
 	issueReviewBinding,
 	loadCanonicalTimeCorrectionSubmittedRevision,
 	loadCanonicalWorkPeriodSubmittedRevision,
@@ -388,7 +396,7 @@ async function loadTimeCardFacts(
 	return facts ? { facts, submittedRevisionId: revision.submittedRevisionId, workflowType } : null;
 }
 
-type CanonicalTimeCardRevision =
+type TimeCardRevision =
 	| { status: "not_captured" | "material_change" }
 	| {
 			status: "current";
@@ -409,7 +417,7 @@ async function loadCanonicalTimeCardRevision(
 		workflowType: TimeApprovalWorkflowType;
 		sourceId: string;
 	},
-): Promise<CanonicalTimeCardRevision> {
+): Promise<TimeCardRevision> {
 	const scope = { organizationId: input.organizationId, workflowId: input.workflowId };
 	if (input.workflowType === "time_correction") {
 		const revision = await loadCanonicalTimeCorrectionSubmittedRevision(database, scope);
@@ -431,6 +439,36 @@ async function loadCanonicalTimeCardRevision(
 	) {
 		return { status: "not_captured" };
 	}
+	const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
+	if (comparison.kind !== "current") return { status: "material_change" };
+	return {
+		status: "current",
+		submittedRevisionId: revision.id,
+		facts: (display, t) => buildWorkPeriodCardFacts(revision, display, t),
+	};
+}
+
+/**
+ * The revision gates of a legacy time card (#432): the cycle's legacy
+ * revision still matching the live graph.
+ */
+async function loadLegacyTimeCardRevision(
+	database: ApprovalDatabase,
+	organizationId: string,
+	cycle: LegacyTimeCycleRevision,
+): Promise<TimeCardRevision> {
+	if (cycle.kind === "time_correction") {
+		const { revision } = cycle;
+		const comparison = await compareTimeCorrectionWithSubmittedRevision(database, revision);
+		if (comparison.kind !== "current") return { status: "material_change" };
+		const names = await loadTimeCorrectionCategoryNames(database, organizationId, revision);
+		return {
+			status: "current",
+			submittedRevisionId: revision.id,
+			facts: (display, t) => buildTimeCorrectionCardFacts(revision, names, display, t),
+		};
+	}
+	const { revision } = cycle;
 	const comparison = await compareWorkPeriodWithSubmittedRevision(database, revision);
 	if (comparison.kind !== "current") return { status: "material_change" };
 	return {
@@ -465,6 +503,29 @@ export async function classifyCanonicalTimeCard(
 }
 
 /**
+ * How a pending legacy time request would present on a card, by the legacy
+ * card's own revision and fact gates, for the pilot readiness report (#432):
+ * the kind its cycle's legacy revision names, or null without a legacy
+ * revision (the owner then holds it as evidence required).
+ */
+export async function classifyLegacyTimeCard(
+	database: ApprovalDatabase,
+	input: { organizationId: string; approvalRequestId: string },
+): Promise<{
+	kind: TimeApprovalWorkflowType;
+	status: "current" | "review_only" | "material_change";
+} | null> {
+	const cycle = await loadLegacyTimeCycleRevision(database, input);
+	if (!cycle) return null;
+	const revision = await loadLegacyTimeCardRevision(database, input.organizationId, cycle);
+	if (revision.status !== "current") return { kind: cycle.kind, status: "material_change" };
+	return {
+		kind: cycle.kind,
+		status: revision.facts(NEUTRAL_DISPLAY, FALLBACK_TEXT) ? "current" : "review_only",
+	};
+}
+
+/**
  * Prepares an actionable time approval card (manual submission, policy
  * clock-out or correction) for one recipient's exact pending canonical
  * assignment, or returns null so the caller shows a review-only notice (#325).
@@ -492,29 +553,128 @@ export async function prepareBoundTimeCard(
 		provider: input.provider,
 	});
 	if (presentationMode !== "actionable") return null;
+	const draft = await timeCardDraft({
+		organizationId: input.target.organizationId,
+		workflowType: loaded.workflowType,
+		approvalRequestId: input.approvalRequestId,
+		recipientUserId: input.recipientUserId,
+		facts: loaded.facts,
+		t: input.t,
+	});
+	if (input.fits && !input.fits(draft)) return null;
+	const bindingId = await issueReviewBinding(database, {
+		...input.target,
+		submittedRevisionId: loaded.submittedRevisionId,
+	});
+	return { ...draft, bindingId };
+}
+
+/** An actionable time card; its review link names the exact compatibility request. */
+async function timeCardDraft(input: {
+	organizationId: string;
+	workflowType: TimeApprovalWorkflowType;
+	approvalRequestId: string;
+	recipientUserId: string;
+	facts: ApprovalCardFact[];
+	t: BotTranslateFn;
+}): Promise<ApprovalCardDraft> {
 	const { t } = input;
-	const title = TITLES[loaded.workflowType];
-	const draft: ApprovalCardDraft = {
+	const title = TITLES[input.workflowType];
+	return {
 		status: "actionable",
 		recipientUserId: input.recipientUserId,
 		title: t(title.key, title.fallback),
-		facts: loaded.facts,
+		facts: input.facts,
 		text: t(
 			"bot.approval.card.boundHint",
 			"Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",
 		),
 		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
 		reviewUrl: await approvalReviewUrl({
-			organizationId: input.target.organizationId,
+			organizationId: input.organizationId,
 			reference: { kind: "compatibility", approvalRequestId: input.approvalRequestId },
 		}),
 		approveLabel: t("bot.approval.card.approve", "Approve"),
 		rejectLabel: t("bot.approval.card.reject", "Reject"),
 	};
+}
+
+/**
+ * Prepares an actionable card for one recipient's exact pending legacy time
+ * request (the stage's request for chains), bound to that request and the
+ * legacy submitted revision of its submission cycle (#432), or returns null so
+ * the caller shows a review-only notice. Every gate must hold: an admitted
+ * provider (Telegram only), legacy authority for the revision's kind, evidence
+ * capture, an actionable presentation control, a revision that still matches
+ * the live work graph, intelligible facts and the provider's own limits. A
+ * shadow/ready observation is never consulted. A binding is issued only for a
+ * card that will be sent. Infrastructure errors propagate.
+ */
+export async function prepareBoundLegacyTimeCard(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		approvalRequestId: string;
+		recipientEmployeeId: string;
+		recipientUserId: string;
+		provider: ApprovalPresentationProvider;
+		display: DisplayContext;
+		t: BotTranslateFn;
+		fits?: (draft: ApprovalCardDraft) => boolean;
+	},
+): Promise<ApprovalActionableCard | null> {
+	const { organizationId } = input;
+	if (!LEGACY_TIME_ACTIONABLE_PROVIDERS.includes(input.provider)) return null;
+	const [request] = await database
+		.select({ id: approvalRequest.id })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.approverId, input.recipientEmployeeId),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.limit(1);
+	if (!request) return null;
+	const cycle = await loadLegacyTimeCycleRevision(database, {
+		organizationId,
+		approvalRequestId: input.approvalRequestId,
+	});
+	if (cycle?.revision.lifecycle.authority !== "legacy") return null;
+	const { legacy } = cycle.revision.lifecycle;
+	const workflowType = cycle.kind;
+	if (!(await hasLegacyTimeAuthority(database, { organizationId, workflowType }))) return null;
+	const [evidenceMode, presentationMode] = await Promise.all([
+		readApprovalEvidenceMode(database, { organizationId, workflowType }),
+		readApprovalPresentationMode(database, {
+			organizationId,
+			workflowType,
+			provider: input.provider,
+		}),
+	]);
+	if (evidenceMode !== "capture" || presentationMode !== "actionable") return null;
+	const revision = await loadLegacyTimeCardRevision(database, organizationId, cycle);
+	if (revision.status !== "current") return null;
+	const facts = revision.facts(input.display, input.t);
+	if (!facts) return null;
+	const draft = await timeCardDraft({
+		organizationId,
+		workflowType,
+		approvalRequestId: input.approvalRequestId,
+		recipientUserId: input.recipientUserId,
+		facts,
+		t: input.t,
+	});
 	if (input.fits && !input.fits(draft)) return null;
-	const bindingId = await issueReviewBinding(database, {
-		...input.target,
-		submittedRevisionId: loaded.submittedRevisionId,
+	const bindingId = await issueLegacyReviewBinding(database, {
+		organizationId,
+		recipientEmployeeId: input.recipientEmployeeId,
+		legacyApprovalRequestId: input.approvalRequestId,
+		submittedRevisionId: cycle.revision.id,
+		revision: { sourceType: "time_entry", sourceId: cycle.workPeriodId, legacy },
 	});
 	return { ...draft, bindingId };
 }

@@ -14,7 +14,10 @@ import {
 	loadReviewBindingWorkflowType,
 } from "@/lib/approvals/evidence/store";
 import { isTimeApprovalWorkflowType } from "@/lib/approvals/time-approval-kinds";
-import { decideBoundTimeInvocation } from "@/lib/approvals/server/time-bound-decision";
+import {
+	decideBoundLegacyTimeInvocation,
+	decideBoundTimeInvocation,
+} from "@/lib/approvals/server/time-bound-decision";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
 import {
 	decideBoundAbsenceInvocation,
@@ -207,9 +210,9 @@ export async function attemptBoundBotApproval(
 		},
 	};
 	// A binding decides only under the authority it was issued for, by its
-	// kind's owner: a legacy handle reaches the legacy absence (#384) or expense
-	// (#296) owner, never a canonical one; a canonical handle reaches its kind's
-	// owner (absence, or a time kind, #325). Bindings and their revisions are
+	// kind's owner: a legacy handle reaches the legacy absence (#384), time
+	// (#432) or expense (#296) owner, never a canonical one; a canonical handle
+	// reaches its kind's owner (absence, or a time kind, #325). Bindings and their revisions are
 	// immutable and outlive their committed invocations, so routing on them
 	// keeps exact replays intact.
 	const scope = { organizationId: input.organizationId, bindingId: input.bindingId };
@@ -219,7 +222,9 @@ export async function attemptBoundBotApproval(
 		authority === "legacy"
 			? workflowType === "absence"
 				? await decideBoundLegacyAbsenceInvocation(decision)
-				: await decideBoundTravelExpenseInvocation(decision)
+				: isTimeApprovalWorkflowType(workflowType)
+					? await decideBoundLegacyTimeInvocation(decision)
+					: await decideBoundTravelExpenseInvocation(decision)
 			: isTimeApprovalWorkflowType(workflowType)
 				? await decideBoundTimeInvocation(decision)
 				: await decideBoundAbsenceInvocation(decision);

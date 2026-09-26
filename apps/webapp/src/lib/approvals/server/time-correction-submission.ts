@@ -34,6 +34,10 @@ import {
 	deriveTimeCorrectionSubmissionKey,
 	type TimeCorrectionEndpointEvidence,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import {
+	legacyDeliveryCycleId,
+	recordLegacyDeliveryIntent,
+} from "@/lib/approvals/delivery/intents";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import {
 	captureTimeCorrectionSubmissionEvidence,
@@ -2002,6 +2006,30 @@ function submitCorrectionInTransaction(
 								work.authority.mode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
 							autoCompleted: result.kind === "auto_completed",
 						},
+			});
+		}
+		if (
+			result.disposition === "executed" &&
+			work.authority.mode !== "canonical" &&
+			work.authority.mode !== "complete" &&
+			(result.kind === "default_created" || result.kind === "chain_created")
+		) {
+			// The legacy cycle's first lifecycle intent, only while a delivery
+			// control exists (#432): the delivery owner sends its cards.
+			await recordLegacyDeliveryIntent(tx, {
+				organizationId: input.organizationId,
+				workflowType: "time_correction",
+				sourceType: "time_entry",
+				sourceId: lockedPeriod.id,
+				approvalRequestId: result.approvalRequestId,
+				cycleId: legacyDeliveryCycleId({
+					chainInstanceId:
+						"chainInstanceId" in result && typeof result.chainInstanceId === "string"
+							? result.chainInstanceId
+							: null,
+					approvalRequestId: result.approvalRequestId,
+				}),
+				event: "submitted",
 			});
 		}
 		if (adopted) {

@@ -1143,6 +1143,249 @@ Unit seams: `absence-approvals.test.ts`, `legacy-absence.test.ts`,
 `maintenance.test.ts`, `approval-adapters.test.ts`, `mutations.test.ts`,
 `request-absence-effect.test.ts`.
 
+## Legacy time approval cards, bound decisions and cycle delivery (#432)
+
+Organizations whose manual time submissions, policy clock-outs or time
+corrections are decided by legacy authority (rollout `legacy`, `shadow` or
+`ready` for the kind) get Telegram cards bound to the exact legacy request and
+the legacy submitted revision of its submission cycle, exactly as legacy
+absences do (#384). A press is decided by the legacy branch of the kind's
+existing decision owner (#302 work period, #301 correction) under #325's
+invocation identity. Everything is **inactive for every organization**: no
+migration, no control rows. The #384 cycle key (`legacy_cycle_id`,
+`resolveLegacyDeliveryCycle`) and planner are reused unchanged.
+
+```text
+ordinary / correction submission, legacy branch (tx)   #302 / #301 capture, then
+  recordLegacyDeliveryIntent("submitted", cycle)         only while a delivery control exists
+owner → prepareApprovalPresentation → prepareBoundLegacyTimeCard  (presentation/time-card.ts)
+  gates hold? no → unchanged review-only notice
+  issueLegacyReviewBinding(recipient, legacy request, legacy revision)
+
+webhook → attemptBoundBotApproval: legacy binding × time kind
+  decideBoundLegacyTimeInvocation                        (server/time-bound-decision.ts)
+    committed invocation? replay / conflict (no current state read)
+    approved member + active employee; binding names this actor; kind and work
+      period from the binding's revision
+    executeOrdinaryWorkPeriodDecisionInTransaction | executeTimeCorrectionDecisionInTransaction
+      rollout gate → invocation lock → committed? replay / conflict
+      presentation control reread (paused → nothing decided)
+      binding authority = gate authority (cutover); legacy: Telegram only
+      binding names actor + exact legacy request + the cycle's current revision
+      #439 transfer check (no management authority from a card)
+      #302/#301 holds (material change, evidence required)
+      unchanged legacy mutation for the exact request's current approver
+      legacy decision evidence (+ binding, invocation receipt digest) → approval_invocation
+      recordLegacyTimeDecisionIntent("decided", cycle)
+  after commit (not on replay): the web decision's notifications, work balance,
+    surcharge maintenance, kick
+cancelPendingTimeCorrection (legacy rows) → recordLegacyDeliveryIntent("withdrawn", cycle)
+```
+
+### Cards and admission
+
+`prepareApprovalPresentation` checks whether the request's cycle has a legacy
+revision (`loadLegacyTimeCycleRevision`, `evidence/legacy-time.ts`) whose kind
+has legacy authority. If so the pending legacy request is the authority; a
+shadow/ready observation that mirrors it is never consulted, promoted or named.
+A card is actionable only when **all** of these hold, otherwise the unchanged
+review-only notice is sent:
+
+- the provider is Telegram (`LEGACY_TIME_ACTIONABLE_PROVIDERS`: Teams and
+  Discord share the bound path but are not verified under legacy authority, so
+  their legacy time cards stay review-only even with an `actionable` control;
+  Slack gets the notice, not the canonical review-only summary);
+- the rollout of the revision's kind is not `canonical`/`complete`;
+- `approval_evidence_control` = `capture` and `approval_presentation_control`
+  = `actionable` for `(organization, kind, telegram)`;
+- the exact legacy request (the stage's request for chains) is pending and
+  assigned to the recipient, and belongs to the lifecycle the legacy revision
+  was captured for (its request, or a stage request of its chain);
+- the revision still matches the live work graph (the #302/#301 comparisons);
+- the facts are intelligible (#325's review-only rules) and fit one Telegram
+  message, checked before the binding is issued.
+
+Card facts are #325's (`buildWorkPeriodCardFacts`, `buildTimeCorrectionCardFacts`,
+including the edit, metadata-only and deletion correction variants) from the
+legacy revision; the review link is the exact legacy request.
+
+### Bound decisions
+
+- Routing: `attemptBoundBotApproval` sends a legacy binding whose revision is a
+  time kind to `decideBoundLegacyTimeInvocation`; bindings and revisions are
+  immutable, so routing never changes for a committed invocation.
+- Invocation identity, receipt key (`approval-invocation:v1:…`) and command
+  fingerprint are #290's. The legacy decision evidence of a card decision is
+  keyed by the digest of the invocation receipt key (time evidence keeps only
+  digests, #325) and names the binding; its legacy command fingerprints
+  (`work-period-legacy-decision:v1`, `time-correction-legacy-decision:v1`) are
+  unchanged.
+- The ordinary owner's established semantic replay (a terminal or intermediate
+  request matching a retried web decision) is skipped for a card decision and
+  for evidence that names a binding, so a fresh invocation never matches a
+  semantic receipt and a semantic web retry never matches a card's. The
+  correction owner has no semantic replay.
+- Cutover: `assertTimeBindingAuthority` requires the binding's authority to
+  equal the gate's, read under the rollout gate (`binding_mismatch`
+  otherwise); a legacy card decision is admitted only for Telegram.
+- `assertLegacyTimeBinding` requires the binding to name this organization, the
+  deciding actor, the exact legacy request and the cycle's current legacy
+  revision, before the #439 transfer check and any authority question.
+- Authority is the exact bound request's current approver only: the legacy
+  mutation runs without any any-approver or organization option
+  (`processApprovalWithCurrentEmployee` then refuses anyone else), and the
+  #439 transfer check gets no management callback, so eligible-manager
+  fallback and management authority are unreachable. On an escalated request
+  the former holder and eligible non-holders get `approval_reassigned`; the
+  request row is locked like the transfer locks it, so a press racing a
+  transfer serializes behind it and is then refused.
+- Refusals (reassigned, decided or withdrawn, material change, paused
+  provider, unclassifiable request, other tenant or recipient) decide nothing;
+  the webhook turns a still-pending card into a review notice and the owner
+  refreshes decided or withdrawn cards.
+- A card decision runs the same after-commit effects as a web decision (#302
+  notifications and surcharge/work-balance maintenance; #301 notifications and
+  the work-balance dirty mark, #461), never on replay.
+
+### Cycle-keyed legacy delivery
+
+See [Approval card delivery](approval-delivery.md), "Submission cycles". A
+work period has several cycles (a submission, then corrections); each is its
+own lifecycle. The ordinary and correction submission owners write
+`submitted`, both decision owners (web and card) `decided`, and requester
+correction cancellation `withdrawn` intents, only while a delivery control
+exists for `(organization, kind)`. A direct correction's cancellation keeps its
+request as a decided-looking tombstone (#301), so a time cycle with a
+`withdrawn` intent reads as cancelled. The existing notification path stays
+silent for owner-delivered cycles, whether it names the work period or the
+exact request.
+
+### Cleanup
+
+As for legacy absences: bindings, invocations, evidence and delivery rows
+survive ordinary cancellation and are purged, per cycle, by privileged
+`deleteApproval` (by request, revision or cycle ID), which reports them. A late
+press after the purge finds no binding; a late send records no message.
+
+### Activation
+
+After capture is active for the kind (#302/#301), as the authorized adoption
+writer under the exclusive rollout lock of each kind:
+
+```sql
+begin;
+select pg_advisory_xact_lock(hashtextextended(
+  'approval-rollout:' || length(:org) || ':' || :org || ':' || length(:kind) || ':' || :kind, 0));
+insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+values (:org, :kind, 'telegram', 'actionable')
+on conflict (organization_id, workflow_type, provider) do update set mode = excluded.mode;
+commit;
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, :kind, 'telegram');
+```
+
+Both rows are shared with canonical time cards (#325): after the cutover they
+admit canonical cards. No application endpoint changes either control.
+
+### Activation blockers (#432, unresolved)
+
+1. **Old binaries.** Instances without this release refuse legacy time bindings
+   (the card becomes a review notice), decide and submit without intents
+   (cards are never refreshed), cancel corrections without `withdrawn` intents
+   and send the old-path message next to the owner's card. Drain them before
+   inserting either control.
+2. **In-flight classification.** Requests submitted before capture have no
+   revision and get review-only cards; cycles submitted before the delivery
+   control have no intent and stay with the old notification path. The pilot
+   readiness report classifies legacy time evidence and counts these cycles;
+   see [Approval card pilots](approval-pilot.md#legacy-time-cards-432).
+3. **Shadow requester cancellation** of direct legacy corrections works since
+   #463 (merged first); #432 verifies withdrawal and cleanup in `legacy`,
+   `shadow` and `ready`.
+4. **Replacement cards** after a legacy time transfer: #408 built legacy
+   replacement delivery for absences and expenses only, and parks legacy time
+   transfer events. The former holder's card decides nothing, but nobody
+   refreshes it and the new holder gets no card from the owner (the
+   verification renders one through the old path). The readiness report holds
+   this while escalation owns transfers (`escalation_replacement_unsupported`).
+5. **In-place material changes** commit no intent, so the card is not
+   refreshed; pressing it decides nothing.
+6. Only Telegram is admitted (in code). Teams, Discord and Slack stay
+   review-only for legacy time approvals.
+7. **Ingress.** No durable acceptance before the webhook acknowledgment.
+8. **Old-path tracking.** The old Telegram path tracks one message per request
+   (`telegram_approval_message` is unique per request), so a second old-path
+   card for the same request loses the first one's tracking. The delivery
+   owner has no such limit.
+9. The approval write-boundary scanner cannot read sources on Windows. No new
+   writer file was added (intents go through `delivery/intents.ts`), but the
+   changed statements were not scanned.
+10. Everything in the #301, #302, #325 and #384 blockers (time pilot #448).
+
+### Verification (#432)
+
+PostgreSQL 16 (`lib/telegram/legacy-time-bound-approval.integration.test.ts`,
+part of `test:approval-workflow-repository:integration`), driving the real
+`clockIn`/`clockOut`, `createManualTimeEntry`, `requestTimeCorrection`,
+`requestTimeEntryDeletion`, the historical policy clock-out submission,
+`sendApprovalMessageToManager`, the delivery owner, `handleTelegramUpdate`, the
+web approvals actions, `cancelMyTimeCorrectionRequest`,
+`processDueEscalations`, `sendTelegramNotification`, `deleteApproval` and the
+pilot readiness report. Only the session, billing guard, notification fan-out,
+e-mail, work-balance marking, the vault, the post-commit fast path and the
+Telegram transport are replaced. 37/37 passing:
+
+- `legacy`, `shadow` and `ready` × manual submission, policy clock-out and
+  correction: a card bound to the exact legacy request and legacy revision (no
+  workflow or assignment), exact review link; one press decides once with
+  legacy evidence (binding, receipt digest, observation recorded as observed
+  only) and a legacy invocation row;
+- metadata-only and deletion correction cards bound and decided;
+- each gate missing (no control, `review_only`, capture off, material change;
+  Teams and Discord with actionable controls, Slack) → review-only notice, no
+  binding;
+- exact replay on redelivery and a new update, conflict on another command, a
+  fresh query decides nothing, a semantic web retry does not match;
+- rejection with the persisted reason; two-stage chains (manual and
+  correction) in `legacy`, and a correction chain in `shadow` and `ready`, stage
+  by stage, where the stage-one card cannot decide stage two;
+- a web decision, an in-place material change, another recipient, another
+  organization's bot, a reassigned request (former holder still an eligible
+  manager), a card of a manager with management authority after reassignment
+  and a paused provider decide nothing; a committed press still replays; the
+  same card decides once re-admitted;
+- legacy→canonical and canonical→legacy cutover between render and press
+  decide nothing;
+- an injected invocation failure rolls back request, correction, evidence and
+  invocation; three concurrent deliveries then commit exactly once;
+- with #439: after a real scheduled transfer of each kind the former holder's
+  card is refused as `reassigned` (an eligible non-holder has no binding of
+  its own and is refused as `not_found`), and the new holder's card decides; a
+  press racing an in-flight transfer waits for it and is refused;
+- owner delivery of each kind: `submitted` intent keyed by the cycle, the old
+  path silent for the owned cycle (work-period and request notifications; it
+  notifies without a control), one bound card, a press refreshed by the owner;
+  `shadow` and `ready` delivered cards decide and refresh;
+- web decisions on a chain refresh stage one and send stage two's card in the
+  same cycle; the final rejection refreshes both cards;
+- two cycles on one work period (the manual submission, then a correction)
+  deliver, version and refresh independently; privileged cleanup purges exactly
+  the correction cycle;
+- correction cancellation in `legacy`, `shadow` and `ready`: `withdrawn`
+  intent, card refreshed to "withdrawn", binding, work, message and intents
+  survive; a press decides nothing; privileged cleanup purges and reports them;
+  a late press recreates nothing;
+- a decided cycle purged by its request, another cycle kept;
+- the pilot readiness report: legacy evidence (current, not captured, material
+  change) per kind, in-flight cycles before activation, Teams unverified, and
+  the escalation replacement hold.
+
+The whole approval runner list passes (83 files before merging #408, and the
+affected suites again after it), including #290, #291, #296, #301, #302, #325
+(legacy review-only case updated to the bound card; the #330 shadow-cutover
+report case updated for legacy authority), #328/#459 readiness, #384, #408,
+#439 and #463.
+
 ## Teams absence cards with reviewed bindings (#293 / T29)
 
 Canonical absence cards on Teams can carry Approve/Reject controls with the
@@ -1470,7 +1713,7 @@ No application endpoint changes the mode.
    records the committed segments but does not change how splits are made
    (including the second segment's minutes, derived by subtraction).
 6. Presentation and canonical bindings: implemented by #325 (see its
-   section); legacy-authority time cards stay review-only.
+   section); legacy bindings and cycle delivery by #432.
 7. Not verified on PostgreSQL: mobile and offline clock-out callers (same
    owner), bots deciding time approvals, multi-stage chains, `shadow`/`ready`
    modes, concurrent decision races, and old binaries (pre-deployment binaries
@@ -1602,7 +1845,7 @@ and the zero-length canonical sentinel. Legacy rows also record
 1. **In-flight classification.** Enabling capture holds every pending correction
    submitted before capture (`evidence_required`) until it is drained or cancelled.
 2. **Presentation** and canonical bindings: implemented by #325 (see its
-   section); legacy-authority time cards stay review-only.
+   section); legacy bindings and cycle delivery by #432.
 3. **Demo corrections** (#285) capture no evidence.
 4. Not verified on PostgreSQL: multi-stage chains, `shadow`/`ready` modes, bots
    deciding corrections, and old binaries (pre-deployment binaries submit and
@@ -1636,8 +1879,8 @@ Manual time submissions, policy clock-outs and time corrections (edit,
 metadata-only and deletion) are now presented from the evidence #301/#302/#303
 capture, and decided from cards through reviewed bindings. The scope agreed on
 2026-09-25 is **canonical authority only** for bound cards and card decisions;
-legacy-authoritative time approvals stay review-only on every bot (follow-up
-ticket, see blockers). Authenticated review works for both authorities.
+legacy-authoritative time approvals got bound cards later, in #432 (see
+"Legacy time approval cards"). Authenticated review works for both authorities.
 Everything is **inactive for every organization**: no migration and no control
 row is added; the existing tables and checks already admit the three kinds.
 
@@ -1800,10 +2043,9 @@ No application endpoint changes either control.
 
 ### Activation blockers (#325, unresolved)
 
-1. **Legacy authority.** Legacy-authoritative time approvals (every
-   organization today) stay review-only on bots: no legacy binding, no legacy
-   delivery intent, and legacy delivery assumes one lifecycle per source while a
-   work period has several approval cycles. Follow-up: #432.
+1. **Legacy authority.** Resolved in code by #432 (see "Legacy time approval
+   cards, bound decisions and cycle delivery"): legacy bindings, legacy card
+   decisions and cycle-keyed legacy delivery for the three kinds.
 2. **Canonical-only (`complete`) references.** Presentation starts from the
    compatibility request; a `complete`-mode workflow without one is delivered as
    `unsupported_route` attention (same limit as absences).

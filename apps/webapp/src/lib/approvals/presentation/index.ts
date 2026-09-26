@@ -22,9 +22,14 @@ import {
 	prepareBoundLegacyAbsenceCard,
 } from "./bound-card";
 import { hasLegacyAbsenceAuthority } from "../evidence/legacy-absence";
+import { isLegacyTimeAuthorityRequest } from "../evidence/legacy-time";
 import { approvalReviewUrl } from "./review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
-import { prepareBoundTimeCard, prepareTimeReviewSummary } from "./time-card";
+import {
+	prepareBoundLegacyTimeCard,
+	prepareBoundTimeCard,
+	prepareTimeReviewSummary,
+} from "./time-card";
 import { prepareBoundTravelExpenseCard } from "./travel-expense-card";
 
 const logger = createLogger("ApprovalPresentation");
@@ -45,9 +50,9 @@ export interface ApprovalReviewNotice {
  * absence gets an evidence-backed card bound to the recipient's exact
  * assignment and submitted revision (#290), as does a canonical manual time
  * submission, policy clock-out or time correction (#325), and a
- * legacy-authoritative expense claim (#296) or absence (#384, Telegram only)
- * one bound to the exact legacy request and its submitted revision; everything
- * else stays review-only.
+ * legacy-authoritative expense claim (#296), absence (#384, Telegram only) or
+ * time approval (#432, Telegram only) one bound to the exact legacy request and
+ * its submitted revision; everything else stays review-only.
  * Infrastructure failures propagate; lack of entitlement discloses nothing.
  */
 export async function prepareApprovalPresentation(input: {
@@ -85,10 +90,19 @@ export async function prepareApprovalPresentation(input: {
 	const legacyAbsence =
 		request.entityType === "absence_entry" &&
 		(await hasLegacyAbsenceAuthority(db, input.organizationId));
+	// Likewise for a time request whose cycle has a legacy revision of a kind
+	// with legacy authority (#432).
+	const legacyTime =
+		Boolean(input.provider) &&
+		request.entityType === "time_entry" &&
+		(await isLegacyTimeAuthorityRequest(db, {
+			organizationId: input.organizationId,
+			approvalRequestId: request.id,
+		}));
 	// A compatibility representative is not proof that its former assignee
 	// still owns the current canonical stage. Never broaden this into management
 	// authority merely because the recipient also happens to be a manager.
-	const stages = legacyAbsence
+	const stages = legacyAbsence || legacyTime
 		? []
 		: await db.query.approvalWorkflowStage.findMany({
 				where: and(
@@ -193,6 +207,19 @@ export async function prepareApprovalPresentation(input: {
 	} else if (input.provider && legacyAbsence) {
 		// Legacy-authoritative absences bind the exact legacy request (#384).
 		const card = await prepareBoundLegacyAbsenceCard(db, {
+			organizationId: input.organizationId,
+			approvalRequestId: request.id,
+			recipientEmployeeId: input.recipientEmployeeId,
+			recipientUserId: recipient.userId,
+			provider: input.provider,
+			display,
+			t,
+			...(input.fits ? { fits: input.fits } : {}),
+		});
+		if (card) return card;
+	} else if (input.provider && legacyTime) {
+		// Legacy-authoritative time approvals bind the exact legacy request (#432).
+		const card = await prepareBoundLegacyTimeCard(db, {
 			organizationId: input.organizationId,
 			approvalRequestId: request.id,
 			recipientEmployeeId: input.recipientEmployeeId,

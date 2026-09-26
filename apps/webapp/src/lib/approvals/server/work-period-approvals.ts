@@ -49,6 +49,8 @@ import { applyPolicyClockOutTerminalBreakInTransaction } from "@/lib/time-tracki
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
+import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
+import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
@@ -81,6 +83,10 @@ import {
 	BoundAssignmentNotCurrentError,
 } from "../evidence/invocation";
 import {
+	findLegacyDecisionEvidenceByRequest,
+	loadLegacyWorkPeriodSubmittedRevision,
+} from "../evidence/store";
+import {
 	prepareLegacyWorkPeriodDecisionEvidence,
 	recordLegacyWorkPeriodDecisionEvidence,
 	translateWorkPeriodEvidenceError,
@@ -89,11 +95,14 @@ import {
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import {
 	admitFreshTimeInvocation,
+	assertLegacyTimeBinding,
+	assertTimeBindingAuthority,
 	type BoundTimeInvocation,
 	type BoundTimeInvocationOutcome,
 	BoundTimeInvocationReplay,
 	boundTimeInvocationCommand,
 	boundTimeInvocationKey,
+	recordLegacyTimeInvocationDecision,
 	recordTimeInvocationDecision,
 	replayCommittedTimeInvocation,
 } from "./bound-time-invocation";
@@ -445,8 +454,9 @@ export async function canManageOrganizationTimeApproval(
 export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	historicalOnly?: boolean;
 	/**
-	 * A reviewed-binding card action (#325). The target is then the exact bound
-	 * canonical assignment, decided under the invocation's own receipt.
+	 * A reviewed-binding card action. The target is then the exact bound
+	 * canonical assignment (#325) or, under legacy authority, the exact bound
+	 * legacy request (#432), decided under the invocation's own receipt.
 	 */
 	bound?: BoundTimeInvocation;
 	dbService: ApprovalDbService;
@@ -470,6 +480,11 @@ export async function executeOrdinaryWorkPeriodDecisionInTransaction(input: {
 	postCommit: WorkPeriodPostCommitDescriptor | null;
 	/** Bound decisions only: the committed invocation and its evidence. */
 	invocation?: BoundTimeInvocationOutcome;
+	/**
+	 * A legacy decision committed its cycle's delivery intent (#432); the
+	 * caller runs the delivery owner sooner after commit.
+	 */
+	deliveryIntent?: boolean;
 }> {
 	try {
 		return await retryWorkPeriodDecisionTransaction(() =>
@@ -810,6 +825,10 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			compatibilityWriter:
 				context.compatibilityWriter.withWriteGate(fixedGate),
 		} as ApprovalWorkflowTransactionContext;
+		const legacyAuthority =
+			authority.mode === "legacy" ||
+			authority.mode === "shadow" ||
+			authority.mode === "ready";
 		if (input.bound && boundCommand) {
 			await admitFreshTimeInvocation(database, {
 				organizationId: input.organizationId,
@@ -817,16 +836,34 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				bound: input.bound,
 				command: boundCommand,
 			});
-			// Bindings exist only for exact canonical assignments.
-			if (requestRow || !assignment || authority.mode === "legacy" || authority.mode === "shadow" || authority.mode === "ready") {
+			await assertTimeBindingAuthority(database, {
+				organizationId: input.organizationId,
+				bound: input.bound,
+				legacyAuthority,
+			});
+			if (legacyAuthority) {
+				// A legacy binding names the exact legacy request and the current
+				// revision of its cycle (#432), before any authority question.
+				if (!requestRow) throw new ApprovalEvidenceError("binding_mismatch");
+				const current = await loadLegacyWorkPeriodSubmittedRevision(database, {
+					organizationId: input.organizationId,
+					workPeriodId: period.id,
+					approvalRequestId: input.approvalRequestId,
+					chainInstanceId: verifiedLegacyState?.chain?.id ?? null,
+				});
+				await assertLegacyTimeBinding(database, {
+					organizationId: input.organizationId,
+					bound: input.bound,
+					actorEmployeeId: actor.id,
+					approvalRequestId: input.approvalRequestId,
+					currentRevisionId: current?.workflowType === metadata.kind ? current.id : null,
+				});
+			} else if (requestRow || !assignment) {
+				// Canonical bindings exist only for exact canonical assignments.
 				throw new ApprovalEvidenceError("binding_mismatch");
 			}
 		}
-		if (
-			authority.mode === "legacy" ||
-			authority.mode === "shadow" ||
-			authority.mode === "ready"
-		) {
+		if (legacyAuthority) {
 			const observedWorkflow =
 				authority.mode === "legacy" || !period.approvalWorkflowId
 					? null
@@ -867,14 +904,24 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 					actorEmployeeId: actor.id,
 					decision: input.decision.kind,
 				});
+			// Established semantic replay, for unbound callers only: a card decision
+			// is keyed by its provider invocation (#432), so a fresh invocation never
+			// matches a semantic receipt and a semantic retry never matches a card's.
 			if (
-				verifiedLegacyIntermediateReplay ||
-				observedIntermediateReplay ||
-				(terminalRequestMatches &&
-					period.approvalStatus === expectedTerminalStatus &&
-					(authority.mode === "legacy" ||
-						(observedIdentityMatches &&
-							observedWorkflow?.status === expectedTerminalStatus)))
+				!input.bound &&
+				(verifiedLegacyIntermediateReplay ||
+					observedIntermediateReplay ||
+					(terminalRequestMatches &&
+						period.approvalStatus === expectedTerminalStatus &&
+						(authority.mode === "legacy" ||
+							(observedIdentityMatches &&
+								observedWorkflow?.status === expectedTerminalStatus)))) &&
+				!(
+					await findLegacyDecisionEvidenceByRequest(database, {
+						organizationId: input.organizationId,
+						approvalRequestId: input.approvalRequestId,
+					})
+				)?.reviewedBindingId
 			) {
 				return {
 					result: ordinaryDecisionResult({
@@ -1073,23 +1120,46 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 					});
 				},
 			});
-			if (evidencePlan) {
-				const finalized = domainResult as WorkPeriodApprovalResult | undefined;
-				await recordLegacyWorkPeriodDecisionEvidence(database, evidencePlan, {
-					organizationId: input.organizationId,
-					action: input.decision.kind,
-					reason: input.decision.reason,
-					approvalRequestId: input.approvalRequestId,
-					idempotencyKey: legacyIdempotencyKey,
-					actor: { employeeId: actor.id, userId: actor.userId },
-					finalized: finalized
-						? {
-								outcome: finalized.outcome,
-								maintenance: finalized.maintenance,
-							}
-						: null,
-				});
-			}
+			const finalized = domainResult as WorkPeriodApprovalResult | undefined;
+			const evidence = evidencePlan
+				? await recordLegacyWorkPeriodDecisionEvidence(database, evidencePlan, {
+						organizationId: input.organizationId,
+						action: input.decision.kind,
+						reason: input.decision.reason,
+						approvalRequestId: input.approvalRequestId,
+						// A card decision's receipt is its invocation (#290 identity).
+						idempotencyKey: input.bound
+							? boundTimeInvocationKey(input.bound)
+							: legacyIdempotencyKey,
+						reviewedBindingId: input.bound?.reviewedBindingId ?? null,
+						actor: { employeeId: actor.id, userId: actor.userId },
+						finalized: finalized
+							? {
+									outcome: finalized.outcome,
+									maintenance: finalized.maintenance,
+								}
+							: null,
+					})
+				: null;
+			// Same transaction as the legacy mutation and its evidence (#432).
+			const invocation =
+				input.bound && boundCommand
+					? await recordLegacyTimeInvocationDecision(database, {
+							bound: input.bound,
+							command: boundCommand,
+							approvalRequestId: input.approvalRequestId,
+							evidence,
+						})
+					: undefined;
+			// The cycle's lifecycle intent, only while a delivery control exists
+			// (#432): the owner refreshes its sent cards and sends the next
+			// stage's card.
+			const deliveryIntent = await recordLegacyTimeDecisionIntent(database, {
+				organizationId: input.organizationId,
+				workflowType: metadata.kind,
+				workPeriodId: period.id,
+				approvalRequestId: input.approvalRequestId,
+			});
 			const result =
 				(domainResult as WorkPeriodApprovalResult | undefined) ??
 				ordinaryDecisionResult({
@@ -1099,6 +1169,8 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				});
 			return {
 				result,
+				...(invocation ? { invocation } : {}),
+				deliveryIntent,
 				postCommit: Object.freeze({
 					disposition: "dispatch" as const,
 					dedupeKey: `ordinary-decision:${period.id}:${input.approvalRequestId}:${input.decision.kind}`,
@@ -2455,7 +2527,7 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 				},
 				clock: systemClock,
 			});
-			await completeOrdinaryWorkPeriodDecisionAfterCommit({
+			const execution = await completeOrdinaryWorkPeriodDecisionAfterCommit({
 				execute: () =>
 					executeOrdinaryWorkPeriodDecisionInTransaction({
 						historicalOnly: input.historicalOnly,
@@ -2500,6 +2572,11 @@ export function decideOrdinaryWorkPeriodWithStableTargetEffect(
 					);
 				},
 			});
+			if (execution.deliveryIntent) {
+				// The legacy cycle's intent committed with the decision (#432); this
+				// only runs the delivery owner sooner.
+				kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
+			}
 		},
 		catch: (error) => {
 			if (error instanceof ApprovalAssignmentReassignedError) {

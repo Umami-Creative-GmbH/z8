@@ -890,23 +890,37 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 		]);
 	});
 
-	it("blocks time cards under legacy authority, and any bound card without compatibility requests", async () => {
+	it("admits legacy time cards on Telegram only, and blocks any bound card without compatibility requests", async () => {
 		await seedOrganization();
 		await prepareAbsence();
 		await prepareTime({ mode: "legacy" });
+		// A Teams row left from canonical authority: legacy Teams cards stay
+		// review-only in code, and the row is canonical time cards' to keep.
+		await admin.query(
+			`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+			 values ($1, 'manual_time_submission', 'teams', 'actionable')`,
+			[ids.organization],
+		);
 
 		const legacy = await assessApprovalPilotReadiness({ organizationId: ids.organization });
 
-		// Legacy-authoritative time approvals stay review-only on bots (#432).
+		// Legacy-authoritative time approvals bind the exact legacy request on
+		// Telegram only (#432); Slack has no legacy review-only summary.
 		for (const kind of TIME_APPROVAL_WORKFLOW_TYPES) {
 			expect(kindOf(legacy, kind)).toMatchObject({ authority: "legacy", lifecycleMode: "legacy" });
-			for (const provider of ["telegram", "slack"]) {
-				expect(combination(legacy, kind, provider)).toMatchObject({
-					verdict: "blocked",
-					findings: [{ code: "authority_not_canonical", severity: "blocker" }],
-				});
-			}
+			expect(combination(legacy, kind, "telegram")).toMatchObject({
+				verdict: "ready",
+				findings: [],
+			});
+			expect(combination(legacy, kind, "slack")).toMatchObject({
+				verdict: "blocked",
+				findings: [{ code: "combination_unverified", severity: "blocker" }],
+			});
 		}
+		expect(codes(combination(legacy, "manual_time_submission", "teams").findings)).toEqual([
+			"combination_unverified",
+			"provider_not_configured",
+		]);
 
 		// Without the compatibility mirror presentation has no request to start
 		// from: owner work becomes `unsupported_route` attention (#325 blocker 2).

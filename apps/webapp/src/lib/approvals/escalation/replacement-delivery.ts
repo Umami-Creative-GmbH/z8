@@ -62,8 +62,9 @@ export interface EscalationTransferExpansionSummary {
  * Legacy-authoritative transfers (#408) of absences and travel expenses are
  * expanded into their legacy lifecycle while the kind has legacy authority; an
  * event waits (pending) while it does not, so it never acts under canonical
- * authority. Legacy time transfers (#439) have no legacy delivery lifecycle
- * yet (#432) and wait too.
+ * authority. Legacy time transfers (#439) wait too: their cycles are
+ * delivered since #432, but replacement delivery was built for absences and
+ * expenses only.
  */
 export async function expandEscalationTransferEvents(input: {
 	organizationId: string;

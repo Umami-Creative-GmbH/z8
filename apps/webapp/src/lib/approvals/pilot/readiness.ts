@@ -9,24 +9,28 @@ import {
 	approvalDeliveryControl,
 	approvalEscalationControl,
 	approvalEscalationPolicy,
+	approvalRequest,
 	approvalWorkflow,
 	approvalWorkflowStage,
 	travelExpenseClaim,
+	workPeriod,
 } from "@/db/schema";
 import { isCanonicalEscalationWorkflowType } from "../escalation/kinds";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import { LEGACY_ABSENCE_ACTIONABLE_PROVIDERS } from "../evidence/legacy-absence";
+import { LEGACY_TIME_ACTIONABLE_PROVIDERS } from "../evidence/legacy-time";
 import { readApprovalEvidenceMode } from "../evidence/store";
 import {
 	type AbsenceReviewEvidence,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
-import { classifyCanonicalTimeCard } from "../presentation/time-card";
+import { classifyCanonicalTimeCard, classifyLegacyTimeCard } from "../presentation/time-card";
 import { prepareTimeReviewEvidence } from "../presentation/time-review";
 import {
 	prepareTravelExpenseReviewEvidence,
 	type TravelExpenseReviewEvidence,
 } from "../presentation/travel-expense-review";
+import { classifyPersistedTimeApprovalRequest } from "../server/time-approval-classification";
 import type { ApprovalDatabase } from "../server/types";
 import {
 	isTimeApprovalWorkflowType,
@@ -37,7 +41,7 @@ import {
 /**
  * Read-only readiness report for the approval card pilots: one organization's
  * absence and expense (#328 / T63; legacy absences #459) and time approval
- * (#330 / T65) card combinations, classified from a single consistent
+ * (#330 / T65; legacy time approvals #432) card combinations, classified from a single consistent
  * snapshot. It changes nothing; repairs, backfills and control changes stay
  * with the separately authorized adoption writer.
  */
@@ -102,26 +106,40 @@ const LEGACY_ABSENCE_ADMISSION = Object.fromEntries(
 	]),
 ) as PilotAdmission;
 
+/**
+ * Legacy time cards (#432): likewise only Telegram was exercised. Teams and
+ * Discord cards stay review-only in code even with an `actionable` control,
+ * and Slack has no legacy review-only summary.
+ */
+const LEGACY_TIME_ADMISSION = Object.fromEntries(
+	APPROVAL_DELIVERY_PROVIDERS.map((provider) => [
+		provider,
+		LEGACY_TIME_ACTIONABLE_PROVIDERS.includes(provider) ? "actionable" : "unverified",
+	]),
+) as PilotAdmission;
+
 type PilotAuthority = "canonical" | "legacy";
 
 /**
  * The authorities whose lifecycles a kind's cards decide: absence cards bind
  * canonical assignments (#290) or exact legacy requests (#384), time cards
- * canonical assignments only (#325; legacy time approvals are #432), and
- * expense cards exist only under legacy authority (#296).
+ * canonical assignments (#325) or exact legacy requests (#432), and expense
+ * cards exist only under legacy authority (#296).
  */
 const CARD_AUTHORITY: Record<PilotWorkflowType, readonly PilotAuthority[]> = {
 	absence: ["canonical", "legacy"],
 	travel_expense: ["legacy"],
-	manual_time_submission: ["canonical"],
-	policy_clock_out: ["canonical"],
-	time_correction: ["canonical"],
+	manual_time_submission: ["canonical", "legacy"],
+	policy_clock_out: ["canonical", "legacy"],
+	time_correction: ["canonical", "legacy"],
 };
 
 function admissionOf(workflowType: PilotWorkflowType, authority: PilotAuthority): PilotAdmission {
-	return workflowType === "absence" && authority === "legacy"
-		? LEGACY_ABSENCE_ADMISSION
-		: PILOT_ADMISSION[workflowType];
+	if (authority === "legacy" && workflowType === "absence") return LEGACY_ABSENCE_ADMISSION;
+	if (authority === "legacy" && isTimeApprovalWorkflowType(workflowType)) {
+		return LEGACY_TIME_ADMISSION;
+	}
+	return PILOT_ADMISSION[workflowType];
 }
 
 export type PilotFindingCode =
@@ -423,6 +441,55 @@ async function countLegacyAbsenceInFlight(
 	return Number(row?.count ?? 0);
 }
 
+/**
+ * Legacy time counterpart (#432), keyed like the owner's lifecycles: pending
+ * submission cycles of the kind (their legacy revision names it) without an
+ * intent of that cycle at or after activation. A cycle without a legacy
+ * revision cannot be attributed to a kind here; it is held as evidence.
+ */
+async function countLegacyTimeInFlight(
+	database: ApprovalDatabase,
+	input: PilotScope,
+): Promise<number> {
+	const [row] = rows(
+		await database.execute(sql`
+			select count(distinct coalesce(s.chain_instance_id, r.id))::int as count
+			from approval_request r
+			left join approval_chain_stage_instance s
+				on s.organization_id = r.organization_id and s.approval_request_id = r.id
+			where r.organization_id = ${input.organizationId}
+				and r.entity_type = 'time_entry'
+				and r.status = 'pending'
+				and exists (
+					select 1 from approval_submitted_revision v
+					where v.organization_id = r.organization_id
+						and v.authority = 'legacy'
+						and v.workflow_type = ${input.workflowType}
+						and v.source_type = 'time_entry'
+						and v.source_id = r.entity_id
+						and (
+							v.legacy_chain_instance_id = s.chain_instance_id
+							or (s.chain_instance_id is null and v.legacy_approval_request_id = r.id)
+						)
+				)
+				and not exists (
+					select 1 from approval_delivery_intent i
+					join approval_delivery_control c
+						on c.organization_id = i.organization_id
+						and c.workflow_type = i.workflow_type
+						and c.provider = ${input.provider}
+					where i.organization_id = r.organization_id
+						and i.workflow_type = ${input.workflowType}
+						and i.source_type = 'time_entry'
+						and i.source_id = r.entity_id
+						and i.legacy_cycle_id = coalesce(s.chain_instance_id, r.id)
+						and c.activated_at <= i.created_at
+				)
+		`),
+	);
+	return Number(row?.count ?? 0);
+}
+
 /** Lifecycles of an admitted combination that the owner will never card. */
 function countInFlight(
 	database: ApprovalDatabase,
@@ -430,6 +497,9 @@ function countInFlight(
 	authority: PilotAuthority,
 ): Promise<number> {
 	if (authority === "canonical") return countCanonicalInFlight(database, input);
+	if (isTimeApprovalWorkflowType(input.workflowType)) {
+		return countLegacyTimeInFlight(database, input);
+	}
 	return input.workflowType === "absence"
 		? countLegacyAbsenceInFlight(database, input)
 		: countLegacyExpenseInFlight(database, input);
@@ -533,18 +603,32 @@ const LEGACY_ENTITY_TYPES: Record<PilotWorkflowType, string> = {
  * historical-only: not refreshed by the owner, and a press revalidates at
  * commit instead of deciding from the card. The `time_entry` request type
  * serves three kinds, so a time card counts under the kind of the canonical
- * workflow whose stage mirrors its request.
+ * workflow whose stage mirrors its request, or of the legacy revision of its
+ * cycle (#432).
  */
 async function countLegacyCards(database: ApprovalDatabase, input: PilotScope): Promise<number> {
 	const timeKind = isTimeApprovalWorkflowType(input.workflowType)
-		? sql`and exists (
+		? sql`and (exists (
 				select 1 from approval_workflow_stage s
 				join approval_workflow w
 					on w.id = s.workflow_id and w.organization_id = s.organization_id
 				where s.organization_id = r.organization_id
 					and s.legacy_approval_request_id = r.id
 					and w.workflow_type = ${input.workflowType}
-			)`
+			) or exists (
+				select 1 from approval_submitted_revision v
+				left join approval_chain_stage_instance cs
+					on cs.organization_id = r.organization_id and cs.approval_request_id = r.id
+				where v.organization_id = r.organization_id
+					and v.authority = 'legacy'
+					and v.workflow_type = ${input.workflowType}
+					and v.source_type = 'time_entry'
+					and v.source_id = r.entity_id
+					and (
+						v.legacy_chain_instance_id = cs.chain_instance_id
+						or (cs.chain_instance_id is null and v.legacy_approval_request_id = r.id)
+					)
+			))`
 		: sql``;
 	const [row] = rows(
 		await database.execute(sql`
@@ -633,12 +717,76 @@ async function classifyTimeWorkflow(
 }
 
 /**
+ * Pending legacy time requests of the kind (#432), one per pending legacy
+ * request, by the legacy card's own revision and fact gates. A request
+ * without a legacy revision is attributed by the decision owner's own
+ * classification and held as not captured.
+ */
+async function classifyLegacyTimeRequests(
+	database: ApprovalDatabase,
+	organizationId: string,
+	workflowType: TimeApprovalWorkflowType,
+): Promise<EvidenceClass[]> {
+	const pending = await database
+		.select({
+			id: approvalRequest.id,
+			metadata: approvalRequest.metadata,
+			reason: approvalRequest.reason,
+			requestedBy: approvalRequest.requestedBy,
+			clockInId: workPeriod.clockInId,
+			clockOutId: workPeriod.clockOutId,
+			pendingChanges: workPeriod.pendingChanges,
+		})
+		.from(approvalRequest)
+		.innerJoin(
+			workPeriod,
+			and(
+				eq(workPeriod.id, approvalRequest.entityId),
+				eq(workPeriod.organizationId, approvalRequest.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(approvalRequest.organizationId, organizationId),
+				eq(approvalRequest.entityType, "time_entry"),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.orderBy(approvalRequest.id);
+	const classes: EvidenceClass[] = [];
+	for (const request of pending) {
+		const card = await classifyLegacyTimeCard(database, {
+			organizationId,
+			approvalRequestId: request.id,
+		});
+		if (card) {
+			if (card.kind !== workflowType) continue;
+			classes.push(
+				card.status === "current"
+					? "current"
+					: card.status === "review_only"
+						? "reviewOnly"
+						: "materialChange",
+			);
+			continue;
+		}
+		const kind = await classifyPersistedTimeApprovalRequest(database as never, {
+			organizationId,
+			request,
+			period: request,
+		});
+		if (kind === workflowType) classes.push("notCaptured");
+	}
+	return classes;
+}
+
+/**
  * Submitted evidence of every pending lifecycle of the kind, through the same
  * review preparation that the inbox and the decision owner use, so a held
  * lifecycle here is exactly one that cannot be decided from a card. Time kinds
- * count their pending canonical workflows, the only lifecycles a time card
- * represents; legacy time requests are classified by the time pilot report
- * (#329).
+ * under canonical authority count their pending canonical workflows, the only
+ * lifecycles a canonical time card represents; under legacy authority their
+ * pending legacy requests (#432).
  */
 async function classifyPendingEvidence(
 	database: ApprovalDatabase,
@@ -647,7 +795,9 @@ async function classifyPendingEvidence(
 	authority: PilotAuthority,
 ): Promise<PilotPendingEvidence> {
 	const classes: EvidenceClass[] = [];
-	if (isTimeApprovalWorkflowType(workflowType)) {
+	if (isTimeApprovalWorkflowType(workflowType) && authority === "legacy") {
+		classes.push(...(await classifyLegacyTimeRequests(database, organizationId, workflowType)));
+	} else if (isTimeApprovalWorkflowType(workflowType)) {
 		const pending = await database
 			.select({ id: approvalWorkflow.id, sourceId: approvalWorkflow.sourceId })
 			.from(approvalWorkflow)
@@ -844,6 +994,10 @@ async function assess(
 		const kindFindings: PilotFinding[] = [];
 		const authorityAdmitted = CARD_AUTHORITY[workflowType].includes(authority);
 		const legacyAbsence = workflowType === "absence" && authority === "legacy";
+		// Legacy absence (#384) and time (#432) cards: unverified providers stay
+		// review-only in code, and legacy transfers get no replacement card.
+		const legacyCardsInCode =
+			authority === "legacy" && (legacyAbsence || isTimeApprovalWorkflowType(workflowType));
 		if (!authorityAdmitted) {
 			kindFindings.push({
 				code: authority === "legacy" ? "authority_not_canonical" : "authority_not_legacy",
@@ -882,10 +1036,10 @@ async function assess(
 			});
 			if (admission === "unverified") {
 				findings.push({ code: "combination_unverified", severity: "blocker" });
-				// Legacy absence cards on these providers stay review-only in code
-				// whatever the row says, and the row is shared with canonical
-				// absence cards, which it does admit.
-				if (presentation === "actionable" && !legacyAbsence) {
+				// Legacy absence and time cards on these providers stay review-only
+				// in code whatever the row says, and the row is shared with the
+				// kind's canonical cards.
+				if (presentation === "actionable" && !legacyCardsInCode) {
 					findings.push({ code: "presentation_actionable_unverified", severity: "blocker" });
 				}
 			} else if (admission === "actionable" && presentation !== "actionable") {
@@ -894,7 +1048,7 @@ async function assess(
 			const integration = configured.get(provider);
 			if (!integration) {
 				findings.push({ code: "provider_not_configured", severity: "blocker" });
-			} else if (legacyAbsence && transfersActive) {
+			} else if (legacyCardsInCode && transfersActive) {
 				// Legacy transfers get no replacement card and leave the former
 				// holder's card unrefreshed (#384 blocker 5, #408).
 				findings.push({ code: "escalation_replacement_unsupported", severity: "hold" });

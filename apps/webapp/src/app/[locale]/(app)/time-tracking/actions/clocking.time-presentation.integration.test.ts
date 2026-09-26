@@ -1148,7 +1148,7 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		expect(await bindings()).toBe(0);
 	});
 
-	it("keeps legacy-authority time cards review-only while their review shows the evidence", async () => {
+	it("binds legacy-authority time cards to the legacy request while their review shows the evidence", async () => {
 		await seed({ rollout: "legacy" });
 		const manualId = await submitManual();
 		const { rows } = await admin.query<{ id: string }>(
@@ -1157,16 +1157,27 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		);
 		const requestId = only(rows).id;
 
+		// Legacy time cards bind the exact legacy request (#432); the
+		// canonical-only guarantees of this suite are covered in
+		// legacy-time-bound-approval.integration.test.ts.
 		const card = await prepareApprovalPresentation({
 			approvalId: requestId,
 			recipientEmployeeId: ids.manager,
 			organizationId: ids.organization,
 			provider: "telegram",
 		});
-		expect(card.status).toBe("review_required");
-		// No legacy delivery intents exist for time kinds: the owner sends nothing.
+		expect(card.status).toBe("actionable");
+		const { rows: bound } = await admin.query(
+			"select authority, legacy_approval_request_id, workflow_id from approval_review_binding",
+		);
+		expect(only(bound)).toEqual({
+			authority: "legacy",
+			legacy_approval_request_id: requestId,
+			workflow_id: null,
+		});
+		// The submission's legacy delivery intent: the owner sends the cycle's card.
 		await deliver();
-		expect(sends()).toHaveLength(0);
+		expect(sends()).toHaveLength(1);
 
 		const review = await reviewSections(requestId);
 		expect(keyValue(review.sections, "Submitted times").slice(0, 3)).toEqual([
@@ -1523,14 +1534,17 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		);
 		await submitManual("2026-07-20");
 		const heldAtCutover = { ...noPending, total: 1, authorityChange: 1 };
-		// The shadow workflow mirrors the legacy request, whose revision is
-		// legacy: the report says so before the cutover, not after it.
+		// Before the cutover the legacy request is decided by legacy authority,
+		// whose legacy card binds its legacy revision (#432).
 		const shadow = await pilotReport();
-		expect(pilotKind(shadow, "manual_time_submission")?.pending).toEqual(heldAtCutover);
-		expect(pilotTelegram(shadow, "manual_time_submission")?.findings).toEqual([
-			{ code: "authority_not_canonical", severity: "blocker" },
-			{ code: "evidence_held", severity: "hold", count: 1 },
-		]);
+		expect(pilotKind(shadow, "manual_time_submission")?.pending).toEqual({
+			...noPending,
+			total: 1,
+			current: 1,
+		});
+		expect(pilotTelegram(shadow, "manual_time_submission")?.findings).toEqual([]);
+		// The shadow workflow mirrors the legacy request, whose revision is
+		// legacy: after the cutover a canonical card cannot bind it.
 
 		await admin.query(
 			`update approval_workflow_rollout

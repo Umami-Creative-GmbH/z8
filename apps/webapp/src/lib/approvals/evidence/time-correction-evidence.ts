@@ -770,8 +770,13 @@ export async function recordLegacyTimeCorrectionDecisionEvidence(
 		action: DecisionAction;
 		reason: string | null;
 		approvalRequestId: string;
-		/** The unchanged legacy idempotency key computed by the decision owner. */
+		/**
+		 * The unchanged legacy idempotency key computed by the decision owner, or
+		 * for a card decision its invocation receipt key (#432).
+		 */
 		idempotencyKey: string;
+		/** The legacy binding a card decision was reviewed through (#432). */
+		reviewedBindingId?: string | null;
 		actor: { employeeId: string; userId: string };
 		/** Whether this decision finalized the lifecycle (a chain stage may not). */
 		finalized: boolean;
@@ -909,5 +914,6 @@ export async function recordLegacyTimeCorrectionDecisionEvidence(
 				: null,
 		},
 		labels: { actorName: actor.name },
+		reviewedBindingId: input.reviewedBindingId ?? null,
 	});
 }
