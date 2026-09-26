@@ -363,13 +363,19 @@ describeLifecycleDatabase("approval handover", () => {
 			]);
 
 			const rows = await assignments(duty.workflow);
-			const outcome = (await onlyTask(departureId)).payload.outcome;
+			const settled = await onlyTask(departureId);
+			// Status and error are part of the comparison so a failure shows why the task did not settle.
+			const handover = {
+				outcome: settled.payload.outcome,
+				status: settled.status,
+				lastError: settled.last_error,
+			};
 			if (decision.status === "fulfilled") {
 				expect(rows).toEqual([expect.objectContaining({ status: "approved" })]);
-				expect(outcome).toBe("source_resolved");
+				expect(handover).toEqual({ outcome: "source_resolved", status: "completed", lastError: null });
 			} else {
 				expect(rows.map((row) => row.status)).toEqual(["cancelled", "pending"]);
-				expect(outcome).toBe("transferred");
+				expect(handover).toEqual({ outcome: "transferred", status: "completed", lastError: null });
 			}
 		});
 
