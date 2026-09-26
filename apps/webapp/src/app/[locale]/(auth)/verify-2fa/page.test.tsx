@@ -14,6 +14,10 @@ const headers = vi.hoisted(() => vi.fn(async () => requestHeaders));
 vi.mock("next/headers", () => ({
 	headers,
 }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 
 vi.mock("next/navigation", () => ({
 	redirect: vi.fn(),

@@ -1,7 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { getCookieConsentScript, setCookieConsentScript } from "@/lib/platform-settings";
 
 export async function getCookieConsentScriptAction(): Promise<{
@@ -9,8 +8,7 @@ export async function getCookieConsentScriptAction(): Promise<{
 	data?: string | null;
 	error?: string;
 }> {
-	const headersList = await headers();
-	const session = await auth.api.getSession({ headers: headersList });
+	const session = await getRequestSession();
 
 	if (!session || session.user?.role !== "admin") {
 		return { success: false, error: "Unauthorized" };
@@ -28,8 +26,7 @@ export async function getCookieConsentScriptAction(): Promise<{
 export async function setCookieConsentScriptAction(
 	script: string,
 ): Promise<{ success: boolean; error?: string }> {
-	const headersList = await headers();
-	const session = await auth.api.getSession({ headers: headersList });
+	const session = await getRequestSession();
 
 	if (!session || session.user?.role !== "admin") {
 		return { success: false, error: "Unauthorized" };

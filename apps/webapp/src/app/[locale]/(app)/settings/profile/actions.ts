@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { employee, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
+import { getRequestSession } from "@/lib/auth/request-session";
 import type { BirthdayInput } from "@/lib/datetime/birthday";
 import { ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -491,7 +492,7 @@ export async function updateTimezone(timezone: string): Promise<ServerActionResu
  * Get current user's timezone
  */
 export async function getCurrentTimezone(): Promise<string> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return "UTC";
 	}
@@ -535,7 +536,7 @@ export async function updateWeekStartDay(
 }
 
 export async function getWeekStartDay(): Promise<WeekStartDay> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return "sunday";
 	}
@@ -570,7 +571,7 @@ export async function updateTimeFormat(timeFormat: TimeFormat): Promise<ServerAc
 }
 
 export async function getTimeFormat(): Promise<TimeFormat> {
-	const session = await auth.api.getSession({ headers: await headers() });
+	const session = await getRequestSession();
 	if (!session?.user) {
 		return normalizeTimeFormat(null);
 	}

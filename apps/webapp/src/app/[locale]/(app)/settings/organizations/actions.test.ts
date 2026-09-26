@@ -62,6 +62,10 @@ vi.mock("@opentelemetry/api", async (importOriginal) => {
 vi.mock("next/headers", () => ({
 	headers: headersMock,
 }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 
 // Records that role updates run inside the coordinated auth transaction (#314).
 const authCoordination = vi.hoisted(() => ({ inside: false, updatesInside: 0 }));

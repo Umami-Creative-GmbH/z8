@@ -1,7 +1,6 @@
 import { Context, Effect, Layer } from "effect";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 import type { SessionAuthUser } from "@/lib/auth/auth-context-user";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { AuthenticationError } from "../errors";
 
@@ -34,9 +33,7 @@ export const AuthServiceLive = Layer.effect(
 			getSession: (organizationId) =>
 				Effect.tryPromise({
 					try: async () => {
-						const session = await auth.api.getSession({
-							headers: await headers(),
-						});
+						const session = await getRequestSession();
 
 						if (
 							!session?.user ||

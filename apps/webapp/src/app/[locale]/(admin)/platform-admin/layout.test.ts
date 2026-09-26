@@ -184,7 +184,7 @@ describe("platform admin layout", () => {
 	it("preserves session, role, translated navigation, identity, and child rendering in content", () => {
 		const source = readAdminLayoutSource();
 
-		expect(source).toContain("auth.api.getSession({ headers: headersList })");
+		expect(source).toContain("const session = await getRequestSession();");
 		expect(source).toContain('redirect("/sign-in")');
 		expect(source).toContain('session.user.role !== "admin"');
 		expect(source).toContain('redirect("/")');

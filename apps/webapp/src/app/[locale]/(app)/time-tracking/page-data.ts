@@ -1,5 +1,4 @@
 import { and, eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import type {
 	SerializableWorkdayTimelineItem,
 	SerializableWorkdayTimelineResult,
@@ -8,7 +7,7 @@ import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { userSettings } from "@/db/schema";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { normalizeTimeFormat } from "@/lib/user-preferences/time-format";
@@ -29,7 +28,7 @@ export interface TimeTrackingPageSearchParams {
 }
 
 export async function getTimeTrackingPageData(searchParams: TimeTrackingPageSearchParams = {}) {
-	const session = (await auth.api.getSession({ headers: await headers() }))!;
+	const session = (await getRequestSession())!;
 
 	const [currentEmployee, settings] = await Promise.all([
 		getCurrentEmployee(),

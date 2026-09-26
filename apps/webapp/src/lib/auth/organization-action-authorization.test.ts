@@ -7,6 +7,10 @@ import { requireActiveOrganizationActionActor } from "./organization-action-auth
 const sso = vi.hoisted(() => ({ allowed: vi.fn(async () => true) }));
 vi.mock("@/lib/enterprise-identity/session-sso-store", () => ({ canAccessOrganizationWithSso: sso.allowed }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) => ({
+	...(await importOriginal<typeof import("next/server")>()),
+	connection: async () => undefined,
+}));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => ({ user: { id: "user-1" }, session: { id: "session-1", userId: "user-1" } }) } } }));
 
 function runAuthorization({

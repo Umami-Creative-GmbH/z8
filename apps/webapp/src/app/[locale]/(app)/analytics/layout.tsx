@@ -6,7 +6,6 @@ import {
 	IconUsers,
 } from "@tabler/icons-react";
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
@@ -14,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth/request-session";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
@@ -61,9 +60,7 @@ async function AnalyticsLayoutContent({
 }) {
 	const [t, session] = await Promise.all([
 		getTranslate(),
-		headers().then((requestHeaders) =>
-			auth.api.getSession({ headers: requestHeaders }),
-		),
+		getRequestSession(),
 	]);
 	if (!session?.user) {
 		redirect("/sign-in");
