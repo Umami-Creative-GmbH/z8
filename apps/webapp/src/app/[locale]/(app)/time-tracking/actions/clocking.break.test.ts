@@ -15,7 +15,6 @@ const mockState = vi.hoisted(() => ({
 	closeAndResumeWork: vi.fn(),
 	createTimeEntry: vi.fn(),
 	markEmployeeWorkBalanceDirty: vi.fn(),
-	checkClockOutNeedsApproval: vi.fn(),
 	getActiveWorkPeriod: vi.fn(),
 	updateSet: vi.fn(),
 	updateReturning: vi.fn(),
@@ -101,8 +100,6 @@ vi.mock("./auth", () => ({
 	getUserTimezone: async () => "Europe/Berlin",
 }));
 vi.mock("./approvals", () => ({
-	sendClockOutApprovalNotifications: vi.fn(),
-	sendClockOutApprovedNotification: vi.fn(),
 	sendManualEntryApprovalNotifications: vi.fn(),
 	sendManualEntryApprovedNotification: vi.fn(),
 }));
@@ -119,7 +116,6 @@ vi.mock("./entry-helpers", () => ({
 	validateProjectAssignment: vi.fn(),
 }));
 vi.mock("./policy-helpers", () => ({
-	checkClockOutNeedsApproval: mockState.checkClockOutNeedsApproval,
 	getEditCapabilityForPeriod: vi.fn(),
 }));
 vi.mock("./queries", () => ({
@@ -153,7 +149,6 @@ describe("addBreakToActiveSession", () => {
 		mockState.ownerInputs.length = 0;
 		mockState.target = [{ id: "period-1", approvalStatus: "approved" }];
 		mockState.replayCloseResumeWork.mockResolvedValue(null);
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(false);
 		mockState.updateReturning.mockResolvedValue([{ id: "period-1" }]);
 		mockState.getActiveWorkPeriod.mockResolvedValue({
 			id: "period-1",
@@ -184,7 +179,6 @@ describe("addBreakToActiveSession", () => {
 				submissionId,
 				workPeriodId: "period-1",
 				endTime: parseInstant("2026-05-04T09:45:00Z"),
-				requiresApproval: false,
 			}),
 		]);
 		expect(mockState.assertReview).toHaveBeenCalledWith(expect.anything(), "org-1", {
@@ -247,14 +241,12 @@ describe("addBreakToActiveSession", () => {
 
 	it("runs the shared close/resume operation in an adopted organization", async () => {
 		mockState.admission = "append";
-		mockState.checkClockOutNeedsApproval.mockResolvedValue(true);
 		mockState.closeAndResumeWork.mockResolvedValue({
 			disposition: "executed",
 			result: resumeResult("period-2", "2026-05-04T10:00:00Z"),
 			closed: {
 				entry: { id: "clock-out-1" },
 				disposition: "executed",
-				approvalSubmission: null,
 				surchargeSnapshot: null,
 				result: {
 					workPeriodId: "period-1",
@@ -277,7 +269,8 @@ describe("addBreakToActiveSession", () => {
 			success: true,
 			data: { id: "period-2", startTime: new Date("2026-05-04T10:00:00.000Z") },
 		});
-		expect(mockState.ownerInputs[1]).toMatchObject({ requiresApproval: true });
+		// A break never routes approval (#361).
+		expect(mockState.ownerInputs[1]).not.toHaveProperty("requiresApproval");
 		expect(mockState.closeAndResumeWork).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",

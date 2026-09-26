@@ -296,7 +296,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Alle Ausstempelungen",
       "allManagers": "Alle Manager",
       "approvalDaysDescription": "Über den Self-Service hinaus können Mitarbeiter innerhalb dieses Zeitfensters Änderungen anfordern (erfordert Genehmigung). 0 = kein zusätzliches Zeitfenster.",
       "approvalDaysLabel": "Genehmigungszeitfenster (Tage)",
@@ -387,8 +386,7 @@
       "trustModeDescription": "Mitarbeitern erlauben, Einträge ohne Genehmigungsanforderungen zu bearbeiten",
       "trustModeLabel": "Vertrauensmodus",
       "updated": "Richtlinie erfolgreich aktualisiert",
-      "updateFailed": "Richtlinie konnte nicht aktualisiert werden",
-      "zeroDayPolicy": "Jedes Ausstempeln erfordert die Genehmigung eines Managers (strengster Modus)."
+      "updateFailed": "Richtlinie konnte nicht aktualisiert werden"
     },
     "coverageRules": {
       "addRule": "Regel hinzufügen",

@@ -755,7 +755,14 @@
       "idx": 107,
       "version": "7",
       "when": 1793548800000,
-      "tag": "0107_legacy_absence_presentation",
+      "tag": "0107_approval_workflow_rollout_precreate",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1793635200000,
+      "tag": "0108_legacy_absence_presentation",
       "breakpoints": true
     }
   ]

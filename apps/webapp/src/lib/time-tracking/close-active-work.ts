@@ -7,16 +7,15 @@ import "server-only";
  *
  * One call inside the web clock-out outer transaction establishes the whole
  * completed graph: the clock-out entry through the append collaborator, the
- * closed period, canonical base/detail/allocation, required approval
- * participation, the work-balance refresh intent and the committed operation
- * receipt. Callers supply intent and evidence (operation identity, attribution
+ * closed period, canonical base/detail/allocation, the work-balance refresh
+ * intent and the committed operation receipt. A live closure never routes
+ * approval (#361). Callers supply intent and evidence (operation identity, attribution
  * intent, event instant and capture), never duration, links or storage patches.
  *
  * Exact replay of a committed receipt writes nothing. Receipt-less committed
  * clock-outs keep the legacy matcher in the action; this module never repairs them.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
 import {
 	type CompletedWorkWriter,
 	completedWorkOperation,
@@ -28,12 +27,8 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import type { BotPlatform } from "@/lib/bot-platform/types";
-import {
-	executeOrdinaryWorkPeriodSubmissionInTransaction,
-	type WorkPeriodPostCommitDescriptor,
-} from "@/lib/approvals/server/work-period-submission";
+import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work-period-submission";
 import {
 	comparePlainDates,
 	dateFromInstant,
@@ -55,7 +50,6 @@ import {
 	createDatabaseClockingStore,
 	type Entry,
 } from "./clocking-core";
-import { resolvePolicyClockOutBreakSnapshotInTransaction } from "./policy-clock-out-break-snapshot";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -151,6 +145,10 @@ export type CompletedWorkFollowUp =
 	| { kind: "break_enforcement"; delivery: "committed_intent"; intentId: string }
 	| { kind: "approval_notification"; delivery: "approval_owner" };
 
+/**
+ * Receipt version 1 keeps the approval participation variant it was defined with;
+ * live closures only ever commit `none` (#361).
+ */
 export type CloseActiveWorkApprovalParticipation =
 	| { participation: "none" }
 	| {
@@ -230,15 +228,6 @@ export class CompletedWorkAttributionError extends Error {
 		this.name = "CompletedWorkAttributionError";
 	}
 }
-
-function approvalDbService(context: WorkTransactionContext): ApprovalDbService {
-	return {
-		db: context.approval.dbService.db as ApprovalDbService["db"],
-		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-	};
-}
-
-const APPROVAL_REASON = "Clock-out requires approval (0-day policy)";
 
 /**
  * Exact receipt replay. Returns null when no receipt exists for the identity, so
@@ -343,11 +332,8 @@ export type CloseActiveWorkInput = {
 
 export type ClosedActiveWork = CloseActiveWorkReceipt & {
 	disposition: "executed";
-	approvalSubmission: Awaited<
-		ReturnType<typeof executeOrdinaryWorkPeriodSubmissionInTransaction>
-	> | null;
 	/** Evidence for the post-commit immediate surcharge calculation. */
-	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
+	surchargeSnapshot: PolicyClockOutSurchargeSnapshot;
 };
 
 /**
@@ -448,8 +434,6 @@ export async function closeActiveWorkGraph(
 		period.workCategoryId,
 	);
 	const endAt = dateFromInstant(input.eventInstant);
-	const requiresApproval = context.requiresApproval;
-	const approvalState = requiresApproval ? "pending" : "approved";
 
 	const surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
 		dbService: { db: tx },
@@ -458,14 +442,6 @@ export async function closeActiveWorkGraph(
 		startTime: start,
 		endTime: input.eventInstant,
 	});
-	const breakPolicySnapshot = requiresApproval
-		? await resolvePolicyClockOutBreakSnapshotInTransaction({
-				dbService: { db: tx },
-				organizationId,
-				employeeId,
-				endTime: input.eventInstant,
-			})
-		: null;
 
 	const [record] = await tx
 		.insert(timeRecord)
@@ -476,7 +452,7 @@ export async function closeActiveWorkGraph(
 			startAt: period.startTime,
 			endAt,
 			durationMinutes,
-			approvalState,
+			approvalState: "approved",
 			origin: "clock",
 			createdBy: input.actorUserId,
 			updatedBy: input.actorUserId,
@@ -526,23 +502,8 @@ export async function closeActiveWorkGraph(
 			projectId,
 			workCategoryId,
 			canonicalRecordId: record.id,
-			approvalStatus: approvalState,
-			pendingChanges: breakPolicySnapshot
-				? {
-						originalStartTime: period.startTime.toISOString(),
-						originalEndTime: endAt.toISOString(),
-						originalDurationMinutes: durationMinutes,
-						requestedAt: endAt.toISOString(),
-						requestedBy: input.actorUserId,
-						isNewClockOut: true,
-						ordinarySubmission: {
-							submissionId: command.operationId,
-							kind: "policy_clock_out" as const,
-						},
-						breakPolicySnapshot,
-						surchargeSnapshot,
-					}
-				: null,
+			approvalStatus: "approved",
+			pendingChanges: null,
 			graphRevision: resultRevision,
 			updatedAt: new Date(),
 		})
@@ -558,54 +519,15 @@ export async function closeActiveWorkGraph(
 		.returning({ id: workPeriod.id });
 	if (!closed) throw new ClockingConflictError("Active work period changed");
 
-	let approvalSubmission: ClosedActiveWork["approvalSubmission"] = null;
-	let approval: CloseActiveWorkApprovalParticipation = { participation: "none" };
-	let committedApprovalState: "approved" | "pending" = approvalState;
-	if (requiresApproval) {
-		approvalSubmission = await executeOrdinaryWorkPeriodSubmissionInTransaction({
-			dbService: approvalDbService(context),
-			context: context.approval,
-			coordination: context,
-			organizationId,
-			workPeriodId: period.id,
-			submissionId: command.operationId,
-			requesterEmployeeId: employeeId,
-			requesterUserId: input.actorUserId,
-			teamId: input.teamId,
-			defaultApproverId: null,
-			reason: APPROVAL_REASON,
-			overtimeRisk: "warning",
-			kind: "policy_clock_out",
-			metadata: {},
-		});
-		approval = {
-			participation: "policy_clock_out",
-			disposition: approvalSubmission.disposition,
-			outcome: approvalSubmission.result.kind,
-			approvalRequestId: approvalSubmission.result.approvalRequestId,
-			submittedRevisionId: approvalSubmission.evidence?.submittedRevisionId ?? null,
-		};
-		const [after] = await tx
-			.select({ approvalStatus: workPeriod.approvalStatus })
-			.from(workPeriod)
-			.where(and(eq(workPeriod.id, period.id), eq(workPeriod.organizationId, organizationId)))
-			.limit(1);
-		if (after?.approvalStatus !== "approved" && after?.approvalStatus !== "pending") {
-			throw new CompletedWorkIntegrityError("Approval participation left an invalid state");
-		}
-		committedApprovalState = after.approvalStatus;
-	}
-
 	// Required recalculation commits with the work and recovers through the
 	// existing balance refresh owner. The earlier of the UTC and captured-offset
 	// local start date covers the work's day in either representation.
 	const dirtyFromDate = earliestStartDate(start, clockIn.utcOffsetMinutes);
 	await markEmployeeWorkBalanceDirty({ employeeId, organizationId, dirtyFromDate }, tx);
-	// Ordinary closures owe any automatic break adjustment later; its intent commits
-	// with the work so process loss, dates and review cannot lose it (#305). An
-	// approval-routed closure splits at its terminal approval instead (#303).
+	// A closure owes any automatic break adjustment later; its intent commits with
+	// the work so process loss, dates and review cannot lose it (#305).
 	const breakIntentId =
-		requiresApproval || context.admission !== "append"
+		context.admission !== "append"
 			? null
 			: await commitAutomaticBreakIntent(tx, {
 					organizationId,
@@ -618,18 +540,10 @@ export async function closeActiveWorkGraph(
 	const followUps: CompletedWorkFollowUp[] = [
 		{ kind: "work_balance_refresh", delivery: "committed_intent", dirtyFromDate },
 		{ kind: "compliance_check", delivery: "post_commit_best_effort" },
-		...(requiresApproval
-			? [{ kind: "approval_notification" as const, delivery: "approval_owner" as const }]
-			: [
-					breakIntentId === null
-						? { kind: "break_enforcement" as const, delivery: "post_commit_best_effort" as const }
-						: {
-								kind: "break_enforcement" as const,
-								delivery: "committed_intent" as const,
-								intentId: breakIntentId,
-							},
-					{ kind: "surcharge_calculation" as const, delivery: "post_commit_best_effort" as const },
-				]),
+		breakIntentId === null
+			? { kind: "break_enforcement", delivery: "post_commit_best_effort" }
+			: { kind: "break_enforcement", delivery: "committed_intent", intentId: breakIntentId },
+		{ kind: "surcharge_calculation", delivery: "post_commit_best_effort" },
 	];
 	const result: CloseActiveWorkResult = {
 		version: CLOSE_ACTIVE_WORK_RESULT_VERSION,
@@ -663,8 +577,8 @@ export async function closeActiveWorkGraph(
 			previousEntryId: appended.previousEntryId,
 			previousHash: appended.previousHash,
 		},
-		approvalState: committedApprovalState,
-		approval,
+		approvalState: "approved",
+		approval: { participation: "none" },
 		followUps,
 	};
 
@@ -672,8 +586,7 @@ export async function closeActiveWorkGraph(
 		disposition: "executed",
 		result,
 		entry: appended.entry,
-		approvalSubmission,
-		surchargeSnapshot: requiresApproval ? null : surchargeSnapshot,
+		surchargeSnapshot,
 	};
 }
 

@@ -18,7 +18,12 @@ async function ProjectSettingsPageContent() {
 		redirect("/settings");
 	}
 
-	return <ProjectManagement organizationId={organizationId} />;
+	return (
+		<ProjectManagement
+			organizationId={organizationId}
+			canManageProjectManagers={settingsRouteContext.accessTier === "orgAdmin"}
+		/>
+	);
 }
 
 function ProjectSettingsPageLoading() {

@@ -122,7 +122,7 @@ For each command in capture order:
 | Server answer | Result |
 | --- | --- |
 | `executed` / `replayed` for this operation | `committed`, receipt stored |
-| no answer, `unknown`, 5xx, unreadable 2xx, `approval_policy_unavailable` | transient: same command again |
+| no answer, `unknown`, 5xx, unreadable 2xx, `approval_policy_unavailable` (not sent since #361; older servers) | transient: same command again |
 | `unauthorized`, `access_denied`, `billing_required`, `context_mismatch`, `not_adopted`, `unsupported_version`, other 4xx | paused: waits, no failure counted |
 | `collision`, `integrity_review_required`, lookup `conflict` | `rejected`, never archivable: committed work exists under the identity |
 | every other typed refusal (`target_unknown`, `target_not_active`, `occupancy_conflict`, `admission_window`, `append_review_required`, …) | `rejected` with the server body as evidence; archivable |

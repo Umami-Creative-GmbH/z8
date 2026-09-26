@@ -31,21 +31,7 @@ const harness = vi.hoisted(() => ({
 	notifications: [] as string[],
 	/** Runs once between a submission's replay check and its fresh preflight. */
 	beforeFreshPreflight: null as (() => Promise<void>) | null,
-	/** Policy clock-out approval is production-false today; scenarios force it. */
-	forceApproval: false,
 }));
-
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/policy-helpers", async (importOriginal) => {
-	const original =
-		await importOriginal<
-			typeof import("@/app/[locale]/(app)/time-tracking/actions/policy-helpers")
-		>();
-	return {
-		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceApproval || (await original.checkClockOutNeedsApproval(employeeId)),
-	};
-});
 
 vi.mock("@/lib/time-tracking/validation", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/time-tracking/validation")>();
@@ -133,10 +119,10 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	...(await importOriginal<
 		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
 	>()),
-	sendClockOutApprovalNotifications: async () => {
+	sendManualEntryApprovalNotifications: async () => {
 		harness.notifications.push("pending");
 	},
-	sendClockOutApprovedNotification: async () => {
+	sendManualEntryApprovedNotification: async () => {
 		harness.notifications.push("approved");
 	},
 }));
@@ -174,6 +160,10 @@ const ids = {
 	peerUser: "t275-peer-user",
 	managerUser: "t281-manager-user",
 	manager: "f1000000-0000-4000-8000-000000000003",
+	changePolicy: "f4000000-0000-4000-8000-000000000001",
+	changePolicyAssignment: "f4000000-0000-4000-8000-000000000002",
+	approvalPolicy: "f4000000-0000-4000-8000-000000000003",
+	approvalStage: "f4000000-0000-4000-8000-000000000004",
 	requester: "f1000000-0000-4000-8000-000000000001",
 	peer: "f1000000-0000-4000-8000-000000000002",
 	projectA: "f3000000-0000-4000-8000-000000000001",
@@ -319,6 +309,14 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		return only(rows);
 	}
 
+	async function approvalOf(clockInId: string) {
+		const { rows } = await admin.query<{ approval_status: string; pending_changes: unknown }>(
+			"select approval_status, pending_changes from work_period where clock_in_id = $1",
+			[clockInId],
+		);
+		return only(rows);
+	}
+
 	async function cleanup() {
 		await admin.query("drop function if exists t281_fail() cascade");
 		await admin.query("delete from organization where id in ($1, $2)", [
@@ -404,7 +402,6 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		harness.server = server;
 		harness.notifications.length = 0;
 		harness.beforeFreshPreflight = null;
-		harness.forceApproval = false;
 		actAs(ids.requesterUser);
 		await seed();
 	});
@@ -415,6 +412,60 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
 		await pool.end();
 	});
+
+	/**
+	 * A manager, an active approval policy and a same-day-only change policy: every
+	 * input the dormant live clock-out approval once read. None routes approval (#361).
+	 */
+	async function strictChangePolicyWithApprover() {
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into "user" (id, name, email, created_at, updated_at)
+			 values ($1, 'Manager', 't281-manager@example.test', $2, $2)`,
+			[ids.managerUser, timestamp],
+		);
+		await admin.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at)
+			 values ('t281-member-manager', $1, $2, 'member', 'approved', $3)`,
+			[ids.organization, ids.managerUser, timestamp],
+		);
+		await admin.query(
+			`insert into employee (id, user_id, organization_id, role, updated_at)
+			 values ($1, $2, $3, 'manager', $4)`,
+			[ids.manager, ids.managerUser, ids.organization, timestamp],
+		);
+		await admin.query(
+			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
+			 values ($1, $2, $3, true, $4, now(), now())`,
+			[randomUUID(), ids.requester, ids.manager, ids.managerUser],
+		);
+		await admin.query(
+			`insert into approval_policy
+			 (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, $2, 'T361 active policy', true, 1, $3, now())`,
+			[ids.approvalPolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into approval_policy_stage
+			 (id, organization_id, policy_id, step_order, label, approver_type,
+			  fallback_behavior, updated_at)
+			 values ($1, $2, $3, 1, 'Manager', 'direct_manager', 'fail', now())`,
+			[ids.approvalStage, ids.organization, ids.approvalPolicy],
+		);
+		await admin.query(
+			`insert into change_policy
+			 (id, organization_id, name, self_service_days, approval_days, no_approval_required,
+			  created_by, updated_at)
+			 values ($1, $2, 'Same day only', 0, 0, false, $3, now())`,
+			[ids.changePolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into change_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, priority, created_by, updated_at)
+			 values ($1, $2, $3, 'organization', 0, $4, now())`,
+			[ids.changePolicyAssignment, ids.changePolicy, ids.organization, ids.managerUser],
+		);
+	}
 
 	it("advertises capabilities and the server-derived context, gated by adoption", async () => {
 		const read = async () => {
@@ -606,6 +657,31 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			body: { outcome: "replayed", operationId: close.operationId, receipt: executed.body.receipt },
 		});
 		expect(await snapshot()).toEqual(before);
+	});
+
+	it("never routes a clock-out to approval, even under a same-day-only change policy", async () => {
+		await strictChangePolicyWithApprover();
+		const start = clockInCommand();
+		await submit(start);
+		harness.now = now.add({ hours: 8 });
+		const close = clockOutCommand(
+			{ clockInOperationId: start.operationId },
+			{ occurredAt: harness.now.toString() },
+		);
+
+		const executed = await submit(close);
+
+		expect(executed.status).toBe(201);
+		expect(executed.body.receipt.result).toMatchObject({
+			approvalState: "approved",
+			approval: { participation: "none" },
+		});
+		expect(await approvalOf(start.operationId)).toEqual({
+			approval_status: "approved",
+			pending_changes: null,
+		});
+		expect((await snapshot()).approval_requests).toBeNull();
+		expect(harness.notifications).toEqual([]);
 	});
 
 	it("keeps current attribution eligibility checks and writes nothing when they fail", async () => {
@@ -1294,58 +1370,24 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 			expect(await snapshot()).toEqual(committed);
 		});
 
-		it("commits required approval with the close, and rolls both endpoints back when it fails", async () => {
-			harness.forceApproval = true;
-			const timestamp = new Date("2026-07-01T00:00:00Z");
-			await admin.query(
-				`insert into "user" (id, name, email, created_at, updated_at)
-				 values ($1, 'Manager', 't281-manager@example.test', $2, $2)`,
-				[ids.managerUser, timestamp],
-			);
-			await admin.query(
-				`insert into member (id, organization_id, user_id, role, status, created_at)
-				 values ('t281-member-manager', $1, $2, 'member', 'approved', $3)`,
-				[ids.organization, ids.managerUser, timestamp],
-			);
-			await admin.query(
-				`insert into employee (id, user_id, organization_id, role, updated_at)
-				 values ($1, $2, $3, 'manager', $4)`,
-				[ids.manager, ids.managerUser, ids.organization, timestamp],
-			);
-			await admin.query(
-				`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
-				 values ($1, $2, $3, true, $4, now(), now())`,
-				[randomUUID(), ids.requester, ids.manager, ids.managerUser],
-			);
+		it("never routes the closed segment to approval, even under a same-day-only change policy", async () => {
+			await strictChangePolicyWithApprover();
 			const start = await startWork();
 			const command = breakCommand({ clockInOperationId: start.operationId });
-			const before = await snapshot();
-			await admin.query(
-				`create function t281_fail() returns trigger language plpgsql as $$
-				 begin raise exception 't281 injected approval failure'; end $$`,
-			);
-			await admin.query(
-				"create trigger t281_fail before insert on approval_request for each row execute function t281_fail()",
-			);
-			expect((await submit(command)).status).toBe(500);
-			await admin.query("drop function t281_fail() cascade");
-			expect(await snapshot()).toEqual(before);
-			expect(harness.notifications).toEqual([]);
 
 			const executed = await submit(command);
 
 			expect(executed.status).toBe(201);
 			expect(executed.body.receipt.result.close).toMatchObject({
-				approvalState: "pending",
-				approval: {
-					participation: "policy_clock_out",
-					disposition: "executed",
-					approvalRequestId: expect.any(String),
-				},
+				approvalState: "approved",
+				approval: { participation: "none" },
 			});
-			expect(await period(command.operationId)).toMatchObject({ is_active: true });
-			expect((await snapshot()).approval_requests).toHaveLength(1);
-			expect(harness.notifications).toEqual(["pending"]);
+			expect(await approvalOf(start.operationId)).toEqual({
+				approval_status: "approved",
+				pending_changes: null,
+			});
+			expect((await snapshot()).approval_requests).toBeNull();
+			expect(harness.notifications).toEqual([]);
 		});
 
 		it("refuses breaks on stale, reviewed, overlapping or inverted work without writing", async () => {

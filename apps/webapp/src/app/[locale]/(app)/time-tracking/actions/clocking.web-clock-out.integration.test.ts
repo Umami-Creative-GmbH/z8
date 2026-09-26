@@ -6,9 +6,7 @@
  *
  * The real `clockIn`/`clockOut` server actions run against that database. Only the
  * request/session, external billing provisioning, notification delivery, and Next
- * cache boundaries are replaced. `checkClockOutNeedsApproval` is production-false
- * today, so approval scenarios force only that decision and keep the real routing,
- * approval runtime, repository, write gate, and submission collaborators.
+ * cache boundaries are replaced. Live clock-outs never route approval (#361).
  */
 
 import { randomUUID } from "node:crypto";
@@ -32,10 +30,8 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceApproval: false,
 	queries: [] as { sql: string; params: unknown[] }[],
 	errors: [] as { context: unknown; message: unknown }[],
-	notifications: [] as { event: string; managerId: string }[],
 }));
 
 vi.mock("@/db", async () => {
@@ -95,32 +91,6 @@ vi.mock("@/lib/billing/guard", () => ({
 		access.canAccess,
 }));
 
-vi.mock("./approvals", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async (params: { managerId: string }) => {
-		harness.notifications.push({
-			event: "pending",
-			managerId: params.managerId,
-		});
-	},
-	sendClockOutApprovedNotification: async (params: { managerId: string }) => {
-		harness.notifications.push({
-			event: "approved",
-			managerId: params.managerId,
-		});
-	},
-}));
-
-vi.mock("./policy-helpers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("./policy-helpers")>();
-	return {
-		...original,
-		checkClockOutNeedsApproval: async (employeeId: string) =>
-			harness.forceApproval ||
-			(await original.checkClockOutNeedsApproval(employeeId)),
-	};
-});
-
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
 	const record = (context: unknown, message?: unknown) => {
@@ -139,8 +109,10 @@ vi.mock("./shared", async (importOriginal) => {
 });
 
 const { clockIn, clockOut } = await import("./clocking");
-const { checkClockOutNeedsApproval: productionClockOutApprovalDecision } =
-	await import("./policy-helpers");
+const { db } = await import("@/db");
+const { createOrganizationApprovalRollouts } = await import(
+	"@/lib/approvals/workflow/organization-rollout"
+);
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -178,13 +150,12 @@ const ids = {
 	lateManager: "d1000000-0000-4000-8000-000000000003",
 	peer: "d1000000-0000-4000-8000-000000000004",
 	managerLink: "d2000000-0000-4000-8000-000000000001",
-	lateManagerLink: "d2000000-0000-4000-8000-000000000002",
 	workPolicy: "d3000000-0000-4000-8000-000000000001",
-	regulation: "d3000000-0000-4000-8000-000000000002",
-	breakRule: "d3000000-0000-4000-8000-000000000003",
 	policyAssignment: "d3000000-0000-4000-8000-000000000004",
 	approvalPolicy: "d4000000-0000-4000-8000-000000000001",
 	approvalStage: "d4000000-0000-4000-8000-000000000002",
+	changePolicy: "d5000000-0000-4000-8000-000000000001",
+	changePolicyAssignment: "d5000000-0000-4000-8000-000000000002",
 } as const;
 const genericFailure = "Failed to clock out. Please try again.";
 const lifecycleModes = ["legacy", "canonical"] as const;
@@ -377,7 +348,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		).length;
 	}
 
-	async function clockInRequester(userId = ids.requesterUser) {
+	async function clockInRequester(userId: string = ids.requesterUser) {
 		actAs(userId);
 		const result = await clockIn("office", {
 			instant: clockInAt,
@@ -396,7 +367,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 
 	function clockOutRequester(
 		submissionId: string = randomUUID(),
-		userId = ids.requesterUser,
+		userId: string = ids.requesterUser,
 		instant: Instant = clockOutAt,
 	) {
 		actAs(userId);
@@ -407,7 +378,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		});
 	}
 
-	async function workState(employeeId = ids.requester) {
+	async function workState(employeeId: string = ids.requester) {
 		const { rows } = await admin.query<{
 			open_periods: number;
 			closed_periods: number;
@@ -430,34 +401,8 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		return only(rows);
 	}
 
-	/**
-	 * Legacy side effects dispatch through the action after commit; canonical side
-	 * effects are durable outbox rows for the pending stage assignment instead.
-	 */
-	async function expectPendingApprover(
-		mode: LifecycleMode,
-		approverEmployeeId: string,
-	) {
-		const { rows } = await admin.query<{ approver_employee_id: string }>(
-			`select approver_employee_id from approval_stage_assignment
-			 where organization_id = $1 and status = 'pending'`,
-			[ids.organization],
-		);
-		if (mode === "legacy") {
-			expect(harness.notifications).toEqual([
-				{ event: "pending", managerId: approverEmployeeId },
-			]);
-			return;
-		}
-		expect(harness.notifications).toEqual([]);
-		expect(rows.map((row) => row.approver_employee_id)).toEqual([
-			approverEmployeeId,
-		]);
-		expect((await workState()).outbox).toBeGreaterThan(0);
-	}
-
 	/** One genesis, no dangling link, and no fork in the employee hash chain. */
-	async function expectCoherentChain(employeeId = ids.requester) {
+	async function expectCoherentChain(employeeId: string = ids.requester) {
 		const { rows } = await admin.query<{
 			genesis: number;
 			dangling: number;
@@ -493,8 +438,6 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 	async function seed(
 		options: {
 			manager?: boolean;
-			requesterSelfApproves?: boolean;
-			breakPolicy?: boolean;
 			rolloutBootstrapped?: boolean;
 			mode?: LifecycleMode;
 		} = {},
@@ -559,7 +502,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 				ids.peer,
 				ids.peerUser,
 				ids.organization,
-				options.requesterSelfApproves ? "manager" : "employee",
+				"employee",
 				timestamp,
 			],
 		);
@@ -568,7 +511,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 			 select user_id, 'UTC', $2 from unnest($1::text[]) as user_id`,
 			[[ids.requesterUser, ids.peerUser], timestamp],
 		);
-		if (options.manager || options.requesterSelfApproves) {
+		if (options.manager) {
 			await admin.query(
 				`insert into employee_managers
 				 (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
@@ -576,42 +519,7 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 				[
 					ids.managerLink,
 					ids.requester,
-					options.requesterSelfApproves ? ids.requester : ids.manager,
-					ids.managerUser,
-					timestamp,
-				],
-			);
-		}
-		if (options.breakPolicy) {
-			await admin.query(
-				`insert into work_policy
-				 (id, organization_id, name, schedule_enabled, regulation_enabled,
-				  is_active, created_by, updated_at)
-				 values ($1, $2, 'T272 break', false, true, true, $3, $4)`,
-				[ids.workPolicy, ids.organization, ids.managerUser, timestamp],
-			);
-			await admin.query(
-				`insert into work_policy_regulation
-				 (id, policy_id, max_uninterrupted_minutes, updated_at)
-				 values ($1, $2, 360, $3)`,
-				[ids.regulation, ids.workPolicy, timestamp],
-			);
-			await admin.query(
-				`insert into work_policy_break_rule
-				 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
-				 values ($1, $2, 360, 30, $3)`,
-				[ids.breakRule, ids.regulation, timestamp],
-			);
-			await admin.query(
-				`insert into work_policy_assignment
-				 (id, policy_id, organization_id, assignment_type, employee_id,
-				  priority, is_active, created_by, updated_at)
-				 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
-				[
-					ids.policyAssignment,
-					ids.workPolicy,
-					ids.organization,
-					ids.requester,
+					ids.manager,
 					ids.managerUser,
 					timestamp,
 				],
@@ -637,10 +545,8 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 	});
 
 	beforeEach(async () => {
-		harness.forceApproval = false;
 		harness.queries.length = 0;
 		harness.errors.length = 0;
-		harness.notifications.length = 0;
 		await seed();
 	});
 
@@ -655,10 +561,67 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		await pool.end();
 	});
 
-	it("keeps the production clock-out approval decision false", async () => {
-		await expect(
-			productionClockOutApprovalDecision(ids.requester),
-		).resolves.toBe(false);
+	it("never routes a live clock-out to approval, even under a same-day-only change policy", async () => {
+		await seed({ manager: true, mode: "canonical" });
+		await admin.query(
+			`insert into approval_policy
+			 (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, $2, 'T361 active policy', true, 1, $3, now())`,
+			[ids.approvalPolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into approval_policy_stage
+			 (id, organization_id, policy_id, step_order, label, approver_type,
+			  fallback_behavior, updated_at)
+			 values ($1, $2, $3, 1, 'Manager', 'direct_manager', 'fail', now())`,
+			[ids.approvalStage, ids.organization, ids.approvalPolicy],
+		);
+		// The strictest change policy: same-day self-service and no approval window.
+		await admin.query(
+			`insert into change_policy
+			 (id, organization_id, name, self_service_days, approval_days, no_approval_required,
+			  created_by, updated_at)
+			 values ($1, $2, 'Same day only', 0, 0, false, $3, now())`,
+			[ids.changePolicy, ids.organization, ids.managerUser],
+		);
+		await admin.query(
+			`insert into change_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, priority, created_by, updated_at)
+			 values ($1, $2, $3, 'organization', 0, $4, now())`,
+			[
+				ids.changePolicyAssignment,
+				ids.changePolicy,
+				ids.organization,
+				ids.managerUser,
+			],
+		);
+		const periodId = await clockInRequester();
+
+		const result = await clockOutRequester();
+
+		expect(result).toMatchObject({ success: true });
+		expect(result.success && result.data.pendingApproval).toBeUndefined();
+		const { rows } = await admin.query<{
+			approval_status: string;
+			pending_changes: unknown;
+			approval_state: string;
+		}>(
+			`select wp.approval_status, wp.pending_changes, tr.approval_state
+			 from work_period wp join time_record tr on tr.id = wp.canonical_record_id
+			 where wp.id = $1`,
+			[periodId],
+		);
+		expect(only(rows)).toEqual({
+			approval_status: "approved",
+			pending_changes: null,
+			approval_state: "approved",
+		});
+		expect(await workState()).toMatchObject({
+			closed_periods: 1,
+			approval_requests: 0,
+			workflows: 0,
+			outbox: 0,
+		});
 	});
 
 	it("closes the period in legacy admission and replays the committed result", async () => {
@@ -935,32 +898,66 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		await expect(requester).resolves.toMatchObject({ success: true });
 	});
 
-	it("serializes same-organization writers behind an uncommitted first rollout bootstrap", async () => {
+	async function policyClockOutRollouts() {
+		const { rows } = await admin.query<{
+			lifecycle_mode: string;
+			side_effect_mode: string;
+		}>(
+			`select lifecycle_mode, side_effect_mode from approval_workflow_rollout
+			 where organization_id = $1 and workflow_type = 'policy_clock_out'`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
+	// #359: organization creation pre-creates the rollout rows, so the first
+	// policy clock-out no longer bootstraps one and holds other employees behind it.
+	it("does not serialize a distinct employee behind the organization's first clock-out once its rollout rows exist", async () => {
 		await seed({ rolloutBootstrapped: false });
+		await createOrganizationApprovalRollouts(db, ids.organization);
 		await clockInRequester();
 		await clockInRequester(ids.peerUser);
 		const blocker = await holdAdvisory(keys.employee);
 
-		const requester = clockOutRequester();
-		const requesterPid = await waitForWaiter(blocker.pid);
-		let peerSettled = false;
-		const peer = clockOutRequester(randomUUID(), ids.peerUser).finally(() => {
-			peerSettled = true;
+		let requesterSettled = false;
+		const requester = clockOutRequester().finally(() => {
+			requesterSettled = true;
 		});
-		// The distinct employee waits on the requester's uncommitted rollout row,
-		// not on the requester's employee key.
-		await waitForWaiter(requesterPid);
-		expect(peerSettled).toBe(false);
+		const requesterPid = await waitForWaiter(blocker.pid);
+		// The requester already passed its write gate and waits on its employee key.
+		expect(await advisoryHeld(requesterPid, keys.writeGate)).toEqual([
+			"ShareLock:held",
+		]);
+
+		await expect(
+			clockOutRequester(randomUUID(), ids.peerUser),
+		).resolves.toMatchObject({ success: true });
+		expect(requesterSettled).toBe(false);
+		expect(await workState(ids.peer)).toMatchObject({
+			open_periods: 0,
+			clock_outs: 1,
+		});
 
 		await blocker.commit();
 		await expect(requester).resolves.toMatchObject({ success: true });
-		await expect(peer).resolves.toMatchObject({ success: true });
-		const { rows } = await admin.query<{ count: number }>(
-			`select count(*)::int as count from approval_workflow_rollout
-			 where organization_id = $1 and workflow_type = 'policy_clock_out'`,
-			[ids.organization],
-		);
-		expect(only(rows).count).toBe(1);
+		expect(await policyClockOutRollouts()).toEqual([
+			{ lifecycle_mode: "legacy", side_effect_mode: "legacy" },
+		]);
+	});
+
+	it("still bootstraps a missing rollout row in the write gate", async () => {
+		await seed({ rolloutBootstrapped: false });
+		await clockInRequester();
+		expect(await policyClockOutRollouts()).toEqual([]);
+
+		await expect(clockOutRequester()).resolves.toMatchObject({
+			success: true,
+		});
+
+		expect(await policyClockOutRollouts()).toEqual([
+			{ lifecycle_mode: "legacy", side_effect_mode: "legacy" },
+		]);
+		expect(await workState()).toMatchObject({ open_periods: 0, clock_outs: 1 });
 	});
 
 	it("restarts the whole transaction when protected configuration changes while waiting", async () => {
@@ -1065,160 +1062,6 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		).toBe(true);
 		expect(await workState()).toEqual(before);
 	});
-
-	it("rolls the closed period back when approval routing finds no manager", async () => {
-		harness.forceApproval = true;
-		await clockInRequester();
-		const before = await workState();
-
-		await expect(clockOutRequester()).resolves.toEqual({
-			success: false,
-			error: "No manager assigned to approve time changes",
-		});
-		expect(await workState()).toEqual(before);
-		expect(harness.notifications).toEqual([]);
-	});
-
-	it.each(lifecycleModes)(
-		"creates one pending approval and replays it without duplicate side effects in %s mode",
-		async (mode) => {
-			await seed({ manager: true, mode });
-			harness.forceApproval = true;
-			await clockInRequester();
-			const submissionId = randomUUID();
-
-			const first = await clockOutRequester(submissionId);
-			expect(first).toMatchObject({ success: true });
-			expect(first.success && first.data.pendingApproval).toBe(true);
-			await expectPendingApprover(mode, ids.manager);
-			const committed = await workState();
-			expect(committed).toMatchObject({
-				open_periods: 0,
-				clock_outs: 1,
-				records: 1,
-			});
-			expect(committed.approval_requests + committed.workflows).toBeGreaterThan(
-				0,
-			);
-
-			const replay = await clockOutRequester(submissionId);
-			expect(replay).toMatchObject({ success: true });
-			expect(replay.success && replay.data.pendingApproval).toBe(true);
-			expect(replay.success && first.success && replay.data.id).toBe(
-				first.success ? first.data.id : undefined,
-			);
-			expect(await workState()).toEqual(committed);
-			expect(harness.notifications).toHaveLength(mode === "legacy" ? 1 : 0);
-		},
-	);
-
-	it.each(lifecycleModes)(
-		"restarts when a new approval participant appears while waiting in %s mode",
-		async (mode) => {
-			await seed({ manager: true, mode });
-			harness.forceApproval = true;
-			await clockInRequester();
-			const { action, holder } = await blockFreshAttempt(keys.adoption, () =>
-				clockOutRequester(),
-			);
-
-			await admin.query(
-				"update employee_managers set is_primary = false where id = $1",
-				[ids.managerLink],
-			);
-			await admin.query(
-				`insert into employee_managers
-			 (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
-			 values ($1, $2, $3, true, $4, now(), now())`,
-				[ids.lateManagerLink, ids.requester, ids.lateManager, ids.managerUser],
-			);
-			await holder.commit();
-
-			const result = await action;
-			expect(result).toMatchObject({ success: true });
-			expect(result.success && result.data.pendingApproval).toBe(true);
-			expect(adoptionAttempts()).toBe(3);
-			await expectPendingApprover(mode, ids.lateManager);
-		},
-	);
-
-	it("restarts when an approval policy is activated while waiting in canonical mode", async () => {
-		await seed({ manager: true, mode: "canonical" });
-		harness.forceApproval = true;
-		await clockInRequester();
-		const { action, holder } = await blockFreshAttempt(keys.adoption, () =>
-			clockOutRequester(),
-		);
-
-		await admin.query(
-			`insert into approval_policy
-			 (id, organization_id, name, is_active, priority, created_by, updated_at)
-			 values ($1, $2, 'T272 late policy', true, 1, $3, now())`,
-			[ids.approvalPolicy, ids.organization, ids.managerUser],
-		);
-		await admin.query(
-			`insert into approval_policy_stage
-			 (id, organization_id, policy_id, step_order, label, approver_type,
-			  fallback_behavior, updated_at)
-			 values ($1, $2, $3, 1, 'Manager', 'direct_manager', 'fail', now())`,
-			[ids.approvalStage, ids.organization, ids.approvalPolicy],
-		);
-		await holder.commit();
-
-		const result = await action;
-		expect(result).toMatchObject({ success: true });
-		expect(result.success && result.data.pendingApproval).toBe(true);
-		expect(adoptionAttempts()).toBe(3);
-		expect(
-			harness.queries.some(
-				(query) =>
-					query.sql.includes("web-clock-out:lock") &&
-					query.sql.includes('"approval_policy_stage"') &&
-					query.params.includes(ids.approvalStage),
-			),
-		).toBe(true);
-	});
-
-	it.each(lifecycleModes)(
-		"auto-completes requester approval with the terminal break split in one transaction in %s mode",
-		async (mode) => {
-			await seed({ requesterSelfApproves: true, breakPolicy: true, mode });
-			harness.forceApproval = true;
-			await clockInRequester();
-
-			const result = await clockOutRequester();
-			expect(result).toMatchObject({ success: true });
-			expect(result.success && result.data.pendingApproval).toBe(false);
-			expect(adoptionAttempts()).toBe(2);
-
-			const { rows } = await admin.query<{
-				start_time: Date;
-				end_time: Date;
-				approval_status: string;
-			}>(
-				`select start_time, end_time, approval_status from work_period
-			 where employee_id = $1 order by start_time`,
-				[ids.requester],
-			);
-			expect(rows.length).toBeGreaterThan(1);
-			expect(rows.every((row) => row.approval_status === "approved")).toBe(
-				true,
-			);
-			const breakMinutes = rows
-				.slice(1)
-				.reduce(
-					(total, row, index) =>
-						total +
-						(row.start_time.getTime() -
-							(rows[index]?.end_time.getTime() ?? Number.NaN)) /
-							60_000,
-					0,
-				);
-			expect(breakMinutes).toBeGreaterThanOrEqual(30);
-			expect(rows.at(-1)?.end_time).toEqual(new Date("2026-07-22T16:00:00Z"));
-			await expectCoherentChain();
-		},
-	);
 
 	async function seedBreakPolicy() {
 		const timestamp = new Date("2026-07-01T00:00:00Z");

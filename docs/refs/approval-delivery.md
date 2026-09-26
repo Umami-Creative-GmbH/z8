@@ -9,7 +9,7 @@ policy clock-outs and time corrections (Telegram verified; see "Time approval
 presentation and bound decisions" in [approval evidence](approval-evidence.md)). It is **inactive for every organization**: migrations
 `0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql`,
 `0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql`,
-`0094_discord_approval_delivery.sql` and `0107_legacy_absence_presentation.sql`
+`0094_discord_approval_delivery.sql` and `0108_legacy_absence_presentation.sql`
 insert no control rows.
 
 ```text
@@ -152,7 +152,7 @@ without it keep the source-scoped expense lifecycle above, unchanged.
   was withdrawn).
 - **Surviving cancellation.** Ordinary absence cancellation deletes the absence
   and its pending legacy requests. The delivery rows' request FKs are dropped
-  (`0107`), so the cycle's work, messages and intents stay until privileged
+  (`0108`), so the cycle's work, messages and intents stay until privileged
   cleanup, and its sent cards are refreshed to "withdrawn".
 - **Old path.** `isApprovalNotificationDeliveredByOwner` treats a legacy absence
   cycle as owner-delivered when the owner owns one of its intents (created at

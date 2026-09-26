@@ -180,7 +180,6 @@ const REJECTION_MESSAGES: Record<string, string> = {
 	not_allowed_at_time: "Clocking is not allowed at this time",
 	attribution_not_allowed: "The selected project or category is not available",
 	append_review_required: "Clock-in needs a review of your time history",
-	approval_routing: "No approver is available for this clock-out",
 	invalid_interval: "The clock-out is not after the clock-in",
 };
 

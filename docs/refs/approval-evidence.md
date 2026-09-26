@@ -662,7 +662,7 @@ No application endpoint changes either control.
 7. **Ingress.** No durable acceptance before the webhook acknowledgment.
 8. **Legacy lifecycle identity.** Resolved in #384 for kinds with submission
    cycles: delivery rows carry a cycle key (`legacy_cycle_id`), and the legacy
-   request FKs of delivery rows no longer cascade (`0107`). Expense claims keep
+   request FKs of delivery rows no longer cascade (`0108`). Expense claims keep
    the source-scoped lifecycle and version (one plus the decided legacy
    requests), unchanged.
 9. Everything in the #295 blockers (storage immutability, abandoned objects,
@@ -919,8 +919,8 @@ Organizations whose absences are decided by legacy authority (rollout `legacy`,
 the legacy submitted revision of its submission cycle. A press is decided by
 the unchanged #288 legacy owner under #290's invocation identity. Everything is
 **inactive for every organization**: migration
-`0107_legacy_absence_presentation.sql` inserts no control rows. Apply it after
-`0106`.
+`0108_legacy_absence_presentation.sql` inserts no control rows. Apply it after
+`0107`.
 
 ```text
 requestAbsenceEffect, legacy branch (tx)            #288 capture, then
@@ -1016,7 +1016,7 @@ owns (`isApprovalNotificationDeliveredByOwner`), so no card is sent twice.
 ### Cleanup
 
 Legacy bindings, invocations, decision evidence and delivery rows survive
-ordinary cancellation (the delivery rows' request FKs are dropped in `0107`;
+ordinary cancellation (the delivery rows' request FKs are dropped in `0108`;
 they keep the request and cycle by value). Privileged `deleteApproval` follows
 the revision, request and chain links and, through the delivery rows, the
 cycle, so requests deleted by cancellation are still found. It deletes and
@@ -1028,7 +1028,7 @@ a late send finds no work row and records no message.
 
 ### Activation
 
-Apply `0107` after `0106`. After capture is active (#288), as the authorized
+Apply `0108` after `0107`. After capture is active (#288), as the authorized
 adoption writer under the exclusive absence rollout lock:
 
 ```sql
@@ -1050,7 +1050,7 @@ application endpoint changes either control.
 
 ### Activation blockers (#384, unresolved)
 
-1. Apply `0107` through the authorized deployment. It has run only on the
+1. Apply `0108` through the authorized deployment. It has run only on the
    disposable PostgreSQL 16 database. It drops the legacy request FKs of the
    three delivery tables; rolling it back must first delete delivery rows whose
    request no longer exists.
@@ -1449,9 +1449,9 @@ No application endpoint changes the mode.
    changed pending entry is refused for approve and reject; ordinary users have
    no cancel/resubmit path for manual or policy clock-out approvals. It stays
    pending until privileged cleanup or a separately agreed repair.
-3. **Live clock-out approval stays dormant** (`checkClockOutNeedsApproval` is
-   production-false, #361). This slice changes no approval policy; the policy
-   clock-out path is verified only with that decision forced.
+3. **Live clock-outs never route approval** (#361). Only historical policy
+   clock-out requests exist; the suites seed them through the ordinary
+   submission (`submitHistoricalPolicyClockOut`).
 4. Manual submissions still use the pre-#308 action (caller-side zone
    interpretation, overlap trimming, age check). The evidence records what that
    action stored; the strict manual command is #308. That action's own record
@@ -1479,7 +1479,8 @@ part of `test:approval-workflow-repository:integration`), driving the real
 inbox `approveApprovalInboxItem`/`rejectApprovalInboxItem`, `deleteApproval`
 and `clearOrganizationTimeData`. Only session, billing, notification delivery
 and Next cache are replaced; clock-out and manual approval requirements are
-forced. 10/10 passing:
+forced. 10/10 passing. (Since #361 a policy clock-out is a real clock-out whose
+historical submission is seeded, not a forced live decision.)
 
 - policy clock-out capture: legacy revision linked to the routed request,
   endpoint captures, stored 61 minutes versus 3640 elapsed seconds, break
@@ -1804,8 +1805,7 @@ No application endpoint changes either control.
    but were not exercised for time kinds: do not admit them.
 4. **Category names** are current names; request-time names are not captured.
 5. Everything in the #301/#302/#303 blockers: in-flight classification, held
-   requests without durable attention, dormant live clock-out approval (#361),
-   old binaries, ingress, and the pilot (#330).
+   requests without durable attention, old binaries, ingress, and the pilot (#330).
 6. The approval write-boundary scanner cannot read sources on Windows; this
    slice adds no writer (it reuses the invocation and binding stores).
 
@@ -1819,7 +1819,8 @@ part of `test:approval-workflow-repository:integration`), driving the real
 `prepareApprovalPresentation`, `sendTelegramNotification` and `deleteApproval`.
 Replaced: session, billing, notification fan-out, Next cache, bot-token vault,
 the delivery fast path and the Telegram transport; live clock-out, manual and
-correction approval are forced as in #301/#302. 12/12 passing:
+correction approval are forced as in #301/#302. 12/12 passing. (Since #361 the
+policy clock-out is seeded as a historical submission instead.)
 
 - policy clock-out: the owner sends one bound card (captured offsets, 421
   stored minutes versus 7 h 0 min 40 s elapsed, break disclosure, submission in

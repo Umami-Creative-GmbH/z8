@@ -79,13 +79,6 @@ export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
 		}) => Effect.Effect<EditCapability, DatabaseError>;
 
 		/**
-		 * Check if clock-out needs approval (for 0-day policy)
-		 */
-		readonly checkClockOutNeedsApproval: (
-			employeeId: string,
-		) => Effect.Effect<boolean, DatabaseError>;
-
-		/**
 		 * Get managers to notify for an approval request.
 		 * Respects the notifyAllManagers policy setting.
 		 */
@@ -316,8 +309,6 @@ export const ChangePolicyServiceLive = Layer.effect(
 						daysBack,
 					};
 				}),
-
-			checkClockOutNeedsApproval: () => Effect.succeed(false),
 
 			getManagersForApproval: (employeeId, notifyAll) =>
 				Effect.gen(function* (_) {

@@ -84,11 +84,9 @@
         "failed": "No se pudo fichar la salida. Inténtalo de nuevo.",
         "noProfile": "No se encontró el perfil del empleado.",
         "notClockedIn": "No tienes un turno iniciado actualmente.",
-        "policyCheckFailed": "No se pudo verificar la política de aprobación de tiempo. Por favor, inténtelo de nuevo.",
         "success": "Turno finalizado a las {time}. Duración: {hours}h {minutes}m.",
         "successAt": "Salida fichada a las {time}.",
-        "unconfirmed": "No se pudo confirmar tu fichaje de salida. Comprueba tu estado antes de volver a intentarlo.",
-        "unsupportedApproval": "Los cambios de tiempo que requieren aprobación aún no son compatibles con esta acción"
+        "unconfirmed": "No se pudo confirmar tu fichaje de salida. Comprueba tu estado antes de volver a intentarlo."
       },
       "compliance": {
         "error": "Error al recuperar los datos de cumplimiento. Por favor, inténtalo de nuevo más tarde.",

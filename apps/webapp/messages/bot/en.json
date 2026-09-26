@@ -123,11 +123,9 @@
         "failed": "Could not clock out. Please try again.",
         "noProfile": "Employee profile not found.",
         "notClockedIn": "You are not currently clocked in.",
-        "policyCheckFailed": "Could not verify time approval policy. Please try again.",
         "success": "Clocked out at {time}. Duration: {hours}h {minutes}m.",
         "successAt": "Clocked out at {time}.",
-        "unconfirmed": "Your clock-out could not be confirmed. Check your status before trying again.",
-        "unsupportedApproval": "Time changes requiring approval are not supported for this action yet"
+        "unconfirmed": "Your clock-out could not be confirmed. Check your status before trying again."
       },
       "compliance": {
         "error": "Failed to retrieve compliance data. Please try again later.",

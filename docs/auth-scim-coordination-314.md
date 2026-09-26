@@ -61,6 +61,18 @@ before-hook's guard and the endpoint's write commit together.
   Auth's endpoint definitions, so a renamed endpoint cannot silently drop out.
   `addMember` has no HTTP path; its server callers must use `runAuthMutation`.
 
+  **Correction (#359).** Better Auth's `auth.handler` runs each request under
+  `runWithAdapter(baseAdapter)`. That resets its adapter context, so over `/api/auth` Better
+  Auth's own writes went through the base adapter and committed on their own, outside the
+  coordinated transaction the hooks wrote in. Endpoints that open their own
+  `runWithTransaction` opened a second transaction. Work queued with
+  `queueAfterTransactionHook` ran at once, before the commit. The raced tests above did not
+  notice, because every Better Auth write happened after the guard wait. Since #359 the captured
+  drizzle client runs every query on the published transaction while one is active, and a
+  transaction opened on it joins it. The coordination hooks queue after-commit work with
+  `queueAfterAuthTransactionCommit`. `/organization/create` joined the coordinated paths in
+  #359.
+
 The email-lookup wrapper now also applies to the transaction adapter. Inside a coordinated
 transaction, user email lookups therefore stay case-insensitive.
 
@@ -109,8 +121,9 @@ Before this slice, `afterRemoveMember` ran `completeRemovedMemberCleanup` after 
 committed. Now the removal transaction itself runs `revokeRemovedMemberAccessInTransaction`
 through `afterRemoveMember` and the leave after-hook. That call deactivates the employee and
 deletes the organization's session rows in the same commit as the membership delete. Only
-secondary-storage session deletion and billing reconciliation wait for the commit (Better
-Auth's `queueAfterTransactionHook`).
+secondary-storage session deletion and billing reconciliation wait for the commit
+(`queueAfterAuthTransactionCommit` since #359; Better Auth's `queueAfterTransactionHook`
+before).
 
 `revokeRemovedMemberAccessInTransaction` takes the user's guard first. This also covers the
 action's retry path (`completeRemovedMemberCleanup`).
@@ -121,7 +134,7 @@ the error. As before this slice, the HTTP response is an error for a change that
 `removeEmployeeAccessAction` detects the committed removal and retries the cleanup.
 
 Provisioning after a membership is added or accepted keeps its existing after-commit timing,
-now deferred with `queueAfterTransactionHook`. That provisioning covers the employee, the
+now deferred with `queueAfterAuthTransactionCommit` (#359). That provisioning covers the employee, the
 invitation's organization-creation flag, and billing seats.
 
 ## Behavior changes
@@ -196,6 +209,7 @@ that key's `hashtextextended` value.
 | `updateMemberRole` / `removeMember` / `leaveOrganization` outside a coordinated transaction | Refused with `UncoordinatedAuthMutationError`; nothing written |
 | Member removal | Waits on the target's guard; membership delete, employee deactivation and session-row deletion commit together; billing reconciled after commit |
 | Removal whose in-transaction cleanup fails (trigger fault) | Whole removal rolls back; membership and active employee remain; no billing call |
+| HTTP `/organization/remove-member` (#359) | A failing in-transaction cleanup rolls the membership delete back (500) |
 | HTTP `/organization/leave` (bearer session) | Waits on the leaver's guard; same cleanup |
 | HTTP `/organization/accept-invitation` | Waits on the invitee's guard; provisioning runs after commit |
 | Provider-bound SSO provisioning | Waits on the user's guard; member (mapped `admin` role) and active employee commit together |
@@ -237,7 +251,7 @@ The suite does not cover:
 - The SSO callback endpoints. The provisioning functions are called directly, and the
   production composition test covers the wiring (`organizationProvisioning.disabled`,
   `provisionUser`, plugin order) without PostgreSQL.
-- HTTP `/organization/remove-member` and `/organization/add-member`, and the admin endpoints
+- HTTP `/organization/add-member`, and the admin endpoints
   `/admin/unban-user`, `/admin/update-user` and `/admin/remove-user`. They share the hooks
   exercised by the raced paths.
 - A ban racing submissions in several organizations. The user guard is global by

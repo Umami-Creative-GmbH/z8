@@ -703,6 +703,29 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			expect(harness.billingReconciled).toEqual([]);
 		});
 
+		// #359: over HTTP, Better Auth's handler resets its adapter context; its own
+		// membership delete still commits or rolls back with the coordinated request.
+		it("rolls an HTTP removal back, membership included, when its cleanup fails", async () => {
+			await admin.query(
+				`create function t314_fail_employee_update() returns trigger language plpgsql as
+				 $$ begin raise exception 't314 cleanup failure'; end $$`,
+			);
+			await admin.query(
+				`create trigger t314_fail_employee_update before update on employee for each row
+				 when (old.user_id = '${ids.employeeUser}') execute function t314_fail_employee_update()`,
+			);
+
+			const removal = await post("/organization/remove-member", ids.ownerUser, {
+				organizationId: ids.organization,
+				memberIdOrEmail: memberId(ids.employeeUser),
+			});
+
+			expect(removal.status).toBe(500);
+			expect(await membership(ids.employeeUser)).toMatchObject({ status: "approved" });
+			expect(await employeeActive(ids.employeeUser)).toBe(true);
+			expect(harness.billingReconciled).toEqual([]);
+		});
+
 		it("holds leaving over HTTP on the leaver's protection and runs the same cleanup", async () => {
 			const submission = await pausedSubmission(manualCommand(), ids.adminUser);
 

@@ -248,8 +248,8 @@ to the shared clock-out in [#277](bot-clocking-277.md)).
 
 ## Review follow-ups deferred to activation
 
-- Employee project/category eligibility and the policy clock-out approval decision
-  are still evaluated before the transaction (inherited from #272). The operation
+- Employee project/category eligibility is still evaluated before the transaction
+  (inherited from #272; the approval decision was removed in #361). The operation
   re-validates organization scope in the transaction, but the configuration and
   assignment writers do not yet take the configuration guards, so an in-transaction
   re-check would not add protection yet. Participation of those writers is #308

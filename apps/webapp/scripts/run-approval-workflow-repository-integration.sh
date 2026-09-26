@@ -105,6 +105,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.automatic-break.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-eligibility.integration.test.ts" \
+	"src/app/[locale]/(app)/settings/projects/actions.project-membership.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-authorization.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-auth-scim.integration.test.ts" \
 	"src/app/[locale]/(app)/settings/organizations/organization-timezone.integration.test.ts" \
@@ -163,4 +164,6 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/time-tracking/actions/correction-lifecycle.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.time-presentation.integration.test.ts" \
 	src/lib/approvals/pilot/readiness.integration.test.ts \
-	src/lib/approvals/lifecycle-cleanup.integration.test.ts
+	src/lib/time-tracking/pilot/readiness.integration.test.ts \
+	src/lib/approvals/lifecycle-cleanup.integration.test.ts \
+	src/lib/auth/organization-creation.integration.test.ts

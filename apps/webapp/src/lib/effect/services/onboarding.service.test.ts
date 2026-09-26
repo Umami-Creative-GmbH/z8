@@ -12,6 +12,8 @@ const creationPolicyState = vi.hoisted(() => ({
 	disabled: false,
 }));
 
+const authMutation = vi.hoisted(() => ({ active: false, calls: 0 }));
+
 vi.mock("next/headers", () => ({
 	headers: vi.fn(),
 }));
@@ -23,6 +25,15 @@ vi.mock("@/lib/auth", () => ({
 			getSession: vi.fn(),
 			updateUser: vi.fn(),
 		},
+	},
+	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+		authMutation.calls += 1;
+		authMutation.active = true;
+		try {
+			return await mutation();
+		} finally {
+			authMutation.active = false;
+		}
 	},
 }));
 
@@ -47,8 +58,36 @@ function withTransaction<T extends object>(mockDb: T) {
 
 beforeEach(() => {
 	creationPolicyState.disabled = false;
+	authMutation.calls = 0;
 	vi.clearAllMocks();
 });
+
+function onboardingLayer(mockDb: object) {
+	const authLayer = Layer.succeed(
+		AuthService,
+		AuthService.of({
+			getSession: () =>
+				Effect.succeed({
+					user: { id: "user-1" },
+					session: { activeOrganizationId: null },
+				} as never),
+		}),
+	);
+	const dbLayer = Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			db: withTransaction(mockDb) as never,
+			query: (_name, query) => Effect.promise(query) as never,
+		}),
+	);
+	return OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+}
+
+function userUpdates() {
+	const where = vi.fn(async () => undefined);
+	const set = vi.fn(() => ({ where }));
+	return { update: vi.fn(() => ({ set })), set };
+}
 
 describe("OnboardingService.createOrganization", () => {
 	it("rejects organization creation before enabling temporary creation permission when disabled", async () => {
@@ -102,6 +141,57 @@ describe("OnboardingService.createOrganization", () => {
 		expect(mockDb.update).not.toHaveBeenCalled();
 		expect(mockDb.insert).not.toHaveBeenCalled();
 		expect(auth.api.createOrganization).not.toHaveBeenCalled();
+	});
+
+	it("creates the organization in one coordinated auth transaction", async () => {
+		const mockDb = userUpdates();
+		const requestHeaders = new Headers({ cookie: "session=1" });
+		vi.mocked(headers).mockResolvedValue(requestHeaders as never);
+		let coordinated = false;
+		vi.mocked(auth.api.createOrganization).mockImplementation((async () => {
+			coordinated = authMutation.active;
+			return { id: "org-1" };
+		}) as never);
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* OnboardingService;
+				return yield* service.createOrganization({ name: "Acme Inc.", slug: "acme" });
+			}).pipe(Effect.provide(onboardingLayer(mockDb))),
+		);
+
+		expect(result).toEqual({ organizationId: "org-1" });
+		expect(authMutation.calls).toBe(1);
+		expect(coordinated).toBe(true);
+		expect(auth.api.createOrganization).toHaveBeenCalledExactlyOnceWith({
+			headers: requestHeaders,
+			body: { name: "Acme Inc.", slug: "acme" },
+		});
+	});
+
+	it("reports a failed coordinated creation and withdraws the temporary permission", async () => {
+		const mockDb = userUpdates();
+		vi.mocked(headers).mockResolvedValue(new Headers() as never);
+		vi.mocked(auth.api.createOrganization).mockRejectedValue(new Error("rolled back"));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					return yield* service.createOrganization({ name: "Acme Inc.", slug: "acme" });
+				}).pipe(Effect.provide(onboardingLayer(mockDb))),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: { message: "rolled back", field: "slug" },
+		});
+		expect(authMutation.calls).toBe(1);
+		expect(mockDb.set.mock.calls).toEqual([
+			[{ canCreateOrganizations: true }],
+			[{ canCreateOrganizations: false }],
+		]);
 	});
 });
 

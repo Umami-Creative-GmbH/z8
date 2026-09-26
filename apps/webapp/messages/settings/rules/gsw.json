@@ -153,7 +153,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Alli Usstemplige",
       "allManagers": "Alli Manager",
       "approvalDaysDescription": "Über s Self-Service use chönd Mitarbeiter innerhalb vo däm Zitfänschter Änderige aaträge (brucht Freigab). 0 = kei zuesätzlichs Fänschter.",
       "approvalDaysLabel": "Freigabefänschter (Täg)",
@@ -244,8 +243,7 @@
       "trustModeDescription": "Erlaube Mitarbeitenden, Einträge ohne Genehmigung zu bearbeiten",
       "trustModeLabel": "Vertrauensmodus",
       "updated": "Richtlinie erfolgreich aktualisiert",
-      "updateFailed": "Richtlinie konnte nicht aktualisiert werden",
-      "zeroDayPolicy": "Jedes Ausstempeln erfordert die Genehmigung eines Managers (strengster Modus)."
+      "updateFailed": "Richtlinie konnte nicht aktualisiert werden"
     },
     "coverageRules": {
       "addRule": "Regel hinzufügen",

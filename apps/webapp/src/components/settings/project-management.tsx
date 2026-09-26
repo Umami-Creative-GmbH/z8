@@ -30,9 +30,12 @@ import {
 } from "@/components/ui/table";
 import { queryKeys } from "@/lib/query";
 import { ProjectDialog } from "./project-dialog";
+import { ProjectMembersPanel } from "./project-members-panel";
 
 interface ProjectManagementProps {
 	organizationId: string;
+	/** Only org admins may add or remove project managers (#367). */
+	canManageProjectManagers: boolean;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -73,11 +76,15 @@ function formatDeadline(deadline: Date | null) {
 	return { text: `${days} days remaining`, isOverdue: false };
 }
 
-export function ProjectManagement({ organizationId }: ProjectManagementProps) {
+export function ProjectManagement({
+	organizationId,
+	canManageProjectManagers,
+}: ProjectManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editingProject, setEditingProject] = useState<ProjectWithDetails | null>(null);
+	const [membersProjectId, setMembersProjectId] = useState<string | null>(null);
 
 	const {
 		data: projectsResult,
@@ -94,6 +101,8 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 	});
 
 	const projects = projectsResult || [];
+	// Read from the list so the panel reflects refetched assignments.
+	const membersProject = projects.find((project) => project.id === membersProjectId) ?? null;
 
 	const handleCreate = () => {
 		setEditingProject(null);
@@ -103,6 +112,11 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 	const handleEdit = (project: ProjectWithDetails) => {
 		setEditingProject(project);
 		setDialogOpen(true);
+	};
+
+	const handleMembersChanged = () => {
+		// Assignments also change which projects are bookable, so refresh every project query.
+		queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
 	};
 
 	const handleSuccess = () => {
@@ -262,13 +276,24 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 												)}
 											</TableCell>
 											<TableCell>
-												<div className="flex items-center gap-1 text-sm text-muted-foreground">
-													<IconUsers className="size-4" />
-													<span>
-														{project.assignments.length}{" "}
-														{project.assignments.length === 1 ? "member" : "members"}
+												<Button
+													variant="ghost"
+													size="sm"
+													className="gap-1 text-muted-foreground"
+													onClick={() => setMembersProjectId(project.id)}
+												>
+													<IconUsers className="size-4" aria-hidden="true" />
+													{t(
+														"settings.projects.members.count",
+														"{count, plural, one {# member} other {# members}}",
+														{ count: project.assignments.length },
+													)}
+													<span className="sr-only">
+														{t("settings.projects.members.manage", "Manage members of {name}", {
+															name: project.name,
+														})}
 													</span>
-												</div>
+												</Button>
 											</TableCell>
 											<TableCell>
 												<Button variant="ghost" size="sm" onClick={() => handleEdit(project)}>
@@ -290,6 +315,17 @@ export function ProjectManagement({ organizationId }: ProjectManagementProps) {
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
 				onSuccess={handleSuccess}
+			/>
+
+			<ProjectMembersPanel
+				organizationId={organizationId}
+				project={membersProject}
+				open={membersProject !== null}
+				onOpenChange={(open) => {
+					if (!open) setMembersProjectId(null);
+				}}
+				canManageProjectManagers={canManageProjectManagers}
+				onChanged={handleMembersChanged}
 			/>
 		</div>
 	);

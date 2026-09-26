@@ -21,13 +21,3 @@ export async function getEditCapabilityForPeriod(params: {
 
 	return Effect.runPromise(effect);
 }
-
-export async function checkClockOutNeedsApproval(employeeId: string): Promise<boolean> {
-	const effect = Effect.gen(function* (_) {
-		const policyService = yield* _(ChangePolicyService);
-
-		return yield* _(policyService.checkClockOutNeedsApproval(employeeId));
-	}).pipe(Effect.provide(ChangePolicyServiceLive), Effect.provide(DatabaseServiceLive));
-
-	return Effect.runPromise(effect);
-}
