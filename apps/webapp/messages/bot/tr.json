@@ -84,11 +84,9 @@
         "failed": "Çıkış yapılamadı. Lütfen tekrar deneyin.",
         "noProfile": "Çalışan profili bulunamadı.",
         "notClockedIn": "Şu anda mesaide değilsiniz.",
-        "policyCheckFailed": "Zaman onay politikası doğrulanamadı. Lütfen tekrar deneyin.",
         "success": "{time} saatinde mesai bitirildi. Süre: {hours}s {minutes}dk.",
         "successAt": "Çıkış saati: {time}.",
-        "unconfirmed": "Çıkışınız doğrulanamadı. Tekrar denemeden önce durumunuzu kontrol edin.",
-        "unsupportedApproval": "Onay gerektiren zaman değişiklikleri bu eylem için henüz desteklenmiyor"
+        "unconfirmed": "Çıkışınız doğrulanamadı. Tekrar denemeden önce durumunuzu kontrol edin."
       },
       "compliance": {
         "error": "Uyumluluk verileri alınamadı. Lütfen daha sonra tekrar deneyin.",

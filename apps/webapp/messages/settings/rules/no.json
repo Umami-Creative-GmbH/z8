@@ -135,7 +135,6 @@
       }
     },
     "changePolicies": {
-      "allClockOuts": "Alle utstemplinger",
       "allManagers": "Alle ledere",
       "approvalDaysDescription": "Utover selvbetjening kan ansatte be om endringer innenfor dette tidsvinduet (krever godkjenning). 0 = ingen ekstra tidsperiode.",
       "approvalDaysLabel": "Godkjenningsvindu (dager)",
@@ -226,8 +225,7 @@
       "trustModeDescription": "La ansatte redigere oppføringer uten krav om godkjenning",
       "trustModeLabel": "Tillitsmodus",
       "updated": "Retningslinjen ble oppdatert",
-      "updateFailed": "Kunne ikke oppdatere retningslinje",
-      "zeroDayPolicy": "Hver utstempling krever ledergodkjenning (strengeste modus)."
+      "updateFailed": "Kunne ikke oppdatere retningslinje"
     },
     "coverageRules": {
       "addRule": "Legg til regel",

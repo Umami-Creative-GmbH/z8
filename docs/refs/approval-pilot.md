@@ -267,8 +267,9 @@ With a real bot and tenant:
 
 ### Known holds and open decisions
 
-- **Policy clock-out cards** only arise if live clock-out approval is enabled,
-  and it is dormant today (#361).
+- **Policy clock-out cards** only arise for requests submitted before live
+  clock-out approval was retired (#361). Those stay decidable, replayable and
+  finalizable; no new ones are created.
 - **Held requests** (material change, or no revision) have no durable
   administrative attention, and manual and policy clock-out approvals have no
   user cancel or resubmit path (#302 blockers). They count under

@@ -45,6 +45,11 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+// Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
+vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/delivery/intents")>()),
+	recordLegacyDeliveryIntent: async () => false,
+}));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	getPrimaryEligibleManagerIdForRequester:
 		callerMocks.getPrimaryEligibleManagerIdForRequester,

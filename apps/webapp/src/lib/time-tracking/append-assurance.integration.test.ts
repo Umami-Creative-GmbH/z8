@@ -95,8 +95,6 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	...(await importOriginal<
 		typeof import("@/app/[locale]/(app)/time-tracking/actions/approvals")
 	>()),
-	sendClockOutApprovalNotifications: async () => {},
-	sendClockOutApprovedNotification: async () => {},
 	sendManualEntryApprovalNotifications: async () => {},
 	sendManualEntryApprovedNotification: async () => {},
 }));

@@ -27,7 +27,6 @@ import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
-	forceClockOutApproval: false,
 }));
 
 vi.mock("@/db", async () => {
@@ -129,15 +128,8 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 	);
 });
 
-vi.mock("./approvals", async (importOriginal) => ({
-	...(await importOriginal<typeof import("./approvals")>()),
-	sendClockOutApprovalNotifications: async () => undefined,
-	sendClockOutApprovedNotification: async () => undefined,
-}));
-
 vi.mock("./policy-helpers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./policy-helpers")>()),
-	checkClockOutNeedsApproval: async () => harness.forceClockOutApproval,
 	getEditCapabilityForPeriod: async () => ({ type: "approval_required" }),
 }));
 
@@ -515,7 +507,6 @@ describeIntegration("automatic break adjustment on PostgreSQL", () => {
 	});
 
 	beforeEach(async () => {
-		harness.forceClockOutApproval = false;
 		await seed();
 	});
 
@@ -1075,16 +1066,6 @@ describeIntegration("automatic break adjustment on PostgreSQL", () => {
 
 		expect(await intents()).toEqual([]);
 		expect(await periods()).toEqual([]);
-	});
-
-	it("commits no ordinary intent for an approval-routed closure", async () => {
-		harness.forceClockOutApproval = true;
-		await recordWork();
-		expect(await intents()).toEqual([]);
-		expect(await periods()).toMatchObject([{ approval_status: "pending", duration_minutes: 420 }]);
-		expect(only(await receipts("close_active_work")).result.followUps).not.toContainEqual(
-			expect.objectContaining({ kind: "break_enforcement" }),
-		);
 	});
 
 	it("keeps a legacy organization's established writes, now atomic and without an intent", async () => {

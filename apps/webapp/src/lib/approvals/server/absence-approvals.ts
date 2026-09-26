@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Runtime } from "effect";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
@@ -42,6 +42,10 @@ import {
 	renderAbsenceRequestApproved,
 	renderAbsenceRequestRejected,
 } from "@/lib/email/render";
+import {
+	findLegacyAbsenceDecisionTarget,
+	recordLegacyAbsenceDecisionIntent,
+} from "@/lib/approvals/delivery/intents";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { createLogger } from "@/lib/logger";
 import {
@@ -64,6 +68,7 @@ import { findLegacyTransferredRequest } from "../escalation/legacy-transfer-stor
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	findLegacyAbsenceDecisionReplay,
+	LEGACY_ABSENCE_ACTIONABLE_PROVIDERS,
 	type LegacyObservedMirror,
 	prepareLegacyAbsenceDecisionEvidence,
 	recordLegacyAbsenceDecisionEvidence,
@@ -80,12 +85,17 @@ import {
 	readApprovalPresentationMode,
 	recordApprovalInvocation,
 	requireCanonicalInvocationDecision,
+	requireLegacyInvocationDecision,
 } from "../evidence/invocation";
 import {
 	type DecisionEvidenceRecord,
 	findDecisionEvidenceByReceipt,
 	type LegacyDecisionEvidenceRecord,
+	loadLegacyAbsenceSubmittedRevision,
+	loadLegacyReviewBinding,
+	loadLegacySubmittedRevisionSource,
 	loadReviewBinding,
+	loadReviewBindingAuthority,
 } from "../evidence/store";
 import {
 	ApprovalAuditLogger,
@@ -213,10 +223,13 @@ export interface AbsenceDecisionInvocation {
 	providerActorId: string;
 }
 
-/** The committed decision an invocation is associated with. */
+/**
+ * The committed decision an invocation is associated with: canonical evidence,
+ * or legacy evidence for a legacy binding (#384).
+ */
 export interface AbsenceInvocationOutcome {
 	replayed: boolean;
-	evidence: DecisionEvidenceRecord;
+	evidence: DecisionEvidenceRecord | LegacyDecisionEvidenceRecord;
 }
 
 interface ExecuteAbsenceDecisionInput {
@@ -441,16 +454,16 @@ export async function executeAbsenceDecisionInTransaction(
 				invocation,
 			);
 			if (evidence) {
+				// The command fingerprint includes the binding, whose authority is
+				// fixed, so the committed evidence belongs to that authority.
 				return {
 					mode: gate.mode,
 					actor: currentEmployee,
 					domainResult: undefined,
 					commandResult: undefined,
 					replayed: null as LegacyDecisionEvidenceRecord | null,
-					invocation: {
-						replayed: true,
-						evidence: requireCanonicalInvocationDecision(evidence),
-					} as AbsenceInvocationOutcome,
+					invocation: { replayed: true, evidence } as AbsenceInvocationOutcome,
+					deliveryIntent: false,
 				};
 			}
 			// A fresh invocation needs current admission, read under the rollout
@@ -468,14 +481,60 @@ export async function executeAbsenceDecisionInTransaction(
 			}
 		}
 
-		if (
-			gate.mode === "legacy" ||
-			gate.mode === "shadow" ||
-			gate.mode === "ready"
-		) {
-			if (input.reviewedBindingId !== undefined) {
-				// Legacy authority has no reviewed-binding validation; never ignore one.
+		const legacyAuthority =
+			gate.mode === "legacy" || gate.mode === "shadow" || gate.mode === "ready";
+		if (input.reviewedBindingId !== undefined) {
+			// Cutover: a binding decides only under the authority it was issued
+			// for, read under the rollout gate (#384). A legacy binding never
+			// decides under canonical authority, nor the other way round.
+			const authority = await loadReviewBindingAuthority(transactionDb, {
+				organizationId: input.organizationId,
+				bindingId: input.reviewedBindingId,
+			});
+			if (authority !== (legacyAuthority ? "legacy" : "canonical")) {
+				throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
+			}
+		}
+
+		if (legacyAuthority) {
+			// A legacy binding is validated only together with its invocation; a
+			// card decision is admitted only for verified providers (#384).
+			if (input.reviewedBindingId !== undefined && !invocation) {
 				throw new ApprovalEvidenceError("binding_mismatch");
+			}
+			if (
+				invocation &&
+				!LEGACY_ABSENCE_ACTIONABLE_PROVIDERS.includes(
+					approvalInvocationProvider(invocation.identity.scheme),
+				)
+			) {
+				throw new ApprovalInvocationNotAdmittedError();
+			}
+			const binding =
+				input.reviewedBindingId === undefined
+					? null
+					: await loadLegacyReviewBinding(transactionDb, {
+							organizationId: input.organizationId,
+							bindingId: input.reviewedBindingId,
+						});
+			if (
+				input.reviewedBindingId !== undefined &&
+				(!binding ||
+					binding.recipientEmployeeId !== currentEmployee.id ||
+					binding.legacyApprovalRequestId !== input.approvalRequestId)
+			) {
+				throw new ApprovalEvidenceError("binding_mismatch");
+			}
+			if (binding) {
+				// The binding names the cycle's current revision (checked before
+				// any authority question, #384 step 5); a missing revision holds.
+				const current = await loadLegacyAbsenceSubmittedRevision(transactionDb, {
+					organizationId: input.organizationId,
+					absenceId: input.absenceId,
+				});
+				if (current?.id !== binding.submittedRevisionId) {
+					throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
+				}
 			}
 			let expectedVersion: number | null = null;
 			if (gate.mode !== "legacy") {
@@ -509,14 +568,18 @@ export async function executeAbsenceDecisionInTransaction(
 			};
 			// Receipt before fresh checks: an exact committed operation replays
 			// its original evidence and runs no mutation or after-commit effects.
-			const replayed = await legacyEvidence.findReplay(transactionDb, {
-				organizationId: input.organizationId,
-				absenceId: input.absenceId,
-				approvalRequestId: input.approvalRequestId,
-				action: input.action,
-				reason: input.reason,
-				actor: evidenceActor,
-			});
+			// A fresh invocation never matches a semantic receipt (#384); its own
+			// committed receipt was matched above.
+			const replayed = invocation
+				? null
+				: await legacyEvidence.findReplay(transactionDb, {
+						organizationId: input.organizationId,
+						absenceId: input.absenceId,
+						approvalRequestId: input.approvalRequestId,
+						action: input.action,
+						reason: input.reason,
+						actor: evidenceActor,
+					});
 			if (replayed) {
 				return {
 					mode: gate.mode,
@@ -525,6 +588,7 @@ export async function executeAbsenceDecisionInTransaction(
 					commandResult: undefined,
 					replayed,
 					invocation: null,
+					deliveryIntent: false,
 				};
 			}
 			// An escalation transfer revoked the former holders' authority: only
@@ -557,6 +621,18 @@ export async function executeAbsenceDecisionInTransaction(
 				absenceId: input.absenceId,
 				captureState,
 			});
+			if (binding && binding.submittedRevisionId !== evidencePlan?.revision.id) {
+				// Checked above; the plan must hold the same revision.
+				throw new ApprovalEvidenceError("invariant", { field: "revision" });
+			}
+			// The exact legacy request the unchanged owner decides: the caller's,
+			// or the actor's own pending request (the owner rechecks it).
+			const decidedRequestId = await findLegacyAbsenceDecisionTarget(transactionDb, {
+				organizationId: input.organizationId,
+				absenceId: input.absenceId,
+				approvalRequestId: input.approvalRequestId,
+				actorEmployeeId: currentEmployee.id,
+			});
 			// Unchanged legacy key: it stays the shadow observation key and is
 			// stored verbatim as the legacy receipt key.
 			const idempotencyKey = `absence:${input.absenceId}:${input.action}:${expectedVersion ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`;
@@ -579,26 +655,57 @@ export async function executeAbsenceDecisionInTransaction(
 					observed = mirrored;
 				},
 			});
-			if (evidencePlan) {
-				await legacyEvidence.record(transactionDb, evidencePlan, {
-					organizationId: input.organizationId,
-					absenceId: input.absenceId,
-					action: input.action,
-					reason: input.reason,
-					approvalRequestId: input.approvalRequestId,
-					idempotencyKey,
-					actor: evidenceActor,
-					captureState,
-					observed,
+			const evidence = evidencePlan
+				? await legacyEvidence.record(transactionDb, evidencePlan, {
+						organizationId: input.organizationId,
+						absenceId: input.absenceId,
+						action: input.action,
+						reason: input.reason,
+						approvalRequestId: input.approvalRequestId,
+						// A card decision's receipt is its invocation (#290 identity).
+						idempotencyKey: invocation?.key ?? idempotencyKey,
+						reviewedBindingId: binding?.id ?? null,
+						actor: evidenceActor,
+						captureState,
+						observed,
+					})
+				: null;
+			let invocationOutcome: AbsenceInvocationOutcome | null = null;
+			if (invocation) {
+				if (!evidence || !input.approvalRequestId) {
+					throw new ApprovalEvidenceError("invariant", {
+						field: "invocation_decision",
+					});
+				}
+				// Same transaction as the legacy mutation and its evidence.
+				await recordApprovalInvocation(transactionDb, {
+					identity: invocation.identity,
+					deliveryId: invocation.deliveryId,
+					command: invocation.command,
+					legacyApprovalRequestId: input.approvalRequestId,
+					receiptIdempotencyKey: invocation.key,
+					decisionEvidenceId: evidence.id,
 				});
+				invocationOutcome = { replayed: false, evidence };
 			}
+			// The cycle's lifecycle intent, only while a delivery control exists
+			// (#384): the owner refreshes its sent cards and sends the next
+			// stage's card.
+			const deliveryIntent = decidedRequestId
+				? await recordLegacyAbsenceDecisionIntent(transactionDb, {
+						organizationId: input.organizationId,
+						absenceId: input.absenceId,
+						approvalRequestId: decidedRequestId,
+					})
+				: false;
 			return {
 				mode: gate.mode,
 				actor: currentEmployee,
 				domainResult,
 				commandResult: undefined,
 				replayed: null,
-				invocation: null,
+				invocation: invocationOutcome,
+				deliveryIntent,
 			};
 		}
 
@@ -689,6 +796,7 @@ export async function executeAbsenceDecisionInTransaction(
 			commandResult,
 			replayed: null as LegacyDecisionEvidenceRecord | null,
 			invocation: invocationOutcome,
+			deliveryIntent: false,
 		};
 	});
 }
@@ -1760,9 +1868,13 @@ function authenticatedAbsenceDecisionEffect(
 				),
 			);
 		}
-		if (execution.mode === "canonical" || execution.mode === "complete") {
+		if (
+			execution.mode === "canonical" ||
+			execution.mode === "complete" ||
+			execution.deliveryIntent
+		) {
 			// Refreshes of delivered cards were committed as intents with the
-			// transition; this only runs them sooner.
+			// transition (or the legacy decision, #384); this only runs them sooner.
 			kickApprovalDelivery({ organizationId });
 		}
 	});
@@ -1953,11 +2065,202 @@ export async function decideBoundAbsenceInvocation(input: {
 		return {
 			status: "decided",
 			replayed: execution.invocation.replayed,
-			evidence: execution.invocation.evidence,
+			evidence: requireCanonicalInvocationDecision(execution.invocation.evidence),
 		};
 	} catch (error) {
 		return classifyBoundAbsenceError(error);
 	}
+}
+
+export type BoundLegacyAbsenceInvocationResult =
+	| {
+			status: "decided";
+			replayed: boolean;
+			evidence: LegacyDecisionEvidenceRecord;
+	  }
+	| Exclude<BoundAbsenceInvocationResult, { status: "decided" }>;
+
+/**
+ * A legacy reviewed-binding decision from an authenticated bot invocation
+ * (#384): the legacy counterpart of `decideBoundAbsenceInvocation`. An exact
+ * committed invocation replays first, before any current state is read.
+ * Otherwise the legacy decision owner decides only the exact bound legacy
+ * request, for its current approver, under the rollout gate: neither
+ * eligible-manager fallback nor organization management is reachable from a
+ * card. Infrastructure errors propagate.
+ */
+export async function decideBoundLegacyAbsenceInvocation(input: {
+	organizationId: string;
+	actorEmployeeId: string;
+	actorUserId: string;
+	bindingId: string;
+	action: ApprovalAction;
+	reason?: string;
+	invocation: AbsenceDecisionInvocation;
+	database: AbsenceDecisionDatabase;
+}): Promise<BoundLegacyAbsenceInvocationResult> {
+	const database = input.database as ApprovalDatabase;
+	try {
+		const committed = await findCommittedInvocationDecision(database, {
+			identity: input.invocation.identity,
+			command: absenceInvocationCommand({
+				...input,
+				reviewedBindingId: input.bindingId,
+			}),
+		});
+		if (committed) {
+			return {
+				status: "decided",
+				replayed: true,
+				evidence: requireLegacyInvocationDecision(committed),
+			};
+		}
+	} catch (error) {
+		return classifyBoundLegacyAbsenceError(error);
+	}
+	const memberships = await database
+		.select({ id: member.id })
+		.from(member)
+		.where(
+			and(
+				eq(member.organizationId, input.organizationId),
+				eq(member.userId, input.actorUserId),
+				eq(member.status, "approved"),
+			),
+		)
+		.limit(1);
+	const binding = await loadLegacyReviewBinding(database, {
+		organizationId: input.organizationId,
+		bindingId: input.bindingId,
+	});
+	if (
+		memberships.length !== 1 ||
+		!binding ||
+		binding.recipientEmployeeId !== input.actorEmployeeId
+	) {
+		return { status: "not_found" };
+	}
+	// The revision survives ordinary cancellation, so it names the absence even
+	// after the pending request was deleted.
+	const source = await loadLegacySubmittedRevisionSource(database, {
+		organizationId: input.organizationId,
+		submittedRevisionId: binding.submittedRevisionId,
+	});
+	if (source?.workflowType !== "absence" || source.sourceType !== "absence_entry") {
+		return { status: "not_found" };
+	}
+	const absenceId = source.sourceId;
+	const absences = await database
+		.select({ id: absenceEntry.id })
+		.from(absenceEntry)
+		.where(and(eq(absenceEntry.organizationId, input.organizationId), eq(absenceEntry.id, absenceId)))
+		.limit(1);
+	// Ordinary cancellation deleted the absence: its cards decide nothing.
+	if (absences.length !== 1) return { status: "review_required", reason: "stale" };
+	const query: ApprovalDbService["query"] = <T>(
+		_name: string,
+		operation: () => Promise<T>,
+	) => Effect.promise(operation);
+	const runtime = createAbsenceDecisionRuntime({
+		db: input.database,
+		query,
+		canManageApproval: async () => {
+			throw new BoundAssignmentNotCurrentError();
+		},
+	});
+	let execution: Awaited<ReturnType<typeof executeAbsenceDecisionInTransaction>>;
+	try {
+		execution = await executeAbsenceDecisionInTransaction({
+			runtime,
+			organizationId: input.organizationId,
+			actorEmployeeId: input.actorEmployeeId,
+			actorUserId: input.actorUserId,
+			absenceId,
+			// The exact bound legacy request; never re-selected.
+			approvalRequestId: binding.legacyApprovalRequestId,
+			action: input.action,
+			...(input.reason === undefined ? {} : { reason: input.reason }),
+			reviewedBindingId: binding.id,
+			invocation: input.invocation,
+			query,
+			captureLegacyState: captureAbsenceLegacyApprovalState,
+			// Only the exact request's current approver: no management authority.
+			canManageOrganizationApproval: async () => false,
+			nowInstant: () => systemClock.nowInstant(),
+			processLegacy: createLegacyAbsenceDecisionProcessor({
+				absenceId,
+				action: input.action,
+				reason: input.reason,
+				options: { approvalRequestId: binding.legacyApprovalRequestId },
+			}),
+		});
+	} catch (error) {
+		return classifyBoundLegacyAbsenceError(error);
+	}
+	if (!execution.invocation) {
+		throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
+	}
+	if (execution.domainResult) {
+		// The same after-commit effects as a web decision (requester e-mail and
+		// notification, calendar sync, work balance); never on replay.
+		const dbService: ApprovalDbService = {
+			db: input.database as ApprovalDbService["db"],
+			query,
+		};
+		const postCommit =
+			input.action === "approve"
+				? completeApprovedAbsenceAfterCommit(
+						dbService,
+						absenceId,
+						execution.actor,
+						execution.domainResult as ApprovedAbsenceResult,
+					)
+				: completeRejectedAbsenceAfterCommit(
+						dbService,
+						absenceId,
+						execution.actor,
+						input.reason ?? "",
+						execution.domainResult as RejectedAbsenceResult,
+					);
+		await Effect.runPromise(
+			postCommit.pipe(Effect.provide(AppLayer)) as Effect.Effect<void, AnyAppError, never>,
+		).catch((error) =>
+			logger.error(
+				{ error, absenceId, organizationId: input.organizationId },
+				"Absence card decision after-commit work failed",
+			),
+		);
+	}
+	if (execution.deliveryIntent) {
+		kickApprovalDelivery({ organizationId: input.organizationId });
+	}
+	return {
+		status: "decided",
+		replayed: execution.invocation.replayed,
+		evidence: requireLegacyInvocationDecision(execution.invocation.evidence),
+	};
+}
+
+function classifyBoundLegacyAbsenceError(
+	error: unknown,
+): Exclude<BoundAbsenceInvocationResult, { status: "decided" }> {
+	// The legacy owner's own refusals arrive as Effect failures.
+	const failure = Runtime.isFiberFailure(error)
+		? Cause.squash(error[Runtime.FiberFailureCauseId])
+		: error;
+	// No longer the approver, already decided, or deleted by cancellation.
+	if (
+		failure instanceof AuthorizationError ||
+		failure instanceof NotFoundError ||
+		failure instanceof ConflictError
+	) {
+		return { status: "review_required", reason: "stale" };
+	}
+	const classified = classifyBoundAbsenceError(failure);
+	if (classified.status === "decided") {
+		throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
+	}
+	return classified;
 }
 
 function classifyBoundAbsenceError(

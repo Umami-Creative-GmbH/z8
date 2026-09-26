@@ -143,6 +143,13 @@ vi.mock("@/lib/logger", () => ({ createLogger: () => state.logger }));
 // card is admitted, so every adapter must behave review-only.
 vi.mock("@/lib/approvals/presentation/bound-card", () => ({
 	prepareBoundAbsenceCard: async () => null,
+	prepareBoundLegacyAbsenceCard: async () => null,
+}));
+// Legacy absence cards (#384): legacy-bound-approval.integration.test.ts. The
+// fixtures here model canonical absence authority.
+vi.mock("@/lib/approvals/evidence/legacy-absence", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-absence")>()),
+	hasLegacyAbsenceAuthority: async () => false,
 }));
 // Expense card admission (#296) likewise: expense-review-decision.integration.test.ts.
 vi.mock("@/lib/approvals/presentation/travel-expense-card", () => ({

@@ -28,11 +28,9 @@
         "failed": "Kunne ikke stemple ut. Prøv igjen.",
         "noProfile": "Fant ikke ansattprofil.",
         "notClockedIn": "Du er for øyeblikket ikke stemplet inn.",
-        "policyCheckFailed": "Kunne ikke verifisere retningslinjer for timegodkjenning. Prøv igjen.",
         "success": "Stemplet ut kl. {time}. Varighet: {hours}t {minutes}m.",
         "successAt": "Stemplet ut kl. {time}.",
-        "unconfirmed": "Utstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen.",
-        "unsupportedApproval": "Tidsendringer som krever godkjenning støttes ikke for denne handlingen ennå"
+        "unconfirmed": "Utstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen."
       },
       "compliance": {
         "error": "Kunne ikke hente samsvarsdata. Prøv igjen senere.",

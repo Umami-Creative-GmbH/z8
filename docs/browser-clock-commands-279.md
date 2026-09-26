@@ -101,8 +101,8 @@ looks unsent. The outcome is then stored:
   the page shows the server's reason. It counts as unresolved until the page
   acknowledges that it showed it (`ACKNOWLEDGE_CLOCK_COMMAND`). A page whose reply
   wait ran out never acknowledges, so the refusal stays visible for review.
-- Network failure, a cut response, 5xx, `approval_policy_unavailable` →
-  transient. After 5 transient failures the record is `exhausted`, which stops
+- Network failure, a cut response or 5xx → transient. The server no longer sends
+  `approval_policy_unavailable` (503) since #361. After 5 transient failures the record is `exhausted`, which stops
   automatic attempts but keeps the record. An explicit "Refresh status" resumes it.
 
 A rejection after an uncertain attempt stays `review_required` with

@@ -272,9 +272,11 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 			"approval_request",
 		]);
 		for (const statement of deletes.slice(1, 4)) {
-			// Scoped by organization and the lifecycle's legacy requests only.
+			// Scoped by organization and the lifecycle's legacy requests and
+			// delivery cycles (#384) only.
 			expect(statement.sql).toContain("legacy_approval_request_id = any($2::uuid[])");
-			expect(statement.params).toEqual(["org-1", [LEGACY_REQUEST]]);
+			expect(statement.sql).toContain("legacy_cycle_id = any($3::uuid[])");
+			expect(statement.params).toEqual(["org-1", [LEGACY_REQUEST], []]);
 		}
 		expect(deletes[1]?.sql).toContain("lifecycle = 'legacy'");
 		expect(deletes[2]?.sql).toContain("lifecycle = 'legacy'");

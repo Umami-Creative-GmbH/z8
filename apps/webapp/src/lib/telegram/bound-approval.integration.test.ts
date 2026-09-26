@@ -870,7 +870,8 @@ describeIntegration("Telegram absence cards with reviewed bindings (PostgreSQL)"
 			{ presentation: null },
 			{ presentation: "review_only" as const },
 			{ capture: false },
-			{ lifecycle: "legacy" as const },
+			// Legacy authority now binds legacy cards (#384); its gates are verified
+			// in legacy-bound-approval.integration.test.ts.
 		];
 		for (const gate of cases) {
 			await seed(gate);

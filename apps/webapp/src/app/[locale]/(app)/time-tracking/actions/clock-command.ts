@@ -31,7 +31,6 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { ValidationError } from "@/lib/effect/errors";
 import {
 	admitClockCommandAge,
 	type BreakClockDiscontinuity,
@@ -88,7 +87,6 @@ import {
 	validateWorkCategoryAssignment,
 } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
-import { checkClockOutNeedsApproval } from "./policy-helpers";
 import type { ClockOutResult } from "./types";
 
 export const DIRECT_HTTP_WRITER = {
@@ -124,8 +122,6 @@ export type ClockCommandRejection =
 	| { code: "occupancy_conflict" }
 	| { code: "invalid_interval" }
 	| { code: "attribution_not_allowed"; field: "projectId" | "workCategoryId" }
-	| { code: "approval_policy_unavailable" }
-	| { code: "approval_routing"; error: string }
 	| { code: "append_review_required" }
 	| { code: "integrity_review_required" };
 
@@ -284,13 +280,6 @@ function mapFailure(error: unknown): ClockCommandRejection | null {
 	}
 	if (error instanceof TimeEntryAppendReviewRequiredError) {
 		return { code: "append_review_required" };
-	}
-	if (
-		error instanceof ValidationError &&
-		error.field === "managerId" &&
-		error.message === "No manager assigned to approve time changes"
-	) {
-		return { code: "approval_routing", error: error.message };
 	}
 	return null;
 }
@@ -512,13 +501,6 @@ async function submitClose(
 			});
 		}
 	}
-	let requiresApproval: boolean;
-	try {
-		requiresApproval = await checkClockOutNeedsApproval(actor.employeeId);
-	} catch {
-		throw new ClockCommandRejectedError({ code: "approval_policy_unavailable" });
-	}
-
 	const result = await withWebClockOutTransaction(
 		{
 			organizationId: actor.organizationId,
@@ -527,7 +509,6 @@ async function submitClose(
 			submissionId: command.operationId,
 			workPeriodId,
 			endTime: occurredAt,
-			requiresApproval,
 			projectId,
 			workCategoryId,
 		},
@@ -560,7 +541,7 @@ async function submitClose(
 		outcome: "executed",
 		operationId: command.operationId,
 		receipt: { kind: "close_active_work", result: result.closed.result },
-		clockOut: await closedWorkFollowUps(actor, command, result.closed, requiresApproval),
+		clockOut: await closedWorkFollowUps(actor, command, result.closed),
 	};
 }
 
@@ -575,13 +556,6 @@ async function submitBreak(
 ): Promise<ClockCommandSubmission> {
 	const workPeriodId = await resolveCloseTarget(actor, command);
 	const breakStart = parseInstant(command.breakStart.at);
-	let requiresApproval: boolean;
-	try {
-		requiresApproval = await checkClockOutNeedsApproval(actor.employeeId);
-	} catch {
-		throw new ClockCommandRejectedError({ code: "approval_policy_unavailable" });
-	}
-
 	const result = await withWebClockOutTransaction(
 		{
 			organizationId: actor.organizationId,
@@ -590,7 +564,6 @@ async function submitBreak(
 			submissionId: command.operationId,
 			workPeriodId,
 			endTime: breakStart,
-			requiresApproval,
 		},
 		createOrdinaryApprovalRuntime,
 		async (coordination) => {
@@ -624,26 +597,25 @@ async function submitBreak(
 		outcome: "executed",
 		operationId: command.operationId,
 		receipt: { kind: "close_resume_work", result: result.executed.result },
-		clockOut: await closedWorkFollowUps(actor, command, result.executed.closed, requiresApproval),
+		clockOut: await closedWorkFollowUps(actor, command, result.executed.closed),
 	};
 }
 
 /**
  * Post-commit follow-ups of a committed closure, shared by clock-out and break:
- * compliance, break enforcement, surcharges and approval notification.
+ * compliance, break enforcement and surcharges.
  */
 async function closedWorkFollowUps(
 	actor: Actor,
 	command: ClockOutCommand | BreakCommand,
 	closed: ClosedActiveWork,
-	requiresApproval: boolean,
 ): Promise<Pick<ClockOutResult, "complianceWarnings" | "breakAdjustment">> {
 	const advice = await completeClockOutAfterCommit({
 		outcome: {
 			entry: closed.entry,
 			disposition: closed.disposition,
 			durationMinutes: closed.result.segment.durationMinutes,
-			approvalSubmission: closed.approvalSubmission ?? undefined,
+			approvalSubmission: undefined,
 			workPeriodId: closed.result.workPeriodId,
 			startTime: dateFromInstant(parseInstant(closed.result.segment.startAt)),
 			endTime: dateFromInstant(parseInstant(closed.result.segment.endAt)),
@@ -652,7 +624,6 @@ async function closedWorkFollowUps(
 		},
 		employee: { id: actor.employeeId, organizationId: actor.organizationId },
 		userId: actor.userId,
-		needsClockOutApproval: requiresApproval,
 		timezone: await getUserTimezone(actor.userId).catch(() => command.timezone),
 		projectId: closed.result.attribution.projectId,
 	});

@@ -54,7 +54,6 @@ describe("clocking service delegation", () => {
 			"await validateProjectAssignment(",
 		);
 		const billingIndex = body.indexOf("requireBillingForMutation(");
-		const approvalPolicyIndex = body.indexOf("checkClockOutNeedsApproval(");
 		const canonicalIndex = body.indexOf(
 			"canonicalWorkRecordClient.createForCompletedPeriod(",
 		);
@@ -62,15 +61,16 @@ describe("clocking service delegation", () => {
 
 		expect(projectValidationIndex).toBeGreaterThanOrEqual(0);
 		expect(billingIndex).toBeGreaterThan(projectValidationIndex);
-		expect(approvalPolicyIndex).toBeGreaterThan(billingIndex);
 		expect(body).not.toContain("getPrimaryEligibleManagerIdForRequester");
-		expect(canonicalIndex).toBeGreaterThan(approvalPolicyIndex);
+		expect(canonicalIndex).toBeGreaterThan(billingIndex);
 		expect(canonicalIndex).toBeGreaterThan(delegateIndex);
 		expect(body).toContain("beforePeriodClose:");
-		expect(body).toContain("afterPeriodClose:");
 		expect(body).toContain("withWebClockOutTransaction(");
-		expect(body).toContain("executeOrdinaryWorkPeriodSubmissionInTransaction(");
 		expect(body).not.toContain("createClockOutApprovalRequest(");
+		// A live clock-out never routes approval (#361): only a committed
+		// historical submission replays.
+		expect(body).not.toContain("checkClockOutNeedsApproval(");
+		expect(body).not.toContain("afterPeriodClose:");
 	});
 
 	it("creates manual source and approval state in one workflow transaction", () => {
