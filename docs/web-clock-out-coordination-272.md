@@ -225,6 +225,10 @@ Verified (20 tests; 3 consecutive local runs green, plus the full runner below):
   unforked hash chain. A concurrent duplicate submission returns one committed result.
 - A distinct employee is not serialized behind a held employee key once the rollout row
   exists.
+- (#359) With the rollout rows pre-created by the organization-creation writer, a distinct
+  employee's clock-out completes while the organization's first `policy_clock_out` clock-out
+  waits on its employee key, already holding the shared write gate. The gate's fail-safe
+  insert still creates a missing row (`legacy`/`legacy`).
 - A restart happens, not a late earlier-ranked acquisition, when any of these change
   while the fresh closure waits: a new work-policy assignment (configuration), a
   routed-row binding changed by a raw row writer holding `FOR UPDATE` (detected after
@@ -251,16 +255,17 @@ removed.
 
 Runtime findings:
 
-1. **First rollout bootstrap serializes same-organization writers.** The write gate's
-   `insert into approval_workflow_rollout ... on conflict do nothing` makes any other
-   same-organization clock-out (including other employees) wait while the first
-   transaction's inserted row is uncommitted. It lasts only until that transaction ends
-   and only happens before the organization's first `policy_clock_out` write. Among
-   coordinated writers it cannot deadlock, because the bootstrap happens at step 2,
-   before any employee key. A writer that holds an employee key or later-ranked rows and
-   then first-bootstraps this rollout row would deadlock with it; PostgreSQL would abort
-   one side. Pre-create rollout rows before any activation or pilot. The suite pins the
-   current behavior.
+1. **Resolved by #359: rollout rows exist before the first write.** Organization
+   creation commits one `legacy`/`legacy` rollout row per workflow type with the
+   organization and its owner, in one coordinated transaction. Migration
+   `0107_approval_workflow_rollout_precreate` backfilled every existing organization. The
+   write gate's `insert ... on conflict do nothing` then finds a committed row and blocks
+   no one. The first `policy_clock_out` clock-out of an organization no longer holds other
+   employees behind an uncommitted rollout row. The suite shows this through the real
+   `clockOut` action. The gate keeps its insert as a fail-safe for a missing row. Such a
+   row can only come from an organization inserted outside the application (test fixtures).
+   The first write then bootstraps it and serializes same-organization writers until it
+   commits, as before #359.
 2. **The approval branch was removed (#361).** Live clock-outs never route
    approval. The coordinator no longer routes approval policies, stages or
    participants and fails closed if a live clock-out would activate one; it keeps
@@ -292,8 +297,6 @@ Blocked obligations (ticket remains open; no activation):
   modes; rollout cutover racing a clock-out; foreign-key failure injection; and
   same-organization distinct employees contending on the `FOR NO KEY UPDATE`
   organization row during the row phase. That contention is documented and expected.
-- Pre-create `policy_clock_out` rollout rows before any activation, so the first-bootstrap
-  serialization above cannot meet a writer that holds later-ranked resources.
 - Prove every competing work/configuration/access/billing writer participates
   in the actual original transaction or is effectively disabled/drained.
   Shared guards do not protect against legacy writers that ignore them.

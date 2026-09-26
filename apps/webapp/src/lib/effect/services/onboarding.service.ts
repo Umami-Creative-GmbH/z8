@@ -15,7 +15,7 @@ import {
 	workPolicyScheduleDay,
 } from "@/db/schema";
 import { env } from "@/env";
-import { auth } from "@/lib/auth";
+import { auth, runAuthMutation } from "@/lib/auth";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import {
 	isOrganizationCreationDisabled,
@@ -258,17 +258,20 @@ export const OnboardingServiceLive = Layer.effect(
 							.where(eq(user.id, session.user.id));
 					});
 
-					// Create organization using Better Auth server-side API
+					// Create organization using Better Auth server-side API. The organization,
+					// its owner and its approval rollout rows commit together (#359).
 					const result = yield* Effect.tryPromise({
 						try: async () => {
 							const hdrs = await headers();
-							const orgResult = await auth.api.createOrganization({
-								headers: hdrs,
-								body: {
-									name: data.name,
-									slug: data.slug,
-								},
-							});
+							const orgResult = await runAuthMutation(() =>
+								auth.api.createOrganization({
+									headers: hdrs,
+									body: {
+										name: data.name,
+										slug: data.slug,
+									},
+								}),
+							);
 
 							return orgResult;
 						},

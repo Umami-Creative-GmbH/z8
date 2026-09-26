@@ -19,6 +19,7 @@
     "approvals:list": "tsx scripts/approvals.ts list",
     "approvals:delete": "tsx scripts/approvals.ts delete",
     "approvals:pilot-readiness": "tsx scripts/approval-pilot-readiness.ts",
+    "time:pilot-readiness": "tsx scripts/time-pilot-readiness.ts",
     "queue:obliterate": "tsx scripts/obliterate-job-queue.ts"
   },
   "dependencies": {
