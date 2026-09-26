@@ -18,6 +18,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { getCurrentAdapter } from "@better-auth/core/context";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
@@ -158,7 +159,9 @@ const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
 const { createSCIMCallbackModelRegistration, createZ8SCIMPlugin } = await import(
 	"@/lib/scim/auth-configuration"
 );
-const { guardSCIMSubjectAcquisitions } = await import("@/lib/scim/projection-guards");
+const { guardSCIMSubjectAcquisitions, SCIMProjectionGuardOrderError } = await import(
+	"@/lib/scim/projection-guards"
+);
 const { getSCIMCredentialExpiresAt, SCIM_SCOPES } = await import("@/lib/scim/constants");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
@@ -1004,6 +1007,56 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 				await expect(pending).resolves.toMatchObject({ success: true });
 				expect(await workFor(ids.employee)).toHaveLength(1);
 				expect(guardedDuringFirstProjection).toEqual(scimMembers);
+			});
+
+			it("aborts a SCIM transaction that reaches a late user, writing nothing and never locking it", async () => {
+				const scim = await seedScimManagedSources();
+				// Taking the admin's guard now would wait here instead of failing.
+				const adminGuard = await holdAdvisoryLock(userGuard(ids.adminUser));
+				const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection?.reconcileUser;
+				const { adapter } = await auth.$context;
+
+				const projection = coordinated(async () => {
+					const transaction = await getCurrentAdapter(adapter);
+					// Locks and guards the employee's subject, which sorts after the admin.
+					await transaction.incrementOne({
+						model: "scimSubject",
+						where: [{ field: "userId", value: ids.employeeUser }],
+						increment: { revision: 1 },
+					});
+					// The admin was not locked with its subject: a late user.
+					await reconcileUser?.(
+						{
+							provisioningDomainId: ids.organization,
+							userId: ids.adminUser,
+							active: false,
+							sources: [
+								{
+									id: scimSource(ids.adminUser),
+									connectionId: scim.connectionId,
+									provisioningDomainId: ids.organization,
+									active: false,
+								},
+							],
+							grants: [],
+						},
+						{ database: transaction },
+					);
+				});
+
+				await expect(projection).rejects.toBeInstanceOf(SCIMProjectionGuardOrderError);
+				await adminGuard.release();
+				expect(await membership(ids.adminUser)).toMatchObject({ status: "approved" });
+				const { rows: subjects } = await admin.query<{ revision: number }>(
+					"select revision from scim_subject where user_id = $1",
+					[ids.employeeUser],
+				);
+				expect(subjects).toEqual([{ revision: 0 }]);
+				const { rows: lifecycle } = await admin.query(
+					"select id from scim_user_lifecycle_state where organization_id = $1",
+					[ids.organization],
+				);
+				expect(lifecycle).toEqual([]);
 			});
 
 			it("holds every replayed user's guard before projecting the first", async () => {

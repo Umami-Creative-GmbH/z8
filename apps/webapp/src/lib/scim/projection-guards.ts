@@ -52,9 +52,16 @@ function recordGuardedUser(transaction: AuthTransaction, userId: string) {
 	if (userId > guarded.highest) guarded.highest = userId;
 }
 
-async function guardLockedSubject(subject: unknown) {
+/** Guards the subject's user once the plugin's write returned the locked subject row. */
+async function guardLockedSubject<T>(model: string, lock: Promise<T>): Promise<T> {
+	const subject = await lock;
+	if (model !== SCIM_SUBJECT_MODEL) return subject;
 	const userId = (subject as { userId?: unknown } | null)?.userId;
-	if (typeof userId !== "string") return;
+	if (typeof userId === "string") await guardSubjectUser(userId);
+	return subject;
+}
+
+async function guardSubjectUser(userId: string) {
 	const transaction = requireAuthTransaction("SCIM subject lock");
 	const guarded = guardedUsers.get(transaction);
 	if (guarded?.userIds.has(userId)) return;
@@ -71,16 +78,10 @@ function observeSubjectLocks<Adapter extends Pick<AuthAdapter, "create" | "incre
 ): Adapter {
 	return {
 		...adapter,
-		create: async (data: Parameters<AuthAdapter["create"]>[0]) => {
-			const created = await adapter.create(data);
-			if (data.model === SCIM_SUBJECT_MODEL) await guardLockedSubject(created);
-			return created;
-		},
-		incrementOne: async (data: Parameters<AuthAdapter["incrementOne"]>[0]) => {
-			const incremented = await adapter.incrementOne(data);
-			if (data.model === SCIM_SUBJECT_MODEL) await guardLockedSubject(incremented);
-			return incremented;
-		},
+		create: (data: Parameters<AuthAdapter["create"]>[0]) =>
+			guardLockedSubject(data.model, adapter.create(data)),
+		incrementOne: (data: Parameters<AuthAdapter["incrementOne"]>[0]) =>
+			guardLockedSubject(data.model, adapter.incrementOne(data)),
 	};
 }
 

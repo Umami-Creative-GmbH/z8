@@ -286,8 +286,10 @@ factory, including the adapters of Better Auth transactions. When `incrementOne`
 on `scimSubject` returns a row, it takes that user's exclusive configuration/access guard
 right away, on the captured transaction (`requireAuthTransaction`), and records it for that
 transaction. The guards therefore follow the plugin's sorted subject order and are all held
-before the first callback, so before the first projected write. The wrapper is composed in
-`lib/auth.ts` and in the three SCIM PostgreSQL suites.
+before the first callback, so before the first projected write. Domain replay and decommission
+work in batches of up to 50 users, each in its own transaction; the guarantee holds per batch
+transaction, which is the unit that commits. The wrapper is composed in `lib/auth.ts` and in the
+three SCIM PostgreSQL suites.
 
 Nothing is locked out of order, and every violation fails closed:
 
@@ -319,9 +321,17 @@ instead of deadlocking.
   version breaks it, the order checks fail closed and the PostgreSQL tests below fail. Guards
   never silently go out of order.
 
-Side effect: on single-user paths the guard is now taken at the subject lock, which is earlier
-than the callback. That is still after the plugin's identity rows, and it is now before its
-update of the managed user's name and email.
+Side effects:
+
+- On single-user paths the guard is now taken at the subject lock, which is earlier than the
+  callback. That is still after the plugin's identity rows, and it is now before its update of
+  the managed user's name and email.
+- Every `scimSubject` lock now takes the user's exclusive guard, including profile-only `/Users`
+  updates, which also run the projection callback. The plugin's exported
+  `acquireActiveSCIMUserLink` also locks a subject without projecting. z8 does not call it; a
+  future caller must run it inside a captured transaction or it is refused.
+- A late user whose ID sorts above every guarded user could be locked in order, but it still
+  fails closed. This keeps the rule simple: only users locked with their subject are projected.
 
 ### PostgreSQL evidence (2026-09-26)
 
@@ -334,15 +344,19 @@ ID sorts first.
 | HTTP `POST /Groups` listing the employee, then the admin (descending ID order), paused on the employee's row; the admin then submits on behalf of the employee | Both members' guards are held during the first projection. The submission waits and then commits after the group change (201). No deadlock |
 | Domain replay (`reconcileSCIMProjection`), paused on the first user's employee row | Both users' guards are already held |
 | Managed-connection decommission, paused on the first user's membership suspension | Both users' guards are already held; both memberships are suspended |
+| Late user: in a real Better Auth transaction, lock the employee's subject, then project the admin (lower ID) while another connection holds the admin's guard | The callback throws `SCIMProjectionGuardOrderError` without waiting on the admin's guard. The transaction rolls back: the subject revision is unchanged, the admin stays approved, and no lifecycle state is written |
 
 With the fix disabled (the wrapper passes the factory through and the callback takes each guard
-itself, as before #429), all three cases fail. In the race, PostgreSQL logs
+itself, as before #429), the first three cases fail. In the race, PostgreSQL logs
 `deadlock detected`: the submission's `ShareLock` on one guard waits for the group change,
 whose `ExclusiveLock` on the other waits for the submission. The submission is aborted
 (`success: false`). The replay and decommission cases hold only the first user's guard.
 
 The three SCIM PostgreSQL suites (manual/auth/SCIM, `protocol`, `scim-callback-atomicity`)
-pass 28/28 on a fresh database.
+pass 29/29 on a fresh database. With only the callback's late-user check disabled, the
+late-user case waits on the admin's guard and times out, so it takes the guard late. The full
+runner list passed on the same kind of database: 78 files and 1366 tests (the browser suite
+skipped).
 
 Database-free: `lib/scim/projection-guards.test.ts` covers guard after the subject lock (advance
 and create), once per user and transaction, ignored models and conflicts, out-of-order refusal,
