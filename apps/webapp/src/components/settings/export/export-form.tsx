@@ -184,7 +184,7 @@ export function ExportForm({ organizationId }: ExportFormProps) {
 								<IconDownload className="mr-2 size-4" />
 								{t(
 									"settings.dataExport.form.startExport",
-									`Start Export (${selectedCategories.size})`,
+									"Start Export ({count})",
 									{
 										count: selectedCategories.size,
 									},

@@ -188,7 +188,7 @@ export function ExportHistory({ exports, organizationId }: ExportHistoryProps) {
 											<Badge variant="outline" className="text-xs">
 												{t(
 													"settings.dataExport.history.moreCategories",
-													`+${exp.categories.length - 3} more`,
+													"+{count} more",
 													{
 														count: exp.categories.length - 3,
 													},

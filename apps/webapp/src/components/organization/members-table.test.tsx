@@ -19,11 +19,10 @@ import { MembersTable } from "./members-table";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			defaultValue?: string,
-			values?: Record<string, unknown>,
-		) => defaultValue?.replace("{count}", String(values?.count ?? "")) ?? _key,
+		t: (_key: string, fallback?: string, values?: Record<string, unknown>) =>
+			(fallback ?? _key).replace(/\{(\w+)\}/g, (match, name: string) =>
+				values?.[name] === undefined ? match : String(values[name]),
+			),
 	}),
 }));
 

@@ -119,7 +119,7 @@ export function ApprovalFastLanes({
 											<p className="break-words text-muted-foreground text-xs">
 												{t(
 													"approvals:fastLanes.notEligibleApprove",
-													`${notApprovableCount} not eligible for bulk approve`,
+													"{notApprovableCount} not eligible for bulk approve",
 													{ notApprovableCount },
 												)}
 											</p>
@@ -128,7 +128,7 @@ export function ApprovalFastLanes({
 											<p className="break-words text-muted-foreground text-xs">
 												{t(
 													"approvals:fastLanes.notEligibleReject",
-													`${notRejectableCount} not eligible for bulk reject`,
+													"{notRejectableCount} not eligible for bulk reject",
 													{ notRejectableCount },
 												)}
 											</p>
@@ -139,7 +139,7 @@ export function ApprovalFastLanes({
 											size="sm"
 											onClick={() => onBulkApprove(approvableIds)}
 											disabled={isBusy || approvableIds.length === 0}
-											aria-label={t("approvals:fastLanes.approveGroup", `Approve ${actionLabel}`, {
+											aria-label={t("approvals:fastLanes.approveGroup", "Approve {label}", {
 												label: actionLabel,
 											})}
 										>
@@ -155,7 +155,7 @@ export function ApprovalFastLanes({
 												setRejectReason("");
 											}}
 											disabled={isBusy || rejectableIds.length === 0}
-											aria-label={t("approvals:fastLanes.rejectGroup", `Reject ${actionLabel}`, {
+											aria-label={t("approvals:fastLanes.rejectGroup", "Reject {label}", {
 												label: actionLabel,
 											})}
 										>
@@ -184,7 +184,7 @@ export function ApprovalFastLanes({
 												disabled={isBusy || trimmedReason.length === 0}
 												aria-label={t(
 													"approvals:fastLanes.confirmRejectGroup",
-													`Confirm reject ${actionLabel}`,
+													"Confirm reject {label}",
 													{
 														label: actionLabel,
 													},
@@ -201,12 +201,12 @@ export function ApprovalFastLanes({
 												variant="ghost"
 												size="sm"
 												className="px-0 text-muted-foreground"
-												aria-label={t("approvals:fastLanes.expandGroup", `Expand ${label}`, {
+												aria-label={t("approvals:fastLanes.expandGroup", "Expand {label}", {
 													label,
 												})}
 											>
 												<IconChevronDown aria-hidden="true" />
-												{t("approvals:fastLanes.showGroup", `Show ${label}`, { label })}
+												{t("approvals:fastLanes.showGroup", "Show {label}", { label })}
 											</Button>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="space-y-2 pt-2">

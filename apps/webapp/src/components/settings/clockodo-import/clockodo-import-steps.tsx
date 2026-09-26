@@ -252,45 +252,55 @@ function ClockodoPreviewStep({
 	if (!preview) return null;
 	const rows = [
 		[
-			"users",
+			"settings.clockodoImport.entity.users",
 			"Users / Employees",
 			preview.users,
 			controller.existingCounts?.employees ?? 0,
 		],
-		["teams", "Teams", preview.teams, controller.existingCounts?.teams ?? 0],
 		[
-			"services",
+			"settings.clockodoImport.entity.teams",
+			"Teams",
+			preview.teams,
+			controller.existingCounts?.teams ?? 0,
+		],
+		[
+			"settings.clockodoImport.entity.services",
 			"Services / Work Categories",
 			preview.services,
 			controller.existingCounts?.workCategories ?? 0,
 		],
 		[
-			"entries",
+			"settings.clockodoImport.entity.entries",
 			"Time Entries",
 			preview.entries,
 			controller.existingCounts?.workPeriods ?? 0,
 		],
 		[
-			"absences",
+			"settings.clockodoImport.entity.absences",
 			"Absences",
 			preview.absences,
 			controller.existingCounts?.absences ?? 0,
 		],
 		[
-			"targetHours",
+			"settings.clockodoImport.entity.targetHours",
 			"Target Hours / Work Policies",
 			preview.targetHours,
 			controller.existingCounts?.workPolicies ?? 0,
 		],
-		["holidayQuotas", "Holiday Quotas", preview.holidayQuotas, 0],
 		[
-			"nonBusinessDays",
+			"settings.clockodoImport.entity.holidayQuotas",
+			"Holiday Quotas",
+			preview.holidayQuotas,
+			0,
+		],
+		[
+			"settings.clockodoImport.entity.nonBusinessDays",
 			"Non-Business Days",
 			preview.nonBusinessDays,
 			controller.existingCounts?.holidays ?? 0,
 		],
 		[
-			"surcharges",
+			"settings.clockodoImport.entity.surcharges",
 			"Surcharges",
 			preview.surcharges,
 			controller.existingCounts?.surcharges ?? 0,
@@ -332,7 +342,7 @@ function ClockodoPreviewStep({
 							{rows.map(([key, label, clockodo, z8]) => (
 								<ClockodoPreviewRow
 									key={key}
-									label={t(`settings.clockodoImport.entity.${key}`, label)}
+									label={t(key, label)}
 									clockodo={clockodo}
 									z8={z8}
 								/>
