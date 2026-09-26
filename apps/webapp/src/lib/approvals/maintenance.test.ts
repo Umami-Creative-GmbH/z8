@@ -273,11 +273,16 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		]);
 		for (const statement of deletes.slice(1, 4)) {
 			// Scoped by organization and the lifecycle's legacy requests and
-			// delivery cycles (#384) only.
+			// delivery cycles (#384) only; work and intents also by the
+			// lifecycle's legacy escalation transfers (#408).
 			expect(statement.sql).toContain("legacy_approval_request_id = any($2::uuid[])");
 			expect(statement.sql).toContain("legacy_cycle_id = any($3::uuid[])");
-			expect(statement.params).toEqual(["org-1", [LEGACY_REQUEST], []]);
 		}
+		expect(deletes[1]?.params).toEqual(["org-1", [LEGACY_REQUEST], [], "org-1", []]);
+		expect(deletes[2]?.params).toEqual(["org-1", [LEGACY_REQUEST], []]);
+		expect(deletes[3]?.params).toEqual(["org-1", [LEGACY_REQUEST], [], "org-1", []]);
+		expect(deletes[1]?.sql).toContain("escalation_transfer_id = any($5::uuid[])");
+		expect(deletes[3]?.sql).toContain("escalation_transfer_id = any($5::uuid[])");
 		expect(deletes[1]?.sql).toContain("lifecycle = 'legacy'");
 		expect(deletes[2]?.sql).toContain("lifecycle = 'legacy'");
 		expect(result.delivery).toEqual({
@@ -317,6 +322,18 @@ describe("deleteApprovalInTransaction evidence cleanup", () => {
 		expect(transferDeletes[0]?.sql).toContain("authority_mode = 'legacy'");
 		expect(transferDeletes[0]?.params).toEqual(["org-1", [LEGACY_TRANSFER]]);
 		expect(result.escalationTransfers).toEqual(["transfer-1", "transfer-2"]);
+		// Replacement work and transfer intents (#408) follow the transfer too, and
+		// go before the journal they would otherwise cascade from unreported.
+		const order = statements
+			.filter((statement) => statement.sql.startsWith("delete from"))
+			.map((statement) => statement.sql.split(" ")[2]);
+		for (const table of ["approval_delivery_work", "approval_delivery_intent"]) {
+			const scoped = statements.find((statement) =>
+				statement.sql.startsWith(`delete from ${table}`),
+			);
+			expect(scoped?.params).toEqual(["org-1", [LEGACY_REQUEST], [], "org-1", [LEGACY_TRANSFER]]);
+			expect(order.indexOf(table)).toBeLessThan(order.indexOf("approval_escalation_transfer"));
+		}
 	});
 
 	it("addresses a legacy escalation transfer whose request was already deleted", async () => {

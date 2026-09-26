@@ -62,7 +62,8 @@ Every committed value that a migration admitted pins that migration:
 
 - receipt kinds and writers;
 - delivery messages and invocations by provider;
-- legacy card lifecycles (0093), replacement work (0096) and cycle-keyed legacy delivery (0108);
+- legacy card lifecycles (0093), replacement work (0096), cycle-keyed legacy delivery (0108)
+  and legacy escalation replacement delivery (0109);
 - rebuild intents (0099, 0101), the historical repair control (0102), payroll inputs and control (0104), proposals and continuation positions (0105), and break adjustment intents (0106).
 
 `floor.schema` is the newest pinned migration. Never narrow a CHECK or drop a column or
@@ -75,6 +76,8 @@ evidence they hold.
 - receipt kinds and writers, because older code cannot replay committed receipts it
   does not know (#275, #281);
 - cycle-keyed legacy delivery, because binaries below #384 plan cycle rows source-wide;
+- legacy escalation replacement delivery, because binaries below #408 plan initial cards
+  for transferred legacy requests and never retire former holders' cards as "Reassigned";
 - any value this release does not know, which a newer release committed. It pins as
   `unknown (newer than this release)`.
 
@@ -181,6 +184,10 @@ Before rolling any binary back:
    - purge delivery rows of cancelled cycles first;
    - drop `legacy_cycle_id` only after a binary without cycle support drains;
    - `withdrawn` intents violate the old CHECK.
+
+   0109 (#408) pins its release: `transferred` intents violate the old CHECK, and a
+   binary below #408 plans initial cards for transferred legacy requests and leaves
+   former holders' legacy cards without their "Reassigned" refresh.
 6. Make pages reload onto the rolled-back bundle before users retry stored entries.
    Server action IDs change between builds (#310).
 

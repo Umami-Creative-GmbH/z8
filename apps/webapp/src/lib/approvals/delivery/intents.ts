@@ -43,6 +43,41 @@ export async function recordLegacyDeliveryIntent(
 	return resultRows(result).length > 0;
 }
 
+/**
+ * The lifecycle intent of a committed legacy escalation transfer (#408),
+ * written by escalation's replacement pass when it expands the transfer, once
+ * per transfer. It only moves the lifecycle's version on (the legacy request
+ * stays the same, with its replacement); escalation plans the transfer's
+ * delivery itself, so the intent is born expanded and the delivery owner never
+ * dispatches it.
+ */
+export async function recordLegacyTransferIntent(
+	database: Pick<ApprovalDatabase, "execute">,
+	input: {
+		organizationId: string;
+		workflowType: ApprovalWorkflowType;
+		sourceType: string;
+		sourceId: string;
+		approvalRequestId: string;
+		cycleId: string | null;
+		escalationTransferId: string;
+	},
+): Promise<void> {
+	await database.execute(sql`
+		insert into approval_delivery_intent (
+			organization_id, workflow_type, source_type, source_id, legacy_approval_request_id,
+			legacy_cycle_id, event, escalation_transfer_id, expansion_status, expanded_at
+		)
+		values (
+			${input.organizationId}, ${input.workflowType}::approval_workflow_type,
+			${input.sourceType}, ${input.sourceId}::uuid, ${input.approvalRequestId}::uuid,
+			${input.cycleId}::uuid, 'transferred', ${input.escalationTransferId}::uuid,
+			'expanded', now()
+		)
+		on conflict do nothing
+	`);
+}
+
 function resultRows(result: unknown): Record<string, unknown>[] {
 	return result && typeof result === "object" && "rows" in result && Array.isArray(result.rows)
 		? (result.rows as Record<string, unknown>[])
@@ -107,6 +142,41 @@ export function legacyDeliveryCycleId(input: {
 	approvalRequestId: string;
 }): string {
 	return input.chainInstanceId ?? input.approvalRequestId;
+}
+
+/**
+ * The submission cycle of a legacy request whose delivery may already exist
+ * (#408, an escalation transfer): the cycle its delivery rows recorded by
+ * value, which outlives cancellation, else the cycle it belongs to now.
+ */
+export async function resolveRecordedLegacyDeliveryCycle(
+	database: Pick<ApprovalDatabase, "execute">,
+	input: { organizationId: string; approvalRequestId: string },
+): Promise<string> {
+	const [recorded] = resultRows(
+		await database.execute(sql`
+			select legacy_cycle_id from (
+				select m.legacy_cycle_id from approval_delivery_message m
+				where m.organization_id = ${input.organizationId}
+					and m.legacy_approval_request_id = ${input.approvalRequestId}::uuid
+					and m.legacy_cycle_id is not null
+				union all
+				select d.legacy_cycle_id from approval_delivery_work d
+				where d.organization_id = ${input.organizationId}
+					and d.legacy_approval_request_id = ${input.approvalRequestId}::uuid
+					and d.legacy_cycle_id is not null
+				union all
+				select i.legacy_cycle_id from approval_delivery_intent i
+				where i.organization_id = ${input.organizationId}
+					and i.legacy_approval_request_id = ${input.approvalRequestId}::uuid
+					and i.legacy_cycle_id is not null
+			) recorded
+			limit 1
+		`),
+	);
+	return typeof recorded?.legacy_cycle_id === "string"
+		? recorded.legacy_cycle_id
+		: resolveLegacyDeliveryCycle(database, input);
 }
 
 /**

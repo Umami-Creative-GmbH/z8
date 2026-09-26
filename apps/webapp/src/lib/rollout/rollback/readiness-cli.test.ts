@@ -30,6 +30,7 @@ const REPORT = assessRollbackReadiness({
 		legacyLifecycleRows: 0,
 		cycleRows: 0,
 		replacementRows: 0,
+		legacyReplacementRows: 0,
 	},
 	escalation: {
 		owner: "escalation",

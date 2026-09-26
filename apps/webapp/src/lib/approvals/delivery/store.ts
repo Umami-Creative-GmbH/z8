@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	type ApprovalDeliveryEffect,
@@ -20,6 +20,7 @@ import {
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import type { ApprovalWorkflowType } from "../workflow/ports";
+import { recordLegacyTransferIntent } from "./intents";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type ApprovalDeliveryExecutor = typeof db | DatabaseTransaction;
@@ -258,10 +259,11 @@ export interface LegacyDeliveryLifecycle {
 /**
  * The lifecycle's status version; it only increases, like a workflow's
  * version, and a message reflecting it is current. A cycle counts its own
- * lifecycle intents (submission, each decision, withdrawal), which are written
- * with every change and never deleted but by the purge; this survives ordinary
- * cancellation, which deletes pending requests. A source-scoped lifecycle is
- * one plus the number of its decided legacy requests (#296, unchanged).
+ * lifecycle intents (submission, each decision, withdrawal, each escalation
+ * transfer), which are written with every change and never deleted but by the
+ * purge; this survives ordinary cancellation, which deletes pending requests.
+ * A source-scoped lifecycle is one plus the number of its decided legacy
+ * requests (#296) and of its recorded escalation transfers (#408).
  */
 function legacyLifecycleVersionSql(organizationId: string, lifecycle: LegacyDeliveryLifecycle) {
 	if (lifecycle.cycleId) {
@@ -272,14 +274,57 @@ function legacyLifecycleVersionSql(organizationId: string, lifecycle: LegacyDeli
 				and i.legacy_cycle_id = ${lifecycle.cycleId}::uuid
 		)`;
 	}
-	return sql`(
+	return sql`((
 		select 1 + count(*) filter (where r.status <> 'pending')
 		from approval_request r
 		where r.organization_id = ${organizationId}
 			and r.entity_type = ${lifecycle.sourceType}
 			and r.entity_id = ${lifecycle.sourceId}::uuid
+	) + (
+		select count(*)
+		from approval_delivery_intent i
+		where i.organization_id = ${organizationId}
+			and i.source_type = ${lifecycle.sourceType}
+			and i.source_id = ${lifecycle.sourceId}::uuid
+			and i.legacy_cycle_id is null
+			and i.event = 'transferred'
+	))`;
+}
+
+/**
+ * Whether escalation replaced a legacy request's recipient (#408): a committed
+ * legacy transfer moved the request away from them, and no later transfer
+ * moved it back. The same request stays with its replacement, so this, not
+ * the request's status, tells a former holder's card from the holder's own.
+ * Transfers keep the request by value, so the answer survives cancellation.
+ */
+function legacyRecipientReplacedSql(input: {
+	organizationId: SQL;
+	approvalRequestId: SQL;
+	recipientEmployeeId: SQL;
+}) {
+	return sql`exists (
+		select 1 from approval_escalation_transfer t
+		where t.organization_id = ${input.organizationId}
+			and t.authority_mode = 'legacy'
+			and t.legacy_approval_request_id = ${input.approvalRequestId}
+			and t.source_approver_employee_id = ${input.recipientEmployeeId}
+			and not exists (
+				select 1 from approval_escalation_transfer back
+				where back.organization_id = t.organization_id
+					and back.authority_mode = 'legacy'
+					and back.legacy_approval_request_id = t.legacy_approval_request_id
+					and back.replacement_approver_employee_id = t.source_approver_employee_id
+					and back.legacy_source_sequence > t.legacy_source_sequence
+			)
 	)`;
 }
+
+const legacyMessageReplacedSql = legacyRecipientReplacedSql({
+	organizationId: sql`m.organization_id`,
+	approvalRequestId: sql`m.legacy_approval_request_id`,
+	recipientEmployeeId: sql`m.recipient_employee_id`,
+});
 
 /**
  * The live legacy requests (`r`) of a lifecycle: the source's requests, and for
@@ -420,6 +465,14 @@ async function planLegacyLifecycleEffects(
 			from approval_request r
 			where ${legacyLifecycleRequestsSql(input.organizationId, lifecycle)}
 				and r.status = 'pending'
+				-- A request escalation transferred belongs to escalation's
+				-- replacement delivery (#408), like a replacement assignment.
+				and not exists (
+					select 1 from approval_escalation_transfer t
+					where t.organization_id = r.organization_id
+						and t.authority_mode = 'legacy'
+						and t.legacy_approval_request_id = r.id
+				)
 		`),
 	);
 	const legacy = {
@@ -543,14 +596,24 @@ export async function planApprovalMessageRefreshes(
 }
 
 /**
- * A refresh for every known message of a legacy lifecycle whose request is no
- * longer pending (decided, or deleted by ordinary cancellation) and which does
- * not yet reflect the lifecycle's version. A still-pending request's card keeps
- * its controls.
+ * A refresh for every known message of a legacy lifecycle whose card no longer
+ * matches and which does not yet reflect the lifecycle's version: its request
+ * is no longer pending (decided, or deleted by ordinary cancellation), or
+ * escalation replaced its recipient (#408). The holder's card of a still-pending
+ * request keeps its controls. Escalation scopes the plan to the former
+ * holder's messages of one request and links the refreshes to its transfer,
+ * adopting a still-unclaimed one the delivery owner planned first, like the
+ * canonical plan.
  */
 async function planLegacyMessageRefreshes(
 	executor: ApprovalDeliveryExecutor,
-	input: { organizationId: string; lifecycle: LegacyDeliveryLifecycle },
+	input: {
+		organizationId: string;
+		lifecycle: LegacyDeliveryLifecycle;
+		approvalRequestId?: string;
+		recipientEmployeeId?: string;
+		escalationTransferId?: string;
+	},
 ): Promise<number> {
 	const { lifecycle } = input;
 	const stale = rows(
@@ -562,34 +625,49 @@ async function planLegacyMessageRefreshes(
 				on r.id = m.legacy_approval_request_id and r.organization_id = m.organization_id
 			where ${legacyLifecycleRowsSql("m", input.organizationId, lifecycle)}
 				and m.state <> 'gone'
-				and (r.id is null or r.status <> 'pending')
+				and (r.id is null or r.status <> 'pending' or ${legacyMessageReplacedSql})
 				and m.status_version < ${legacyLifecycleVersionSql(input.organizationId, lifecycle)}
+				${
+					input.approvalRequestId
+						? sql`and m.legacy_approval_request_id = ${input.approvalRequestId}::uuid`
+						: sql``
+				}
+				${
+					input.recipientEmployeeId
+						? sql`and m.recipient_employee_id = ${input.recipientEmployeeId}::uuid`
+						: sql``
+				}
 		`),
 	);
 	let created = 0;
 	for (const message of stale) {
 		const messageId = text(message.id, "message");
 		const version = Number(message.version);
-		const inserted = await executor
-			.insert(approvalDeliveryWork)
-			.values({
-				organizationId: input.organizationId,
-				lifecycle: "legacy",
-				workflowType: lifecycle.workflowType,
-				legacySourceType: lifecycle.sourceType,
-				legacySourceId: lifecycle.sourceId,
-				legacyCycleId: lifecycle.cycleId,
-				effect: "refresh",
-				provider: text(message.provider, "provider") as ApprovalDeliveryProvider,
-				legacyApprovalRequestId: text(message.legacy_approval_request_id, "legacy request"),
-				recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
-				messageId,
-				dedupeKey: refreshDedupeKey(messageId, version),
-			})
-			.onConflictDoNothing({
-				target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
-			})
-			.returning({ id: approvalDeliveryWork.id });
+		const planned = executor.insert(approvalDeliveryWork).values({
+			organizationId: input.organizationId,
+			lifecycle: "legacy",
+			workflowType: lifecycle.workflowType,
+			legacySourceType: lifecycle.sourceType,
+			legacySourceId: lifecycle.sourceId,
+			legacyCycleId: lifecycle.cycleId,
+			effect: "refresh",
+			provider: text(message.provider, "provider") as ApprovalDeliveryProvider,
+			legacyApprovalRequestId: text(message.legacy_approval_request_id, "legacy request"),
+			recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
+			messageId,
+			escalationTransferId: input.escalationTransferId ?? null,
+			dedupeKey: refreshDedupeKey(messageId, version),
+		});
+		const target = [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey];
+		const inserted = await (input.escalationTransferId
+			? planned.onConflictDoUpdate({
+					target,
+					set: { escalationTransferId: input.escalationTransferId },
+					setWhere: sql`${approvalDeliveryWork.escalationTransferId} is null
+						and ${approvalDeliveryWork.status} = 'pending'`,
+				})
+			: planned.onConflictDoNothing({ target })
+		).returning({ id: approvalDeliveryWork.id });
 		created += inserted.length;
 	}
 	return created;
@@ -608,14 +686,20 @@ export async function scheduleApprovalMessageRefreshes(
 				assignmentId?: string;
 				escalationTransferId?: string;
 		  }
-		| { organizationId: string; legacy: LegacyDeliveryLifecycle },
+		| {
+				organizationId: string;
+				legacy: LegacyDeliveryLifecycle;
+				/** Escalation (#408): one request's messages to one recipient, linked to its transfer. */
+				approvalRequestId?: string;
+				recipientEmployeeId?: string;
+				escalationTransferId?: string;
+		  },
 ): Promise<number> {
-	return "legacy" in input
-		? planLegacyMessageRefreshes(db, {
-				organizationId: input.organizationId,
-				lifecycle: input.legacy,
-			})
-		: planApprovalMessageRefreshes(db, { ...input, outboxId: null });
+	if ("legacy" in input) {
+		const { legacy, ...scope } = input;
+		return planLegacyMessageRefreshes(db, { ...scope, lifecycle: legacy });
+	}
+	return planApprovalMessageRefreshes(db, { ...input, outboxId: null });
 }
 
 function replacementDedupeKey(transferId: string, provider: string): string {
@@ -660,10 +744,120 @@ export async function planReplacementDeliveryWork(
 	return inserted.length;
 }
 
+/** A card the provider's old notification path sent, which no work produced. */
+export interface UntrackedApprovalCard {
+	provider: ApprovalDeliveryProvider;
+	recipientUserId: string;
+	receiverScope: string;
+	destinationId: string;
+	remoteMessageId: string;
+}
+
+/**
+ * The delivery effects of one committed legacy escalation transfer (#408), in
+ * the expansion's transaction. The legacy request stays the same, so the
+ * transfer is recorded as a lifecycle intent of its own (once per transfer,
+ * already expanded: escalation is its only dispatcher), which moves the
+ * lifecycle's version on. Then the replacement card per intended provider
+ * (keyed by the transfer, so it never collides with the former holder's
+ * initial card and a second transfer gets its own), the adoption of the former
+ * holder's old-path cards, and the retirement of every tracked card of the
+ * former holder for the request, linked to the transfer. Work and messages
+ * name the legacy lifecycle, never a workflow, stage or assignment.
+ */
+export async function planLegacyEscalationTransferDelivery(
+	transaction: DatabaseTransaction,
+	input: {
+		organizationId: string;
+		escalationTransferId: string;
+		lifecycle: LegacyDeliveryLifecycle;
+		approvalRequestId: string;
+		formerApproverEmployeeId: string;
+		replacementApproverEmployeeId: string;
+		providers: readonly ApprovalDeliveryProvider[];
+		untrackedFormerCards: readonly UntrackedApprovalCard[];
+	},
+): Promise<number> {
+	const { lifecycle } = input;
+	await recordLegacyTransferIntent(transaction, {
+		organizationId: input.organizationId,
+		workflowType: lifecycle.workflowType,
+		sourceType: lifecycle.sourceType,
+		sourceId: lifecycle.sourceId,
+		approvalRequestId: input.approvalRequestId,
+		cycleId: lifecycle.cycleId,
+		escalationTransferId: input.escalationTransferId,
+	});
+	const legacy = {
+		lifecycle: "legacy" as const,
+		workflowType: lifecycle.workflowType,
+		legacySourceType: lifecycle.sourceType,
+		legacySourceId: lifecycle.sourceId,
+		legacyCycleId: lifecycle.cycleId,
+		legacyApprovalRequestId: input.approvalRequestId,
+	};
+	let planned = 0;
+	if (input.providers.length > 0) {
+		const inserted = await transaction
+			.insert(approvalDeliveryWork)
+			.values(
+				input.providers.map((provider) => ({
+					organizationId: input.organizationId,
+					...legacy,
+					effect: "replacement" as const,
+					provider,
+					recipientEmployeeId: input.replacementApproverEmployeeId,
+					escalationTransferId: input.escalationTransferId,
+					dedupeKey: replacementDedupeKey(input.escalationTransferId, provider),
+				})),
+			)
+			.onConflictDoNothing({
+				target: [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey],
+			})
+			.returning({ id: approvalDeliveryWork.id });
+		planned += inserted.length;
+	}
+	for (const card of input.untrackedFormerCards) {
+		// The old path's card is tracked from now on, reflecting no version yet,
+		// with the controls it may have shown.
+		await transaction
+			.insert(approvalDeliveryMessage)
+			.values({
+				organizationId: input.organizationId,
+				...legacy,
+				approvalRequestId: input.approvalRequestId,
+				recipientEmployeeId: input.formerApproverEmployeeId,
+				...card,
+				controls: "actionable",
+				statusVersion: 0,
+			})
+			.onConflictDoNothing({
+				target: [
+					approvalDeliveryMessage.organizationId,
+					approvalDeliveryMessage.provider,
+					approvalDeliveryMessage.receiverScope,
+					approvalDeliveryMessage.destinationId,
+					approvalDeliveryMessage.remoteMessageId,
+				],
+			});
+	}
+	planned += await planLegacyMessageRefreshes(transaction, {
+		organizationId: input.organizationId,
+		lifecycle,
+		approvalRequestId: input.approvalRequestId,
+		recipientEmployeeId: input.formerApproverEmployeeId,
+		escalationTransferId: input.escalationTransferId,
+	});
+	return planned;
+}
+
 /**
  * Cancels replacement work that became obsolete before it was sent: its
  * assignment is no longer pending (decided, or transferred again) or the
- * request settled. Work in flight is rechecked by its own worker.
+ * request settled. A legacy replacement (#408) is obsolete once its request is
+ * no longer pending with the recipient (decided, withdrawn or transferred
+ * again) or a later transfer of the request superseded it. Work in flight is
+ * rechecked by its own worker.
  */
 export async function cancelObsoleteReplacementDeliveryWork(input: {
 	organizationId: string;
@@ -684,7 +878,44 @@ export async function cancelObsoleteReplacementDeliveryWork(input: {
 			returning d.id
 		`),
 	);
-	return cancelled.length;
+	const legacy = input.workflowId
+		? []
+		: rows(
+				await db.execute(sql`
+					update approval_delivery_work d
+					set status = 'cancelled', last_outcome = 'obsolete', processed_at = now(),
+						updated_at = now()
+					where d.organization_id = ${input.organizationId}
+						and d.lifecycle = 'legacy'
+						and d.effect = 'replacement'
+						and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
+						and (
+							not exists (
+								select 1 from approval_request r
+								where r.organization_id = d.organization_id
+									and r.id = d.legacy_approval_request_id
+									and r.status = 'pending'
+									and r.approver_id = d.recipient_employee_id
+							)
+							-- A later transfer superseded it, even one that moved the
+							-- request back to the same holder: that transfer's card
+							-- is the current one.
+							or exists (
+								select 1
+								from approval_escalation_transfer own
+								join approval_escalation_transfer later
+									on later.organization_id = own.organization_id
+									and later.authority_mode = 'legacy'
+									and later.legacy_approval_request_id = own.legacy_approval_request_id
+									and later.legacy_source_sequence > own.legacy_source_sequence
+								where own.organization_id = d.organization_id
+									and own.id = d.escalation_transfer_id
+							)
+						)
+					returning d.id
+				`),
+			);
+	return cancelled.length + legacy.length;
 }
 
 export interface ApprovalDeliveryExpansionSummary {
@@ -1381,7 +1612,12 @@ export function approvalDeliveryMessageLegacyLifecycle(
 export async function isApprovalDeliveryMessagePending(
 	message: Pick<
 		ApprovalDeliveryMessageRecord,
-		"organizationId" | "lifecycle" | "workflowId" | "assignmentId" | "legacyApprovalRequestId"
+		| "organizationId"
+		| "lifecycle"
+		| "workflowId"
+		| "assignmentId"
+		| "legacyApprovalRequestId"
+		| "recipientEmployeeId"
 	>,
 ): Promise<boolean> {
 	if (message.lifecycle === "legacy") {
@@ -1396,7 +1632,8 @@ export async function isApprovalDeliveryMessagePending(
 				),
 			)
 			.limit(1);
-		return request?.status === "pending";
+		// A former holder's card (#408) is no longer pending for its recipient.
+		return request?.status === "pending" && !(await isApprovalDeliveryAssignmentReplaced(message));
 	}
 	if (!message.workflowId || !message.assignmentId) return false;
 	const [row] = await db
@@ -1425,12 +1662,34 @@ export async function isApprovalDeliveryMessagePending(
 
 /**
  * Whether a delivered card's assignment was replaced by another approver's
- * (escalation or reassignment): its cards then say it was reassigned. Legacy
- * lifecycle cards (#296) have no canonical assignment to replace.
+ * (escalation or reassignment): its cards then say it was reassigned. A legacy
+ * lifecycle card (#296) has no canonical assignment; it is replaced once
+ * escalation transferred its request away from its recipient (#408).
  */
 export async function isApprovalDeliveryAssignmentReplaced(
-	message: Pick<ApprovalDeliveryMessageRecord, "organizationId" | "workflowId" | "assignmentId">,
+	message: Pick<
+		ApprovalDeliveryMessageRecord,
+		| "organizationId"
+		| "lifecycle"
+		| "workflowId"
+		| "assignmentId"
+		| "legacyApprovalRequestId"
+		| "recipientEmployeeId"
+	>,
 ): Promise<boolean> {
+	if (message.lifecycle === "legacy") {
+		if (!message.legacyApprovalRequestId) return false;
+		const [replaced] = rows(
+			await db.execute(sql`
+				select ${legacyRecipientReplacedSql({
+					organizationId: sql`${message.organizationId}`,
+					approvalRequestId: sql`${message.legacyApprovalRequestId}::uuid`,
+					recipientEmployeeId: sql`${message.recipientEmployeeId}::uuid`,
+				})} as replaced
+			`),
+		);
+		return replaced?.replaced === true;
+	}
 	if (!message.workflowId || !message.assignmentId) return false;
 	const [successor] = await db
 		.select({ id: approvalStageAssignment.id })

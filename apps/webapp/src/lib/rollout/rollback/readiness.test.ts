@@ -20,6 +20,7 @@ function untouched(overrides: Partial<RollbackSnapshot> = {}): RollbackSnapshot 
 			legacyLifecycleRows: 0,
 			cycleRows: 0,
 			replacementRows: 0,
+			legacyReplacementRows: 0,
 		},
 		escalation: { owner: null, automationPaused: false, pendingTransferred: [] },
 		durable: {
@@ -143,6 +144,7 @@ describe("assessRollbackReadiness", () => {
 					legacyLifecycleRows: 0,
 					cycleRows: 0,
 					replacementRows: 2,
+					legacyReplacementRows: 0,
 				},
 			}),
 		);
@@ -205,6 +207,25 @@ describe("assessRollbackReadiness", () => {
 		);
 
 		expect(report.cards).toMatchObject({ verdict: "ready", findings: [] });
+	});
+
+	it("pins legacy escalation replacement delivery to its release (#408)", () => {
+		const report = assessRollbackReadiness(
+			untouched({
+				cards: { ...untouched().cards, legacyReplacementRows: 3 },
+			}),
+		);
+
+		expect(report.floor).toMatchObject({
+			schema: "0109_legacy_escalation_replacement_delivery",
+			release: "0109_legacy_escalation_replacement_delivery",
+		});
+		expect(report.floor.pins).toContainEqual({
+			migration: "0109_legacy_escalation_replacement_delivery",
+			subject: "legacy replacement delivery",
+			rows: 3,
+			limits: "release",
+		});
 	});
 
 	it("pins each provider's remote identities, legacy lifecycles and cycle-keyed delivery", () => {
