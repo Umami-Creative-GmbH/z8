@@ -26,6 +26,7 @@ import {
 	decommissionSCIMConnection,
 	runDueSCIMDecommission,
 } from "./decommission";
+import { guardSCIMSubjectAcquisitions } from "./projection-guards";
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const sentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -75,11 +76,13 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		baseURL: "http://localhost:3000",
 		secret: "managed-scim-protocol-integration-secret",
 		// As in production: SCIM callbacks guard on the captured transaction (#314).
-		database: drizzleAdapter(captureAuthTransactions(database), {
-			provider: "pg",
-			schema: authDatabaseSchema,
-			transaction: true,
-		}),
+		database: guardSCIMSubjectAcquisitions(
+			drizzleAdapter(captureAuthTransactions(database), {
+				provider: "pg",
+				schema: authDatabaseSchema,
+				transaction: true,
+			}),
+		),
 		plugins: [
 			createZ8SCIMPlugin("p".repeat(32)),
 			organization({

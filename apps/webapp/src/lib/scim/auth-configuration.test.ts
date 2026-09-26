@@ -8,6 +8,10 @@ import {
 	createZ8SCIMPlugin,
 } from "./auth-configuration";
 import { resolveSCIMIdentity } from "./identity-resolution";
+import {
+	protectSCIMProjectedUser,
+	SCIMProjectionGuardOrderError,
+} from "./projection-guards";
 import { scimRoleProjection } from "./projection-reconciler";
 import { SCIM_MODELS } from "./transaction-store";
 import { createTransactionFixture } from "./transaction-store.test-fixture";
@@ -210,6 +214,26 @@ describe("createZ8SCIMPlugin", () => {
 		);
 		expect(target.rows(SCIM_MODELS.member)).toHaveLength(0);
 		expect(guard.protect).not.toHaveBeenCalled();
+	});
+
+	// #429: a user the sorted subject locks did not guard is never locked late.
+	it("fails closed on a late user without guarding it or writing", async () => {
+		const target = createTransactionFixture(applicationRows());
+		await protectSCIMProjectedUser(guard.transaction as never, {
+			organizationId,
+			userId: "user_guarded_in_sorted_order",
+		});
+		guard.protect.mockClear();
+		const reconcileUser = createZ8SCIMPlugin("s".repeat(32)).options.projection
+			?.reconcileUser;
+
+		await expect(
+			reconcileUser?.(projectedState(true), { database: target.database }),
+		).rejects.toBeInstanceOf(SCIMProjectionGuardOrderError);
+
+		expect(guard.protect).not.toHaveBeenCalled();
+		expect(target.operations.create).not.toHaveBeenCalled();
+		expect(target.operations.update).not.toHaveBeenCalled();
 	});
 
 	it("creates lifecycle records before applying the projected role state", async () => {

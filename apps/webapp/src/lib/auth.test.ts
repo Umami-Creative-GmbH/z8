@@ -236,6 +236,10 @@ describe("organization member removal", () => {
 		);
 		expect(source).not.toContain("completeRemovedMemberCleanup({");
 		expect(source).toContain("drizzleAdapter(captureAuthTransactions(db)");
+		// SCIM subject locks take the users' guards in the plugin's sorted order (#429).
+		expect(source).toMatch(
+			/guardSCIMSubjectAcquisitions\(\s*drizzleAdapter\(captureAuthTransactions\(db\)/,
+		);
 		expect(hooks).toEqual(
 			expect.objectContaining({
 				beforeUpdateMemberRole: expect.any(Function),

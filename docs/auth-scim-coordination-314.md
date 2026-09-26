@@ -87,7 +87,7 @@ transaction, user email lookups therefore stay case-insensitive.
 | Invitation acceptance | `beforeAcceptInvitation` | Accepting user |
 | Organization deletion (cascades every membership) | `beforeDeleteOrganization` | Organization |
 | Admin role, ban, unban, update, removal | `z8-auth-mutation-coordination` before-hook | Body's `userId` (global, all organizations) |
-| SCIM provisioning, group changes, replay, recovery, decommission | Start of `reconcileSCIMProjectedUser`, inside the SCIM plugin's transaction | Projected user |
+| SCIM provisioning, group changes, replay, recovery, decommission | The plugin's lock of the user's `scimSubject`, in sorted user order, inside the SCIM plugin's transaction; re-taken at the start of `reconcileSCIMProjectedUser` ([#429](#sorted-scim-projection-guards-429)) | Projected user |
 | Provider-bound SSO login | `provisionSsoProviderOrganization` (own transaction) | Logging-in user |
 | Social login with a verified SSO domain | `assignSsoOrganizationByVerifiedDomain` (own transaction) | Logging-in user |
 
@@ -95,10 +95,12 @@ Every guard is taken before the writer's first write of a fact that manual creat
 before any identity lock or row lock the writer takes on such facts. This matches #264 ranks
 3–4 and #313.
 
-There is one exception to "before anything". In a SCIM request, the plugin first writes its own
-identity rows (`scimUser`, `scimSubject` and the managed user's name and email), and only then
-calls `reconcileSCIMProjectedUser`. Manual creation does not lock those rows and does not read
-them under protection, so taking the guard after them creates no wait cycle with a submission.
+There is one exception to "before anything". In a SCIM request, the plugin first writes some of
+its own identity and group rows (`scimUser`, `scimGroup`, the `scimSubject` lock itself and, for
+a new user, the Better Auth user). Since #429 the guard follows the `scimSubject` lock directly;
+before that it was taken in `reconcileSCIMProjectedUser`, after all of them. Manual creation does
+not lock those rows and does not read them under protection, so taking the guard after them
+creates no wait cycle with a submission.
 
 Plugin before-hooks see the request's original headers, because Better Auth merges the bearer
 plugin's session cookie only after every before-hook has run. The leave hook therefore resolves
@@ -246,8 +248,9 @@ file was skipped: the browser suite, which needs `Z8_TEST_CHROME_PATH`.
 
 The suite does not cover:
 
-- SCIM `/Users` and `/Groups` requests, decommission, absent-member and stale-projection cases.
-  Only the replay path is raced. All of these reach the same guarded callback.
+- SCIM `/Users` requests, absent-member and stale-projection cases. The replay path is raced,
+  and since #429 a `/Groups` creation and a managed-connection decommission run against
+  PostgreSQL too. All of these reach the same guarded callback.
 - The SSO callback endpoints. The provisioning functions are called directly, and the
   production composition test covers the wiring (`organizationProvisioning.disabled`,
   `provisionUser`, plugin order) without PostgreSQL.
@@ -257,6 +260,110 @@ The suite does not cover:
 - A ban racing submissions in several organizations. The user guard is global by
   construction, but no test shows it.
 
+## Sorted SCIM projection guards (#429)
+
+[#429](https://github.com/Umami-Creative-GmbH/z8/issues/429) closes activation blocker 4.
+
+### Problem
+
+`@better-auth/scim` 1.7.3 calls the projection callback once per user, in its own order. A
+group change follows the request's member order (`reconcileUsers` →
+`reconcileSCIMUserBatch`, in chunks of 50; duplicates are dropped, nothing is sorted). A guard
+taken only in the callback was therefore taken out of order. A group change listing B before A
+took B's guard, then A's. A submission holding A's guard (shared) and waiting for B's
+deadlocked with it.
+
+### Design
+
+Every multi-user projection path of the plugin (group create, replace, patch and delete,
+domain replay, connection decommission) first runs `acquireUserLocks`. That step resolves the
+batch's users, **sorts them**, and advances each user's `scimSubject.revision` in that order,
+before any callback runs. The plugin needs this order for its own deadlock freedom. Single-user
+paths lock their one user's subject the same way, or create it.
+
+`guardSCIMSubjectAcquisitions` (`lib/scim/projection-guards.ts`) wraps Better Auth's adapter
+factory, including the adapters of Better Auth transactions. When `incrementOne` or `create`
+on `scimSubject` returns a row, it takes that user's exclusive configuration/access guard
+right away, on the captured transaction (`requireAuthTransaction`), and records it for that
+transaction. The guards therefore follow the plugin's sorted subject order and are all held
+before the first callback, so before the first projected write. Domain replay and decommission
+work in batches of up to 50 users, each in its own transaction; the guarantee holds per batch
+transaction, which is the unit that commits. The wrapper is composed in `lib/auth.ts` and in the
+three SCIM PostgreSQL suites.
+
+Nothing is locked out of order, and every violation fails closed:
+
+- A subject locked outside a captured transaction is refused (`UncoordinatedAuthMutationError`).
+- A subject below a user this transaction already guards is refused before its guard is taken
+  (`SCIMProjectionGuardOrderError`).
+- The callback keeps its guard as a check (`protectSCIMProjectedUser`). It re-takes the guard of
+  a user locked with its subject. In a transaction that already guarded other users, a user
+  whose guard was not taken with its subject is late. The callback then throws
+  `SCIMProjectionGuardOrderError` before any guard or write. The plugin owns the transaction,
+  so z8 cannot restart it. The whole SCIM transaction rolls back and the SCIM client or
+  recovery retries (#313's restart semantics). A transaction that guarded nobody yet takes the
+  guard in the callback, as before.
+
+In 1.7.3 no late user can occur: the callbacks project a subset of the users whose subjects
+`acquireUserLocks` locked, and a `scimUser`'s user does not change. The check stays anyway.
+If the wrapper were missing, a multi-user projection would fail closed at its second user
+instead of deadlocking.
+
+### Why not a patch or upstream support
+
+- The plugin has no public pre-reconcile option, so upstream support means waiting for a
+  release.
+- A `pnpm patch` would sort the callbacks or add a hook inside vendored `dist` code, and would
+  have to be ported on every Better Auth upgrade.
+- Observing the subject lock uses only the public adapter contract and the plugin's schema.
+  It relies on one invariant: the plugin locks every projected user's subject, in sorted order,
+  before projecting. The plugin keeps that invariant for its own correctness. If a future
+  version breaks it, the order checks fail closed and the PostgreSQL tests below fail. Guards
+  never silently go out of order.
+
+Side effects:
+
+- On single-user paths the guard is now taken at the subject lock, which is earlier than the
+  callback. That is still after the plugin's identity rows, and it is now before its update of
+  the managed user's name and email.
+- Every `scimSubject` lock now takes the user's exclusive guard, including profile-only `/Users`
+  updates, which also run the projection callback. The plugin's exported
+  `acquireActiveSCIMUserLink` also locks a subject without projecting. z8 does not call it; a
+  future caller must run it inside a captured transaction or it is refused.
+- A late user whose ID sorts above every guarded user could be locked in order, but it still
+  fails closed. This keeps the rule simple: only users locked with their subject are projected.
+
+### PostgreSQL evidence (2026-09-26)
+
+Added to `clocking.manual-auth-scim.integration.test.ts`. It uses a real managed SCIM
+connection whose active sources are the organization admin and the employee. The admin's user
+ID sorts first.
+
+| Case | Result |
+| --- | --- |
+| HTTP `POST /Groups` listing the employee, then the admin (descending ID order), paused on the employee's row; the admin then submits on behalf of the employee | Both members' guards are held during the first projection. The submission waits and then commits after the group change (201). No deadlock |
+| Domain replay (`reconcileSCIMProjection`), paused on the first user's employee row | Both users' guards are already held |
+| Managed-connection decommission, paused on the first user's membership suspension | Both users' guards are already held; both memberships are suspended |
+| Late user: in a real Better Auth transaction, lock the employee's subject, then project the admin (lower ID) while another connection holds the admin's guard | The callback throws `SCIMProjectionGuardOrderError` without waiting on the admin's guard. The transaction rolls back: the subject revision is unchanged, the admin stays approved, and no lifecycle state is written |
+
+With the fix disabled (the wrapper passes the factory through and the callback takes each guard
+itself, as before #429), the first three cases fail. In the race, PostgreSQL logs
+`deadlock detected`: the submission's `ShareLock` on one guard waits for the group change,
+whose `ExclusiveLock` on the other waits for the submission. The submission is aborted
+(`success: false`). The replay and decommission cases hold only the first user's guard.
+
+The three SCIM PostgreSQL suites (manual/auth/SCIM, `protocol`, `scim-callback-atomicity`)
+pass 29/29 on a fresh database. With only the callback's late-user check disabled, the
+late-user case waits on the admin's guard and times out, so it takes the guard late. The full
+runner list passed on the same kind of database: 78 files and 1366 tests (the browser suite
+skipped).
+
+Database-free: `lib/scim/projection-guards.test.ts` covers guard after the subject lock (advance
+and create), once per user and transaction, ignored models and conflicts, out-of-order refusal,
+fail closed outside a transaction, the callback's re-take, and late-user refusal.
+`lib/scim/auth-configuration.test.ts` shows that a late user aborts the callback with no guard
+and no write. `lib/auth.test.ts` pins the production composition.
+
 ## Remaining activation blockers
 
 1. Employee provisioning after membership addition or acceptance, invite-code joins,
@@ -265,14 +372,11 @@ The suite does not cover:
    They participate since #312; see [its evidence](user-configuration-access-312.md).
 3. Old deployed binaries write these facts without protection (#327). New guards cannot fence
    old code. They must be drained or disabled before manual adoption activates.
-4. A SCIM request that projects several users can take their guards out of sorted order, for
-   example a group change listing members in request order. Domain replays are ordered by user
-   ID. Against a submission holding one of those users' guards, PostgreSQL detects the
-   resulting deadlock and aborts one side. Both sides keep their guarantees, but the aborted
-   side needs a retry: the SCIM client or recovery, or the user resubmitting. Sorted
-   acquisition is only possible inside the SCIM plugin, which calls the callback once per user.
-   This needs a focused follow-up: upstream support, or an application pre-lock of the
-   batch's routed users. Production observation of lock waits and aborts belongs to #327.
+4. ~~A SCIM request that projects several users can take their guards out of sorted order, for
+   example a group change listing members in request order.~~ Every projected user's guard is
+   now taken in sorted order before the first projected write; see
+   [Sorted SCIM projection guards (#429)](#sorted-scim-projection-guards-429). Production
+   observation of lock waits and aborts belongs to #447 (which replaced #327).
 5. Organization deletion briefly pauses manual submissions across the organization, like the
    other organization-wide writers in #313. Better Auth's hard deletion of an organization that
    has an owner cannot succeed today because of the owner-retention trigger.
