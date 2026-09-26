@@ -105,6 +105,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.automatic-break.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-command.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-eligibility.integration.test.ts" \
+	"src/app/[locale]/(app)/settings/projects/actions.project-membership.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-authorization.integration.test.ts" \
 	"src/app/[locale]/(app)/time-tracking/actions/clocking.manual-auth-scim.integration.test.ts" \
 	"src/app/[locale]/(app)/settings/organizations/organization-timezone.integration.test.ts" \
