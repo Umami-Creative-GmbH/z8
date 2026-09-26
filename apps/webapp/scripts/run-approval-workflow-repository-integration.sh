@@ -149,6 +149,7 @@ pnpm --dir "$app_directory" exec vitest run --no-file-parallelism \
 	src/lib/effect/services/billing/billable-seat-count.integration.test.ts \
 	src/lib/effect/services/billing/seat-sync-ordering.integration.test.ts \
 	src/lib/approvals/evidence/legacy-absence.integration.test.ts \
+	src/lib/approvals/domain-adapters/absence-legacy-chain-observation.integration.test.ts \
 	src/lib/approvals/presentation/review-arrival.integration.test.ts \
 	src/lib/travel-expenses/expense-submission.integration.test.ts \
 	src/lib/approvals/escalation/legacy-transfer.integration.test.ts \
