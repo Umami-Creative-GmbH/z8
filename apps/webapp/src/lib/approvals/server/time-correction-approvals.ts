@@ -2624,9 +2624,18 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 				"canonical_record_source_mismatch",
 			);
 		}
+		// Legacy submission requires a canonical record only for metadata
+		// changes, so a legacy timestamp-only correction may lack one.
+		const isLegacyTimestampOnlyCorrection =
+			expectedApprovalWorkflowId === null &&
+			currentCorrection !== null &&
+			currentCorrection.workLocationType ===
+				normalizeWorkLocationType(period.workLocationType) &&
+			currentCorrection.workCategoryId === period.workCategoryId;
 		if (
 			(currentCorrection || expectedApprovalWorkflowId !== null) &&
-			(input.transition.kind !== "approve" || !isUnmaterializedActivePeriod)
+			(input.transition.kind !== "approve" || !isUnmaterializedActivePeriod) &&
+			!isLegacyTimestampOnlyCorrection
 		) {
 			throw timeCorrectionFinalizationConflict("missing_canonical_record", {
 				transitionKind: input.transition.kind,

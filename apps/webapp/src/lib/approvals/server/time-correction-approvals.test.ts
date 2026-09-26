@@ -9022,6 +9022,129 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		).resolves.toMatchObject({ transition: "approved" });
 	});
 
+	describe("pure-legacy timestamp correction with work metadata and no canonical record", () => {
+		const correction = {
+			action: "edit" as const,
+			clockOutCorrectionId: ids.correctionOut,
+			workLocationType: "office" as const,
+			workCategoryId: terminalPeriod.workCategoryId,
+		};
+		const legacyOnlyPeriodDb = (
+			overrides: Partial<Parameters<typeof createFinalizerDb>[0]> = {},
+		) =>
+			createFinalizerDb({
+				period: {
+					...terminalPeriod,
+					approvalWorkflowId: null,
+					canonicalRecordId: null,
+				},
+				entries: [originalIn, originalOut, correctionOut],
+				canonical: null,
+				canonicalWork: null,
+				legacyRequest: {
+					...legacyRequest,
+					metadata: {
+						timeCorrection: correction,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+				workflow: null,
+				mutationRows: [
+					[{ id: ids.correctionOut }],
+					[{ id: ids.originalOut }],
+					[{ id: ids.period }],
+				],
+				...overrides,
+			});
+
+		it("approves without touching canonical tables", async () => {
+			const { dbService, mutations } = legacyOnlyPeriodDb();
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						expectedApprovalWorkflowId: null,
+						expectedApprovalWorkflowVersion: null,
+						correction,
+					}),
+				),
+			).resolves.toMatchObject({ transition: "approved" });
+			expect(mutations.map(({ table }) => table)).toEqual([
+				timeEntry,
+				timeEntry,
+				workPeriod,
+			]);
+			expect(mutations.at(-1)?.values).toMatchObject({
+				clockOutId: ids.correctionOut,
+				endTime: correctionOut.timestamp,
+				workLocationType: "office",
+				workCategoryId: terminalPeriod.workCategoryId,
+			});
+		});
+
+		it("rejects without touching canonical tables", async () => {
+			const { dbService, mutations } = legacyOnlyPeriodDb({
+				legacyRequest: {
+					...legacyRequest,
+					status: "rejected",
+					approvedAt: null,
+					rejectionReason: "Incorrect time",
+					metadata: {
+						timeCorrection: correction,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+			});
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						expectedApprovalWorkflowId: null,
+						expectedApprovalWorkflowVersion: null,
+						correction,
+						transition: { kind: "reject", reason: "Incorrect time" },
+					}),
+				),
+			).resolves.toMatchObject({ transition: "rejected" });
+			expect(mutations).toEqual([]);
+		});
+
+		it("still refuses a metadata change without a canonical record", async () => {
+			const categoryChange = { ...correction, workCategoryId: null };
+			const { dbService, mutations } = legacyOnlyPeriodDb({
+				legacyRequest: {
+					...legacyRequest,
+					metadata: {
+						timeCorrection: categoryChange,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+			});
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						expectedApprovalWorkflowId: null,
+						expectedApprovalWorkflowVersion: null,
+						correction: categoryChange,
+					}),
+				),
+			).rejects.toMatchObject({
+				details: { reason: "missing_canonical_record" },
+			});
+			expect(mutations).toEqual([]);
+		});
+	});
+
 	it.each([
 		["approve", "approved", "rejected", { kind: "approve", reason: null }],
 		[
