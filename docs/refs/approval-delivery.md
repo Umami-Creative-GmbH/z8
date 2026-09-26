@@ -811,8 +811,9 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
 
 - The shared executor rechecks right before the send: the kind still has
   legacy authority (otherwise `cancelled`, `authority_changed`), the request is
-  pending and its current approver is still the recipient (otherwise
-  `cancelled`, `obsolete`: decided, withdrawn or transferred again), the
+  pending and its current approver is still the recipient, and no later
+  transfer superseded the work (otherwise `cancelled`, `obsolete`: decided,
+  withdrawn or transferred again), the
   recipient is an active employee, their preference allows the channel, and
   the adapter's integration and escalation-delivery checks. The shared
   presentation checks membership and entitlement.
@@ -890,8 +891,14 @@ processEscalationReplacementDeliveries(org, limit)      escalation/replacement-d
    `escalation_replacement_unsupported` and `legacy_transfer_without_replacement`
    for legacy kinds; revisit them in the pilot (#423).
 8. A cutover cancels planned work; a later rollback does not re-plan it (the
-   former card keeps its last state and decides nothing).
+   former card keeps its last state and decides nothing). A retirement the
+   delivery owner planned itself (a former card that landed after the
+   expansion) is not transfer-linked and follows the owner's existing legacy
+   rules, not escalation's authority recheck.
 9. **Untracked duplicates** (#291 blocker 6) apply to replacement cards too.
+10. **Cross-tenant evidence.** Every new query filters by organization; the
+    suite seeds a second organization but no foreign delivery or transfer rows,
+    so tenant isolation is verified by review, not at runtime.
 
 ### Verification (#408)
 
@@ -903,7 +910,7 @@ action, `processEscalationReplacementDeliveries`, `handleTelegramUpdate`,
 `sendApprovalMessageToManager`, `approveAbsenceEffect`,
 `approveTravelExpenseClaim`, `cancelAbsenceRequest`,
 `recoverApprovalDeliveryForAttention`, `saveConversation`,
-`recheckEscalationAttention` and `deleteApproval`. 19/19 passing:
+`recheckEscalationAttention` and `deleteApproval`. 21/21 passing:
 
 - Absence and expense: one bound replacement card to the backup and the former
   card edited into Reassigned without controls; the version moves on
@@ -915,7 +922,11 @@ action, `processEscalationReplacementDeliveries`, `handleTelegramUpdate`,
 - Absence and expense: an old-path card of the former holder is adopted and
   retired; bound and unbound presses on it decide nothing.
 - A former card that landed after the transfer is retired, whether escalation
-  expanded before or after it landed.
+  expanded before or after it landed. A replacement card that went stale in
+  flight (the replacement decided on the web meanwhile) is tracked and shows
+  the decision afterwards.
+- A replacement superseded by a later transfer back to the same holder
+  (A → B → A → B) is cancelled, and only the latest transfer's card is sent.
 - A lease-takeover duplicate of the replacement card and a second
   (management) transfer: both duplicates are retired as Reassigned, the new
   holder gets a card and decides; every card ends without controls.

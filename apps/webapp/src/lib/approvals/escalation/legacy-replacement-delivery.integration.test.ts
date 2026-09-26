@@ -1335,6 +1335,80 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 		}
 	});
 
+	it("tracks a replacement card that went stale in flight and retires it with the decision", async () => {
+		await seed();
+		const submitted = await transferred("travel_expense");
+		// The replacement decides on the web while Telegram is accepting its card.
+		duringSend = async () => {
+			expect((await decideOnWeb(ids.backupUser, submitted)).success).toBe(true);
+		};
+		await replace();
+		const backupMessage = (await messages(submitted.requestId)).find(
+			(message) => message.recipient_employee_id === ids.backup,
+		);
+		expect(backupMessage).toMatchObject({ controls: "actionable", state: "current" });
+		const staleRetirement = (await work(submitted.requestId)).find(
+			(row) => row.effect === "refresh" && row.message_id === backupMessage?.id,
+		);
+		expect(staleRetirement).toMatchObject({
+			status: "pending",
+			escalation_transfer_id: submitted.transfer.id,
+		});
+		await deliver(minutes(1));
+		await replace(minutes(1));
+		expect(String(only(editsOf(backupMessage?.remote_message_id)).body.text)).toContain(
+			"Approved by Blake Backup",
+		);
+		for (const message of await messages(submitted.requestId)) {
+			expect(message.controls).toBe("none");
+		}
+		expect(await decisionState(submitted)).toMatchObject({ source: "approved", decisions: "1" });
+	});
+
+	it("cancels a replacement superseded by a later transfer back to the same holder", async () => {
+		await seed();
+		const submitted = await transferred("absence");
+		script.sendMessage = [
+			{ kind: "error", status: 400, errorCode: 400, description: "Bad Request: invalid markup" },
+		];
+		await replace();
+		const [first] = await replacementWork(submitted.requestId);
+		expect(first).toMatchObject({ status: "failed", recipient_employee_id: ids.backup });
+
+		// Management moves the request back to the manager and then to the backup again.
+		actAs(ids.adminUser);
+		for (const [recipient, key] of [
+			[ids.manager, "e4088000-0000-4000-8000-000000000003"],
+			[ids.backup, "e4088000-0000-4000-8000-000000000004"],
+		] as const) {
+			const moved = await transferApprovalEscalationAssignment({
+				approvalRequestId: submitted.requestId,
+				recipientEmployeeId: recipient,
+				idempotencyKey: key,
+				reason: "Rebalancing",
+			});
+			expect(moved.success).toBe(true);
+		}
+		actAs(null);
+		expect(await approverOf(submitted.requestId)).toBe(ids.backup);
+		const lineage = await transfers(submitted.requestId);
+		expect(lineage.map((transfer) => transfer.legacy_source_sequence)).toEqual([0, 1, 2]);
+
+		await replace(minutes(1));
+		const byTransfer = Object.fromEntries(
+			(await replacementWork(submitted.requestId)).map((row) => [
+				row.escalation_transfer_id,
+				[row.recipient_employee_id, row.status, row.last_outcome],
+			]),
+		);
+		expect(byTransfer[lineage[0]?.id ?? ""]).toEqual([ids.backup, "cancelled", "obsolete"]);
+		expect(byTransfer[lineage[2]?.id ?? ""]).toEqual([ids.backup, "delivered", "delivered"]);
+		// Recovery can never resend the superseded card.
+		expect(sendsTo(CHAT.backup)).toHaveLength(2);
+		await replace(minutes(2));
+		expect(sendsTo(CHAT.backup)).toHaveLength(2);
+	});
+
 	it("freezes channels at the first expansion; the delivery owner never claims transfer-linked work", async () => {
 		await seed({ enableEscalations: false });
 		const off = await transferred("travel_expense");

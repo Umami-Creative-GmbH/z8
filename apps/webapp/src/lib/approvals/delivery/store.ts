@@ -856,7 +856,8 @@ export async function planLegacyEscalationTransferDelivery(
  * assignment is no longer pending (decided, or transferred again) or the
  * request settled. A legacy replacement (#408) is obsolete once its request is
  * no longer pending with the recipient (decided, withdrawn or transferred
- * again). Work in flight is rechecked by its own worker.
+ * again) or a later transfer of the request superseded it. Work in flight is
+ * rechecked by its own worker.
  */
 export async function cancelObsoleteReplacementDeliveryWork(input: {
 	organizationId: string;
@@ -888,12 +889,28 @@ export async function cancelObsoleteReplacementDeliveryWork(input: {
 						and d.lifecycle = 'legacy'
 						and d.effect = 'replacement'
 						and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
-						and not exists (
-							select 1 from approval_request r
-							where r.organization_id = d.organization_id
-								and r.id = d.legacy_approval_request_id
-								and r.status = 'pending'
-								and r.approver_id = d.recipient_employee_id
+						and (
+							not exists (
+								select 1 from approval_request r
+								where r.organization_id = d.organization_id
+									and r.id = d.legacy_approval_request_id
+									and r.status = 'pending'
+									and r.approver_id = d.recipient_employee_id
+							)
+							-- A later transfer superseded it, even one that moved the
+							-- request back to the same holder: that transfer's card
+							-- is the current one.
+							or exists (
+								select 1
+								from approval_escalation_transfer own
+								join approval_escalation_transfer later
+									on later.organization_id = own.organization_id
+									and later.authority_mode = 'legacy'
+									and later.legacy_approval_request_id = own.legacy_approval_request_id
+									and later.legacy_source_sequence > own.legacy_source_sequence
+								where own.organization_id = d.organization_id
+									and own.id = d.escalation_transfer_id
+							)
 						)
 					returning d.id
 				`),
