@@ -97,8 +97,12 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: vi.fn(() => ({
 		error: loggerErrorMock,
 		info: vi.fn(),
+		warn: vi.fn(),
 	})),
 }));
+
+// The post-commit delivery fast path is best effort and outside these submissions.
+vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
 
 import {
 	createRequestedAbsenceRecordsInTransaction,

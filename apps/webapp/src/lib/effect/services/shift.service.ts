@@ -12,6 +12,7 @@ import {
 	type skill,
 	subareaSkillRequirement,
 } from "@/db/schema";
+import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
@@ -119,6 +120,7 @@ export interface ShiftWithRelations extends Shift {
 		id: string;
 		firstName: string | null;
 		lastName: string | null;
+		user?: AuthUserDisplayNameInput | null;
 	} | null;
 	template?: ShiftTemplate | null;
 	subarea?: {
@@ -889,6 +891,10 @@ export const ShiftServiceLive = Layer.effect(
 											firstName: true,
 											lastName: true,
 										},
+										// The display name derives from the user, not the deprecated employee columns.
+										with: {
+											user: { columns: { name: true, firstName: true, lastName: true, email: true } },
+										},
 									},
 									template: true,
 									subarea: {
@@ -926,6 +932,10 @@ export const ShiftServiceLive = Layer.effect(
 											id: true,
 											firstName: true,
 											lastName: true,
+										},
+										// The display name derives from the user, not the deprecated employee columns.
+										with: {
+											user: { columns: { name: true, firstName: true, lastName: true, email: true } },
 										},
 									},
 									template: true,

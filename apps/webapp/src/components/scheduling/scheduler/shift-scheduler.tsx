@@ -17,6 +17,7 @@ import type {
 } from "@/app/[locale]/(app)/scheduling/types";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
+import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import {
 	CoverageHeatmapOverlay,
@@ -322,7 +323,7 @@ function EmployeeFilterNotice({
 }) {
 	const { t } = useTranslate();
 	const employee = shifts.find((shift) => shift.employeeId === employeeId)?.employee;
-	const name = employee ? `${employee.firstName ?? ""} ${employee.lastName ?? ""}`.trim() : "";
+	const name = employee?.user ? buildAuthUserDisplayName(employee.user) : "";
 	return (
 		<div className="flex items-center gap-2 text-sm" role="status">
 			<span>
