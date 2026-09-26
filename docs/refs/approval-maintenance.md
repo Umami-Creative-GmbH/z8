@@ -26,7 +26,7 @@ pnpm approvals:delete --help
 pnpm approvals:pilot-readiness --organization-id <org-id> [--json]
 ```
 
-The readiness report is described in [Non-time approval pilot](approval-pilot.md).
+The readiness report is described in [Approval card pilots](approval-pilot.md).
 
 The same commands are available from `apps/webapp`. Listing includes storage type (`legacy`, `workflow`, `legacy_evidence` for a legacy-authority submitted revision, or `legacy_transfer` for a legacy escalation transfer; both stay listed after cancellation deletes their pending request), approval ID, organization ID, status, source type/ID, and UTC creation time. It reads approval tables directly, so missing source records do not hide orphaned approvals.
 

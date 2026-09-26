@@ -1,5 +1,6 @@
 /**
- * #328 / T63 runtime evidence: the non-time pilot readiness report.
+ * #328 / T63 and #330 / T65 runtime evidence: the approval card pilot readiness
+ * report (absence, expense and time kinds).
  *
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
@@ -120,6 +121,7 @@ const { requestAbsenceEffect } = await import(
 	"@/app/[locale]/(app)/absences/request-absence-effect"
 );
 const { assessApprovalPilotReadiness } = await import("./readiness");
+const { TIME_APPROVAL_WORKFLOW_TYPES } = await import("../time-approval-kinds");
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -155,7 +157,7 @@ const ids = {
 
 const SEEDED_AT = new Date("2026-07-01T00:00:00Z");
 
-describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
+describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
 
 	async function cleanup() {
@@ -220,20 +222,61 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			 values ($1, 'absence', 'telegram', 'actionable')`,
 			[ids.organization],
 		);
+		await seedTelegramBot();
+		await seedSlackWorkspace();
+	}
+
+	/** A Telegram bot that delivers approvals but not escalations. */
+	async function seedTelegramBot() {
 		await admin.query(
 			`insert into telegram_bot_config
 			 (organization_id, bot_token, bot_username, webhook_secret, setup_status,
 			  enable_approvals, enable_escalations, updated_at)
-			 values ($1, 'vault:managed', 't328_bot', 't328-secret', 'active', true, false, $2)`,
+			 values ($1, 'vault:managed', 't328_bot', 't328-secret', 'active', true, false, $2)
+			 on conflict do nothing`,
 			[ids.organization, SEEDED_AT],
 		);
+	}
+
+	/** A Slack workspace that delivers approvals and escalations. */
+	async function seedSlackWorkspace() {
 		await admin.query(
 			`insert into slack_workspace_config
 			 (organization_id, slack_team_id, slack_team_name, bot_access_token, setup_status,
 			  enable_approvals, updated_at)
-			 values ($1, 'T328', 'T328 workspace', 'vault:managed', 'active', true, $2)`,
+			 values ($1, 'T328', 'T328 workspace', 'vault:managed', 'active', true, $2)
+			 on conflict do nothing`,
 			[ids.organization, SEEDED_AT],
 		);
+	}
+
+	/**
+	 * The documented #325 gates for canonical time cards on Telegram (#330),
+	 * with a Slack workspace for the review-only summary.
+	 */
+	async function prepareTime(options: { mode?: "legacy" | "canonical" } = {}) {
+		for (const kind of TIME_APPROVAL_WORKFLOW_TYPES) {
+			await admin.query(
+				`insert into approval_workflow_rollout
+				 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+				 values ($1, $2, $3, $4, $5, $5)`,
+				[
+					ids.organization,
+					kind,
+					options.mode ?? "canonical",
+					options.mode ?? "canonical",
+					SEEDED_AT,
+				],
+			);
+			await enableCapture(kind);
+			await admin.query(
+				`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+				 values ($1, $2, 'telegram', 'actionable')`,
+				[ids.organization, kind],
+			);
+		}
+		await seedTelegramBot();
+		await seedSlackWorkspace();
 	}
 
 	async function enableCapture(workflowType: string) {
@@ -277,14 +320,7 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			 values ($1, 'travel_expense', 'telegram', 'actionable')`,
 			[ids.organization],
 		);
-		await admin.query(
-			`insert into telegram_bot_config
-			 (organization_id, bot_token, bot_username, webhook_secret, setup_status,
-			  enable_approvals, enable_escalations, updated_at)
-			 values ($1, 'vault:managed', 't328_bot', 't328-secret', 'active', true, false, $2)
-			 on conflict do nothing`,
-			[ids.organization, SEEDED_AT],
-		);
+		await seedTelegramBot();
 	}
 
 	/**
@@ -334,6 +370,15 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			(entry) => entry.workflowType === workflowType && entry.provider === provider,
 		);
 		if (!found) throw new Error(`Missing combination ${workflowType}/${provider}`);
+		return found;
+	}
+
+	function kindOf(
+		readiness: Awaited<ReturnType<typeof assessApprovalPilotReadiness>>,
+		workflowType: string,
+	) {
+		const found = readiness.kinds.find((entry) => entry.workflowType === workflowType);
+		if (!found) throw new Error(`Missing kind ${workflowType}`);
 		return found;
 	}
 
@@ -457,7 +502,14 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			authority: "canonical",
 			lifecycleMode: "canonical",
 			evidenceMode: "capture",
-			pending: { total: 3, current: 1, notCaptured: 1, materialChange: 1, authorityChange: 0 },
+			pending: {
+				total: 3,
+				current: 1,
+				notCaptured: 1,
+				materialChange: 1,
+				authorityChange: 0,
+				reviewOnly: 0,
+			},
 		});
 		expect(combination(report, "absence", "telegram").findings).toEqual([
 			{ code: "evidence_held", severity: "hold", count: 2 },
@@ -524,6 +576,97 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			verdict: "blocked",
 			findings: [{ code: "authority_not_legacy", severity: "blocker" }],
 		});
+	});
+
+	it("admits time cards on Telegram, Slack review-only summaries, and blocks unverified providers", async () => {
+		await seedOrganization();
+		await prepareTime();
+		// Teams actions share the bound path but were never exercised for time kinds (#325).
+		await admin.query(
+			`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+			 values ($1, 'manual_time_submission', 'teams', 'actionable')`,
+			[ids.organization],
+		);
+
+		const report = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		for (const kind of TIME_APPROVAL_WORKFLOW_TYPES) {
+			expect(report.kinds.find((entry) => entry.workflowType === kind)).toEqual({
+				workflowType: kind,
+				authority: "canonical",
+				lifecycleMode: "canonical",
+				evidenceMode: "capture",
+				pending: {
+					total: 0,
+					current: 0,
+					notCaptured: 0,
+					materialChange: 0,
+					authorityChange: 0,
+					reviewOnly: 0,
+				},
+			});
+			expect(combination(report, kind, "telegram")).toMatchObject({
+				verdict: "ready",
+				findings: [],
+			});
+			// Slack summaries are review-only and need no presentation control.
+			expect(combination(report, kind, "slack")).toMatchObject({ verdict: "ready", findings: [] });
+			expect(codes(combination(report, kind, "discord").findings)).toEqual([
+				"combination_unverified",
+				"provider_not_configured",
+			]);
+		}
+		expect(codes(combination(report, "manual_time_submission", "teams").findings)).toEqual([
+			"combination_unverified",
+			"presentation_actionable_unverified",
+			"provider_not_configured",
+		]);
+		expect(codes(combination(report, "policy_clock_out", "teams").findings)).toEqual([
+			"combination_unverified",
+			"provider_not_configured",
+		]);
+	});
+
+	it("blocks time cards under legacy authority, and any bound card without compatibility requests", async () => {
+		await seedOrganization();
+		await prepareAbsence();
+		await prepareTime({ mode: "legacy" });
+
+		const legacy = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		// Legacy-authoritative time approvals stay review-only on bots (#432).
+		for (const kind of TIME_APPROVAL_WORKFLOW_TYPES) {
+			expect(kindOf(legacy, kind)).toMatchObject({ authority: "legacy", lifecycleMode: "legacy" });
+			for (const provider of ["telegram", "slack"]) {
+				expect(combination(legacy, kind, provider)).toMatchObject({
+					verdict: "blocked",
+					findings: [{ code: "authority_not_canonical", severity: "blocker" }],
+				});
+			}
+		}
+
+		// Without the compatibility mirror presentation has no request to start
+		// from: owner work becomes `unsupported_route` attention (#325 blocker 2).
+		await admin.query(
+			`update approval_workflow_rollout set lifecycle_mode = 'complete'
+			 where organization_id = $1 and workflow_type in ('time_correction', 'absence')`,
+			[ids.organization],
+		);
+
+		const complete = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		for (const kind of ["time_correction", "absence"]) {
+			expect(kindOf(complete, kind)).toMatchObject({
+				authority: "canonical",
+				lifecycleMode: "complete",
+			});
+			for (const provider of ["telegram", "slack"]) {
+				expect(combination(complete, kind, provider)).toMatchObject({
+					verdict: "blocked",
+					findings: [{ code: "authority_complete_unsupported", severity: "blocker" }],
+				});
+			}
+		}
 	});
 
 	it("observes an active combination's delivery work and surfaces work that needs recovery", async () => {
@@ -744,6 +887,7 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 		await seedOrganization();
 		// The seeded Telegram bot delivers approvals but not escalations; Slack does both.
 		await prepareAbsence();
+		await prepareTime();
 		const telegramBefore = combination(
 			await assessApprovalPilotReadiness({ organizationId: ids.organization }),
 			"absence",
@@ -773,6 +917,14 @@ describeIntegration("Non-time approval pilot readiness (PostgreSQL)", () => {
 			findings: [{ code: "escalation_delivery_disabled", severity: "hold" }],
 		});
 		expect(combination(report, "absence", "slack").findings).toEqual([]);
+		// Canonical time kinds escalate too (#326) and get replacement cards (#300).
+		for (const kind of TIME_APPROVAL_WORKFLOW_TYPES) {
+			expect(combination(report, kind, "telegram")).toMatchObject({
+				verdict: "hold",
+				findings: [{ code: "escalation_delivery_disabled", severity: "hold" }],
+			});
+			expect(combination(report, kind, "slack").findings).toEqual([]);
+		}
 		// Expense claims have no escalation transfers.
 		expect(codes(combination(report, "travel_expense", "telegram").findings)).not.toContain(
 			"escalation_delivery_disabled",

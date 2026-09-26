@@ -182,6 +182,7 @@ const { prepareApprovalPresentation } = await import("@/lib/approvals/presentati
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { sendTelegramNotification } = await import("@/lib/notifications/telegram-channel");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
+const { assessApprovalPilotReadiness } = await import("@/lib/approvals/pilot/readiness");
 const { submitHistoricalPolicyClockOut } = await import(
 	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
@@ -1399,6 +1400,151 @@ describeIntegration("time approval presentation, bound decisions and review (Pos
 		const late = await press(purgedCard, "ba", "t325-purge-1").catch(() => null);
 		expect(late?.answer.body ?? {}).not.toMatchObject({ text: "Request approved" });
 		expect(await remaining(purged.workflow_id)).toMatchObject({ invocations: "0" });
+	});
+
+	type PilotReadiness = Awaited<ReturnType<typeof assessApprovalPilotReadiness>>;
+	const pilotReport = () => assessApprovalPilotReadiness({ organizationId: ids.organization });
+	const pilotKind = (report: PilotReadiness, workflowType: string) =>
+		report.kinds.find((entry) => entry.workflowType === workflowType);
+	const pilotTelegram = (report: PilotReadiness, workflowType: string) =>
+		report.combinations.find(
+			(entry) => entry.workflowType === workflowType && entry.provider === "telegram",
+		);
+	const noPending = {
+		total: 0,
+		current: 0,
+		notCaptured: 0,
+		materialChange: 0,
+		authorityChange: 0,
+		reviewOnly: 0,
+	};
+
+	it("classifies pending time lifecycles for the pilot report exactly as the card path holds them (#330)", async () => {
+		await seed({ capture: false });
+		// Submitted before capture: no revision, so no card can ever bind to it.
+		await submitManual("2026-07-20");
+		await admin.query(
+			`insert into approval_evidence_control (organization_id, workflow_type, mode)
+			 select $1, kind, 'capture' from unnest($2::approval_workflow_type[]) as kind`,
+			[ids.organization, TIME_KINDS],
+		);
+		const current = await submitManual("2026-07-21");
+		const work = await recordWork(
+			parseInstant("2026-07-22T08:00:00Z"),
+			parseInstant("2026-07-22T10:00:00Z"),
+			{ approval: false },
+		);
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		// A material change of the corrected entry after submission.
+		await admin.query("update work_period set work_location_type = 'home' where id = $1", [
+			work.id,
+		]);
+		// A policy clock-out captured without the employee's name: current
+		// evidence the card cannot state, so its card is review-only.
+		await admin.query(`update "user" set name = '' where id = $1`, [ids.requesterUser]);
+		await recordWork(parseInstant("2026-07-23T08:00:00Z"), parseInstant("2026-07-23T10:00:00Z"), {
+			approval: true,
+		});
+		await admin.query(`update "user" set name = 'Avery Requester' where id = $1`, [
+			ids.requesterUser,
+		]);
+		// A card the pre-owner Telegram path sent for the current request, still open.
+		const cycle = await pendingCycle(current, "manual_time_submission");
+		await admin.query(
+			`insert into telegram_approval_message
+			 (organization_id, approval_request_id, chat_id, message_id, recipient_user_id, status,
+			  updated_at)
+			 values ($1, $2, $3, '1', $4, 'sent', now())`,
+			[ids.organization, cycle.request_id, String(MANAGER_CHAT_ID), ids.managerUser],
+		);
+
+		const report = await pilotReport();
+
+		expect(pilotKind(report, "manual_time_submission")).toEqual({
+			workflowType: "manual_time_submission",
+			authority: "canonical",
+			lifecycleMode: "canonical",
+			evidenceMode: "capture",
+			pending: { ...noPending, total: 2, current: 1, notCaptured: 1 },
+		});
+		expect(pilotKind(report, "time_correction")?.pending).toEqual({
+			...noPending,
+			total: 1,
+			materialChange: 1,
+		});
+		expect(pilotKind(report, "policy_clock_out")?.pending).toEqual({
+			...noPending,
+			total: 1,
+			reviewOnly: 1,
+		});
+		// The pending lifecycles have intents after activation: the owner cards them.
+		expect(pilotTelegram(report, "manual_time_submission")).toMatchObject({
+			verdict: "hold",
+			delivery: { active: true, activatedAt: "2026-07-01T00:00:00.000Z" },
+			findings: [
+				{ code: "evidence_held", severity: "hold", count: 1 },
+				{ code: "legacy_cards_historical_only", severity: "hold", count: 1 },
+			],
+		});
+		expect(pilotTelegram(report, "time_correction")?.findings).toEqual([
+			{ code: "evidence_held", severity: "hold", count: 1 },
+		]);
+		expect(pilotTelegram(report, "policy_clock_out")).toMatchObject({
+			verdict: "hold",
+			findings: [{ code: "card_review_only", severity: "hold", count: 1 }],
+		});
+
+		// Activated only now, the same lifecycles stay web-inbox-only (#328 decision).
+		await admin.query(
+			`delete from approval_delivery_control
+			 where organization_id = $1 and workflow_type = 'manual_time_submission'`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into approval_delivery_control (organization_id, workflow_type, provider)
+			 values ($1, 'manual_time_submission', 'telegram')`,
+			[ids.organization],
+		);
+		expect(pilotTelegram(await pilotReport(), "manual_time_submission")?.findings).toContainEqual({
+			code: "in_flight_before_activation",
+			severity: "hold",
+			count: 2,
+		});
+	});
+
+	it("reports a request captured under shadow authority as another authority's evidence after cutover (#330)", async () => {
+		await seed({ rollout: "legacy" });
+		await admin.query(
+			`update approval_workflow_rollout set lifecycle_mode = 'shadow'
+			 where organization_id = $1 and workflow_type = 'manual_time_submission'`,
+			[ids.organization],
+		);
+		await submitManual("2026-07-20");
+		const heldAtCutover = { ...noPending, total: 1, authorityChange: 1 };
+		// The shadow workflow mirrors the legacy request, whose revision is
+		// legacy: the report says so before the cutover, not after it.
+		const shadow = await pilotReport();
+		expect(pilotKind(shadow, "manual_time_submission")?.pending).toEqual(heldAtCutover);
+		expect(pilotTelegram(shadow, "manual_time_submission")?.findings).toEqual([
+			{ code: "authority_not_canonical", severity: "blocker" },
+			{ code: "evidence_held", severity: "hold", count: 1 },
+		]);
+
+		await admin.query(
+			`update approval_workflow_rollout
+			 set lifecycle_mode = 'canonical', side_effect_mode = 'canonical'
+			 where organization_id = $1 and workflow_type = 'manual_time_submission'`,
+			[ids.organization],
+		);
+		const cutover = await pilotReport();
+		expect(pilotKind(cutover, "manual_time_submission")?.pending).toEqual(heldAtCutover);
+		expect(pilotTelegram(cutover, "manual_time_submission")?.findings).toContainEqual({
+			code: "evidence_held",
+			severity: "hold",
+			count: 1,
+		});
 	});
 
 	it("silences the existing time notification path only for the cycle the owner delivers", async () => {

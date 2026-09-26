@@ -12,8 +12,9 @@ const HELP = `Approval pilot readiness (server operator access and database cred
   pnpm approvals:pilot-readiness --organization-id <org-id> [--json]
 
 Reports, from one read-only snapshot, whether the organization's absence and
-expense card combinations can enter or continue the non-time approval pilot
-(#328), and the organization's escalation ownership. Nothing is changed.
+expense card combinations (#328) and time approval card combinations (#330)
+can enter or continue their pilot, and the organization's escalation
+ownership. Nothing is changed.
 
 Options:
   --organization-id  Required organization scope
@@ -90,6 +91,7 @@ export function formatApprovalPilotReadiness(report: ApprovalPilotReadiness): st
 				"not captured": kind.pending.notCaptured,
 				"material change": kind.pending.materialChange,
 				"authority change": kind.pending.authorityChange,
+				"review only": kind.pending.reviewOnly,
 			})}`,
 		);
 	}
