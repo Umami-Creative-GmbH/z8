@@ -372,10 +372,18 @@ describeLifecycleDatabase("approval handover", () => {
 			};
 			if (decision.status === "fulfilled") {
 				expect(rows).toEqual([expect.objectContaining({ status: "approved" })]);
-				expect(handover).toEqual({ outcome: "source_resolved", status: "completed", lastError: null });
+				expect(handover).toEqual({
+					outcome: "source_resolved",
+					status: "completed",
+					lastError: null,
+				});
 			} else {
 				expect(rows.map((row) => row.status)).toEqual(["cancelled", "pending"]);
-				expect(handover).toEqual({ outcome: "transferred", status: "completed", lastError: null });
+				expect(handover).toEqual({
+					outcome: "transferred",
+					status: "completed",
+					lastError: null,
+				});
 			}
 		});
 

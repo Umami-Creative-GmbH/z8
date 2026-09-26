@@ -568,27 +568,34 @@ export function createApprovalTransitionEngine(
 			}
 
 			const adapter = context.adapterRegistry.get(workflow.workflowType);
-			let source: unknown;
-			try {
-				source = await dependencies.sourceLoader.load({
+			// The snapshot was read before the version CAS. A concurrent command that
+			// committed meanwhile also moved the source, so a source or adapter check
+			// that fails against this stale snapshot is a version race, not a bad source.
+			const reportingVersionRace = async <T>(step: () => Promise<T>): Promise<T> => {
+				try {
+					return await step();
+				} catch (error) {
+					const current = await context.repository.loadSnapshot({
+						organizationId: request.organizationId,
+						workflowId: request.workflowId,
+					});
+					if (current.version !== workflow.version) {
+						throw engineError("version_conflict", {
+							expectedVersion: String(workflow.version),
+							actualVersion: String(current.version),
+						});
+					}
+					throw error;
+				}
+			};
+			const source = await reportingVersionRace(() =>
+				dependencies.sourceLoader.load({
 					dbService: context.dbService,
 					organizationId: request.organizationId,
 					workflow,
 					actor,
-				});
-			} catch (error) {
-				const current = await context.repository.loadSnapshot({
-					organizationId: request.organizationId,
-					workflowId: request.workflowId,
-				});
-				if (current.version !== workflow.version) {
-					throw engineError("version_conflict", {
-						expectedVersion: String(workflow.version),
-						actualVersion: String(current.version),
-					});
-				}
-				throw error;
-			}
+				}),
+			);
 			const adapterContext: ApprovalDomainAdapterContext<unknown> = {
 				organizationId: request.organizationId,
 				workflow,
@@ -601,14 +608,18 @@ export function createApprovalTransitionEngine(
 				source,
 				actor,
 			};
-			const capabilities = await adapter.getTrustedCapabilities(adapterContext);
+			const capabilities = await reportingVersionRace(() =>
+				adapter.getTrustedCapabilities(adapterContext),
+			);
 			const preflight = adapterCommand(request.command);
 			if (preflight) {
-				await adapter.preflightCommand({
-					...adapterContext,
-					command: preflight,
-					proposedStatus: proposedStatus(preflight),
-				});
+				await reportingVersionRace(() =>
+					adapter.preflightCommand({
+						...adapterContext,
+						command: preflight,
+						proposedStatus: proposedStatus(preflight),
+					}),
+				);
 			}
 			const decisionCommand =
 				request.command.type === "approve" || request.command.type === "reject"
