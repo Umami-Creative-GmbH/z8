@@ -1546,7 +1546,6 @@ function sameCorrectionPayload(
 	}
 }
 
-/** Correction entry IDs a request's metadata names, or none when it is malformed. */
 function correctionPayload(
 	value: unknown,
 ): TimeCorrectionWorkflowPayload["timeCorrection"] {

@@ -41,9 +41,6 @@ export const LEGACY_ESCALATION_ENTITY_TYPES = {
 
 export type LegacyEscalationEntityType = keyof typeof LEGACY_ESCALATION_ENTITY_TYPES;
 
-/** Legacy entity types whose pending request a transfer moves. */
-export type TransferableLegacyEntityType = LegacyEscalationEntityType;
-
 /** Legacy kinds escalation transfers by moving the pending request. */
 export type LegacyEscalationWorkflowType =
 	(typeof LEGACY_ESCALATION_ENTITY_TYPES)[LegacyEscalationEntityType][number];

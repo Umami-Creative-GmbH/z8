@@ -42,7 +42,10 @@ import {
 import type { ApprovalDbService } from "../server/types";
 import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
 import { classifyPersistedTimeApprovalRequest } from "../server/time-approval-classification";
-import { appendLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
+import {
+	appendLegacyEscalationLineage,
+	splitLegacyEscalationLineage,
+} from "../workflow/legacy-escalation-lineage";
 import { LegacyApprovalObservationPlannerError } from "../workflow/legacy-observation-planner";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
@@ -70,7 +73,6 @@ import {
 	type LegacyEscalationEntityType,
 	type LegacyEscalationWorkflowType,
 	legacyEntityTypeAdmits,
-	type TransferableLegacyEntityType,
 	UNTRANSFERABLE_ESCALATION_ROUTES,
 } from "./kinds";
 import { listLegacyRequestTransferFacts } from "./legacy-transfer-store";
@@ -341,11 +343,17 @@ async function resolveLegacyWorkflowType(
 		: { kind: "resolved", workflowType: classified, represented: false };
 }
 
-/** The hold of a time request no kind could be established for. */
-function unclassifiedTimeRequestLoad(request: LocatedLegacyRequest): LegacySubjectLoad {
+/**
+ * An unsupported route, held once the request's current holder is due (its
+ * creation is when that holder became actionable).
+ */
+function heldRoute(
+	request: { approverId: string; createdAt: Date },
+	route: string,
+): LegacySubjectLoad {
 	return {
 		kind: "unsupported",
-		route: "legacy_time_unclassified",
+		route,
 		approverEmployeeId: request.approverId,
 		createdAt: instantFromDate(request.createdAt),
 	};
@@ -359,7 +367,7 @@ interface LegacySubject {
 	workflowType: LegacyEscalationWorkflowType;
 	request: {
 		id: string;
-		sourceType: TransferableLegacyEntityType;
+		sourceType: LegacyEscalationEntityType;
 		sourceId: string;
 		requesterEmployeeId: string;
 		approverEmployeeId: string;
@@ -466,27 +474,19 @@ async function loadLegacySubject(
 		!isLegacyEscalationEntityType(request.entityType) ||
 		!legacyEntityTypeAdmits(request.entityType, input.workflowType)
 	) {
-		return {
-			kind: "unsupported",
-			route: `entity_type:${request.entityType}`,
-			approverEmployeeId: request.approverId,
-			createdAt: instantFromDate(request.createdAt),
-		};
+		return heldRoute(request, `entity_type:${request.entityType}`);
 	}
 	if (request.status !== "pending") return { kind: "not_pending" };
 	if (!legacyAuthority) {
 		// Expenses have no canonical adapter, and an unrepresented time request
 		// has no canonical assignment: no one can transfer them under another
 		// mode, so they are held visibly instead of skipped.
-		return {
-			kind: "unsupported",
-			route:
-				input.workflowType === "travel_expense"
-					? "travel_expense_without_legacy_authority"
-					: "legacy_time_without_legacy_authority",
-			approverEmployeeId: request.approverId,
-			createdAt: instantFromDate(request.createdAt),
-		};
+		return heldRoute(
+			request,
+			input.workflowType === "travel_expense"
+				? "travel_expense_without_legacy_authority"
+				: "legacy_time_without_legacy_authority",
+		);
 	}
 	switch (input.workflowType) {
 		case "absence":
@@ -771,8 +771,9 @@ function isTimeLegacyCaptureError(
  * A legacy time request is transferable when it is its work period's only
  * pending request and the verified capture of its kind (the work-period
  * capture for manual submissions and policy clock-outs, the correction
- * capture for time corrections) confirms the kind, the requester, the
- * approver and the payload of the locked row. Chain stages are held like
+ * capture for time corrections) verifies the locked row's payload against
+ * its source and confirms its kind, requester, approver, status and
+ * escalation lineage. Chain stages are held like
  * absence chain stages; in a mirroring mode the transfer mirrors into the
  * pending observation the work period is bound to, and is held without one or
  * when that observation names another current holder than the request.
@@ -844,20 +845,21 @@ async function loadLegacyTimeSubject(
 	if (state.chain !== null) {
 		// Chain stages bind the approver on their stage row; moving the request
 		// alone would contradict the chain.
-		return {
-			kind: "unsupported",
-			route: "legacy_chain_stage",
-			approverEmployeeId: request.approverId,
-			createdAt: instantFromDate(request.createdAt),
-		};
+		return heldRoute(request, "legacy_chain_stage");
 	}
 	const captured = state.approvalRequest;
+	const rawLineage = splitLegacyEscalationLineage(metadata);
+	const capturedLineage = splitLegacyEscalationLineage(captured?.metadata ?? null);
 	if (
 		!captured ||
 		captured.id !== request.id ||
 		captured.status !== "pending" ||
 		captured.approverId !== request.approverId ||
-		captured.requestedBy !== request.requestedBy
+		captured.requestedBy !== request.requestedBy ||
+		// The capture verified the payload of this very row; the lineage the
+		// transfer extends must be the one it verified.
+		JSON.stringify(rawLineage.kind === "lineage" ? rawLineage.lineage : null) !==
+			JSON.stringify(capturedLineage.kind === "lineage" ? capturedLineage.lineage : null)
 	) {
 		return mismatch();
 	}
@@ -1237,7 +1239,7 @@ async function processDueLegacyRequestInTransaction(
 	let loaded: LegacySubjectLoad;
 	let gate: ApprovalWriteGateResult | null = null;
 	if (resolution.kind === "unclassified") {
-		loaded = unclassifiedTimeRequestLoad(located);
+		loaded = heldRoute(located, "legacy_time_unclassified");
 	} else {
 		gate = await context.writeGate.acquire({
 			organizationId,

@@ -3,7 +3,7 @@ import type { db } from "@/db";
 import { approvalEscalationTransfer, approvalRequest } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { ApprovalAssignmentReassignedError } from "./decision-authority";
-import type { TransferableLegacyEntityType } from "./kinds";
+import type { LegacyEscalationEntityType } from "./kinds";
 import type { LegacyJournalTransferFact } from "./transfer-evaluation";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -78,7 +78,7 @@ export async function findLegacyTransferredApprovalRequest(
 	executor: LegacyTransferExecutor,
 	input: {
 		organizationId: string;
-		entityType: TransferableLegacyEntityType;
+		entityType: LegacyEscalationEntityType;
 		entityId: string;
 		approvalRequestId?: string;
 	},
@@ -137,7 +137,7 @@ export async function assertLegacyTransferDecisionAuthority(
 	executor: LegacyTransferExecutor,
 	input: {
 		organizationId: string;
-		entityType: TransferableLegacyEntityType;
+		entityType: LegacyEscalationEntityType;
 		entityId: string;
 		approvalRequestId: string;
 		actorEmployeeId: string;
