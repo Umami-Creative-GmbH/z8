@@ -3,6 +3,7 @@ import {
 	type ApprovalPresentationProvider,
 	absenceCategory,
 	absenceEntry,
+	approvalRequest,
 	approvalWorkflow,
 	approvalWorkflowRollout,
 } from "@/db/schema";
@@ -19,11 +20,15 @@ import {
 	compareLiveAbsenceWithRevision,
 } from "../evidence/absence-facts";
 import { readApprovalPresentationMode } from "../evidence/invocation";
+import { hasLegacyAbsenceAuthority } from "../evidence/legacy-absence";
 import {
 	type AbsenceSubmittedRevisionRecord,
+	isLegacyRequestInRevisionLifecycle,
+	issueLegacyReviewBinding,
 	issueReviewBinding,
 	type ReviewBindingTarget,
 	loadCurrentAbsenceSubmittedRevision,
+	loadLegacyAbsenceSubmittedRevision,
 	readApprovalEvidenceMode,
 } from "../evidence/store";
 import type { ApprovalDatabase } from "../server/types";
@@ -128,7 +133,8 @@ function coverageText(
  * cycle, labelled with that zone.
  */
 export function buildAbsenceCardFacts(
-	revision: AbsenceSubmittedRevisionRecord,
+	// Either authority's revision: the facts never depend on who decides.
+	revision: Omit<AbsenceSubmittedRevisionRecord, "workflowId">,
 	comparison: AbsenceRevisionComparison,
 	display: DisplayContext,
 	t: BotTranslateFn,
@@ -245,6 +251,28 @@ async function loadAbsenceCardFacts(
 		workflowId: target.workflowId,
 	});
 	if (!revision || revision.sourceId !== workflow.sourceId) return null;
+	const live = await compareLiveAbsence(database, {
+		organizationId: target.organizationId,
+		absenceId: workflow.sourceId,
+		revision,
+	});
+	if (!live) return null;
+	const facts = buildAbsenceCardFacts(revision, live.comparison, input.display, input.t);
+	return facts ? { facts, submittedRevisionId: revision.id } : null;
+}
+
+/**
+ * The live absence compared with a submitted revision of either authority,
+ * with the absence's status. Null when the source is missing or uncategorized.
+ */
+async function compareLiveAbsence(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		absenceId: string;
+		revision: Pick<AbsenceSubmittedRevisionRecord, "facts" | "labels">;
+	},
+): Promise<{ comparison: AbsenceRevisionComparison; status: string } | null> {
 	const [live] = await database
 		.select({
 			id: absenceEntry.id,
@@ -255,6 +283,7 @@ async function loadAbsenceCardFacts(
 			startPeriod: absenceEntry.startPeriod,
 			endDate: absenceEntry.endDate,
 			endPeriod: absenceEntry.endPeriod,
+			status: absenceEntry.status,
 			categoryName: absenceCategory.name,
 		})
 		.from(absenceEntry)
@@ -262,28 +291,28 @@ async function loadAbsenceCardFacts(
 			absenceCategory,
 			and(
 				eq(absenceCategory.id, absenceEntry.categoryId),
-				eq(absenceCategory.organizationId, target.organizationId),
+				eq(absenceCategory.organizationId, input.organizationId),
 			),
 		)
 		.where(
 			and(
-				eq(absenceEntry.organizationId, target.organizationId),
-				eq(absenceEntry.id, workflow.sourceId),
+				eq(absenceEntry.organizationId, input.organizationId),
+				eq(absenceEntry.id, input.absenceId),
 			),
 		)
 		.limit(1);
 	if (
 		!live ||
-		live.organizationId !== target.organizationId ||
+		live.organizationId !== input.organizationId ||
 		live.categoryId === null
 	) {
 		return null;
 	}
 	const comparison = compareLiveAbsenceWithRevision(
-		revision.facts,
-		revision.labels,
+		input.revision.facts,
+		input.revision.labels,
 		{
-			organizationId: target.organizationId,
+			organizationId: input.organizationId,
 			absenceId: live.id,
 			employeeId: live.employeeId,
 			categoryId: live.categoryId,
@@ -294,8 +323,7 @@ async function loadAbsenceCardFacts(
 			categoryName: live.categoryName ?? null,
 		},
 	);
-	const facts = buildAbsenceCardFacts(revision, comparison, input.display, input.t);
-	return facts ? { facts, submittedRevisionId: revision.id } : null;
+	return { comparison, status: live.status };
 }
 
 // Exact item; it stays reviewable as history after a decision, and arrival
@@ -337,24 +365,143 @@ export async function prepareBoundAbsenceCard(
 	if (presentationMode !== "actionable") return null;
 	const loaded = await loadAbsenceCardFacts(database, input);
 	if (!loaded) return null;
-	const draft: ApprovalCardDraft = {
+	const draft = absenceCardDraft({
+		recipientUserId: input.recipientUserId,
+		facts: loaded.facts,
+		reviewUrl: await cardReviewUrl(target, input.approvalRequestId),
+		t,
+	});
+	if (input.fits && !input.fits(draft)) return null;
+	const bindingId = await issueReviewBinding(database, {
+		...target,
+		submittedRevisionId: loaded.submittedRevisionId,
+	});
+	return { ...draft, bindingId };
+}
+
+function absenceCardDraft(input: {
+	recipientUserId: string;
+	facts: ApprovalCardFact[];
+	reviewUrl: string;
+	t: BotTranslateFn;
+}): ApprovalCardDraft {
+	const { t } = input;
+	return {
 		status: "actionable",
 		recipientUserId: input.recipientUserId,
 		title: t("bot.approval.card.absenceTitle", "Absence approval request"),
-		facts: loaded.facts,
+		facts: input.facts,
 		text: t(
 			"bot.approval.card.boundHint",
 			"Approve or reject decides exactly the request shown above. If it changed or was reassigned, nothing is decided and you are asked to review it in Z8.",
 		),
 		reviewLabel: t("bot.approval.reviewInZ8", "Review in Z8"),
-		reviewUrl: await cardReviewUrl(target, input.approvalRequestId),
+		reviewUrl: input.reviewUrl,
 		approveLabel: t("bot.approval.card.approve", "Approve"),
 		rejectLabel: t("bot.approval.card.reject", "Reject"),
 	};
+}
+
+/**
+ * Providers whose legacy absence cards may carry controls (#384). Teams and
+ * Discord share the bound path but are not verified under legacy authority, so
+ * even an `actionable` control (for example one left from canonical authority)
+ * keeps their legacy absence cards review-only.
+ */
+const LEGACY_ABSENCE_CARD_PROVIDERS: readonly ApprovalPresentationProvider[] = ["telegram"];
+
+/**
+ * Prepares an actionable card for one recipient's exact pending legacy absence
+ * request (the stage's request for chains), bound to that request and the
+ * legacy submitted revision of its submission cycle (#384), or returns null so
+ * the caller shows a review-only notice. Every gate must hold: legacy absence
+ * authority, evidence capture, an admitted provider, a pending absence whose
+ * cycle revision still matches it, intelligible facts and the provider's own
+ * limits. A shadow/ready observation is never consulted. A binding is issued
+ * only for a card that will be sent. Infrastructure errors propagate.
+ */
+export async function prepareBoundLegacyAbsenceCard(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		approvalRequestId: string;
+		recipientEmployeeId: string;
+		recipientUserId: string;
+		provider: ApprovalPresentationProvider;
+		display: DisplayContext;
+		t: BotTranslateFn;
+		fits?: (draft: ApprovalCardDraft) => boolean;
+	},
+): Promise<ApprovalActionableCard | null> {
+	const { organizationId } = input;
+	if (!LEGACY_ABSENCE_CARD_PROVIDERS.includes(input.provider)) return null;
+	const [request] = await database
+		.select({ absenceId: approvalRequest.entityId })
+		.from(approvalRequest)
+		.where(
+			and(
+				eq(approvalRequest.id, input.approvalRequestId),
+				eq(approvalRequest.organizationId, organizationId),
+				eq(approvalRequest.entityType, "absence_entry"),
+				eq(approvalRequest.approverId, input.recipientEmployeeId),
+				eq(approvalRequest.status, "pending"),
+			),
+		)
+		.limit(1);
+	if (!request) return null;
+	if (!(await hasLegacyAbsenceAuthority(database, organizationId))) return null;
+	const [evidenceMode, presentationMode] = await Promise.all([
+		readApprovalEvidenceMode(database, { organizationId, workflowType: "absence" }),
+		readApprovalPresentationMode(database, {
+			organizationId,
+			workflowType: "absence",
+			provider: input.provider,
+		}),
+	]);
+	if (evidenceMode !== "capture" || presentationMode !== "actionable") return null;
+	const revision = await loadLegacyAbsenceSubmittedRevision(database, {
+		organizationId,
+		absenceId: request.absenceId,
+	});
+	if (!revision) return null;
+	const cycle = {
+		sourceType: "absence_entry",
+		sourceId: request.absenceId,
+		legacy: revision.legacy,
+	};
+	if (
+		!(await isLegacyRequestInRevisionLifecycle(database, {
+			organizationId,
+			approvalRequestId: input.approvalRequestId,
+			revision: cycle,
+		}))
+	) {
+		return null;
+	}
+	const live = await compareLiveAbsence(database, {
+		organizationId,
+		absenceId: request.absenceId,
+		revision,
+	});
+	if (live?.status !== "pending") return null;
+	const facts = buildAbsenceCardFacts(revision, live.comparison, input.display, input.t);
+	if (!facts) return null;
+	const draft = absenceCardDraft({
+		recipientUserId: input.recipientUserId,
+		facts,
+		reviewUrl: await approvalReviewUrl({
+			organizationId,
+			reference: { kind: "compatibility", approvalRequestId: input.approvalRequestId },
+		}),
+		t: input.t,
+	});
 	if (input.fits && !input.fits(draft)) return null;
-	const bindingId = await issueReviewBinding(database, {
-		...target,
-		submittedRevisionId: loaded.submittedRevisionId,
+	const bindingId = await issueLegacyReviewBinding(database, {
+		organizationId,
+		recipientEmployeeId: input.recipientEmployeeId,
+		legacyApprovalRequestId: input.approvalRequestId,
+		submittedRevisionId: revision.id,
+		revision: cycle,
 	});
 	return { ...draft, bindingId };
 }

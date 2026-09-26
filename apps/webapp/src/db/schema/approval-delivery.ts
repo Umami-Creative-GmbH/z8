@@ -15,7 +15,6 @@ import {
 import { organization, user } from "../auth-schema";
 import { approvalEscalationTransfer } from "./approval-escalation";
 import { approvalReviewBinding } from "./approval-evidence";
-import { approvalRequest } from "./approval";
 import { approvalOutbox, approvalStageAssignment, approvalWorkflow } from "./approval-workflow";
 import { approvalWorkflowTypeEnum } from "./enums";
 import { employee } from "./organization";
@@ -53,6 +52,13 @@ export type ApprovalDeliveryMessageState = (typeof APPROVAL_DELIVERY_MESSAGE_STA
  * lifecycle is a workflow with stages and assignments; a legacy lifecycle is a
  * legacy-authoritative source (e.g. an expense claim) whose legacy requests are
  * the assignment equivalents. Legacy rows never name a canonical workflow.
+ *
+ * A legacy lifecycle is one submission cycle when `legacy_cycle_id` is set
+ * (#384): the legacy chain instance, or the single legacy request, that one
+ * submission created. Without it the whole source is one lifecycle (expense
+ * claims, which leave draft once). Legacy rows keep their legacy request by
+ * value: ordinary cancellation deletes pending legacy requests, and delivery
+ * history must survive it until privileged cleanup purges the lifecycle.
  */
 export const APPROVAL_DELIVERY_LIFECYCLES = ["canonical", "legacy"] as const;
 export type ApprovalDeliveryLifecycle = (typeof APPROVAL_DELIVERY_LIFECYCLES)[number];
@@ -121,6 +127,8 @@ export const approvalDeliveryMessage = pgTable(
 		legacySourceType: text("legacy_source_type"),
 		legacySourceId: uuid("legacy_source_id"),
 		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
+		/** The submission cycle of a cycle-keyed legacy lifecycle (#384), by value. */
+		legacyCycleId: uuid("legacy_cycle_id"),
 		recipientEmployeeId: uuid("recipient_employee_id").notNull(),
 		recipientUserId: text("recipient_user_id")
 			.notNull()
@@ -153,8 +161,15 @@ export const approvalDeliveryMessage = pgTable(
 		index("approvalDeliveryMessage_org_legacy_source_idx")
 			.on(table.organizationId, table.legacySourceType, table.legacySourceId)
 			.where(sql`${table.lifecycle} = 'legacy'`),
+		index("approvalDeliveryMessage_org_legacy_cycle_idx")
+			.on(table.organizationId, table.legacyCycleId)
+			.where(sql`${table.legacyCycleId} IS NOT NULL`),
 		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`),
 		check("approval_delivery_message_lifecycle_check", lifecycleCheck(table)),
+		check(
+			"approval_delivery_message_legacy_cycle_check",
+			sql`${table.legacyCycleId} IS NULL OR ${table.lifecycle} = 'legacy'`,
+		),
 		check(
 			"approval_delivery_message_legacy_reference_check",
 			sql`${table.lifecycle} <> 'legacy' OR ${table.approvalRequestId} = ${table.legacyApprovalRequestId}`,
@@ -177,13 +192,9 @@ export const approvalDeliveryMessage = pgTable(
 			columns: [table.assignmentId, table.organizationId],
 			foreignColumns: [approvalStageAssignment.id, approvalStageAssignment.organizationId],
 		}).onDelete("cascade"),
-		// A purged legacy lifecycle takes its messages with it; a late send then
-		// cannot record a message for it.
-		foreignKey({
-			name: "approval_delivery_message_legacy_request_fk",
-			columns: [table.legacyApprovalRequestId, table.organizationId],
-			foreignColumns: [approvalRequest.id, approvalRequest.organizationId],
-		}).onDelete("cascade"),
+		// Legacy lifecycles keep their request by value (#384); privileged cleanup
+		// purges them explicitly, and a late send after the purge finds no work
+		// to record its message for.
 		foreignKey({
 			name: "approval_delivery_message_binding_fk",
 			columns: [table.bindingId, table.organizationId],
@@ -222,6 +233,8 @@ export const approvalDeliveryWork = pgTable(
 		legacySourceType: text("legacy_source_type"),
 		legacySourceId: uuid("legacy_source_id"),
 		legacyApprovalRequestId: uuid("legacy_approval_request_id"),
+		/** The submission cycle of a cycle-keyed legacy lifecycle (#384), by value. */
+		legacyCycleId: uuid("legacy_cycle_id"),
 		recipientEmployeeId: uuid("recipient_employee_id").notNull(),
 		messageId: uuid("message_id"),
 		/** The committed transfer whose replacement delivery owns this work. */
@@ -252,7 +265,14 @@ export const approvalDeliveryWork = pgTable(
 		index("approvalDeliveryWork_org_legacy_source_idx")
 			.on(table.organizationId, table.legacySourceType, table.legacySourceId)
 			.where(sql`${table.lifecycle} = 'legacy'`),
+		index("approvalDeliveryWork_org_legacy_cycle_idx")
+			.on(table.organizationId, table.legacyCycleId)
+			.where(sql`${table.legacyCycleId} IS NOT NULL`),
 		check("approval_delivery_work_lifecycle_check", lifecycleCheck(table)),
+		check(
+			"approval_delivery_work_legacy_cycle_check",
+			sql`${table.legacyCycleId} IS NULL OR ${table.lifecycle} = 'legacy'`,
+		),
 		index("approvalDeliveryWork_due_idx")
 			.on(table.organizationId, table.availableAt)
 			.where(sql`status IN ('pending', 'processing')`),
@@ -279,11 +299,6 @@ export const approvalDeliveryWork = pgTable(
 			foreignColumns: [approvalWorkflow.id, approvalWorkflow.organizationId],
 		}).onDelete("cascade"),
 		foreignKey({
-			name: "approval_delivery_work_legacy_request_fk",
-			columns: [table.legacyApprovalRequestId, table.organizationId],
-			foreignColumns: [approvalRequest.id, approvalRequest.organizationId],
-		}).onDelete("cascade"),
-		foreignKey({
 			name: "approval_delivery_work_assignment_fk",
 			columns: [table.assignmentId, table.organizationId],
 			foreignColumns: [approvalStageAssignment.id, approvalStageAssignment.organizationId],
@@ -306,14 +321,16 @@ export const approvalDeliveryWork = pgTable(
 	],
 );
 
-export const APPROVAL_DELIVERY_INTENT_EVENTS = ["submitted", "decided"] as const;
+/** `withdrawn`: ordinary cancellation deleted the cycle's pending requests (#384). */
+export const APPROVAL_DELIVERY_INTENT_EVENTS = ["submitted", "decided", "withdrawn"] as const;
 export type ApprovalDeliveryIntentEvent = (typeof APPROVAL_DELIVERY_INTENT_EVENTS)[number];
 
 // Lifecycle intents of legacy-authoritative approvals (#296), the counterpart
-// of a canonical workflow's outbox rows. The legacy submission/decision owner
-// writes one in the transaction that changes the lifecycle, only while the kind
-// has a delivery control; the delivery owner plans from current state. A purged
-// legacy request takes its intents with it.
+// of a canonical workflow's outbox rows. The legacy submission/decision (and,
+// for cycles, cancellation) owner writes one in the transaction that changes
+// the lifecycle, only while the kind has a delivery control; the delivery owner
+// plans from current state. Intents keep their request by value and are purged
+// with their lifecycle; a cycle's intents also count its status version.
 export const approvalDeliveryIntent = pgTable(
 	"approval_delivery_intent",
 	{
@@ -326,6 +343,8 @@ export const approvalDeliveryIntent = pgTable(
 		sourceId: uuid("source_id").notNull(),
 		/** The legacy request whose state this transaction changed. */
 		legacyApprovalRequestId: uuid("legacy_approval_request_id").notNull(),
+		/** The submission cycle of a cycle-keyed legacy lifecycle (#384), by value. */
+		legacyCycleId: uuid("legacy_cycle_id"),
 		event: text("event").$type<ApprovalDeliveryIntentEvent>().notNull(),
 		expansionStatus: text("expansion_status")
 			.$type<"pending" | "expanded">()
@@ -342,15 +361,21 @@ export const approvalDeliveryIntent = pgTable(
 			table.organizationId,
 			table.legacyApprovalRequestId,
 		),
-		check("approval_delivery_intent_event_check", sql`${table.event} IN ('submitted', 'decided')`),
+		index("approvalDeliveryIntent_org_legacy_cycle_idx")
+			.on(table.organizationId, table.legacyCycleId)
+			.where(sql`${table.legacyCycleId} IS NOT NULL`),
+		check(
+			"approval_delivery_intent_event_check",
+			sql`${table.event} IN ('submitted', 'decided', 'withdrawn')`,
+		),
 		check(
 			"approval_delivery_intent_expansion_check",
 			sql`${table.expansionStatus} IN ('pending', 'expanded')`,
 		),
-		foreignKey({
-			name: "approval_delivery_intent_legacy_request_fk",
-			columns: [table.legacyApprovalRequestId, table.organizationId],
-			foreignColumns: [approvalRequest.id, approvalRequest.organizationId],
-		}).onDelete("cascade"),
+		// Only a cycle's own owners know that cancellation withdrew it.
+		check(
+			"approval_delivery_intent_withdrawn_cycle_check",
+			sql`${table.event} <> 'withdrawn' OR ${table.legacyCycleId} IS NOT NULL`,
+		),
 	],
 );

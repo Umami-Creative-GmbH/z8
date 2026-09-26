@@ -173,6 +173,7 @@ jobs:
             src/lib/cron/legacy-escalation-fencing.integration.test.ts \
             src/lib/approvals/presentation/review-arrival.integration.test.ts \
             src/lib/telegram/bound-approval.integration.test.ts \
+            src/lib/telegram/legacy-bound-approval.integration.test.ts \
             src/lib/approvals/delivery/telegram-delivery.integration.test.ts \
             src/lib/approvals/delivery/slack-delivery.integration.test.ts \
             src/lib/teams/bound-approval.integration.test.ts \

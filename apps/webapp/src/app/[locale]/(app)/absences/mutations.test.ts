@@ -59,6 +59,11 @@ vi.mock("@/lib/queue", () => ({
 	addCalendarSyncJob: mockState.addCalendarSyncJob,
 }));
 
+// Withdrawal intents (#384): legacy-bound-approval.integration.test.ts.
+vi.mock("@/lib/approvals/delivery/intents", () => ({
+	recordLegacyDeliveryIntent: async () => false,
+}));
+
 vi.mock("@/lib/billing/guard", () => ({
 	isBillingMutationAllowed: mockState.isBillingMutationAllowed,
 	requireBillingForMutation: mockState.requireBillingForMutation,

@@ -81,7 +81,8 @@ export async function isApprovalDeliveryOwner(input: {
  * message about the same request. The owner must be active for the provider
  * and kind, and the absence or work period must have a canonical workflow,
  * whose committed intents the owner delivers; a legacy request (e.g. a policy
- * fallback) keeps the path.
+ * fallback) keeps the path. Under legacy absence authority the owner delivers
+ * the cycles whose lifecycle intents it owns (#384).
  */
 export async function isApprovalNotificationDeliveredByOwner(input: {
 	organizationId: string;
@@ -160,7 +161,31 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 		workflowType: "absence",
 		provider: input.provider,
 	});
-	if (!owner) return false;
+	if (!owner) {
+		// Legacy absence authority (#384): the owner delivers a cycle whose
+		// lifecycle intent it owns (written while the provider's control was
+		// active), so the existing path stays silent for it.
+		const [delivered] = rows(
+			await db.execute(sql`
+				select 1 as delivered
+				from approval_delivery_intent i
+				join approval_delivery_control c
+					on c.organization_id = i.organization_id
+					and c.workflow_type = i.workflow_type
+					and c.provider = ${input.provider}
+					and c.activated_at <= i.created_at
+				left join approval_workflow_rollout r
+					on r.organization_id = i.organization_id and r.workflow_type = i.workflow_type
+				where i.organization_id = ${input.organizationId}
+					and i.workflow_type = 'absence'
+					and i.source_type = 'absence_entry'
+					and i.source_id = ${absenceId}::uuid
+					and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
+				limit 1
+			`),
+		);
+		return delivered !== undefined;
+	}
 	const absence = await db.query.absenceEntry.findFirst({
 		where: and(eq(absenceEntry.id, absenceId), eq(absenceEntry.organizationId, input.organizationId)),
 		columns: { approvalWorkflowId: true },
@@ -199,22 +224,37 @@ function refreshDedupeKey(messageId: string, workflowVersion: number): string {
 }
 
 /**
- * A legacy-authoritative lifecycle (#296): one source (e.g. an expense claim)
- * and its legacy requests, which are the assignment equivalents. A claim leaves
- * draft once, so its requests form exactly one lifecycle.
+ * A legacy-authoritative lifecycle (#296): a source and its legacy requests,
+ * which are the assignment equivalents. With a `cycleId` (#384) it is one
+ * submission cycle of the source: the legacy chain instance, or the single
+ * legacy request, that one submission created, so several cycles of a source
+ * deliver, version and refresh independently. Without one the whole source is
+ * one lifecycle (an expense claim leaves draft once).
  */
 export interface LegacyDeliveryLifecycle {
 	workflowType: ApprovalWorkflowType;
 	sourceType: string;
 	sourceId: string;
+	cycleId: string | null;
 }
 
 /**
- * The lifecycle's status version: one plus the number of its decided legacy
- * requests. Decisions only move forward, so it only increases, like a
- * workflow's version; a message reflecting it is current.
+ * The lifecycle's status version; it only increases, like a workflow's
+ * version, and a message reflecting it is current. A cycle counts its own
+ * lifecycle intents (submission, each decision, withdrawal), which are written
+ * with every change and never deleted but by the purge; this survives ordinary
+ * cancellation, which deletes pending requests. A source-scoped lifecycle is
+ * one plus the number of its decided legacy requests (#296, unchanged).
  */
 function legacyLifecycleVersionSql(organizationId: string, lifecycle: LegacyDeliveryLifecycle) {
+	if (lifecycle.cycleId) {
+		return sql`(
+			select count(*)
+			from approval_delivery_intent i
+			where i.organization_id = ${organizationId}
+				and i.legacy_cycle_id = ${lifecycle.cycleId}::uuid
+		)`;
+	}
 	return sql`(
 		select 1 + count(*) filter (where r.status <> 'pending')
 		from approval_request r
@@ -223,6 +263,45 @@ function legacyLifecycleVersionSql(organizationId: string, lifecycle: LegacyDeli
 			and r.entity_id = ${lifecycle.sourceId}::uuid
 	)`;
 }
+
+/**
+ * The live legacy requests (`r`) of a lifecycle: the source's requests, and for
+ * a cycle only the cycle's own request or its chain's stage requests.
+ */
+function legacyLifecycleRequestsSql(organizationId: string, lifecycle: LegacyDeliveryLifecycle) {
+	return sql`r.organization_id = ${organizationId}
+		and r.entity_type = ${lifecycle.sourceType}
+		and r.entity_id = ${lifecycle.sourceId}::uuid
+		${
+			lifecycle.cycleId
+				? sql`and (r.id = ${lifecycle.cycleId}::uuid or exists (
+					select 1 from approval_chain_stage_instance s
+					where s.organization_id = r.organization_id
+						and s.chain_instance_id = ${lifecycle.cycleId}::uuid
+						and s.approval_request_id = r.id
+				))`
+				: sql``
+		}`;
+}
+
+/** Delivery rows (`m`/`d` columns) of exactly one legacy lifecycle. */
+function legacyLifecycleRowsSql(
+	alias: "m" | "d",
+	organizationId: string,
+	lifecycle: LegacyDeliveryLifecycle,
+) {
+	const row = sql.raw(alias);
+	return sql`${row}.organization_id = ${organizationId}
+		and ${row}.lifecycle = 'legacy'
+		and ${row}.legacy_source_type = ${lifecycle.sourceType}
+		and ${row}.legacy_source_id = ${lifecycle.sourceId}::uuid
+		and ${
+			lifecycle.cycleId
+				? sql`${row}.legacy_cycle_id = ${lifecycle.cycleId}::uuid`
+				: sql`${row}.legacy_cycle_id is null`
+		}`;
+}
+
 
 /**
  * Plans every effect the workflow's current state requires: an initial card
@@ -322,9 +401,7 @@ async function planLegacyLifecycleEffects(
 		await transaction.execute(sql`
 			select r.id, r.approver_id
 			from approval_request r
-			where r.organization_id = ${input.organizationId}
-				and r.entity_type = ${lifecycle.sourceType}
-				and r.entity_id = ${lifecycle.sourceId}::uuid
+			where ${legacyLifecycleRequestsSql(input.organizationId, lifecycle)}
 				and r.status = 'pending'
 		`),
 	);
@@ -333,6 +410,7 @@ async function planLegacyLifecycleEffects(
 		workflowType: lifecycle.workflowType,
 		legacySourceType: lifecycle.sourceType,
 		legacySourceId: lifecycle.sourceId,
+		legacyCycleId: lifecycle.cycleId,
 	};
 	let created = 0;
 	for (const request of pending) {
@@ -357,23 +435,22 @@ async function planLegacyLifecycleEffects(
 		}
 	}
 	const stillPending = pending.map((request) => text(request.id, "legacy request"));
-	const cancelled = await transaction
-		.update(approvalDeliveryWork)
-		.set({ status: "cancelled", lastOutcome: "obsolete", processedAt: new Date() })
-		.where(
-			and(
-				eq(approvalDeliveryWork.organizationId, input.organizationId),
-				eq(approvalDeliveryWork.lifecycle, "legacy"),
-				eq(approvalDeliveryWork.legacySourceType, lifecycle.sourceType),
-				eq(approvalDeliveryWork.legacySourceId, lifecycle.sourceId),
-				eq(approvalDeliveryWork.effect, "initial"),
-				inArray(approvalDeliveryWork.status, ["pending", "awaiting_repair", "exhausted", "failed"]),
-				stillPending.length > 0
-					? sql`${approvalDeliveryWork.legacyApprovalRequestId} <> all(${sql.param(stillPending)}::uuid[])`
-					: sql`true`,
-			),
-		)
-		.returning({ id: approvalDeliveryWork.id });
+	const cancelled = rows(
+		await transaction.execute(sql`
+			update approval_delivery_work d
+			set status = 'cancelled', last_outcome = 'obsolete', processed_at = now(),
+				updated_at = now()
+			where ${legacyLifecycleRowsSql("d", input.organizationId, lifecycle)}
+				and d.effect = 'initial'
+				and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
+				${
+					stillPending.length > 0
+						? sql`and d.legacy_approval_request_id <> all(${sql.param(stillPending)}::uuid[])`
+						: sql``
+				}
+			returning d.id
+		`),
+	);
 	created += await planLegacyMessageRefreshes(transaction, input);
 	return { created, cancelled: cancelled.length };
 }
@@ -450,8 +527,9 @@ export async function planApprovalMessageRefreshes(
 
 /**
  * A refresh for every known message of a legacy lifecycle whose request is no
- * longer pending and which does not yet reflect the lifecycle's version. A
- * still-pending request's card keeps its controls.
+ * longer pending (decided, or deleted by ordinary cancellation) and which does
+ * not yet reflect the lifecycle's version. A still-pending request's card keeps
+ * its controls.
  */
 async function planLegacyMessageRefreshes(
 	executor: ApprovalDeliveryExecutor,
@@ -463,14 +541,11 @@ async function planLegacyMessageRefreshes(
 			select m.id, m.provider, m.legacy_approval_request_id, m.recipient_employee_id,
 				${legacyLifecycleVersionSql(input.organizationId, lifecycle)} as version
 			from approval_delivery_message m
-			join approval_request r
+			left join approval_request r
 				on r.id = m.legacy_approval_request_id and r.organization_id = m.organization_id
-			where m.organization_id = ${input.organizationId}
-				and m.lifecycle = 'legacy'
-				and m.legacy_source_type = ${lifecycle.sourceType}
-				and m.legacy_source_id = ${lifecycle.sourceId}::uuid
+			where ${legacyLifecycleRowsSql("m", input.organizationId, lifecycle)}
 				and m.state <> 'gone'
-				and r.status <> 'pending'
+				and (r.id is null or r.status <> 'pending')
 				and m.status_version < ${legacyLifecycleVersionSql(input.organizationId, lifecycle)}
 		`),
 	);
@@ -486,6 +561,7 @@ async function planLegacyMessageRefreshes(
 				workflowType: lifecycle.workflowType,
 				legacySourceType: lifecycle.sourceType,
 				legacySourceId: lifecycle.sourceId,
+				legacyCycleId: lifecycle.cycleId,
 				effect: "refresh",
 				provider: text(message.provider, "provider") as ApprovalDeliveryProvider,
 				legacyApprovalRequestId: text(message.legacy_approval_request_id, "legacy request"),
@@ -709,7 +785,7 @@ async function expandLegacyIntents(input: {
 	return db.transaction(async (transaction) => {
 		const intents = rows(
 			await transaction.execute(sql`
-				select i.id, i.workflow_type, i.source_type, i.source_id,
+				select i.id, i.workflow_type, i.source_type, i.source_id, i.legacy_cycle_id,
 					array(
 						select c.provider from approval_delivery_control c
 						where c.organization_id = i.organization_id
@@ -746,8 +822,9 @@ async function expandLegacyIntents(input: {
 				workflowType: text(intent.workflow_type, "workflow type") as ApprovalWorkflowType,
 				sourceType: text(intent.source_type, "source type"),
 				sourceId: text(intent.source_id, "source"),
+				cycleId: nullableText(intent.legacy_cycle_id),
 			};
-			const key = `${lifecycle.workflowType}:${lifecycle.sourceType}:${lifecycle.sourceId}`;
+			const key = `${lifecycle.workflowType}:${lifecycle.sourceType}:${lifecycle.sourceId}:${lifecycle.cycleId ?? ""}`;
 			const providers = Array.isArray(intent.providers)
 				? (intent.providers as ApprovalDeliveryProvider[])
 				: [];
@@ -883,7 +960,8 @@ export async function claimApprovalDeliveryWork(input: {
 						where w.id = d.workflow_id and w.organization_id = d.organization_id
 					), d.workflow_type) as workflow_type,
 					d.effect, d.provider, d.assignment_id, d.legacy_source_type,
-					d.legacy_source_id, d.legacy_approval_request_id, d.recipient_employee_id,
+					d.legacy_source_id, d.legacy_approval_request_id, d.legacy_cycle_id,
+					d.recipient_employee_id,
 					d.message_id, d.escalation_transfer_id, d.retry_count, d.attempt_count
 			`),
 		);
@@ -906,6 +984,7 @@ export async function claimApprovalDeliveryWork(input: {
 									workflowType,
 									sourceType: text(row.legacy_source_type, "legacy source type"),
 									sourceId: text(row.legacy_source_id, "legacy source"),
+									cycleId: nullableText(row.legacy_cycle_id),
 									approvalRequestId: text(row.legacy_approval_request_id, "legacy request"),
 								}
 							: null,
@@ -925,18 +1004,67 @@ export async function claimApprovalDeliveryWork(input: {
  * Current state of a legacy lifecycle's request (#296), shaped like a
  * workflow assignment: the lifecycle's status and version, and the request's
  * own status and current approver. Only kinds whose source status is known
- * here are supported; anything else is null.
+ * here are supported; anything else is null. An absence cycle (#384) has the
+ * status of its chain or single request; a request deleted by ordinary
+ * cancellation reads as `cancelled` without an approver.
  */
 export async function loadLegacyDeliveryState(input: {
 	organizationId: string;
 	lifecycle: LegacyDeliveryLifecycle;
 	approvalRequestId: string;
 }): Promise<{
-	lifecycleStatus: "pending" | "approved" | "rejected" | "unknown";
+	lifecycleStatus: "pending" | "approved" | "rejected" | "cancelled" | "unknown";
 	version: number;
 	requestStatus: string;
-	approverEmployeeId: string;
+	approverEmployeeId: string | null;
 } | null> {
+	const { cycleId } = input.lifecycle;
+	if (
+		cycleId &&
+		input.lifecycle.workflowType === "absence" &&
+		input.lifecycle.sourceType === "absence_entry"
+	) {
+		// A cycle's status is its own: its chain's, or its single request's.
+		// Ordinary cancellation deletes the absence and its pending requests
+		// (withdrawn); the cycle's delivery rows outlive them until privileged
+		// cleanup.
+		const [absence] = rows(
+			await db.execute(sql`
+				select a.id as source_id, c.status::text as chain_status,
+					q.status::text as root_status, r.status as request_status, r.approver_id,
+					${legacyLifecycleVersionSql(input.organizationId, input.lifecycle)} as version
+				from (select 1) as lifecycle
+				left join absence_entry a
+					on a.organization_id = ${input.organizationId}
+					and a.id = ${input.lifecycle.sourceId}::uuid
+				left join approval_chain_instance c
+					on c.organization_id = ${input.organizationId} and c.id = ${cycleId}::uuid
+				left join approval_request q
+					on q.organization_id = ${input.organizationId} and q.id = ${cycleId}::uuid
+				left join approval_request r
+					on r.organization_id = ${input.organizationId}
+					and r.id = ${input.approvalRequestId}::uuid
+					and r.entity_type = 'absence_entry'
+					and r.entity_id = ${input.lifecycle.sourceId}::uuid
+			`),
+		);
+		if (!absence) return null;
+		const cycleStatus = absence.source_id
+			? (nullableText(absence.chain_status) ?? nullableText(absence.root_status) ?? "cancelled")
+			: "cancelled";
+		return {
+			lifecycleStatus:
+				cycleStatus === "pending" ||
+				cycleStatus === "approved" ||
+				cycleStatus === "rejected" ||
+				cycleStatus === "cancelled"
+					? cycleStatus
+					: "unknown",
+			version: Number(absence.version),
+			requestStatus: nullableText(absence.request_status) ?? "cancelled",
+			approverEmployeeId: nullableText(absence.approver_id),
+		};
+	}
 	if (
 		input.lifecycle.workflowType !== "travel_expense" ||
 		input.lifecycle.sourceType !== "travel_expense_claim"
@@ -1073,6 +1201,9 @@ export type RecordDeliveredMessageResult =
 	| { kind: "known"; messageId: string }
 	| { kind: "purged" };
 
+/** Rolls back a legacy message whose sending work was purged meanwhile. */
+class LegacyLifecyclePurgedError extends Error {}
+
 function isForeignKeyViolation(error: unknown): boolean {
 	for (let current = error; current && typeof current === "object"; ) {
 		if ("code" in current && current.code === "23503") return true;
@@ -1084,7 +1215,10 @@ function isForeignKeyViolation(error: unknown): boolean {
 /**
  * Records one actual remote message with its full identity, independently of
  * the claim's fence: a late or duplicate send is still tracked so it can be
- * refreshed. A lifecycle purged meanwhile cannot be recreated (its FKs fail).
+ * refreshed. A lifecycle purged meanwhile cannot be recreated: a canonical
+ * message's FKs fail, and a legacy message (whose request is kept by value,
+ * #384) is recorded only while the work that sent it still exists, which the
+ * purge deletes under its table locks.
  */
 export async function recordDeliveredApprovalMessage(
 	input: DeliveredApprovalMessageInput,
@@ -1100,24 +1234,45 @@ export async function recordDeliveredApprovalMessage(
 				legacySourceType: legacy.sourceType,
 				legacySourceId: legacy.sourceId,
 				legacyApprovalRequestId: legacy.approvalRequestId,
+				legacyCycleId: legacy.cycleId,
 			}
 		: { ...remote, workflowId, stageId, assignmentId };
 	try {
-		const [inserted] = await db
-			.insert(approvalDeliveryMessage)
-			.values(values)
-			.onConflictDoNothing({
-				target: [
-					approvalDeliveryMessage.organizationId,
-					approvalDeliveryMessage.provider,
-					approvalDeliveryMessage.receiverScope,
-					approvalDeliveryMessage.destinationId,
-					approvalDeliveryMessage.remoteMessageId,
-				],
-			})
-			.returning({ id: approvalDeliveryMessage.id });
+		const inserted = await db.transaction(async (transaction) => {
+			// The insert takes the message table lock first, the same order as the
+			// purge (which locks every delivery table up front), so the two
+			// serialize instead of deadlocking.
+			const [row] = await transaction
+				.insert(approvalDeliveryMessage)
+				.values(values)
+				.onConflictDoNothing({
+					target: [
+						approvalDeliveryMessage.organizationId,
+						approvalDeliveryMessage.provider,
+						approvalDeliveryMessage.receiverScope,
+						approvalDeliveryMessage.destinationId,
+						approvalDeliveryMessage.remoteMessageId,
+					],
+				})
+				.returning({ id: approvalDeliveryMessage.id });
+			if (legacy && row) {
+				const origin = input.originWorkId
+					? rows(
+							await transaction.execute(sql`
+								select id from approval_delivery_work
+								where organization_id = ${input.organizationId}
+									and id = ${input.originWorkId}::uuid
+								for key share
+							`),
+						)
+					: [];
+				if (origin.length !== 1) throw new LegacyLifecyclePurgedError();
+			}
+			return row ?? null;
+		});
 		if (inserted) return { kind: "recorded", messageId: inserted.id };
 	} catch (error) {
+		if (error instanceof LegacyLifecyclePurgedError) return { kind: "purged" };
 		if (isForeignKeyViolation(error)) return { kind: "purged" };
 		throw error;
 	}
@@ -1185,7 +1340,7 @@ export function approvalDeliveryMessageReviewReference(
 export function approvalDeliveryMessageLegacyLifecycle(
 	message: Pick<
 		ApprovalDeliveryMessageRecord,
-		"lifecycle" | "workflowType" | "legacySourceType" | "legacySourceId"
+		"lifecycle" | "workflowType" | "legacySourceType" | "legacySourceId" | "legacyCycleId"
 	>,
 ): LegacyDeliveryLifecycle | null {
 	return message.lifecycle === "legacy" &&
@@ -1196,6 +1351,7 @@ export function approvalDeliveryMessageLegacyLifecycle(
 				workflowType: message.workflowType,
 				sourceType: message.legacySourceType,
 				sourceId: message.legacySourceId,
+				cycleId: message.legacyCycleId,
 			}
 		: null;
 }

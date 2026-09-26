@@ -14,6 +14,8 @@ import {
 	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
+import { recordLegacyDeliveryIntent } from "@/lib/approvals/delivery/intents";
+import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import {
@@ -198,7 +200,33 @@ async function cancelLegacyApprovalRows(
 		>;
 		cancelledAt: Date;
 	},
-): Promise<void> {
+): Promise<boolean> {
+	// Each submission cycle is withdrawn with its absence (#384): a lifecycle
+	// intent, written only while a delivery control exists, lets the delivery
+	// owner refresh the cycle's sent cards. Its requests are read before the
+	// pending ones are deleted and their chain links cleared.
+	const cycles =
+		input.chains.length === 0
+			? input.requests.map((request) => ({ cycleId: request.id, requestId: request.id }))
+			: input.chains.flatMap((chain) => {
+					const stage = (chain.stages ?? []).find((row) => row.approvalRequestId);
+					return stage?.approvalRequestId
+						? [{ cycleId: chain.id, requestId: stage.approvalRequestId }]
+						: [];
+				});
+	let deliveryIntent = false;
+	for (const cycle of cycles) {
+		deliveryIntent =
+			(await recordLegacyDeliveryIntent(dbService.db, {
+				organizationId: input.organizationId,
+				workflowType: "absence",
+				sourceType: "absence_entry",
+				sourceId: input.absenceId,
+				approvalRequestId: cycle.requestId,
+				cycleId: cycle.cycleId,
+				event: "withdrawn",
+			})) || deliveryIntent;
+	}
 	const activeRequestIds = new Set(
 		input.chains.flatMap((chain) =>
 			(chain.stages ?? []).flatMap((stage) =>
@@ -313,6 +341,7 @@ async function cancelLegacyApprovalRows(
 			"Legacy approval request changed during cancellation",
 		);
 	}
+	return deliveryIntent;
 }
 
 export async function cancelAbsenceRequest(
@@ -643,7 +672,7 @@ export async function cancelAbsenceRequestForEmployee(
 						capturedAt: cancelledAt,
 					});
 				}
-				await cancelLegacyApprovalRows(
+				const deliveryIntent = await cancelLegacyApprovalRows(
 					{
 						db: transactionDb,
 						query: <T>(_name: string, operation: () => Promise<T>) =>
@@ -695,12 +724,16 @@ export async function cancelAbsenceRequestForEmployee(
 					expectedApprovalWorkflowId: absence.approvalWorkflowId,
 					expectedCanonicalRecordId: absence.canonicalRecordId,
 				});
-				return { absence, disposition: "executed" as const };
+				return { absence, disposition: "executed" as const, deliveryIntent };
 			},
 		);
 
 		if (committedCancellation.disposition === "replayed") {
 			return { success: true };
+		}
+		if ("deliveryIntent" in committedCancellation && committedCancellation.deliveryIntent) {
+			// The withdrawal intent committed; this only runs the owner sooner.
+			kickApprovalDelivery({ organizationId });
 		}
 		const committedAbsence = committedCancellation.absence;
 		await addCalendarSyncJob({
