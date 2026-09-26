@@ -39,6 +39,18 @@ function getServerEpochSecond() {
 	return 0;
 }
 
+function subscribeToNothing() {
+	return () => {};
+}
+
+function getBrowserOrigin(): string | null {
+	return window.location.origin;
+}
+
+function getServerOrigin(): string | null {
+	return null;
+}
+
 function resolveBrowserTimezone(params?: { browserTimezone?: string | null }) {
 	return params && "browserTimezone" in params
 		? params.browserTimezone
@@ -108,12 +120,14 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		commandCapabilities,
 		submitClockCommand,
 	} = useOfflineClock();
+	// Null on the server and during hydration, so both render the same capture mode.
+	const origin = useSyncExternalStore(subscribeToNothing, getBrowserOrigin, getServerOrigin);
 	const pageSession =
-		session?.user?.id && activeOrganizationId && typeof window !== "undefined"
+		session?.user?.id && activeOrganizationId && origin
 			? {
 					userId: session.user.id,
 					organizationId: activeOrganizationId,
-					origin: window.location.origin,
+					origin,
 				}
 			: null;
 	const canFreeze =

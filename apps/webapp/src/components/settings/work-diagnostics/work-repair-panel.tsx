@@ -138,12 +138,12 @@ export function WorkRepairPanel({
 						reason: value.reason.trim(),
 					}),
 				});
-				const body = await response.json().catch(() => null);
 				if (!response.ok) {
+					const refusal = await response.json().catch(() => null);
 					setState({
 						kind: "error",
 						message:
-							body?.code === "repair_not_authorized"
+							refusal?.code === "repair_not_authorized"
 								? t(
 										"settings.workDiagnostics.repair.notAuthorized",
 										"Repair has not been authorized for this organization.",
@@ -152,6 +152,7 @@ export function WorkRepairPanel({
 					});
 					return;
 				}
+				const body = await response.json();
 				setState({ kind: "done", outcomes: body.outcomes });
 				router.refresh();
 			} catch {

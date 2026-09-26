@@ -17,6 +17,12 @@ export default {
 				files: ["**/drizzle/0062_better_auth_scim_storage.sql"],
 				rules: ["react-doctor/supabase-rls-policy-risk"],
 			},
+			{
+				// TanStack Form array fields are addressed by index (`changes[${index}]`), so the index
+				// is the row identity; draft change rows have no other identity until submitted.
+				files: ["**/components/settings/work-diagnostics/work-proposal-panel.tsx"],
+				rules: ["react-doctor/no-array-index-as-key"],
+			},
 		],
 	},
 	serverAuthFunctionNames: [

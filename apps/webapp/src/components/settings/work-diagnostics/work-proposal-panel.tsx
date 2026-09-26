@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { HistoricalWorkProposalStatus } from "@/db/schema/completed-work";
-import type { AppendAssuranceReport } from "@/lib/time-tracking/append-assurance";
 import type { AppendContinuationProposal } from "@/lib/time-tracking/append-continuation";
 import {
 	REPAIRABLE_FIELDS,
@@ -29,25 +28,13 @@ import {
 import type { HistoricalRepairProposal } from "@/lib/time-tracking/historical-repair-proposal";
 import type { HistoricalWorkProposalView } from "@/lib/time-tracking/historical-work-proposals";
 import { useRouter } from "@/navigation";
+import type { ContinuationTarget, RepairTarget } from "./work-proposal-targets";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 const ENDPOINT = "/api/time-entries/diagnostics/proposals";
 const SELECT_CLASS =
 	"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
-
-/** Work with findings an explicit repair could address. */
-export interface RepairTarget {
-	workPeriodId: string;
-	employeeId: string;
-	findingKinds: string[];
-}
-
-/** An employee whose history needs review before appends, with the entries nothing follows. */
-export interface ContinuationTarget {
-	employeeId: string;
-	candidates: { entryId: string; hash: string }[];
-}
 
 export interface WorkProposalPanelProps {
 	proposals: HistoricalWorkProposalView[];
@@ -56,32 +43,6 @@ export interface WorkProposalPanelProps {
 	employeeLabels: Record<string, string>;
 	repairTargets: RepairTarget[];
 	continuationTargets: ContinuationTarget[];
-}
-
-/**
- * Employees whose append history needs review and has no position yet, with each
- * entry no other entry follows (by stored ID, or by hash when no ID is stored).
- */
-export function continuationTargetsOf(
-	reports: readonly { employeeId: string; report: AppendAssuranceReport }[],
-): ContinuationTarget[] {
-	return reports.flatMap(({ employeeId, report }) => {
-		if (report.lineage.status !== "review_required" || report.continuity.status !== "not_adopted") {
-			return [];
-		}
-		const followed = (entry: AppendAssuranceReport["entries"][number]) =>
-			report.entries.some(
-				(other) =>
-					other.entryId !== entry.entryId &&
-					(other.stored.previousEntryId === entry.entryId ||
-						(other.stored.previousEntryId === null &&
-							other.stored.previousHash === entry.stored.hash)),
-			);
-		const candidates = report.entries
-			.filter((entry) => !followed(entry))
-			.map((entry) => ({ entryId: entry.entryId, hash: entry.stored.hash }));
-		return candidates.length > 0 ? [{ employeeId, candidates }] : [];
-	});
 }
 
 function fieldLabel(field: RepairChangeField, t: Translate): string {
@@ -151,7 +112,11 @@ async function post(body: Record<string, unknown>) {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(body),
 	});
-	return { ok: response.ok, body: await response.json().catch(() => null) };
+	// A refusal carries its code in the body, so both outcomes read it.
+	if (!response.ok) {
+		return { ok: false, body: await response.json().catch(() => null) };
+	}
+	return { ok: true, body: await response.json().catch(() => null) };
 }
 
 export function WorkProposalPanel({
@@ -694,6 +659,152 @@ function formatValue(value: string | number | null, t: Translate) {
 		: String(value);
 }
 
+type ProposalMessage = { kind: "error" | "info"; text: string };
+
+/** Send one decision; `completed` is false when the request was refused or failed. */
+async function runProposalAction(
+	body: Record<string, unknown>,
+	t: Translate,
+): Promise<{ completed: boolean; message: ProposalMessage | null }> {
+	try {
+		const { ok, body: result } = await post(body);
+		if (!ok) {
+			return { completed: false, message: { kind: "error", text: refusalMessage(result, t) } };
+		}
+		const stale = result?.status === "stale";
+		return {
+			completed: true,
+			message: stale
+				? {
+						kind: "info",
+						text: t(
+							"settings.workDiagnostics.proposals.staleResult",
+							"Evidence changed since this proposal was made. Nothing else was written; create a new proposal from current evidence.",
+						),
+					}
+				: null,
+		};
+	} catch {
+		return { completed: false, message: { kind: "error", text: refusalMessage(null, t) } };
+	}
+}
+
+function actorName(value: { id: string; name: string | null } | null) {
+	return value?.name ?? value?.id ?? "";
+}
+
+function ProposalActors({ proposal, t }: { proposal: HistoricalWorkProposalView; t: Translate }) {
+	return (
+		<p className="text-xs text-muted-foreground">
+			{t("settings.workDiagnostics.proposals.proposedBy", "Proposed by {name}", {
+				name: actorName(proposal.proposedBy),
+			})}
+			{proposal.approvedBy
+				? ` · ${t("settings.workDiagnostics.proposals.approvedBy", "approved by {name}", {
+						name: actorName(proposal.approvedBy),
+					})}`
+				: ""}
+			{proposal.resolvedBy
+				? ` · ${t("settings.workDiagnostics.proposals.resolvedBy", "resolved by {name}", {
+						name: actorName(proposal.resolvedBy),
+					})}`
+				: ""}
+		</p>
+	);
+}
+
+function ProposalActions({
+	proposal,
+	authorized,
+	busy,
+	onAct,
+	onToggleReject,
+	t,
+}: {
+	proposal: HistoricalWorkProposalView;
+	authorized: boolean;
+	busy: boolean;
+	onAct: (body: Record<string, unknown>) => void;
+	onToggleReject: () => void;
+	t: Translate;
+}) {
+	return (
+		<div className="flex flex-wrap gap-2">
+			{proposal.status === "proposed" ? (
+				<Button
+					size="sm"
+					disabled={busy}
+					onClick={() => onAct({ action: "approve", fingerprint: proposal.fingerprint })}
+				>
+					{t("settings.workDiagnostics.proposals.approve", "Approve this proposal")}
+				</Button>
+			) : null}
+			{proposal.status === "approved" ? (
+				<Button size="sm" disabled={busy || !authorized} onClick={() => onAct({ action: "apply" })}>
+					{t("settings.workDiagnostics.proposals.apply", "Apply")}
+				</Button>
+			) : null}
+			{proposal.status === "proposed" || proposal.status === "approved" ? (
+				<Button size="sm" variant="outline" disabled={busy} onClick={onToggleReject}>
+					{t("settings.workDiagnostics.proposals.reject", "Reject")}
+				</Button>
+			) : null}
+		</div>
+	);
+}
+
+function RejectProposalForm({
+	proposalId,
+	busy,
+	onReject,
+	t,
+}: {
+	proposalId: string;
+	busy: boolean;
+	onReject: (note: string) => Promise<void>;
+	t: Translate;
+}) {
+	const form = useForm({
+		defaultValues: { note: "" },
+		onSubmit: ({ value }) => onReject(value.note.trim()),
+	});
+
+	return (
+		<form
+			className="space-y-2"
+			onSubmit={(event) => {
+				event.preventDefault();
+				form.handleSubmit();
+			}}
+		>
+			<form.Field name="note">
+				{(field) => (
+					<>
+						<Label htmlFor={`work-proposal-reject-${proposalId}`}>
+							{t("settings.workDiagnostics.proposals.rejectNote", "Why is it rejected?")}
+						</Label>
+						<Textarea
+							id={`work-proposal-reject-${proposalId}`}
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							maxLength={1000}
+							rows={2}
+						/>
+						<Button
+							type="submit"
+							size="sm"
+							variant="destructive"
+							disabled={busy || !field.state.value.trim()}
+						>
+							{t("settings.workDiagnostics.proposals.confirmReject", "Reject proposal")}
+						</Button>
+					</>
+				)}
+			</form.Field>
+		</form>
+	);
+}
+
 function ProposalItem({
 	proposal,
 	authorized,
@@ -707,41 +818,19 @@ function ProposalItem({
 }) {
 	const router = useRouter();
 	const [busy, setBusy] = useState(false);
-	const [message, setMessage] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+	const [message, setMessage] = useState<ProposalMessage | null>(null);
 	const [rejecting, setRejecting] = useState(false);
-	const actor = (value: { id: string; name: string | null } | null) =>
-		value?.name ?? value?.id ?? "";
 
-	const act = async (body: Record<string, unknown>) => {
+	const act = (body: Record<string, unknown>) => {
 		setBusy(true);
 		setMessage(null);
-		try {
-			const { ok, body: result } = await post({ proposalId: proposal.id, ...body });
-			if (!ok) {
-				setMessage({ kind: "error", text: refusalMessage(result, t) });
-				return;
-			}
-			if (result?.status === "stale") {
-				setMessage({
-					kind: "info",
-					text: t(
-						"settings.workDiagnostics.proposals.staleResult",
-						"Evidence changed since this proposal was made. Nothing else was written; create a new proposal from current evidence.",
-					),
-				});
-			}
-			router.refresh();
-		} catch {
-			setMessage({ kind: "error", text: refusalMessage(null, t) });
-		} finally {
-			setBusy(false);
-		}
+		return runProposalAction({ proposalId: proposal.id, ...body }, t)
+			.then((outcome) => {
+				setMessage(outcome.message);
+				if (outcome.completed) router.refresh();
+			})
+			.finally(() => setBusy(false));
 	};
-
-	const rejectForm = useForm({
-		defaultValues: { note: "" },
-		onSubmit: ({ value }) => act({ action: "reject", note: value.note.trim() }),
-	});
 
 	const content = proposal.proposal;
 	return (
@@ -758,85 +847,27 @@ function ProposalItem({
 				<span className="text-sm">{employeeLabel(proposal.employeeId)}</span>
 			</div>
 			<p className="text-sm">{proposal.reason}</p>
-			<p className="text-xs text-muted-foreground">
-				{t("settings.workDiagnostics.proposals.proposedBy", "Proposed by {name}", {
-					name: actor(proposal.proposedBy),
-				})}
-				{proposal.approvedBy
-					? ` · ${t("settings.workDiagnostics.proposals.approvedBy", "approved by {name}", {
-							name: actor(proposal.approvedBy),
-						})}`
-					: ""}
-				{proposal.resolvedBy
-					? ` · ${t("settings.workDiagnostics.proposals.resolvedBy", "resolved by {name}", {
-							name: actor(proposal.resolvedBy),
-						})}`
-					: ""}
-			</p>
+			<ProposalActors proposal={proposal} t={t} />
 			{proposal.kind === "field_repair" ? (
 				<RepairDetails proposal={content as HistoricalRepairProposal} t={t} />
 			) : (
 				<ContinuationDetails proposal={content as AppendContinuationProposal} t={t} />
 			)}
-			<div className="flex flex-wrap gap-2">
-				{proposal.status === "proposed" ? (
-					<Button
-						size="sm"
-						disabled={busy}
-						onClick={() => act({ action: "approve", fingerprint: proposal.fingerprint })}
-					>
-						{t("settings.workDiagnostics.proposals.approve", "Approve this proposal")}
-					</Button>
-				) : null}
-				{proposal.status === "approved" ? (
-					<Button size="sm" disabled={busy || !authorized} onClick={() => act({ action: "apply" })}>
-						{t("settings.workDiagnostics.proposals.apply", "Apply")}
-					</Button>
-				) : null}
-				{proposal.status === "proposed" || proposal.status === "approved" ? (
-					<Button
-						size="sm"
-						variant="outline"
-						disabled={busy}
-						onClick={() => setRejecting(!rejecting)}
-					>
-						{t("settings.workDiagnostics.proposals.reject", "Reject")}
-					</Button>
-				) : null}
-			</div>
+			<ProposalActions
+				proposal={proposal}
+				authorized={authorized}
+				busy={busy}
+				onAct={act}
+				onToggleReject={() => setRejecting(!rejecting)}
+				t={t}
+			/>
 			{rejecting ? (
-				<form
-					className="space-y-2"
-					onSubmit={(event) => {
-						event.preventDefault();
-						rejectForm.handleSubmit();
-					}}
-				>
-					<rejectForm.Field name="note">
-						{(field) => (
-							<>
-								<Label htmlFor={`work-proposal-reject-${proposal.id}`}>
-									{t("settings.workDiagnostics.proposals.rejectNote", "Why is it rejected?")}
-								</Label>
-								<Textarea
-									id={`work-proposal-reject-${proposal.id}`}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									maxLength={1000}
-									rows={2}
-								/>
-								<Button
-									type="submit"
-									size="sm"
-									variant="destructive"
-									disabled={busy || !field.state.value.trim()}
-								>
-									{t("settings.workDiagnostics.proposals.confirmReject", "Reject proposal")}
-								</Button>
-							</>
-						)}
-					</rejectForm.Field>
-				</form>
+				<RejectProposalForm
+					proposalId={proposal.id}
+					busy={busy}
+					onReject={(note) => act({ action: "reject", note })}
+					t={t}
+				/>
 			) : null}
 			{message ? (
 				<p
@@ -852,17 +883,20 @@ function ProposalItem({
 
 function RepairDetails({ proposal, t }: { proposal: HistoricalRepairProposal; t: Translate }) {
 	const consequences = proposal.consequences;
+	const headings = [
+		t("settings.workDiagnostics.proposals.representation", "Representation"),
+		t("settings.workDiagnostics.proposals.fieldName", "Field"),
+		t("settings.workDiagnostics.proposals.before", "Before"),
+		t("settings.workDiagnostics.proposals.after", "New value"),
+	];
 	return (
 		<div className="space-y-2 text-sm">
 			<Table>
 				<TableHeader>
 					<TableRow>
-						<TableHead>
-							{t("settings.workDiagnostics.proposals.representation", "Representation")}
-						</TableHead>
-						<TableHead>{t("settings.workDiagnostics.proposals.fieldName", "Field")}</TableHead>
-						<TableHead>{t("settings.workDiagnostics.proposals.before", "Before")}</TableHead>
-						<TableHead>{t("settings.workDiagnostics.proposals.after", "New value")}</TableHead>
+						{headings.map((heading) => (
+							<TableHead key={heading}>{heading}</TableHead>
+						))}
 					</TableRow>
 				</TableHeader>
 				<TableBody>

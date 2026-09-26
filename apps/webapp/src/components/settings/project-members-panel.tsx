@@ -173,6 +173,8 @@ function AddMemberForm({
 	});
 
 	return (
+		// TanStack Form owns the submission lifecycle; see .react-doctor/false-positives.md.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			className="flex items-center gap-2"
 			onSubmit={(event) => {

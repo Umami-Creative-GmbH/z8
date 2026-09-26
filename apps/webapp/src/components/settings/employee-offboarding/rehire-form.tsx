@@ -1,7 +1,12 @@
 "use client";
 
 import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
+import {
+	type FormAsyncValidateOrFn,
+	type FormValidateOrFn,
+	type ReactFormExtendedApi,
+	useForm,
+} from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import {
@@ -55,6 +60,21 @@ export type RehireFormProps = {
 	onCancel: () => void;
 };
 
+const DEFAULT_VALUES: RehireFormValues = {
+	role: "employee",
+	teamId: NONE,
+	primaryManagerId: NONE,
+	workPolicyId: "",
+	weeklyHours: "40",
+	contractType: "fixed",
+	workModel: "onsite",
+	hourlyRate: "",
+	currency: "EUR",
+	probationStartsOn: "",
+	probationEndsOn: "",
+	changeReason: "",
+};
+
 /** Rounds hours to whole contract minutes; the server re-validates the range. */
 function toContractMinutes(hours: string): number {
 	return Math.round(Number(hours.replace(",", ".")) * 60);
@@ -72,26 +92,9 @@ export function RehireForm(props: RehireFormProps) {
 	const requestIdentity = useRequestIdentity();
 	const errorRef = useRef<HTMLDivElement>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
-	const required = (label: string) =>
-		t("settings.employees.offboarding.fieldRequired", "{label} is required.", { label });
-
-	const defaultValues: RehireFormValues = {
-		role: "employee",
-		teamId: NONE,
-		primaryManagerId: NONE,
-		workPolicyId: "",
-		weeklyHours: "40",
-		contractType: "fixed",
-		workModel: "onsite",
-		hourlyRate: "",
-		currency: "EUR",
-		probationStartsOn: "",
-		probationEndsOn: "",
-		changeReason: "",
-	};
 
 	const form = useForm({
-		defaultValues,
+		defaultValues: DEFAULT_VALUES,
 		onSubmit: async ({ value }) => {
 			setSubmitError(null);
 			const intent = {
@@ -165,68 +168,12 @@ export function RehireForm(props: RehireFormProps) {
 			</p>
 
 			<div className="grid gap-4 md:grid-cols-2">
-				<form.Field name="role">
-					{(field) => (
-						<TermSelectField label={t("settings.employees.offboarding.role", "Role")} field={field}>
-							<SelectItem value="employee">
-								{t("settings.employees.offboarding.roles.employee", "Employee")}
-							</SelectItem>
-							<SelectItem value="manager">
-								{t("settings.employees.offboarding.roles.manager", "Manager")}
-							</SelectItem>
-							<SelectItem value="admin">
-								{t("settings.employees.offboarding.roles.admin", "Admin")}
-							</SelectItem>
-						</TermSelectField>
-					)}
-				</form.Field>
-				<form.Field name="teamId">
-					{(field) => (
-						<TermSelectField label={t("settings.employees.offboarding.team", "Team")} field={field}>
-							<SelectItem value={NONE}>
-								{t("settings.employees.offboarding.noTeam", "No team")}
-							</SelectItem>
-							{props.teams.map((team) => (
-								<SelectItem key={team.id} value={team.id}>
-									{team.name}
-								</SelectItem>
-							))}
-						</TermSelectField>
-					)}
-				</form.Field>
-				<form.Field name="primaryManagerId">
-					{(field) => (
-						<TermSelectField
-							label={t("settings.employees.offboarding.primaryManager", "Primary manager")}
-							field={field}
-						>
-							<SelectItem value={NONE}>
-								{t("settings.employees.offboarding.noManager", "No manager")}
-							</SelectItem>
-							{props.managers.map((manager) => (
-								<SelectItem key={manager.id} value={manager.id}>
-									{manager.name}
-								</SelectItem>
-							))}
-						</TermSelectField>
-					)}
-				</form.Field>
-				<form.Field
-					name="workPolicyId"
-					validators={{
-						onSubmit: ({ value }) => (value ? undefined : required(terms.workPolicy)),
-					}}
-				>
-					{(field) => (
-						<TermSelectField label={terms.workPolicy} field={field} required>
-							{props.workPolicies.map((policy) => (
-								<SelectItem key={policy.id} value={policy.id}>
-									{policy.name}
-								</SelectItem>
-							))}
-						</TermSelectField>
-					)}
-				</form.Field>
+				<RehireAssignmentFields
+					form={form}
+					teams={props.teams}
+					managers={props.managers}
+					workPolicies={props.workPolicies}
+				/>
 				<form.Field
 					name="weeklyHours"
 					validators={{
@@ -367,5 +314,110 @@ export function RehireForm(props: RehireFormProps) {
 				</form.Subscribe>
 			</div>
 		</form>
+	);
+}
+
+type Sync = FormValidateOrFn<RehireFormValues> | undefined;
+type Async = FormAsyncValidateOrFn<RehireFormValues> | undefined;
+type RehireFormApi = ReactFormExtendedApi<
+	RehireFormValues,
+	Sync,
+	Sync,
+	Async,
+	Sync,
+	Async,
+	Sync,
+	Async,
+	Sync,
+	Async,
+	Async,
+	unknown
+>;
+
+/** Role, team, primary manager and work policy of the new employment period. */
+function RehireAssignmentFields({
+	form,
+	teams,
+	managers,
+	workPolicies,
+}: {
+	form: RehireFormApi;
+	teams: RehireOption[];
+	managers: RehireOption[];
+	workPolicies: RehireOption[];
+}) {
+	const { t } = useTranslate();
+	const terms = useEmploymentTermLabels();
+
+	return (
+		<>
+			<form.Field name="role">
+				{(field) => (
+					<TermSelectField label={t("settings.employees.offboarding.role", "Role")} field={field}>
+						<SelectItem value="employee">
+							{t("settings.employees.offboarding.roles.employee", "Employee")}
+						</SelectItem>
+						<SelectItem value="manager">
+							{t("settings.employees.offboarding.roles.manager", "Manager")}
+						</SelectItem>
+						<SelectItem value="admin">
+							{t("settings.employees.offboarding.roles.admin", "Admin")}
+						</SelectItem>
+					</TermSelectField>
+				)}
+			</form.Field>
+			<form.Field name="teamId">
+				{(field) => (
+					<TermSelectField label={t("settings.employees.offboarding.team", "Team")} field={field}>
+						<SelectItem value={NONE}>
+							{t("settings.employees.offboarding.noTeam", "No team")}
+						</SelectItem>
+						{teams.map((team) => (
+							<SelectItem key={team.id} value={team.id}>
+								{team.name}
+							</SelectItem>
+						))}
+					</TermSelectField>
+				)}
+			</form.Field>
+			<form.Field name="primaryManagerId">
+				{(field) => (
+					<TermSelectField
+						label={t("settings.employees.offboarding.primaryManager", "Primary manager")}
+						field={field}
+					>
+						<SelectItem value={NONE}>
+							{t("settings.employees.offboarding.noManager", "No manager")}
+						</SelectItem>
+						{managers.map((manager) => (
+							<SelectItem key={manager.id} value={manager.id}>
+								{manager.name}
+							</SelectItem>
+						))}
+					</TermSelectField>
+				)}
+			</form.Field>
+			<form.Field
+				name="workPolicyId"
+				validators={{
+					onSubmit: ({ value }) =>
+						value
+							? undefined
+							: t("settings.employees.offboarding.fieldRequired", "{label} is required.", {
+									label: terms.workPolicy,
+								}),
+				}}
+			>
+				{(field) => (
+					<TermSelectField label={terms.workPolicy} field={field} required>
+						{workPolicies.map((policy) => (
+							<SelectItem key={policy.id} value={policy.id}>
+								{policy.name}
+							</SelectItem>
+						))}
+					</TermSelectField>
+				)}
+			</form.Field>
+		</>
 	);
 }
