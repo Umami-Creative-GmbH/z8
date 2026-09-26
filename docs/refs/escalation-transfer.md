@@ -667,9 +667,11 @@ Bound legacy time cards are out of scope: #432 must add the same refusal.
 - **Old binaries** decide legacy time requests without the refusal. Deploy
   everywhere and drain old workers before an organization's ownership moves.
 - **Requester cancellation in `shadow`/`ready`** of a direct legacy
-  correction already fails without #439: the observation planner refuses the
-  retained tombstone, which also drops the original work metadata.
-  Cancellation of a transferred correction is verified under `legacy` only.
+  correction failed before #463: the retained tombstone dropped the original
+  work metadata, and the observation planner refused the tombstone. #463
+  keeps the metadata and plans the tombstone as `workflow.cancelled` with the
+  lineage holders intact. Cancellation of a transferred correction is verified
+  under `legacy`, `shadow` and `ready`.
 - **Delivery:** legacy transfer events stay `pending` until legacy replacement
   delivery exists (#408). The replacement gets no card and the former card is
   not retired.
