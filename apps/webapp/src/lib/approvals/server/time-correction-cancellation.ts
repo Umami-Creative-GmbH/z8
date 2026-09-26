@@ -307,7 +307,9 @@ export async function cancelPendingTimeCorrection(
 							workPeriodId: input.workPeriodId,
 							capturedAt,
 							expectedCorrection: legacy.correction,
-							expectedLegacyCycle: legacy.cycle,
+							expectedLegacyCycle: legacy.cycle.chainInstanceId
+								? { chainInstanceId: legacy.cycle.chainInstanceId }
+								: legacy.cycle,
 							...(before.chain === null
 								? {
 										priorVerifiedDirectRequest: {
