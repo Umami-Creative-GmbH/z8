@@ -305,8 +305,8 @@ Old-path cards of pending legacy time requests count as
 
 Chains are verified in `legacy`, `shadow` and `ready` modes (#432), so there is
 no chain-mode hold for time kinds. The report cannot see the remaining #432
-blockers: the drain of old binaries, shadow cancellation (#463), ingress
-durability and the scanner gap. Record their evidence separately.
+blockers: the drain of old binaries, ingress durability and the scanner gap.
+Record their evidence separately.
 
 ### Verification (#432)
 

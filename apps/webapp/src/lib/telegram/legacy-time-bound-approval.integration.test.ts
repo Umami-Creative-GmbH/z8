@@ -219,6 +219,9 @@ const { timeCorrectionReceiptKeyDigest } = await import(
 const { db } = await import("@/db");
 const { sendApprovalMessageToManager } = await import("./approval-handler");
 const { handleTelegramUpdate } = await import("./bot-handler");
+const { decideBoundLegacyTimeInvocation } = await import(
+	"@/lib/approvals/server/time-bound-decision"
+);
 
 const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
@@ -1515,6 +1518,37 @@ describeIntegration(
 					// An eligible non-holder pressing that card decides nothing either.
 					await press(formerCard, { as: "third" });
 					expect(await state(workPeriodId)).toEqual(transferred);
+					// The exact outcomes behind those notices: the former holder is
+					// refused as reassigned by the #439 check; a binding never names a
+					// non-holder, so theirs is refused before any authority question.
+					const direct = (approver: Approver, invocationId: string) =>
+						decideBoundLegacyTimeInvocation({
+							database: db as never,
+							organizationId: ids.organization,
+							actorEmployeeId: EMPLOYEES[approver],
+							actorUserId: USERS[approver],
+							bindingId: bindingOf(formerCard.callbackData[0]),
+							action: "approve",
+							invocation: {
+								identity: {
+									organizationId: ids.organization,
+									scheme: "telegram_callback_query",
+									schemeVersion: 1,
+									receiverScope: "telegram-bot:432432432",
+									invocationId,
+								},
+								deliveryId: null,
+								providerActorId: String(TELEGRAM[approver].user),
+							},
+						});
+					expect(await direct("manager", `t432-direct-former-${kind}`)).toEqual({
+						status: "review_required",
+						reason: "reassigned",
+					});
+					expect(await direct("third", `t432-direct-third-${kind}`)).toEqual({
+						status: "not_found",
+					});
+					expect(await state(workPeriodId)).toEqual(transferred);
 
 					const replacement = await sendCard(requestId, "backup");
 					const decided = await press(replacement);
@@ -1771,61 +1805,64 @@ describeIntegration(
 			});
 
 			// Shadow and ready cancellation works since #463.
-			it.each(MODES)("withdraws a cancelled correction cycle's cards in %s mode and keeps its history until privileged cleanup", async (mode) => {
-				await seed({ mode, delivery: true });
-				const { workPeriodId, requestId } = await submit("time_correction");
-				const sent = only((await runOwner()).sent);
-				const card = await deliveredCard(sent);
-				const { rows: revisions } = await admin.query<{ id: string }>(
-					"select id from approval_submitted_revision where legacy_approval_request_id = $1",
-					[requestId],
-				);
-				const revisionId = only(revisions).id;
+			it.each(MODES)(
+				"withdraws a cancelled correction cycle's cards in %s mode and keeps its history until privileged cleanup",
+				async (mode) => {
+					await seed({ mode, delivery: true });
+					const { workPeriodId, requestId } = await submit("time_correction");
+					const sent = only((await runOwner()).sent);
+					const card = await deliveredCard(sent);
+					const { rows: revisions } = await admin.query<{ id: string }>(
+						"select id from approval_submitted_revision where legacy_approval_request_id = $1",
+						[requestId],
+					);
+					const revisionId = only(revisions).id;
 
-				actAs(ids.requesterUser);
-				expect(await cancelMyTimeCorrectionRequest(workPeriodId)).toEqual({ success: true });
-				actAs(null);
-				expect((await intents()).map((row) => [row.event, row.legacy_cycle_id])).toEqual([
-					["submitted", requestId],
-					["withdrawn", requestId],
-				]);
-				const withdrawn = await runOwner();
-				expect(only(withdrawn.edits).body.text).toContain("Request withdrawn");
-				// Binding, delivery work, message and intents survive ordinary cancellation.
-				const survivors = async () => {
-					const { rows } = await admin.query<Record<string, number>>(
-						`select
+					actAs(ids.requesterUser);
+					expect(await cancelMyTimeCorrectionRequest(workPeriodId)).toEqual({ success: true });
+					actAs(null);
+					expect((await intents()).map((row) => [row.event, row.legacy_cycle_id])).toEqual([
+						["submitted", requestId],
+						["withdrawn", requestId],
+					]);
+					const withdrawn = await runOwner();
+					expect(only(withdrawn.edits).body.text).toContain("Request withdrawn");
+					// Binding, delivery work, message and intents survive ordinary cancellation.
+					const survivors = async () => {
+						const { rows } = await admin.query<Record<string, number>>(
+							`select
 					   (select count(*)::int from approval_review_binding where submitted_revision_id = $1) as bindings,
 					   (select count(*)::int from approval_delivery_work where legacy_cycle_id = $2) as work,
 					   (select count(*)::int from approval_delivery_message where legacy_cycle_id = $2) as messages,
 					   (select count(*)::int from approval_delivery_intent where legacy_cycle_id = $2) as intents`,
-						[revisionId, requestId],
-					);
-					return only(rows);
-				};
-				expect(await survivors()).toEqual({ bindings: 1, work: 2, messages: 1, intents: 2 });
-				// A press on the withdrawn card decides nothing.
-				const before = await state(workPeriodId);
-				const late = await press(card, { queryId: "t432-withdrawn", updateId: 6101 });
-				expect(only(late.answers).body).toMatchObject({ text: "Review required" });
-				expect(await state(workPeriodId)).toEqual(before);
+							[revisionId, requestId],
+						);
+						return only(rows);
+					};
+					expect(await survivors()).toEqual({ bindings: 1, work: 2, messages: 1, intents: 2 });
+					// A press on the withdrawn card decides nothing.
+					const before = await state(workPeriodId);
+					const late = await press(card, { queryId: "t432-withdrawn", updateId: 6101 });
+					expect(only(late.answers).body).toMatchObject({ text: "Review required" });
+					expect(await state(workPeriodId)).toEqual(before);
 
-				const deleted = await deleteApproval(db as never, ids.organization, requestId);
-				expect(deleted.evidence.submittedRevisions).toEqual([revisionId]);
-				expect(deleted.evidence.reviewBindings).toHaveLength(1);
-				expect(deleted.delivery.work).toHaveLength(2);
-				expect(deleted.delivery.messages).toHaveLength(1);
-				expect(deleted.delivery.intents).toHaveLength(2);
-				expect(await survivors()).toEqual({ bindings: 0, work: 0, messages: 0, intents: 0 });
-				// A redelivered press after the purge recreates nothing.
-				await press(card, { queryId: "t432-withdrawn", updateId: 6102 });
-				expect(await survivors()).toEqual({ bindings: 0, work: 0, messages: 0, intents: 0 });
-				const { rows: invocations } = await admin.query(
-					"select count(*)::int as count from approval_invocation where organization_id = $1",
-					[ids.organization],
-				);
-				expect(only(invocations)).toEqual({ count: 0 });
-			});
+					const deleted = await deleteApproval(db as never, ids.organization, requestId);
+					expect(deleted.evidence.submittedRevisions).toEqual([revisionId]);
+					expect(deleted.evidence.reviewBindings).toHaveLength(1);
+					expect(deleted.delivery.work).toHaveLength(2);
+					expect(deleted.delivery.messages).toHaveLength(1);
+					expect(deleted.delivery.intents).toHaveLength(2);
+					expect(await survivors()).toEqual({ bindings: 0, work: 0, messages: 0, intents: 0 });
+					// A redelivered press after the purge recreates nothing.
+					await press(card, { queryId: "t432-withdrawn", updateId: 6102 });
+					expect(await survivors()).toEqual({ bindings: 0, work: 0, messages: 0, intents: 0 });
+					const { rows: invocations } = await admin.query(
+						"select count(*)::int as count from approval_invocation where organization_id = $1",
+						[ids.organization],
+					);
+					expect(only(invocations)).toEqual({ count: 0 });
+				},
+			);
 
 			it("purges exactly a decided cycle's bindings, invocations and delivery rows and reports them", async () => {
 				await seed({ delivery: true });

@@ -1299,14 +1299,15 @@ admit canonical cards. No application endpoint changes either control.
    control have no intent and stay with the old notification path. The pilot
    readiness report classifies legacy time evidence and counts these cycles;
    see [Approval card pilots](approval-pilot.md#legacy-time-cards-432).
-3. **Shadow requester cancellation** of direct legacy corrections fails
-   (#463), so withdrawal is verified under `legacy` only. Whichever of #432 and
-   #463 merges second adds the shadow-mode cancellation-cleanup case.
-4. **Replacement cards** after a legacy escalation transfer (#408): the former
-   holder's card decides nothing, but nobody refreshes it and the new holder
-   gets no card from the owner (the verification renders one through the old
-   path). The readiness report holds this while escalation owns transfers
-   (`escalation_replacement_unsupported`).
+3. **Shadow requester cancellation** of direct legacy corrections works since
+   #463 (merged first); #432 verifies withdrawal and cleanup in `legacy`,
+   `shadow` and `ready`.
+4. **Replacement cards** after a legacy time transfer: #408 built legacy
+   replacement delivery for absences and expenses only, and parks legacy time
+   transfer events. The former holder's card decides nothing, but nobody
+   refreshes it and the new holder gets no card from the owner (the
+   verification renders one through the old path). The readiness report holds
+   this while escalation owns transfers (`escalation_replacement_unsupported`).
 5. **In-place material changes** commit no intent, so the card is not
    refreshed; pressing it decides nothing.
 6. Only Telegram is admitted (in code). Teams, Discord and Slack stay
@@ -1332,7 +1333,7 @@ web approvals actions, `cancelMyTimeCorrectionRequest`,
 `processDueEscalations`, `sendTelegramNotification`, `deleteApproval` and the
 pilot readiness report. Only the session, billing guard, notification fan-out,
 e-mail, work-balance marking, the vault, the post-commit fast path and the
-Telegram transport are replaced. 35/35 passing:
+Telegram transport are replaced. 37/37 passing:
 
 - `legacy`, `shadow` and `ready` × manual submission, policy clock-out and
   correction: a card bound to the exact legacy request and legacy revision (no
@@ -1358,8 +1359,9 @@ Telegram transport are replaced. 35/35 passing:
 - an injected invocation failure rolls back request, correction, evidence and
   invocation; three concurrent deliveries then commit exactly once;
 - with #439: after a real scheduled transfer of each kind the former holder's
-  card and an eligible non-holder decide nothing and the new holder's card
-  decides; a press racing an in-flight transfer waits for it and is refused;
+  card is refused as `reassigned` (an eligible non-holder has no binding of
+  its own and is refused as `not_found`), and the new holder's card decides; a
+  press racing an in-flight transfer waits for it and is refused;
 - owner delivery of each kind: `submitted` intent keyed by the cycle, the old
   path silent for the owned cycle (work-period and request notifications; it
   notifies without a control), one bound card, a press refreshed by the owner;
@@ -1369,17 +1371,20 @@ Telegram transport are replaced. 35/35 passing:
 - two cycles on one work period (the manual submission, then a correction)
   deliver, version and refresh independently; privileged cleanup purges exactly
   the correction cycle;
-- correction cancellation: `withdrawn` intent, card refreshed to "withdrawn",
-  binding, work, message and intents survive; a press decides nothing;
-  privileged cleanup purges and reports them; a late press recreates nothing;
+- correction cancellation in `legacy`, `shadow` and `ready`: `withdrawn`
+  intent, card refreshed to "withdrawn", binding, work, message and intents
+  survive; a press decides nothing; privileged cleanup purges and reports them;
+  a late press recreates nothing;
 - a decided cycle purged by its request, another cycle kept;
 - the pilot readiness report: legacy evidence (current, not captured, material
   change) per kind, in-flight cycles before activation, Teams unverified, and
   the escalation replacement hold.
 
-The #301, #302, #325 (legacy review-only case updated to the bound card; the
-#330 shadow-cutover report case updated for legacy authority), #328/#459
-readiness, #384, #439, #290 and #291 suites still pass on the same runner.
+The whole approval runner list passes (83 files before merging #408, and the
+affected suites again after it), including #290, #291, #296, #301, #302, #325
+(legacy review-only case updated to the bound card; the #330 shadow-cutover
+report case updated for legacy authority), #328/#459 readiness, #384, #408,
+#439 and #463.
 
 ## Teams absence cards with reviewed bindings (#293 / T29)
 

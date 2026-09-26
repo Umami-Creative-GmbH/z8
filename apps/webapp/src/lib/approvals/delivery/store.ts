@@ -100,7 +100,8 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 	// kind; a legacy request (no mirroring stage) keeps the existing path.
 	let timeWorkflowType: ApprovalWorkflowType | null = null;
 	// Legacy time cycles (#432): the work period and the exact request, when the
-	// notification names one; otherwise every pending request of the period.
+	// notification names one. A notification naming only the period counts the
+	// cycles of all its pending requests (a period has one pending cycle).
 	let legacyTimeCandidates: { workPeriodId: string; requestIds: string[] } | null = null;
 	if (input.entityType === "absence_entry") {
 		absenceId = input.entityId;
@@ -244,9 +245,10 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 
 /**
  * Legacy time authority (#432): the owner delivers a cycle whose lifecycle
- * intent it owns (written while the provider's control was active and the
- * kind had legacy authority), so the existing path stays silent for it. Only
- * the cycles of the named requests count.
+ * intent it owns (written while the provider's control was active) while the
+ * kind still has legacy authority, as for legacy absences (#384), so the
+ * existing path stays silent for it. Only the cycles of the given requests
+ * count.
  */
 async function isLegacyTimeCycleDeliveredByOwner(input: {
 	organizationId: string;
