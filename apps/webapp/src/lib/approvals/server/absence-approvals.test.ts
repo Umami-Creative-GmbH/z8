@@ -62,6 +62,16 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty,
 }));
 
+// Legacy delivery intents (#384) are verified against PostgreSQL in
+// telegram/legacy-bound-approval.integration.test.ts.
+vi.mock("@/lib/approvals/delivery/intents", () => ({
+	findLegacyAbsenceDecisionTarget: async (
+		_database: unknown,
+		input: { approvalRequestId?: string },
+	) => input.approvalRequestId,
+	recordLegacyAbsenceDecisionIntent: async () => false,
+	recordLegacyDeliveryIntent: async () => false,
+}));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));

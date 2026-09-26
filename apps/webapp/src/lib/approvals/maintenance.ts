@@ -120,6 +120,29 @@ async function resolveLifecycle(
 			select 'legacy_transfer', id, 'workflow', observed_workflow_id from approval_escalation_transfer
 			where organization_id = ${organizationId} and authority_mode = 'legacy'
 				and observed_workflow_id is not null
+			-- A legacy delivery cycle (#384) records its requests by value, so a
+			-- request deleted by ordinary cancellation stays linked. The cycle is
+			-- the legacy chain or the single request one submission created.
+			union all
+			select 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_approval_request_id
+			from approval_delivery_intent
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_approval_request_id
+			from approval_delivery_work
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_approval_request_id
+			from approval_delivery_message
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select distinct 'legacy_cycle', legacy_cycle_id, 'chain', legacy_cycle_id
+			from approval_delivery_intent
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
+			union all
+			select distinct 'legacy_cycle', legacy_cycle_id, 'legacy', legacy_cycle_id
+			from approval_delivery_intent
+			where organization_id = ${organizationId} and legacy_cycle_id is not null
 		), links as (
 			select from_kind, from_id, to_kind, to_id from edges
 			union all
@@ -231,7 +254,7 @@ export async function deleteApprovalInTransaction(
 ): Promise<DeletedApprovalRecords> {
 	await lockApprovalTopology(transaction);
 
-	const matches = rows(
+	let matches = rows(
 		await transaction.execute(sql`
 			select 'legacy' as storage_type, id from approval_request
 			where organization_id = ${organizationId} and id = ${id}::uuid
@@ -249,6 +272,18 @@ export async function deleteApprovalInTransaction(
 		`),
 	);
 	if (matches.length === 0) {
+		// A legacy delivery cycle (#384) whose requests ordinary cancellation
+		// deleted, and which captured no revision, is addressed by its cycle.
+		matches = rows(
+			await transaction.execute(sql`
+				select 'legacy_cycle' as storage_type, legacy_cycle_id as id
+				from approval_delivery_intent
+				where organization_id = ${organizationId} and legacy_cycle_id = ${id}::uuid
+				limit 1
+			`),
+		);
+	}
+	if (matches.length === 0) {
 		throw new ApprovalMaintenanceError(
 			"APPROVAL_NOT_FOUND",
 			`Approval ${id} not found in organization ${organizationId}`,
@@ -265,7 +300,8 @@ export async function deleteApprovalInTransaction(
 		kind !== "legacy" &&
 		kind !== "workflow" &&
 		kind !== "legacy_evidence" &&
-		kind !== "legacy_transfer"
+		kind !== "legacy_transfer" &&
+		kind !== "legacy_cycle"
 	) {
 		throw new Error("Unexpected approval storage type");
 	}
@@ -276,6 +312,7 @@ export async function deleteApprovalInTransaction(
 	const chainIds: string[] = [];
 	const legacyRevisionIds: string[] = [];
 	const legacyTransferIds: string[] = [];
+	const legacyCycleIds: string[] = [];
 	for (const row of lifecycle) {
 		switch (row.kind) {
 			case "legacy":
@@ -292,6 +329,9 @@ export async function deleteApprovalInTransaction(
 				break;
 			case "legacy_transfer":
 				legacyTransferIds.push(rowId(row));
+				break;
+			case "legacy_cycle":
+				legacyCycleIds.push(rowId(row));
 				break;
 		}
 	}
@@ -330,17 +370,21 @@ export async function deleteApprovalInTransaction(
 			where organization_id = ${organizationId} and id = any(${sql.param(chainIds)}::uuid[])
 			returning id
 		`);
-	// Delivery of legacy lifecycles (#296) follows the lifecycle's legacy requests.
-	// Delete it before the requests (whose FKs would cascade it unreported); a
-	// late send completing afterwards cannot record a message (its FK fails).
-	const legacyDeliveryScope = sql`organization_id = ${organizationId} and legacy_approval_request_id = any(${sql.param(legacyIds)}::uuid[])`;
-	const legacyDeliveryWork = legacyIds.length === 0 ? [] : await deletedIds(sql`
+	// Delivery of legacy lifecycles (#296) follows the lifecycle's legacy requests
+	// and, for cycles (#384), the cycle; the rows keep both by value, so they
+	// outlive ordinary cancellation until this purge. Delete and report them; a
+	// late send completing afterwards finds no work to record its message for.
+	const hasLegacyDelivery = legacyIds.length > 0 || legacyCycleIds.length > 0;
+	const legacyDeliveryScope = sql`organization_id = ${organizationId} and (
+		legacy_approval_request_id = any(${sql.param(legacyIds)}::uuid[])
+		or legacy_cycle_id = any(${sql.param(legacyCycleIds)}::uuid[]))`;
+	const legacyDeliveryWork = !hasLegacyDelivery ? [] : await deletedIds(sql`
 			delete from approval_delivery_work where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
 		`);
-	const legacyDeliveryMessages = legacyIds.length === 0 ? [] : await deletedIds(sql`
+	const legacyDeliveryMessages = !hasLegacyDelivery ? [] : await deletedIds(sql`
 			delete from approval_delivery_message where lifecycle = 'legacy' and ${legacyDeliveryScope} returning id
 		`);
-	const deliveryIntents = legacyIds.length === 0 ? [] : await deletedIds(sql`
+	const deliveryIntents = !hasLegacyDelivery ? [] : await deletedIds(sql`
 			delete from approval_delivery_intent where ${legacyDeliveryScope} returning id
 		`);
 	const legacyRequests = legacyIds.length === 0 ? [] : await deletedIds(sql`
@@ -543,11 +587,15 @@ export async function deleteEmployeeApprovalLifecycles(
 						or replacement_approver_employee_id = any(${employees})
 						or actor_employee_id = any(${employees}))
 				union all
-				select case when lifecycle = 'legacy' then legacy_approval_request_id else workflow_id end
+				-- A legacy delivery cycle (#384) is addressed by its cycle: its
+				-- requests may have been deleted by ordinary cancellation.
+				select case when lifecycle = 'legacy'
+					then coalesce(legacy_cycle_id, legacy_approval_request_id) else workflow_id end
 				from approval_delivery_work where organization_id = ${org}
 					and recipient_employee_id = any(${employees})
 				union all
-				select case when lifecycle = 'legacy' then legacy_approval_request_id else workflow_id end
+				select case when lifecycle = 'legacy'
+					then coalesce(legacy_cycle_id, legacy_approval_request_id) else workflow_id end
 				from approval_delivery_message where organization_id = ${org}
 					and recipient_employee_id = any(${employees})
 				union all

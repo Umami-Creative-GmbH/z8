@@ -16,7 +16,10 @@ import {
 import { isTimeApprovalWorkflowType } from "@/lib/approvals/time-approval-kinds";
 import { decideBoundTimeInvocation } from "@/lib/approvals/server/time-bound-decision";
 import { loadApprovalInboxDecisionTarget } from "@/lib/approvals/inbox/decision-service";
-import { decideBoundAbsenceInvocation } from "@/lib/approvals/server/absence-approvals";
+import {
+	decideBoundAbsenceInvocation,
+	decideBoundLegacyAbsenceInvocation,
+} from "@/lib/approvals/server/absence-approvals";
 import { decideBoundTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
@@ -203,17 +206,21 @@ export async function attemptBoundBotApproval(
 			providerActorId: input.invocation.providerActorId,
 		},
 	};
-	// A binding decides only under the authority it was issued for: a legacy
-	// handle reaches the legacy expense owner (#296), never a canonical one; a
-	// canonical handle reaches its kind's owner (absence, or a time kind, #325).
-	// Bindings are immutable and outlive their committed invocations, so
-	// routing on them keeps exact replays intact.
+	// A binding decides only under the authority it was issued for, by its
+	// kind's owner: a legacy handle reaches the legacy absence (#384) or expense
+	// (#296) owner, never a canonical one; a canonical handle reaches its kind's
+	// owner (absence, or a time kind, #325). Bindings and their revisions are
+	// immutable and outlive their committed invocations, so routing on them
+	// keeps exact replays intact.
 	const scope = { organizationId: input.organizationId, bindingId: input.bindingId };
 	const authority = await loadReviewBindingAuthority(db, scope);
+	const workflowType = await loadReviewBindingWorkflowType(db, scope);
 	const result =
 		authority === "legacy"
-			? await decideBoundTravelExpenseInvocation(decision)
-			: isTimeApprovalWorkflowType(await loadReviewBindingWorkflowType(db, scope))
+			? workflowType === "absence"
+				? await decideBoundLegacyAbsenceInvocation(decision)
+				: await decideBoundTravelExpenseInvocation(decision)
+			: isTimeApprovalWorkflowType(workflowType)
 				? await decideBoundTimeInvocation(decision)
 				: await decideBoundAbsenceInvocation(decision);
 	return result.status === "review_required"

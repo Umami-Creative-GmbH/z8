@@ -594,15 +594,17 @@ export async function loadReviewBindingAuthority(
 }
 
 /**
- * The kind of the workflow a canonical binding names, so a card action reaches
- * that kind's decision owner (#325). Bindings are immutable, so routing on
- * them keeps exact replays intact. Organization-scoped; null when unknown.
+ * The kind a binding decides, so a card action reaches that kind's decision
+ * owner: the workflow's kind for a canonical binding (#325), the legacy
+ * revision's kind for a legacy one (#384). Bindings and revisions are
+ * immutable, so routing on them keeps exact replays intact. Organization-scoped;
+ * null when unknown.
  */
 export async function loadReviewBindingWorkflowType(
 	database: ApprovalDatabase,
 	input: { organizationId: string; bindingId: string },
 ): Promise<ApprovalWorkflowType | null> {
-	const rows = await database
+	const canonical = await database
 		.select({ workflowType: approvalWorkflow.workflowType })
 		.from(approvalReviewBinding)
 		.innerJoin(
@@ -620,7 +622,27 @@ export async function loadReviewBindingWorkflowType(
 			),
 		)
 		.limit(1);
-	return rows[0]?.workflowType ?? null;
+	if (canonical[0]) return canonical[0].workflowType;
+	const legacy = await database
+		.select({ workflowType: approvalSubmittedRevision.workflowType })
+		.from(approvalReviewBinding)
+		.innerJoin(
+			approvalSubmittedRevision,
+			and(
+				eq(approvalSubmittedRevision.id, approvalReviewBinding.submittedRevisionId),
+				eq(approvalSubmittedRevision.organizationId, approvalReviewBinding.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+			),
+		)
+		.where(
+			and(
+				eq(approvalReviewBinding.id, input.bindingId),
+				eq(approvalReviewBinding.organizationId, input.organizationId),
+				eq(approvalReviewBinding.authority, "legacy"),
+			),
+		)
+		.limit(1);
+	return legacy[0]?.workflowType ?? null;
 }
 
 /** Transaction-time check that a supplied handle names exactly this target. */
@@ -1191,6 +1213,33 @@ export async function loadLegacyReviewBinding(
 		legacyApprovalRequestId: row.legacyApprovalRequestId,
 		submittedRevisionId: row.submittedRevisionId,
 	};
+}
+
+/**
+ * The source a legacy submitted revision was captured for. Revisions survive
+ * ordinary cancellation, so a legacy handle still names its source after the
+ * pending request was deleted.
+ */
+export async function loadLegacySubmittedRevisionSource(
+	database: ApprovalDatabase,
+	input: { organizationId: string; submittedRevisionId: string },
+): Promise<{ workflowType: ApprovalWorkflowType; sourceType: string; sourceId: string } | null> {
+	const rows = await database
+		.select({
+			workflowType: approvalSubmittedRevision.workflowType,
+			sourceType: approvalSubmittedRevision.sourceType,
+			sourceId: approvalSubmittedRevision.sourceId,
+		})
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.id, input.submittedRevisionId),
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+			),
+		)
+		.limit(1);
+	return rows[0] ?? null;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { absenceEntry } from "@/db/schema";
+import {
+	type ApprovalPresentationProvider,
+	absenceEntry,
+	approvalWorkflowRollout,
+} from "@/db/schema";
 import {
 	type Instant,
 	instantFromDate,
@@ -41,6 +45,39 @@ import {
  * evidence and an operation receipt without creating canonical authority. The
  * legacy idempotency keys are stored exactly as the owners compute them.
  */
+
+/**
+ * Whether absences are decided by legacy authority in the organization
+ * (rollout `legacy`, `shadow`, `ready` or none). A legacy binding is issued and
+ * decides only then, so it never decides under canonical authority (#384).
+ */
+export async function hasLegacyAbsenceAuthority(
+	database: ApprovalDatabase,
+	organizationId: string,
+): Promise<boolean> {
+	const [rollout] = await database
+		.select({ mode: approvalWorkflowRollout.lifecycleMode })
+		.from(approvalWorkflowRollout)
+		.where(
+			and(
+				eq(approvalWorkflowRollout.organizationId, organizationId),
+				eq(approvalWorkflowRollout.workflowType, "absence"),
+			),
+		)
+		.limit(1);
+	return rollout?.mode !== "canonical" && rollout?.mode !== "complete";
+}
+
+/**
+ * Providers whose legacy absence cards may carry controls and whose presses
+ * may decide (#384). Teams and Discord share the bound path but are not
+ * verified under legacy authority, so even an `actionable` presentation
+ * control (for example one left from canonical authority) keeps them
+ * review-only. Slack never decides.
+ */
+export const LEGACY_ABSENCE_ACTIONABLE_PROVIDERS: readonly ApprovalPresentationProvider[] = [
+	"telegram",
+];
 
 const LEGACY_DECISION_COMMAND_VERSION = "absence-legacy-decision:v1";
 const LEGACY_SUBMISSION_COMMAND = "absence-legacy-submission:v1";
@@ -466,7 +503,11 @@ export async function findLegacyAbsenceDecisionReplay(
 		organizationId: input.organizationId,
 		approvalRequestId: input.approvalRequestId,
 	});
-	if (evidence?.operationKind !== "command") return null;
+	// A card decision is keyed by its provider invocation (#384): only that
+	// invocation replays it, never a semantic retry.
+	if (evidence?.operationKind !== "command" || evidence.reviewedBindingId) {
+		return null;
+	}
 	const revision = await loadLegacyAbsenceSubmittedRevision(database, {
 		organizationId: input.organizationId,
 		absenceId: input.absenceId,
@@ -580,8 +621,13 @@ export async function recordLegacyAbsenceDecisionEvidence(
 		action: LegacyDecisionAction;
 		reason: string | undefined;
 		approvalRequestId: string | undefined;
-		/** The unchanged legacy idempotency key computed by the decision owner. */
+		/**
+		 * The unchanged legacy idempotency key computed by the decision owner, or
+		 * for a card decision its invocation receipt key (#384).
+		 */
 		idempotencyKey: string;
+		/** The legacy binding a card decision was reviewed through (#384). */
+		reviewedBindingId?: string | null;
 		actor: { employeeId: string; userId: string };
 		captureState: () => Promise<VerifiedLegacyApprovalState>;
 		/** This decision's shadow mirror result; null when nothing was mirrored. */
@@ -669,5 +715,6 @@ export async function recordLegacyAbsenceDecisionEvidence(
 			observation,
 		}),
 		labels: { actorName: actor.name },
+		reviewedBindingId: input.reviewedBindingId ?? null,
 	});
 }
