@@ -145,7 +145,15 @@
     "wrong-account": "Cuenta incorrecta",
     "wrong-account-description": "Ha iniciado sesión con un correo electrónico diferente. Cierre sesión y utilice la dirección de correo electrónico invitada para aceptar esta invitación.",
     "wrong-account-description-short": "Utilice la dirección de correo electrónico invitada para cambiar de cuenta y continuar.",
-    "you-are-invited": "Ha sido invitado"
+    "you-are-invited": "Ha sido invitado",
+    "confirm-password": "Confirmar Contraseña",
+    "first-name": "Nombre",
+    "first-name-placeholder": "Juan…",
+    "invited-email-locked": "Usa la dirección de correo electrónico invitada para esta cuenta para que puedas unirte a la organización automáticamente.",
+    "last-name": "Apellido",
+    "last-name-placeholder": "Pérez…",
+    "secure-password-description": "Utilice una contraseña que pueda reconocer rápidamente durante los días de trabajo ajetreados sin comprometer la seguridad.",
+    "secure-password-heading": "Establecer una contraseña segura"
   },
   "profile": {
     "change-password": "Cambiar contraseña",

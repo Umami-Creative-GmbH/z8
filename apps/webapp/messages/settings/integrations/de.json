@@ -171,6 +171,17 @@
         "skippedCount": "{count} übersprungen",
         "status": "Status",
         "title": "Benutzer zuordnen"
+      },
+      "entity": {
+        "absences": "Abwesenheiten",
+        "entries": "Zeiteinträge",
+        "holidayQuotas": "Urlaubskontingente",
+        "nonBusinessDays": "Arbeitsfreie Tage",
+        "services": "Dienstleistungen / Arbeitskategorien",
+        "surcharges": "Zuschläge",
+        "targetHours": "Sollstunden / Arbeitszeitrichtlinien",
+        "teams": "Teams",
+        "users": "Benutzer / Mitarbeiter"
       }
     },
     "discord": {

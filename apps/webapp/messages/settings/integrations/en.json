@@ -171,6 +171,17 @@
         "skippedCount": "{count} skipped",
         "status": "Status",
         "title": "Map Users"
+      },
+      "entity": {
+        "absences": "Absences",
+        "entries": "Time Entries",
+        "holidayQuotas": "Holiday Quotas",
+        "nonBusinessDays": "Non-Business Days",
+        "services": "Services / Work Categories",
+        "surcharges": "Surcharges",
+        "targetHours": "Target Hours / Work Policies",
+        "teams": "Teams",
+        "users": "Users / Employees"
       }
     },
     "discord": {

@@ -30,7 +30,8 @@
       "errors": {
         "invalidTimeRange": "Clock out time must be after clock in time",
         "submitFailed": "Failed to submit correction",
-        "updateFailed": "Failed to update time entry"
+        "updateFailed": "Failed to update time entry",
+        "noChanges": "At least one correction value must change"
       },
       "noteLabel": "Note (optional)",
       "notePlaceholder": "Add a note about this change…",
@@ -48,7 +49,9 @@
         "submitted": "Correction request submitted for manager approval",
         "updated": "Time entry updated successfully"
       },
-      "timezoneNote": "Times are in your local timezone ({timezone})"
+      "timezoneNote": "Times are in your local timezone ({timezone})",
+      "clockInTime": "Clock In Time",
+      "clockOutTime": "Clock Out Time"
     },
     "currentlyClockedIn": "You're currently clocked in",
     "deadline": "Deadline",
@@ -59,7 +62,9 @@
       "holidayBlockedDesc": "This day is marked as a holiday and time entries are not allowed",
       "notesSaveFailed": "Failed to save notes",
       "restPeriodBlocked": "Rest period not complete",
-      "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed."
+      "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
+      "appendReviewRequired": "Clock-in needs a review of your time history",
+      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator."
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
@@ -84,7 +89,15 @@
         "futureDate": "Cannot create entries for future dates",
         "invalidTime": "Enter a complete, valid time",
         "invalidTimeRange": "Clock out time must be after clock in time",
-        "tooLong": "Work period cannot exceed 24 hours"
+        "tooLong": "Work period cannot exceed 24 hours",
+        "collision": "This entry conflicts with an earlier submission or changed work. Check your existing entries.",
+        "futureTime": "Cannot create entries for future times",
+        "historyReview": "This time history needs review before new entries can be saved. Contact your administrator.",
+        "nonexistentTime": "This time doesn't exist on this date because the clocks move forward.",
+        "occurrenceRequired": "This time occurs twice on this date. Choose which one you mean.",
+        "overlap": "This time overlaps recorded work. Choose a range that doesn't overlap existing entries.",
+        "reconfirm": "The timezone or times changed. Review the entry and submit it again.",
+        "refresh": "Manual entry settings changed. Review the entry and submit it again."
       },
       "occurrence": {
         "earlier": "First, {offset}",
@@ -100,7 +113,23 @@
         "editAsNew": "Edit as new entry",
         "retry": "Retry exactly",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Unconfirmed entries"
+        "title": "Unconfirmed entries",
+        "checkFailed": "Couldn't check this entry right now. Try again later.",
+        "contextMismatch": "You're signed in to a different account or organization. Switch back to handle this entry.",
+        "notCommitted": "No save found.",
+        "notCommittedToast": "No save was found for this entry. Retry it exactly, or edit it as a new entry.",
+        "saved": "This entry was saved.",
+        "savedForApproval": "This entry was saved and submitted for approval. Its current status: {status}.",
+        "status": {
+          "approved": "approved",
+          "pending": "pending",
+          "rejected": "rejected"
+        },
+        "stillUncertain": "Still not confirmed. The entry is kept; try again when you're back online.",
+        "uncertain": "Not confirmed. It may already be saved.",
+        "uncertainToast": "We couldn't confirm whether this entry was saved. It's kept under Unconfirmed entries, where you can retry it exactly or check its status.",
+        "unsupported": "Its status can't be checked. It may already be saved.",
+        "unsupportedToast": "This entry's status can't be checked right now. Retrying sends exactly the same entry."
       },
       "submit": "Create Entry",
       "submitting": "Creating…",
@@ -167,7 +196,18 @@
     },
     "unknownCategory": "Unknown category",
     "unknownProject": "Unknown project",
-    "workCategory": "Work Category"
+    "workCategory": "Work Category",
+    "clockInSavedForReview": "Clock-in saved on this device for review; not confirmed on the server",
+    "clockOutSavedForReview": "Clock-out saved on this device for review; not confirmed on the server",
+    "workLocation": "Work location",
+    "workLocationHome": "Home",
+    "workLocationOffice": "Office",
+    "workLocationOther": "Other",
+    "workLocationRemote": "Remote",
+    "clockInSavedForSending": "Clock-in saved on this device. It is sent automatically and is not confirmed yet.",
+    "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
+    "clockInSavedHeld": "Clock-in saved on this device but not sent. Review saved records.",
+    "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records."
   },
   "wellness": {
     "water": {

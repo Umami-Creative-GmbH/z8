@@ -16,14 +16,14 @@
       "openApprovals": "Approbations en attente",
       "openCalendar": "Ouvrir le calendrier",
       "openWork": "Travail sans pointage de sortie",
-      "openWorkDiagnostics": "Ouvrir les diagnostics de travail",
+      "openWorkDiagnostics": "Ouvrir le diagnostic du travail",
       "pendingAbsence": "Absence en attente",
       "pendingTimeCorrection": "Correction de temps en attente",
-      "pendingWorkApproval": "Heures en attente d'approbation",
+      "pendingWorkApproval": "Travail en attente d'approbation",
       "refreshAfterClearFailed": "Blocage levé, mais la paie n'a pas pu être actualisée",
-      "uncertainHistoricalWork": "L'historique des heures doit être vérifié",
+      "uncertainHistoricalWork": "Travail historique à vérifier",
       "unknownEmployee": "Employé inconnu",
-      "unresolvedWorkMinutes": "Les minutes travaillées doivent être vérifiées"
+      "unresolvedWorkMinutes": "Minutes de travail à vérifier"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
     "employeeTotals": {
@@ -51,6 +51,9 @@
       "employeeIdsMustBeArray": "employeeIds doit être un tableau",
       "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
+      "exportBlockedByOffboardingClockRepair": "Export bloqué : corrigez d'abord le pointage de sortie lié au départ",
+      "exportBlockedByUncertainWork": "Export bloqué : résolvez d'abord le travail incertain du périmètre sélectionné",
+      "exportBlockedByUnresolvedWorkMinutes": "Export bloqué : résolvez d'abord les minutes de travail à vérifier",
       "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
       "invalidBlockerId": "ID de blocage de paie invalide",
       "invalidBlockerType": "Type de blocage de paie invalide",

@@ -171,6 +171,17 @@
         "skippedCount": "{count} ignorati",
         "status": "Stato",
         "title": "Mappa utenti"
+      },
+      "entity": {
+        "absences": "Assenze",
+        "entries": "Voci di tempo",
+        "holidayQuotas": "Quote ferie",
+        "nonBusinessDays": "Giorni non lavorativi",
+        "services": "Servizi / Categorie di lavoro",
+        "surcharges": "Supplementi",
+        "targetHours": "Ore target / Politiche di lavoro",
+        "teams": "Team",
+        "users": "Utenti / Dipendenti"
       }
     },
     "discord": {

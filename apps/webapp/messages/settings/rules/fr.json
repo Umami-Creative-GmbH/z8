@@ -210,10 +210,10 @@
       "approvalType": {
         "absence": "Absence",
         "complianceException": "Exception de conformité",
-        "manualTimeSubmission": "Saisie manuelle des heures",
+        "manualTimeSubmission": "Saisie manuelle du temps",
         "policyClockOut": "Pointage de sortie selon la politique",
         "shiftRequest": "Demande de quart",
-        "timeCorrection": "Correction du temps",
+        "timeCorrection": "Correction de temps",
         "travelExpense": "Frais de déplacement"
       },
       "approvalTypes": "Types d'approbation",
@@ -255,6 +255,21 @@
       "validation": {
         "activePolicyRequiresStage": "Les politiques actives nécessitent au moins une étape d'approbation.",
         "specificEmployeeRequiresId": "Les étapes spécifiques aux employés nécessitent un identifiant d'employé approbateur."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Envoyez la demande au responsable par défaut lorsque cette étape ne peut pas déterminer d'approbateur.",
+          "label": "Responsable par défaut"
+        },
+        "fail": {
+          "description": "Rejetez la demande lorsque cette étape ne peut pas déterminer d'approbateur.",
+          "label": "Rejeter la demande"
+        },
+        "label": "Comportement de secours",
+        "organizationAdmin": {
+          "description": "Envoyez la demande à un administrateur de l'organisation lorsque cette étape ne peut pas déterminer d'approbateur.",
+          "label": "Administrateur de l'organisation"
+        }
       }
     },
     "changePolicies": {

@@ -47,7 +47,23 @@
           "missingConfiguration": "Konfiguration",
           "missingCredentials": "Zugangsdate"
         },
-        "year": "Jahr"
+        "year": "Jahr",
+        "allEmployees": "Alli Mitarbeiter",
+        "allProjects": "Alli Projekt",
+        "allTeams": "Alli Teams",
+        "employees": "Mitarbeiter",
+        "employeesSelected": "{{count}} usgwählt",
+        "exportButtonDatev": "Export nach DATEV",
+        "exportButtonLexware": "Export nach Lexware",
+        "exportButtonPersonio": "Export nach Personio",
+        "exportButtonSage": "Export nach Sage",
+        "exportButtonSuccessFactorsApi": "Export nach SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV exportiere",
+        "exportButtonWorkday": "Export nach Workday",
+        "projects": "Projekt",
+        "projectsSelected": "{{count}} usgwählt",
+        "teams": "Teams",
+        "teamsSelected": "{{count}} usgwählt"
       },
       "history": {
         "description": "Früherigi DATEV-Export aaluege und abelade",

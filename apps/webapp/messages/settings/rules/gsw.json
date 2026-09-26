@@ -208,13 +208,13 @@
       "activeStatus": "Aktive Status",
       "addPolicy": "Richtlinie hinzufüege",
       "approvalType": {
-        "absence": "Abwesenheit",
-        "complianceException": "Compliance-Ausnahme",
-        "manualTimeSubmission": "Manuelle Zeiteinreichung",
-        "policyClockOut": "Richtlinien-Ausstempeln",
-        "shiftRequest": "Schichtanfrage",
-        "timeCorrection": "Zeitkorrektur",
-        "travelExpense": "Reisespesen"
+        "absence": "Abweseheit",
+        "complianceException": "Compliance-Uusnahm",
+        "manualTimeSubmission": "Manuelli Ziiterfassig",
+        "policyClockOut": "Uusstemple gemäss Richtlinie",
+        "shiftRequest": "Schichtaafrag",
+        "timeCorrection": "Ziitkorrektur",
+        "travelExpense": "Reisespese"
       },
       "approvalTypes": "Freigabetype",
       "conditionsCount": "Aazahl Bedingige",
@@ -255,6 +255,21 @@
       "validation": {
         "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",
         "specificEmployeeRequiresId": "Für spezifischi Mitarbeiter-Stufe isch en Mitarbeiter-ID vom Freigabeberechtigte nötig."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Schick de Aatrag a de Standard-Vorgesetzte, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
+          "label": "Standard-Vorgesetzte"
+        },
+        "fail": {
+          "description": "Wiis de Aatrag ab, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
+          "label": "Aatrag abwiise"
+        },
+        "label": "Ersatzverhalte",
+        "organizationAdmin": {
+          "description": "Schick de Aatrag an en Organisations-Admin, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
+          "label": "Organisations-Admin"
+        }
       }
     },
     "changePolicies": {

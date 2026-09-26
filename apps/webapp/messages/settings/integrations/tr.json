@@ -171,6 +171,17 @@
         "skippedCount": "{count} atlandı",
         "status": "Durum",
         "title": "Kullanıcıları Eşleştir"
+      },
+      "entity": {
+        "absences": "İzinler",
+        "entries": "Zaman Kayıtları",
+        "holidayQuotas": "İzin Kotaları",
+        "nonBusinessDays": "İş Dışı Günler",
+        "services": "Hizmetler / Çalışma Kategorileri",
+        "surcharges": "Ek Ücretler",
+        "targetHours": "Hedef Saatler / Çalışma Politikaları",
+        "teams": "Ekipler",
+        "users": "Kullanıcılar / Çalışanlar"
       }
     },
     "discord": {

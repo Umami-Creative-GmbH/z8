@@ -120,7 +120,7 @@
       "expired": "Expirado",
       "expires": "Expira",
       "inactive": "Inactivo",
-      "invitationActionsLabel": "Acciones para la invitación a ${row.original.email}",
+      "invitationActionsLabel": "Acciones para la invitación a {email}",
       "invitationCancelError": "Error al cancelar la invitación",
       "invitationCancelSuccess": "Invitación cancelada",
       "invitationResendError": "Error al reenviar la invitación",
@@ -128,7 +128,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invitación(es) pendiente(s) de ser aceptada(s)}}",
       "invitedBy": "Invitado por",
       "member": "Miembro",
-      "memberActionsLabel": "Acciones para ${row.original.user.name}",
+      "memberActionsLabel": "Acciones para {name}",
       "memberCount": "{count, plural, other {{count} miembro(s) en esta organización}}",
       "noInvitationResults": "No hay invitaciones que coincidan con su búsqueda.",
       "noInvitations": "No hay invitaciones pendientes.",
@@ -256,7 +256,7 @@
       "title": "Equipos"
     },
     "timezone": {
-      "balances-recalculating": "Los balances de trabajo se están recalculando para la nueva zona horaria y permanecerán ocultos hasta que estén listos.",
+      "balances-recalculating": "Los saldos de trabajo se están recalculando para la nueva zona horaria y permanecen ocultos hasta que estén listos.",
       "default": "Zona horaria predeterminada",
       "description": "Establezca la zona horaria predeterminada para su organización. Se utiliza para el seguimiento de ausencias, informes y otras funciones basadas en fechas. Los usuarios individuales pueden anular esto en la configuración de su perfil.",
       "owner-only": "Solo los propietarios de la organización pueden cambiar la configuración de la zona horaria.",

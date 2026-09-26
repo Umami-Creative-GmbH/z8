@@ -189,7 +189,7 @@
         "presetName": "Όνομα προεπιλογής",
         "presetNameHint": "Αυτό το όνομα θα χρησιμοποιηθεί για την αναγνώριση της προεπιλογής κατά την ανάθεση σε ομάδες ή υπαλλήλους",
         "presetNamePlaceholder": "π.χ. Γερμανία - Βαυαρία",
-        "presetSuccess": "Δημιουργήθηκε η προεπιλογή \"{name}\" με ${holidaysToImport.length} αργίες",
+        "presetSuccess": "Δημιουργήθηκε η προεπιλογή \"{name}\" με {count} αργίες",
         "region": "Περιοχή",
         "searchCountry": "Αναζήτηση χωρών...",
         "searchRegion": "Αναζήτηση περιοχών...",

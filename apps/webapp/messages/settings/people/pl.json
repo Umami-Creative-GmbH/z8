@@ -78,7 +78,7 @@
         "title": "Zaproszenia"
       },
       "lifecycle": {
-        "actionsLabel": "Działania dotyczące pracownika ${target.displayName}",
+        "actionsLabel": "Działania dotyczące pracownika {name}",
         "deactivate": "Dezaktywuj",
         "deactivateDescription": "Spowoduje to zawieszenie dostępu do tej organizacji i zakończenie bieżących sesji. Historia pracownika zostanie zachowana.",
         "deactivateError": "Nie udało się dezaktywować pracownika",
@@ -100,7 +100,9 @@
         "removeSuccess": "Dostęp do organizacji został usunięty",
         "removeTitle": "Usunąć dostęp do organizacji?",
         "removing": "Usuwanie dostępu...",
-        "removingStatus": "Usuwanie dostępu do organizacji"
+        "removingStatus": "Usuwanie dostępu do organizacji",
+        "finalOwnerDeactivateGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim dezaktywujesz tego pracownika.",
+        "finalOwnerRemoveGuidance": "Najpierw przypisz i aktywuj innego zatwierdzonego właściciela, zanim odbierzesz temu pracownikowi dostęp."
       },
       "offboarding": {
         "acknowledgeDuties": "Administratorzy rozpatrzą {count} otwartych zadań zatwierdzania.",
@@ -569,7 +571,7 @@
       "catalogDescription": "Zdefiniuj umiejętności, które mogą być wymagane dla podobszarów i szablonów zmian",
       "category": "Kategoria",
       "confirmDelete": "Czy na pewno chcesz usunąć tę umiejętność?",
-      "confirmRemove": "Usunąć „${skillName}” od tego pracownika?",
+      "confirmRemove": "Usunąć „{skillName}” od tego pracownika?",
       "createError": "Nie udało się utworzyć umiejętności",
       "createSkill": "Utwórz umiejętność",
       "createSkillDescription": "Utwórz nową umiejętność, którą można przypisać do pracowników",

@@ -30,7 +30,8 @@
       "errors": {
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
         "submitFailed": "Falha ao enviar correção",
-        "updateFailed": "Falha ao atualizar registro de tempo"
+        "updateFailed": "Falha ao atualizar registro de tempo",
+        "noChanges": "É necessário alterar pelo menos um valor da correção"
       },
       "noteLabel": "Nota (opcional)",
       "notePlaceholder": "Adicione uma nota sobre esta alteração...",
@@ -48,7 +49,9 @@
         "submitted": "Solicitação de correção enviada para aprovação do gerente",
         "updated": "Registro de tempo atualizado com sucesso"
       },
-      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})"
+      "timezoneNote": "Os horários estão no seu fuso horário local ({timezone})",
+      "clockInTime": "Hora de entrada",
+      "clockOutTime": "Hora de saída"
     },
     "currentlyClockedIn": "Você registrou a entrada atualmente",
     "deadline": "Prazo",
@@ -59,48 +62,74 @@
       "holidayBlockedDesc": "Este dia está marcado como feriado e registros de tempo não são permitidos",
       "notesSaveFailed": "Falha ao salvar notas",
       "restPeriodBlocked": "Período de descanso não concluído",
-      "restPeriodBlockedDesc": "Você deve completar o período de descanso obrigatório antes de registrar a entrada. Solicite uma exceção se necessário."
+      "restPeriodBlockedDesc": "Você deve completar o período de descanso obrigatório antes de registrar a entrada. Solicite uma exceção se necessário.",
+      "appendReviewRequired": "Registrar a entrada requer uma revisão do seu histórico de tempo",
+      "appendReviewRequiredDesc": "Não foi possível verificar seus registros de tempo anteriores, então a nova entrada não foi salva. Entre em contato com seu administrador."
     },
     "manualEntry": {
       "addButton": "Adicionar Entrada Manual",
       "clockInLabel": "Registrar Entrada",
       "clockOutLabel": "Registrar Saída",
       "context": {
-        "choicesCleared": "Um projeto ou categoria selecionado não está mais disponível e foi limpo.",
-        "loadFailed": "Não foi possível carregar o fuso horário e as opções para este lançamento.",
-        "loading": "Carregando opções de lançamento…",
-        "notAuthorized": "Você não pode criar lançamentos de horas para este colaborador.",
-        "organizationFallback": "{employee} não possui fuso horário pessoal, portanto o fuso horário da organização é usado.",
+        "choicesCleared": "Um projeto ou categoria selecionado já não está disponível e foi removido.",
+        "loadFailed": "Não foi possível carregar o fuso horário e as opções para este registo.",
+        "loading": "A carregar opções do registo…",
+        "notAuthorized": "Não pode criar registos de tempo para este colaborador.",
+        "organizationFallback": "{employee} não tem fuso horário pessoal, por isso é usado o da organização.",
         "retry": "Tentar novamente",
-        "targetChanged": "O colaborador foi alterado, portanto o projeto e a categoria foram limpos.",
-        "targetTimezone": "Os horários estão no fuso horário de {employee}: {timezone}",
+        "targetChanged": "O colaborador mudou, por isso o projeto e a categoria foram limpos.",
+        "targetTimezone": "As horas estão no fuso horário de {employee}: {timezone}",
         "thisEmployee": "este colaborador",
-        "utcFallback": "Nem {employee} nem a organização têm um fuso horário definido, portanto o UTC é usado."
+        "utcFallback": "Nem {employee} nem a organização definiram um fuso horário, por isso é usado UTC."
       },
       "dateLabel": "Data",
       "description": "Crie uma entrada de tempo para uma data passada. A aprovação pode ser necessária com base na política de alteração da sua organização.",
       "errors": {
         "createFailed": "Falha ao criar entrada de tempo",
         "futureDate": "Não é possível criar entradas para datas futuras",
-        "invalidTime": "Insira um horário completo e válido",
+        "invalidTime": "Introduza uma hora completa e válida",
         "invalidTimeRange": "O horário de saída deve ser posterior ao horário de entrada",
-        "tooLong": "O período de trabalho não pode exceder 24 horas"
+        "tooLong": "O período de trabalho não pode exceder 24 horas",
+        "collision": "Esta entrada entra em conflito com um envio anterior ou com trabalho alterado. Verifique suas entradas existentes.",
+        "futureTime": "Não é possível criar entradas para horários futuros",
+        "historyReview": "Este histórico de tempo precisa ser revisado antes que novas entradas possam ser salvas. Contate seu administrador.",
+        "nonexistentTime": "Este horário não existe nesta data porque os relógios são adiantados.",
+        "occurrenceRequired": "Este horário ocorre duas vezes nesta data. Escolha a qual se refere.",
+        "overlap": "Este horário se sobrepõe a trabalho registrado. Escolha um intervalo sem sobreposição.",
+        "reconfirm": "O fuso horário ou os horários mudaram. Revise a entrada e envie-a novamente.",
+        "refresh": "As configurações de entradas manuais mudaram. Revise a entrada e envie-a novamente."
       },
       "occurrence": {
-        "earlier": "Primeiro, {offset}",
-        "later": "Segundo, {offset}",
+        "earlier": "Primeira, {offset}",
+        "later": "Segunda, {offset}",
         "legend": "{time} ocorre duas vezes nesta data. A qual você se refere?"
       },
       "reasonLabel": "Motivo",
       "reasonPlaceholder": "Descreva no que você trabalhou…",
       "recovery": {
-        "check": "Verificar status",
-        "description": "Estes lançamentos foram enviados desta aba sem um resultado confirmado. Nada será enviado novamente a menos que você escolha fazê-lo.",
-        "discard": "Dispensar",
-        "editAsNew": "Editar como novo lançamento",
-        "retry": "Tentar novamente exatamente",
+        "check": "Verificar estado",
+        "description": "Estes registos foram enviados a partir deste separador sem um resultado confirmado. Nada é reenviado a menos que o escolha.",
+        "discard": "Descartar",
+        "editAsNew": "Editar como novo registo",
+        "retry": "Tentar novamente igual",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Registros não confirmados"
+        "title": "Registos não confirmados",
+        "checkFailed": "Não foi possível verificar este registo agora. Tente mais tarde.",
+        "contextMismatch": "Tem sessão iniciada noutra conta ou organização. Volte a mudar para tratar este registo.",
+        "notCommitted": "Nenhum registo guardado encontrado.",
+        "notCommittedToast": "Não foi encontrado nenhum registo guardado. Tente novamente igual ou edite-o como novo registo.",
+        "saved": "Este registo foi guardado.",
+        "savedForApproval": "Este registo foi guardado e enviado para aprovação. Estado atual: {status}.",
+        "status": {
+          "approved": "aprovado",
+          "pending": "pendente",
+          "rejected": "rejeitado"
+        },
+        "stillUncertain": "Ainda não confirmado. O registo é mantido; tente novamente quando voltar a estar online.",
+        "uncertain": "Não confirmado. Pode já estar guardado.",
+        "uncertainToast": "Não foi possível confirmar se este registo foi guardado. Fica em Registos não confirmados, onde pode tentar novamente igual ou verificar o estado.",
+        "unsupported": "Não é possível verificar o estado. Pode já estar guardado.",
+        "unsupportedToast": "Não é possível verificar agora o estado deste registo. Tentar novamente envia exatamente o mesmo registo."
       },
       "submit": "Criar Entrada",
       "submitting": "Criando…",
@@ -167,7 +196,14 @@
     },
     "unknownCategory": "Categoria desconhecida",
     "unknownProject": "Projeto desconhecido",
-    "workCategory": "Categoria de Trabalho"
+    "workCategory": "Categoria de Trabalho",
+    "clockInSavedForReview": "Registro de entrada salvo neste dispositivo para revisão; não confirmado no servidor",
+    "clockOutSavedForReview": "Registro de saída salvo neste dispositivo para revisão; não confirmado no servidor",
+    "workLocation": "Local de trabalho",
+    "workLocationHome": "Casa",
+    "workLocationOffice": "Escritório",
+    "workLocationOther": "Outro",
+    "workLocationRemote": "Remoto"
   },
   "wellness": {
     "water": {

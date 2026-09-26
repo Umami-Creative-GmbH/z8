@@ -18,7 +18,7 @@
         "appendReview": "Din tidshistorik behöver granskas innan du kan stämpla in. Kontakta din administratör.",
         "cannotNow": "Det går inte att stämpla in just nu.",
         "committed": "Instämplad.",
-        "failed": "Kunde inte stämpla in. Försök igen.",
+        "failed": "Det gick inte att stämpla in. Försök igen.",
         "noProfile": "Medarbetarprofilen hittades inte.",
         "success": "Instämplad {time}.",
         "unconfirmed": "Din instämpling kunde inte bekräftas. Kontrollera din status innan du försöker igen."
@@ -27,11 +27,11 @@
         "appendReview": "Din tidshistorik behöver granskas innan du kan stämpla ut. Kontakta din administratör.",
         "cannotNow": "Det går inte att stämpla ut just nu.",
         "committed": "Utstämplad.",
-        "failed": "Kunde inte stämpla ut. Försök igen.",
+        "failed": "Det gick inte att stämpla ut. Försök igen.",
         "noProfile": "Medarbetarprofilen hittades inte.",
         "notClockedIn": "Du är för närvarande inte instämplad.",
         "success": "Utstämplad {time}. Varaktighet: {hours}h {minutes}m.",
-        "successAt": "Stämplade ut kl. {time}.",
+        "successAt": "Utstämplad kl. {time}.",
         "unconfirmed": "Din utstämpling kunde inte bekräftas. Kontrollera din status innan du försöker igen."
       },
       "compliance": {
@@ -64,7 +64,8 @@
         "header": "{outCount} av {total} teammedlemmar är frånvarande idag:",
         "noneOut": "Alla dina {total} teammedlemmar är tillgängliga idag.",
         "noTeam": "Du har inga teammedlemmar tilldelade till dig."
-      }
+      },
+      "billingRequired": "Fakturering krävs för att fortsätta använda tidrapportering. Be en organisationsadministratör att uppdatera faktureringen."
     },
     "language": {
       "changed": "Språket har ändrats till {language}.",
@@ -90,7 +91,7 @@
       "notLinked": "Ditt Telegram-konto är inte länkat till Z8. Gå till Inställningar > Integrationer > Telegram i din Z8-översikt för att generera en länkkod och skicka sedan: /link DIN_KOD",
       "notLinkedTeams": "Jag kunde inte hitta ditt Z8-konto. Kontrollera att din e-postadress för Teams matchar e-postadressen för ditt Z8-konto.",
       "noUser": "Det gick inte att identifiera ditt användarkonto.",
-      "replyUndelivered": "Ditt kommando behandlades, men svaret kunde inte visas. Kontrollera din status innan du försöker igen.",
+      "replyUndelivered": "Ditt kommando behandlades, men svaret kunde inte visas. Kontrollera din status innan du upprepar det.",
       "setupBody": "Din organisation måste anslutas till Z8. Klicka nedan för att påbörja konfigurationen.",
       "setupButton": "Slutför konfiguration",
       "setupNote": "Endast organisationsadministratörer kan slutföra denna konfiguration.",

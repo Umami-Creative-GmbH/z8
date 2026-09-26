@@ -59,23 +59,25 @@
       "holidayBlockedDesc": "Denna dag är markerad som en helgdag och tidsregistreringar är inte tillåtna",
       "notesSaveFailed": "Det gick inte att spara anteckningar",
       "restPeriodBlocked": "Viloperioden är inte slutförd",
-      "restPeriodBlockedDesc": "Du måste slutföra den obligatoriska viloperioden innan du stämplar in. Begär ett undantag vid behov."
+      "restPeriodBlockedDesc": "Du måste slutföra den obligatoriska viloperioden innan du stämplar in. Begär ett undantag vid behov.",
+      "appendReviewRequired": "Instämpling kräver granskning av din tidshistorik",
+      "appendReviewRequiredDesc": "Dina tidigare tidsposter kunde inte verifieras, så den nya instämplingen sparades inte. Kontakta din administratör."
     },
     "manualEntry": {
       "addButton": "Lägg till manuell registrering",
       "clockInLabel": "Stämpla in",
       "clockOutLabel": "Stämpla ut",
       "context": {
-        "choicesCleared": "Ett valt projekt eller en vald kategori är inte längre tillgänglig och har rensats.",
-        "loadFailed": "Kunde inte läsa in tidszon och alternativ för denna post.",
-        "loading": "Läser in alternativ för tidrapport…",
-        "notAuthorized": "Du kan inte skapa tidrapporter för denna medarbetare.",
-        "organizationFallback": "{employee} har ingen personlig tidszon, så organisationens tidszon används.",
+        "choicesCleared": "Ett valt projekt eller en vald kategori är inte längre tillgänglig och togs bort.",
+        "loadFailed": "Det gick inte att läsa in tidszonen och valen för den här posten.",
+        "loading": "Läser in alternativ för posten…",
+        "notAuthorized": "Du kan inte skapa tidsposter för den här medarbetaren.",
+        "organizationFallback": "{employee} har ingen egen tidszon, så organisationens tidszon används.",
         "retry": "Försök igen",
         "targetChanged": "Medarbetaren ändrades, så projekt och kategori rensades.",
-        "targetTimezone": "Tider visas i tidszonen för {employee}: {timezone}",
-        "thisEmployee": "denna medarbetare",
-        "utcFallback": "Varken {employee} eller organisationen har någon angiven tidszon, så UTC används."
+        "targetTimezone": "Tiderna är i tidszonen för {employee}: {timezone}",
+        "thisEmployee": "den här medarbetaren",
+        "utcFallback": "Varken {employee} eller organisationen har angett en tidszon, så UTC används."
       },
       "dateLabel": "Datum",
       "description": "Skapa en tidsregistrering för ett tidigare datum. Godkännande kan krävas baserat på din organisations ändringspolicy.",
@@ -84,23 +86,47 @@
         "futureDate": "Det går inte att skapa registreringar för framtida datum",
         "invalidTime": "Ange en fullständig, giltig tid",
         "invalidTimeRange": "Utstämplingstiden måste vara efter instämplingstiden",
-        "tooLong": "Arbetsperioden får inte överstiga 24 timmar"
+        "tooLong": "Arbetsperioden får inte överstiga 24 timmar",
+        "collision": "Den här posten står i konflikt med en tidigare inskickning eller ändrat arbete. Kontrollera dina befintliga poster.",
+        "futureTime": "Det går inte att skapa poster för framtida tider",
+        "historyReview": "Den här tidshistoriken måste granskas innan nya poster kan sparas. Kontakta din administratör.",
+        "nonexistentTime": "Den här tiden finns inte på det här datumet eftersom klockan ställs fram.",
+        "occurrenceRequired": "Den här tiden förekommer två gånger på det här datumet. Välj vilken du menar.",
+        "overlap": "Den här tiden överlappar registrerat arbete. Välj ett intervall utan överlappning.",
+        "reconfirm": "Tidszonen eller tiderna har ändrats. Granska posten och skicka den igen.",
+        "refresh": "Inställningarna för manuella poster har ändrats. Granska posten och skicka den igen."
       },
       "occurrence": {
         "earlier": "Första, {offset}",
         "later": "Andra, {offset}",
-        "legend": "{time} inträffar två gånger detta datum. Vilken menar du?"
+        "legend": "{time} förekommer två gånger på det här datumet. Vilken menar du?"
       },
       "reasonLabel": "Anledning",
       "reasonPlaceholder": "Beskriv vad du har arbetat med…",
       "recovery": {
         "check": "Kontrollera status",
-        "description": "Dessa poster skickades från den här fliken utan bekräftat resultat. Inget skickas igen om du inte väljer att göra det.",
-        "discard": "Avvisa",
+        "description": "Dessa poster skickades från den här fliken utan ett bekräftat resultat. Inget skickas igen om du inte väljer det.",
+        "discard": "Avfärda",
         "editAsNew": "Redigera som ny post",
         "retry": "Försök igen exakt",
         "summary": "{date}, {clockIn}–{clockOut} ({timezone})",
-        "title": "Obekräftade registreringar"
+        "title": "Obekräftade poster",
+        "checkFailed": "Det gick inte att kontrollera posten just nu. Försök igen senare.",
+        "contextMismatch": "Du är inloggad på ett annat konto eller en annan organisation. Byt tillbaka för att hantera posten.",
+        "notCommitted": "Ingen sparning hittades.",
+        "notCommittedToast": "Ingen sparning hittades för posten. Försök igen exakt eller redigera den som en ny post.",
+        "saved": "Posten sparades.",
+        "savedForApproval": "Posten sparades och skickades för godkännande. Aktuell status: {status}.",
+        "status": {
+          "approved": "godkänd",
+          "pending": "väntande",
+          "rejected": "avvisad"
+        },
+        "stillUncertain": "Fortfarande inte bekräftad. Posten finns kvar; försök igen när du är online igen.",
+        "uncertain": "Inte bekräftad. Den kan redan vara sparad.",
+        "uncertainToast": "Vi kunde inte bekräfta om posten sparades. Den finns kvar under Obekräftade poster, där du kan försöka igen exakt eller kontrollera dess status.",
+        "unsupported": "Dess status kan inte kontrolleras. Den kan redan vara sparad.",
+        "unsupportedToast": "Postens status kan inte kontrolleras just nu. Ett nytt försök skickar exakt samma post."
       },
       "submit": "Skapa registrering",
       "submitting": "Skapar…",
@@ -167,7 +193,9 @@
     },
     "unknownCategory": "Okänd kategori",
     "unknownProject": "Okänt projekt",
-    "workCategory": "Arbetskategori"
+    "workCategory": "Arbetskategori",
+    "clockInSavedForReview": "Instämpling sparad på denna enhet för granskning; ej bekräftad på servern",
+    "clockOutSavedForReview": "Utstämpling sparad på denna enhet för granskning; ej bekräftad på servern"
   },
   "wellness": {
     "water": {

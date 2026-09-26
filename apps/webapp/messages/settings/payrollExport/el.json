@@ -47,7 +47,23 @@
           "missingConfiguration": "διαμόρφωση",
           "missingCredentials": "διαπιστευτήρια"
         },
-        "year": "Έτος"
+        "year": "Έτος",
+        "allEmployees": "Όλοι οι εργαζόμενοι",
+        "allProjects": "Όλα τα έργα",
+        "allTeams": "Όλες οι ομάδες",
+        "employees": "Εργαζόμενοι",
+        "employeesSelected": "{{count}} επιλεγμένα",
+        "exportButtonDatev": "Εξαγωγή στο DATEV",
+        "exportButtonLexware": "Εξαγωγή στο Lexware",
+        "exportButtonPersonio": "Εξαγωγή στο Personio",
+        "exportButtonSage": "Εξαγωγή στο Sage",
+        "exportButtonSuccessFactorsApi": "Εξαγωγή στο SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Εξαγωγή SAP SuccessFactors CSV",
+        "exportButtonWorkday": "Εξαγωγή στο Workday",
+        "projects": "Έργα",
+        "projectsSelected": "{{count}} επιλεγμένα",
+        "teams": "Ομάδες",
+        "teamsSelected": "{{count}} επιλεγμένα"
       },
       "history": {
         "description": "Προβολή και λήψη προηγούμενων εξαγωγών DATEV",

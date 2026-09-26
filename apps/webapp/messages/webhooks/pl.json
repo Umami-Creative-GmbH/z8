@@ -21,7 +21,22 @@
     "form": {
       "events-required": "Należy wybrać przynajmniej jedno zdarzenie",
       "name-required": "Nazwa jest wymagana",
-      "url-required": "URL jest wymagany"
+      "url-required": "URL jest wymagany",
+      "create": "Utwórz webhook",
+      "create-description": "Skonfiguruj nowy punkt końcowy webhooka, aby otrzymywać powiadomienia o zdarzeniach.",
+      "create-title": "Utwórz webhook",
+      "description": "Opis",
+      "description-placeholder": "Do czego służy ten webhook?",
+      "deselect-all": "Odznacz wszystko",
+      "edit-description": "Zaktualizuj konfigurację punktu końcowego webhooka.",
+      "edit-title": "Edytuj webhook",
+      "events": "Zdarzenia do otrzymania",
+      "events-hint": "Wybrane zdarzenia: {{count}}",
+      "name": "Nazwa",
+      "name-placeholder": "Mój webhook",
+      "select-all": "Zaznacz wszystko",
+      "url": "URL punktu końcowego",
+      "url-hint": "HTTPS jest wymagane w środowisku produkcyjnym. Zdarzenia będą wysyłane jako żądania POST."
     },
     "last-delivery": "Ostatnia",
     "logs": {

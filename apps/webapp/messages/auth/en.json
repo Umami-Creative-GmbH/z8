@@ -145,7 +145,15 @@
     "wrong-account": "Wrong account",
     "wrong-account-description": "You're signed in as a different email. Sign out and use the invited email address to accept this invitation.",
     "wrong-account-description-short": "Use the invited email address to switch accounts and continue.",
-    "you-are-invited": "You're invited"
+    "you-are-invited": "You're invited",
+    "confirm-password": "Confirm Password",
+    "first-name": "First Name",
+    "first-name-placeholder": "John…",
+    "invited-email-locked": "Use the invited email address for this account so you can join the organization automatically.",
+    "last-name": "Last Name",
+    "last-name-placeholder": "Doe…",
+    "secure-password-description": "Use a password you can recognize quickly during busy workdays without compromising security.",
+    "secure-password-heading": "Set a secure password"
   },
   "profile": {
     "change-password": "Change Password",

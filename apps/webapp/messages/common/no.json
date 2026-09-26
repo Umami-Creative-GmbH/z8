@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Kontakt administrator",
       "createOrg": "Opprett organisasjon",
-      "description": "Du trenger en ansattprofil for å ${feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
+      "description": "Du trenger en ansattprofil for å {feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
       "emailBody": "Hei,nnJeg trenger en ansattprofil konfigurert for å få tilgang til plattformfunksjonene. Kan du hjelpe meg med dette?nnTakk!",
       "emailSubject": "Oppsett av ansattprofil kreves",
       "helpText": "Hvis du ble invitert til en organisasjon, kan du be administratoren din om å opprette ansattprofilen din.",
@@ -559,5 +559,8 @@
     "notCalculated": "Ikke beregnet ennå",
     "pendingDescription": "Systemet vil beregne denne saldoen snart.",
     "updatedEveryThreeHours": "Oppdateres hver 3. time"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Laster inn bedriftsutvalg"
   }
 }

@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Contactar administrador",
       "createOrg": "Criar organização",
-      "description": "Precisa de um perfil de funcionário para ${feature}. Por favor crie uma organização ou contacte o seu administrador.",
+      "description": "Precisa de um perfil de funcionário para {feature}. Por favor crie uma organização ou contacte o seu administrador.",
       "emailBody": "Olá,\n\npreciso que seja configurado um perfil de funcionário para aceder às funcionalidades da plataforma. Poderia ajudar-me com isto?\n\nObrigado!",
       "emailSubject": "Configuração do perfil de funcionário necessária",
       "helpText": "Se foi convidado para uma organização, peça ao seu administrador para configurar o seu perfil de funcionário.",
@@ -289,8 +289,16 @@
     "trust-center": "Central de Confiança"
   },
   "loading": {
-    "chart": "Carregando gráfico",
-    "settings": "Carregando configurações"
+    "chart": "A carregar gráfico",
+    "settings": "A carregar definições",
+    "application": "A carregar aplicação",
+    "authentication": "A carregar autenticação",
+    "calendar": "A carregar calendário",
+    "licenses": "A carregar licenças",
+    "platformAnalytics": "A carregar análises da plataforma",
+    "setup": "A carregar configuração",
+    "teamAbsences": "A carregar ausências da equipa",
+    "workerQueue": "A carregar fila de trabalhos"
   },
   "nav": {
     "absences": "Ausências",
@@ -337,6 +345,14 @@
       "teamMemberAdded": {
         "message": "Você foi adicionado à equipe {teamName} por {performedByName}.",
         "title": "Adicionado à equipe"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Sua solicitação de {categoryName} para {dateRange} foi enviada e está aguardando aprovação.",
+        "title": "Solicitação de ausência enviada"
+      },
+      "teamMemberRemoved": {
+        "message": "Você foi removido da equipe {teamName} por {performedByName}.",
+        "title": "Removido da equipe"
       }
     },
     "description": "Revise atualizações, aprovações e alertas do sistema em uma única linha do tempo.",
@@ -559,5 +575,8 @@
     "notCalculated": "Ainda não calculado",
     "pendingDescription": "O trabalhador calculará este saldo em breve.",
     "updatedEveryThreeHours": "Atualizado a cada 3 horas"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Carregando o portal do conselho de trabalhadores"
   }
 }

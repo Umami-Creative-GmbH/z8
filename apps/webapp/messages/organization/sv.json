@@ -120,7 +120,7 @@
       "expired": "Utgången",
       "expires": "Löper ut",
       "inactive": "Inaktiv",
-      "invitationActionsLabel": "Åtgärder för inbjudan till ${row.original.email}",
+      "invitationActionsLabel": "Åtgärder för inbjudan till {email}",
       "invitationCancelError": "Kunde inte avbryta inbjudan",
       "invitationCancelSuccess": "Inbjudan har avbrutits",
       "invitationResendError": "Kunde inte skicka inbjudan igen",
@@ -128,7 +128,7 @@
       "invitationsWaiting": "{count, plural, other {{count} inbjudan/inbjudningar väntar på att accepteras}}",
       "invitedBy": "Inbjuden av",
       "member": "Medlem",
-      "memberActionsLabel": "Åtgärder för ${row.original.user.name}",
+      "memberActionsLabel": "Åtgärder för {name}",
       "memberCount": "{count, plural, other {{count} medlem(mar) i denna organisation}}",
       "noInvitationResults": "Inga inbjudningar matchar din sökning.",
       "noInvitations": "Inga väntande inbjudningar.",
@@ -256,7 +256,7 @@
       "title": "Team"
     },
     "timezone": {
-      "balances-recalculating": "Arbetssaldon räknas om för den nya tidszonen och förblir dolda tills de är klara.",
+      "balances-recalculating": "Arbetssaldon räknas om för den nya tidszonen och är dolda tills de är klara.",
       "default": "Standardtidszon",
       "description": "Ange standardtidszon för din organisation. Detta används för frånvarohantering, rapporter och andra datumbaserade funktioner. Enskilda användare kan åsidosätta detta i sina profilinställningar.",
       "owner-only": "Endast organisationsägare kan ändra tidszonsinställningen.",

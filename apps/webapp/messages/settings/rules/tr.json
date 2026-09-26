@@ -210,11 +210,11 @@
       "approvalType": {
         "absence": "Devamsızlık",
         "complianceException": "Uyumluluk istisnası",
-        "manualTimeSubmission": "Manuel zaman bildirimi",
-        "policyClockOut": "Politika çıkış kaydı",
+        "manualTimeSubmission": "Manuel süre gönderimi",
+        "policyClockOut": "Politikaya göre çıkış kaydı",
         "shiftRequest": "Vardiya talebi",
-        "timeCorrection": "Zaman düzeltmesi",
-        "travelExpense": "Seyahat masrafı"
+        "timeCorrection": "Süre düzeltmesi",
+        "travelExpense": "Seyahat gideri"
       },
       "approvalTypes": "Onay türleri",
       "conditionsCount": "Koşul sayısı",
@@ -255,6 +255,21 @@
       "validation": {
         "activePolicyRequiresStage": "Aktif politikalar en az bir onay aşaması gerektirir.",
         "specificEmployeeRequiresId": "Belirli çalışan aşamaları, onaylayan bir çalışan kimliği gerektirir."
+      },
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi varsayılan yöneticiye gönderin.",
+          "label": "Varsayılan yönetici"
+        },
+        "fail": {
+          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi reddedin.",
+          "label": "Talebi reddet"
+        },
+        "label": "Alternatif davranış",
+        "organizationAdmin": {
+          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi bir kuruluş yöneticisine gönderin.",
+          "label": "Kuruluş yöneticisi"
+        }
       }
     },
     "changePolicies": {

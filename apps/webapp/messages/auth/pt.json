@@ -145,7 +145,15 @@
     "wrong-account": "Conta incorreta",
     "wrong-account-description": "Você está conectado com um e-mail diferente. Saia e use o endereço de e-mail convidado para aceitar este convite.",
     "wrong-account-description-short": "Use o endereço de e-mail convidado para trocar de conta e continuar.",
-    "you-are-invited": "Você foi convidado"
+    "you-are-invited": "Você foi convidado",
+    "confirm-password": "Confirmar Palavra-passe",
+    "first-name": "Nome",
+    "first-name-placeholder": "John…",
+    "invited-email-locked": "Use o endereço de e-mail convidado para esta conta para que você possa entrar na organização automaticamente.",
+    "last-name": "Sobrenome",
+    "last-name-placeholder": "Doe…",
+    "secure-password-description": "Use uma senha que você consiga reconhecer rapidamente durante dias de trabalho agitados, sem comprometer a segurança.",
+    "secure-password-heading": "Definir uma senha segura"
   },
   "profile": {
     "change-password": "Alterar palavra-passe",

@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Skontaktuj się z administratorem",
       "createOrg": "Utwórz organizację",
-      "description": "Potrzebujesz profilu pracownika, aby ${feature}. Utwórz organizację lub skontaktuj się z administratorem.",
+      "description": "Potrzebujesz profilu pracownika, aby {feature}. Utwórz organizację lub skontaktuj się z administratorem.",
       "emailBody": "Cześć,\n\nPotrzebuję skonfigurowanego profilu pracownika, aby uzyskać dostęp do funkcji platformy. Czy mógłbyś mi w tym pomóc?\n\nDziękuję!",
       "emailSubject": "Wymagana konfiguracja profilu pracownika",
       "helpText": "Jeśli otrzymałeś zaproszenie do organizacji, poproś administratora o skonfigurowanie Twojego profilu pracownika.",
@@ -289,8 +289,16 @@
     "trust-center": "Centrum zaufania"
   },
   "loading": {
-    "chart": "Wczytywanie wykresu",
-    "settings": "Wczytywanie ustawień"
+    "chart": "Ładowanie wykresu",
+    "settings": "Ładowanie ustawień",
+    "application": "Ładowanie aplikacji",
+    "authentication": "Ładowanie uwierzytelniania",
+    "calendar": "Ładowanie kalendarza",
+    "licenses": "Ładowanie licencji",
+    "platformAnalytics": "Ładowanie analityki platformy",
+    "setup": "Ładowanie konfiguracji",
+    "teamAbsences": "Ładowanie nieobecności zespołu",
+    "workerQueue": "Ładowanie kolejki zadań"
   },
   "nav": {
     "absences": "Nieobecności",
@@ -337,6 +345,14 @@
       "teamMemberAdded": {
         "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
         "title": "Dodano do zespołu"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
+        "title": "Wniosek o nieobecność wysłany"
+      },
+      "teamMemberRemoved": {
+        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
+        "title": "Usunięto z zespołu"
       }
     },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
@@ -559,5 +575,8 @@
     "notCalculated": "Jeszcze nie obliczono",
     "pendingDescription": "Pracownik wkrótce obliczy ten bilans.",
     "updatedEveryThreeHours": "Aktualizowane co 3 godziny"
+  },
+  "worksCouncil": {
+    "loadingLabel": "Ładowanie portalu rady zakładowej"
   }
 }

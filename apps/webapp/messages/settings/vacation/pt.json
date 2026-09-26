@@ -91,7 +91,32 @@
         "edit": {
           "description": "Configurar subsídio de férias personalizado para {{name}}",
           "title": "Editar subsídio de férias"
-        }
+        },
+        "actions": {
+          "edit": "Editar"
+        },
+        "allowancesForYear": "Licenças de Férias para {{year}}",
+        "defaultAllowanceDescription": "Licença padrão: {{days}} dias por ano",
+        "defaultPolicy": "Padrão",
+        "description": "Configure licenças de férias personalizadas para funcionários individuais",
+        "employeeCount": "{{count}} funcionários",
+        "emptyDescription": "Adicione funcionários à sua organização para gerenciar seus subsídios de férias.",
+        "emptyTitle": "Nenhum funcionário encontrado",
+        "noOrgPolicyConfigured": " (Nenhuma política da organização configurada)",
+        "primaryManager": "Principal",
+        "table": {
+          "actions": "Ações",
+          "adjustments": "Ajustes",
+          "carryover": "Acúmulo para o próximo ano",
+          "customDays": "Dias personalizados",
+          "defaultDays": "Dias padrão",
+          "employee": "Funcionário",
+          "managers": "Gerentes",
+          "policy": "Política",
+          "team": "Equipe",
+          "totalAvailable": "Total disponível"
+        },
+        "title": "Subsídios dos funcionários"
       },
       "expires": "Expira",
       "fallsBackToDefault": "Retorna ao padrão da empresa",

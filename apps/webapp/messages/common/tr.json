@@ -257,7 +257,7 @@
     "noEmployee": {
       "contactAdmin": "Yöneticiyle İletişime Geçin",
       "createOrg": "Organizasyon Oluştur",
-      "description": "${feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
+      "description": "{feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
       "emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
       "emailSubject": "Çalışan Profili Kurulumu Gerekli",
       "helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
@@ -290,7 +290,15 @@
   },
   "loading": {
     "chart": "Grafik yükleniyor",
-    "settings": "Ayarlar yükleniyor"
+    "settings": "Ayarlar yükleniyor",
+    "application": "Uygulama yükleniyor",
+    "authentication": "Kimlik doğrulama yükleniyor",
+    "calendar": "Takvim yükleniyor",
+    "licenses": "Lisanslar yükleniyor",
+    "platformAnalytics": "Platform analizleri yükleniyor",
+    "setup": "Kurulum yükleniyor",
+    "teamAbsences": "Ekip devamsızlıkları yükleniyor",
+    "workerQueue": "İş kuyruğu yükleniyor"
   },
   "nav": {
     "absences": "İzinler",
@@ -337,6 +345,14 @@
       "teamMemberAdded": {
         "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
         "title": "Ekibe eklendi"
+      },
+      "absenceRequestSubmitted": {
+        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
+        "title": "Devamsızlık talebi gönderildi"
+      },
+      "teamMemberRemoved": {
+        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
+        "title": "Ekipten çıkarıldı"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",
@@ -559,5 +575,8 @@
     "notCalculated": "Henüz hesaplanmadı",
     "pendingDescription": "Çalışan bu bakiyeyi yakında hesaplayacaktır.",
     "updatedEveryThreeHours": "Her 3 saatte bir güncellenir"
+  },
+  "worksCouncil": {
+    "loadingLabel": "İş konseyi portalı yükleniyor"
   }
 }
