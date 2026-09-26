@@ -1,12 +1,13 @@
 /**
- * #328 / T63 and #330 / T65 runtime evidence: the approval card pilot readiness
- * report (absence, expense and time kinds).
+ * #328 / T63, #330 / T65 and #459 runtime evidence: the approval card pilot
+ * readiness report (canonical and legacy absence, expense and time kinds).
  *
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
- * Absences are submitted through the real canonical submission caller, so
- * their workflow, outbox intents and submitted revisions are the ones
+ * Absences are submitted through the real submission caller under canonical
+ * and legacy authority, so their workflows or legacy requests and chains,
+ * outbox rows or cycle-keyed intents, and submitted revisions are the ones
  * production writes. Controls, bots and delivery rows are seeded the way the
  * documented operator SQL and the delivery owner write them. Only the
  * request/session, billing guard, e-mail and notification fan-out, calendar
@@ -120,6 +121,7 @@ vi.mock("@/lib/approvals/delivery/kick", () => ({
 const { requestAbsenceEffect } = await import(
 	"@/app/[locale]/(app)/absences/request-absence-effect"
 );
+const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
 const { assessApprovalPilotReadiness } = await import("./readiness");
 const { TIME_APPROVAL_WORKFLOW_TYPES } = await import("../time-approval-kinds");
 
@@ -149,11 +151,18 @@ const ids = {
 	otherOrganization: "t328-other-org",
 	requesterUser: "t328-requester-user",
 	managerUser: "t328-manager-user",
+	finalUser: "t328-final-user",
 	requester: "e3280000-0000-4000-8000-000000000001",
 	manager: "e3280000-0000-4000-8000-000000000002",
+	finalApprover: "e3280000-0000-4000-8000-000000000003",
 	managerLink: "e3281000-0000-4000-8000-000000000001",
 	category: "e3282000-0000-4000-8000-000000000001",
+	policy: "e3283000-0000-4000-8000-000000000001",
+	firstStage: "e3283000-0000-4000-8000-000000000002",
+	secondStage: "e3283000-0000-4000-8000-000000000003",
 } as const;
+
+type LegacyAbsenceMode = "legacy" | "shadow" | "ready";
 
 const SEEDED_AT = new Date("2026-07-01T00:00:00Z");
 
@@ -165,7 +174,7 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 			[ids.organization, ids.otherOrganization],
 		]);
 		await admin.query('delete from "user" where id = any($1::text[])', [
-			[ids.requesterUser, ids.managerUser],
+			[ids.requesterUser, ids.managerUser, ids.finalUser],
 		]);
 	}
 
@@ -178,20 +187,30 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 		);
 		await admin.query(
 			`insert into "user" (id, name, email, created_at, updated_at) values
-			 ($1, 'Avery Requester', 't328-requester@example.test', $3, $3),
-			 ($2, 'Morgan Manager', 't328-manager@example.test', $3, $3)`,
-			[ids.requesterUser, ids.managerUser, SEEDED_AT],
+			 ($1, 'Avery Requester', 't328-requester@example.test', $4, $4),
+			 ($2, 'Morgan Manager', 't328-manager@example.test', $4, $4),
+			 ($3, 'Frankie Final', 't328-final@example.test', $4, $4)`,
+			[ids.requesterUser, ids.managerUser, ids.finalUser, SEEDED_AT],
 		);
 		await admin.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
 			 select 't328-member-' || user_id, $1, user_id, 'member', 'approved', $2
 			 from unnest($3::text[]) as user_id`,
-			[ids.organization, SEEDED_AT, [ids.requesterUser, ids.managerUser]],
+			[ids.organization, SEEDED_AT, [ids.requesterUser, ids.managerUser, ids.finalUser]],
 		);
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, updated_at) values
-			 ($1, $2, $5, 'employee', $6), ($3, $4, $5, 'manager', $6)`,
-			[ids.requester, ids.requesterUser, ids.manager, ids.managerUser, ids.organization, SEEDED_AT],
+			 ($1, $2, $7, 'employee', $8), ($3, $4, $7, 'manager', $8), ($5, $6, $7, 'admin', $8)`,
+			[
+				ids.requester,
+				ids.requesterUser,
+				ids.manager,
+				ids.managerUser,
+				ids.finalApprover,
+				ids.finalUser,
+				ids.organization,
+				SEEDED_AT,
+			],
 		);
 		await admin.query(
 			`insert into employee_managers
@@ -224,6 +243,56 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 		);
 		await seedTelegramBot();
 		await seedSlackWorkspace();
+	}
+
+	/**
+	 * The documented #384 gates for legacy absence cards on Telegram: a
+	 * legacy-authoritative rollout, capture, the shared Telegram presentation
+	 * row and the bot, with a Slack workspace that has no verified legacy path.
+	 */
+	async function prepareLegacyAbsence(
+		options: { mode?: LegacyAbsenceMode; capture?: boolean } = {},
+	) {
+		await admin.query(
+			`insert into approval_workflow_rollout
+			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
+			 values ($1, 'absence', $2, 'legacy', $3, $3)`,
+			[ids.organization, options.mode ?? "legacy", SEEDED_AT],
+		);
+		if (options.capture ?? true) await enableCapture("absence");
+		await admin.query(
+			`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+			 values ($1, 'absence', 'telegram', 'actionable')`,
+			[ids.organization],
+		);
+		await seedTelegramBot();
+		await seedSlackWorkspace();
+	}
+
+	async function setAbsenceMode(mode: LegacyAbsenceMode | "canonical") {
+		await admin.query(
+			`update approval_workflow_rollout set lifecycle_mode = $2, side_effect_mode = $3
+			 where organization_id = $1 and workflow_type = 'absence'`,
+			[ids.organization, mode, mode === "canonical" ? "canonical" : "legacy"],
+		);
+	}
+
+	/** An active two-stage policy: the requester's manager, then the final approver. */
+	async function seedTwoStagePolicy() {
+		await admin.query(
+			`insert into approval_policy
+			 (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, $2, 'T459 two stages', true, 1, $3, $4)`,
+			[ids.policy, ids.organization, ids.managerUser, SEEDED_AT],
+		);
+		await admin.query(
+			`insert into approval_policy_stage
+			 (id, organization_id, policy_id, step_order, label, approver_type,
+			  approver_employee_id, fallback_behavior, updated_at) values
+			 ($1, $3, $4, 1, 'Manager', 'direct_manager', null, 'fail', $6),
+			 ($2, $3, $4, 2, 'Final', 'specific_employee', $5, 'fail', $6)`,
+			[ids.firstStage, ids.secondStage, ids.organization, ids.policy, ids.finalApprover, SEEDED_AT],
+		);
 	}
 
 	/** A Telegram bot that delivers approvals but not escalations. */
@@ -287,7 +356,7 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 		);
 	}
 
-	/** Submits a canonical absence through the real caller as the requester. */
+	/** Submits an absence through the real caller as the requester, under the current rollout. */
 	async function submitAbsence(startDate: string, endDate = startDate) {
 		harness.userId = ids.requesterUser;
 		harness.organizationId = ids.organization;
@@ -417,11 +486,13 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 
 		const report = await assessApprovalPilotReadiness({ organizationId: ids.organization });
 
+		// No rollout row: absences are decided by legacy authority, whose
+		// Telegram cards #384 admits.
+		expect(kindOf(report, "absence")).toMatchObject({ authority: "legacy", lifecycleMode: null });
 		const telegram = combination(report, "absence", "telegram");
 		expect(telegram.verdict).toBe("blocked");
 		expect(telegram.delivery).toEqual({ active: false, activatedAt: null, work: {} });
 		expect(codes(telegram.findings)).toEqual([
-			"authority_not_canonical",
 			"evidence_capture_inactive",
 			"presentation_not_actionable",
 			"provider_not_configured",
@@ -515,6 +586,198 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 			{ code: "evidence_held", severity: "hold", count: 2 },
 			{ code: "in_flight_before_activation", severity: "hold", count: 3 },
 		]);
+	});
+
+	it("admits legacy absence cards on Telegram only, under the #384 gates", async () => {
+		await seedOrganization();
+		await prepareLegacyAbsence();
+		// A Teams row left from canonical authority: legacy Teams cards stay
+		// review-only in code, and the row is canonical absence cards' to keep.
+		await admin.query(
+			`insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+			 values ($1, 'absence', 'teams', 'actionable')`,
+			[ids.organization],
+		);
+
+		const report = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		expect(kindOf(report, "absence")).toEqual({
+			workflowType: "absence",
+			authority: "legacy",
+			lifecycleMode: "legacy",
+			evidenceMode: "capture",
+			pending: {
+				total: 0,
+				current: 0,
+				notCaptured: 0,
+				materialChange: 0,
+				authorityChange: 0,
+				reviewOnly: 0,
+			},
+		});
+		expect(combination(report, "absence", "telegram")).toMatchObject({
+			verdict: "ready",
+			findings: [],
+		});
+		// The owner would deliver a legacy cycle there too, but only Telegram was verified.
+		expect(combination(report, "absence", "slack")).toMatchObject({
+			verdict: "blocked",
+			findings: [{ code: "combination_unverified", severity: "blocker" }],
+		});
+		for (const provider of ["teams", "discord"]) {
+			expect(codes(combination(report, "absence", provider).findings)).toEqual([
+				"combination_unverified",
+				"provider_not_configured",
+			]);
+		}
+
+		// Chain cards were verified in `legacy` mode only (#384 blocker 4).
+		for (const mode of ["shadow", "ready"] as const) {
+			await setAbsenceMode(mode);
+			const observed = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+			expect(kindOf(observed, "absence")).toMatchObject({
+				authority: "legacy",
+				lifecycleMode: mode,
+			});
+			expect(combination(observed, "absence", "telegram")).toMatchObject({
+				verdict: "hold",
+				findings: [{ code: "legacy_chain_mode_unverified", severity: "hold" }],
+			});
+		}
+
+		// The cutover hands the same controls to canonical absence cards.
+		await setAbsenceMode("canonical");
+		const canonical = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+		expect(combination(canonical, "absence", "telegram").findings).toEqual([]);
+		expect(combination(canonical, "absence", "slack").findings).toEqual([]);
+		expect(codes(combination(canonical, "absence", "teams").findings)).toEqual([
+			"provider_not_configured",
+		]);
+	});
+
+	it("classifies pending legacy absence evidence exactly as the legacy owner holds it", async () => {
+		await seedOrganization();
+		await prepareLegacyAbsence({ capture: false });
+		// Submitted before capture: no legacy revision, held once capture is on.
+		await submitAbsence("2026-11-02");
+		await enableCapture("absence");
+		await submitAbsence("2026-11-09");
+		const changed = await submitAbsence("2026-11-16");
+		// An in-place material change after submission (#384 blocker 6).
+		await admin.query("update absence_entry set end_date = '2026-11-17' where id = $1", [changed]);
+		// Submitted under canonical authority, then rolled back: the legacy owner
+		// finds no legacy revision to bind.
+		await setAbsenceMode("canonical");
+		await submitAbsence("2026-11-23");
+		// A shadow submission is evidenced by its legacy revision only.
+		await setAbsenceMode("shadow");
+		await submitAbsence("2026-11-30");
+
+		const report = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		expect(kindOf(report, "absence")).toEqual({
+			workflowType: "absence",
+			authority: "legacy",
+			lifecycleMode: "shadow",
+			evidenceMode: "capture",
+			pending: {
+				total: 5,
+				current: 2,
+				notCaptured: 1,
+				materialChange: 1,
+				authorityChange: 1,
+				reviewOnly: 0,
+			},
+		});
+		// No delivery control yet: every pending cycle, the canonical one's
+		// compatibility request included, would be in flight at activation.
+		expect(combination(report, "absence", "telegram").findings).toEqual([
+			{ code: "evidence_held", severity: "hold", count: 3 },
+			{ code: "legacy_chain_mode_unverified", severity: "hold" },
+			{ code: "in_flight_before_activation", severity: "hold", count: 5 },
+		]);
+	});
+
+	it("counts in-flight legacy absence cycles by submission cycle, chains included", async () => {
+		await seedOrganization();
+		await prepareLegacyAbsence();
+		await submitAbsence("2026-11-02");
+		await seedTwoStagePolicy();
+		const before = await submitAbsence("2026-11-09");
+		await activateDelivery("absence", "telegram");
+		const after = await submitAbsence("2026-11-16");
+
+		// The submission owner keyed the post-activation intent by the chain instance.
+		const { rows: intents } = await admin.query<{ source_id: string; cycle: boolean }>(
+			`select i.source_id, i.legacy_cycle_id = c.id as cycle
+			 from approval_delivery_intent i
+			 join approval_chain_instance c on c.entity_id = i.source_id
+			 where i.organization_id = $1`,
+			[ids.organization],
+		);
+		expect(intents).toEqual([{ source_id: after, cycle: true }]);
+
+		const initial = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+		expect(kindOf(initial, "absence").pending).toMatchObject({ total: 3, current: 3 });
+		// The single request and the chain submitted before activation get no card.
+		expect(combination(initial, "absence", "telegram").findings).toEqual([
+			{ code: "in_flight_before_activation", severity: "hold", count: 2 },
+		]);
+
+		// Stage one decided on the web: the `decided` intent of that cycle makes
+		// the owner card stage two.
+		const {
+			rows: [stageOne],
+		} = await admin.query<{ id: string }>(
+			"select id from approval_request where entity_id = $1 and status = 'pending'",
+			[before],
+		);
+		harness.userId = ids.managerUser;
+		harness.organizationId = ids.organization;
+		const decided = await approveAbsenceEffect(before, { approvalRequestId: stageOne?.id });
+		harness.userId = null;
+		expect(decided.success).toBe(true);
+
+		// Only the single request submitted before activation stays web-inbox-only.
+		const walked = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+		expect(combination(walked, "absence", "telegram").findings).toEqual([
+			{ code: "in_flight_before_activation", severity: "hold", count: 1 },
+		]);
+
+		// Both chains are still pending: shadow/ready name them (#384 blocker 4).
+		await setAbsenceMode("shadow");
+		const shadow = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+		expect(combination(shadow, "absence", "telegram").findings).toEqual([
+			{ code: "legacy_chain_mode_unverified", severity: "hold", count: 2 },
+			{ code: "in_flight_before_activation", severity: "hold", count: 1 },
+		]);
+	});
+
+	it("holds legacy absence cards once escalation owns transfers, which get no replacement card", async () => {
+		await seedOrganization();
+		await prepareLegacyAbsence();
+		await admin.query(
+			`insert into approval_escalation_control
+			 (organization_id, owner, automation_paused, escalation_owned_since)
+			 values ($1, 'escalation', false, now())`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into approval_escalation_policy
+			 (organization_id, enabled, response_window_hours, revision, migration_provenance,
+			  conflict_review_status, updated_at)
+			 values ($1, true, 24, 1, '{}'::jsonb, 'none', now())`,
+			[ids.organization],
+		);
+
+		const report = await assessApprovalPilotReadiness({ organizationId: ids.organization });
+
+		// Not `escalation_delivery_disabled`: frozen replacement channels are a
+		// canonical transfer concept (#300); legacy transfers have none (#408).
+		expect(combination(report, "absence", "telegram")).toMatchObject({
+			verdict: "hold",
+			findings: [{ code: "escalation_replacement_unsupported", severity: "hold" }],
+		});
 	});
 
 	it("admits legacy expense cards on Telegram only and counts claims without a post-activation intent", async () => {
