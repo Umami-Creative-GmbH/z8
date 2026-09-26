@@ -662,9 +662,13 @@ function engineFixture(
 		activationResolutions?: Array<ResolvedStage | Error>;
 		adapter?: ApprovalDomainAdapter<unknown>;
 		source?: unknown;
+		/** Successive `loadSnapshot` results; the last one repeats. */
+		snapshotSequence?: ApprovalWorkflowSnapshot[];
+		capabilitiesError?: Error;
 	} = {},
 ) {
 	const calls: string[] = [];
+	let snapshotIndex = 0;
 	const state = {
 		committed: false,
 		rolledBack: false,
@@ -755,6 +759,7 @@ function engineFixture(
 		},
 		getTrustedCapabilities: async () => {
 			calls.push("capabilities");
+			if (options.capabilitiesError) throw options.capabilitiesError;
 			return { canCancelAfterApproval: true };
 		},
 		produceRoutingContext: async () => {
@@ -841,6 +846,10 @@ function engineFixture(
 		repository: {
 			loadSnapshot: async () => {
 				calls.push("loadSnapshot");
+				const sequence = options.snapshotSequence;
+				if (sequence?.length) {
+					return sequence[Math.min(snapshotIndex++, sequence.length - 1)];
+				}
 				return options.snapshot ?? engineSnapshot();
 			},
 			claimCommand: async (input: unknown) => {
@@ -1897,6 +1906,30 @@ describe("approval transition engine atomic orchestration", () => {
 		await fixture.engine.execute(engineRequest());
 
 		expect(fixture.calls).not.toContain("compatibility");
+	});
+
+	it("reports a source check that fails against a stale snapshot as a version race", async () => {
+		// A concurrent decision committed after the snapshot was read: the adapter sees the
+		// decided source, and the reloaded workflow has a newer version.
+		const fixture = engineFixture({
+			snapshotSequence: [engineSnapshot(), engineSnapshot({ version: 8 })],
+			capabilitiesError: new Error("Absence approval adapter scope or state is invalid"),
+		});
+
+		await expect(fixture.engine.execute(engineRequest())).rejects.toMatchObject({
+			code: "version_conflict",
+		});
+		expect(fixture.calls).not.toContain("applyMaterializedTransition");
+	});
+
+	it("keeps a source check failure when the workflow has not moved", async () => {
+		const fixture = engineFixture({
+			capabilitiesError: new Error("Absence approval adapter scope or state is invalid"),
+		});
+
+		await expect(fixture.engine.execute(engineRequest())).rejects.toThrow(
+			"Absence approval adapter scope or state is invalid",
+		);
 	});
 
 	it("does not materialize, finalize, or write when CAS conflicts", async () => {
