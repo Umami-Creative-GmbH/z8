@@ -3,13 +3,14 @@
 One durable owner sends approval cards and keeps them current. It covers
 Telegram cards (#291), review-only Slack cards (#294), Teams cards (#293) and
 Discord cards (#292, see its section at the end) for canonical absences, and,
-since #296, Telegram cards for legacy-authoritative expense claims (see "Legacy
-lifecycles"). Since #325 it also delivers canonical manual time submissions,
+since #296, Telegram cards for legacy-authoritative expense claims and, since
+#384, legacy-authoritative absences (see "Legacy lifecycles"). Since #325 it also delivers canonical manual time submissions,
 policy clock-outs and time corrections (Telegram verified; see "Time approval
 presentation and bound decisions" in [approval evidence](approval-evidence.md)). It is **inactive for every organization**: migrations
 `0086_approval_delivery.sql`, `0090_approval_delivery_slack.sql`,
-`0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql` and
-`0094_discord_approval_delivery.sql` insert no control rows.
+`0091_teams_approval_actions.sql`, `0093_legacy_expense_presentation.sql`,
+`0094_discord_approval_delivery.sql` and `0107_legacy_absence_presentation.sql`
+insert no control rows.
 
 ```text
 canonical submission / decision / cancellation (one transaction)
@@ -116,12 +117,43 @@ leaves draft once) and its legacy requests stand in for assignments.
   `cancelled`, `obsolete`). A refresh reports the recipient's own committed
   legacy decision evidence and the claim's current status.
 - **Rows.** Work and messages carry `lifecycle = 'legacy'`, the kind, the source
-  and the exact legacy request (FK to `approval_request`, cascading), never a
-  workflow, stage or assignment. A message's review link is its legacy request.
-  Attention incidents use the `legacy_assignment` subject.
+  and the exact legacy request (by value since #384), never a workflow, stage
+  or assignment. A message's review link is its legacy request. Attention
+  incidents use the `legacy_assignment` subject.
 - A press on a still-pending legacy card that decided nothing becomes a review
   notice in the webhook, as for canonical cards; a decided card is refreshed by
   the owner only.
+
+### Submission cycles (#384)
+
+A source can have several independent submission cycles (time kinds, #432;
+legacy absences create one per source). A cycle-keyed legacy lifecycle is one
+cycle: `legacy_cycle_id` names the legacy chain instance, or the single legacy
+request, that one submission created, on intents, work and messages. Rows
+without it keep the source-scoped expense lifecycle above, unchanged.
+
+- **Intents.** Legacy absence submission (`submitted`), decision (`decided`, the
+  decided request's cycle) and ordinary cancellation (`withdrawn`, one per
+  cycle, written before the pending requests are deleted) write the cycle's
+  intents, only while a delivery control exists for `(organization, absence)`.
+- **Membership.** The cycle's live requests are its single request, or the stage
+  requests of its chain. Initial cards, cancellation of initial work and
+  refreshes are scoped to the cycle's rows.
+- **Version.** The number of the cycle's intents. Every lifecycle change writes
+  one and only the purge deletes them, so the version only increases, also
+  across cancellation (which deletes the pending requests). A two-stage chain
+  moves 1 → 2 → 3; a withdrawal adds one.
+- **State.** The cycle's status is its chain's, or its single request's; a
+  deleted absence or request reads as `cancelled` (the card says the request
+  was withdrawn).
+- **Surviving cancellation.** Ordinary absence cancellation deletes the absence
+  and its pending legacy requests. The delivery rows' request FKs are dropped
+  (`0107`), so the cycle's work, messages and intents stay until privileged
+  cleanup, and its sent cards are refreshed to "withdrawn".
+- **Old path.** `isApprovalNotificationDeliveredByOwner` treats a legacy absence
+  cycle as owner-delivered when the owner owns one of its intents (created at
+  or after the provider's control activation), so the old path sends neither a
+  card nor a message for it.
 
 ## Sending and refreshing
 
@@ -237,7 +269,12 @@ legacy lifecycles, its legacy requests, together with their intents) and
 reports them as `delivery.work`, `delivery.messages` and `delivery.intents`
 (platform-admin card, CLI and audit). A
 send that completes after the purge cannot record its message: the workflow FK
-fails and the owner reports `delivered_after_purge`.
+fails and the owner reports `delivered_after_purge`. Legacy rows keep their
+request by value (#384), so a legacy message is recorded only while the work
+that sent it still exists; the message insert serializes with the purge's
+table locks. Legacy cycles are purged through their requests and their cycle
+(including requests deleted by cancellation), and an orphaned cycle is
+addressable by its cycle ID.
 
 ## Activation
 
@@ -265,10 +302,10 @@ canonical absence submissions then send no Telegram card at all.
 2. **Old binaries.** Instances without this release neither run
    `cron:approval-delivery` nor kick the owner; delivery then waits for an
    upgraded worker. Insert controls only after every instance is upgraded.
-3. **Legacy authority.** Legacy absences are #384. Legacy expense claims are
-   delivered since #296 (their own blockers are in
+3. **Legacy authority.** Legacy expense claims are delivered since #296 and
+   legacy absences since #384 (their own blockers are in
    [Approval evidence](approval-evidence.md), "Expense review, decisions and
-   cards").
+   cards" and "Legacy absence cards, bound decisions and cycle delivery").
 4. **Escalation replacement delivery** is #300 (see below).
 5. **In-place material changes** without a workflow transition commit no
    intent, so the card is not refreshed. Pressing it decides nothing.

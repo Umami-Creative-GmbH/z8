@@ -197,7 +197,9 @@ Code: `apps/webapp/src/lib/approvals/evidence/legacy-absence.ts`, with the rows 
 - Fresh checks then run before the legacy mutation: once a legacy revision
   exists it is always enforced (material change holds with the same 409 as
   canonical); while capture is active a lifecycle without one is held
-  (`evidence_required`). Legacy authority still rejects reviewed bindings.
+  (`evidence_required`). Legacy authority accepts only a legacy reviewed
+  binding carried by a Telegram invocation (#384, see "Legacy absence cards,
+  bound decisions and cycle delivery"); any other binding is refused.
 
 ### Shadow observation fix
 
@@ -256,9 +258,9 @@ No application endpoint changes the mode.
    submission (same owner, different caller), inbox bulk decisions, concurrent
    decision races (two approvers, decision versus `sick-vacation-override` or
    cancellation), `ready` mode, and old binaries without the legacy hooks
-   (pre-deployment binaries decide without evidence or replay). Bots stay
-   review-only; exact-item navigation (#289) and binding issuance for cards
-   (#290) remain.
+   (pre-deployment binaries decide without evidence or replay). Telegram cards
+   became actionable in #384 (bindings, bound decisions and delivery for
+   `legacy`, `shadow` and `ready`); other bots stay review-only.
 7. Limited organization pilot, then expansion (#328).
 
 ## Verification status
@@ -658,12 +660,11 @@ No application endpoint changes either control.
    stay review-only (#292, #294). No in-app or e-mail approver notification is
    added.
 7. **Ingress.** No durable acceptance before the webhook acknowledgment.
-8. **Legacy lifecycle identity.** Delivery treats one expense claim as one
-   lifecycle (a claim leaves draft once) and versions it as one plus its
-   decided legacy requests. A kind with several submission cycles per source,
-   such as legacy absences (#384), needs a cycle-specific key; the legacy
-   request FKs of delivery rows also cascade on cancellation, which deletes
-   pending absence requests.
+8. **Legacy lifecycle identity.** Resolved in #384 for kinds with submission
+   cycles: delivery rows carry a cycle key (`legacy_cycle_id`), and the legacy
+   request FKs of delivery rows no longer cascade (`0107`). Expense claims keep
+   the source-scoped lifecycle and version (one plus the decided legacy
+   requests), unchanged.
 9. Everything in the #295 blockers (storage immutability, abandoned objects,
    historical drafts), whole-organization cleanup ordering (resolved in #306) and the pilot (#328).
 10. The approval write-boundary scanner cannot read sources on Windows. The new
@@ -851,10 +852,10 @@ No application endpoint changes the mode.
 
 1. Apply `0081` through the authorized deployment (it has run only on the
    disposable PostgreSQL 16 database).
-2. **Legacy authority.** Bindings exist only for canonical assignments, so
-   organizations whose absences are `legacy`, `shadow` or `ready` keep
-   review-only cards. A legacy binding representation is not implemented
-   (#384).
+2. **Legacy authority.** Resolved in code by #384: organizations whose
+   absences are `legacy`, `shadow` or `ready` get Telegram cards bound to the
+   exact legacy request (see "Legacy absence cards, bound decisions and cycle
+   delivery"). Its own activation blockers apply.
 3. **Routing and delivery (#291).** Implemented by the approval delivery
    owner, which has its own activation blockers; see
    [Approval card delivery](approval-delivery.md). Without its control a stale
@@ -910,6 +911,221 @@ on-behalf roles, coverage, essential gaps), `telegram/bound-approval.test.ts`
 (callback codec, invocation envelope), `bot-platform/bound-decision-notice.test.ts`
 (request versus step outcome wording, replay label, review results),
 `maintenance.test.ts`.
+
+## Legacy absence cards, bound decisions and cycle delivery (#384)
+
+Organizations whose absences are decided by legacy authority (rollout `legacy`,
+`shadow` or `ready`) get Telegram cards bound to the exact legacy request and
+the legacy submitted revision of its submission cycle. A press is decided by
+the unchanged #288 legacy owner under #290's invocation identity. Everything is
+**inactive for every organization**: migration
+`0107_legacy_absence_presentation.sql` inserts no control rows. Apply it after
+`0106`.
+
+```text
+requestAbsenceEffect, legacy branch (tx)            #288 capture, then
+  recordLegacyDeliveryIntent("submitted", cycle)     only while a delivery control exists
+owner → prepareApprovalPresentation → prepareBoundLegacyAbsenceCard  (presentation/bound-card.ts)
+  gates hold? no → unchanged review-only notice
+  issueLegacyReviewBinding(recipient, legacy request, legacy revision)
+
+webhook → attemptBoundBotApproval: legacy binding × kind absence
+  decideBoundLegacyAbsenceInvocation                  (server/absence-approvals.ts)
+    committed invocation? replay / conflict (no current state read)
+    approved member; binding names this actor; absence from the binding's revision
+    executeAbsenceDecisionInTransaction (legacy branch)
+      rollout gate → invocation lock → committed? replay / conflict
+      presentation control reread (paused → nothing decided); Telegram only
+      binding authority = gate authority (cutover), binding names actor + request
+      #299 transfer check (no management authority from a card)
+      #288 holds (material change, evidence required); binding names the current revision
+      unchanged legacy mutation for the exact request's current approver
+      legacy decision evidence (+ binding, invocation receipt key) → approval_invocation
+      recordLegacyDeliveryIntent("decided", cycle)
+  after commit (not on replay): requester e-mail/notification, calendar, balance, kick
+cancelAbsenceRequest (legacy rows) → recordLegacyDeliveryIntent("withdrawn", cycle)
+```
+
+### Cards and admission
+
+`prepareApprovalPresentation` resolves the absence's authority first. Under
+legacy authority the pending legacy request is the authority; a shadow/ready
+observation that mirrors it is never consulted, promoted or named. A card is
+actionable only when **all** of these hold, otherwise the unchanged review-only
+notice is sent:
+
+- the provider is Telegram (Teams and Discord share the bound path but are not
+  verified under legacy authority, so their legacy absence cards stay
+  review-only even with an `actionable` control; Slack never decides);
+- the rollout is not `canonical`/`complete`;
+- `approval_evidence_control` = `capture` and `approval_presentation_control`
+  = `actionable` for `(organization, absence, telegram)`;
+- the exact legacy request (the stage's request for chains) is pending and
+  assigned to the recipient, and belongs to the lifecycle the legacy revision
+  was captured for (its request, or a stage request of its chain);
+- the absence is pending and the revision still matches it;
+- the facts are intelligible and fit one Telegram message, checked before the
+  binding is issued.
+
+Card facts are the #290 absence facts (`buildAbsenceCardFacts`) from the legacy
+revision; the review link is the exact legacy request.
+
+### Bound decisions
+
+- Routing: `attemptBoundBotApproval` reads the binding's authority and kind
+  (the workflow's kind for canonical bindings, the revision's kind for legacy
+  ones). A legacy absence binding reaches `decideBoundLegacyAbsenceInvocation`,
+  a legacy expense binding the unchanged #296 owner. Bindings and revisions are
+  immutable, so routing never changes for a committed invocation.
+- Invocation identity, receipt key (`approval-invocation:v1:…`) and command
+  fingerprint are #290's. The legacy decision evidence of a card decision is
+  keyed by the invocation receipt and names the binding; its legacy command
+  fingerprint (`absence-legacy-decision:v1`) is unchanged. Semantic replay
+  ignores evidence that names a binding, and a fresh invocation never consults
+  semantic receipts, so neither kind of receipt can replay the other.
+- Cutover: under the rollout gate the binding's authority must equal the
+  gate's (`binding_mismatch` otherwise). A legacy binding never decides under
+  canonical authority and a canonical binding never under legacy authority.
+- Authority is the exact bound request's current approver only: the legacy
+  owner runs with that request and without any any-approver or organization
+  option, so eligible-manager fallback and management authority are
+  unreachable; after a #299 transfer the former holder is refused.
+- Refusals (reassigned, decided, deleted by cancellation, material change,
+  paused provider, other tenant or recipient) decide nothing; the webhook turns
+  a still-pending card into a review notice and the owner refreshes decided or
+  withdrawn cards.
+- A card decision runs the same after-commit effects as a web decision
+  (requester e-mail and notification, calendar sync, work balance), never on
+  replay.
+
+### Cycle-keyed legacy delivery
+
+See [Approval card delivery](approval-delivery.md), "Legacy lifecycles". A
+legacy absence lifecycle is one submission cycle: the legacy chain instance, or
+the single legacy request, that one submission created (`legacy_cycle_id` on
+intents, work and messages). The submission, decision and cancellation owners
+write `submitted`, `decided` and `withdrawn` intents in their transactions,
+only while a delivery control exists for `(organization, absence)`. The
+existing notification path stays silent for a cycle whose intent the owner
+owns (`isApprovalNotificationDeliveredByOwner`), so no card is sent twice.
+
+### Cleanup
+
+Legacy bindings, invocations, decision evidence and delivery rows survive
+ordinary cancellation (the delivery rows' request FKs are dropped in `0107`;
+they keep the request and cycle by value). Privileged `deleteApproval` follows
+the revision, request and chain links and, through the delivery rows, the
+cycle, so requests deleted by cancellation are still found. It deletes and
+reports invocations, bindings, decision evidence, revisions, and delivery work,
+messages and intents. A cycle whose requests are gone and that captured no
+revision is addressable by its cycle ID, and employee cleanup (#306) addresses
+delivery rows by their cycle. A late press after the purge finds no binding;
+a late send finds no work row and records no message.
+
+### Activation
+
+Apply `0107` after `0106`. After capture is active (#288), as the authorized
+adoption writer under the exclusive absence rollout lock:
+
+```sql
+begin;
+select pg_advisory_xact_lock(hashtextextended(
+  'approval-rollout:' || length(:org) || ':' || :org || ':7:absence', 0));
+insert into approval_presentation_control (organization_id, workflow_type, provider, mode)
+values (:org, 'absence', 'telegram', 'actionable')
+on conflict (organization_id, workflow_type, provider) do update set mode = excluded.mode;
+commit;
+insert into approval_delivery_control (organization_id, workflow_type, provider)
+values (:org, 'absence', 'telegram');
+```
+
+The presentation control row is shared with canonical absence cards (#290);
+the delivery control makes the owner deliver legacy absence cycles while the
+rollout is legacy-authoritative and canonical workflows after cutover. No
+application endpoint changes either control.
+
+### Activation blockers (#384, unresolved)
+
+1. Apply `0107` through the authorized deployment. It has run only on the
+   disposable PostgreSQL 16 database. It drops the legacy request FKs of the
+   three delivery tables; rolling it back must first delete delivery rows whose
+   request no longer exists.
+2. **Old binaries.** Instances without this release decide legacy absences
+   without intents (cards are never refreshed), cancel without `withdrawn`
+   intents, send the old-path card next to the owner's, route a legacy absence
+   binding to the expense owner (decides nothing), and record legacy messages
+   without the purge guard that replaced the dropped FK. Drain them before
+   inserting either control.
+3. **In-flight classification.** Absences submitted before capture have no
+   revision and get review-only cards; cycles submitted before the delivery
+   control have no intent and stay with the old notification path. The pilot
+   readiness report (#328) does not classify legacy absence cycles yet.
+4. **Shadow/ready chains.** A legacy chain submission fails in `shadow` and
+   `ready` (sub-millisecond chain times in the observation; pre-existing, found
+   here). Chains are verified in `legacy` mode only.
+5. **Replacement cards** after a legacy escalation transfer (#408): the former
+   holder's card decides nothing, but nobody refreshes it and the new holder
+   gets no card from the owner.
+6. **In-place material changes** commit no intent, so the card is not
+   refreshed; pressing it decides nothing.
+7. Only Telegram is admitted (in code). Teams, Discord and Slack stay
+   review-only for legacy absences.
+8. **Ingress.** No durable acceptance before the webhook acknowledgment.
+9. **Several cycles per source** are verified with a seeded second cycle only:
+   absences create one cycle per source. Time kinds (#432) reuse the key.
+10. The approval write-boundary scanner cannot read sources on Windows. No new
+    writer file was added (the writes go through `delivery/intents.ts` and
+    `delivery/store.ts`), but the changed statements were not scanned.
+11. Everything in the #288, #290 and #291 blockers (pilot #423).
+
+### Verification (#384)
+
+PostgreSQL 16 (`lib/telegram/legacy-bound-approval.integration.test.ts`, part of
+`test:approval-workflow-repository:integration`), driving the real
+`requestAbsenceEffect`, `sendApprovalMessageToManager`, the delivery owner
+(`processApprovalDeliveries`), `handleTelegramUpdate`, `approveAbsenceEffect`,
+`rejectAbsenceEffect`, `cancelAbsenceRequest`, `sendTelegramNotification` and
+`deleteApproval`. Only the session, billing guard, e-mail and notification
+fan-out, calendar queue, work-balance marking, the vault, the post-commit fast
+path and the Telegram transport are replaced. 15/15 passing:
+
+- `legacy`, `shadow` and `ready` cards bound to the exact legacy request and
+  legacy revision (no workflow, stage or assignment), German locale, logical
+  dates, exact review link, no notes;
+- each gate missing (no control, `review_only`, capture off, material change,
+  Teams with an actionable control) → review-only notice, no binding;
+- approve: one legacy decision, evidence with the binding and the invocation
+  receipt key, persisted time, legacy invocation row; redelivery and a new
+  update replay; the same query with another command conflicts; a fresh query
+  decides nothing; a semantic web retry does not match the invocation receipt;
+- reject in `shadow` mode: observation recorded as observation only;
+- two-stage chain: stage one recorded as an intermediate step; the stage-one
+  card cannot decide stage two; the final approver's own card decides;
+- a web decision, an in-place material change, another recipient, another
+  organization's bot, a reassigned request (former holder still an eligible
+  manager) and a paused provider decide nothing; the committed press still
+  replays; the same card decides once re-admitted;
+- legacy→canonical and canonical→legacy cutover between render and press
+  decide nothing;
+- an injected invocation failure rolls back request, absence, evidence and
+  invocation; three concurrent deliveries then commit exactly once;
+- owner delivery: `submitted` intent keyed by the cycle, the old path silent for
+  the owned cycle (and notifying without a control), one bound card, a press
+  refreshed by the owner to "approved";
+- web decisions on a chain refresh stage one and send stage two's card in the
+  same cycle; the final rejection refreshes both cards;
+- cancellation: `withdrawn` intent, card refreshed to "withdrawn", binding,
+  work, message and intents survive; a press decides nothing; privileged
+  cleanup by revision purges and reports them; a late press recreates nothing;
+- a decided cycle purged by its request: invocation, binding, message and
+  intents reported, another absence's cycle kept, the absence stays approved;
+- two cycles of one source deliver, version and refresh independently.
+
+The #288, #290, #291, #292, #293, #294, #296, #300 and #306 suites still pass on
+the same runner; #290's "legacy rollout stays review-only" gate case moved here.
+Unit seams: `absence-approvals.test.ts`, `legacy-absence.test.ts`,
+`maintenance.test.ts`, `approval-adapters.test.ts`, `mutations.test.ts`,
+`request-absence-effect.test.ts`.
 
 ## Teams absence cards with reviewed bindings (#293 / T29)
 
