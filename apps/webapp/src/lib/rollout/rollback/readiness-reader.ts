@@ -149,7 +149,13 @@ async function readCards(
 				where organization_id = ${organizationId}
 					and (legacy_cycle_id is not null or event = 'withdrawn')) as cycles,
 			(select count(*)::int from approval_delivery_work
-				where organization_id = ${organizationId} and effect = 'replacement') as replacements`,
+				where organization_id = ${organizationId} and effect = 'replacement') as replacements,
+			(select count(*)::int from approval_delivery_work
+				where organization_id = ${organizationId} and lifecycle = 'legacy'
+					and escalation_transfer_id is not null)
+			+ (select count(*)::int from approval_delivery_intent
+				where organization_id = ${organizationId} and event = 'transferred')
+				as legacy_replacements`,
 	);
 	return {
 		deliveryControls: deliveryControls.map((row) => ({
@@ -186,6 +192,7 @@ async function readCards(
 		legacyLifecycleRows: Number(lineage?.legacy ?? 0),
 		cycleRows: Number(lineage?.cycles ?? 0),
 		replacementRows: Number(lineage?.replacements ?? 0),
+		legacyReplacementRows: Number(lineage?.legacy_replacements ?? 0),
 	};
 }
 

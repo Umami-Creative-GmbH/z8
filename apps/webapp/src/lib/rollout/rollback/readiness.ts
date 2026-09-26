@@ -103,6 +103,8 @@ export interface RollbackSnapshot {
 		cycleRows: number;
 		/** Replacement delivery work in any state (#300). */
 		replacementRows: number;
+		/** Legacy replacement and retirement work and `transferred` intents (#408). */
+		legacyReplacementRows: number;
 	};
 	escalation: {
 		/** Null without a control row: legacy ownership. */
@@ -482,6 +484,14 @@ function assessFloor(snapshot: RollbackSnapshot): RollbackReadiness["floor"] {
 		"0108_legacy_absence_presentation",
 		"cycle-keyed legacy delivery",
 		cards.cycleRows,
+		"release",
+	);
+	// Binaries below #408 plan initial cards for transferred legacy requests and
+	// leave former holders' cards actionable-looking; the schema holds its intents.
+	pin(
+		"0109_legacy_escalation_replacement_delivery",
+		"legacy replacement delivery",
+		cards.legacyReplacementRows,
 		"release",
 	);
 	pin(
