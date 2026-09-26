@@ -25,6 +25,7 @@ import { useRouter } from "@/navigation";
 import { CalendarEventDialogs } from "./calendar-event-dialogs";
 import { CalendarMainContent } from "./calendar-main-content";
 import type { ViewMode } from "./schedule-x-calendar";
+import type { WorkPeriodActions } from "./work-period-context-menu";
 
 interface CalendarViewProps {
 	organizationId: string;
@@ -231,6 +232,10 @@ function CalendarViewContent({
 
 	const [showSplitDialog, setShowSplitDialog] = useState(false);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	// Context menu entry point (#507): "Edit" opens the time form, "Delete"
+	// opens only the deletion dialog.
+	const [initialTimeEditing, setInitialTimeEditing] = useState(false);
+	const [deleteFromContextMenu, setDeleteFromContextMenu] = useState(false);
 	const [manualEntryOpen, setManualEntryOpen] = useState(false);
 	const [manualEntryDefaults, setManualEntryDefaults] =
 		useState<ManualEntryDefaults | null>(null);
@@ -313,7 +318,30 @@ function CalendarViewContent({
 
 	// Handle event click
 	const handleEventClick = (event: CalendarEvent) => {
+		setInitialTimeEditing(false);
+		setDeleteFromContextMenu(false);
 		setSelectedEvent(event);
+	};
+
+	// Own entries follow the change policy; managers, admins and owners change
+	// their employees' entries through the approval chain. The server decides.
+	const workPeriodActions: WorkPeriodActions = {
+		canManage: (event) =>
+			event.metadata.employeeId === currentEmployeeId || isManagerOrAbove,
+		onEdit: (event) => {
+			setShowSplitDialog(false);
+			setShowDeleteDialog(false);
+			setDeleteFromContextMenu(false);
+			setInitialTimeEditing(true);
+			setSelectedEvent(event);
+		},
+		onDelete: (event) => {
+			setShowSplitDialog(false);
+			setInitialTimeEditing(false);
+			setDeleteFromContextMenu(true);
+			setShowDeleteDialog(true);
+			setSelectedEvent(event);
+		},
 	};
 
 	// Handle date range change from schedule-x
@@ -363,6 +391,8 @@ function CalendarViewContent({
 		setSelectedEvent(null);
 		setShowSplitDialog(false);
 		setShowDeleteDialog(false);
+		setInitialTimeEditing(false);
+		setDeleteFromContextMenu(false);
 	};
 
 	// Handle split click from edit dialog
@@ -379,7 +409,19 @@ function CalendarViewContent({
 
 	// Handle delete click from edit dialog
 	const handleDeleteClick = () => {
+		setDeleteFromContextMenu(false);
 		setShowDeleteDialog(true);
+	};
+
+	// Cancelling a context-menu deletion closes everything; from the edit
+	// panel it returns to the panel.
+	const handleDeleteDialogOpenChange = (open: boolean) => {
+		if (open) return;
+		if (deleteFromContextMenu) {
+			handleCloseDetails();
+			return;
+		}
+		setShowDeleteDialog(false);
 	};
 
 	// Handle delete complete
@@ -422,12 +464,13 @@ function CalendarViewContent({
 				selectedEvent={selectedEvent}
 				showSplitDialog={showSplitDialog}
 				showDeleteDialog={showDeleteDialog}
+				initialTimeEditing={initialTimeEditing}
 				displayContext={calendarDisplayContext}
 				onCloseDetails={handleCloseDetails}
 				onSplitClick={handleSplitClick}
 				onDeleteClick={handleDeleteClick}
 				onSplitDialogOpenChange={(open) => !open && setShowSplitDialog(false)}
-				onDeleteDialogOpenChange={(open) => !open && setShowDeleteDialog(false)}
+				onDeleteDialogOpenChange={handleDeleteDialogOpenChange}
 				onSplitComplete={handleSplitComplete}
 				onDeleteComplete={handleDeleteComplete}
 				onNotesUpdated={refetch}
@@ -460,6 +503,7 @@ function CalendarViewContent({
 				onEventClick={handleEventClick}
 				clockOutAllowedWorkPeriodIds={clockOutAllowedWorkPeriodIds}
 				onRunningPeriodClockOutRequest={handleRunningPeriodClockOutRequest}
+				workPeriodActions={workPeriodActions}
 				onRangeChange={handleRangeChange}
 				onTimeRangeSelect={handleTimeRangeSelect}
 				onRefresh={refetch}

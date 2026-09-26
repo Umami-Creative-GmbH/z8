@@ -9,6 +9,7 @@ import { CalendarControls } from "./calendar-controls";
 import { MonthWorkSummaryView } from "./month-work-summary-view";
 import type { ViewMode } from "./schedule-x-calendar";
 import { ScheduleXWrapper } from "./schedule-x-wrapper";
+import type { WorkPeriodActions } from "./work-period-context-menu";
 import { YearCalendarView } from "./year-calendar-view";
 
 interface CalendarMainContentProps {
@@ -35,6 +36,7 @@ interface CalendarMainContentProps {
 	onEventClick: (event: CalendarEvent) => void;
 	clockOutAllowedWorkPeriodIds: ReadonlySet<string>;
 	onRunningPeriodClockOutRequest: (event: CalendarEvent) => void;
+	workPeriodActions?: WorkPeriodActions;
 	onRangeChange: (range: { startDateKey: string; endDateKey: string }) => void;
 	onTimeRangeSelect: (range: { start: Date; end: Date }) => void;
 	onRefresh: () => void;
@@ -64,6 +66,7 @@ export function CalendarMainContent({
 	onEventClick,
 	clockOutAllowedWorkPeriodIds,
 	onRunningPeriodClockOutRequest,
+	workPeriodActions,
 	onRangeChange,
 	onTimeRangeSelect,
 	onRefresh,
@@ -129,6 +132,7 @@ export function CalendarMainContent({
 						onEventClick={onEventClick}
 						clockOutAllowedWorkPeriodIds={clockOutAllowedWorkPeriodIds}
 						onRunningPeriodClockOutRequest={onRunningPeriodClockOutRequest}
+						workPeriodActions={workPeriodActions}
 						onRangeChange={onRangeChange}
 						onTimeRangeSelect={onTimeRangeSelect}
 						onRefresh={onRefresh}

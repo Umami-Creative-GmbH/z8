@@ -99,6 +99,36 @@ describe("calendarEventToScheduleX", () => {
 		expect(scheduleXEvent?.end.toString()).toBe("2026-05-18T17:18:00+00:00[UTC]");
 	});
 
+	it("adds the escaped edited-by line to completed work periods", () => {
+		const edited: WorkPeriodEvent = {
+			id: "work-edited",
+			type: "work_period",
+			date: new Date("2026-05-18T07:00:00.000Z"),
+			endDate: new Date("2026-05-18T15:00:00.000Z"),
+			title: "Ada Lovelace - 8h",
+			color: "#10b981",
+			metadata: {
+				durationMinutes: 480,
+				employeeId: "employee-1",
+				employeeName: "Ada Lovelace",
+				editedByName: "John <Doe>",
+				editedAt: new Date("2026-05-19T09:00:00.000Z"),
+			},
+		};
+
+		const timeGrid =
+			calendarEventToScheduleX(edited, "UTC", {
+				editedByLabel: (event) =>
+					event.type === "work_period"
+						? `(edited by ${event.metadata.editedByName} at 19.05.2026)`
+						: null,
+			})?._customContent?.timeGrid ?? "";
+
+		expect(timeGrid).toContain("Ada Lovelace - 8h");
+		expect(timeGrid).toContain("(edited by John &lt;Doe&gt; at 19.05.2026)");
+		expect(calendarEventToScheduleX(edited, "UTC")?._customContent).toBeUndefined();
+	});
+
 	it("renders the running indicator as a fixed round ping dot", () => {
 		const runningPeriod: WorkPeriodEvent = {
 			id: "work-running-dot",

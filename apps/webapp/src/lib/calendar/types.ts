@@ -109,6 +109,9 @@ export interface WorkPeriodEvent extends CalendarEvent {
 		// "rejected" = manager rejected the change
 		approvalStatus?: "approved" | "pending" | "rejected";
 		isRunning?: true;
+		// Last applied edit by someone other than the employee (manager/admin)
+		editedByName?: string;
+		editedAt?: Date;
 	};
 }
 

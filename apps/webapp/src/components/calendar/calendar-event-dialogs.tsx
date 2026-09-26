@@ -31,6 +31,8 @@ interface CalendarEventDialogsProps {
 	selectedEvent: CalendarEvent | null;
 	showSplitDialog: boolean;
 	showDeleteDialog: boolean;
+	/** Open the edit panel with the time form already open (context menu "Edit"). */
+	initialTimeEditing?: boolean;
 	displayContext: DisplayContext;
 	onCloseDetails: () => void;
 	onSplitClick: () => void;
@@ -59,6 +61,7 @@ export function CalendarEventDialogs({
 	selectedEvent,
 	showSplitDialog,
 	showDeleteDialog,
+	initialTimeEditing,
 	displayContext,
 	onCloseDetails,
 	onSplitClick,
@@ -106,6 +109,7 @@ export function CalendarEventDialogs({
 					event={selectedWorkPeriod}
 					showSplitDialog={showSplitDialog}
 					showDeleteDialog={showDeleteDialog}
+					initialTimeEditing={initialTimeEditing}
 					displayContext={displayContext}
 					onCloseDetails={onCloseDetails}
 					onSplitClick={onSplitClick}
@@ -126,6 +130,7 @@ type WorkPeriodDialogsProps = Pick<
 	CalendarEventDialogsProps,
 	| "showSplitDialog"
 	| "showDeleteDialog"
+	| "initialTimeEditing"
 	| "displayContext"
 	| "onCloseDetails"
 	| "onSplitClick"
@@ -142,6 +147,7 @@ function WorkPeriodDialogs({
 	event,
 	showSplitDialog,
 	showDeleteDialog,
+	initialTimeEditing,
 	displayContext,
 	onCloseDetails,
 	onSplitClick,
@@ -187,6 +193,7 @@ function WorkPeriodDialogs({
 			onSplitClick={onSplitClick}
 			onDeleteClick={onDeleteClick}
 			displayContext={displayContext}
+			initialTimeEditing={initialTimeEditing}
 		/>
 	);
 }

@@ -21,6 +21,8 @@ export interface ScheduleXEvent {
 
 export interface ScheduleXAdapterOptions {
 	clockOutAllowedWorkPeriodIds?: ReadonlySet<string>;
+	/** Localized "(edited by … at dd.mm.yyyy)" line for a completed work period (#507). */
+	editedByLabel?: (event: CalendarEvent) => string | null;
 }
 
 /**
@@ -397,17 +399,28 @@ export function calendarEventToScheduleX(
 				calendarId = "work_period_rejected";
 			}
 
+			const editedByLabel = event.metadata.isRunning
+				? null
+				: (options?.editedByLabel?.(event) ?? null);
+			const editedByLine = editedByLabel
+				? `<span class="text-[10px] italic opacity-80" data-work-period-edited-by="true">${escapeHtml(editedByLabel)}</span>`
+				: "";
+			const timezoneLine =
+				timezoneLabel || !editedByLabel
+					? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel ?? "")}</span>`
+					: "";
+
 			return {
 				id: event.id,
 				title: event.title,
 				start,
 				end,
 				calendarId,
-				...((event.metadata.isRunning || timezoneLabel) && {
+				...((event.metadata.isRunning || timezoneLabel || editedByLabel) && {
 					_customContent: {
 						timeGrid: event.metadata.isRunning
 							? `<span class="inline-flex w-full items-center gap-1.5"><span class="relative inline-flex size-2 shrink-0" aria-hidden="true"><span class="absolute inline-flex size-full animate-ping rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex size-2 rounded-full bg-red-500"></span></span><span>${escapeHtml(event.title)}</span>${timezoneLabel ? `<span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel)}</span>` : ""}${runningClockOutButton}</span>`
-							: `<span class="inline-flex flex-col gap-0.5"><span>${escapeHtml(event.title)}</span><span class="text-[10px] opacity-80">${escapeHtml(timezoneLabel ?? "")}</span></span>`,
+							: `<span class="inline-flex flex-col gap-0.5"><span>${escapeHtml(event.title)}</span>${timezoneLine}${editedByLine}</span>`,
 					},
 				}),
 				_eventData: event,
