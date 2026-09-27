@@ -7,12 +7,10 @@ import type {
 	WorkTransactionClient,
 } from "./web-clock-out-transaction";
 
-export class WorkTransactionScopeChanged extends Error {
-	constructor() {
-		super("Work transaction resources changed; restart routing");
-		this.name = "WorkTransactionScopeChanged";
-	}
-}
+import { WorkTransactionScopeChanged } from "./work-transaction";
+
+// Moved to the work-transaction module; re-exported until web clock-out migrates (#490).
+export { WorkTransactionScopeChanged };
 
 type Resource = Readonly<{
 	table: string;

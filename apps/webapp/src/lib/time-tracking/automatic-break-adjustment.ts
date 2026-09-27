@@ -75,7 +75,7 @@ import {
 	assertNoUnresolvedWorkPeriodReview,
 	isUnresolvedWorkPeriodReview,
 } from "./work-period-review";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION = 1;
 export const AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION = 1;
@@ -267,7 +267,7 @@ function regulationFrom(
  * and resolved by the outcome: deleted once final, kept `deferred` while blocked.
  */
 export async function adjustAutomaticBreakInTransaction(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: AutomaticBreakTarget & { trigger: AutomaticBreakAdjustmentTrigger; now: Instant },
 ): Promise<AutomaticBreakAdjustmentOutcome> {
 	const { organizationId, employeeId, workPeriodId } = input;
@@ -919,7 +919,7 @@ export async function adjustAutomaticBreakInTransaction(
  * was made from, and an unresolved review refuses the adjustment without writes.
  */
 export async function applyLegacyAutomaticBreakInTransaction(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: AutomaticBreakTarget & {
 		trigger: AutomaticBreakAdjustmentTrigger;
 		plan: LegacyBreakPlan;

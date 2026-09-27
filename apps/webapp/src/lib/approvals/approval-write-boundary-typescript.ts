@@ -293,6 +293,7 @@ const TRUSTED_TRANSACTION_TYPE_EXPORTS = new Map<
 	[
 		"lib/time-tracking/work-transaction",
 		new Map([
+			["SealedWorkTransactionScope", "approval_db_service"],
 			["WorkTransactionClient", "database_receiver"],
 			["WorkTransactionScope", "approval_db_service"],
 		]),

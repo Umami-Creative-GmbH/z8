@@ -6,7 +6,7 @@ import { holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 /**
  * GET /api/org-admin/holiday-categories

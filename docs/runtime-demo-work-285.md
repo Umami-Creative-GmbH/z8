@@ -42,7 +42,7 @@ Every demo write runs in a transaction that acquires, in order:
    endpoint and canonical-record locks. Adopted appends lock the
    `time_entry_append_position` row.
 
-The key builders are the shared ones in `lib/time-tracking/work-transaction.ts`.
+The key builders are the shared ones in `lib/time-tracking/work-transaction/`.
 `withDemoWorkTransaction` opens one transaction per employee. The correction path
 runs inside the approval workflow transaction and gets its scope from
 `acquireDemoWorkScope`.

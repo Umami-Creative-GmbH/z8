@@ -37,7 +37,7 @@ import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { normalizeWorkLocationType, type WorkLocationType } from "./work-location";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const CLOSE_RESUME_WORK_RESULT_VERSION = 1;
 
@@ -96,7 +96,7 @@ export type CloseResumeWorkInput = {
  * mismatch in scope, kind, writer or command is a collision; nothing is repaired.
  */
 export async function replayCloseResumeWork(
-	context: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	context: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -133,7 +133,7 @@ export async function replayCloseResumeWork(
 
 /** Whether both the closure and the resumed start the receipt describes still stand. */
 export async function isCloseResumeStanding(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	scope: { organizationId: string; employeeId: string },
 	result: Pick<CloseResumeWorkResult, "close" | "resume">,
 ): Promise<boolean> {

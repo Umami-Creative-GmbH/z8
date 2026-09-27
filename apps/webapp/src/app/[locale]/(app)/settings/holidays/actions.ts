@@ -14,7 +14,7 @@ import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types"
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
 	requireOrgAdminEmployeeSettingsAccess,

@@ -20,15 +20,15 @@ import {
 	acquireOrganizationConfigurationGuard,
 	acquireUserConfigurationAccessGuards,
 	readAppendAdmission,
+	type SealedWorkTransactionScope,
 	sealWorkTransactionScope,
 	type WorkTransactionAdmission,
-	type WorkTransactionScope,
 } from "./work-transaction";
 
 export type { WorkTransactionClient } from "./work-transaction";
 
 /** Trusted server composition only; no transaction/savepoint or adoption upgrade capability. */
-export interface WorkTransactionContext extends WorkTransactionScope {
+export interface WorkTransactionContext extends SealedWorkTransactionScope {
 	readonly approval: ApprovalWorkflowTransactionContext;
 	/**
 	 * Read from the organization's append control under the adoption gate. `append`
