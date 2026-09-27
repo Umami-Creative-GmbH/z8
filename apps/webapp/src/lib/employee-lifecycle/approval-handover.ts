@@ -23,7 +23,12 @@ import { enqueueReviewNotifications } from "./notifications";
 import { DepartureTaskLeaseNotOwnedError } from "./outbox";
 import { FUTURE_STAGE_REVIEW_REASON } from "./review-reasons";
 import { actorMayResolveDepartureWork } from "./reviews";
-import type { DepartureIdentity, LifecycleActor, LifecycleTransaction } from "./types";
+import type {
+	DepartureIdentity,
+	LifecycleActor,
+	LifecycleClient,
+	LifecycleTransaction,
+} from "./types";
 
 type LifecycleRootDatabase = Pick<
 	typeof rootDatabase,
@@ -44,7 +49,7 @@ const VERSION_CONFLICT_ATTEMPTS = 3;
  * into application memory.
  */
 export async function captureApprovalHandoverDuties(
-	tx: LifecycleTransaction,
+	tx: Pick<LifecycleClient, "execute">,
 	identity: DepartureIdentity,
 	replacementEmployeeId: string | null,
 ): Promise<void> {

@@ -15,34 +15,36 @@ import {
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
 import { captureApprovalHandoverDuties } from "./approval-handover";
 import { enqueueReviewNotifications } from "./notifications";
-import { assertReadCommitted, lockLifecycleScope } from "./locks";
 import { evaluateDepartureAuthority } from "./owner-invariant";
 import type {
 	DepartureClockOutPort,
 	DepartureClockOutResult,
 	DepartureIdentity,
+	DepartureScope,
 	ExecuteDepartureResult,
-	LifecycleTransaction,
+	LifecycleClient,
 } from "./types";
 
 const logger = createLogger("EmployeeDepartureTransition");
 
 /**
- * Materializes one departure revision inside the caller's transaction. Takes
- * the lifecycle locks, then decides from locked state: an obsolete or not-due
- * identity is a no-op. The effective transition uses the intended cutoff, never
- * the execution time.
+ * Materializes one departure revision inside the caller's departure work
+ * transaction (`runDepartureTransaction`), whose coordinator already holds the
+ * lifecycle guards and the organization row. Decides from locked state: an
+ * obsolete or not-due identity is a no-op. The effective transition uses the
+ * intended cutoff, never the execution time.
  */
 export async function executeDepartureInTransaction(
-	tx: LifecycleTransaction,
+	scope: DepartureScope,
 	identity: DepartureIdentity,
 	now: Instant,
 	clockOut: DepartureClockOutPort,
 ): Promise<ExecuteDepartureResult> {
-	await assertReadCommitted(tx);
-	await lockLifecycleScope(tx, identity.organizationId, identity.employeeId);
+	scope.assertEmployee(identity.organizationId, identity.employeeId);
+	const tx = scope.db;
 
 	const [departure] = await tx
 		.select()
@@ -132,7 +134,7 @@ export async function executeDepartureInTransaction(
 			AND is_active = true
 	`);
 
-	const clockResult = await closeRunningPeriod(tx, identity, clockOut, {
+	const clockResult = await closeRunningPeriod(scope, identity, clockOut, {
 		cutoff,
 		actorUserId: departure.createdBy,
 		clockOutActionId: departure.clockOutActionId,
@@ -156,7 +158,7 @@ export async function executeDepartureInTransaction(
 
 /** Executor events have no client request; each gets its own receipt identity. */
 async function recordSystemEvent(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	identity: DepartureIdentity,
 	kind: "departure_blocked" | "departure_effective",
 	occurredAt: Date,
@@ -183,7 +185,7 @@ async function recordSystemEvent(
  * period; each becomes an admin review item instead of silently applying.
  */
 async function closeEmploymentWindows(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	identity: DepartureIdentity,
 	cutoff: Date,
 	now: Date,
@@ -254,15 +256,17 @@ async function closeEmploymentWindows(
 /**
  * Runs the clock-out port inside a savepoint so a failure rolls back only its
  * own writes; the outer transaction still records the effective departure and
- * durable repair work. A failure of the outer commit remains an error.
+ * durable repair work. A failure of the outer commit remains an error. The
+ * savepoint takes no guard: the port receives its sealed scope, so clocking
+ * only asserts the write target. A protocol violation is never a repair.
  */
 async function closeRunningPeriod(
-	tx: LifecycleTransaction,
+	scope: DepartureScope,
 	identity: DepartureIdentity,
 	clockOut: DepartureClockOutPort,
 	input: { cutoff: Instant; actorUserId: string; clockOutActionId: string },
 ): Promise<DepartureClockOutResult & { activePeriodStartedAt?: Date | null }> {
-	const [activePeriod] = await tx
+	const [activePeriod] = await scope.db
 		.select({ id: workPeriod.id, startTime: workPeriod.startTime })
 		.from(workPeriod)
 		.where(
@@ -277,14 +281,15 @@ async function closeRunningPeriod(
 		.limit(1);
 
 	try {
-		const result = await tx.transaction((savepoint) =>
-			clockOut.close({ ...identity, ...input, transaction: savepoint }),
+		const result = await scope.savepoint((savepoint) =>
+			clockOut.close({ ...identity, ...input, scope: savepoint }),
 		);
 		return {
 			...result,
 			activePeriodStartedAt: activePeriod?.startTime ?? null,
 		};
 	} catch (error) {
+		if (error instanceof WorkTransactionProtocolViolation) throw error;
 		logger.error(
 			{
 				error,
@@ -303,7 +308,7 @@ async function closeRunningPeriod(
 }
 
 async function recordClockOutReview(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	identity: DepartureIdentity,
 	result: DepartureClockOutResult & { activePeriodStartedAt?: Date | null },
 	cutoff: Date,
@@ -397,7 +402,7 @@ async function recordClockOutReview(
  * count when delivered rather than applying a captured decrement.
  */
 async function persistFollowUpIntent(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	identity: DepartureIdentity,
 	targetUserId: string,
 ) {
