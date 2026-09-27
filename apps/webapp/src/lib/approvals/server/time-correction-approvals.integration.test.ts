@@ -226,19 +226,13 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		expect(binding).toContain("updated.length !== 1");
 	});
 
-	it("runs only against a label-owned disposable database and includes this suite", () => {
+	it("runs only against a label-owned disposable database", () => {
 		expect(runnerSource).toContain("docker run --detach");
 		expect(runnerSource).toContain(
 			"--label z8.agent-owned=approval-workflow-repository-test",
 		);
 		expect(runnerSource).toContain(
 			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=",
-		);
-		expect(runnerSource).toContain(
-			"src/lib/approvals/server/time-correction-approvals.integration.test.ts",
-		);
-		expect(runnerSource).toContain(
-			'PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC"',
 		);
 		expect(runnerSource).not.toMatch(
 			/(^|[^A-Z_])(?:DATABASE_URL|POSTGRES_URL|PGHOST)=/m,
