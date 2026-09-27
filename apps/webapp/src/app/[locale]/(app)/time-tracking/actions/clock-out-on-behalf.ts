@@ -69,9 +69,9 @@ import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import {
 	type ClockOutCommitOutcome,
 	completeClockOutAfterCommit,
-	createOrdinaryApprovalRuntime,
 	validateWorkCategoryAssignment,
 } from "./clocking";
+import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
 import { validateProjectAssignment } from "./entry-helpers";
 import { resolveManualEntryTarget, resolveManualEntryTargetZone } from "./manual-entry-target";
 import { logger } from "./shared";

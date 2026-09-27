@@ -73,7 +73,9 @@
         "failed": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
         "noProfile": "Mitarbeiterprofil nicht gefunden.",
         "success": "Eingestempelt um {time}.",
-        "unconfirmed": "Ihr Einstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen."
+        "unconfirmed": "Ihr Einstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
+        "holidayBlocked": "An einem Feiertag kann nicht eingestempelt werden.",
+        "occupied": "Diese Zeit überschneidet sich mit bereits erfasster Arbeit."
       },
       "clockout": {
         "appendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie ausstempeln können. Bitte wenden Sie sich an Ihren Administrator.",
@@ -84,7 +86,10 @@
         "notClockedIn": "Sie sind derzeit nicht eingestempelt.",
         "success": "Ausgestempelt um {time}. Dauer: {hours}h {minutes}m.",
         "successAt": "Ausgestempelt um {time}.",
-        "unconfirmed": "Ihr Ausstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen."
+        "unconfirmed": "Ihr Ausstempeln konnte nicht bestätigt werden. Prüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
+        "beforeClockIn": "Das Ausstempeln muss nach dem Einstempeln liegen.",
+        "projectNotAllowed": "Diesem Projekt kann nicht zugeordnet werden.",
+        "workCategoryNotAllowed": "Dieser Arbeitskategorie kann nicht zugeordnet werden."
       },
       "compliance": {
         "error": "Compliance-Daten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",

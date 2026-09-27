@@ -1,7 +1,7 @@
-import type { approvalStatusEnum, timeEntry } from "@/db/schema";
+import type { approvalStatusEnum } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
+import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
 import type { ManualCommandRejection } from "./manual-command-submission";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
@@ -36,19 +36,7 @@ export interface TimeEntryDeletionRequest {
 	reason: string;
 }
 
-export interface BreakAdjustmentInfo {
-	breakMinutes: number;
-	breakInsertedAt: string;
-	regulationName: string;
-	originalDurationMinutes: number;
-	adjustedDurationMinutes: number;
-}
-
-export type ClockOutResult = typeof timeEntry.$inferSelect & {
-	complianceWarnings?: ComplianceWarning[];
-	breakAdjustment?: BreakAdjustmentInfo;
-	pendingApproval?: boolean;
-};
+export type { BreakAdjustmentInfo, ClockOutResult } from "@/lib/time-tracking/clocking/types";
 
 export interface BrowserTimezoneContext {
 	browserTimezone?: string | null;
@@ -56,6 +44,8 @@ export interface BrowserTimezoneContext {
 
 export interface ClockOutActionContext extends BrowserTimezoneContext {
 	submissionId: string;
+	/** Where the submission id came from; bots name each attempt on the server. */
+	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
 }

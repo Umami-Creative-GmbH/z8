@@ -15,7 +15,7 @@ import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approval
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { POLICY_CLOCK_OUT_APPROVAL_REASON } from "@/lib/approvals/time-request-kind";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { createOrdinaryApprovalRuntime } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
+import { createOrdinaryApprovalRuntime } from "../ordinary-approval-runtime";
 import { resolvePolicyClockOutBreakSnapshotInTransaction } from "../policy-clock-out-break-snapshot";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "../policy-clock-out-surcharge-snapshot";
 

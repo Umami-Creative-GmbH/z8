@@ -36,7 +36,7 @@ import {
 	sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification,
 } from "./approvals";
-import { createOrdinaryApprovalRuntime } from "./clocking";
+import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
 import { reconcileImmediateSurcharges } from "./compliance";
 import { MANUAL_ENTRY_TARGET_AUTH_ERROR, resolveManualEntryTarget } from "./manual-entry-target";
 import type { ManualActor, ManualPreparationRejection } from "./manual-preparation";

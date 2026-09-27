@@ -34,7 +34,7 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
-import { BOOKABLE_PROJECT_STATUSES } from "@/app/[locale]/(app)/time-tracking/actions/shared";
+import { BOOKABLE_PROJECT_STATUSES } from "./project-eligibility";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,

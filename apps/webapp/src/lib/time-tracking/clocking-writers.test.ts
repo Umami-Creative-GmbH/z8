@@ -35,7 +35,9 @@ describe("live clocking writers", () => {
 		const clockOutAction = web.slice(web.indexOf("export async function clockOut"), web.indexOf("export async function addBreakToActiveSession"));
 		expect(clockInAction).toContain("clockingService.clockIn");
 		expect(clockInAction).not.toContain("createTimeEntry(");
-		expect(clockOutAction).toContain("clockingService.clockOut");
+		// Clock-out runs through the Clocking module, which owns both admissions (#478).
+		expect(clockOutAction).toContain("clocking.run(");
+		expect(clockOutAction).not.toContain("clockingService");
 		expect(clockOutAction).not.toContain("createTimeEntry(");
 
 		const legacyClockIn = legacyWeb.slice(legacyWeb.indexOf("export async function clockIn"), legacyWeb.indexOf("export interface BreakAdjustmentInfo"));

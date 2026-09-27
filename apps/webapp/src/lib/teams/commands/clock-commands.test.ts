@@ -106,8 +106,10 @@ describe("bot clock-out command", () => {
 		await expect(first?.[0].resolveTimezone()).resolves.toBe("Europe/Berlin");
 		// Omitted attribution preserves the period's project and category.
 		expect(first?.slice(1, 3)).toEqual([undefined, undefined]);
+		// A server identity: it names the operation but is never replayed.
 		expect(first?.[3]).toEqual({
 			submissionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+			identityOrigin: "server",
 			deviceInfo: "telegram-bot",
 		});
 		expect(first).toHaveLength(4);
@@ -144,7 +146,9 @@ describe("bot clock-out command", () => {
 
 	it.each([
 		["not_clocked_in", "You are not currently clocked in."],
-		["rejected", "Clock-out must be after clock-in"],
+		["invalid_interval", "Clock-out must be after clock-in."],
+		["project_not_allowed", "Cannot assign to this project."],
+		["access_denied", "Employee profile not found."],
 		[
 			"billing_required",
 			"Billing is required to continue using time tracking. Ask an organization admin to update billing.",
@@ -159,11 +163,7 @@ describe("bot clock-out command", () => {
 		],
 		["failed", "Could not clock out. Please try again."],
 	])("words the %s outcome", async (failure, text) => {
-		state.clockOutAs.mockResolvedValue({
-			success: false,
-			error: "Clock-out must be after clock-in",
-			failure,
-		});
+		state.clockOutAs.mockResolvedValue({ success: false, failure, refusal: { code: failure } });
 
 		await expect(clockOutCommand.handler(context())).resolves.toEqual({ type: "text", text });
 	});
