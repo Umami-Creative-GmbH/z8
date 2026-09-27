@@ -8,7 +8,10 @@ import {
 	type ApprovalRuntimeFactory,
 	approvalWorkTransactionPort,
 } from "@/lib/approvals/workflow/work-transaction-port";
-import type { WorkTransactionContext } from "./web-clock-out-transaction";
+import {
+	sealWorkTransactionContext,
+	type WorkTransactionContext,
+} from "./web-clock-out-transaction";
 import { runWorkTransaction, type WorkRoute, type WorkTransactionClient } from "./work-transaction";
 
 /**
@@ -38,10 +41,11 @@ export function manualSubmissionIdentity(organizationId: string, submissionId: s
 	return [organizationId, "manual_time_submission", "time_entry", submissionId] as const;
 }
 
-/** Approval policies and stages the operation may activate, beyond the coordinated scope. */
+/** What the operation decides on beyond the coordinated scope; compared on re-route. */
 type ManualSnapshot = {
-	/** Whether approval participants are routed. */
+	/** Whether approval participants are routed (the attempt is widened). */
 	approvalRouted: boolean;
+	/** The approval policies and stages the operation may activate. */
 	policyIds: string[];
 	stageIds: string[];
 };
@@ -106,8 +110,7 @@ export function withManualWorkTransaction<T>(
 			};
 			const { activationResolver } = scope.approval;
 			return operation(
-				Object.freeze({
-					...scope,
+				sealWorkTransactionContext<ManualWorkTransactionContext>(scope, {
 					approval: {
 						...scope.approval,
 						activationResolver: {

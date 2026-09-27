@@ -10,7 +10,9 @@ import { lockWebClockOutResources, routeWebClockOutResources } from "./web-clock
 import {
 	runWorkTransaction,
 	type SealedWorkTransactionScope,
+	type WorkRoute,
 	type WorkTransactionAdmission,
+	type WorkTransactionScope,
 } from "./work-transaction";
 
 export type { WorkTransactionClient } from "./work-transaction";
@@ -103,8 +105,7 @@ export function withWebClockOutTransaction<T>(
 		},
 		(scope) =>
 			operation(
-				Object.freeze({
-					...scope,
+				sealWorkTransactionContext(scope, {
 					approval: {
 						...scope.approval,
 						activationResolver: {
@@ -118,4 +119,16 @@ export function withWebClockOutTransaction<T>(
 				}),
 			),
 	);
+}
+
+/**
+ * The operation's context over a coordinator scope with approval checks. The
+ * scope's restart, savepoint and route stay with the coordinator writer.
+ */
+export function sealWorkTransactionContext<C extends WorkTransactionContext>(
+	scope: WorkTransactionScope<WorkRoute, ApprovalWorkflowTransactionContext>,
+	context: Omit<C, keyof SealedWorkTransactionScope>,
+): C {
+	const { restart: _restart, savepoint: _savepoint, route: _route, ...sealed } = scope;
+	return Object.freeze({ ...sealed, ...context }) as C;
 }

@@ -168,7 +168,7 @@ describe("approval write gate in a work transaction", () => {
 		).rejects.toThrow(/rank 2 shared guard .* after rank 5/);
 	});
 
-	it("keeps the rollout lock key the coordinator checks", () => {
+	it("keeps the write gate guard key the coordinator checks", () => {
 		expect(approvalRolloutLockScope("ab", "absence")).toBe(
 			approvalWriteGateGuard("ab", "absence").key,
 		);

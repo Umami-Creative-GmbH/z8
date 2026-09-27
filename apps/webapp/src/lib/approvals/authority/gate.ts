@@ -36,8 +36,8 @@ export function approvalRolloutLockScope(
 }
 
 /**
- * The shared rollout lock, held by every writer of the kind until commit. In a
- * work transaction it is recorded at rank 2 of the acquisition protocol first.
+ * The shared rollout lock, held by every writer of the kind until commit. It is
+ * the approval write gate guard (rank 2); a work transaction records it first.
  */
 export async function acquireApprovalWriteLock(
 	dbService: ApprovalDbService,
