@@ -1523,6 +1523,25 @@ function sameDatabaseInstant(left: Date | null, right: Date | null): boolean {
 	);
 }
 
+/** Field names only, so the conflict log carries no work data. */
+function canonicalRecordSourceMismatches(
+	canonical: LockedCanonicalWorkRecord,
+	period: LockedTimeCorrectionPeriod,
+	organizationId: string,
+): string[] {
+	const checks: Array<[string, boolean]> = [
+		["id", canonical.id === period.canonicalRecordId],
+		["organizationId", canonical.organizationId === organizationId],
+		["employeeId", canonical.employeeId === period.employeeId],
+		["recordKind", canonical.recordKind === "work"],
+		["approvalState", canonical.approvalState === period.approvalStatus],
+		["startAt", sameDatabaseInstant(canonical.startAt, period.startTime)],
+		["endAt", sameDatabaseInstant(canonical.endAt, period.endTime)],
+		["durationMinutes", canonical.durationMinutes === period.durationMinutes],
+	];
+	return checks.filter(([, matches]) => !matches).map(([field]) => field);
+}
+
 function sameCorrectionPayload(
 	value: unknown,
 	expected: TimeCorrectionWorkflowPayload["timeCorrection"],
@@ -2531,20 +2550,29 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			)
 			.for("update")) as LockedCanonicalWorkRecord[];
 		canonical = canonicalRows[0] ?? null;
+		const canonicalMismatches = canonical
+			? canonicalRecordSourceMismatches(canonical, period, input.organizationId)
+			: [];
+		// Committed history can disagree on minutes alone: before #388 the legacy
+		// clock-out floored the canonical minutes and rounded the period's, and
+		// that history was kept. A decision rewrites both minutes from the
+		// corrected endpoints or leaves both untouched, so only a cancellation
+		// snapshot still pins them.
+		const blockingCanonicalMismatches =
+			expectedSource === undefined
+				? canonicalMismatches.filter((field) => field !== "durationMinutes")
+				: canonicalMismatches;
 		if (
 			canonicalRows.length !== 1 ||
 			!canonical ||
-			canonical.id !== period.canonicalRecordId ||
-			canonical.organizationId !== input.organizationId ||
-			canonical.employeeId !== period.employeeId ||
-			canonical.recordKind !== "work" ||
-			canonical.approvalState !== period.approvalStatus ||
-			!sameDatabaseInstant(canonical.startAt, period.startTime) ||
-			!sameDatabaseInstant(canonical.endAt, period.endTime) ||
-			canonical.durationMinutes !== period.durationMinutes
+			blockingCanonicalMismatches.length > 0
 		) {
 			throw timeCorrectionFinalizationConflict(
 				"canonical_record_source_mismatch",
+				{
+					canonicalRowCount: canonicalRows.length,
+					mismatchedFields: canonicalMismatches,
+				},
 			);
 		}
 		if (Object.hasOwn(correction, "workLocationType") || expectedSource) {
@@ -2622,6 +2650,7 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		) {
 			throw timeCorrectionFinalizationConflict(
 				"canonical_record_source_mismatch",
+				{ canonicalRowCount: 0, mismatchedFields: ["canonicalRecordId"] },
 			);
 		}
 		// Legacy submission requires a canonical record only for metadata
