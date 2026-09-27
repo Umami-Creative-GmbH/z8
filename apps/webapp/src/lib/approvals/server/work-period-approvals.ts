@@ -53,7 +53,6 @@ import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
-import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	ApprovalAssignmentReassignedError,
 	approvalReassignedConflict,
@@ -810,7 +809,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		// Every read above is plain; the #264 protocol is taken before the first
 		// row lock, so a final policy clock-out approval's break split runs under
 		// the owner's coordination instead of locking late (#303).
-		const { authority, writeGate: fixedGate } =
+		const { authority, context: decisionContext } =
 			await acquireWorkPeriodDecisionScope(context, {
 				organizationId: input.organizationId,
 				kind: metadata.kind,
@@ -819,16 +818,8 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				workPeriodId: period.id,
 				observed,
 			});
-		const decisionContext = {
-			...context,
-			writeGate: fixedGate,
-			compatibilityWriter:
-				context.compatibilityWriter.withWriteGate(fixedGate),
-		} as ApprovalWorkflowTransactionContext;
 		const legacyAuthority =
-			authority.mode === "legacy" ||
-			authority.mode === "shadow" ||
-			authority.mode === "ready";
+			authority.authority === "legacy";
 		if (input.bound && boundCommand) {
 			await admitFreshTimeInvocation(database, {
 				organizationId: input.organizationId,
@@ -839,7 +830,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			await assertTimeBindingAuthority(database, {
 				organizationId: input.organizationId,
 				bound: input.bound,
-				legacyAuthority,
+				gate: authority,
 			});
 			if (legacyAuthority) {
 				// A legacy binding names the exact legacy request and the current
@@ -865,7 +856,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		}
 		if (legacyAuthority) {
 			const observedWorkflow =
-				authority.mode === "legacy" || !period.approvalWorkflowId
+				!authority.shadowMirroring || !period.approvalWorkflowId
 					? null
 					: await context.repository.loadSnapshot({
 							organizationId: input.organizationId,
@@ -895,7 +886,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						),
 				);
 			const verifiedLegacyIntermediateReplay =
-				authority.mode === "legacy" &&
+				!authority.shadowMirroring &&
 				terminalRequestMatches &&
 				period.approvalStatus === "pending" &&
 				isVerifiedLegacyIntermediateReplay({
@@ -913,7 +904,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 					observedIntermediateReplay ||
 					(terminalRequestMatches &&
 						period.approvalStatus === expectedTerminalStatus &&
-						(authority.mode === "legacy" ||
+						(!authority.shadowMirroring ||
 							(observedIdentityMatches &&
 								observedWorkflow?.status === expectedTerminalStatus)))) &&
 				!(
@@ -953,7 +944,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			});
 			let expectedObservedVersion = observedWorkflow?.version ?? null;
 			let bootstrappedWorkflowId: string | null = null;
-			if (authority.mode !== "legacy" && !observedWorkflow) {
+			if (authority.shadowMirroring && !observedWorkflow) {
 				if (!verifiedLegacyState) {
 					throw new Error(ORDINARY_DECISION_ERROR);
 				}
@@ -1010,7 +1001,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				input.decision.reason ?? "",
 			].join(":");
 			const coordinator = createLegacyApprovalWriteCoordinator({
-				writeGate: fixedGate,
+				writeGate: decisionContext.writeGate,
 				compatibilityWriter: decisionContext.compatibilityWriter,
 			});
 			let mutationResult: WorkPeriodApprovalResult | undefined;
@@ -1032,7 +1023,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				idempotencyKey: legacyIdempotencyKey,
 				expectedVersion: expectedObservedVersion,
 				captureState:
-					authority.mode === "legacy"
+					!authority.shadowMirroring
 						? undefined
 						: async () => {
 								captureCount += 1;

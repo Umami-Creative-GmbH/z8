@@ -13,6 +13,7 @@ import {
 	type TimeEntryAppendAdmission,
 	timeEntryAppendControl,
 } from "@/db/schema/time-entry-append";
+import { parseApprovalLifecycleMode } from "@/lib/approvals/authority";
 import { TIME_APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/time-approval-kinds";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -161,7 +162,8 @@ async function readCards(
 		deliveryControls: deliveryControls.map((row) => ({
 			workflowType: String(row.workflow_type),
 			provider: String(row.provider) as ApprovalDeliveryProvider,
-			lifecycleMode: row.lifecycle_mode === null ? null : String(row.lifecycle_mode),
+			lifecycleMode:
+				row.lifecycle_mode === null ? null : parseApprovalLifecycleMode(row.lifecycle_mode),
 		})),
 		presentationControls: presentationControls.map((row) => ({
 			workflowType: String(row.workflow_type),

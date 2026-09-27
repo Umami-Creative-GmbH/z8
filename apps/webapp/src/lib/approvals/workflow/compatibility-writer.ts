@@ -2132,11 +2132,11 @@ export function createApprovalCompatibilityWriter(
 				idempotencyKey: normalizedInput.idempotencyKey,
 				expectedVersion: normalizedInput.expectedVersion,
 			});
-			const { behavior } = await dependencies.writeGate.acquire({
+			const { shadowMirroring } = await dependencies.writeGate.acquire({
 				organizationId: observedInput.organizationId,
 				workflowType: observedInput.source.workflowType,
 			});
-			if (behavior.mirror !== "legacy_to_canonical") return null;
+			if (!shadowMirroring) return null;
 			assertSameVerifiedScope(observedInput.before, observedInput.after);
 			const result =
 				await dependencies.repository.applyObservedLegacyTransition(
@@ -2158,11 +2158,11 @@ export function createApprovalCompatibilityWriter(
 
 		async mirrorCanonicalToLegacy(input) {
 			const result = detachedCanonicalMirrorResult(input);
-			const { behavior } = await dependencies.writeGate.acquire({
+			const { compatibilityWriting } = await dependencies.writeGate.acquire({
 				organizationId: result.snapshot.organizationId,
 				workflowType: result.snapshot.workflowType,
 			});
-			if (behavior.mirror !== "canonical_to_legacy") return;
+			if (!compatibilityWriting) return;
 			const legacyIds =
 				await dependencies.legacyPersistence.resolveOrCreateStableIds({
 					organizationId: result.snapshot.organizationId,

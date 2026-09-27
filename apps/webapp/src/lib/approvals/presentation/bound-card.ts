@@ -5,7 +5,6 @@ import {
 	absenceEntry,
 	approvalRequest,
 	approvalWorkflow,
-	approvalWorkflowRollout,
 } from "@/db/schema";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
@@ -14,6 +13,7 @@ import {
 	formatInstant,
 	formatPlainDate,
 } from "@/lib/datetime/temporal-format";
+import { readApprovalAuthoritySnapshot } from "../authority";
 import {
 	type AbsenceRevisionComparison,
 	type AbsenceSubmittedCoverage,
@@ -21,7 +21,6 @@ import {
 } from "../evidence/absence-facts";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
-	hasLegacyAbsenceAuthority,
 	LEGACY_ABSENCE_ACTIONABLE_PROVIDERS,
 } from "../evidence/legacy-absence";
 import {
@@ -232,18 +231,11 @@ async function loadAbsenceCardFacts(
 	) {
 		return null;
 	}
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, target.organizationId),
-				eq(approvalWorkflowRollout.workflowType, "absence"),
-			),
-		)
-		.limit(1);
-	if (rollout?.mode !== "canonical" && rollout?.mode !== "complete")
-		return null;
+	const rollout = await readApprovalAuthoritySnapshot(database, {
+		organizationId: target.organizationId,
+		workflowType: "absence",
+	});
+	if (rollout.authority !== "canonical") return null;
 	const evidenceMode = await readApprovalEvidenceMode(database, {
 		organizationId: target.organizationId,
 		workflowType: "absence",
@@ -444,7 +436,11 @@ export async function prepareBoundLegacyAbsenceCard(
 		)
 		.limit(1);
 	if (!request) return null;
-	if (!(await hasLegacyAbsenceAuthority(database, organizationId))) return null;
+	const rollout = await readApprovalAuthoritySnapshot(database, {
+		organizationId,
+		workflowType: "absence",
+	});
+	if (rollout.authority !== "legacy") return null;
 	const [evidenceMode, presentationMode] = await Promise.all([
 		readApprovalEvidenceMode(database, { organizationId, workflowType: "absence" }),
 		readApprovalPresentationMode(database, {

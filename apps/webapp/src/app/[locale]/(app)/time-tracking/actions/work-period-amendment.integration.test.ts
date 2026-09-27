@@ -17,13 +17,9 @@
 
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -33,37 +29,15 @@ const harness = vi.hoisted(() => ({
 	logs: [] as { context: unknown; message: unknown }[],
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
-
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -90,10 +64,9 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 	canApproveFor: async () => harness.canApprove,
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("./policy-helpers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./policy-helpers")>()),
@@ -117,27 +90,6 @@ const { editSameDayTimeEntry } = await import("./corrections");
 const { updateWorkPeriodProject } = await import("../actions");
 const { POST: postCorrection } = await import("@/app/api/time-entries/corrections/route");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`work period amendment PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t286-amendment-org",
@@ -180,11 +132,11 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration(
+describe(
 	"direct work amendments through the completed-work operation on PostgreSQL",
 	() => {
 		vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-		const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+		const admin = integrationAdminPool();
 
 		function actAs(userId: string, roles: { isOrgAdmin?: boolean; canApprove?: boolean } = {}) {
 			harness.userId = userId;
@@ -441,23 +393,6 @@ describeIntegration(
 			await setAdmission("active");
 		}
 
-		beforeAll(async () => {
-			const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl,
-				required: integrationRequired,
-				sentinel: testSentinel,
-				currentDatabase: async () => {
-					const result = await admin.query<{ database_name: string }>(
-						"select current_database() as database_name",
-					);
-					return result.rows[0]?.database_name ?? "";
-				},
-			});
-			if (enabled.status !== "enabled") {
-				throw new Error("Work period amendment PostgreSQL is disabled");
-			}
-		});
-
 		beforeEach(async () => {
 			harness.logs.length = 0;
 			await seed();
@@ -465,9 +400,6 @@ describeIntegration(
 
 		afterAll(async () => {
 			await cleanup();
-			await admin.end();
-			const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-			await pool.end();
 		});
 
 		it("corrects adopted work atomically with one derived duration and exact append linkage", async () => {

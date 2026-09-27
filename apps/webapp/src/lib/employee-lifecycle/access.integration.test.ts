@@ -4,14 +4,13 @@
  */
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess, resolveEmployeeOrganizationAccess } from "./access";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -20,7 +19,7 @@ const CUTOFF = "2026-09-15T00:00:00Z";
 const BEFORE = parseInstant("2026-09-14T23:59:00Z");
 const AFTER = parseInstant("2026-09-15T00:01:00Z");
 
-describeLifecycleDatabase("effective organization access", () => {
+describe("effective organization access", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

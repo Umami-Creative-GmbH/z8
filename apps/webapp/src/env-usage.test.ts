@@ -1,10 +1,15 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const SRC_ROOT = fileURLToPath(new URL(".", import.meta.url));
-const ALLOWED_DIRECT_ENV_READERS = new Set(["env.ts", "instrumentation.ts"]);
+const ALLOWED_DIRECT_ENV_READERS = new Set([
+	"env.ts",
+	"instrumentation.ts",
+	// Reads Z8_TEST_PROJECT directly so a suite that mocks "@/env" cannot disable the guard.
+	join("db", "unit-project-guard.ts"),
+]);
 const RUNTIME_FILE_EXTENSIONS = [".ts", ".tsx"] as const;
 
 function collectRuntimeFiles(directory: string): string[] {
@@ -30,7 +35,9 @@ function collectRuntimeFiles(directory: string): string[] {
 function isRuntimeSourceFile(filePath: string): boolean {
 	return (
 		RUNTIME_FILE_EXTENSIONS.some((extension) => filePath.endsWith(extension)) &&
-		!filePath.includes(".test.")
+		!filePath.includes(".test.") &&
+		// Test infrastructure (e.g. the integration database gate) is never bundled.
+		!relative(SRC_ROOT, filePath).startsWith(`test${sep}`)
 	);
 }
 

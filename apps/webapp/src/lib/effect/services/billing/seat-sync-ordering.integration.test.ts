@@ -2,16 +2,15 @@
  * PostgreSQL contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * Seat quantities reach Stripe in order, and ambiguous sends are reconciled.
  */
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { deliverOrganizationSeats, type SeatStripePort } from "./seat-delivery";
 
-describeLifecycleDatabase("ordered seat delivery", () => {
+describe("ordered seat delivery", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

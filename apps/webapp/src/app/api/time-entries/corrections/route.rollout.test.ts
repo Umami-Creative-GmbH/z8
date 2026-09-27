@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 
 type RolloutMode = "legacy" | "shadow" | "ready" | "canonical" | "complete";
 type FixtureRow = Record<string, unknown>;
@@ -63,21 +64,7 @@ const state = vi.hoisted(() => ({
 }));
 
 function authority(mode: RolloutMode) {
-	return {
-		mode,
-		behavior: {
-			serveFrom: mode === "complete" ? "canonical" : "legacy",
-			writeLegacy: mode !== "complete",
-			writeCanonical: mode !== "legacy",
-			decideCanonical: mode === "canonical" || mode === "complete",
-			mirror:
-				mode === "shadow" || mode === "ready"
-					? "legacy_to_canonical"
-					: mode === "canonical"
-						? "canonical_to_legacy"
-						: "none",
-		},
-	};
+	return approvalWriteGateResult(mode);
 }
 
 const original = {

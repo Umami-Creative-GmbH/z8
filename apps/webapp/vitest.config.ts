@@ -33,6 +33,8 @@ export default defineConfig({
 					include: ["src/**/*.test.{ts,tsx}"],
 					exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
 					env: { Z8_TEST_PROJECT: "unit" },
+					// Fails a test whose code reached the real @/db pool (see src/db/unit-project-guard.ts).
+					setupFiles: ["./src/test/unit-setup.ts"],
 				},
 			},
 			{
@@ -41,10 +43,11 @@ export default defineConfig({
 					name: "integration",
 					include: ["src/**/*.integration.test.ts"],
 					fileParallelism: false,
-					// REQUIRED=1 turns a missing disposable database into an error, not a skip.
+					// Binds @/db, verifies the disposable database (failing, never
+					// skipping, without one) and closes the pools of every suite.
+					setupFiles: ["./src/test/integration-setup.ts"],
 					env: {
 						Z8_TEST_PROJECT: "integration",
-						APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED: "1",
 						TZ: "UTC",
 						PGOPTIONS: "-c statement_timeout=15000 -c timezone=UTC",
 					},

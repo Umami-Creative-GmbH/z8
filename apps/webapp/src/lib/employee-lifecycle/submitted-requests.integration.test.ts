@@ -7,7 +7,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { Effect } from "effect";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	ApprovalAuditLogger,
 	createApprovalAuditLogger,
@@ -29,7 +29,6 @@ import {
 } from "./testing/approval-workflow.test.fixture";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -37,7 +36,7 @@ import {
 const SUBMITTED_AT = parseInstant("2026-09-14T08:00:00Z");
 const DEPARTED_AT = parseInstant("2026-09-15T08:00:00Z");
 
-describeLifecycleDatabase("submitted requests after departure", () => {
+describe("submitted requests after departure", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = SUBMITTED_AT;
 	let requester: SeededEmployee;

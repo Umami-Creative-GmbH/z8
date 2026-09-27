@@ -10,6 +10,7 @@ type InlineProject = {
 		include?: string[];
 		exclude?: string[];
 		fileParallelism?: boolean;
+		setupFiles?: string[];
 		env?: Record<string, string>;
 	};
 };
@@ -46,16 +47,20 @@ describe("vitest projects", () => {
 		expect(project("unit").test.env).toEqual({ Z8_TEST_PROJECT: "unit" });
 	});
 
-	it("runs integration suites serially and requires the disposable database", () => {
+	it("runs integration suites serially in UTC", () => {
 		const integration = project("integration").test;
 
 		expect(integration.fileParallelism).toBe(false);
 		expect(integration.env).toEqual({
 			Z8_TEST_PROJECT: "integration",
-			APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED: "1",
 			TZ: "UTC",
 			PGOPTIONS: "-c statement_timeout=15000 -c timezone=UTC",
 		});
+	});
+
+	it("gives every integration suite the one database gate, pool and @/db binding", () => {
+		expect(project("integration").test.setupFiles).toEqual(["./src/test/integration-setup.ts"]);
+		expect(project("unit").test.setupFiles).not.toContain("./src/test/integration-setup.ts");
 	});
 
 	it("keeps pnpm test database-free and routes test:integration through the Docker runner", async () => {

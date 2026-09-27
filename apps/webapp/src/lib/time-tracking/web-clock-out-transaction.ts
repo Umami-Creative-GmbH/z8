@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/db";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
+import { acquirePinnedApprovalContext } from "@/lib/approvals/workflow/pinned-write-gate";
 import type {
 	ApprovalWorkflowDatabase,
 	ApprovalWorkflowRepository,
@@ -109,9 +110,12 @@ async function runAttempt<T>(
 			return await runtime.repository.withTransaction(async (approval) => {
 				await acquireAdoptionGate(transaction, input.organizationId);
 				const admission = await readAppendAdmission(transaction, input.organizationId);
-				const authority = await approval.writeGate.acquire({
+				// The policy clock-out write gate stays pinned: replay of a committed
+				// clock-out that carries historical approval evidence reads through it.
+				const { context: pinnedApproval } = await acquirePinnedApprovalContext(approval, {
 					organizationId: input.organizationId,
 					workflowType: "policy_clock_out",
+					assertActive,
 				});
 				await acquireOrganizationConfigurationGuard(
 					transaction,
@@ -136,33 +140,16 @@ async function runAttempt<T>(
 					routed,
 					await routeWebClockOutResources(transaction, input),
 				);
-				// The policy clock-out write gate stays: replay of a committed clock-out
-				// that carries historical approval evidence reads through it.
-				const writeGate: ApprovalWorkflowTransactionContext["writeGate"] = {
-					async acquire(scope) {
-						assertActive();
-						if (
-							scope.organizationId !== input.organizationId ||
-							scope.workflowType !== "policy_clock_out"
-						) {
-							throw new Error("Approval scope is outside the work transaction");
-						}
-						return authority;
-					},
-				};
 				return operation(
 					sealWorkTransactionScope({
 						db: transaction,
 						approval: {
-							...approval,
+							...pinnedApproval,
 							activationResolver: {
 								async resolve() {
 									return refuseApprovalRouting();
 								},
 							},
-							writeGate,
-							compatibilityWriter:
-								approval.compatibilityWriter.withWriteGate(writeGate),
 						},
 						admission,
 						assertParticipant: refuseApprovalRouting,

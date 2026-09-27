@@ -1,4 +1,5 @@
 import type { ApprovalCompatibilityWriter } from "../workflow/compatibility-writer";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import type {
 	ApprovalEventActorIdentity,
 	ApprovalSourceIdentity,
@@ -133,22 +134,19 @@ export function createLegacyApprovalWriteCoordinator(dependencies: {
 				organizationId: execution.organizationId,
 				workflowType: execution.workflowType,
 			});
-			const fixedGate: ApprovalWriteGate = {
-				acquire: async (scope) => {
-					if (
-						scope.organizationId !== execution.organizationId ||
-						scope.workflowType !== execution.workflowType
-					) {
+			const compatibilityWriter = dependencies.compatibilityWriter.withWriteGate(
+				pinApprovalWriteGate({
+					organizationId: execution.organizationId,
+					workflowType: execution.workflowType,
+					authority: gate,
+					refuse: () => {
 						throw new LegacyApprovalWriteBoundaryError(
 							"invalid_source_identity",
 							"Legacy approval mirror is outside the trusted scope.",
 						);
-					}
-					return gate;
-				},
-			};
-			const compatibilityWriter =
-				dependencies.compatibilityWriter.withWriteGate(fixedGate);
+					},
+				}),
+			);
 
 			switch (gate.mode) {
 				case "legacy":

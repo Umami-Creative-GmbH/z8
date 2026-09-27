@@ -15,13 +15,9 @@
  * HTTP transport (fetch, below both provider clients) are replaced.
  */
 
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -29,38 +25,16 @@ const harness = vi.hoisted(() => ({
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 10,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -80,48 +54,36 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t294.example.test",
 }));
 
-vi.mock("@/lib/email/email-service", () => ({
-	sendEmail: async () => ({ success: true }),
-}));
+vi.mock("@/lib/email/email-service", async () =>
+	(await import("@/test/integration-harness")).emailService(),
+);
 
-vi.mock("@/lib/email/render", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/email/render")>();
-	return {
-		...original,
-		renderAbsenceRequestSubmitted: async () => "<p>submitted</p>",
-		renderAbsenceRequestPendingApproval: async () => "<p>pending</p>",
-		renderAbsenceRequestApproved: async () => "<p>approved</p>",
-		renderAbsenceRequestRejected: async () => "<p>rejected</p>",
-	};
-});
+vi.mock("@/lib/email/render", async (importOriginal) =>
+	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
+);
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	const ignore = async () => undefined;
-	return {
-		...original,
-		onAbsenceRequestSubmitted: ignore,
-		onAbsenceRequestPendingApproval: ignore,
-		onAbsenceRequestApproved: ignore,
-		onAbsenceRequestRejected: ignore,
-		onApprovedAbsenceCancelledByEmployee: ignore,
-	};
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
+		"onAbsenceRequestSubmitted",
+		"onAbsenceRequestPendingApproval",
+		"onAbsenceRequestApproved",
+		"onAbsenceRequestRejected",
+		"onApprovedAbsenceCancelledByEmployee",
+	]),
+);
 
-vi.mock("@/lib/queue", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/queue")>()),
-	addCalendarSyncJob: async () => undefined,
-}));
+vi.mock("@/lib/queue", async (importOriginal) =>
+	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
+);
 
 vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/work-balance/service")>()),
@@ -136,11 +98,9 @@ vi.mock("@/lib/vault", async (importOriginal) => ({
 
 // The best-effort fast path only runs the owner sooner; recording the calls
 // keeps each test's delivery passes explicit and deterministic.
-vi.mock("@/lib/approvals/delivery/kick", () => ({
-	kickApprovalDelivery: (input: { organizationId: string; workflowId?: string | null }) => {
-		harness.kicks.push(input);
-	},
-}));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(harness.kicks),
+);
 
 const TELEGRAM_BOT_TOKEN = "294294294:AAT294-delivery_owner";
 
@@ -161,27 +121,6 @@ const { sendSlackNotification } = await import("@/lib/notifications/slack-channe
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const telegramConversations = await import("@/lib/telegram/conversation-manager");
 const { formatInstant } = await import("@/lib/datetime/temporal-format");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Slack approval delivery PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const SLACK_TEAM_ID = "T294TEAM";
 const MANAGER_SLACK_ID = "U294MANAGER";
@@ -242,8 +181,8 @@ function json(body: unknown, status = 200, headers: Record<string, string> = {})
 	});
 }
 
-describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("Slack approval delivery owner (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: ProviderCall[] = [];
 	let nextTs = 1_790_000_000;
 	let nextTelegramMessageId = 9400;
@@ -573,23 +512,6 @@ describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
 		return bot;
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Slack approval delivery PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -606,7 +528,6 @@ describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("sends one review-only card with the submitted facts and records its full identity", async () => {

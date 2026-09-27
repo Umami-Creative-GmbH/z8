@@ -1,5 +1,6 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { ValidationError } from "@/lib/effect/errors";
 import {
@@ -373,15 +374,7 @@ vi.mock("@/lib/approvals/workflow/runtime", async (importOriginal) => {
 								writeGate: {
 									acquire: async (scope: unknown) => (
 										mockState.acquireApprovalGate(scope),
-										{
-											mode: "legacy",
-											behavior: {
-												writeLegacy: true,
-												writeCanonical: false,
-												decideCanonical: false,
-												observation: "none",
-											},
-										}
+										approvalWriteGateResult("legacy")
 									),
 								},
 								compatibilityWriter,

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	type AbsenceApprovalSource,
@@ -13,11 +14,9 @@ import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-p
 import { buildAbsenceSubmittedFacts } from "../evidence/absence-facts";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import type { AbsenceSubmittedRevisionRecord } from "../evidence/store";
-import { getCutoverBehavior } from "./cutover";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalCommandResult,
-	ApprovalCutoverBehavior,
 	ApprovalEngineClock,
 	ApprovalMaterializedTransitionPlan,
 	ApprovalTransitionResultBuilder,
@@ -417,10 +416,7 @@ describe("approval transition engine receipt replay", () => {
 						writeGate: {
 							acquire: async () => {
 								calls.push("acquireGate");
-								return {
-									mode: "canonical",
-									behavior: getCutoverBehavior("canonical"),
-								};
+								return approvalWriteGateResult("canonical");
 							},
 						},
 						repository: {
@@ -642,10 +638,6 @@ function engineFixture(
 			| { kind: "system"; employeeId: null; userId: null };
 		cas?: "advanced" | "conflict";
 		mode?: ApprovalWorkflowLifecycleMode;
-		writeLegacy?: boolean;
-		writeCanonical?: boolean;
-		decideCanonical?: boolean;
-		mirror?: ApprovalCutoverBehavior["mirror"];
 		finalizerError?: Error;
 		transactionBoundFinalizer?: boolean;
 		projectionError?: Error;
@@ -828,19 +820,7 @@ function engineFixture(
 		writeGate: {
 			acquire: async () => {
 				calls.push("acquireGate");
-				const mode = options.mode ?? "canonical";
-				const behavior = getCutoverBehavior(mode);
-				return {
-					mode,
-					behavior: {
-						...behavior,
-						writeLegacy: options.writeLegacy ?? behavior.writeLegacy,
-						writeCanonical: options.writeCanonical ?? behavior.writeCanonical,
-						decideCanonical:
-							options.decideCanonical ?? behavior.decideCanonical,
-						mirror: options.mirror ?? behavior.mirror,
-					},
-				};
+				return approvalWriteGateResult(options.mode ?? "canonical");
 			},
 		},
 		repository: {
@@ -1785,10 +1765,7 @@ describe("approval transition engine atomic orchestration", () => {
 	});
 
 	it("orders source preflight, planning, CAS, materialization, terminal finalization, and durable writes", async () => {
-		const fixture = engineFixture({
-			writeLegacy: true,
-			mirror: "canonical_to_legacy",
-		});
+		const fixture = engineFixture({ mode: "canonical" });
 		await fixture.engine.execute(engineRequest());
 		expect(fixture.calls).toEqual([
 			"resolveActor",
@@ -1844,32 +1821,6 @@ describe("approval transition engine atomic orchestration", () => {
 		expect(fixture.calls).not.toContain("completeCommand");
 	});
 
-	it.each([
-		{ writeCanonical: false, decideCanonical: true },
-		{ writeCanonical: true, decideCanonical: false },
-	] as const)("fails closed before receipt claim when authority behavior is $writeCanonical/$decideCanonical", async ({
-		writeCanonical,
-		decideCanonical,
-	}) => {
-		const fixture = engineFixture({
-			mode: "canonical",
-			writeCanonical,
-			decideCanonical,
-		});
-
-		await expect(fixture.engine.execute(engineRequest())).rejects.toMatchObject(
-			{
-				code: "forbidden",
-				details: { field: "canonical_authority", mode: "canonical" },
-			},
-		);
-		expect(fixture.calls).toEqual([
-			"resolveActor",
-			"loadSnapshot",
-			"acquireGate",
-		]);
-	});
-
 	it("executes canonical authority and mirrors canonical to legacy exactly once", async () => {
 		const fixture = engineFixture({ mode: "canonical" });
 
@@ -1900,8 +1851,8 @@ describe("approval transition engine atomic orchestration", () => {
 		).toHaveLength(1);
 	});
 
-	it("does not invoke compatibility writes when the cutover gate disables mirroring", async () => {
-		const fixture = engineFixture({ writeLegacy: true, mirror: "none" });
+	it("does not invoke compatibility writes when the cutover gate disables compatibility writing", async () => {
+		const fixture = engineFixture({ mode: "complete" });
 
 		await fixture.engine.execute(engineRequest());
 
@@ -1996,7 +1947,7 @@ describe("approval transition engine atomic orchestration", () => {
 	])("rejects a result containing $description before durable writes", async ({
 		resultScope,
 	}) => {
-		const fixture = engineFixture({ resultScope, writeLegacy: true });
+		const fixture = engineFixture({ resultScope });
 		await expect(fixture.engine.execute(engineRequest())).rejects.toMatchObject(
 			{
 				code: "result_scope",

@@ -44,6 +44,14 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+// The rollout snapshot read, resolved through the real authority table.
+vi.mock("@/lib/approvals/authority", async () => {
+	const { resolveApprovalAuthority } = await import("@/lib/approvals/authority/resolution");
+	return {
+		readApprovalAuthoritySnapshot: async () =>
+			resolveApprovalAuthority((await dbMocks.approvalWorkflowRollouts())?.lifecycleMode),
+	};
+});
 vi.mock("@/db/auth-schema", () => ({ member: {} }));
 
 vi.mock("@/db/schema", () => ({

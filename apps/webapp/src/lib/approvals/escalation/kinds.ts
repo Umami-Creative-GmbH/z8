@@ -1,5 +1,5 @@
 import { TIME_APPROVAL_WORKFLOW_TYPES } from "../time-approval-kinds";
-import type { ApprovalCutoverBehavior, ApprovalWorkflowType } from "../workflow/ports";
+import type { ApprovalWorkflowType } from "../workflow/ports";
 
 /**
  * The approval kinds and authority modes escalation transfers (#298, #299,
@@ -103,10 +103,10 @@ export function isUntransferableEscalationRoute(value: unknown): boolean {
  */
 export function unsupportedCanonicalReplacementRoute(input: {
 	workflowType: CanonicalEscalationWorkflowType;
-	mirror: ApprovalCutoverBehavior["mirror"];
+	compatibilityWriting: boolean;
 	pendingSiblingCount: number;
 }): string | null {
-	if (input.mirror !== "canonical_to_legacy") {
+	if (!input.compatibilityWriting) {
 		return input.workflowType === "absence"
 			? "absence_inbox_requires_compatibility_mirror"
 			: "time_inbox_requires_compatibility_mirror";

@@ -88,6 +88,10 @@ export const CANONICAL_WRITE_OWNERS = {
 	"src/lib/approvals/delivery/intents.ts": {
 		approval_delivery_intent: ["insert"],
 	},
+	// The gated authority read inserts a missing rollout row as `legacy` (#474).
+	"src/lib/approvals/authority/gate.ts": {
+		approval_workflow_rollout: ["insert"],
+	},
 	// Immutable invocation association, inserted by the bound decision owner.
 	"src/lib/approvals/evidence/invocation.ts": {
 		approval_invocation: ["insert"],
@@ -113,9 +117,6 @@ export const CANONICAL_WRITE_OWNERS = {
 		approval_chain_stage_instance: ["insert", "update"],
 		approval_request: ["insert", "update", "delete"],
 		approval_workflow_stage: ["update"],
-	},
-	"src/lib/approvals/workflow/cutover.ts": {
-		approval_workflow_rollout: ["insert"],
 	},
 	// Pre-creates a new organization's legacy rollout rows in its creation
 	// transaction (#359), called from the coordinated organization hooks.

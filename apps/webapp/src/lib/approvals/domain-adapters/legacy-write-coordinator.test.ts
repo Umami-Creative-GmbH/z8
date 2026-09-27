@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalCompatibilityWriter } from "../workflow/compatibility-writer";
-import { getCutoverBehavior } from "../workflow/cutover";
 import type {
 	ApprovalEventActorIdentity,
 	ApprovalSourceIdentity,
@@ -55,7 +55,7 @@ function harness(mode: ApprovalWorkflowLifecycleMode) {
 		acquire: async (input) => {
 			timeline.push("gate");
 			gateInputs.push(input);
-			return { mode, behavior: getCutoverBehavior(mode) };
+			return approvalWriteGateResult(mode);
 		},
 	};
 	const compatibilityWriter = {
@@ -197,10 +197,7 @@ describe("legacy approval write coordinator", () => {
 		const test = harness("canonical");
 		const forgedInput = {
 			...test.input,
-			authoritySnapshot: {
-				mode: "legacy",
-				behavior: getCutoverBehavior("legacy"),
-			},
+			authoritySnapshot: approvalWriteGateResult("legacy"),
 		};
 
 		await expect(test.coordinator.execute(forgedInput)).rejects.toMatchObject({
@@ -604,7 +601,7 @@ describe("legacy approval write coordinator", () => {
 			writeGate: {
 				acquire: async () => {
 					test.timeline.push("gate");
-					return { mode: "shadow", behavior: getCutoverBehavior("shadow") };
+					return approvalWriteGateResult("shadow");
 				},
 			},
 			compatibilityWriter,
@@ -639,10 +636,7 @@ describe("legacy approval write coordinator", () => {
 				acquire: async () => {
 					timeline.push("gate");
 					if (failureAt === "gate") throw failure;
-					return {
-						mode: "shadow",
-						behavior: getCutoverBehavior("shadow"),
-					};
+					return approvalWriteGateResult("shadow");
 				},
 			},
 			compatibilityWriter: {

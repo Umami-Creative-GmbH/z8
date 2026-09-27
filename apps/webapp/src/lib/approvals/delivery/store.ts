@@ -18,6 +18,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { approvalAuthorityOf, approvalAuthoritySql } from "../authority";
 import type { ApprovalReviewReference } from "../presentation/review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import type { ApprovalWorkflowType } from "../workflow/ports";
@@ -74,7 +75,7 @@ export async function isApprovalDeliveryOwner(input: {
 			),
 		)
 		.limit(1);
-	return row?.mode === "canonical" || row?.mode === "complete";
+	return row !== undefined && approvalAuthorityOf(row.mode) === "canonical";
 }
 
 /**
@@ -230,7 +231,7 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 							), ${absenceRequestId}::uuid)`
 							: sql``
 					}
-					and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
+					and ${approvalAuthoritySql(sql`r.lifecycle_mode`, "legacy")}
 				limit 1
 			`),
 		);
@@ -280,7 +281,7 @@ async function isLegacyTimeCycleDeliveredByOwner(input: {
 					), request.id)
 					from unnest(${sql.param(input.requestIds)}::uuid[]) as request(id)
 				)
-				and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
+				and ${approvalAuthoritySql(sql`r.lifecycle_mode`, "legacy")}
 			limit 1
 		`),
 	);
@@ -1047,7 +1048,7 @@ async function expandCanonicalIntents(input: {
 				join approval_workflow_rollout r
 					on r.organization_id = o.organization_id
 					and r.workflow_type = w.workflow_type
-					and r.lifecycle_mode in ('canonical', 'complete')
+					and ${approvalAuthoritySql(sql`r.lifecycle_mode`, "canonical")}
 				where o.organization_id = ${input.organizationId}
 					and o.expansion_status = 'pending'
 					and o.event_type <> 'workflow.legacy_observed'
@@ -1124,7 +1125,7 @@ async function expandLegacyIntents(input: {
 				where i.organization_id = ${input.organizationId}
 					and i.expansion_status = 'pending'
 					-- Legacy lifecycles are owned only while the kind has legacy authority.
-					and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
+					and ${approvalAuthoritySql(sql`r.lifecycle_mode`, "legacy")}
 					and exists (
 						select 1 from approval_delivery_control c
 						where c.organization_id = i.organization_id

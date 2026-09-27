@@ -7,6 +7,7 @@ import {
 	employee,
 	workPeriod,
 } from "@/db/schema";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 
 const ids = {
 	organization: "10000000-0000-4000-8000-000000000001",
@@ -91,16 +92,7 @@ function createCanonicalHarness(input?: {
 	disposition?: "executed" | "replayed";
 }) {
 	const snapshot = workflow(input?.status);
-	const gate = vi.fn().mockResolvedValue({
-		mode: input?.mode ?? "canonical",
-		behavior: {
-			serveFrom: "canonical",
-			writeLegacy: input?.mode !== "complete",
-			writeCanonical: true,
-			decideCanonical: true,
-			mirror: input?.mode === "complete" ? "none" : "canonical_to_legacy",
-		},
-	});
+	const gate = vi.fn().mockResolvedValue(approvalWriteGateResult(input?.mode ?? "canonical"));
 	const context = {
 		dbService: {
 			db: {
@@ -430,16 +422,7 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 	const context = {
 		dbService: { db: database },
 		writeGate: {
-			acquire: vi.fn().mockResolvedValue({
-				mode,
-				behavior: {
-					serveFrom: "legacy",
-					writeLegacy: true,
-					writeCanonical: mode !== "legacy",
-					decideCanonical: false,
-					mirror: mode === "legacy" ? "none" : "legacy_to_canonical",
-				},
-			}),
+			acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 		},
 		repository: {
 			loadSnapshot: vi.fn().mockResolvedValue(workflow()),

@@ -3,13 +3,12 @@
  * Membership, provisioning and generic toggles cannot reopen ended employment.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureCommands } from "./commands";
 import { hasEndedEmploymentWithoutRehire } from "./employment-periods";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 } from "./testing/database.test.fixture";
 import type { DepartureClockOutPort, LifecycleActor } from "./types";
@@ -20,7 +19,7 @@ const clockOut: DepartureClockOutPort = {
 	},
 };
 
-describeLifecycleDatabase("employment projection guards", () => {
+describe("employment projection guards", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = parseInstant("2026-09-14T09:30:00Z");
 

@@ -2,16 +2,15 @@
  * PostgreSQL contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner owns, migrates, and removes the disposable database.
  */
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 } from "./testing/database.test.fixture";
 
 const cutoff = new Date("2026-09-15T00:00:00Z");
 
-describeLifecycleDatabase("employee lifecycle persistence constraints", () => {
+describe("employee lifecycle persistence constraints", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

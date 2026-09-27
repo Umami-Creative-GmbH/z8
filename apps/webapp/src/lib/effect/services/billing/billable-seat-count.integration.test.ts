@@ -3,11 +3,10 @@
  * One billable-seat definition shared by every billing entry point.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
@@ -15,7 +14,7 @@ import { countBillableSeats } from "./billable-seat-count";
 
 const NOW = parseInstant("2026-09-15T12:00:00Z");
 
-describeLifecycleDatabase("billable seat count", () => {
+describe("billable seat count", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

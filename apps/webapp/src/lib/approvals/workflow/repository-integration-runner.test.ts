@@ -76,8 +76,7 @@ describe("approval workflow repository integration runner", () => {
 			suites.indexOf("verify-approval-migration-recovery.ts"),
 		);
 		expect(suites).not.toContain(".integration.test.ts");
-		// The integration project's env owns these; the script must not fork them.
+		// The integration project's env owns it; the script must not fork it.
 		expect(suites).not.toContain("PGOPTIONS");
-		expect(suites).not.toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED");
 	});
 });

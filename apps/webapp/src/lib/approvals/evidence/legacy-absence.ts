@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 import {
 	type ApprovalPresentationProvider,
 	absenceEntry,
-	approvalWorkflowRollout,
 } from "@/db/schema";
 import {
 	type Instant,
@@ -45,28 +44,6 @@ import {
  * evidence and an operation receipt without creating canonical authority. The
  * legacy idempotency keys are stored exactly as the owners compute them.
  */
-
-/**
- * Whether absences are decided by legacy authority in the organization
- * (rollout `legacy`, `shadow`, `ready` or none). A legacy binding is issued and
- * decides only then, so it never decides under canonical authority (#384).
- */
-export async function hasLegacyAbsenceAuthority(
-	database: ApprovalDatabase,
-	organizationId: string,
-): Promise<boolean> {
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, organizationId),
-				eq(approvalWorkflowRollout.workflowType, "absence"),
-			),
-		)
-		.limit(1);
-	return rollout?.mode !== "canonical" && rollout?.mode !== "complete";
-}
 
 /**
  * Providers whose legacy absence cards may carry controls and whose presses

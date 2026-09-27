@@ -63,28 +63,28 @@ describe("admitted escalation kinds (#326)", () => {
 		expect(
 			unsupportedCanonicalReplacementRoute({
 				workflowType: "policy_clock_out",
-				mirror: "canonical_to_legacy",
+				compatibilityWriting: true,
 				pendingSiblingCount: 0,
 			}),
 		).toBeNull();
 		expect(
 			unsupportedCanonicalReplacementRoute({
 				workflowType: "time_correction",
-				mirror: "none",
+				compatibilityWriting: false,
 				pendingSiblingCount: 0,
 			}),
 		).toBe("time_inbox_requires_compatibility_mirror");
 		expect(
 			unsupportedCanonicalReplacementRoute({
 				workflowType: "absence",
-				mirror: "none",
+				compatibilityWriting: false,
 				pendingSiblingCount: 0,
 			}),
 		).toBe("absence_inbox_requires_compatibility_mirror");
 		expect(
 			unsupportedCanonicalReplacementRoute({
 				workflowType: "manual_time_submission",
-				mirror: "canonical_to_legacy",
+				compatibilityWriting: true,
 				pendingSiblingCount: 1,
 			}),
 		).toBe("parallel_assignments_without_replacement_inbox");

@@ -146,6 +146,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import type { ApprovalWriteGateResult } from "../authority";
 
 type CorrectionTimesResult =
 	| {
@@ -1522,7 +1523,7 @@ type AdoptedSubmissionContext = {
 async function recordAdoptedSubmission(
 	input: AdoptedSubmissionContext & {
 		correctionEntries: Array<typeof timeEntry.$inferSelect>;
-		authorityMode: string;
+		authority: ApprovalWriteGateResult;
 		result: { kind: string; approvalRequestId: string; chainInstanceId?: string | null };
 		submittedRevision: number;
 	},
@@ -1550,7 +1551,7 @@ async function recordAdoptedSubmission(
 		return endpoint ? requestedEndpoint(endpoint) : null;
 	};
 	const currentLocation = normalizeWorkLocationType(lockedPeriod.workLocationType);
-	const canonical = input.authorityMode === "canonical" || input.authorityMode === "complete";
+	const canonical = input.authority.authority === "canonical";
 	const [bound] = canonical
 		? []
 		: await scope.db
@@ -1573,8 +1574,9 @@ async function recordAdoptedSubmission(
 				authority: "legacy",
 				approvalRequestId: input.result.approvalRequestId,
 				chainInstanceId: input.result.chainInstanceId ?? null,
-				observedWorkflowId:
-					input.authorityMode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+				observedWorkflowId: input.authority.shadowMirroring
+					? (bound?.approvalWorkflowId ?? null)
+					: null,
 			};
 	const operationId = deriveTimeCorrectionOperationId({
 		organizationId: request.organizationId,
@@ -2016,8 +2018,7 @@ function submitCorrectionInTransaction(
 			}
 		}
 		if (evidenceFacts && result.disposition === "executed") {
-			const canonical =
-				work.authority.mode === "canonical" || work.authority.mode === "complete";
+			const canonical = work.authority.authority === "canonical";
 			const [bound] = await tx
 				.select({ approvalWorkflowId: workPeriod.approvalWorkflowId })
 				.from(workPeriod)
@@ -2049,16 +2050,16 @@ function submitCorrectionInTransaction(
 								"chainInstanceId" in result && typeof result.chainInstanceId === "string"
 									? result.chainInstanceId
 									: null,
-							observedWorkflowId:
-								work.authority.mode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+							observedWorkflowId: work.authority.shadowMirroring
+								? (bound?.approvalWorkflowId ?? null)
+								: null,
 							autoCompleted: result.kind === "auto_completed",
 						},
 			});
 		}
 		if (
 			result.disposition === "executed" &&
-			work.authority.mode !== "canonical" &&
-			work.authority.mode !== "complete" &&
+			work.authority.authority === "legacy" &&
 			(result.kind === "default_created" || result.kind === "chain_created")
 		) {
 			// The legacy cycle's first lifecycle intent, only while a delivery
@@ -2095,7 +2096,7 @@ function submitCorrectionInTransaction(
 				await recordAdoptedSubmission({
 					...receiptInput,
 					correctionEntries,
-					authorityMode: work.authority.mode,
+					authority: work.authority,
 					result,
 					submittedRevision,
 				});
