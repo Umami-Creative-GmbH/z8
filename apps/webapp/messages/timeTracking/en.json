@@ -82,7 +82,15 @@
       "clockInCollision": "This clock-in conflicts with an earlier request. Please refresh and try again.",
       "clockInAppendReview": "Your time history needs review before you can clock in. Please contact your administrator.",
       "clockInNotAllowed": "You cannot clock in.",
-      "clockInRetry": "Failed to clock in. Please try again."
+      "clockInRetry": "Failed to clock in. Please try again.",
+      "breakDurationInvalid": "Enter a break duration of at least 1 minute.",
+      "breakTooLong": "Break duration must be shorter than your current session.",
+      "holidayBlockedBreak": "Cannot resume work after a break on {holidayName}",
+      "breakOccupied": "The break overlaps other recorded work.",
+      "breakNotAllowed": "You cannot add a break to this work.",
+      "breakAwaitingApproval": "This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
+      "breakPendingCorrection": "A time correction approval is already pending for this work period. Add the break once it is resolved.",
+      "breakRetry": "Failed to add break. Please try again."
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",

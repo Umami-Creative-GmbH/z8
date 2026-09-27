@@ -54,7 +54,16 @@ export type ClockInBody = {
 	workLocationType: WorkLocationType;
 };
 
-export type ClockBody = ClockInBody | ClockOutBody;
+/**
+ * A break on the active work: it closes the work `breakMinutes` before the
+ * command's instant and resumes it at that instant.
+ */
+export type BreakBody = {
+	kind: "break";
+	breakMinutes: number;
+};
+
+export type ClockBody = ClockInBody | ClockOutBody | BreakBody;
 
 type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
@@ -71,7 +80,8 @@ type ClockCommandOf<Body extends ClockBody> = {
 
 export type ClockInCommand = ClockCommandOf<ClockInBody>;
 export type ClockOutCommand = ClockCommandOf<ClockOutBody>;
-export type ClockCommand = ClockInCommand | ClockOutCommand;
+export type BreakCommand = ClockCommandOf<BreakBody>;
+export type ClockCommand = ClockInCommand | ClockOutCommand | BreakCommand;
 
 /** Refusals every clock command can meet. */
 type SharedClockFailure =
@@ -100,8 +110,21 @@ export type ClockInFailure =
 	| "occupancy_conflict"
 	| "invalid_work_location";
 
+export type BreakFailure =
+	| SharedClockFailure
+	| "not_clocked_in"
+	| "invalid_break_duration"
+	/** The break would close the work at or before its start. */
+	| "invalid_interval"
+	/** Only the resumed half: a holiday never refuses closing work. */
+	| "holiday_blocked"
+	/** The active work has an unresolved approval or correction. */
+	| "under_review"
+	/** Other recorded work occupies the resumed interval. */
+	| "occupancy_conflict";
+
 /** One failure taxonomy; each adapter words every code. */
-export type ClockCommandFailure = ClockOutFailure | ClockInFailure;
+export type ClockCommandFailure = ClockOutFailure | ClockInFailure | BreakFailure;
 
 /** Refusals every clock command can meet, with their detail. */
 type SharedClockRefusal =
@@ -110,7 +133,11 @@ type SharedClockRefusal =
 	| { code: "append_review_required"; requirement: unknown }
 	| { code: "collision" | "failed" | "unconfirmed"; cause?: unknown };
 
-type DetailedClockFailure = SharedClockRefusal["code"] | "already_clocked_in" | "holiday_blocked";
+type DetailedClockFailure =
+	| SharedClockRefusal["code"]
+	| "already_clocked_in"
+	| "holiday_blocked"
+	| "under_review";
 
 export type ClockOutRefusal =
 	| SharedClockRefusal
@@ -123,7 +150,14 @@ export type ClockInRefusal =
 	| { code: "holiday_blocked"; holidayName?: string }
 	| { code: Exclude<ClockInFailure, DetailedClockFailure> };
 
-export type ClockRefusal = ClockInRefusal | ClockOutRefusal;
+export type BreakRefusal =
+	| SharedClockRefusal
+	| { code: "holiday_blocked"; holidayName?: string }
+	/** What the work waits for: its own approval, or a time correction. */
+	| { code: "under_review"; review: "approval" | "time_correction" }
+	| { code: Exclude<BreakFailure, DetailedClockFailure> };
+
+export type ClockRefusal = ClockInRefusal | ClockOutRefusal | BreakRefusal;
 
 export interface BreakAdjustmentInfo {
 	breakMinutes: number;
@@ -155,4 +189,14 @@ export type ClockInOutcome =
 	| { outcome: "executed" | "replayed"; result: ClockInResult }
 	| { outcome: "refused"; failure: ClockInRefusal };
 
-export type ClockOutcome = ClockInOutcome | ClockOutOutcome;
+/** The work a committed break resumed. */
+export type BreakResult = {
+	workPeriodId: string;
+	start: Instant;
+};
+
+export type BreakOutcome =
+	| { outcome: "executed" | "replayed"; result: BreakResult }
+	| { outcome: "refused"; failure: BreakRefusal };
+
+export type ClockOutcome = ClockInOutcome | ClockOutOutcome | BreakOutcome;

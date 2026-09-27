@@ -99,29 +99,11 @@ import type {
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
 
+/** The calendar's break; the Clocking module checks billing like every other break. */
 export async function addBreakToActiveSession(
 	breakMinutes: number,
 	actionContext?: AddBreakActionContext,
 ) {
-	const session = await getRequestSession();
-	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
-	}
-
-	const emp = await getCurrentEmployee();
-	if (!emp) {
-		return { success: false, error: "Employee profile not found" };
-	}
-
-	const billingAccess = await requireBillingForMutation(emp.organizationId);
-	if (!isBillingMutationAllowed(billingAccess)) {
-		return {
-			success: false,
-			error: "billing_required",
-			code: billingAccess.reason ?? "subscription_required",
-		};
-	}
-
 	return addBreakToActiveSessionAction(breakMinutes, actionContext);
 }
 

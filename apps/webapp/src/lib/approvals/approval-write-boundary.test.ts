@@ -5151,7 +5151,7 @@ db.delete(approvalOutbox);`,
 					uncertainty: "dynamic_payload",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions/clocking.ts": [
+			"src/lib/time-tracking/clocking/break.ts": [
 				{
 					columns: [
 						"approval_status",
@@ -5160,13 +5160,13 @@ db.delete(approvalOutbox);`,
 						"end_time",
 						"pending_changes",
 					],
-					functionName: "addLegacyBreak",
+					functionName: "takeLegacyBreak",
 					operation: "update",
 					table: "work_period",
 				},
 				{
 					columns: ["clock_in_id", "start_time"],
-					functionName: "addLegacyBreak",
+					functionName: "takeLegacyBreak",
 					operation: "insert",
 					table: "work_period",
 				},
