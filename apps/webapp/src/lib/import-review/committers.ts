@@ -20,13 +20,12 @@ import { calculateHash } from "@/lib/time-tracking/blockchain";
 import type { ImportedWorkHold } from "@/lib/time-tracking/imported-work-interval";
 import {
 	type ImportedWorkCommand,
-	importedWorkSourceKey,
 	recordImportedWork,
 	replayImportedWork,
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
-import { withReviewedImportTransaction } from "./import-work-transaction";
+import { reviewedImportRowRouting, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
 
@@ -595,25 +594,7 @@ async function commitSurcharge(
 	await markCommitted(database, row.id, job, "surcharge_model", created.id);
 }
 
-/** A reviewer's mapping change between routing and the claim restarts the row. */
-class ImportRowScopeChangedError extends Error {
-	constructor() {
-		super("Import row scope changed while committing");
-		this.name = "ImportRowScopeChangedError";
-	}
-}
-
-const WORK_ROW_ATTEMPTS = 3;
-
 type StagedRow = typeof importStagedRow.$inferSelect;
-
-function routedEmployeeId(row: StagedRow): string {
-	const employeeId = (row.normalizedPayload as Partial<WorkPeriodPayload>).employeeId;
-	if (typeof employeeId !== "string" || employeeId.length === 0) {
-		throw new Error("work_period import row requires a mapped employee before commit");
-	}
-	return employeeId;
-}
 
 async function getBatchProvider(job: ImportCommitJobData): Promise<ImportProvider> {
 	const batch = await db.query.importBatch.findFirst({
@@ -648,86 +629,60 @@ function importedWorkCommand(
 
 /**
  * Commits one reviewed work row inside the reviewed-import transaction (#284).
- * Routing reads the employee from the staged row; under protection the claimed
- * row must still route to it, otherwise the transaction rolls back and routing
- * restarts. Receipt replay runs first in every mode. Adopted organizations then
- * use the completed-work operation, which commits the whole graph or holds the
- * row with its evidence; the others keep the legacy writer.
+ * Routing reads the employee and source identity from the staged row; under
+ * protection the claimed row must still route there, otherwise a reviewer
+ * remapped it after routing and the attempt restarts. Receipt replay runs first
+ * in every mode. Adopted organizations then use the completed-work operation,
+ * which commits the whole graph or holds the row with its evidence; the others
+ * keep the legacy writer.
  */
-async function commitReviewedWorkRow(
-	routedRow: StagedRow,
+function commitReviewedWorkRow(
+	rowId: string,
 	job: ImportCommitJobData,
 	provider: ImportProvider,
 ): Promise<CommitRowOutcome> {
-	let row = routedRow;
-	for (let attempt = 1; ; attempt++) {
-		const employeeId = routedEmployeeId(row);
-		const command = importedWorkCommand(row, job, provider);
-		try {
-			return await withReviewedImportTransaction(
-				{
-					organizationId: job.organizationId,
-					employeeId,
-					importerUserId: job.committedBy,
-					sourceKey: importedWorkSourceKey(command.source),
-				},
-				async (scope): Promise<CommitRowOutcome> => {
-					const database = scope.db as CommitDb;
-					const claimed = await claimRow(database, row.id, job);
-					if (!claimed) return { status: "skipped" };
-					const claimedCommand = importedWorkCommand(claimed, job, provider);
-					if (
-						routedEmployeeId(claimed) !== employeeId ||
-						importedWorkSourceKey(claimedCommand.source) !== importedWorkSourceKey(command.source)
-					) {
-						throw new ImportRowScopeChangedError();
-					}
-					const scoped = { organizationId: job.organizationId, employeeId };
-					const outcome =
-						(await replayImportedWork(scope, { ...scoped, command: claimedCommand })) ??
-						(scope.admission === "append"
-							? await recordImportedWork(scope, {
-									...scoped,
-									importerUserId: job.committedBy,
-									command: claimedCommand,
-									now: systemClock.nowInstant(),
-								})
-							: null);
-					if (!outcome) {
-						await commitWorkPeriod(database, claimed, job);
-						return { status: "committed" };
-					}
-					if (outcome.kind === "held") return markHeld(database, claimed.id, job, outcome.hold);
-					await markCommitted(
-						database,
-						claimed.id,
-						job,
-						"work_period",
-						outcome.result.workPeriodId,
-					);
-					return { status: "committed" };
-				},
-			);
-		} catch (error) {
-			if (!(error instanceof ImportRowScopeChangedError) || attempt >= WORK_ROW_ATTEMPTS) {
-				throw error;
+	return withReviewedImportTransaction(
+		{
+			organizationId: job.organizationId,
+			batchId: job.batchId,
+			rowId,
+			provider,
+			importerUserId: job.committedBy,
+		},
+		async (scope): Promise<CommitRowOutcome> => {
+			const database = scope.db as CommitDb;
+			const claimed = await claimRow(database, rowId, job);
+			if (!claimed) return { status: "skipped" };
+			const routed = scope.route.snapshot;
+			const claimedRouting = reviewedImportRowRouting(claimed, provider);
+			if (
+				routed === null ||
+				claimedRouting.employeeId !== routed.employeeId ||
+				claimedRouting.sourceKey !== routed.sourceKey
+			) {
+				return scope.restart();
 			}
-			const [rerouted] = await db
-				.select()
-				.from(importStagedRow)
-				.where(
-					and(
-						eq(importStagedRow.id, row.id),
-						eq(importStagedRow.batchId, job.batchId),
-						eq(importStagedRow.organizationId, job.organizationId),
-						eq(importStagedRow.entityType, job.entityType),
-					),
-				)
-				.limit(1);
-			if (rerouted?.rowStatus !== "accepted") return { status: "skipped" };
-			row = rerouted;
-		}
-	}
+			const command = importedWorkCommand(claimed, job, provider);
+			const scoped = { organizationId: job.organizationId, employeeId: routed.employeeId };
+			const outcome =
+				(await replayImportedWork(scope, { ...scoped, command })) ??
+				(scope.admission === "append"
+					? await recordImportedWork(scope, {
+							...scoped,
+							importerUserId: job.committedBy,
+							command,
+							now: systemClock.nowInstant(),
+						})
+					: null);
+			if (!outcome) {
+				await commitWorkPeriod(database, claimed, job);
+				return { status: "committed" };
+			}
+			if (outcome.kind === "held") return markHeld(database, claimed.id, job, outcome.hold);
+			await markCommitted(database, claimed.id, job, "work_period", outcome.result.workPeriodId);
+			return { status: "committed" };
+		},
+	);
 }
 
 /**
@@ -778,7 +733,7 @@ export async function commitAcceptedRowsForEntity(
 
 		try {
 			const outcome = provider
-				? await commitReviewedWorkRow(row, job, provider)
+				? await commitReviewedWorkRow(row.id, job, provider)
 				: await db.transaction(async (tx): Promise<CommitRowOutcome> => {
 						if (MANUAL_DEPENDENCY_SETUP_ENTITIES.has(job.entityType)) {
 							await acquireExclusiveOrganizationConfigurationGuard(tx, job.organizationId);
