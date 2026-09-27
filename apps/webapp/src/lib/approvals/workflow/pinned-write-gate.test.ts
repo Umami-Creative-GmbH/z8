@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getCutoverBehavior } from "./cutover";
+import { approvalWriteGateResult } from "../authority";
 import {
 	ApprovalWriteGateScopeMismatch,
 	acquirePinnedApprovalContext,
@@ -8,10 +8,7 @@ import {
 } from "./pinned-write-gate";
 import type { ApprovalWriteGate, ApprovalWriteGateResult } from "./ports";
 
-const authority: ApprovalWriteGateResult = {
-	mode: "shadow",
-	behavior: getCutoverBehavior("shadow"),
-};
+const authority: ApprovalWriteGateResult = approvalWriteGateResult("shadow");
 
 function testContext() {
 	const acquire = vi.fn<ApprovalWriteGate["acquire"]>().mockResolvedValue(authority);

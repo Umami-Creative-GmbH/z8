@@ -9,7 +9,6 @@ import {
 	approvalReviewBinding,
 	approvalStageAssignment,
 	approvalSubmittedRevision,
-	approvalWorkflow,
 	employee,
 } from "@/db/schema";
 import {
@@ -569,80 +568,6 @@ export async function loadReviewBinding(
 		assignmentId: row.assignmentId,
 		submittedRevisionId: row.submittedRevisionId,
 	};
-}
-
-/**
- * Which authority a binding handle belongs to, so a card action reaches only
- * that authority's decision owner. Organization-scoped; null when unknown.
- */
-export async function loadReviewBindingAuthority(
-	database: ApprovalDatabase,
-	input: { organizationId: string; bindingId: string },
-): Promise<"canonical" | "legacy" | null> {
-	const rows = await database
-		.select({ authority: approvalReviewBinding.authority })
-		.from(approvalReviewBinding)
-		.where(
-			and(
-				eq(approvalReviewBinding.id, input.bindingId),
-				eq(approvalReviewBinding.organizationId, input.organizationId),
-			),
-		)
-		.limit(1);
-	const authority = rows[0]?.authority;
-	return authority === "canonical" || authority === "legacy" ? authority : null;
-}
-
-/**
- * The kind a binding decides, so a card action reaches that kind's decision
- * owner: the workflow's kind for a canonical binding (#325), the legacy
- * revision's kind for a legacy one (#384). Bindings and revisions are
- * immutable, so routing on them keeps exact replays intact. Organization-scoped;
- * null when unknown.
- */
-export async function loadReviewBindingWorkflowType(
-	database: ApprovalDatabase,
-	input: { organizationId: string; bindingId: string },
-): Promise<ApprovalWorkflowType | null> {
-	const canonical = await database
-		.select({ workflowType: approvalWorkflow.workflowType })
-		.from(approvalReviewBinding)
-		.innerJoin(
-			approvalWorkflow,
-			and(
-				eq(approvalWorkflow.id, approvalReviewBinding.workflowId),
-				eq(approvalWorkflow.organizationId, approvalReviewBinding.organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(approvalReviewBinding.id, input.bindingId),
-				eq(approvalReviewBinding.organizationId, input.organizationId),
-				eq(approvalReviewBinding.authority, "canonical"),
-			),
-		)
-		.limit(1);
-	if (canonical[0]) return canonical[0].workflowType;
-	const legacy = await database
-		.select({ workflowType: approvalSubmittedRevision.workflowType })
-		.from(approvalReviewBinding)
-		.innerJoin(
-			approvalSubmittedRevision,
-			and(
-				eq(approvalSubmittedRevision.id, approvalReviewBinding.submittedRevisionId),
-				eq(approvalSubmittedRevision.organizationId, approvalReviewBinding.organizationId),
-				eq(approvalSubmittedRevision.authority, "legacy"),
-			),
-		)
-		.where(
-			and(
-				eq(approvalReviewBinding.id, input.bindingId),
-				eq(approvalReviewBinding.organizationId, input.organizationId),
-				eq(approvalReviewBinding.authority, "legacy"),
-			),
-		)
-		.limit(1);
-	return legacy[0]?.workflowType ?? null;
 }
 
 /** Transaction-time check that a supplied handle names exactly this target. */

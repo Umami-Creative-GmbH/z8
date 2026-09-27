@@ -6,12 +6,12 @@ import {
 	absenceEntry,
 	approvalRequest,
 	approvalWorkflow,
-	approvalWorkflowRollout,
 	timeEntry,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 	workPeriod,
 } from "@/db/schema";
+import { readApprovalAuthoritySnapshot } from "@/lib/approvals/authority";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
 import { normalizeTimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { classifyTimeApprovalRequest } from "@/lib/approvals/time-request-kind";
@@ -151,12 +151,9 @@ async function loadSource(
 async function loadTimeCorrections(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestItem[]> {
-	const rollout = await db.query.approvalWorkflowRollout.findFirst({
-		where: and(
-			eq(approvalWorkflowRollout.organizationId, input.organizationId),
-			eq(approvalWorkflowRollout.workflowType, "time_correction"),
-		),
-		columns: { lifecycleMode: true },
+	const rollout = await readApprovalAuthoritySnapshot(db, {
+		organizationId: input.organizationId,
+		workflowType: "time_correction",
 	});
 	const legacyWorkflowIds = new Set<string>();
 	const legacyItems: SelfServiceRequestItem[] = [];
@@ -230,7 +227,9 @@ async function loadTimeCorrections(
 		if (rows.length < SOURCE_QUERY_LIMIT) break;
 	}
 
-	if (rollout?.lifecycleMode !== "complete") {
+	// Legacy requests hold every correction until canonical authority stops
+	// compatibility writing (`complete`).
+	if (rollout.authority === "legacy" || rollout.compatibilityWriting) {
 		return legacyItems;
 	}
 

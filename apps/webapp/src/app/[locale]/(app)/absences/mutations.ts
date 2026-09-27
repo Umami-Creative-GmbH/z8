@@ -630,13 +630,13 @@ export async function cancelAbsenceRequestForEmployee(
 				};
 				const cancelledAt = systemClock.nowInstant();
 				if (
-					(gate.mode === "shadow" || gate.mode === "ready") &&
+					gate.shadowMirroring &&
 					(!absence.approvalWorkflowId || !workflowRow)
 				) {
 					fail("Absence approval workflow link is missing");
 				}
 
-				if (gate.mode === "canonical" || gate.mode === "complete") {
+				if (gate.authority === "canonical") {
 					if (!absence.approvalWorkflowId || !workflowRow) {
 						fail("Absence approval workflow link is missing");
 					}
@@ -674,7 +674,7 @@ export async function cancelAbsenceRequestForEmployee(
 				}
 
 				let before: VerifiedLegacyApprovalState | undefined;
-				if (gate.mode === "shadow" || gate.mode === "ready") {
+				if (gate.shadowMirroring) {
 					before = await captureAbsenceLegacyApprovalState({
 						dbService: pinnedContext.dbService,
 						organizationId,

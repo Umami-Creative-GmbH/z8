@@ -7,6 +7,7 @@ import {
 	timeEntryAppendControl,
 	workPeriod,
 } from "@/db/schema";
+import { parseApprovalLifecycleMode } from "@/lib/approvals/authority";
 import { readApprovalEvidenceMode } from "@/lib/approvals/evidence/store";
 import { prepareTimeReviewEvidence } from "@/lib/approvals/presentation/time-review";
 import {
@@ -207,7 +208,7 @@ async function readApprovals(
 				select workflow_type, lifecycle_mode from approval_workflow_rollout
 				where organization_id = ${organizationId}
 			`),
-		).map((row) => [String(row.workflow_type), String(row.lifecycle_mode)]),
+		).map((row) => [String(row.workflow_type), parseApprovalLifecycleMode(row.lifecycle_mode)]),
 	);
 	const kinds: TimePilotApprovalKindEvidence[] = [];
 	for (const workflowType of TIME_APPROVAL_WORKFLOW_TYPES) {

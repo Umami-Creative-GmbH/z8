@@ -4,12 +4,9 @@ import { user } from "@/db/auth-schema";
 import {
 	approvalEscalationControl,
 	approvalEscalationPolicy,
-	approvalWorkflowRollout,
 	employee,
 } from "@/db/schema";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import { getCutoverBehavior } from "../workflow/cutover";
-import type { ApprovalWorkflowType } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { ApprovalStateMachineError } from "../workflow/state-machine";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
@@ -17,7 +14,7 @@ import type { EscalationPolicySnapshot } from "./deadline";
 
 /**
  * Shared machinery of the canonical and legacy escalation transfer paths:
- * fresh ownership and policy reads, discovery-time authority, the escalation
+ * fresh ownership and policy reads, the escalation
  * workflow runtime and transaction gate, and race classification.
  */
 
@@ -115,40 +112,6 @@ export function createEscalationRuntime(
 }
 
 export type EscalationRuntime = ReturnType<typeof createEscalationRuntime>;
-
-/**
- * Discovery-time authority of each kind: whether its rollout decides
- * canonically. The mode is re-read under the write gate inside every
- * transfer transaction, which is what actually decides. A missing row is
- * created as `legacy` by the write gate.
- */
-export async function readDecisionAuthorityForDiscovery(
-	executor: DatabaseTransaction | typeof db,
-	organizationId: string,
-	workflowTypes: readonly ApprovalWorkflowType[],
-): Promise<Map<ApprovalWorkflowType, "canonical" | "legacy">> {
-	const rows = await executor
-		.select({
-			workflowType: approvalWorkflowRollout.workflowType,
-			mode: approvalWorkflowRollout.lifecycleMode,
-		})
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, organizationId),
-				inArray(approvalWorkflowRollout.workflowType, [...workflowTypes]),
-			),
-		);
-	const modes = new Map(rows.map((row) => [row.workflowType, row.mode]));
-	return new Map(
-		workflowTypes.map((workflowType) => [
-			workflowType,
-			getCutoverBehavior(modes.get(workflowType) ?? "legacy").decideCanonical
-				? "canonical"
-				: "legacy",
-		]),
-	);
-}
 
 export function isTransitionRace(error: unknown): boolean {
 	return (

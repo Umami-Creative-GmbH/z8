@@ -819,9 +819,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				observed,
 			});
 		const legacyAuthority =
-			authority.mode === "legacy" ||
-			authority.mode === "shadow" ||
-			authority.mode === "ready";
+			authority.authority === "legacy";
 		if (input.bound && boundCommand) {
 			await admitFreshTimeInvocation(database, {
 				organizationId: input.organizationId,
@@ -832,7 +830,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			await assertTimeBindingAuthority(database, {
 				organizationId: input.organizationId,
 				bound: input.bound,
-				legacyAuthority,
+				gate: authority,
 			});
 			if (legacyAuthority) {
 				// A legacy binding names the exact legacy request and the current
@@ -858,7 +856,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		}
 		if (legacyAuthority) {
 			const observedWorkflow =
-				authority.mode === "legacy" || !period.approvalWorkflowId
+				!authority.shadowMirroring || !period.approvalWorkflowId
 					? null
 					: await context.repository.loadSnapshot({
 							organizationId: input.organizationId,
@@ -888,7 +886,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						),
 				);
 			const verifiedLegacyIntermediateReplay =
-				authority.mode === "legacy" &&
+				!authority.shadowMirroring &&
 				terminalRequestMatches &&
 				period.approvalStatus === "pending" &&
 				isVerifiedLegacyIntermediateReplay({
@@ -906,7 +904,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 					observedIntermediateReplay ||
 					(terminalRequestMatches &&
 						period.approvalStatus === expectedTerminalStatus &&
-						(authority.mode === "legacy" ||
+						(!authority.shadowMirroring ||
 							(observedIdentityMatches &&
 								observedWorkflow?.status === expectedTerminalStatus)))) &&
 				!(
@@ -946,7 +944,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			});
 			let expectedObservedVersion = observedWorkflow?.version ?? null;
 			let bootstrappedWorkflowId: string | null = null;
-			if (authority.mode !== "legacy" && !observedWorkflow) {
+			if (authority.shadowMirroring && !observedWorkflow) {
 				if (!verifiedLegacyState) {
 					throw new Error(ORDINARY_DECISION_ERROR);
 				}
@@ -1025,7 +1023,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				idempotencyKey: legacyIdempotencyKey,
 				expectedVersion: expectedObservedVersion,
 				captureState:
-					authority.mode === "legacy"
+					!authority.shadowMirroring
 						? undefined
 						: async () => {
 								captureCount += 1;

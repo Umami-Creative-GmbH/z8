@@ -18,9 +18,13 @@ vi.mock("@/lib/approvals/evidence/travel-expense-decision", () => ({
 	},
 	travelExpenseDecisionIdempotencyKey: () => "key",
 }));
-vi.mock("@/lib/approvals/workflow/cutover", () => ({
-	acquireApprovalWriteLock: async () => undefined,
-}));
+vi.mock("@/lib/approvals/authority", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/approvals/authority")>();
+	return {
+		...actual,
+		acquireApprovalWriteGate: async () => actual.approvalWriteGateResult("legacy"),
+	};
+});
 vi.mock("@/lib/approvals/delivery/intents", () => ({
 	recordLegacyDeliveryIntent: async () => false,
 }));

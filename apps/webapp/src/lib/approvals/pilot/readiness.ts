@@ -15,6 +15,7 @@ import {
 	travelExpenseClaim,
 	workPeriod,
 } from "@/db/schema";
+import { parseApprovalLifecycleMode, resolveApprovalAuthority } from "../authority";
 import { isCanonicalEscalationWorkflowType } from "../escalation/kinds";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import { LEGACY_ABSENCE_ACTIONABLE_PROVIDERS } from "../evidence/legacy-absence";
@@ -37,6 +38,7 @@ import {
 	TIME_APPROVAL_WORKFLOW_TYPES,
 	type TimeApprovalWorkflowType,
 } from "../time-approval-kinds";
+import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
 
 /**
  * Read-only readiness report for the approval card pilots: one organization's
@@ -270,14 +272,14 @@ async function loadLifecycleMode(
 	database: ApprovalDatabase,
 	organizationId: string,
 	workflowType: PilotWorkflowType,
-): Promise<string | null> {
+): Promise<ApprovalWorkflowLifecycleMode | null> {
 	const [row] = rows(
 		await database.execute(sql`
 			select lifecycle_mode from approval_workflow_rollout
 			where organization_id = ${organizationId} and workflow_type = ${workflowType}
 		`),
 	);
-	return typeof row?.lifecycle_mode === "string" ? row.lifecycle_mode : null;
+	return row?.lifecycle_mode == null ? null : parseApprovalLifecycleMode(row.lifecycle_mode);
 }
 
 /**
@@ -971,8 +973,8 @@ async function assess(
 	const combinations: PilotCombinationReadiness[] = [];
 	for (const workflowType of PILOT_WORKFLOW_TYPES) {
 		const lifecycleMode = await loadLifecycleMode(database, organizationId, workflowType);
-		const authority: PilotAuthority =
-			lifecycleMode === "canonical" || lifecycleMode === "complete" ? "canonical" : "legacy";
+		const rollout = resolveApprovalAuthority(lifecycleMode);
+		const authority: PilotAuthority = rollout.authority;
 		const evidenceMode = await readApprovalEvidenceMode(database, {
 			organizationId,
 			workflowType,
@@ -1003,7 +1005,7 @@ async function assess(
 				code: authority === "legacy" ? "authority_not_canonical" : "authority_not_legacy",
 				severity: "blocker",
 			});
-		} else if (authority === "canonical" && lifecycleMode === "complete") {
+		} else if (authority === "canonical" && !rollout.compatibilityWriting) {
 			// Presentation starts from the stage's compatibility request, which
 			// `complete` no longer writes: the owner's work becomes
 			// `unsupported_route` attention instead of a card.
@@ -1017,7 +1019,7 @@ async function assess(
 		if (pending.reviewOnly > 0) {
 			kindFindings.push({ code: "card_review_only", severity: "hold", count: pending.reviewOnly });
 		}
-		if (legacyAbsence && (lifecycleMode === "shadow" || lifecycleMode === "ready")) {
+		if (legacyAbsence && rollout.shadowMirroring) {
 			const chains = await countLegacyAbsenceChains(database, organizationId);
 			kindFindings.push({
 				code: "legacy_chain_mode_unverified",

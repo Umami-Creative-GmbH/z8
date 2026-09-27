@@ -486,7 +486,7 @@ export function createApprovalTransitionEngine(
 				workflowType: workflow.workflowType,
 			});
 			assertSnapshotScope(request, workflow);
-			if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+			if (gate.authority !== "canonical") {
 				throw engineError("forbidden", {
 					field: "canonical_authority",
 					mode: gate.mode,
@@ -842,7 +842,7 @@ export function createApprovalTransitionEngine(
 					finalization,
 				});
 			}
-			if (gate.behavior.mirror === "canonical_to_legacy") {
+			if (gate.compatibilityWriting) {
 				await context.compatibilityWriter
 					.withWriteGate(
 						pinApprovalWriteGate({

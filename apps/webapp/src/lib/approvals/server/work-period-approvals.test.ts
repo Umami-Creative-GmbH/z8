@@ -3,6 +3,7 @@ import { getTableName } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { approvalWriteGateResult } from "../authority";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import { createLegacyApprovalObservationPlanner } from "../workflow/legacy-observation-planner";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
@@ -566,7 +567,7 @@ describe("stable ordinary work-period decisions", () => {
 		const context = {
 			dbService: { db: transactionDb },
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({ mode }),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			compatibilityWriter: {
 				withWriteGate: vi.fn().mockReturnThis(),
@@ -733,7 +734,7 @@ describe("stable ordinary work-period decisions", () => {
 			});
 			const context = {
 				dbService: { db: dbService.db },
-				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 				compatibilityWriter: {
 					withWriteGate: vi.fn().mockReturnValue({
 						withWriteGate: vi.fn().mockReturnThis(),
@@ -859,7 +860,7 @@ describe("stable ordinary work-period decisions", () => {
 		const context = {
 			dbService: { db: dbService.db },
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({ mode: "legacy" }),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")),
 			},
 			compatibilityWriter: {
 				withWriteGate: vi.fn().mockReturnThis(),
@@ -954,7 +955,7 @@ describe("stable ordinary work-period decisions", () => {
 		});
 		const context = {
 			dbService: { db: dbService.db },
-			writeGate: { acquire: vi.fn().mockResolvedValue({ mode: "legacy" }) },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
 			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
 			repository: { loadSnapshot: vi.fn() },
 		};
@@ -1117,7 +1118,7 @@ describe("stable ordinary work-period decisions", () => {
 		const context = {
 			dbService: { db: dbService.db },
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({ mode }),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			compatibilityWriter,
 			repository: {
@@ -1265,7 +1266,7 @@ describe("stable ordinary work-period decisions", () => {
 			});
 			const context = {
 				dbService: { db: dbService.db },
-				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 				compatibilityWriter: {
 					withWriteGate: vi.fn().mockReturnValue({
 						withWriteGate: vi.fn().mockReturnThis(),
@@ -1358,7 +1359,7 @@ describe("stable ordinary work-period decisions", () => {
 		};
 		const context = {
 			dbService: { db: dbService.db },
-			writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 			compatibilityWriter,
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
@@ -1457,7 +1458,7 @@ describe("stable ordinary work-period decisions", () => {
 		}));
 		const context = {
 			dbService: { db: dbService.db },
-			writeGate: { acquire: vi.fn().mockResolvedValue({ mode: "legacy" }) },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
 			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
 			repository: { loadSnapshot: vi.fn() },
 		};

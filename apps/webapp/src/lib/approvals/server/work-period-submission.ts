@@ -805,8 +805,7 @@ function validatePendingOccupants(
 			canonical.workflowType !== input.kind ||
 			canonical.requesterEmployeeId !== input.requesterEmployeeId ||
 			canonical.id !== source.approvalWorkflowId ||
-			((authority.mode === "canonical" || authority.mode === "complete") &&
-				canonical.id !== expectedWorkflowId)
+			(authority.authority === "canonical" && canonical.id !== expectedWorkflowId)
 		) {
 			return fail();
 		}
@@ -839,7 +838,7 @@ function validatePendingOccupants(
 		) {
 			return fail();
 		}
-		if (authority.mode === "canonical" || authority.mode === "complete") {
+		if (authority.authority === "canonical") {
 			if (!canonical) return fail();
 			validateCompatibilityMetadata({
 				metadata: legacy.metadata,
@@ -1258,8 +1257,7 @@ async function resolveTerminalReplay(input: {
 	approverEmployeeId: string;
 } | null> {
 	if (input.source.approvalStatus === "pending") return null;
-	const canonicalAuthority =
-		input.authority.mode === "canonical" || input.authority.mode === "complete";
+	const canonicalAuthority = input.authority.authority === "canonical";
 	if (
 		(input.source.approvalStatus !== "approved" &&
 			input.source.approvalStatus !== "rejected") ||
@@ -1374,7 +1372,7 @@ async function resolveTerminalReplay(input: {
 				return fail();
 			}
 			const approvalRequestId =
-				input.authority.mode === "canonical"
+				input.authority.compatibilityWriting
 					? (
 							await resolveCanonicalCompatibilityRequest({
 								submission: input.submission,
@@ -1607,11 +1605,7 @@ function descriptor(input: {
 	maintenance: WorkPeriodMaintenanceFacts | null;
 }): WorkPeriodPostCommitDescriptor {
 	return Object.freeze({
-		disposition:
-			input.authority.mode === "canonical" ||
-			input.authority.mode === "complete"
-				? "observe"
-				: "dispatch",
+		disposition: input.authority.authority === "canonical" ? "observe" : "dispatch",
 		dedupeKey: `${input.submissionKey}:${input.result.kind}`,
 		event: input.result.kind === "auto_completed" ? "approved" : "pending",
 		organizationId: input.submission.organizationId,
@@ -1698,11 +1692,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		fail();
 	const historicalManualSubmission =
 		input.kind === "manual_time_submission" && markerDescriptor === undefined;
-	if (
-		historicalManualSubmission &&
-		(authority.mode === "canonical" || authority.mode === "complete")
-	)
-		fail();
+	if (historicalManualSubmission && authority.authority === "canonical") fail();
 	const breakPolicySnapshot =
 		input.kind === "policy_clock_out"
 			? policyClockOutBreakSnapshotFromPendingChanges(
@@ -1772,11 +1762,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 	);
 	const submitterUserId = input.submitterUserId ?? input.requesterUserId;
 
-	if (
-		authority.mode === "legacy" ||
-		authority.mode === "shadow" ||
-		authority.mode === "ready"
-	) {
+	if (authority.authority === "legacy") {
 		let created: ResolvePolicyAndCreateApprovalResult | null = null;
 		let observedWorkflowId: string | null = null;
 		let captureCount = 0;
@@ -2056,7 +2042,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 					activation: activationEvidence(terminalFinalized),
 				})
 			: null;
-	if (started.kind === "created" && authority.mode === "canonical") {
+	if (started.kind === "created" && authority.compatibilityWriting) {
 		await context.compatibilityWriter.mirrorCanonicalToLegacy({
 			result: {
 				snapshot: started.snapshot,
@@ -2070,7 +2056,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		.flatMap((stage) => stage.assignments)
 		.find((assignment) => assignment.status === "pending");
 	const canonicalCompatibility =
-		authority.mode === "canonical" && !started.terminal
+		authority.compatibilityWriting && !started.terminal
 			? await resolveCanonicalCompatibilityRequest({
 					submission: input,
 					snapshot: started.snapshot,

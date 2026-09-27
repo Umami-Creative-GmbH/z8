@@ -3881,11 +3881,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			workflowType: "time_correction",
 		});
 
-	if (
-		authority.mode === "legacy" ||
-		authority.mode === "shadow" ||
-		authority.mode === "ready"
-	) {
+	if (authority.authority === "legacy") {
 		if (input.submissionId) {
 			const cycleRequests =
 				await input.dbService.db.query.approvalRequest.findMany({
@@ -4275,7 +4271,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			workflowId: replaySnapshot.id,
 		});
 		const compatibilityId =
-			authority.mode === "canonical"
+			authority.compatibilityWriting
 				? await resolveOriginalTimeCorrectionCompatibilityApprovalId({
 						dbService: input.dbService,
 						organizationId: input.organizationId,
@@ -4289,7 +4285,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const approvalRequestId =
 			compatibilityId ??
 			originalHumanStage?.legacyApprovalRequestId ??
-			(authority.mode === "canonical" ? originalHumanStage?.id : null) ??
+			(authority.compatibilityWriting ? originalHumanStage?.id : null) ??
 			originalHumanStage?.assignments.at(0)?.id ??
 			replaySnapshot.id;
 		if (evidence.resultKind === "auto_completed") {
@@ -4425,7 +4421,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			};
 		},
 	});
-	if (started.kind === "created" && authority.mode === "canonical") {
+	if (started.kind === "created" && authority.compatibilityWriting) {
 		await transactionContext.compatibilityWriter.mirrorCanonicalToLegacy({
 			result: {
 				snapshot: started.snapshot,
@@ -4436,7 +4432,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		});
 	}
 	const compatibilityId =
-		authority.mode === "canonical"
+		authority.compatibilityWriting
 			? await resolveTimeCorrectionCompatibilityApprovalId({
 					dbService: input.dbService,
 					organizationId: input.organizationId,
@@ -4981,9 +4977,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			const context = work.context;
 			const authority = work.authority;
 			const legacyAuthority =
-				authority.mode === "legacy" ||
-				authority.mode === "shadow" ||
-				authority.mode === "ready";
+				authority.authority === "legacy";
 			if (input.bound && boundCommand) {
 				await admitFreshTimeInvocation(transactionDb, {
 					organizationId: input.organizationId,
@@ -4994,7 +4988,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				await assertTimeBindingAuthority(transactionDb, {
 					organizationId: input.organizationId,
 					bound: input.bound,
-					legacyAuthority,
+					gate: authority,
 				});
 				if (legacyAuthority) {
 					// A legacy binding names the exact legacy request and the current
@@ -5073,16 +5067,14 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					input.nowInstant ?? (() => systemClock.nowInstant())
 				)();
 				const observedWorkflow =
-					authority.mode === "legacy"
-						? null
-						: period.approvalWorkflowId
-							? await context.repository.loadSnapshot({
-									organizationId: input.organizationId,
-									workflowId: period.approvalWorkflowId,
-								})
-							: null;
+					authority.shadowMirroring && period.approvalWorkflowId
+						? await context.repository.loadSnapshot({
+								organizationId: input.organizationId,
+								workflowId: period.approvalWorkflowId,
+							})
+						: null;
 				if (
-					authority.mode !== "legacy" &&
+					authority.shadowMirroring &&
 					(!observedWorkflow ||
 						observedWorkflow.organizationId !== input.organizationId ||
 						observedWorkflow.workflowType !== "time_correction" ||

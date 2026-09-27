@@ -175,20 +175,15 @@ export async function cancelPendingTimeCorrection(
 				throw new Error("Time correction cancellation is unavailable");
 			}
 			const gate = work.authority;
-			if (
-				gate.mode === "legacy" ||
-				gate.mode === "shadow" ||
-				gate.mode === "ready"
-			) {
-				const observedWorkflow =
-					gate.mode === "legacy"
-						? null
-						: await loadCancellationWorkflow(
-								context,
-								input,
-								lockedPeriod.approvalWorkflowId,
-								true,
-							);
+			if (gate.authority === "legacy") {
+				const observedWorkflow = gate.shadowMirroring
+					? await loadCancellationWorkflow(
+							context,
+							input,
+							lockedPeriod.approvalWorkflowId,
+							true,
+						)
+					: null;
 				const capturedAt = systemClock.nowInstant();
 				const cancelledAt = instantToDB(capturedAt);
 				if (!cancelledAt) {
@@ -355,7 +350,7 @@ export async function cancelPendingTimeCorrection(
 						});
 					},
 				});
-				if (gate.mode === "legacy") {
+				if (!gate.shadowMirroring) {
 					await deleteCancelledTimeCorrectionsInTransaction({
 						dbService: context.dbService as never,
 						organizationId: input.organizationId,

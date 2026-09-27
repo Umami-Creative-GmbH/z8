@@ -12,6 +12,7 @@ import {
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import { readApprovalAuthoritySnapshot } from "../authority";
 import {
 	type ApprovalActionableCard,
 	type ApprovalCardDraft,
@@ -21,8 +22,7 @@ import {
 	prepareBoundAbsenceCard,
 	prepareBoundLegacyAbsenceCard,
 } from "./bound-card";
-import { hasLegacyAbsenceAuthority } from "../evidence/legacy-absence";
-import { isLegacyTimeAuthorityRequest } from "../evidence/legacy-time";
+import { readTimeRequestAuthority } from "../evidence/legacy-time";
 import { approvalReviewUrl } from "./review-navigation";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import {
@@ -89,16 +89,21 @@ export async function prepareApprovalPresentation(input: {
 	// (#384).
 	const legacyAbsence =
 		request.entityType === "absence_entry" &&
-		(await hasLegacyAbsenceAuthority(db, input.organizationId));
+		(
+			await readApprovalAuthoritySnapshot(db, {
+				organizationId: input.organizationId,
+				workflowType: "absence",
+			})
+		).authority === "legacy";
 	// Likewise for a time request whose cycle has a legacy revision of a kind
 	// with legacy authority (#432).
 	const legacyTime =
 		Boolean(input.provider) &&
 		request.entityType === "time_entry" &&
-		(await isLegacyTimeAuthorityRequest(db, {
+		(await readTimeRequestAuthority(db, {
 			organizationId: input.organizationId,
 			approvalRequestId: request.id,
-		}));
+		})) === "legacy";
 	// A compatibility representative is not proof that its former assignee
 	// still owns the current canonical stage. Never broaden this into management
 	// authority merely because the recipient also happens to be a manager.

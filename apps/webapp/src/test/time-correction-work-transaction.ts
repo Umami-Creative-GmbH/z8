@@ -10,8 +10,8 @@
  *     await importOriginal(),
  *   ));
  */
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type * as Coordinator from "@/lib/approvals/server/time-correction-work-transaction";
-import { getCutoverBehavior } from "@/lib/approvals/workflow/cutover";
 import {
 	acquirePinnedApprovalContext,
 	pinApprovalWriteGate,
@@ -31,7 +31,7 @@ export function legacyTimeCorrectionWorkTransaction(
 			});
 			// Suites that stub the whole submission owner build no approval gate.
 			if (!context.writeGate) {
-				const authority = { mode: "legacy" as const, behavior: getCutoverBehavior("legacy") };
+				const authority = approvalWriteGateResult("legacy");
 				const writeGate = pinApprovalWriteGate({
 					organizationId: route.organizationId,
 					workflowType: "time_correction",
