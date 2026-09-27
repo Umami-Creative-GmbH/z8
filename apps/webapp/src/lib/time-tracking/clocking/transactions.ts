@@ -10,7 +10,7 @@ import {
 	type WorkTransactionContext,
 	withWebClockOutTransaction,
 } from "../web-clock-out-transaction";
-import type { WorkTransactionScope } from "../work-transaction";
+import type { SealedWorkTransactionScope } from "../work-transaction";
 
 /**
  * The transactions port. The coordinated adapter owns the work transaction; the
@@ -25,7 +25,7 @@ export interface ClockTransactions {
 	/** A start's work transaction; starts have no approval participation. */
 	start<T>(
 		scope: WebClockInTransactionInput,
-		operation: (scope: WorkTransactionScope) => Promise<T>,
+		operation: (scope: SealedWorkTransactionScope) => Promise<T>,
 	): Promise<T>;
 }
 

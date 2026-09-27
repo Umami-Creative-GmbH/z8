@@ -178,7 +178,7 @@ export async function findStandingStart(
  * occupies its start onward.
  */
 export async function findLiveWorkOccupant(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	scope: { organizationId: string; employeeId: string },
 	startAt: Date,
 ): Promise<"active_work" | "completed_work" | null> {

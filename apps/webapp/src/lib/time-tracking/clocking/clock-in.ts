@@ -24,7 +24,7 @@ import {
 	startLiveWork,
 } from "../start-live-work";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
-import type { WorkTransactionScope } from "../work-transaction";
+import type { SealedWorkTransactionScope } from "../work-transaction";
 import type { ClockInCommand, ClockInRefusal, ClockInResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -78,7 +78,7 @@ export function planClockIn(command: ClockInCommand, employee: Employee): ClockI
  * a foreign entry with the ID only makes the start's own insert fail.
  */
 async function replayLegacyClockIn(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	plan: ClockInPlan,
 ): Promise<ClockInResult | null> {
 	const { command, employee } = plan;
@@ -126,7 +126,7 @@ async function replayLegacyClockIn(
  * matcher in every admission, so a later admission change still replays exactly.
  */
 export async function replayClockIn(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	plan: ClockInPlan,
 ): Promise<ClockInResult | null> {
 	const receipt = await replayStartLiveWork(scope, {
@@ -146,7 +146,7 @@ export async function replayClockIn(
  * refuse the start under both admissions.
  */
 export async function startClockIn(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: {
 		plan: ClockInPlan;
 		replayable: boolean;
