@@ -46,8 +46,8 @@ export interface BotCommandContext {
 	platformUserId: string;
 	/**
 	 * The platform's ID for this invocation, the same on every redelivery of it:
-	 * the Discord interaction ID, or the Telegram bot and update IDs. Absent where
-	 * the platform has none (Slack, Teams).
+	 * the Discord interaction ID, the Telegram bot and update IDs, or the Teams
+	 * conversation and activity IDs. Absent where the platform has none (Slack).
 	 */
 	invocationId?: string;
 	config: PlatformConfig;

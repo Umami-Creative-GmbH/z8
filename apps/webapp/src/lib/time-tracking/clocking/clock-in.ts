@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 import { type employee, timeEntry, workPeriod } from "@/db/schema";
 import {
+	compareInstants,
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
@@ -72,8 +73,9 @@ export function planClockIn(command: ClockInCommand, employee: Employee): ClockI
 
 /**
  * A receipt-less start committed under this identity by the legacy writer, whose
- * clock-in entry takes the operation ID. Operation IDs are global entry keys, so
- * any other use of the ID, or a different start, is a collision.
+ * clock-in entry takes the operation ID. Another entry of the employee under the
+ * ID, or a different start, is a collision. The read stays in the organization:
+ * a foreign entry with the ID only makes the start's own insert fail.
  */
 async function replayLegacyClockIn(
 	scope: WorkTransactionScope,
@@ -83,7 +85,13 @@ async function replayLegacyClockIn(
 	const [entry] = await scope.db
 		.select()
 		.from(timeEntry)
-		.where(eq(timeEntry.id, command.identity.id))
+		.where(
+			and(
+				eq(timeEntry.id, command.identity.id),
+				eq(timeEntry.organizationId, employee.organizationId),
+				eq(timeEntry.employeeId, employee.id),
+			),
+		)
 		.limit(1);
 	if (!entry) return null;
 	const [period] = await scope.db
@@ -97,14 +105,13 @@ async function replayLegacyClockIn(
 			),
 		)
 		.limit(1);
-	const requested = command.at.kind === "occurred" ? dateFromInstant(command.at.instant) : null;
+	const { at } = command;
 	if (
-		entry.organizationId !== employee.organizationId ||
-		entry.employeeId !== employee.id ||
 		entry.type !== "clock_in" ||
 		entry.isSuperseded ||
 		entry.deviceInfo !== command.channel ||
-		(requested !== null && entry.timestamp.getTime() !== requested.getTime()) ||
+		(at.kind === "occurred" &&
+			compareInstants(instantFromDate(entry.timestamp), at.instant) !== 0) ||
 		!period ||
 		period.deletedAt !== null ||
 		period.workLocationType !== command.body.workLocationType
@@ -135,8 +142,8 @@ export async function replayClockIn(
 /**
  * Starts live work inside the work transaction, through the admission's writer.
  * Replayable identities re-check replay first, since a matching command may have
- * committed after the first replay read. Active work and completed-work
- * occupancy refuse the start under both admissions.
+ * committed after the first replay read. Live work and completed-work occupancy
+ * refuse the start under both admissions.
  */
 export async function startClockIn(
 	scope: WorkTransactionScope,
@@ -153,7 +160,7 @@ export async function startClockIn(
 		const replay = await replayClockIn(scope, plan);
 		if (replay) return { disposition: "replayed", entry: replay };
 	}
-	const [active] = await scope.db
+	const [live] = await scope.db
 		.select({ startTime: workPeriod.startTime })
 		.from(workPeriod)
 		.where(
@@ -164,10 +171,10 @@ export async function startClockIn(
 			),
 		)
 		.limit(1);
-	if (active) {
+	if (live) {
 		return {
 			disposition: "refused",
-			refusal: { code: "already_clocked_in", since: instantFromDate(active.startTime) },
+			refusal: { code: "already_clocked_in", since: instantFromDate(live.startTime) },
 		};
 	}
 	const scopeIds = { organizationId: employee.organizationId, employeeId: employee.id };

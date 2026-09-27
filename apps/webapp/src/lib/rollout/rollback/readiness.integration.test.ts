@@ -489,8 +489,9 @@ describe("rollback readiness on PostgreSQL", () => {
 			rows: 1,
 			limits: "schema",
 		});
-		// Adopted receipts need a release that can replay them.
-		expect(report.floor.release).toBe("0083_completed_work_operation");
+		// Adopted receipts need a release that can replay them; clock-ins keep
+		// start receipts (#479).
+		expect(report.floor.release).toBe("0084_direct_clock_commands");
 	});
 
 	it("returning append to inactive keeps positions and receipts but reopens legacy writers", async () => {

@@ -270,8 +270,9 @@ async function send(
 			await handleBotActivity({
 				activity: {
 					type: "message",
+					id: `activity-${invocation}`,
 					text: command,
-					conversation: { tenantId: ids.teamsTenant },
+					conversation: { id: "a:t277-conversation", tenantId: ids.teamsTenant },
 					from: { aadObjectId: ids.platformUser, name: "Requester" },
 				},
 				sendActivity: async (message: unknown) => {
@@ -773,7 +774,7 @@ describe("bot clocking through the shared clock commands on PostgreSQL", () => {
 		},
 	);
 
-	it.each(["telegram", "discord"] as const)(
+	it.each(["telegram", "discord", "teams"] as const)(
 		"%s replays a redelivered invocation instead of clocking again",
 		async (platform) => {
 			await setAdmission("inactive");

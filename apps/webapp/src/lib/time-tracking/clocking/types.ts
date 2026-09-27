@@ -56,7 +56,7 @@ export type ClockInBody = {
 
 export type ClockBody = ClockInBody | ClockOutBody;
 
-export type ClockCommand<Body extends ClockBody = ClockBody> = {
+type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
 	principal: ClockPrincipal;
 	/** The employee whose live work changes. */
@@ -69,8 +69,9 @@ export type ClockCommand<Body extends ClockBody = ClockBody> = {
 	body: Body;
 };
 
-export type ClockInCommand = ClockCommand<ClockInBody>;
-export type ClockOutCommand = ClockCommand<ClockOutBody>;
+export type ClockInCommand = ClockCommandOf<ClockInBody>;
+export type ClockOutCommand = ClockCommandOf<ClockOutBody>;
+export type ClockCommand = ClockInCommand | ClockOutCommand;
 
 /** Refusals every clock command can meet. */
 type SharedClockFailure =

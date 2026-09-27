@@ -54,6 +54,7 @@ import type {
 	ClockInOutcome,
 	ClockInRefusal,
 	ClockOutCommand,
+	ClockOutcome,
 	ClockOutOutcome,
 	ClockOutRefusal,
 	ClockRefusal,
@@ -81,11 +82,12 @@ export type Clocking = {
 	/** Runs one clock command to an executed, replayed or refused outcome. */
 	run(command: ClockInCommand): Promise<ClockInOutcome>;
 	run(command: ClockOutCommand): Promise<ClockOutOutcome>;
+	run(command: ClockCommand): Promise<ClockOutcome>;
 	/** The committed receipt of an operation identity, without running anything. */
 	lookup(query: ClockLookupQuery): Promise<ClockLookup>;
 };
 
-type Subject = typeof employee.$inferSelect;
+type Employee = typeof employee.$inferSelect;
 
 /** Client and derived identities name one attempt across retries; server ones never replay. */
 function isReplayable(identity: OperationIdentity) {
@@ -232,11 +234,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			);
 			return result ? { outcome: "replayed", result } : null;
 		} catch (error) {
-			return refused(
-				error instanceof CompletedWorkCollisionError
-					? { code: "collision", cause: error }
-					: { code: "failed", cause: error },
-			);
+			// A collision reads the same as in the start's own replay; anything else failed.
+			const refusal = startRefusal(error);
+			return refused(refusal.code === "collision" ? refusal : { code: "failed", cause: error });
 		}
 	}
 
@@ -356,7 +356,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		};
 	}
 
-	async function runClockOut(command: ClockOutCommand, subject: Subject) {
+	async function runClockOut(command: ClockOutCommand, subject: Employee) {
 		const plan = planClockOut(command, subject);
 		const replayable = isReplayable(command.identity);
 		if (replayable) {
@@ -376,7 +376,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	 * Start steps after committed replay. Active work and occupancy are read inside
 	 * the work transaction, after its own replay, so a matching commit replays there.
 	 */
-	async function runClockIn(command: ClockInCommand, subject: Subject): Promise<ClockInOutcome> {
+	async function runClockIn(command: ClockInCommand, subject: Employee): Promise<ClockInOutcome> {
 		const plan = planClockIn(command, subject);
 		const replayable = isReplayable(command.identity);
 		if (replayable) {
@@ -428,9 +428,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				reason: billing.reason ?? "subscription_required",
 			});
 		}
-		return isClockIn(command)
-			? runClockIn(command, subject)
-			: runClockOut(command as ClockOutCommand, subject);
+		return isClockIn(command) ? runClockIn(command, subject) : runClockOut(command, subject);
 	}
 
 	return {

@@ -214,7 +214,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			return postClockIn({
 				workLocationType: params?.workLocationType,
 				browserTimezone: resolveBrowserTimezone(params),
-				submissionId: params?.submissionId as string,
+				// Named here if the connection returned after the request was prepared.
+				submissionId: params?.submissionId ?? crypto.randomUUID(),
 			});
 		},
 		onSuccess: (result) => {
