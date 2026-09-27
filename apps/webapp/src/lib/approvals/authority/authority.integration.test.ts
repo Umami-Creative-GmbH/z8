@@ -1,7 +1,7 @@
 /**
  * #474 runtime evidence for the approval authority module against PostgreSQL.
  *
- * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
+ * Local contract: pnpm --filter webapp test:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
  * The gated read, the snapshot read, the review-binding read and the SQL
@@ -10,21 +10,14 @@
 
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import * as authSchema from "@/db/auth-schema";
-import { configurePostgresUtcTypes, withUtcPostgresSession } from "@/db/postgres-utc";
-import * as schema from "@/db/schema";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { db } from "@/db";
 import { ApprovalEvidenceError } from "@/lib/approvals/evidence/errors";
 import type {
 	ApprovalWorkflowLifecycleMode,
 	ApprovalWorkflowType,
 } from "@/lib/approvals/workflow/ports";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 import {
 	acquireApprovalWriteGate,
 	approvalAuthorityOf,
@@ -36,29 +29,6 @@ import {
 	readApprovalAuthoritySnapshots,
 	readReviewBindingAuthority,
 } from ".";
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`approval authority PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the disposable PostgreSQL runner", () => undefined);
-	});
-}
-
-configurePostgresUtcTypes();
 
 const ids = {
 	organization: "t474-authority",
@@ -87,15 +57,8 @@ const MODE_BY_KIND: ReadonlyArray<[ApprovalWorkflowType, ApprovalWorkflowLifecyc
 	["shift_request", null],
 ];
 
-describeIntegration("approval authority on PostgreSQL", () => {
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString: databaseUrl ?? "postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 4,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	const admin = new Pool(withUtcPostgresSession({ connectionString: databaseUrl, max: 2 }));
+describe("approval authority on PostgreSQL", () => {
+	const admin = integrationAdminPool();
 	const timestamp = new Date("2026-09-27T08:00:00Z");
 
 	async function cleanup() {
@@ -250,33 +213,12 @@ describeIntegration("approval authority on PostgreSQL", () => {
 		}
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Approval authority PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		await cleanup();
 		await seedOrganizations();
 	});
 
-	afterAll(async () => {
-		await cleanup();
-		await pool.end();
-		await admin.end();
-	});
+	afterAll(cleanup);
 
 	describe("gated read", () => {
 		it("takes the shared rollout lock and inserts the legacy row when none exists", async () => {
