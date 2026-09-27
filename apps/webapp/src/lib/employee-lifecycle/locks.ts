@@ -9,8 +9,8 @@ import {
 import type { LifecycleClient } from "./types";
 
 /**
- * Lock order for lifecycle transitions follows the acquisition protocol (#264,
- * #477): exclusive configuration/access protection of the employee's user
+ * Lifecycle transitions take their guards in the acquisition protocol's rank
+ * order (#264, #477): exclusive configuration/access protection of the employee's user
  * (#313: transitions change access and active state, which manual creation
  * reads under the shared counterpart), then the employee key (the canonical
  * clocking key), then the organization row, then scoped rows. A departure runs
@@ -37,7 +37,7 @@ export async function lockLifecycleScope(
 	await lockLifecycleOrganization(tx, organizationId);
 }
 
-/** The user whose configuration and access a transition of the employee changes. */
+/** The users (at most one) whose configuration and access the employee's transition changes. */
 export async function lifecycleUserIds(
 	tx: Pick<LifecycleClient, "select">,
 	organizationId: string,

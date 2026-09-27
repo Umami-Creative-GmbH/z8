@@ -14,4 +14,4 @@ Every writer of time data takes its guards in one rank order (adoption gate, app
 ## Consequences
 
 - A mistake in the order refuses a live write (for example a clock-out) instead of risking a deadlock or an adoption interleaving. This is the same fail-closed stance the codebase takes for uncoordinated writers in adopted organizations.
-- Raw-SQL guard takers outside the coordinator (the legacy manual replay, and the policy clock-out terminal break fallback) are invisible to the ledger. They are listed as known limits until they retire.
+- Raw-SQL guard takers outside the coordinator (the legacy manual replay) are invisible to the ledger. They are listed as known limits until they retire. The policy clock-out terminal break fallback records its employee key through `holdGuard` since #492, but still takes its ownership key unrecorded.

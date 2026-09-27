@@ -7,7 +7,7 @@ import type {
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
 
 export type LifecycleTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-/** The client of a lifecycle transaction, including a departure's coordinated one. */
+/** The client of a lifecycle transaction, including a departure work transaction's. */
 export type LifecycleClient = WorkTransactionClient;
 /** The sealed scope of a departure work transaction (`departure-transaction.ts`). */
 export type DepartureScope = WorkTransactionScope;
