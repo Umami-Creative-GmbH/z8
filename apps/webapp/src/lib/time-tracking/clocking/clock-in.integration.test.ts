@@ -1,12 +1,12 @@
 /**
- * The Clocking module's clock-out, through `run` only (#478): legacy and append
+ * The Clocking module's clock-in, through `run` only (#479): legacy and append
  * admission × client, derived and server operation identities.
  *
  * Local contract: pnpm --filter webapp test:integration
  *
- * Live work is started through the real web clock-in. The work transactions are
- * the real coordinated adapter, and follow-ups are recorded. Only billing
- * provisioning and the Next request/cache boundaries are replaced.
+ * The work transactions are the real coordinated adapter, and follow-ups are
+ * recorded. Only billing provisioning and the Next request/cache boundaries are
+ * replaced.
  */
 
 import { randomUUID } from "node:crypto";
@@ -34,25 +34,20 @@ vi.mock("@/lib/billing/guard", () => ({
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
-const { clockInAs } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
-const { db } = await import("@/db");
-type ClockCommand = import("./types").ClockCommand;
+type ClockInCommand = import("./types").ClockInCommand;
+type ClockOutCommand = import("./types").ClockOutCommand;
 type ClockTransactions = import("./transactions").ClockTransactions;
 
 const ids = {
-	organization: "t478-clocking-org",
-	user: "t478-employee-user",
-	otherUser: "t478-other-user",
-	employee: "f4780000-0000-4000-8000-000000000001",
-	other: "f4780000-0000-4000-8000-000000000002",
-	assignedProject: "f4780000-0000-4000-8000-000000000011",
-	foreignProject: "f4780000-0000-4000-8000-000000000012",
-	assignment: "f4780000-0000-4000-8000-000000000013",
-	holidayCategory: "f4780000-0000-4000-8000-000000000021",
-	holiday: "f4780000-0000-4000-8000-000000000022",
+	organization: "t479-clocking-org",
+	user: "t479-employee-user",
+	otherUser: "t479-other-user",
+	employee: "f4790000-0000-4000-8000-000000000001",
+	other: "f4790000-0000-4000-8000-000000000002",
+	holidayCategory: "f4790000-0000-4000-8000-000000000021",
+	holiday: "f4790000-0000-4000-8000-000000000022",
 } as const;
 const clockInAt = parseInstant("2026-07-22T08:00:00Z");
-const clockOutAt = parseInstant("2026-07-22T09:00:40Z");
 
 function only<T>(rows: readonly T[]): T {
 	const [row] = rows;
@@ -62,35 +57,43 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describe("Clocking clock-out through run on PostgreSQL", () => {
+describe("Clocking clock-in through run on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 	const admin = integrationAdminPool();
 
 	function newClocking(transactions: ClockTransactions = coordinatedTransactions()) {
 		const followUps = recordingFollowUps();
 		const clocking = createClocking({
-			clock: { nowInstant: () => clockOutAt } as never,
+			clock: { nowInstant: () => clockInAt } as never,
 			transactions,
 			followUps,
 		});
 		return { clocking, followUps };
 	}
 
-	function clockOut(overrides: Partial<ClockCommand> = {}): ClockCommand {
+	function clockIn(overrides: Partial<ClockInCommand> = {}): ClockInCommand {
 		return {
 			organizationId: ids.organization,
 			principal: { kind: "user", userId: ids.user },
 			subject: { employeeId: ids.employee },
 			identity: { origin: "client", id: randomUUID() },
 			channel: "web",
-			at: { kind: "occurred", instant: clockOutAt },
+			at: { kind: "occurred", instant: clockInAt },
 			zone: { device: "UTC", fallback: "UTC" },
+			body: { kind: "clock_in", workLocationType: "remote" },
+			...overrides,
+		};
+	}
+
+	function clockOut(instant: Instant): ClockOutCommand {
+		return {
+			...clockIn(),
+			at: { kind: "occurred", instant },
 			body: {
 				kind: "clock_out",
 				project: { kind: "preserve" },
 				workCategory: { kind: "preserve" },
 			},
-			...overrides,
 		};
 	}
 
@@ -102,55 +105,33 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 		);
 	}
 
-	async function startWork(instant: Instant = clockInAt) {
-		const employee = await db.query.employee.findFirst({
-			where: (row, { eq }) => eq(row.id, ids.employee),
-		});
-		if (!employee) throw new Error("Employee missing");
-		await expect(
-			clockInAs({ userId: ids.user, employee, resolveTimezone: async () => "UTC" }, "office", {
-				instant,
-				browserTimezone: "UTC",
-			}),
-		).resolves.toMatchObject({ success: true });
-		const { rows } = await admin.query<{ id: string }>(
-			"select id from work_period where employee_id = $1 and end_time is null",
-			[ids.employee],
-		);
-		return only(rows).id;
-	}
-
-	/** Every row a closure can write, to prove "no writes" by equality. */
+	/** Every row a start can write, to prove "no writes" by equality. */
 	async function snapshot() {
 		const { rows } = await admin.query(
 			`select
 			   (select json_agg(row_to_json(t) order by t.id) from work_period t where organization_id = $1) as periods,
 			   (select json_agg(row_to_json(t) order by t.id) from time_entry t where organization_id = $1) as entries,
-			   (select json_agg(row_to_json(t) order by t.id) from time_record t where organization_id = $1) as records,
+			   (select json_agg(row_to_json(t) order by t.employee_id) from time_entry_append_position t where organization_id = $1) as positions,
 			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = $1) as receipts`,
 			[ids.organization],
 		);
 		return only(rows);
 	}
 
-	async function closedPeriod(periodId: string) {
+	async function openPeriods() {
 		const { rows } = await admin.query<{
-			is_active: boolean;
-			clock_out_id: string;
-			duration_minutes: number;
-			project_id: string | null;
-			record_duration: number | null;
-			receipts: number;
+			clock_in_id: string;
+			start_time: Date;
+			work_location_type: string;
+			start_receipts: number;
 		}>(
-			`select wp.is_active, wp.clock_out_id, wp.duration_minutes, wp.project_id,
-			        tr.duration_minutes as record_duration,
+			`select wp.clock_in_id, wp.start_time, wp.work_location_type,
 			        (select count(*)::int from completed_work_operation
-			         where work_period_id = wp.id and kind = 'close_active_work') as receipts
-			 from work_period wp left join time_record tr on tr.id = wp.canonical_record_id
-			 where wp.id = $1`,
-			[periodId],
+			         where work_period_id = wp.id and kind = 'start_live_work') as start_receipts
+			 from work_period wp where wp.employee_id = $1 and wp.end_time is null`,
+			[ids.employee],
 		);
-		return only(rows);
+		return rows;
 	}
 
 	async function cleanup() {
@@ -162,7 +143,7 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
-			`insert into organization (id, name, slug, created_at) values ($1, 'T478 clocking', $1, $2)`,
+			`insert into organization (id, name, slug, created_at) values ($1, 'T479 clocking', $1, $2)`,
 			[ids.organization, timestamp],
 		);
 		await admin.query(
@@ -173,13 +154,13 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 		);
 		await admin.query(
 			`insert into "user" (id, name, email, created_at, updated_at) values
-			 ($1, 'Employee', 't478-employee@example.test', $3, $3),
-			 ($2, 'Other', 't478-other@example.test', $3, $3)`,
+			 ($1, 'Employee', 't479-employee@example.test', $3, $3),
+			 ($2, 'Other', 't479-other@example.test', $3, $3)`,
 			[ids.user, ids.otherUser, timestamp],
 		);
 		await admin.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
-			 select 't478-member-' || user_id, $1, user_id, 'member', 'approved', $2
+			 select 't479-member-' || user_id, $1, user_id, 'member', 'approved', $2
 			 from unnest($3::text[]) as user_id`,
 			[ids.organization, timestamp, [ids.user, ids.otherUser]],
 		);
@@ -192,16 +173,6 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			`insert into user_settings (user_id, timezone, updated_at)
 			 select user_id, 'UTC', $2 from unnest($1::text[]) as user_id`,
 			[[ids.user, ids.otherUser], timestamp],
-		);
-		await admin.query(
-			`insert into project (id, organization_id, name, status, is_active, created_by, updated_at) values
-			 ($1, $3, 'Assigned', 'active', true, $4, $5), ($2, $3, 'Unassigned', 'active', true, $4, $5)`,
-			[ids.assignedProject, ids.foreignProject, ids.organization, ids.user, timestamp],
-		);
-		await admin.query(
-			`insert into project_assignment (id, project_id, organization_id, assignment_type, employee_id, created_by)
-			 values ($1, $2, $3, 'employee', $4, $5)`,
-			[ids.assignment, ids.assignedProject, ids.organization, ids.employee, ids.user],
 		);
 	}
 
@@ -222,149 +193,140 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			await setAdmission(mode);
 		});
 
-		it("closes live work with one derived duration and follows it up once", async () => {
-			const periodId = await startWork();
+		it("starts live work under the operation identity and follows nothing up", async () => {
 			const { clocking, followUps } = newClocking();
-			const command = clockOut({
-				body: {
-					kind: "clock_out",
-					project: { kind: "replace", id: ids.assignedProject },
-					workCategory: { kind: "preserve" },
-				},
-			});
+			const command = clockIn({ channel: "telegram-bot", zone: { device: null, fallback: "UTC" } });
 
 			const outcome = await clocking.run(command);
 
 			expect(outcome).toMatchObject({
 				outcome: "executed",
-				result: { id: command.identity.id, type: "clock_out" },
-				// 60m40s rounds half up in both representations.
-				durationMinutes: 61,
+				result: {
+					id: command.identity.id,
+					type: "clock_in",
+					timestamp: new Date("2026-07-22T08:00:00Z"),
+					deviceInfo: "telegram-bot",
+					ipAddress: "bot",
+					timezoneSource: "user_setting",
+				},
 			});
-			expect(await closedPeriod(periodId)).toEqual({
-				is_active: false,
-				clock_out_id: command.identity.id,
-				duration_minutes: 61,
-				project_id: ids.assignedProject,
-				record_duration: 61,
-				receipts: admission === "append" ? 1 : 0,
-			});
-			// Instants compare by their canonical strings.
-			expect(
-				followUps.closures.map(({ start, ...closure }) => ({
-					...closure,
-					start: start.toString(),
-				})),
-			).toEqual([
+			expect(await openPeriods()).toEqual([
 				{
-					organizationId: ids.organization,
-					employeeId: ids.employee,
-					actorUserId: ids.user,
-					workPeriodId: periodId,
-					start: "2026-07-22T08:00:00Z",
-					durationMinutes: 61,
-					projectId: ids.assignedProject,
-					surchargeSnapshot: expect.any(Object),
-					balanceRefreshCommitted: admission === "append",
-					timezone: "UTC",
+					clock_in_id: command.identity.id,
+					start_time: new Date("2026-07-22T08:00:00Z"),
+					work_location_type: "remote",
+					// Only the append writer keeps receipts.
+					start_receipts: admission === "append" ? 1 : 0,
 				},
 			]);
+			expect(followUps.closures).toEqual([]);
 		});
 
 		it.each(["client", "derived"] as const)(
-			"replays a committed %s identity without writes or follow-ups",
+			"replays a committed %s identity without writes",
 			async (origin) => {
-				await startWork();
-				const { clocking, followUps } = newClocking();
-				const command = clockOut({ identity: { origin, id: randomUUID() } });
-				const first = await clocking.run(command);
+				const { clocking } = newClocking();
+				const command = clockIn({ identity: { origin, id: randomUUID() } });
+				await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
 				const committed = await snapshot();
 
 				const retry = await clocking.run(command);
 
-				expect(first).toMatchObject({ outcome: "executed" });
 				expect(retry).toEqual({
 					outcome: "replayed",
-					result: expect.objectContaining({ id: command.identity.id }),
-					durationMinutes: 61,
+					result: expect.objectContaining({ id: command.identity.id, type: "clock_in" }),
 				});
 				expect(await snapshot()).toEqual(committed);
-				expect(followUps.closures).toHaveLength(1);
 			},
 		);
 
-		it("looks up a committed receipt for its own principal only", async () => {
-			await startWork();
+		it("replays a committed start after its work was closed", async () => {
 			const { clocking } = newClocking();
-			const command = clockOut();
+			const command = clockIn();
 			await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
-
-			const own = await clocking.lookup(command);
-			const foreign = await clocking.lookup({
-				...command,
-				principal: { kind: "user", userId: ids.otherUser },
+			await expect(clocking.run(clockOut(clockInAt.add({ hours: 1 })))).resolves.toMatchObject({
+				outcome: "executed",
 			});
 
-			// Only the append writer keeps receipts.
-			expect(own).toEqual(
-				admission === "append"
-					? {
-							found: true,
-							kind: "close_active_work",
-							result: expect.objectContaining({ clockOutEntryId: command.identity.id }),
-						}
-					: { found: false },
-			);
-			expect(foreign).toEqual({ found: false });
+			await expect(clocking.run(command)).resolves.toMatchObject({
+				outcome: "replayed",
+				result: { id: command.identity.id },
+			});
 		});
 
-		it("never replays a server identity", async () => {
-			await startWork();
-			const { clocking, followUps } = newClocking();
-			const command = clockOut({
+		it("never replays a server identity and says since when work runs", async () => {
+			const { clocking } = newClocking();
+			const command = clockIn({
 				channel: "slack-bot",
 				identity: { origin: "server", id: randomUUID() },
 			});
 			await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
 			const committed = await snapshot();
 
-			await expect(clocking.run(command)).resolves.toEqual({
-				outcome: "refused",
-				failure: { code: "not_clocked_in" },
+			const repeat = await clocking.run({
+				...command,
+				at: { kind: "occurred", instant: clockInAt.add({ minutes: 5 }) },
 			});
 
+			expect(repeat).toEqual({
+				outcome: "refused",
+				failure: { code: "already_clocked_in", since: expect.anything() },
+			});
+			// Instants compare by their canonical strings.
+			expect(
+				repeat.outcome === "refused" &&
+					repeat.failure.code === "already_clocked_in" &&
+					repeat.failure.since.toString(),
+			).toBe("2026-07-22T08:00:00Z");
 			expect(await snapshot()).toEqual(committed);
-			expect(followUps.closures).toHaveLength(1);
 		});
 
 		it("refuses the same identity with a different command as a collision", async () => {
-			await startWork();
 			const { clocking } = newClocking();
-			const command = clockOut();
+			const command = clockIn();
 			await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
 			const committed = await snapshot();
 
 			const changed = await clocking.run({
 				...command,
-				body: { ...command.body, project: { kind: "replace", id: ids.assignedProject } },
+				body: { kind: "clock_in", workLocationType: "office" },
 			});
 
 			expect(changed).toMatchObject({ outcome: "refused", failure: { code: "collision" } });
 			expect(await snapshot()).toEqual(committed);
 		});
 
-		it("re-checks replay when a matching commit races a late refusal", async () => {
-			await startWork();
+		it("refuses a start inside completed work as an occupancy conflict", async () => {
+			const { clocking } = newClocking();
+			await expect(clocking.run(clockIn())).resolves.toMatchObject({ outcome: "executed" });
+			await expect(clocking.run(clockOut(clockInAt.add({ hours: 2 })))).resolves.toMatchObject({
+				outcome: "executed",
+			});
+			const before = await snapshot();
+
+			const inside = await clocking.run(
+				clockIn({ at: { kind: "occurred", instant: clockInAt.add({ hours: 1 }) } }),
+			);
+
+			expect(inside).toEqual({ outcome: "refused", failure: { code: "occupancy_conflict" } });
+			expect(await snapshot()).toEqual(before);
+			// Where the completed work ends, a start is free.
+			await expect(
+				clocking.run(clockIn({ at: { kind: "occurred", instant: clockInAt.add({ hours: 2 }) } })),
+			).resolves.toMatchObject({ outcome: "executed" });
+		});
+
+		it("replays a matching start that commits after the first replay read", async () => {
 			const real = coordinatedTransactions();
 			const { clocking: racing } = newClocking();
-			const command = clockOut();
+			const command = clockIn();
 			let raced = false;
 			// The real adapter, paused after the first (replay) transaction so the
-			// matching command commits before this one reads its target.
-			const { clocking, followUps } = newClocking({
+			// matching command commits before this one starts.
+			const { clocking } = newClocking({
 				...real,
-				async run(scope, operation) {
-					const result = await real.run(scope, operation);
+				async start(scope, operation) {
+					const result = await real.start(scope, operation);
 					if (!raced) {
 						raced = true;
 						await expect(racing.run(command)).resolves.toMatchObject({ outcome: "executed" });
@@ -377,12 +339,10 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 				outcome: "replayed",
 				result: { id: command.identity.id },
 			});
-			expect(followUps.closures).toEqual([]);
+			expect(await openPeriods()).toHaveLength(1);
 		});
 
-		it("does not refuse a clock-out on a blocking holiday", async () => {
-			// The holiday is declared while the employee works: ending that work is allowed.
-			const periodId = await startWork();
+		it("refuses a blocking holiday with its own clock-in refusal", async () => {
 			await admin.query(
 				`insert into holiday_category (id, organization_id, type, name, blocks_time_entry, updated_at)
 				 values ($1, $2, 'public_holiday', 'Closed', true, now())`,
@@ -394,73 +354,79 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 				[ids.holiday, ids.organization, ids.holidayCategory, ids.user],
 			);
 			const { clocking } = newClocking();
+			const before = await snapshot();
 
-			await expect(clocking.run(clockOut())).resolves.toMatchObject({ outcome: "executed" });
-
-			expect(await closedPeriod(periodId)).toMatchObject({ is_active: false });
+			await expect(clocking.run(clockIn())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "holiday_blocked", holidayName: "Closing day" },
+			});
+			expect(await snapshot()).toEqual(before);
 		});
 
-		it("refuses billing, an ineligible project and another employee's work without writes", async () => {
-			await startWork();
-			const { clocking, followUps } = newClocking();
+		it("refuses billing, another employee, and malformed commands without writes", async () => {
+			const { clocking } = newClocking();
 			const before = await snapshot();
 
 			harness.billing = { canAccess: false, reason: "subscription_expired" };
-			await expect(clocking.run(clockOut())).resolves.toEqual({
+			await expect(clocking.run(clockIn())).resolves.toEqual({
 				outcome: "refused",
 				failure: { code: "billing_required", reason: "subscription_expired" },
 			});
 			harness.billing = { canAccess: true };
 			await expect(
-				clocking.run(
-					clockOut({
-						body: {
-							kind: "clock_out",
-							project: { kind: "replace", id: ids.foreignProject },
-							workCategory: { kind: "preserve" },
-						},
-					}),
-				),
-			).resolves.toEqual({ outcome: "refused", failure: { code: "project_not_allowed" } });
-			await expect(
-				clocking.run(clockOut({ principal: { kind: "user", userId: ids.otherUser } })),
+				clocking.run(clockIn({ principal: { kind: "user", userId: ids.otherUser } })),
 			).resolves.toEqual({ outcome: "refused", failure: { code: "access_denied" } });
 			await expect(
-				clocking.run(clockOut({ identity: { origin: "client", id: "not-a-uuid" } })),
+				clocking.run(clockIn({ identity: { origin: "client", id: "not-a-uuid" } })),
 			).resolves.toEqual({ outcome: "refused", failure: { code: "invalid_command" } });
+			await expect(
+				clocking.run(clockIn({ body: { kind: "clock_in", workLocationType: "field" as never } })),
+			).resolves.toEqual({ outcome: "refused", failure: { code: "invalid_work_location" } });
 
 			expect(await snapshot()).toEqual(before);
-			expect(followUps.closures).toEqual([]);
 		});
 
 		it("refuses a stale command by its freshness, but replays it once committed", async () => {
-			await startWork();
 			const { clocking } = newClocking();
-			const window = {
-				earliest: clockOutAt.subtract({ minutes: 5 }),
-				latest: clockOutAt.add({ minutes: 5 }),
-			};
-			const stale = clockOut({
-				at: { kind: "occurred", instant: clockOutAt.subtract({ minutes: 10 }) },
-				freshness: window,
+			const stale = clockIn({
+				at: { kind: "occurred", instant: clockInAt.subtract({ minutes: 10 }) },
+				freshness: {
+					earliest: clockInAt.subtract({ minutes: 5 }),
+					latest: clockInAt.add({ minutes: 5 }),
+				},
 			});
 			await expect(clocking.run(stale)).resolves.toEqual({
 				outcome: "refused",
 				failure: { code: "admission_window", reason: "too_old" },
 			});
 
-			const command = clockOut();
+			const command = clockIn();
 			await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
 			// Retried after its window passed: the committed result replays.
 			await expect(
 				clocking.run({
 					...command,
 					freshness: {
-						earliest: clockOutAt.add({ hours: 1 }),
-						latest: clockOutAt.add({ hours: 2 }),
+						earliest: clockInAt.add({ hours: 1 }),
+						latest: clockInAt.add({ hours: 2 }),
 					},
 				}),
 			).resolves.toMatchObject({ outcome: "replayed" });
 		});
+	});
+
+	it("replays a legacy start after the organization adopts appends", async () => {
+		await setAdmission("inactive");
+		const { clocking } = newClocking();
+		const command = clockIn();
+		await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
+		await setAdmission("active");
+		const committed = await snapshot();
+
+		await expect(clocking.run(command)).resolves.toMatchObject({
+			outcome: "replayed",
+			result: { id: command.identity.id },
+		});
+		expect(await snapshot()).toEqual(committed);
 	});
 });

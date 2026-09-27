@@ -44,6 +44,12 @@ export interface BotCommandContext {
 	userId: string;
 	/** Platform-specific user ID (Teams AAD Object ID or Telegram user ID) */
 	platformUserId: string;
+	/**
+	 * The platform's ID for this invocation, the same on every redelivery of it:
+	 * the Discord interaction ID, or the Telegram bot and update IDs. Absent where
+	 * the platform has none (Slack, Teams).
+	 */
+	invocationId?: string;
 	config: PlatformConfig;
 	args: string[];
 	/** User's preferred locale (e.g., "en", "de") */

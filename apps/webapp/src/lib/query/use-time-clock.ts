@@ -180,6 +180,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		mutationFn: async (params?: {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
+			submissionId?: string;
 		}) => {
 			const frozen = prepareFrozenCommand("clock_in", params);
 			if (frozen) return submitClockCommand(frozen);
@@ -213,6 +214,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 			return postClockIn({
 				workLocationType: params?.workLocationType,
 				browserTimezone: resolveBrowserTimezone(params),
+				submissionId: params?.submissionId as string,
 			});
 		},
 		onSuccess: (result) => {
@@ -380,7 +382,12 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		clockIn: (params?: {
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
-		}) => clockInMutation.mutateAsync(params ?? {}),
+		}) =>
+			// One identity per request, as for clock-out; the server replays a committed identity.
+			clockInMutation.mutateAsync({
+				...(params ?? {}),
+				...(!isOffline ? { submissionId: crypto.randomUUID() } : {}),
+			}),
 		clockOut: (params?: {
 			projectId?: string;
 			workCategoryId?: string;

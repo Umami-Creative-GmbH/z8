@@ -59,12 +59,13 @@ describe("POST /api/time-clock", () => {
 		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 
-	it("clocks in with the selected work location", async () => {
+	it("clocks in with the selected work location and the submission id", async () => {
 		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
 
 		const response = await POST(
 			timeClockRequest({
 				action: "clock_in",
+				submissionId,
 				workLocationType: "remote",
 				browserTimezone: "Europe/Berlin",
 			}),
@@ -74,8 +75,25 @@ describe("POST /api/time-clock", () => {
 		expect(await response.json()).toEqual({ success: true, data: { id: "entry-1" } });
 		expect(mockState.clockIn).toHaveBeenCalledWith("remote", {
 			browserTimezone: "Europe/Berlin",
+			submissionId,
 		});
 		expect(mockState.clockOut).not.toHaveBeenCalled();
+	});
+
+	it("still clocks in for clients from before clock-in identities", async () => {
+		mockState.clockIn.mockResolvedValue({ success: true, data: { id: "entry-1" } });
+
+		const response = await POST(timeClockRequest({ action: "clock_in" }));
+
+		expect(response.status).toBe(200);
+		expect(mockState.clockIn.mock.calls[0]?.[1]?.submissionId).toBeUndefined();
+	});
+
+	it("rejects a clock-in submission id that is not a UUID", async () => {
+		const response = await POST(timeClockRequest({ action: "clock_in", submissionId: "retry-1" }));
+
+		expect(response.status).toBe(400);
+		expect(mockState.clockIn).not.toHaveBeenCalled();
 	});
 
 	it("returns clocking failures as an action result with a client error status", async () => {

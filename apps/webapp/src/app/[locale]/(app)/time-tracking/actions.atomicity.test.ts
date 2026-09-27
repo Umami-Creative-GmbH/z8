@@ -22,14 +22,14 @@ function functionBody(name: string) {
 }
 
 describe("clocking service delegation", () => {
-	it("delegates clockIn writes to the shared clocking service", () => {
-		// The web action authenticates, then runs the live core bots share (#277).
+	it("runs clockIn as a command of the Clocking module", () => {
+		// The web action authenticates, then runs the live adapter bots share (#277).
 		expect(functionBody("clockIn")).toContain("await clockInAs(");
 		const body = functionBody("clockInAs");
 
-		expect(body).toContain("clockingService.clockIn({");
-		expect(body).not.toContain("await db.transaction(async (tx)");
-		expect(body).not.toContain("pg_advisory_xact_lock");
+		expect(body).toContain("await clocking.run({");
+		expect(body).not.toContain("clockingService");
+		expect(body).not.toContain("db.transaction");
 	});
 
 	it("runs clockOut as a command of the Clocking module", () => {
@@ -39,19 +39,6 @@ describe("clocking service delegation", () => {
 		expect(body).toContain("await clocking.run({");
 		expect(body).not.toContain("clockingService");
 		expect(body).not.toContain("db.transaction");
-	});
-
-	it("captures browser evidence before delegating clock-in", () => {
-		const body = functionBody("clockInAs");
-
-		const captureIndex = body.indexOf("resolveTimeEntryTimezoneCapture(");
-		const delegateIndex = body.indexOf("clockingService.clockIn({");
-
-		expect(captureIndex).toBeGreaterThanOrEqual(0);
-		expect(delegateIndex).toBeGreaterThan(captureIndex);
-		expect(body).toContain(
-			"action: { instant: actionInstant, ...timezoneCapture }",
-		);
 	});
 
 	it("creates manual source and approval state in one workflow transaction", () => {

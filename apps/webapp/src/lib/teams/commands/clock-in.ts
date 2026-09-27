@@ -2,13 +2,10 @@
  * "Clock In" Command
  *
  * Starts work from any bot (Slack, Telegram, Discord, Teams) through the same
- * shared live clock-in the web uses: one coordinated transaction, the
- * organization's append admission and the same validation and billing checks.
+ * shared live clock-in the web uses: the Clocking module's clock-in, under the
+ * organization's admission, with the same holiday, billing and occupancy checks.
  */
 
-import { and, eq, isNull } from "drizzle-orm";
-import { db } from "@/db";
-import { workPeriod } from "@/db/schema";
 import { resolveBotClockActor } from "@/lib/bot-platform/clock-actor";
 import {
 	billingRequiredReply,
@@ -19,8 +16,9 @@ import {
 	textReply,
 } from "@/lib/bot-platform/clock-replies";
 import { type BotTranslateFn, getBotTranslate } from "@/lib/bot-platform/i18n";
+import { botOperationIdentity } from "@/lib/bot-platform/operation-identity";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
 import type { ClockInFailure } from "@/lib/time-tracking/clocking/types";
@@ -34,8 +32,7 @@ const cannotNow: Reply = (t) => t("bot.cmd.clockin.cannotNow", "Cannot clock in 
 const replies: ClockCommandReplies<ClockInFailure> = {
 	failures: {
 		already_clocked_in: (t) => t("bot.cmd.clockin.alreadyInNow", "You are already clocked in."),
-		holiday_blocked: (t) =>
-			t("bot.cmd.clockin.holidayBlocked", "Cannot clock in on a holiday."),
+		holiday_blocked: (t) => t("bot.cmd.clockin.holidayBlocked", "Cannot clock in on a holiday."),
 		occupancy_conflict: (t) =>
 			t("bot.cmd.clockin.occupied", "This time overlaps other recorded work."),
 		invalid_work_location: cannotNow,
@@ -51,7 +48,8 @@ const replies: ClockCommandReplies<ClockInFailure> = {
 			),
 		access_denied: (t) => t("bot.cmd.clockin.noProfile", "Employee profile not found."),
 		billing_required: billingRequiredReply,
-		// A clock-in carries no identity or freshness window yet; nothing was written.
+		// A redelivered invocation replays; these cannot arise from a bot command
+		// without a freshness window, and nothing was written.
 		collision: failed,
 		admission_window: failed,
 		invalid_command: failed,
@@ -80,7 +78,12 @@ export const clockInCommand: BotCommand = {
 				return textReply(t("bot.cmd.clockin.noProfile", "Employee profile not found."));
 			}
 
-			const result = await clockInAs(actor, "office", { deviceInfo: `${ctx.platform}-bot` });
+			const identity = botOperationIdentity(ctx, "clockin");
+			const result = await clockInAs(actor, "office", {
+				submissionId: identity.id,
+				identityOrigin: identity.origin,
+				deviceInfo: `${ctx.platform}-bot`,
+			});
 			if (result.success) {
 				return committedReply(
 					() =>
@@ -92,8 +95,8 @@ export const clockInCommand: BotCommand = {
 					(error) => logger.error({ error }, "Failed to format committed clock-in reply"),
 				);
 			}
-			if (result.failure === "already_clocked_in") {
-				return textReply(await alreadyClockedIn(ctx, temporal, t));
+			if (result.refusal.code === "already_clocked_in") {
+				return textReply(alreadyClockedIn(result.refusal.since, temporal, t));
 			}
 			return clockFailureReply(result.failure, replies, t);
 		} catch (error) {
@@ -103,31 +106,21 @@ export const clockInCommand: BotCommand = {
 	},
 };
 
-/** A status read for the reply; a failure here only loses the start time. */
-async function alreadyClockedIn(
-	ctx: BotCommandContext,
+/** The refusal carries the active start; a formatting failure only loses the time. */
+function alreadyClockedIn(
+	since: Instant,
 	temporal: ReturnType<typeof getCommandTemporalContext>,
 	t: BotTranslateFn,
-): Promise<string> {
+): string {
 	try {
-		const activePeriod = await db.query.workPeriod.findFirst({
-			where: and(
-				eq(workPeriod.employeeId, ctx.employeeId),
-				eq(workPeriod.organizationId, ctx.organizationId),
-				isNull(workPeriod.endTime),
-			),
-		});
-		if (activePeriod) {
-			const clockInTime = instantFromDate(activePeriod.startTime);
-			const { hours, minutes } = elapsedHoursAndMinutes(clockInTime, temporal.now);
-			return t(
-				"bot.cmd.clockin.alreadyIn",
-				"You are already clocked in since {time} ({hours}h {minutes}m).",
-				{ time: formatInstant(clockInTime, temporal, "time"), hours, minutes },
-			);
-		}
+		const { hours, minutes } = elapsedHoursAndMinutes(since, temporal.now);
+		return t(
+			"bot.cmd.clockin.alreadyIn",
+			"You are already clocked in since {time} ({hours}h {minutes}m).",
+			{ time: formatInstant(since, temporal, "time"), hours, minutes },
+		);
 	} catch (error) {
-		logger.warn({ error }, "Failed to read the active period for the clock-in reply");
+		logger.warn({ error }, "Failed to format the already-clocked-in reply");
+		return replies.failures.already_clocked_in(t);
 	}
-	return t("bot.cmd.clockin.alreadyInNow", "You are already clocked in.");
 }

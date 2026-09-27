@@ -172,6 +172,31 @@ export async function findStandingStart(
 	return entry;
 }
 
+/**
+ * Symmetric half-open occupancy for a live start at `startAt`: undeleted work of
+ * the employee that is active, or completed and ending after it. Active work
+ * occupies its start onward.
+ */
+export async function findLiveWorkOccupant(
+	tx: WorkTransactionScope["db"],
+	scope: { organizationId: string; employeeId: string },
+	startAt: Date,
+): Promise<"active_work" | "completed_work" | null> {
+	const occupants = await tx
+		.select({ endTime: workPeriod.endTime })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, scope.organizationId),
+				eq(workPeriod.employeeId, scope.employeeId),
+				isNull(workPeriod.deletedAt),
+				or(isNull(workPeriod.endTime), gt(workPeriod.endTime, startAt)),
+			),
+		);
+	if (occupants.some((row) => row.endTime === null)) return "active_work";
+	return occupants.length > 0 ? "completed_work" : null;
+}
+
 export type StartLiveWorkInput = {
 	organizationId: string;
 	employeeId: string;
@@ -239,21 +264,8 @@ export async function startLiveWorkGraph(
 	}
 
 	const startAt = dateFromInstant(input.eventInstant);
-	const occupants = await tx
-		.select({ id: workPeriod.id, endTime: workPeriod.endTime })
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				isNull(workPeriod.deletedAt),
-				or(isNull(workPeriod.endTime), gt(workPeriod.endTime, startAt)),
-			),
-		);
-	if (occupants.some((row) => row.endTime === null)) {
-		throw new LiveWorkOccupiedError("active_work");
-	}
-	if (occupants.length > 0) throw new LiveWorkOccupiedError("completed_work");
+	const occupant = await findLiveWorkOccupant(tx, { organizationId, employeeId }, startAt);
+	if (occupant) throw new LiveWorkOccupiedError(occupant);
 
 	const appended = await appendClockEntry(
 		store,
@@ -263,7 +275,7 @@ export async function startLiveWorkGraph(
 			createdBy: input.actorUserId,
 			actionId: command.operationId,
 			action: { instant: input.eventInstant, ...input.capture },
-			source: { ipAddress: null, deviceInfo: input.writer.deviceInfo },
+			source: { ipAddress: input.writer.ipAddress ?? null, deviceInfo: input.writer.deviceInfo },
 		},
 		"clock_in",
 		context.admission,

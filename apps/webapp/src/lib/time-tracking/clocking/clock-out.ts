@@ -35,13 +35,13 @@ import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import type { WorkLocationType } from "../work-location";
 import type { ClosedLiveWork } from "./follow-ups";
-import type { ClockCommand, ClockOutResult } from "./types";
+import type { ClockOutCommand, ClockOutResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
 
 /** One clock-out command, resolved against its subject. */
 export type ClockOutPlan = {
-	command: ClockCommand;
+	command: ClockOutCommand;
 	employee: Employee;
 	/** The receipt's frozen command; a retry must carry exactly the same value. */
 	receiptCommand: CloseActiveWorkCommand;
@@ -62,7 +62,7 @@ export type ClockOutClosure =
 			closed: Omit<ClosedLiveWork, "timezone">;
 	  };
 
-export function planClockOut(command: ClockCommand, employee: Employee): ClockOutPlan {
+export function planClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
 	const { body, identity, at, zone, channel } = command;
 	return {
 		command,

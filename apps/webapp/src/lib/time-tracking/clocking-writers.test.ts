@@ -17,7 +17,7 @@ describe("live clocking writers", () => {
 		const clockInBot = source("../teams/commands/clock-in.ts");
 		const clockOutBot = source("../teams/commands/clock-out.ts");
 
-		for (const writer of [api, web, onBehalf]) {
+		for (const writer of [api, onBehalf]) {
 			expect(writer).toContain("clockingService");
 		}
 		// Bots reach the web's shared live clock core (#277), never the raw service.
@@ -33,9 +33,11 @@ describe("live clocking writers", () => {
 
 		const clockInAction = web.slice(web.indexOf("export async function clockIn"), web.indexOf("export async function clockOut"));
 		const clockOutAction = web.slice(web.indexOf("export async function clockOut"), web.indexOf("export async function addBreakToActiveSession"));
-		expect(clockInAction).toContain("clockingService.clockIn");
+		// Clock-in and clock-out run through the Clocking module, which owns both
+		// admissions (#478, #479).
+		expect(clockInAction).toContain("clocking.run(");
+		expect(clockInAction).not.toContain("clockingService");
 		expect(clockInAction).not.toContain("createTimeEntry(");
-		// Clock-out runs through the Clocking module, which owns both admissions (#478).
 		expect(clockOutAction).toContain("clocking.run(");
 		expect(clockOutAction).not.toContain("clockingService");
 		expect(clockOutAction).not.toContain("createTimeEntry(");
