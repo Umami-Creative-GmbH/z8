@@ -38,18 +38,15 @@ const harness = vi.hoisted(() => ({
 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 // The manual action's session. Better Auth itself is a real instance below.
 vi.mock("@/lib/auth", () => ({
@@ -88,10 +85,9 @@ vi.mock("@/lib/enterprise-identity/session-sso-store", async (importOriginal) =>
 	canAccessOrganizationWithSso: async () => true,
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	reconcileBillingSeatsForOrganization: async (organizationId: string) => {
@@ -105,15 +101,9 @@ vi.mock("@/lib/redis", async (importOriginal) => ({
 	secondaryStorage: { deleteOrThrow: async () => undefined },
 }));
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+);
 
 vi.mock("./approvals", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./approvals")>()),

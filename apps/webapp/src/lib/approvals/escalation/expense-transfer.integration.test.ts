@@ -28,18 +28,15 @@ const harness = vi.hoisted(() => ({
 	versionCounter: 0,
 }));
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => undefined,
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -59,25 +56,18 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t326e.example.test",
 }));
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+);
 
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t326-public",
@@ -113,13 +103,14 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 }));
 
-vi.mock("@/lib/vault", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/vault")>()),
-	getOrgSecret: async () => "326326327:AAT326-escalated_expenses",
-}));
+vi.mock("@/lib/vault", async (importOriginal) =>
+	(await import("@/test/integration-harness")).vault(importOriginal, async () => "326326327:AAT326-escalated_expenses"),
+);
 
 // The best-effort fast path only runs the owner sooner; each test runs it explicitly.
-vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: () => undefined }));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(),
+);
 
 const BOT_TOKEN = "326326327:AAT326-escalated_expenses";
 

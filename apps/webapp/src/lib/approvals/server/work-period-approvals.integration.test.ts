@@ -56,10 +56,9 @@ const reviewSession = vi.hoisted(() => ({
 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
 vi.mock("next/headers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/headers")>()),
