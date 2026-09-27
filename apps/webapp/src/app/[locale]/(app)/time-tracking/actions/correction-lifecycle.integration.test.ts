@@ -1163,7 +1163,11 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		await expect(
 			requestEdit(changed.id, { clockIn: "08:30", clockOut: "10:00" }),
 		).resolves.toMatchObject({ success: true });
-		await admin.query("update work_period set duration_minutes = 119 where id = $1", [changed.id]);
+		await admin.query(
+			`update work_period set end_time = end_time - interval '1 minute', duration_minutes = 119
+			 where id = $1`,
+			[changed.id],
+		);
 		let committed = await snapshot();
 		await expect(approve(await pendingApprovalId(changed.id))).rejects.toBeDefined();
 		expect(await snapshot()).toEqual(committed);
@@ -1176,6 +1180,23 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		committed = await snapshot();
 		await expect(approve(await pendingApprovalId(removed.id))).rejects.toBeDefined();
 		expect(await snapshot()).toEqual(committed);
+	});
+
+	it("finalizes over pre-#388 minutes drift, rewriting both minutes", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+		// The legacy clock-out floored the canonical minutes and rounded the period's.
+		await admin.query("update work_period set duration_minutes = 121 where id = $1", [work.id]);
+
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toMatchObject({
+			status: "approved",
+		});
+		expect(await period(work.id)).toMatchObject({
+			duration_minutes: 90,
+			record_duration: 90,
+		});
 	});
 
 	it.each([
