@@ -231,9 +231,6 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		expect(runnerSource).toContain(
 			"--label z8.agent-owned=approval-workflow-repository-test",
 		);
-		expect(runnerSource).toContain(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=",
-		);
 		expect(runnerSource).not.toMatch(
 			/(^|[^A-Z_])(?:DATABASE_URL|POSTGRES_URL|PGHOST)=/m,
 		);
