@@ -24,7 +24,7 @@ Inventory rows: C09 and C10 in `docs/audits/265-configuration-paths.md`.
 
 ## Protocol
 
-`lib/time-tracking/work-transaction.ts`:
+`lib/time-tracking/work-transaction/`:
 
 - `acquireExclusiveOrganizationConfigurationGuard(tx, organizationId)` (shared with #313) takes
   `pg_advisory_xact_lock` on `["work-organization-configuration", organizationId]`, the key

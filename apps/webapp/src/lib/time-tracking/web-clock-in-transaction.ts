@@ -7,8 +7,8 @@ import {
 	acquireOrganizationConfigurationGuard,
 	acquireUserConfigurationAccessGuards,
 	readAppendAdmission,
+	type SealedWorkTransactionScope,
 	sealWorkTransactionScope,
-	type WorkTransactionScope,
 } from "./work-transaction";
 
 export interface WebClockInTransactionInput {
@@ -26,7 +26,7 @@ export interface WebClockInTransactionInput {
  */
 export async function withWebClockInTransaction<T>(
 	input: WebClockInTransactionInput,
-	operation: (scope: WorkTransactionScope) => Promise<T>,
+	operation: (scope: SealedWorkTransactionScope) => Promise<T>,
 ): Promise<T> {
 	return db.transaction(async (transaction) => {
 		await acquireAdoptionGate(transaction, input.organizationId);

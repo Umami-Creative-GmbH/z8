@@ -72,7 +72,7 @@ import {
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
@@ -2088,7 +2088,7 @@ function correctionSegment(input: {
  * rejection that leaves the graph unchanged).
  */
 async function recordAdoptedCorrectionFinalization(input: {
-	scope: WorkTransactionScope;
+	scope: SealedWorkTransactionScope;
 	organizationId: string;
 	employeeId: string;
 	actorUserId: string;

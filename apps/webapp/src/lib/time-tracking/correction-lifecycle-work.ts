@@ -37,8 +37,8 @@ import {
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { WorkOccupancyConflictError } from "./work-occupancy";
 import {
+	type SealedWorkTransactionScope,
 	type WorkTransactionClient,
-	type WorkTransactionScope,
 	workTransactionScopeFor,
 } from "./work-transaction";
 
@@ -228,7 +228,7 @@ export function timeCorrectionLifecycleKey(lifecycle: TimeCorrectionLifecycleRef
 export function resolveCorrectionWorkScope(
 	client: object,
 	input: { organizationId: string; employeeId: string },
-): WorkTransactionScope | null {
+): SealedWorkTransactionScope | null {
 	const scope = workTransactionScopeFor(client);
 	if (!scope) return null;
 	scope.assertEmployee(input.organizationId, input.employeeId);
@@ -237,7 +237,7 @@ export function resolveCorrectionWorkScope(
 
 /** The exact predecessor for pending correction entries, from append evidence. */
 export async function admitTimeCorrectionAppend(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: { organizationId: string; employeeId: string },
 ): Promise<TimeEntryAppend> {
 	scope.assertEmployee(input.organizationId, input.employeeId);

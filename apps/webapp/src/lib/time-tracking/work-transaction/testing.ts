@@ -1,0 +1,73 @@
+/**
+ * The work transaction fake for unit suites. It runs the plan's real routing
+ * (twice per attempt) and the real ledger, but records guards instead of
+ * locking, so a rank bug shows up without a database. It can force a scope
+ * change on chosen attempts to exercise the restart budget.
+ */
+import {
+	runWorkTransactionWith,
+	type WorkPlan,
+	type WorkRoute,
+	type WorkTransactionAdmission,
+	type WorkTransactionScope,
+} from "./index";
+import type { Guard } from "./ranks";
+
+export interface RecordedGuard extends Guard {
+	/** The attempt, from 1, that took the guard. */
+	readonly attempt: number;
+}
+
+export interface FakeWorkTransactionOptions {
+	/** The transaction client handed to routing and the operation; default `{}`. */
+	client?: object;
+	/** The admission read under the adoption gate; default `legacy`. */
+	admission?: WorkTransactionAdmission;
+	/** Attempts (from 1) whose re-route reports a concurrent scope change. */
+	changeScopeOn?: readonly number[];
+}
+
+export interface FakeWorkTransaction {
+	run<R extends WorkRoute, A, T>(
+		plan: WorkPlan<R, A>,
+		operation: (scope: WorkTransactionScope<R, A>) => Promise<T>,
+	): Promise<T>;
+	/** Every guard taken, in order, across all attempts. */
+	readonly guards: readonly RecordedGuard[];
+	/** How many attempts the last run opened. */
+	readonly attempts: number;
+}
+
+export function fakeWorkTransaction(options: FakeWorkTransactionOptions = {}): FakeWorkTransaction {
+	const guards: RecordedGuard[] = [];
+	let attempts = 0;
+	const changeScopeOn = new Set(options.changeScopeOn ?? []);
+	return {
+		guards,
+		get attempts() {
+			return attempts;
+		},
+		run(plan, operation) {
+			attempts = 0;
+			return runWorkTransactionWith(
+				{
+					async open(_database, body) {
+						attempts += 1;
+						// A fresh client per attempt, as a fresh transaction would be.
+						return body(Object.create(options.client ?? {}));
+					},
+					async lock(_client, guard) {
+						guards.push({ ...guard, attempt: attempts });
+					},
+					async readAdmission() {
+						return options.admission ?? "legacy";
+					},
+					savepoint: (transaction, body) => body(Object.create(transaction)),
+					scopeChanged: (attempt) => changeScopeOn.has(attempt),
+				},
+				plan,
+				operation,
+			);
+		},
+	};
+}

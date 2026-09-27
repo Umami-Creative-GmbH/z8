@@ -127,7 +127,7 @@ import {
 import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-work";
 import type { TimeEntryAppend } from "@/lib/time-tracking/time-entry-append";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
@@ -1487,7 +1487,7 @@ function requestedEndpoint(endpoint: SubmissionEndpoint): RequestedCorrectionEnd
  * before the proposal is committed; approval checks it again (#301).
  */
 async function assertSubmittedIntervalFree(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: SubmitCorrectionInput,
 	period: LockedSubmissionPeriod,
 ) {
@@ -1506,7 +1506,7 @@ async function assertSubmittedIntervalFree(
 }
 
 type AdoptedSubmissionContext = {
-	scope: WorkTransactionScope;
+	scope: SealedWorkTransactionScope;
 	input: SubmitCorrectionInput;
 	lockedPeriod: LockedSubmissionPeriod;
 	submissionKey: string;

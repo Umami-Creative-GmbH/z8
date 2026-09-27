@@ -25,7 +25,7 @@ resolutions of [#258](https://github.com/Umami-Creative-GmbH/z8/issues/258#issue
 [#259](https://github.com/Umami-Creative-GmbH/z8/issues/259#issuecomment-5654750145).
 
 ```text
-lib/time-tracking/organization-configuration-guard.ts      # shared/exclusive organization configuration guard (reused, from dev)
+lib/time-tracking/work-transaction/ranks.ts      # shared/exclusive organization configuration guard (reused, from dev)
 lib/effect/services/billing/billing-configuration.ts       # in-transaction read, protected mutation wrappers, trial provisioning
 lib/effect/services/billing/billing-enforcement.service.ts # provisioning path delegates to provisionLocalTrial
 lib/effect/services/billing/subscription.service.ts        # create, updateFromStripe, setStripeCustomerId, ensureLocalTrial
@@ -56,7 +56,7 @@ returns the original receipt unchanged. No creator-only restriction is added.
 ## Exclusive configuration protection for billing writers
 
 Billing writers reuse the shared organization configuration guard module
-(`lib/time-tracking/organization-configuration-guard.ts`, introduced by #315/#316):
+(`lib/time-tracking/work-transaction/ranks.ts`, introduced by #315/#316):
 `withOrganizationConfigurationMutation` for writers that know their organization, and
 `acquireExclusiveOrganizationConfigurationGuard` per owning organization for writers addressed
 by Stripe subscription id. That guard takes

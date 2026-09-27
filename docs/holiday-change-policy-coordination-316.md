@@ -25,11 +25,11 @@ The inventory rows are C11–C13 in [the configuration-path audit](audits/265-co
 
 ## Protocol
 
-`lib/time-tracking/organization-configuration-guard.ts` owns the rank-3 key
+`lib/time-tracking/work-transaction/ranks.ts` owns the rank-3 key
 `["work-organization-configuration", organizationId]` and both of its modes. The module
 imports no schema, so route handlers can take the guard without loading the
 work-transaction module (whose schema import breaks their stubbed `drizzle-orm` tests).
-`work-transaction.ts` re-exports all three functions, so the coordinators and the #311,
+`work-transaction/index.ts` re-exports all three functions, so the coordinators and the #311,
 #313 and #315 writers share this one helper.
 
 - `acquireOrganizationConfigurationGuard(tx, organizationId)`: shared, taken by fresh

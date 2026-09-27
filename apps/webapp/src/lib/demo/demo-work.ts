@@ -58,9 +58,9 @@ import {
 	acquireOrganizationConfigurationGuard,
 	acquireUserConfigurationAccessGuards,
 	readAppendAdmission,
+	type SealedWorkTransactionScope,
 	sealWorkTransactionScope,
 	type WorkTransactionClient,
-	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 
@@ -93,7 +93,7 @@ export async function acquireDemoWorkScope(
 	input: DemoWorkCoordinationInput,
 	options: { afterAdoptionGate?: () => Promise<void> } = {},
 	isActive: () => boolean = () => true,
-): Promise<WorkTransactionScope> {
+): Promise<SealedWorkTransactionScope> {
 	await acquireAdoptionGate(transaction, input.organizationId);
 	const admission = await readAppendAdmission(transaction, input.organizationId);
 	await options.afterAdoptionGate?.();
@@ -120,7 +120,7 @@ export async function acquireDemoWorkScope(
 /** One coordinated transaction for a demo operation. */
 export function withDemoWorkTransaction<T>(
 	input: DemoWorkCoordinationInput,
-	operation: (scope: WorkTransactionScope) => Promise<T>,
+	operation: (scope: SealedWorkTransactionScope) => Promise<T>,
 ): Promise<T> {
 	return db.transaction(async (transaction) => {
 		let active = true;
@@ -214,7 +214,7 @@ function demoCapture(timestamp: Date) {
  * transaction. The caller owns the transaction, so a failure rolls back the day.
  */
 export async function recordDemoWorkDay(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: DemoWorkDayInput,
 ): Promise<DemoWorkDayOutcome> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
@@ -348,7 +348,7 @@ async function isOccupied(
 }
 
 async function recordAdoptedDemoWorkDay(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: DemoWorkDayInput,
 ): Promise<DemoWorkDayOutcome> {
 	const client = scope.db;
@@ -527,7 +527,7 @@ async function appendDemoEntry(
  * detail with it and advances the period's graph revision.
  */
 export async function assignDemoWorkCategory(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -600,7 +600,7 @@ export type DemoHistoryDeletion = {
  * employee or organization is touched.
  */
 export async function deleteDemoEmployeeHistory(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: { organizationId: string; employeeId: string },
 ): Promise<DemoHistoryDeletion> {
 	scope.assertEmployee(input.organizationId, input.employeeId);

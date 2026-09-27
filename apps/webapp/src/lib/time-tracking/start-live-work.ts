@@ -42,7 +42,7 @@ import {
 } from "./close-active-work";
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkLocationType } from "./work-location";
-import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
 export { LiveWorkOccupiedError } from "./clocking-core";
 
@@ -101,7 +101,7 @@ export type StartLiveWorkReceipt = {
  * mismatch in scope, kind, writer or command is a collision; nothing is repaired.
  */
 export async function replayStartLiveWork(
-	context: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	context: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -140,7 +140,7 @@ export async function replayStartLiveWork(
  * once the entry is superseded or its period was deleted.
  */
 export async function findStandingStart(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	scope: { organizationId: string; employeeId: string },
 	result: Pick<StartLiveWorkResult, "clockInEntryId" | "workPeriodId">,
 ): Promise<Entry | null> {
@@ -194,7 +194,7 @@ export type StartLiveWorkInput = {
  * entry with this identity is therefore a collision.
  */
 export async function startLiveWork(
-	context: WorkTransactionScope,
+	context: SealedWorkTransactionScope,
 	input: StartLiveWorkInput,
 ): Promise<StartLiveWorkReceipt & { disposition: "executed" }> {
 	const started = await startLiveWorkGraph(context, input);
@@ -223,7 +223,7 @@ export async function startLiveWork(
  * command's operation ID.
  */
 export async function startLiveWorkGraph(
-	context: WorkTransactionScope,
+	context: SealedWorkTransactionScope,
 	input: StartLiveWorkInput,
 ): Promise<StartLiveWorkReceipt & { disposition: "executed" }> {
 	const { organizationId, employeeId, command } = input;

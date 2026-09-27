@@ -26,20 +26,21 @@ import "server-only";
  * break split finds the coordination it runs under instead of locking late.
  */
 import { sql } from "drizzle-orm";
-import { routeScope, sameScope } from "@/lib/time-tracking/completed-work-transaction";
-import { WorkTransactionScopeChanged } from "@/lib/time-tracking/web-clock-out-resources";
+import { routeCompletedWork } from "@/lib/time-tracking/completed-work-transaction";
 import {
 	acquireAdoptionGate,
 	acquireEmployeeCoordination,
 	acquireOrganizationConfigurationGuard,
 	acquireUserConfigurationAccessGuards,
 	readAppendAdmission,
+	type SealedWorkTransactionScope,
+	sameWorkRoute,
 	sealWorkTransactionScope,
 	type WorkTransactionClient,
-	type WorkTransactionScope,
+	WorkTransactionScopeChanged,
 } from "@/lib/time-tracking/work-transaction";
-import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWriteGateResult } from "../workflow/ports";
 
@@ -53,7 +54,7 @@ export interface WorkPeriodDecisionRoute {
 }
 
 export interface WorkPeriodDecisionTransaction {
-	scope: WorkTransactionScope;
+	scope: SealedWorkTransactionScope;
 	/** The ordinary approval gate result of the decided kind, acquired at rank 2. */
 	authority: ApprovalWriteGateResult;
 	/** The caller's context with the acquired approval gate pinned. */
@@ -120,7 +121,7 @@ export async function acquireWorkPeriodDecisionScope(
 		employeeId: route.ownerEmployeeId,
 		actorUserId: route.actorUserId,
 	};
-	const routed = await routeScope(transaction, routeInput);
+	const routed = await routeCompletedWork(transaction, routeInput);
 	await acquireAdoptionGate(transaction, route.organizationId);
 	const admission = await readAppendAdmission(transaction, route.organizationId);
 	const pinned = await acquirePinnedApprovalContext(context, {
@@ -128,10 +129,10 @@ export async function acquireWorkPeriodDecisionScope(
 		workflowType: route.kind,
 	});
 	await acquireOrganizationConfigurationGuard(transaction, route.organizationId);
-	await acquireUserConfigurationAccessGuards(transaction, routed.userIds);
-	await acquireEmployeeCoordination(transaction, routed.employeeIds);
+	await acquireUserConfigurationAccessGuards(transaction, routed.users);
+	await acquireEmployeeCoordination(transaction, routed.employees);
 	if (
-		!sameScope(routed, await routeScope(transaction, routeInput)) ||
+		!sameWorkRoute(routed, await routeCompletedWork(transaction, routeInput)) ||
 		route.observed !==
 			(await observeWorkPeriodDecision(context, {
 				organizationId: route.organizationId,

@@ -27,8 +27,8 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
-import type { BotPlatform } from "@/lib/bot-platform/types";
 import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work-period-submission";
+import type { BotPlatform } from "@/lib/bot-platform/types";
 import {
 	comparePlainDates,
 	dateFromInstant,
@@ -57,7 +57,7 @@ import {
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "./work-duration";
-import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
@@ -235,7 +235,7 @@ export class CompletedWorkAttributionError extends Error {
  * writer or command is a collision; nothing is re-executed or repaired.
  */
 export async function replayCloseActiveWork(
-	context: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	context: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -279,7 +279,7 @@ export async function replayCloseActiveWork(
  * closure's clock-out to the segment it generated from the period, never replacing it.
  */
 export async function findStandingClosure(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	scope: { organizationId: string; employeeId: string },
 	result: Pick<CloseActiveWorkResult, "clockOutEntryId" | "workPeriodId">,
 ): Promise<Entry | null> {
