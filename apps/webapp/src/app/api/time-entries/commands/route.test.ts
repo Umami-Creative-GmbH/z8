@@ -1,5 +1,5 @@
 /**
- * The v2 commands route as a frozen clock command adapter (#481): how a request
+ * The commands route as a frozen clock command adapter (#481): how a request
  * becomes a Clocking command, and how an outcome becomes the HTTP/v2 response.
  * The Clocking module is replaced; its behaviour is covered on PostgreSQL by
  * `lib/time-tracking/clocking/frozen.integration.test.ts` and `route.integration.test.ts`.

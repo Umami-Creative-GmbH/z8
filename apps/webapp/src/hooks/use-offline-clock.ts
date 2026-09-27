@@ -380,9 +380,7 @@ export function useOfflineClock() {
 				operationId: request.operationId,
 			}).catch(() => {});
 		}
-		return toBrowserClockActionResult(record, (key, fallback, params) =>
-			t(key, fallback, params),
-		);
+		return toBrowserClockActionResult(record, t);
 	};
 
 	const triggerSync = async () => {

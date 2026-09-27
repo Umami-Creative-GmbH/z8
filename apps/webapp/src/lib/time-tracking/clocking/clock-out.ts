@@ -36,7 +36,12 @@ import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import type { WorkLocationType } from "../work-location";
 import type { ClosedLiveWork } from "./follow-ups";
-import { assertFrozenAccepted, assertFrozenIdentityUnused, isFrozen } from "./frozen";
+import {
+	assertFrozenAccepted,
+	assertFrozenIdentityUnused,
+	isFrozen,
+	receiptCommandOf,
+} from "./frozen";
 import type { ClockOutCommand, ClockOutResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -68,7 +73,7 @@ export type ClockOutClosure =
 	  };
 
 export function planClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
-	const { body, identity, at, zone, channel, payload } = command;
+	const { body, identity, at, zone, channel } = command;
 	const receiptCommand: CloseActiveWorkCommand = {
 		version: 1,
 		operationId: identity.id,
@@ -81,8 +86,7 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
 	return {
 		command,
 		employee,
-		// The run checked that the payload names this identity; its adapter froze the body into it.
-		receiptCommand: (payload as CloseActiveWorkOperationCommand | undefined) ?? receiptCommand,
+		receiptCommand: receiptCommandOf<CloseActiveWorkOperationCommand>(command, receiptCommand),
 		writer: liveClockOutWriter(channel),
 	};
 }

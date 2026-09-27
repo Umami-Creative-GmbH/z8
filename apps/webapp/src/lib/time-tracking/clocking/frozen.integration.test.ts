@@ -391,6 +391,24 @@ describe("Clocking frozen clock commands through run on PostgreSQL", () => {
 		});
 	});
 
+	it("holds committed evidence it cannot interpret as a collision, never an unknown outcome", async () => {
+		const { clocking } = newClocking();
+		const start = frozenClockIn();
+		await clocking.run(start);
+		now = now.add({ hours: 1 });
+		const close = frozenClockOut({ kind: "started_by", operationId: start.identity.id });
+		await clocking.run(close);
+		// A receipt version this code does not know.
+		await admin.query("update completed_work_operation set result_version = 99 where id = $1", [
+			close.identity.id,
+		]);
+
+		await expect(clocking.run(close)).resolves.toMatchObject({
+			outcome: "refused",
+			failure: { code: "collision" },
+		});
+	});
+
 	it("treats a frozen identity that receipt-less work already holds as a collision", async () => {
 		const { clocking } = newClocking();
 		await setAdmission("inactive");

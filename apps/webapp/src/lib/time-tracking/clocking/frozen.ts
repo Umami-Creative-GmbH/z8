@@ -1,3 +1,5 @@
+import "server-only";
+
 import { eq } from "drizzle-orm";
 import { timeEntry } from "@/db/schema";
 import { CompletedWorkCollisionError } from "../close-active-work";
@@ -17,6 +19,18 @@ export class FrozenCommandNotAcceptedError extends Error {
 
 export function isFrozen(command: ClockCommand) {
 	return command.payload !== undefined;
+}
+
+/**
+ * The receipt's command: the frozen payload, else the writer's established
+ * command. The run checked that the payload names this identity, and its
+ * adapter froze the body into it.
+ */
+export function receiptCommandOf<Receipt extends { version: number; operationId: string }>(
+	command: ClockCommand,
+	established: Receipt,
+): Receipt {
+	return (command.payload as Receipt | undefined) ?? established;
 }
 
 /** Refuses a frozen command under legacy admission, after its committed replay. */

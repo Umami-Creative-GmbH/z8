@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { completedWorkOperation, employee, timeEntry, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
@@ -148,10 +148,20 @@ function isBreak(command: ClockCommand): command is BreakCommand {
 type ClockTargetRefusal = "not_clocked_in" | "target_unknown" | "target_not_active";
 
 /**
- * The refusal a matching commit causes: it closed the target after the first
- * replay read. Refusals inside the work transaction follow its own replay.
+ * Refusals decided after the first replay read and before the work transaction,
+ * which answer only a command that has not committed: the age window of a retry
+ * whose original is still in flight, and a holiday. A matching commit between
+ * the two reads replays instead. Refusals inside the work transaction follow its
+ * own replay.
  */
+const LATE_START_REFUSALS = new Set<ClockInRefusal["code"]>([
+	"admission_window",
+	"holiday_blocked",
+]);
+
+/** A matching commit also closes the target after the first replay read. */
 const LATE_CLOCK_OUT_REFUSALS = new Set<ClockOutRefusal["code"]>([
+	"admission_window",
 	"not_clocked_in",
 	"target_not_active",
 ]);
@@ -162,6 +172,8 @@ const LATE_CLOCK_OUT_REFUSALS = new Set<ClockOutRefusal["code"]>([
  * before that work started.
  */
 const LATE_BREAK_REFUSALS = new Set<BreakRefusal["code"]>([
+	"admission_window",
+	"holiday_blocked",
 	"not_clocked_in",
 	"target_not_active",
 	"invalid_interval",
@@ -173,9 +185,13 @@ function targetChanged(command: ClockOutCommand | BreakCommand) {
 	return target.kind === "active" ? "not_clocked_in" : "target_not_active";
 }
 
-/** Refusals of the shared work-transaction errors, for either kind. */
+/** Refusals of the shared work-transaction errors, for every kind. */
 function transactionRefusal(error: unknown) {
-	if (error instanceof CompletedWorkCollisionError) {
+	// A receipt the module cannot interpret counts as one: never resend under this identity.
+	if (
+		error instanceof CompletedWorkCollisionError ||
+		error instanceof CompletedWorkIntegrityError
+	) {
 		return { code: "collision" as const, cause: error };
 	}
 	if (error instanceof TimeEntryAppendReviewRequiredError) {
@@ -185,6 +201,15 @@ function transactionRefusal(error: unknown) {
 		return { code: "frozen_not_accepted" as const };
 	}
 	return null;
+}
+
+/**
+ * Why a read-only replay did not answer: a collision reads the same as in the
+ * operation's own replay; anything else failed, and nothing was written.
+ */
+function replayRefusal(error: unknown) {
+	const shared = transactionRefusal(error);
+	return shared?.code === "collision" ? shared : { code: "failed" as const, cause: error };
 }
 
 /** Why the closure's work transaction did not commit, for errors the writers raise. */
@@ -205,8 +230,6 @@ function closureRefusal(command: ClockOutCommand, error: unknown): ClockOutRefus
 function startRefusal(error: unknown): ClockInRefusal {
 	const shared = transactionRefusal(error);
 	if (shared) return shared;
-	// A start receipt the module cannot interpret: never resend under this identity.
-	if (error instanceof CompletedWorkIntegrityError) return { code: "collision", cause: error };
 	// The employee lifecycle gate, under the employee lock.
 	if (error instanceof ClockingAccessError || error instanceof ClockingOrganizationError) {
 		return { code: "access_denied" };
@@ -221,8 +244,6 @@ function startRefusal(error: unknown): ClockInRefusal {
 function breakRefusal(command: BreakCommand, error: unknown): BreakRefusal {
 	const shared = transactionRefusal(error);
 	if (shared) return shared;
-	// A receipt the module cannot interpret: never resend under this identity.
-	if (error instanceof CompletedWorkIntegrityError) return { code: "collision", cause: error };
 	if (isUnresolvedWorkPeriodReview(error)) {
 		return {
 			code: "under_review",
@@ -322,11 +343,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			);
 			return replay ? { outcome: "replayed", ...replay } : null;
 		} catch (error) {
-			return refused(
-				error instanceof CompletedWorkCollisionError
-					? { code: "collision", cause: error }
-					: { code: "failed", cause: error },
-			);
+			return refused(replayRefusal(error));
 		}
 	}
 
@@ -338,9 +355,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			);
 			return result ? { outcome: "replayed", result } : null;
 		} catch (error) {
-			// A collision reads the same as in the start's own replay; anything else failed.
-			const refusal = startRefusal(error);
-			return refused(refusal.code === "collision" ? refusal : { code: "failed", cause: error });
+			return refused(replayRefusal(error));
 		}
 	}
 
@@ -373,6 +388,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 							: eq(workPeriod.clockInId, target.operationId),
 				),
 			)
+			// A start names its own period; should other work share the entry, the open one wins.
+			.orderBy(desc(workPeriod.isActive))
 			.limit(1);
 		if (!period) {
 			return { refusal: target.kind === "active" ? "not_clocked_in" : "target_unknown" };
@@ -501,10 +518,6 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return outcome;
 	}
 
-	/**
-	 * Start steps after committed replay. Active work and occupancy are read inside
-	 * the work transaction, after its own replay, so a matching commit replays there.
-	 */
 	async function runClockIn(command: ClockInCommand, subject: Employee): Promise<ClockInOutcome> {
 		const plan = planClockIn(command, subject);
 		const replayable = isReplayable(command.identity);
@@ -512,6 +525,26 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			const replay = await committedStartReplay(plan);
 			if (replay) return replay;
 		}
+		const outcome = await executeClockIn(plan);
+		if (
+			replayable &&
+			outcome.outcome === "refused" &&
+			LATE_START_REFUSALS.has(outcome.failure.code)
+		) {
+			// A matching command may have committed since the first replay read.
+			const replay = await committedStartReplay(plan);
+			if (replay?.outcome === "replayed") return replay;
+		}
+		return outcome;
+	}
+
+	/**
+	 * Start steps after committed replay. Active work and occupancy are read inside
+	 * the work transaction, after its own replay, so a matching commit replays there.
+	 */
+	async function executeClockIn(plan: ClockInPlan): Promise<ClockInOutcome> {
+		const { command, employee: subject } = plan;
+		const replayable = isReplayable(command.identity);
 		const eventInstant = eventInstantOf(command);
 		const stale = freshnessRefusal(command, eventInstant);
 		if (stale) return refused(stale);
@@ -549,8 +582,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			);
 			return result ? { outcome: "replayed", result } : null;
 		} catch (error) {
-			const refusal = breakRefusal(plan.command, error);
-			return refused(refusal.code === "collision" ? refusal : { code: "failed", cause: error });
+			return refused(replayRefusal(error));
 		}
 	}
 

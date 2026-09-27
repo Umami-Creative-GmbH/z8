@@ -5,7 +5,7 @@ import { createLogger } from "@/lib/logger";
 import { CLOCK_COMMAND_OPERATION_ID } from "@/lib/time-tracking/clock-command";
 import { clocking } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError } from "@/lib/time-tracking/clocking-service";
-import { lookupQuery, requireCommandActor } from "../frozen-clock-command";
+import { type FrozenCommandActor, lookupQuery, requireCommandActor } from "../frozen-clock-command";
 
 const logger = createLogger("ClockCommandLookup");
 const noStore = { "Cache-Control": "no-store" };
@@ -41,7 +41,7 @@ export async function GET(
 			{ status: 403, headers: noStore },
 		);
 	try {
-		let actor: Awaited<ReturnType<typeof requireCommandActor>>;
+		let actor: FrozenCommandActor;
 		try {
 			actor = await requireCommandActor(session);
 		} catch (error) {

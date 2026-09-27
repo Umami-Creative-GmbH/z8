@@ -187,7 +187,7 @@ const REJECTED: Message = [
 	"The server did not accept this clock action",
 ];
 
-/** How the page words the v2 rejections a person can meet, per command kind. */
+/** How the page words the route's rejections a person can meet, per command kind. */
 const REJECTION_MESSAGES: Partial<Record<string, Message | Record<ClockKind, Message>>> = {
 	already_clocked_in: ["timeTracking.errors.alreadyClockedIn", "You are already clocked in"],
 	target_not_active: [

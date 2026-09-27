@@ -60,7 +60,7 @@ function closeTarget(
 }
 
 /**
- * One frozen v2 command as a Clocking command. The adapter chooses the age window
+ * One frozen clock command as a Clocking command. The adapter chooses the age window
  * from the command's admission mode around the server's instant; the window also
  * covers a break's confirmation. The frozen bytes travel as the payload.
  */
@@ -118,7 +118,27 @@ export function toClockingCommand(
 	}
 }
 
-/** The v2 wire codes of refusals that wrote nothing. */
+/** What the adapter itself refuses before a Clocking command exists. */
+type AdapterRejection =
+	| { code: "access_denied" }
+	| { code: "context_mismatch"; fields: string[] }
+	| { code: "clock_discontinuity"; from: string };
+
+const ADAPTER_REJECTION_STATUS: Record<AdapterRejection["code"], number> = {
+	access_denied: 403,
+	context_mismatch: 409,
+	clock_discontinuity: 422,
+};
+
+/** One adapter refusal as its HTTP/v2 response; nothing was run or written. */
+export function adapterRejectionReply(operationId: string, rejection: AdapterRejection) {
+	return {
+		status: ADAPTER_REJECTION_STATUS[rejection.code],
+		body: { outcome: "rejected" as const, operationId, ...rejection },
+	};
+}
+
+/** The HTTP/v2 wire codes of Clocking refusals that wrote nothing. */
 type RejectionCode =
 	| "access_denied"
 	| "billing_required"
@@ -137,8 +157,8 @@ type RejectionCode =
 	| "review_pending";
 
 /**
- * The HTTP status table: every Clocking failure code, as its v2 status and wire
- * code. `unknown` means the command may or may not have committed: the client
+ * The HTTP status table: every Clocking failure code, as its HTTP status and v2
+ * wire code. `unknown` means the command may or may not have committed: the client
  * looks it up, then resends it unchanged.
  */
 const FAILURE_REPLIES: Record<
@@ -187,7 +207,7 @@ function refusalDetails(refusal: ClockRefusal): Record<string, unknown> {
 	}
 }
 
-/** One refusal as its v2 response: a typed rejection, or an unknown outcome. */
+/** One Clocking refusal as its HTTP/v2 response: a typed rejection, or an unknown outcome. */
 export function refusalReply(operationId: string, refusal: ClockRefusal) {
 	const { status, code } = FAILURE_REPLIES[refusal.code];
 	return {

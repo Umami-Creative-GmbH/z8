@@ -35,7 +35,12 @@ import type { WorkLocationType } from "../work-location";
 import { assertNoUnresolvedWorkPeriodReview } from "../work-period-review";
 import type { ClockOutTarget } from "./clock-out";
 import type { ClosedLiveWork } from "./follow-ups";
-import { assertFrozenAccepted, assertFrozenIdentityUnused, isFrozen } from "./frozen";
+import {
+	assertFrozenAccepted,
+	assertFrozenIdentityUnused,
+	isFrozen,
+	receiptCommandOf,
+} from "./frozen";
 import type { BreakCommand, BreakResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -78,7 +83,7 @@ export type BreakClosure =
 	| { disposition: "executed"; result: BreakResult; closed: Omit<ClosedLiveWork, "timezone"> };
 
 export function planBreak(command: BreakCommand, employee: Employee): BreakPlan {
-	const { body, identity, at, zone, channel, payload } = command;
+	const { body, identity, at, zone, channel } = command;
 	const receiptCommand: BreakReceiptCommand = {
 		version: BREAK_COMMAND_VERSION,
 		operationId: identity.id,
@@ -98,8 +103,7 @@ export function planBreak(command: BreakCommand, employee: Employee): BreakPlan 
 	return {
 		command,
 		employee,
-		// The run checked that the payload names this identity; its adapter froze the body into it.
-		receiptCommand: (payload as CloseResumeWorkOperationCommand | undefined) ?? receiptCommand,
+		receiptCommand: receiptCommandOf<CloseResumeWorkOperationCommand>(command, receiptCommand),
 		// The live channel's writer names the channel, not the kind.
 		writer: liveClockOutWriter(channel),
 	};

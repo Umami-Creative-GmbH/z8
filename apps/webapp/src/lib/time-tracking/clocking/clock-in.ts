@@ -25,7 +25,12 @@ import {
 } from "../start-live-work";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { SealedWorkTransactionScope } from "../work-transaction";
-import { assertFrozenIdentityUnused, isFrozen } from "./frozen";
+import {
+	assertFrozenAccepted,
+	assertFrozenIdentityUnused,
+	isFrozen,
+	receiptCommandOf,
+} from "./frozen";
 import type { ClockInCommand, ClockInRefusal, ClockInResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -56,7 +61,7 @@ export type ClockInStart =
 	| { disposition: "refused"; refusal: ClockInRefusal };
 
 export function planClockIn(command: ClockInCommand, employee: Employee): ClockInPlan {
-	const { body, identity, at, zone, channel, payload } = command;
+	const { body, identity, at, zone, channel } = command;
 	const receiptCommand: ClockInReceiptCommand = {
 		version: CLOCK_IN_COMMAND_VERSION,
 		operationId: identity.id,
@@ -68,8 +73,7 @@ export function planClockIn(command: ClockInCommand, employee: Employee): ClockI
 	return {
 		command,
 		employee,
-		// The run checked that the payload names this identity; its adapter froze the body into it.
-		receiptCommand: (payload as StartLiveWorkOperationCommand | undefined) ?? receiptCommand,
+		receiptCommand: receiptCommandOf<StartLiveWorkOperationCommand>(command, receiptCommand),
 		// The live channel's writer names the channel, not the kind, as for web breaks.
 		writer: liveClockOutWriter(channel),
 	};
@@ -168,9 +172,7 @@ export async function startClockIn(
 		const replay = await replayClockIn(scope, plan);
 		if (replay) return { disposition: "replayed", entry: replay };
 	}
-	if (isFrozen(command) && scope.admission !== "append") {
-		return { disposition: "refused", refusal: { code: "frozen_not_accepted" } };
-	}
+	assertFrozenAccepted(command, scope.admission);
 	const [live] = await scope.db
 		.select({ startTime: workPeriod.startTime })
 		.from(workPeriod)

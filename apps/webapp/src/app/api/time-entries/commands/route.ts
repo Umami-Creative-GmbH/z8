@@ -17,6 +17,7 @@ import { type ClockOutAdvice, clocking } from "@/lib/time-tracking/clocking";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import {
+	adapterRejectionReply,
 	type FrozenCommandActor,
 	lookupQuery,
 	refusalReply,
@@ -87,11 +88,8 @@ export async function GET(request: Request) {
 	}
 }
 
-function rejected(operationId: string, status: number, rejection: Record<string, unknown>) {
-	return NextResponse.json(
-		{ outcome: "rejected", operationId, ...rejection },
-		{ status, headers: noStore },
-	);
+function reply({ status, body }: { status: number; body: Record<string, unknown> }) {
+	return NextResponse.json(body, { status, headers: noStore });
 }
 
 /**
@@ -134,7 +132,7 @@ export async function POST(request: Request) {
 			actor = await requireCommandActor(session);
 		} catch (error) {
 			if (error instanceof ClockingAccessError) {
-				return rejected(operationId, 403, { code: "access_denied" });
+				return reply(adapterRejectionReply(operationId, { code: "access_denied" }));
 			}
 			throw error;
 		}
@@ -143,11 +141,13 @@ export async function POST(request: Request) {
 			server: await serverOrigin(request),
 		});
 		if (mismatched.length > 0) {
-			return rejected(operationId, 409, { code: "context_mismatch", fields: mismatched });
+			return reply(
+				adapterRejectionReply(operationId, { code: "context_mismatch", fields: mismatched }),
+			);
 		}
 		// A property of the frozen bytes alone, so no committed command ever failed it.
 		const discontinuity = command.kind === "break" ? checkBreakClockContinuity(command) : null;
-		if (discontinuity) return rejected(operationId, 422, discontinuity);
+		if (discontinuity) return reply(adapterRejectionReply(operationId, discontinuity));
 
 		const outcome = await clocking.run(
 			toClockingCommand(command, actor, {
@@ -160,8 +160,7 @@ export async function POST(request: Request) {
 			if (failure.code === "unconfirmed" || failure.code === "failed") {
 				logger.error({ error: failure.cause, operationId }, "Clock command failed");
 			}
-			const reply = refusalReply(operationId, failure);
-			return NextResponse.json(reply.body, { status: reply.status, headers: noStore });
+			return reply(refusalReply(operationId, failure));
 		}
 		const committed = await clocking.lookup(lookupQuery(actor, operationId));
 		if (committed.outcome !== "committed") {
@@ -193,7 +192,7 @@ export async function POST(request: Request) {
 		logger.error({ error, operationId }, "Clock command failed");
 		// The command may or may not have committed: look it up, then resend it unchanged.
 		return NextResponse.json(
-			{ outcome: "unknown", operationId: parsed.command.operationId },
+			{ outcome: "unknown", operationId },
 			{ status: 500, headers: noStore },
 		);
 	}

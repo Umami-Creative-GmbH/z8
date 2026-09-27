@@ -6,8 +6,9 @@
  * The server stores the command verbatim in the completed-work receipt, so a
  * retry must be byte-for-byte the same JSON value. This module owns only the
  * pure contract: the version 2 shape, the elapsed-age windows, break clock
- * continuity and the context assertion check. The v2 commands route runs the
- * command through the Clocking module, which checks the window after replay.
+ * continuity and the context assertion check. The commands route runs each
+ * frozen clock command through the Clocking module, which checks the window
+ * after replay.
  */
 import { z } from "zod";
 import { parseInstant } from "@/lib/datetime/temporal-core";
