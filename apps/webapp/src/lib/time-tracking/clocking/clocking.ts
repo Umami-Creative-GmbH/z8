@@ -31,6 +31,8 @@ import { validateTimeEntry } from "../validation";
 import { workCategoryIneligibility } from "../work-category-eligibility";
 import { WorkIntervalError } from "../work-duration";
 import { isWorkLocationType, type WorkLocationType } from "../work-location";
+import { isUnresolvedWorkPeriodReview } from "../work-period-review";
+import { type BreakClosure, type BreakPlan, planBreak, replayBreak, takeBreak } from "./break";
 import {
 	type ClockInPlan,
 	type ClockInStart,
@@ -49,6 +51,9 @@ import {
 import type { ClockFollowUps } from "./follow-ups";
 import type { ClockTransactions } from "./transactions";
 import type {
+	BreakCommand,
+	BreakOutcome,
+	BreakRefusal,
 	ClockCommand,
 	ClockInCommand,
 	ClockInOutcome,
@@ -82,6 +87,7 @@ export type Clocking = {
 	/** Runs one clock command to an executed, replayed or refused outcome. */
 	run(command: ClockInCommand): Promise<ClockInOutcome>;
 	run(command: ClockOutCommand): Promise<ClockOutOutcome>;
+	run(command: BreakCommand): Promise<BreakOutcome>;
 	run(command: ClockCommand): Promise<ClockOutcome>;
 	/** The committed receipt of an operation identity, without running anything. */
 	lookup(query: ClockLookupQuery): Promise<ClockLookup>;
@@ -102,11 +108,21 @@ function isClockIn(command: ClockCommand): command is ClockInCommand {
 	return command.body.kind === "clock_in";
 }
 
+function isBreak(command: ClockCommand): command is BreakCommand {
+	return command.body.kind === "break";
+}
+
 /**
  * The refusal a matching commit causes: it closed the target after the first
  * replay read. Refusals inside the work transaction follow its own replay.
  */
 const LATE_REFUSALS = new Set<ClockOutRefusal["code"]>(["not_clocked_in"]);
+
+/**
+ * A matching break that commits after the first replay read leaves its resumed
+ * work as the target, which this break would close before that work started.
+ */
+const LATE_BREAK_REFUSALS = new Set<BreakRefusal["code"]>(["not_clocked_in", "invalid_interval"]);
 
 /** Refusals of the shared work-transaction errors, for either kind. */
 function transactionRefusal(error: unknown) {
@@ -149,6 +165,25 @@ function startRefusal(error: unknown): ClockInRefusal {
 	return { code: "unconfirmed", cause: error };
 }
 
+/** Why the break's work transaction did not commit, for errors the writers raise. */
+function breakRefusal(error: unknown): BreakRefusal {
+	const shared = transactionRefusal(error);
+	if (shared) return shared;
+	// A receipt the module cannot interpret: never resend under this identity.
+	if (error instanceof CompletedWorkIntegrityError) return { code: "collision", cause: error };
+	if (isUnresolvedWorkPeriodReview(error)) {
+		return {
+			code: "under_review",
+			review:
+				error.conflictType === "pending_time_correction_approval" ? "time_correction" : "approval",
+		};
+	}
+	if (error instanceof LiveWorkOccupiedError) return { code: "occupancy_conflict" };
+	if (error instanceof ClockingConflictError) return { code: "not_clocked_in" };
+	if (error instanceof WorkIntervalError) return { code: "invalid_interval" };
+	return { code: "unconfirmed", cause: error };
+}
+
 /** The frozen command's age window, checked after committed replay. */
 function freshnessRefusal(command: ClockCommand, eventInstant: Instant) {
 	const { freshness } = command;
@@ -174,10 +209,12 @@ function eventCapture(command: ClockCommand, eventInstant: Instant) {
 
 /**
  * The Clocking module. Every clock command runs in one fixed order: authorize,
- * billing, committed replay, freshness, the start's holiday or the closure's
- * target and attribution eligibility, then the work transaction (replay again,
- * admission and writer, the start's occupancy or the canonical record on a
- * legacy close), commit and follow-ups. Callers never see admission.
+ * billing, committed replay, freshness, the holiday of a start or a break's
+ * resumed half, the closure's target and attribution eligibility, then the work
+ * transaction (replay again, admission and writer, the occupancy of a started or
+ * resumed interval or the canonical record on a legacy close), commit and
+ * follow-ups for every executed closure, breaks included. Callers never see
+ * admission.
  */
 export function createClocking(ports: ClockingPorts): Clocking {
 	const { clock, transactions, followUps } = ports;
@@ -197,7 +234,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return row && row.userId === command.principal.userId ? row : null;
 	}
 
-	function transactionScope(plan: ClockInPlan | ClockOutPlan) {
+	function transactionScope(plan: ClockInPlan | ClockOutPlan | BreakPlan) {
 		return {
 			organizationId: plan.employee.organizationId,
 			employeeId: plan.employee.id,
@@ -240,7 +277,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 	}
 
-	async function activeTarget(plan: ClockOutPlan): Promise<ClockOutTarget | null> {
+	async function activeTarget(plan: ClockOutPlan | BreakPlan): Promise<ClockOutTarget | null> {
 		const [period] = await db
 			.select({
 				id: workPeriod.id,
@@ -412,12 +449,100 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return { outcome: start.disposition, result: start.entry };
 	}
 
-	async function run(command: ClockCommand): Promise<ClockInOutcome | ClockOutOutcome> {
+	/** A read-only work transaction: nothing it throws wrote anything. */
+	async function committedBreakReplay(plan: BreakPlan): Promise<BreakOutcome | null> {
+		try {
+			const result = await transactions.run(transactionScope(plan), (coordination) =>
+				replayBreak(coordination, plan),
+			);
+			return result ? { outcome: "replayed", result } : null;
+		} catch (error) {
+			const refusal = breakRefusal(error);
+			return refused(refusal.code === "collision" ? refusal : { code: "failed", cause: error });
+		}
+	}
+
+	/** Break steps after committed replay; any refusal here may race a matching commit. */
+	async function executeBreak(plan: BreakPlan, eventInstant: Instant): Promise<BreakOutcome> {
+		const { command, employee: subject } = plan;
+		const stale = freshnessRefusal(command, eventInstant);
+		if (stale) return refused(stale);
+		// A blocking holiday refuses only the resumed half; closing work is never refused.
+		const validity = await validateTimeEntry(
+			subject.organizationId,
+			dateFromInstant(eventInstant),
+			command.zone.fallback,
+		);
+		if (!validity.isValid) {
+			return refused({ code: "holiday_blocked", holidayName: validity.holidayName });
+		}
+		const target = await activeTarget(plan);
+		if (!target) return refused({ code: "not_clocked_in" });
+		const breakStart = eventInstant.subtract({ minutes: command.body.breakMinutes });
+		if (compareInstants(breakStart, target.start) <= 0) {
+			return refused({ code: "invalid_interval" });
+		}
+
+		let closure: BreakClosure;
+		try {
+			closure = await transactions.run(
+				{ ...transactionScope(plan), workPeriodId: target.workPeriodId, endTime: breakStart },
+				(coordination) =>
+					takeBreak(coordination, {
+						plan,
+						replayable: isReplayable(command.identity),
+						target,
+						// Each endpoint is captured in the zone at its own instant.
+						endpoints: {
+							close: { instant: breakStart, capture: eventCapture(command, breakStart) },
+							resume: { instant: eventInstant, capture: eventCapture(command, eventInstant) },
+						},
+					}),
+			);
+		} catch (error) {
+			return refused(breakRefusal(error));
+		}
+		if (closure.disposition === "executed") {
+			// The break closes work as a clock-out does; its follow-ups never fail the break.
+			await followUps
+				.afterClockOut({ ...closure.closed, timezone: command.zone.fallback })
+				.catch(() => undefined);
+		}
+		return { outcome: closure.disposition, result: closure.result };
+	}
+
+	async function runBreak(command: BreakCommand, subject: Employee): Promise<BreakOutcome> {
+		const plan = planBreak(command, subject);
+		const replayable = isReplayable(command.identity);
+		if (replayable) {
+			const replay = await committedBreakReplay(plan);
+			if (replay) return replay;
+		}
+		const outcome = await executeBreak(plan, eventInstantOf(command));
+		if (
+			replayable &&
+			outcome.outcome === "refused" &&
+			LATE_BREAK_REFUSALS.has(outcome.failure.code)
+		) {
+			// A matching command may have committed since the first replay read.
+			const replay = await committedBreakReplay(plan);
+			if (replay?.outcome === "replayed") return replay;
+		}
+		return outcome;
+	}
+
+	async function run(command: ClockCommand): Promise<ClockOutcome> {
 		if (!CANONICAL_UUID.test(command.identity.id)) {
 			return refused({ code: "invalid_command" });
 		}
 		if (isClockIn(command) && !isWorkLocationType(command.body.workLocationType)) {
 			return refused({ code: "invalid_work_location" });
+		}
+		if (
+			isBreak(command) &&
+			!(Number.isInteger(command.body.breakMinutes) && command.body.breakMinutes >= 1)
+		) {
+			return refused({ code: "invalid_break_duration" });
 		}
 		const subject = await subjectEmployee(command);
 		if (!subject) return refused({ code: "access_denied" });
@@ -428,7 +553,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				reason: billing.reason ?? "subscription_required",
 			});
 		}
-		return isClockIn(command) ? runClockIn(command, subject) : runClockOut(command, subject);
+		if (isClockIn(command)) return runClockIn(command, subject);
+		if (isBreak(command)) return runBreak(command, subject);
+		return runClockOut(command, subject);
 	}
 
 	return {

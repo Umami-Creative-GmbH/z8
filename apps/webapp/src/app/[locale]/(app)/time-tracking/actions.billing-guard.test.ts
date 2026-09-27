@@ -133,10 +133,15 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).not.toContain("requireBillingForMutation");
 	});
 
-	it("guards break insertion before delegating to the clocking mutation", () => {
-		expectBillingGuardBeforeWrite(
-			"addBreakToActiveSession",
-			"addBreakToActiveSessionAction(breakMinutes, actionContext)",
+	it("leaves break billing, holiday, capture and occupancy to the Clocking module", () => {
+		// Proven through `run` in lib/time-tracking/clocking/break.integration.test.ts.
+		const body = functionBody("addBreakToActiveSession", clockingSource);
+
+		expect(body).toContain("await clocking.run({");
+		expect(body).toContain('body: { kind: "break", breakMinutes }');
+		expect(body).not.toContain("requireBillingForMutation");
+		expect(functionBody("addBreakToActiveSession")).toContain(
+			"return addBreakToActiveSessionAction(breakMinutes, actionContext);",
 		);
 	});
 

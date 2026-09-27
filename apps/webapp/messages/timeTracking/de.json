@@ -82,7 +82,15 @@
       "clockInCollision": "Dieses Einstempeln steht im Konflikt mit einer früheren Anfrage. Bitte aktualisieren Sie und versuchen Sie es erneut.",
       "clockInAppendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie einstempeln können. Bitte wenden Sie sich an Ihre Administration.",
       "clockInNotAllowed": "Sie können nicht einstempeln.",
-      "clockInRetry": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut."
+      "clockInRetry": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "breakDurationInvalid": "Geben Sie eine Pausendauer von mindestens 1 Minute ein.",
+      "breakTooLong": "Die Pause muss kürzer sein als Ihre aktuelle Sitzung.",
+      "holidayBlockedBreak": "Nach einer Pause kann am {holidayName} nicht weitergearbeitet werden",
+      "breakOccupied": "Die Pause überschneidet sich mit anderer erfasster Arbeit.",
+      "breakNotAllowed": "Sie können dieser Arbeit keine Pause hinzufügen.",
+      "breakAwaitingApproval": "Dieser Arbeitszeitraum wartet auf Genehmigung und kann nicht bearbeitet werden. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
+      "breakPendingCorrection": "Für diesen Arbeitszeitraum ist bereits eine Zeitkorrektur zur Genehmigung offen. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
+      "breakRetry": "Pause konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut."
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",
