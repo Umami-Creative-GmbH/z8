@@ -54,6 +54,7 @@ import { workTransactionScopeFor } from "./work-transaction";
 import {
 	employeeCoordinationGuard,
 	holdGuard,
+	lockGuard,
 	sourceIdentityGuard,
 } from "./work-transaction/ranks";
 
@@ -353,16 +354,19 @@ function validateLockedSource(
 }
 
 /**
- * The established employee locks of a legacy split outside the coordinators:
- * the employee key, then the terminal-break/work-balance ownership key, which
- * web clock-out takes as a source identity with the same key text.
+ * The established employee guards of a legacy split outside the coordinators:
+ * the employee key, recorded in the transaction's ledger, then the
+ * terminal-break/work-balance ownership key (a source identity with the same
+ * key text as web clock-out's). The ownership key is not recorded, so an
+ * approval transaction that finalizes several employees' work is never
+ * refused for taking the next employee key after it.
  */
 async function lockEmployeeUncoordinated(
 	input: EnforcePolicyClockOutTerminalBreakInput,
 ): Promise<void> {
 	const db = input.dbService.db;
 	await holdGuard(db, employeeCoordinationGuard(input.employeeId));
-	await holdGuard(db, sourceIdentityGuard([input.organizationId, input.employeeId]));
+	await lockGuard(db, sourceIdentityGuard([input.organizationId, input.employeeId]));
 }
 
 export async function applyPolicyClockOutTerminalBreakInTransaction(

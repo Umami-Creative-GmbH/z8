@@ -18,7 +18,7 @@ import type { DepartureClockOutPort } from "./types";
 // together, and clocking takes no guard of its own.
 const canonicalClocking = createClockingService({
 	transaction: () => {
-		throw new Error("departure_clock_out_requires_lifecycle_transaction");
+		throw new Error("departure_clock_out_requires_departure_work_transaction");
 	},
 	storeForCoordinatedTransaction: (scope) => createDatabaseClockingStore(scope.db),
 });
