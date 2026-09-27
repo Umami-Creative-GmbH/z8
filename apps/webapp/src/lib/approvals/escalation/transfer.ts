@@ -19,6 +19,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalAssignmentSnapshot,
@@ -66,7 +67,6 @@ import {
 	type DatabaseTransaction,
 	type EscalationRuntime,
 	employeeNames,
-	fixedGateContext,
 	isTransitionRace,
 	readDecisionAuthorityForDiscovery,
 	readEscalationOwnership,
@@ -845,7 +845,10 @@ async function processDueAssignment(
 		});
 		const committed = await commitCanonicalTransfer({
 			runtime,
-			context: fixedGateContext(context, organizationId, gate, workflowType),
+			context: {
+				...context,
+				writeGate: pinApprovalWriteGate({ organizationId, workflowType, authority: gate }),
+			},
 			current,
 			recipientEmployeeId: decision.recipientEmployeeId,
 			operationKey,
@@ -1114,12 +1117,14 @@ export async function escalateAssignmentByManager(input: {
 				const policy = await readEscalationPolicy(tx, actor.organizationId);
 				const outcome = await commitCanonicalTransfer({
 					runtime,
-					context: fixedGateContext(
-						context,
-						actor.organizationId,
-						prepared.gate,
-						prepared.current.workflowType,
-					),
+					context: {
+						...context,
+						writeGate: pinApprovalWriteGate({
+							organizationId: actor.organizationId,
+							workflowType: prepared.current.workflowType,
+							authority: prepared.gate,
+						}),
+					},
 					current: prepared.current,
 					recipientEmployeeId: recipient.employeeId,
 					operationKey,

@@ -36,6 +36,7 @@ Name every suite that needs a real database `*.integration.test.ts`. Vitest's `i
 - `apps/webapp/src/test/integration-database.ts` is the only way a suite reaches the database. The project's setup file (`src/test/integration-setup.ts`) binds `@/db` to it, verifies the disposable database before each suite's first hook, and closes every pool after the last one. Without the database, a suite fails; it never skips.
 - In a suite, use `integrationAdminPool()` for raw seeding and assertions and `openIntegrationPool({ max })` when a test needs connections of its own. Do not build a `pg` pool, a gate or a `vi.mock("@/db")` binding by hand. To observe production queries, rebind with `integrationDbModule({ logQuery })`.
 - The module throws when a `unit` project file calls it. A misnamed suite therefore fails `pnpm test` instead of silently skipping.
+- In the `unit` project the real `@/db` pool refuses every connection (`src/db/unit-project-guard.ts`), so a misnamed suite that only reaches PostgreSQL through production code fails too. `src/test/unit-setup.ts` fails the test even when the code under test swallowed the error. Unit tests may still import `@/db` for schema exports or mock it.
 
 ## RBAC
 

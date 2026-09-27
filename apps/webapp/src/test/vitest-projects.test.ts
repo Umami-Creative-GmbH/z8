@@ -60,7 +60,7 @@ describe("vitest projects", () => {
 
 	it("gives every integration suite the one database gate, pool and @/db binding", () => {
 		expect(project("integration").test.setupFiles).toEqual(["./src/test/integration-setup.ts"]);
-		expect(project("unit").test.setupFiles).toBeUndefined();
+		expect(project("unit").test.setupFiles).not.toContain("./src/test/integration-setup.ts");
 	});
 
 	it("keeps pnpm test database-free and routes test:integration through the Docker runner", async () => {

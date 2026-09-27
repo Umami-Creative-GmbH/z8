@@ -47,6 +47,7 @@ import {
 	splitLegacyEscalationLineage,
 } from "../workflow/legacy-escalation-lineage";
 import { LegacyApprovalObservationPlannerError } from "../workflow/legacy-observation-planner";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalCommandActor,
@@ -80,7 +81,6 @@ import {
 	type DatabaseTransaction,
 	type EscalationOwnership,
 	type EscalationRuntime,
-	fixedGateContext,
 	readEscalationOwnership,
 	readEscalationPolicy,
 } from "./transfer-context";
@@ -1036,8 +1036,11 @@ async function commitLegacyTransfer(
 				};
 	let observed: ObservedLegacyTransitionResult | null = null;
 	const coordinator = createLegacyApprovalWriteCoordinator({
-		writeGate: fixedGateContext(context, organizationId, input.gate, subject.workflowType)
-			.writeGate,
+		writeGate: pinApprovalWriteGate({
+			organizationId,
+			workflowType: subject.workflowType,
+			authority: input.gate,
+		}),
 		compatibilityWriter: context.compatibilityWriter,
 	});
 	const captureState = subject.captureState;

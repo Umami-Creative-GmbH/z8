@@ -51,6 +51,7 @@ import {
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { pinApprovalWriteGate } from "@/lib/approvals/workflow/pinned-write-gate";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	ApprovalWorkflowStartError,
@@ -495,23 +496,16 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						organizationId: currentEmployee.organizationId,
 						workflowType: "absence",
 					});
-					const fixedGate = {
-						acquire: async (input: {
-							organizationId: string;
-							workflowType: "absence";
-						}) => {
-							if (
-								input.organizationId !== currentEmployee.organizationId ||
-								input.workflowType !== "absence"
-							) {
-								throw new Error("Approval submission gate scope mismatch");
-							}
-							return gate;
-						},
-					};
+					// The legacy coordinator and the transition engine rebind the
+					// compatibility writer to this gate themselves.
+					const pinnedGate = pinApprovalWriteGate({
+						organizationId: currentEmployee.organizationId,
+						workflowType: "absence",
+						authority: gate,
+					});
 					const context = {
 						...approvalContext,
-						writeGate: fixedGate,
+						writeGate: pinnedGate,
 					} as ApprovalWorkflowTransactionContext;
 					const bindSourceWorkflow: StartApprovalWorkflowInput["bindSourceWorkflow"] =
 						async (workflowId) => {
@@ -565,7 +559,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							params.approvalWorkflow.create ?? createApprovalWorkflow;
 						const capturedAt = approvalLifecycle.nowInstant();
 						const coordinator = createLegacyApprovalWriteCoordinator({
-							writeGate: fixedGate,
+							writeGate: pinnedGate,
 							compatibilityWriter: approvalContext.compatibilityWriter,
 						});
 						const captureState = () =>
