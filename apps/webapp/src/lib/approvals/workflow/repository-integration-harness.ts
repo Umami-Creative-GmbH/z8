@@ -34,11 +34,25 @@ export type ApprovalWorkflowRepositoryTestDatabaseGuard =
 			databaseName: string;
 	  };
 
+/**
+ * Vitest discovers PostgreSQL suites only by the `*.integration.test.ts`
+ * suffix. A misnamed suite lands in the `unit` project, where it would never
+ * meet a database, so the gate refuses to run there instead of skipping.
+ */
+function assertNotUnitTestProject() {
+	if (process.env.Z8_TEST_PROJECT === "unit") {
+		throw new Error(
+			"A PostgreSQL database gate was called from the unit test project: database suites must be named `*.integration.test.ts`",
+		);
+	}
+}
+
 export function resolveApprovalWorkflowRepositoryTestConfiguration(input: {
 	databaseUrl: string | undefined;
 	required: boolean;
 	sentinel: string | undefined;
 }): ApprovalWorkflowRepositoryTestConfiguration {
+	assertNotUnitTestProject();
 	if (!input.databaseUrl && !input.sentinel && !input.required) {
 		return {
 			status: "unavailable",

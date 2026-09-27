@@ -5,43 +5,17 @@ import { describe, expect, it } from "vitest";
 const workflowPath = fileURLToPath(
 	new URL("../../../../../../.github/workflows/tests.yml", import.meta.url),
 );
-const integrationVitestCommand =
-	"pnpm --filter webapp exec vitest run --no-file-parallelism";
 
 async function readWorkflow() {
 	// Windows autocrlf checkouts read CRLF; the contract is written against LF.
 	return (await readFile(workflowPath, "utf8")).replace(/\r\n/g, "\n");
 }
 
-function integrationSuiteFiles(workflow: string) {
-	const lines = workflow.split("\n");
-	const start = lines.findIndex((line) =>
-		line.includes(integrationVitestCommand),
-	);
-	const files: string[] = [];
-	for (let index = start; start >= 0 && index < lines.length; index++) {
-		const line = lines[index].trim();
-		const args =
-			index === start
-				? line.slice(
-						line.indexOf(integrationVitestCommand) +
-							integrationVitestCommand.length,
-					)
-				: line;
-		const continues = args.endsWith("\\");
-		const file = (continues ? args.slice(0, -1) : args)
-			.trim()
-			.replace(/^"(.*)"$/, "$1");
-		if (file) files.push(file);
-		if (!continues) break;
-	}
-	return files;
-}
-
 describe("approval workflow repository integration CI contract", () => {
 	it("enables the filtered PR trigger and runs the PostgreSQL migration integration gate", async () => {
 		const workflow = await readWorkflow();
 
+		// `apps/webapp/**` covers vitest.config.ts and the shared suite runner.
 		expect(workflow).toMatch(`on:
   pull_request:
     branches:
@@ -64,40 +38,33 @@ describe("approval workflow repository integration CI contract", () => {
       postgres:
         image: postgres:16`);
 		expect(workflow).toContain(
-			`- name: Run approval workflow repository PostgreSQL integration contract
+			`- name: Run PostgreSQL integration suites
         run: |
           set -euo pipefail
           database_name="approval_workflow_repository_test_\${GITHUB_RUN_ID}_\${GITHUB_RUN_ATTEMPT}"`,
 		);
 		expect(workflow).toContain(
-			`SKIP_ENV_VALIDATION=1 \\
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/\${database_name}" \\
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \\
-          pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts`,
+			`bash apps/webapp/scripts/run-postgres-integration-suites.sh \\
+            "postgresql://postgres:postgres@127.0.0.1:5432/\${database_name}"`,
 		);
-		expect(workflow).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
-		expect(workflow).toContain(integrationVitestCommand);
+	});
+
+	it("shares the suite runner instead of duplicating its list and environment", async () => {
+		const workflow = await readWorkflow();
+
+		expect(workflow).not.toContain(".integration.test.ts");
+		expect(workflow).not.toContain("verify-approval-migration-recovery.ts");
+		expect(workflow).not.toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_");
+		expect(workflow).not.toContain("PGOPTIONS");
+		expect(workflow).not.toContain("TZ=UTC");
+	});
+
+	it("runs only the unit project in the sharded unit job", async () => {
+		const workflow = await readWorkflow();
+
 		expect(workflow).toContain(
-			"src/lib/scim/seat-sync-outbox.integration.test.ts",
-		);
-		expect(workflow).toContain(
-			"src/lib/scim/scim-callback-atomicity.integration.test.ts",
-		);
-		expect(workflow).toContain("src/lib/scim/protocol.integration.test.ts");
-		expect(workflow).toContain(
-			"src/lib/cron/legacy-escalation-fencing.integration.test.ts",
-		);
-		expect(integrationSuiteFiles(workflow)).toEqual(
-			expect.arrayContaining([
-				"src/lib/scim/seat-sync-outbox.integration.test.ts",
-				"src/lib/scim/protocol.integration.test.ts",
-				"src/lib/approvals/workflow/repository.integration.test.ts",
-				"src/lib/approvals/workflow/transition-engine.integration.test.ts",
-				"src/lib/approvals/server/time-correction-approvals.integration.test.ts",
-				"src/lib/approvals/server/work-period-approvals.integration.test.ts",
-				"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-in.integration.test.ts",
-				"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts",
-			]),
+			// biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression
+			"pnpm exec turbo test --filter=webapp --output-logs=full --log-order=stream -- --project unit --shard=${{ matrix.shard }}/4",
 		);
 	});
 });
