@@ -7,6 +7,8 @@ const SRC_ROOT = fileURLToPath(new URL(".", import.meta.url));
 const ALLOWED_DIRECT_ENV_READERS = new Set([
 	"env.ts",
 	"instrumentation.ts",
+	// Reads Z8_TEST_PROJECT directly so a suite that mocks "@/env" cannot disable the guard.
+	join("db", "unit-project-guard.ts"),
 	// Test-only database gate; reads the vitest project name.
 	join("lib", "approvals", "workflow", "repository-integration-harness.ts"),
 ]);

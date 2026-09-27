@@ -40,9 +40,9 @@ import { getPrimaryEligibleManagerIdForRequester } from "../policies/manager-eli
 import type { ApprovalPolicyOvertimeRisk } from "../policies/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type {
 	ApprovalWorkflowSnapshot,
-	ApprovalWriteGate,
 	ApprovalWriteGateResult,
 } from "../workflow/ports";
 import { startApprovalWorkflow } from "../workflow/start-workflow";
@@ -311,23 +311,6 @@ function exactDataObject(
 		result[key] = descriptor.value;
 	}
 	return result;
-}
-
-function fixedWriteGate(
-	input: ExecuteOrdinaryWorkPeriodSubmissionInput,
-	authority: ApprovalWriteGateResult,
-): ApprovalWriteGate {
-	return {
-		async acquire(scope) {
-			if (
-				scope.organizationId !== input.organizationId ||
-				scope.workflowType !== input.kind
-			) {
-				return fail();
-			}
-			return authority;
-		},
-	};
 }
 
 function sourceLockKey(input: {
@@ -1662,17 +1645,14 @@ async function executeOrdinaryWorkPeriodSubmission(
 		input.organizationId,
 		input.requesterEmployeeId,
 	);
-	const authority = await input.context.writeGate.acquire({
-		organizationId: input.organizationId,
-		workflowType: input.kind,
-	});
-	const fixedGate = fixedWriteGate(input, authority);
-	const context = {
-		...input.context,
-		writeGate: fixedGate,
-		compatibilityWriter:
-			input.context.compatibilityWriter.withWriteGate(fixedGate),
-	} as ApprovalWorkflowTransactionContext;
+	const { authority, context } = await acquirePinnedApprovalContext(
+		input.context,
+		{
+			organizationId: input.organizationId,
+			workflowType: input.kind,
+			refuse: fail,
+		},
+	);
 	await lockOrdinarySource(input);
 	const submissionKey = deriveApprovalWorkflowId({
 		organizationId: input.organizationId,
@@ -1801,7 +1781,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		let observedWorkflowId: string | null = null;
 		let captureCount = 0;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: fixedGate,
+			writeGate: context.writeGate,
 			compatibilityWriter: context.compatibilityWriter,
 		});
 		const result = await coordinator.execute({

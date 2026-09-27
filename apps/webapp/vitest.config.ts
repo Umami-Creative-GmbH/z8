@@ -33,6 +33,8 @@ export default defineConfig({
 					include: ["src/**/*.test.{ts,tsx}"],
 					exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
 					env: { Z8_TEST_PROJECT: "unit" },
+					// Fails a test whose code reached the real @/db pool (see src/db/unit-project-guard.ts).
+					setupFiles: ["./src/test/unit-setup.ts"],
 				},
 			},
 			{
