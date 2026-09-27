@@ -9145,7 +9145,7 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		});
 	});
 
-	describe("pure-legacy correction whose canonical minutes drifted from the period (#388)", () => {
+	describe("pure-legacy correction whose canonical record drifted from the period (#388, legacy split)", () => {
 		const legacyDriftDb = (canonical: Record<string, unknown>) =>
 			createFinalizerDb({
 				period: { ...terminalPeriod, approvalWorkflowId: null },
@@ -9179,10 +9179,43 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			);
 		});
 
-		it("rejects without touching either representation", async () => {
+		// The legacy calendar split moved the first period's end to the split
+		// point and left its canonical record spanning the whole original work.
+		const splitStaleCanonical = {
+			endAt: new Date("2026-07-19T10:00:00.000Z"),
+			durationMinutes: 690,
+		};
+
+		it("approves over a canonical interval a legacy split left stale and rewrites it", async () => {
+			testEnv.NODE_ENV = "production";
+			const { dbService, mutations } = legacyDriftDb(splitStaleCanonical);
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, legacyDecision),
+				),
+			).resolves.toMatchObject({ transition: "approved" });
+			const canonicalMutation = mutations.find(
+				({ table }) => table === timeRecord,
+			);
+			expect(canonicalMutation?.values).toMatchObject({
+				startAt: correctionIn.timestamp,
+				endAt: correctionOut.timestamp,
+				durationMinutes: 210,
+			});
+			const boundValues = collectTerminalBoundValues(canonicalMutation?.where);
+			expect(boundValues).toContainEqual(splitStaleCanonical.endAt);
+			expect(boundValues).toContain(690);
+			expect(loggerWarn).not.toHaveBeenCalled();
+		});
+
+		it.each([
+			["minutes", { durationMinutes: 479 }],
+			["interval", splitStaleCanonical],
+		])("rejects over stale canonical %s without touching either representation", async (_label, canonical) => {
 			const { dbService, mutations } = createFinalizerDb({
 				period: { ...terminalPeriod, approvalWorkflowId: null },
-				canonical: { ...canonicalRecord, durationMinutes: 479 },
+				canonical: { ...canonicalRecord, ...canonical },
 				legacyRequest: {
 					...legacyRequest,
 					status: "rejected",
@@ -9203,11 +9236,11 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 			expect(mutations).toEqual([]);
 		});
 
-		it("still refuses a canonical interval drift and names the fields", async () => {
+		it("still refuses a canonical approval-state drift and names every field", async () => {
 			testEnv.NODE_ENV = "production";
 			const { dbService, mutations } = legacyDriftDb({
-				endAt: new Date("2026-07-19T06:31:00.000Z"),
-				durationMinutes: 481,
+				...splitStaleCanonical,
+				approvalState: "pending",
 			});
 
 			await expect(
@@ -9221,10 +9254,23 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 				{
 					reason: "canonical_record_source_mismatch",
 					canonicalRowCount: 1,
-					mismatchedFields: ["endAt", "durationMinutes"],
+					mismatchedFields: ["approvalState", "endAt", "durationMinutes"],
 				},
 				"Time correction finalization conflict",
 			);
+			expect(mutations).toEqual([]);
+		});
+
+		it("still refuses a canonical interval drift under a canonical workflow", async () => {
+			const { dbService, mutations } = createFinalizerDb({
+				canonical: { ...canonicalRecord, ...splitStaleCanonical },
+			});
+
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService)),
+			).rejects.toMatchObject({
+				details: { reason: "canonical_record_source_mismatch" },
+			});
 			expect(mutations).toEqual([]);
 		});
 	});
