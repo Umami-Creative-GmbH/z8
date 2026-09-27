@@ -78,11 +78,11 @@ function resolveIntegrationDatabaseUrl(input: {
 	return parseIntegrationDatabaseUrl(input.databaseUrl);
 }
 
-function environmentConfiguration() {
-	return resolveIntegrationDatabaseUrl({
+function environment() {
+	return {
 		databaseUrl: process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL,
 		sentinel: process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL,
-	});
+	};
 }
 
 /** Checks configuration before connecting, then `current_database()` over the connection. */
@@ -110,7 +110,7 @@ let adminPool: Pool | undefined;
 export function openIntegrationPool(
 	config: Pick<PoolConfig, "max" | "idleTimeoutMillis"> = {},
 ): Pool {
-	const { databaseUrl } = environmentConfiguration();
+	const { databaseUrl } = resolveIntegrationDatabaseUrl(environment());
 	configurePostgresUtcTypes();
 	const pool = new Pool(withUtcPostgresSession({ ...config, connectionString: databaseUrl }));
 	// Crash scenarios terminate backends; the affected query fails, but an idle
@@ -150,11 +150,10 @@ export async function integrationDbModule(options: { logQuery?: QueryLogger } = 
 }
 
 /** Runs once per suite, before its first hook (see `integration-setup.ts`). */
-export async function verifyIntegrationTestDatabase(): Promise<IntegrationDatabaseConfig> {
+export async function verifySuiteDatabase(): Promise<IntegrationDatabaseConfig> {
 	const pool = integrationAdminPool();
 	return verifyIntegrationDatabase({
-		databaseUrl: process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL,
-		sentinel: process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL,
+		...environment(),
 		currentDatabase: async () => {
 			const result = await pool.query<{ name: string }>("select current_database() as name");
 			return result.rows[0]?.name ?? "";

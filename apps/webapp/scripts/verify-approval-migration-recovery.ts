@@ -8,10 +8,10 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 import {
 	type IntegrationDatabaseConfig,
+	integrationDatabaseSentinel,
 	parseIntegrationDatabaseUrl,
 } from "../src/test/integration-database";
 
-const TEST_SENTINEL = "approval-workflow-repository-test";
 const INCIDENT_LATEST_CREATED_AT = "1785493929039";
 const INCIDENT_LATEST_TAG = "0059_payroll_blocker_dismissal";
 const EXPAND_CREATED_AT = "1785232090757";
@@ -292,10 +292,10 @@ function requireTestDatabaseConfig(): IntegrationDatabaseConfig {
 		);
 	}
 	if (
-		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== TEST_SENTINEL
+		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== integrationDatabaseSentinel
 	) {
 		throw new Error(
-			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${TEST_SENTINEL}`,
+			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${integrationDatabaseSentinel}`,
 		);
 	}
 	return parseIntegrationDatabaseUrl(databaseUrl);

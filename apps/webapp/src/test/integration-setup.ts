@@ -4,12 +4,12 @@
  * before its first hook, and its pools closed after its last hook.
  */
 import { afterAll, beforeAll, vi } from "vitest";
-import { closeIntegrationPools, verifyIntegrationTestDatabase } from "./integration-database";
+import { closeIntegrationPools, verifySuiteDatabase } from "./integration-database";
 
 vi.mock("@/db", async () => (await import("./integration-database")).integrationDbModule());
 
 beforeAll(async () => {
-	await verifyIntegrationTestDatabase();
+	await verifySuiteDatabase();
 });
 
 afterAll(closeIntegrationPools);

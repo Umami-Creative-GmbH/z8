@@ -67,10 +67,6 @@ const runnerSource = readFileSync(
 	),
 	"utf8",
 );
-const suitesRunnerSource = readFileSync(
-	join(process.cwd(), "scripts/run-postgres-integration-suites.sh"),
-	"utf8",
-);
 const integrationSource = readFileSync(
 	join(
 		process.cwd(),
@@ -228,14 +224,12 @@ describe("time correction PostgreSQL non-live contracts", () => {
 	});
 
 	// The integration project includes this suite by its suffix and sets
-	// PGOPTIONS itself (src/test/vitest-projects.test.ts).
+	// PGOPTIONS itself (src/test/vitest-projects.test.ts); the shared suite
+	// runner exports the database URL (repository-integration-runner.test.ts).
 	it("runs only against a label-owned disposable database", () => {
 		expect(runnerSource).toContain("docker run --detach");
 		expect(runnerSource).toContain(
 			"--label z8.agent-owned=approval-workflow-repository-test",
-		);
-		expect(suitesRunnerSource).toContain(
-			'export APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="$database_url"',
 		);
 		expect(runnerSource).not.toMatch(
 			/(^|[^A-Z_])(?:DATABASE_URL|POSTGRES_URL|PGHOST)=/m,
