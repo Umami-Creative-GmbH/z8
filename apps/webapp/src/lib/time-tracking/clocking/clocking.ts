@@ -116,7 +116,7 @@ function isBreak(command: ClockCommand): command is BreakCommand {
  * The refusal a matching commit causes: it closed the target after the first
  * replay read. Refusals inside the work transaction follow its own replay.
  */
-const LATE_REFUSALS = new Set<ClockOutRefusal["code"]>(["not_clocked_in"]);
+const LATE_CLOCK_OUT_REFUSALS = new Set<ClockOutRefusal["code"]>(["not_clocked_in"]);
 
 /**
  * A matching break that commits after the first replay read leaves its resumed
@@ -401,7 +401,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			if (replay) return replay;
 		}
 		const outcome = await executeClockOut(plan, eventInstantOf(command));
-		if (replayable && outcome.outcome === "refused" && LATE_REFUSALS.has(outcome.failure.code)) {
+		if (
+			replayable &&
+			outcome.outcome === "refused" &&
+			LATE_CLOCK_OUT_REFUSALS.has(outcome.failure.code)
+		) {
 			// A matching command may have committed since the first replay read.
 			const replay = await committedReplay(plan);
 			if (replay?.outcome === "replayed") return replay;
