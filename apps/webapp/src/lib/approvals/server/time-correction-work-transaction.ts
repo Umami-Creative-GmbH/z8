@@ -59,11 +59,12 @@ export interface TimeCorrectionWorkTransaction {
 /**
  * Acquires the protocol on the caller's approval repository transaction. Must be
  * called before any row lock of the transaction; routing reads before it are
- * plain reads.
+ * plain reads. `refuse` replaces the pinned gate's refusal of another scope.
  */
 export async function acquireTimeCorrectionWorkScope(
 	context: ApprovalWorkflowTransactionContext,
 	route: TimeCorrectionWorkRoute,
+	refuse?: () => never,
 ): Promise<TimeCorrectionWorkTransaction> {
 	const transaction = context.dbService.db as unknown as WorkTransactionClient;
 	const routeInput = {
@@ -77,6 +78,7 @@ export async function acquireTimeCorrectionWorkScope(
 	const pinned = await acquirePinnedApprovalContext(context, {
 		organizationId: route.organizationId,
 		workflowType: "time_correction",
+		refuse,
 	});
 	await acquireOrganizationConfigurationGuard(transaction, route.organizationId);
 	await acquireUserConfigurationAccessGuards(transaction, routed.userIds);

@@ -28,7 +28,7 @@ export interface ApprovalWriteGatePin {
 	assertActive?: () => void;
 }
 
-export type ApprovalWriteGateScope = Omit<ApprovalWriteGatePin, "authority">;
+export type ApprovalWriteGatePinScope = Omit<ApprovalWriteGatePin, "authority">;
 
 interface PinnableApprovalContext {
 	writeGate: ApprovalWriteGate;
@@ -65,7 +65,7 @@ export function pinApprovalContext<C extends PinnableApprovalContext>(
 /** Acquires the context's write gate once and pins the result. */
 export async function acquirePinnedApprovalContext<C extends PinnableApprovalContext>(
 	context: C,
-	scope: ApprovalWriteGateScope,
+	scope: ApprovalWriteGatePinScope,
 ): Promise<{ authority: ApprovalWriteGateResult; context: C }> {
 	const authority = await context.writeGate.acquire({
 		organizationId: scope.organizationId,

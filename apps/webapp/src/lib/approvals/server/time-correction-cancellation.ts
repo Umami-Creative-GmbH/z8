@@ -146,11 +146,17 @@ export async function cancelPendingTimeCorrection(
 
 			// Shared work protocol (#301) before any row lock: adoption gate, the
 			// time-correction approval gate, configuration, access, employee key.
-			const work = await acquireTimeCorrectionWorkScope(outerContext, {
-				organizationId: input.organizationId,
-				ownerEmployeeId: input.requesterEmployeeId,
-				actorUserId: input.requesterUserId,
-			});
+			const work = await acquireTimeCorrectionWorkScope(
+				outerContext,
+				{
+					organizationId: input.organizationId,
+					ownerEmployeeId: input.requesterEmployeeId,
+					actorUserId: input.requesterUserId,
+				},
+				() => {
+					throw new Error("Time correction cancellation is unavailable");
+				},
+			);
 			const context = work.context;
 			const adopted = work.scope.admission === "append";
 			let lockedPeriod: Awaited<

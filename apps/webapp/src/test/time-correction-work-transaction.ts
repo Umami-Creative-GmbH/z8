@@ -23,7 +23,7 @@ export function legacyTimeCorrectionWorkTransaction(
 ): typeof Coordinator {
 	return {
 		...actual,
-		acquireTimeCorrectionWorkScope: async (context, route) => {
+		acquireTimeCorrectionWorkScope: async (context, route, refuse) => {
 			const scope = sealWorkTransactionScope({
 				db: context.dbService.db as never,
 				admission: "legacy" as const,
@@ -36,12 +36,14 @@ export function legacyTimeCorrectionWorkTransaction(
 					organizationId: route.organizationId,
 					workflowType: "time_correction",
 					authority,
+					refuse,
 				});
 				return { scope, authority, context: { ...context, writeGate } };
 			}
 			const pinned = await acquirePinnedApprovalContext(context, {
 				organizationId: route.organizationId,
 				workflowType: "time_correction",
+				refuse,
 			});
 			return { scope, ...pinned };
 		},
