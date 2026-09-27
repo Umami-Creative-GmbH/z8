@@ -52,7 +52,6 @@ import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalCommandActor,
 	type ApprovalEventActorIdentity,
-	type ApprovalWorkflowLifecycleMode,
 	type ApprovalWorkflowType,
 	type ApprovalWriteGateResult,
 	type JsonObject,
@@ -140,12 +139,6 @@ export function isLegacyObservationRejection(error: unknown): boolean {
 			(error.code === "malformed" || error.code === "source_conflict"))
 	);
 }
-
-const LEGACY_AUTHORITY_MODES = new Set<ApprovalWorkflowLifecycleMode>([
-	"legacy",
-	"shadow",
-	"ready",
-]);
 
 /**
  * Pending legacy requests of the given entity types old enough to possibly
@@ -443,8 +436,7 @@ async function loadLegacySubject(
 	},
 ): Promise<LegacySubjectLoad> {
 	const tx = context.dbService.db as unknown as DatabaseTransaction;
-	const legacyAuthority = LEGACY_AUTHORITY_MODES.has(gate.mode) && !gate.behavior.decideCanonical;
-	if (!legacyAuthority && (input.workflowType === "absence" || input.represented)) {
+	if (gate.authority !== "legacy" && (input.workflowType === "absence" || input.represented)) {
 		// The canonical path discovers and transfers the assignment instead.
 		return { kind: "canonical_authority" };
 	}
@@ -477,7 +469,7 @@ async function loadLegacySubject(
 		return heldRoute(request, `entity_type:${request.entityType}`);
 	}
 	if (request.status !== "pending") return { kind: "not_pending" };
-	if (!legacyAuthority) {
+	if (gate.authority !== "legacy") {
 		// Expenses have no canonical adapter, and an unrepresented time request
 		// has no canonical assignment: no one can transfer them under another
 		// mode, so they are held visibly instead of skipped.
@@ -591,7 +583,7 @@ async function loadLegacyAbsenceSubject(
 
 	let expectedVersion: number | null = null;
 	let unsupportedRoute: string | null = null;
-	if (gate.behavior.mirror === "legacy_to_canonical") {
+	if (gate.shadowMirroring) {
 		const [observed] = await tx
 			.select({ version: approvalWorkflow.version })
 			.from(approvalWorkflow)
@@ -731,7 +723,8 @@ async function loadLegacyExpenseSubject(
 			transfers,
 			evidence,
 			expectedVersion: null,
-			unsupportedRoute: gate.behavior.mirror === "none" ? null : "legacy_observation_unsupported",
+			unsupportedRoute:
+				gate.shadowMirroring || gate.compatibilityWriting ? "legacy_observation_unsupported" : null,
 		},
 	};
 }
@@ -872,7 +865,7 @@ async function loadLegacyTimeSubject(
 
 	let expectedVersion: number | null = null;
 	let unsupportedRoute: string | null = null;
-	if (gate.behavior.mirror === "legacy_to_canonical") {
+	if (gate.shadowMirroring) {
 		// The decision owners observe the workflow the work period is bound to.
 		const [observed] = await tx
 			.select({ id: approvalWorkflow.id, version: approvalWorkflow.version })

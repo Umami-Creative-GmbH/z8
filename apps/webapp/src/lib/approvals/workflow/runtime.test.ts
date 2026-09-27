@@ -1,12 +1,12 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalDomainAdapterRegistry } from "../domain-adapters/registry";
 import type {
 	ApprovalTerminalFinalizationResult,
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
-import { getCutoverBehavior } from "./cutover";
 import type {
 	ApprovalCommandResult,
 	ApprovalDbService,
@@ -453,10 +453,7 @@ describe("approval workflow runtime", () => {
 		const context = {
 			dbService: transactionService,
 			writeGate: {
-				acquire: async () => ({
-					mode: "canonical" as const,
-					behavior: getCutoverBehavior("canonical"),
-				}),
+				acquire: async () => (approvalWriteGateResult("canonical")),
 			},
 			repository: {
 				loadSnapshot: async () => workflow,

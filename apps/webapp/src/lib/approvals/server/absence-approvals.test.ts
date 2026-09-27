@@ -76,6 +76,7 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));
 
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { ApprovalEvidenceError } from "@/lib/approvals/evidence/errors";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
@@ -1747,24 +1748,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn(async () => ({
-					mode,
-					behavior: {
-						serveFrom:
-							mode === "canonical" || mode === "complete"
-								? "canonical"
-								: "legacy",
-						writeLegacy: mode !== "complete",
-						writeCanonical: mode !== "legacy",
-						decideCanonical: mode === "canonical" || mode === "complete",
-						mirror:
-							mode === "shadow" || mode === "ready"
-								? "legacy_to_canonical"
-								: mode === "canonical"
-									? "canonical_to_legacy"
-									: "none",
-					},
-				})),
+				acquire: vi.fn(async () => (approvalWriteGateResult(mode))),
 			},
 			compatibilityWriter: {
 				withWriteGate() {
@@ -2007,16 +1991,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "canonical",
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: true,
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: "canonical_to_legacy",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("canonical")),
 			},
 			repository: {
 				loadSnapshot: vi.fn(async () => structuredClone(snapshot)),
@@ -2105,16 +2080,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "complete",
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: false,
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: "none",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("complete")),
 			},
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({
@@ -2281,16 +2247,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "shadow",
-					behavior: {
-						serveFrom: "legacy",
-						writeLegacy: true,
-						writeCanonical: true,
-						decideCanonical: false,
-						mirror: "legacy_to_canonical",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("shadow")),
 			},
 			compatibilityWriter: {
 				withWriteGate() {
@@ -2392,16 +2349,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode,
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: mode === "canonical",
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: mode === "canonical" ? "canonical_to_legacy" : "none",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({
@@ -2497,16 +2445,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "canonical",
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: true,
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: "canonical_to_legacy",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("canonical")),
 			},
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({
@@ -2590,16 +2529,7 @@ describe("legacy absence decision evidence routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode,
-					behavior: {
-						serveFrom: "legacy",
-						writeLegacy: true,
-						writeCanonical: mode === "shadow",
-						decideCanonical: false,
-						mirror: mode === "shadow" ? "legacy_to_canonical" : "none",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			compatibilityWriter: {
 				withWriteGate() {

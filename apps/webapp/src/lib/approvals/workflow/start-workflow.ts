@@ -704,11 +704,7 @@ export async function startApprovalWorkflow(
 		organizationId: input.organizationId,
 		workflowType: input.workflowType,
 	});
-	if (
-		(gate.mode !== "canonical" && gate.mode !== "complete") ||
-		!gate.behavior.decideCanonical ||
-		!gate.behavior.writeCanonical
-	) {
+	if (gate.authority !== "canonical") {
 		fail("WRITE_GATE_REJECTED", { mode: gate.mode });
 	}
 	const submissionContextSnapshot = normalizeStableData(

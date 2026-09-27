@@ -6,6 +6,7 @@ import {
 	approvalChainStageInstance,
 	approvalRequest,
 } from "@/db/schema";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type { ApprovalCompatibilityWriter } from "@/lib/approvals/workflow/compatibility-writer";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 
@@ -511,24 +512,7 @@ function harness(
 		writeGate: {
 			acquire: vi.fn().mockImplementation(async () => {
 				events.push("gate");
-				return {
-					mode,
-					behavior: {
-						serveFrom:
-							mode === "canonical" || mode === "complete"
-								? "canonical"
-								: "legacy",
-						writeLegacy: mode !== "complete",
-						writeCanonical: mode !== "legacy",
-						decideCanonical: mode === "canonical" || mode === "complete",
-						mirror:
-							mode === "shadow" || mode === "ready"
-								? "legacy_to_canonical"
-								: mode === "canonical"
-									? "canonical_to_legacy"
-									: "none",
-					},
-				};
+				return approvalWriteGateResult(mode);
 			}),
 		},
 		repository: {

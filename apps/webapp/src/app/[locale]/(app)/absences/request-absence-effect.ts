@@ -546,11 +546,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							};
 						};
 
-					if (
-						gate.mode === "legacy" ||
-						gate.mode === "shadow" ||
-						gate.mode === "ready"
-					) {
+					if (gate.authority === "legacy") {
 						const transactionalDbService = createTransactionDbService(
 							dbService,
 							approvalContext.dbService,
@@ -768,7 +764,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 								endAt: canonicalValues.timeRecord.endAt,
 							},
 						});
-						if (gate.mode === "canonical") {
+						if (gate.compatibilityWriting) {
 							await approvalContext.compatibilityWriter.mirrorCanonicalToLegacy(
 								{
 									result: {

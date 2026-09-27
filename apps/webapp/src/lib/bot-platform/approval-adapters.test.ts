@@ -147,15 +147,18 @@ vi.mock("@/lib/approvals/presentation/bound-card", () => ({
 }));
 // Legacy absence cards (#384): legacy-bound-approval.integration.test.ts. The
 // fixtures here model canonical absence authority.
-vi.mock("@/lib/approvals/evidence/legacy-absence", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-absence")>()),
-	hasLegacyAbsenceAuthority: async () => false,
-}));
+vi.mock("@/lib/approvals/authority", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/approvals/authority")>();
+	return {
+		...actual,
+		readApprovalAuthoritySnapshot: async () => actual.resolveApprovalAuthority("canonical"),
+	};
+});
 // Legacy time cards (#432): legacy-time-bound-approval.integration.test.ts. The
 // time fixtures here have no legacy revision, so they keep the existing path.
 vi.mock("@/lib/approvals/evidence/legacy-time", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-time")>()),
-	isLegacyTimeAuthorityRequest: async () => false,
+	readTimeRequestAuthority: async () => "undetermined",
 }));
 // Historical replays here were never card decisions: no evidence names a binding.
 vi.mock("@/lib/approvals/evidence/store", async (importOriginal) => ({
@@ -220,6 +223,7 @@ vi.mock("@/lib/teams/conversation-manager", () => ({
 
 import { Effect } from "effect";
 import { db } from "@/db";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { handleTelegramUpdate } from "@/lib/telegram/bot-handler";
 import { sendSlackNotification } from "@/lib/notifications/slack-channel";
 import { sendTelegramNotification } from "@/lib/notifications/telegram-channel";
@@ -719,7 +723,7 @@ describe.each(platformCases)(
 						) =>
 							run({
 								dbService: { db },
-								writeGate: { acquire: async () => ({ mode: "legacy" }) },
+								writeGate: { acquire: async () => approvalWriteGateResult("legacy") },
 								compatibilityWriter: { withWriteGate: () => ({}) },
 							}),
 					},

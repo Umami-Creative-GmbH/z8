@@ -1,5 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { createDatabaseStageActivationResolver } from "../routing/stage-activation-resolver";
 import type {
@@ -86,16 +87,7 @@ function input(mode: ApprovalWorkflowLifecycleMode = "canonical") {
 	const calls: string[] = [];
 	const acquire = vi.fn(async () => {
 		calls.push("gate");
-		return {
-			mode,
-			behavior: {
-				serveFrom: mode === "complete" ? "canonical" : "legacy",
-				writeLegacy: mode !== "complete",
-				writeCanonical: mode === "canonical" || mode === "complete",
-				decideCanonical: mode === "canonical" || mode === "complete",
-				mirror: "none",
-			},
-		};
+		return approvalWriteGateResult(mode);
 	});
 	const execute = vi.fn(async () => ({ rows: [{ policies: [] }] }));
 	const createInitialWorkflow = vi.fn(
@@ -398,25 +390,6 @@ describe("startApprovalWorkflow", () => {
 		});
 		expect(fixture.calls[0]).toBe("gate");
 		expect(fixture.execute).toHaveBeenCalledOnce();
-	});
-
-	it("rejects a canonical label whose behavior is not canonical-complete", async () => {
-		const fixture = input();
-		fixture.acquire.mockResolvedValue({
-			mode: "canonical",
-			behavior: {
-				serveFrom: "canonical",
-				writeLegacy: false,
-				writeCanonical: true,
-				decideCanonical: false,
-				mirror: "none",
-			},
-		});
-
-		await expect(startApprovalWorkflow(fixture.value)).rejects.toMatchObject({
-			code: "WRITE_GATE_REJECTED",
-		});
-		expect(fixture.execute).not.toHaveBeenCalled();
 	});
 
 	it.each([

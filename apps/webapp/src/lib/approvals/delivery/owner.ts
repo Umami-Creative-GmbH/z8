@@ -5,7 +5,6 @@ import {
 	type ApprovalDeliveryProvider,
 	approvalStageAssignment,
 	approvalWorkflow,
-	approvalWorkflowRollout,
 	approvalWorkflowStage,
 	employee,
 } from "@/db/schema";
@@ -14,6 +13,7 @@ import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { loadNotificationChannelPreferences } from "@/lib/notifications/notification-service";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
+import { readApprovalAuthoritySnapshot } from "../authority";
 import type { EscalationAttentionInput } from "../escalation/attention";
 import {
 	raiseEscalationAttention,
@@ -371,18 +371,11 @@ async function finishSimply(
  */
 async function escalationAuthorityHolds(work: ClaimedApprovalDeliveryWork): Promise<boolean> {
 	if (!work.escalationTransferId) return true;
-	const [rollout] = await db
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, work.organizationId),
-				eq(approvalWorkflowRollout.workflowType, work.workflowType),
-			),
-		)
-		.limit(1);
-	const canonical = rollout?.mode === "canonical" || rollout?.mode === "complete";
-	return work.lifecycle === "legacy" ? !canonical : canonical;
+	const { authority } = await readApprovalAuthoritySnapshot(db, {
+		organizationId: work.organizationId,
+		workflowType: work.workflowType,
+	});
+	return authority === (work.lifecycle === "legacy" ? "legacy" : "canonical");
 }
 
 /**
