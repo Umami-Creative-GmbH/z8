@@ -236,6 +236,7 @@ export async function decideBoundTimeInvocation(
 		if (workflow.workflowType === "time_correction") {
 			const execution = await executeTimeCorrectionDecisionInTransaction({
 				createRuntime: boundTimeRuntime,
+				database: database as ApprovalDbService["db"],
 				bound,
 				organizationId: input.organizationId,
 				actorEmployeeId: input.actorEmployeeId,
@@ -382,6 +383,7 @@ export async function decideBoundLegacyTimeInvocation(
 				execute: () =>
 					executeTimeCorrectionDecisionInTransaction({
 						createRuntime: boundTimeRuntime,
+						database: dbService.db,
 						bound,
 						organizationId: input.organizationId,
 						actorEmployeeId: input.actorEmployeeId,

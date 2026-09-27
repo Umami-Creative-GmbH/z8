@@ -820,7 +820,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		endTime: period.endTime,
 	};
 
-	// The coordinator took the #264 protocol for the owner and kind it routed,
+	// The coordinator took the acquisition protocol for the owner and kind it routed,
 	// so a final policy clock-out approval's break split runs under the owner's
 	// coordination instead of locking late (#303). The observation it routed
 	// from held under the guards, so these reads agree with it.
@@ -831,7 +831,6 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 	) {
 		throw new Error(ORDINARY_DECISION_ERROR);
 	}
-	const decisionContext = context;
 	// The kind's gate, acquired at rank 2 and pinned on the borrowed context.
 	const authority = await context.writeGate.acquire({
 		organizationId: input.organizationId,
@@ -968,7 +967,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				throw new Error(ORDINARY_DECISION_ERROR);
 			}
 			const bootstrapped =
-				await decisionContext.compatibilityWriter.mirrorLegacyToCanonical({
+				await context.compatibilityWriter.mirrorLegacyToCanonical({
 					before: {
 						...verifiedLegacyState,
 						approvalRequest: null,
@@ -1020,8 +1019,8 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 			input.decision.reason ?? "",
 		].join(":");
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: decisionContext.writeGate,
-			compatibilityWriter: decisionContext.compatibilityWriter,
+			writeGate: context.writeGate,
+			compatibilityWriter: context.compatibilityWriter,
 		});
 		let mutationResult: WorkPeriodApprovalResult | undefined;
 		let captureCount = 0;
@@ -1235,7 +1234,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 	if (exactCanonicalReplay && canonicalCommand && canonicalIdempotencyKey) {
 		const replay =
 			await runtime.transitionEngine.executeInTransactionWithDisposition(
-				decisionContext,
+				context,
 				{
 					organizationId: input.organizationId,
 					workflowId: snapshot.id,
@@ -1307,7 +1306,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		: `ordinary-decision:${input.organizationId}:${snapshot.id}:${input.approvalRequestId}:${input.decision.kind}:${input.decision.reason ?? ""}`;
 	const execution =
 		await runtime.transitionEngine.executeInTransactionWithDisposition(
-			decisionContext,
+			context,
 			{
 				organizationId: input.organizationId,
 				workflowId: snapshot.id,

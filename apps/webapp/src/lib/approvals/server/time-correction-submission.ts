@@ -2096,7 +2096,7 @@ function submitCorrectionInTransaction(
 				await recordAdoptedSubmission({
 					...receiptInput,
 					correctionEntries,
-					authority: authority,
+					authority,
 					result,
 					submittedRevision,
 				});

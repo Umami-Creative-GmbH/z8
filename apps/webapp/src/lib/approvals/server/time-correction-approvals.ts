@@ -4822,8 +4822,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			},
 			runtime.factory,
 			async (scope) => {
-			const outerContext = scope.approval;
-			const transactionDb = outerContext.dbService
+			const context = scope.approval;
+			const transactionDb = context.dbService
 				.db as unknown as ApprovalDbService["db"];
 			const dbService: ApprovalDbService = {
 				db: transactionDb,
@@ -5027,7 +5027,6 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				};
 			}
 
-			const context = outerContext;
 			const authority = await timeCorrectionAuthority(scope, input.organizationId);
 			const legacyAuthority =
 				authority.authority === "legacy";

@@ -103,10 +103,10 @@ describe("time correction request safety", () => {
 		);
 	});
 
-	it("routes modular approval-producing edits through one repository transaction and the shared submission boundary", () => {
+	it("routes modular approval-producing edits through one work transaction and the shared submission boundary", () => {
 		const body = functionBody(modularSource, "submitCorrection");
 
-		expect(body).toContain("repository.withTransaction");
+		expect(body).toContain("withTimeCorrectionWorkTransaction");
 		expect(body).toContain("deriveTimeCorrectionSubmissionKey");
 		expect(body).toContain("deriveTimeCorrectionRowId");
 		expect(body).toContain("executeTimeCorrectionSubmissionInTransaction");
@@ -164,18 +164,18 @@ describe("time correction request safety", () => {
 			"session.session.activeOrganizationId !== input.organizationId",
 		);
 		expect(body.indexOf("getCurrentSession()")).toBeLessThan(
-			body.indexOf("repository.withTransaction"),
+			body.indexOf("withTimeCorrectionWorkTransaction"),
 		);
 	});
 
-	it("routes deletion through the same repository-owned submission boundary", () => {
+	it("routes deletion through the same work-transaction submission boundary", () => {
 		const body = functionBody(modularSource, "submitCorrection");
 		const deletionBody = functionBody(
 			modularSource,
 			"requestTimeEntryDeletion",
 		);
 
-		expect(body).toContain("repository.withTransaction");
+		expect(body).toContain("withTimeCorrectionWorkTransaction");
 		expect(body).toContain("deriveTimeCorrectionSubmissionKey");
 		expect(body).toContain("deriveTimeCorrectionRowId");
 		expect(body).toContain("executeTimeCorrectionSubmissionInTransaction");
