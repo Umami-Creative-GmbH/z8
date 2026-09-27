@@ -9,6 +9,7 @@ import {
 import {
 	acquireExclusiveOrganizationConfigurationGuard,
 	acquireOrganizationConfigurationGuard,
+	adoptionGate,
 	employeeCoordinationGuard,
 	holdGuard,
 	organizationConfigurationGuard,
@@ -277,6 +278,38 @@ describe("runWorkTransaction", () => {
 		await expect(fake.run(plan(simple), async () => "next")).resolves.toBe("next");
 	});
 
+	it("restarts on a scope change seen after the row locks", async () => {
+		let reads = 0;
+		const lockRows = vi.fn(async () => undefined);
+		const fake = fakeWorkTransaction();
+		const result = await fake.run(
+			plan(
+				() => {
+					reads += 1;
+					// The third read, after the first attempt's row locks, sees a new employee.
+					return reads >= 3 ? { ...simple, employees: [...simple.employees, "emp-3"] } : simple;
+				},
+				{ lockRows },
+			),
+			async (scope) => scope.route.employees,
+		);
+
+		expect(result).toContain("emp-3");
+		expect(fake.attempts).toBe(2);
+		expect(lockRows).toHaveBeenCalledTimes(2);
+	});
+
+	it("settles a savepoint scope when its savepoint ends", async () => {
+		const fake = fakeWorkTransaction();
+		await fake.run(plan(simple), async (scope) => {
+			const inner = await scope.savepoint(async (savepoint) => savepoint);
+			expect(() => inner.assertEmployee(organizationId, "emp-2")).toThrow(
+				"Work transaction is no longer active",
+			);
+			expect(() => scope.assertEmployee(organizationId, "emp-2")).not.toThrow();
+		});
+	});
+
 	it("runs a savepoint with a scope of its own", async () => {
 		const fake = fakeWorkTransaction();
 		await fake.run(plan(simple), async (scope) => {
@@ -444,6 +477,12 @@ describe("runWorkTransaction", () => {
 			await acquireExclusiveOrganizationConfigurationGuard(handle as never, organizationId);
 			expect(handle.execute).toHaveBeenCalledTimes(2);
 
+			// A ledger holdGuard created on its own does not make the handle coordinated.
+			const lazy = { execute: vi.fn(async () => undefined) };
+			await holdGuard(lazy as never, sourceIdentityGuard(["provider", "a"]));
+			await acquireOrganizationConfigurationGuard(lazy as never, organizationId);
+			expect(lazy.execute).toHaveBeenCalledTimes(2);
+
 			const fake = fakeWorkTransaction();
 			await expect(
 				fake.run(plan(simple), (scope) =>
@@ -460,6 +499,30 @@ describe("runWorkTransaction", () => {
 				),
 			).rejects.toBeInstanceOf(WorkTransactionProtocolViolation);
 			expect(fake.attempts).toBe(1);
+		});
+
+		it("does not retry a violation raised after a swallowed restart", async () => {
+			const fake = fakeWorkTransaction();
+			await expect(
+				fake.run(plan(simple), async (scope) => {
+					try {
+						scope.restart();
+					} catch {}
+					await holdGuard(scope.db, userConfigurationAccessGuard("user-c"));
+				}),
+			).rejects.toBeInstanceOf(WorkTransactionProtocolViolation);
+			expect(fake.attempts).toBe(1);
+		});
+
+		it("allows re-taking a held guard inside a savepoint without locking again", async () => {
+			const fake = fakeWorkTransaction();
+			await fake.run(plan(simple), (scope) =>
+				scope.savepoint(async (savepoint) => {
+					await holdGuard(savepoint.db, adoptionGate(organizationId));
+					await holdGuard(savepoint.db, employeeCoordinationGuard("emp-2"));
+				}),
+			);
+			expect(fake.guards).toHaveLength(6);
 		});
 	});
 });

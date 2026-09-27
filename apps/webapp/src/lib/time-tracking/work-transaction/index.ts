@@ -29,10 +29,12 @@ import {
 	Rank,
 	recordGuard,
 	sourceIdentityGuard,
+	type Transaction,
 	userConfigurationAccessGuard,
 	WorkTransactionProtocolViolation,
 } from "./ranks";
 
+export type { Transaction } from "./ranks";
 // The organization configuration guard lives in the schema-free ranks module so
 // route handlers can take it; coordinators keep importing it from here.
 export {
@@ -41,8 +43,6 @@ export {
 	WorkTransactionProtocolViolation,
 	withOrganizationConfigurationMutation,
 } from "./ranks";
-
-export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type WorkTransactionClient = Pick<
 	Transaction,
 	"execute" | "query" | "select" | "insert" | "update" | "delete"
@@ -116,8 +116,6 @@ export interface WorkTransactionScope<R = WorkRoute, A = never> extends SealedWo
 	readonly route: R;
 	/** The pinned approval context from the port. */
 	readonly approval: A;
-	/** Throws unless the employee is a write target of this organization. */
-	assertEmployee(organizationId: string, employeeId: string): void;
 	/** Rolls the attempt back and starts a fresh one, within the budget of 3. */
 	restart(options?: { widen: true }): never;
 	/** Runs `work` in a savepoint; no guard may be taken inside it. */
@@ -126,7 +124,8 @@ export interface WorkTransactionScope<R = WorkRoute, A = never> extends SealedWo
 
 /**
  * The routed scope differed once the guards were held, in every attempt the
- * budget allowed; every attempt has been rolled back.
+ * budget allowed; every attempt has been rolled back. Coordinators not yet
+ * migrated still throw it after one attempt as their own restart signal.
  */
 export class WorkTransactionScopeChanged extends Error {
 	constructor() {
@@ -150,8 +149,9 @@ export function workTransactionScopeFor(client: object): SealedWorkTransactionSc
 }
 
 /**
- * For the outer transaction coordinators not yet migrated; ordinary callers
- * receive a scope. The sealed scope is also registered for its transaction client.
+ * For the coordinators not yet migrated, which still seal their scopes by hand;
+ * ordinary callers receive a scope. The sealed scope is also registered for its
+ * transaction client.
  */
 export function sealWorkTransactionScope<T extends object>(
 	scope: T,
@@ -183,7 +183,7 @@ export interface WorkTransactionAdapter {
 	lock(client: object, guard: Guard): Promise<void>;
 	readAdmission(client: object, organizationId: string): Promise<WorkTransactionAdmission>;
 	savepoint<T>(transaction: object, body: (savepoint: object) => Promise<T>): Promise<T>;
-	/** Reports a concurrent scope change at the compare after rank 5. */
+	/** Reports a concurrent scope change at the compare after rank 5 (the fake's hook). */
 	scopeChanged?(attempt: number): boolean;
 }
 
@@ -221,7 +221,16 @@ class AttemptRolledBack extends Error {
 	}
 }
 
-/** `runWorkTransaction` over an adapter; `testing.ts` passes its fake. */
+/**
+ * Whether the attempt must restart. It is kept beside the error, because
+ * approvals or Effect may redact the error on its way out.
+ */
+interface RestartIntent {
+	requested: boolean;
+	widen: boolean;
+}
+
+/** `runWorkTransaction` over an adapter; only `testing.ts` passes another one. */
 export async function runWorkTransactionWith<R extends WorkRoute, A, T>(
 	adapter: WorkTransactionAdapter,
 	plan: WorkPlan<R, A>,
@@ -234,11 +243,11 @@ export async function runWorkTransactionWith<R extends WorkRoute, A, T>(
 	try {
 		return await activeRun.run(run, async () => {
 			let widened = false;
-			for (let attempt = 1; ; attempt += 1) {
-				const outcome = await runAttempt(adapter, plan, operation, { attempt, widened });
+			for (let number = 1; ; number += 1) {
+				const outcome = await runAttempt(adapter, plan, operation, { number, widened });
 				if (outcome.done) return outcome.value;
 				if (outcome.widen) widened = true;
-				if (attempt >= ATTEMPTS) throw new WorkTransactionScopeChanged();
+				if (number >= ATTEMPTS) throw new WorkTransactionScopeChanged();
 			}
 		});
 	} finally {
@@ -248,25 +257,35 @@ export async function runWorkTransactionWith<R extends WorkRoute, A, T>(
 
 type AttemptOutcome<T> = { done: true; value: T } | { done: false; widen: boolean };
 
+interface Attempt<A> {
+	/** From 1. */
+	number: number;
+	widened: boolean;
+	transaction: object;
+	approval: A;
+	restart: RestartIntent;
+}
+
 async function runAttempt<R extends WorkRoute, A, T>(
 	adapter: WorkTransactionAdapter,
 	plan: WorkPlan<R, A>,
 	operation: (scope: WorkTransactionScope<R, A>) => Promise<T>,
-	{ attempt, widened }: { attempt: number; widened: boolean },
+	{ number, widened }: { number: number; widened: boolean },
 ): Promise<AttemptOutcome<T>> {
-	const restart: { requested: boolean; widen: boolean } = { requested: false, widen: false };
+	const restart: RestartIntent = { requested: false, widen: false };
 	try {
 		const value = await adapter.open(plan.database, (transaction) => {
 			openLedger(transaction, adapter.lock);
 			const body = (approval: A) =>
-				coordinate(adapter, plan, operation, { transaction, approval, attempt, widened, restart });
+				coordinate(adapter, plan, operation, { number, widened, transaction, approval, restart });
 			return plan.approval
 				? plan.approval.borrow(transaction as WorkTransactionClient, body)
 				: body(undefined as A);
 		});
 		return { done: true, value };
 	} catch (error) {
-		// The intent, not the error, decides: approvals or Effect may redact the error.
+		// A violation is never retried, even after a restart the operation swallowed.
+		if (error instanceof WorkTransactionProtocolViolation) throw error;
 		if (restart.requested) return { done: false, widen: restart.widen };
 		throw error;
 	}
@@ -276,13 +295,7 @@ async function coordinate<R extends WorkRoute, A, T>(
 	adapter: WorkTransactionAdapter,
 	plan: WorkPlan<R, A>,
 	operation: (scope: WorkTransactionScope<R, A>) => Promise<T>,
-	attempt: {
-		transaction: object;
-		approval: A;
-		attempt: number;
-		widened: boolean;
-		restart: { requested: boolean; widen: boolean };
-	},
+	attempt: Attempt<A>,
 ): Promise<T> {
 	const { transaction, restart } = attempt;
 	const client = transaction as WorkTransactionClient;
@@ -296,45 +309,42 @@ async function coordinate<R extends WorkRoute, A, T>(
 	};
 
 	const routed = await route();
-	const writeTargets = new Set(routed.writeTargets);
-	const employees = new Set(routed.employees);
+	const scope = normalizeRoute(routed);
+	const writeTargets = new Set(scope.writeTargets);
 	for (const target of writeTargets) {
-		if (!employees.has(target)) {
+		if (!scope.employees.includes(target)) {
 			throw new WorkTransactionProtocolViolation(`write target ${target} is not a routed employee`);
 		}
 	}
-	if (routed.approvalGate !== undefined && !plan.approval) {
+	if (scope.approvalGate !== null && !plan.approval) {
 		throw new WorkTransactionProtocolViolation("an approval gate without an approval port");
 	}
 
 	await take(adoptionGate(plan.organizationId));
 	const admission = await adapter.readAdmission(transaction, plan.organizationId);
 	let approval = attempt.approval;
-	if (routed.approvalGate !== undefined && plan.approval) {
-		approval = await plan.approval.gate(approval, plan.organizationId, routed.approvalGate);
+	if (scope.approvalGate !== null && plan.approval) {
+		approval = await plan.approval.gate(approval, plan.organizationId, scope.approvalGate);
 		if (!ledgerHolds(transaction, Rank.approvalWriteGate)) {
 			throw new WorkTransactionProtocolViolation("the approval gate did not record rank 2");
 		}
 	}
-	const organization = routed.guards?.organization ?? "shared";
-	if (organization !== "none") {
-		await take(organizationConfigurationGuard(plan.organizationId, organization));
+	if (scope.organization !== "none") {
+		await take(organizationConfigurationGuard(plan.organizationId, scope.organization));
 	}
-	for (const userId of sortedUnique(routed.users)) {
-		await take(userConfigurationAccessGuard(userId, routed.guards?.users ?? "shared"));
+	for (const userId of scope.users) {
+		await take(userConfigurationAccessGuard(userId, scope.userMode));
 	}
-	for (const employeeId of sortedUnique(routed.employees)) {
+	for (const employeeId of scope.employees) {
 		await take(employeeCoordinationGuard(employeeId));
 	}
-	const canonical = canonicalRoute(routed);
+	const canonical = canonicalJson(scope);
 	let confirmed = await route();
-	if (adapter.scopeChanged?.(attempt.attempt) || canonicalRoute(confirmed) !== canonical) {
+	if (adapter.scopeChanged?.(attempt.number) || canonicalRoute(confirmed) !== canonical) {
 		rollBack(false);
 	}
-	for (const identity of sortedUnique(
-		(routed.sourceIdentities ?? []).map((id) => JSON.stringify(id)),
-	)) {
-		await take(sourceIdentityGuard(JSON.parse(identity) as string[]));
+	for (const identity of scope.sourceIdentities) {
+		await take(sourceIdentityGuard(identity));
 	}
 	if (plan.lockRows) {
 		recordGuard(transaction, Rank.rows, "rows", "exclusive");
@@ -343,12 +353,13 @@ async function coordinate<R extends WorkRoute, A, T>(
 		if (canonicalRoute(confirmed) !== canonical) rollBack(false);
 	}
 
-	let active = true;
-	const assertActive = () => {
-		if (!active) throw new Error("Work transaction is no longer active");
-	};
-	const seal = (db: object): WorkTransactionScope<R, A> => {
-		const scope: WorkTransactionScope<R, A> = Object.freeze({
+	/** Seals a scope for `db` that settles with its parent and when `settle` runs. */
+	const seal = (db: object, live: () => boolean) => {
+		let active = true;
+		const assertActive = () => {
+			if (!active || !live()) throw new Error("Work transaction is no longer active");
+		};
+		const sealed: WorkTransactionScope<R, A> = Object.freeze({
 			[protectedTransaction]: true as const,
 			db: db as WorkTransactionClient,
 			admission,
@@ -367,39 +378,72 @@ async function coordinate<R extends WorkRoute, A, T>(
 			savepoint<U>(work: (scope: WorkTransactionScope<R, A>) => Promise<U>): Promise<U> {
 				assertActive();
 				return adapter.savepoint(db, (savepoint) =>
-					insideSavepoint(db, savepoint, () => work(seal(savepoint))),
+					insideSavepoint(db, savepoint, async () => {
+						const inner = seal(savepoint, () => active && live());
+						try {
+							return await work(inner.scope);
+						} finally {
+							inner.settle();
+						}
+					}),
 				);
 			},
 		});
-		scopesByTransaction.set(db, scope);
-		return scope;
+		scopesByTransaction.set(db, sealed);
+		return {
+			scope: sealed,
+			settle: () => {
+				active = false;
+			},
+		};
 	};
+
+	const outer = seal(transaction, () => true);
 	try {
-		const value = await operation(seal(transaction));
+		const value = await operation(outer.scope);
 		// A restart the operation swallowed still rolls this attempt back.
 		if (restart.requested) rollBack(false);
 		return value;
 	} finally {
-		active = false;
+		outer.settle();
 	}
 }
 
-function sortedUnique(values: readonly string[]): string[] {
-	return [...new Set(values)].sort();
+/** A route with its sets sorted and deduplicated and its guard modes defaulted. */
+interface NormalizedRoute {
+	users: string[];
+	employees: string[];
+	writeTargets: string[];
+	organization: "none" | "shared" | "exclusive";
+	userMode: "shared" | "exclusive";
+	approvalGate: string | null;
+	sourceIdentities: (readonly string[])[];
+	snapshot: unknown;
 }
 
-/** The route as canonical JSON: sets sorted, guard modes defaulted. */
-function canonicalRoute(route: WorkRoute): string {
-	return canonicalJson({
+function normalizeRoute(route: WorkRoute): NormalizedRoute {
+	const identities = new Map(
+		(route.sourceIdentities ?? []).map((identity) => [JSON.stringify(identity), identity]),
+	);
+	return {
 		users: sortedUnique(route.users),
 		employees: sortedUnique(route.employees),
 		writeTargets: sortedUnique(route.writeTargets),
 		organization: route.guards?.organization ?? "shared",
 		userMode: route.guards?.users ?? "shared",
 		approvalGate: route.approvalGate ?? null,
-		sourceIdentities: sortedUnique((route.sourceIdentities ?? []).map((id) => JSON.stringify(id))),
+		sourceIdentities: [...identities.keys()].sort().map((key) => identities.get(key) ?? []),
 		snapshot: route.snapshot ?? null,
-	});
+	};
+}
+
+function sortedUnique(values: readonly string[]): string[] {
+	return [...new Set(values)].sort();
+}
+
+/** The route as canonical JSON, compared on every re-route. */
+function canonicalRoute(route: WorkRoute): string {
+	return canonicalJson(normalizeRoute(route));
 }
 
 /**

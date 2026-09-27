@@ -227,6 +227,55 @@ describe("work transaction coordinator on PostgreSQL", () => {
 		expect(await suiteLockCount()).toBe(0);
 	});
 
+	it("locks rows last and restarts on a scope change seen after them", async () => {
+		const rowHolder = await admin.connect();
+		await rowHolder.query("begin");
+		await rowHolder.query("select 1 from t487_route where organization_id = $1 for update", [
+			organizationId,
+		]);
+		let lockRows = 0;
+		let run: Promise<readonly string[]> | undefined;
+		try {
+			run = runWorkTransaction(
+				{
+					organizationId,
+					route: (db) => routeFromTable(db),
+					async lockRows(db) {
+						lockRows += 1;
+						await db.execute(
+							sql`select 1 from t487_route where organization_id = ${organizationId} for update`,
+						);
+					},
+				},
+				async (scope) => scope.route.employees,
+			);
+			let pid: number | undefined;
+			for (let poll = 0; poll < 400 && pid === undefined; poll += 1) {
+				const { rows } = await admin.query<{ pid: number }>(
+					`select pid from pg_stat_activity
+					  where wait_event_type = 'Lock' and query like '%t487_route%for update%'`,
+				);
+				pid = rows[0]?.pid;
+				if (pid === undefined) await new Promise((resolve) => setTimeout(resolve, 25));
+			}
+			if (pid === undefined) throw new Error("The row locks never waited");
+			// Every guard rank is held before the first row lock.
+			expect([...(await heldKeys(pid)).keys()].sort()).toEqual(
+				Object.values(guards)
+					.map(({ key }) => key)
+					.sort(),
+			);
+			await admin.query("insert into t487_route values ($1, $2)", [organizationId, ids.joiner]);
+		} finally {
+			await rowHolder.query("rollback");
+			rowHolder.release();
+		}
+
+		await expect(run).resolves.toEqual([ids.employee, ids.joiner]);
+		expect(lockRows).toBe(2);
+		expect(await suiteLockCount()).toBe(0);
+	});
+
 	it("gives up after 3 changed attempts and leaves no rows and no locks", async () => {
 		let routings = 0;
 		await expect(

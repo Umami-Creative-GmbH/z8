@@ -9,7 +9,7 @@
 import { sql } from "drizzle-orm";
 import type { db } from "@/db";
 
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type GuardClient = Pick<Transaction, "execute">;
 
 /** A guard's position in the acquisition protocol; lower ranks are taken first. */
@@ -103,15 +103,19 @@ class GuardLedger {
 	private routing = 0;
 	private savepoints = 0;
 
-	constructor(readonly lock: Lock) {}
+	constructor(
+		readonly lock: Lock,
+		/** Opened by the coordinator for a transaction it owns. */
+		readonly coordinated: boolean,
+	) {}
 
-	/** Records the guard; true when it is newly held and must still be locked. */
+	/**
+	 * Records the guard; true when it is newly held and must still be locked. A
+	 * held guard in the same or a weaker mode is allowed anywhere, since it takes
+	 * no new lock; a new one is refused while routing and inside a savepoint.
+	 */
 	record(guard: Guard): boolean {
 		const describe = `rank ${guard.rank} ${guard.mode} guard ${guard.key}`;
-		if (this.routing > 0) throw new WorkTransactionProtocolViolation(`${describe} during routing`);
-		if (this.savepoints > 0) {
-			throw new WorkTransactionProtocolViolation(`${describe} inside a savepoint`);
-		}
 		const id = `${guard.rank}\u0000${guard.key}`;
 		const held = this.held.get(id);
 		if (held) {
@@ -119,6 +123,10 @@ class GuardLedger {
 				throw new WorkTransactionProtocolViolation(`${describe} upgrades a shared guard`);
 			}
 			return false;
+		}
+		if (this.routing > 0) throw new WorkTransactionProtocolViolation(`${describe} during routing`);
+		if (this.savepoints > 0) {
+			throw new WorkTransactionProtocolViolation(`${describe} inside a savepoint`);
 		}
 		if (guard.rank < this.highest) {
 			throw new WorkTransactionProtocolViolation(`${describe} after rank ${this.highest}`);
@@ -148,7 +156,7 @@ const ledgers = new WeakMap<object, GuardLedger>();
 function ledgerFor(client: object): GuardLedger {
 	let ledger = ledgers.get(client);
 	if (!ledger) {
-		ledger = new GuardLedger(lockGuard);
+		ledger = new GuardLedger(lockGuard, false);
 		ledgers.set(client, ledger);
 	}
 	return ledger;
@@ -175,7 +183,7 @@ export function recordGuard(client: object, rank: Rank, key: string, mode: Guard
  * opened, with the lock its adapter takes (the fake records instead).
  */
 export function openLedger(client: object, lock: Lock): void {
-	ledgers.set(client, new GuardLedger(lock));
+	ledgers.set(client, new GuardLedger(lock, true));
 }
 
 /** Coordinator internals: whether the transaction's ledger holds a guard of the rank. */
@@ -208,7 +216,7 @@ export function insideSavepoint<T>(
  * database handle), and a ledger must never carry guards across transactions.
  */
 async function takeConfigurationGuard(client: GuardClient, guard: Guard): Promise<void> {
-	if (ledgers.has(client)) await holdGuard(client, guard);
+	if (ledgers.get(client)?.coordinated) await holdGuard(client, guard);
 	else await lockGuard(client, guard);
 }
 
