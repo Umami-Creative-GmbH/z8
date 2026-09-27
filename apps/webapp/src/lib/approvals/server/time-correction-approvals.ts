@@ -132,6 +132,7 @@ import type {
 } from "../policies/types";
 import { mapSequentially } from "../sequential";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
@@ -3585,28 +3586,6 @@ function requesterAutoCompletionActor(input: {
 	};
 }
 
-function fixedTimeCorrectionGate(
-	organizationId: string,
-	authority: Awaited<
-		ReturnType<ApprovalWorkflowTransactionContext["writeGate"]["acquire"]>
-	>,
-) {
-	return {
-		acquire: async (scope: {
-			organizationId: string;
-			workflowType: "time_correction";
-		}) => {
-			if (
-				scope.organizationId !== organizationId ||
-				scope.workflowType !== "time_correction"
-			) {
-				throw new Error("Time correction rollout scope mismatch");
-			}
-			return authority;
-		},
-	};
-}
-
 function resultCycle(
 	result: TimeCorrectionApprovalWorkflowResult,
 ): ExpectedTimeCorrectionLegacyCycle {
@@ -3896,17 +3875,11 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 				workCategoryId: lockedSource.workCategoryId,
 			})
 		: undefined;
-	const authority = await input.context.writeGate.acquire({
-		organizationId: input.organizationId,
-		workflowType: "time_correction",
-	});
-	const fixedGate = fixedTimeCorrectionGate(input.organizationId, authority);
-	const transactionContext = {
-		...input.context,
-		writeGate: fixedGate,
-		compatibilityWriter:
-			input.context.compatibilityWriter.withWriteGate(fixedGate),
-	} as ApprovalWorkflowTransactionContext;
+	const { authority, context: transactionContext } =
+		await acquirePinnedApprovalContext(input.context, {
+			organizationId: input.organizationId,
+			workflowType: "time_correction",
+		});
 
 	if (
 		authority.mode === "legacy" ||
@@ -4071,7 +4044,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const capture =
 			input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: fixedGate,
+			writeGate: transactionContext.writeGate,
 			compatibilityWriter: transactionContext.compatibilityWriter,
 		});
 		const result = await coordinator.execute({
@@ -5007,16 +4980,6 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			});
 			const context = work.context;
 			const authority = work.authority;
-			const fixedGate = fixedTimeCorrectionGate(
-				input.organizationId,
-				authority,
-			);
-			const decisionContext = {
-				...context,
-				writeGate: fixedGate,
-				compatibilityWriter:
-					context.compatibilityWriter.withWriteGate(fixedGate),
-			} as ApprovalWorkflowTransactionContext;
 			const legacyAuthority =
 				authority.mode === "legacy" ||
 				authority.mode === "shadow" ||
@@ -5149,8 +5112,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const capture =
 					input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: fixedGate,
-					compatibilityWriter: decisionContext.compatibilityWriter,
+					writeGate: context.writeGate,
+					compatibilityWriter: context.compatibilityWriter,
 				});
 				const domainResult = await coordinator.execute({
 					organizationId: input.organizationId,
@@ -5350,7 +5313,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				: `time-correction:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${decisionFingerprint(input.reason)}`;
 			const commandResult =
 				await input.runtime.transitionEngine.executeInTransaction(
-					decisionContext,
+					context,
 					{
 						organizationId: input.organizationId,
 						workflowId: workflow.id,

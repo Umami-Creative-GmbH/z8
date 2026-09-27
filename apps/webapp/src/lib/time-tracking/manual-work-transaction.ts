@@ -3,8 +3,8 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalPolicy, approvalPolicyStage } from "@/db/schema";
-import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import { routeWorkPeriodApprovalParticipants } from "@/lib/approvals/server/work-period-resource-routing";
+import { acquirePinnedApprovalContext } from "@/lib/approvals/workflow/pinned-write-gate";
 import type { StageActivationInput } from "@/lib/approvals/workflow/ports";
 import type {
 	ApprovalWorkflowDatabase,
@@ -170,9 +170,10 @@ async function runAttempt<T>(
 			return await runtime.repository.withTransaction(async (approval) => {
 				await acquireAdoptionGate(transaction, input.organizationId);
 				const admission = await readAppendAdmission(transaction, input.organizationId);
-				const authority = await approval.writeGate.acquire({
+				const { context: pinnedApproval } = await acquirePinnedApprovalContext(approval, {
 					organizationId: input.organizationId,
 					workflowType: "manual_time_submission",
+					assertActive,
 				});
 				await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
 				await acquireUserConfigurationAccessGuards(transaction, [
@@ -198,18 +199,6 @@ async function runAttempt<T>(
 					);
 				}
 
-				const writeGate: ApprovalWorkflowTransactionContext["writeGate"] = {
-					async acquire(scope) {
-						assertActive();
-						if (
-							scope.organizationId !== input.organizationId ||
-							scope.workflowType !== "manual_time_submission"
-						) {
-							throw new Error("Approval scope is outside the work transaction");
-						}
-						return authority;
-					},
-				};
 				const widen = (): never => {
 					restart = routeApproval ? "scope" : "approval";
 					throw routeApproval ? new WorkTransactionScopeChanged() : new ApprovalScopeRequired();
@@ -239,7 +228,7 @@ async function runAttempt<T>(
 					sealWorkTransactionScope({
 						db: transaction,
 						approval: {
-							...approval,
+							...pinnedApproval,
 							activationResolver: {
 								async resolve(activation: StageActivationInput) {
 									const policy = activation.workflow.policySnapshot;
@@ -265,8 +254,6 @@ async function runAttempt<T>(
 									return result;
 								},
 							},
-							writeGate,
-							compatibilityWriter: approval.compatibilityWriter.withWriteGate(writeGate),
 						},
 						admission,
 						assertParticipant,
