@@ -1,7 +1,51 @@
-import { describe, expect, it, vi } from "vitest";
-import { verifyApprovalWorkflowRepositoryTestDatabase } from "./repository-integration-harness";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	resolveApprovalWorkflowRepositoryTestConfiguration,
+	verifyApprovalWorkflowRepositoryTestDatabase,
+} from "./repository-integration-harness";
+
+const enabledDatabaseUrl =
+	"postgresql://postgres:test@localhost:5432/approval_workflow_repository_test_a1b2c3d4";
 
 describe("approval workflow repository integration database guard", () => {
+	// This file runs in the `unit` project; the gate itself refuses that project.
+	beforeEach(() => {
+		vi.stubEnv("Z8_TEST_PROJECT", "integration");
+	});
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	describe("called from the unit test project", () => {
+		beforeEach(() => {
+			vi.stubEnv("Z8_TEST_PROJECT", "unit");
+		});
+
+		it("refuses to resolve a configuration, even an enabled one", () => {
+			expect(() =>
+				resolveApprovalWorkflowRepositoryTestConfiguration({
+					databaseUrl: enabledDatabaseUrl,
+					required: true,
+					sentinel: "approval-workflow-repository-test",
+				}),
+			).toThrow("database suites must be named `*.integration.test.ts`");
+		});
+
+		it("refuses to verify the database without connecting", async () => {
+			const currentDatabase = vi.fn();
+
+			await expect(
+				verifyApprovalWorkflowRepositoryTestDatabase({
+					databaseUrl: undefined,
+					required: false,
+					sentinel: undefined,
+					currentDatabase,
+				}),
+			).rejects.toThrow("database suites must be named `*.integration.test.ts`");
+			expect(currentDatabase).not.toHaveBeenCalled();
+		});
+	});
+
 	it("skips without opening a database connection when the URL or opt-in sentinel is absent", async () => {
 		const currentDatabase = vi.fn();
 
@@ -110,8 +154,7 @@ describe("approval workflow repository integration database guard", () => {
 	});
 
 	it("enables only the explicit sentinel and disposable database naming convention", async () => {
-		const databaseUrl =
-			"postgresql://postgres:test@localhost:5432/approval_workflow_repository_test_a1b2c3d4";
+		const databaseUrl = enabledDatabaseUrl;
 		await expect(
 			verifyApprovalWorkflowRepositoryTestDatabase({
 				databaseUrl,
