@@ -12,6 +12,10 @@
  */
 import type * as Coordinator from "@/lib/approvals/server/time-correction-work-transaction";
 import { getCutoverBehavior } from "@/lib/approvals/workflow/cutover";
+import {
+	acquirePinnedApprovalContext,
+	pinApprovalWriteGate,
+} from "@/lib/approvals/workflow/pinned-write-gate";
 import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
 export function legacyTimeCorrectionWorkTransaction(
@@ -20,27 +24,26 @@ export function legacyTimeCorrectionWorkTransaction(
 	return {
 		...actual,
 		acquireTimeCorrectionWorkScope: async (context, route) => {
-			// Suites that stub the whole submission owner build no approval gate.
-			const authority = context.writeGate
-				? await context.writeGate.acquire({
-						organizationId: route.organizationId,
-						workflowType: "time_correction",
-					})
-				: { mode: "legacy" as const, behavior: getCutoverBehavior("legacy") };
 			const scope = sealWorkTransactionScope({
 				db: context.dbService.db as never,
 				admission: "legacy" as const,
 				assertEmployee: () => undefined,
 			});
-			// The harness's own compatibility writer stays observable as the suite built it.
-			return {
-				scope,
-				authority,
-				context: {
-					...context,
-					writeGate: actual.fixedTimeCorrectionWriteGate(route.organizationId, authority),
-				},
-			};
+			// Suites that stub the whole submission owner build no approval gate.
+			if (!context.writeGate) {
+				const authority = { mode: "legacy" as const, behavior: getCutoverBehavior("legacy") };
+				const writeGate = pinApprovalWriteGate({
+					organizationId: route.organizationId,
+					workflowType: "time_correction",
+					authority,
+				});
+				return { scope, authority, context: { ...context, writeGate } };
+			}
+			const pinned = await acquirePinnedApprovalContext(context, {
+				organizationId: route.organizationId,
+				workflowType: "time_correction",
+			});
+			return { scope, ...pinned };
 		},
 		retryTimeCorrectionWorkTransaction: (run) => run(),
 	};

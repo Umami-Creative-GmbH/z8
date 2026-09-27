@@ -108,6 +108,7 @@ import {
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { classifyLegacyStage } from "../policies/requester-auto-approval";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
@@ -396,24 +397,17 @@ export async function executeAbsenceDecisionInTransaction(
 			organizationId: input.organizationId,
 			workflowType: "absence",
 		});
-		const fixedGate = {
-			acquire: async (scope: {
-				organizationId: string;
-				workflowType: "absence";
-			}) => {
-				if (
-					scope.organizationId !== input.organizationId ||
-					scope.workflowType !== "absence"
-				) {
-					throw new Error("Absence decision gate scope mismatch");
-				}
-				return gate;
-			},
-		};
-		const decisionContext = {
+		// The legacy coordinator and the transition engine rebind the
+		// compatibility writer to this gate themselves.
+		const pinnedGate = pinApprovalWriteGate({
+			organizationId: input.organizationId,
+			workflowType: "absence",
+			authority: gate,
+		});
+		const decisionContext: ApprovalWorkflowTransactionContext = {
 			...context,
-			writeGate: fixedGate,
-		} as ApprovalWorkflowTransactionContext;
+			writeGate: pinnedGate,
+		};
 		const sourceIdentity = {
 			organizationId: input.organizationId,
 			workflowType: "absence" as const,
@@ -638,7 +632,7 @@ export async function executeAbsenceDecisionInTransaction(
 			const idempotencyKey = `absence:${input.absenceId}:${input.action}:${expectedVersion ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`;
 			let observed: LegacyObservedMirror | null = null;
 			const coordinator = createLegacyApprovalWriteCoordinator({
-				writeGate: fixedGate,
+				writeGate: pinnedGate,
 				compatibilityWriter: decisionContext.compatibilityWriter,
 			});
 			const domainResult = await coordinator.execute({

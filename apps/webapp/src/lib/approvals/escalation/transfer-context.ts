@@ -8,9 +8,8 @@ import {
 	employee,
 } from "@/db/schema";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { getCutoverBehavior } from "../workflow/cutover";
-import type { ApprovalWorkflowType, ApprovalWriteGateResult } from "../workflow/ports";
+import type { ApprovalWorkflowType } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { ApprovalStateMachineError } from "../workflow/state-machine";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
@@ -149,26 +148,6 @@ export async function readDecisionAuthorityForDiscovery(
 				: "legacy",
 		]),
 	);
-}
-
-/** Pins the gate this transaction already acquired for one kind. */
-export function fixedGateContext(
-	context: ApprovalWorkflowTransactionContext,
-	organizationId: string,
-	gate: ApprovalWriteGateResult,
-	workflowType: ApprovalWorkflowType,
-): ApprovalWorkflowTransactionContext {
-	return {
-		...context,
-		writeGate: {
-			acquire: async (scope) => {
-				if (scope.organizationId !== organizationId || scope.workflowType !== workflowType) {
-					throw new Error("Escalation gate scope mismatch");
-				}
-				return gate;
-			},
-		},
-	};
 }
 
 export function isTransitionRace(error: unknown): boolean {
