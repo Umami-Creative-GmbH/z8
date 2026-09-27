@@ -14,7 +14,6 @@ import {
 } from "./testing/approval-workflow.test.fixture";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -22,7 +21,7 @@ import {
 const NOW = parseInstant("2026-09-15T08:00:00Z");
 const AFTER_CUTOFF = parseInstant("2026-09-30T23:00:00Z");
 
-describeLifecycleDatabase("employee offboarding read models", () => {
+describe("employee offboarding read models", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = NOW;
 

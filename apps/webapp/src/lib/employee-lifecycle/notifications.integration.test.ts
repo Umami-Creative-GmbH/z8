@@ -4,20 +4,19 @@
  * and at-most-once delivery semantics.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams, NotificationChannel } from "@/lib/notifications/types";
 import { createDepartureCommands } from "./commands";
 import { runDepartureTaskDelivery } from "./delivery";
 import {
 	createReviewNotificationHandler,
-	resolveReviewRecipients,
 	type ReviewNotificationTransport,
+	resolveReviewRecipients,
 } from "./notifications";
 import { createDepartureTaskOutbox, type DepartureTaskClaim } from "./outbox";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -40,7 +39,7 @@ function allChannels(enabled: NotificationChannel[]): Record<NotificationChannel
 	>;
 }
 
-describeLifecycleDatabase("offboarding review notifications", () => {
+describe("offboarding review notifications", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let manager: SeededEmployee;
 	let departing: SeededEmployee;
