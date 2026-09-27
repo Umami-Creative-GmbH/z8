@@ -2555,13 +2555,21 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 			: [];
 		// Committed history can disagree on minutes alone: before #388 the legacy
 		// clock-out floored the canonical minutes and rounded the period's, and
-		// that history was kept. A decision rewrites both minutes from the
-		// corrected endpoints or leaves both untouched, so only a cancellation
-		// snapshot still pins them.
-		const blockingCanonicalMismatches =
-			expectedSource === undefined
-				? canonicalMismatches.filter((field) => field !== "durationMinutes")
-				: canonicalMismatches;
+		// that history was kept. The legacy automatic break enforcement and the
+		// legacy calendar split also move the first period's end without its
+		// record's, so a legacy decision may meet a stale canonical interval too. The period's endpoints were checked
+		// against the ledger above, and a decision rewrites the canonical interval
+		// from the corrected endpoints or leaves it untouched, so only a
+		// cancellation snapshot still pins it.
+		const toleratedCanonicalDrift: ReadonlySet<string> =
+			expectedSource !== undefined
+				? new Set()
+				: expectedApprovalWorkflowId === null
+					? new Set(["startAt", "endAt", "durationMinutes"])
+					: new Set(["durationMinutes"]);
+		const blockingCanonicalMismatches = canonicalMismatches.filter(
+			(field) => !toleratedCanonicalDrift.has(field),
+		);
 		if (
 			canonicalRows.length !== 1 ||
 			!canonical ||

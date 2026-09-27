@@ -1199,6 +1199,31 @@ describeIntegration("approval-based correction lifecycles on PostgreSQL", () => 
 		});
 	});
 
+	it("finalizes over a canonical interval a legacy break left stale, rewriting it", async () => {
+		const work = await recordWork(at("2026-07-22T08:00:00Z"), at("2026-07-22T10:00:00Z"));
+		// Legacy break enforcement and splits move only the period's end; its record keeps the original end.
+		await admin.query(
+			`update time_record set end_at = end_at + interval '2 hours', duration_minutes = 240
+			 where id = (select canonical_record_id from work_period where id = $1)`,
+			[work.id],
+		);
+		await expect(
+			requestEdit(work.id, { clockIn: "08:30", clockOut: "10:00" }),
+		).resolves.toMatchObject({ success: true });
+
+		await expect(approve(await pendingApprovalId(work.id))).resolves.toMatchObject({
+			status: "approved",
+		});
+		expect(await period(work.id)).toMatchObject({
+			start_time: new Date("2026-07-22T08:30:00Z"),
+			end_time: new Date("2026-07-22T10:00:00Z"),
+			duration_minutes: 90,
+			record_start: new Date("2026-07-22T08:30:00Z"),
+			record_end: new Date("2026-07-22T10:00:00Z"),
+			record_duration: 90,
+		});
+	});
+
 	it.each([
 		["submission", "submit_time_correction"],
 		["approval", "finalize_time_correction"],
