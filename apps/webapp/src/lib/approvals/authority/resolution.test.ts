@@ -49,12 +49,12 @@ describe("approval authority resolution", () => {
 	});
 
 	it.each(["", "LEGACY", "retired", "toString", 42])("refuses the impossible mode %j", (mode) => {
-		expect(() => parseApprovalLifecycleMode(mode)).toThrow(/rollout mode is unavailable/);
-		expect(() => approvalWriteGateResult(mode as never)).toThrow(/rollout mode is unavailable/);
+		expect(() => parseApprovalLifecycleMode(mode)).toThrow(/lifecycle mode is unavailable/);
+		expect(() => approvalWriteGateResult(mode as never)).toThrow(/lifecycle mode is unavailable/);
 	});
 
 	it("refuses a gate result without a mode", () => {
-		expect(() => approvalWriteGateResult(null as never)).toThrow(/rollout mode is unavailable/);
+		expect(() => approvalWriteGateResult(null as never)).toThrow(/lifecycle mode is unavailable/);
 	});
 
 	it("cannot be changed into another mode's answers", () => {

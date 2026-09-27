@@ -601,7 +601,9 @@ export async function processDueEscalations(input: {
 
 	const summary: ProcessDueEscalationsSummary = {
 		...emptySummary(organizationId, "processed"),
-		authorities: Object.fromEntries(authorities),
+		authorities: Object.fromEntries(
+			[...authorities].map(([workflowType, { authority }]) => [workflowType, authority]),
+		),
 	};
 	const runtime = createEscalationRuntime(null);
 	for (const item of work) {

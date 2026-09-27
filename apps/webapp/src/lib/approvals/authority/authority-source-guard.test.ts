@@ -23,7 +23,7 @@ const MODE = '"(?:legacy|shadow|ready|canonical|complete)"';
 const LIFECYCLE_ONLY = '"(?:shadow|ready|complete)"';
 const OPERATOR = String.raw`\s*[!=]==?\s*`;
 /** Receivers that always hold a lifecycle mode, whichever literal they meet. */
-const MODE_RECEIVER = String.raw`(?:\blifecycleMode|\blifecycle_mode|\b(?:gate|authority|rollout|execution)\??\.mode)\b`;
+const MODE_RECEIVER = String.raw`(?:\blifecycleMode|\blifecycle_mode|\b(?:gate|authority|rollout|execution|row)\??\.mode)\b`;
 /** Any mode-named receiver: only lifecycle modes are `shadow`, `ready` or `complete`. */
 const ANY_MODE = String.raw`[\w?.]*(?:[mM]ode|[lL]ifecycle)\b`;
 
@@ -90,6 +90,7 @@ describe("approval authority source guard", () => {
 		["and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))", true],
 		["join approval_workflow_rollout r on r.lifecycle_mode in ('canonical', 'complete')", true],
 		["const MODES = new Set<ApprovalWorkflowLifecycleMode>([", true],
+		['return row?.mode === "canonical";', true],
 		['if (gate.authority === "legacy") {', false],
 		['if (evidence.mode === "canonical") {', false],
 		['if (event.authority_mode === "legacy") {', false],

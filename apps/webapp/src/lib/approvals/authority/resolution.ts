@@ -22,6 +22,9 @@ export interface ApprovalAuthorityResolution {
 	readonly compatibilityWriting: boolean;
 }
 
+/** Raised for a stored lifecycle mode outside the table. */
+export const LIFECYCLE_MODE_UNAVAILABLE = "Approval lifecycle mode is unavailable";
+
 declare const gated: unique symbol;
 
 /**
@@ -59,7 +62,7 @@ export function lifecycleModesWithAuthority(
 export function parseApprovalLifecycleMode(value: unknown): ApprovalWorkflowLifecycleMode {
 	if (value === null || value === undefined) return "legacy";
 	if (typeof value !== "string" || !Object.hasOwn(LIFECYCLE, value)) {
-		throw new Error("Approval workflow rollout mode is unavailable");
+		throw new Error(LIFECYCLE_MODE_UNAVAILABLE);
 	}
 	return value as ApprovalWorkflowLifecycleMode;
 }
@@ -91,7 +94,7 @@ export function approvalWriteGateResult(
 	mode: ApprovalWorkflowLifecycleMode,
 ): ApprovalWriteGateResult {
 	if (mode === null || mode === undefined) {
-		throw new Error("Approval workflow rollout mode is unavailable");
+		throw new Error(LIFECYCLE_MODE_UNAVAILABLE);
 	}
 	return resolveApprovalAuthority(mode) as ApprovalWriteGateResult;
 }

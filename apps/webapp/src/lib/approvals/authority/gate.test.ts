@@ -117,7 +117,7 @@ describe("approval write gate", () => {
 		} as ApprovalDbService;
 		await expect(
 			acquireApprovalWriteGate(service, { organizationId: "org-1", workflowType: "absence" }),
-		).rejects.toThrow("Approval workflow rollout mode is unavailable");
+		).rejects.toThrow("Approval lifecycle mode is unavailable");
 	});
 
 	it("pins an acquired gate to its organization and kind", async () => {

@@ -8,6 +8,7 @@ import {
 	type ApprovalAuthorityResolution,
 	type ApprovalWriteGateResult,
 	approvalWriteGateResult,
+	LIFECYCLE_MODE_UNAVAILABLE,
 	lifecycleModesWithAuthority,
 	parseApprovalLifecycleMode,
 	resolveApprovalAuthority,
@@ -48,16 +49,16 @@ async function readGatedLifecycleMode(dbService: ApprovalDbService, input: Appro
 			and workflow_type = ${input.workflowType}
 	`);
 	if (!result || typeof result !== "object" || !("rows" in result)) {
-		throw new Error("Approval workflow rollout mode is unavailable");
+		throw new Error(LIFECYCLE_MODE_UNAVAILABLE);
 	}
 	const rows = result.rows;
 	const row = Array.isArray(rows) ? rows[0] : null;
 	if (!row || typeof row !== "object" || !("lifecycle_mode" in row)) {
-		throw new Error("Approval workflow rollout mode is unavailable");
+		throw new Error(LIFECYCLE_MODE_UNAVAILABLE);
 	}
 	// The row was just ensured, so null is as impossible as an unknown mode.
 	if (row.lifecycle_mode === null) {
-		throw new Error("Approval workflow rollout mode is unavailable");
+		throw new Error(LIFECYCLE_MODE_UNAVAILABLE);
 	}
 	return parseApprovalLifecycleMode(row.lifecycle_mode);
 }
