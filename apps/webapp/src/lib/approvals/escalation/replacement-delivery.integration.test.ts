@@ -15,21 +15,15 @@
  * the Telegram HTTP transport (fetch) are replaced.
  */
 
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 10 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -126,27 +120,6 @@ const { expandEscalationTransferEvents, processEscalationReplacementDeliveries }
 	"./replacement-delivery"
 );
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Escalation replacement delivery PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const MANAGER_TELEGRAM_ID = 30_001;
 const BACKUP_TELEGRAM_ID = 30_002;
 const MANAGER_CHAT_ID = 300_111;
@@ -198,8 +171,8 @@ function minutes(count: number) {
 	return T0.add({ minutes: count });
 }
 
-describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("escalation replacement delivery (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 30_000;
 	const originalFetch = globalThis.fetch;
@@ -612,23 +585,6 @@ describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Escalation replacement delivery PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -646,7 +602,6 @@ describeIntegration("escalation replacement delivery (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("sends the replacement card and retires the former card from the committed event (commit before send)", async () => {

@@ -14,19 +14,13 @@
  * queue, work-balance marking and the post-commit delivery kick are replaced.
  */
 
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 10 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -99,27 +93,6 @@ const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-ap
 const { assessApprovalPilotReadiness } = await import("./readiness");
 const { TIME_APPROVAL_WORKFLOW_TYPES } = await import("../time-approval-kinds");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Pilot readiness PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t328-pilot-org",
 	otherOrganization: "t328-other-org",
@@ -140,8 +113,8 @@ type LegacyAbsenceMode = "legacy" | "shadow" | "ready";
 
 const SEEDED_AT = new Date("2026-07-01T00:00:00Z");
 
-describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("Approval card pilot readiness (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 
 	async function cleanup() {
 		await admin.query("delete from organization where id = any($1::text[])", [
@@ -428,23 +401,6 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 	const codes = (findings: ReadonlyArray<{ code: string }>) =>
 		findings.map((finding) => finding.code).sort();
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Pilot readiness PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -452,7 +408,6 @@ describeIntegration("Approval card pilot readiness (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("blocks an unprepared organization's absence Telegram pilot and names every missing gate", async () => {

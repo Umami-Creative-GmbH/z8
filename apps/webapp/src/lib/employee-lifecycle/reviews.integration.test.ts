@@ -3,7 +3,7 @@
  * Open timer repairs block payroll for the affected employee and range only.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	findOpenDepartureClockRepairs,
@@ -12,7 +12,6 @@ import {
 } from "./reviews";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -22,7 +21,7 @@ const SEPTEMBER = {
 	rangeEndExclusive: new Date("2026-10-01T00:00:00Z"),
 };
 
-describeLifecycleDatabase("departure clock repairs", () => {
+describe("departure clock repairs", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

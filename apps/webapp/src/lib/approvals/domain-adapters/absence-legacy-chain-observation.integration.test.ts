@@ -13,19 +13,13 @@
  * and work-balance marking boundaries are replaced.
  */
 
-import { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 8 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -97,27 +91,6 @@ const { requestAbsenceEffect } = await import(
 );
 const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy absence chain observation PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "lacs-legacy-chain-org",
 	requesterUser: "lacs-requester-user",
@@ -142,8 +115,8 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("legacy absence chain observation (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string) {
 		harness.userId = userId;
@@ -271,20 +244,6 @@ describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
 	}
 
 	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy absence chain observation PostgreSQL is disabled");
-		}
 		// `defaultNow()` almost always yields microseconds; pin them so the case
 		// never depends on the clock landing on a whole millisecond.
 		await admin.query(
@@ -315,7 +274,6 @@ describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
 			await admin.query(`drop trigger if exists lacs_sub_millisecond_created_at on ${table}`);
 		}
 		await admin.query("drop function if exists lacs_sub_millisecond_created_at()");
-		await admin.end();
 	});
 
 	it.each<ObservingRolloutMode>(["shadow", "ready"])(

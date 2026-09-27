@@ -16,14 +16,10 @@
 
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxDetailResult } from "@/lib/approvals/inbox/types";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -34,8 +30,6 @@ const harness = vi.hoisted(() => ({
 	publicObjects: new Map<string, Uint8Array>(),
 	versionCounter: 0,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 10 }));
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
@@ -155,27 +149,6 @@ const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-de
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`expense review and decisions PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const MANAGER_TELEGRAM_ID = 29_601;
 const MANAGER_CHAT_ID = 296_555;
 // Pinned pass time. New work becomes due at the database's now(), so the
@@ -217,8 +190,8 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 4 });
+describe("expense review, decisions and cards (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 9600;
 	const originalFetch = globalThis.fetch;
@@ -640,23 +613,6 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Expense review and decisions PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		actAs(null);
 		harness.notifications = [];
@@ -673,7 +629,6 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("reviews the exact claim from its frozen submission and holds changed or unevidenced claims", async () => {

@@ -15,20 +15,14 @@
  * Telegram HTTP transport (fetch) are replaced.
  */
 
-import { Pool } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 8 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -120,27 +114,6 @@ const { db } = await import("@/db");
 const { sendApprovalMessageToManager } = await import("./approval-handler");
 const { handleTelegramUpdate } = await import("./bot-handler");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Legacy absence bound approval PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const BOT_TOKEN = "384384384:AAT384-legacy_card_test";
 const OTHER_BOT_TOKEN = "384384385:AAT384-other_org_bot";
 const MANAGER_TELEGRAM_ID = 38_401;
@@ -203,8 +176,8 @@ function bindingOf(callbackData: string | undefined): string {
 	return (JSON.parse(callbackData ?? "{}") as { b: string }).b;
 }
 
-describeIntegration("Legacy absence Telegram cards with reviewed bindings (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("Legacy absence Telegram cards with reviewed bindings (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 8000;
 	const originalFetch = globalThis.fetch;
@@ -599,23 +572,6 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 		return calls.slice(before).filter((call) => call.method === "sendMessage");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy absence bound approval PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -630,7 +586,6 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	for (const mode of ["legacy", "shadow", "ready"] as const) {

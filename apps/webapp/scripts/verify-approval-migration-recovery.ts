@@ -7,11 +7,11 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
 import {
-	type ApprovalWorkflowRepositoryTestDatabaseConfig,
-	parseApprovalWorkflowRepositoryTestDatabaseUrl,
-} from "../src/lib/approvals/workflow/repository-integration-harness";
+	type IntegrationDatabaseConfig,
+	integrationDatabaseSentinel,
+	parseIntegrationDatabaseUrl,
+} from "../src/test/integration-database";
 
-const TEST_SENTINEL = "approval-workflow-repository-test";
 const INCIDENT_LATEST_CREATED_AT = "1785493929039";
 const INCIDENT_LATEST_TAG = "0059_payroll_blocker_dismissal";
 const EXPAND_CREATED_AT = "1785232090757";
@@ -283,7 +283,7 @@ export function assertApprovalCatalog(catalog: ApprovalCatalog): void {
 	}
 }
 
-function requireTestDatabaseConfig(): ApprovalWorkflowRepositoryTestDatabaseConfig {
+function requireTestDatabaseConfig(): IntegrationDatabaseConfig {
 	const databaseUrl =
 		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 	if (!databaseUrl) {
@@ -292,13 +292,13 @@ function requireTestDatabaseConfig(): ApprovalWorkflowRepositoryTestDatabaseConf
 		);
 	}
 	if (
-		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== TEST_SENTINEL
+		process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL !== integrationDatabaseSentinel
 	) {
 		throw new Error(
-			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${TEST_SENTINEL}`,
+			`APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL must equal ${integrationDatabaseSentinel}`,
 		);
 	}
-	return parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl);
+	return parseIntegrationDatabaseUrl(databaseUrl);
 }
 
 async function preflightDisposableDatabase(

@@ -18,13 +18,9 @@
  */
 
 import type { TurnContext } from "botbuilder";
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const APP_ID = "29300000-0000-4000-8000-00000000a001";
 const TENANT_ID = "29300000-0000-4000-8000-00000000b001";
@@ -49,8 +45,6 @@ const harness = vi.hoisted(() => ({
 	script: { send: [] as unknown[], update: [] as unknown[] },
 	duringSend: null as null | (() => Promise<void>),
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 10 }));
 
 vi.mock("@/env", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/env")>();
@@ -195,27 +189,6 @@ const { saveConversationReference } = await import("./conversation-manager");
 const { sendApprovalCardToManager } = await import("./approval-handler");
 const { sendTeamsNotification } = await import("@/lib/notifications/teams-channel");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Teams bound approvals PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const MANAGER_AAD_ID = "29300000-0000-4000-8000-00000000c001";
 const CONVERSATION_ID = "a:t293-personal-conversation";
 const SERVICE_URL = "https://smba.trafficmanager.net/emea/";
@@ -341,8 +314,8 @@ function responseText(result: Turn): unknown {
 	return result.response()?.body.value;
 }
 
-describeIntegration("Teams bound approval cards (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("Teams bound approval cards (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 
 	const sends = () => harness.calls.filter((call) => call.method === "send");
 	const updates = () => harness.calls.filter((call) => call.method === "update");
@@ -557,23 +530,6 @@ describeIntegration("Teams bound approval cards (PostgreSQL)", () => {
 		return { ...submitted, sent, message, approve, reject };
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Teams bound approval PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -587,7 +543,6 @@ describeIntegration("Teams bound approval cards (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("delivers one bound card with its full Teams identity from the committed intent", async () => {

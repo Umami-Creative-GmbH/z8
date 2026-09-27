@@ -13,21 +13,15 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	logs: [] as { context: unknown; message: unknown }[],
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -73,27 +67,6 @@ const { clockIn, clockOut } = await import("./clocking");
 const { splitWorkPeriod: splitFromCalendarActions } = await import("../actions");
 const { splitWorkPeriod: splitFromMutations } = await import("./mutations");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`work period split PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t304-split-org",
 	requesterUser: "t304-split-requester-user",
@@ -120,9 +93,9 @@ function only<T>(rows: readonly T[]): T {
 
 type Split = typeof splitFromCalendarActions;
 
-describeIntegration("calendar splits through the completed-work operation on PostgreSQL", () => {
+describe("calendar splits through the completed-work operation on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string) {
 		harness.userId = userId;
@@ -301,23 +274,6 @@ describeIntegration("calendar splits through the completed-work operation on Pos
 		await setAdmission("active");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Work period split PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.logs.length = 0;
 		await seed();
@@ -325,9 +281,6 @@ describeIntegration("calendar splits through the completed-work operation on Pos
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("splits adopted work with independent rounding, cloned attribution and exact append linkage", async () => {

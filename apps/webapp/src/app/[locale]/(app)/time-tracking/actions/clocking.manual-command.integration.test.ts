@@ -15,22 +15,16 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	now: null as Instant | null,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
@@ -116,27 +110,6 @@ const { createManualTimeEntry, lookupManualTimeEntry } = await import("../action
 const { clockIn, clockOut } = await import("./clocking");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`manual command PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t308-manual-org",
 	otherOrganization: "t308-other-org",
@@ -198,9 +171,9 @@ function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualT
 	};
 }
 
-describeIntegration("strict versioned manual commands on PostgreSQL", () => {
+describe("strict versioned manual commands on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 8 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -390,23 +363,6 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Manual command PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.now = null;
 		await seed();
@@ -414,9 +370,6 @@ describeIntegration("strict versioned manual commands on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	describe("adoption gating", () => {

@@ -23,7 +23,6 @@ import {
 } from "./testing/approval-workflow.test.fixture";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -33,7 +32,7 @@ const SCHEDULED_AT = parseInstant("2026-09-15T08:00:00Z");
 /** After the Europe/Berlin end of 2026-09-30. */
 const AFTER_CUTOFF = parseInstant("2026-09-30T23:00:00Z");
 
-describeLifecycleDatabase("approval handover", () => {
+describe("approval handover", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = SUBMITTED_AT;
 	const clock = { nowInstant: () => now };

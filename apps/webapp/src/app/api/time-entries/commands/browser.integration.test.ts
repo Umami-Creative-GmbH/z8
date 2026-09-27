@@ -17,21 +17,15 @@
 import { readFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { resolve } from "node:path";
-import { Pool } from "pg";
 import puppeteer, { type Browser, type Page } from "puppeteer-core";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	server: null as string | null,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
@@ -72,24 +66,10 @@ const commands = await import("./route");
 const lookupRoute = await import("./[operationId]/route");
 
 const executablePath = process.env.Z8_TEST_CHROME_PATH;
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" && executablePath ? describe : describe.skip;
-if (integrationConfiguration.status !== "enabled" || !executablePath) {
-	describe.skip("browser clock commands need PostgreSQL and Z8_TEST_CHROME_PATH", () => {
-		it("requires the label-owned disposable PostgreSQL runner and a Chromium executable", () => {});
+const describeBrowser = executablePath ? describe : describe.skip;
+if (!executablePath) {
+	describe.skip("browser clock commands need Z8_TEST_CHROME_PATH", () => {
+		it("requires a Chromium executable", () => {});
 	});
 }
 
@@ -115,9 +95,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("browser frozen clock commands through the real route on PostgreSQL", () => {
+describeBrowser("browser frozen clock commands through the real route on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 90_000, hookTimeout: 90_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 	let browser: Browser;
 	let page: Page;
 	let server: Server;
@@ -285,19 +265,6 @@ describeIntegration("browser frozen clock commands through the real route on Pos
 	}
 
 	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled")
-			throw new Error("Browser clock command PostgreSQL is disabled");
 		server = createServer(async (request, response) => {
 			try {
 				const pathname = new URL(request.url!, "http://localhost").pathname;
@@ -348,9 +315,6 @@ describeIntegration("browser frozen clock commands through the real route on Pos
 		await browser?.close();
 		await new Promise<void>((done) => server?.close(() => done()));
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("commits a clock-in captured before sending and keeps its receipt locally", async () => {

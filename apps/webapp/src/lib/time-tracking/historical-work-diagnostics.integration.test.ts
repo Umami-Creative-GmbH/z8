@@ -16,21 +16,15 @@
 
 import { randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 8 }));
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
@@ -80,27 +74,6 @@ const { POST } = await import("@/app/api/time-entries/diagnostics/route");
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`work diagnostics PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t319-diagnostics-org",
 	otherOrganization: "t319-other-org",
@@ -132,9 +105,9 @@ type Finding = {
 	redacted?: true;
 };
 
-describeIntegration("historical work diagnostics on PostgreSQL", () => {
+describe("historical work diagnostics on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 4 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -271,30 +244,10 @@ describeIntegration("historical work diagnostics on PostgreSQL", () => {
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Work diagnostics PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(seed);
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("reports consistent legacy manual work as complete and writes nothing", async () => {

@@ -1,13 +1,12 @@
 /**
- * Shared harness for the `integration` vitest project (every
- * `*.integration.test.ts`). It owns the database pool
- * and the standard infrastructure fakes, so a suite replaces only what its own
- * contract needs.
+ * Standard infrastructure fakes for the `integration` vitest project. The
+ * database pool and the `@/db` binding come from `integration-setup.ts`; this
+ * module holds the fakes most suites share, so a suite replaces only what its
+ * own contract needs.
  *
  * Each export is a `vi.mock` module factory. `vi.mock` is hoisted above the
  * suite's imports, so a suite reaches the harness through a dynamic import:
  *
- *   vi.mock("@/db", async () => (await import("@/test/integration-harness")).database());
  *   vi.mock("next/cache", async (importOriginal) =>
  *   	(await import("@/test/integration-harness")).nextCache(importOriginal),
  *   );
@@ -15,33 +14,6 @@
 import { vi } from "vitest";
 
 type ImportOriginal = <T>() => Promise<T>;
-
-/** The disposable database URL; the integration project requires it. */
-export function integrationDatabaseUrl(): string {
-	const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-	if (!databaseUrl) {
-		throw new Error(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL is missing. Run " +
-				"`pnpm --filter webapp test:integration`.",
-		);
-	}
-	return databaseUrl;
-}
-
-/** `@/db` bound to one UTC pool on the disposable database. */
-export async function database(options: { max?: number } = {}) {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({ connectionString: integrationDatabaseUrl(), max: options.max }),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-}
 
 /** `connection()` throws outside a Next request scope. */
 export async function nextServer(importOriginal: ImportOriginal) {

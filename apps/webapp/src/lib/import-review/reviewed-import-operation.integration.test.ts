@@ -12,21 +12,16 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
-import { Pool, type PoolClient } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import type { PoolClient } from "pg";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	enqueued: [] as unknown[],
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 vi.mock("./queue", () => ({
 	enqueueImportCommitJob: async (data: unknown) => {
@@ -71,27 +66,6 @@ const { clockIn, clockOut } = await import(
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`reviewed import operation PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t284-reviewed-import-org",
 	importerUser: "t284-importer-user",
@@ -124,9 +98,9 @@ function elapsedSeconds(startsAt: string, endsAt: string) {
 	return (Date.parse(endsAt) - Date.parse(startsAt)) / 1000;
 }
 
-describeIntegration("reviewed imports through the completed-work operation on PostgreSQL", () => {
+describe("reviewed imports through the completed-work operation on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 12 });
+	const admin = integrationAdminPool();
 	const openHolders = new Set<Holder>();
 
 	type Holder = {
@@ -476,23 +450,6 @@ describeIntegration("reviewed imports through the completed-work operation on Po
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Reviewed import operation PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		for (const holder of [...openHolders]) await holder.commit();
 		harness.enqueued.length = 0;
@@ -503,9 +460,6 @@ describeIntegration("reviewed imports through the completed-work operation on Po
 	afterAll(async () => {
 		for (const holder of [...openHolders]) await holder.commit();
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	describe("legacy organizations", () => {

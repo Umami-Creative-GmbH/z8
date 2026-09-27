@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -9,11 +9,7 @@ const ALLOWED_DIRECT_ENV_READERS = new Set([
 	"instrumentation.ts",
 	// Reads Z8_TEST_PROJECT directly so a suite that mocks "@/env" cannot disable the guard.
 	join("db", "unit-project-guard.ts"),
-	// Test-only database gate; reads the vitest project name.
-	join("lib", "approvals", "workflow", "repository-integration-harness.ts"),
 ]);
-// Vitest-only support code (aliases, doubles, the integration harness) never ships.
-const TEST_SUPPORT_DIRECTORY = join(SRC_ROOT, "test");
 const RUNTIME_FILE_EXTENSIONS = [".ts", ".tsx"] as const;
 
 function collectRuntimeFiles(directory: string): string[] {
@@ -22,7 +18,6 @@ function collectRuntimeFiles(directory: string): string[] {
 		const stats = statSync(absolutePath);
 
 		if (stats.isDirectory()) {
-			if (absolutePath === TEST_SUPPORT_DIRECTORY) return [];
 			return collectRuntimeFiles(absolutePath);
 		}
 
@@ -40,7 +35,9 @@ function collectRuntimeFiles(directory: string): string[] {
 function isRuntimeSourceFile(filePath: string): boolean {
 	return (
 		RUNTIME_FILE_EXTENSIONS.some((extension) => filePath.endsWith(extension)) &&
-		!filePath.includes(".test.")
+		!filePath.includes(".test.") &&
+		// Test infrastructure (e.g. the integration database gate) is never bundled.
+		!relative(SRC_ROOT, filePath).startsWith(`test${sep}`)
 	);
 }
 

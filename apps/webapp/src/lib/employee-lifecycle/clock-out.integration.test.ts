@@ -2,7 +2,7 @@
  * PostgreSQL contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The canonical departure clock-out closes a real running period at the cutoff.
  */
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createClockingService,
@@ -11,7 +11,6 @@ import {
 import { createDepartureClockOut } from "./clock-out";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -20,7 +19,7 @@ import { executeDepartureInTransaction } from "./transition";
 const CUTOFF = "2026-09-14T22:00:00Z";
 const EXECUTED_LATE = parseInstant("2026-09-14T22:17:00Z");
 
-describeLifecycleDatabase("departure clock-out", () => {
+describe("departure clock-out", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

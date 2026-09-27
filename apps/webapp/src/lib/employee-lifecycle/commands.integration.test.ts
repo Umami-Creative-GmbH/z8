@@ -3,19 +3,18 @@
  * Schedule, edit, cancel and immediate departure commands against real locks.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureCommands } from "./commands";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 } from "./testing/database.test.fixture";
 import type { DepartureClockOutPort, LifecycleActor } from "./types";
 
 const MONDAY = parseInstant("2026-09-14T08:00:00Z");
 
-describeLifecycleDatabase("departure commands", () => {
+describe("departure commands", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = MONDAY;
 	const clockOutCalls: string[] = [];

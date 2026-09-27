@@ -16,13 +16,9 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -30,8 +26,6 @@ const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
 	failCompliance: false,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
@@ -94,27 +88,6 @@ const { clockIn, clockOutAs } = await import("@/app/[locale]/(app)/time-tracking
 const { db } = await import("@/db");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`on-behalf clock-out PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t276-on-behalf-org",
 	otherOrganization: "t276-on-behalf-other-org",
@@ -161,9 +134,9 @@ async function post(body: unknown) {
 	return { status: response.status, body: (await response.json()) as Record<string, any> };
 }
 
-describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
+describe("manager on-behalf clock-out on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string | null, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -364,23 +337,6 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 		await setAdmission("active");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("On-behalf clock-out PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.now = clockOutAt;
 		harness.failCompliance = false;
@@ -389,9 +345,6 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("closes the target's running work as one graph owned by the target and completed by the manager", async () => {

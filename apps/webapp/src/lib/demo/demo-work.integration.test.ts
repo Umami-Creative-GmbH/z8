@@ -13,20 +13,14 @@
  * no activation setter.
  */
 
-import { Pool } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -70,27 +64,6 @@ const {
 } = await import("@/app/[locale]/(app)/settings/demo/actions");
 const { clockIn } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`runtime demo work PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t285-demo-org",
 	otherOrganization: "t285-other-org",
@@ -122,9 +95,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("runtime demo work on PostgreSQL", () => {
+describe("runtime demo work on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 120_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAsAdmin() {
 		// Not the active organization: `canUseDemoData` then checks the admin membership.
@@ -316,23 +289,6 @@ describeIntegration("runtime demo work on PostgreSQL", () => {
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Runtime demo work PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		vi.useFakeTimers({ toFake: ["Date"], now: fixedNow });
 		vi.spyOn(Math, "random").mockReturnValue(0.5);
@@ -346,9 +302,6 @@ describeIntegration("runtime demo work on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	describe("generation", () => {

@@ -25,13 +25,10 @@ import { betterAuth } from "better-auth/minimal";
 import { admin as adminPlugin } from "better-auth/plugins/admin";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
-import { Pool, type PoolClient } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import type { PoolClient } from "pg";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -39,8 +36,6 @@ const harness = vi.hoisted(() => ({
 	billingReconciled: [] as string[],
 	provisioned: [] as string[],
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 16 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -143,27 +138,6 @@ const { guardSCIMSubjectAcquisitions, SCIMProjectionGuardOrderError } = await im
 );
 const { getSCIMCredentialExpiresAt, SCIM_SCOPES } = await import("@/lib/scim/constants");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`manual auth/SCIM PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const origin = "http://localhost:3000";
 const ids = {
 	organization: "t314-auth-org",
@@ -219,9 +193,9 @@ function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualT
 const submissionIdentity = (command: ManualTimeEntryCommand) =>
 	JSON.stringify([ids.organization, "manual_time_submission", "time_entry", command.submissionId]);
 
-describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
+describe("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 12 });
+	const admin = integrationAdminPool();
 
 	// A real Better Auth instance with the production coordination wiring.
 	const auth = betterAuth({
@@ -593,23 +567,6 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 			}),
 		);
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Manual auth/SCIM PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.billingReconciled.length = 0;
 		harness.provisioned.length = 0;
@@ -628,9 +585,6 @@ describeIntegration("Better Auth, SCIM and SSO writers on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("lets an organization admin create on behalf of the employee before any mutation", async () => {

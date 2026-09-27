@@ -10,22 +10,18 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool, type PoolClient } from "pg";
+import type { PoolClient } from "pg";
 import {
 	afterAll,
 	afterEach,
-	beforeAll,
 	beforeEach,
 	describe,
 	expect,
 	it,
 	vi,
 } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -34,34 +30,13 @@ const harness = vi.hoisted(() => ({
 	errors: [] as { context: unknown; message: unknown }[],
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import(
-		"@/db/postgres-utc"
-	);
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({
-		client: pool,
-		schema: { ...authSchema, ...schema },
-		logger: {
-			logQuery: (query, params) => {
-				harness.queries.push({ sql: query, params });
-			},
+vi.mock("@/db", async () =>
+	(await import("@/test/integration-database")).integrationDbModule({
+		logQuery: (query, params) => {
+			harness.queries.push({ sql: query, params });
 		},
-	});
-	return { ...authSchema, ...schema, db, pool };
-});
+	}),
+);
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -117,29 +92,6 @@ const { createOrganizationApprovalRollouts } = await import(
 	"@/lib/approvals/workflow/organization-rollout"
 );
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`web clock-out PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const clockInAt = parseInstant("2026-07-22T08:00:00Z");
 const clockOutAt = parseInstant("2026-07-22T16:00:00Z");
 const ids = {
@@ -172,9 +124,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
+describe("web clock-out outer transaction on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 12 });
+	const admin = integrationAdminPool();
 	const openHolders = new Set<Holder>();
 
 	type Holder = {
@@ -530,23 +482,6 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 		}
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Web clock-out PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.queries.length = 0;
 		harness.errors.length = 0;
@@ -559,9 +494,6 @@ describeIntegration("web clock-out outer transaction on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("never routes a live clock-out to approval, even under a same-day-only change policy", async () => {

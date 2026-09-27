@@ -15,21 +15,15 @@
  * HTTP transport (fetch, below both provider clients) are replaced.
  */
 
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 10 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -128,27 +122,6 @@ const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const telegramConversations = await import("@/lib/telegram/conversation-manager");
 const { formatInstant } = await import("@/lib/datetime/temporal-format");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Slack approval delivery PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const SLACK_TEAM_ID = "T294TEAM";
 const MANAGER_SLACK_ID = "U294MANAGER";
 const MANAGER_DM = "D294MANAGER";
@@ -208,8 +181,8 @@ function json(body: unknown, status = 200, headers: Record<string, string> = {})
 	});
 }
 
-describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("Slack approval delivery owner (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: ProviderCall[] = [];
 	let nextTs = 1_790_000_000;
 	let nextTelegramMessageId = 9400;
@@ -539,23 +512,6 @@ describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
 		return bot;
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Slack approval delivery PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -572,7 +528,6 @@ describeIntegration("Slack approval delivery owner (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("sends one review-only card with the submitted facts and records its full identity", async () => {

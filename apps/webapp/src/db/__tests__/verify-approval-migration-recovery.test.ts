@@ -10,7 +10,7 @@ import {
 	normalizeMigrationLedger,
 	sumCatalogNamespaceCounts,
 } from "../../../scripts/verify-approval-migration-recovery";
-import { parseApprovalWorkflowRepositoryTestDatabaseUrl } from "../../lib/approvals/workflow/repository-integration-harness";
+import { parseIntegrationDatabaseUrl } from "../../test/integration-database";
 
 describe("destructive database safety", () => {
 	it.each([
@@ -19,7 +19,7 @@ describe("destructive database safety", () => {
 		"postgresql://postgres:secret@[::1]:5432/approval_workflow_repository_test_local",
 	])("accepts an isolated loopback PostgreSQL URL", (databaseUrl) => {
 		expect(
-			parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl),
+			parseIntegrationDatabaseUrl(databaseUrl),
 		).toMatchObject({
 			databaseUrl,
 			databaseName: "approval_workflow_repository_test_local",
@@ -31,7 +31,7 @@ describe("destructive database safety", () => {
 			"postgresql://postgres:do-not-log@example.com/approval_workflow_repository_test_remote";
 		let message = "";
 		try {
-			parseApprovalWorkflowRepositoryTestDatabaseUrl(databaseUrl);
+			parseIntegrationDatabaseUrl(databaseUrl);
 		} catch (error) {
 			message = error instanceof Error ? error.message : String(error);
 		}
@@ -42,7 +42,7 @@ describe("destructive database safety", () => {
 
 	it("rejects a non-PostgreSQL protocol", () => {
 		expect(() =>
-			parseApprovalWorkflowRepositoryTestDatabaseUrl(
+			parseIntegrationDatabaseUrl(
 				"https://localhost/approval_workflow_repository_test_local",
 			),
 		).toThrow("PostgreSQL protocol");
@@ -53,7 +53,7 @@ describe("destructive database safety", () => {
 		"?application_name=approval-migration-verifier",
 	])("rejects database URL query parameters: %s", (search) => {
 		expect(() =>
-			parseApprovalWorkflowRepositoryTestDatabaseUrl(
+			parseIntegrationDatabaseUrl(
 				`postgresql://postgres:secret@127.0.0.1:5432/approval_workflow_repository_test_local${search}`,
 			),
 		).toThrow("must not include query parameters");

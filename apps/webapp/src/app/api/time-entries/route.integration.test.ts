@@ -13,20 +13,15 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool, type PoolClient } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import type { PoolClient } from "pg";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	headers: {} as Record<string, string>,
 }));
-
-vi.mock("@/db", async () => (await import("@/test/integration-harness")).database({ max: 12 }));
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers(harness.headers) }));
 
@@ -58,27 +53,6 @@ vi.mock("@/lib/billing/guard", async (importOriginal) =>
 
 const legacyRoute = await import("./route");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy direct writer PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t327-legacy-writer-org",
 	requesterUser: "t327-requester-user",
@@ -97,9 +71,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("legacy direct clock writer in adopted organizations on PostgreSQL", () => {
+describe("legacy direct clock writer in adopted organizations on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 8 });
+	const admin = integrationAdminPool();
 	const openHolders = new Set<Holder>();
 
 	type Holder = {
@@ -272,23 +246,6 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 		return holder;
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy direct writer PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		for (const holder of [...openHolders]) await holder.commit();
 		harness.userId = ids.requesterUser;
@@ -300,9 +257,6 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 	afterAll(async () => {
 		for (const holder of [...openHolders]) await holder.commit();
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("keeps the legacy writer for organizations without an active control", async () => {

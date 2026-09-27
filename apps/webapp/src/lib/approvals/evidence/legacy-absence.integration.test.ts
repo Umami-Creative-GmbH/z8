@@ -12,47 +12,21 @@
  */
 
 import { createHash } from "node:crypto";
-import { Pool } from "pg";
 import {
 	afterAll,
-	beforeAll,
 	beforeEach,
 	describe,
 	expect,
 	it,
 	vi,
 } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	notifications: [] as string[],
 }));
-
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import(
-		"@/db/postgres-utc"
-	);
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 8,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) =>
@@ -148,29 +122,6 @@ const {
 	loadLegacyAbsenceSubmittedRevision,
 } = await import("./store");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy absence evidence PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	organization: "t288-legacy-absence-org",
 	otherOrganization: "t288-other-org",
@@ -202,8 +153,8 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("legacy absence approval evidence (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("legacy absence approval evidence (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string, organizationId = ids.organization) {
 		harness.userId = userId;
@@ -463,23 +414,6 @@ describeIntegration("legacy absence approval evidence (PostgreSQL)", () => {
 		}
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy absence evidence PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.notifications = [];
 		harness.userId = null;
@@ -488,7 +422,6 @@ describeIntegration("legacy absence approval evidence (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("captures a legacy submission and approval without inventing canonical authority, and replays the committed result", async () => {
