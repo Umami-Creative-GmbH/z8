@@ -17,6 +17,7 @@ import { timeEntryAppendControl } from "@/db/schema/time-entry-append";
 import { canonicalJson } from "../canonical-json";
 import {
 	adoptionGate,
+	approvalWriteGateGuard,
 	duringRouting,
 	employeeCoordinationGuard,
 	type Guard,
@@ -325,7 +326,9 @@ async function coordinate<R extends WorkRoute, A, T>(
 	let approval = attempt.approval;
 	if (scope.approvalGate !== null && plan.approval) {
 		approval = await plan.approval.gate(approval, plan.organizationId, scope.approvalGate);
-		if (!ledgerHolds(transaction, Rank.approvalWriteGate)) {
+		if (
+			!ledgerHolds(transaction, approvalWriteGateGuard(plan.organizationId, scope.approvalGate))
+		) {
 			throw new WorkTransactionProtocolViolation("the approval gate did not record rank 2");
 		}
 	}

@@ -1,8 +1,16 @@
 import type { db } from "@/db";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type {
+	WorkTransactionClient,
+	WorkTransactionScope,
+} from "@/lib/time-tracking/work-transaction";
 import type { UpsertEmploymentHistory } from "@/lib/validations/employment-history";
 
 export type LifecycleTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+/** The client of a lifecycle transaction, including a departure's coordinated one. */
+export type LifecycleClient = WorkTransactionClient;
+/** The sealed scope of a departure work transaction (`departure-transaction.ts`). */
+export type DepartureScope = WorkTransactionScope;
 
 export type DepartureStatus = "pending" | "canceled" | "blocked" | "effective";
 export type DepartureMode = "scheduled" | "immediate";
@@ -57,14 +65,16 @@ export type DepartureClockOutResult =
 	| { kind: "repair_required"; workPeriodId: string | null; reason: string };
 
 /**
- * Closes the target's running work period at the cutoff inside the lifecycle
- * transaction. Slice 2 supplies the canonical clocking implementation; there is
- * deliberately no production no-op.
+ * Closes the target's running work period at the cutoff inside the departure
+ * work transaction. It runs in a savepoint of that transaction and receives the
+ * savepoint's sealed scope, so it takes no guard of its own. Slice 2 supplies
+ * the canonical clocking implementation; there is deliberately no production
+ * no-op.
  */
 export interface DepartureClockOutPort {
 	close(
 		input: DepartureIdentity & {
-			transaction: LifecycleTransaction;
+			scope: DepartureScope;
 			cutoff: Instant;
 			actorUserId: string;
 			clockOutActionId: string;

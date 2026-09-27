@@ -1,6 +1,11 @@
 import { and, eq, inArray, type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { approvalWorkflowRollout } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-schema";
+import {
+	approvalWriteGateGuard,
+	Rank,
+	recordGuard,
+} from "@/lib/time-tracking/work-transaction/ranks";
 import type { ApprovalDatabase } from "../server/types";
 import type { ApprovalDbService, ApprovalWorkflowType, ApprovalWriteGate } from "../workflow/ports";
 import {
@@ -27,15 +32,19 @@ export function approvalRolloutLockScope(
 	organizationId: string,
 	workflowType: ApprovalWorkflowType,
 ): string {
-	return `approval-rollout:${organizationId.length}:${organizationId}:${workflowType.length}:${workflowType}`;
+	return approvalWriteGateGuard(organizationId, workflowType).key;
 }
 
-/** The shared rollout lock, held by every writer of the kind until commit. */
+/**
+ * The shared rollout lock, held by every writer of the kind until commit. It is
+ * the approval write gate guard (rank 2); a work transaction records it first.
+ */
 export async function acquireApprovalWriteLock(
 	dbService: ApprovalDbService,
 	input: ApprovalAuthorityScope,
 ): Promise<void> {
 	const scope = approvalRolloutLockScope(input.organizationId, input.workflowType);
+	recordGuard(dbService.db, Rank.approvalWriteGate, scope, "shared");
 	await dbService.db.execute(
 		sql`select pg_advisory_xact_lock_shared(hashtextextended(${scope}, 0))`,
 	);
