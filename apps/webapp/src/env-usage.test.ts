@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 
 const SRC_ROOT = fileURLToPath(new URL(".", import.meta.url));
 const ALLOWED_DIRECT_ENV_READERS = new Set(["env.ts", "instrumentation.ts"]);
+// Vitest-only support code (aliases, doubles, the integration harness) never ships.
+const TEST_SUPPORT_DIRECTORY = join(SRC_ROOT, "test");
 const RUNTIME_FILE_EXTENSIONS = [".ts", ".tsx"] as const;
 
 function collectRuntimeFiles(directory: string): string[] {
@@ -13,6 +15,7 @@ function collectRuntimeFiles(directory: string): string[] {
 		const stats = statSync(absolutePath);
 
 		if (stats.isDirectory()) {
+			if (absolutePath === TEST_SUPPORT_DIRECTORY) return [];
 			return collectRuntimeFiles(absolutePath);
 		}
 
