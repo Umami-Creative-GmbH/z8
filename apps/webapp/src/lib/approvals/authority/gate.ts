@@ -99,36 +99,6 @@ export function createApprovalWriteGate(dbService: ApprovalDbService): ApprovalW
 	};
 }
 
-/** Refused when a pinned gate is asked for another organization or kind. */
-export class ApprovalWriteGateScopeError extends Error {
-	constructor() {
-		super("Approval write gate scope mismatch");
-		this.name = "ApprovalWriteGateScopeError";
-	}
-}
-
-/**
- * Pins a gate result this transaction already acquired: later acquisitions of
- * the same organization and kind return it without another read, and any
- * other organization or kind is refused.
- */
-export function fixedApprovalWriteGate(
-	scope: ApprovalAuthorityScope,
-	gate: ApprovalWriteGateResult,
-): ApprovalWriteGate {
-	return {
-		acquire: async (requested) => {
-			if (
-				requested.organizationId !== scope.organizationId ||
-				requested.workflowType !== scope.workflowType
-			) {
-				throw new ApprovalWriteGateScopeError();
-			}
-			return gate;
-		},
-	};
-}
-
 /**
  * The snapshot read: no lock, no write, and no row is `legacy`. Advisory only,
  * for presentation, reports, planners, self-service and escalation context;

@@ -14,7 +14,6 @@ import {
 	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
-import { fixedApprovalWriteGate } from "@/lib/approvals/authority";
 import {
 	legacyDeliveryCycleId,
 	recordLegacyDeliveryIntent,
@@ -28,6 +27,7 @@ import {
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { pinApprovalWriteGate } from "@/lib/approvals/workflow/pinned-write-gate";
 import type { VerifiedLegacyApprovalState } from "@/lib/approvals/workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
@@ -619,10 +619,15 @@ export async function cancelAbsenceRequestForEmployee(
 					organizationId,
 					workflowType: "absence",
 				});
-				const fixedContext = {
+				const pinnedContext: ApprovalWorkflowTransactionContext = {
 					...context,
-					writeGate: fixedApprovalWriteGate({ organizationId, workflowType: "absence" }, gate),
-				} as ApprovalWorkflowTransactionContext;
+					writeGate: pinApprovalWriteGate({
+						organizationId,
+						workflowType: "absence",
+						authority: gate,
+						refuse: () => fail(),
+					}),
+				};
 				const cancelledAt = systemClock.nowInstant();
 				if (
 					gate.shadowMirroring &&
@@ -652,7 +657,7 @@ export async function cancelAbsenceRequestForEmployee(
 					}
 					const execution =
 						await runtime.transitionEngine.executeInTransactionWithDisposition(
-							fixedContext,
+							pinnedContext,
 							{
 								organizationId,
 								workflowId: snapshot.id,
@@ -671,7 +676,7 @@ export async function cancelAbsenceRequestForEmployee(
 				let before: VerifiedLegacyApprovalState | undefined;
 				if (gate.shadowMirroring) {
 					before = await captureAbsenceLegacyApprovalState({
-						dbService: fixedContext.dbService,
+						dbService: pinnedContext.dbService,
 						organizationId,
 						absenceId,
 						capturedAt: cancelledAt,
@@ -693,13 +698,13 @@ export async function cancelAbsenceRequestForEmployee(
 				);
 				if (before) {
 					const after = await captureAbsenceLegacyApprovalState({
-						dbService: fixedContext.dbService,
+						dbService: pinnedContext.dbService,
 						organizationId,
 						absenceId,
 						capturedAt: cancelledAt,
 					});
 					const mirrored =
-						await fixedContext.compatibilityWriter.mirrorLegacyToCanonical({
+						await pinnedContext.compatibilityWriter.mirrorLegacyToCanonical({
 							before,
 							after,
 							actor: {

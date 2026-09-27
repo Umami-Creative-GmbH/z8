@@ -10,8 +10,8 @@
  *     await importOriginal(),
  *   ));
  */
-import { fixedApprovalWriteGate } from "@/lib/approvals/authority";
 import type * as Coordinator from "@/lib/approvals/server/work-period-decision-transaction";
+import { acquirePinnedApprovalContext } from "@/lib/approvals/workflow/pinned-write-gate";
 import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
 export function legacyWorkPeriodDecisionTransaction(
@@ -20,7 +20,7 @@ export function legacyWorkPeriodDecisionTransaction(
 	return {
 		...actual,
 		acquireWorkPeriodDecisionScope: async (context, route) => {
-			const authority = await context.writeGate.acquire({
+			const pinned = await acquirePinnedApprovalContext(context, {
 				organizationId: route.organizationId,
 				workflowType: route.kind,
 			});
@@ -29,14 +29,7 @@ export function legacyWorkPeriodDecisionTransaction(
 				admission: "legacy" as const,
 				assertEmployee: () => undefined,
 			});
-			return {
-				scope,
-				authority,
-				writeGate: fixedApprovalWriteGate(
-					{ organizationId: route.organizationId, workflowType: route.kind },
-					authority,
-				),
-			};
+			return { scope, ...pinned };
 		},
 		observeWorkPeriodDecision: async () => "unobserved",
 		retryWorkPeriodDecisionTransaction: (run) => run(),

@@ -15,7 +15,6 @@ import {
 	decodeApprovalDatabaseTimestamptz,
 	decodeApprovalDatabaseTimestampWithoutTimeZone,
 } from "../approval-database-row";
-import { fixedApprovalWriteGate } from "../authority";
 import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
@@ -41,6 +40,7 @@ import { getPrimaryEligibleManagerIdForRequester } from "../policies/manager-eli
 import type { ApprovalPolicyOvertimeRisk } from "../policies/types";
 import { classifyTimeApprovalRequest } from "../time-request-kind";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type {
 	ApprovalWorkflowSnapshot,
 	ApprovalWriteGateResult,
@@ -1639,20 +1639,14 @@ async function executeOrdinaryWorkPeriodSubmission(
 		input.organizationId,
 		input.requesterEmployeeId,
 	);
-	const authority = await input.context.writeGate.acquire({
-		organizationId: input.organizationId,
-		workflowType: input.kind,
-	});
-	const fixedGate = fixedApprovalWriteGate(
-		{ organizationId: input.organizationId, workflowType: input.kind },
-		authority,
+	const { authority, context } = await acquirePinnedApprovalContext(
+		input.context,
+		{
+			organizationId: input.organizationId,
+			workflowType: input.kind,
+			refuse: fail,
+		},
 	);
-	const context = {
-		...input.context,
-		writeGate: fixedGate,
-		compatibilityWriter:
-			input.context.compatibilityWriter.withWriteGate(fixedGate),
-	} as ApprovalWorkflowTransactionContext;
 	await lockOrdinarySource(input);
 	const submissionKey = deriveApprovalWorkflowId({
 		organizationId: input.organizationId,
@@ -1773,7 +1767,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 		let observedWorkflowId: string | null = null;
 		let captureCount = 0;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: fixedGate,
+			writeGate: context.writeGate,
 			compatibilityWriter: context.compatibilityWriter,
 		});
 		const result = await coordinator.execute({

@@ -11,13 +11,11 @@ export {
 } from "./binding";
 export {
 	type ApprovalAuthorityScope,
-	ApprovalWriteGateScopeError,
 	acquireApprovalWriteGate,
 	acquireApprovalWriteLock,
 	approvalAuthoritySql,
 	approvalRolloutLockScope,
 	createApprovalWriteGate,
-	fixedApprovalWriteGate,
 	readApprovalAuthoritySnapshot,
 	readApprovalAuthoritySnapshots,
 } from "./gate";

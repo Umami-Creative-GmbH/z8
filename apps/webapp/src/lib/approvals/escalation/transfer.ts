@@ -17,9 +17,10 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
-import { fixedApprovalWriteGate, readApprovalAuthoritySnapshots } from "../authority";
+import { readApprovalAuthoritySnapshots } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalAssignmentSnapshot,
@@ -849,7 +850,7 @@ async function processDueAssignment(
 			runtime,
 			context: {
 				...context,
-				writeGate: fixedApprovalWriteGate({ organizationId, workflowType }, gate),
+				writeGate: pinApprovalWriteGate({ organizationId, workflowType, authority: gate }),
 			},
 			current,
 			recipientEmployeeId: decision.recipientEmployeeId,
@@ -1121,13 +1122,11 @@ export async function escalateAssignmentByManager(input: {
 					runtime,
 					context: {
 						...context,
-						writeGate: fixedApprovalWriteGate(
-							{
-								organizationId: actor.organizationId,
-								workflowType: prepared.current.workflowType,
-							},
-							prepared.gate,
-						),
+						writeGate: pinApprovalWriteGate({
+							organizationId: actor.organizationId,
+							workflowType: prepared.current.workflowType,
+							authority: prepared.gate,
+						}),
 					},
 					current: prepared.current,
 					recipientEmployeeId: recipient.employeeId,

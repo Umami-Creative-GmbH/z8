@@ -35,6 +35,7 @@ Name every suite that needs a real database `*.integration.test.ts`. Vitest's `i
 - `pnpm --filter webapp test:integration` starts a label-owned PostgreSQL 16 container and hands it to `scripts/run-postgres-integration-suites.sh`. CI's integration job calls the same script. Extra arguments reach Vitest, so a file path runs one suite.
 - The `integration` project sets `APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1`, so running it without the disposable database fails instead of skipping.
 - The database gates (`repository-integration-harness.ts`, `employee-lifecycle/testing/database.test.fixture.ts`) throw when a `unit` project file calls them. A misnamed suite therefore fails `pnpm test` instead of silently skipping.
+- In the `unit` project the real `@/db` pool refuses every connection (`src/db/unit-project-guard.ts`), so a misnamed suite that only reaches PostgreSQL through production code fails too. `src/test/unit-setup.ts` fails the test even when the code under test swallowed the error. Unit tests may still import `@/db` for schema exports or mock it.
 
 ## RBAC
 

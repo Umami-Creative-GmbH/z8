@@ -22,7 +22,6 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { decodeApprovalDatabaseJsonText } from "../approval-database-row";
-import { fixedApprovalWriteGate } from "../authority";
 import {
 	AbsenceLegacyStateCaptureError,
 	captureAbsenceLegacyApprovalState,
@@ -48,6 +47,7 @@ import {
 	splitLegacyEscalationLineage,
 } from "../workflow/legacy-escalation-lineage";
 import { LegacyApprovalObservationPlannerError } from "../workflow/legacy-observation-planner";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalCommandActor,
@@ -1029,10 +1029,11 @@ async function commitLegacyTransfer(
 				};
 	let observed: ObservedLegacyTransitionResult | null = null;
 	const coordinator = createLegacyApprovalWriteCoordinator({
-		writeGate: fixedApprovalWriteGate(
-			{ organizationId, workflowType: subject.workflowType },
-			input.gate,
-		),
+		writeGate: pinApprovalWriteGate({
+			organizationId,
+			workflowType: subject.workflowType,
+			authority: input.gate,
+		}),
 		compatibilityWriter: context.compatibilityWriter,
 	});
 	const captureState = subject.captureState;

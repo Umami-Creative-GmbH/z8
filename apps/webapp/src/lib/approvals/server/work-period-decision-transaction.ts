@@ -38,10 +38,10 @@ import {
 	type WorkTransactionClient,
 	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
-import { fixedApprovalWriteGate } from "../authority";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
-import type { ApprovalWriteGate, ApprovalWriteGateResult } from "../workflow/ports";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
+import type { ApprovalWriteGateResult } from "../workflow/ports";
 
 export interface WorkPeriodDecisionRoute {
 	organizationId: string;
@@ -56,8 +56,8 @@ export interface WorkPeriodDecisionTransaction {
 	scope: WorkTransactionScope;
 	/** The ordinary approval gate result of the decided kind, acquired at rank 2. */
 	authority: ApprovalWriteGateResult;
-	/** An approval gate that returns the already acquired authority. */
-	writeGate: ApprovalWriteGate;
+	/** The caller's context with the acquired approval gate pinned. */
+	context: ApprovalWorkflowTransactionContext;
 }
 
 /**
@@ -123,7 +123,7 @@ export async function acquireWorkPeriodDecisionScope(
 	const routed = await routeScope(transaction, routeInput);
 	await acquireAdoptionGate(transaction, route.organizationId);
 	const admission = await readAppendAdmission(transaction, route.organizationId);
-	const authority = await context.writeGate.acquire({
+	const pinned = await acquirePinnedApprovalContext(context, {
 		organizationId: route.organizationId,
 		workflowType: route.kind,
 	});
@@ -150,14 +150,7 @@ export async function acquireWorkPeriodDecisionScope(
 			}
 		},
 	});
-	return {
-		scope,
-		authority,
-		writeGate: fixedApprovalWriteGate(
-			{ organizationId: route.organizationId, workflowType: route.kind },
-			authority,
-		),
-	};
+	return { scope, ...pinned };
 }
 
 /**

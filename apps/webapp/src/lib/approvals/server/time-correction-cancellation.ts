@@ -17,7 +17,6 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
-import { fixedApprovalWriteGate } from "../authority";
 import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
@@ -30,9 +29,7 @@ import { captureTimeCorrectionLegacyApprovalState } from "../domain-adapters/tim
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { cancelLegacyTimeCorrectionApprovalRows } from "../workflow/compatibility-writer";
 import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
-import type {
-	VerifiedLegacyApprovalState,
-} from "../workflow/ports";
+import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import {
 	deriveTimeCorrectionOperationId,
@@ -149,11 +146,17 @@ export async function cancelPendingTimeCorrection(
 
 			// Shared work protocol (#301) before any row lock: adoption gate, the
 			// time-correction approval gate, configuration, access, employee key.
-			const work = await acquireTimeCorrectionWorkScope(outerContext, {
-				organizationId: input.organizationId,
-				ownerEmployeeId: input.requesterEmployeeId,
-				actorUserId: input.requesterUserId,
-			});
+			const work = await acquireTimeCorrectionWorkScope(
+				outerContext,
+				{
+					organizationId: input.organizationId,
+					ownerEmployeeId: input.requesterEmployeeId,
+					actorUserId: input.requesterUserId,
+				},
+				() => {
+					throw new Error("Time correction cancellation is unavailable");
+				},
+			);
 			const context = work.context;
 			const adopted = work.scope.admission === "append";
 			let lockedPeriod: Awaited<
@@ -172,16 +175,6 @@ export async function cancelPendingTimeCorrection(
 				throw new Error("Time correction cancellation is unavailable");
 			}
 			const gate = work.authority;
-			const fixedGate = fixedApprovalWriteGate(
-				{ organizationId: input.organizationId, workflowType: "time_correction" },
-				gate,
-			);
-			const transactionContext: ApprovalWorkflowTransactionContext = {
-				...context,
-				writeGate: fixedGate,
-				compatibilityWriter:
-					context.compatibilityWriter.withWriteGate(fixedGate),
-			};
 			if (gate.authority === "legacy") {
 				const observedWorkflow = gate.shadowMirroring
 					? await loadCancellationWorkflow(
@@ -286,8 +279,8 @@ export async function cancelPendingTimeCorrection(
 				});
 				let captureCount = 0;
 				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: fixedGate,
-					compatibilityWriter: transactionContext.compatibilityWriter,
+					writeGate: context.writeGate,
+					compatibilityWriter: context.compatibilityWriter,
 				});
 				await coordinator.execute({
 					organizationId: input.organizationId,
@@ -393,7 +386,7 @@ export async function cancelPendingTimeCorrection(
 			);
 			const execution =
 				await runtime.transitionEngine.executeInTransactionWithDisposition(
-					transactionContext,
+					context,
 					{
 						organizationId: input.organizationId,
 						workflowId: workflow.id,

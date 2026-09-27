@@ -28,7 +28,6 @@ import {
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
-import { fixedApprovalWriteGate } from "@/lib/approvals/authority";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
 import { createLegacyApprovalWriteCoordinator } from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
@@ -52,6 +51,7 @@ import {
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { pinApprovalWriteGate } from "@/lib/approvals/workflow/pinned-write-gate";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	ApprovalWorkflowStartError,
@@ -496,12 +496,16 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						organizationId: currentEmployee.organizationId,
 						workflowType: "absence",
 					});
+					// The legacy coordinator and the transition engine rebind the
+					// compatibility writer to this gate themselves.
+					const pinnedGate = pinApprovalWriteGate({
+						organizationId: currentEmployee.organizationId,
+						workflowType: "absence",
+						authority: gate,
+					});
 					const context = {
 						...approvalContext,
-						writeGate: fixedApprovalWriteGate(
-							{ organizationId: currentEmployee.organizationId, workflowType: "absence" },
-							gate,
-						),
+						writeGate: pinnedGate,
 					} as ApprovalWorkflowTransactionContext;
 					const bindSourceWorkflow: StartApprovalWorkflowInput["bindSourceWorkflow"] =
 						async (workflowId) => {
@@ -551,7 +555,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							params.approvalWorkflow.create ?? createApprovalWorkflow;
 						const capturedAt = approvalLifecycle.nowInstant();
 						const coordinator = createLegacyApprovalWriteCoordinator({
-							writeGate: context.writeGate,
+							writeGate: pinnedGate,
 							compatibilityWriter: approvalContext.compatibilityWriter,
 						});
 						const captureState = () =>

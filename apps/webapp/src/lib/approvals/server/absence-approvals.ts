@@ -54,7 +54,7 @@ import {
 } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { assertReviewBindingAuthority, fixedApprovalWriteGate } from "../authority";
+import { assertReviewBindingAuthority } from "../authority";
 import type { ApprovalActionOptions } from "../domain/types";
 import { captureAbsenceLegacyApprovalState } from "../domain-adapters/absence-legacy-state";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
@@ -108,6 +108,7 @@ import {
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { classifyLegacyStage } from "../policies/requester-auto-approval";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
@@ -396,13 +397,17 @@ export async function executeAbsenceDecisionInTransaction(
 			organizationId: input.organizationId,
 			workflowType: "absence",
 		});
-		const decisionContext = {
+		// The legacy coordinator and the transition engine rebind the
+		// compatibility writer to this gate themselves.
+		const pinnedGate = pinApprovalWriteGate({
+			organizationId: input.organizationId,
+			workflowType: "absence",
+			authority: gate,
+		});
+		const decisionContext: ApprovalWorkflowTransactionContext = {
 			...context,
-			writeGate: fixedApprovalWriteGate(
-				{ organizationId: input.organizationId, workflowType: "absence" },
-				gate,
-			),
-		} as ApprovalWorkflowTransactionContext;
+			writeGate: pinnedGate,
+		};
 		const sourceIdentity = {
 			organizationId: input.organizationId,
 			workflowType: "absence" as const,
@@ -624,7 +629,7 @@ export async function executeAbsenceDecisionInTransaction(
 			const idempotencyKey = `absence:${input.absenceId}:${input.action}:${expectedVersion ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`;
 			let observed: LegacyObservedMirror | null = null;
 			const coordinator = createLegacyApprovalWriteCoordinator({
-				writeGate: decisionContext.writeGate,
+				writeGate: pinnedGate,
 				compatibilityWriter: decisionContext.compatibilityWriter,
 			});
 			const domainResult = await coordinator.execute({

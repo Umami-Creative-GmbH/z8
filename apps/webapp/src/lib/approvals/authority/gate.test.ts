@@ -2,7 +2,7 @@ import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import type { ApprovalDbService } from "../workflow/ports";
-import { acquireApprovalWriteGate, approvalAuthoritySql, fixedApprovalWriteGate } from "./gate";
+import { acquireApprovalWriteGate, approvalAuthoritySql } from "./gate";
 import { approvalWriteGateResult } from "./resolution";
 
 describe("approval write gate", () => {
@@ -118,23 +118,6 @@ describe("approval write gate", () => {
 		await expect(
 			acquireApprovalWriteGate(service, { organizationId: "org-1", workflowType: "absence" }),
 		).rejects.toThrow("Approval lifecycle mode is unavailable");
-	});
-
-	it("pins an acquired gate to its organization and kind", async () => {
-		const gate = approvalWriteGateResult("shadow");
-		const fixed = fixedApprovalWriteGate(
-			{ organizationId: "org-1", workflowType: "time_correction" },
-			gate,
-		);
-		await expect(
-			fixed.acquire({ organizationId: "org-1", workflowType: "time_correction" }),
-		).resolves.toBe(gate);
-		await expect(
-			fixed.acquire({ organizationId: "org-2", workflowType: "time_correction" }),
-		).rejects.toThrow("Approval write gate scope mismatch");
-		await expect(
-			fixed.acquire({ organizationId: "org-1", workflowType: "absence" }),
-		).rejects.toThrow("Approval write gate scope mismatch");
 	});
 });
 

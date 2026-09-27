@@ -53,7 +53,6 @@ import { recordLegacyTimeDecisionIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
-import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	ApprovalAssignmentReassignedError,
 	approvalReassignedConflict,
@@ -810,7 +809,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 		// Every read above is plain; the #264 protocol is taken before the first
 		// row lock, so a final policy clock-out approval's break split runs under
 		// the owner's coordination instead of locking late (#303).
-		const { authority, writeGate: fixedGate } =
+		const { authority, context: decisionContext } =
 			await acquireWorkPeriodDecisionScope(context, {
 				organizationId: input.organizationId,
 				kind: metadata.kind,
@@ -819,13 +818,8 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				workPeriodId: period.id,
 				observed,
 			});
-		const decisionContext = {
-			...context,
-			writeGate: fixedGate,
-			compatibilityWriter:
-				context.compatibilityWriter.withWriteGate(fixedGate),
-		} as ApprovalWorkflowTransactionContext;
-		const legacyAuthority = authority.authority === "legacy";
+		const legacyAuthority =
+			authority.authority === "legacy";
 		if (input.bound && boundCommand) {
 			await admitFreshTimeInvocation(database, {
 				organizationId: input.organizationId,
@@ -1007,7 +1001,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				input.decision.reason ?? "",
 			].join(":");
 			const coordinator = createLegacyApprovalWriteCoordinator({
-				writeGate: fixedGate,
+				writeGate: decisionContext.writeGate,
 				compatibilityWriter: decisionContext.compatibilityWriter,
 			});
 			let mutationResult: WorkPeriodApprovalResult | undefined;

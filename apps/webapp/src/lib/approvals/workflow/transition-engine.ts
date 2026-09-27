@@ -1,5 +1,4 @@
 import { isInstant } from "@/lib/datetime/temporal-core";
-import { fixedApprovalWriteGate } from "../authority";
 import type {
 	ApprovalDomainAdapterContext,
 	ApprovalDomainCommand,
@@ -8,6 +7,7 @@ import type {
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
 import { mapSequentially } from "../sequential";
+import { pinApprovalWriteGate } from "./pinned-write-gate";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalCommandResult,
@@ -843,15 +843,15 @@ export function createApprovalTransitionEngine(
 				});
 			}
 			if (gate.compatibilityWriting) {
-				const fixedGate = fixedApprovalWriteGate(
-					{
-						organizationId: result.snapshot.organizationId,
-						workflowType: result.snapshot.workflowType,
-					},
-					gate,
-				);
 				await context.compatibilityWriter
-					.withWriteGate(fixedGate)
+					.withWriteGate(
+						pinApprovalWriteGate({
+							organizationId: result.snapshot.organizationId,
+							workflowType: result.snapshot.workflowType,
+							authority: gate,
+							refuse: () => invariant({ mirror: "write_gate_scope" }),
+						}),
+					)
 					.mirrorCanonicalToLegacy({ result });
 			}
 			await context.projectionWriter.write(result.projection);

@@ -10,8 +10,12 @@
  *     await importOriginal(),
  *   ));
  */
-import { approvalWriteGateResult, fixedApprovalWriteGate } from "@/lib/approvals/authority";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type * as Coordinator from "@/lib/approvals/server/time-correction-work-transaction";
+import {
+	acquirePinnedApprovalContext,
+	pinApprovalWriteGate,
+} from "@/lib/approvals/workflow/pinned-write-gate";
 import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
 export function legacyTimeCorrectionWorkTransaction(
@@ -19,31 +23,29 @@ export function legacyTimeCorrectionWorkTransaction(
 ): typeof Coordinator {
 	return {
 		...actual,
-		acquireTimeCorrectionWorkScope: async (context, route) => {
-			// Suites that stub the whole submission owner build no approval gate.
-			const authority = context.writeGate
-				? await context.writeGate.acquire({
-						organizationId: route.organizationId,
-						workflowType: "time_correction",
-					})
-				: approvalWriteGateResult("legacy");
+		acquireTimeCorrectionWorkScope: async (context, route, refuse) => {
 			const scope = sealWorkTransactionScope({
 				db: context.dbService.db as never,
 				admission: "legacy" as const,
 				assertEmployee: () => undefined,
 			});
-			// The harness's own compatibility writer stays observable as the suite built it.
-			return {
-				scope,
-				authority,
-				context: {
-					...context,
-					writeGate: fixedApprovalWriteGate(
-						{ organizationId: route.organizationId, workflowType: "time_correction" },
-						authority,
-					),
-				},
-			};
+			// Suites that stub the whole submission owner build no approval gate.
+			if (!context.writeGate) {
+				const authority = approvalWriteGateResult("legacy");
+				const writeGate = pinApprovalWriteGate({
+					organizationId: route.organizationId,
+					workflowType: "time_correction",
+					authority,
+					refuse,
+				});
+				return { scope, authority, context: { ...context, writeGate } };
+			}
+			const pinned = await acquirePinnedApprovalContext(context, {
+				organizationId: route.organizationId,
+				workflowType: "time_correction",
+				refuse,
+			});
+			return { scope, ...pinned };
 		},
 		retryTimeCorrectionWorkTransaction: (run) => run(),
 	};

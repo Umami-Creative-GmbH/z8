@@ -74,7 +74,6 @@ import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
 import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { fixedApprovalWriteGate } from "../authority";
 import type { ApprovalActionOptions } from "../domain/types";
 import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
 import {
@@ -133,6 +132,7 @@ import type {
 } from "../policies/types";
 import { mapSequentially } from "../sequential";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
@@ -3875,20 +3875,11 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 				workCategoryId: lockedSource.workCategoryId,
 			})
 		: undefined;
-	const authority = await input.context.writeGate.acquire({
-		organizationId: input.organizationId,
-		workflowType: "time_correction",
-	});
-	const fixedGate = fixedApprovalWriteGate(
-		{ organizationId: input.organizationId, workflowType: "time_correction" },
-		authority,
-	);
-	const transactionContext = {
-		...input.context,
-		writeGate: fixedGate,
-		compatibilityWriter:
-			input.context.compatibilityWriter.withWriteGate(fixedGate),
-	} as ApprovalWorkflowTransactionContext;
+	const { authority, context: transactionContext } =
+		await acquirePinnedApprovalContext(input.context, {
+			organizationId: input.organizationId,
+			workflowType: "time_correction",
+		});
 
 	if (authority.authority === "legacy") {
 		if (input.submissionId) {
@@ -4049,7 +4040,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const capture =
 			input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: fixedGate,
+			writeGate: transactionContext.writeGate,
 			compatibilityWriter: transactionContext.compatibilityWriter,
 		});
 		const result = await coordinator.execute({
@@ -4985,17 +4976,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 			});
 			const context = work.context;
 			const authority = work.authority;
-			const fixedGate = fixedApprovalWriteGate(
-				{ organizationId: input.organizationId, workflowType: "time_correction" },
-				authority,
-			);
-			const decisionContext = {
-				...context,
-				writeGate: fixedGate,
-				compatibilityWriter:
-					context.compatibilityWriter.withWriteGate(fixedGate),
-			} as ApprovalWorkflowTransactionContext;
-			const legacyAuthority = authority.authority === "legacy";
+			const legacyAuthority =
+				authority.authority === "legacy";
 			if (input.bound && boundCommand) {
 				await admitFreshTimeInvocation(transactionDb, {
 					organizationId: input.organizationId,
@@ -5122,8 +5104,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const capture =
 					input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: fixedGate,
-					compatibilityWriter: decisionContext.compatibilityWriter,
+					writeGate: context.writeGate,
+					compatibilityWriter: context.compatibilityWriter,
 				});
 				const domainResult = await coordinator.execute({
 					organizationId: input.organizationId,
@@ -5323,7 +5305,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				: `time-correction:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${decisionFingerprint(input.reason)}`;
 			const commandResult =
 				await input.runtime.transitionEngine.executeInTransaction(
-					decisionContext,
+					context,
 					{
 						organizationId: input.organizationId,
 						workflowId: workflow.id,

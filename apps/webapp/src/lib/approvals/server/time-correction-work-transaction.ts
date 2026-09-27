@@ -17,7 +17,7 @@ import "server-only";
  * The routed scope is re-read under those locks; a changed scope throws
  * `WorkTransactionScopeChanged` and the caller restarts the whole transaction
  * instead of acquiring an earlier-ranked lock late. The approval gate result is
- * fixed on the returned context, so the existing submission, decision and
+ * pinned on the returned context, so the existing submission, decision and
  * cancellation code never re-acquires it after its row locks.
  *
  * Legacy organizations keep their established writes; they only run inside the
@@ -36,8 +36,8 @@ import {
 	type WorkTransactionClient,
 	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
-import { fixedApprovalWriteGate } from "../authority";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWriteGateResult } from "../workflow/ports";
 
 export interface TimeCorrectionWorkRoute {
@@ -52,18 +52,19 @@ export interface TimeCorrectionWorkTransaction {
 	scope: WorkTransactionScope;
 	/** The `time_correction` approval gate result, acquired at rank 2. */
 	authority: ApprovalWriteGateResult;
-	/** The caller's context with the acquired approval gate fixed. */
+	/** The caller's context with the acquired approval gate pinned. */
 	context: ApprovalWorkflowTransactionContext;
 }
 
 /**
  * Acquires the protocol on the caller's approval repository transaction. Must be
  * called before any row lock of the transaction; routing reads before it are
- * plain reads.
+ * plain reads. `refuse` replaces the pinned gate's refusal of another scope.
  */
 export async function acquireTimeCorrectionWorkScope(
 	context: ApprovalWorkflowTransactionContext,
 	route: TimeCorrectionWorkRoute,
+	refuse?: () => never,
 ): Promise<TimeCorrectionWorkTransaction> {
 	const transaction = context.dbService.db as unknown as WorkTransactionClient;
 	const routeInput = {
@@ -74,9 +75,10 @@ export async function acquireTimeCorrectionWorkScope(
 	const routed = await routeScope(transaction, routeInput);
 	await acquireAdoptionGate(transaction, route.organizationId);
 	const admission = await readAppendAdmission(transaction, route.organizationId);
-	const authority = await context.writeGate.acquire({
+	const pinned = await acquirePinnedApprovalContext(context, {
 		organizationId: route.organizationId,
 		workflowType: "time_correction",
+		refuse,
 	});
 	await acquireOrganizationConfigurationGuard(transaction, route.organizationId);
 	await acquireUserConfigurationAccessGuards(transaction, routed.userIds);
@@ -94,19 +96,7 @@ export async function acquireTimeCorrectionWorkScope(
 			}
 		},
 	});
-	const writeGate = fixedApprovalWriteGate(
-		{ organizationId: route.organizationId, workflowType: "time_correction" },
-		authority,
-	);
-	return {
-		scope,
-		authority,
-		context: {
-			...context,
-			writeGate,
-			compatibilityWriter: context.compatibilityWriter.withWriteGate(writeGate),
-		},
-	};
+	return { scope, ...pinned };
 }
 
 /**
