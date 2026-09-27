@@ -1,4 +1,5 @@
 import { isInstant } from "@/lib/datetime/temporal-core";
+import { fixedApprovalWriteGate } from "../authority";
 import type {
 	ApprovalDomainAdapterContext,
 	ApprovalDomainCommand,
@@ -16,7 +17,6 @@ import type {
 	ApprovalWorkflowAuthorizationGrant,
 	ApprovalWorkflowCommandRequest,
 	ApprovalWorkflowSourceLoader,
-	ApprovalWriteGate,
 } from "./ports";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
@@ -486,7 +486,7 @@ export function createApprovalTransitionEngine(
 				workflowType: workflow.workflowType,
 			});
 			assertSnapshotScope(request, workflow);
-			if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+			if (gate.authority !== "canonical") {
 				throw engineError("forbidden", {
 					field: "canonical_authority",
 					mode: gate.mode,
@@ -842,18 +842,14 @@ export function createApprovalTransitionEngine(
 					finalization,
 				});
 			}
-			if (gate.behavior.mirror === "canonical_to_legacy") {
-				const fixedGate: ApprovalWriteGate = {
-					acquire: async (scope) => {
-						if (
-							scope.organizationId !== result.snapshot.organizationId ||
-							scope.workflowType !== result.snapshot.workflowType
-						) {
-							invariant({ mirror: "write_gate_scope" });
-						}
-						return gate;
+			if (gate.compatibilityWriting) {
+				const fixedGate = fixedApprovalWriteGate(
+					{
+						organizationId: result.snapshot.organizationId,
+						workflowType: result.snapshot.workflowType,
 					},
-				};
+					gate,
+				);
 				await context.compatibilityWriter
 					.withWriteGate(fixedGate)
 					.mirrorCanonicalToLegacy({ result });

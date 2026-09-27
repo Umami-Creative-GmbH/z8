@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { approvalWorkflowRollout } from "@/db/schema";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { readApprovalAuthoritySnapshot } from "../authority";
 import {
 	type AbsenceRevisionComparison,
 	type AbsenceSubmittedCoverage,
@@ -124,20 +123,12 @@ export async function prepareAbsenceReviewEvidence(
 			organizationId: input.organizationId,
 			workflowType: "absence",
 		}),
-		database
-			.select({ mode: approvalWorkflowRollout.lifecycleMode })
-			.from(approvalWorkflowRollout)
-			.where(
-				and(
-					eq(approvalWorkflowRollout.organizationId, input.organizationId),
-					eq(approvalWorkflowRollout.workflowType, "absence"),
-				),
-			)
-			.limit(1),
+		readApprovalAuthoritySnapshot(database, {
+			organizationId: input.organizationId,
+			workflowType: "absence",
+		}),
 	]);
-	const lifecycle = rollout[0]?.mode;
-	const canonicalAuthority =
-		lifecycle === "canonical" || lifecycle === "complete";
+	const canonicalAuthority = rollout.authority === "canonical";
 	// A legacy revision never sits under a workflow ID, so an observed shadow
 	// workflow link cannot surface legacy evidence as canonical (or vice versa).
 	const canonicalRevision = live.approvalWorkflowId

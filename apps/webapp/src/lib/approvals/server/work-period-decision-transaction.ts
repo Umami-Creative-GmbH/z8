@@ -38,6 +38,7 @@ import {
 	type WorkTransactionClient,
 	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
+import { fixedApprovalWriteGate } from "../authority";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import type { ApprovalWriteGate, ApprovalWriteGateResult } from "../workflow/ports";
@@ -152,17 +153,10 @@ export async function acquireWorkPeriodDecisionScope(
 	return {
 		scope,
 		authority,
-		writeGate: {
-			acquire: async (gateScope) => {
-				if (
-					gateScope.organizationId !== route.organizationId ||
-					gateScope.workflowType !== route.kind
-				) {
-					throw new Error("Work period decision rollout scope mismatch");
-				}
-				return authority;
-			},
-		},
+		writeGate: fixedApprovalWriteGate(
+			{ organizationId: route.organizationId, workflowType: route.kind },
+			authority,
+		),
 	};
 }
 

@@ -36,8 +36,9 @@ import {
 	type WorkTransactionClient,
 	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
+import { fixedApprovalWriteGate } from "../authority";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
-import type { ApprovalWriteGate, ApprovalWriteGateResult } from "../workflow/ports";
+import type { ApprovalWriteGateResult } from "../workflow/ports";
 
 export interface TimeCorrectionWorkRoute {
 	organizationId: string;
@@ -53,21 +54,6 @@ export interface TimeCorrectionWorkTransaction {
 	authority: ApprovalWriteGateResult;
 	/** The caller's context with the acquired approval gate fixed. */
 	context: ApprovalWorkflowTransactionContext;
-}
-
-/** An approval gate that returns the already acquired `time_correction` authority. */
-export function fixedTimeCorrectionWriteGate(
-	organizationId: string,
-	authority: ApprovalWriteGateResult,
-): ApprovalWriteGate {
-	return {
-		acquire: async (scope) => {
-			if (scope.organizationId !== organizationId || scope.workflowType !== "time_correction") {
-				throw new Error("Time correction rollout scope mismatch");
-			}
-			return authority;
-		},
-	};
 }
 
 /**
@@ -108,7 +94,10 @@ export async function acquireTimeCorrectionWorkScope(
 			}
 		},
 	});
-	const writeGate = fixedTimeCorrectionWriteGate(route.organizationId, authority);
+	const writeGate = fixedApprovalWriteGate(
+		{ organizationId: route.organizationId, workflowType: "time_correction" },
+		authority,
+	);
 	return {
 		scope,
 		authority,

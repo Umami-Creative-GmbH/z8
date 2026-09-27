@@ -1,3 +1,4 @@
+import { assertReviewBindingAuthority } from "../authority";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import {
 	type ApprovalInvocationCommand,
@@ -16,9 +17,8 @@ import {
 	findDecisionEvidenceByReceipt,
 	type LegacyDecisionEvidenceRecord,
 	loadLegacyReviewBinding,
-	loadReviewBindingAuthority,
 } from "../evidence/store";
-import type { ApprovalWorkflowType } from "../workflow/ports";
+import type { ApprovalWorkflowType, ApprovalWriteGateResult } from "../workflow/ports";
 import type { ApprovalDatabase } from "./types";
 
 /**
@@ -168,17 +168,15 @@ export async function recordTimeInvocationDecision(
  */
 export async function assertTimeBindingAuthority(
 	database: ApprovalDatabase,
-	input: { organizationId: string; bound: BoundTimeInvocation; legacyAuthority: boolean },
+	input: { organizationId: string; bound: BoundTimeInvocation; gate: ApprovalWriteGateResult },
 ): Promise<void> {
-	const authority = await loadReviewBindingAuthority(database, {
+	await assertReviewBindingAuthority(database, {
 		organizationId: input.organizationId,
 		bindingId: input.bound.reviewedBindingId,
+		gate: input.gate,
 	});
-	if (authority !== (input.legacyAuthority ? "legacy" : "canonical")) {
-		throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
-	}
 	if (
-		input.legacyAuthority &&
+		input.gate.authority === "legacy" &&
 		!LEGACY_TIME_ACTIONABLE_PROVIDERS.includes(
 			approvalInvocationProvider(input.bound.invocation.identity.scheme),
 		)

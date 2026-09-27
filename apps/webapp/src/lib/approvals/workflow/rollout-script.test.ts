@@ -13,7 +13,7 @@ import {
 	APPROVAL_EXPANSION_CONTRACT,
 	type ApprovalExpansionCatalog,
 } from "../../../../scripts/approval-workflow-schema-contract";
-import { getCutoverBehavior } from "./cutover";
+import { resolveApprovalAuthority } from "../authority";
 import type { ApprovalTransactionClient } from "./ports";
 
 const webappRoot = resolve(import.meta.dirname, "../../../..");
@@ -462,9 +462,9 @@ describe("approval workflow rollout CLI", () => {
 			from: "legacy",
 			to: "shadow",
 		});
-		expect(getCutoverBehavior("shadow")).toMatchObject({
-			serveFrom: "legacy",
-			mirror: "legacy_to_canonical",
+		expect(resolveApprovalAuthority("shadow")).toMatchObject({
+			authority: "legacy",
+			shadowMirroring: true,
 		});
 	});
 

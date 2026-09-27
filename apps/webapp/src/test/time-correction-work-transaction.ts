@@ -10,8 +10,8 @@
  *     await importOriginal(),
  *   ));
  */
+import { approvalWriteGateResult, fixedApprovalWriteGate } from "@/lib/approvals/authority";
 import type * as Coordinator from "@/lib/approvals/server/time-correction-work-transaction";
-import { getCutoverBehavior } from "@/lib/approvals/workflow/cutover";
 import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
 export function legacyTimeCorrectionWorkTransaction(
@@ -26,7 +26,7 @@ export function legacyTimeCorrectionWorkTransaction(
 						organizationId: route.organizationId,
 						workflowType: "time_correction",
 					})
-				: { mode: "legacy" as const, behavior: getCutoverBehavior("legacy") };
+				: approvalWriteGateResult("legacy");
 			const scope = sealWorkTransactionScope({
 				db: context.dbService.db as never,
 				admission: "legacy" as const,
@@ -38,7 +38,10 @@ export function legacyTimeCorrectionWorkTransaction(
 				authority,
 				context: {
 					...context,
-					writeGate: actual.fixedTimeCorrectionWriteGate(route.organizationId, authority),
+					writeGate: fixedApprovalWriteGate(
+						{ organizationId: route.organizationId, workflowType: "time_correction" },
+						authority,
+					),
 				},
 			};
 		},

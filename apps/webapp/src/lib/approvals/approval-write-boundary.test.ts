@@ -4228,6 +4228,9 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/delivery/intents.ts": {
 				approval_delivery_intent: ["insert"],
 			},
+			"src/lib/approvals/authority/gate.ts": {
+				approval_workflow_rollout: ["insert"],
+			},
 			"src/lib/approvals/evidence/invocation.ts": {
 				approval_invocation: ["insert"],
 			},
@@ -4251,9 +4254,6 @@ db.delete(approvalOutbox);`,
 				approval_chain_stage_instance: ["insert", "update"],
 				approval_request: ["insert", "update", "delete"],
 				approval_workflow_stage: ["update"],
-			},
-			"src/lib/approvals/workflow/cutover.ts": {
-				approval_workflow_rollout: ["insert"],
 			},
 			"src/lib/approvals/workflow/organization-rollout.ts": {
 				approval_workflow_rollout: ["insert"],

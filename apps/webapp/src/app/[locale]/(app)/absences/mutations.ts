@@ -14,6 +14,7 @@ import {
 	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
+import { fixedApprovalWriteGate } from "@/lib/approvals/authority";
 import {
 	legacyDeliveryCycleId,
 	recordLegacyDeliveryIntent,
@@ -620,30 +621,17 @@ export async function cancelAbsenceRequestForEmployee(
 				});
 				const fixedContext = {
 					...context,
-					writeGate: {
-						acquire: async (scope: {
-							organizationId: string;
-							workflowType: "absence";
-						}) => {
-							if (
-								scope.organizationId !== organizationId ||
-								scope.workflowType !== "absence"
-							) {
-								fail();
-							}
-							return gate;
-						},
-					},
+					writeGate: fixedApprovalWriteGate({ organizationId, workflowType: "absence" }, gate),
 				} as ApprovalWorkflowTransactionContext;
 				const cancelledAt = systemClock.nowInstant();
 				if (
-					(gate.mode === "shadow" || gate.mode === "ready") &&
+					gate.shadowMirroring &&
 					(!absence.approvalWorkflowId || !workflowRow)
 				) {
 					fail("Absence approval workflow link is missing");
 				}
 
-				if (gate.mode === "canonical" || gate.mode === "complete") {
+				if (gate.authority === "canonical") {
 					if (!absence.approvalWorkflowId || !workflowRow) {
 						fail("Absence approval workflow link is missing");
 					}
@@ -681,7 +669,7 @@ export async function cancelAbsenceRequestForEmployee(
 				}
 
 				let before: VerifiedLegacyApprovalState | undefined;
-				if (gate.mode === "shadow" || gate.mode === "ready") {
+				if (gate.shadowMirroring) {
 					before = await captureAbsenceLegacyApprovalState({
 						dbService: fixedContext.dbService,
 						organizationId,

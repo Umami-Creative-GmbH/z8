@@ -105,6 +105,7 @@ vi.mock("@/lib/work-balance/service", () => ({
 }));
 
 import { db as globalDb } from "@/db";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
@@ -502,19 +503,7 @@ describe("time correction transaction boundaries", () => {
 			workLocationType: "office",
 			workCategoryId: "71000000-0000-4000-8000-000000000802",
 		};
-		const authority = {
-			mode: input.mode,
-			behavior: {
-				serveFrom: "canonical" as const,
-				writeLegacy: input.mode === "canonical",
-				writeCanonical: true,
-				decideCanonical: true,
-				mirror:
-					input.mode === "canonical"
-						? ("canonical_to_legacy" as const)
-						: ("none" as const),
-			},
-		};
+		const authority = approvalWriteGateResult(input.mode);
 		const snapshots = new Map<string, ApprovalWorkflowSnapshot>();
 		const submissionWorkflows = new Map<string, string>();
 		const compatibilityRows: Array<Record<string, unknown>> = [];
@@ -1552,19 +1541,7 @@ describe("time correction transaction boundaries", () => {
 			failureEvidence = { point, ...evidence, state: durableSnapshot() };
 			throw new Error(`injected:${point}`);
 		};
-		const authority = {
-			mode,
-			behavior: {
-				serveFrom: "legacy" as const,
-				writeLegacy: true,
-				writeCanonical: mode !== "legacy",
-				decideCanonical: false,
-				mirror:
-					mode === "legacy"
-						? ("none" as const)
-						: ("legacy_to_canonical" as const),
-			},
-		};
+		const authority = approvalWriteGateResult(mode);
 		const acquire = vi.fn().mockResolvedValue(authority);
 		const captureEnvelope = () => {
 			captureRead += 1;
@@ -2249,19 +2226,7 @@ describe("time correction transaction boundaries", () => {
 				approver: "31000000-0000-4000-8000-000000000102",
 				correction: "61000000-0000-4000-8000-000000000101",
 			};
-			const authority = {
-				mode,
-				behavior: {
-					serveFrom: "canonical" as const,
-					writeLegacy: mode === "canonical",
-					writeCanonical: true,
-					decideCanonical: true,
-					mirror:
-						mode === "canonical"
-							? ("canonical_to_legacy" as const)
-							: ("none" as const),
-				},
-			};
+			const authority = approvalWriteGateResult(mode);
 			let sourceWorkflowId: string | null = null;
 			let persistedSnapshot: ApprovalWorkflowSnapshot | null = null;
 			const execute = vi.fn().mockResolvedValue({ rows: [{ policies: [] }] });
@@ -5062,16 +5027,7 @@ describe("time correction transaction boundaries", () => {
 			.mockResolvedValueOnce(null)
 			.mockResolvedValue({ approverId: "emp-manager" });
 		dbService.db.query.approvalRequest.findMany = vi.fn().mockResolvedValue([]);
-		const acquire = vi.fn().mockResolvedValue({
-			mode: "legacy",
-			behavior: {
-				serveFrom: "legacy",
-				writeLegacy: true,
-				writeCanonical: false,
-				decideCanonical: false,
-				mirror: "none",
-			},
-		});
+		const acquire = vi.fn().mockResolvedValue(approvalWriteGateResult("legacy"));
 		const context = {
 			dbService,
 			writeGate: { acquire },
@@ -5157,16 +5113,7 @@ describe("time correction transaction boundaries", () => {
 				},
 				updatedAt: new Date("2026-07-20T10:00:00.000Z"),
 			});
-		const acquire = vi.fn().mockResolvedValue({
-			mode: "legacy",
-			behavior: {
-				serveFrom: "legacy",
-				writeLegacy: true,
-				writeCanonical: false,
-				decideCanonical: false,
-				mirror: "none",
-			},
-		});
+		const acquire = vi.fn().mockResolvedValue(approvalWriteGateResult("legacy"));
 		const context = {
 			dbService,
 			writeGate: { acquire },

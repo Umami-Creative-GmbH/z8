@@ -3,7 +3,6 @@ import { and, eq } from "drizzle-orm";
 import {
 	approvalChainStageInstance,
 	approvalRequest,
-	approvalWorkflowRollout,
 	travelExpenseClaim,
 } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
@@ -33,28 +32,6 @@ import { compareTravelExpenseWithSubmittedRevision } from "./travel-expense-subm
  */
 
 const COMMAND_VERSION = "travel-expense-legacy-decision:v1";
-
-/**
- * Expense claims have no canonical adapter, so their only authority is legacy.
- * Bound cards are issued and decided only while no rollout claims canonical
- * authority for the kind (#384 cutover rule).
- */
-export async function hasLegacyTravelExpenseAuthority(
-	database: ApprovalDatabase,
-	organizationId: string,
-): Promise<boolean> {
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, organizationId),
-				eq(approvalWorkflowRollout.workflowType, "travel_expense"),
-			),
-		)
-		.limit(1);
-	return rollout?.mode !== "canonical" && rollout?.mode !== "complete";
-}
 
 function sha256(value: string): string {
 	return createHash("sha256").update(value).digest("hex");

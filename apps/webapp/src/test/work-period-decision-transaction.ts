@@ -10,6 +10,7 @@
  *     await importOriginal(),
  *   ));
  */
+import { fixedApprovalWriteGate } from "@/lib/approvals/authority";
 import type * as Coordinator from "@/lib/approvals/server/work-period-decision-transaction";
 import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
@@ -31,17 +32,10 @@ export function legacyWorkPeriodDecisionTransaction(
 			return {
 				scope,
 				authority,
-				writeGate: {
-					acquire: async (gateScope) => {
-						if (
-							gateScope.organizationId !== route.organizationId ||
-							gateScope.workflowType !== route.kind
-						) {
-							throw new Error("Work period decision rollout scope mismatch");
-						}
-						return authority;
-					},
-				},
+				writeGate: fixedApprovalWriteGate(
+					{ organizationId: route.organizationId, workflowType: route.kind },
+					authority,
+				),
 			};
 		},
 		observeWorkPeriodDecision: async () => "unobserved",

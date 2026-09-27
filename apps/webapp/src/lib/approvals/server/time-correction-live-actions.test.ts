@@ -1,5 +1,6 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 
 const state = vi.hoisted(() => ({
 	db: null as unknown,
@@ -144,16 +145,7 @@ function createHarness() {
 	const context = {
 		dbService: { db: transactionDb },
 		writeGate: {
-			acquire: vi.fn().mockResolvedValue({
-				mode: "complete",
-				behavior: {
-					serveFrom: "canonical",
-					writeLegacy: false,
-					writeCanonical: true,
-					decideCanonical: true,
-					mirror: "none",
-				},
-			}),
+			acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("complete")),
 		},
 		repository: {
 			loadSnapshot: vi.fn().mockResolvedValue({

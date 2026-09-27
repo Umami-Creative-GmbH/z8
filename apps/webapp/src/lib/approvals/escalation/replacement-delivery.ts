@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import type { ApprovalDeliveryProvider } from "@/db/schema";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { approvalAuthoritySql } from "../authority";
 import { resolveRecordedLegacyDeliveryCycle } from "../delivery/intents";
 import {
 	type ApprovalDeliveryOutcome,
@@ -106,7 +107,7 @@ export async function expandEscalationTransferEvents(input: {
 						t.authority_mode = 'canonical'
 						or (
 							t.authority_mode = 'legacy'
-							and (r.lifecycle_mode is null or r.lifecycle_mode not in ('canonical', 'complete'))
+							and ${approvalAuthoritySql(sql`r.lifecycle_mode`, "legacy")}
 							and (
 								(t.workflow_type = 'absence' and e.payload->>'sourceType' = 'absence_entry')
 								or (t.workflow_type = 'travel_expense'

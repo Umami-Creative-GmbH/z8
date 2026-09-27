@@ -3,7 +3,6 @@ import {
 	type ApprovalPresentationProvider,
 	approvalRequest,
 	approvalWorkflow,
-	approvalWorkflowRollout,
 	workCategory,
 } from "@/db/schema";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
@@ -14,9 +13,9 @@ import {
 	formatInstant,
 	formatUtcOffset,
 } from "@/lib/datetime/temporal-format";
+import { readApprovalAuthoritySnapshot } from "../authority";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
-	hasLegacyTimeAuthority,
 	LEGACY_TIME_ACTIONABLE_PROVIDERS,
 	type LegacyTimeCycleRevision,
 	loadLegacyTimeCycleRevision,
@@ -369,17 +368,11 @@ async function loadTimeCardFacts(
 		return null;
 	}
 	const workflowType = workflow.workflowType;
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, target.organizationId),
-				eq(approvalWorkflowRollout.workflowType, workflowType),
-			),
-		)
-		.limit(1);
-	if (rollout?.mode !== "canonical" && rollout?.mode !== "complete") return null;
+	const rollout = await readApprovalAuthoritySnapshot(database, {
+		organizationId: target.organizationId,
+		workflowType,
+	});
+	if (rollout.authority !== "canonical") return null;
 	const evidenceMode = await readApprovalEvidenceMode(database, {
 		organizationId: target.organizationId,
 		workflowType,
@@ -646,7 +639,8 @@ export async function prepareBoundLegacyTimeCard(
 	if (cycle?.revision.lifecycle.authority !== "legacy") return null;
 	const { legacy } = cycle.revision.lifecycle;
 	const workflowType = cycle.kind;
-	if (!(await hasLegacyTimeAuthority(database, { organizationId, workflowType }))) return null;
+	const rollout = await readApprovalAuthoritySnapshot(database, { organizationId, workflowType });
+	if (rollout.authority !== "legacy") return null;
 	const [evidenceMode, presentationMode] = await Promise.all([
 		readApprovalEvidenceMode(database, { organizationId, workflowType }),
 		readApprovalPresentationMode(database, {

@@ -4,6 +4,7 @@ import {
 	approvalChainInstance,
 	approvalChainStageInstance,
 } from "@/db/schema";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { TimeCorrectionWorkflowPayload } from "../domain-adapters/time-correction-contract";
 import {
@@ -14,7 +15,6 @@ import {
 	type LegacyApprovalPersistence,
 	type LegacyCanonicalIdMapping,
 } from "./compatibility-writer";
-import { getCutoverBehavior } from "./cutover";
 import type {
 	ApprovalCommandResult,
 	ApprovalDbService,
@@ -205,7 +205,7 @@ function writeGate(
 	return {
 		acquire: async (input: unknown) => {
 			onAcquire?.(input);
-			return { mode, behavior: getCutoverBehavior(mode) };
+			return approvalWriteGateResult(mode);
 		},
 	};
 }
@@ -1196,16 +1196,7 @@ describe("approval compatibility writer", () => {
 			writeGate: {
 				acquire: async () => {
 					timeline.push("gate");
-					return {
-						mode: "canonical" as const,
-						behavior: {
-							serveFrom: "canonical" as const,
-							writeLegacy: true,
-							writeCanonical: true,
-							decideCanonical: true,
-							mirror: "canonical_to_legacy" as const,
-						},
-					};
+					return approvalWriteGateResult("canonical");
 				},
 			},
 			repository: {} as TransactionalWorkflowRepository,

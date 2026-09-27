@@ -7,6 +7,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { createApprovalWriteGate } from "../authority";
 import type { ApprovalDomainAdapterRegistry } from "../domain-adapters/registry";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { createApprovalOutboxWriter } from "../outbox/writer";
@@ -17,7 +18,6 @@ import {
 	createTransactionBoundLegacyApprovalPersistence,
 	type LegacyApprovalRowWriter,
 } from "./compatibility-writer";
-import { createApprovalWriteGate } from "./cutover";
 import {
 	deriveApprovalAssignmentId,
 	deriveApprovalEventId,

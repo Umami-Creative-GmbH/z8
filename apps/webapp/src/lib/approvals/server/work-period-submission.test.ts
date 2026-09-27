@@ -2,6 +2,7 @@ import { getTableName } from "drizzle-orm";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
@@ -484,21 +485,7 @@ function fixture(
 			state.calls.push("routing");
 			if (state.failure === "routing")
 				throw new Error("private-routing-evidence");
-			return {
-				mode: state.mode,
-				behavior: {
-					writeLegacy: state.mode !== "complete",
-					writeCanonical: state.mode !== "legacy",
-					decideCanonical:
-						state.mode === "canonical" || state.mode === "complete",
-					observation:
-						state.mode === "shadow" || state.mode === "ready"
-							? "legacy_to_canonical"
-							: state.mode === "canonical"
-								? "canonical_to_legacy"
-								: "none",
-				},
-			};
+			return approvalWriteGateResult(state.mode);
 		}),
 	};
 	const compatibilityWriter = {
