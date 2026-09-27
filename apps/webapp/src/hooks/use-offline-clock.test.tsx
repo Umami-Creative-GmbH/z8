@@ -21,6 +21,9 @@ vi.mock("@/lib/auth-client", () => ({
 	useSession: () => ({ data: mocks.session }),
 }));
 vi.mock("./use-online-status", () => ({ useOnlineStatus: () => true }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 import { useOfflineClock } from "./use-offline-clock";
 
 const OPERATION_ID = "0f8fad5b-d9cb-469f-a165-70867728950e";

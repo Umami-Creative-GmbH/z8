@@ -5,11 +5,12 @@
  * exactly that command, under the same identity, until it learns the outcome.
  * The server stores the command verbatim in the completed-work receipt, so a
  * retry must be byte-for-byte the same JSON value. This module owns only the
- * pure contract: the version 2 shape, elapsed-age admission and the context
- * assertion check. Execution lives with the completed-work operations.
+ * pure contract: the version 2 shape, the elapsed-age windows, break clock
+ * continuity and the context assertion check. The v2 commands route runs the
+ * command through the Clocking module, which checks the window after replay.
  */
 import { z } from "zod";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimezone } from "./timezone-capture";
 import { WORK_LOCATION_TYPES } from "./work-location";
 
@@ -212,25 +213,6 @@ export function checkBreakClockContinuity(command: BreakCommand): BreakClockDisc
 		if (Math.abs(wall - monotonic) > allowed) return { code: "clock_discontinuity", from };
 	}
 	return null;
-}
-
-export type ClockCommandAgeAdmission =
-	| { admitted: true }
-	| { admitted: false; reason: "too_old" | "in_future" };
-
-/** Fresh admission only; matching committed replay never reaches this check. */
-export function admitClockCommandAge(
-	mode: ClockCommandAdmission,
-	occurredAt: Instant,
-	serverNow: Instant,
-): ClockCommandAgeAdmission {
-	const window = CLOCK_COMMAND_ADMISSION_WINDOWS[mode];
-	const ageMilliseconds = Number(serverNow.epochNanoseconds - occurredAt.epochNanoseconds) / 1e6;
-	if (ageMilliseconds > window.pastMilliseconds) return { admitted: false, reason: "too_old" };
-	if (-ageMilliseconds > window.futureMilliseconds) {
-		return { admitted: false, reason: "in_future" };
-	}
-	return { admitted: true };
 }
 
 export type ClockCommandAuthority = {

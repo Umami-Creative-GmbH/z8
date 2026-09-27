@@ -39,12 +39,41 @@ export type ClockCommandZone = {
 
 /**
  * The instants an occurred command may carry, chosen by its adapter. Checked
- * after committed replay, so a retried old command that committed replays.
+ * after committed replay, so a retried old command that committed replays. The
+ * window covers the command's endpoints and any further device observations.
  */
-export type ClockCommandFreshness = { earliest: Instant; latest: Instant };
+export type ClockCommandFreshness = {
+	earliest: Instant;
+	latest: Instant;
+	/** Device observations the command carries besides its endpoints. */
+	observed?: readonly Instant[];
+};
+
+/**
+ * A frozen clock command's bytes, as its client froze them before the first
+ * attempt. The receipt stores them as its command, so they are the collision
+ * fingerprint, and the append writer reads its fields from them. Frozen
+ * commands run only under append admission.
+ */
+export type FrozenClockPayload = {
+	readonly version: number;
+	readonly operationId: string;
+	readonly [field: string]: unknown;
+};
+
+/**
+ * The work a closure closes: the employee's active work, a known period, or the
+ * period a named start operation (a clock-in or a break's resume) created.
+ */
+export type ClockTarget =
+	| { kind: "active" }
+	| { kind: "period"; workPeriodId: string }
+	| { kind: "started_by"; operationId: string };
 
 export type ClockOutBody = {
 	kind: "clock_out";
+	/** Absent: the employee's active work. */
+	target?: ClockTarget;
 	project: AttributionIntent;
 	workCategory: AttributionIntent;
 };
@@ -54,14 +83,19 @@ export type ClockInBody = {
 	workLocationType: WorkLocationType;
 };
 
+/** Where a break closed the work: its instant and the zone observed there. */
+export type BreakStart = { instant: Instant; zone: string };
+
 /**
- * A break on the active work: it closes the work `breakMinutes` before the
- * command's instant and resumes it at that instant.
+ * A break on the target: it closes the work at the break start and resumes it at
+ * the command's instant. The start is either `breakMinutes` before that instant
+ * or an observed instant of its own.
  */
 export type BreakBody = {
 	kind: "break";
-	breakMinutes: number;
-};
+	/** Absent: the employee's active work. */
+	target?: ClockTarget;
+} & ({ breakMinutes: number; start?: never } | { start: BreakStart; breakMinutes?: never });
 
 export type ClockBody = ClockInBody | ClockOutBody | BreakBody;
 
@@ -75,6 +109,7 @@ type ClockCommandOf<Body extends ClockBody> = {
 	at: ClockCommandAt;
 	zone: ClockCommandZone;
 	freshness?: ClockCommandFreshness;
+	payload?: FrozenClockPayload;
 	body: Body;
 };
 
@@ -91,13 +126,19 @@ type SharedClockFailure =
 	| "admission_window"
 	| "collision"
 	| "append_review_required"
+	/** A frozen command in an organization that has not adopted append admission. */
+	| "frozen_not_accepted"
 	/** Nothing was written; retrying is safe. */
 	| "failed"
 	/** The only outcome where work may have been saved. */
 	| "unconfirmed";
 
+/** Refusals of a named close target; the active target refuses `not_clocked_in`. */
+type ClockTargetFailure = "target_unknown" | "target_not_active";
+
 export type ClockOutFailure =
 	| SharedClockFailure
+	| ClockTargetFailure
 	| "not_clocked_in"
 	| "project_not_allowed"
 	| "work_category_not_allowed"
@@ -112,6 +153,7 @@ export type ClockInFailure =
 
 export type BreakFailure =
 	| SharedClockFailure
+	| ClockTargetFailure
 	| "not_clocked_in"
 	| "invalid_break_duration"
 	/** The break would close the work at or before its start. */
@@ -189,11 +231,11 @@ export type ClockInOutcome =
 	| { outcome: "executed" | "replayed"; result: ClockInResult }
 	| { outcome: "refused"; failure: ClockInRefusal };
 
-/** The work a committed break resumed. */
+/** The work a committed break resumed; an executed break adds its closure's advice. */
 export type BreakResult = {
 	workPeriodId: string;
 	start: Instant;
-};
+} & Pick<ClockOutResult, "complianceWarnings" | "breakAdjustment">;
 
 export type BreakOutcome =
 	| { outcome: "executed" | "replayed"; result: BreakResult }

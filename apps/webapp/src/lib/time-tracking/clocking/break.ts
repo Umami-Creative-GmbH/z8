@@ -35,6 +35,7 @@ import type { WorkLocationType } from "../work-location";
 import { assertNoUnresolvedWorkPeriodReview } from "../work-period-review";
 import type { ClockOutTarget } from "./clock-out";
 import type { ClosedLiveWork } from "./follow-ups";
+import { assertFrozenAccepted, assertFrozenIdentityUnused, isFrozen } from "./frozen";
 import type { BreakCommand, BreakResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -44,20 +45,26 @@ const BREAK_COMMAND_VERSION = 1;
 /** The receipt's frozen command; a retry must carry exactly the same value. */
 export type BreakReceiptCommand = CloseResumeWorkOperationCommand & {
 	version: typeof BREAK_COMMAND_VERSION;
-	breakMinutes: number;
 	/** Device-captured resume instant; absent when the server sampled it. */
 	requestedInstant?: string;
 	browserTimezone: string | null;
 	deviceInfo: BreakCommand["channel"];
-};
+} & ({ breakMinutes: number } | { breakStart: { at: string; timezone: string } });
 
 /** One break command, resolved against its subject. */
 export type BreakPlan = {
 	command: BreakCommand;
 	employee: Employee;
-	receiptCommand: BreakReceiptCommand;
+	/** The receipt's command: the frozen payload, or the established live command. */
+	receiptCommand: CloseResumeWorkOperationCommand;
 	writer: CloseActiveWorkWriter;
 };
+
+/** Where the break closes the work it resumes at `resumeAt`. */
+export function breakStartOf(command: BreakCommand, resumeAt: Instant): Instant {
+	const { body } = command;
+	return body.start ? body.start.instant : resumeAt.subtract({ minutes: body.breakMinutes });
+}
 
 /** The two endpoints of a break: where the work closes and where it resumes. */
 export type BreakEndpoints = {
@@ -71,19 +78,28 @@ export type BreakClosure =
 	| { disposition: "executed"; result: BreakResult; closed: Omit<ClosedLiveWork, "timezone"> };
 
 export function planBreak(command: BreakCommand, employee: Employee): BreakPlan {
-	const { body, identity, at, zone, channel } = command;
+	const { body, identity, at, zone, channel, payload } = command;
+	const receiptCommand: BreakReceiptCommand = {
+		version: BREAK_COMMAND_VERSION,
+		operationId: identity.id,
+		...(body.start
+			? {
+					breakStart: {
+						at: instantToCanonicalString(body.start.instant),
+						timezone: body.start.zone,
+					},
+				}
+			: { breakMinutes: body.breakMinutes }),
+		// Server-sampled breaks keep the established web receipt command.
+		...(at.kind === "occurred" ? { requestedInstant: instantToCanonicalString(at.instant) } : {}),
+		browserTimezone: zone.device,
+		deviceInfo: channel,
+	};
 	return {
 		command,
 		employee,
-		receiptCommand: {
-			version: BREAK_COMMAND_VERSION,
-			operationId: identity.id,
-			breakMinutes: body.breakMinutes,
-			// Server-sampled breaks keep the established web receipt command.
-			...(at.kind === "occurred" ? { requestedInstant: instantToCanonicalString(at.instant) } : {}),
-			browserTimezone: zone.device,
-			deviceInfo: channel,
-		},
+		// The run checked that the payload names this identity; its adapter froze the body into it.
+		receiptCommand: (payload as CloseResumeWorkOperationCommand | undefined) ?? receiptCommand,
 		// The live channel's writer names the channel, not the kind.
 		writer: liveClockOutWriter(channel),
 	};
@@ -108,7 +124,7 @@ function replayReceipt(coordination: WorkTransactionContext, plan: BreakPlan) {
 /**
  * A receipt-less break committed under this identity by the legacy writer, whose
  * resumed clock-in entry takes the operation ID and follows the break's own
- * clock-out entry by exactly the break's minutes. Any other entry of the employee
+ * clock-out entry at exactly the break's start. Any other entry of the employee
  * under the ID is a collision. The reads stay in the organization.
  */
 async function replayLegacyBreak(
@@ -151,10 +167,8 @@ async function replayLegacyBreak(
 		resumed.type !== "clock_in" ||
 		resumed.isSuperseded ||
 		closedEntry?.type !== "clock_out" ||
-		compareInstants(
-			instantFromDate(closedEntry.timestamp),
-			resumedAt.subtract({ minutes: command.body.breakMinutes }),
-		) !== 0 ||
+		compareInstants(instantFromDate(closedEntry.timestamp), breakStartOf(command, resumedAt)) !==
+			0 ||
 		(at.kind === "occurred" && compareInstants(resumedAt, at.instant) !== 0) ||
 		!period
 	) {
@@ -166,6 +180,7 @@ async function replayLegacyBreak(
 /**
  * The committed break for this identity, or null. Receipts precede the legacy
  * matcher in every admission, so a later admission change still replays exactly.
+ * A frozen break commits only with its receipt.
  */
 export async function replayBreak(
 	coordination: WorkTransactionContext,
@@ -173,6 +188,10 @@ export async function replayBreak(
 ): Promise<BreakResult | null> {
 	const receipt = await replayReceipt(coordination, plan);
 	if (receipt) return receiptResult(receipt.result);
+	if (isFrozen(plan.command)) {
+		await assertFrozenIdentityUnused(coordination.db, plan.command);
+		return null;
+	}
 	return replayLegacyBreak(coordination, plan);
 }
 
@@ -197,6 +216,7 @@ export async function takeBreak(
 		const replay = await replayBreak(coordination, plan);
 		if (replay) return { disposition: "replayed", result: replay };
 	}
+	assertFrozenAccepted(input.plan.command, coordination.admission);
 	if (coordination.admission !== "append") {
 		return takeLegacyBreak(coordination, input);
 	}

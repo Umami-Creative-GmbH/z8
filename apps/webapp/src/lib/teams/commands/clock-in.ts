@@ -49,9 +49,10 @@ const replies: ClockCommandReplies<ClockInFailure> = {
 		access_denied: (t) => t("bot.cmd.clockin.noProfile", "Employee profile not found."),
 		billing_required: billingRequiredReply,
 		// A redelivered invocation replays; these cannot arise from a bot command
-		// without a freshness window, and nothing was written.
+		// without a freshness window or frozen payload, and nothing was written.
 		collision: failed,
 		admission_window: failed,
+		frozen_not_accepted: failed,
 		invalid_command: failed,
 		failed,
 	},

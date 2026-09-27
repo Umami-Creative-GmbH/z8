@@ -305,17 +305,21 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 				principal: { kind: "user", userId: ids.otherUser },
 			});
 
-			// Only the append writer keeps receipts.
+			// Only the append writer keeps receipts; the legacy entry holds the identity.
 			expect(own).toEqual(
 				admission === "append"
 					? {
-							found: true,
-							kind: "close_active_work",
-							result: expect.objectContaining({ clockOutEntryId: command.identity.id }),
+							outcome: "committed",
+							receipt: {
+								kind: "close_active_work",
+								result: expect.objectContaining({ clockOutEntryId: command.identity.id }),
+							},
+							command: expect.objectContaining({ operationId: command.identity.id }),
+							evidence: "standing",
 						}
-					: { found: false },
+					: { outcome: "conflict" },
 			);
-			expect(foreign).toEqual({ found: false });
+			expect(foreign).toEqual({ outcome: "access_denied" });
 		});
 
 		it("never replays a server identity", async () => {

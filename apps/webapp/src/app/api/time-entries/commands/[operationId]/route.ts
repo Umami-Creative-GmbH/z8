@@ -1,9 +1,11 @@
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
-import { lookupClockCommand } from "@/app/[locale]/(app)/time-tracking/actions/clock-command";
 import { auth } from "@/lib/auth";
 import { createLogger } from "@/lib/logger";
 import { CLOCK_COMMAND_OPERATION_ID } from "@/lib/time-tracking/clock-command";
+import { clocking } from "@/lib/time-tracking/clocking";
+import { ClockingAccessError } from "@/lib/time-tracking/clocking-service";
+import { lookupQuery, requireCommandActor } from "../frozen-clock-command";
 
 const logger = createLogger("ClockCommandLookup");
 const noStore = { "Cache-Control": "no-store" };
@@ -11,7 +13,8 @@ const noStore = { "Cache-Control": "no-store" };
 /**
  * GET /api/time-entries/commands/{operationId}
  * Lookup-only recovery of one frozen clock command (#275), scoped to the
- * authenticated employee in the active organization. It never creates work.
+ * authenticated employee in the active organization, through the Clocking
+ * module's `lookup`. It never creates work.
  */
 export async function GET(
 	_request: Request,
@@ -32,18 +35,23 @@ export async function GET(
 			{ status: 401, headers: noStore },
 		);
 	}
+	const accessDenied = () =>
+		NextResponse.json(
+			{ outcome: "rejected", code: "access_denied" },
+			{ status: 403, headers: noStore },
+		);
 	try {
-		const lookup = await lookupClockCommand({
-			operationId,
-			session: {
-				userId: session.user.id,
-				activeOrganizationId: session.session.activeOrganizationId,
-			},
-		});
-		return NextResponse.json(lookup, {
-			status: lookup.outcome === "rejected" ? 403 : 200,
-			headers: noStore,
-		});
+		let actor: Awaited<ReturnType<typeof requireCommandActor>>;
+		try {
+			actor = await requireCommandActor(session);
+		} catch (error) {
+			if (error instanceof ClockingAccessError) return accessDenied();
+			throw error;
+		}
+		const found = await clocking.lookup(lookupQuery(actor, operationId));
+		if (found.outcome === "access_denied") return accessDenied();
+		// A client whose captured context differs pauses instead of looking up.
+		return NextResponse.json({ ...found, operationId }, { headers: noStore });
 	} catch (error) {
 		logger.error({ error, operationId }, "Clock command lookup failed");
 		return NextResponse.json(

@@ -15,6 +15,7 @@ import { clockingService } from "../clocking-service";
 import {
 	attributionValue,
 	type CloseActiveWorkCommand,
+	type CloseActiveWorkOperationCommand,
 	type CloseActiveWorkReceipt,
 	type CloseActiveWorkWriter,
 	clockSource,
@@ -35,6 +36,7 @@ import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import type { WorkLocationType } from "../work-location";
 import type { ClosedLiveWork } from "./follow-ups";
+import { assertFrozenAccepted, assertFrozenIdentityUnused, isFrozen } from "./frozen";
 import type { ClockOutCommand, ClockOutResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -43,8 +45,11 @@ type Employee = typeof employee.$inferSelect;
 export type ClockOutPlan = {
 	command: ClockOutCommand;
 	employee: Employee;
-	/** The receipt's frozen command; a retry must carry exactly the same value. */
-	receiptCommand: CloseActiveWorkCommand;
+	/**
+	 * The receipt's command: the frozen payload, or the established live command.
+	 * A retry must carry exactly the same value.
+	 */
+	receiptCommand: CloseActiveWorkOperationCommand;
 	writer: CloseActiveWorkWriter;
 };
 
@@ -63,19 +68,21 @@ export type ClockOutClosure =
 	  };
 
 export function planClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
-	const { body, identity, at, zone, channel } = command;
+	const { body, identity, at, zone, channel, payload } = command;
+	const receiptCommand: CloseActiveWorkCommand = {
+		version: 1,
+		operationId: identity.id,
+		project: body.project,
+		workCategory: body.workCategory,
+		requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
+		browserTimezone: zone.device,
+		deviceInfo: channel,
+	};
 	return {
 		command,
 		employee,
-		receiptCommand: {
-			version: 1,
-			operationId: identity.id,
-			project: body.project,
-			workCategory: body.workCategory,
-			requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
-			browserTimezone: zone.device,
-			deviceInfo: channel,
-		},
+		// The run checked that the payload names this identity; its adapter froze the body into it.
+		receiptCommand: (payload as CloseActiveWorkOperationCommand | undefined) ?? receiptCommand,
 		writer: liveClockOutWriter(channel),
 	};
 }
@@ -182,6 +189,10 @@ export async function replayClockOut(
 ): Promise<ClockOutReplay | null> {
 	const receipt = await replayReceipt(coordination, plan);
 	if (receipt) return receiptReplay(receipt);
+	if (isFrozen(plan.command)) {
+		await assertFrozenIdentityUnused(coordination.db, plan.command);
+		return null;
+	}
 	return replayLegacyClockOut(coordination, plan);
 }
 
@@ -211,10 +222,13 @@ export async function closeClockOut(
 		const receipt = await replayReceipt(coordination, plan);
 		if (receipt) return { disposition: "replayed", ...receiptReplay(receipt) };
 	}
+	assertFrozenAccepted(plan.command, coordination.admission);
 	if (coordination.admission !== "append") {
 		return closeLegacyClockOut(coordination, input);
 	}
-	if (replayable) {
+	if (isFrozen(plan.command)) {
+		await assertFrozenIdentityUnused(coordination.db, plan.command);
+	} else if (replayable) {
 		const legacy = await replayLegacyClockOut(coordination, plan);
 		if (legacy) return { disposition: "replayed", ...legacy };
 	}

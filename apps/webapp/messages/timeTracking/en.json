@@ -90,7 +90,12 @@
       "breakNotAllowed": "You cannot add a break to this work.",
       "breakAwaitingApproval": "This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
       "breakPendingCorrection": "A time correction approval is already pending for this work period. Add the break once it is resolved.",
-      "breakRetry": "Failed to add break. Please try again."
+      "breakRetry": "Failed to add break. Please try again.",
+      "clockTargetNotActive": "This work period is no longer active. Refresh your clock status.",
+      "clockTargetUnknown": "The work period to close was not found. Refresh your clock status.",
+      "clockNotAllowedAtTime": "Clocking is not allowed at this time",
+      "clockAttributionNotAllowed": "The selected project or category is not available",
+      "clockCommandRejected": "The server did not accept this clock action"
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
