@@ -100,10 +100,7 @@ export async function acquireDemoWorkScope(
 	const admission = await readAppendAdmission(transaction, input.organizationId);
 	await options.afterAdoptionGate?.();
 	await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
-	await acquireUserConfigurationAccessGuards(transaction, [
-		...(input.triggeringUserId ? [input.triggeringUserId] : []),
-		...(input.accessUserIds ?? []),
-	]);
+	await acquireUserConfigurationAccessGuards(transaction, routeDemoWork(input).users);
 	await acquireEmployeeCoordination(transaction, input.employeeIds);
 
 	const employees = new Set(input.employeeIds);

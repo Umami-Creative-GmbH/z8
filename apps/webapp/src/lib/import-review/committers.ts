@@ -25,7 +25,7 @@ import {
 } from "@/lib/time-tracking/record-imported-work";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
-import { reviewedImportRowRouting, withReviewedImportTransaction } from "./import-work-transaction";
+import { reviewedImportRowMapping, withReviewedImportTransaction } from "./import-work-transaction";
 import { importedWorkProviderEvidence } from "./imported-work-evidence";
 import type { ImportCommitJobData, ImportProvider } from "./types";
 
@@ -654,11 +654,11 @@ function commitReviewedWorkRow(
 			const claimed = await claimRow(database, rowId, job);
 			if (!claimed) return { status: "skipped" };
 			const routed = scope.route.snapshot;
-			const claimedRouting = reviewedImportRowRouting(claimed, provider);
+			const claimedMapping = reviewedImportRowMapping(claimed, provider);
 			if (
 				routed === null ||
-				claimedRouting.employeeId !== routed.employeeId ||
-				claimedRouting.sourceKey !== routed.sourceKey
+				claimedMapping.employeeId !== routed.employeeId ||
+				claimedMapping.sourceKey !== routed.sourceKey
 			) {
 				return scope.restart();
 			}

@@ -19,16 +19,16 @@ export interface ReviewedImportTransactionInput {
 	importerUserId: string;
 }
 
-/** Where a staged work row routes: its mapped employee and its provider source identity. */
-export interface ReviewedImportRowRouting {
+/** A staged work row's mapping: its employee and its provider source identity. */
+export interface ReviewedImportRowMapping {
 	employeeId: string;
 	/** `importedWorkSourceKey` of the row's source. */
 	sourceKey: string;
 }
 
 /** The routed row's mapping; null when the row no longer exists. */
-export interface ReviewedImportRoute extends WorkRoute<ReviewedImportRowRouting | null> {
-	snapshot: ReviewedImportRowRouting | null;
+export interface ReviewedImportRoute extends WorkRoute<ReviewedImportRowMapping | null> {
+	snapshot: ReviewedImportRowMapping | null;
 }
 
 type StagedRowMapping = Pick<
@@ -36,10 +36,11 @@ type StagedRowMapping = Pick<
 	"batchId" | "normalizedPayload" | "providerSourceId" | "sourcePayloadHash"
 >;
 
-export function reviewedImportRowRouting(
+/** Reads a staged work row's mapping; a row without a mapped employee cannot commit. */
+export function reviewedImportRowMapping(
 	row: StagedRowMapping,
 	provider: ImportProvider,
-): ReviewedImportRowRouting {
+): ReviewedImportRowMapping {
 	const employeeId = row.normalizedPayload.employeeId;
 	if (typeof employeeId !== "string" || employeeId.length === 0) {
 		throw new Error("work_period import row requires a mapped employee before commit");
@@ -84,19 +85,20 @@ async function routeReviewedImport(
 			),
 		)
 		.limit(1);
-	const routing = row ? reviewedImportRowRouting(row, input.provider) : null;
-	const employees = routing ? [routing.employeeId] : [];
+	const mapping = row ? reviewedImportRowMapping(row, input.provider) : null;
+	const employees = mapping ? [mapping.employeeId] : [];
 	return {
 		users: [input.importerUserId],
 		employees,
 		writeTargets: employees,
-		sourceIdentities: routing
-			? [["reviewed-import-source", input.organizationId, routing.sourceKey]]
+		sourceIdentities: mapping
+			? [["reviewed-import-source", input.organizationId, mapping.sourceKey]]
 			: [],
-		snapshot: routing,
+		snapshot: mapping,
 	};
 }
 
+/** The reviewed-import plan: routing only, for `runWorkTransaction` or the fake. */
 export function reviewedImportPlan(
 	input: ReviewedImportTransactionInput,
 ): WorkPlan<ReviewedImportRoute> {
