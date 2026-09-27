@@ -421,6 +421,24 @@ describe("runWorkTransaction", () => {
 			).rejects.toThrow("the approval gate did not record rank 2");
 		});
 
+		it("takes the rank-2 guard for a test-double gate when asked", async () => {
+			const fake = fakeWorkTransaction({ recordApprovalGate: true });
+			const approval = await fake.run(
+				{
+					organizationId,
+					route: async () => ({ ...simple, approvalGate: "time_correction" }),
+					approval: port(false),
+				},
+				async (scope) => scope.approval,
+			);
+
+			expect(approval).toEqual({ pinned: "time_correction" });
+			expect(fake.guards[1]).toEqual({
+				...approvalWriteGateGuard(organizationId, "time_correction"),
+				attempt: 1,
+			});
+		});
+
 		it("records a self-locked guard only inside a work transaction", async () => {
 			// A long-lived handle keeps no ledger, so a later lower rank is not refused.
 			const handle = { execute: vi.fn(async () => undefined) };

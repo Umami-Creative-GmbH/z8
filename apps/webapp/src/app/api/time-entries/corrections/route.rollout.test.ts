@@ -297,11 +297,37 @@ const context = {
 	activationResolver: {},
 };
 
-vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
-	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks: corrections run on the work
+// transaction fake (real ledger, recorded guards) over the database of the
+// suite's approval context. The PostgreSQL suites prove the protocol.
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withTimeCorrectionWorkTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withTimeCorrectionWorkTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(actual.timeCorrectionWorkPlan(input, createRuntime), operation),
+	};
+});
+vi.mock("@/lib/time-tracking/completed-work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/completed-work-transaction")>()),
+	routeCompletedWork: async (
+		_db: unknown,
+		input: { employeeId: string; actorUserId: string | null },
+	) => ({
+		users: input.actorUserId === null ? [] : [input.actorUserId],
+		employees: [input.employeeId],
+		writeTargets: [input.employeeId],
+	}),
+}));
 
 vi.mock("@/db", () => ({ db }));
 // Legacy submission intents (#432): legacy-time-bound-approval.integration.test.ts.

@@ -6,12 +6,14 @@
  */
 import {
 	runWorkTransactionWith,
+	sealWorkTransactionScope,
 	type WorkPlan,
 	type WorkRoute,
 	type WorkTransactionAdmission,
+	type WorkTransactionClient,
 	type WorkTransactionScope,
 } from "./index";
-import type { Guard } from "./ranks";
+import { approvalWriteGateGuard, type Guard, holdGuard } from "./ranks";
 
 export interface RecordedGuard extends Guard {
 	/** The attempt, from 1, that took the guard. */
@@ -25,6 +27,23 @@ export interface FakeWorkTransactionOptions {
 	admission?: WorkTransactionAdmission;
 	/** Attempts (from 1) whose re-route reports a concurrent scope change. */
 	changeScopeOn?: readonly number[];
+	/**
+	 * Opens each attempt's transaction, such as a mocked `db.transaction` with
+	 * rollback; default a fresh client derived from `client`.
+	 */
+	transaction?<T>(body: (client: object) => Promise<T>): Promise<T>;
+	/**
+	 * For approval ports whose write gate is a test double that takes no guard:
+	 * the fake takes the routed gate's rank-2 guard once the port's `gate` returns.
+	 */
+	recordApprovalGate?: boolean;
+	/**
+	 * For mocked approval runtimes that carry their own database instead of the
+	 * transaction they borrow: the database this returns for the borrowed
+	 * approval. Routing reads it, and the scope is also registered for it, as it
+	 * is for the transaction.
+	 */
+	approvalDatabase?(approval: unknown): object;
 }
 
 export interface FakeWorkTransaction {
@@ -49,12 +68,48 @@ export function fakeWorkTransaction(options: FakeWorkTransactionOptions = {}): F
 		},
 		run(plan, operation) {
 			attempts = 0;
+			let transaction: object = {};
+			let borrowed: unknown;
+			const { approval } = plan;
+			const faked: typeof plan = {
+				...plan,
+				...(options.approvalDatabase && {
+					route: (_db, attempt) =>
+						plan.route(options.approvalDatabase?.(borrowed) as WorkTransactionClient, attempt),
+				}),
+				...(approval && {
+					approval: {
+						borrow: (db, body) =>
+							approval.borrow(db, (context) => {
+								borrowed = context;
+								return body(context);
+							}),
+						async gate(context, organizationId, workflowType) {
+							const pinned = await approval.gate(context, organizationId, workflowType);
+							if (options.recordApprovalGate) {
+								await holdGuard(
+									transaction as Parameters<typeof holdGuard>[0],
+									approvalWriteGateGuard(organizationId, workflowType),
+								);
+							}
+							return pinned;
+						},
+					},
+				}),
+			};
 			return runWorkTransactionWith(
 				{
 					async open(_database, body) {
 						attempts += 1;
+						if (options.transaction) {
+							return options.transaction((client) => {
+								transaction = client;
+								return body(client);
+							});
+						}
 						// A fresh client per attempt, as a fresh transaction would be.
-						return body(Object.create(options.client ?? {}));
+						transaction = Object.create(options.client ?? {});
+						return body(transaction);
 					},
 					async lock(_client, guard) {
 						guards.push({ ...guard, attempt: attempts });
@@ -65,8 +120,13 @@ export function fakeWorkTransaction(options: FakeWorkTransactionOptions = {}): F
 					savepoint: (transaction, body) => body(Object.create(transaction)),
 					scopeChanged: (attempt) => changeScopeOn.has(attempt),
 				},
-				plan,
-				operation,
+				faked,
+				(scope) => {
+					if (options.approvalDatabase) {
+						sealWorkTransactionScope({ ...scope, db: options.approvalDatabase(borrowed) });
+					}
+					return operation(scope);
+				},
 			);
 		},
 	};

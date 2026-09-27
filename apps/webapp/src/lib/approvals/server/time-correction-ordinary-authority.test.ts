@@ -93,6 +93,13 @@ function createFacadeDb(
 			},
 			timeEntry: { findFirst: vi.fn() },
 		},
+		// Work transaction routing and admission reads: no other employee records of
+		// the actor and no append control.
+		select: () => ({
+			from: () => ({
+				where: () => Object.assign(Promise.resolve([]), { limit: async () => [] }),
+			}),
+		}),
 		transaction: async <T>(operation: (tx: unknown) => Promise<T>) =>
 			await operation(database),
 	};

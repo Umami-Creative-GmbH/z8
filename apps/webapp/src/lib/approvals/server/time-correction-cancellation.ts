@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
 	approvalChainInstance,
@@ -30,7 +30,9 @@ import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/type
 import { cancelLegacyTimeCorrectionApprovalRows } from "../workflow/compatibility-writer";
 import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
+import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import {
 	deriveTimeCorrectionOperationId,
 	loadTimeCorrectionReceipt,
@@ -44,8 +46,8 @@ import {
 	lockTimeCorrectionSubmissionSourceInTransaction,
 } from "./time-correction-approvals";
 import {
-	acquireTimeCorrectionWorkScope,
-	retryTimeCorrectionWorkTransaction,
+	timeCorrectionAuthority,
+	withTimeCorrectionWorkTransaction,
 } from "./time-correction-work-transaction";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 
@@ -59,8 +61,9 @@ export interface CancelPendingTimeCorrectionInput {
 export async function cancelPendingTimeCorrection(
 	input: CancelPendingTimeCorrectionInput,
 ): Promise<{ replayed: boolean }> {
-	const runtime = createProductionApprovalWorkflowRuntime({
-		db,
+	const createRuntime = (database: ApprovalWorkflowDatabase) =>
+		createProductionApprovalWorkflowRuntime({
+		db: database,
 		adapters: {
 			absence: {
 				clock: systemClock,
@@ -85,14 +88,27 @@ export async function cancelPendingTimeCorrection(
 		canManageApproval: async () => false,
 		clock: systemClock,
 	});
+	const runtime = attemptApprovalRuntime(createRuntime);
 
 	// Set by the committed attempt: a legacy cycle's withdrawal intent (#432).
 	let deliveryIntent = false;
 	try {
-		const cancelled = await retryTimeCorrectionWorkTransaction(() =>
-			runtime.repository.withTransaction(async (outerContext) => {
+		// A work transaction (#301, #477): the coordinator takes the adoption gate,
+		// the pinned time-correction approval gate, configuration, access and the
+		// employee keys before any row lock; the approval runtime borrows it.
+		const cancelled = await withTimeCorrectionWorkTransaction(
+			{
+				organizationId: input.organizationId,
+				actorUserId: input.requesterUserId,
+				owner: input.requesterEmployeeId,
+				refuse: () => {
+					throw new Error("Time correction cancellation is unavailable");
+				},
+			},
+			runtime.factory,
+			async (scope) => {
 			deliveryIntent = false;
-			const database = outerContext.dbService.db as typeof db;
+			const database = scope.approval.dbService.db as typeof db;
 			const [requesters, memberships, periods] = await Promise.all([
 				database.query.employee.findMany({
 					where: and(
@@ -144,21 +160,8 @@ export async function cancelPendingTimeCorrection(
 				throw new Error("Time correction cancellation is unavailable");
 			}
 
-			// Shared work protocol (#301) before any row lock: adoption gate, the
-			// time-correction approval gate, configuration, access, employee key.
-			const work = await acquireTimeCorrectionWorkScope(
-				outerContext,
-				{
-					organizationId: input.organizationId,
-					ownerEmployeeId: input.requesterEmployeeId,
-					actorUserId: input.requesterUserId,
-				},
-				() => {
-					throw new Error("Time correction cancellation is unavailable");
-				},
-			);
-			const context = work.context;
-			const adopted = work.scope.admission === "append";
+			const context = scope.approval;
+			const adopted = scope.admission === "append";
 			let lockedPeriod: Awaited<
 				ReturnType<typeof lockTimeCorrectionSubmissionSourceInTransaction>
 			>;
@@ -174,7 +177,7 @@ export async function cancelPendingTimeCorrection(
 			} catch {
 				throw new Error("Time correction cancellation is unavailable");
 			}
-			const gate = work.authority;
+			const gate = await timeCorrectionAuthority(scope, input.organizationId);
 			if (gate.authority === "legacy") {
 				const observedWorkflow = gate.shadowMirroring
 					? await loadCancellationWorkflow(
@@ -385,7 +388,7 @@ export async function cancelPendingTimeCorrection(
 				true,
 			);
 			const execution =
-				await runtime.transitionEngine.executeInTransactionWithDisposition(
+				await runtime.current().transitionEngine.executeInTransactionWithDisposition(
 					context,
 					{
 						organizationId: input.organizationId,
@@ -397,7 +400,7 @@ export async function cancelPendingTimeCorrection(
 					},
 				);
 			return { replayed: execution.disposition === "replayed" };
-		}),
+			},
 		);
 		if (deliveryIntent) {
 			// The withdrawal intent committed; this only runs the owner sooner.

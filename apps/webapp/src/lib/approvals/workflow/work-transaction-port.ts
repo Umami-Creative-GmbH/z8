@@ -18,6 +18,27 @@ export type ApprovalRuntimeFactory = (database: ApprovalWorkflowDatabase) => {
 	repository: ApprovalWorkflowRepository;
 };
 
+/**
+ * A runtime factory that remembers the runtime the port built for the running
+ * attempt, so the writer reaches that runtime's transition engine, whose
+ * in-transaction commands run on the borrowed approval context.
+ */
+export function attemptApprovalRuntime<R extends ReturnType<ApprovalRuntimeFactory>>(
+	createApprovalRuntime: (database: ApprovalWorkflowDatabase) => R,
+): { factory: ApprovalRuntimeFactory; current(): R } {
+	let current: R | null = null;
+	return {
+		factory: (database) => {
+			current = createApprovalRuntime(database);
+			return current;
+		},
+		current() {
+			if (!current) throw new Error("No approval runtime borrows a work transaction");
+			return current;
+		},
+	};
+}
+
 function isApprovalWorkflowType(value: string): value is ApprovalWorkflowType {
 	return (APPROVAL_WORKFLOW_TYPES as readonly string[]).includes(value);
 }
@@ -26,10 +47,12 @@ function isApprovalWorkflowType(value: string): value is ApprovalWorkflowType {
  * The port a coordinator's plan passes as `approval`. Each attempt builds the
  * runtime over the borrowed transaction; the runtime keeps its reservation and
  * CAS invariants. Once the attempt settles, the borrowed transaction and the
- * pinned gate refuse.
+ * pinned gate refuse. `refuse` replaces the pinned gate's refusal of another
+ * scope.
  */
 export function approvalWorkTransactionPort(
 	createApprovalRuntime: ApprovalRuntimeFactory,
+	options: { refuse?: () => never } = {},
 ): WorkTransactionApprovalPort<ApprovalWorkflowTransactionContext> {
 	const assertActiveFor = new WeakMap<ApprovalWorkflowTransactionContext, () => void>();
 	return {
@@ -63,6 +86,7 @@ export function approvalWorkTransactionPort(
 			const { context } = await acquirePinnedApprovalContext(approval, {
 				organizationId,
 				workflowType,
+				refuse: options.refuse,
 				assertActive: assertActiveFor.get(approval),
 			});
 			return context;
