@@ -40,7 +40,7 @@ The scope names the organization and the changed facts:
 | `route(tx)` | Scope derived from current rows | Available for discovered scope; no adopted writer currently needs it |
 
 The keys and hash seed are the ones `acquireOrganizationConfigurationGuard` and
-`acquireUserConfigurationAccessGuards` take shared (`lib/time-tracking/work-transaction.ts`).
+`acquireUserConfigurationAccessGuards` take shared (`lib/time-tracking/work-transaction/`).
 The exclusive counterparts `acquireExclusiveOrganizationConfigurationGuard` (shared with the
 #311 timezone writer) and `acquireExclusiveUserConfigurationAccessGuards` live beside them, so
 both sides build the key in one place.

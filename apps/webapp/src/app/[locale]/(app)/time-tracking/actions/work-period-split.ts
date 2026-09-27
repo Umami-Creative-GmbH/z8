@@ -35,7 +35,7 @@ import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-cap
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { assertNoUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { getCurrentEmployee, getCurrentSession, getRequestMetadata, getUserTimezone } from "./auth";
 import { calculateAndPersistSurcharges } from "./compliance";
 import { createTimeEntry } from "./entry-helpers";
@@ -282,7 +282,7 @@ export async function splitOwnWorkPeriod(
  * now inside the coordinated transaction and behind the unresolved-review guard.
  */
 async function splitLegacyWorkPeriod(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: {
 		organizationId: string;
 		employeeId: string;

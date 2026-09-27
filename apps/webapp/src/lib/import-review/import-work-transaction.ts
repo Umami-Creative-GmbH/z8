@@ -6,8 +6,8 @@ import {
 	acquireSourceIdentity,
 	acquireUserConfigurationAccessGuards,
 	readAppendAdmission,
+	type SealedWorkTransactionScope,
 	sealWorkTransactionScope,
-	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
 
 export interface ReviewedImportTransactionInput {
@@ -37,7 +37,7 @@ export interface ReviewedImportTransactionInput {
  */
 export async function withReviewedImportTransaction<T>(
 	input: ReviewedImportTransactionInput,
-	operation: (scope: WorkTransactionScope) => Promise<T>,
+	operation: (scope: SealedWorkTransactionScope) => Promise<T>,
 ): Promise<T> {
 	return db.transaction(async (transaction) => {
 		await acquireAdoptionGate(transaction, input.organizationId);

@@ -79,7 +79,7 @@ import { withWebClockInTransaction } from "@/lib/time-tracking/web-clock-in-tran
 import { withWebClockOutTransaction } from "@/lib/time-tracking/web-clock-out-transaction";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { isUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { getUserTimezone } from "./auth";
 import {
 	completeClockOutAfterCommit,
@@ -194,7 +194,7 @@ async function requireCommandActor(session: ClockCommandSession): Promise<Actor>
  * was used by other work and can never be this command's commit.
  */
 async function replayCommand(
-	scope: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	scope: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	actor: Actor,
 	command: ClockCommand,
 ): Promise<ClockCommandReceipt | null> {
@@ -230,7 +230,7 @@ async function replayCommand(
 
 function replayTransaction<T>(
 	actor: Actor,
-	operation: (scope: WorkTransactionScope) => Promise<T>,
+	operation: (scope: SealedWorkTransactionScope) => Promise<T>,
 ): Promise<T> {
 	// Replay and lookup only read; the clock-in owner's acquisition order is a
 	// prefix of every clocking writer's, and its exclusive employee key serializes

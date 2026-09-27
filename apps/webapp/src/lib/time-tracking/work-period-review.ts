@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { approvalRequest, approvalWorkflow, type workPeriod } from "@/db/schema";
 import { ConflictError } from "@/lib/effect/errors";
-import type { WorkTransactionClient, WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope, WorkTransactionClient } from "./work-transaction";
 
 /**
  * Structural changes to a work period wait while an ordinary approval or a time
@@ -13,7 +13,7 @@ import type { WorkTransactionClient, WorkTransactionScope } from "./work-transac
  * period blocks, whatever its type.
  */
 export async function assertNoUnresolvedWorkPeriodReview(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	organizationId: string,
 	period: Pick<typeof workPeriod.$inferSelect, "id" | "approvalStatus">,
 ) {

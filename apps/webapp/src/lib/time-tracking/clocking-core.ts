@@ -24,8 +24,8 @@ import { deriveWorkDurationMinutes } from "./work-duration";
 import {
 	acquireAdoptionGate,
 	readAppendAdmission,
+	type SealedWorkTransactionScope,
 	type WorkTransactionAdmission,
-	type WorkTransactionScope,
 } from "./work-transaction";
 
 export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
@@ -99,7 +99,7 @@ export type ClockingInput = {
 	notes?: string;
 	location?: string;
 	transaction?: unknown;
-	coordination?: WorkTransactionScope;
+	coordination?: SealedWorkTransactionScope;
 };
 
 type ClockInInput = ClockingInput & {
@@ -196,7 +196,7 @@ export type ClockingDependencies = {
 	transaction<T>(callback: (store: ClockingStore) => Promise<T>): Promise<T>;
 	storeForTransaction?: (transaction: unknown) => ClockingStore;
 	storeForCoordinatedTransaction?: (
-		context: WorkTransactionScope,
+		context: SealedWorkTransactionScope,
 	) => ClockingStore;
 	findApprovedMembership?: (
 		userId: string,

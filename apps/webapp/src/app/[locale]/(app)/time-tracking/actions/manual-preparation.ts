@@ -26,7 +26,7 @@ import {
 	manualOccupiedLocalDates,
 	resolveManualInterpretationZone,
 } from "@/lib/time-tracking/manual-command";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { validateWorkCategoryAssignment } from "./clocking";
 import { validateProjectAssignment } from "./entry-helpers";
 import { resolveManualEntryTargetZone } from "./manual-entry-target";
@@ -85,7 +85,7 @@ export type ManualActor = {
 	isPlatformAdmin: boolean;
 };
 
-type Reader = WorkTransactionScope["db"];
+type Reader = SealedWorkTransactionScope["db"];
 
 async function loadPrincipal(tx: Reader, actor: ManualActor): Promise<PrincipalContext | null> {
 	const [account] = await tx
@@ -218,7 +218,7 @@ async function resolveEffectiveChangePolicy(
  * committed replay; a restart samples a new `now`.
  */
 export async function prepareManualWork(
-	scope: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	scope: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	input: { actor: ManualActor; command: ManualTimeEntryCommand; now: Instant },
 ): Promise<ManualPreparation> {
 	const { actor, command, now } = input;

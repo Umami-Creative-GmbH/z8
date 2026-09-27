@@ -17,11 +17,11 @@ import { db } from "@/db";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import type { Transaction, WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
 import {
 	acquireExclusiveOrganizationConfigurationGuard,
 	withOrganizationConfigurationMutation,
-} from "@/lib/time-tracking/organization-configuration-guard";
-import type { Transaction, WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
+} from "@/lib/time-tracking/work-transaction/ranks";
 import { countBillableSeats } from "./billable-seat-count";
 import { type BillingAccessResult, evaluateBillingAccess } from "./billing-access";
 
