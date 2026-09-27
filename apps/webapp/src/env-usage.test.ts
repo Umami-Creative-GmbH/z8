@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -30,7 +30,9 @@ function collectRuntimeFiles(directory: string): string[] {
 function isRuntimeSourceFile(filePath: string): boolean {
 	return (
 		RUNTIME_FILE_EXTENSIONS.some((extension) => filePath.endsWith(extension)) &&
-		!filePath.includes(".test.")
+		!filePath.includes(".test.") &&
+		// Test infrastructure (e.g. the integration database gate) is never bundled.
+		!relative(SRC_ROOT, filePath).startsWith(`test${sep}`)
 	);
 }
 
