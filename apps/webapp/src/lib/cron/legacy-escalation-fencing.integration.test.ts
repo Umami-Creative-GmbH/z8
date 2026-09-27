@@ -9,9 +9,8 @@
  */
 import { randomUUID } from "node:crypto";
 import type { Job } from "bullmq";
-import { eq, inArray, sql } from "drizzle-orm";
-import { Pool } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq, inArray } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import {
@@ -28,12 +27,9 @@ import {
 	telegramEscalation,
 	telegramUserMapping,
 } from "@/db/schema";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
 import { createJobExecution } from "@/lib/cron/tracking";
 import type { AllJobData, JobResult } from "@/lib/queue";
+import { integrationAdminPool } from "@/test/integration-database";
 import { processJob } from "@/worker";
 import { LEGACY_ESCALATION_JOB_NAMES } from "./legacy-escalation-schedulers";
 
@@ -57,26 +53,6 @@ vi.mock("@/lib/slack/approval-handler", () => ({ sendApprovalMessageToManager: p
 vi.mock("@/lib/telegram/approval-handler", () => ({ sendApprovalMessageToManager: providers.recordSend }));
 vi.mock("@/lib/discord/approval-handler", () => ({ sendApprovalMessageToManager: providers.recordSend }));
 vi.mock("@/lib/teams/approval-handler", () => ({ sendApprovalCardToManager: providers.recordSend }));
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid legacy escalation fencing integration test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration = integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy escalation fencing PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 type LegacyEscalationJobName = (typeof LEGACY_ESCALATION_JOB_NAMES)[number];
 type OrgKey = "legacy" | "moved" | "paused";
@@ -242,30 +218,8 @@ async function runScheduledJob(jobName: LegacyEscalationJobName): Promise<JobRes
 	return result;
 }
 
-describeIntegration("legacy escalation execution fencing (PostgreSQL)", () => {
-	const pool = new Pool({ connectionString: databaseUrl, max: 2 });
-
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await pool.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy escalation fencing integration test is not enabled");
-		}
-		// The handlers use the application client; it must target the same disposable database.
-		const appDatabase = await db.execute<{ database_name: string }>(
-			sql`select current_database() as database_name`,
-		);
-		expect(appDatabase.rows[0]?.database_name).toBe(enabled.databaseName);
-	});
+describe("legacy escalation execution fencing (PostgreSQL)", () => {
+	const pool = integrationAdminPool();
 
 	beforeEach(() => {
 		providers.configs = [];
@@ -282,10 +236,6 @@ describeIntegration("legacy escalation execution fencing (PostgreSQL)", () => {
 		if (executionIds.length > 0) {
 			await db.delete(cronJobExecution).where(inArray(cronJobExecution.id, executionIds.splice(0)));
 		}
-	});
-
-	afterAll(async () => {
-		await pool.end();
 	});
 
 	describe.each(LEGACY_ESCALATION_JOB_NAMES)("%s", (jobName) => {

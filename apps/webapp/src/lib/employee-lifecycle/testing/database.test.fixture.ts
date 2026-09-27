@@ -1,41 +1,13 @@
 /**
- * Guarded PostgreSQL fixture for employee lifecycle integration tests.
- * Only targets the label-owned disposable database created by
- * `pnpm --filter webapp test:approval-workflow-repository:integration`.
+ * Employee lifecycle seeding over the integration database module, which owns
+ * the gate and the pools (`@/test/integration-database`).
  */
 import { randomUUID } from "node:crypto";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { describe, it } from "vitest";
+import type { Pool } from "pg";
 import * as authSchema from "@/db/auth-schema";
 import * as schema from "@/db/schema";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const sentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const required = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-
-/** `describe` when the disposable database is configured, otherwise a visible skip. */
-export function describeLifecycleDatabase(name: string, body: () => void) {
-	const configuration = resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required,
-		sentinel,
-	});
-	if (configuration.status === "error") {
-		throw new Error(`Invalid lifecycle integration configuration: ${configuration.reason}`);
-	}
-	if (configuration.status === "unavailable") {
-		describe.skip(`${name} (PostgreSQL unavailable: ${configuration.reason})`, () => {
-			it("requires the label-owned disposable PostgreSQL runner", () => {});
-		});
-		return;
-	}
-	describe(name, body);
-}
+import { integrationAdminPool, openIntegrationPool } from "@/test/integration-database";
 
 const combinedSchema = { ...authSchema, ...schema };
 
@@ -77,6 +49,7 @@ export type LifecycleDatabaseFixture = {
 	 * `pg_terminate_backend(backendPid)` to simulate a process crash.
 	 */
 	openCrashableConnection(): Promise<CrashableConnection>;
+	/** Removes the seeded organizations and users; the module closes the pools. */
 	close(): Promise<void>;
 };
 
@@ -87,21 +60,7 @@ export type CrashableConnection = {
 };
 
 export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabaseFixture> {
-	const pool = new Pool({ connectionString: databaseUrl, max: 8 });
-	const guard = await verifyApprovalWorkflowRepositoryTestDatabase({
-		databaseUrl,
-		required,
-		sentinel,
-		currentDatabase: async () => {
-			const result = await pool.query<{ name: string }>("select current_database() as name");
-			return result.rows[0]?.name ?? "";
-		},
-	});
-	if (guard.status !== "enabled") {
-		await pool.end();
-		throw new Error("Lifecycle integration database is not enabled");
-	}
-
+	const pool = integrationAdminPool();
 	const db = drizzle({ client: pool, schema: combinedSchema });
 	const organizationIds: string[] = [];
 	const userIds: string[] = [];
@@ -174,10 +133,7 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 		createOrganization,
 		seedEmployee,
 		async openCrashableConnection() {
-			const crashable = new Pool({ connectionString: databaseUrl, max: 1, idleTimeoutMillis: 0 });
-			// A terminated backend surfaces as a pool error; the test asserts the crash itself.
-			crashable.on("error", () => {});
-			crashable.on("connect", (client) => client.on("error", () => {}));
+			const crashable = openIntegrationPool({ max: 1, idleTimeoutMillis: 0 });
 			const result = await crashable.query<{ pid: number }>("select pg_backend_pid() as pid");
 			return {
 				db: drizzle({ client: crashable, schema: combinedSchema }),
@@ -186,14 +142,10 @@ export async function createLifecycleDatabaseFixture(): Promise<LifecycleDatabas
 			};
 		},
 		async close() {
-			try {
-				// Deleting a tenant cascades to its lifecycle rows; append-only
-				// events permit deletion only once their organization is gone.
-				await pool.query("delete from organization where id = any($1::text[])", [organizationIds]);
-				await pool.query(`delete from "user" where id = any($1::text[])`, [userIds]);
-			} finally {
-				await pool.end();
-			}
+			// Deleting a tenant cascades to its lifecycle rows; append-only
+			// events permit deletion only once their organization is gone.
+			await pool.query("delete from organization where id = any($1::text[])", [organizationIds]);
+			await pool.query(`delete from "user" where id = any($1::text[])`, [userIds]);
 		},
 	};
 }

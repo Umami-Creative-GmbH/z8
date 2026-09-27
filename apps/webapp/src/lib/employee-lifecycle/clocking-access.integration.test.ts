@@ -3,7 +3,7 @@
  * Clock actions serialize with departures and never start work past a cutoff.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	ClockingAccessError,
@@ -16,14 +16,13 @@ import { preserveLateClockEvidence } from "./late-clock-evidence";
 import { findOpenDepartureClockRepairs } from "./reviews";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
 import { executeDepartureInTransaction } from "./transition";
 import type { DepartureClockOutPort } from "./types";
 
-describeLifecycleDatabase("clocking against departures", () => {
+describe("clocking against departures", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

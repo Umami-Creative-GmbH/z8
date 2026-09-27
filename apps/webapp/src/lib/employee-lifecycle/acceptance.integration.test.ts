@@ -38,7 +38,6 @@ import {
 } from "./testing/approval-workflow.test.fixture";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -62,7 +61,7 @@ const MORNING = parseInstant("2026-09-14T08:00:00Z");
 const CUTOFF = "2026-09-14T22:00:00Z";
 const AFTER_CUTOFF = parseInstant("2026-09-14T22:17:00Z");
 
-describeLifecycleDatabase("employee offboarding acceptance", () => {
+describe("employee offboarding acceptance", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = MORNING;
 	const clock = { nowInstant: () => now };

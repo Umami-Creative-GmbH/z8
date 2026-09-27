@@ -24,38 +24,15 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
 }));
-
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
 vi.mock("next/server", async (importOriginal) => ({
@@ -234,27 +211,6 @@ const { decideBoundLegacyTimeInvocation } = await import(
 	"@/lib/approvals/server/time-bound-decision"
 );
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Legacy time bound approval PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const TIME_KINDS = ["manual_time_submission", "policy_clock_out", "time_correction"] as const;
 type TimeKind = (typeof TIME_KINDS)[number];
 const MODES = ["legacy", "shadow", "ready"] as const;
@@ -350,11 +306,11 @@ function dayOf(index: number): string {
 	return new Date(Date.UTC(2026, 6, 6 + index)).toISOString().slice(0, 10);
 }
 
-describeIntegration(
+describe(
 	"Legacy time approval Telegram cards with reviewed bindings (PostgreSQL)",
 	() => {
 		vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 });
-		const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+		const admin = integrationAdminPool();
 		const calls: TelegramCall[] = [];
 		let nextMessageId = 43_200;
 		let nextUpdateId = 432_000;
@@ -947,23 +903,6 @@ describeIntegration(
 			return rows;
 		}
 
-		beforeAll(async () => {
-			const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl,
-				required: integrationRequired,
-				sentinel: testSentinel,
-				currentDatabase: async () => {
-					const result = await admin.query<{ database_name: string }>(
-						"select current_database() as database_name",
-					);
-					return result.rows[0]?.database_name ?? "";
-				},
-			});
-			if (enabled.status !== "enabled") {
-				throw new Error("Legacy time bound approval PostgreSQL is disabled");
-			}
-		});
-
 		beforeEach(() => {
 			actAs(null);
 			harness.kicks.length = 0;
@@ -977,9 +916,6 @@ describeIntegration(
 
 		afterAll(async () => {
 			await cleanup();
-			await admin.end();
-			const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-			await pool.end();
 		});
 
 		describe.each(MODES)("under %s authority", (mode) => {

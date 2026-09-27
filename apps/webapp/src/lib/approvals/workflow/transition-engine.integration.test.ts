@@ -5,9 +5,9 @@
 
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 import type { ApprovalTerminalAdapterInput } from "../domain-adapters/types";
 import type {
 	ApprovalCommandResult,
@@ -18,34 +18,7 @@ import {
 	type ApprovalWorkflowRepository,
 	createApprovalWorkflowRepository,
 } from "./repository";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "./repository-integration-harness";
 import { createApprovalTransitionEngine } from "./transition-engine";
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`approval transition engine PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organizationOne: "engine-integration-org-1",
@@ -83,28 +56,9 @@ function normalize(value: unknown): unknown {
 	return value;
 }
 
-describeIntegration("approval transition engine PostgreSQL contract", () => {
-	const pool = new Pool({ connectionString: databaseUrl, max: 12 });
+describe("approval transition engine PostgreSQL contract", () => {
+	const pool = integrationAdminPool();
 	const database = drizzle({ client: pool });
-
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await pool.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error(
-				"Approval workflow engine integration test is not enabled",
-			);
-		}
-	});
 
 	beforeEach(async () => {
 		await pool.query(`
@@ -127,10 +81,6 @@ describeIntegration("approval transition engine PostgreSQL contract", () => {
 			delete from organization where id in ('${ids.organizationOne}', '${ids.organizationTwo}');
 		`);
 		await seed();
-	});
-
-	afterAll(async () => {
-		await pool.end();
 	});
 
 	async function seedOrganization(

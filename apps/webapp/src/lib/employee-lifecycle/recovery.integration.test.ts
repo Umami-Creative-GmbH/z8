@@ -9,7 +9,7 @@
  * Each test is named after its crash point.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	deliverOrganizationSeats,
@@ -32,7 +32,6 @@ import { findOpenDepartureClockRepairs } from "./reviews";
 import { createSessionRevocationHandler } from "./session-cleanup";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type LifecycleTestDatabase,
 	type SeededEmployee,
@@ -47,7 +46,7 @@ const CUTOFF = new Date("2027-03-15T23:00:00Z");
 const AFTER_CUTOFF = parseInstant("2027-03-16T00:00:00Z");
 const LEASE_EXPIRED = AFTER_CUTOFF.add({ minutes: 6 });
 
-describeLifecycleDatabase("departure crash recovery", () => {
+describe("departure crash recovery", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = SCHEDULED_AT;
 	const secondaryStorage = new Set<string>();
