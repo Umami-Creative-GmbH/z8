@@ -10,6 +10,7 @@ import {
 	acquireExclusiveOrganizationConfigurationGuard,
 	acquireOrganizationConfigurationGuard,
 	adoptionGate,
+	approvalWriteGateGuard,
 	employeeCoordinationGuard,
 	holdGuard,
 	organizationConfigurationGuard,
@@ -325,12 +326,17 @@ describe("runWorkTransaction", () => {
 
 	describe("approval write gate", () => {
 		type Approval = { pinned: string | null };
-		const port = (record: boolean, seen: number[] = []) => ({
+		/** `record` names the workflow type whose gate the port records; `true` records the routed one. */
+		const port = (record: boolean | string, seen: number[] = []) => ({
 			borrow: async <T>(_db: unknown, body: (approval: Approval) => Promise<T>) =>
 				body({ pinned: null }),
-			gate: async (approval: Approval, _organizationId: string, workflowType: string) => {
+			gate: async (approval: Approval, organization: string, workflowType: string) => {
 				seen.push(fakeGuards.length);
-				if (record) recordGuard(currentDb, Rank.approvalWriteGate, workflowType, "shared");
+				const recorded = record === true ? workflowType : record;
+				if (recorded) {
+					const { key } = approvalWriteGateGuard(organization, recorded);
+					recordGuard(currentDb, Rank.approvalWriteGate, key, "shared");
+				}
 				return { ...approval, pinned: workflowType };
 			},
 		});
@@ -396,6 +402,39 @@ describe("runWorkTransaction", () => {
 					async () => undefined,
 				),
 			).rejects.toThrow("the approval gate did not record rank 2");
+		});
+
+		it("refuses a port that records another workflow type's gate", async () => {
+			const fake = fakeWorkTransaction();
+			await expect(
+				fake.run(
+					{
+						organizationId,
+						route: async (db) => {
+							currentDb = db;
+							return { ...simple, approvalGate: "time_correction" };
+						},
+						approval: port("absence"),
+					},
+					async () => undefined,
+				),
+			).rejects.toThrow("the approval gate did not record rank 2");
+		});
+
+		it("records a self-locked guard only inside a work transaction", async () => {
+			// A long-lived handle keeps no ledger, so a later lower rank is not refused.
+			const handle = { execute: vi.fn(async () => undefined) };
+			const { key } = approvalWriteGateGuard(organizationId, "time_correction");
+			recordGuard(handle, Rank.approvalWriteGate, key, "shared");
+			await holdGuard(handle as never, adoptionGate(organizationId));
+			expect(handle.execute).toHaveBeenCalledTimes(1);
+
+			const fake = fakeWorkTransaction();
+			await expect(
+				fake.run(plan(simple), async (scope) =>
+					recordGuard(scope.db, Rank.approvalWriteGate, key, "shared"),
+				),
+			).rejects.toThrow(/rank 2 shared guard .* after rank 5/);
 		});
 	});
 
