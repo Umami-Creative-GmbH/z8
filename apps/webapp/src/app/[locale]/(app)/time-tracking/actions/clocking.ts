@@ -94,14 +94,13 @@ import {
 	validateCommonEvidence,
 } from "@/lib/time-tracking/ordinary-submission-evidence";
 import {
-	afterCommitFollowUps,
 	type ClockActor,
 	type ClockInFailure,
 	type ClockOutFailure,
 	type ClockOutRefusal,
 	type ClockOutResult,
 	clocking,
-	clockOutFollowUpEffects,
+	clockOutFollowUps,
 } from "@/lib/time-tracking/clocking";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
@@ -698,8 +697,6 @@ export type ClockOutCommitOutcome = {
 	balanceRefreshCommitted: boolean;
 };
 
-const clockOutFollowUps = afterCommitFollowUps(clockOutFollowUpEffects);
-
 async function revalidateAfterClockOut(context: Record<string, unknown>) {
 	try {
 		revalidatePath("/time-tracking");
@@ -710,7 +707,7 @@ async function revalidateAfterClockOut(context: Record<string, unknown>) {
 
 /**
  * Post-commit work for the live clock-out adapters that are not yet on the
- * Clocking module (v2 commands, on-behalf): the module's follow-ups and the
+ * Clocking module (frozen clock commands, on-behalf): the module's follow-ups and the
  * web cache. Neither can turn the committed closure into a failure.
  */
 export async function completeClockOutAfterCommit(input: {
@@ -731,8 +728,7 @@ export async function completeClockOutAfterCommit(input: {
 		employeeId: employee.id,
 		actorUserId: input.userId,
 		workPeriodId: outcome.workPeriodId,
-		startTime: outcome.startTime,
-		endTime: outcome.endTime,
+		start: instantFromDate(outcome.startTime),
 		durationMinutes: outcome.durationMinutes,
 		projectId: input.projectId ?? null,
 		surchargeSnapshot: outcome.surchargeSnapshot,
@@ -758,12 +754,12 @@ export async function clockOut(
 ): Promise<ServerActionResult<ClockOutResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
+		return { success: false, error: await clockOutFailureMessage("not_authenticated") };
 	}
 
 	const currentEmployee = await getCurrentEmployee();
 	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
+		return { success: false, error: await clockOutFailureMessage("employee_not_found") };
 	}
 	const result = await clockOutAs(
 		webClockActor(session.user.id, currentEmployee),

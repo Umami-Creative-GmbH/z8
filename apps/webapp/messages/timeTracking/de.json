@@ -72,7 +72,9 @@
       "clockOutCollision": "Dieses Ausstempeln steht im Konflikt mit einer früheren Anfrage oder geänderter Arbeit. Bitte aktualisieren Sie und versuchen Sie es erneut.",
       "clockOutAppendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie ausstempeln können. Bitte wenden Sie sich an Ihre Administration.",
       "clockOutNotAllowed": "Sie können diese Arbeit nicht ausstempeln.",
-      "clockOutRetry": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut."
+      "clockOutRetry": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "notAuthenticated": "Nicht angemeldet",
+      "employeeProfileNotFound": "Mitarbeiterprofil nicht gefunden"
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",

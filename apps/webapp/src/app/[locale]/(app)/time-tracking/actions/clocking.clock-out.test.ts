@@ -193,7 +193,7 @@ describe("web clock-out adapter", () => {
 
 		await expect(clockOut(undefined, undefined, { submissionId })).resolves.toEqual({
 			success: false,
-			error: "Not authenticated",
+			error: "timeTracking.errors.notAuthenticated|Not authenticated",
 		});
 		expect(state.run).not.toHaveBeenCalled();
 	});

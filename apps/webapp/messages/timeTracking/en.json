@@ -72,7 +72,9 @@
       "clockOutCollision": "This clock-out conflicts with an earlier request or changed work. Please refresh and try again.",
       "clockOutAppendReview": "Your time history needs review before you can clock out. Please contact your administrator.",
       "clockOutNotAllowed": "You cannot clock out this work.",
-      "clockOutRetry": "Failed to clock out. Please try again."
+      "clockOutRetry": "Failed to clock out. Please try again.",
+      "notAuthenticated": "Not authenticated",
+      "employeeProfileNotFound": "Employee profile not found"
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",

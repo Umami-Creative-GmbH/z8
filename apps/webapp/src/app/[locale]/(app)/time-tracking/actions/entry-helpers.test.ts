@@ -25,6 +25,7 @@ vi.mock("./auth", () => ({ getRequestMetadata: mocks.getRequestMetadata }));
 vi.mock("@/lib/time-tracking/project-eligibility", () => ({
 	listEligibleProjects: mocks.listEligibleProjects,
 	isProjectEligible: mocks.isProjectEligible,
+	BOOKABLE_PROJECT_STATUSES: ["planned", "active", "paused"],
 }));
 
 const { createTimeEntry, getAssignedProjectsWithHours, validateProjectAssignment } = await import(

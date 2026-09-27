@@ -9,6 +9,7 @@ import {
 	compareInstants,
 	dateFromInstant,
 	type Instant,
+	instantFromDate,
 } from "@/lib/datetime/temporal-core";
 import { ClockingConflictError } from "../clocking-core";
 import {
@@ -158,13 +159,16 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return period
 			? {
 					workPeriodId: period.id,
-					startTime: period.startTime,
+					start: instantFromDate(period.startTime),
 					workLocationType: (period.workLocationType as WorkLocationType | null) ?? null,
 				}
 			: null;
 	}
 
-	async function attributionRefusal(plan: ClockOutPlan): Promise<ClockOutRefusal | null> {
+	async function attributionRefusal(
+		plan: ClockOutPlan,
+		eventInstant: Instant,
+	): Promise<ClockOutRefusal | null> {
 		const { employee: subject, command } = plan;
 		const { project, workCategory } = command.body;
 		if (
@@ -182,11 +186,16 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 		if (
 			workCategory.kind === "replace" &&
-			(await workCategoryIneligibility({
-				employeeId: subject.id,
-				organizationId: subject.organizationId,
-				workCategoryId: workCategory.id,
-			})) !== null
+			(await workCategoryIneligibility(
+				{
+					employeeId: subject.id,
+					organizationId: subject.organizationId,
+					workCategoryId: workCategory.id,
+				},
+				db,
+				// Access is evaluated when the work ends.
+				dateFromInstant(eventInstant),
+			)) !== null
 		) {
 			return { code: "work_category_not_allowed" };
 		}
@@ -208,7 +217,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		// A blocking holiday never refuses a clock-out: it would leave live work running.
 		const target = await activeTarget(plan);
 		if (!target) return refused({ code: "not_clocked_in" });
-		const attribution = await attributionRefusal(plan);
+		const attribution = await attributionRefusal(plan, eventInstant);
 		if (attribution) return refused(attribution);
 
 		const capture = resolveTimeEntryTimezoneCapture({

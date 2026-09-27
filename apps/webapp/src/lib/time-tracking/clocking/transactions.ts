@@ -8,11 +8,10 @@ import {
 } from "../web-clock-out-transaction";
 
 /**
- * The transactions port. A coordinated adapter owns the work transaction; an
- * enlisted one (departure) will run inside a caller's sealed work transaction.
+ * The transactions port. The coordinated adapter owns the work transaction; the
+ * enlisted adapter for departures (#485) will run inside a caller's.
  */
 export interface ClockTransactions {
-	readonly kind: "coordinated";
 	run<T>(
 		scope: WebClockOutTransactionInput,
 		operation: (context: WorkTransactionContext) => Promise<T>,
@@ -22,7 +21,6 @@ export interface ClockTransactions {
 /** The module owns each work transaction, under the #264 acquisition protocol. */
 export function coordinatedTransactions(): ClockTransactions {
 	return {
-		kind: "coordinated",
 		run: (scope, operation) =>
 			withWebClockOutTransaction(scope, createOrdinaryApprovalRuntime, operation),
 	};

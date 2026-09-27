@@ -36,15 +36,19 @@ export const clockOutFollowUpEffects: ClockOutFollowUpEffects = {
 			input.durationMinutes,
 			input.timezone,
 		),
-	enforceBreaks: enforceBreaksAfterClockOut,
+	enforceBreaks: ({ durationMinutes, ...input }) =>
+		enforceBreaksAfterClockOut({ ...input, sessionDurationMinutes: durationMinutes }),
 	reconcileSurcharges: reconcileImmediateSurcharges,
 	markBalanceDirty: markEmployeeWorkBalanceDirty,
 	checkProjectBudget: checkProjectBudgetAfterClockOut,
 };
 
+/** Follow-ups after commit, also run by the live clock-outs not yet on the module. */
+export const clockOutFollowUps = afterCommitFollowUps(clockOutFollowUpEffects);
+
 /** The production instance: coordinated work transactions, follow-ups after commit. */
 export const clocking = createClocking({
 	clock: systemClock,
 	transactions: coordinatedTransactions(),
-	followUps: afterCommitFollowUps(clockOutFollowUpEffects),
+	followUps: clockOutFollowUps,
 });

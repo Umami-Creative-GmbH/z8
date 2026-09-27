@@ -10,8 +10,16 @@ const RETRY: Message = [
 	"Failed to clock out. Please try again.",
 ];
 
+/** What the web adapter itself refuses before a command exists. */
+type WebClockOutRefusal = "not_authenticated" | "employee_not_found";
+
 /** How the web words every clock-out refusal, in the `timeTracking` namespace. */
-const CLOCK_OUT_FAILURE_MESSAGES: Record<Exclude<ClockOutFailure, "billing_required">, Message> = {
+const CLOCK_OUT_FAILURE_MESSAGES: Record<
+	Exclude<ClockOutFailure, "billing_required"> | WebClockOutRefusal,
+	Message
+> = {
+	not_authenticated: ["timeTracking.errors.notAuthenticated", "Not authenticated"],
+	employee_not_found: ["timeTracking.errors.employeeProfileNotFound", "Employee profile not found"],
 	not_clocked_in: ["timeTracking.errors.notClockedIn", "You are not currently clocked in"],
 	project_not_allowed: ["timeTracking.errors.projectNotAllowed", "Cannot assign to this project"],
 	work_category_not_allowed: [
@@ -52,7 +60,7 @@ async function translator(): Promise<Translate> {
 }
 
 export async function clockOutFailureMessage(
-	failure: Exclude<ClockOutFailure, "billing_required">,
+	failure: Exclude<ClockOutFailure, "billing_required"> | WebClockOutRefusal,
 ): Promise<string> {
 	const [key, fallback] = CLOCK_OUT_FAILURE_MESSAGES[failure];
 	return (await translator())(key, fallback);

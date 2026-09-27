@@ -1,4 +1,4 @@
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import type { BreakEnforcementResult } from "@/lib/effect/services/break-enforcement.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
@@ -14,8 +14,8 @@ export type ClosedLiveWork = {
 	/** The human who completed the work. */
 	actorUserId: string;
 	workPeriodId: string;
-	startTime: Date;
-	endTime: Date;
+	/** Where the closed work started; its local day bounds the balance refresh. */
+	start: Instant;
 	durationMinutes: number;
 	/** The closed period's project, whatever the command's attribution intent. */
 	projectId: string | null;
@@ -51,7 +51,7 @@ export type ClockOutFollowUpEffects = {
 		employeeId: string;
 		organizationId: string;
 		workPeriodId: string;
-		sessionDurationMinutes: number;
+		durationMinutes: number;
 		timezone: string;
 		createdBy: string;
 	}): Promise<BreakEnforcementResult>;
@@ -112,7 +112,7 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 						employeeId,
 						organizationId,
 						workPeriodId,
-						sessionDurationMinutes: closure.durationMinutes,
+						durationMinutes: closure.durationMinutes,
 						timezone: closure.timezone,
 						createdBy: closure.actorUserId,
 					}),
@@ -142,10 +142,7 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 						effects.markBalanceDirty({
 							employeeId,
 							organizationId,
-							dirtyFromDate: instantFromDate(closure.startTime)
-								.toZonedDateTimeISO("UTC")
-								.toPlainDate()
-								.toString(),
+							dirtyFromDate: closure.start.toZonedDateTimeISO("UTC").toPlainDate().toString(),
 						}),
 					undefined,
 					"Failed to mark work balance dirty after clock-out",

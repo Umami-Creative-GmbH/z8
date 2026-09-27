@@ -95,8 +95,30 @@ function receiptReplay(receipt: CloseActiveWorkReceipt): ClockOutReplay {
 	};
 }
 
-function pendingApproval(submission: { result: { kind: string } } | null | undefined) {
+export function pendingApproval(submission: { result: { kind: string } } | null | undefined) {
 	return submission ? submission.result.kind !== "auto_completed" : undefined;
+}
+
+function replayReceipt(coordination: WorkTransactionContext, plan: ClockOutPlan) {
+	return replayCloseActiveWork(coordination, {
+		organizationId: plan.employee.organizationId,
+		employeeId: plan.employee.id,
+		command: plan.receiptCommand,
+		writer: plan.writer.writer,
+	});
+}
+
+/** The receipt-less legacy row committed under this identity, if any. */
+function findLegacyEvidence(coordination: WorkTransactionContext, plan: ClockOutPlan) {
+	const { command, employee } = plan;
+	return findPolicyClockOutSubmissionEvidence({
+		tx: coordination.db,
+		submissionId: command.identity.id,
+		organizationId: employee.organizationId,
+		employeeId: employee.id,
+		projectId: attributionValue(command.body.project) ?? null,
+		workCategoryId: attributionValue(command.body.workCategory) ?? null,
+	});
 }
 
 /**
@@ -107,15 +129,7 @@ async function replayLegacyClockOut(
 	coordination: WorkTransactionContext,
 	plan: ClockOutPlan,
 ): Promise<ClockOutReplay | null> {
-	const { command, employee } = plan;
-	const evidence = await findPolicyClockOutSubmissionEvidence({
-		tx: coordination.db,
-		submissionId: command.identity.id,
-		organizationId: employee.organizationId,
-		employeeId: employee.id,
-		projectId: attributionValue(command.body.project) ?? null,
-		workCategoryId: attributionValue(command.body.workCategory) ?? null,
-	});
+	const evidence = await findLegacyEvidence(coordination, plan);
 	if (!evidence) return null;
 	const { period, hasApprovalEvidence } = evidence;
 	const approvalSubmission = hasApprovalEvidence
@@ -166,19 +180,14 @@ export async function replayClockOut(
 	coordination: WorkTransactionContext,
 	plan: ClockOutPlan,
 ): Promise<ClockOutReplay | null> {
-	const receipt = await replayCloseActiveWork(coordination, {
-		organizationId: plan.employee.organizationId,
-		employeeId: plan.employee.id,
-		command: plan.receiptCommand,
-		writer: plan.writer.writer,
-	});
+	const receipt = await replayReceipt(coordination, plan);
 	if (receipt) return receiptReplay(receipt);
 	return replayLegacyClockOut(coordination, plan);
 }
 
 export type ClockOutTarget = {
 	workPeriodId: string;
-	startTime: Date;
+	start: Instant;
 	workLocationType: WorkLocationType | null;
 };
 
@@ -199,12 +208,7 @@ export async function closeClockOut(
 ): Promise<ClockOutClosure> {
 	const { plan, replayable } = input;
 	if (replayable) {
-		const receipt = await replayCloseActiveWork(coordination, {
-			organizationId: plan.employee.organizationId,
-			employeeId: plan.employee.id,
-			command: plan.receiptCommand,
-			writer: plan.writer.writer,
-		});
+		const receipt = await replayReceipt(coordination, plan);
 		if (receipt) return { disposition: "replayed", ...receiptReplay(receipt) };
 	}
 	if (coordination.admission !== "append") {
@@ -235,8 +239,7 @@ export async function closeClockOut(
 			employeeId: employee.id,
 			actorUserId: plan.command.principal.userId,
 			workPeriodId: result.workPeriodId,
-			startTime: dateFromInstant(parseInstant(result.segment.startAt)),
-			endTime: dateFromInstant(parseInstant(result.segment.endAt)),
+			start: parseInstant(result.segment.startAt),
 			durationMinutes: result.segment.durationMinutes,
 			projectId: result.attribution.projectId,
 			surchargeSnapshot: closed.surchargeSnapshot,
@@ -305,14 +308,7 @@ async function closeLegacyClockOut(
 		},
 	});
 	if (closed.disposition === "replayed") {
-		const evidence = await findPolicyClockOutSubmissionEvidence({
-			tx: coordination.db,
-			submissionId: command.identity.id,
-			organizationId: employee.organizationId,
-			employeeId: employee.id,
-			projectId: projectId ?? null,
-			workCategoryId: workCategoryId ?? null,
-		});
+		const evidence = await findLegacyEvidence(coordination, plan);
 		if (!evidence || evidence.period.id !== closed.period.id) {
 			throw new Error("Submission collision");
 		}
@@ -336,8 +332,7 @@ async function closeLegacyClockOut(
 			employeeId: employee.id,
 			actorUserId: command.principal.userId,
 			workPeriodId: target.workPeriodId,
-			startTime: target.startTime,
-			endTime,
+			start: target.start,
 			durationMinutes: closed.durationMinutes,
 			projectId: projectId ?? null,
 			// Assigned inside the closer's callback, which narrowing cannot see.

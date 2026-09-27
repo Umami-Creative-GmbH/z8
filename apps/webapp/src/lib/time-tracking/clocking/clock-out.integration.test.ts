@@ -314,14 +314,19 @@ describeIntegration("Clocking clock-out through run on PostgreSQL", () => {
 				record_duration: 61,
 				receipts: admission === "append" ? 1 : 0,
 			});
-			expect(followUps.closures).toEqual([
+			// Instants compare by their canonical strings.
+			expect(
+				followUps.closures.map(({ start, ...closure }) => ({
+					...closure,
+					start: start.toString(),
+				})),
+			).toEqual([
 				{
 					organizationId: ids.organization,
 					employeeId: ids.employee,
 					actorUserId: ids.user,
 					workPeriodId: periodId,
-					startTime: new Date("2026-07-22T08:00:00Z"),
-					endTime: new Date("2026-07-22T09:00:40Z"),
+					start: "2026-07-22T08:00:00Z",
 					durationMinutes: 61,
 					projectId: ids.assignedProject,
 					surchargeSnapshot: expect.any(Object),
