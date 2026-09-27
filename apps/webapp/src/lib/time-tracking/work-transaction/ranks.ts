@@ -42,6 +42,23 @@ export function adoptionGate(organizationId: string, mode: GuardMode = "shared")
 }
 
 /**
+ * The approval write gate (rank 2): one workflow type's rollout in one
+ * organization. Writers hold it shared; a cutover transition holds it
+ * exclusively. Approvals locks it itself and records it with `recordGuard`.
+ */
+export function approvalWriteGateGuard(
+	organizationId: string,
+	workflowType: string,
+	mode: GuardMode = "shared",
+): Guard {
+	return {
+		rank: Rank.approvalWriteGate,
+		key: `approval-rollout:${organizationId.length}:${organizationId}:${workflowType.length}:${workflowType}`,
+		mode,
+	};
+}
+
+/**
  * The #264 organization configuration guard (rank 3). Fresh manual preparation
  * holds it shared while it reads organization configuration; writers of that
  * configuration hold it exclusively.
@@ -136,9 +153,10 @@ class GuardLedger {
 		return true;
 	}
 
-	holds(rank: Rank): boolean {
-		for (const guard of this.held.values()) if (guard.rank === rank) return true;
-		return false;
+	/** Whether the guard is held in its mode or a stronger one. */
+	holds(guard: Guard): boolean {
+		const held = this.held.get(`${guard.rank}\u0000${guard.key}`);
+		return held !== undefined && (held.mode === "exclusive" || guard.mode === "shared");
 	}
 
 	async during<T>(phase: "routing" | "savepoints", work: () => Promise<T>): Promise<T> {
@@ -173,9 +191,15 @@ export async function holdGuard(client: GuardClient, guard: Guard): Promise<void
 	if (ledger.record(guard)) await ledger.lock(client, guard);
 }
 
-/** Records a guard its owner locks itself, such as the approval write gate (rank 2). */
+/**
+ * Records a guard its owner locks itself, such as the approval write gate
+ * (rank 2), before it locks. Only a work transaction's ledger records it:
+ * elsewhere the client may be a long-lived database handle, and a ledger must
+ * never carry guards across transactions.
+ */
 export function recordGuard(client: object, rank: Rank, key: string, mode: GuardMode): void {
-	ledgerFor(client).record({ rank, key, mode });
+	const ledger = ledgers.get(client);
+	if (ledger?.coordinated) ledger.record({ rank, key, mode });
 }
 
 /**
@@ -186,9 +210,9 @@ export function openLedger(client: object, lock: Lock): void {
 	ledgers.set(client, new GuardLedger(lock, true));
 }
 
-/** Coordinator internals: whether the transaction's ledger holds a guard of the rank. */
-export function ledgerHolds(client: object, rank: Rank): boolean {
-	return ledgerFor(client).holds(rank);
+/** Coordinator internals: whether the transaction's ledger holds the guard. */
+export function ledgerHolds(client: object, guard: Guard): boolean {
+	return ledgerFor(client).holds(guard);
 }
 
 /** Coordinator internals: refuses every guard while `work` routes the scope. */

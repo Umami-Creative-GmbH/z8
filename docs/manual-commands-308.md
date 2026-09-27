@@ -64,7 +64,8 @@ governs interpretation and capture; on-behalf entries cannot use it.
 
 ## Acquisition protocol
 
-`lib/time-tracking/manual-work-transaction.ts` acquires, in order:
+`lib/time-tracking/manual-work-transaction.ts` routes the scope and the work transaction
+coordinator (`lib/time-tracking/work-transaction`, #477/#490) acquires, in order:
 
 1. Shared `["completed-work-adoption", organizationId]`, then the append control under it.
 2. The `manual_time_submission` approval write gate.
@@ -78,9 +79,10 @@ governs interpretation and capture; on-behalf entries cannot use it.
    when routed, then the operation's rows and the append position.
 
 The first attempt routes no approval participants. When preparation decides that approval is
-required, the attempt rolls back before any write and restarts with participants routed. A
-routed scope that changes while waiting restarts too (at most three attempts). Nothing
-acquires an earlier-ranked resource late.
+required, the attempt rolls back before any write and restarts widened, with participants
+routed (`scope.restart({ widen: true })`). A routed scope that changes while waiting restarts
+too; both share the coordinator's budget of three attempts. Nothing acquires an
+earlier-ranked resource late.
 
 ## Preparation and operation
 
