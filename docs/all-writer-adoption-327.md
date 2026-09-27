@@ -41,9 +41,7 @@ work-transaction coordinator:
 In an adopted organization they wrote with legacy head selection, and the next
 admitted append was held (`unexpected_history_change`). Both callers now:
 
-1. take the shared organization adoption gate before the employee key. A
-   caller-owned transaction, such as the departure's, may already hold its own
-   locks;
+1. take the shared organization adoption gate before the employee key;
 2. read the append admission under that gate;
 3. refuse a fresh write with `ClockingAppendAdoptedError` (`append_adopted`) before
    writing anything. An action ID that already committed still replays.
@@ -57,19 +55,17 @@ Each caller answers the refusal in its own way:
   leaves the period open for the canonical correction flow. Offboarding shows its
   own label for this reason.
 
+Since #492 the departure runs as a work transaction
+(`lib/employee-lifecycle/departure-transaction.ts`). The coordinator takes the
+shared adoption gate first and reads the admission under it. The clock-out runs in
+a savepoint of that transaction and receives its sealed scope, so the clocking core
+only asserts the write target. In an `append` admission the clock-out writes nothing
+and records the same repair.
+
 There is no activation code: the activation step is an operator transaction that
 takes the exclusive adoption gate and then inserts the control row. The route
 suite runs exactly that SQL. Such a transaction drains in-flight legacy writes,
 and a legacy write that arrives while it commits is refused.
-
-**Known limit: lock order in the departure path.** The departure runs inside its
-lifecycle transaction, which already holds the employee advisory lock and the
-organization row (`lockLifecycleScope`). The shared adoption gate is therefore
-taken after them, which inverts the #264 order. That is safe while activation
-takes only the exclusive gate and the control row. Activation tooling must not
-take employee or organization locks while it holds the exclusive gate, or it can
-deadlock with a departure. Adopting the departure into the completed-work
-operation (W24 below) removes this.
 
 ### Symmetric occupancy for adopted live starts (W01)
 
