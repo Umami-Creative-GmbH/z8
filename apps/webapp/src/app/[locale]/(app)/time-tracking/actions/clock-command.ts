@@ -83,9 +83,9 @@ import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction"
 import { getUserTimezone } from "./auth";
 import {
 	completeClockOutAfterCommit,
-	createOrdinaryApprovalRuntime,
 	validateWorkCategoryAssignment,
 } from "./clocking";
+import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
 import { validateProjectAssignment } from "./entry-helpers";
 import type { ClockOutResult } from "./types";
 

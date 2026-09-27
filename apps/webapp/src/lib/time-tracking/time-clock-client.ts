@@ -1,4 +1,4 @@
-import type { ClockOutResult } from "@/app/[locale]/(app)/time-tracking/actions";
+import type { ClockOutResult } from "./clocking/types";
 import type { ServerActionResult } from "@/lib/effect/result";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 

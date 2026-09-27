@@ -64,7 +64,15 @@
       "restPeriodBlocked": "Ruhezeit nicht abgeschlossen",
       "restPeriodBlockedDesc": "Sie müssen die erforderliche Ruhezeit einhalten, bevor Sie sich einstempeln. Fordern Sie bei Bedarf eine Ausnahme an.",
       "appendReviewRequired": "Einstempeln erfordert eine Prüfung Ihres Zeitverlaufs",
-      "appendReviewRequiredDesc": "Ihre bisherigen Zeiteinträge konnten nicht verifiziert werden, daher wurde das Einstempeln nicht gespeichert. Bitte wenden Sie sich an Ihre Administration."
+      "appendReviewRequiredDesc": "Ihre bisherigen Zeiteinträge konnten nicht verifiziert werden, daher wurde das Einstempeln nicht gespeichert. Bitte wenden Sie sich an Ihre Administration.",
+      "notClockedIn": "Sie sind derzeit nicht eingestempelt",
+      "projectNotAllowed": "Diesem Projekt kann nicht zugeordnet werden",
+      "workCategoryNotAllowed": "Dieser Arbeitskategorie kann nicht zugeordnet werden",
+      "clockOutBeforeClockIn": "Das Ausstempeln muss nach dem Einstempeln liegen",
+      "clockOutCollision": "Dieses Ausstempeln steht im Konflikt mit einer früheren Anfrage oder geänderter Arbeit. Bitte aktualisieren Sie und versuchen Sie es erneut.",
+      "clockOutAppendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie ausstempeln können. Bitte wenden Sie sich an Ihre Administration.",
+      "clockOutNotAllowed": "Sie können diese Arbeit nicht ausstempeln.",
+      "clockOutRetry": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",

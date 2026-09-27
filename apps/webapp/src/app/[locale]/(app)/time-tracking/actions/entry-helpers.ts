@@ -11,10 +11,13 @@ import {
 	getProjectTotalHours,
 } from "@/lib/notifications/project-notification-triggers";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
-import { isProjectEligible, listEligibleProjects } from "@/lib/time-tracking/project-eligibility";
+import {
+	BOOKABLE_PROJECT_STATUSES,
+	isProjectEligible,
+	listEligibleProjects,
+} from "@/lib/time-tracking/project-eligibility";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 import { getRequestMetadata } from "./auth";
-import { BOOKABLE_PROJECT_STATUSES } from "./shared";
 
 type TimeEntryDbClient = Pick<typeof db, "insert" | "select">;
 type TimeEntryUpdateDbClient = Pick<typeof db, "update">;

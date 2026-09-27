@@ -132,22 +132,13 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain('fallbackSource: "user_setting"');
 	});
 
-	it("guards clock-out before creating time entries", () => {
-		expectBillingGuardBeforeWrite(
-			"clockOutAs",
-			"clockingService.clockOut({",
-			clockingSource,
-		);
-	});
-
-	it("captures browser timezone context in live clock-out entries", () => {
+	it("leaves clock-out billing, capture and follow-ups to the Clocking module", () => {
+		// Proven through `run` in lib/time-tracking/clocking/clock-out.integration.test.ts.
 		const body = functionBody("clockOutAs", clockingSource);
 
-		expect(body).toContain("actionContext: ClockOutActionContext");
-		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
-		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
-		expect(body).toContain('browserSource: "browser"');
-		expect(body).toContain('fallbackSource: "user_setting"');
+		expect(body).toContain("await clocking.run({");
+		expect(body).toContain("device: actionContext.browserTimezone ?? null");
+		expect(body).not.toContain("requireBillingForMutation");
 	});
 
 	it("guards break insertion before delegating to the clocking mutation", () => {
@@ -210,16 +201,11 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain("dirtyFromDate:");
 	});
 
-	it("marks work balances dirty after clockOut changes payable time", () => {
-		// Every live clock-out adapter shares the post-commit follow-ups (#275).
-		expect(functionBody("clockOutAs", clockingSource)).toContain(
-			"await completeClockOutAfterCommit(",
-		);
+	it("runs the Clocking module's follow-ups after other live clock-outs commit", () => {
+		// v2 commands and on-behalf share the module's follow-ups until they migrate.
 		const body = functionBody("completeClockOutAfterCommit", clockingSource);
-		expect(body).toContain(
-			"await markWorkBalanceDirtyAfterClockOutBestEffort(",
-		);
-		expect(body).toContain("dirtyFromDate:");
+		expect(body).toContain("await clockOutFollowUps.afterClockOut({");
+		expect(body).toContain("balanceRefreshCommitted: outcome.balanceRefreshCommitted");
 	});
 
 	it.each([

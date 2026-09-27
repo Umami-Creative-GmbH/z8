@@ -11,9 +11,11 @@ import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { resolveBotClockActor } from "@/lib/bot-platform/clock-actor";
 import {
+	billingRequiredReply,
 	type ClockCommandReplies,
 	clockFailureReply,
 	committedReply,
+	type Reply,
 	textReply,
 } from "@/lib/bot-platform/clock-replies";
 import { type BotTranslateFn, getBotTranslate } from "@/lib/bot-platform/i18n";
@@ -21,12 +23,22 @@ import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bo
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { createLogger } from "@/lib/logger";
+import type { ClockInFailure } from "@/lib/time-tracking/clocking/types";
 import { elapsedHoursAndMinutes, getCommandTemporalContext } from "./command-temporal";
 
 const logger = createLogger("BotCommand:ClockIn");
 
-const replies: ClockCommandReplies = {
+const failed: Reply = (t) => t("bot.cmd.clockin.failed", "Could not clock in. Please try again.");
+const cannotNow: Reply = (t) => t("bot.cmd.clockin.cannotNow", "Cannot clock in at this time.");
+
+const replies: ClockCommandReplies<ClockInFailure> = {
 	failures: {
+		already_clocked_in: (t) => t("bot.cmd.clockin.alreadyInNow", "You are already clocked in."),
+		holiday_blocked: (t) =>
+			t("bot.cmd.clockin.holidayBlocked", "Cannot clock in on a holiday."),
+		occupancy_conflict: (t) =>
+			t("bot.cmd.clockin.occupied", "This time overlaps other recorded work."),
+		invalid_work_location: cannotNow,
 		append_review_required: (t) =>
 			t(
 				"bot.cmd.clockin.appendReview",
@@ -37,9 +49,14 @@ const replies: ClockCommandReplies = {
 				"bot.cmd.clockin.unconfirmed",
 				"Your clock-in could not be confirmed. Check your status before trying again.",
 			),
+		access_denied: (t) => t("bot.cmd.clockin.noProfile", "Employee profile not found."),
+		billing_required: billingRequiredReply,
+		// A clock-in carries no identity or freshness window yet; nothing was written.
+		collision: failed,
+		admission_window: failed,
+		invalid_command: failed,
+		failed,
 	},
-	cannotNow: (t) => t("bot.cmd.clockin.cannotNow", "Cannot clock in at this time."),
-	failed: (t) => t("bot.cmd.clockin.failed", "Could not clock in. Please try again."),
 	committed: (t) => t("bot.cmd.clockin.committed", "Clocked in."),
 };
 
@@ -78,7 +95,7 @@ export const clockInCommand: BotCommand = {
 			if (result.failure === "already_clocked_in") {
 				return textReply(await alreadyClockedIn(ctx, temporal, t));
 			}
-			return clockFailureReply(result, replies, t);
+			return clockFailureReply(result.failure, replies, t);
 		} catch (error) {
 			logger.error({ error, ctx }, "Failed to clock in");
 			throw error;

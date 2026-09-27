@@ -6,7 +6,7 @@
  * transaction, and only then sends it. This module is the pure page half: when a
  * command may be frozen at all, and how a stored record reads back to the caller.
  */
-import type { ClockOutResult } from "@/app/[locale]/(app)/time-tracking/actions/types";
+import type { ClockOutResult } from "./clocking/types";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import {
 	CLOCK_COMMAND_VERSION,

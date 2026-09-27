@@ -64,7 +64,15 @@
       "restPeriodBlocked": "Rest period not complete",
       "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
       "appendReviewRequired": "Clock-in needs a review of your time history",
-      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator."
+      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+      "notClockedIn": "You are not currently clocked in",
+      "projectNotAllowed": "Cannot assign to this project",
+      "workCategoryNotAllowed": "Cannot assign to this work category",
+      "clockOutBeforeClockIn": "Clock-out must be after clock-in",
+      "clockOutCollision": "This clock-out conflicts with an earlier request or changed work. Please refresh and try again.",
+      "clockOutAppendReview": "Your time history needs review before you can clock out. Please contact your administrator.",
+      "clockOutNotAllowed": "You cannot clock out this work.",
+      "clockOutRetry": "Failed to clock out. Please try again."
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
