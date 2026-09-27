@@ -972,6 +972,59 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		)
 		.limit(1);
 	if (!sourceClockOut) return { kind: "obsolete", reason: "changed" };
+	// The canonical record divides with the work, as in the adopted adjustment; the
+	// established writes left it spanning the break and the generated work (#514).
+	// A record that no longer spans exactly this period stays as it is.
+	let canonical: {
+		record: typeof timeRecord.$inferSelect;
+		detail: typeof timeRecordWork.$inferSelect;
+		allocations: Array<typeof timeRecordAllocation.$inferSelect>;
+	} | null = null;
+	if (period.canonicalRecordId) {
+		const [record] = await tx
+			.select()
+			.from(timeRecord)
+			.where(
+				and(
+					eq(timeRecord.id, period.canonicalRecordId),
+					eq(timeRecord.organizationId, organizationId),
+					eq(timeRecord.employeeId, employeeId),
+					eq(timeRecord.recordKind, "work"),
+				),
+			)
+			.for("update");
+		const [detail] = await tx
+			.select()
+			.from(timeRecordWork)
+			.where(
+				and(
+					eq(timeRecordWork.recordId, period.canonicalRecordId),
+					eq(timeRecordWork.organizationId, organizationId),
+					eq(timeRecordWork.recordKind, "work"),
+				),
+			)
+			.for("update");
+		const allocations = await tx
+			.select()
+			.from(timeRecordAllocation)
+			.where(
+				and(
+					eq(timeRecordAllocation.recordId, period.canonicalRecordId),
+					eq(timeRecordAllocation.organizationId, organizationId),
+				),
+			)
+			.orderBy(asc(timeRecordAllocation.id))
+			.for("update");
+		if (
+			record &&
+			detail &&
+			record.endAt &&
+			record.startAt.getTime() === period.startTime.getTime() &&
+			record.endAt.getTime() === plan.expected.endTime.getTime()
+		) {
+			canonical = { record, detail, allocations };
+		}
+	}
 	// Established head selection: the latest-created entry of the employee.
 	const [head] = await tx
 		.select({ hash: timeEntry.hash })
@@ -1032,6 +1085,64 @@ export async function applyLegacyAutomaticBreakInTransaction(
 		)
 		.returning({ id: workPeriod.id });
 	if (updated.length !== 1) throw new CompletedWorkIntegrityError("Adjusted work period changed");
+	let generatedRecordId: string | null = null;
+	if (canonical) {
+		const updatedRecords = await tx
+			.update(timeRecord)
+			.set({
+				endAt: plan.breakStart,
+				durationMinutes: plan.firstDurationMinutes,
+				updatedAt: now,
+				updatedBy: writtenBy,
+			})
+			.where(
+				and(
+					eq(timeRecord.id, canonical.record.id),
+					eq(timeRecord.organizationId, organizationId),
+					eq(timeRecord.employeeId, employeeId),
+					eq(timeRecord.recordKind, "work"),
+				),
+			)
+			.returning({ id: timeRecord.id });
+		if (updatedRecords.length !== 1) {
+			throw new CompletedWorkIntegrityError("Canonical work record update failed");
+		}
+		// The generated record keeps the originating work's origin, approval state and
+		// recording actor; no new decision is recorded for it.
+		generatedRecordId = randomUUID();
+		await tx.insert(timeRecord).values({
+			id: generatedRecordId,
+			organizationId,
+			employeeId,
+			recordKind: "work",
+			startAt: plan.breakEnd,
+			endAt: plan.expected.endTime,
+			durationMinutes: plan.secondDurationMinutes,
+			approvalState: canonical.record.approvalState,
+			origin: canonical.record.origin,
+			createdBy: canonical.record.createdBy,
+			updatedAt: now,
+			updatedBy: writtenBy,
+		});
+		await tx.insert(timeRecordWork).values({
+			recordId: generatedRecordId,
+			organizationId,
+			recordKind: "work",
+			workCategoryId: canonical.detail.workCategoryId,
+			workLocationType: canonical.detail.workLocationType,
+			computationMetadata: canonical.detail.computationMetadata,
+		});
+		for (const allocation of canonical.allocations) {
+			await tx.insert(timeRecordAllocation).values({
+				organizationId,
+				recordId: generatedRecordId,
+				allocationKind: allocation.allocationKind,
+				projectId: allocation.projectId,
+				costCenterId: allocation.costCenterId,
+				weightPercent: allocation.weightPercent,
+			});
+		}
+	}
 	const [inserted] = await tx
 		.insert(workPeriod)
 		.values({
@@ -1043,6 +1154,9 @@ export async function applyLegacyAutomaticBreakInTransaction(
 			endTime: plan.expected.endTime,
 			durationMinutes: plan.secondDurationMinutes,
 			projectId: period.projectId,
+			workCategoryId: period.workCategoryId,
+			workLocationType: period.workLocationType,
+			canonicalRecordId: generatedRecordId,
 			isActive: false,
 			wasAutoAdjusted: true,
 			autoAdjustmentReason: plan.reason,
