@@ -316,6 +316,21 @@ describeIntegration("automatic break adjustment on PostgreSQL", () => {
 		return rows;
 	}
 
+	/** Each period's canonical record and its location, in work order. */
+	async function canonicalGraph() {
+		const { rows } = await admin.query(
+			`select tr.id, tr.start_at, tr.end_at, tr.duration_minutes, tr.approval_state,
+			        w.work_location_type, wp.work_location_type as period_location
+			 from work_period wp
+			 join time_record tr on tr.id = wp.canonical_record_id
+			 join time_record_work w on w.record_id = tr.id
+			 where wp.organization_id = $1 and wp.deleted_at is null
+			 order by wp.start_time`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
 	async function intents(): Promise<IntentRow[]> {
 		const { rows } = await admin.query<IntentRow>(
 			`select id, work_period_id, closure_entry_id, triggered_by_user_id, status, blocker,
@@ -1101,8 +1116,56 @@ describeIntegration("automatic break adjustment on PostgreSQL", () => {
 			previous_hash: only(closure).hash,
 			created_by: ids.requesterUser,
 		});
+		// The canonical record divides with the work instead of spanning the break (#514).
+		expect(generated?.canonical_record_id).not.toBeNull();
+		expect(await canonicalGraph()).toEqual([
+			{
+				id: retained?.canonical_record_id,
+				start_at: retained?.start_time,
+				end_at: retained?.end_time,
+				duration_minutes: 360,
+				approval_state: "approved",
+				work_location_type: "office",
+				period_location: "office",
+			},
+			{
+				id: generated?.canonical_record_id,
+				start_at: generated?.start_time,
+				end_at: generated?.end_time,
+				duration_minutes: 29,
+				approval_state: "approved",
+				work_location_type: "office",
+				period_location: "office",
+			},
+		]);
 		expect(await intents()).toEqual([]);
 		expect(await receipts()).toEqual([]);
+	});
+
+	it("lets a correction of a legacy break's retained work be approved (#514)", async () => {
+		await setAdmission("inactive");
+		const { id: periodId } = await recordWork();
+		await expect(
+			requestEdit(periodId, { clockIn: "08:00", clockOut: "12:00" }),
+		).resolves.toMatchObject({ success: true });
+
+		await expect(approve(await pendingApprovalId(periodId))).resolves.toMatchObject({
+			status: "approved",
+		});
+		// Only the clock-out moves: 08:00 is the original clock-in's own minute.
+		const [retained] = await canonicalGraph();
+		expect(retained).toMatchObject({
+			start_at: new Date("2026-07-22T08:00:40Z"),
+			end_at: new Date("2026-07-22T12:00:00Z"),
+			duration_minutes: 239,
+		});
+		const [period] = await periods();
+		expect(period).toMatchObject({
+			id: periodId,
+			start_time: retained.start_at,
+			end_time: retained.end_at,
+			duration_minutes: retained.duration_minutes,
+		});
 	});
 
 	it("leaves a legacy organization's closure whole when an established write fails", async () => {
