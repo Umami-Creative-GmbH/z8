@@ -4,7 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const SRC_ROOT = fileURLToPath(new URL(".", import.meta.url));
-const ALLOWED_DIRECT_ENV_READERS = new Set(["env.ts", "instrumentation.ts"]);
+const ALLOWED_DIRECT_ENV_READERS = new Set([
+	"env.ts",
+	"instrumentation.ts",
+	// Test-only database gate; reads the vitest project name.
+	join("lib", "approvals", "workflow", "repository-integration-harness.ts"),
+]);
 // Vitest-only support code (aliases, doubles, the integration harness) never ships.
 const TEST_SUPPORT_DIRECTORY = join(SRC_ROOT, "test");
 const RUNTIME_FILE_EXTENSIONS = [".ts", ".tsx"] as const;

@@ -4,9 +4,6 @@ import { configDefaults, defineConfig } from "vitest/config";
 // Set the parent process timezone before test workers are started.
 process.env.TZ ||= "UTC";
 
-// Every PostgreSQL suite is found by this glob; the Redis suite has its own opt-in gate.
-const postgresIntegrationSuites = "src/**/!(*.redis).integration.test.ts";
-
 export default defineConfig({
 	test: {
 		globals: true,
@@ -26,27 +23,29 @@ export default defineConfig({
 			"@/lib": path.resolve(__dirname, "./src/lib"),
 			"server-only": path.resolve(__dirname, "./src/test/server-only.ts"),
 		},
+		// Suites are discovered by suffix: a new `*.integration.test.ts` runs
+		// against PostgreSQL with no registration anywhere else.
 		projects: [
 			{
 				extends: true,
 				test: {
 					name: "unit",
 					include: ["src/**/*.test.{ts,tsx}"],
-					exclude: [...configDefaults.exclude, postgresIntegrationSuites],
+					exclude: [...configDefaults.exclude, "**/*.integration.test.ts"],
+					env: { Z8_TEST_PROJECT: "unit" },
 				},
 			},
 			{
-				// Runs against the disposable database that
-				// scripts/run-approval-workflow-repository-integration.sh (or CI) creates,
-				// and fails before any suite runs when that database is not configured.
 				extends: true,
 				test: {
 					name: "integration",
-					include: [postgresIntegrationSuites],
-					globalSetup: ["./src/test/postgres-integration.global-setup.ts"],
+					include: ["src/**/*.integration.test.ts"],
 					fileParallelism: false,
+					// REQUIRED=1 turns a missing disposable database into an error, not a skip.
 					env: {
+						Z8_TEST_PROJECT: "integration",
 						APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED: "1",
+						TZ: "UTC",
 						PGOPTIONS: "-c statement_timeout=15000 -c timezone=UTC",
 					},
 				},

@@ -1,6 +1,6 @@
 /**
  * Shared harness for the `integration` vitest project (every
- * `*.integration.test.ts` except the Redis suite). It owns the database pool
+ * `*.integration.test.ts`). It owns the database pool
  * and the standard infrastructure fakes, so a suite replaces only what its own
  * contract needs.
  *
@@ -16,13 +16,13 @@ import { vi } from "vitest";
 
 type ImportOriginal = <T>() => Promise<T>;
 
-/** The disposable database URL; the project's global setup has already verified it. */
+/** The disposable database URL; the integration project requires it. */
 export function integrationDatabaseUrl(): string {
 	const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
 	if (!databaseUrl) {
 		throw new Error(
 			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL is missing. Run " +
-				"`pnpm --filter webapp test:approval-workflow-repository:integration`.",
+				"`pnpm --filter webapp test:integration`.",
 		);
 	}
 	return databaseUrl;

@@ -5,7 +5,7 @@
  *   docker run -d --rm --name z8-t271-valkey --label z8.agent-owned=legacy-escalation-redis-test \
  *     -p 127.0.0.1:6399:6379 valkey/valkey:8
  *   LEGACY_ESCALATION_REDIS_TEST_URL=redis://127.0.0.1:6399 \
- *     pnpm --filter webapp exec vitest run src/lib/cron/legacy-escalation-schedulers.redis.integration.test.ts
+ *     pnpm --filter webapp exec vitest run src/lib/cron/legacy-escalation-schedulers.redis.test.ts
  *
  * Uses a unique queue name and obliterates it afterwards.
  */

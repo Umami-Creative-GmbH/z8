@@ -1,55 +1,69 @@
-import { glob } from "node:fs/promises";
-import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { createVitest } from "vitest/node";
+import vitestConfig from "../../vitest.config";
 
-const appDirectory = fileURLToPath(new URL("../..", import.meta.url));
+type InlineProject = {
+	extends?: boolean;
+	test?: {
+		name?: string;
+		include?: string[];
+		exclude?: string[];
+		fileParallelism?: boolean;
+		env?: Record<string, string>;
+	};
+};
 
-async function discoveredFilesByProject() {
-	const vitest = await createVitest("test", {
-		config: path.join(appDirectory, "vitest.config.ts"),
-		root: appDirectory,
-		watch: false,
-	});
-	try {
-		const specifications = await vitest.globTestSpecifications();
-		const files = new Map<string, string[]>();
-		for (const specification of specifications) {
-			const name = specification.project.name;
-			const relative = path.relative(appDirectory, specification.moduleId).replaceAll("\\", "/");
-			files.set(name, [...(files.get(name) ?? []), relative]);
-		}
-		return files;
-	} finally {
-		await vitest.close();
-	}
+function project(name: string) {
+	const projects = (vitestConfig.test?.projects ?? []) as InlineProject[];
+	const match = projects.find((entry) => entry.test?.name === name);
+	if (!match?.test) throw new Error(`Vitest project ${name} is not declared`);
+	return { ...match, test: match.test };
 }
 
-async function integrationSuitesOnDisk() {
-	const files: string[] = [];
-	for await (const file of glob("src/**/*.integration.test.ts", { cwd: appDirectory })) {
-		files.push(file.replaceAll("\\", "/"));
-	}
-	return files;
+async function readPackageScripts() {
+	const packagePath = fileURLToPath(new URL("../../package.json", import.meta.url));
+	const packageJson = JSON.parse(await readFile(packagePath, "utf8")) as {
+		scripts: Record<string, string>;
+	};
+	return packageJson.scripts;
 }
-
-const redisSuite = "src/lib/cron/legacy-escalation-schedulers.redis.integration.test.ts";
 
 describe("vitest projects", () => {
-	it("discovers every PostgreSQL integration suite by glob and keeps it out of the unit run", async () => {
-		const [projects, onDisk] = await Promise.all([
-			discoveredFilesByProject(),
-			integrationSuitesOnDisk(),
-		]);
-		const postgresSuites = onDisk.filter((file) => file !== redisSuite);
-		const unit = projects.get("unit") ?? [];
-		const integration = projects.get("integration") ?? [];
+	it("discovers PostgreSQL suites by suffix, never from a list", () => {
+		const unit = project("unit");
+		const integration = project("integration");
 
-		expect(postgresSuites.length).toBeGreaterThanOrEqual(86);
-		expect([...integration].sort()).toEqual([...postgresSuites].sort());
-		expect(unit.filter((file) => integration.includes(file))).toEqual([]);
-		expect(unit).toContain(redisSuite);
-		expect(unit).toContain("src/test/vitest-projects.test.ts");
-	}, 60_000);
+		expect(vitestConfig.test?.include).toBeUndefined();
+		expect(unit.extends).toBe(true);
+		expect(unit.test.include).toEqual(["src/**/*.test.{ts,tsx}"]);
+		expect(unit.test.exclude).toContain("**/*.integration.test.ts");
+		expect(integration.extends).toBe(true);
+		expect(integration.test.include).toEqual(["src/**/*.integration.test.ts"]);
+	});
+
+	it("marks the unit project so database gates can refuse misnamed suites", () => {
+		expect(project("unit").test.env).toEqual({ Z8_TEST_PROJECT: "unit" });
+	});
+
+	it("runs integration suites serially and requires the disposable database", () => {
+		const integration = project("integration").test;
+
+		expect(integration.fileParallelism).toBe(false);
+		expect(integration.env).toEqual({
+			Z8_TEST_PROJECT: "integration",
+			APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED: "1",
+			TZ: "UTC",
+			PGOPTIONS: "-c statement_timeout=15000 -c timezone=UTC",
+		});
+	});
+
+	it("keeps pnpm test database-free and routes test:integration through the Docker runner", async () => {
+		const scripts = await readPackageScripts();
+
+		expect(scripts.test).toBe("vitest run --project unit");
+		expect(scripts["test:integration"]).toBe(
+			"bash ./scripts/run-approval-workflow-repository-integration.sh",
+		);
+	});
 });

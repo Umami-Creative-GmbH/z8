@@ -15,20 +15,10 @@ Use **pnpm**. Do not use npm or bun.
 ```bash
 pnpm dev              # Start dev server
 CI=true pnpm build    # Production build (CI=true is required to pass)
-pnpm test             # Run tests (vitest)
+pnpm test             # Unit tests (vitest `unit` project, no database)
+pnpm test:integration # PostgreSQL suites in a disposable Docker database (run from apps/webapp)
 pnpm drizzle-kit push # Push schema to database
 ```
-
-### PostgreSQL Integration Suites
-
-`pnpm test` runs the vitest `unit` project. Every `*.integration.test.ts` except the Redis suite belongs to the `integration` project, found by glob, so a new suite needs no registration. That project fails when its disposable database is missing instead of skipping.
-
-```bash
-pnpm --filter webapp test:approval-workflow-repository:integration          # start PostgreSQL 16, migrate, run every suite
-pnpm --filter webapp test:approval-workflow-repository:integration <path>   # the same, one suite
-```
-
-Suites take the database pool and the standard fakes (Next request scope, billing, email, queue, vault, delivery kick, notification triggers) from `apps/webapp/src/test/integration-harness.ts`.
 
 ## Opening Files and URLs in WSL
 

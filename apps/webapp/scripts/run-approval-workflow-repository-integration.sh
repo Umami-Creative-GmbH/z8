@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Starts an isolated PostgreSQL 16 database, applies the full migration chain,
-# runs the vitest integration project (every *.integration.test.ts except the
-# Redis suite), and removes only its label-owned container. Extra arguments go
-# to vitest, e.g. one suite path.
+# Starts an isolated PostgreSQL 16 database, hands it to the shared suite runner
+# (migration verifier + the Vitest `integration` project), and removes only its
+# label-owned container. Extra arguments are passed through to Vitest.
 set -euo pipefail
 
 readonly sentinel="approval-workflow-repository-test"
@@ -65,25 +64,6 @@ readonly host_port="$(docker inspect --format '{{(index (index .NetworkSettings.
 docker exec "$container_name" createdb --username postgres "$database_name"
 printf 'Created disposable database: %s\n' "$database_name"
 
-printf 'Verifying approval migration incident recovery, retry, and fresh chain\n'
-POSTGRES_HOST=127.0.0.1 \
-POSTGRES_PORT="$host_port" \
-POSTGRES_DB="$database_name" \
-POSTGRES_USER=postgres \
-POSTGRES_PASSWORD="$database_password" \
-POSTGRES_SSL_MODE=disable \
-SKIP_ENV_VALIDATION=1 \
-APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:${database_password}@127.0.0.1:${host_port}/${database_name}" \
-APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
-pnpm --dir "$app_directory" exec tsx ./scripts/verify-approval-migration-recovery.ts
-
-printf 'Running every PostgreSQL integration suite (the vitest integration project)\n'
-POSTGRES_HOST=127.0.0.1 \
-POSTGRES_PORT="$host_port" \
-POSTGRES_DB="$database_name" \
-POSTGRES_USER=postgres \
-POSTGRES_PASSWORD="$database_password" \
-POSTGRES_SSL_MODE=disable \
-APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:${database_password}@127.0.0.1:${host_port}/${database_name}" \
-APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \
-pnpm --dir "$app_directory" exec vitest run --project integration "$@"
+bash "$app_directory/scripts/run-postgres-integration-suites.sh" \
+	"postgresql://postgres:${database_password}@127.0.0.1:${host_port}/${database_name}" \
+	"$@"

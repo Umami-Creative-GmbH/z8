@@ -24,7 +24,8 @@ Z8 stores canonical instants in UTC and stores the event-local UTC offset on eac
 ```bash
 pnpm dev              # Start dev server
 CI=true pnpm build    # Production build (CI=true is required to pass)
-pnpm test             # Run tests (vitest)
+pnpm test             # Unit tests (vitest `unit` project, no database)
+pnpm test:integration # PostgreSQL suites in a disposable Docker database (run from apps/webapp)
 pnpm drizzle-kit push # Push schema to database
 ```
 

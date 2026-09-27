@@ -28,6 +28,19 @@ New migrations must have a `when` greater than every prior migration.
 
 If a migration was committed with an older `when` and production may have already advanced past it, do not only edit the old journal entry. Add a new idempotent recovery migration with a later `when` so production databases that skipped the old migration are fixed safely.
 
+## PostgreSQL Integration Suites
+
+Name every suite that needs a real database `*.integration.test.ts`. Vitest's `integration` project in `apps/webapp/vitest.config.ts` discovers them by that suffix, so no runner or CI list needs editing. `pnpm test` runs only the `unit` project.
+
+- `pnpm --filter webapp test:integration` starts a label-owned PostgreSQL 16 container and hands it to `scripts/run-postgres-integration-suites.sh`. CI's integration job calls the same script. Extra arguments reach Vitest, so a file path runs one suite.
+- The `integration` project sets `APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1`, so running it without the disposable database fails instead of skipping.
+- The database gates (`repository-integration-harness.ts`, `employee-lifecycle/testing/database.test.fixture.ts`) throw when a `unit` project file calls them. A misnamed suite therefore fails `pnpm test` instead of silently skipping.
+- Take the database pool and the standard fakes (Next request scope, billing, email, queue, vault, delivery kick, notification triggers) from `apps/webapp/src/test/integration-harness.ts`, for example:
+
+  ```ts
+  vi.mock("@/db", async () => (await import("@/test/integration-harness")).database());
+  ```
+
 ## RBAC
 
 Z8 uses [CASL](https://casl.js.org/) for role-based access control. Prefer existing authorization helpers and ability checks over ad-hoc role checks.

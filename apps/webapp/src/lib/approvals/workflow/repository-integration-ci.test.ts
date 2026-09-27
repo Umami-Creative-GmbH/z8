@@ -5,9 +5,6 @@ import { describe, expect, it } from "vitest";
 const workflowPath = fileURLToPath(
 	new URL("../../../../../../.github/workflows/tests.yml", import.meta.url),
 );
-// The integration project finds every PostgreSQL suite by glob (vitest.config.ts).
-const integrationVitestCommand =
-	"pnpm --filter webapp exec vitest run --project integration\n";
 
 async function readWorkflow() {
 	// Windows autocrlf checkouts read CRLF; the contract is written against LF.
@@ -18,6 +15,7 @@ describe("approval workflow repository integration CI contract", () => {
 	it("enables the filtered PR trigger and runs the PostgreSQL migration integration gate", async () => {
 		const workflow = await readWorkflow();
 
+		// `apps/webapp/**` covers vitest.config.ts and the shared suite runner.
 		expect(workflow).toMatch(`on:
   pull_request:
     branches:
@@ -40,18 +38,33 @@ describe("approval workflow repository integration CI contract", () => {
       postgres:
         image: postgres:16`);
 		expect(workflow).toContain(
-			`- name: Run approval workflow repository PostgreSQL integration contract
+			`- name: Run PostgreSQL integration suites
         run: |
           set -euo pipefail
           database_name="approval_workflow_repository_test_\${GITHUB_RUN_ID}_\${GITHUB_RUN_ATTEMPT}"`,
 		);
 		expect(workflow).toContain(
-			`SKIP_ENV_VALIDATION=1 \\
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/\${database_name}" \\
-          APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test \\
-          pnpm --filter webapp exec tsx scripts/verify-approval-migration-recovery.ts`,
+			`bash apps/webapp/scripts/run-postgres-integration-suites.sh \\
+            "postgresql://postgres:postgres@127.0.0.1:5432/\${database_name}"`,
 		);
-		expect(workflow).toContain(integrationVitestCommand);
+	});
+
+	it("shares the suite runner instead of duplicating its list and environment", async () => {
+		const workflow = await readWorkflow();
+
 		expect(workflow).not.toContain(".integration.test.ts");
+		expect(workflow).not.toContain("verify-approval-migration-recovery.ts");
+		expect(workflow).not.toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_");
+		expect(workflow).not.toContain("PGOPTIONS");
+		expect(workflow).not.toContain("TZ=UTC");
+	});
+
+	it("runs only the unit project in the sharded unit job", async () => {
+		const workflow = await readWorkflow();
+
+		expect(workflow).toContain(
+			// biome-ignore lint/suspicious/noTemplateCurlyInString: GitHub Actions expression
+			"pnpm exec turbo test --filter=webapp --output-logs=full --log-order=stream -- --project unit --shard=${{ matrix.shard }}/4",
+		);
 	});
 });
