@@ -14,6 +14,12 @@ employee lock. The legacy transaction adapter remains for other callers.
 > close through the completed-work operation; see
 > [web-clock-out-operation-274.md](web-clock-out-operation-274.md). The text
 > below describes the #272 prefactor as delivered.
+>
+> Since #490 the work transaction coordinator (`lib/time-tracking/work-transaction`)
+> composes this protocol. Web clock-out supplies only its routing (the resource
+> inventory, with the auxiliary keys as rank-6 source identities of identical key
+> text) and its row locks; the coordinator owns the order, the re-route compares,
+> the restart budget and the pinned `policy_clock_out` gate.
 
 Admission is deliberately fixed to `legacy`. There is no activation setter,
 exclusive adoption upgrade, new command version, receipt owner, dispatcher, or

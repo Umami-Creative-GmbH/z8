@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { ValidationError } from "@/lib/effect/errors";
-import {
-	TimeEntryAppendReviewRequiredError,
-} from "@/lib/time-tracking/clocking-service";
-import { sealWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 
 const mockState = vi.hoisted(() => ({
 	getCurrentSession: vi.fn(),
@@ -60,13 +56,10 @@ const mockState = vi.hoisted(() => ({
 	findTeamMemberships: vi.fn(),
 	findTeams: vi.fn(),
 	transaction: vi.fn(),
-	withWebClockInTransaction: vi.fn(),
 	acquireApprovalGate: vi.fn(),
 	updateReturning: vi.fn(),
 	updateSet: vi.fn(),
 	updateWhere: vi.fn(),
-	clockingClockIn: vi.fn(),
-	clockingClockOut: vi.fn(),
 	createCanonicalWorkRecord: vi.fn(),
 	resolveBreakPolicySnapshot: vi.fn(
 		async (input: { endTime: { toString(): string } }) => ({
@@ -242,13 +235,6 @@ vi.mock("@/lib/work-balance/service", () => ({
 	markEmployeeWorkBalanceDirty: mockState.markEmployeeWorkBalanceDirty,
 }));
 
-// The real clock-in coordinator is exercised on PostgreSQL by
-// clocking.web-clock-in.integration.test.ts.
-vi.mock("@/lib/time-tracking/web-clock-in-transaction", () => ({
-	withWebClockInTransaction: (...args: unknown[]) =>
-		mockState.withWebClockInTransaction(...args),
-}));
-
 vi.mock("@/lib/time-tracking/work-transaction", async (importOriginal) => ({
 	...(await importOriginal<
 		typeof import("@/lib/time-tracking/work-transaction")
@@ -267,16 +253,6 @@ vi.mock("@/lib/time-tracking/close-active-work", async (importOriginal) => ({
 		mockState.replayCloseActiveWork(...(args as [])),
 	closeActiveWork: (...args: unknown[]) =>
 		mockState.closeActiveWork(...args),
-}));
-
-vi.mock("@/lib/time-tracking/clocking-service", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/lib/time-tracking/clocking-service")
-	>()),
-	clockingService: {
-		clockIn: (...args: unknown[]) => mockState.clockingClockIn(...args),
-		clockOut: (...args: unknown[]) => mockState.clockingClockOut(...args),
-	},
 }));
 
 vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
@@ -443,10 +419,9 @@ vi.mock("./shared", () => ({
 	ONE_MINUTE_MS: 60_000,
 }));
 
-const {
-	clockIn,
-	createManualTimeEntry: createManualTimeEntryAction,
-} = await import("./clocking");
+const { createManualTimeEntry: createManualTimeEntryAction } = await import(
+	"./clocking"
+);
 
 const defaultSubmissionId = "10000000-0000-4000-8000-000000000099";
 
@@ -846,178 +821,6 @@ function createManualTimeEntry(
 		...data,
 	});
 }
-
-describe("clockIn", () => {
-	const clockInScope = sealWorkTransactionScope({
-		db: {} as never,
-		admission: "legacy" as const,
-		assertEmployee: () => undefined,
-	});
-
-	beforeEach(() => {
-		vi.clearAllMocks();
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date("2026-05-04T09:00:00.000Z"));
-
-		mockState.withWebClockInTransaction.mockImplementation(
-			async (_input: unknown, operation: (scope: unknown) => Promise<unknown>) =>
-				operation(clockInScope),
-		);
-		mockState.getCurrentSession.mockResolvedValue({ user: { id: "user-1" } });
-		mockState.getCurrentEmployee.mockResolvedValue({
-			id: "employee-1",
-			organizationId: "org-1",
-			teamId: null,
-			managerId: null,
-		});
-		mockState.getUserTimezone.mockResolvedValue("UTC");
-		mockState.getActiveWorkPeriod.mockResolvedValue(null);
-		mockState.validateTimeEntry.mockResolvedValue({ isValid: true });
-		mockState.createTimeEntry.mockResolvedValue({
-			id: "clock-in-1",
-			type: "clock_in",
-			timestamp: new Date("2026-05-04T09:00:00.000Z"),
-		});
-		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
-		mockState.isBillingMutationAllowed.mockReturnValue(true);
-		mockState.insertValues.mockResolvedValue(undefined);
-		mockState.createCanonicalWorkRecord.mockResolvedValue({
-			id: "canonical-1",
-		});
-		mockState.clockingClockIn.mockImplementation(async (input) => {
-			const entry = await mockState.createTimeEntry({
-				employeeId: input.employeeId,
-				organizationId: input.organizationId,
-				type: "clock_in",
-				timestamp: new Date("2026-05-04T09:00:00.000Z"),
-				createdBy: input.createdBy,
-				...input.action,
-			});
-			await mockState.insertValues({
-				workLocationType: input.workLocationType,
-			});
-			return { entry };
-		});
-	});
-
-	it("rejects suspended organizations before creating a clock-in entry", async () => {
-		mockState.requireBillingForMutation.mockResolvedValue({
-			canAccess: false,
-			reason: "trial_expired",
-		});
-		mockState.isBillingMutationAllowed.mockReturnValue(false);
-
-		const result = await clockIn("remote");
-
-		expect(mockState.requireBillingForMutation).toHaveBeenCalledWith("org-1");
-		expect(result).toEqual({
-			success: false,
-			error: "billing_required",
-			code: "trial_expired",
-		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.insertValues).not.toHaveBeenCalled();
-	});
-
-	it("persists remote work location when clocking in", async () => {
-		const result = await clockIn("remote");
-
-		expect(result.success).toBe(true);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				workLocationType: "remote",
-			}),
-		);
-	});
-
-	it("stores browser-derived timezone capture when clocking in with a valid browser timezone", async () => {
-		const result = await clockIn("office", {
-			browserTimezone: "America/New_York",
-		});
-
-		expect(result.success).toBe(true);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
-			expect.objectContaining({
-				timezone: "America/New_York",
-				timezoneSource: "browser",
-				utcOffsetMinutes: -240,
-			}),
-		);
-	});
-
-	it("falls back to saved timezone capture when clocking in with an invalid browser timezone", async () => {
-		mockState.getUserTimezone.mockResolvedValue("Europe/Berlin");
-
-		const result = await clockIn("office", { browserTimezone: "Not/AZone" });
-
-		expect(result.success).toBe(true);
-		expect(mockState.createTimeEntry).toHaveBeenCalledWith(
-			expect.objectContaining({
-				timezone: "Europe/Berlin",
-				timezoneSource: "user_setting",
-				utcOffsetMinutes: 120,
-			}),
-		);
-	});
-
-	it("defaults to office work location when clocking in without a location", async () => {
-		const result = await clockIn();
-
-		expect(result.success).toBe(true);
-		expect(mockState.insertValues).toHaveBeenCalledWith(
-			expect.objectContaining({
-				workLocationType: "office",
-			}),
-		);
-	});
-
-	it("runs the clocking service inside the coordinated clock-in transaction", async () => {
-		await clockIn("office");
-
-		expect(mockState.withWebClockInTransaction).toHaveBeenCalledWith(
-			{ organizationId: "org-1", employeeId: "employee-1", userId: "user-1" },
-			expect.any(Function),
-		);
-		expect(mockState.clockingClockIn).toHaveBeenCalledWith(
-			expect.objectContaining({ coordination: clockInScope }),
-		);
-	});
-
-	it("returns only a review code to the user when append history needs review", async () => {
-		const requirement = {
-			organizationId: "org-1",
-			employeeId: "employee-1",
-			reasons: [{ kind: "fork" as const, predecessorId: "a", successorIds: ["b", "c"] }],
-		};
-		mockState.clockingClockIn.mockRejectedValue(
-			new TimeEntryAppendReviewRequiredError(requirement),
-		);
-
-		const result = await clockIn("office");
-
-		expect(result).toEqual({
-			success: false,
-			code: "append_review_required",
-			error:
-				"Your time history needs review before you can clock in. Please contact your administrator.",
-		});
-		expect(mockState.logger.warn).toHaveBeenCalledWith(
-			{ appendReviewRequirement: requirement },
-			"Clock in held for append history review",
-		);
-	});
-
-	it("rejects invalid work location before creating a time entry", async () => {
-		const result = await clockIn("field" as never);
-
-		expect(result).toEqual({
-			success: false,
-			error: "Invalid work location type",
-		});
-		expect(mockState.createTimeEntry).not.toHaveBeenCalled();
-		expect(mockState.insertValues).not.toHaveBeenCalled();
-	});
-});
 
 vi.mock("@/lib/auth-helpers", () => ({
 	getPrincipalContext: mockState.getPrincipalContext,

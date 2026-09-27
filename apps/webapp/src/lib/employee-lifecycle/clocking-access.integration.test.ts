@@ -12,6 +12,7 @@ import {
 } from "@/lib/time-tracking/clocking-core";
 import { createDepartureClockOut } from "./clock-out";
 import { assertEmployeeMayClock } from "./clocking-gate";
+import { runDepartureTransaction } from "./departure-transaction";
 import { preserveLateClockEvidence } from "./late-clock-evidence";
 import { findOpenDepartureClockRepairs } from "./reviews";
 import {
@@ -121,8 +122,8 @@ describe("clocking against departures", () => {
 		};
 		const now: Instant = parseInstant(new Date().toISOString());
 
-		const departure = fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, now, holdingClockOut),
+		const departure = runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, now, holdingClockOut),
 		);
 		await locksTaken;
 		const racingClockIn = clockIn(target).then(
@@ -140,8 +141,8 @@ describe("clocking against departures", () => {
 	async function depart(target: SeededEmployee, cutoff: Date) {
 		const identity = await schedule(target, cutoff);
 		const now = parseInstant(new Date().toISOString());
-		await fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, now, createDepartureClockOut()),
+		await runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, now, createDepartureClockOut()),
 		);
 		return identity;
 	}
@@ -170,8 +171,8 @@ describe("clocking against departures", () => {
 		).rejects.toBeInstanceOf(ClockingAccessError);
 		expect(await activePeriods(target)).toBe(1);
 
-		await fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, actionAt, createDepartureClockOut()),
+		await runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, actionAt, createDepartureClockOut()),
 		);
 		const closed = await fixture.pool.query<{ end_time: Date }>(
 			`select end_time from work_period where employee_id = $1`,

@@ -51,6 +51,11 @@ import {
 import { deriveWorkDurationMinutes } from "./work-duration";
 import { assertNoUnrelatedWorkPeriodReview } from "./work-period-review";
 import { workTransactionScopeFor } from "./work-transaction";
+import {
+	employeeCoordinationGuard,
+	holdGuard,
+	sourceIdentityGuard,
+} from "./work-transaction/ranks";
 
 type WorkLocationType = "office" | "home" | "remote" | "other" | null;
 
@@ -347,20 +352,17 @@ function validateLockedSource(
 	return source;
 }
 
-/** The established employee locks of a legacy split outside the coordinators. */
+/**
+ * The established employee locks of a legacy split outside the coordinators:
+ * the employee key, then the terminal-break/work-balance ownership key, which
+ * web clock-out takes as a source identity with the same key text.
+ */
 async function lockEmployeeUncoordinated(
 	input: EnforcePolicyClockOutTerminalBreakInput,
 ): Promise<void> {
 	const db = input.dbService.db;
-	const employeeLock = await db.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${input.employeeId}, 0)) as locked`,
-	);
-	if (rows(employeeLock).length !== 1) fail();
-	const ownershipLockKey = JSON.stringify([input.organizationId, input.employeeId]);
-	const ownershipLock = await db.execute(
-		sql`select pg_advisory_xact_lock(hashtextextended(${ownershipLockKey}, 0)) as locked`,
-	);
-	if (rows(ownershipLock).length !== 1) fail();
+	await holdGuard(db, employeeCoordinationGuard(input.employeeId));
+	await holdGuard(db, sourceIdentityGuard([input.organizationId, input.employeeId]));
 }
 
 export async function applyPolicyClockOutTerminalBreakInTransaction(

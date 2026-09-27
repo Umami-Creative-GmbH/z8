@@ -171,9 +171,11 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 		return only(rows);
 	}
 
+	/** Closure receipts; an adopted clock-in keeps its own start receipt (#479). */
 	async function receipts() {
 		const { rows } = await admin.query(
-			"select * from completed_work_operation where organization_id = any($1) order by created_at",
+			`select * from completed_work_operation
+			 where organization_id = any($1) and kind = 'close_active_work' order by created_at`,
 			[[ids.organization, ids.otherOrganization]],
 		);
 		return rows;
@@ -650,7 +652,8 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 	async function closures() {
 		const { rows } = await admin.query<{ clock_outs: number; writers: string[] | null }>(
 			`select (select count(*)::int from time_entry where employee_id = $1 and type = 'clock_out') as clock_outs,
-			        (select array_agg(writer order by writer) from completed_work_operation where employee_id = $1) as writers`,
+			        (select array_agg(writer order by writer) from completed_work_operation
+			         where employee_id = $1 and kind = 'close_active_work') as writers`,
 			[ids.target],
 		);
 		return only(rows);

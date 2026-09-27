@@ -74,7 +74,15 @@
       "clockOutNotAllowed": "Sie können diese Arbeit nicht ausstempeln.",
       "clockOutRetry": "Ausstempeln fehlgeschlagen. Bitte versuchen Sie es erneut.",
       "notAuthenticated": "Nicht angemeldet",
-      "employeeProfileNotFound": "Mitarbeiterprofil nicht gefunden"
+      "employeeProfileNotFound": "Mitarbeiterprofil nicht gefunden",
+      "alreadyClockedIn": "Sie sind bereits eingestempelt",
+      "holidayBlockedClockIn": "Einstempeln am {holidayName} nicht möglich",
+      "clockInOccupied": "Diese Zeit überschneidet sich mit anderer erfasster Arbeit",
+      "invalidWorkLocation": "Ungültiger Arbeitsort",
+      "clockInCollision": "Dieses Einstempeln steht im Konflikt mit einer früheren Anfrage. Bitte aktualisieren Sie und versuchen Sie es erneut.",
+      "clockInAppendReview": "Ihr Zeitverlauf muss geprüft werden, bevor Sie einstempeln können. Bitte wenden Sie sich an Ihre Administration.",
+      "clockInNotAllowed": "Sie können nicht einstempeln.",
+      "clockInRetry": "Einstempeln fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",

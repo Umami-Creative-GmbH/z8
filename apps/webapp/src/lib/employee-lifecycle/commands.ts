@@ -21,6 +21,7 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { departureCutoff } from "./cutoff";
+import { runDepartureTransaction } from "./departure-transaction";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
 import { assertReadCommitted, lockLifecycleScope } from "./locks";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
@@ -31,7 +32,7 @@ import type {
 	DepartureIdentity,
 	ExecuteDepartureResult,
 	LifecycleActor,
-	LifecycleTransaction,
+	LifecycleClient,
 	OffboardNow,
 	RehireEmployee,
 	ScheduleDeparture,
@@ -100,8 +101,8 @@ function executeDeparture(
 	deps: DepartureCommandDependencies,
 	identity: DepartureIdentity,
 ): Promise<ExecuteDepartureResult> {
-	return deps.db.transaction((tx) =>
-		executeDepartureInTransaction(tx, identity, deps.clock.nowInstant(), deps.clockOut),
+	return runDepartureTransaction(deps.db, identity, (scope) =>
+		executeDepartureInTransaction(scope, identity, deps.clock.nowInstant(), deps.clockOut),
 	);
 }
 
@@ -115,11 +116,9 @@ async function materializeDueDeparture(
 	organizationId: string,
 	employeeId: string,
 ): Promise<void> {
-	await deps.db.transaction(async (tx) => {
+	await runDepartureTransaction(deps.db, { organizationId, employeeId }, async (scope) => {
 		const now = deps.clock.nowInstant();
-		await assertReadCommitted(tx);
-		await lockLifecycleScope(tx, organizationId, employeeId);
-		const [due] = await tx
+		const [due] = await scope.db
 			.select({
 				id: employeeDeparture.id,
 				revision: employeeDeparture.revision,
@@ -136,7 +135,7 @@ async function materializeDueDeparture(
 			);
 		if (!due) return;
 		await executeDepartureInTransaction(
-			tx,
+			scope,
 			{
 				organizationId,
 				employeeId,
@@ -247,7 +246,7 @@ async function scheduleDeparture(
  * the prior blocked outcome remains in the append-only audit trail.
  */
 async function reviseDeparture(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	input: {
 		actor: LifecycleActor;
 		targetId: string;
@@ -372,8 +371,9 @@ async function cancelDeparture(
 
 /**
  * Captures the effective instant once, supersedes any pending schedule in the
- * same serialized transition and executes immediately. A retried request
- * returns the recorded result rather than re-reading the clock.
+ * same serialized transition and executes immediately, all in one departure
+ * work transaction. A retried request returns the recorded result rather than
+ * re-reading the clock.
  */
 async function offboardNow(
 	deps: DepartureCommandDependencies,
@@ -381,10 +381,12 @@ async function offboardNow(
 	input: OffboardNow,
 ): Promise<ExecuteDepartureResult> {
 	const fingerprint = requestFingerprint(actor, "offboard_now", input);
-	return deps.db.transaction(async (tx) => {
+	const departing = { organizationId: actor.organizationId, employeeId: input.employeeId };
+	return runDepartureTransaction(deps.db, departing, async (scope) => {
+		const tx = scope.db;
 		const now = deps.clock.nowInstant();
 		const nowDate = dateFromInstant(now);
-		const target = await beginCommand(tx, actor, input.employeeId);
+		const target = await readCommandTarget(tx, actor, input.employeeId);
 		const replay = await readReceipt<ExecuteDepartureResult>(
 			tx,
 			actor,
@@ -450,7 +452,7 @@ async function offboardNow(
 			departureId: created.id,
 			revision: 1,
 		};
-		const result = await executeDepartureInTransaction(tx, identity, now, deps.clockOut);
+		const result = await executeDepartureInTransaction(scope, identity, now, deps.clockOut);
 
 		await writeReceipt(tx, {
 			actor,
@@ -492,7 +494,7 @@ async function offboardNow(
  * replacement or explicit acknowledgment that admins will resolve them.
  */
 async function assertReplacementChoice(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	organizationId: string,
 	targetId: string,
 	input: {
@@ -710,7 +712,7 @@ async function rehireEmployee(
 
 /** Team, manager and work policy must all belong to the same organization. */
 async function assertRehireTermsBelongToOrganization(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	organizationId: string,
 	employeeId: string,
 	input: RehireEmployee,
@@ -743,7 +745,7 @@ async function assertRehireTermsBelongToOrganization(
 	}
 }
 
-async function organizationTimezone(tx: LifecycleTransaction, organizationId: string) {
+async function organizationTimezone(tx: LifecycleClient, organizationId: string) {
 	const [org] = await tx
 		.select({ timezone: organization.timezone })
 		.from(organization)
@@ -760,12 +762,21 @@ function localDateStart(value: string | null, timezone: string): Date | null {
 type CommandTarget = { id: string; userId: string };
 
 async function beginCommand(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	actor: LifecycleActor,
 	employeeId: string,
 ): Promise<CommandTarget> {
 	await assertReadCommitted(tx);
 	await lockLifecycleScope(tx, actor.organizationId, employeeId);
+	return readCommandTarget(tx, actor, employeeId);
+}
+
+/** The command's employee, read under the lifecycle locks. */
+async function readCommandTarget(
+	tx: LifecycleClient,
+	actor: LifecycleActor,
+	employeeId: string,
+): Promise<CommandTarget> {
 	const [target] = await tx
 		.select({ id: employee.id, userId: employee.userId })
 		.from(employee)
@@ -779,7 +790,7 @@ async function beginCommand(
  * an employee or departure ID never implies it.
  */
 async function assertActorMayDepart(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	actor: LifecycleActor,
 	target: CommandTarget,
 ) {
@@ -797,7 +808,7 @@ async function assertActorMayDepart(
 
 /** Cancelling needs owner/admin authority but not the final-owner invariant. */
 async function assertActorMayManage(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	actor: LifecycleActor,
 	target: CommandTarget,
 ) {
@@ -814,7 +825,7 @@ async function assertActorMayManage(
 }
 
 async function ensureOpenEmploymentPeriod(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	organizationId: string,
 	employeeId: string,
 ): Promise<string> {
@@ -824,7 +835,7 @@ async function ensureOpenEmploymentPeriod(
 }
 
 async function resolveCutoff(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	organizationId: string,
 	lastWorkingDay: string,
 	now: Instant,
@@ -851,7 +862,7 @@ async function resolveCutoff(
 }
 
 async function persistDispatchIntent(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	identity: {
 		organizationId: string;
 		employeeId: string;
@@ -902,7 +913,7 @@ function sortKeys(value: unknown): unknown {
  * request ID is rejected.
  */
 async function readReceipt<T>(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	actor: LifecycleActor,
 	requestId: string,
 	fingerprint: string,
@@ -926,7 +937,7 @@ async function readReceipt<T>(
 }
 
 async function writeReceipt(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	input: {
 		actor: LifecycleActor;
 		employeeId: string;

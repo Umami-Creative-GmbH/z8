@@ -1,8 +1,10 @@
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
-import type { ApprovalDbService } from "../workflow/ports";
-import { acquireApprovalWriteGate, approvalAuthoritySql } from "./gate";
+import { approvalWriteGateGuard } from "@/lib/time-tracking/work-transaction/ranks";
+import { fakeWorkTransaction } from "@/lib/time-tracking/work-transaction/testing";
+import type { ApprovalDbService, ApprovalWorkflowType } from "../workflow/ports";
+import { acquireApprovalWriteGate, approvalAuthoritySql, approvalRolloutLockScope } from "./gate";
 import { approvalWriteGateResult } from "./resolution";
 
 describe("approval write gate", () => {
@@ -118,6 +120,58 @@ describe("approval write gate", () => {
 		await expect(
 			acquireApprovalWriteGate(service, { organizationId: "org-1", workflowType: "absence" }),
 		).rejects.toThrow("Approval lifecycle mode is unavailable");
+	});
+});
+
+describe("approval write gate in a work transaction", () => {
+	const organizationId = "org-1";
+	const route = {
+		users: ["user-1"],
+		employees: ["emp-1"],
+		writeTargets: ["emp-1"],
+		approvalGate: "manual_time_submission",
+	};
+	const client = {
+		execute: async (query: SQL) =>
+			new PgDialect().sqlToQuery(query).sql.includes("select lifecycle_mode")
+				? { rows: [{ lifecycle_mode: "legacy" }] }
+				: { rows: [] },
+	};
+	const port = {
+		borrow: <T>(db: unknown, body: (approval: ApprovalDbService) => Promise<T>) =>
+			body({ db } as ApprovalDbService),
+		gate: async (approval: ApprovalDbService, organization: string, workflowType: string) => {
+			await acquireApprovalWriteGate(approval, {
+				organizationId: organization,
+				workflowType: workflowType as ApprovalWorkflowType,
+			});
+			return approval;
+		},
+	};
+
+	it("records the gate at rank 2, satisfying the coordinator's check", async () => {
+		const fake = fakeWorkTransaction({ client });
+		await expect(
+			fake.run({ organizationId, route: async () => route, approval: port }, async () => "ok"),
+		).resolves.toBe("ok");
+	});
+
+	it("refuses a gate acquired after a higher rank", async () => {
+		const fake = fakeWorkTransaction({ client });
+		await expect(
+			fake.run({ organizationId, route: async () => route, approval: port }, (scope) =>
+				acquireApprovalWriteGate({ db: scope.db } as ApprovalDbService, {
+					organizationId,
+					workflowType: "policy_clock_out",
+				}),
+			),
+		).rejects.toThrow(/rank 2 shared guard .* after rank 5/);
+	});
+
+	it("keeps the write gate guard key the coordinator checks", () => {
+		expect(approvalRolloutLockScope("ab", "absence")).toBe(
+			approvalWriteGateGuard("ab", "absence").key,
+		);
 	});
 });
 

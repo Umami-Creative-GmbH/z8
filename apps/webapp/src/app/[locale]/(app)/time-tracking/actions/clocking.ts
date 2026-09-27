@@ -22,10 +22,6 @@ import {
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
-	isBillingMutationAllowed,
-	requireBillingForMutation,
-} from "@/lib/billing/guard";
-import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
@@ -42,13 +38,11 @@ import {
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
 import {
 	ClockingConflictError,
-	clockingService,
 	TimeEntryAppendReviewRequiredError,
 } from "@/lib/time-tracking/clocking-service";
 import {
 	attributionIntent,
 	type ClockChannel,
-	clockSource,
 	CompletedWorkCollisionError,
 	liveClockOutWriter,
 } from "@/lib/time-tracking/close-active-work";
@@ -65,16 +59,9 @@ import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
-import {
-	validateTimeEntry,
-	validateTimeEntryRange,
-} from "@/lib/time-tracking/validation";
-import {
-	isWorkLocationType,
-	type WorkLocationType,
-} from "@/lib/time-tracking/work-location";
+import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
-import { withWebClockInTransaction } from "@/lib/time-tracking/web-clock-in-transaction";
 import {
 	type WorkTransactionContext,
 	withWebClockOutTransaction,
@@ -96,11 +83,14 @@ import {
 import {
 	type ClockActor,
 	type ClockInFailure,
+	type ClockInRefusal,
+	type ClockInResult,
 	type ClockOutFailure,
 	type ClockOutRefusal,
 	type ClockOutResult,
 	clocking,
 	clockOutFollowUps,
+	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
@@ -112,7 +102,7 @@ import { LiveWorkOccupiedError } from "@/lib/time-tracking/start-live-work";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import { canonicalWorkRecordClient } from "../actions.canonical";
-import { clockOutFailureMessage } from "./clock-failure-messages";
+import { clockInFailureMessage, clockOutFailureMessage } from "./clock-failure-messages";
 import {
 	sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification,
@@ -165,9 +155,6 @@ type WorkBalanceDirtyInput = Parameters<typeof markEmployeeWorkBalanceDirty>[0];
 
 const APPROVAL_POLICY_CHECK_ERROR =
 	"Could not verify time approval policy. Please try again.";
-// Ordinary users learn only that review is needed; operators get the scoped reasons.
-const APPEND_REVIEW_REQUIRED_ERROR =
-	"Your time history needs review before you can clock in. Please contact your administrator.";
 const CLOCK_OUT_COLLISION_ERROR =
 	"This clock-out conflicts with an earlier request or changed work. Please refresh and try again.";
 const CLOCK_OUT_APPEND_REVIEW_REQUIRED_ERROR =
@@ -448,29 +435,21 @@ async function findAndReplayManualSubmission(input: {
 }
 
 export type ClockActionContext = BrowserTimezoneContext & {
+	/**
+	 * Identity of this clock-in attempt. A retry with the same identity replays the
+	 * committed start; without one the server generates an identity that names the
+	 * operation but cannot recognize a retry.
+	 */
+	submissionId?: string;
+	/** Where the submission id came from; bots derive theirs from the platform invocation. */
+	identityOrigin?: OperationIdentity["origin"];
 	instant?: Instant;
 	deviceInfo?: ClockChannel;
 };
 
-/** The live clock-in result; clock-in is not yet on the Clocking module. */
-export type ClockCommandResult<T, Committed = unknown> =
-	| ({ success: true; data: T } & Committed)
-	| {
-			success: false;
-			error: string;
-			code?: string;
-			holidayName?: string;
-			failure: ClockInFailure;
-	  };
-
-/** The web action wire shape, without adapter-only outcome detail. */
-function toActionResult<T>(
-	result: ClockCommandResult<T>,
-): ServerActionResult<T> {
-	if (result.success) return { success: true, data: result.data };
-	const { failure: _failure, ...failed } = result;
-	return failed;
-}
+export type ClockInCommandResult =
+	| { success: true; data: ClockInResult }
+	| { success: false; failure: ClockInFailure; refusal: ClockInRefusal };
 
 /** The legacy break's own refresh mark; the break is not yet on the Clocking module. */
 async function markWorkBalanceDirtyAfterClockOutBestEffort(
@@ -522,27 +501,58 @@ export async function validateWorkCategoryAssignment(
 		: { isValid: false, error: "Cannot assign to this work category" };
 }
 
+/**
+ * Web clock-in. Every refusal is worded in the `timeTracking` namespace; the
+ * wire keeps the codes the client acts on (billing, append review, occupancy)
+ * and the holiday's name.
+ */
 export async function clockIn(
 	workLocationType?: WorkLocationType,
 	actionContext: ClockActionContext = {},
-): Promise<ServerActionResult<Awaited<ReturnType<typeof createTimeEntry>>>> {
+): Promise<ServerActionResult<ClockInResult>> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
-		return { success: false, error: "Not authenticated" };
+		return { success: false, error: await clockInFailureMessage("not_authenticated") };
 	}
 
 	const currentEmployee = await getCurrentEmployee();
 	if (!currentEmployee) {
-		return { success: false, error: "Employee profile not found" };
+		return { success: false, error: await clockInFailureMessage("employee_not_found") };
 	}
 
-	return toActionResult(
-		await clockInAs(
-			webClockActor(session.user.id, currentEmployee),
-			workLocationType,
-			actionContext,
-		),
+	const result = await clockInAs(
+		webClockActor(session.user.id, currentEmployee),
+		workLocationType,
+		actionContext,
 	);
+	if (result.success) return { success: true, data: result.data };
+	const { refusal } = result;
+	switch (refusal.code) {
+		case "billing_required":
+			return { success: false, error: "billing_required", code: refusal.reason };
+		case "holiday_blocked":
+			return {
+				success: false,
+				error: await clockInFailureMessage("holiday_blocked", {
+					holidayName: refusal.holidayName ?? "",
+				}),
+				holidayName: refusal.holidayName,
+			};
+		case "append_review_required":
+			return {
+				success: false,
+				error: await clockInFailureMessage(refusal.code),
+				code: APPEND_REVIEW_REQUIRED_CODE,
+			};
+		case "occupancy_conflict":
+			return {
+				success: false,
+				error: await clockInFailureMessage(refusal.code),
+				code: refusal.code,
+			};
+		default:
+			return { success: false, error: await clockInFailureMessage(refusal.code) };
+	}
 }
 
 function webClockActor(
@@ -552,134 +562,61 @@ function webClockActor(
 	return { userId, employee, resolveTimezone: () => getUserTimezone(userId) };
 }
 
+/** Operator detail for refusals; the employee sees only the worded code. */
+function logClockInRefusal(refusal: ClockInRefusal) {
+	switch (refusal.code) {
+		case "unconfirmed":
+			logger.error({ error: refusal.cause }, "Clock in error");
+			return;
+		case "failed":
+			// The replay transaction only reads, so this attempt wrote nothing.
+			logger.error({ error: refusal.cause }, "Clock in replay error");
+			return;
+		case "collision":
+			logger.warn({ error: refusal.cause }, "Clock in identity collision");
+			return;
+		case "append_review_required":
+			logger.warn(
+				{ appendReviewRequirement: refusal.requirement },
+				"Clock in held for append history review",
+			);
+			return;
+	}
+}
+
 /**
- * Shared live clock-in for an adapter-authenticated actor (web, mobile, bots).
- * Every channel starts work through the same coordinated transaction, so an
- * adopted organization's append lineage has one clock-in writer (#273, #277).
+ * The live clock-in adapter shared by the web, mobile and bots: it turns an
+ * authenticated actor's request into a Clocking command and the outcome into a
+ * result. The web sends a client operation identity and bots a derived one where
+ * their platform names the invocation; without one the identity is the server's.
  */
 export async function clockInAs(
 	actor: ClockActor,
-	workLocationType?: WorkLocationType,
+	workLocationType: WorkLocationType = "office",
 	actionContext: ClockActionContext = {},
-): Promise<
-	ClockCommandResult<Awaited<ReturnType<typeof createTimeEntry>>>
-> {
-	const currentEmployee = actor.employee;
-	const [timezone, activeWorkPeriod] = await Promise.all([
-		actor.resolveTimezone(),
-		getActiveWorkPeriod(currentEmployee.id),
-	]);
-	if (activeWorkPeriod) {
-		return {
-			success: false,
-			error: "You are already clocked in",
-			failure: "already_clocked_in",
-		};
+): Promise<ClockInCommandResult> {
+	const outcome = await clocking.run({
+		organizationId: actor.employee.organizationId,
+		principal: { kind: "user", userId: actor.userId },
+		subject: { employeeId: actor.employee.id },
+		identity: actionContext.submissionId
+			? { origin: actionContext.identityOrigin ?? "client", id: actionContext.submissionId }
+			: { origin: "server", id: crypto.randomUUID() },
+		channel: actionContext.deviceInfo ?? "web",
+		at: actionContext.instant
+			? { kind: "occurred", instant: actionContext.instant }
+			: { kind: "now" },
+		zone: {
+			device: actionContext.browserTimezone ?? null,
+			fallback: await actor.resolveTimezone(),
+		},
+		body: { kind: "clock_in", workLocationType },
+	});
+	if (outcome.outcome === "refused") {
+		logClockInRefusal(outcome.failure);
+		return { success: false, failure: outcome.failure.code, refusal: outcome.failure };
 	}
-
-	const actionInstant = actionContext.instant ?? systemClock.nowInstant();
-	const now = dateFromInstant(actionInstant);
-	const validation = await validateTimeEntry(
-		currentEmployee.organizationId,
-		now,
-		timezone,
-	);
-	if (!validation.isValid) {
-		return {
-			success: false,
-			error: validation.error || "Cannot clock in at this time",
-			holidayName: validation.holidayName,
-			failure: "holiday_blocked",
-		};
-	}
-
-	const resolvedWorkLocationType = workLocationType ?? "office";
-
-	if (!isWorkLocationType(resolvedWorkLocationType)) {
-		return {
-			success: false,
-			error: "Invalid work location type",
-			failure: "invalid_work_location",
-		};
-	}
-
-	const billingAccess = await requireBillingForMutation(
-		currentEmployee.organizationId,
-	);
-	if (!isBillingMutationAllowed(billingAccess)) {
-		return {
-			success: false,
-			error: "billing_required",
-			code: billingAccess.reason ?? "subscription_required",
-			failure: "billing_required",
-		};
-	}
-
-	try {
-		const timezoneCapture = resolveTimeEntryTimezoneCapture({
-			timestamp: now,
-			browserTimezone: actionContext.browserTimezone,
-			fallbackTimezone: timezone,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
-		const { entry } = await withWebClockInTransaction(
-			{
-				organizationId: currentEmployee.organizationId,
-				employeeId: currentEmployee.id,
-				userId: actor.userId,
-			},
-			(coordination) =>
-				clockingService.clockIn({
-					coordination,
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					createdBy: actor.userId,
-					action: { instant: actionInstant, ...timezoneCapture },
-					source: clockSource(actionContext.deviceInfo ?? "web"),
-					workLocationType: resolvedWorkLocationType,
-				}),
-		);
-
-		return {
-			success: true,
-			data: entry as Awaited<ReturnType<typeof createTimeEntry>>,
-		};
-	} catch (error) {
-		if (error instanceof ClockingConflictError) {
-			return {
-				success: false,
-				error: "You are already clocked in",
-				failure: "already_clocked_in",
-			};
-		}
-		if (error instanceof LiveWorkOccupiedError) {
-			return {
-				success: false,
-				error: "This time overlaps other recorded work",
-				code: "occupancy_conflict",
-				failure: "occupancy_conflict",
-			};
-		}
-		if (error instanceof TimeEntryAppendReviewRequiredError) {
-			logger.warn(
-				{ appendReviewRequirement: error.requirement },
-				"Clock in held for append history review",
-			);
-			return {
-				success: false,
-				error: APPEND_REVIEW_REQUIRED_ERROR,
-				code: APPEND_REVIEW_REQUIRED_CODE,
-				failure: "append_review_required",
-			};
-		}
-		logger.error({ error }, "Clock in error");
-		return {
-			success: false,
-			error: "Failed to clock in. Please try again.",
-			failure: "unconfirmed",
-		};
-	}
+	return { success: true, data: outcome.result };
 }
 
 /** Post-commit facts of one executed or legacy-replayed live closure. */

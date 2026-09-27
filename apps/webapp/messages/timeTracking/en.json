@@ -74,7 +74,15 @@
       "clockOutNotAllowed": "You cannot clock out this work.",
       "clockOutRetry": "Failed to clock out. Please try again.",
       "notAuthenticated": "Not authenticated",
-      "employeeProfileNotFound": "Employee profile not found"
+      "employeeProfileNotFound": "Employee profile not found",
+      "alreadyClockedIn": "You are already clocked in",
+      "holidayBlockedClockIn": "Cannot clock in on {holidayName}",
+      "clockInOccupied": "This time overlaps other recorded work",
+      "invalidWorkLocation": "Invalid work location type",
+      "clockInCollision": "This clock-in conflicts with an earlier request. Please refresh and try again.",
+      "clockInAppendReview": "Your time history needs review before you can clock in. Please contact your administrator.",
+      "clockInNotAllowed": "You cannot clock in.",
+      "clockInRetry": "Failed to clock in. Please try again."
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
