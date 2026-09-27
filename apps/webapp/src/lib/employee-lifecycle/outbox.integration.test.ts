@@ -3,18 +3,17 @@
  * Durable departure follow-up tasks: leases, ownership, retry and exhaustion.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureTaskOutbox } from "./outbox";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 } from "./testing/database.test.fixture";
 
 const NOW = parseInstant("2026-09-15T00:00:00Z");
 
-describeLifecycleDatabase("departure task outbox", () => {
+describe("departure task outbox", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

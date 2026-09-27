@@ -33,8 +33,9 @@ If a migration was committed with an older `when` and production may have alread
 Name every suite that needs a real database `*.integration.test.ts`. Vitest's `integration` project in `apps/webapp/vitest.config.ts` discovers them by that suffix, so no runner or CI list needs editing. `pnpm test` runs only the `unit` project.
 
 - `pnpm --filter webapp test:integration` starts a label-owned PostgreSQL 16 container and hands it to `scripts/run-postgres-integration-suites.sh`. CI's integration job calls the same script. Extra arguments reach Vitest, so a file path runs one suite.
-- The `integration` project sets `APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1`, so running it without the disposable database fails instead of skipping.
-- The database gates (`repository-integration-harness.ts`, `employee-lifecycle/testing/database.test.fixture.ts`) throw when a `unit` project file calls them. A misnamed suite therefore fails `pnpm test` instead of silently skipping.
+- `apps/webapp/src/test/integration-database.ts` is the only way a suite reaches the database. The project's setup file (`src/test/integration-setup.ts`) binds `@/db` to it, verifies the disposable database before each suite's first hook, and closes every pool after the last one. Without the database, a suite fails; it never skips.
+- In a suite, use `integrationAdminPool()` for raw seeding and assertions and `openIntegrationPool({ max })` when a test needs connections of its own. Do not build a `pg` pool, a gate or a `vi.mock("@/db")` binding by hand. To observe production queries, rebind with `integrationDbModule({ logQuery })`.
+- The module throws when a `unit` project file calls it. A misnamed suite therefore fails `pnpm test` instead of silently skipping.
 
 ## RBAC
 

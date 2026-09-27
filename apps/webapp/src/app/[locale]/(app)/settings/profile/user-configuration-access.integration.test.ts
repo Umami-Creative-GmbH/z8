@@ -18,13 +18,10 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool, type PoolClient } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import type { PoolClient } from "pg";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { integrationAdminPool } from "@/test/integration-database";
 
 // Concurrent actions each keep their own request session.
 const { sessions } = await vi.hoisted(async () => {
@@ -36,25 +33,6 @@ const { sessions } = await vi.hoisted(async () => {
 			role: "user" | "admin";
 		}>(),
 	};
-});
-
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 16,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
 });
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
@@ -168,27 +146,6 @@ const { getEmployeeWorkBalance, getEmployeeWorkBalances, listEmployeesForWorkBal
 const { processWorkBalanceRebuildIntents } = await import("@/lib/work-balance/rebuild-intents");
 const { runWorkBalanceRefresh } = await import("@/lib/jobs/work-balance");
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`user configuration access PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const ids = {
 	orgA: "t312-org-a",
 	orgB: "t312-org-b",
@@ -243,9 +200,9 @@ function manualCommand(
 const submissionIdentity = (organizationId: string, command: ManualTimeEntryCommand) =>
 	JSON.stringify([organizationId, "manual_time_submission", "time_entry", command.submissionId]);
 
-describeIntegration("user configuration and access mutations on PostgreSQL", () => {
+describe("user configuration and access mutations on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 12 });
+	const admin = integrationAdminPool();
 
 	function as<T>(
 		userId: string,
@@ -482,23 +439,6 @@ describeIntegration("user configuration and access mutations on PostgreSQL", () 
 		await seedBalance(ids.colleagueA, ids.orgA);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("User configuration access PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		await seed();
 	});
@@ -515,9 +455,6 @@ describeIntegration("user configuration and access mutations on PostgreSQL", () 
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	describe("timezone change and user-scoped rebuild intents", () => {

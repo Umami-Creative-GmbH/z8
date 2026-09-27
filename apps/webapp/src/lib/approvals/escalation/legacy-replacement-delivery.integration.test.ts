@@ -20,13 +20,9 @@
  * transport (fetch) are replaced.
  */
 
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -35,25 +31,6 @@ const harness = vi.hoisted(() => ({
 	publicObjects: new Map<string, Uint8Array>(),
 	versionCounter: 0,
 }));
-
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 10,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 
@@ -202,27 +179,6 @@ const { expandEscalationTransferEvents, processEscalationReplacementDeliveries }
 	"./replacement-delivery"
 );
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Legacy replacement delivery PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
-
 const TELEGRAM = { manager: 40_801, backup: 40_802, third: 40_803 } as const;
 const CHAT = { manager: 408_111, backup: 408_222, third: 408_333 } as const;
 // Pinned pass time. Submissions use the database's real time, so the pinned
@@ -280,9 +236,9 @@ function minutes(count: number) {
 	return T0.add({ minutes: count });
 }
 
-describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () => {
+describe("legacy escalation replacement delivery (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 3 });
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 40_800;
 	const originalFetch = globalThis.fetch;
@@ -820,23 +776,6 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 		return result;
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy replacement delivery PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		actAs(null);
 		harness.kicks.length = 0;
@@ -853,9 +792,6 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	for (const subject of ["absence", "travel_expense"] as const) {

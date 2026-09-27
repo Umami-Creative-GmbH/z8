@@ -3,11 +3,10 @@
  * Exercises the serialized departure transition against real locks and triggers.
  */
 import { sql } from "drizzle-orm";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -30,7 +29,7 @@ function recordingClockOut(result: DepartureClockOutResult = { kind: "not_runnin
 	return { port, calls };
 }
 
-describeLifecycleDatabase("departure transition", () => {
+describe("departure transition", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

@@ -8,10 +8,9 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Effect } from "effect";
-import { Pool, type PoolClient } from "pg";
+import type { Pool, PoolClient } from "pg";
 import {
 	afterAll,
-	beforeAll,
 	beforeEach,
 	describe,
 	expect,
@@ -22,25 +21,22 @@ import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
 import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
-import { loadOrdinaryWorkPeriodLegacyDecisionEvidence } from "../domain-adapters/work-period-legacy-state";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { openIntegrationPool } from "@/test/integration-database";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
+import { loadOrdinaryWorkPeriodLegacyDecisionEvidence } from "../domain-adapters/work-period-legacy-state";
 import {
 	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
 } from "../inbox/ordinary-canonical-read";
-import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
-import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "../workflow/repository-integration-harness";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { resolveApprovalReviewArrival } from "../presentation/review-arrival";
 import { parseApprovalReviewTarget } from "../presentation/review-navigation";
+import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
+import type { ApprovalWorkflowDatabase } from "../workflow/repository";
+import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
@@ -171,7 +167,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"async function withRollbackClient",
 		);
 		const helperEnd = integrationSource.indexOf(
-			"describeIntegration(",
+			"describe(",
 			helperStart,
 		);
 		expect(integrationSource.slice(helperStart, helperEnd)).toContain(
@@ -266,29 +262,6 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		}
 	});
 });
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`ordinary work-period PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const databaseSchema = { ...authSchema, ...schema };
 const now = parseInstant("2099-07-22T17:00:00Z");
@@ -472,10 +445,10 @@ async function withRollbackClient<T>(
 	return result.value;
 }
 
-describeIntegration(
+describe(
 	"ordinary work-period PostgreSQL concurrency and rollback",
 	() => {
-		const pool = new Pool({ connectionString: databaseUrl, max: 20 });
+		const pool = openIntegrationPool({ max: 20 });
 		const database = drizzle({ client: pool, schema: databaseSchema });
 		const manager: CurrentApprover = {
 			id: ids.manager,
@@ -1701,28 +1674,10 @@ describeIntegration(
 			throw new Error("Timed out observing Task 11 employee advisory lock");
 		}
 
-		beforeAll(async () => {
-			const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl,
-				required: integrationRequired,
-				sentinel: testSentinel,
-				currentDatabase: async () => {
-					const result = await pool.query<{ database_name: string }>(
-						"select current_database() as database_name",
-					);
-					return result.rows[0]?.database_name ?? "";
-				},
-			});
-			if (enabled.status !== "enabled") {
-				throw new Error("Ordinary work-period PostgreSQL is disabled");
-			}
-		});
-
 		beforeEach(() => seed());
 
 		afterAll(async () => {
 			await cleanup();
-			await pool.end();
 		});
 
 		it("decodes the ordinary source database boundary before strict validation", async () => {
