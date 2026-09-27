@@ -9,7 +9,6 @@
  * owner, not here.
  */
 
-import { randomUUID } from "node:crypto";
 import { resolveBotClockActor } from "@/lib/bot-platform/clock-actor";
 import {
 	billingRequiredReply,
@@ -20,6 +19,7 @@ import {
 	textReply,
 } from "@/lib/bot-platform/clock-replies";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
+import { botOperationIdentity } from "@/lib/bot-platform/operation-identity";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
@@ -52,8 +52,8 @@ const replies: ClockCommandReplies<ClockOutFailure> = {
 			),
 		access_denied: (t) => t("bot.cmd.clockout.noProfile", "Employee profile not found."),
 		billing_required: billingRequiredReply,
-		// Bots send server identities without a freshness window, so these cannot
-		// arise from a bot command; nothing was written.
+		// A redelivered invocation replays; these cannot arise from a bot command
+		// without a freshness window, and nothing was written.
 		collision: failed,
 		admission_window: failed,
 		invalid_command: failed,
@@ -82,17 +82,18 @@ export const clockOutCommand: BotCommand = {
 				return textReply(t("bot.cmd.clockout.noProfile", "Employee profile not found."));
 			}
 
+			const identity = botOperationIdentity(ctx, "clockout");
 			const result = await clockOutAs(
 				actor,
 				// Omitted attribution: bots never choose a project or category.
 				undefined,
 				undefined,
 				{
-					// Bot requests carry no client identity. This server identity names
-					// the operation (clock-out entry and receipt) but is never replayed:
-					// repeating the command is a fresh command with fresh checks.
-					submissionId: randomUUID(),
-					identityOrigin: "server",
+					// Derived from the platform invocation, a redelivery replays the
+					// committed clock-out. Without one it is a server identity, never
+					// replayed: repeating the command is a fresh command.
+					submissionId: identity.id,
+					identityOrigin: identity.origin,
 					deviceInfo: `${ctx.platform}-bot`,
 				},
 			);

@@ -167,6 +167,7 @@ const startWrites: Record<AdmissionMode, readonly (readonly [string, string])[]>
 		["time_entry", "insert"],
 		["time_entry_append_position", "insert"],
 		["work_period", "insert"],
+		["completed_work_operation", "insert"],
 	],
 	inactive: [
 		["time_entry", "insert"],
@@ -182,8 +183,18 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-/** Sends one command through the real adapter and returns the reply it delivered. */
-async function send(platform: Platform, command: "clockin" | "clockout", at: Instant) {
+let invocationSequence = 0;
+
+/**
+ * Sends one command through the real adapter and returns the reply it delivered.
+ * Each send is a new platform invocation unless it names one to redeliver.
+ */
+async function send(
+	platform: Platform,
+	command: "clockin" | "clockout",
+	at: Instant,
+	invocation: number = ++invocationSequence,
+) {
 	harness.now = at;
 	switch (platform) {
 		case "slack": {
@@ -211,7 +222,7 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 			const before = harness.telegram.length;
 			await handleTelegramUpdate(
 				{
-					update_id: 1,
+					update_id: invocation,
 					message: {
 						message_id: 1,
 						date: 0,
@@ -235,7 +246,7 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 			const before = harness.discord.length;
 			await handleDiscordInteraction(
 				{
-					id: "interaction-277",
+					id: `interaction-${invocation}`,
 					token: "interaction-token",
 					type: InteractionType.APPLICATION_COMMAND,
 					data: { name: command },
@@ -259,8 +270,9 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 			await handleBotActivity({
 				activity: {
 					type: "message",
+					id: `activity-${invocation}`,
 					text: command,
-					conversation: { tenantId: ids.teamsTenant },
+					conversation: { id: "a:t277-conversation", tenantId: ids.teamsTenant },
 					from: { aadObjectId: ids.platformUser, name: "Requester" },
 				},
 				sendActivity: async (message: unknown) => {
@@ -332,7 +344,7 @@ describe("bot clocking through the shared clock commands on PostgreSQL", () => {
 		const { rows } = await admin.query(
 			`select id, writer, writer_version, append_admission, actor_kind, actor_user_id, work_period_id,
 			        command, result -> 'segment' as segment
-			 from completed_work_operation where organization_id = $1`,
+			 from completed_work_operation where organization_id = $1 and kind = 'close_active_work'`,
 			[ids.organization],
 		);
 		return rows;
@@ -626,7 +638,7 @@ describe("bot clocking through the shared clock commands on PostgreSQL", () => {
 		);
 
 		it.each(platforms)(
-			"%s treats a repeated unkeyed clock-out as a fresh command",
+			"%s treats a new clock-out invocation as a fresh command",
 			async (platform) => {
 				await send(platform, "clockin", clockInAt);
 				await send(platform, "clockout", clockInAt.add({ hours: 1 }));
@@ -761,6 +773,42 @@ describe("bot clocking through the shared clock commands on PostgreSQL", () => {
 			expect(await snapshot()).toEqual(before);
 		},
 	);
+
+	it.each(["telegram", "discord", "teams"] as const)(
+		"%s replays a redelivered invocation instead of clocking again",
+		async (platform) => {
+			await setAdmission("inactive");
+			await expect(send(platform, "clockin", clockInAt, 9001)).resolves.toContain(
+				"Clocked in at 08:00.",
+			);
+			const started = await snapshot();
+			// The platform redelivers the same invocation later.
+			await expect(
+				send(platform, "clockin", clockInAt.add({ seconds: 30 }), 9001),
+			).resolves.toContain("Clocked in at 08:00.");
+			expect(await snapshot()).toEqual(started);
+
+			await expect(send(platform, "clockout", clockInAt.add({ hours: 1 }), 9002)).resolves.toContain(
+				"Clocked out at 09:00. Duration: 1h 0m.",
+			);
+			const closed = await snapshot();
+			await expect(
+				send(platform, "clockout", clockInAt.add({ hours: 1, seconds: 30 }), 9002),
+			).resolves.toContain("Clocked out at 09:00. Duration: 1h 0m.");
+			expect(await snapshot()).toEqual(closed);
+		},
+	);
+
+	it.each(platforms)("%s says since when work runs on a repeated clock-in", async (platform) => {
+		await send(platform, "clockin", clockInAt);
+		const before = await snapshot();
+
+		await expect(send(platform, "clockin", clockInAt.add({ minutes: 65 }))).resolves.toContain(
+			"You are already clocked in since 08:00 (1h 5m).",
+		);
+
+		expect(await snapshot()).toEqual(before);
+	});
 
 	it("keeps a committed clock-out when its Discord reply cannot be delivered", async () => {
 		await send("discord", "clockin", clockInAt);

@@ -114,22 +114,14 @@ describe("legacy time-tracking action billing guards", () => {
 		);
 	});
 
-	it("guards clock-in before creating time entries", () => {
-		expectBillingGuardBeforeWrite(
-			"clockInAs",
-			"clockingService.clockIn({",
-			clockingSource,
-		);
-	});
-
-	it("captures browser timezone context in live clock-in entries", () => {
+	it("leaves clock-in billing, holiday, capture and occupancy to the Clocking module", () => {
+		// Proven through `run` in lib/time-tracking/clocking/clock-in.integration.test.ts.
 		const body = functionBody("clockInAs", clockingSource);
 
-		expect(body).toContain("actionContext: ClockActionContext = {}");
-		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
-		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
-		expect(body).toContain('browserSource: "browser"');
-		expect(body).toContain('fallbackSource: "user_setting"');
+		expect(body).toContain("await clocking.run({");
+		expect(body).toContain("device: actionContext.browserTimezone ?? null");
+		expect(body).not.toContain("requireBillingForMutation");
+		expect(body).not.toContain("clockingService");
 	});
 
 	it("leaves clock-out billing, capture and follow-ups to the Clocking module", () => {

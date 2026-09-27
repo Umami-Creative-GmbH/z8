@@ -16,6 +16,7 @@ export type WebClockOutResult = ServerActionResult<
 type TimeClockRequest =
 	| {
 			action: "clock_in";
+			submissionId: string;
 			workLocationType?: WorkLocationType;
 			browserTimezone?: string | null;
 	  }
@@ -56,6 +57,7 @@ async function postTimeClock<T>(request: TimeClockRequest): Promise<ServerAction
 }
 
 export function postClockIn(input: {
+	submissionId: string;
 	workLocationType?: WorkLocationType;
 	browserTimezone?: string | null;
 }): Promise<WebClockInResult> {

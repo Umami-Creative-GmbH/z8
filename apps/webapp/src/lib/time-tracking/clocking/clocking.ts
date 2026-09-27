@@ -11,19 +11,33 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
-import { ClockingConflictError } from "../clocking-core";
+import {
+	ClockingAccessError,
+	ClockingConflictError,
+	ClockingOrganizationError,
+	LiveWorkOccupiedError,
+} from "../clocking-core";
 import {
 	attributionValue,
 	type CloseActiveWorkResult,
 	CompletedWorkAttributionError,
 	CompletedWorkCollisionError,
+	CompletedWorkIntegrityError,
 } from "../close-active-work";
 import { isProjectEligible } from "../project-eligibility";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
 import { resolveTimeEntryTimezoneCapture } from "../timezone-capture";
+import { validateTimeEntry } from "../validation";
 import { workCategoryIneligibility } from "../work-category-eligibility";
 import { WorkIntervalError } from "../work-duration";
-import type { WorkLocationType } from "../work-location";
+import { isWorkLocationType, type WorkLocationType } from "../work-location";
+import {
+	type ClockInPlan,
+	type ClockInStart,
+	planClockIn,
+	replayClockIn,
+	startClockIn,
+} from "./clock-in";
 import {
 	type ClockOutClosure,
 	type ClockOutPlan,
@@ -34,7 +48,18 @@ import {
 } from "./clock-out";
 import type { ClockFollowUps } from "./follow-ups";
 import type { ClockTransactions } from "./transactions";
-import type { ClockCommand, ClockOutcome, ClockOutRefusal, OperationIdentity } from "./types";
+import type {
+	ClockCommand,
+	ClockInCommand,
+	ClockInOutcome,
+	ClockInRefusal,
+	ClockOutCommand,
+	ClockOutcome,
+	ClockOutOutcome,
+	ClockOutRefusal,
+	ClockRefusal,
+	OperationIdentity,
+} from "./types";
 
 const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -55,18 +80,26 @@ export type ClockLookup =
 
 export type Clocking = {
 	/** Runs one clock command to an executed, replayed or refused outcome. */
+	run(command: ClockInCommand): Promise<ClockInOutcome>;
+	run(command: ClockOutCommand): Promise<ClockOutOutcome>;
 	run(command: ClockCommand): Promise<ClockOutcome>;
 	/** The committed receipt of an operation identity, without running anything. */
 	lookup(query: ClockLookupQuery): Promise<ClockLookup>;
 };
+
+type Employee = typeof employee.$inferSelect;
 
 /** Client and derived identities name one attempt across retries; server ones never replay. */
 function isReplayable(identity: OperationIdentity) {
 	return identity.origin !== "server";
 }
 
-function refused(failure: ClockOutRefusal): ClockOutcome {
-	return { outcome: "refused", failure };
+function refused<R extends ClockRefusal>(failure: R) {
+	return { outcome: "refused" as const, failure };
+}
+
+function isClockIn(command: ClockCommand): command is ClockInCommand {
+	return command.body.kind === "clock_in";
 }
 
 /**
@@ -75,27 +108,76 @@ function refused(failure: ClockOutRefusal): ClockOutcome {
  */
 const LATE_REFUSALS = new Set<ClockOutRefusal["code"]>(["not_clocked_in"]);
 
-/** Why the work transaction did not commit, for errors the writers raise. */
+/** Refusals of the shared work-transaction errors, for either kind. */
+function transactionRefusal(error: unknown) {
+	if (error instanceof CompletedWorkCollisionError) {
+		return { code: "collision" as const, cause: error };
+	}
+	if (error instanceof TimeEntryAppendReviewRequiredError) {
+		return { code: "append_review_required" as const, requirement: error.requirement };
+	}
+	return null;
+}
+
+/** Why the closure's work transaction did not commit, for errors the writers raise. */
 function closureRefusal(error: unknown): ClockOutRefusal {
+	const shared = transactionRefusal(error);
+	if (shared) return shared;
 	if (error instanceof ClockingConflictError) return { code: "not_clocked_in" };
 	if (error instanceof WorkIntervalError) return { code: "invalid_interval" };
-	if (error instanceof CompletedWorkCollisionError) return { code: "collision", cause: error };
 	if (error instanceof CompletedWorkAttributionError) {
 		return {
 			code: error.field === "projectId" ? "project_not_allowed" : "work_category_not_allowed",
 		};
 	}
-	if (error instanceof TimeEntryAppendReviewRequiredError) {
-		return { code: "append_review_required", requirement: error.requirement };
+	return { code: "unconfirmed", cause: error };
+}
+
+/** Why the start's work transaction did not commit, for errors the writers raise. */
+function startRefusal(error: unknown): ClockInRefusal {
+	const shared = transactionRefusal(error);
+	if (shared) return shared;
+	// A start receipt the module cannot interpret: never resend under this identity.
+	if (error instanceof CompletedWorkIntegrityError) return { code: "collision", cause: error };
+	// The employee lifecycle gate, under the employee lock.
+	if (error instanceof ClockingAccessError || error instanceof ClockingOrganizationError) {
+		return { code: "access_denied" };
+	}
+	if (error instanceof LiveWorkOccupiedError && error.occupant === "completed_work") {
+		return { code: "occupancy_conflict" };
 	}
 	return { code: "unconfirmed", cause: error };
 }
 
+/** The frozen command's age window, checked after committed replay. */
+function freshnessRefusal(command: ClockCommand, eventInstant: Instant) {
+	const { freshness } = command;
+	if (!freshness || command.at.kind !== "occurred") return null;
+	if (compareInstants(eventInstant, freshness.earliest) < 0) {
+		return { code: "admission_window" as const, reason: "too_old" as const };
+	}
+	if (compareInstants(eventInstant, freshness.latest) > 0) {
+		return { code: "admission_window" as const, reason: "in_future" as const };
+	}
+	return null;
+}
+
+function eventCapture(command: ClockCommand, eventInstant: Instant) {
+	return resolveTimeEntryTimezoneCapture({
+		timestamp: dateFromInstant(eventInstant),
+		browserTimezone: command.zone.device,
+		fallbackTimezone: command.zone.fallback,
+		browserSource: "browser",
+		fallbackSource: "user_setting",
+	});
+}
+
 /**
  * The Clocking module. Every clock command runs in one fixed order: authorize,
- * billing, committed replay, freshness, target and attribution eligibility, then
- * the work transaction (replay again, admission and writer, canonical record on
- * a legacy close), commit and follow-ups. Callers never see admission.
+ * billing, committed replay, freshness, the start's holiday or the closure's
+ * target and attribution eligibility, then the work transaction (replay again,
+ * admission and writer, the start's occupancy or the canonical record on a
+ * legacy close), commit and follow-ups. Callers never see admission.
  */
 export function createClocking(ports: ClockingPorts): Clocking {
 	const { clock, transactions, followUps } = ports;
@@ -115,7 +197,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return row && row.userId === command.principal.userId ? row : null;
 	}
 
-	function transactionScope(plan: ClockOutPlan) {
+	function transactionScope(plan: ClockInPlan | ClockOutPlan) {
 		return {
 			organizationId: plan.employee.organizationId,
 			employeeId: plan.employee.id,
@@ -124,8 +206,12 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		};
 	}
 
+	function eventInstantOf(command: ClockCommand) {
+		return command.at.kind === "occurred" ? command.at.instant : clock.nowInstant();
+	}
+
 	/** A read-only work transaction: nothing it throws wrote anything. */
-	async function committedReplay(plan: ClockOutPlan): Promise<ClockOutcome | null> {
+	async function committedReplay(plan: ClockOutPlan): Promise<ClockOutOutcome | null> {
 		try {
 			const replay = await transactions.run(transactionScope(plan), (coordination) =>
 				replayClockOut(coordination, plan),
@@ -137,6 +223,20 @@ export function createClocking(ports: ClockingPorts): Clocking {
 					? { code: "collision", cause: error }
 					: { code: "failed", cause: error },
 			);
+		}
+	}
+
+	/** A read-only work transaction: nothing it throws wrote anything. */
+	async function committedStartReplay(plan: ClockInPlan): Promise<ClockInOutcome | null> {
+		try {
+			const result = await transactions.start(transactionScope(plan), (scope) =>
+				replayClockIn(scope, plan),
+			);
+			return result ? { outcome: "replayed", result } : null;
+		} catch (error) {
+			// A collision reads the same as in the start's own replay; anything else failed.
+			const refusal = startRefusal(error);
+			return refused(refusal.code === "collision" ? refusal : { code: "failed", cause: error });
 		}
 	}
 
@@ -202,31 +302,20 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		return null;
 	}
 
-	/** Steps after committed replay; any refusal here may race a matching commit. */
-	async function execute(plan: ClockOutPlan, eventInstant: Instant): Promise<ClockOutcome> {
+	/** Closure steps after committed replay; any refusal here may race a matching commit. */
+	async function executeClockOut(
+		plan: ClockOutPlan,
+		eventInstant: Instant,
+	): Promise<ClockOutOutcome> {
 		const { command } = plan;
-		const { freshness } = command;
-		if (freshness && command.at.kind === "occurred") {
-			if (compareInstants(eventInstant, freshness.earliest) < 0) {
-				return refused({ code: "admission_window", reason: "too_old" });
-			}
-			if (compareInstants(eventInstant, freshness.latest) > 0) {
-				return refused({ code: "admission_window", reason: "in_future" });
-			}
-		}
+		const stale = freshnessRefusal(command, eventInstant);
+		if (stale) return refused(stale);
 		// A blocking holiday never refuses a clock-out: it would leave live work running.
 		const target = await activeTarget(plan);
 		if (!target) return refused({ code: "not_clocked_in" });
 		const attribution = await attributionRefusal(plan, eventInstant);
 		if (attribution) return refused(attribution);
 
-		const capture = resolveTimeEntryTimezoneCapture({
-			timestamp: dateFromInstant(eventInstant),
-			browserTimezone: command.zone.device,
-			fallbackTimezone: command.zone.fallback,
-			browserSource: "browser",
-			fallbackSource: "user_setting",
-		});
 		let closure: ClockOutClosure;
 		try {
 			closure = await transactions.run(
@@ -243,7 +332,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 						replayable: isReplayable(command.identity),
 						target,
 						eventInstant,
-						capture,
+						capture: eventCapture(command, eventInstant),
 					}),
 			);
 		} catch (error) {
@@ -267,35 +356,84 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		};
 	}
 
+	async function runClockOut(command: ClockOutCommand, subject: Employee) {
+		const plan = planClockOut(command, subject);
+		const replayable = isReplayable(command.identity);
+		if (replayable) {
+			const replay = await committedReplay(plan);
+			if (replay) return replay;
+		}
+		const outcome = await executeClockOut(plan, eventInstantOf(command));
+		if (replayable && outcome.outcome === "refused" && LATE_REFUSALS.has(outcome.failure.code)) {
+			// A matching command may have committed since the first replay read.
+			const replay = await committedReplay(plan);
+			if (replay?.outcome === "replayed") return replay;
+		}
+		return outcome;
+	}
+
+	/**
+	 * Start steps after committed replay. Active work and occupancy are read inside
+	 * the work transaction, after its own replay, so a matching commit replays there.
+	 */
+	async function runClockIn(command: ClockInCommand, subject: Employee): Promise<ClockInOutcome> {
+		const plan = planClockIn(command, subject);
+		const replayable = isReplayable(command.identity);
+		if (replayable) {
+			const replay = await committedStartReplay(plan);
+			if (replay) return replay;
+		}
+		const eventInstant = eventInstantOf(command);
+		const stale = freshnessRefusal(command, eventInstant);
+		if (stale) return refused(stale);
+		const validity = await validateTimeEntry(
+			subject.organizationId,
+			dateFromInstant(eventInstant),
+			command.zone.fallback,
+		);
+		if (!validity.isValid) {
+			return refused({ code: "holiday_blocked", holidayName: validity.holidayName });
+		}
+
+		let start: ClockInStart;
+		try {
+			start = await transactions.start(transactionScope(plan), (scope) =>
+				startClockIn(scope, {
+					plan,
+					replayable,
+					eventInstant,
+					capture: eventCapture(command, eventInstant),
+				}),
+			);
+		} catch (error) {
+			return refused(startRefusal(error));
+		}
+		if (start.disposition === "refused") return refused(start.refusal);
+		return { outcome: start.disposition, result: start.entry };
+	}
+
+	async function run(command: ClockCommand): Promise<ClockInOutcome | ClockOutOutcome> {
+		if (!CANONICAL_UUID.test(command.identity.id)) {
+			return refused({ code: "invalid_command" });
+		}
+		if (isClockIn(command) && !isWorkLocationType(command.body.workLocationType)) {
+			return refused({ code: "invalid_work_location" });
+		}
+		const subject = await subjectEmployee(command);
+		if (!subject) return refused({ code: "access_denied" });
+		const billing = await requireBillingForMutation(command.organizationId);
+		if (!isBillingMutationAllowed(billing)) {
+			return refused({
+				code: "billing_required",
+				reason: billing.reason ?? "subscription_required",
+			});
+		}
+		return isClockIn(command) ? runClockIn(command, subject) : runClockOut(command, subject);
+	}
+
 	return {
-		async run(command) {
-			if (!CANONICAL_UUID.test(command.identity.id)) {
-				return refused({ code: "invalid_command" });
-			}
-			const subject = await subjectEmployee(command);
-			if (!subject) return refused({ code: "access_denied" });
-			const billing = await requireBillingForMutation(command.organizationId);
-			if (!isBillingMutationAllowed(billing)) {
-				return refused({
-					code: "billing_required",
-					reason: billing.reason ?? "subscription_required",
-				});
-			}
-			const plan = planClockOut(command, subject);
-			const replayable = isReplayable(command.identity);
-			if (replayable) {
-				const replay = await committedReplay(plan);
-				if (replay) return replay;
-			}
-			const eventInstant = command.at.kind === "occurred" ? command.at.instant : clock.nowInstant();
-			const outcome = await execute(plan, eventInstant);
-			if (replayable && outcome.outcome === "refused" && LATE_REFUSALS.has(outcome.failure.code)) {
-				// A matching command may have committed since the first replay read.
-				const replay = await committedReplay(plan);
-				if (replay?.outcome === "replayed") return replay;
-			}
-			return outcome;
-		},
+		// Each kind's outcome follows its command; the overloads state it.
+		run: run as Clocking["run"],
 
 		async lookup(query) {
 			const subject = await subjectEmployee(query);

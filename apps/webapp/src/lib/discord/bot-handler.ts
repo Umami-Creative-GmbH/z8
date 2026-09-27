@@ -109,6 +109,8 @@ async function handleSlashCommand(
 		employeeId: userResult.user.employeeId,
 		userId: userResult.user.userId,
 		platformUserId: discordUserId,
+		// Redeliveries of one interaction share its ID.
+		invocationId: interaction.id,
 		config: {
 			organizationId: bot.organizationId,
 			enableApprovals: bot.enableApprovals,

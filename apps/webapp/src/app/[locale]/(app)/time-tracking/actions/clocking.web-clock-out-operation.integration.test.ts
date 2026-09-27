@@ -605,7 +605,8 @@ describe("web clock-out through the completed-work operation on PostgreSQL", () 
 		]);
 		const { rows } = await admin.query<{ receipts: number; clock_outs: number; records: number }>(
 			`select
-			   (select count(*)::int from completed_work_operation where organization_id = $1) as receipts,
+			   (select count(*)::int from completed_work_operation
+			    where organization_id = $1 and kind = 'close_active_work') as receipts,
 			   (select count(*)::int from time_entry where organization_id = $1 and type = 'clock_out') as clock_outs,
 			   (select count(*)::int from time_record where organization_id = $1) as records`,
 			[ids.organization],

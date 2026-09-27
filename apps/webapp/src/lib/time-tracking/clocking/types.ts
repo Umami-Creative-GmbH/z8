@@ -2,6 +2,7 @@ import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel } from "../close-active-work";
+import type { WorkLocationType } from "../work-location";
 
 /** An authenticated human clocking their own employee record. */
 export type ClockActor = {
@@ -48,7 +49,14 @@ export type ClockOutBody = {
 	workCategory: AttributionIntent;
 };
 
-export type ClockCommand = {
+export type ClockInBody = {
+	kind: "clock_in";
+	workLocationType: WorkLocationType;
+};
+
+export type ClockBody = ClockInBody | ClockOutBody;
+
+type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
 	principal: ClockPrincipal;
 	/** The employee whose live work changes. */
@@ -58,8 +66,12 @@ export type ClockCommand = {
 	at: ClockCommandAt;
 	zone: ClockCommandZone;
 	freshness?: ClockCommandFreshness;
-	body: ClockOutBody;
+	body: Body;
 };
+
+export type ClockInCommand = ClockCommandOf<ClockInBody>;
+export type ClockOutCommand = ClockCommandOf<ClockOutBody>;
+export type ClockCommand = ClockInCommand | ClockOutCommand;
 
 /** Refusals every clock command can meet. */
 type SharedClockFailure =
@@ -91,22 +103,27 @@ export type ClockInFailure =
 /** One failure taxonomy; each adapter words every code. */
 export type ClockCommandFailure = ClockOutFailure | ClockInFailure;
 
-export type ClockOutRefusal =
+/** Refusals every clock command can meet, with their detail. */
+type SharedClockRefusal =
 	| { code: "billing_required"; reason: string }
 	| { code: "admission_window"; reason: "too_old" | "in_future" }
 	| { code: "append_review_required"; requirement: unknown }
-	| { code: "collision" | "failed" | "unconfirmed"; cause?: unknown }
-	| {
-			code: Exclude<
-				ClockOutFailure,
-				| "billing_required"
-				| "admission_window"
-				| "append_review_required"
-				| "collision"
-				| "failed"
-				| "unconfirmed"
-			>;
-	  };
+	| { code: "collision" | "failed" | "unconfirmed"; cause?: unknown };
+
+type DetailedClockFailure = SharedClockRefusal["code"] | "already_clocked_in" | "holiday_blocked";
+
+export type ClockOutRefusal =
+	| SharedClockRefusal
+	| { code: Exclude<ClockOutFailure, DetailedClockFailure> };
+
+export type ClockInRefusal =
+	| SharedClockRefusal
+	/** Where the employee's live work started. */
+	| { code: "already_clocked_in"; since: Instant }
+	| { code: "holiday_blocked"; holidayName?: string }
+	| { code: Exclude<ClockInFailure, DetailedClockFailure> };
+
+export type ClockRefusal = ClockInRefusal | ClockOutRefusal;
 
 export interface BreakAdjustmentInfo {
 	breakMinutes: number;
@@ -122,7 +139,10 @@ export type ClockOutResult = typeof timeEntry.$inferSelect & {
 	pendingApproval?: boolean;
 };
 
-export type ClockOutcome =
+/** The committed clock-in entry. */
+export type ClockInResult = typeof timeEntry.$inferSelect;
+
+export type ClockOutOutcome =
 	| {
 			outcome: "executed" | "replayed";
 			result: ClockOutResult;
@@ -130,3 +150,9 @@ export type ClockOutcome =
 			durationMinutes: number | null;
 	  }
 	| { outcome: "refused"; failure: ClockOutRefusal };
+
+export type ClockInOutcome =
+	| { outcome: "executed" | "replayed"; result: ClockInResult }
+	| { outcome: "refused"; failure: ClockInRefusal };
+
+export type ClockOutcome = ClockInOutcome | ClockOutOutcome;

@@ -613,7 +613,8 @@ describe("time pilot readiness on PostgreSQL", () => {
 		});
 		expect(report.operations.receiptsSinceActivation).toMatchObject({
 			manual_entry: 2,
-			web_clock_out: 1,
+			// One adopted clock-in and one clock-out; the live web writer names both (#479).
+			web_clock_out: 2,
 			manager_on_behalf: 1,
 		});
 		expect(report.operations.findings).toEqual([

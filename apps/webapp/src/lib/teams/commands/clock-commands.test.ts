@@ -11,7 +11,6 @@ const state = vi.hoisted(() => ({
 	clockOutAs: vi.fn(),
 	authorized: vi.fn(),
 	employee: vi.fn(),
-	activePeriod: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/clocking", () => ({
@@ -25,7 +24,6 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			employee: { findFirst: state.employee },
-			workPeriod: { findFirst: state.activePeriod },
 		},
 	},
 }));
@@ -183,17 +181,21 @@ describe("bot clock-in command", () => {
 		expect(state.clockInAs).toHaveBeenCalledWith(
 			expect.objectContaining({ userId: "user-1", employee: employeeRow }),
 			"office",
-			{ deviceInfo: "discord-bot" },
+			{
+				// No invocation ID: a server identity, never replayed.
+				submissionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
+				identityOrigin: "server",
+				deviceInfo: "discord-bot",
+			},
 		);
 	});
 
-	it("reads the active start for an already-clocked-in reply", async () => {
+	it("says since when work runs from the refusal, without another read", async () => {
 		state.clockInAs.mockResolvedValue({
 			success: false,
-			error: "You are already clocked in",
 			failure: "already_clocked_in",
+			refusal: { code: "already_clocked_in", since: parseInstant("2026-07-22T08:00:00Z") },
 		});
-		state.activePeriod.mockResolvedValue({ startTime: new Date("2026-07-22T08:00:00Z") });
 
 		await expect(clockInCommand.handler(context())).resolves.toEqual({
 			type: "text",
@@ -204,9 +206,8 @@ describe("bot clock-in command", () => {
 	it("words a billing refusal from the shared core's guard", async () => {
 		state.clockInAs.mockResolvedValue({
 			success: false,
-			error: "billing_required",
-			code: "subscription_required",
 			failure: "billing_required",
+			refusal: { code: "billing_required", reason: "subscription_required" },
 		});
 
 		await expect(clockInCommand.handler(context())).resolves.toEqual({
@@ -218,13 +219,53 @@ describe("bot clock-in command", () => {
 	it("words an unconfirmed clock-in without inviting a blind retry", async () => {
 		state.clockInAs.mockResolvedValue({
 			success: false,
-			error: "Failed to clock in. Please try again.",
 			failure: "unconfirmed",
+			refusal: { code: "unconfirmed" },
 		});
 
 		await expect(clockInCommand.handler(context())).resolves.toEqual({
 			type: "text",
 			text: "Your clock-in could not be confirmed. Check your status before trying again.",
 		});
+	});
+});
+
+describe("bot clock operation identity", () => {
+	it("derives one identity per platform invocation, so a redelivery replays", async () => {
+		state.clockInAs.mockResolvedValue({ success: false, failure: "failed", refusal: { code: "failed" } });
+		const invocation = context({ platform: "discord", invocationId: "1300000000000000001" });
+
+		await clockInCommand.handler(invocation);
+		await clockInCommand.handler(invocation);
+		await clockInCommand.handler({ ...invocation, invocationId: "1300000000000000002" });
+		await clockOutCommand.handler(invocation);
+
+		const [first, redelivered, next] = state.clockInAs.mock.calls.map((call) => call[2]);
+		expect(first).toEqual({
+			submissionId: expect.stringMatching(
+				/^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+			),
+			identityOrigin: "derived",
+			deviceInfo: "discord-bot",
+		});
+		expect(redelivered).toEqual(first);
+		expect(next.submissionId).not.toBe(first.submissionId);
+		// The same invocation never names both a clock-in and a clock-out.
+		const clockOut = state.clockOutAs.mock.calls[0]?.[3];
+		expect(clockOut).toMatchObject({ identityOrigin: "derived" });
+		expect(clockOut.submissionId).not.toBe(first.submissionId);
+	});
+
+	it("scopes a derived identity to its platform and organization", async () => {
+		state.clockInAs.mockResolvedValue({ success: false, failure: "failed", refusal: { code: "failed" } });
+
+		await clockInCommand.handler(context({ platform: "telegram", invocationId: "1:42" }));
+		await clockInCommand.handler(context({ platform: "discord", invocationId: "1:42" }));
+		await clockInCommand.handler(
+			context({ platform: "telegram", invocationId: "1:42", organizationId: "org-2" }),
+		);
+
+		const ids = state.clockInAs.mock.calls.map((call) => call[2].submissionId);
+		expect(new Set(ids).size).toBe(ids.length);
 	});
 });

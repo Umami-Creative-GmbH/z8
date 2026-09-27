@@ -200,6 +200,11 @@ async function handleMessage(context: TurnContext): Promise<void> {
 		employeeId: userResult.status === "found" ? userResult.user.employeeId : "",
 		userId: userResult.status === "found" ? userResult.user.userId : "",
 		platformUserId: teamsUserId,
+		// The recorded activity ID within its conversation, as for bound approvals (#261).
+		invocationId:
+			activity.conversation?.id && activity.id
+				? `${activity.conversation.id}:${activity.id}`
+				: undefined,
 		config: {
 			organizationId: tenant.organizationId,
 			enableApprovals: tenant.enableApprovals,
