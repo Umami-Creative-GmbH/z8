@@ -90,7 +90,12 @@
       "breakNotAllowed": "Sie können dieser Arbeit keine Pause hinzufügen.",
       "breakAwaitingApproval": "Dieser Arbeitszeitraum wartet auf Genehmigung und kann nicht bearbeitet werden. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
       "breakPendingCorrection": "Für diesen Arbeitszeitraum ist bereits eine Zeitkorrektur zur Genehmigung offen. Fügen Sie die Pause hinzu, sobald dies geklärt ist.",
-      "breakRetry": "Pause konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut."
+      "breakRetry": "Pause konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
+      "clockTargetNotActive": "Dieser Arbeitszeitraum ist nicht mehr aktiv. Aktualisieren Sie Ihren Stempelstatus.",
+      "clockTargetUnknown": "Der zu schließende Arbeitszeitraum wurde nicht gefunden. Aktualisieren Sie Ihren Stempelstatus.",
+      "clockNotAllowedAtTime": "Stempeln ist zu diesem Zeitpunkt nicht erlaubt",
+      "clockAttributionNotAllowed": "Das gewählte Projekt oder die gewählte Kategorie ist nicht verfügbar",
+      "clockCommandRejected": "Der Server hat diese Stempelaktion nicht angenommen"
     },
     "manualEntry": {
       "addButton": "Manuellen Eintrag hinzufügen",

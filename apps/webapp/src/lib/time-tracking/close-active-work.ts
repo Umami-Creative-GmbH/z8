@@ -63,9 +63,13 @@ export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
 export const WEB_CLOCK_OUT_WRITER_VERSION = 1;
 export const BOT_CLOCK_OUT_WRITER_VERSION = 1;
+export const DIRECT_HTTP_WRITER_VERSION = 1;
 
-/** The adapter a live clock command arrived through; stored as device evidence. */
-export type ClockChannel = "web" | "mobile" | `${BotPlatform}-bot`;
+/**
+ * The adapter a live clock command arrived through; stored as device evidence.
+ * `api` is the direct-HTTP route for frozen clock commands.
+ */
+export type ClockChannel = "web" | "mobile" | "api" | `${BotPlatform}-bot`;
 
 /** Entry source evidence. Bots keep their established `ip_address = "bot"`. */
 export function clockSource(channel: ClockChannel) {
@@ -117,6 +121,13 @@ export type CloseActiveWorkWriter = {
 
 /** The receipt writer of a live clock channel: bots share one, the platform stays in the command. */
 export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter {
+	if (channel === "api") {
+		return {
+			writer: "direct_http",
+			writerVersion: DIRECT_HTTP_WRITER_VERSION,
+			...clockSource(channel),
+		};
+	}
 	return channel.endsWith("-bot")
 		? { writer: "bot_clock_out", writerVersion: BOT_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) }
 		: { writer: "web_clock_out", writerVersion: WEB_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) };

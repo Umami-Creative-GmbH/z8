@@ -25,6 +25,12 @@ import {
 } from "../start-live-work";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { SealedWorkTransactionScope } from "../work-transaction";
+import {
+	assertFrozenAccepted,
+	assertFrozenIdentityUnused,
+	isFrozen,
+	receiptCommandOf,
+} from "./frozen";
 import type { ClockInCommand, ClockInRefusal, ClockInResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -44,7 +50,8 @@ export type ClockInReceiptCommand = StartLiveWorkOperationCommand & {
 export type ClockInPlan = {
 	command: ClockInCommand;
 	employee: Employee;
-	receiptCommand: ClockInReceiptCommand;
+	/** The receipt's command: the frozen payload, or the established live command. */
+	receiptCommand: StartLiveWorkOperationCommand;
 	writer: StartLiveWorkWriter;
 };
 
@@ -55,17 +62,18 @@ export type ClockInStart =
 
 export function planClockIn(command: ClockInCommand, employee: Employee): ClockInPlan {
 	const { body, identity, at, zone, channel } = command;
+	const receiptCommand: ClockInReceiptCommand = {
+		version: CLOCK_IN_COMMAND_VERSION,
+		operationId: identity.id,
+		workLocationType: body.workLocationType,
+		requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
+		browserTimezone: zone.device,
+		deviceInfo: channel,
+	};
 	return {
 		command,
 		employee,
-		receiptCommand: {
-			version: CLOCK_IN_COMMAND_VERSION,
-			operationId: identity.id,
-			workLocationType: body.workLocationType,
-			requestedInstant: at.kind === "occurred" ? instantToCanonicalString(at.instant) : null,
-			browserTimezone: zone.device,
-			deviceInfo: channel,
-		},
+		receiptCommand: receiptCommandOf<StartLiveWorkOperationCommand>(command, receiptCommand),
 		// The live channel's writer names the channel, not the kind, as for web breaks.
 		writer: liveClockOutWriter(channel),
 	};
@@ -136,6 +144,10 @@ export async function replayClockIn(
 		writer: plan.writer.writer,
 	});
 	if (receipt) return receipt.entry as ClockInResult;
+	if (isFrozen(plan.command)) {
+		await assertFrozenIdentityUnused(scope.db, plan.command);
+		return null;
+	}
 	return replayLegacyClockIn(scope, plan);
 }
 
@@ -160,6 +172,7 @@ export async function startClockIn(
 		const replay = await replayClockIn(scope, plan);
 		if (replay) return { disposition: "replayed", entry: replay };
 	}
+	assertFrozenAccepted(command, scope.admission);
 	const [live] = await scope.db
 		.select({ startTime: workPeriod.startTime })
 		.from(workPeriod)

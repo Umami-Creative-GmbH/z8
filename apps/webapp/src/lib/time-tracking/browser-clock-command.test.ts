@@ -176,9 +176,18 @@ describe("prepareBrowserClockCommand", () => {
 });
 
 describe("toBrowserClockActionResult", () => {
+	/** A translator that records the keys it words and falls back to English. */
+	const translated: string[] = [];
+	const translate = (key: string, fallback: string, params: Record<string, string> = {}) => {
+		translated.push(key);
+		return fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params[name] ?? "");
+	};
+	const readResult = (record: Parameters<typeof toBrowserClockActionResult>[0]) =>
+		toBrowserClockActionResult(record, translate);
+
 	it("reports a committed clock-out with its entry and post-commit advice", () => {
 		expect(
-			toBrowserClockActionResult({
+			readResult({
 				state: "committed",
 				kind: "clock_out",
 				receipt: {
@@ -195,7 +204,7 @@ describe("toBrowserClockActionResult", () => {
 
 	it("reports a committed clock-in with the clock-in entry", () => {
 		expect(
-			toBrowserClockActionResult({
+			readResult({
 				state: "committed",
 				kind: "clock_in",
 				receipt: { kind: "start_live_work", result: { clockInEntryId: "entry-in" } },
@@ -205,7 +214,7 @@ describe("toBrowserClockActionResult", () => {
 
 	it("reports an attended rejection as a failure with its code and holiday", () => {
 		expect(
-			toBrowserClockActionResult({
+			readResult({
 				state: "rejected",
 				kind: "clock_in",
 				lastOutcome: { kind: "rejected", code: "not_allowed_at_time", holidayName: "Neujahr" },
@@ -214,22 +223,40 @@ describe("toBrowserClockActionResult", () => {
 			success: false,
 			code: "not_allowed_at_time",
 			holidayName: "Neujahr",
-			error: "Clocking is not allowed at this time",
+			error: "Cannot clock in on Neujahr",
 		});
 		expect(
-			toBrowserClockActionResult({
+			readResult({
 				state: "rejected",
-				kind: "clock_in",
+				kind: "clock_out",
 				lastOutcome: { kind: "rejected", code: "append_review_required" },
 			}),
-		).toMatchObject({ success: false, code: "append_review_required" });
+		).toMatchObject({
+			success: false,
+			code: "append_review_required",
+			error:
+				"Your time history needs review before you can clock out. Please contact your administrator.",
+		});
+	});
+
+	it("words every rejection in the timeTracking namespace, unknown codes included", () => {
+		translated.length = 0;
+		for (const code of ["target_not_active", "not_adopted", "not_allowed_at_time"]) {
+			readResult({ state: "rejected", kind: "clock_out", lastOutcome: { kind: "rejected", code } });
+		}
+
+		expect(translated).toEqual([
+			"timeTracking.errors.clockTargetNotActive",
+			"timeTracking.errors.clockCommandRejected",
+			"timeTracking.errors.clockNotAllowedAtTime",
+		]);
 	});
 
 	it.each(["pending", "exhausted", "review_required"] as const)(
 		"reports a saved but unconfirmed %s command as queued, never as a failed save",
 		(state) => {
 			expect(
-				toBrowserClockActionResult({
+				readResult({
 					state,
 					kind: "clock_in",
 					lastOutcome: { kind: "transient" },
@@ -243,7 +270,7 @@ describe("toBrowserClockActionResult", () => {
 	);
 
 	it("reports an unknown outcome after durable capture as queued", () => {
-		expect(toBrowserClockActionResult(null)).toEqual({
+		expect(readResult(null)).toEqual({
 			success: true,
 			queued: true,
 			delivery: "pending",

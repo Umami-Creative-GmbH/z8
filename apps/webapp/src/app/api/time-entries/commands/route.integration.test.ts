@@ -25,19 +25,37 @@ const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
 	server: "https://app.t275.test" as string | null,
 	notifications: [] as string[],
-	/** Runs once between a submission's replay check and its fresh preflight. */
+	/**
+	 * Runs once between a submission's replay check and its fresh preflight: the
+	 * holiday check of a start or break, or a clock-out's project eligibility.
+	 */
 	beforeFreshPreflight: null as (() => Promise<void>) | null,
 }));
+
+async function runFreshPreflightHook() {
+	const hook = harness.beforeFreshPreflight;
+	harness.beforeFreshPreflight = null;
+	await hook?.();
+}
 
 vi.mock("@/lib/time-tracking/validation", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/time-tracking/validation")>();
 	return {
 		...original,
 		validateTimeEntry: async (...args: Parameters<typeof original.validateTimeEntry>) => {
-			const hook = harness.beforeFreshPreflight;
-			harness.beforeFreshPreflight = null;
-			await hook?.();
+			await runFreshPreflightHook();
 			return original.validateTimeEntry(...args);
+		},
+	};
+});
+
+vi.mock("@/lib/time-tracking/project-eligibility", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/time-tracking/project-eligibility")>();
+	return {
+		...original,
+		isProjectEligible: async (...args: Parameters<typeof original.isProjectEligible>) => {
+			await runFreshPreflightHook();
+			return original.isProjectEligible(...args);
 		},
 	};
 });
@@ -863,7 +881,8 @@ describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		harness.now = now.add({ hours: 2 });
 		const close = clockOutCommand(
 			{ clockInOperationId: start.operationId },
-			{ occurredAt: harness.now.toString() },
+			// Its project's eligibility is the preflight read the hook precedes.
+			{ occurredAt: harness.now.toString(), project: { kind: "replace", id: ids.projectA } },
 		);
 		let first: Awaited<ReturnType<typeof submit>> | undefined;
 		// The identical request commits after this retry's replay check, so the

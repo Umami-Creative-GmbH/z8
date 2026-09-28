@@ -15,6 +15,10 @@ const CLOCK_OUT_RETRY: Message = [
 	"timeTracking.errors.clockOutRetry",
 	"Failed to clock out. Please try again.",
 ];
+const NOT_CLOCKED_IN: Message = [
+	"timeTracking.errors.notClockedIn",
+	"You are not currently clocked in",
+];
 const CLOCK_IN_RETRY: Message = [
 	"timeTracking.errors.clockInRetry",
 	"Failed to clock in. Please try again.",
@@ -34,7 +38,7 @@ const CLOCK_OUT_FAILURE_MESSAGES: Record<
 	Message
 > = {
 	...WEB_REFUSAL_MESSAGES,
-	not_clocked_in: ["timeTracking.errors.notClockedIn", "You are not currently clocked in"],
+	not_clocked_in: NOT_CLOCKED_IN,
 	project_not_allowed: ["timeTracking.errors.projectNotAllowed", "Cannot assign to this project"],
 	work_category_not_allowed: [
 		"timeTracking.errors.workCategoryNotAllowed",
@@ -53,6 +57,11 @@ const CLOCK_OUT_FAILURE_MESSAGES: Record<
 		"Your time history needs review before you can clock out. Please contact your administrator.",
 	],
 	access_denied: ["timeTracking.errors.clockOutNotAllowed", "You cannot clock out this work."],
+	// The web closes its active work with live commands: named targets and frozen
+	// payloads never reach these words.
+	target_unknown: NOT_CLOCKED_IN,
+	target_not_active: NOT_CLOCKED_IN,
+	frozen_not_accepted: CLOCK_OUT_RETRY,
 	admission_window: CLOCK_OUT_RETRY,
 	invalid_command: CLOCK_OUT_RETRY,
 	failed: CLOCK_OUT_RETRY,
@@ -84,6 +93,7 @@ const CLOCK_IN_FAILURE_MESSAGES: Record<
 		"Your time history needs review before you can clock in. Please contact your administrator.",
 	],
 	access_denied: ["timeTracking.errors.clockInNotAllowed", "You cannot clock in."],
+	frozen_not_accepted: CLOCK_IN_RETRY,
 	admission_window: CLOCK_IN_RETRY,
 	invalid_command: CLOCK_IN_RETRY,
 	failed: CLOCK_IN_RETRY,
@@ -122,6 +132,9 @@ const BREAK_FAILURE_MESSAGES: Record<
 	collision: CLOCK_OUT_FAILURE_MESSAGES.collision,
 	append_review_required: CLOCK_OUT_FAILURE_MESSAGES.append_review_required,
 	access_denied: ["timeTracking.errors.breakNotAllowed", "You cannot add a break to this work."],
+	target_unknown: NOT_CLOCKED_IN,
+	target_not_active: NOT_CLOCKED_IN,
+	frozen_not_accepted: BREAK_RETRY,
 	admission_window: BREAK_RETRY,
 	invalid_command: BREAK_RETRY,
 	failed: BREAK_RETRY,

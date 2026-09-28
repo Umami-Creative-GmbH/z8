@@ -172,16 +172,80 @@ export type BrowserClockActionResult =
 	| { success: true; queued: true; delivery: "pending" | "held" }
 	| { success: false; error: string; code: string; holidayName?: string };
 
-const REJECTION_MESSAGES: Record<string, string> = {
-	already_clocked_in: "You are already clocked in",
-	target_not_active: "This work period is no longer active. Refresh your clock status.",
-	target_unknown: "The work period to close was not found. Refresh your clock status.",
-	occupancy_conflict: "This time overlaps other recorded work",
-	not_allowed_at_time: "Clocking is not allowed at this time",
-	attribution_not_allowed: "The selected project or category is not available",
-	append_review_required: "Clock-in needs a review of your time history",
-	invalid_interval: "The clock-out is not after the clock-in",
+/** The page's `timeTracking` translator: a key, its English fallback and parameters. */
+export type ClockMessageTranslate = (
+	key: string,
+	fallback: string,
+	params?: Record<string, string>,
+) => string;
+
+type Message = readonly [key: string, fallback: string];
+type ClockKind = BrowserClockCommandOutcome["kind"];
+
+const REJECTED: Message = [
+	"timeTracking.errors.clockCommandRejected",
+	"The server did not accept this clock action",
+];
+
+/** How the page words the route's rejections a person can meet, per command kind. */
+const REJECTION_MESSAGES: Partial<Record<string, Message | Record<ClockKind, Message>>> = {
+	already_clocked_in: ["timeTracking.errors.alreadyClockedIn", "You are already clocked in"],
+	target_not_active: [
+		"timeTracking.errors.clockTargetNotActive",
+		"This work period is no longer active. Refresh your clock status.",
+	],
+	target_unknown: [
+		"timeTracking.errors.clockTargetUnknown",
+		"The work period to close was not found. Refresh your clock status.",
+	],
+	occupancy_conflict: [
+		"timeTracking.errors.clockInOccupied",
+		"This time overlaps other recorded work",
+	],
+	attribution_not_allowed: [
+		"timeTracking.errors.clockAttributionNotAllowed",
+		"The selected project or category is not available",
+	],
+	append_review_required: {
+		clock_in: [
+			"timeTracking.errors.clockInAppendReview",
+			"Your time history needs review before you can clock in. Please contact your administrator.",
+		],
+		clock_out: [
+			"timeTracking.errors.clockOutAppendReview",
+			"Your time history needs review before you can clock out. Please contact your administrator.",
+		],
+	},
+	invalid_interval: [
+		"timeTracking.errors.clockOutBeforeClockIn",
+		"Clock-out must be after clock-in",
+	],
 };
+
+const HOLIDAY_BLOCKED_CLOCK_IN: Message = [
+	"timeTracking.errors.holidayBlockedClockIn",
+	"Cannot clock in on {holidayName}",
+];
+const NOT_ALLOWED_AT_TIME: Message = [
+	"timeTracking.errors.clockNotAllowedAtTime",
+	"Clocking is not allowed at this time",
+];
+
+function rejectionMessage(
+	kind: ClockKind,
+	code: string,
+	holidayName: string | undefined,
+	translate: ClockMessageTranslate,
+): string {
+	if (code === "not_allowed_at_time") {
+		// Only a start meets a holiday: a clock-out is never refused for one.
+		return kind === "clock_in" && holidayName
+			? translate(...HOLIDAY_BLOCKED_CLOCK_IN, { holidayName })
+			: translate(...NOT_ALLOWED_AT_TIME);
+	}
+	const message = REJECTION_MESSAGES[code] ?? REJECTED;
+	return translate(...("clock_in" in message ? message[kind] : message));
+}
 
 /**
  * How one stored record reads to the person who pressed the button. A committed
@@ -190,6 +254,7 @@ const REJECTION_MESSAGES: Record<string, string> = {
  */
 export function toBrowserClockActionResult(
 	record: BrowserClockCommandOutcome | null,
+	translate: ClockMessageTranslate,
 ): BrowserClockActionResult {
 	if (record?.state === "committed" && record.receipt) {
 		const id =
@@ -209,7 +274,7 @@ export function toBrowserClockActionResult(
 			success: false,
 			code,
 			...(holidayName ? { holidayName } : {}),
-			error: REJECTION_MESSAGES[code] ?? "The server did not accept this clock action",
+			error: rejectionMessage(record.kind, code, holidayName, translate),
 		};
 	}
 	return {

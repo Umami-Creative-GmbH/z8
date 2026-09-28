@@ -12,7 +12,13 @@ import { createClocking } from "./clocking";
 import { afterCommitFollowUps, type ClockOutFollowUpEffects } from "./follow-ups";
 import { coordinatedTransactions } from "./transactions";
 
-export { type Clocking, type ClockLookup, createClocking } from "./clocking";
+export {
+	type Clocking,
+	type ClockLookup,
+	type ClockLookupQuery,
+	type ClockReceipt,
+	createClocking,
+} from "./clocking";
 export {
 	afterCommitFollowUps,
 	type ClockFollowUps,
