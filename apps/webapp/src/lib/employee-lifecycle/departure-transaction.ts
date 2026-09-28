@@ -30,6 +30,7 @@ export function departureWorkPlan(
 			users: await lifecycleUserIds(db, target.organizationId, target.employeeId),
 			employees: [target.employeeId],
 			writeTargets: [target.employeeId],
+			// Deactivating work policy assignments needs no configuration guard (time-tracking ADR 0003).
 			guards: { organization: "none", users: "exclusive" },
 		}),
 		lockRows: (db) => lockLifecycleOrganization(db, target.organizationId),
