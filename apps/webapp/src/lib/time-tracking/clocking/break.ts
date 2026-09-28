@@ -296,8 +296,9 @@ async function takeLegacyBreak(
 	if (!period) throw new ClockingConflictError("Active work period changed");
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
 
+	// The locked row, not the target resolved before the transaction, is the source.
 	const start = instantFromDate(period.startTime);
-	const workLocationType = (period.workLocationType as WorkLocationType | null) ?? null;
+	const { workLocationType } = period;
 	const breakStart = dateFromInstant(endpoints.close.instant);
 	const durationMinutes = deriveWorkDurationMinutes(start, endpoints.close.instant);
 	const surchargeSnapshot: PolicyClockOutSurchargeSnapshot =

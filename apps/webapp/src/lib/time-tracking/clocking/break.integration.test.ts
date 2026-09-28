@@ -122,6 +122,8 @@ describe("Clocking break through run on PostgreSQL", () => {
 			   (select json_agg(row_to_json(t) order by t.id) from work_period t where organization_id = $1) as periods,
 			   (select json_agg(row_to_json(t) order by t.id) from time_entry t where organization_id = $1) as entries,
 			   (select json_agg(row_to_json(t) order by t.id) from time_record t where organization_id = $1) as records,
+			   (select json_agg(row_to_json(t) order by t.record_id) from time_record_work t where organization_id = $1) as record_work,
+			   (select json_agg(row_to_json(t) order by t.id) from time_record_allocation t where organization_id = $1) as allocations,
 			   (select json_agg(row_to_json(t) order by t.employee_id) from time_entry_append_position t where organization_id = $1) as positions,
 			   (select json_agg(row_to_json(t) order by t.id) from completed_work_operation t where organization_id = $1) as receipts`,
 			[ids.organization],
