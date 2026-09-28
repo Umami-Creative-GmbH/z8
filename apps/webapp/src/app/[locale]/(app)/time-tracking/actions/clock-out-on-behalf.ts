@@ -84,6 +84,7 @@ const FAILURE_CODES: Record<
 	// An on-behalf command carries neither an age window nor a frozen payload.
 	admission_window: "invalid_command",
 	frozen_not_accepted: "invalid_command",
+	legacy_not_accepted: "invalid_command",
 	collision: "collision",
 	append_review_required: "append_review_required",
 	target_unknown: "target_unknown",

@@ -13,5 +13,7 @@ Every clock command (clock in, clock out, break, on-behalf clock-out, departure 
 
 ## Consequences
 
-- The one place admission shows through is a capability refusal: frozen clock commands are refused in legacy organizations (`frozen_not_accepted`, mapped to v2 `not_adopted`), because the legacy writer keeps no receipts to replay a delayed command.
+- Admission shows through in two capability refusals only:
+  - Frozen clock commands are refused in legacy organizations (`frozen_not_accepted`, mapped to v2 `not_adopted`), because the legacy writer keeps no receipts to replay a delayed command.
+  - Legacy clock commands from the legacy desktop route are refused in adopted organizations (`legacy_not_accepted`, mapped to the route's 409 `append_adopted`), because their old consumers never adopted replay-safe commands (#327). Their committed actions still replay. The route marks its commands as legacy; it still never reads admission (#483).
 - Retiring legacy later means deleting the module's internal legacy writer, not touching adapters.

@@ -53,6 +53,7 @@ const replies: ClockCommandReplies<ClockInFailure> = {
 		collision: failed,
 		admission_window: failed,
 		frozen_not_accepted: failed,
+		legacy_not_accepted: failed,
 		invalid_command: failed,
 		failed,
 	},

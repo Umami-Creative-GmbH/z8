@@ -17,7 +17,11 @@ describe("live clocking writers", () => {
 		const clockInBot = source("../teams/commands/clock-in.ts");
 		const clockOutBot = source("../teams/commands/clock-out.ts");
 
-		expect(api).toContain("clockingService");
+		// The legacy route is a legacy command adapter over the Clocking module (#483).
+		expect(api).toContain("clocking.run(");
+		expect(api).toContain("legacy: true");
+		expect(api).not.toContain("clockingService.clockIn");
+		expect(api).not.toContain("clockingService.clockOut");
 		// Bots reach the web's shared live clock core (#277), never the raw service.
 		expect(clockInBot).toContain("clockInAs(");
 		expect(clockOutBot).toContain("clockOutAs(");

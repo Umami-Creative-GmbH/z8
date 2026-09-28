@@ -429,4 +429,56 @@ describe("Clocking clock-in through run on PostgreSQL", () => {
 		});
 		expect(await snapshot()).toEqual(committed);
 	});
+
+	it("starts a legacy command only under legacy admission, and replays it once adopted", async () => {
+		await setAdmission("inactive");
+		const { clocking } = newClocking();
+		const command = clockIn({ channel: "api", legacy: true });
+		await expect(clocking.run(command)).resolves.toMatchObject({
+			outcome: "executed",
+			result: { id: command.identity.id, deviceInfo: "api" },
+		});
+		await setAdmission("active");
+		const committed = await snapshot();
+
+		await expect(clocking.run(command)).resolves.toMatchObject({
+			outcome: "replayed",
+			result: { id: command.identity.id },
+		});
+		// A fresh legacy start, even without other live work, is refused without writes.
+		await expect(
+			clocking.run(
+				clockIn({
+					principal: { kind: "user", userId: ids.otherUser },
+					subject: { employeeId: ids.other },
+					identity: { origin: "server", id: randomUUID() },
+					channel: "api",
+					legacy: true,
+				}),
+			),
+		).resolves.toEqual({ outcome: "refused", failure: { code: "legacy_not_accepted" } });
+		expect(await snapshot()).toEqual(committed);
+	});
+
+	it("replays an extension replay the pre-module legacy route committed", async () => {
+		await setAdmission("inactive");
+		const { clocking } = newClocking();
+		const command = clockIn({ channel: "api", legacy: true });
+		await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
+		// The pre-#483 route marked its extension replays with their own device evidence.
+		await admin.query("update time_entry set device_info = 'extension-replay' where id = $1", [
+			command.identity.id,
+		]);
+		const committed = await snapshot();
+
+		await expect(clocking.run(command)).resolves.toMatchObject({
+			outcome: "replayed",
+			result: { id: command.identity.id, deviceInfo: "extension-replay" },
+		});
+		// Only the legacy route's own commands match that evidence.
+		await expect(
+			clocking.run({ ...command, channel: "web", legacy: undefined }),
+		).resolves.toMatchObject({ outcome: "refused", failure: { code: "collision" } });
+		expect(await snapshot()).toEqual(committed);
+	});
 });

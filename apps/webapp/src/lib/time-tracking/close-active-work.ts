@@ -67,7 +67,7 @@ export const DIRECT_HTTP_WRITER_VERSION = 1;
 
 /**
  * The adapter a live clock command arrived through; stored as device evidence.
- * `api` is the direct-HTTP route for frozen clock commands.
+ * `api` is direct HTTP: frozen clock commands and the legacy route's commands.
  */
 export type ClockChannel = "web" | "mobile" | "api" | `${BotPlatform}-bot`;
 

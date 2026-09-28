@@ -42,6 +42,7 @@ import {
 	isFrozen,
 	receiptCommandOf,
 } from "./frozen";
+import { assertLegacyAccepted } from "./legacy-command";
 import type { BreakCommand, BreakResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -222,6 +223,7 @@ export async function takeBreak(
 		if (replay) return { disposition: "replayed", result: replay };
 	}
 	assertFrozenAccepted(input.plan.command, coordination.admission);
+	assertLegacyAccepted(input.plan.command, coordination.admission);
 	if (coordination.admission !== "append") {
 		return takeLegacyBreak(coordination, input);
 	}
