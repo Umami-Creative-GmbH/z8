@@ -461,9 +461,11 @@ describe(
 			},
 		};
 
-		function runtime() {
+		function runtime(
+			borrowed: ApprovalWorkflowDatabase = database as unknown as ApprovalWorkflowDatabase,
+		) {
 			return createProductionApprovalWorkflowRuntime({
-				db: database as unknown as ApprovalWorkflowDatabase,
+				db: borrowed,
 				adapters: {
 					absence: {
 						clock: systemClock,
@@ -849,7 +851,7 @@ describe(
 		) {
 			return executeOrdinaryWorkPeriodDecisionInTransaction({
 				dbService: dbService(database),
-				runtime: runtime(),
+				createRuntime: runtime,
 				organizationId: ids.organization,
 				approvalRequestId,
 				workPeriodId: ids.period,

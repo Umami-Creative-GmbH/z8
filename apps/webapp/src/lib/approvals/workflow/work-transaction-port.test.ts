@@ -7,7 +7,7 @@ import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/type
 import { ApprovalWriteGateScopeMismatch } from "./pinned-write-gate";
 import type { ApprovalDbService } from "./ports";
 import type { ApprovalWorkflowDatabase } from "./repository";
-import { approvalWorkTransactionPort } from "./work-transaction-port";
+import { approvalWorkTransactionPort, attemptApprovalRuntime } from "./work-transaction-port";
 
 const organizationId = "org-1";
 const route = {
@@ -59,6 +59,34 @@ function harness() {
 	const locks = () => statements.filter((statement) => statement.includes("lock_shared")).length;
 	return { client, port, borrowed, locks };
 }
+
+describe("attemptApprovalRuntime", () => {
+	it("hands out the runtime the port built for the running attempt", async () => {
+		const { client } = harness();
+		const runtime = attemptApprovalRuntime((database) => ({
+			repository: {
+				withTransaction: <T>(
+					operation: (context: ApprovalWorkflowTransactionContext) => Promise<T>,
+				) =>
+					database.transaction(async (transaction) =>
+						operation({ dbService: { db: transaction } } as never),
+					),
+			} as never,
+			engine: { database },
+		}));
+		expect(() => runtime.current()).toThrow("No approval runtime borrows a work transaction");
+
+		const engines = await fakeWorkTransaction({ client }).run(
+			{
+				organizationId,
+				route: async () => ({ ...route, approvalGate: undefined }),
+				approval: approvalWorkTransactionPort(runtime.factory),
+			},
+			async () => runtime.current().engine,
+		);
+		expect(engines.database).toBeDefined();
+	});
+});
 
 describe("approvalWorkTransactionPort", () => {
 	it("borrows the work transaction and pins the gate taken at rank 2", async () => {

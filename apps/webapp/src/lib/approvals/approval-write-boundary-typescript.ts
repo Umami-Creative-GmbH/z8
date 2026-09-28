@@ -283,6 +283,14 @@ const TRUSTED_TRANSACTION_TYPE_EXPORTS = new Map<
 		new Map([["DatabaseTransaction", "database_receiver"]]),
 	],
 	[
+		"lib/approvals/server/time-correction-work-transaction",
+		new Map([["TimeCorrectionWorkScope", "approval_db_service"]]),
+	],
+	[
+		"lib/approvals/server/work-period-decision-transaction",
+		new Map([["WorkPeriodDecisionScope", "approval_db_service"]]),
+	],
+	[
 		"lib/time-tracking/manual-work-transaction",
 		new Map([["ManualWorkTransactionContext", "approval_db_service"]]),
 	],

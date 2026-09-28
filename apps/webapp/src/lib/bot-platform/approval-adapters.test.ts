@@ -88,11 +88,46 @@ vi.mock("@/lib/approvals/workflow/runtime", () => ({
 vi.mock("@/lib/approvals/domain-adapters/work-period-legacy-state", () => ({
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: state.legacyEvidence,
 }));
-vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) =>
-	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks or the decision's observation:
+// decisions run the real plan on the work transaction fake (real ledger,
+// recorded guards) over the database of the suite's approval context, routed to
+// the fixture's target. work-period-decision-transaction.test.ts and the
+// PostgreSQL suites prove the observed routing.
+const decisionRouting = vi.hoisted(() => ({
+	kind: "manual_time_submission" as "manual_time_submission" | "policy_clock_out",
+	ownerEmployeeId: "requester",
+}));
+vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/approvals/server/work-period-decision-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withWorkPeriodDecisionTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withWorkPeriodDecisionTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(
+				{
+					...actual.workPeriodDecisionPlan(input, createRuntime),
+					route: async () => {
+						const target = { ...decisionRouting };
+						return {
+							users: [input.actorUserId],
+							employees: [target.ownerEmployeeId],
+							writeTargets: [target.ownerEmployeeId],
+							approvalGate: target.kind,
+							snapshot: { observation: "unobserved", target },
+						};
+					},
+				},
+				operation,
+			),
+	};
+});
 vi.mock(
 	"@/lib/approvals/domain-adapters/legacy-write-coordinator",
 	async (importOriginal) => {

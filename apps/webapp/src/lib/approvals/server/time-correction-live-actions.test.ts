@@ -10,11 +10,37 @@ const state = vi.hoisted(() => ({
 	processApprovalWithCurrentEmployee: vi.fn(),
 }));
 
-vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
-	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks: corrections run on the work
+// transaction fake (real ledger, recorded guards) over the database of the
+// suite's approval context. The PostgreSQL suites prove the protocol.
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withTimeCorrectionWorkTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withTimeCorrectionWorkTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(actual.timeCorrectionWorkPlan(input, createRuntime), operation),
+	};
+});
+vi.mock("@/lib/time-tracking/completed-work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/completed-work-transaction")>()),
+	routeCompletedWork: async (
+		_db: unknown,
+		input: { employeeId: string; actorUserId: string | null },
+	) => ({
+		users: input.actorUserId === null ? [] : [input.actorUserId],
+		employees: [input.employeeId],
+		writeTargets: [input.employeeId],
+	}),
+}));
 
 vi.mock("@/env", () => ({
 	env: {
@@ -257,12 +283,14 @@ describe("authenticated time correction live actions", () => {
 				: await rejectTimeCorrectionEffect("approval-stable-1", reason);
 
 		expect(result).toEqual({ success: true, data: undefined });
-		expect(harness.approvalRequestFindFirst).toHaveBeenCalledOnce();
-		const approvalQuery = compiledWhere(
-			harness.approvalRequestFindFirst.mock.calls[0] as unknown[],
-		);
-		expect(approvalQuery.params).toContain("approval-stable-1");
-		expect(approvalQuery.params).not.toContain("work-period-1");
+		// Routing reads the target, re-reads it under the guards, then the decision
+		// reads it; each read names the stable approval ID.
+		expect(harness.approvalRequestFindFirst).toHaveBeenCalledTimes(3);
+		for (const call of harness.approvalRequestFindFirst.mock.calls) {
+			const approvalQuery = compiledWhere(call as unknown[]);
+			expect(approvalQuery.params).toContain("approval-stable-1");
+			expect(approvalQuery.params).not.toContain("work-period-1");
+		}
 		expect(harness.transition).toHaveBeenCalledWith(
 			expect.anything(),
 			expect.objectContaining({

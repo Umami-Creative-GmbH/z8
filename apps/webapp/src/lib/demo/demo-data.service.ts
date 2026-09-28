@@ -58,7 +58,9 @@ import {
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import { deriveTimeCorrectionRowId } from "@/lib/approvals/workflow/identity";
+import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
+import { approvalWorkTransactionPort } from "@/lib/approvals/workflow/work-transaction-port";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import {
 	compareInstants,
@@ -82,14 +84,13 @@ import {
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import {
-	acquireDemoWorkScope,
 	assignDemoWorkCategory,
 	type DemoWorkSession,
 	deleteDemoEmployeeHistories,
 	recordDemoWorkDay,
 	withDemoWorkTransaction,
 } from "./demo-work";
-import type { Transaction } from "@/lib/time-tracking/work-transaction";
+import { runWorkTransaction, type Transaction } from "@/lib/time-tracking/work-transaction";
 import { type DemoEmployee, withDemoConfigurationMutation } from "./demo-configuration";
 
 const demoLogger = createLogger("demo-data");
@@ -753,8 +754,9 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 		db,
 		query: (_name, operation) => Effect.promise(operation),
 	};
-	const runtime = createProductionApprovalWorkflowRuntime({
-		db,
+	const createRuntime = (database: ApprovalWorkflowDatabase) =>
+		createProductionApprovalWorkflowRuntime({
+		db: database,
 		adapters: {
 			absence: {
 				clock: systemClock,
@@ -866,30 +868,27 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 			submissionId: string;
 		};
 		try {
-			submission = await runtime.repository.withTransaction(async (context) => {
-				const tx = context.dbService.db as unknown as typeof db;
-				// Shared work protocol (#285): adoption gate, the time-correction approval
-				// gate, configuration and admin access guards, then the requester's key.
-				const scope = await acquireDemoWorkScope(
-					tx,
-					{
-						organizationId: options.organizationId,
-						triggeringUserId: options.createdBy,
-						employeeIds: [requester.id],
-						// Routing depends on the requester's and approver's access.
-						accessUserIds: [requester.userId, employeesById.get(approverId)?.userId].filter(
+			// A work transaction (#285, #477): the adoption gate, the pinned
+			// time-correction approval gate, configuration, the admin's, requester's
+			// and approver's access, then the requester's and the approver's keys,
+			// since the approver is row-locked below. Only the requester is written.
+			const approverUserId = employeesById.get(approverId)?.userId;
+			submission = await runWorkTransaction(
+				{
+					organizationId: options.organizationId,
+					approval: approvalWorkTransactionPort(createRuntime),
+					route: async () => ({
+						users: [options.createdBy, requester.userId, approverUserId].filter(
 							(userId): userId is string => typeof userId === "string",
 						),
-					},
-					{
-						afterAdoptionGate: async () => {
-							await context.writeGate.acquire({
-								organizationId: options.organizationId,
-								workflowType: "time_correction",
-							});
-						},
-					},
-				);
+						employees: [requester.id, approverId],
+						writeTargets: [requester.id],
+						approvalGate: "time_correction",
+					}),
+				},
+				async (scope) => {
+				const context = scope.approval;
+				const tx = context.dbService.db as unknown as typeof db;
 				const lockedEmployees = await tx
 					.select()
 					.from(employee)
@@ -1308,7 +1307,8 @@ export async function generateDemoPendingTimeCorrectionApprovals(
 					}
 				}
 				return { result, submissionId };
-			});
+				},
+			);
 		} catch (error) {
 			if (error instanceof DemoCorrectionHeldForReviewError) {
 				// Scoped to this requester; operators get the reasons.

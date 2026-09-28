@@ -42,9 +42,10 @@ canonical resolutions of [#252](https://github.com/Umami-Creative-GmbH/z8/issues
 
 ## Coordination
 
-`acquireTimeCorrectionWorkScope` (`lib/approvals/server/time-correction-work-transaction.ts`)
-runs on the approval repository transaction before any row lock, in the #264
-order:
+`withTimeCorrectionWorkTransaction` (`lib/approvals/server/time-correction-work-transaction.ts`)
+runs each transition as a work transaction (#477): the coordinator opens the
+transaction and the approval runtime borrows it through the approval port
+(#491). Before any read of the transition it takes, in the #264 order:
 
 1. the shared adoption gate, with the append control read under it;
 2. the `time_correction` approval write gate (rank 2);
@@ -54,14 +55,15 @@ order:
    actor).
 
 Before, submission, decision and cancellation each locked employee and period
-rows first and only then took the approval gate. Now the gate result is fixed on
-the context, so the existing owners never acquire it late. The routed scope is
-re-read under the locks; a change throws `WorkTransactionScopeChanged` and
-`retryTimeCorrectionWorkTransaction` restarts the transaction (at most twice).
-A decision routes from plain reads of the request and period (the owner is the
-period's employee); the finalizer re-reads everything under the locks.
+rows first and only then took the approval gate. Now the gate result is pinned on
+the borrowed context, so the existing owners never acquire it late. The
+coordinator re-routes under the locks; a change restarts the attempt, within
+its budget of 3. A decision routes its owner from plain reads of the approval
+target (the legacy request's requester, or the canonical workflow's); when the
+decision's own reads find another owner, it restarts. The finalizer re-reads
+everything under the locks.
 
-`sealWorkTransactionScope` registers each sealed scope by its transaction client
+The coordinator registers each sealed scope by its transaction client
 (`workTransactionScopeFor`). The finalizer and the cancellation writer find the
 coordinated scope through the client the approval engine hands them. The engine's
 time-correction adapter additionally refuses an adopted organization when no
@@ -216,9 +218,10 @@ because React `cache` pins the first actor for the whole test process.
   passes the canonical lifecycle.
 - `time-correction.handler.test.ts`: pending rows named by the request classify it;
   superseded or foreign rows do not.
-- The legacy mock-database harnesses run the coordinator in legacy scope
-  (`src/test/time-correction-work-transaction.ts`) and the decision harness runs
-  with evidence capture inactive.
+- The mock-database harnesses run the real plan on the work transaction fake
+  (`lib/time-tracking/work-transaction/testing.ts`) over their approval
+  context's database, and the decision harness runs with evidence capture
+  inactive.
 
 ## Remaining activation blockers
 
