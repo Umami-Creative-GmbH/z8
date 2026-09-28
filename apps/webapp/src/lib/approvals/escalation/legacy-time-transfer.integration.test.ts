@@ -1079,23 +1079,59 @@ describe("escalated legacy time approvals (PostgreSQL)", () => {
 			await expectUntouched(request, workPeriodId, null);
 		});
 
-		it("holds a mirroring mode without a pending observation", async () => {
-			await seed();
-			const workPeriodId = await submit("time_correction");
-			const request = await pendingRequest(workPeriodId);
-			// Submitted before shadowing: nothing observed the request.
-			await setMode("shadow");
+		it.each(TIME_KINDS)(
+			"late-mirrors a %s submitted before shadowing, then mirrors its transfer (#475)",
+			async (kind) => {
+				await seed();
+				const workPeriodId = await submit(kind);
+				const request = await pendingRequest(workPeriodId);
+				// Submitted before shadowing: nothing observed the request yet.
+				await setMode("shadow");
 
-			expect(await escalateAt(request.created_at, 60)).toMatchObject({
-				transferred: 0,
-				held: { unsupported_route: 1 },
-			});
-			expect(only(await openAttention())).toMatchObject({
-				approval_type: "time_correction",
-				evidence: { route: "legacy_observation_missing" },
-			});
-			await expectUntouched(request, workPeriodId, null);
-		});
+				expect(await escalateAt(request.created_at, 60)).toMatchObject({ transferred: 1 });
+				expect(await openAttention()).toEqual([]);
+				const transfer = only(await journal());
+				expect(transfer.observed_workflow_id).toEqual(expect.any(String));
+				const { rows: events } = await admin.query<{
+					event_type: string;
+					idempotency_key: string;
+				}>(
+					`select event_type, idempotency_key from approval_workflow_event
+					 where workflow_id = $1 order by occurred_at, idempotency_key`,
+					[transfer.observed_workflow_id],
+				);
+				// The late mirror, as a fresh submission, precedes the transfer.
+				const lateMirrorKey = `late-mirror:${ids.organization}:${kind}:time_entry:${workPeriodId}:${request.id}`;
+				expect(events[0]?.idempotency_key).toBe(lateMirrorKey);
+				expect(events.at(-1)).toMatchObject({ event_type: "assignment.escalated" });
+				expect(transfer.observed_event_id).toEqual(expect.any(String));
+				const { rows: workflows } = await admin.query<{ status: string; version: number }>(
+					`select status::text as status, version from approval_workflow
+					 where organization_id = $1 and source_id = $2`,
+					[ids.organization, workPeriodId],
+				);
+				expect(workflows).toEqual([{ status: "pending", version: 2 }]);
+				const { rows: assignments } = await admin.query(
+					`select approver_employee_id, status from approval_stage_assignment
+					 where workflow_id = $1 order by assignment_sequence`,
+					[transfer.observed_workflow_id],
+				);
+				expect(assignments).toEqual([
+					{ approver_employee_id: ids.manager, status: "cancelled" },
+					{ approver_employee_id: ids.backup, status: "pending" },
+				]);
+
+				// The replacement's decision lands on the same observed workflow.
+				const decided = await decideAs(ids.backupUser, request.id, "approve");
+				expect(decided).toMatchObject({ status: 200, body: { success: true } });
+				const { rows: after } = await admin.query<{ id: string; status: string }>(
+					`select id, status::text as status from approval_workflow
+					 where organization_id = $1 and source_id = $2`,
+					[ids.organization, workPeriodId],
+				);
+				expect(after).toEqual([{ id: transfer.observed_workflow_id, status: "approved" }]);
+			},
+		);
 
 		it("holds a transfer the shadow observation contradicts", async () => {
 			await seed({ mode: "shadow" });

@@ -106,6 +106,7 @@ const ids = {
 	secondStage: "e3193000-0000-4000-8000-000000000003",
 } as const;
 type ObservingRolloutMode = "shadow" | "ready";
+type RolloutMode = "legacy" | ObservingRolloutMode;
 
 function only<T>(rows: readonly T[]): T {
 	const [row] = rows;
@@ -130,7 +131,7 @@ describe("legacy absence chain observation (PostgreSQL)", () => {
 		]);
 	}
 
-	async function seed(mode: ObservingRolloutMode) {
+	async function seed(mode: RolloutMode) {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
@@ -331,6 +332,91 @@ describe("legacy absence chain observation (PostgreSQL)", () => {
 				submitted_matches_chain: true,
 			});
 			expect(await absenceStatus(absenceId)).toBe("approved");
+		},
+	);
+
+	async function workflowCount(absenceId: string): Promise<number> {
+		const { rows } = await admin.query<{ count: number }>(
+			`select count(*)::int as count from approval_workflow
+			 where organization_id = $1 and source_id = $2`,
+			[ids.organization, absenceId],
+		);
+		return only(rows).count;
+	}
+
+	async function lateMirrorKeys(): Promise<string[]> {
+		const { rows } = await admin.query<{ idempotency_key: string }>(
+			`select idempotency_key from approval_workflow_event
+			 where organization_id = $1 and idempotency_key like 'late-mirror:%'
+			 order by idempotency_key`,
+			[ids.organization],
+		);
+		return rows.map((row) => row.idempotency_key);
+	}
+
+	it.each<ObservingRolloutMode>(["shadow", "ready"])(
+		"late-mirrors a legacy-mode submission decided after the move to %s (#475)",
+		async (mode) => {
+			await seed("legacy");
+
+			actAs(ids.requesterUser);
+			const submitted = await requestAbsenceEffect({
+				categoryId: ids.category,
+				startDate: "2026-08-10",
+				endDate: "2026-08-11",
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+				durationKind: "full_day",
+				notes: null,
+			});
+			if (!submitted.success) {
+				throw new Error(`Submission failed: ${submitted.error}`);
+			}
+			const absenceId = submitted.data.absenceId;
+			expect(await workflowCount(absenceId)).toBe(0);
+			await admin.query(
+				`update approval_workflow_rollout set lifecycle_mode = $2, updated_at = now()
+				 where organization_id = $1 and workflow_type = 'absence'`,
+				[ids.organization, mode],
+			);
+
+			const firstRequestId = await pendingRequestId(absenceId);
+			actAs(ids.managerUser);
+			expect(
+				await approveAbsenceEffect(absenceId, { approvalRequestId: firstRequestId }),
+			).toEqual({ success: true, data: undefined });
+			// Mirrored first as a fresh submission, then the stage decision on top.
+			expect(await observedWorkflow(absenceId)).toMatchObject({
+				status: "pending",
+				current_stage_order: 2,
+				submitted_matches_chain: true,
+			});
+			const lateMirrored = await lateMirrorKeys();
+			expect(lateMirrored[0]).toBe(
+				`late-mirror:${ids.organization}:absence:absence_entry:${absenceId}:${firstRequestId}`,
+			);
+
+			// A retry of the late-mirrored decision finds the decided request (without
+			// decision evidence there is no receipt to replay) and mirrors nothing again.
+			expect(
+				await approveAbsenceEffect(absenceId, { approvalRequestId: firstRequestId }),
+			).toMatchObject({ success: false, error: "Approval request is already approved" });
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+			expect(await workflowCount(absenceId)).toBe(1);
+
+			// The next stage decides onto the same observed workflow, without a request id.
+			actAs(ids.secondManagerUser);
+			expect(await approveAbsenceEffect(absenceId)).toEqual({
+				success: true,
+				data: undefined,
+			});
+			expect(await observedWorkflow(absenceId)).toMatchObject({
+				status: "approved",
+				current_stage_order: null,
+			});
+			expect(await absenceStatus(absenceId)).toBe("approved");
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+			expect(await workflowCount(absenceId)).toBe(1);
 		},
 	);
 });

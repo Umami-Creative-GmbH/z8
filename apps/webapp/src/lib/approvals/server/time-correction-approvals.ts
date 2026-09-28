@@ -79,7 +79,10 @@ import type {
 } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
-import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "../domain-adapters/legacy-write-coordinator";
 import {
 	type CurrentTimeCorrectionWorkflowContract,
 	normalizeTimeCorrectionOriginalWorkMetadata,
@@ -4048,25 +4051,29 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const capture =
 			input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: transactionContext.writeGate,
 			compatibilityWriter: transactionContext.compatibilityWriter,
+			observedWorkflows: createObservedWorkflowReader(transactionContext),
 		});
-		const result = await coordinator.execute({
-			organizationId: input.organizationId,
-			workflowType: "time_correction",
+		// A submission has no legacy request yet: nothing to observe.
+		const observation = await coordinator.observe({
+			gate: authority,
 			sourceIdentity: {
 				organizationId: input.organizationId,
 				workflowType: "time_correction",
 				sourceType: "time_entry",
 				sourceId: input.workPeriodId,
 			},
+			requesterEmployeeId: input.requesterEmployeeId,
+			legacyApprovalRequestId: null,
+		});
+		const result = await coordinator.execute({
+			observation,
 			actor: {
 				kind: "employee",
 				employeeId: input.requesterEmployeeId,
 				userId: null,
 			},
 			idempotencyKey: input.submissionKey,
-			expectedVersion: null,
 			captureState: async () => {
 				captureCount += 1;
 				return await capture({
@@ -5118,29 +5125,6 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const capturedAt = (
 					input.nowInstant ?? (() => systemClock.nowInstant())
 				)();
-				const observedWorkflow =
-					authority.shadowMirroring && period.approvalWorkflowId
-						? await context.repository.loadSnapshot({
-								organizationId: input.organizationId,
-								workflowId: period.approvalWorkflowId,
-							})
-						: null;
-				if (
-					authority.shadowMirroring &&
-					(!observedWorkflow ||
-						observedWorkflow.organizationId !== input.organizationId ||
-						observedWorkflow.workflowType !== "time_correction" ||
-						observedWorkflow.sourceType !== "time_entry" ||
-						observedWorkflow.sourceId !== period.id ||
-						observedWorkflow.requesterEmployeeId !== period.employeeId ||
-						observedWorkflow.status !== "pending")
-				) {
-					throw new ConflictError({
-						message:
-							"Approval workflow decision conflicts with the current state",
-						conflictType: "approval_transition",
-					});
-				}
 				// Fresh evidence checks (#301) before the legacy mutation: an
 				// evidenced lifecycle must still match its submitted revision.
 				const evidencePlan = await prepareLegacyTimeCorrectionDecisionEvidence(
@@ -5156,25 +5140,35 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const capture =
 					input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: context.writeGate,
 					compatibilityWriter: context.compatibilityWriter,
+					observedWorkflows: createObservedWorkflowReader(context),
 				});
-				const domainResult = await coordinator.execute({
-					organizationId: input.organizationId,
-					workflowType: "time_correction",
+				const observation = await coordinator.observe({
+					gate: authority,
 					sourceIdentity: {
 						organizationId: input.organizationId,
 						workflowType: "time_correction",
 						sourceType: "time_entry",
 						sourceId: period.id,
 					},
+					requesterEmployeeId: period.employeeId,
+					legacyApprovalRequestId: request.id,
+				});
+				// The request is pending, so the workflow observing it must be too.
+				if (observation.workflow && observation.workflow.status !== "pending") {
+					throw new ConflictError({
+						message: "Approval workflow decision conflicts with the current state",
+						conflictType: "approval_transition",
+					});
+				}
+				const domainResult = await coordinator.execute({
+					observation,
 					actor: {
 						kind: "employee",
 						employeeId: actor.id,
 						userId: actor.userId,
 					},
 					idempotencyKey: legacyIdempotencyKey,
-					expectedVersion: observedWorkflow?.version ?? null,
 					captureState: () =>
 						capture({
 							dbService,

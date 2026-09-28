@@ -476,4 +476,116 @@ describe("legacy time correction chain observation (PostgreSQL)", () => {
 			expect(await periodStart(workPeriodId)).toEqual(new Date("2026-07-22T08:00:00Z"));
 		},
 	);
+
+	async function moveToMode(mode: ObservingRolloutMode) {
+		await admin.query(
+			`update approval_workflow_rollout set lifecycle_mode = $2, updated_at = now()
+			 where organization_id = $1 and workflow_type = 'time_correction'`,
+			[ids.organization, mode],
+		);
+	}
+
+	async function lateMirrorKeys(): Promise<string[]> {
+		const { rows } = await admin.query<{ idempotency_key: string }>(
+			`select idempotency_key from approval_workflow_event
+			 where organization_id = $1 and idempotency_key like 'late-mirror:%'
+			 order by idempotency_key`,
+			[ids.organization],
+		);
+		return rows.map((row) => row.idempotency_key);
+	}
+
+	async function boundWorkflow(workPeriodId: string) {
+		const { rows } = await admin.query<{ bound: boolean; workflows: number }>(
+			`select period.approval_workflow_id = workflow.id as bound,
+			   (select count(*)::int from approval_workflow
+			    where organization_id = $1 and workflow_type = 'time_correction'
+			      and source_id = $2) as workflows
+			 from work_period period
+			 left join approval_workflow workflow
+			   on workflow.organization_id = period.organization_id
+			  and workflow.workflow_type = 'time_correction'
+			  and workflow.source_id = period.id
+			 where period.organization_id = $1 and period.id = $2`,
+			[ids.organization, workPeriodId],
+		);
+		return only(rows);
+	}
+
+	it.each<ObservingRolloutMode>(["shadow", "ready"])(
+		"late-mirrors a legacy-mode correction decided after the move to %s (#475)",
+		async (mode) => {
+			const workPeriodId = await submitChainCorrection("legacy");
+			await moveToMode(mode);
+			const firstRequest = await pendingRequest(workPeriodId);
+
+			await expect(approveAs(ids.managerUser, ids.manager, workPeriodId)).resolves.toBeDefined();
+			// Mirrored first as a fresh submission, then the stage decision on top.
+			expect(await observedWorkflow(workPeriodId)).toMatchObject({
+				status: "pending",
+				current_stage_order: 2,
+				submitted_matches_chain: true,
+			});
+			const lateMirrored = await lateMirrorKeys();
+			expect(lateMirrored[0]).toBe(
+				`late-mirror:${ids.organization}:time_correction:time_entry:${workPeriodId}:${firstRequest.id}`,
+			);
+			expect(await boundWorkflow(workPeriodId)).toEqual({ bound: true, workflows: 1 });
+
+			// A retry of the late-mirrored decision finds the decided request and
+			// mirrors nothing again.
+			actAs(ids.managerUser);
+			await expect(
+				approveApprovalInboxItem({
+					approvalId: firstRequest.id,
+					actorEmployeeId: ids.manager,
+					organizationId: ids.organization,
+				}),
+			).rejects.toThrow("Request is already approved");
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+			expect(await boundWorkflow(workPeriodId)).toEqual({ bound: true, workflows: 1 });
+
+			await expect(
+				approveAs(ids.secondManagerUser, ids.secondManager, workPeriodId),
+			).resolves.toBeDefined();
+			expect(await observedWorkflow(workPeriodId)).toMatchObject({
+				status: "approved",
+				current_stage_order: null,
+			});
+			expect(await periodStart(workPeriodId)).toEqual(new Date("2026-07-22T08:30:00Z"));
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+			expectApprovalNotifiedOnce(workPeriodId);
+		},
+	);
+
+	it.each<ObservingRolloutMode>(["shadow", "ready"])(
+		"late-mirrors the cancellation of a legacy-mode correction after the move to %s (#475)",
+		async (mode) => {
+			const workPeriodId = await submitChainCorrection("legacy", { singleStage: true });
+			await moveToMode(mode);
+			const request = await pendingRequest(workPeriodId);
+
+			actAs(ids.requesterUser);
+			await expect(cancelMyTimeCorrectionRequest(workPeriodId)).resolves.toEqual({
+				success: true,
+			});
+			const lateMirrored = await lateMirrorKeys();
+			expect(lateMirrored[0]).toBe(
+				`late-mirror:${ids.organization}:time_correction:time_entry:${workPeriodId}:${request.id}`,
+			);
+			const { rows } = await admin.query<{ status: string }>(
+				`select status::text as status from approval_workflow
+				 where organization_id = $1 and workflow_type = 'time_correction' and source_id = $2`,
+				[ids.organization, workPeriodId],
+			);
+			expect(rows).toEqual([{ status: "cancelled" }]);
+			expect(await periodStart(workPeriodId)).toEqual(new Date("2026-07-22T08:00:00Z"));
+
+			// The retry replays the cancellation of the late-mirrored cycle.
+			await expect(cancelMyTimeCorrectionRequest(workPeriodId)).resolves.toEqual({
+				success: true,
+			});
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+		},
+	);
 });

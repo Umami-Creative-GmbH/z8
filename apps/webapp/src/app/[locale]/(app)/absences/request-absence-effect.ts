@@ -29,7 +29,10 @@ import {
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
-import { createLegacyApprovalWriteCoordinator } from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { AbsenceRawCoverageInput } from "@/lib/approvals/evidence/absence-facts";
 import { captureCanonicalAbsenceSubmissionEvidence } from "@/lib/approvals/evidence/absence-submission";
@@ -555,8 +558,15 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							params.approvalWorkflow.create ?? createApprovalWorkflow;
 						const capturedAt = approvalLifecycle.nowInstant();
 						const coordinator = createLegacyApprovalWriteCoordinator({
-							writeGate: pinnedGate,
 							compatibilityWriter: approvalContext.compatibilityWriter,
+							observedWorkflows: createObservedWorkflowReader(approvalContext),
+						});
+						// A submission has no legacy request yet: nothing to observe.
+						const observation = await coordinator.observe({
+							gate,
+							sourceIdentity,
+							requesterEmployeeId: currentEmployee.id,
+							legacyApprovalRequestId: null,
 						});
 						const captureState = () =>
 							approvalLifecycle.captureLegacyState({
@@ -568,12 +578,9 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						let mirrored: LegacyObservedMirror | null = null;
 
 						approvalWorkflowResult = await coordinator.execute({
-							organizationId: currentEmployee.organizationId,
-							workflowType: "absence",
-							sourceIdentity,
+							observation,
 							actor,
 							idempotencyKey: submissionKey,
-							expectedVersion: null,
 							captureState,
 							mutate:
 								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {

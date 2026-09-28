@@ -490,6 +490,7 @@ describe("stable ordinary work-period decisions", () => {
 			],
 		};
 		const transactionDb = {
+			execute: vi.fn(async () => ({ rows: [{ id: "workflow-1" }] })),
 			query: {
 				employee: {
 					findMany: vi.fn().mockResolvedValue([currentApprover]),
@@ -783,7 +784,7 @@ describe("stable ordinary work-period decisions", () => {
 					mirrorLegacyToCanonical,
 				},
 				repository: {
-					loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+					loadSnapshot: vi.fn().mockResolvedValue(observedWorkflowSnapshot()),
 				},
 			};
 			const execution = executeOrdinaryWorkPeriodDecisionInTransaction({
@@ -1165,7 +1166,7 @@ describe("stable ordinary work-period decisions", () => {
 			},
 			compatibilityWriter,
 			repository: {
-				loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+				loadSnapshot: vi.fn().mockResolvedValue(observedWorkflowSnapshot()),
 			},
 		};
 		const runtime = {
@@ -1202,7 +1203,7 @@ describe("stable ordinary work-period decisions", () => {
 		["ready", "approve"],
 		["ready", "reject"],
 	] as const)(
-		"bootstraps a pre-canonical manual submission in %s mode for %s",
+		"late-mirrors a manual submission from before shadow mirroring in %s mode for %s",
 		async (mode, action) => {
 			const pendingAt = parseInstant("2026-07-15T09:59:00Z");
 			const terminalAt = parseInstant("2026-07-15T10:00:00Z");
@@ -1304,6 +1305,10 @@ describe("stable ordinary work-period decisions", () => {
 						organizationId: "org-1",
 						sourceId: "period-1",
 						requesterEmployeeId: "employee-1",
+						stages: planned.snapshot.stages.map((stage) => ({
+							...stage,
+							legacyApprovalRequestId: "approval-1",
+						})),
 					},
 				};
 			});
@@ -1348,10 +1353,14 @@ describe("stable ordinary work-period decisions", () => {
 			expect(context.repository.loadSnapshot).not.toHaveBeenCalled();
 			expect(mirrorLegacyToCanonical).toHaveBeenCalledTimes(2);
 			expect(
-				mirrorLegacyToCanonical.mock.calls.map(
-					([call]) => call.expectedVersion,
-				),
-			).toEqual([null, 1]);
+				mirrorLegacyToCanonical.mock.calls.map(([call]) => [
+					call.idempotencyKey,
+					call.expectedVersion,
+				]),
+			).toEqual([
+				["late-mirror:org-1:manual_time_submission:time_entry:period-1:approval-1", null],
+				[expect.stringMatching(/^ordinary-decision:org-1:period-1:approval-1:/), 1],
+			]);
 			expect(dbService.updateSets).toContainEqual(
 				expect.objectContaining({ approvalWorkflowId: expect.any(String) }),
 			);
@@ -1406,7 +1415,7 @@ describe("stable ordinary work-period decisions", () => {
 			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 			compatibilityWriter,
 			repository: {
-				loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+				loadSnapshot: vi.fn().mockResolvedValue(observedWorkflowSnapshot()),
 			},
 		};
 
@@ -1750,6 +1759,29 @@ const period = {
 	deletedAt: null,
 };
 
+/** The workflow the legacy write coordinator observes for approval-1 (#475). */
+function observedWorkflowSnapshot(overrides: Record<string, unknown> = {}) {
+	return {
+		id: "workflow-1",
+		organizationId: "org-1",
+		workflowType: "manual_time_submission",
+		sourceType: "time_entry",
+		sourceId: "period-1",
+		requesterEmployeeId: "employee-1",
+		status: "pending",
+		version: 2,
+		stages: [
+			{
+				id: "stage-1",
+				legacyApprovalRequestId: "approval-1",
+				status: "pending",
+				assignments: [],
+			},
+		],
+		...overrides,
+	};
+}
+
 const canonicalRecord = {
 	id: "record-1",
 	organizationId: "org-1",
@@ -2021,7 +2053,10 @@ function createDecisionDbService(options?: {
 		};
 	};
 	const db = {
-		execute: vi.fn(),
+		// The coordinator's observed-workflow lookup: an unlinked period has none.
+		execute: vi.fn(async () => ({
+			rows: options?.autoCompleted || options?.unlinked ? [] : [{ id: "workflow-1" }],
+		})),
 		query: {
 			approvalRequest: {
 				findFirst: vi

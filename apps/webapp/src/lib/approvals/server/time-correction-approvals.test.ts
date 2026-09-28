@@ -149,6 +149,7 @@ import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
@@ -854,6 +855,8 @@ describe("time correction transaction boundaries", () => {
 		const submissionLockTables: unknown[] = [];
 		const db = {
 			execute: vi.fn(async (query: SQL) => {
+				const observed = answerObservedWorkflowLookup(query, snapshots.values());
+				if (observed) return observed;
 				const rendered = new PgDialect().sqlToQuery(query).sql;
 				if (rendered.includes("from employee")) {
 					return {
@@ -1708,7 +1711,10 @@ describe("time correction transaction boundaries", () => {
 			},
 		});
 		const db = {
-			execute: vi.fn(async () => captureEnvelope()),
+			execute: vi.fn(
+				async (query: SQL) =>
+					answerObservedWorkflowLookup(query, workflows.values()) ?? captureEnvelope(),
+			),
 			query: {
 				approvalRequest: {
 					findMany: vi.fn(async () => requests),

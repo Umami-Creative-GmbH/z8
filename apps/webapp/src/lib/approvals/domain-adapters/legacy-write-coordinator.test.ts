@@ -6,7 +6,7 @@ import type {
 	ApprovalEventActorIdentity,
 	ApprovalSourceIdentity,
 	ApprovalWorkflowLifecycleMode,
-	ApprovalWriteGate,
+	ApprovalWorkflowSnapshot,
 	ObservedLegacyTransitionResult,
 	VerifiedLegacyApprovalState,
 } from "../workflow/ports";
@@ -14,6 +14,7 @@ import { APPROVAL_WORKFLOW_TYPES } from "../workflow/types";
 import {
 	createLegacyApprovalWriteCoordinator,
 	LegacyApprovalWriteBoundaryError,
+	type ObservedWorkflowReader,
 } from "./legacy-write-coordinator";
 
 const sourceIdentity = {
@@ -43,33 +44,81 @@ function state(status: string): VerifiedLegacyApprovalState {
 	};
 }
 
-function harness(mode: ApprovalWorkflowLifecycleMode) {
+function workflow(overrides: Partial<ApprovalWorkflowSnapshot> = {}): ApprovalWorkflowSnapshot {
+	return {
+		...sourceIdentity,
+		id: "workflow-1",
+		requesterEmployeeId: "requester-1",
+		status: "pending",
+		currentStageOrder: 1,
+		version: 4,
+		policySnapshot: {},
+		contextSnapshot: {},
+		displaySnapshot: {},
+		submittedAt: capturedAt,
+		completedAt: null,
+		cancelledAt: null,
+		decisionReason: null,
+		stages: [
+			{
+				id: "stage-1",
+				organizationId: sourceIdentity.organizationId,
+				workflowId: "workflow-1",
+				sequence: 1,
+				label: "Stage",
+				resolverSnapshot: {},
+				activationMode: "human",
+				status: "pending",
+				activatedAt: capturedAt,
+				decidedAt: null,
+				decisionReason: null,
+				legacyApprovalRequestId: "request-1",
+				assignments: [],
+			},
+		],
+		...overrides,
+	};
+}
+
+function mirrorResult(snapshot: ApprovalWorkflowSnapshot) {
+	return { snapshot } as ObservedLegacyTransitionResult;
+}
+
+function harness(
+	mode: ApprovalWorkflowLifecycleMode,
+	options: {
+		observed?: ApprovalWorkflowSnapshot | null;
+		mirrorResults?: Array<ObservedLegacyTransitionResult | null>;
+	} = {},
+) {
 	const timeline: string[] = [];
 	let captureCount = 0;
-	const gateInputs: unknown[] = [];
-	const mirrorInputs: unknown[] = [];
-	const mirrorResult = {
-		snapshot: { id: "workflow-1", organizationId: "org-1" },
-	} as ObservedLegacyTransitionResult;
-	const writeGate: ApprovalWriteGate = {
-		acquire: async (input) => {
-			timeline.push("gate");
-			gateInputs.push(input);
-			return approvalWriteGateResult(mode);
+	const lookups: unknown[] = [];
+	const mirrorInputs: Array<Record<string, unknown>> = [];
+	const mirrorResults = options.mirrorResults ?? [mirrorResult(workflow({ version: 5 }))];
+	const observedWorkflows: ObservedWorkflowReader = {
+		findByLegacyRequest: async (input) => {
+			timeline.push("lookup");
+			lookups.push(input);
+			return options.observed === undefined ? workflow() : options.observed;
 		},
 	};
 	const compatibilityWriter = {
 		withWriteGate: () => compatibilityWriter,
-		mirrorLegacyToCanonical: async (input: unknown) => {
-			timeline.push("mirror");
+		mirrorLegacyToCanonical: async (input: Record<string, unknown>) => {
+			timeline.push(
+				String(input.idempotencyKey).startsWith("late-mirror:") ? "late-mirror" : "mirror",
+			);
 			mirrorInputs.push(input);
-			return mirrorResult;
+			const result = mirrorResults.shift();
+			if (result === undefined) throw new Error("unexpected mirror");
+			return result;
 		},
 		mirrorCanonicalToLegacy: async () => undefined,
-	} as ApprovalCompatibilityWriter;
+	} as unknown as ApprovalCompatibilityWriter;
 	const coordinator = createLegacyApprovalWriteCoordinator({
-		writeGate,
 		compatibilityWriter,
+		observedWorkflows,
 	});
 	const captureState = async () => {
 		captureCount += 1;
@@ -80,631 +129,540 @@ function harness(mode: ApprovalWorkflowLifecycleMode) {
 		timeline.push("mutate");
 		return { mutation: "result" };
 	};
+	const observeInput = {
+		gate: approvalWriteGateResult(mode),
+		sourceIdentity,
+		requesterEmployeeId: "requester-1",
+		legacyApprovalRequestId: "request-1" as string | null,
+	};
 	return {
 		coordinator,
 		timeline,
-		gateInputs,
+		lookups,
 		mirrorInputs,
-		mirrorResult,
-		input: {
-			organizationId: sourceIdentity.organizationId,
-			workflowType: sourceIdentity.workflowType,
-			sourceIdentity,
+		observeInput,
+		observe: () => coordinator.observe(observeInput),
+		writeInput: {
 			actor: actor as ApprovalEventActorIdentity,
 			idempotencyKey: "legacy-decision:source-1",
-			expectedVersion: 4,
-			captureState,
+			captureState: captureState as (() => Promise<VerifiedLegacyApprovalState>) | undefined,
 			mutate,
+			afterMirror: undefined as
+				| ((result: ObservedLegacyTransitionResult) => Promise<void>)
+				| undefined,
 		},
 	};
 }
 
 describe("legacy approval write coordinator", () => {
-	it.each([
-		["empty organization", { organizationId: "" }],
-		[
-			"foreign source organization",
-			{
-				sourceIdentity: { ...sourceIdentity, organizationId: "org-2" },
-			},
-		],
-		[
-			"foreign source workflow type",
-			{
-				sourceIdentity: {
-					...sourceIdentity,
-					workflowType: "travel_expense" as const,
-				},
-			},
-		],
-		[
-			"empty source type",
-			{
-				sourceIdentity: { ...sourceIdentity, sourceType: "" },
-			},
-		],
-		[
-			"empty source ID",
-			{
-				sourceIdentity: { ...sourceIdentity, sourceId: "" },
-			},
-		],
-		["empty idempotency key", { idempotencyKey: "" }],
-		["negative expected version", { expectedVersion: -1 }],
-		["fractional expected version", { expectedVersion: 1.5 }],
-	] as const)("rejects %s before acquiring the gate", async (_name, override) => {
-		const test = harness("legacy");
-		const input = { ...test.input, ...override };
-
-		await expect(test.coordinator.execute(input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "invalid_source_identity",
-		});
-		expect(test.timeline).toEqual([]);
-	});
-
-	it.each([
-		"time_entry",
-		"forged_workflow",
-	])("rejects unsupported matching workflow type %s before the gate or callbacks", async (workflowType) => {
-		const test = harness("shadow");
-		const forgedWorkflowType =
-			workflowType as ApprovalSourceIdentity["workflowType"];
-		const input = {
-			...test.input,
-			workflowType: forgedWorkflowType,
-			sourceIdentity: {
-				...test.input.sourceIdentity,
-				workflowType: forgedWorkflowType,
-			},
-		};
-
-		await expect(test.coordinator.execute(input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "invalid_source_identity",
-		});
-		expect(test.timeline).toEqual([]);
-		expect(test.mirrorInputs).toEqual([]);
-	});
-
-	it.each(
-		APPROVAL_WORKFLOW_TYPES,
-	)("preserves legacy execution for canonical workflow type %s", async (workflowType) => {
-		const test = harness("legacy");
-		const input = {
-			...test.input,
-			workflowType,
-			sourceIdentity: { ...test.input.sourceIdentity, workflowType },
-		};
-
-		await expect(test.coordinator.execute(input)).resolves.toEqual({
-			mutation: "result",
-		});
-		expect(test.timeline).toEqual(["gate", "mutate"]);
-	});
-
-	it("executes only the legacy mutation in legacy mode", async () => {
-		const test = harness("legacy");
-
-		await expect(test.coordinator.execute(test.input)).resolves.toEqual({
-			mutation: "result",
-		});
-		expect(test.timeline).toEqual(["gate", "mutate"]);
-		expect(test.mirrorInputs).toEqual([]);
-	});
-
-	it("ignores a forged authority snapshot and enforces the acquired gate", async () => {
-		const test = harness("canonical");
-		const forgedInput = {
-			...test.input,
-			authoritySnapshot: approvalWriteGateResult("legacy"),
-		};
-
-		await expect(test.coordinator.execute(forgedInput)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "canonical_authority",
-		});
-		expect(test.timeline).toEqual(["gate"]);
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("observes and mirrors around the mutation in %s mode", async (mode) => {
-		const test = harness(mode);
-
-		await expect(test.coordinator.execute(test.input)).resolves.toEqual({
-			mutation: "result",
-		});
-		expect(test.timeline).toEqual([
-			"gate",
-			"capture-before",
-			"mutate",
-			"capture-after",
-			"mirror",
-		]);
-	});
-
-	it("passes exact trusted arguments to the gate and mirror and returns the mutation result", async () => {
-		const test = harness("shadow");
-		const result = { mutation: "exact-result" };
-		test.input.mutate = async () => {
-			test.timeline.push("mutate");
-			return result;
-		};
-
-		await expect(test.coordinator.execute(test.input)).resolves.toBe(result);
-		expect(test.gateInputs).toEqual([
-			{
-				organizationId: sourceIdentity.organizationId,
-				workflowType: sourceIdentity.workflowType,
-			},
-		]);
-		expect(test.mirrorInputs).toHaveLength(1);
-		expect(test.mirrorInputs[0]).toEqual({
-			before: state("before"),
-			after: state("after"),
-			actor,
-			idempotencyKey: "legacy-decision:source-1",
-			expectedVersion: 4,
-		});
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("runs the successful observation callback after mirror in %s mode", async (mode) => {
-		const test = harness(mode);
-		let observed: ObservedLegacyTransitionResult | undefined;
-		test.input.afterMirror = async (result) => {
-			test.timeline.push("after-mirror");
-			observed = result;
-		};
-
-		await test.coordinator.execute(test.input);
-
-		expect(observed).toBe(test.mirrorResult);
-		expect(test.timeline).toEqual([
-			"gate",
-			"capture-before",
-			"mutate",
-			"capture-after",
-			"mirror",
-			"after-mirror",
-		]);
-	});
-
-	it("propagates a post-mirror callback failure before returning", async () => {
-		const test = harness("shadow");
-		const failure = new Error("source binding failed");
-		test.input.afterMirror = async () => {
-			test.timeline.push("after-mirror");
-			throw failure;
-		};
-
-		await expect(test.coordinator.execute(test.input)).rejects.toBe(failure);
-		expect(test.timeline).toEqual([
-			"gate",
-			"capture-before",
-			"mutate",
-			"capture-after",
-			"mirror",
-			"after-mirror",
-		]);
-	});
-
-	it("mirrors the trusted entry-time actor when callbacks mutate the input actor", async () => {
-		const test = harness("shadow");
-		const mutableActor: ApprovalEventActorIdentity = {
-			kind: "employee",
-			employeeId: "employee-1",
-			userId: "user-1",
-		};
-		test.input.actor = mutableActor;
-		test.input.mutate = async () => {
-			test.timeline.push("mutate");
-			mutableActor.employeeId = "employee-2";
-			mutableActor.userId = "user-2";
-			return { mutation: "result" };
-		};
-
-		await test.coordinator.execute(test.input);
-
-		const mirroredActor = (
-			test.mirrorInputs[0] as { actor: ApprovalEventActorIdentity }
-		).actor;
-		expect(mirroredActor).toEqual({
-			kind: "employee",
-			employeeId: "employee-1",
-			userId: "user-1",
-		});
-		expect(mirroredActor).not.toBe(mutableActor);
-	});
-
-	it.each([
-		["persistence organization", { organizationId: "org-2" }],
-		[
-			"source organization",
-			{
-				source: { ...sourceIdentity, organizationId: "org-2" },
-			},
-		],
-		[
-			"workflow type",
-			{
-				source: { ...sourceIdentity, workflowType: "travel_expense" as const },
-			},
-		],
-		[
-			"source type",
-			{
-				source: { ...sourceIdentity, sourceType: "travel_expense_claim" },
-			},
-		],
-		[
-			"source ID",
-			{
-				source: { ...sourceIdentity, sourceId: "source-2" },
-			},
-		],
-	] as const)("rejects a foreign %s in the before capture before mutation", async (_name, override) => {
-		const test = harness("shadow");
-		test.input.captureState = async () => {
-			test.timeline.push("capture-before");
-			return { ...state("before"), ...override };
-		};
-
-		await expect(test.coordinator.execute(test.input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "observation_scope",
-		});
-		expect(test.timeline).toEqual(["gate", "capture-before"]);
-	});
-
-	it.each([
-		["persistence organization", { organizationId: "org-2" }],
-		[
-			"source organization",
-			{
-				source: { ...sourceIdentity, organizationId: "org-2" },
-			},
-		],
-		[
-			"workflow type",
-			{
-				source: { ...sourceIdentity, workflowType: "travel_expense" as const },
-			},
-		],
-		[
-			"source type",
-			{
-				source: { ...sourceIdentity, sourceType: "travel_expense_claim" },
-			},
-		],
-		[
-			"source ID",
-			{
-				source: { ...sourceIdentity, sourceId: "source-2" },
-			},
-		],
-	] as const)("rejects a foreign %s in the after capture before mirroring", async (_name, override) => {
-		const test = harness("shadow");
-		let captureCount = 0;
-		test.input.captureState = async () => {
-			captureCount += 1;
-			test.timeline.push(
-				captureCount === 1 ? "capture-before" : "capture-after",
-			);
-			return captureCount === 1
-				? state("before")
-				: { ...state("after"), ...override };
-		};
-
-		await expect(test.coordinator.execute(test.input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "observation_scope",
-		});
-		expect(test.timeline).toEqual([
-			"gate",
-			"capture-before",
-			"mutate",
-			"capture-after",
-		]);
-	});
-
-	it("does not allow a capture callback to redefine the trusted source identity", async () => {
-		const test = harness("shadow");
-		const trustedSource = { ...sourceIdentity };
-		test.input.sourceIdentity = trustedSource;
-		test.input.captureState = async () => {
-			test.timeline.push("capture-before");
-			trustedSource.sourceId = "source-2";
-			return {
-				...state("before"),
-				source: { ...trustedSource },
-			};
-		};
-
-		await expect(test.coordinator.execute(test.input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "observation_scope",
-		});
-		expect(test.timeline).toEqual(["gate", "capture-before"]);
-	});
-
-	it("isolates the validated before-capture scope from later mutation", async () => {
-		const test = harness("shadow");
-		const before = state("before");
-		test.input.captureState = async () => {
-			test.timeline.push(
-				test.timeline.includes("mutate") ? "capture-after" : "capture-before",
-			);
-			return test.timeline.includes("mutate") ? state("after") : before;
-		};
-		test.input.mutate = async () => {
-			test.timeline.push("mutate");
-			before.source = { ...before.source, sourceId: "source-2" };
-			return { mutation: "result" };
-		};
-
-		await expect(test.coordinator.execute(test.input)).resolves.toEqual({
-			mutation: "result",
-		});
-		expect(test.timeline).toEqual([
-			"gate",
-			"capture-before",
-			"mutate",
-			"capture-after",
-			"mirror",
-		]);
-		expect(
-			(test.mirrorInputs[0] as { before: VerifiedLegacyApprovalState }).before
-				.source,
-		).toEqual(sourceIdentity);
-	});
-
-	it("mirrors an immutable entry-time snapshot of all before-state evidence", async () => {
-		const test = harness("shadow");
-		const changedAt = parseInstant("2026-07-18T11:00:00Z");
-		const before: VerifiedLegacyApprovalState = {
-			...state("before"),
-			approvalRequest: {
-				id: "request-1",
-				organizationId: sourceIdentity.organizationId,
-				entityType: sourceIdentity.sourceType,
-				entityId: sourceIdentity.sourceId,
-				requestedBy: "employee-1",
-				approverId: "employee-2",
-				status: "pending",
-				reason: "entry reason",
-				rejectionReason: null,
-				approvedAt: null,
-				metadata: { nested: { value: "entry metadata" } },
-				updatedAt: capturedAt,
-			},
-			chain: {
-				id: "chain-1",
-				organizationId: sourceIdentity.organizationId,
-				policyId: "policy-1",
-				policyNameSnapshot: "Entry policy",
-				entityType: sourceIdentity.sourceType,
-				entityId: sourceIdentity.sourceId,
-				requesterEmployeeId: "employee-1",
-				currentStageOrder: 1,
-				status: "pending",
-				createdAt: capturedAt,
-				updatedAt: capturedAt,
-				completedAt: null,
-			},
-			chainRows: [
+	describe("observe", () => {
+		it.each([
+			["empty source organization", { sourceIdentity: { ...sourceIdentity, organizationId: "" } }],
+			["empty source type", { sourceIdentity: { ...sourceIdentity, sourceType: "" } }],
+			["empty source ID", { sourceIdentity: { ...sourceIdentity, sourceId: "" } }],
+			[
+				"unsupported workflow type",
 				{
-					id: "chain-row-1",
-					organizationId: sourceIdentity.organizationId,
-					chainInstanceId: "chain-1",
-					policyStageId: "policy-stage-1",
-					stepOrder: 1,
-					labelSnapshot: "Entry stage",
-					approverTypeSnapshot: "manager",
-					resolvedApproverEmployeeId: "employee-2",
-					approvalRequestId: "request-1",
-					status: "pending",
-					decidedBy: null,
-					decidedAt: null,
-					createdAt: capturedAt,
-					updatedAt: capturedAt,
+					sourceIdentity: {
+						...sourceIdentity,
+						workflowType: "time_entry" as ApprovalSourceIdentity["workflowType"],
+					},
 				},
 			],
-			sourceSnapshot: {
+			["empty requester", { requesterEmployeeId: "" }],
+			["empty legacy request", { legacyApprovalRequestId: " " }],
+		] as const)("rejects %s before any lookup", async (_name, override) => {
+			const test = harness("shadow");
+
+			await expect(
+				test.coordinator.observe({ ...test.observeInput, ...override }),
+			).rejects.toMatchObject({
+				name: "LegacyApprovalWriteBoundaryError",
+				code: "invalid_source_identity",
+			});
+			expect(test.timeline).toEqual([]);
+		});
+
+		it.each(["legacy", "canonical", "complete"] as const)(
+			"looks nothing up and agrees vacuously without shadow mirroring (%s)",
+			async (mode) => {
+				const test = harness(mode);
+
+				const observation = await test.observe();
+
+				expect(observation.workflow).toBeNull();
+				expect(observation.agrees(() => false)).toBe(true);
+				expect(test.lookups).toEqual([]);
+			},
+		);
+
+		it.each(["shadow", "ready"] as const)(
+			"loads the observed workflow of the legacy request in %s mode",
+			async (mode) => {
+				const test = harness(mode);
+
+				const observation = await test.observe();
+
+				expect(test.lookups).toEqual([
+					{ source: sourceIdentity, legacyApprovalRequestId: "request-1" },
+				]);
+				expect(observation.workflow).toEqual(workflow());
+				expect(observation.agrees((observed) => observed.version === 4)).toBe(true);
+				expect(observation.agrees((observed) => observed.status === "approved")).toBe(false);
+			},
+		);
+
+		it("disagrees under shadow mirroring when there is no observed workflow", async () => {
+			const test = harness("shadow", { observed: null });
+
+			const observation = await test.observe();
+
+			expect(observation.workflow).toBeNull();
+			expect(observation.agrees(() => true)).toBe(false);
+		});
+
+		it("observes nothing for a submission", async () => {
+			const test = harness("shadow");
+
+			const observation = await test.coordinator.observe({
+				...test.observeInput,
+				legacyApprovalRequestId: null,
+			});
+
+			expect(observation.workflow).toBeNull();
+			expect(test.lookups).toEqual([]);
+		});
+
+		it.each([
+			["organization", { organizationId: "org-2" }],
+			["workflow type", { workflowType: "time_correction" as const }],
+			["source type", { sourceType: "time_entry" }],
+			["source ID", { sourceId: "source-2" }],
+			["requester", { requesterEmployeeId: "requester-2" }],
+			["legacy request", { stages: [] }],
+		] as const)("refuses an observed workflow with another %s", async (_name, override) => {
+			const test = harness("shadow", { observed: workflow(override) });
+
+			await expect(test.observe()).rejects.toMatchObject({
+				name: "LegacyApprovalWriteBoundaryError",
+				code: "observation_scope",
+			});
+		});
+	});
+
+	describe("execute", () => {
+		it("refuses an observation it did not make", async () => {
+			const test = harness("legacy");
+			const other = harness("legacy");
+			const forged = {
+				...(await test.observe()),
+			};
+
+			await expect(
+				test.coordinator.execute({ ...test.writeInput, observation: forged }),
+			).rejects.toMatchObject({ code: "invalid_source_identity" });
+			await expect(
+				test.coordinator.execute({
+					...test.writeInput,
+					observation: await other.observe(),
+				}),
+			).rejects.toMatchObject({ code: "invalid_source_identity" });
+			expect(test.timeline).toEqual([]);
+		});
+
+		it("rejects an empty idempotency key before any callback", async () => {
+			const test = harness("shadow");
+			const observation = await test.observe();
+
+			await expect(
+				test.coordinator.execute({ ...test.writeInput, observation, idempotencyKey: "" }),
+			).rejects.toMatchObject({ code: "invalid_source_identity" });
+			expect(test.timeline).toEqual(["lookup"]);
+		});
+
+		it.each(APPROVAL_WORKFLOW_TYPES)(
+			"runs only the legacy mutation under legacy authority for %s",
+			async (workflowType) => {
+				const test = harness("legacy");
+				const observation = await test.coordinator.observe({
+					...test.observeInput,
+					sourceIdentity: { ...sourceIdentity, workflowType },
+				});
+
+				await expect(
+					test.coordinator.execute({ ...test.writeInput, observation }),
+				).resolves.toEqual({ mutation: "result" });
+				expect(test.timeline).toEqual(["mutate"]);
+				expect(test.mirrorInputs).toEqual([]);
+			},
+		);
+
+		it.each(["canonical", "complete"] as const)(
+			"refuses a legacy write under canonical authority (%s)",
+			async (mode) => {
+				const test = harness(mode);
+				const observation = await test.observe();
+
+				await expect(
+					test.coordinator.execute({ ...test.writeInput, observation }),
+				).rejects.toMatchObject({
+					name: "LegacyApprovalWriteBoundaryError",
+					code: "canonical_authority",
+				});
+				expect(test.timeline).toEqual([]);
+			},
+		);
+
+		it.each(["shadow", "ready"] as const)(
+			"requires captured state while shadow mirroring (%s)",
+			async (mode) => {
+				const test = harness(mode);
+				const observation = await test.observe();
+
+				await expect(
+					test.coordinator.execute({
+						...test.writeInput,
+						captureState: undefined,
+						observation,
+					}),
+				).rejects.toEqual(
+					expect.objectContaining({
+						name: LegacyApprovalWriteBoundaryError.name,
+						code: "observation_required",
+					}),
+				);
+				expect(test.timeline).toEqual(["lookup"]);
+			},
+		);
+
+		it.each(["shadow", "ready"] as const)(
+			"mirrors around the mutation at the observed version in %s mode",
+			async (mode) => {
+				const test = harness(mode);
+				const observation = await test.observe();
+				let observed: ObservedLegacyTransitionResult | undefined;
+				const result = { mutation: "exact-result" };
+
+				await expect(
+					test.coordinator.execute({
+						...test.writeInput,
+						observation,
+						mutate: async () => {
+							test.timeline.push("mutate");
+							return result;
+						},
+						afterMirror: async (mirrored) => {
+							test.timeline.push("after-mirror");
+							observed = mirrored;
+						},
+					}),
+				).resolves.toBe(result);
+				expect(test.timeline).toEqual([
+					"lookup",
+					"capture-before",
+					"mutate",
+					"capture-after",
+					"mirror",
+					"after-mirror",
+				]);
+				expect(test.mirrorInputs).toEqual([
+					{
+						before: state("before"),
+						after: state("after"),
+						actor,
+						idempotencyKey: "legacy-decision:source-1",
+						expectedVersion: 4,
+					},
+				]);
+				expect(observed?.snapshot.version).toBe(5);
+			},
+		);
+
+		it("mirrors a submission as the initial version without late mirroring", async () => {
+			const test = harness("shadow");
+			const observation = await test.coordinator.observe({
+				...test.observeInput,
+				legacyApprovalRequestId: null,
+			});
+
+			await test.coordinator.execute({ ...test.writeInput, observation });
+
+			expect(test.timeline).toEqual(["capture-before", "mutate", "capture-after", "mirror"]);
+			expect(test.mirrorInputs[0]?.expectedVersion).toBeNull();
+		});
+
+		it("late-mirrors a legacy request without an observed workflow, then mirrors the action", async () => {
+			const lateMirrored = workflow({ version: 1 });
+			const decided = workflow({ version: 2, status: "approved" });
+			const test = harness("shadow", {
+				observed: null,
+				mirrorResults: [mirrorResult(lateMirrored), mirrorResult(decided)],
+			});
+			const observation = await test.observe();
+			let observed: ObservedLegacyTransitionResult | undefined;
+
+			await test.coordinator.execute({
+				...test.writeInput,
+				observation,
+				afterMirror: async (mirrored) => {
+					observed = mirrored;
+				},
+			});
+
+			expect(test.timeline).toEqual([
+				"lookup",
+				"capture-before",
+				"late-mirror",
+				"mutate",
+				"capture-after",
+				"mirror",
+			]);
+			expect(test.mirrorInputs).toEqual([
+				{
+					before: { ...state("before"), approvalRequest: null, chain: null, chainRows: [] },
+					after: state("before"),
+					actor,
+					idempotencyKey: "late-mirror:org-1:absence:absence_entry:source-1:request-1",
+					expectedVersion: null,
+				},
+				{
+					before: state("before"),
+					after: state("after"),
+					actor,
+					idempotencyKey: "legacy-decision:source-1",
+					expectedVersion: 1,
+				},
+			]);
+			expect(observed?.snapshot).toBe(decided);
+		});
+
+		it.each([
+			["a decided workflow", { status: "approved" as const, version: 1 }],
+			["a later version", { version: 2 }],
+			["another source", { sourceId: "source-2", version: 1 }],
+			["another requester", { requesterEmployeeId: "requester-2", version: 1 }],
+			["no stage for the request", { stages: [], version: 1 }],
+		] as const)(
+			"refuses a late mirror that produced %s before mutation",
+			async (_name, override) => {
+				const test = harness("shadow", {
+					observed: null,
+					mirrorResults: [mirrorResult(workflow(override))],
+				});
+				const observation = await test.observe();
+
+				await expect(
+					test.coordinator.execute({ ...test.writeInput, observation }),
+				).rejects.toMatchObject({ code: "observation_scope" });
+				expect(test.timeline).toEqual(["lookup", "capture-before", "late-mirror"]);
+			},
+		);
+
+		it("refuses an action mirrored into another workflow than the observed one", async () => {
+			const test = harness("shadow", {
+				mirrorResults: [mirrorResult(workflow({ id: "workflow-2", version: 5 }))],
+			});
+			const observation = await test.observe();
+			let afterMirror = false;
+
+			await expect(
+				test.coordinator.execute({
+					...test.writeInput,
+					observation,
+					afterMirror: async () => {
+						afterMirror = true;
+					},
+				}),
+			).rejects.toMatchObject({ code: "observation_scope" });
+			expect(afterMirror).toBe(false);
+		});
+
+		it("rejects an unavailable observation after mirroring", async () => {
+			const test = harness("shadow", { mirrorResults: [null] });
+			const observation = await test.observe();
+
+			await expect(
+				test.coordinator.execute({ ...test.writeInput, observation }),
+			).rejects.toMatchObject({
+				name: "LegacyApprovalWriteBoundaryError",
+				code: "observation_unavailable",
+			});
+			expect(test.timeline).toEqual([
+				"lookup",
+				"capture-before",
+				"mutate",
+				"capture-after",
+				"mirror",
+			]);
+		});
+
+		it("propagates a post-mirror callback failure", async () => {
+			const test = harness("shadow");
+			const observation = await test.observe();
+			const failure = new Error("source binding failed");
+
+			await expect(
+				test.coordinator.execute({
+					...test.writeInput,
+					observation,
+					afterMirror: async () => {
+						throw failure;
+					},
+				}),
+			).rejects.toBe(failure);
+		});
+
+		it("mirrors the trusted entry-time actor when callbacks mutate the input actor", async () => {
+			const test = harness("shadow");
+			const observation = await test.observe();
+			const mutableActor: ApprovalEventActorIdentity = {
+				kind: "employee",
+				employeeId: "employee-1",
+				userId: "user-1",
+			};
+
+			await test.coordinator.execute({
+				...test.writeInput,
+				observation,
+				actor: mutableActor,
+				mutate: async () => {
+					mutableActor.employeeId = "employee-2";
+					mutableActor.userId = "user-2";
+					return { mutation: "result" };
+				},
+			});
+
+			const mirroredActor = test.mirrorInputs[0]?.actor;
+			expect(mirroredActor).toEqual({
+				kind: "employee",
+				employeeId: "employee-1",
+				userId: "user-1",
+			});
+			expect(mirroredActor).not.toBe(mutableActor);
+		});
+
+		it.each([
+			["persistence organization", { organizationId: "org-2" }],
+			["source organization", { source: { ...sourceIdentity, organizationId: "org-2" } }],
+			["workflow type", { source: { ...sourceIdentity, workflowType: "travel_expense" as const } }],
+			["source type", { source: { ...sourceIdentity, sourceType: "travel_expense_claim" } }],
+			["source ID", { source: { ...sourceIdentity, sourceId: "source-2" } }],
+		] as const)("rejects a foreign %s in either capture", async (_name, override) => {
+			for (const foreignCapture of [1, 2]) {
+				const test = harness("shadow");
+				const observation = await test.observe();
+				let captureCount = 0;
+
+				await expect(
+					test.coordinator.execute({
+						...test.writeInput,
+						observation,
+						captureState: async () => {
+							captureCount += 1;
+							const captured = state(captureCount === 1 ? "before" : "after");
+							return captureCount === foreignCapture ? { ...captured, ...override } : captured;
+						},
+					}),
+				).rejects.toMatchObject({
+					name: "LegacyApprovalWriteBoundaryError",
+					code: "observation_scope",
+				});
+				expect(test.mirrorInputs).toEqual([]);
+			}
+		});
+
+		it("mirrors an immutable entry-time snapshot of the before state", async () => {
+			const test = harness("shadow");
+			const observation = await test.observe();
+			const changedAt = parseInstant("2026-07-18T11:00:00Z");
+			const before: VerifiedLegacyApprovalState = {
+				...state("before"),
+				sourceSnapshot: { status: "before", nested: { value: "entry source" } },
+			};
+			let captureCount = 0;
+
+			await test.coordinator.execute({
+				...test.writeInput,
+				observation,
+				captureState: async () => {
+					captureCount += 1;
+					return captureCount === 1 ? before : state("after");
+				},
+				mutate: async () => {
+					before.source = { ...before.source, sourceId: "source-2" };
+					before.sourceSnapshot = { status: "mutated", nested: { value: "mutated" } };
+					before.capturedAt = changedAt;
+					return { mutation: "result" };
+				},
+			});
+
+			const mirroredBefore = test.mirrorInputs[0]?.before as VerifiedLegacyApprovalState;
+			expect(mirroredBefore.source).toEqual(sourceIdentity);
+			expect(mirroredBefore.sourceSnapshot).toEqual({
 				status: "before",
 				nested: { value: "entry source" },
-				items: [{ value: "entry item" }],
+			});
+			expect(mirroredBefore.capturedAt).toBe(capturedAt);
+			expect(Object.isFrozen(mirroredBefore)).toBe(true);
+			expect(Object.isFrozen(mirroredBefore.sourceSnapshot)).toBe(true);
+		});
+
+		it.each([
+			["capture-before", ["lookup", "capture-before"]],
+			["mutate", ["lookup", "capture-before", "mutate"]],
+			["capture-after", ["lookup", "capture-before", "mutate", "capture-after"]],
+			["mirror", ["lookup", "capture-before", "mutate", "capture-after", "mirror"]],
+		] as const)(
+			"propagates the %s exception unchanged and stops the sequence",
+			async (failureAt, expectedTimeline) => {
+				const failure = new Error(`${failureAt} failed`);
+				const test = harness("shadow");
+				const observation = await test.observe();
+				let captureCount = 0;
+				const writer = {
+					withWriteGate: () => writer,
+					mirrorLegacyToCanonical: async () => {
+						test.timeline.push("mirror");
+						throw failure;
+					},
+					mirrorCanonicalToLegacy: async () => undefined,
+				} as unknown as ApprovalCompatibilityWriter;
+				const coordinator =
+					failureAt === "mirror"
+						? createLegacyApprovalWriteCoordinator({
+								compatibilityWriter: writer,
+								observedWorkflows: {
+									findByLegacyRequest: async () => {
+										test.timeline.push("lookup");
+										return workflow();
+									},
+								},
+							})
+						: test.coordinator;
+				if (failureAt === "mirror") test.timeline.length = 0;
+				const trusted =
+					failureAt === "mirror" ? await coordinator.observe(test.observeInput) : observation;
+
+				await expect(
+					coordinator.execute({
+						...test.writeInput,
+						observation: trusted,
+						captureState: async () => {
+							captureCount += 1;
+							const step = captureCount === 1 ? "capture-before" : "capture-after";
+							test.timeline.push(step);
+							if (failureAt === step) throw failure;
+							return state(captureCount === 1 ? "before" : "after");
+						},
+						mutate: async () => {
+							test.timeline.push("mutate");
+							if (failureAt === "mutate") throw failure;
+							return "result";
+						},
+					}),
+				).rejects.toBe(failure);
+				expect(test.timeline).toEqual(expectedTimeline);
 			},
-		};
-		let captureCount = 0;
-		test.input.captureState = async () => {
-			captureCount += 1;
-			test.timeline.push(
-				captureCount === 1 ? "capture-before" : "capture-after",
-			);
-			return captureCount === 1 ? before : state("after");
-		};
-		test.input.mutate = async () => {
-			test.timeline.push("mutate");
-			const request = before.approvalRequest;
-			const chain = before.chain;
-			const chainRow = before.chainRows[0];
-			if (!request || !chain || !chainRow) {
-				throw new Error("Legacy state fixture is incomplete");
-			}
-			request.reason = "mutated reason";
-			request.metadata = {
-				nested: { value: "mutated metadata" },
-			};
-			request.updatedAt = changedAt;
-			chain.policyNameSnapshot = "Mutated policy";
-			chain.updatedAt = changedAt;
-			chainRow.labelSnapshot = "Mutated stage";
-			chainRow.updatedAt = changedAt;
-			before.sourceSnapshot = {
-				status: "mutated",
-				nested: { value: "mutated source" },
-				items: [{ value: "mutated item" }],
-			};
-			before.capturedAt = changedAt;
-			return { mutation: "result" };
-		};
-
-		await test.coordinator.execute(test.input);
-
-		const mirroredBefore = (
-			test.mirrorInputs[0] as { before: VerifiedLegacyApprovalState }
-		).before;
-		expect(mirroredBefore.approvalRequest).toMatchObject({
-			reason: "entry reason",
-			metadata: { nested: { value: "entry metadata" } },
-			updatedAt: capturedAt,
-		});
-		expect(mirroredBefore.chain).toMatchObject({
-			policyNameSnapshot: "Entry policy",
-			updatedAt: capturedAt,
-		});
-		expect(mirroredBefore.chainRows).toMatchObject([
-			{ labelSnapshot: "Entry stage", updatedAt: capturedAt },
-		]);
-		expect(mirroredBefore.sourceSnapshot).toEqual({
-			status: "before",
-			nested: { value: "entry source" },
-			items: [{ value: "entry item" }],
-		});
-		expect(mirroredBefore.approvalRequest?.updatedAt).toBe(capturedAt);
-		expect(mirroredBefore.chain?.updatedAt).toBe(capturedAt);
-		expect(mirroredBefore.chainRows[0]?.updatedAt).toBe(capturedAt);
-		expect(mirroredBefore.capturedAt).toBe(capturedAt);
-		expect(Object.isFrozen(mirroredBefore)).toBe(true);
-		expect(Object.isFrozen(mirroredBefore.sourceSnapshot)).toBe(true);
-		expect(Object.isFrozen(mirroredBefore.chainRows)).toBe(true);
-	});
-
-	it("rejects an unavailable observation after mirroring", async () => {
-		const test = harness("shadow");
-		const compatibilityWriter = {
-			withWriteGate() {
-				return this;
-			},
-			mirrorLegacyToCanonical: async () => {
-				test.timeline.push("mirror");
-				return null;
-			},
-			mirrorCanonicalToLegacy: async () => undefined,
-		} satisfies ApprovalCompatibilityWriter;
-		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: {
-				acquire: async () => {
-					test.timeline.push("gate");
-					return approvalWriteGateResult("shadow");
-				},
-			},
-			compatibilityWriter,
-		});
-		test.timeline.length = 0;
-
-		await expect(coordinator.execute(test.input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "observation_unavailable",
-		});
-		expect(test.timeline).toEqual([
-			"gate",
-			"capture-before",
-			"mutate",
-			"capture-after",
-			"mirror",
-		]);
-	});
-
-	it.each([
-		["gate", ["gate"]],
-		["capture-before", ["gate", "capture-before"]],
-		["mutate", ["gate", "capture-before", "mutate"]],
-		["capture-after", ["gate", "capture-before", "mutate", "capture-after"]],
-		["mirror", ["gate", "capture-before", "mutate", "capture-after", "mirror"]],
-	] as const)("propagates the %s exception unchanged and stops the transaction sequence", async (failureAt, expectedTimeline) => {
-		const failure = new Error(`${failureAt} failed`);
-		const timeline: string[] = [];
-		let captureCount = 0;
-		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: {
-				acquire: async () => {
-					timeline.push("gate");
-					if (failureAt === "gate") throw failure;
-					return approvalWriteGateResult("shadow");
-				},
-			},
-			compatibilityWriter: {
-				withWriteGate() {
-					return this;
-				},
-				mirrorLegacyToCanonical: async () => {
-					timeline.push("mirror");
-					if (failureAt === "mirror") throw failure;
-					return {} as never;
-				},
-				mirrorCanonicalToLegacy: async () => undefined,
-			},
-		});
-		const captureState = async () => {
-			captureCount += 1;
-			const step = captureCount === 1 ? "capture-before" : "capture-after";
-			timeline.push(step);
-			if (failureAt === step) throw failure;
-			return state(captureCount === 1 ? "before" : "after");
-		};
-		const mutate = async () => {
-			timeline.push("mutate");
-			if (failureAt === "mutate") throw failure;
-			return "result";
-		};
-
-		await expect(
-			coordinator.execute({
-				organizationId: sourceIdentity.organizationId,
-				workflowType: sourceIdentity.workflowType,
-				sourceIdentity,
-				actor,
-				idempotencyKey: "legacy-decision:source-1",
-				expectedVersion: null,
-				captureState,
-				mutate,
-			}),
-		).rejects.toBe(failure);
-		expect(timeline).toEqual(expectedTimeline);
-	});
-
-	it.each([
-		"canonical",
-		"complete",
-	] as const)("rejects legacy mutation after the gate in %s mode", async (mode) => {
-		const test = harness(mode);
-
-		await expect(test.coordinator.execute(test.input)).rejects.toMatchObject({
-			name: "LegacyApprovalWriteBoundaryError",
-			code: "canonical_authority",
-		});
-		expect(test.timeline).toEqual(["gate"]);
-	});
-
-	it.each([
-		"shadow",
-		"ready",
-	] as const)("requires observation before mutation in %s mode", async (mode) => {
-		const test = harness(mode);
-		const { captureState: _captureState, ...input } = test.input;
-
-		await expect(test.coordinator.execute(input)).rejects.toEqual(
-			expect.objectContaining({
-				name: LegacyApprovalWriteBoundaryError.name,
-				code: "observation_required",
-			}),
 		);
-		expect(test.timeline).toEqual(["gate"]);
 	});
 });
