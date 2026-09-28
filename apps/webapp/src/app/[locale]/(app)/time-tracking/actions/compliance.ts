@@ -8,6 +8,7 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import {
 	type BreakEnforcementResult,
 	BreakEnforcementService,
@@ -25,8 +26,8 @@ import {
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
-import { getTimeSummary } from "./queries";
 import { logger } from "./shared";
 
 export async function calculateBreaksTakenToday(
@@ -66,34 +67,46 @@ export async function calculateBreaksTakenToday(
 	return totalBreakMinutes;
 }
 
-export async function checkComplianceAfterClockOut(
-	employeeId: string,
-	organizationId: string,
-	workPeriodId: string,
-	currentSessionMinutes: number,
-	timezone: string = "UTC",
-): Promise<ComplianceWarning[]> {
+/**
+ * Checks one closed period against the employee's working-time rules and logs
+ * its violations. Totals come from `readComplianceTotals`, never from the
+ * request session, and cover the work's own local day and week in `timezone`,
+ * so on-behalf, bot, API and worker closures are judged like self clock-outs.
+ */
+export async function checkComplianceAfterClockOut(input: {
+	employeeId: string;
+	organizationId: string;
+	workPeriodId: string;
+	durationMinutes: number;
+	/** Where the closed work started. */
+	workStart: Instant;
+	timezone: string;
+}): Promise<ComplianceWarning[]> {
+	const { employeeId, organizationId, workPeriodId } = input;
 	try {
-		const [timeSummary, breaksTaken] = await Promise.all([
-			getTimeSummary(employeeId, timezone),
-			calculateBreaksTakenToday(employeeId, timezone),
-		]);
+		const totals = await readComplianceTotals({
+			organizationId,
+			employeeId,
+			workStart: input.workStart,
+			timezone: input.timezone,
+		});
 
 		const complianceEffect = Effect.gen(function* (_) {
 			const workPolicyService = yield* _(WorkPolicyService);
 			const result = yield* _(
 				workPolicyService.checkCompliance({
 					employeeId,
-					currentSessionMinutes,
-					totalDailyMinutes: timeSummary.todayMinutes,
-					totalWeeklyMinutes: timeSummary.weekMinutes,
-					breaksTakenMinutes: breaksTaken,
+					organizationId,
+					currentSessionMinutes: input.durationMinutes,
+					totalDailyMinutes: totals.dailyMinutes,
+					totalWeeklyMinutes: totals.weeklyMinutes,
+					breaksTakenMinutes: totals.breakMinutes,
 				}),
 			);
 
 			if (result.warnings.length > 0) {
 				const effectivePolicy = yield* _(
-					workPolicyService.getEffectivePolicy(employeeId),
+					workPolicyService.getEffectivePolicy(employeeId, organizationId),
 				);
 				if (effectivePolicy?.regulation) {
 					for (const warning of result.warnings) {

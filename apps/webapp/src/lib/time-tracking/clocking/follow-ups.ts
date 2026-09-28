@@ -52,6 +52,8 @@ export type ClockOutFollowUpEffects = {
 		organizationId: string;
 		workPeriodId: string;
 		durationMinutes: number;
+		/** The closed work's start; its local day and week in `timezone` are checked. */
+		workStart: Instant;
 		timezone: string;
 	}): Promise<ComplianceWarning[]>;
 	enforceBreaks(input: {
@@ -107,6 +109,7 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 						organizationId,
 						workPeriodId,
 						durationMinutes: closure.durationMinutes,
+						workStart: closure.start,
 						timezone: closure.timezone,
 					}),
 				[],
@@ -173,8 +176,9 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 /**
  * Stages the follow-ups as durable work that commits with the closure: a
  * departure's `clock_postprocess` task (#476 decision 14). Its handler runs the
- * same effects, in the same order, as `afterCommitFollowUps`, except the
- * request-bound compliance advice. Nothing runs now, so there is no advice.
+ * same effects, in the same order, as `afterCommitFollowUps`, except compliance,
+ * which a cutoff closure would misreport (see `ClockPostprocessEffects`).
+ * Nothing runs now, so there is no advice.
  */
 export function durableFollowUps(
 	stage: (closure: ClosedLiveWork) => Promise<void>,
