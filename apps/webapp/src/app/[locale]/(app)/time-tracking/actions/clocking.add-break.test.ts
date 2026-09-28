@@ -25,6 +25,7 @@ vi.mock("@/lib/time-tracking/clocking", () => ({
 vi.mock("./auth", () => ({
 	getCurrentSession: async () => state.session,
 	getCurrentEmployee: async () => state.employee,
+	getRequestMetadata: async () => ({ ipAddress: "203.0.113.7", userAgent: "test-agent" }),
 	getUserTimezone: async () => "Europe/Berlin",
 }));
 vi.mock("@/tolgee/server", () => ({
@@ -52,7 +53,7 @@ beforeEach(() => {
 });
 
 describe("web break adapter", () => {
-	it("turns the web request into a self-service break command", async () => {
+	it("turns the web request into a self-service break command carrying its evidence", async () => {
 		await addBreakToActiveSession(15, { submissionId, browserTimezone: "America/New_York" });
 
 		expect(state.run).toHaveBeenCalledWith({
@@ -64,6 +65,7 @@ describe("web break adapter", () => {
 			at: { kind: "now" },
 			zone: { device: "America/New_York", fallback: "Europe/Berlin" },
 			body: { kind: "break", breakMinutes: 15 },
+			request: { ipAddress: "203.0.113.7", userAgent: "test-agent" },
 		});
 	});
 

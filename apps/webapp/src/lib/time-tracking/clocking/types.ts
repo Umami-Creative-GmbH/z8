@@ -2,6 +2,7 @@ import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
+import type { TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { WorkLocationType } from "../work-location";
 
 /** An authenticated human clocking their own employee record. */
@@ -135,7 +136,14 @@ type ClockCommandOf<Body extends ClockBody> = {
 
 export type ClockInCommand = ClockCommandOf<ClockInBody>;
 export type ClockOutCommand = ClockCommandOf<ClockOutBody>;
-export type BreakCommand = ClockCommandOf<BreakBody>;
+export type BreakCommand = ClockCommandOf<BreakBody> & {
+	/**
+	 * The adapter's request evidence, stored on the hash-chained entries an
+	 * unadopted organization's break writes. Absent, those entries record the
+	 * channel's source, as the operation's own entries always do.
+	 */
+	request?: TimeEntryRequestMetadata;
+};
 export type ClockCommand = ClockInCommand | ClockOutCommand | BreakCommand;
 
 /** Refusals every clock command can meet. */

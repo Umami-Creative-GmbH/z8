@@ -109,7 +109,7 @@ vi.mock("@/lib/approvals/server/time-correction-submission", () => ({
 	submitCorrection: mockState.submitCorrection,
 }));
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/entry-helpers", () => ({
+vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
 	createTimeEntry: mockState.createTimeEntry,
 }));
 

@@ -18,21 +18,20 @@ function appImports(relativePath: string) {
 // #524: bots, API routes and the departure worker run the Clocking module
 // outside a web request, so it must not reach into the web actions.
 describe("Clocking module layering", () => {
-	it("imports nothing from the app layer but the break writer's raw entry helper", () => {
+	it("imports nothing from the app layer", () => {
 		const moduleFiles = readdirSync(fileURLToPath(new URL(".", import.meta.url))).filter(
 			(file) => file.endsWith(".ts") && !file.includes(".test."),
 		);
 
 		expect(moduleFiles).toContain("index.ts");
-		expect(moduleFiles.flatMap((file) => appImports(`./${file}`))).toEqual([
-			"./break.ts: @/app/[locale]/(app)/time-tracking/actions/entry-helpers",
-		]);
+		expect(moduleFiles.flatMap((file) => appImports(`./${file}`))).toEqual([]);
 	});
 
-	it("keeps the follow-up effects and the canonical work record writer in lib", () => {
+	it("keeps the follow-up effects and the work record and entry writers in lib", () => {
 		expect([
 			...appImports("../clock-out-effects.ts"),
 			...appImports("../canonical-work-record.ts"),
+			...appImports("../time-entry-writer.ts"),
 		]).toEqual([]);
 	});
 });

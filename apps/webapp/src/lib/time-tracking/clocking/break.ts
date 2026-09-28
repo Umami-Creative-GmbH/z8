@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { createTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { type employee, timeEntry, workPeriod } from "@/db/schema";
 import {
 	compareInstants,
@@ -16,6 +15,7 @@ import { ClockingConflictError, LiveWorkOccupiedError } from "../clocking-core";
 import {
 	type CloseActiveWorkWriter,
 	CompletedWorkCollisionError,
+	clockSource,
 	liveClockOutWriter,
 } from "../close-active-work";
 import {
@@ -29,6 +29,7 @@ import {
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "../policy-clock-out-surcharge-snapshot";
 import { findLiveWorkOccupant } from "../start-live-work";
+import { createTimeEntry, type TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { TimeEntryTimezoneCapture } from "../timezone-capture";
 import type { WorkTransactionContext } from "../web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "../work-duration";
@@ -257,6 +258,12 @@ export async function takeBreak(
 	};
 }
 
+/** The channel's source evidence, for a break whose adapter carries no request. */
+function channelRequestMetadata(channel: BreakCommand["channel"]): TimeEntryRequestMetadata {
+	const { ipAddress, deviceInfo } = clockSource(channel);
+	return { ipAddress, userAgent: deviceInfo };
+}
+
 /**
  * The established break writes of organizations that have not adopted: the
  * hash-chained clock-out and clock-in entries, the closed target with its
@@ -297,6 +304,7 @@ async function takeLegacyBreak(
 		.limit(1);
 	if (!period) throw new ClockingConflictError("Active work period changed");
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
+	const request = command.request ?? channelRequestMetadata(command.channel);
 
 	// The locked row, not the target resolved before the transaction, is the source.
 	const start = instantFromDate(period.startTime);
@@ -335,6 +343,7 @@ async function takeLegacyBreak(
 			timestamp: breakStart,
 			createdBy: actorUserId,
 			...endpoints.close.capture,
+			request,
 		},
 		tx,
 	);
@@ -379,6 +388,7 @@ async function takeLegacyBreak(
 			timestamp: dateFromInstant(endpoints.resume.instant),
 			createdBy: actorUserId,
 			...endpoints.resume.capture,
+			request,
 		},
 		tx,
 	);

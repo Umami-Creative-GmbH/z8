@@ -1047,7 +1047,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 	],
-	"src/app/[locale]/(app)/time-tracking/actions/entry-helpers.ts": [
+	"src/lib/time-tracking/time-entry-writer.ts": [
 		{
 			columns: ["is_superseded", "replaces_entry_id", "type"],
 			functionName: "createTimeEntry",
