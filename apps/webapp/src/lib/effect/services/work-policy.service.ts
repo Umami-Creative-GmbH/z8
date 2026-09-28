@@ -100,6 +100,8 @@ export interface ComplianceCheckResult {
 
 export interface CheckComplianceInput {
 	employeeId: string;
+	/** Scopes the employee lookup; callers acting outside a session should pass it. */
+	organizationId?: string;
 	currentSessionMinutes: number;
 	totalDailyMinutes: number;
 	totalWeeklyMinutes: number;
@@ -623,7 +625,12 @@ export const WorkPolicyServiceLive = Layer.effect(
 					const emp = yield* _(
 						dbService.query("getEmployeeForCompliance", async () => {
 							return await dbService.db.query.employee.findFirst({
-								where: eq(employee.id, input.employeeId),
+								where: input.organizationId
+									? and(
+											eq(employee.id, input.employeeId),
+											eq(employee.organizationId, input.organizationId),
+										)
+									: eq(employee.id, input.employeeId),
 								with: {
 									team: true,
 								},

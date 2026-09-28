@@ -17,7 +17,7 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -109,6 +109,9 @@ const ids = {
 	assignmentA: "f2761000-0000-4000-8000-000000000003",
 	categoryA: "f2761000-0000-4000-8000-000000000004",
 	categoryB: "f2761000-0000-4000-8000-000000000005",
+	policy: "f2762000-0000-4000-8000-000000000001",
+	regulation: "f2762000-0000-4000-8000-000000000002",
+	policyAssignment: "f2762000-0000-4000-8000-000000000003",
 } as const;
 const clockInAt = parseInstant("2026-09-20T08:00:00Z");
 // 8h0m40s after the clock-in: the operation rounds half up to 481 minutes.
@@ -442,6 +445,86 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 			[ids.target],
 		);
 		expect(only(balances)).toMatchObject({ is_dirty: true });
+	});
+
+	/** A daily and weekly limit for the target, as an employee-level work policy. */
+	async function seedWorkingTimeLimits(limits: { daily: number; weekly: number }) {
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into work_policy
+			 (id, organization_id, name, schedule_enabled, regulation_enabled, is_active, created_by, updated_at)
+			 values ($1, $2, 'T524 limits', false, true, true, $3, $4)`,
+			[ids.policy, ids.organization, ids.ownerUser, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_regulation (id, policy_id, max_daily_minutes, max_weekly_minutes, updated_at)
+			 values ($1, $2, $3, $4, $5)`,
+			[ids.regulation, ids.policy, limits.daily, limits.weekly, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active, created_by, updated_at)
+			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
+			[ids.policyAssignment, ids.policy, ids.organization, ids.target, ids.ownerUser, timestamp],
+		);
+	}
+
+	/** Earlier closed work for the target, hung off the running period's clock-in. */
+	async function seedEarlierWork(start: string, minutes: number, deleted = false) {
+		const startAt = parseInstant(start);
+		const startTime = dateFromInstant(startAt);
+		await admin.query(
+			`insert into work_period (organization_id, employee_id, clock_in_id, start_time, end_time,
+			  duration_minutes, is_active, approval_status, deleted_at, updated_at)
+			 select organization_id, employee_id, clock_in_id, $2, $3, $4, false, 'approved', $5, now()
+			 from work_period where employee_id = $1 and end_time is null`,
+			[
+				ids.target,
+				startTime,
+				dateFromInstant(startAt.add({ minutes })),
+				minutes,
+				deleted ? startTime : null,
+			],
+		);
+	}
+
+	it("checks the target's compliance on the closed work's own day in the target's zone (#524)", async () => {
+		const running = await clockInAs(ids.targetUser);
+		// The running work starts at 04:00 on Sunday 2026-09-20 in New York, the
+		// first day of a Sunday week.
+		await seedWorkingTimeLimits({ daily: 500, weekly: 600 });
+		// Same New York day: counts toward both totals.
+		await seedEarlierWork("2026-09-20T05:00:00Z", 60);
+		// Same UTC day but Saturday evening in New York: the previous day and week.
+		await seedEarlierWork("2026-09-20T01:00:00Z", 120);
+		// Deleted work never counts.
+		await seedEarlierWork("2026-09-20T06:30:00Z", 300, true);
+
+		// The manager's session is not the target's: totals must not depend on it.
+		const executed = await closeAs(ids.managerUser, {
+			workPeriodId: running.id,
+			operationId: randomUUID(),
+		});
+
+		expect(executed.status).toBe(201);
+		const { rows } = await admin.query(
+			`select employee_id, work_period_id, policy_id, violation_type, details
+			 from work_policy_violation where organization_id = $1`,
+			[ids.organization],
+		);
+		// 60 + 481 minutes that day exceed the daily limit; the week (541) stays
+		// within its limit, which the Saturday work would have broken.
+		expect(rows).toHaveLength(1);
+		expect(only(rows)).toMatchObject({
+			employee_id: ids.target,
+			work_period_id: running.id,
+			policy_id: ids.policy,
+			violation_type: "max_daily",
+		});
+		expect(JSON.parse(only(rows).details)).toMatchObject({
+			actualMinutes: 541,
+			limitMinutes: 500,
+		});
 	});
 
 	it("preserves omitted attribution and validates explicit changes against the target", async () => {

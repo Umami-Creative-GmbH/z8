@@ -28,8 +28,15 @@ type PostprocessPayload = ClockPostprocessPayload & PostprocessProgress;
 
 /**
  * The shared clock-out effects a departure runs durably. Compliance is not among
- * them: its warnings advise the human who clocked out, and its implementation
- * reads that request's employee, which a departure's worker has none of.
+ * them, although its totals no longer depend on a request session (#524):
+ * - A departure closes the timer at its cutoff, the start of the day after the
+ *   last working day, not at a reported end of work. A timer still running then
+ *   is usually a forgotten clock-out, which the departure already flags for
+ *   review (*Needs review: offboarding clock-out*). Checking it would log daily
+ *   and weekly violations measured to the cutoff, and a later correction of the
+ *   period never retracts them.
+ * - Its warnings advise whoever clocked out, and a departure has no one to advise.
+ * An on-behalf clock-out differs: a manager states the end, so it is checked.
  */
 export type ClockPostprocessEffects = Omit<ClockOutFollowUpEffects, "checkCompliance">;
 

@@ -41,14 +41,7 @@ export * from "./types";
  * web actions; the module owns when and how they run.
  */
 export const clockOutFollowUpEffects: ClockOutFollowUpEffects = {
-	checkCompliance: (input) =>
-		checkComplianceAfterClockOut(
-			input.employeeId,
-			input.organizationId,
-			input.workPeriodId,
-			input.durationMinutes,
-			input.timezone,
-		),
+	checkCompliance: checkComplianceAfterClockOut,
 	enforceBreaks: ({ durationMinutes, ...input }) =>
 		enforceBreaksAfterClockOut({ ...input, sessionDurationMinutes: durationMinutes }),
 	reconcileSurcharges: reconcileImmediateSurcharges,
