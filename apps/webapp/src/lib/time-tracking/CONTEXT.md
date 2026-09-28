@@ -25,6 +25,10 @@ A guard's position in the acquisition protocol: adoption gate, approval write ga
 A named protection a work transaction holds until commit, either shared (many readers) or exclusive (one writer).
 _Avoid_: lock (when the rank matters)
 
+**Organization configuration**:
+The organization's settings that decide whether new work is accepted and how it is routed when it is recorded: timezone, holidays, change policies, project and work-category eligibility, organization-wide authorization and billing entitlement. Work policies and surcharge models are not organization configuration: they are evidence captured with the work they apply to.
+_Avoid_: org settings, policy configuration
+
 **Adoption gate**:
 The organization-wide guard every writer of time data holds shared, and that switching an organization's admission holds exclusively. A work transaction reads the admission once, under this gate; in an adopted organization, writers outside a work transaction are refused.
 
