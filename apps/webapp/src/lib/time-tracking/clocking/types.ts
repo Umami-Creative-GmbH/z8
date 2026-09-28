@@ -25,13 +25,21 @@ export type OperationIdentity = {
 	id: string;
 };
 
-/** Who asks. Adapters authenticate the principal; the module authorizes it. */
-export type ClockPrincipal = { kind: "user"; userId: string };
+/**
+ * Who asks. Adapters authenticate the principal; the module authorizes it. A
+ * departure is the offboarding's system actor: it closes the departing
+ * employee's work only inside that departure's own work transaction (#476
+ * decisions 5 and 20), attributed to the human who recorded the departure.
+ */
+export type ClockPrincipal =
+	| { kind: "user"; userId: string }
+	| { kind: "departure"; departureId: string; userId: string };
 
 /**
  * The employee whose live work changes: the principal's own, or, `onBehalf`,
  * another employee's. Only a clock-out of a named period runs on behalf, and only
- * for an owner, an admin or the employee's direct manager; never for oneself.
+ * for an owner, an admin or the employee's direct manager; never for oneself. A
+ * departure's subject is its departing employee, never on behalf.
  */
 export type ClockSubject = { employeeId: string; onBehalf?: boolean };
 

@@ -771,6 +771,13 @@
       "when": 1793721600000,
       "tag": "0109_legacy_escalation_replacement_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1793808000000,
+      "tag": "0110_departure_clock_out_writer",
+      "breakpoints": true
     }
   ]
 }

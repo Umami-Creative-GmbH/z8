@@ -196,25 +196,16 @@ export async function enforceBreaksAfterClockOut(input: {
 	timezone: string;
 	createdBy: string;
 }): Promise<BreakEnforcementResult> {
-	try {
-		const enforcementEffect = Effect.gen(function* (_) {
-			const breakService = yield* _(BreakEnforcementService);
-			return yield* _(breakService.enforceBreaksAfterClockOut(input));
-		}).pipe(
-			Effect.provide(BreakEnforcementServiceLive),
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
+	// Failures propagate: the after-commit follow-ups run this best-effort, and a
+	// departure's durable follow-up task retries it (#485).
+	const enforcementEffect = Effect.gen(function* (_) {
+		const breakService = yield* _(BreakEnforcementService);
+		return yield* _(breakService.enforceBreaksAfterClockOut(input));
+	}).pipe(
+		Effect.provide(BreakEnforcementServiceLive),
+		Effect.provide(WorkPolicyServiceLive),
+		Effect.provide(DatabaseServiceLive),
+	);
 
-		return await Effect.runPromise(enforcementEffect);
-	} catch (error) {
-		logger.error(
-			{ error, workPeriodId: input.workPeriodId },
-			"Failed to enforce breaks after clock-out",
-		);
-		return {
-			wasAdjusted: false,
-			affectedWorkPeriodIds: [input.workPeriodId],
-		};
-	}
+	return Effect.runPromise(enforcementEffect);
 }

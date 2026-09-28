@@ -171,22 +171,22 @@ describe("departure as a work transaction", () => {
 			]);
 		}
 
-		// The adopted departure records a review instead of writing (#477 decision 9).
+		// The departure read the admission the activation committed: it closes the
+		// adopted work through the append writer (#476 decision 16).
 		expect(
 			await row(`select end_time, is_active from work_period where id = $1`, [periodId]),
-		).toEqual({ end_time: null, is_active: true });
+		).toEqual({ end_time: new Date("2026-09-14T22:00:00Z"), is_active: false });
 		expect(
 			await row(
-				`select count(*)::int as count from time_entry where employee_id = $1 and type = 'clock_out'`,
+				`select count(*)::int as count from completed_work_operation
+				 where employee_id = $1 and writer = 'employee_departure'`,
 				[target.employeeId],
 			),
-		).toEqual({ count: 0 });
+		).toEqual({ count: 1 });
 		expect(
-			await row(
-				`select kind, subject_id, metadata->>'reason' as reason from employee_departure_review
-				 where departure_id = $1`,
-				[identity.departureId],
-			),
-		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "append_adopted" });
+			await row(`select kind, subject_id from employee_departure_review where departure_id = $1`, [
+				identity.departureId,
+			]),
+		).toEqual({ kind: "clock_out", subject_id: periodId });
 	});
 });

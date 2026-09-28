@@ -1,21 +1,30 @@
 /**
- * PostgreSQL contract: pnpm --filter webapp test:approval-workflow-repository:integration
- * The canonical departure clock-out closes a real running period at the cutoff.
+ * PostgreSQL contract: pnpm --filter webapp test:integration
+ * The departure clock-out closes a real running period at the cutoff through the
+ * Clocking module (#485), in both admissions, and stages its durable follow-ups.
  */
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	createClockingService,
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
-import { createDepartureClockOut } from "./clock-out";
-import { runDepartureTransaction } from "./departure-transaction";
-import {
-	createLifecycleDatabaseFixture,
-	type LifecycleDatabaseFixture,
-	type SeededEmployee,
-} from "./testing/database.test.fixture";
-import { executeDepartureInTransaction } from "./transition";
+
+const harness = vi.hoisted(() => ({
+	billing: { canAccess: true } as { canAccess: boolean; reason?: string },
+}));
+
+vi.mock("@/lib/billing/guard", () => ({
+	requireBillingForMutation: async () => harness.billing,
+	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
+}));
+
+const { createDepartureClockOut } = await import("./clock-out");
+const { runDepartureTransaction } = await import("./departure-transaction");
+const { createLifecycleDatabaseFixture } = await import("./testing/database.test.fixture");
+const { executeDepartureInTransaction } = await import("./transition");
+type LifecycleDatabaseFixture = import("./testing/database.test.fixture").LifecycleDatabaseFixture;
+type SeededEmployee = import("./testing/database.test.fixture").SeededEmployee;
 
 const CUTOFF = "2026-09-14T22:00:00Z";
 const EXECUTED_LATE = parseInstant("2026-09-14T22:17:00Z");
@@ -31,7 +40,7 @@ describe("departure clock-out", () => {
 		await fixture?.close();
 	});
 
-	async function clockIn(target: SeededEmployee, at: string) {
+	async function clockIn(target: SeededEmployee, at: string, actionId?: string) {
 		const clocking = createClockingService({
 			transaction: (callback) =>
 				fixture.db.transaction((tx) => callback(createDatabaseClockingStore(tx))),
@@ -40,6 +49,7 @@ describe("departure clock-out", () => {
 			employeeId: target.employeeId,
 			organizationId: fixture.organizationId,
 			createdBy: target.userId,
+			actionId,
 			action: {
 				instant: parseInstant(at),
 				utcOffsetMinutes: 0,
@@ -128,6 +138,59 @@ describe("departure clock-out", () => {
 				identity.departureId,
 			]),
 		).toEqual({ kind: "clock_out", subject_id: periodId });
+		// #476 decision 10: every legacy close writes the canonical work record.
+		expect(
+			await row(
+				`select tr.start_at, tr.end_at, tr.duration_minutes, tr.created_by
+				 from work_period wp join time_record tr on tr.id = wp.canonical_record_id
+				 where wp.id = $1`,
+				[periodId],
+			),
+		).toEqual({
+			start_at: new Date("2026-09-14T20:00:00Z"),
+			end_at: new Date(CUTOFF),
+			duration_minutes: 120,
+			created_by: fixture.ownerUserId,
+		});
+		// Legacy closures keep no receipt.
+		expect(await receipts(target)).toEqual([]);
+		expect(await postprocessTasks(identity.departureId)).toEqual([
+			{
+				dedupe_key: `clock-postprocess:${await clockOutActionId(identity.departureId)}`,
+				payload: {
+					workPeriodId: periodId,
+					durationMinutes: 120,
+					periodStartedAt: "2026-09-14T20:00:00.000Z",
+					timezone: "Europe/Berlin",
+					createdBy: fixture.ownerUserId,
+					projectId: null,
+					balanceRefreshCommitted: false,
+					surchargeSnapshot: expect.anything(),
+				},
+			},
+		]);
+	});
+
+	// #476 decision 8: offboarding is never blocked by a lapsed subscription.
+	it("closes running work although billing refuses mutations", async () => {
+		const target = await fixture.seedEmployee();
+		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
+		const identity = await scheduleAt(target);
+		harness.billing = { canAccess: false, reason: "subscription_required" };
+		try {
+			await execute(identity);
+		} finally {
+			harness.billing = { canAccess: true };
+		}
+
+		expect(
+			await row(`select end_time, is_active from work_period where id = $1`, [periodId]),
+		).toEqual({ end_time: new Date(CUTOFF), is_active: false });
+		expect(
+			await row(`select kind, subject_id from employee_departure_review where departure_id = $1`, [
+				identity.departureId,
+			]),
+		).toEqual({ kind: "clock_out", subject_id: periodId });
 	});
 
 	it("reports no running period without writing time entries", async () => {
@@ -168,9 +231,9 @@ describe("departure clock-out", () => {
 		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "period_starts_after_cutoff" });
 	});
 
-	// #327, #477 decision 9: in an organization that adopted appends, the departure
-	// clock-out writes nothing; the period stays open and a timer repair is recorded.
-	it("leaves adopted work open with an append_adopted timer repair", async () => {
+	// #476 decision 16 (W24): an organization that adopted appends closes the
+	// departing employee's live work through the append writer, with a receipt.
+	it("closes adopted work through the append writer", async () => {
 		const target = await fixture.seedEmployee();
 		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
 		const identity = await scheduleAt(target);
@@ -180,21 +243,85 @@ describe("departure clock-out", () => {
 		);
 		try {
 			await execute(identity);
+			// A second run finds the departure effective and writes nothing more.
+			expect(await execute(identity)).toEqual({ status: "obsolete" });
 		} finally {
-			await fixture.pool.query(
-				"delete from time_entry_append_control where organization_id = $1",
-				[fixture.organizationId],
-			);
+			await fixture.pool.query("delete from time_entry_append_control where organization_id = $1", [
+				fixture.organizationId,
+			]);
 		}
+
+		const actionId = await clockOutActionId(identity.departureId);
+		expect(
+			await row(
+				`select wp.end_time, wp.is_active, wp.clock_out_id, tr.duration_minutes as record_minutes
+				 from work_period wp join time_record tr on tr.id = wp.canonical_record_id
+				 where wp.id = $1`,
+				[periodId],
+			),
+		).toEqual({
+			end_time: new Date(CUTOFF),
+			is_active: false,
+			clock_out_id: actionId,
+			record_minutes: 120,
+		});
+		const entries = await fixture.pool.query(
+			`select id, timestamp, timezone_source, created_by, device_info
+			 from time_entry where employee_id = $1 and type = 'clock_out'`,
+			[target.employeeId],
+		);
+		expect(entries.rows).toEqual([
+			{
+				id: actionId,
+				timestamp: new Date(CUTOFF),
+				timezone_source: "manager_target_user_setting",
+				created_by: fixture.ownerUserId,
+				device_info: "employee-offboarding",
+			},
+		]);
+		expect(await receipts(target)).toEqual([
+			{
+				id: actionId,
+				kind: "close_active_work",
+				writer: "employee_departure",
+				work_period_id: periodId,
+				append_admission: "append",
+			},
+		]);
+		expect(
+			await row(`select kind, subject_id from employee_departure_review where departure_id = $1`, [
+				identity.departureId,
+			]),
+		).toEqual({ kind: "clock_out", subject_id: periodId });
+		expect(await postprocessTasks(identity.departureId)).toEqual([
+			{
+				dedupe_key: `clock-postprocess:${actionId}`,
+				payload: expect.objectContaining({
+					workPeriodId: periodId,
+					durationMinutes: 120,
+					balanceRefreshCommitted: true,
+				}),
+			},
+		]);
+	});
+
+	it("rolls back a failed closure and records a timer repair", async () => {
+		const target = await fixture.seedEmployee();
+		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");
+		const identity = await scheduleAt(target);
+		// Another employee's entry already holds the departure's action ID.
+		const other = await fixture.seedEmployee();
+		await clockIn(other, "2026-09-14T19:00:00Z", await clockOutActionId(identity.departureId));
+
+		await expect(execute(identity)).resolves.toMatchObject({ status: "effective" });
 
 		expect(
 			await row(`select end_time, is_active from work_period where id = $1`, [periodId]),
 		).toEqual({ end_time: null, is_active: true });
 		expect(
-			await row(
-				`select count(*)::int as count from time_entry where employee_id = $1 and type = 'clock_out'`,
-				[target.employeeId],
-			),
+			await row(`select count(*)::int as count from time_record where employee_id = $1`, [
+				target.employeeId,
+			]),
 		).toEqual({ count: 0 });
 		expect(
 			await row(
@@ -202,6 +329,33 @@ describe("departure clock-out", () => {
 				 where departure_id = $1`,
 				[identity.departureId],
 			),
-		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "append_adopted" });
+		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "clock_out_failed" });
+		expect(await postprocessTasks(identity.departureId)).toEqual([]);
 	});
+
+	async function clockOutActionId(departureId: string) {
+		const { clock_out_action_id } = await row<{ clock_out_action_id: string }>(
+			`select clock_out_action_id from employee_departure where id = $1`,
+			[departureId],
+		);
+		return clock_out_action_id;
+	}
+
+	async function receipts(target: SeededEmployee) {
+		const result = await fixture.pool.query(
+			`select id, kind, writer, work_period_id, append_admission
+			 from completed_work_operation where employee_id = $1`,
+			[target.employeeId],
+		);
+		return result.rows;
+	}
+
+	async function postprocessTasks(departureId: string) {
+		const result = await fixture.pool.query(
+			`select dedupe_key, payload from employee_departure_task
+			 where departure_id = $1 and kind = 'clock_postprocess'`,
+			[departureId],
+		);
+		return result.rows;
+	}
 });
