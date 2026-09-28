@@ -29,7 +29,7 @@ import {
 import { readComplianceTotals } from "./compliance-totals";
 import type { PolicyClockOutSurchargeSnapshot } from "./policy-clock-out-surcharge-snapshot";
 
-const logger = createLogger("Clocking:Effects");
+const logger = createLogger("TimeTracking:ClockOutEffects");
 
 /**
  * Checks one closed period against the employee's working-time rules and logs

@@ -1,3 +1,5 @@
+import "server-only";
+
 import { db } from "@/db";
 import { timeRecord, timeRecordAllocation, timeRecordWork } from "@/db/schema";
 import type { WorkLocationType } from "./work-location";

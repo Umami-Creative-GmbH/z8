@@ -6,8 +6,11 @@ function source(relativePath: string) {
 	return readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
 }
 
+// Static, dynamic and relative specifiers into `src/app`.
+const APP_SPECIFIER = /(?:from |import\()"((?:@\/|(?:\.\.\/)+)app\/[^"]+)"/g;
+
 function appImports(relativePath: string) {
-	return [...source(relativePath).matchAll(/from "(@\/app\/[^"]+)"/g)].map(
+	return [...source(relativePath).matchAll(APP_SPECIFIER)].map(
 		([, specifier]) => `${relativePath}: ${specifier}`,
 	);
 }

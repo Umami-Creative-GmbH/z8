@@ -5599,8 +5599,7 @@ export function wrongSplitOwner() {
 	});
 
 	it("allows only exact injected creation and correction owners", () => {
-		const canonicalPath =
-			"src/lib/time-tracking/canonical-work-record.ts";
+		const canonicalPath = "src/lib/time-tracking/canonical-work-record.ts";
 		const correctionPath = "src/lib/effect/services/time-entry.service.ts";
 		const recordPath = "src/lib/effect/services/time-record.service.ts";
 		withApprovalWriteTree(
@@ -5632,10 +5631,6 @@ export function renamedCreateTimeRecord() {
 					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
 				).toEqual([
 					expect.objectContaining({
-						functionName: "wrongCompletedPeriodOwner",
-						path: canonicalPath,
-					}),
-					expect.objectContaining({
 						functionName: "dynamicCorrectionOwner",
 						path: correctionPath,
 						uncertainty: "dynamic_payload",
@@ -5648,6 +5643,10 @@ export function renamedCreateTimeRecord() {
 					expect.objectContaining({
 						functionName: "renamedCreateTimeRecord",
 						path: recordPath,
+					}),
+					expect.objectContaining({
+						functionName: "wrongCompletedPeriodOwner",
+						path: canonicalPath,
 					}),
 				]);
 			},
