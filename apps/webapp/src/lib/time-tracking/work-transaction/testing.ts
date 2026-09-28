@@ -25,6 +25,13 @@ export interface FakeWorkTransactionOptions {
 	admission?: WorkTransactionAdmission;
 	/** Attempts (from 1) whose re-route reports a concurrent scope change. */
 	changeScopeOn?: readonly number[];
+	/**
+	 * Opens each attempt's transaction, such as a mocked `db.transaction` with
+	 * rollback; default a fresh client derived from `client`.
+	 */
+	transaction?<T>(body: (client: object) => Promise<T>): Promise<T>;
+	/** Also takes each guard after recording it, such as a mocked advisory lock. */
+	lock?(client: object, guard: Guard): Promise<void>;
 }
 
 export interface FakeWorkTransaction {
@@ -53,11 +60,13 @@ export function fakeWorkTransaction(options: FakeWorkTransactionOptions = {}): F
 				{
 					async open(_database, body) {
 						attempts += 1;
+						if (options.transaction) return options.transaction(body);
 						// A fresh client per attempt, as a fresh transaction would be.
 						return body(Object.create(options.client ?? {}));
 					},
-					async lock(_client, guard) {
+					async lock(client, guard) {
 						guards.push({ ...guard, attempt: attempts });
+						await options.lock?.(client, guard);
 					},
 					async readAdmission() {
 						return options.admission ?? "legacy";
