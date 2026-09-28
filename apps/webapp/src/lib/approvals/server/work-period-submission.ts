@@ -16,7 +16,10 @@ import {
 	decodeApprovalDatabaseTimestampWithoutTimeZone,
 } from "../approval-database-row";
 import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
-import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	type OrdinaryWorkPeriodApprovalKind,
@@ -1767,25 +1770,29 @@ async function executeOrdinaryWorkPeriodSubmission(
 		let observedWorkflowId: string | null = null;
 		let captureCount = 0;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: context.writeGate,
 			compatibilityWriter: context.compatibilityWriter,
+			observedWorkflows: createObservedWorkflowReader(context),
 		});
-		const result = await coordinator.execute({
-			organizationId: input.organizationId,
-			workflowType: input.kind,
+		// A submission has no legacy request yet: nothing to observe.
+		const observation = await coordinator.observe({
+			gate: authority,
 			sourceIdentity: {
 				organizationId: input.organizationId,
 				workflowType: input.kind,
 				sourceType: "time_entry",
 				sourceId: input.workPeriodId,
 			},
+			requesterEmployeeId: input.requesterEmployeeId,
+			legacyApprovalRequestId: null,
+		});
+		const result = await coordinator.execute({
+			observation,
 			actor: {
 				kind: "employee",
 				employeeId: input.requesterEmployeeId,
 				userId: null,
 			},
 			idempotencyKey: submissionKey,
-			expectedVersion: null,
 			captureState: async () => {
 				captureCount += 1;
 				if (captureCount === 1) {

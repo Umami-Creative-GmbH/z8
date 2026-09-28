@@ -15,8 +15,6 @@ const SRC_ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const ALLOWED = [
 	"lib/approvals/authority/",
 	"lib/approvals/workflow/cutover.ts",
-	// Until its follow-up absorbs its callers' mode branches.
-	"lib/approvals/domain-adapters/legacy-write-coordinator.ts",
 ];
 
 const MODE = '"(?:legacy|shadow|ready|canonical|complete)"';

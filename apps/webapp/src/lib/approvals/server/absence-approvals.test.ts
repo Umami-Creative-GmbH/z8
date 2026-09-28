@@ -126,6 +126,43 @@ function noLegacyTransfers() {
 	return { findTransferredRequest: vi.fn(async () => null) };
 }
 
+/**
+ * The legacy write coordinator's observed-workflow read (#475): the absence's
+ * only pending request, the stage lookup, then the repository snapshot.
+ */
+function observedWorkflowRead(
+	observed: { version: number } | null,
+	legacyApprovalRequestId = "approval-target-1",
+) {
+	const snapshot = observed && {
+		id: "workflow-1",
+		organizationId: "org-1",
+		workflowType: "absence",
+		sourceType: "absence_entry",
+		sourceId: "absence-1",
+		requesterEmployeeId: "emp-requester",
+		status: "pending",
+		version: observed.version,
+		stages: [
+			{
+				id: "stage-1",
+				legacyApprovalRequestId,
+				sequence: 1,
+				status: "pending",
+				assignments: [],
+			},
+		],
+	};
+	return {
+		pendingRequests: {
+			findMany: vi.fn().mockResolvedValue([{ id: legacyApprovalRequestId }]),
+		},
+		execute: vi.fn(async () => ({ rows: snapshot ? [{ id: snapshot.id }] : [] })),
+		loadSnapshot: vi.fn(async () => snapshot),
+		mirrored: { snapshot: { id: "workflow-1" } },
+	};
+}
+
 describe("absence canonical decision errors", () => {
 	it.each([
 		["forbidden", AuthorizationError],
@@ -1704,11 +1741,16 @@ describe("absence decision rollout routing", () => {
 				},
 			};
 		});
+		const observedRead = observedWorkflowRead(
+			mode === "shadow" || mode === "ready" ? { version: 4 } : null,
+		);
 		const context = {
 			dbService: {
 				db: {
 					transaction: innerTransaction,
+					execute: observedRead.execute,
 					query: {
+						approvalRequest: observedRead.pendingRequests,
 						employee: {
 							findMany: vi.fn().mockResolvedValue([
 								{
@@ -1729,20 +1771,12 @@ describe("absence decision rollout routing", () => {
 							findFirst: vi.fn().mockResolvedValue({
 								id: "absence-1",
 								organizationId: "org-1",
+								employeeId: "emp-requester",
 								approvalWorkflowId:
 									mode === "canonical" || mode === "complete"
 										? "workflow-1"
 										: null,
 							}),
-						},
-						approvalWorkflow: {
-							findFirst: vi
-								.fn()
-								.mockResolvedValue(
-									mode === "shadow" || mode === "ready"
-										? { id: "workflow-1", version: 4 }
-										: null,
-								),
 						},
 					},
 				},
@@ -1756,11 +1790,14 @@ describe("absence decision rollout routing", () => {
 				},
 				mirrorLegacyToCanonical: vi.fn(async () => {
 					events.push("mirror");
-					return {};
+					return observedRead.mirrored;
 				}),
 			},
 			repository: {
-				loadSnapshot: vi.fn().mockResolvedValue({
+				loadSnapshot:
+					mode === "shadow" || mode === "ready"
+						? observedRead.loadSnapshot
+						: vi.fn().mockResolvedValue({
 					id: "workflow-1",
 					organizationId: "org-1",
 					workflowType: "absence",
@@ -2216,10 +2253,13 @@ describe("absence decision rollout routing", () => {
 			if (failurePoint === "mirror") throw new Error("mirror failed");
 			return {};
 		});
+		const observedRead = observedWorkflowRead({ version: 4 });
 		const context = {
 			dbService: {
 				db: {
+					execute: observedRead.execute,
 					query: {
+						approvalRequest: observedRead.pendingRequests,
 						employee: {
 							findMany: vi.fn().mockResolvedValue([
 								{
@@ -2235,13 +2275,9 @@ describe("absence decision rollout routing", () => {
 							findFirst: vi.fn().mockResolvedValue({
 								id: "absence-1",
 								organizationId: "org-1",
+								employeeId: "emp-requester",
 								approvalWorkflowId: null,
 							}),
-						},
-						approvalWorkflow: {
-							findFirst: vi
-								.fn()
-								.mockResolvedValue({ id: "workflow-1", version: 4 }),
 						},
 					},
 				},
@@ -2249,6 +2285,7 @@ describe("absence decision rollout routing", () => {
 			writeGate: {
 				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("shadow")),
 			},
+			repository: { loadSnapshot: observedRead.loadSnapshot },
 			compatibilityWriter: {
 				withWriteGate() {
 					return this;
@@ -2496,10 +2533,16 @@ describe("legacy absence decision evidence routing", () => {
 			snapshot: { id: "workflow-1" },
 			events: [{ id: "event-1" }],
 		};
+		const observedRead = observedWorkflowRead(
+			mode === "shadow" ? { version: 4 } : null,
+			"approval-1",
+		);
 		const context = {
 			dbService: {
 				db: {
+					execute: observedRead.execute,
 					query: {
+						approvalRequest: observedRead.pendingRequests,
 						employee: {
 							findMany: vi.fn().mockResolvedValue([
 								{
@@ -2515,15 +2558,9 @@ describe("legacy absence decision evidence routing", () => {
 							findFirst: vi.fn().mockResolvedValue({
 								id: "absence-1",
 								organizationId: "org-1",
+								employeeId: "emp-requester",
 								approvalWorkflowId: null,
 							}),
-						},
-						approvalWorkflow: {
-							findFirst: vi
-								.fn()
-								.mockResolvedValue(
-									mode === "shadow" ? { id: "workflow-1", version: 4 } : null,
-								),
 						},
 					},
 				},
@@ -2531,6 +2568,7 @@ describe("legacy absence decision evidence routing", () => {
 			writeGate: {
 				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
+			repository: { loadSnapshot: observedRead.loadSnapshot },
 			compatibilityWriter: {
 				withWriteGate() {
 					return this;

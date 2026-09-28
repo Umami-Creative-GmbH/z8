@@ -101,7 +101,8 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 	it("registers the complete Task 11 mode, rollback, race, isolation, and split matrix", () => {
 		for (const scenario of [
 			"composes submission and terminal decisions in %s mode",
-			"bootstraps an unmarked pre-canonical manual $action in $mode mode",
+			"late-mirrors an unmarked pre-shadow manual $action in $mode mode",
+			"late-mirrors a pre-shadow decision once and replays its retry in %s mode",
 			"preserves policy snapshot through production submission capture in %s mode",
 			"retains terminal policy evidence for $action with split=$split in $mode mode",
 			"rolls back terminal policy $evidence evidence in $mode mode",
@@ -1716,7 +1717,7 @@ describe(
 				{ mode, action: "approve" as const },
 				{ mode, action: "reject" as const },
 			]),
-		)("bootstraps an unmarked pre-canonical manual $action in $mode mode", async ({
+		)("late-mirrors an unmarked pre-shadow manual $action in $mode mode", async ({
 			mode,
 			action,
 		}) => {
@@ -1784,7 +1785,61 @@ describe(
 				approval_status: expectedStatus,
 				approval_workflow_id: workflows[0]?.id,
 			});
+			// Late mirroring (#475): the shared coordinator path and its receipt.
+			const lateMirrorKey = `late-mirror:${ids.organization}:manual_time_submission:time_entry:${ids.period}:${submitted.result.approvalRequestId}`;
+			const lateMirrorEvents = async () =>
+				(
+					await pool.query<{ count: string }>(
+						`select count(*) from approval_workflow_event
+						 where organization_id = $1 and workflow_id = $2
+						 and (idempotency_key = $3 or idempotency_key like $3 || ':%')`,
+						[ids.organization, workflows[0]?.id, lateMirrorKey],
+					)
+				).rows[0]?.count;
+			expect(Number(await lateMirrorEvents())).toBeGreaterThan(0);
 		});
+
+		it.each(["shadow", "ready"] as const)(
+			"late-mirrors a pre-shadow decision once and replays its retry in %s mode",
+			async (mode) => {
+				await seed("manual_time_submission", false, "legacy");
+				const submitted = await submit("manual_time_submission");
+				await pool.query(
+					`update approval_workflow_rollout set lifecycle_mode = $1, updated_at = now()
+					 where organization_id = $2 and workflow_type = 'manual_time_submission'`,
+					[mode, ids.organization],
+				);
+				const lateMirrorEvents = async () =>
+					(
+						await pool.query<{ idempotency_key: string }>(
+							`select idempotency_key from approval_workflow_event
+							 where organization_id = $1 and idempotency_key like 'late-mirror:%'
+							 order by idempotency_key`,
+							[ids.organization],
+						)
+					).rows.map((row) => row.idempotency_key);
+
+				await expect(
+					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
+				).resolves.toMatchObject({ result: { action: "approve" } });
+				const decided = await snapshot();
+				const lateMirrored = await lateMirrorEvents();
+				expect(lateMirrored.length).toBeGreaterThan(0);
+				expect(lateMirrored[0]).toMatch(
+					`late-mirror:${ids.organization}:manual_time_submission:time_entry:${ids.period}:${submitted.result.approvalRequestId}`,
+				);
+				expect(decided.approval_workflow).toEqual([
+					expect.objectContaining({ status: "approved", version: 2 }),
+				]);
+
+				// The retry replays: no second late mirror or observed workflow.
+				await expect(
+					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
+				).resolves.toMatchObject({ result: { action: "approve" }, postCommit: null });
+				expect(await lateMirrorEvents()).toEqual(lateMirrored);
+				expect(await snapshot()).toEqual(decided);
+			},
+		);
 
 		it.each(
 			modes,

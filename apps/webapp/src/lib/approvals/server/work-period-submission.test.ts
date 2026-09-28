@@ -85,7 +85,13 @@ vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 }));
 
 vi.mock("../domain-adapters/legacy-write-coordinator", () => ({
+	createObservedWorkflowReader: () => ({}),
 	createLegacyApprovalWriteCoordinator: () => ({
+		observe: async (input: { legacyApprovalRequestId: string | null }) => {
+			// A submission has no legacy request to observe.
+			expect(input.legacyApprovalRequestId).toBeNull();
+			return input;
+		},
 		execute: async (input: {
 			captureState: () => Promise<unknown>;
 			mutate: () => Promise<unknown>;

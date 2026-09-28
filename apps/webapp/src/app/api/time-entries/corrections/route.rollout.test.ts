@@ -12,6 +12,7 @@ type CorrectionRow = FixtureRow & {
 };
 
 interface LegacyCoordinatorInput {
+	observation: { gate: { shadowMirroring: boolean } };
 	idempotencyKey: string;
 	afterMirror: (mirrored: unknown) => Promise<unknown>;
 }
@@ -389,12 +390,12 @@ vi.mock("@/lib/approvals/workflow/runtime", () => ({
 }));
 
 vi.mock("@/lib/approvals/domain-adapters/legacy-write-coordinator", () => ({
-	createLegacyApprovalWriteCoordinator: (dependencies: typeof context) => ({
+	createObservedWorkflowReader: () => ({}),
+	createLegacyApprovalWriteCoordinator: (dependencies: Pick<typeof context, "compatibilityWriter">) => ({
+		// The submission hands over the gate it read; it observes nothing.
+		observe: async (input: LegacyCoordinatorInput["observation"]) => ({ gate: input.gate }),
 		execute: async (input: LegacyCoordinatorInput) => {
-			const gate = await dependencies.writeGate.acquire({
-				organizationId: "org-1",
-				workflowType: "time_correction",
-			});
+			const gate = input.observation.gate;
 			const autoComplete = state.autoComplete;
 			const correction = [...state.corrections.values()].at(-1);
 			if (autoComplete && correction) correction.isSuperseded = false;
@@ -424,9 +425,9 @@ vi.mock("@/lib/approvals/domain-adapters/legacy-write-coordinator", () => ({
 					},
 				},
 			});
-			if (gate.mode === "shadow" || gate.mode === "ready") {
+			if (gate.shadowMirroring) {
 				const mirrored = await dependencies.compatibilityWriter
-					.withWriteGate(dependencies.writeGate)
+					.withWriteGate(context.writeGate)
 					.mirrorLegacyToCanonical({});
 				await input.afterMirror(mirrored);
 			}

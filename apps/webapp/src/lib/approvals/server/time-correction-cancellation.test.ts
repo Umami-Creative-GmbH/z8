@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	approvalChainInstance,
@@ -8,6 +9,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
+import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 
 const ids = {
 	organization: "10000000-0000-4000-8000-000000000001",
@@ -93,6 +95,9 @@ it("keeps cancellation timestamp comparisons inside the Temporal boundary", () =
 	expect(source).not.toContain(".getTime()");
 });
 
+/** The pending legacy request the observed workflow's stage names (#475). */
+const pendingRequestId = "10000000-0000-4000-8000-000000000005";
+
 function workflow(status: "pending" | "cancelled" = "pending") {
 	return {
 		id: ids.workflow,
@@ -103,6 +108,7 @@ function workflow(status: "pending" | "cancelled" = "pending") {
 		requesterEmployeeId: ids.employee,
 		status,
 		version: status === "pending" ? 4 : 5,
+		stages: [{ legacyApprovalRequestId: pendingRequestId }],
 		contextSnapshot: {
 			timeCorrection: {
 				action: "edit",
@@ -380,6 +386,10 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 		.mockReturnValueOnce(requestMutation)
 		.mockReturnValueOnce(correctionMutation);
 	const database = {
+		// The coordinator's observed-workflow lookup (#475).
+		execute: vi.fn(async (statement: SQL) =>
+			answerObservedWorkflowLookup(statement, [workflow()]),
+		),
 		query: {
 			approvalChainInstance: {
 				findMany: vi.fn().mockResolvedValue([]),
@@ -388,6 +398,8 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 				findMany: vi.fn().mockResolvedValue([]),
 			},
 			approvalRequest: {
+				// The requester's latest legacy request on the work period.
+				findFirst: vi.fn().mockResolvedValue({ id: pendingRequestId }),
 				// After a capture, the persisted request row the capture described:
 				// the tombstone keeps its submission evidence (#301).
 				findMany: vi.fn(async () => {
