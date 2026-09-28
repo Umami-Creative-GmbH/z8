@@ -31,6 +31,7 @@ import {
 	isFrozen,
 	receiptCommandOf,
 } from "./frozen";
+import { assertLegacyAccepted } from "./legacy-command";
 import type { ClockInCommand, ClockInRefusal, ClockInResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -173,6 +174,7 @@ export async function startClockIn(
 		if (replay) return { disposition: "replayed", entry: replay };
 	}
 	assertFrozenAccepted(command, scope.admission);
+	assertLegacyAccepted(command, scope.admission);
 	const [live] = await scope.db
 		.select({ startTime: workPeriod.startTime })
 		.from(workPeriod)

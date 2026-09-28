@@ -1,11 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import { validateProjectAssignment } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { employee, project, timeEntry, userSettings, workCategory } from "@/db/schema";
+import { employee, timeEntry, userSettings } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
@@ -15,39 +15,30 @@ import {
 	toHttpError,
 	UnsupportedAuthorizationConditionError,
 } from "@/lib/authorization";
-import {
-	createBillingForbiddenResponse,
-	isBillingMutationAllowed,
-	requireBillingForMutation,
-} from "@/lib/billing/guard";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
 import { runtime } from "@/lib/effect/runtime";
 import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
-import { employeeHasAccessToCategory } from "@/lib/query/work-category.queries";
+import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
+import { createLogger } from "@/lib/logger";
+import type { AttributionIntent } from "@/lib/time-tracking/close-active-work";
 import {
-  ClockingAccessError,
-  ClockingAppendAdoptedError,
-  ClockingConflictError,
-  clockingService,
-} from "@/lib/time-tracking/clocking-service";
+	type ClockInRefusal,
+	type ClockInResult,
+	type ClockOutRefusal,
+	type ClockOutResult,
+	clocking,
+} from "@/lib/time-tracking/clocking";
+import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 import {
 	getUtcOffsetMinutesForZone,
 	isValidIanaTimezone,
-	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
-import { isWorkLocationType } from "@/lib/time-tracking/work-location";
 import {
 	classifyLegacyClockConsumer,
 	fenceLegacyClockConsumerResponse,
 } from "./legacy-consumer-fence";
 
-class TimeEntryConflictError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "TimeEntryConflictError";
-	}
-}
+const logger = createLogger("LegacyClockRoute");
 
 async function getSavedUserTimezone(userId: string): Promise<string | null> {
 	try {
@@ -197,7 +188,11 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/time-entries
- * Create a new time entry (clock in/out)
+ * The legacy direct clock route (#483): a thin adapter over the Clocking module
+ * for old consumers, the legacy desktop transport and the old service-worker and
+ * extension queues. It keeps only its transport checks: the capture evidence
+ * with its committed-action pre-read ahead of the age window, and the #266 queue
+ * fence. Its commands are legacy commands, which adopted organizations refuse.
  */
 const REPLAY_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
 const ACTION_ID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
@@ -233,6 +228,80 @@ async function preserveRefusedReplay(userId: string, organizationId: string, bod
 	});
 }
 
+/** Omitted attribution preserves the period's; `null` or an empty ID clears it. */
+function attributionOf(value: unknown): AttributionIntent {
+	if (value === undefined) return { kind: "preserve" };
+	return typeof value === "string" && value ? { kind: "replace", id: value } : { kind: "clear" };
+}
+
+type LegacyClockFailure = ClockInRefusal["code"] | ClockOutRefusal["code"];
+
+/**
+ * Every failure, as the route's established status and error text. Old queue
+ * readers retain 401 and 409 (#266); the fence rewrites the extension's 400.
+ */
+const FAILURE_REPLIES: Record<
+	Exclude<LegacyClockFailure, "billing_required" | "legacy_not_accepted">,
+	{ status: number; error: string }
+> = {
+	access_denied: { status: 403, error: "Active employee record required for the organization" },
+	invalid_command: { status: 400, error: "Invalid clock action id" },
+	invalid_work_location: { status: 400, error: "Invalid work location type" },
+	// Legacy commands carry no freshness; the route checks the capture window itself.
+	admission_window: { status: 400, error: "Clock instant is outside the allowed capture window" },
+	collision: { status: 409, error: "Clock action id collision" },
+	append_review_required: {
+		status: 409,
+		error: "Clock action was not saved because time history needs review",
+	},
+	frozen_not_accepted: { status: 400, error: "Invalid clock action" },
+	already_clocked_in: { status: 409, error: "Active work period already exists" },
+	holiday_blocked: { status: 409, error: "Clock-in is not allowed on a holiday" },
+	occupancy_conflict: { status: 409, error: "Clock-in overlaps recorded work" },
+	// Legacy closures always close the active work.
+	not_clocked_in: { status: 409, error: "No active work period found" },
+	target_unknown: { status: 409, error: "No active work period found" },
+	target_not_active: { status: 409, error: "No active work period found" },
+	project_not_allowed: { status: 400, error: "Cannot assign to this project" },
+	work_category_not_allowed: { status: 400, error: "Cannot assign to this work category" },
+	invalid_interval: { status: 409, error: "Clock-out precedes clock-in" },
+	failed: { status: 500, error: "Internal server error" },
+	unconfirmed: { status: 500, error: "Internal server error" },
+};
+
+function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
+	switch (failure.code) {
+		case "billing_required":
+			// The billing guard's response shape.
+			return NextResponse.json(
+				{ error: "billing_required", reason: failure.reason },
+				{ status: 402 },
+			);
+		case "legacy_not_accepted":
+			// The #327 fence's response: every legacy queue reader retains 409.
+			return NextResponse.json(
+				{
+					error: "This organization only accepts coordinated clock commands",
+					code: "append_adopted",
+				},
+				{ status: 409 },
+			);
+		case "failed":
+		case "unconfirmed":
+			logger.error({ error: failure.cause }, "Legacy clock action failed");
+			break;
+	}
+	const { status, error } = FAILURE_REPLIES[failure.code];
+	return NextResponse.json({ error }, { status });
+}
+
+/** The entry alone, as legacy consumers read it; closure advice stays with the web. */
+function entryOf(result: ClockOutResult | ClockInResult) {
+	const { complianceWarnings, breakAdjustment, pendingApproval, ...entry } =
+		result as ClockOutResult;
+	return entry;
+}
+
 export async function POST(request: NextRequest) {
 	// Opt out of caching - must be awaited immediately, not stored as promise
 	await connection();
@@ -248,11 +317,11 @@ export async function POST(request: NextRequest) {
 
 	return fenceLegacyClockConsumerResponse(
 		classifyLegacyClockConsumer(resolvedHeaders, body),
-		await createClockEntry(resolvedHeaders, body),
+		await runLegacyClockCommand(resolvedHeaders, body),
 	);
 }
 
-async function createClockEntry(resolvedHeaders: Headers, body: any) {
+async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 	try {
 		// With Bearer plugin, getSession handles both cookie and Bearer token auth
 		const session = await auth.api.getSession({ headers: resolvedHeaders });
@@ -268,8 +337,6 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 			id,
 			type,
 			timestamp,
-			notes,
-			location,
 			projectId,
 			workCategoryId,
 			workLocationType,
@@ -279,19 +346,11 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 			organizationId,
 		} = body;
 
-		// Validate required fields
-		if (!type || !["clock_in", "clock_out"].includes(type)) {
+		if (type !== "clock_in" && type !== "clock_out") {
 			return NextResponse.json(
 				{ error: "Invalid type. Must be 'clock_in' or 'clock_out'" },
 				{ status: 400 },
 			);
-		}
-
-		const resolvedWorkLocationType =
-			type === "clock_in" ? (workLocationType ?? "office") : undefined;
-
-		if (type === "clock_in" && !isWorkLocationType(resolvedWorkLocationType)) {
-			return NextResponse.json({ error: "Invalid work location type" }, { status: 400 });
 		}
 
 		const activeOrgId = session.session.activeOrganizationId;
@@ -311,52 +370,24 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 		if (organizationId !== undefined) {
 			return NextResponse.json({ error: "organizationId is server-derived" }, { status: 400 });
 		}
-		const requestedOrgId = activeOrgId;
-
-		if (!requestedOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
-		}
+		// Authentication; the Clocking module authorizes the command.
+		let actor: Awaited<ReturnType<typeof clockingService.requireActor>>;
 		try {
-			await clockingService.requireActor({
+			actor = await clockingService.requireActor({
 				userId: session.user.id,
-				activeOrganizationId: requestedOrgId,
+				activeOrganizationId: activeOrgId,
 			});
 		} catch (error) {
 			if (error instanceof ClockingAccessError) {
-				await preserveRefusedReplay(session.user.id, requestedOrgId, body);
+				await preserveRefusedReplay(session.user.id, activeOrgId, body);
 			}
 			throw error;
 		}
 
-		const [currentEmployee] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, requestedOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!currentEmployee) {
-			return NextResponse.json(
-				{ error: "Employee record not found in this organization" },
-				{ status: 404 },
-			);
-		}
-
-		const billingAccess = await requireBillingForMutation(requestedOrgId);
-		if (!isBillingMutationAllowed(billingAccess)) {
-			return createBillingForbiddenResponse(billingAccess);
-		}
-
 		const isReplay = replay === true;
+		// Postgres compares UUIDs case-insensitively; the module's identities are lowercase.
 		const actionId =
-			typeof id === "string" && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)
-				? id
-				: undefined;
+			typeof id === "string" && ACTION_ID_PATTERN.test(id) ? id.toLowerCase() : undefined;
 		const requestBrowserTimezone = isValidIanaTimezone(browserTimezone) ? browserTimezone : null;
 		const hasCapturedEvidence = actionId !== undefined || utcOffsetMinutes !== undefined;
 		if (isReplay && !actionId) {
@@ -371,14 +402,14 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 		) {
 			return NextResponse.json({ error: "Clock timezone evidence is incomplete" }, { status: 400 });
 		}
-		const entryTime = timestamp ? new Date(timestamp) : new Date();
-		if (Number.isNaN(entryTime.getTime())) {
+		const entryTime = timestamp ? new Date(timestamp) : null;
+		if (entryTime && Number.isNaN(entryTime.getTime())) {
 			return NextResponse.json({ error: "Invalid clock instant" }, { status: 400 });
 		}
 		// Historical committed recovery precedes fresh age admission (#275): an
 		// action id that already committed in this scope replays through the
-		// clocking service's unchanged legacy matcher at any age. Absence of an entry
-		// proves nothing about identity-less requests, which keep their rules.
+		// module's legacy matcher at any age. Absence of an entry proves nothing
+		// about identity-less requests, which keep their rules.
 		const [committedAction] = actionId
 			? await db
 					.select({ id: timeEntry.id })
@@ -386,15 +417,15 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 					.where(
 						and(
 							eq(timeEntry.id, actionId),
-							eq(timeEntry.employeeId, currentEmployee.id),
-							eq(timeEntry.organizationId, requestedOrgId),
+							eq(timeEntry.employeeId, actor.employee.id),
+							eq(timeEntry.organizationId, activeOrgId),
 						),
 					)
 					.limit(1)
 			: [];
-		if (hasCapturedEvidence && !committedAction) {
+		if (entryTime && hasCapturedEvidence && !committedAction) {
 			const ageMs = Date.now() - entryTime.getTime();
-			const maxAgeMs = isReplay ? 7 * 24 * 60 * 60_000 : 5 * 60_000;
+			const maxAgeMs = isReplay ? REPLAY_MAX_AGE_MS : 5 * 60_000;
 			if (ageMs < -5 * 60_000 || ageMs > maxAgeMs) {
 				return NextResponse.json(
 					{ error: "Clock instant is outside the allowed capture window" },
@@ -408,108 +439,47 @@ async function createClockEntry(resolvedHeaders: Headers, body: any) {
 				);
 			}
 		}
-		const savedTimezone = (await getSavedUserTimezone(session.user.id)) ?? "UTC";
-		const timezoneCapture = hasCapturedEvidence
-			? { timezone: requestBrowserTimezone!, timezoneSource: "browser" as const, utcOffsetMinutes }
-			: resolveTimeEntryTimezoneCapture({
-					timestamp: entryTime,
-					browserTimezone: requestBrowserTimezone,
-					fallbackTimezone: savedTimezone,
-					browserSource: "browser",
-					fallbackSource: "user_setting",
-				});
 
-		if (projectId) {
-			const [assignedProject] = await db
-				.select()
-				.from(project)
-				.where(and(eq(project.id, projectId), eq(project.organizationId, requestedOrgId)))
-				.limit(1);
-
-			if (!assignedProject) {
-				return NextResponse.json({ error: "Project not found" }, { status: 400 });
-			}
-
-			const projectValidation = await validateProjectAssignment(
-				projectId,
-				currentEmployee.id,
-				currentEmployee.teamId,
-				requestedOrgId,
-			);
-			if (!projectValidation.isValid) {
-				return NextResponse.json(
-					{ error: projectValidation.error || "Cannot assign to this project" },
-					{ status: 400 },
-				);
-			}
-		}
-
-		if (workCategoryId) {
-			const [category] = await db
-				.select()
-				.from(workCategory)
-				.where(
-					and(
-						eq(workCategory.id, workCategoryId),
-						eq(workCategory.organizationId, requestedOrgId),
-						eq(workCategory.isActive, true),
-					),
-				)
-				.limit(1);
-
-			if (!category) {
-				return NextResponse.json({ error: "Work category not found" }, { status: 400 });
-			}
-
-			const hasCategoryAccess = await employeeHasAccessToCategory(
-				currentEmployee.id,
-				workCategoryId,
-				requestedOrgId,
-			);
-			if (!hasCategoryAccess) {
-				return NextResponse.json({ error: "Cannot assign to this work category" }, { status: 400 });
-			}
-		}
-
-		const input = {
-			employeeId: currentEmployee.id,
-			organizationId: requestedOrgId,
-			createdBy: session.user.id,
-			actionId,
-			action: { instant: instantFromDate(entryTime), ...timezoneCapture },
-			source: { ipAddress: null, deviceInfo: isReplay ? "extension-replay" : "api" },
-			notes,
-			location,
+		const command = {
+			organizationId: activeOrgId,
+			principal: { kind: "user" as const, userId: session.user.id },
+			subject: { employeeId: actor.employee.id },
+			// An action id names one attempt across retries; without one, nothing replays.
+			identity: actionId
+				? { origin: "client" as const, id: actionId }
+				: { origin: "server" as const, id: randomUUID() },
+			channel: "api" as const,
+			legacy: true as const,
+			at: entryTime
+				? { kind: "occurred" as const, instant: instantFromDate(entryTime) }
+				: { kind: "now" as const },
+			zone: {
+				device: requestBrowserTimezone,
+				fallback: (await getSavedUserTimezone(session.user.id)) ?? "UTC",
+			},
 		};
-		const result =
+		const outcome =
 			type === "clock_in"
-				? await clockingService.clockIn({ ...input, workLocationType: resolvedWorkLocationType! })
-				: await clockingService.clockOut({ ...input, projectId, workCategoryId });
-		const entry = result.entry;
-
-		return NextResponse.json({ entry }, { status: 201 });
+				? await clocking.run({
+						...command,
+						body: { kind: "clock_in", workLocationType: workLocationType ?? "office" },
+					})
+				: await clocking.run({
+						...command,
+						body: {
+							kind: "clock_out",
+							project: attributionOf(projectId),
+							workCategory: attributionOf(workCategoryId),
+						},
+					});
+		if (outcome.outcome === "refused") return refusedResponse(outcome.failure);
+		// A committed action answers as it did when it was first saved.
+		return NextResponse.json({ entry: entryOf(outcome.result) }, { status: 201 });
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
-		// Adopted organizations accept only coordinated writers (#327). 409 is a
-		// status the #266 fence and every current queue reader retain.
-		if (error instanceof ClockingAppendAdoptedError) {
-			return NextResponse.json({ error: error.message, code: error.code }, { status: 409 });
-		}
-		if (error instanceof TimeEntryConflictError || error instanceof ClockingConflictError) {
-			return NextResponse.json({ error: error.message }, { status: 409 });
-		}
-
-		if (error instanceof Error && error.message === "No active work period found") {
-			return NextResponse.json({ error: "No active work period found" }, { status: 400 });
-		}
-
-		// Handle Effect errors
-		if (error instanceof Error && error.message.includes("NotFoundError")) {
-			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
-		}
-
+		logger.error({ error }, "Legacy clock action failed");
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

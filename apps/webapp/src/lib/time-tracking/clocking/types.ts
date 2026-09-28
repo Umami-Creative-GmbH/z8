@@ -116,6 +116,12 @@ type ClockCommandOf<Body extends ClockBody> = {
 	zone: ClockCommandZone;
 	freshness?: ClockCommandFreshness;
 	payload?: FrozenClockPayload;
+	/**
+	 * A legacy clock command: an old consumer's request on the legacy direct
+	 * route (#266). It commits only under legacy admission; an adopted
+	 * organization answers only its committed replays (#327).
+	 */
+	legacy?: true;
 	body: Body;
 };
 
@@ -134,6 +140,8 @@ type SharedClockFailure =
 	| "append_review_required"
 	/** A frozen command in an organization that has not adopted append admission. */
 	| "frozen_not_accepted"
+	/** A legacy command in an adopted organization, which it never commits. */
+	| "legacy_not_accepted"
 	/** Nothing was written; retrying is safe. */
 	| "failed"
 	/** The only outcome where work may have been saved. */

@@ -65,6 +65,7 @@ import {
 } from "./clock-out";
 import type { ClockFollowUps } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
+import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import type { ClockTransactions } from "./transactions";
 import type {
 	BreakCommand,
@@ -203,6 +204,9 @@ function transactionRefusal(error: unknown) {
 	}
 	if (error instanceof FrozenCommandNotAcceptedError) {
 		return { code: "frozen_not_accepted" as const };
+	}
+	if (error instanceof LegacyCommandNotAcceptedError) {
+		return { code: "legacy_not_accepted" as const };
 	}
 	return null;
 }

@@ -8,7 +8,7 @@ import type { ClockCommand } from "./types";
 
 /**
  * A frozen command commits only through the append writer, with its receipt.
- * This is the only place admission shows through to a caller.
+ * Besides legacy commands, the only place admission shows through to a caller.
  */
 export class FrozenCommandNotAcceptedError extends Error {
 	constructor() {

@@ -58,6 +58,7 @@ const replies: ClockCommandReplies<ClockOutFailure> = {
 		collision: failed,
 		admission_window: failed,
 		frozen_not_accepted: failed,
+		legacy_not_accepted: failed,
 		target_unknown: failed,
 		target_not_active: failed,
 		invalid_command: failed,

@@ -73,6 +73,10 @@ _Avoid_: Clock request, clock action
 A clock command fixed on the employee's device when it happened and submitted later, possibly delayed or offline.
 _Avoid_: v2 command, direct command
 
+**Legacy clock command**:
+A clock command from an old consumer of the legacy direct route, such as the legacy desktop or an old browser queue. It commits only while the organization is not adopted; afterwards only its committed actions are answered.
+_Avoid_: v1 command, old command
+
 **Break**:
 In clocking, ending the current live work and resuming new live work after the break interval.
 _Avoid_: Pause

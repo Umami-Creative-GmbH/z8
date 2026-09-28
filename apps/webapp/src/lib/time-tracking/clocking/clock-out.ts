@@ -46,6 +46,7 @@ import {
 	isFrozen,
 	receiptCommandOf,
 } from "./frozen";
+import { assertLegacyAccepted } from "./legacy-command";
 import type { ClockOutCommand, ClockOutResult } from "./types";
 
 type Employee = typeof employee.$inferSelect;
@@ -285,6 +286,7 @@ export async function closeClockOut(
 		const legacy = await replayLegacyClockOut(coordination, plan);
 		if (legacy) return { disposition: "replayed", ...legacy };
 	}
+	assertLegacyAccepted(plan.command, coordination.admission);
 	const { employee, receiptCommand, writer } = plan;
 	const closed = await closeActiveWork(coordination, {
 		organizationId: employee.organizationId,

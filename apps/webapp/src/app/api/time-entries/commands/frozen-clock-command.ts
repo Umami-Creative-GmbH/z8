@@ -175,6 +175,8 @@ const FAILURE_REPLIES: Record<
 	collision: { status: 409, code: "collision" },
 	append_review_required: { status: 409, code: "append_review_required" },
 	frozen_not_accepted: { status: 409, code: "not_adopted" },
+	// Only the legacy route sends legacy commands.
+	legacy_not_accepted: { status: 500, code: "unknown" },
 	target_unknown: { status: 409, code: "target_unknown" },
 	target_not_active: { status: 409, code: "target_not_active" },
 	// Frozen closures always name their target.

@@ -747,4 +747,44 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			});
 		});
 	});
+
+	it("closes with a legacy command only under legacy admission, and replays it once adopted", async () => {
+		await setAdmission("inactive");
+		const periodId = await startWork();
+		const { clocking, followUps } = newClocking();
+		const command = clockOut({ channel: "api", legacy: true });
+		await expect(clocking.run(command)).resolves.toMatchObject({
+			outcome: "executed",
+			result: { id: command.identity.id, deviceInfo: "api" },
+		});
+		// Every legacy close writes the canonical record and runs the follow-ups.
+		expect(await closedPeriod(periodId)).toMatchObject({ record_duration: 61, receipts: 0 });
+		expect(followUps.closures).toHaveLength(1);
+		await setAdmission("active");
+		await startWork(clockOutAt.add({ minutes: 1 }));
+		const committed = await snapshot();
+
+		await expect(clocking.run(command)).resolves.toMatchObject({
+			outcome: "replayed",
+			result: { id: command.identity.id },
+		});
+		// The new live work stays open for a fresh legacy closure, which is refused.
+		for (const identity of [
+			{ origin: "client", id: randomUUID() },
+			{ origin: "server", id: randomUUID() },
+		] as const) {
+			await expect(
+				clocking.run(
+					clockOut({
+						identity,
+						channel: "api",
+						legacy: true,
+						at: { kind: "occurred", instant: clockOutAt.add({ hours: 1 }) },
+					}),
+				),
+			).resolves.toEqual({ outcome: "refused", failure: { code: "legacy_not_accepted" } });
+		}
+		expect(await snapshot()).toEqual(committed);
+		expect(followUps.closures).toHaveLength(1);
+	});
 });
