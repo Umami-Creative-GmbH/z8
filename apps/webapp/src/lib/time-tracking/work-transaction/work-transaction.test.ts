@@ -300,6 +300,30 @@ describe("runWorkTransaction", () => {
 		expect(lockRows).toHaveBeenCalledTimes(2);
 	});
 
+	it("opens each attempt through the supplied transaction and passes guards to its lock", async () => {
+		const opened: object[] = [];
+		const locked: string[] = [];
+		const fake = fakeWorkTransaction({
+			changeScopeOn: [1],
+			transaction: async (body) => {
+				const client = { attempt: opened.length + 1 };
+				opened.push(client);
+				return body(client);
+			},
+			lock: async (client, guard) => {
+				locked.push(`${(client as { attempt: number }).attempt} ${guard.rank} ${guard.key}`);
+			},
+		});
+
+		const client = await fake.run(plan(simple), async (scope) => scope.db);
+
+		expect(opened).toHaveLength(2);
+		expect(client).toBe(opened[1]);
+		expect(locked).toEqual(
+			fake.guards.map(({ attempt, rank, key }) => `${attempt} ${rank} ${key}`),
+		);
+	});
+
 	it("settles a savepoint scope when its savepoint ends", async () => {
 		const fake = fakeWorkTransaction();
 		await fake.run(plan(simple), async (scope) => {

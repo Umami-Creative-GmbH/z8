@@ -67,7 +67,9 @@ const dbMock = vi.hoisted(() => ({
 
 const workHarness = vi.hoisted(() => ({
 	admission: "legacy" as "legacy" | "append",
+	/** The confirmed route of every attempt that reached the operation. */
 	coordinated: [] as Array<Record<string, unknown>>,
+	guards: [] as Array<{ rank: number; key: string; mode: string; attempt: number }>,
 	replay: vi.fn(),
 	record: vi.fn(),
 }));
@@ -89,23 +91,39 @@ vi.mock("@/lib/time-tracking/blockchain", () => ({
 	),
 }));
 
-// The real owner (import-work-transaction.ts) takes the #264 gates, the shared
-// employee key and the source identity; its PostgreSQL order is proven by
-// reviewed-import-operation.integration.test.ts. Here it keeps the employee key.
-vi.mock("./import-work-transaction", async () => {
+// The real routing runs on the work transaction fake (records guards, real
+// ledger) over the mocked transaction; its PostgreSQL order is proven by
+// reviewed-import-operation.integration.test.ts. Only the employee key is taken
+// on the mocked client, so concurrent workers serialize per employee.
+vi.mock("./import-work-transaction", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("./import-work-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	const { Rank } = await import("@/lib/time-tracking/work-transaction/ranks");
 	const { sql } = await import("drizzle-orm");
 	return {
+		...actual,
 		withReviewedImportTransaction: async (
-			input: Record<string, unknown>,
-			operation: (scope: Record<string, unknown>) => Promise<unknown>,
+			input: Parameters<typeof actual.withReviewedImportTransaction>[0],
+			operation: Parameters<typeof actual.withReviewedImportTransaction>[1],
 		) => {
-			workHarness.coordinated.push(input);
-			return dbMock.transaction(async (tx: { execute: (statement: unknown) => Promise<unknown> }) => {
-				await tx.execute(
-					sql`select pg_advisory_xact_lock(hashtextextended(${input.employeeId}, 0))`,
-				);
-				return operation({ db: tx, admission: workHarness.admission, assertEmployee: () => {} });
+			const fake = fakeWorkTransaction({
+				admission: workHarness.admission,
+				transaction: (body) => dbMock.transaction(body),
+				lock: async (client, guard) => {
+					if (guard.rank !== Rank.employeeCoordination) return;
+					await (client as { execute: (statement: unknown) => Promise<unknown> }).execute(
+						sql`select pg_advisory_xact_lock(hashtextextended(${guard.key}, 0))`,
+					);
+				},
 			});
+			try {
+				return await fake.run(actual.reviewedImportPlan(input), (scope) => {
+					workHarness.coordinated.push({ ...scope.route });
+					return operation(scope);
+				});
+			} finally {
+				workHarness.guards.push(...fake.guards);
+			}
 		},
 	};
 });
@@ -417,6 +435,7 @@ beforeEach(() => {
 	dbMock.query.importBatch.findFirst.mockResolvedValue({ provider: "clockodo" });
 	workHarness.admission = "legacy";
 	workHarness.coordinated = [];
+	workHarness.guards = [];
 	workHarness.replay.mockReset();
 	workHarness.replay.mockResolvedValue(null);
 	workHarness.record.mockReset();
@@ -1054,13 +1073,22 @@ describe("reviewed work rows (#284)", () => {
 
 		await commitAcceptedRowsForEntity(commitJob("work_period"));
 
+		const sourceKey = JSON.stringify(["clockodo", "work_period", "source_1"]);
 		expect(workHarness.coordinated).toEqual([
 			{
-				organizationId: "org_1",
-				employeeId: "emp_1",
-				importerUserId: "user_1",
-				sourceKey: JSON.stringify(["clockodo", "work_period", "source_1"]),
+				users: ["user_1"],
+				employees: ["emp_1"],
+				writeTargets: ["emp_1"],
+				sourceIdentities: [["reviewed-import-source", "org_1", sourceKey]],
+				snapshot: { employeeId: "emp_1", sourceKey },
 			},
+		]);
+		expect(workHarness.guards.map(({ rank, mode, key }) => `${rank} ${mode} ${key}`)).toEqual([
+			`1 shared ${JSON.stringify(["completed-work-adoption", "org_1"])}`,
+			`3 shared ${JSON.stringify(["work-organization-configuration", "org_1"])}`,
+			`4 shared ${JSON.stringify(["work-user-configuration-access", "user_1"])}`,
+			"5 exclusive emp_1",
+			`6 exclusive ${JSON.stringify(["reviewed-import-source", "org_1", sourceKey])}`,
 		]);
 	});
 
@@ -1156,22 +1184,29 @@ describe("reviewed work rows (#284)", () => {
 	it("restarts routing when the claimed row maps to another employee", async () => {
 		const routed = workRow();
 		dbMock.rows = [routed];
-		dbMock.persistedRows.set("row_1", {
-			...routed,
-			normalizedPayload: { ...routed.normalizedPayload, employeeId: "emp_2" },
-		});
+		dbMock.persistedRows.set("row_1", { ...routed });
+		// A reviewer's remap commits after routing confirmed the scope, before the claim.
+		let remapped = false;
+		dbMock.beforeUpdate = async (values) => {
+			if (remapped || values.rowStatus !== "committing") return;
+			remapped = true;
+			dbMock.persistedRows.set("row_1", {
+				...routed,
+				normalizedPayload: { ...routed.normalizedPayload, employeeId: "emp_2" },
+			});
+		};
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
 
 		expect(result).toMatchObject({ committedRows: 1, failedRows: 0 });
-		expect(workHarness.coordinated.map((input) => input.employeeId)).toEqual(["emp_1", "emp_2"]);
+		expect(workHarness.coordinated.map((route) => route.employees)).toEqual([["emp_1"], ["emp_2"]]);
 		expect(dbMock.insertCalls).toContainEqual(
 			expect.objectContaining({ type: "clock_in", employeeId: "emp_2" }),
 		);
 		expect(dbMock.insertCalls).not.toContainEqual(expect.objectContaining({ employeeId: "emp_1" }));
 	});
 
-	it("fails a row without a mapped employee before any transaction", async () => {
+	it("fails a row without a mapped employee while routing, before any guard", async () => {
 		dbMock.rows = [workRow({ normalizedPayload: { employeeId: null, startsAt: "x" } })];
 
 		const result = await commitAcceptedRowsForEntity(commitJob("work_period"));
@@ -1180,6 +1215,7 @@ describe("reviewed work rows (#284)", () => {
 		expect(result.errors[0]?.message).toBe(
 			"work_period import row requires a mapped employee before commit",
 		);
+		expect(workHarness.guards).toEqual([]);
 		expect(workHarness.coordinated).toEqual([]);
 	});
 });

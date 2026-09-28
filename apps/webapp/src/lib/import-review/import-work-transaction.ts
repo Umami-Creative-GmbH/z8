@@ -1,72 +1,118 @@
-import { db } from "@/db";
+import { and, eq } from "drizzle-orm";
+import { importStagedRow } from "@/db/schema";
+import { importedWorkSourceKey } from "@/lib/time-tracking/record-imported-work";
 import {
-	acquireAdoptionGate,
-	acquireEmployeeCoordination,
-	acquireOrganizationConfigurationGuard,
-	acquireSourceIdentity,
-	acquireUserConfigurationAccessGuards,
-	readAppendAdmission,
-	type SealedWorkTransactionScope,
-	sealWorkTransactionScope,
+	runWorkTransaction,
+	type WorkPlan,
+	type WorkRoute,
+	type WorkTransactionClient,
+	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
+import type { ImportProvider } from "./types";
 
 export interface ReviewedImportTransactionInput {
 	organizationId: string;
-	/** Routed from the staged row before the transaction; the caller revalidates it. */
-	employeeId: string;
+	batchId: string;
+	/** The staged work row; routing reads its mapping. */
+	rowId: string;
+	provider: ImportProvider;
 	importerUserId: string;
-	/** Provider source identity (`importedWorkSourceKey`). */
+}
+
+/** A staged work row's mapping: its employee and its provider source identity. */
+export interface ReviewedImportRowMapping {
+	employeeId: string;
+	/** `importedWorkSourceKey` of the row's source. */
 	sourceKey: string;
 }
 
-/**
- * Outer transaction owner for committing one reviewed work import row (#284).
- * Imports have no approval participation. Acquisition follows the #264 order:
- *
- * 1. the shared adoption gate, then the organization's append control under it;
- * 2. shared organization configuration;
- * 3. shared importer configuration/access;
- * 4. the existing exclusive employee key `hashtextextended(employeeId, 0)`, which
- *    replaces the import worker's former `organization:employee` key;
- * 5. the exclusive provider source identity, so the same source imported through
- *    two batches serializes regardless of its employee mapping.
- *
- * The operation then claims the staging row and reads authoritative rows. A
- * changed routed scope must throw and restart the whole transaction; nothing here
- * acquires an earlier-ranked resource late.
- */
-export async function withReviewedImportTransaction<T>(
-	input: ReviewedImportTransactionInput,
-	operation: (scope: SealedWorkTransactionScope) => Promise<T>,
-): Promise<T> {
-	return db.transaction(async (transaction) => {
-		await acquireAdoptionGate(transaction, input.organizationId);
-		const admission = await readAppendAdmission(transaction, input.organizationId);
-		await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
-		await acquireUserConfigurationAccessGuards(transaction, [input.importerUserId]);
-		await acquireEmployeeCoordination(transaction, [input.employeeId]);
-		await acquireSourceIdentity(transaction, [
-			"reviewed-import-source",
-			input.organizationId,
-			input.sourceKey,
-		]);
+/** The routed row's mapping; null when the row no longer exists. */
+export interface ReviewedImportRoute extends WorkRoute<ReviewedImportRowMapping | null> {
+	snapshot: ReviewedImportRowMapping | null;
+}
 
-		let active = true;
-		try {
-			return await operation(
-				sealWorkTransactionScope({
-					db: transaction,
-					admission,
-					assertEmployee(organizationId: string, employeeId: string) {
-						if (!active) throw new Error("Work transaction is no longer active");
-						if (organizationId !== input.organizationId || employeeId !== input.employeeId) {
-							throw new Error("Employee scope is outside the work transaction");
-						}
-					},
-				}),
-			);
-		} finally {
-			active = false;
-		}
-	});
+type StagedRowMapping = Pick<
+	typeof importStagedRow.$inferSelect,
+	"batchId" | "normalizedPayload" | "providerSourceId" | "sourcePayloadHash"
+>;
+
+/** Reads a staged work row's mapping; a row without a mapped employee cannot commit. */
+export function reviewedImportRowMapping(
+	row: StagedRowMapping,
+	provider: ImportProvider,
+): ReviewedImportRowMapping {
+	const employeeId = row.normalizedPayload.employeeId;
+	if (typeof employeeId !== "string" || employeeId.length === 0) {
+		throw new Error("work_period import row requires a mapped employee before commit");
+	}
+	return {
+		employeeId,
+		sourceKey: importedWorkSourceKey({
+			provider,
+			batchId: row.batchId,
+			entityType: "work_period",
+			providerSourceId: row.providerSourceId,
+			sourcePayloadHash: row.sourcePayloadHash,
+		}),
+	};
+}
+
+/**
+ * Routes the staged row by its mapping, whatever its status: the importer's
+ * access, the mapped employee (the only write target), and the provider source
+ * identity, so the same source imported through two batches serializes
+ * regardless of its employee mapping. The employee key replaces the import
+ * worker's former `organization:employee` key.
+ */
+async function routeReviewedImport(
+	db: WorkTransactionClient,
+	input: ReviewedImportTransactionInput,
+): Promise<ReviewedImportRoute> {
+	const [row] = await db
+		.select({
+			batchId: importStagedRow.batchId,
+			normalizedPayload: importStagedRow.normalizedPayload,
+			providerSourceId: importStagedRow.providerSourceId,
+			sourcePayloadHash: importStagedRow.sourcePayloadHash,
+		})
+		.from(importStagedRow)
+		.where(
+			and(
+				eq(importStagedRow.id, input.rowId),
+				eq(importStagedRow.batchId, input.batchId),
+				eq(importStagedRow.organizationId, input.organizationId),
+				eq(importStagedRow.entityType, "work_period"),
+			),
+		)
+		.limit(1);
+	const mapping = row ? reviewedImportRowMapping(row, input.provider) : null;
+	const employees = mapping ? [mapping.employeeId] : [];
+	return {
+		users: [input.importerUserId],
+		employees,
+		writeTargets: employees,
+		sourceIdentities: mapping
+			? [["reviewed-import-source", input.organizationId, mapping.sourceKey]]
+			: [],
+		snapshot: mapping,
+	};
+}
+
+/** The reviewed-import plan: routing only, for `runWorkTransaction` or the fake. */
+export function reviewedImportPlan(
+	input: ReviewedImportTransactionInput,
+): WorkPlan<ReviewedImportRoute> {
+	return { organizationId: input.organizationId, route: (db) => routeReviewedImport(db, input) };
+}
+
+/**
+ * Work transaction for committing one reviewed work import row (#284). Imports
+ * have no approval participation. The operation claims the staging row and must
+ * call `scope.restart()` when the claimed row no longer maps to the routed scope.
+ */
+export function withReviewedImportTransaction<T>(
+	input: ReviewedImportTransactionInput,
+	operation: (scope: WorkTransactionScope<ReviewedImportRoute>) => Promise<T>,
+): Promise<T> {
+	return runWorkTransaction(reviewedImportPlan(input), operation);
 }
