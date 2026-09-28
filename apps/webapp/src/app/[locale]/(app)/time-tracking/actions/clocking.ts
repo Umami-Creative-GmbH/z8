@@ -35,7 +35,9 @@ import {
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
+import { canonicalWorkRecordClient } from "@/lib/time-tracking/canonical-work-record";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
+import { reconcileImmediateSurcharges } from "@/lib/time-tracking/clock-out-effects";
 import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
@@ -76,7 +78,6 @@ import {
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
 import { acquireAdoptionGate, readAppendAdmission } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-import { canonicalWorkRecordClient } from "../actions.canonical";
 import {
 	breakFailureMessage,
 	clockInFailureMessage,
@@ -92,10 +93,7 @@ import {
 	getCurrentSession,
 	getUserTimezone,
 } from "./auth";
-import {
-	calculateBreaksTakenToday,
-	reconcileImmediateSurcharges,
-} from "./compliance";
+import { calculateBreaksTakenToday } from "./compliance";
 import {
 	createTimeEntry,
 	validateProjectAssignment,

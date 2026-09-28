@@ -6,10 +6,6 @@ import "server-only";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { project, timeEntry, workPeriod } from "@/db/schema";
-import {
-	checkProjectBudgetWarnings,
-	getProjectTotalHours,
-} from "@/lib/notifications/project-notification-triggers";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import {
 	BOOKABLE_PROJECT_STATUSES,
@@ -210,37 +206,4 @@ export async function getAssignedProjectsWithHours(
 	}
 
 	return { projectsById, hoursByProjectId };
-}
-
-export async function checkProjectBudgetAfterClockOut(
-	projectId: string,
-	organizationId: string,
-): Promise<void> {
-	const assignedProject = await db.query.project.findFirst({
-		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
-		columns: {
-			id: true,
-			name: true,
-			budgetHours: true,
-		},
-	});
-
-	if (!assignedProject?.budgetHours) {
-		return;
-	}
-
-	const budgetHours = Number.parseFloat(assignedProject.budgetHours);
-	if (Number.isNaN(budgetHours) || budgetHours <= 0) {
-		return;
-	}
-
-	const totalHours = await getProjectTotalHours(projectId, organizationId);
-
-	await checkProjectBudgetWarnings({
-		projectId,
-		projectName: assignedProject.name,
-		organizationId,
-		budgetHours,
-		usedHours: totalHours,
-	});
 }

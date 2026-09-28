@@ -1,13 +1,13 @@
 import "server-only";
 
-import {
-	checkComplianceAfterClockOut,
-	enforceBreaksAfterClockOut,
-	reconcileImmediateSurcharges,
-} from "@/app/[locale]/(app)/time-tracking/actions/compliance";
-import { checkProjectBudgetAfterClockOut } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import {
+	checkComplianceAfterClockOut,
+	checkProjectBudgetAfterClockOut,
+	enforceBreaksAfterClockOut,
+	reconcileImmediateSurcharges,
+} from "../clock-out-effects";
 import { createClocking } from "./clocking";
 import { afterCommitFollowUps, type ClockOutFollowUpEffects } from "./follow-ups";
 import { coordinatedTransactions } from "./transactions";
@@ -37,8 +37,8 @@ export {
 export * from "./types";
 
 /**
- * The production follow-up effects. Their implementations still live beside the
- * web actions; the module owns when and how they run.
+ * The production follow-up effects (`../clock-out-effects`); the module owns
+ * when and how they run.
  */
 export const clockOutFollowUpEffects: ClockOutFollowUpEffects = {
 	checkCompliance: checkComplianceAfterClockOut,

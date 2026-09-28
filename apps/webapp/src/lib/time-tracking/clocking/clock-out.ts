@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { canonicalWorkRecordClient } from "@/app/[locale]/(app)/time-tracking/actions.canonical";
 import { type employee, workPeriod } from "@/db/schema";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
 import { POLICY_CLOCK_OUT_APPROVAL_REASON } from "@/lib/approvals/time-request-kind";
@@ -12,6 +11,7 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { canonicalWorkRecordClient } from "../canonical-work-record";
 import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
 import { clockingService } from "../clocking-service";
 import {
