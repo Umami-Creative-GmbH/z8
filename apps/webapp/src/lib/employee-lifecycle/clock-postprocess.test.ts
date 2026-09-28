@@ -28,7 +28,7 @@ function claim(payload: Record<string, unknown>): DepartureTaskClaim {
 	};
 }
 
-/** The shared clock-out follow-up effects (#476 decision 14), recording their calls. */
+/** The shared clock-out follow-up effects a departure runs (#476 decision 14), recording their calls. */
 function effects() {
 	const calls: string[] = [];
 	const effect = <T>(name: string, value: T) =>
@@ -38,7 +38,6 @@ function effects() {
 		});
 	return {
 		calls,
-		checkCompliance: effect("compliance", []),
 		enforceBreaks: effect("breaks", {
 			wasAdjusted: false,
 			affectedWorkPeriodIds: ["work-1", "work-2"],
@@ -56,14 +55,7 @@ describe("clock postprocess handler", () => {
 
 		await createClockPostprocessHandler(deps)(claim({}), { recordProgress });
 
-		expect(deps.calls).toEqual(["compliance", "breaks", "surcharges", "balance", "budget"]);
-		expect(deps.checkCompliance).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			employeeId: "employee-1",
-			workPeriodId: "work-1",
-			durationMinutes: 120,
-			timezone: "Europe/Berlin",
-		});
+		expect(deps.calls).toEqual(["breaks", "surcharges", "balance", "budget"]);
 		expect(deps.enforceBreaks).toHaveBeenCalledWith({
 			organizationId: "org-1",
 			employeeId: "employee-1",
@@ -85,7 +77,6 @@ describe("clock postprocess handler", () => {
 		});
 		expect(deps.checkProjectBudget).toHaveBeenCalledWith("project-1", "org-1");
 		expect(recordProgress.mock.calls).toEqual([
-			[{ complianceChecked: true }],
 			[{ breaksEnforced: true, affectedWorkPeriodIds: ["work-1", "work-2"] }],
 			[{ surchargesReconciled: true }],
 		]);
@@ -95,11 +86,10 @@ describe("clock postprocess handler", () => {
 		const deps = effects();
 
 		await createClockPostprocessHandler(deps)(
-			claim({ complianceChecked: true, breaksEnforced: true, affectedWorkPeriodIds: ["work-1"] }),
+			claim({ breaksEnforced: true, affectedWorkPeriodIds: ["work-1"] }),
 			{ recordProgress: vi.fn() },
 		);
 
-		expect(deps.checkCompliance).not.toHaveBeenCalled();
 		expect(deps.enforceBreaks).not.toHaveBeenCalled();
 		expect(deps.reconcileSurcharges).toHaveBeenCalledWith(
 			expect.objectContaining({ affectedWorkPeriodIds: ["work-1"] }),
@@ -115,7 +105,7 @@ describe("clock postprocess handler", () => {
 			createClockPostprocessHandler(deps)(claim({}), { recordProgress }),
 		).rejects.toThrow("breaks unavailable");
 
-		expect(recordProgress.mock.calls).toEqual([[{ complianceChecked: true }]]);
+		expect(recordProgress).not.toHaveBeenCalled();
 		expect(deps.reconcileSurcharges).not.toHaveBeenCalled();
 	});
 

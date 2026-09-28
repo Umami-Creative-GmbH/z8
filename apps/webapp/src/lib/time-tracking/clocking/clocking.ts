@@ -365,7 +365,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	 * adapter's failure to stage fails it as `unconfirmed`, since the closure is
 	 * already written into the enlisting transaction.
 	 */
-	async function followUp(
+	async function runFollowUps(
 		closed: Omit<ClosedLiveWork, "timezone">,
 		command: ClockCommand,
 	): Promise<ClockOutAdvice | { failed: unknown }> {
@@ -536,7 +536,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			};
 		}
 		// Committed: only a durable adapter's failure to stage turns this into a failure.
-		const advice = await followUp(closure.closed, command);
+		const advice = await runFollowUps(closure.closed, command);
 		if ("failed" in advice) return refused({ code: "unconfirmed", cause: advice.failed });
 		return {
 			outcome: "executed",
@@ -680,7 +680,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		}
 		if (closure.disposition === "replayed") return { outcome: "replayed", result: closure.result };
 		// The break closes work as a clock-out does, with the same follow-ups.
-		const advice = await followUp(closure.closed, command);
+		const advice = await runFollowUps(closure.closed, command);
 		if ("failed" in advice) return refused({ code: "unconfirmed", cause: advice.failed });
 		return { outcome: "executed", result: { ...closure.result, ...advice } };
 	}

@@ -3,7 +3,8 @@ import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy
 import type { DepartureTaskContext } from "./delivery";
 import type { DepartureTaskClaim } from "./outbox";
 
-type PostprocessPayload = {
+/** What a departure's closure stages for its `clock_postprocess` task. */
+export type ClockPostprocessPayload = {
 	workPeriodId: string;
 	durationMinutes: number;
 	periodStartedAt: string;
@@ -14,11 +15,23 @@ type PostprocessPayload = {
 	projectId?: string | null;
 	/** True when the closure committed its own work-balance refresh intent. */
 	balanceRefreshCommitted?: boolean;
-	complianceChecked?: boolean;
+};
+
+/** Progress a retried task resumes from. */
+type PostprocessProgress = {
 	breaksEnforced?: boolean;
 	affectedWorkPeriodIds?: string[];
 	surchargesReconciled?: boolean;
 };
+
+type PostprocessPayload = ClockPostprocessPayload & PostprocessProgress;
+
+/**
+ * The shared clock-out effects a departure runs durably. Compliance is not among
+ * them: its warnings advise the human who clocked out, and its implementation
+ * reads that request's employee, which a departure's worker has none of.
+ */
+export type ClockPostprocessEffects = Omit<ClockOutFollowUpEffects, "checkCompliance">;
 
 function parsePayload(payload: Record<string, unknown>): PostprocessPayload {
 	if (
@@ -35,32 +48,27 @@ function parsePayload(payload: Record<string, unknown>): PostprocessPayload {
 
 /**
  * A departure's clock-out follow-ups, made durable (#476 decision 14): the shared
- * clock-out effects in the order `afterCommitFollowUps` runs them, compliance,
- * break enforcement for this exact period, surcharges for the periods it touched
+ * clock-out effects in the order `afterCommitFollowUps` runs them, break
+ * enforcement for this exact period, surcharges for the periods it touched
  * (using the snapshot taken at close), the work balance unless the closure
  * committed its refresh, then budget warnings. A failed step fails the task;
  * each completed step is recorded on it, so a retry resumes instead of replaying
  * an effect or applying it to an unrelated later period.
  */
-export function createClockPostprocessHandler(effects: ClockOutFollowUpEffects) {
+export function createClockPostprocessHandler(effects: ClockPostprocessEffects) {
 	return async (claim: DepartureTaskClaim, context: DepartureTaskContext) => {
 		const payload = parsePayload(claim.payload);
 		const scope = { organizationId: claim.organizationId, employeeId: claim.employeeId };
-		const closure = {
-			...scope,
-			workPeriodId: payload.workPeriodId,
-			durationMinutes: payload.durationMinutes,
-			timezone: payload.timezone,
-		};
-
-		if (!payload.complianceChecked) {
-			await effects.checkCompliance(closure);
-			await context.recordProgress({ complianceChecked: true });
-		}
 
 		let affectedWorkPeriodIds = payload.affectedWorkPeriodIds ?? [payload.workPeriodId];
 		if (!payload.breaksEnforced) {
-			const result = await effects.enforceBreaks({ ...closure, createdBy: payload.createdBy });
+			const result = await effects.enforceBreaks({
+				...scope,
+				workPeriodId: payload.workPeriodId,
+				durationMinutes: payload.durationMinutes,
+				timezone: payload.timezone,
+				createdBy: payload.createdBy,
+			});
 			affectedWorkPeriodIds = result.affectedWorkPeriodIds;
 			await context.recordProgress({ breaksEnforced: true, affectedWorkPeriodIds });
 		}

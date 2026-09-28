@@ -13,6 +13,7 @@ import { createClocking } from "@/lib/time-tracking/clocking/clocking";
 import { type ClosedLiveWork, durableFollowUps } from "@/lib/time-tracking/clocking/follow-ups";
 import { enlistedTransactions } from "@/lib/time-tracking/clocking/transactions";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import type { ClockPostprocessPayload } from "./clock-postprocess";
 import type { DepartureClockOutPort } from "./types";
 
 const logger = createLogger("EmployeeDepartureClockOut");
@@ -25,6 +26,16 @@ type CloseInput = Parameters<DepartureClockOutPort["close"]>[0];
  * clock-out follow-up effects (`clock-postprocess.ts`).
  */
 async function stageClockPostprocess(input: CloseInput, closure: ClosedLiveWork) {
+	const payload: ClockPostprocessPayload = {
+		workPeriodId: closure.workPeriodId,
+		durationMinutes: closure.durationMinutes,
+		periodStartedAt: dateFromInstant(closure.start).toISOString(),
+		timezone: closure.timezone,
+		createdBy: closure.actorUserId,
+		surchargeSnapshot: closure.surchargeSnapshot,
+		projectId: closure.projectId,
+		balanceRefreshCommitted: closure.balanceRefreshCommitted,
+	};
 	await input.scope.db
 		.insert(employeeDepartureTask)
 		.values({
@@ -34,16 +45,7 @@ async function stageClockPostprocess(input: CloseInput, closure: ClosedLiveWork)
 			departureId: input.departureId,
 			kind: "clock_postprocess",
 			dedupeKey: `clock-postprocess:${input.clockOutActionId}`,
-			payload: {
-				workPeriodId: closure.workPeriodId,
-				durationMinutes: closure.durationMinutes,
-				periodStartedAt: dateFromInstant(closure.start).toISOString(),
-				timezone: closure.timezone,
-				createdBy: closure.actorUserId,
-				surchargeSnapshot: closure.surchargeSnapshot,
-				projectId: closure.projectId,
-				balanceRefreshCommitted: closure.balanceRefreshCommitted,
-			},
+			payload,
 		})
 		.onConflictDoNothing();
 }

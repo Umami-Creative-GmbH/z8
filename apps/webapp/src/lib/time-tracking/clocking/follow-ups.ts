@@ -173,8 +173,8 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 /**
  * Stages the follow-ups as durable work that commits with the closure: a
  * departure's `clock_postprocess` task (#476 decision 14). Its handler runs the
- * same effects, in the same order, as `afterCommitFollowUps`. Nothing runs now,
- * so there is no advice.
+ * same effects, in the same order, as `afterCommitFollowUps`, except the
+ * request-bound compliance advice. Nothing runs now, so there is no advice.
  */
 export function durableFollowUps(
 	stage: (closure: ClosedLiveWork) => Promise<void>,

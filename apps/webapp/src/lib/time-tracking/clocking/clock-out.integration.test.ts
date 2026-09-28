@@ -33,7 +33,7 @@ vi.mock("@/lib/billing/guard", () => ({
 }));
 
 const { createClocking } = await import("./clocking");
-const { recordingFollowUps } = await import("./follow-ups");
+const { durableFollowUps, recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions, enlistedTransactions } = await import("./transactions");
 const { runDepartureTransaction } = await import("@/lib/employee-lifecycle/departure-transaction");
 const { clockInAs } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
@@ -194,6 +194,19 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			[periodId],
 		);
 		return only(rows);
+	}
+
+	async function declareBlockingHoliday() {
+		await admin.query(
+			`insert into holiday_category (id, organization_id, type, name, blocks_time_entry, updated_at)
+			 values ($1, $2, 'public_holiday', 'Closed', true, now())`,
+			[ids.holidayCategory, ids.organization],
+		);
+		await admin.query(
+			`insert into holiday (id, organization_id, category_id, name, start_date, end_date, created_by, updated_at)
+			 values ($1, $2, $3, 'Closing day', '2026-07-22T00:00:00', '2026-07-22T23:59:59', $4, now())`,
+			[ids.holiday, ids.organization, ids.holidayCategory, ids.user],
+		);
 	}
 
 	async function cleanup() {
@@ -465,16 +478,7 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 		it("does not refuse a clock-out on a blocking holiday", async () => {
 			// The holiday is declared while the employee works: ending that work is allowed.
 			const periodId = await startWork();
-			await admin.query(
-				`insert into holiday_category (id, organization_id, type, name, blocks_time_entry, updated_at)
-				 values ($1, $2, 'public_holiday', 'Closed', true, now())`,
-				[ids.holidayCategory, ids.organization],
-			);
-			await admin.query(
-				`insert into holiday (id, organization_id, category_id, name, start_date, end_date, created_by, updated_at)
-				 values ($1, $2, $3, 'Closing day', '2026-07-22T00:00:00', '2026-07-22T23:59:59', $4, now())`,
-				[ids.holiday, ids.organization, ids.holidayCategory, ids.user],
-			);
+			await declareBlockingHoliday();
 			const { clocking } = newClocking();
 
 			await expect(clocking.run(clockOut())).resolves.toMatchObject({ outcome: "executed" });
@@ -515,23 +519,37 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			expect(followUps.closures).toEqual([]);
 		});
 
-		// #476 decisions 8, 16 and 20.
-		it("runs a departure only enlisted in its own departure's transaction, billing exempt", async () => {
+		/** A departure's clock-out of the employee's period, as its own departure principal. */
+		function departureClockOut(departureId: string, periodId: string, target = true) {
+			return clockOut({
+				principal: { kind: "departure", departureId, userId: ids.ownerUser },
+				identity: { origin: "derived", id: randomUUID() },
+				channel: "employee-offboarding",
+				zone: { device: null, fallback: "UTC" },
+				body: {
+					kind: "clock_out",
+					...(target ? { target: { kind: "period", workPeriodId: periodId } } : {}),
+					project: { kind: "preserve" },
+					workCategory: { kind: "preserve" },
+				},
+			} as Partial<ClockCommand>);
+		}
+
+		function enlistedFor(scope: Parameters<typeof enlistedTransactions>[0], departureId: string) {
+			return enlistedTransactions(scope, {
+				organizationId: ids.organization,
+				employeeId: ids.employee,
+				departureId,
+			});
+		}
+
+		// #476 decisions 8, 9, 16 and 20.
+		it("runs a departure only enlisted in its own departure's transaction, billing and holiday exempt", async () => {
 			const periodId = await startWork();
+			await declareBlockingHoliday();
 			const departureId = randomUUID();
 			const departure = (id = departureId, target = true) =>
-				clockOut({
-					principal: { kind: "departure", departureId: id, userId: ids.ownerUser },
-					identity: { origin: "derived", id: randomUUID() },
-					channel: "employee-offboarding",
-					zone: { device: null, fallback: "UTC" },
-					body: {
-						kind: "clock_out",
-						...(target ? { target: { kind: "period", workPeriodId: periodId } } : {}),
-						project: { kind: "preserve" },
-						workCategory: { kind: "preserve" },
-					},
-				} as Partial<ClockCommand>);
+				departureClockOut(id, periodId, target);
 			const before = await snapshot();
 
 			const coordinated = newClocking();
@@ -545,13 +563,7 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 				db,
 				{ organizationId: ids.organization, employeeId: ids.employee },
 				async (scope) => {
-					const { clocking, followUps } = newClocking(
-						enlistedTransactions(scope, {
-							organizationId: ids.organization,
-							employeeId: ids.employee,
-							departureId,
-						}),
-					);
+					const { clocking, followUps } = newClocking(enlistedFor(scope, departureId));
 					return {
 						followUps,
 						otherDeparture: await clocking.run(departure(randomUUID())),
@@ -584,6 +596,41 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 				record_duration: 61,
 				receipts: admission === "append" ? 1 : 0,
 			});
+		});
+
+		// A durable adapter stages inside the enlisting transaction: its failure leaves
+		// the caller a written closure, which it must roll back.
+		it("fails a departure as unconfirmed when its durable follow-ups cannot stage", async () => {
+			const periodId = await startWork();
+			const departureId = randomUUID();
+			const before = await snapshot();
+			let outcome: unknown;
+
+			await runDepartureTransaction(
+				db,
+				{ organizationId: ids.organization, employeeId: ids.employee },
+				async (scope) => {
+					await scope
+						.savepoint(async (savepoint) => {
+							const clocking = createClocking({
+								clock: { nowInstant: () => clockOutAt } as never,
+								transactions: enlistedFor(savepoint, departureId),
+								followUps: durableFollowUps(async () => {
+									throw new Error("staging failed");
+								}),
+							});
+							outcome = await clocking.run(departureClockOut(departureId, periodId));
+							throw new Error("roll the closure back");
+						})
+						.catch(() => undefined);
+				},
+			);
+
+			expect(outcome).toMatchObject({
+				outcome: "refused",
+				failure: { code: "unconfirmed", cause: new Error("staging failed") },
+			});
+			expect(await snapshot()).toEqual(before);
 		});
 
 		it("refuses a stale command by its freshness, but replays it once committed", async () => {
