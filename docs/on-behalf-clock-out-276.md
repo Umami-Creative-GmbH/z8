@@ -126,6 +126,10 @@ retry gets `target_not_active` as before.
 
 ## Legacy mode (not adopted)
 
+> **Superseded by #482.** On-behalf clock-outs now run through the Clocking module
+> (`lib/time-tracking/clocking`). Its legacy writer also writes the canonical work
+> record, and the module's follow-ups replace `completeClockOutAfterCommit`.
+
 The legacy closer (`clockingService.clockOut`) now runs inside the same coordinator,
 so the admission read and the closure are atomic. It still writes no canonical record
 and no receipt. Two bounded corrections apply:

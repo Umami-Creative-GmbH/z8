@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { completedWorkOperation, employee, timeEntry, workPeriod } from "@/db/schema";
+import { completedWorkOperation, type employee, timeEntry, workPeriod } from "@/db/schema";
 import { isBillingMutationAllowed, requireBillingForMutation } from "@/lib/billing/guard";
 import {
 	type Clock,
@@ -30,12 +30,16 @@ import { type CloseResumeWorkResult, isCloseResumeStanding } from "../close-resu
 import { isProjectEligible } from "../project-eligibility";
 import { findStandingStart, type StartLiveWorkResult } from "../start-live-work";
 import { TimeEntryAppendReviewRequiredError } from "../time-entry-append";
-import { resolveTimeEntryTimezoneCapture } from "../timezone-capture";
+import {
+	resolveFallbackTimezoneCapture,
+	resolveTimeEntryTimezoneCapture,
+} from "../timezone-capture";
 import { validateTimeEntry } from "../validation";
 import { workCategoryIneligibility } from "../work-category-eligibility";
 import { WorkIntervalError } from "../work-duration";
 import { isWorkLocationType, type WorkLocationType } from "../work-location";
 import { isUnresolvedWorkPeriodReview } from "../work-period-review";
+import { authorizedSubject } from "./authorize";
 import {
 	type BreakClosure,
 	type BreakPlan,
@@ -216,7 +220,13 @@ function replayRefusal(error: unknown) {
 function closureRefusal(command: ClockOutCommand, error: unknown): ClockOutRefusal {
 	const shared = transactionRefusal(error);
 	if (shared) return shared;
-	if (error instanceof ClockingConflictError) return { code: targetChanged(command) };
+	if (error instanceof ClockingConflictError) {
+		// The legacy closer's own identity and interval checks.
+		if (error.message === "Clock-out action id collision")
+			return { code: "collision", cause: error };
+		if (error.message === "Clock-out precedes clock-in") return { code: "invalid_interval" };
+		return { code: targetChanged(command) };
+	}
 	if (error instanceof WorkIntervalError) return { code: "invalid_interval" };
 	if (error instanceof CompletedWorkAttributionError) {
 		return {
@@ -286,6 +296,14 @@ function eventCapture(
 	eventInstant: Instant,
 	deviceZone = command.zone.device,
 ) {
+	// On behalf, the event is the subject's, in their zone: never the principal's device.
+	if (command.subject.onBehalf) {
+		return resolveFallbackTimezoneCapture({
+			timestamp: dateFromInstant(eventInstant),
+			timezone: command.zone.fallback,
+			timezoneSource: "manager_target_user_setting",
+		});
+	}
 	return resolveTimeEntryTimezoneCapture({
 		timestamp: dateFromInstant(eventInstant),
 		browserTimezone: deviceZone,
@@ -307,21 +325,6 @@ function eventCapture(
 export function createClocking(ports: ClockingPorts): Clocking {
 	const { clock, transactions, followUps } = ports;
 
-	async function subjectEmployee(command: ClockLookupQuery) {
-		const [row] = await db
-			.select()
-			.from(employee)
-			.where(
-				and(
-					eq(employee.id, command.subject.employeeId),
-					eq(employee.organizationId, command.organizationId),
-				),
-			)
-			.limit(1);
-		// Self-service only: another employee's work needs on-behalf authority.
-		return row && row.userId === command.principal.userId ? row : null;
-	}
-
 	function transactionScope(plan: ClockInPlan | ClockOutPlan | BreakPlan) {
 		return {
 			organizationId: plan.employee.organizationId,
@@ -331,6 +334,11 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		};
 	}
 
+	/** A closure's scope also names the work's owner, who differs on behalf. */
+	function closureScope(plan: ClockOutPlan) {
+		return { ...transactionScope(plan), ownerUserId: plan.employee.userId };
+	}
+
 	function eventInstantOf(command: ClockCommand) {
 		return command.at.kind === "occurred" ? command.at.instant : clock.nowInstant();
 	}
@@ -338,7 +346,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	/** A read-only work transaction: nothing it throws wrote anything. */
 	async function committedReplay(plan: ClockOutPlan): Promise<ClockOutOutcome | null> {
 		try {
-			const replay = await transactions.run(transactionScope(plan), (coordination) =>
+			const replay = await transactions.run(closureScope(plan), (coordination) =>
 				replayClockOut(coordination, plan),
 			);
 			return replay ? { outcome: "replayed", ...replay } : null;
@@ -462,7 +470,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		try {
 			closure = await transactions.run(
 				{
-					...transactionScope(plan),
+					...closureScope(plan),
 					workPeriodId: target.workPeriodId,
 					endTime: eventInstant,
 					projectId: attributionValue(command.body.project),
@@ -485,6 +493,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				outcome: "replayed",
 				result: closure.result,
 				durationMinutes: closure.durationMinutes,
+				receipt: closure.receipt,
 			};
 		}
 		// Committed: follow-ups are best-effort and never turn this into a failure.
@@ -495,6 +504,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			outcome: "executed",
 			result: { ...closure.entry, pendingApproval: undefined, ...advice },
 			durationMinutes: closure.closed.durationMinutes,
+			receipt: closure.receipt,
 		};
 	}
 
@@ -674,7 +684,15 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				return refused({ code: "invalid_break_duration" });
 			}
 		}
-		const subject = await subjectEmployee(command);
+		// On behalf, a clock-out names the period it closes; the receipt keeps it.
+		if (
+			command.subject.onBehalf &&
+			command.body.kind === "clock_out" &&
+			command.body.target?.kind !== "period"
+		) {
+			return refused({ code: "invalid_command" });
+		}
+		const subject = await authorizedSubject({ ...command, kind: command.body.kind });
 		if (!subject) return refused({ code: "access_denied" });
 		const billing = await requireBillingForMutation(command.organizationId);
 		if (!isBillingMutationAllowed(billing)) {
@@ -693,7 +711,8 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		run: run as Clocking["run"],
 
 		async lookup(query) {
-			const subject = await subjectEmployee(query);
+			// Self-service only: a lookup names no command kind to run on behalf.
+			const subject = await authorizedSubject(query);
 			if (!subject) return { outcome: "access_denied" };
 			const owner = { organizationId: subject.organizationId, employeeId: subject.id };
 			// Serialized behind any in-flight operation of the employee: the start's

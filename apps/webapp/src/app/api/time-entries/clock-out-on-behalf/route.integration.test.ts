@@ -776,7 +776,7 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 		});
 	});
 
-	it("keeps the legacy closure before adoption, preserving attribution and replaying its identity", async () => {
+	it("keeps the legacy closure before adoption, with its canonical record, preserving attribution and replaying its identity", async () => {
 		await setAdmission("inactive");
 		const running = await clockInAs(ids.targetUser);
 		await admin.query("update work_period set project_id = $2 where id = $1", [
@@ -801,6 +801,12 @@ describe("manager on-behalf clock-out on PostgreSQL", () => {
 			clock_out_created_by: ids.managerUser,
 			clock_out_timezone: "America/New_York",
 			clock_out_timezone_source: "manager_target_user_setting",
+			// Every legacy close writes the canonical work record (#476 decision 10).
+			canonical_record_id: expect.any(String),
+			record_created_by: ids.managerUser,
+			record_minutes: 481,
+			record_state: "approved",
+			record_projects: [ids.projectA],
 		});
 		expect(await receipts()).toEqual([]);
 		const committed = await snapshot();

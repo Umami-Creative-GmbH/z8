@@ -26,6 +26,7 @@ export {
 	type ClosedLiveWork,
 	recordingFollowUps,
 } from "./follow-ups";
+export { workPeriodOwner } from "./on-behalf";
 export { type ClockTransactions, coordinatedTransactions } from "./transactions";
 export * from "./types";
 
@@ -49,12 +50,9 @@ export const clockOutFollowUpEffects: ClockOutFollowUpEffects = {
 	checkProjectBudget: checkProjectBudgetAfterClockOut,
 };
 
-/** Follow-ups after commit, also run by the live clock-outs not yet on the module. */
-export const clockOutFollowUps = afterCommitFollowUps(clockOutFollowUpEffects);
-
 /** The production instance: coordinated work transactions, follow-ups after commit. */
 export const clocking = createClocking({
 	clock: systemClock,
 	transactions: coordinatedTransactions(),
-	followUps: clockOutFollowUps,
+	followUps: afterCommitFollowUps(clockOutFollowUpEffects),
 });

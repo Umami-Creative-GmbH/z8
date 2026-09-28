@@ -198,13 +198,6 @@ describe("legacy time-tracking action billing guards", () => {
 		expect(body).toContain("dirtyFromDate:");
 	});
 
-	it("runs the Clocking module's follow-ups after other live clock-outs commit", () => {
-		// v2 commands and on-behalf share the module's follow-ups until they migrate.
-		const body = functionBody("completeClockOutAfterCommit", clockingSource);
-		expect(body).toContain("await clockOutFollowUps.afterClockOut({");
-		expect(body).toContain("balanceRefreshCommitted: outcome.balanceRefreshCommitted");
-	});
-
 	it.each([
 		"updateWorkPeriodProject",
 		"updateWorkPeriodNotes",

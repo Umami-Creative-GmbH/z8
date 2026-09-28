@@ -1,6 +1,7 @@
 /**
  * The Clocking module's clock-out, through `run` only (#478): legacy and append
- * admission × client, derived and server operation identities.
+ * admission × client, derived and server operation identities × self-service and
+ * on-behalf principals (#482).
  *
  * Local contract: pnpm --filter webapp test:integration
  *
@@ -43,8 +44,15 @@ const ids = {
 	organization: "t478-clocking-org",
 	user: "t478-employee-user",
 	otherUser: "t478-other-user",
+	managerUser: "t478-manager-user",
+	ownerUser: "t478-owner-user",
+	adminUser: "t478-admin-user",
 	employee: "f4780000-0000-4000-8000-000000000001",
 	other: "f4780000-0000-4000-8000-000000000002",
+	manager: "f4780000-0000-4000-8000-000000000003",
+	owner: "f4780000-0000-4000-8000-000000000004",
+	managerLink: "f4780000-0000-4000-8000-000000000005",
+	admin: "f4780000-0000-4000-8000-000000000006",
 	assignedProject: "f4780000-0000-4000-8000-000000000011",
 	foreignProject: "f4780000-0000-4000-8000-000000000012",
 	assignment: "f4780000-0000-4000-8000-000000000013",
@@ -94,6 +102,37 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 		};
 	}
 
+	/** A clock-out of the employee's named period, on behalf of them by another principal. */
+	function onBehalf(
+		workPeriodId: string,
+		userId: string,
+		overrides: Partial<ClockCommand> = {},
+	): ClockCommand {
+		return clockOut({
+			principal: { kind: "user", userId },
+			subject: { employeeId: ids.employee, onBehalf: true },
+			at: { kind: "now" },
+			zone: { device: "America/New_York", fallback: "UTC" },
+			body: {
+				kind: "clock_out",
+				target: { kind: "period", workPeriodId },
+				project: { kind: "preserve" },
+				workCategory: { kind: "preserve" },
+			},
+			...overrides,
+		});
+	}
+
+	/** The committed clock-out entry's evidence. */
+	async function clockOutEntry(entryId: string) {
+		const { rows } = await admin.query(
+			`select created_by, device_info, ip_address, timezone, timezone_source
+			 from time_entry where id = $1`,
+			[entryId],
+		);
+		return only(rows);
+	}
+
 	async function setAdmission(mode: "active" | "inactive") {
 		await admin.query(
 			`insert into time_entry_append_control (organization_id, mode) values ($1, $2)
@@ -140,10 +179,13 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			duration_minutes: number;
 			project_id: string | null;
 			record_duration: number | null;
+			record_projects: string[] | null;
 			receipts: number;
 		}>(
 			`select wp.is_active, wp.clock_out_id, wp.duration_minutes, wp.project_id,
 			        tr.duration_minutes as record_duration,
+			        (select json_agg(tra.project_id) from time_record_allocation tra
+			         where tra.record_id = tr.id) as record_projects,
 			        (select count(*)::int from completed_work_operation
 			         where work_period_id = wp.id and kind = 'close_active_work') as receipts
 			 from work_period wp left join time_record tr on tr.id = wp.canonical_record_id
@@ -155,7 +197,9 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 
 	async function cleanup() {
 		await admin.query("delete from organization where id = $1", [ids.organization]);
-		await admin.query('delete from "user" where id in ($1, $2)', [ids.user, ids.otherUser]);
+		await admin.query('delete from "user" where id = any($1)', [
+			[ids.user, ids.otherUser, ids.managerUser, ids.ownerUser, ids.adminUser],
+		]);
 	}
 
 	async function seed() {
@@ -172,26 +216,54 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			[ids.organization, timestamp],
 		);
 		await admin.query(
-			`insert into "user" (id, name, email, created_at, updated_at) values
-			 ($1, 'Employee', 't478-employee@example.test', $3, $3),
-			 ($2, 'Other', 't478-other@example.test', $3, $3)`,
-			[ids.user, ids.otherUser, timestamp],
+			`insert into "user" (id, name, email, created_at, updated_at)
+			 select id, id, id || '@example.test', $2, $2 from unnest($1::text[]) as id`,
+			[[ids.user, ids.otherUser, ids.managerUser, ids.ownerUser, ids.adminUser], timestamp],
 		);
 		await admin.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
-			 select 't478-member-' || user_id, $1, user_id, 'member', 'approved', $2
+			 select 't478-member-' || user_id, $1, user_id,
+			        case user_id when $4 then 'owner' when $5 then 'admin' else 'member' end,
+			        'approved', $2
 			 from unnest($3::text[]) as user_id`,
-			[ids.organization, timestamp, [ids.user, ids.otherUser]],
+			[
+				ids.organization,
+				timestamp,
+				[ids.user, ids.otherUser, ids.managerUser, ids.ownerUser, ids.adminUser],
+				ids.ownerUser,
+				ids.adminUser,
+			],
 		);
 		await admin.query(
 			`insert into employee (id, user_id, organization_id, role, updated_at) values
-			 ($1, $2, $5, 'employee', $6), ($3, $4, $5, 'employee', $6)`,
-			[ids.employee, ids.user, ids.other, ids.otherUser, ids.organization, timestamp],
+			 ($1, $2, $9, 'employee', $10), ($3, $4, $9, 'employee', $10),
+			 ($5, $6, $9, 'manager', $10), ($7, $8, $9, 'employee', $10),
+			 ($11, $12, $9, 'employee', $10)`,
+			[
+				ids.employee,
+				ids.user,
+				ids.other,
+				ids.otherUser,
+				ids.manager,
+				ids.managerUser,
+				ids.owner,
+				ids.ownerUser,
+				ids.organization,
+				timestamp,
+				ids.admin,
+				ids.adminUser,
+			],
+		);
+		// The manager's only direct report is the employee.
+		await admin.query(
+			`insert into employee_managers (id, employee_id, manager_id, is_primary, assigned_by, assigned_at, created_at)
+			 values ($1, $2, $3, true, $4, $5, $5)`,
+			[ids.managerLink, ids.employee, ids.manager, ids.ownerUser, timestamp],
 		);
 		await admin.query(
 			`insert into user_settings (user_id, timezone, updated_at)
 			 select user_id, 'UTC', $2 from unnest($1::text[]) as user_id`,
-			[[ids.user, ids.otherUser], timestamp],
+			[[ids.user, ids.otherUser, ids.managerUser, ids.ownerUser, ids.adminUser], timestamp],
 		);
 		await admin.query(
 			`insert into project (id, organization_id, name, status, is_active, created_by, updated_at) values
@@ -247,6 +319,7 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 				duration_minutes: 61,
 				project_id: ids.assignedProject,
 				record_duration: 61,
+				record_projects: [ids.assignedProject],
 				receipts: admission === "append" ? 1 : 0,
 			});
 			// Instants compare by their canonical strings.
@@ -287,6 +360,10 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 					outcome: "replayed",
 					result: expect.objectContaining({ id: command.identity.id }),
 					durationMinutes: 61,
+					receipt:
+						admission === "append"
+							? expect.objectContaining({ operationId: command.identity.id })
+							: null,
 				});
 				expect(await snapshot()).toEqual(committed);
 				expect(followUps.closures).toHaveLength(1);
@@ -465,6 +542,209 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 					},
 				}),
 			).resolves.toMatchObject({ outcome: "replayed" });
+		});
+
+		it("keeps the period's attribution on preserve and replays it (#525)", async () => {
+			const periodId = await startWork();
+			await admin.query("update work_period set project_id = $2 where id = $1", [
+				periodId,
+				ids.assignedProject,
+			]);
+			const { clocking } = newClocking();
+			const command = clockOut();
+
+			await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
+			expect(await closedPeriod(periodId)).toMatchObject({
+				project_id: ids.assignedProject,
+				record_projects: [ids.assignedProject],
+			});
+			const committed = await snapshot();
+
+			await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "replayed" });
+			// Clearing is a different command under the same identity.
+			await expect(
+				clocking.run({ ...command, body: { ...command.body, project: { kind: "clear" } } }),
+			).resolves.toMatchObject({ outcome: "refused", failure: { code: "collision" } });
+			expect(await snapshot()).toEqual(committed);
+		});
+
+		describe("on behalf", () => {
+			it.each([
+				["the direct manager", ids.managerUser],
+				["an organization owner", ids.ownerUser],
+				["an organization admin", ids.adminUser],
+			])("closes the employee's named work for %s", async (_label, userId) => {
+				const periodId = await startWork();
+				const { clocking, followUps } = newClocking();
+				const command = onBehalf(periodId, userId);
+
+				const outcome = await clocking.run(command);
+
+				expect(outcome).toMatchObject({
+					outcome: "executed",
+					result: { id: command.identity.id, employeeId: ids.employee, type: "clock_out" },
+					durationMinutes: 61,
+					receipt:
+						admission === "append"
+							? {
+									actors: {
+										clockIn: { kind: "human", userId: ids.user },
+										completing: { kind: "human", userId },
+									},
+								}
+							: null,
+				});
+				// Both admissions write the canonical work record (#476 decision 10).
+				expect(await closedPeriod(periodId)).toEqual({
+					is_active: false,
+					clock_out_id: command.identity.id,
+					duration_minutes: 61,
+					project_id: null,
+					record_duration: 61,
+					record_projects: null,
+					receipts: admission === "append" ? 1 : 0,
+				});
+				// The subject's zone, never the principal's device.
+				expect(await clockOutEntry(command.identity.id)).toEqual({
+					created_by: userId,
+					device_info: "web-on-behalf",
+					ip_address: null,
+					timezone: "UTC",
+					timezone_source: "manager_target_user_setting",
+				});
+				expect(followUps.closures).toMatchObject([
+					{ employeeId: ids.employee, actorUserId: userId, workPeriodId: periodId },
+				]);
+			});
+
+			it("replays for the same principal only", async () => {
+				const periodId = await startWork();
+				const { clocking, followUps } = newClocking();
+				const command = onBehalf(periodId, ids.managerUser);
+				const first = await clocking.run(command);
+				expect(first).toMatchObject({ outcome: "executed" });
+				const committed = await snapshot();
+
+				const retry = await clocking.run(command);
+				const foreign = await clocking.run({
+					...command,
+					principal: { kind: "user", userId: ids.ownerUser },
+				});
+
+				expect(retry).toMatchObject({
+					outcome: "replayed",
+					result: { id: command.identity.id },
+					receipt: first.outcome === "executed" ? first.receipt : undefined,
+				});
+				expect(foreign).toMatchObject({ outcome: "refused", failure: { code: "collision" } });
+				expect(await snapshot()).toEqual(committed);
+				expect(followUps.closures).toHaveLength(1);
+			});
+
+			it("stores a server identity's receipt command under the manager's writer and never replays it", async () => {
+				const periodId = await startWork();
+				const { clocking } = newClocking();
+				const command = onBehalf(periodId, ids.managerUser, {
+					identity: { origin: "server", id: randomUUID() },
+				});
+				await expect(clocking.run(command)).resolves.toMatchObject({ outcome: "executed" });
+
+				const { rows } = await admin.query(
+					"select writer, command from completed_work_operation where id = $1",
+					[command.identity.id],
+				);
+				expect(rows).toEqual(
+					admission === "append"
+						? [
+								{
+									writer: "manager_on_behalf",
+									command: {
+										version: 1,
+										operationId: command.identity.id,
+										identity: "server",
+										workPeriodId: periodId,
+										project: { kind: "preserve" },
+										workCategory: { kind: "preserve" },
+									},
+								},
+							]
+						: [],
+				);
+				await expect(clocking.run(command)).resolves.toEqual({
+					outcome: "refused",
+					failure: { code: "target_not_active" },
+				});
+			});
+
+			it("refuses without authority, for oneself, for other kinds and without a named period", async () => {
+				const periodId = await startWork();
+				const { clocking, followUps } = newClocking();
+				const before = await snapshot();
+				const denied = { outcome: "refused", failure: { code: "access_denied" } };
+
+				// A peer has no authority over the employee's work.
+				await expect(clocking.run(onBehalf(periodId, ids.otherUser))).resolves.toEqual(denied);
+				// Never on behalf of oneself.
+				await expect(clocking.run(onBehalf(periodId, ids.user))).resolves.toEqual(denied);
+				// A manager may clock out, not clock in or take a break, on behalf.
+				await expect(
+					clocking.run(
+						onBehalf(periodId, ids.managerUser, {
+							body: { kind: "clock_in", workLocationType: "office" },
+						}),
+					),
+				).resolves.toEqual(denied);
+				await expect(
+					clocking.run(
+						onBehalf(periodId, ids.managerUser, { body: { kind: "break", breakMinutes: 15 } }),
+					),
+				).resolves.toEqual(denied);
+				await expect(
+					clocking.run(
+						onBehalf(periodId, ids.managerUser, {
+							body: {
+								kind: "clock_out",
+								project: { kind: "preserve" },
+								workCategory: { kind: "preserve" },
+							},
+						}),
+					),
+				).resolves.toEqual({ outcome: "refused", failure: { code: "invalid_command" } });
+				// Lookups answer self-service only.
+				await expect(clocking.lookup(onBehalf(periodId, ids.managerUser))).resolves.toEqual({
+					outcome: "access_denied",
+				});
+
+				expect(await snapshot()).toEqual(before);
+				expect(followUps.closures).toEqual([]);
+			});
+
+			it("refuses a departed admin and an inactive employee's work", async () => {
+				const periodId = await startWork();
+				const { clocking } = newClocking();
+				const denied = { outcome: "refused", failure: { code: "access_denied" } };
+
+				// Membership alone does not carry an admin whose employee profile left.
+				await admin.query("update employee set is_active = false where id = $1", [ids.admin]);
+				await expect(clocking.run(onBehalf(periodId, ids.adminUser))).resolves.toEqual(denied);
+				await admin.query("update employee set is_active = false where id = $1", [ids.employee]);
+				await expect(clocking.run(onBehalf(periodId, ids.managerUser))).resolves.toEqual(denied);
+
+				expect(await closedPeriod(periodId)).toMatchObject({ is_active: true });
+			});
+
+			it("refuses billing without writes", async () => {
+				const periodId = await startWork();
+				const { clocking } = newClocking();
+				const before = await snapshot();
+				harness.billing = { canAccess: false, reason: "subscription_expired" };
+
+				await expect(clocking.run(onBehalf(periodId, ids.managerUser))).resolves.toEqual({
+					outcome: "refused",
+					failure: { code: "billing_required", reason: "subscription_expired" },
+				});
+				expect(await snapshot()).toEqual(before);
+			});
 		});
 	});
 });

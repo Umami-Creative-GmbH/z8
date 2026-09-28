@@ -1,7 +1,8 @@
 import "server-only";
 
+import { and, eq } from "drizzle-orm";
 import { canonicalWorkRecordClient } from "@/app/[locale]/(app)/time-tracking/actions.canonical";
-import type { employee } from "@/db/schema";
+import { type employee, workPeriod } from "@/db/schema";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
 import { POLICY_CLOCK_OUT_APPROVAL_REASON } from "@/lib/approvals/time-request-kind";
 import {
@@ -13,14 +14,17 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { clockingService } from "../clocking-service";
 import {
+	type AttributionIntent,
 	attributionValue,
 	type CloseActiveWorkCommand,
 	type CloseActiveWorkOperationCommand,
 	type CloseActiveWorkReceipt,
+	type CloseActiveWorkResult,
 	type CloseActiveWorkWriter,
-	clockSource,
+	CompletedWorkCollisionError,
 	closeActiveWork,
 	liveClockOutWriter,
+	MANAGER_ON_BEHALF_WRITER,
 	replayCloseActiveWork,
 } from "../close-active-work";
 import { approvalDbServiceForTransaction } from "../ordinary-approval-runtime";
@@ -61,6 +65,8 @@ export type ClockOutPlan = {
 export type ClockOutReplay = {
 	result: ClockOutResult;
 	durationMinutes: number | null;
+	/** Null for a legacy closure, which keeps no receipt. */
+	receipt: CloseActiveWorkResult | null;
 };
 
 /** A committed closure, before follow-ups. */
@@ -70,9 +76,36 @@ export type ClockOutClosure =
 			disposition: "executed";
 			entry: ClockOutResult;
 			closed: Omit<ClosedLiveWork, "timezone">;
+			receipt: CloseActiveWorkResult | null;
 	  };
 
+/**
+ * The receipt command of an on-behalf clock-out (#276). `server` identities
+ * commit the same graph but cannot prove that a later retry is the same request.
+ */
+export type OnBehalfClockOutCommand = CloseActiveWorkOperationCommand & {
+	version: 1;
+	identity: "client" | "server";
+	workPeriodId: string;
+};
+
+function planOnBehalfClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
+	const { body, identity } = command;
+	// Authorization admits on-behalf closures of a named period only.
+	if (body.target?.kind !== "period") throw new Error("On-behalf clock-out names no period");
+	const receiptCommand: OnBehalfClockOutCommand = {
+		version: 1,
+		operationId: identity.id,
+		identity: identity.origin === "server" ? "server" : "client",
+		workPeriodId: body.target.workPeriodId,
+		project: body.project,
+		workCategory: body.workCategory,
+	};
+	return { command, employee, receiptCommand, writer: MANAGER_ON_BEHALF_WRITER };
+}
+
 export function planClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
+	if (command.subject.onBehalf) return planOnBehalfClockOut(command, employee);
 	const { body, identity, at, zone, channel } = command;
 	const receiptCommand: CloseActiveWorkCommand = {
 		version: 1,
@@ -91,8 +124,14 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
 	};
 }
 
-/** The original committed result; current approval state is a separate read. */
-function receiptReplay(receipt: CloseActiveWorkReceipt): ClockOutReplay {
+/**
+ * The original committed result; current approval state is a separate read. The
+ * same identity from another principal is not this command.
+ */
+function receiptReplay(plan: ClockOutPlan, receipt: CloseActiveWorkReceipt): ClockOutReplay {
+	if (receipt.result.actors.completing.userId !== plan.command.principal.userId) {
+		throw new CompletedWorkCollisionError();
+	}
 	const { approval } = receipt.result;
 	return {
 		result: {
@@ -103,6 +142,7 @@ function receiptReplay(receipt: CloseActiveWorkReceipt): ClockOutReplay {
 					: undefined,
 		},
 		durationMinutes: receipt.result.segment.durationMinutes,
+		receipt: receipt.result,
 	};
 }
 
@@ -119,17 +159,25 @@ function replayReceipt(coordination: WorkTransactionContext, plan: ClockOutPlan)
 	});
 }
 
-/** The receipt-less legacy row committed under this identity, if any. */
-function findLegacyEvidence(coordination: WorkTransactionContext, plan: ClockOutPlan) {
+/**
+ * The receipt-less legacy row committed under this identity, if any. A preserving
+ * intent matches whatever the closure kept; the principal must be the one who
+ * completed it.
+ */
+async function findLegacyEvidence(coordination: WorkTransactionContext, plan: ClockOutPlan) {
 	const { command, employee } = plan;
-	return findPolicyClockOutSubmissionEvidence({
+	const evidence = await findPolicyClockOutSubmissionEvidence({
 		tx: coordination.db,
 		submissionId: command.identity.id,
 		organizationId: employee.organizationId,
 		employeeId: employee.id,
-		projectId: attributionValue(command.body.project) ?? null,
-		workCategoryId: attributionValue(command.body.workCategory) ?? null,
+		projectId: attributionValue(command.body.project),
+		workCategoryId: attributionValue(command.body.workCategory),
 	});
+	if (evidence && evidence.period.clockOut?.createdBy !== command.principal.userId) {
+		throw new CompletedWorkCollisionError();
+	}
+	return evidence;
 }
 
 /**
@@ -152,6 +200,7 @@ async function replayLegacyClockOut(
 			pendingApproval: pendingApproval(approvalSubmission),
 		},
 		durationMinutes: period.durationMinutes ?? null,
+		receipt: null,
 	};
 }
 
@@ -192,7 +241,7 @@ export async function replayClockOut(
 	plan: ClockOutPlan,
 ): Promise<ClockOutReplay | null> {
 	const receipt = await replayReceipt(coordination, plan);
-	if (receipt) return receiptReplay(receipt);
+	if (receipt) return receiptReplay(plan, receipt);
 	if (isFrozen(plan.command)) {
 		await assertFrozenIdentityUnused(coordination.db, plan.command);
 		return null;
@@ -224,7 +273,7 @@ export async function closeClockOut(
 	const { plan, replayable } = input;
 	if (replayable) {
 		const receipt = await replayReceipt(coordination, plan);
-		if (receipt) return { disposition: "replayed", ...receiptReplay(receipt) };
+		if (receipt) return { disposition: "replayed", ...receiptReplay(plan, receipt) };
 	}
 	assertFrozenAccepted(plan.command, coordination.admission);
 	if (coordination.admission !== "append") {
@@ -263,13 +312,43 @@ export async function closeClockOut(
 			surchargeSnapshot: closed.surchargeSnapshot,
 			balanceRefreshCommitted: true,
 		},
+		receipt: result,
+	};
+}
+
+/** The attribution a legacy closure keeps: a preserving intent keeps the period's value. */
+async function legacyAttribution(
+	coordination: WorkTransactionContext,
+	plan: ClockOutPlan,
+	workPeriodId: string,
+) {
+	const { command, employee } = plan;
+	const [period] = await coordination.db
+		.select({ projectId: workPeriod.projectId, workCategoryId: workPeriod.workCategoryId })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.id, workPeriodId),
+				eq(workPeriod.organizationId, employee.organizationId),
+				eq(workPeriod.employeeId, employee.id),
+			),
+		)
+		.limit(1);
+	const kept = (intent: AttributionIntent, current: string | null | undefined) => {
+		const value = attributionValue(intent);
+		return value === undefined ? (current ?? null) : value;
+	};
+	return {
+		projectId: kept(command.body.project, period?.projectId),
+		workCategoryId: kept(command.body.workCategory, period?.workCategoryId),
 	};
 }
 
 /**
  * The #272 legacy closure: the hash-chained clock-out, the canonical work record
  * and the surcharge snapshot, all derived from the closer's locked start and
- * duration so both representations agree (#388).
+ * duration so both representations agree (#388). Every legacy closure writes the
+ * canonical record, on-behalf ones included (#476 decision 10).
  */
 async function closeLegacyClockOut(
 	coordination: WorkTransactionContext,
@@ -281,9 +360,13 @@ async function closeLegacyClockOut(
 	},
 ): Promise<ClockOutClosure> {
 	const { plan, target, eventInstant } = input;
-	const { command, employee } = plan;
-	const projectId = attributionValue(command.body.project);
-	const workCategoryId = attributionValue(command.body.workCategory);
+	const { command, employee, writer } = plan;
+	// Read under the coordinator's period lock, as the append writer resolves it.
+	const { projectId, workCategoryId } = await legacyAttribution(
+		coordination,
+		plan,
+		target.workPeriodId,
+	);
 	const endTime = dateFromInstant(eventInstant);
 	let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
 	const closed = await clockingService.clockOut({
@@ -294,7 +377,7 @@ async function closeLegacyClockOut(
 		workPeriodId: target.workPeriodId,
 		createdBy: command.principal.userId,
 		action: { instant: eventInstant, ...input.capture },
-		source: clockSource(command.channel),
+		source: { ipAddress: writer.ipAddress ?? null, deviceInfo: writer.deviceInfo },
 		projectId,
 		workCategoryId,
 		approvalStatus: "approved",
@@ -315,9 +398,9 @@ async function closeLegacyClockOut(
 					durationMinutes,
 					approvalState: "approved",
 					createdBy: command.principal.userId,
-					workCategoryId: workCategoryId ?? null,
+					workCategoryId,
 					workLocationType: target.workLocationType,
-					projectId: projectId ?? null,
+					projectId,
 					origin: "clock",
 				},
 				coordination.db,
@@ -340,6 +423,7 @@ async function closeLegacyClockOut(
 				pendingApproval: pendingApproval(approvalSubmission),
 			},
 			durationMinutes: closed.durationMinutes,
+			receipt: null,
 		};
 	}
 	return {
@@ -352,10 +436,11 @@ async function closeLegacyClockOut(
 			workPeriodId: target.workPeriodId,
 			start: target.start,
 			durationMinutes: closed.durationMinutes,
-			projectId: projectId ?? null,
+			projectId,
 			// Assigned inside the closer's callback, which narrowing cannot see.
 			surchargeSnapshot: surchargeSnapshot as PolicyClockOutSurchargeSnapshot | null,
 			balanceRefreshCommitted: false,
 		},
+		receipt: null,
 	};
 }

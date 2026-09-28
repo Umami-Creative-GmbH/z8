@@ -71,7 +71,6 @@ import {
 	type ClockOutRefusal,
 	type ClockOutResult,
 	clocking,
-	clockOutFollowUps,
 	type OperationIdentity,
 } from "@/lib/time-tracking/clocking";
 import { workCategoryIneligibility } from "@/lib/time-tracking/work-category-eligibility";
@@ -580,64 +579,13 @@ export async function clockInAs(
 	return { success: true, data: outcome.result };
 }
 
-/** Post-commit facts of one executed or legacy-replayed live closure. */
-export type ClockOutCommitOutcome = {
-	entry: unknown;
-	disposition: "executed" | "replayed";
-	durationMinutes: number;
-	/** The replayed historical policy clock-out submission, if the closure had one. */
-	approvalSubmission: { result: { kind: string } } | undefined;
-	workPeriodId: string;
-	startTime: Date;
-	endTime: Date;
-	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
-	/** True when the closure committed its own work-balance refresh intent. */
-	balanceRefreshCommitted: boolean;
-};
-
-async function revalidateAfterClockOut(context: Record<string, unknown>) {
+/** Refreshes the web cache after a committed closure; never fails the closure. */
+export async function revalidateAfterClockOut(context: Record<string, unknown>) {
 	try {
 		revalidatePath("/time-tracking");
 	} catch (error) {
 		logger.error({ error, ...context }, "Failed to revalidate time tracking after clock-out");
 	}
-}
-
-/**
- * Post-commit work for the live clock-out adapters that are not yet on the
- * Clocking module (frozen clock commands, on-behalf): the module's follow-ups and the
- * web cache. Neither can turn the committed closure into a failure.
- */
-export async function completeClockOutAfterCommit(input: {
-	outcome: ClockOutCommitOutcome;
-	employee: { id: string; organizationId: string };
-	userId: string;
-	timezone: string;
-	projectId: string | null | undefined;
-}): Promise<ClockOutResult> {
-	const { outcome, employee } = input;
-	const entry = outcome.entry as ClockOutResult;
-	const pendingApproval = outcome.approvalSubmission
-		? outcome.approvalSubmission.result.kind !== "auto_completed"
-		: undefined;
-	if (outcome.disposition !== "executed") return { ...entry, pendingApproval };
-	const advice = await clockOutFollowUps.afterClockOut({
-		organizationId: employee.organizationId,
-		employeeId: employee.id,
-		actorUserId: input.userId,
-		workPeriodId: outcome.workPeriodId,
-		start: instantFromDate(outcome.startTime),
-		durationMinutes: outcome.durationMinutes,
-		projectId: input.projectId ?? null,
-		surchargeSnapshot: outcome.surchargeSnapshot,
-		balanceRefreshCommitted: outcome.balanceRefreshCommitted,
-		timezone: input.timezone,
-	});
-	await revalidateAfterClockOut({
-		organizationId: employee.organizationId,
-		workPeriodId: outcome.workPeriodId,
-	});
-	return { ...entry, pendingApproval, ...advice };
 }
 
 /**

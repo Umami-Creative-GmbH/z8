@@ -6,7 +6,7 @@ import {
 } from "@/app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { auth } from "@/lib/auth";
-import { createBillingForbiddenResponse } from "@/lib/billing/guard";
+import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { parseOnBehalfClockOutRequest } from "@/lib/time-tracking/on-behalf-clock-out-request";
 
 /**
@@ -23,6 +23,7 @@ const REJECTIONS: Record<
 	{ status: number; error: string }
 > = {
 	access_denied: { status: 403, error: "Not authorized to clock out this employee" },
+	invalid_command: { status: 400, error: "This clock-out request is not valid" },
 	target_unknown: { status: 404, error: "Work period not found" },
 	target_not_active: { status: 409, error: "Work period is no longer running" },
 	collision: { status: 409, error: "This clock-out request conflicts with another one" },
@@ -31,15 +32,15 @@ const REJECTIONS: Record<
 		status: 409,
 		error: "Clock out was not saved because time history needs review",
 	},
-	integrity_review_required: {
-		status: 409,
-		error: "Clock out was not saved because committed work needs review",
-	},
 };
 
 function rejected(rejection: OnBehalfClockOutRejection, operationId: string | null) {
 	if (rejection.code === "billing_required") {
-		return createBillingForbiddenResponse(rejection.billing);
+		// The billing guard's response shape.
+		return NextResponse.json(
+			{ error: "billing_required", reason: rejection.reason },
+			{ status: 402 },
+		);
 	}
 	if (rejection.code === "attribution_not_allowed") {
 		return NextResponse.json(
@@ -57,6 +58,14 @@ function rejected(rejection: OnBehalfClockOutRejection, operationId: string | nu
 	}
 	const { status, error } = REJECTIONS[rejection.code];
 	return NextResponse.json({ error, code: rejection.code, operationId }, { status });
+}
+
+/** The work may or may not have committed; resending the same identity replays it. */
+function unknownOutcome(operationId: string | null) {
+	return NextResponse.json(
+		{ error: "Internal server error", outcome: "unknown", operationId },
+		{ status: 500 },
+	);
 }
 
 export async function POST(request: NextRequest) {
@@ -84,6 +93,10 @@ export async function POST(request: NextRequest) {
 	if (!activeOrganizationId) {
 		return NextResponse.json({ error: "No active organization" }, { status: 400 });
 	}
+	// Authentication: an organization that requires SSO admits only SSO sessions.
+	if (!(await canAccessOrganizationWithSso(session.session, activeOrganizationId))) {
+		return rejected({ code: "access_denied" }, parsed.operationId ?? null);
+	}
 
 	try {
 		const result = await closeWorkOnBehalf({
@@ -91,17 +104,13 @@ export async function POST(request: NextRequest) {
 			session: { userId: session.user.id, activeOrganizationId },
 		});
 		if (result.outcome === "rejected") return rejected(result, result.operationId);
+		if (result.outcome === "unknown") {
+			logger.error({ error: result.cause }, "On-behalf clock-out failed");
+			return unknownOutcome(result.operationId);
+		}
 		return NextResponse.json(result, { status: result.outcome === "executed" ? 201 : 200 });
 	} catch (error) {
 		logger.error({ error }, "On-behalf clock-out failed");
-		// The work may or may not have committed; resending the same identity replays it.
-		return NextResponse.json(
-			{
-				error: "Internal server error",
-				outcome: "unknown",
-				operationId: parsed.operationId ?? null,
-			},
-			{ status: 500 },
-		);
+		return unknownOutcome(parsed.operationId ?? null);
 	}
 }
