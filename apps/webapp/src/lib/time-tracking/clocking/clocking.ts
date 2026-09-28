@@ -63,7 +63,7 @@ import {
 	planClockOut,
 	replayClockOut,
 } from "./clock-out";
-import type { ClockFollowUps } from "./follow-ups";
+import type { ClockFollowUps, ClockOutAdvice, ClosedLiveWork } from "./follow-ups";
 import { FrozenCommandNotAcceptedError } from "./frozen";
 import { LegacyCommandNotAcceptedError } from "./legacy-command";
 import type { ClockTransactions } from "./transactions";
@@ -300,8 +300,9 @@ function eventCapture(
 	eventInstant: Instant,
 	deviceZone = command.zone.device,
 ) {
-	// On behalf, the event is the subject's, in their zone: never the principal's device.
-	if (command.subject.onBehalf) {
+	// On behalf or at a departure, the event is the subject's, in their zone: never
+	// the principal's device.
+	if (command.subject.onBehalf || command.principal.kind === "departure") {
 		return resolveFallbackTimezoneCapture({
 			timestamp: dateFromInstant(eventInstant),
 			timezone: command.zone.fallback,
@@ -324,7 +325,8 @@ function eventCapture(
  * transaction (replay again, admission and writer, the occupancy of a started or
  * resumed interval or the canonical record on a legacy close), commit and
  * follow-ups for every executed closure, breaks included. Callers never see
- * admission.
+ * admission. A departure principal runs only enlisted in its own departure's work
+ * transaction, and is exempt from billing.
  */
 export function createClocking(ports: ClockingPorts): Clocking {
 	const { clock, transactions, followUps } = ports;
@@ -341,6 +343,39 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	/** A closure's scope also names the work's owner, who differs on behalf. */
 	function closureScope(plan: ClockOutPlan) {
 		return { ...transactionScope(plan), ownerUserId: plan.employee.userId };
+	}
+
+	/**
+	 * A departure principal runs only through the adapter enlisted for its own
+	 * departure, and an enlisted adapter runs nothing else (#476 decision 20).
+	 */
+	function isEnlistedFor(command: ClockLookupQuery) {
+		const { enlistment } = transactions;
+		const { principal } = command;
+		if (principal.kind !== "departure") return enlistment === undefined;
+		return (
+			enlistment?.departureId === principal.departureId &&
+			enlistment.organizationId === command.organizationId &&
+			enlistment.employeeId === command.subject.employeeId
+		);
+	}
+
+	/**
+	 * Follow-ups of a committed closure. Best-effort ones never fail it; a durable
+	 * adapter's failure to stage fails it as `unconfirmed`, since the closure is
+	 * already written into the enlisting transaction.
+	 */
+	async function followUp(
+		closed: Omit<ClosedLiveWork, "timezone">,
+		command: ClockCommand,
+	): Promise<ClockOutAdvice | { failed: unknown }> {
+		const closure = { ...closed, timezone: command.zone.fallback };
+		if (!followUps.durable) return followUps.afterClockOut(closure).catch(() => ({}));
+		try {
+			return await followUps.afterClockOut(closure);
+		} catch (error) {
+			return { failed: error };
+		}
 	}
 
 	function eventInstantOf(command: ClockCommand) {
@@ -500,10 +535,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				receipt: closure.receipt,
 			};
 		}
-		// Committed: follow-ups are best-effort and never turn this into a failure.
-		const advice = await followUps
-			.afterClockOut({ ...closure.closed, timezone: command.zone.fallback })
-			.catch(() => ({}));
+		// Committed: only a durable adapter's failure to stage turns this into a failure.
+		const advice = await followUp(closure.closed, command);
+		if ("failed" in advice) return refused({ code: "unconfirmed", cause: advice.failed });
 		return {
 			outcome: "executed",
 			result: { ...closure.entry, pendingApproval: undefined, ...advice },
@@ -645,10 +679,9 @@ export function createClocking(ports: ClockingPorts): Clocking {
 			return refused(breakRefusal(command, error));
 		}
 		if (closure.disposition === "replayed") return { outcome: "replayed", result: closure.result };
-		// The break closes work as a clock-out does; its follow-ups never fail the break.
-		const advice = await followUps
-			.afterClockOut({ ...closure.closed, timezone: command.zone.fallback })
-			.catch(() => ({}));
+		// The break closes work as a clock-out does, with the same follow-ups.
+		const advice = await followUp(closure.closed, command);
+		if ("failed" in advice) return refused({ code: "unconfirmed", cause: advice.failed });
 		return { outcome: "executed", result: { ...closure.result, ...advice } };
 	}
 
@@ -688,18 +721,23 @@ export function createClocking(ports: ClockingPorts): Clocking {
 				return refused({ code: "invalid_break_duration" });
 			}
 		}
-		// On behalf, a clock-out names the period it closes; the receipt keeps it.
+		const departure = command.principal.kind === "departure";
+		// On behalf or at a departure, a clock-out names the period it closes; the
+		// receipt keeps it.
 		if (
-			command.subject.onBehalf &&
+			(command.subject.onBehalf || departure) &&
 			command.body.kind === "clock_out" &&
 			command.body.target?.kind !== "period"
 		) {
 			return refused({ code: "invalid_command" });
 		}
+		if (!isEnlistedFor(command)) return refused({ code: "access_denied" });
 		const subject = await authorizedSubject({ ...command, kind: command.body.kind });
 		if (!subject) return refused({ code: "access_denied" });
-		const billing = await requireBillingForMutation(command.organizationId);
-		if (!isBillingMutationAllowed(billing)) {
+		// Offboarding is never blocked by a lapsed subscription; seats recount through
+		// the departure's billing sync (#476 decision 8).
+		const billing = departure ? null : await requireBillingForMutation(command.organizationId);
+		if (billing && !isBillingMutationAllowed(billing)) {
 			return refused({
 				code: "billing_required",
 				reason: billing.reason ?? "subscription_required",
@@ -716,6 +754,7 @@ export function createClocking(ports: ClockingPorts): Clocking {
 
 		async lookup(query) {
 			// Self-service only: a lookup names no command kind to run on behalf.
+			if (!isEnlistedFor(query)) return { outcome: "access_denied" };
 			const subject = await authorizedSubject(query);
 			if (!subject) return { outcome: "access_denied" };
 			const owner = { organizationId: subject.organizationId, employeeId: subject.id };

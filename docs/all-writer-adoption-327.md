@@ -27,7 +27,7 @@ Paths are relative to `apps/webapp/src/`.
 
 ## What changed
 
-### Uncoordinated clock writers are fenced (W03, R01–R05, new W24)
+### Uncoordinated clock writers are fenced (W03, R01–R05; W24 until #485)
 
 Two callers used the clocking core (`lib/time-tracking/clocking-core.ts`) outside a
 work-transaction coordinator:
@@ -36,10 +36,11 @@ work-transaction coordinator:
   desktop clock-in/out and the two-request break, extension cohorts X1–X3 and
   action-ID replays;
 - the departure clock-out, `lib/employee-lifecycle/clock-out.ts`, which is still
-  behind the offboarding release gate.
+  behind the offboarding release gate. Since #485 it no longer uses the clocking
+  core directly and is no longer fenced (see below).
 
 In an adopted organization they wrote with legacy head selection, and the next
-admitted append was held (`unexpected_history_change`). Both callers now:
+admitted append was held (`unexpected_history_change`). Both callers were fenced:
 
 1. take the shared organization adoption gate before the employee key;
 2. read the append admission under that gate;
@@ -51,16 +52,25 @@ Each caller answers the refusal in its own way:
 - **The route** answers `409 {code: "append_adopted"}`. Extension readers retain the
   row on 409 (the #266 fence only rewrites their 400). Pre-#267 browser queues get
   401 from the fence. Current browser and desktop builds retain every non-success.
-- **The departure** records a `clock_repair` review with reason `append_adopted` and
-  leaves the period open for the canonical correction flow. Offboarding shows its
-  own label for this reason.
+- **The departure** recorded a `clock_repair` review with reason `append_adopted` and
+  left the period open for the canonical correction flow. Offboarding still shows
+  its own label for such reviews, which departures executed before #485 may have
+  left.
 
 Since #492 the departure runs as a work transaction
 (`lib/employee-lifecycle/departure-transaction.ts`). The coordinator takes the
 shared adoption gate first and reads the admission under it. The clock-out runs in
 a savepoint of that transaction and receives its sealed scope, so the clocking core
-only asserts the write target. In an `append` admission the clock-out writes nothing
-and records the same repair.
+only asserts the write target.
+
+Since #485 (Clocking 7/7, #476 decision 16) the departure clock-out is a Clocking
+module composition. The module runs enlisted in the departure's work transaction:
+each closure step runs in a savepoint of its sealed scope and takes no guard. It
+closes live work through the admission's writer. Adopted organizations therefore
+close through the append writer, under the `employee_departure` receipt writer
+(migration 0110), instead of recording an `append_adopted` repair. Legacy closures
+now also write the canonical work record. A clock-out that fails rolls back only
+its savepoint and records a `clock_out_failed` repair, as before.
 
 There is no activation code: the activation step is an operator transaction that
 takes the exclusive adoption gate and then inserts the control row. The route
@@ -134,7 +144,7 @@ append admission, and commits a receipt where its operation defines one.
 | W21 verifier/audit | Graph-aware assurance (#324) | append-assurance suite |
 | W22 absence neighbors | Not work-graph writers | — |
 | W23 package verification | Consumer only | — |
-| **W24 departure clock-out** (new) | Uncoordinated, **fenced (#327)**: adopted organizations get a timer repair instead of a legacy closure | departure suite |
+| **W24 departure clock-out** (new) | Participates (#485): closes through the Clocking module, enlisted in the departure work transaction; adopted organizations close through the append writer (`employee_departure` receipts) | departure and Clocking suites |
 
 Only these writers of `time_entry`/`work_period` choose between legacy and adopted
 paths: the legacy admin edit, `addLegacyBreak`, `splitLegacyWorkPeriod`, the legacy
@@ -289,10 +299,10 @@ Separately:
 
 ### Writer gaps and decisions still open
 
-- **Departure clock-out adoption (#327, W24).** In adopted organizations it is now
-  refused into a timer repair. Adopt it into the completed-work operation, which
-  needs a writer and a receipt, before offboarding is released for adopted
-  organizations.
+- ~~**Departure clock-out adoption (#327, W24).**~~ Resolved by #485: adopted
+  organizations close the departing employee's live work through the append
+  writer, with an `employee_departure` receipt. This precondition no longer blocks
+  releasing offboarding to adopted organizations.
 - **Bot retry identity** (#277). A lost bot reply cannot be replayed. Using provider
   invocation IDs needs its own decision; Slack has no usable ID.
 - **Identity-less legacy web clock-in** (#279). It participates, but has no stable
@@ -350,7 +360,8 @@ Separately:
   without authorization. Only server code calls them. Tracked as a separate
   hardening task.
 - **Departure correction flow.** No test shows that the canonical correction flow
-  closes a departed employee's open period after an `append_adopted` repair.
+  closes a departed employee's open period after an `append_adopted` repair. Only
+  departures executed before #485 leave such repairs.
 
 ### Operations and monitoring
 

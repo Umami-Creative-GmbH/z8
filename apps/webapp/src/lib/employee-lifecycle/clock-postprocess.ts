@@ -1,28 +1,7 @@
+import type { ClockOutFollowUpEffects } from "@/lib/time-tracking/clocking/follow-ups";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot.types";
 import type { DepartureTaskContext } from "./delivery";
 import type { DepartureTaskClaim } from "./outbox";
-
-export type ClockPostprocessEffects = {
-	enforceBreaks(input: {
-		organizationId: string;
-		employeeId: string;
-		workPeriodId: string;
-		sessionDurationMinutes: number;
-		timezone: string;
-		createdBy: string;
-	}): Promise<{ affectedWorkPeriodIds: string[] }>;
-	reconcileSurcharges(input: {
-		organizationId: string;
-		employeeId: string;
-		affectedWorkPeriodIds: string[];
-		snapshot: PolicyClockOutSurchargeSnapshot;
-	}): Promise<void>;
-	markWorkBalanceDirty(input: {
-		organizationId: string;
-		employeeId: string;
-		dirtyFromDate: string;
-	}): Promise<void>;
-};
 
 type PostprocessPayload = {
 	workPeriodId: string;
@@ -31,6 +10,11 @@ type PostprocessPayload = {
 	timezone: string;
 	createdBy: string;
 	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
+	/** The closed work's project; absent on tasks staged before #485. */
+	projectId?: string | null;
+	/** True when the closure committed its own work-balance refresh intent. */
+	balanceRefreshCommitted?: boolean;
+	complianceChecked?: boolean;
 	breaksEnforced?: boolean;
 	affectedWorkPeriodIds?: string[];
 	surchargesReconciled?: boolean;
@@ -50,26 +34,33 @@ function parsePayload(payload: Record<string, unknown>): PostprocessPayload {
 }
 
 /**
- * The post-clock-out work a live clock-out runs best-effort, made durable for
- * departures: break enforcement for this exact period, surcharges for the
- * periods it touched (using the snapshot taken at close), then work balance.
- * Each completed step is recorded on the task, so a retry resumes instead of
- * replaying an effect or applying it to an unrelated later period.
+ * A departure's clock-out follow-ups, made durable (#476 decision 14): the shared
+ * clock-out effects in the order `afterCommitFollowUps` runs them, compliance,
+ * break enforcement for this exact period, surcharges for the periods it touched
+ * (using the snapshot taken at close), the work balance unless the closure
+ * committed its refresh, then budget warnings. A failed step fails the task;
+ * each completed step is recorded on it, so a retry resumes instead of replaying
+ * an effect or applying it to an unrelated later period.
  */
-export function createClockPostprocessHandler(effects: ClockPostprocessEffects) {
+export function createClockPostprocessHandler(effects: ClockOutFollowUpEffects) {
 	return async (claim: DepartureTaskClaim, context: DepartureTaskContext) => {
 		const payload = parsePayload(claim.payload);
 		const scope = { organizationId: claim.organizationId, employeeId: claim.employeeId };
+		const closure = {
+			...scope,
+			workPeriodId: payload.workPeriodId,
+			durationMinutes: payload.durationMinutes,
+			timezone: payload.timezone,
+		};
+
+		if (!payload.complianceChecked) {
+			await effects.checkCompliance(closure);
+			await context.recordProgress({ complianceChecked: true });
+		}
 
 		let affectedWorkPeriodIds = payload.affectedWorkPeriodIds ?? [payload.workPeriodId];
 		if (!payload.breaksEnforced) {
-			const result = await effects.enforceBreaks({
-				...scope,
-				workPeriodId: payload.workPeriodId,
-				sessionDurationMinutes: payload.durationMinutes,
-				timezone: payload.timezone,
-				createdBy: payload.createdBy,
-			});
+			const result = await effects.enforceBreaks({ ...closure, createdBy: payload.createdBy });
 			affectedWorkPeriodIds = result.affectedWorkPeriodIds;
 			await context.recordProgress({ breaksEnforced: true, affectedWorkPeriodIds });
 		}
@@ -83,9 +74,15 @@ export function createClockPostprocessHandler(effects: ClockPostprocessEffects) 
 			await context.recordProgress({ surchargesReconciled: true });
 		}
 
-		await effects.markWorkBalanceDirty({
-			...scope,
-			dirtyFromDate: payload.periodStartedAt.slice(0, 10),
-		});
+		if (!payload.balanceRefreshCommitted) {
+			await effects.markBalanceDirty({
+				...scope,
+				dirtyFromDate: payload.periodStartedAt.slice(0, 10),
+			});
+		}
+
+		if (payload.projectId) {
+			await effects.checkProjectBudget(payload.projectId, claim.organizationId);
+		}
 	};
 }

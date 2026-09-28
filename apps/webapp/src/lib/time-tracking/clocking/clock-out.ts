@@ -12,6 +12,7 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
 import { clockingService } from "../clocking-service";
 import {
 	type AttributionIntent,
@@ -23,6 +24,7 @@ import {
 	type CloseActiveWorkWriter,
 	CompletedWorkCollisionError,
 	closeActiveWork,
+	DEPARTURE_CLOCK_OUT_WRITER,
 	liveClockOutWriter,
 	MANAGER_ON_BEHALF_WRITER,
 	replayCloseActiveWork,
@@ -105,7 +107,40 @@ function planOnBehalfClockOut(command: ClockOutCommand, employee: Employee): Clo
 	return { command, employee, receiptCommand, writer: MANAGER_ON_BEHALF_WRITER };
 }
 
+/**
+ * The receipt command of a departure's clock-out (#485): the departure closes one
+ * named period, so a retry of the same departure is the same command.
+ */
+export type DepartureClockOutCommand = CloseActiveWorkOperationCommand & {
+	version: 1;
+	departureId: string;
+	workPeriodId: string;
+};
+
+function planDepartureClockOut(
+	command: ClockOutCommand,
+	employee: Employee,
+	departureId: string,
+): ClockOutPlan {
+	const { body, identity } = command;
+	// The module admits departure closures of a named period only.
+	if (body.target?.kind !== "period") throw new Error("Departure clock-out names no period");
+	const receiptCommand: DepartureClockOutCommand = {
+		version: 1,
+		operationId: identity.id,
+		departureId,
+		workPeriodId: body.target.workPeriodId,
+		project: body.project,
+		workCategory: body.workCategory,
+	};
+	return { command, employee, receiptCommand, writer: DEPARTURE_CLOCK_OUT_WRITER };
+}
+
 export function planClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
+	const { principal } = command;
+	if (principal.kind === "departure") {
+		return planDepartureClockOut(command, employee, principal.departureId);
+	}
 	if (command.subject.onBehalf) return planOnBehalfClockOut(command, employee);
 	const { body, identity, at, zone, channel } = command;
 	const receiptCommand: CloseActiveWorkCommand = {
@@ -347,6 +382,18 @@ async function legacyAttribution(
 }
 
 /**
+ * The legacy closer of a departure, which closes the work of the employee whose
+ * access it has just ended: it has no access gate, and it runs only in the
+ * departure's work transaction.
+ */
+const departureLegacyClocking = createClockingService({
+	transaction: () => {
+		throw new Error("A departure clock-out runs in its departure work transaction");
+	},
+	storeForCoordinatedTransaction: (scope) => createDatabaseClockingStore(scope.db),
+});
+
+/**
  * The #272 legacy closure: the hash-chained clock-out, the canonical work record
  * and the surcharge snapshot, all derived from the closer's locked start and
  * duration so both representations agree (#388). Every legacy closure writes the
@@ -371,7 +418,9 @@ async function closeLegacyClockOut(
 	);
 	const endTime = dateFromInstant(eventInstant);
 	let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
-	const closed = await clockingService.clockOut({
+	const closer =
+		writer.writer === DEPARTURE_CLOCK_OUT_WRITER.writer ? departureLegacyClocking : clockingService;
+	const closed = await closer.clockOut({
 		coordination,
 		actionId: command.identity.id,
 		employeeId: employee.id,

@@ -55,21 +55,15 @@ export type ExecuteDepartureResult =
 
 export type DepartureClockOutResult =
 	| { kind: "not_running" }
-	| {
-			kind: "closed";
-			workPeriodId: string;
-			clockOutEntryId: string;
-			/** Evidence for the durable post-clock-out work (breaks, compliance, surcharges). */
-			postprocess?: Record<string, unknown>;
-	  }
+	| { kind: "closed"; workPeriodId: string; clockOutEntryId: string }
 	| { kind: "repair_required"; workPeriodId: string | null; reason: string };
 
 /**
  * Closes the target's running work period at the cutoff inside the departure
  * work transaction. It runs in a savepoint of that transaction and receives the
- * savepoint's sealed scope, so it takes no guard of its own. Slice 2 supplies
- * the canonical clocking implementation; there is deliberately no production
- * no-op.
+ * savepoint's sealed scope, so it takes no guard of its own. A closure stages its
+ * durable `clock_postprocess` follow-ups in the same scope. The Clocking module
+ * supplies the implementation (#485); there is deliberately no production no-op.
  */
 export interface DepartureClockOutPort {
 	close(

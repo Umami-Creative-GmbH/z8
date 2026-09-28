@@ -68,8 +68,14 @@ export const DIRECT_HTTP_WRITER_VERSION = 1;
 /**
  * The adapter a live clock command arrived through; stored as device evidence.
  * `api` is direct HTTP: frozen clock commands and the legacy route's commands.
+ * `employee-offboarding` is the departure's own clock-out (#485).
  */
-export type ClockChannel = "web" | "mobile" | "api" | `${BotPlatform}-bot`;
+export type ClockChannel =
+	| "web"
+	| "mobile"
+	| "api"
+	| `${BotPlatform}-bot`
+	| typeof DEPARTURE_CLOCK_OUT_WRITER.deviceInfo;
 
 /** Entry source evidence. Bots keep their established `ip_address = "bot"`. */
 export function clockSource(channel: ClockChannel) {
@@ -121,6 +127,7 @@ export type CloseActiveWorkWriter = {
 
 /** The receipt writer of a live clock channel: bots share one, the platform stays in the command. */
 export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter {
+	if (channel === DEPARTURE_CLOCK_OUT_WRITER.deviceInfo) return DEPARTURE_CLOCK_OUT_WRITER;
 	if (channel === "api") {
 		return {
 			writer: "direct_http",
@@ -139,6 +146,18 @@ export const MANAGER_ON_BEHALF_WRITER = {
 	writerVersion: 1,
 	// The established device evidence of on-behalf clock-out entries.
 	deviceInfo: "web-on-behalf",
+	ipAddress: null,
+} as const satisfies CloseActiveWorkWriter;
+
+/**
+ * The receipt writer of a departure's clock-out of the departing employee's work
+ * (#485), inside the offboarding work transaction.
+ */
+export const DEPARTURE_CLOCK_OUT_WRITER = {
+	writer: "employee_departure",
+	writerVersion: 1,
+	// The established device evidence of departure clock-out entries.
+	deviceInfo: "employee-offboarding",
 	ipAddress: null,
 } as const satisfies CloseActiveWorkWriter;
 
@@ -401,7 +420,10 @@ export async function closeActiveWorkGraph(
 	if (!(await store.isOrganizationMember(employeeId, organizationId))) {
 		throw new ClockingOrganizationError();
 	}
-	await assertEmployeeMayClock(store, { employeeId, organizationId });
+	// A departure closes the work of the employee whose access it has just ended.
+	if (input.writer.writer !== DEPARTURE_CLOCK_OUT_WRITER.writer) {
+		await assertEmployeeMayClock(store, { employeeId, organizationId });
+	}
 	if (await store.getEntryByActionId(employeeId, organizationId, clockOutEntryId)) {
 		throw new CompletedWorkCollisionError();
 	}

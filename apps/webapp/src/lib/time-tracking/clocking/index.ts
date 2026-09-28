@@ -24,10 +24,16 @@ export {
 	type ClockFollowUps,
 	type ClockOutAdvice,
 	type ClosedLiveWork,
+	durableFollowUps,
 	recordingFollowUps,
 } from "./follow-ups";
 export { workPeriodOwner } from "./on-behalf";
-export { type ClockTransactions, coordinatedTransactions } from "./transactions";
+export {
+	type ClockTransactions,
+	coordinatedTransactions,
+	type DepartureEnlistment,
+	enlistedTransactions,
+} from "./transactions";
 export * from "./types";
 
 /**

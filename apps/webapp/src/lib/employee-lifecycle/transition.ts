@@ -337,22 +337,6 @@ async function recordClockOutReview(
 				affectedEndAt: cutoff,
 			})
 			.onConflictDoNothing();
-		if (result.postprocess) {
-			// Committed with the clock-out, so its side effects are never lost.
-			await tx
-				.insert(employeeDepartureTask)
-				.values({
-					...scope,
-					kind: "clock_postprocess",
-					dedupeKey: `clock-postprocess:${clockOutActionId}`,
-					payload: {
-						workPeriodId: result.workPeriodId,
-						clockOutEntryId: result.clockOutEntryId,
-						...result.postprocess,
-					},
-				})
-				.onConflictDoNothing();
-		}
 		return;
 	}
 	if (result.kind === "repair_required") {

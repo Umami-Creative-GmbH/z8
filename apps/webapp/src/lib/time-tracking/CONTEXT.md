@@ -86,5 +86,5 @@ A clock-out whose subject is another employee's named live work, performed by an
 _Avoid_: Manager clock-out, forced clock-out
 
 **Departure clock-out**:
-The clock-out of a departing employee's live work, performed as part of offboarding.
+The clock-out of a departing employee's live work, performed as part of offboarding. Its principal is the departure, which runs only enlisted in its own departure's work transaction and is exempt from billing; its follow-ups are staged as durable work.
 _Avoid_: Offboarding clock-out

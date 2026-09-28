@@ -1,7 +1,7 @@
 /**
  * The Clocking module's clock-out, through `run` only (#478): legacy and append
- * admission × client, derived and server operation identities × self-service and
- * on-behalf principals (#482).
+ * admission × client, derived and server operation identities × self-service,
+ * on-behalf (#482) and departure (#485) principals.
  *
  * Local contract: pnpm --filter webapp test:integration
  *
@@ -34,7 +34,8 @@ vi.mock("@/lib/billing/guard", () => ({
 
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
-const { coordinatedTransactions } = await import("./transactions");
+const { coordinatedTransactions, enlistedTransactions } = await import("./transactions");
+const { runDepartureTransaction } = await import("@/lib/employee-lifecycle/departure-transaction");
 const { clockInAs } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 const { db } = await import("@/db");
 type ClockCommand = import("./types").ClockCommand;
@@ -512,6 +513,77 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 
 			expect(await snapshot()).toEqual(before);
 			expect(followUps.closures).toEqual([]);
+		});
+
+		// #476 decisions 8, 16 and 20.
+		it("runs a departure only enlisted in its own departure's transaction, billing exempt", async () => {
+			const periodId = await startWork();
+			const departureId = randomUUID();
+			const departure = (id = departureId, target = true) =>
+				clockOut({
+					principal: { kind: "departure", departureId: id, userId: ids.ownerUser },
+					identity: { origin: "derived", id: randomUUID() },
+					channel: "employee-offboarding",
+					zone: { device: null, fallback: "UTC" },
+					body: {
+						kind: "clock_out",
+						...(target ? { target: { kind: "period", workPeriodId: periodId } } : {}),
+						project: { kind: "preserve" },
+						workCategory: { kind: "preserve" },
+					},
+				} as Partial<ClockCommand>);
+			const before = await snapshot();
+
+			const coordinated = newClocking();
+			await expect(coordinated.clocking.run(departure())).resolves.toEqual({
+				outcome: "refused",
+				failure: { code: "access_denied" },
+			});
+			expect(await snapshot()).toEqual(before);
+			harness.billing = { canAccess: false, reason: "subscription_expired" };
+			const outcomes = await runDepartureTransaction(
+				db,
+				{ organizationId: ids.organization, employeeId: ids.employee },
+				async (scope) => {
+					const { clocking, followUps } = newClocking(
+						enlistedTransactions(scope, {
+							organizationId: ids.organization,
+							employeeId: ids.employee,
+							departureId,
+						}),
+					);
+					return {
+						followUps,
+						otherDeparture: await clocking.run(departure(randomUUID())),
+						selfService: await clocking.run(clockOut()),
+						unnamed: await clocking.run(departure(departureId, false)),
+						executed: await clocking.run(departure()),
+					};
+				},
+			);
+
+			expect(outcomes.otherDeparture).toEqual({
+				outcome: "refused",
+				failure: { code: "access_denied" },
+			});
+			expect(outcomes.selfService).toEqual({
+				outcome: "refused",
+				failure: { code: "access_denied" },
+			});
+			expect(outcomes.unnamed).toEqual({
+				outcome: "refused",
+				failure: { code: "invalid_command" },
+			});
+			expect(outcomes.executed).toMatchObject({
+				outcome: "executed",
+				result: { createdBy: ids.ownerUser, deviceInfo: "employee-offboarding" },
+			});
+			expect(outcomes.followUps.closures).toHaveLength(1);
+			expect(await closedPeriod(periodId)).toMatchObject({
+				is_active: false,
+				record_duration: 61,
+				receipts: admission === "append" ? 1 : 0,
+			});
 		});
 
 		it("refuses a stale command by its freshness, but replays it once committed", async () => {

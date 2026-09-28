@@ -31,10 +31,17 @@ export type ClockOutAdvice = Pick<ClockOutResult, "complianceWarnings" | "breakA
 
 /**
  * The follow-ups port: what runs once per executed closure, never on replay.
- * `afterCommitFollowUps` runs them best-effort after commit; `recordingFollowUps`
+ * `afterCommitFollowUps` runs them best-effort after commit; `durableFollowUps`
+ * stages them in the closure's enlisting transaction; `recordingFollowUps`
  * records them for tests.
  */
 export interface ClockFollowUps {
+	/**
+	 * Durable follow-ups stage in the closure's own (enlisting) transaction, so a
+	 * failure to stage fails the command as `unconfirmed` and its caller must roll
+	 * the closure back. Best-effort ones never fail a committed closure.
+	 */
+	readonly durable?: true;
 	afterClockOut(closure: ClosedLiveWork): Promise<ClockOutAdvice>;
 }
 
@@ -159,6 +166,24 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 				complianceWarnings: complianceWarnings.length > 0 ? complianceWarnings : undefined,
 				breakAdjustment: breakEnforcement.wasAdjusted ? breakEnforcement.adjustment : undefined,
 			};
+		},
+	};
+}
+
+/**
+ * Stages the follow-ups as durable work that commits with the closure: a
+ * departure's `clock_postprocess` task (#476 decision 14). Its handler runs the
+ * same effects, in the same order, as `afterCommitFollowUps`. Nothing runs now,
+ * so there is no advice.
+ */
+export function durableFollowUps(
+	stage: (closure: ClosedLiveWork) => Promise<void>,
+): ClockFollowUps {
+	return {
+		durable: true,
+		async afterClockOut(closure) {
+			await stage(closure);
+			return {};
 		},
 	};
 }

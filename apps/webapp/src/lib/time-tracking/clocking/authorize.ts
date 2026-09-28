@@ -43,7 +43,9 @@ async function mayActOnBehalf(principal: ClockPrincipal, subject: Employee) {
  * The subject employee when the principal may run this command for them, else
  * null (#476 decision 5). Self-service runs every kind for one's own employee.
  * On behalf, only a clock-out runs, for another active employee, by an owner, an
- * admin or their direct manager; never for oneself.
+ * admin or their direct manager; never for oneself. A departure runs only its
+ * clock-out of the departing employee, whose access it has just ended; the module
+ * checks that it runs inside that departure's transaction.
  */
 export async function authorizedSubject(query: AuthorizationQuery): Promise<Employee | null> {
 	const { principal, subject } = query;
@@ -55,6 +57,9 @@ export async function authorizedSubject(query: AuthorizationQuery): Promise<Empl
 		)
 		.limit(1);
 	if (!row) return null;
+	if (principal.kind === "departure") {
+		return query.kind === "clock_out" && !subject.onBehalf ? row : null;
+	}
 	if (!subject.onBehalf) return row.userId === principal.userId ? row : null;
 	if (query.kind !== "clock_out" || !row.isActive || row.userId === principal.userId) return null;
 	return (await mayActOnBehalf(principal, row)) ? row : null;
