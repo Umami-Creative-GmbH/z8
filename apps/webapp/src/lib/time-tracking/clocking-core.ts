@@ -5,7 +5,7 @@
  * can use it directly. Request paths use the access-coordinated
  * `clockingService` from `./clocking-service`.
  */
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
@@ -27,6 +27,7 @@ import {
 	type SealedWorkTransactionScope,
 	type WorkTransactionAdmission,
 } from "./work-transaction";
+import { employeeCoordinationGuard, holdGuard } from "./work-transaction/ranks";
 
 export { TimeEntryAppendReviewRequiredError } from "./time-entry-append";
 
@@ -384,10 +385,10 @@ export function createClockingService(deps: ClockingDependencies) {
 					throw new Error("Clocking transaction context changed");
 				}
 			} else {
-				// Uncoordinated writers (the legacy direct route, the departure
-				// clock-out) hold the shared adoption gate, so an exclusive adoption
-				// holder drains them before a mode change becomes visible (#327).
-				// A caller-owned transaction may already hold its own locks.
+				// Uncoordinated writers (the legacy direct route) hold the shared
+				// adoption gate, so an exclusive adoption holder drains them before a
+				// mode change becomes visible (#327). A caller-owned transaction may
+				// already hold its own locks.
 				await store.acquireAdoptionGate(input.organizationId);
 				await store.lockEmployee(input.employeeId);
 			}
@@ -638,11 +639,7 @@ export function createDatabaseClockingStore(tx: ClockingStoreClient): ClockingSt
 		transaction: tx,
 		acquireAdoptionGate: (organizationId) => acquireAdoptionGate(tx, organizationId),
 		readAppendAdmission: (organizationId) => readAppendAdmission(tx, organizationId),
-		lockEmployee: async (employeeId) => {
-			await tx.execute(
-				sql`select pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`,
-			);
-		},
+		lockEmployee: (employeeId) => holdGuard(tx, employeeCoordinationGuard(employeeId)),
 		isOrganizationMember: async (employeeId, organizationId) => {
 			const [member] = await tx
 				.select({ id: employee.id })

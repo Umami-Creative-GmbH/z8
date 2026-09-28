@@ -9,6 +9,7 @@ import {
 	createDatabaseClockingStore,
 } from "@/lib/time-tracking/clocking-core";
 import { createDepartureClockOut } from "./clock-out";
+import { runDepartureTransaction } from "./departure-transaction";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -76,8 +77,8 @@ describe("departure clock-out", () => {
 	}
 
 	function execute(identity: Awaited<ReturnType<typeof scheduleAt>>, now: Instant = EXECUTED_LATE) {
-		return fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, now, createDepartureClockOut()),
+		return runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, now, createDepartureClockOut()),
 		);
 	}
 
@@ -167,8 +168,8 @@ describe("departure clock-out", () => {
 		).toEqual({ kind: "clock_repair", subject_id: periodId, reason: "period_starts_after_cutoff" });
 	});
 
-	// #327: the departure clock-out is not a coordinated writer, so an organization
-	// that adopted appends refuses it before any write and the period stays open.
+	// #327, #477 decision 9: in an organization that adopted appends, the departure
+	// clock-out writes nothing; the period stays open and a timer repair is recorded.
 	it("leaves adopted work open with an append_adopted timer repair", async () => {
 		const target = await fixture.seedEmployee();
 		const periodId = await clockIn(target, "2026-09-14T20:00:00Z");

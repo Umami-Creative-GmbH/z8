@@ -44,6 +44,8 @@ export interface FakeWorkTransactionOptions {
 	 * is for the transaction.
 	 */
 	approvalDatabase?(approval: unknown): object;
+	/** Also takes each guard after recording it, such as a mocked advisory lock. */
+	lock?(client: object, guard: Guard): Promise<void>;
 }
 
 export interface FakeWorkTransaction {
@@ -111,8 +113,9 @@ export function fakeWorkTransaction(options: FakeWorkTransactionOptions = {}): F
 						transaction = Object.create(options.client ?? {});
 						return body(transaction);
 					},
-					async lock(_client, guard) {
+					async lock(client, guard) {
 						guards.push({ ...guard, attempt: attempts });
+						await options.lock?.(client, guard);
 					},
 					async readAdmission() {
 						return options.admission ?? "legacy";

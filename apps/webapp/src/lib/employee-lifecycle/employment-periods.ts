@@ -4,7 +4,7 @@ import { employee } from "@/db/schema";
 import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentInterval } from "./employment-coverage";
-import type { LifecycleTransaction } from "./types";
+import type { LifecycleClient } from "./types";
 
 type CoverageDatabase = Pick<typeof rootDatabase, "select">;
 
@@ -46,7 +46,7 @@ type CurrentEmploymentPeriod = {
  * active again, and returned as-is otherwise.
  */
 export async function resolveCurrentEmploymentPeriod(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	input: { organizationId: string; employeeId: string },
 ): Promise<CurrentEmploymentPeriod | null> {
 	await tx.execute(
@@ -103,7 +103,7 @@ export async function resolveCurrentEmploymentPeriod(
  * timeline cannot bridge the employment gap.
  */
 export async function resolveTermsEmploymentPeriod(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	input: { organizationId: string; employeeId: string; validFrom: Date },
 ): Promise<string> {
 	const period = await resolveCurrentEmploymentPeriod(tx, input);

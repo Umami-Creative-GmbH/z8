@@ -1,6 +1,11 @@
 import "server-only";
 
-import type { ClockInFailure, ClockOutFailure } from "@/lib/time-tracking/clocking/types";
+import type {
+	BreakFailure,
+	BreakRefusal,
+	ClockInFailure,
+	ClockOutFailure,
+} from "@/lib/time-tracking/clocking/types";
 
 type Message = readonly [key: string, fallback: string];
 type Params = Record<string, string>;
@@ -85,6 +90,59 @@ const CLOCK_IN_FAILURE_MESSAGES: Record<
 	unconfirmed: CLOCK_IN_RETRY,
 };
 
+const BREAK_RETRY: Message = [
+	"timeTracking.errors.breakRetry",
+	"Failed to add break. Please try again.",
+];
+
+/** How the web words every break refusal, in the `timeTracking` namespace. */
+const BREAK_FAILURE_MESSAGES: Record<
+	Exclude<BreakFailure, "billing_required" | "under_review"> | WebClockRefusal,
+	Message
+> = {
+	...WEB_REFUSAL_MESSAGES,
+	not_clocked_in: CLOCK_OUT_FAILURE_MESSAGES.not_clocked_in,
+	invalid_break_duration: [
+		"timeTracking.errors.breakDurationInvalid",
+		"Enter a break duration of at least 1 minute.",
+	],
+	invalid_interval: [
+		"timeTracking.errors.breakTooLong",
+		"Break duration must be shorter than your current session.",
+	],
+	holiday_blocked: [
+		"timeTracking.errors.holidayBlockedBreak",
+		"Cannot resume work after a break on {holidayName}",
+	],
+	occupancy_conflict: [
+		"timeTracking.errors.breakOccupied",
+		"The break overlaps other recorded work.",
+	],
+	// A break closes work as a clock-out does, and shares its wording.
+	collision: CLOCK_OUT_FAILURE_MESSAGES.collision,
+	append_review_required: CLOCK_OUT_FAILURE_MESSAGES.append_review_required,
+	access_denied: ["timeTracking.errors.breakNotAllowed", "You cannot add a break to this work."],
+	admission_window: BREAK_RETRY,
+	invalid_command: BREAK_RETRY,
+	failed: BREAK_RETRY,
+	unconfirmed: BREAK_RETRY,
+};
+
+/** What the work under review waits for. */
+const BREAK_REVIEW_MESSAGES: Record<
+	Extract<BreakRefusal, { code: "under_review" }>["review"],
+	Message
+> = {
+	approval: [
+		"timeTracking.errors.breakAwaitingApproval",
+		"This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
+	],
+	time_correction: [
+		"timeTracking.errors.breakPendingCorrection",
+		"A time correction approval is already pending for this work period. Add the break once it is resolved.",
+	],
+};
+
 function interpolate(fallback: string, params: Params = {}) {
 	return fallback.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
 }
@@ -116,4 +174,20 @@ export async function clockInFailureMessage(
 ): Promise<string> {
 	const [key, fallback] = CLOCK_IN_FAILURE_MESSAGES[failure];
 	return (await translator())(key, fallback, params);
+}
+
+export async function breakFailureMessage(
+	refusal: Exclude<BreakRefusal, { code: "billing_required" }> | { code: WebClockRefusal },
+): Promise<string> {
+	const translate = await translator();
+	switch (refusal.code) {
+		case "under_review":
+			return translate(...BREAK_REVIEW_MESSAGES[refusal.review]);
+		case "holiday_blocked":
+			return translate(...BREAK_FAILURE_MESSAGES.holiday_blocked, {
+				holidayName: refusal.holidayName ?? "",
+			});
+		default:
+			return translate(...BREAK_FAILURE_MESSAGES[refusal.code]);
+	}
 }

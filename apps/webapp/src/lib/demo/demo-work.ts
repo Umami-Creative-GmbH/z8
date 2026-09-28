@@ -24,7 +24,6 @@ import "server-only";
  */
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gt, inArray, isNull, lt, notExists, or, sql } from "drizzle-orm";
-import { db } from "@/db";
 import {
 	approvalRequest,
 	completedWorkOperation,
@@ -53,18 +52,13 @@ import {
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { deriveWorkDurationMinutes } from "@/lib/time-tracking/work-duration";
 import {
-	acquireAdoptionGate,
-	acquireEmployeeCoordination,
-	acquireOrganizationConfigurationGuard,
-	acquireUserConfigurationAccessGuards,
-	readAppendAdmission,
+	runWorkTransaction,
 	type SealedWorkTransactionScope,
-	sealWorkTransactionScope,
+	type WorkRoute,
 	type WorkTransactionClient,
+	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
-
-type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export const DEMO_WORK_COMMAND_VERSION = 1;
 export const DEMO_WORK_RESULT_VERSION = 1;
@@ -80,56 +74,30 @@ export interface DemoWorkCoordinationInput {
 	accessUserIds?: readonly string[];
 }
 
-type DemoWorkTransaction = Pick<Transaction, "execute" | "select"> & WorkTransactionClient;
-
 /**
- * Acquires the shared work protocol on a transaction the caller already owns and
- * returns its scope, valid only inside that transaction. `afterAdoptionGate` takes
- * approval gates, which the protocol orders between the adoption gate and the
- * configuration guards.
+ * Demo's fixed routing: the triggering admin and the other access users, and
+ * every coordinated employee, each of which the operation may write.
  */
-export async function acquireDemoWorkScope(
-	transaction: DemoWorkTransaction,
-	input: DemoWorkCoordinationInput,
-	options: { afterAdoptionGate?: () => Promise<void> } = {},
-	isActive: () => boolean = () => true,
-): Promise<SealedWorkTransactionScope> {
-	await acquireAdoptionGate(transaction, input.organizationId);
-	const admission = await readAppendAdmission(transaction, input.organizationId);
-	await options.afterAdoptionGate?.();
-	await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
-	await acquireUserConfigurationAccessGuards(transaction, [
-		...(input.triggeringUserId ? [input.triggeringUserId] : []),
-		...(input.accessUserIds ?? []),
-	]);
-	await acquireEmployeeCoordination(transaction, input.employeeIds);
-
-	const employees = new Set(input.employeeIds);
-	return sealWorkTransactionScope({
-		db: transaction,
-		admission,
-		assertEmployee(organizationId: string, employeeId: string) {
-			if (!isActive()) throw new Error("Work transaction is no longer active");
-			if (organizationId !== input.organizationId || !employees.has(employeeId)) {
-				throw new Error("Employee scope is outside the work transaction");
-			}
-		},
-	});
+function routeDemoWork(input: DemoWorkCoordinationInput): WorkRoute {
+	return {
+		users: [
+			...(input.triggeringUserId ? [input.triggeringUserId] : []),
+			...(input.accessUserIds ?? []),
+		],
+		employees: input.employeeIds,
+		writeTargets: input.employeeIds,
+	};
 }
 
-/** One coordinated transaction for a demo operation. */
+/** One coordinated work transaction for a demo operation. */
 export function withDemoWorkTransaction<T>(
 	input: DemoWorkCoordinationInput,
-	operation: (scope: SealedWorkTransactionScope) => Promise<T>,
+	operation: (scope: WorkTransactionScope) => Promise<T>,
 ): Promise<T> {
-	return db.transaction(async (transaction) => {
-		let active = true;
-		try {
-			return await operation(await acquireDemoWorkScope(transaction, input, {}, () => active));
-		} finally {
-			active = false;
-		}
-	});
+	return runWorkTransaction(
+		{ organizationId: input.organizationId, route: async () => routeDemoWork(input) },
+		operation,
+	);
 }
 
 // ---------------------------------------------------------------------------

@@ -24,6 +24,8 @@ type TimeEntryUpdateDbClient = Pick<typeof db, "update">;
 
 export async function createTimeEntry(
 	params: {
+		/** An operation identity the entry takes; generated when omitted. */
+		id?: string;
 		employeeId: string;
 		organizationId: string;
 		type: "clock_in" | "clock_out" | "correction";
@@ -44,6 +46,7 @@ export async function createTimeEntry(
 	client: TimeEntryDbClient = db,
 ): Promise<typeof timeEntry.$inferSelect> {
 	const {
+		id,
 		employeeId,
 		organizationId,
 		type,
@@ -92,6 +95,7 @@ export async function createTimeEntry(
 	const [entry] = await client
 		.insert(timeEntry)
 		.values({
+			...(id === undefined ? {} : { id }),
 			employeeId,
 			organizationId,
 			type,
