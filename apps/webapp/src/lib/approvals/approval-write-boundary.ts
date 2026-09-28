@@ -182,7 +182,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	"src/app/[locale]/(app)/time-tracking/actions.canonical.ts": [
+	"src/lib/time-tracking/canonical-work-record.ts": [
 		{
 			columns: [
 				"approval_state",

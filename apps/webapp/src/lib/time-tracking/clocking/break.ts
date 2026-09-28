@@ -2,7 +2,6 @@ import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
 import { createTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
-import { canonicalWorkRecordClient } from "@/app/[locale]/(app)/time-tracking/actions.canonical";
 import { type employee, timeEntry, workPeriod } from "@/db/schema";
 import {
 	compareInstants,
@@ -12,6 +11,7 @@ import {
 	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
+import { canonicalWorkRecordClient } from "../canonical-work-record";
 import { ClockingConflictError, LiveWorkOccupiedError } from "../clocking-core";
 import {
 	type CloseActiveWorkWriter,

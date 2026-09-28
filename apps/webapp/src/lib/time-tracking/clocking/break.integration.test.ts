@@ -35,7 +35,7 @@ const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
 const { canonicalWorkRecordClient } = await import(
-	"@/app/[locale]/(app)/time-tracking/actions.canonical"
+	"@/lib/time-tracking/canonical-work-record"
 );
 type BreakCommand = import("./types").BreakCommand;
 type ClockTransactions = import("./transactions").ClockTransactions;

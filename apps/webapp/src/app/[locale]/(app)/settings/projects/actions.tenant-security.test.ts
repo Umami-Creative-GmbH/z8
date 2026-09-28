@@ -14,6 +14,12 @@ const entryHelpersSource = readFileSync(
 	fileURLToPath(new URL("../../time-tracking/actions/entry-helpers.ts", import.meta.url)),
 	"utf8",
 );
+const clockOutEffectsSource = readFileSync(
+	fileURLToPath(
+		new URL("../../../../../lib/time-tracking/clock-out-effects.ts", import.meta.url),
+	),
+	"utf8",
+);
 const projectEligibilitySource = readFileSync(
 	fileURLToPath(
 		new URL("../../../../../lib/time-tracking/project-eligibility.ts", import.meta.url),
@@ -84,7 +90,7 @@ describe("project relationship tenant security", () => {
 
 	it("filters legacy project relationships and aggregates by organization", () => {
 		const projectsBody = functionBody(projectsSource, "getProjects");
-		const budgetBody = functionBody(entryHelpersSource, "checkProjectBudgetAfterClockOut");
+		const budgetBody = functionBody(clockOutEffectsSource, "checkProjectBudgetAfterClockOut");
 
 		expect(projectsBody).toContain("manager.employee?.organizationId !== organizationId");
 		expect(projectsBody).toContain("assignment.team?.organizationId !== organizationId");

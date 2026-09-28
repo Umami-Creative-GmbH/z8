@@ -4318,7 +4318,7 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions.canonical.ts": [
+			"src/lib/time-tracking/canonical-work-record.ts": [
 				{
 					columns: [
 						"approval_state",
@@ -5599,8 +5599,7 @@ export function wrongSplitOwner() {
 	});
 
 	it("allows only exact injected creation and correction owners", () => {
-		const canonicalPath =
-			"src/app/[locale]/(app)/time-tracking/actions.canonical.ts";
+		const canonicalPath = "src/lib/time-tracking/canonical-work-record.ts";
 		const correctionPath = "src/lib/effect/services/time-entry.service.ts";
 		const recordPath = "src/lib/effect/services/time-record.service.ts";
 		withApprovalWriteTree(
@@ -5632,10 +5631,6 @@ export function renamedCreateTimeRecord() {
 					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
 				).toEqual([
 					expect.objectContaining({
-						functionName: "wrongCompletedPeriodOwner",
-						path: canonicalPath,
-					}),
-					expect.objectContaining({
 						functionName: "dynamicCorrectionOwner",
 						path: correctionPath,
 						uncertainty: "dynamic_payload",
@@ -5648,6 +5643,10 @@ export function renamedCreateTimeRecord() {
 					expect.objectContaining({
 						functionName: "renamedCreateTimeRecord",
 						path: recordPath,
+					}),
+					expect.objectContaining({
+						functionName: "wrongCompletedPeriodOwner",
+						path: canonicalPath,
 					}),
 				]);
 			},
@@ -5852,19 +5851,19 @@ export async function hiddenImport(values: object) {
 	it("detects every required injected production mutation site", () => {
 		const expected = [
 			{
-				path: "src/app/[locale]/(app)/time-tracking/actions.canonical.ts",
+				path: "src/lib/time-tracking/canonical-work-record.ts",
 				functionName: "createForCompletedPeriodInTransaction",
 				table: "time_record",
 				operation: "insert",
 			},
 			{
-				path: "src/app/[locale]/(app)/time-tracking/actions.canonical.ts",
+				path: "src/lib/time-tracking/canonical-work-record.ts",
 				functionName: "createForCompletedPeriodInTransaction",
 				table: "time_record_work",
 				operation: "insert",
 			},
 			{
-				path: "src/app/[locale]/(app)/time-tracking/actions.canonical.ts",
+				path: "src/lib/time-tracking/canonical-work-record.ts",
 				functionName: "createForCompletedPeriodInTransaction",
 				table: "time_record_allocation",
 				operation: "insert",

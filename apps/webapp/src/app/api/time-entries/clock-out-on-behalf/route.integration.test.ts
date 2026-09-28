@@ -69,9 +69,8 @@ vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/compliance", async (importOriginal) => {
-	const original =
-		await importOriginal<typeof import("@/app/[locale]/(app)/time-tracking/actions/compliance")>();
+vi.mock("@/lib/time-tracking/clock-out-effects", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/time-tracking/clock-out-effects")>();
 	return {
 		...original,
 		checkComplianceAfterClockOut: async (

@@ -1,6 +1,5 @@
 import { Effect, Layer } from "effect";
 import { db } from "@/db";
-import { timeRecord, timeRecordAllocation, timeRecordWork } from "@/db/schema";
 import { DatabaseError } from "@/lib/effect/errors";
 import {
 	DatabaseService,
@@ -11,13 +10,11 @@ import {
 	TimeEntryServiceLive,
 } from "@/lib/effect/services/time-entry.service";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
-import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 
 type Transaction = Pick<
 	Parameters<Parameters<typeof db.transaction>[0]>[0],
 	"select" | "insert" | "update" | "query"
 >;
-type CanonicalWorkRecordDbClient = Pick<typeof db, "insert">;
 
 function transactionDatabaseLayer(transaction: Transaction) {
 	return Layer.succeed(
@@ -101,70 +98,5 @@ export const canonicalTimeEntryClient = {
 		);
 
 		return Effect.runPromise(effect);
-	},
-};
-
-export const canonicalWorkRecordClient = {
-	createForCompletedPeriod: async (
-		input: {
-			organizationId: string;
-			employeeId: string;
-			startAt: Date;
-			endAt: Date;
-			durationMinutes: number;
-			approvalState: "pending" | "approved" | "rejected";
-			createdBy: string;
-			workCategoryId?: string | null;
-			workLocationType?: WorkLocationType | null;
-			projectId?: string | null;
-			computationMetadata?: string | null;
-			origin: "clock" | "manual";
-		},
-		client?: CanonicalWorkRecordDbClient,
-	) => {
-		const createForCompletedPeriodInTransaction = async (
-			writeClient: CanonicalWorkRecordDbClient,
-		) => {
-			const [record] = await writeClient
-				.insert(timeRecord)
-				.values({
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					recordKind: "work",
-					startAt: input.startAt,
-					endAt: input.endAt,
-					durationMinutes: input.durationMinutes,
-					approvalState: input.approvalState,
-					origin: input.origin,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-				})
-				.returning({ id: timeRecord.id });
-
-			await writeClient.insert(timeRecordWork).values({
-				recordId: record.id,
-				organizationId: input.organizationId,
-				recordKind: "work",
-				workCategoryId: input.workCategoryId ?? null,
-				workLocationType: input.workLocationType ?? null,
-				computationMetadata: input.computationMetadata ?? null,
-			});
-
-			if (input.projectId) {
-				await writeClient.insert(timeRecordAllocation).values({
-					organizationId: input.organizationId,
-					recordId: record.id,
-					allocationKind: "project",
-					projectId: input.projectId,
-					weightPercent: 100,
-				});
-			}
-
-			return record;
-		};
-
-		return client
-			? createForCompletedPeriodInTransaction(client)
-			: db.transaction(createForCompletedPeriodInTransaction);
 	},
 };

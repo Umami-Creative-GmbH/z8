@@ -362,7 +362,7 @@ vi.mock("@/lib/approvals/workflow/runtime", async (importOriginal) => {
 	};
 });
 
-vi.mock("../actions.canonical", () => ({
+vi.mock("@/lib/time-tracking/canonical-work-record", () => ({
 	canonicalWorkRecordClient: {
 		createForCompletedPeriod: mockState.createCanonicalWorkRecord,
 	},
@@ -383,16 +383,19 @@ vi.mock("./auth", () => ({
 	getUserTimezone: mockState.getUserTimezone,
 }));
 
-vi.mock("./compliance", () => ({
-	calculateAndPersistSurcharges: mockState.calculateAndPersistSurcharges,
-	calculateBreaksTakenToday: vi.fn(),
+vi.mock("@/lib/time-tracking/clock-out-effects", () => ({
 	checkComplianceAfterClockOut: mockState.checkComplianceAfterClockOut,
+	checkProjectBudgetAfterClockOut: mockState.checkProjectBudgetAfterClockOut,
 	enforceBreaksAfterClockOut: mockState.enforceBreaksAfterClockOut,
 	reconcileImmediateSurcharges: mockState.reconcileImmediateSurcharges,
 }));
 
+vi.mock("./compliance", () => ({
+	calculateAndPersistSurcharges: mockState.calculateAndPersistSurcharges,
+	calculateBreaksTakenToday: vi.fn(),
+}));
+
 vi.mock("./entry-helpers", () => ({
-	checkProjectBudgetAfterClockOut: mockState.checkProjectBudgetAfterClockOut,
 	createTimeEntry: mockState.createTimeEntry,
 	validateProjectAssignment: mockState.validateProjectAssignment,
 }));
