@@ -56,7 +56,7 @@ import {
 import { planAutomaticBreak } from "./automatic-break-plan";
 import { calculateHash } from "./blockchain";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
-import { capturedZone, readBreakMinutesTakenBefore } from "./breaks-taken";
+import { readBreakMinutesTakenBefore } from "./breaks-taken";
 import {
 	type CompletedWorkFollowUp,
 	CompletedWorkIntegrityError,
@@ -69,7 +69,7 @@ import {
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
 import { admitTimeEntryAppend } from "./time-entry-append";
-import { resolveFallbackTimezoneCapture } from "./timezone-capture";
+import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import {
 	assertNoUnresolvedWorkPeriodReview,

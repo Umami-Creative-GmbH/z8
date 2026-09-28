@@ -11,10 +11,8 @@ import {
 	runAutomaticBreakAdjustment,
 } from "@/lib/time-tracking/automatic-break-adjustment";
 import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
-import {
-	capturedZone,
-	readBreakMinutesTakenBefore,
-} from "@/lib/time-tracking/breaks-taken";
+import { readBreakMinutesTakenBefore } from "@/lib/time-tracking/breaks-taken";
+import { capturedZone } from "@/lib/time-tracking/timezone-capture";
 import { DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 import { SurchargeService, SurchargeServiceLive } from "./surcharge.service";
@@ -250,10 +248,9 @@ export const BreakEnforcementServiceLive = Layer.effect(
 				// Breaks already taken on the work's own local start day, counted as the
 				// adopted adjustment counts them (#547): never the day enforcement runs,
 				// and never `input.timezone`, which only captures the break entries.
-				const endTime = period.endTime;
-				const breaksTaken = yield* _(
-					dbService.query("getBreaksTakenBeforeWork", async () => {
-						const [clockIn] = await dbService.db
+				const clockIn = yield* _(
+					dbService.query("getClockInCaptureForEnforcement", async () => {
+						const [entry] = await dbService.db
 							.select({
 								timezone: timeEntry.timezone,
 								utcOffsetMinutes: timeEntry.utcOffsetMinutes,
@@ -267,18 +264,10 @@ export const BreakEnforcementServiceLive = Layer.effect(
 								),
 							)
 							.limit(1);
-						if (!clockIn) return null;
-						return readBreakMinutesTakenBefore(dbService.db, {
-							organizationId: input.organizationId,
-							employeeId: input.employeeId,
-							workPeriodId: period.id,
-							startAt: instantFromDate(period.startTime),
-							endAt: instantFromDate(endTime),
-							startZone: capturedZone(clockIn),
-						});
+						return entry;
 					}),
 				);
-				if (breaksTaken === null) {
+				if (!clockIn) {
 					return yield* _(
 						Effect.fail(
 							new NotFoundError({
@@ -289,6 +278,19 @@ export const BreakEnforcementServiceLive = Layer.effect(
 						),
 					);
 				}
+				const endTime = period.endTime;
+				const breaksTaken = yield* _(
+					dbService.query("getBreaksTakenBeforeWork", () =>
+						readBreakMinutesTakenBefore(dbService.db, {
+							organizationId: input.organizationId,
+							employeeId: input.employeeId,
+							workPeriodId: period.id,
+							startAt: instantFromDate(period.startTime),
+							endAt: instantFromDate(endTime),
+							startZone: capturedZone(clockIn),
+						}),
+					),
+				);
 
 				// Calculate break deficit
 				const deficitResult = yield* _(
