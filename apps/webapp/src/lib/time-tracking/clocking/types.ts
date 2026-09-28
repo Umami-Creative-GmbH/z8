@@ -1,7 +1,7 @@
 import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
-import type { AttributionIntent, ClockChannel } from "../close-active-work";
+import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
 import type { WorkLocationType } from "../work-location";
 
 /** An authenticated human clocking their own employee record. */
@@ -27,6 +27,13 @@ export type OperationIdentity = {
 
 /** Who asks. Adapters authenticate the principal; the module authorizes it. */
 export type ClockPrincipal = { kind: "user"; userId: string };
+
+/**
+ * The employee whose live work changes: the principal's own, or, `onBehalf`,
+ * another employee's. Only a clock-out of a named period runs on behalf, and only
+ * for an owner, an admin or the employee's direct manager; never for oneself.
+ */
+export type ClockSubject = { employeeId: string; onBehalf?: boolean };
 
 /** When the command happened: sampled by the server, or captured by the device. */
 export type ClockCommandAt = { kind: "now" } | { kind: "occurred"; instant: Instant };
@@ -102,8 +109,7 @@ export type ClockBody = ClockInBody | ClockOutBody | BreakBody;
 type ClockCommandOf<Body extends ClockBody> = {
 	organizationId: string;
 	principal: ClockPrincipal;
-	/** The employee whose live work changes. */
-	subject: { employeeId: string };
+	subject: ClockSubject;
 	identity: OperationIdentity;
 	channel: ClockChannel;
 	at: ClockCommandAt;
@@ -224,6 +230,8 @@ export type ClockOutOutcome =
 			result: ClockOutResult;
 			/** The stored duration; null only for a replayed legacy row without one. */
 			durationMinutes: number | null;
+			/** The committed receipt; null for a legacy closure, which keeps none. */
+			receipt: CloseActiveWorkResult | null;
 	  }
 	| { outcome: "refused"; failure: ClockOutRefusal };
 

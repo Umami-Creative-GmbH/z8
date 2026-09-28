@@ -300,8 +300,9 @@ export async function findPolicyClockOutSubmissionEvidence(input: {
 	submissionId: string;
 	organizationId: string;
 	employeeId: string;
-	projectId: string | null;
-	workCategoryId: string | null;
+	/** Undefined preserved the period's attribution, so any stored value matches. */
+	projectId: string | null | undefined;
+	workCategoryId: string | null | undefined;
 }) {
 	const periods = (await input.tx.query.workPeriod.findMany({
 		where: and(
@@ -375,7 +376,12 @@ export async function findPolicyClockOutSubmissionEvidence(input: {
 		throw new Error("Submission collision");
 	}
 	// Sound evidence of a different command under the same identity.
-	if (period.projectId !== input.projectId || period.workCategoryId !== input.workCategoryId) {
+	const matches = (intended: string | null | undefined, stored: string | null) =>
+		intended === undefined || intended === stored;
+	if (
+		!matches(input.projectId, period.projectId) ||
+		!matches(input.workCategoryId, period.workCategoryId)
+	) {
 		throw new CompletedWorkCollisionError();
 	}
 	return { period, marker, hasApprovalEvidence };

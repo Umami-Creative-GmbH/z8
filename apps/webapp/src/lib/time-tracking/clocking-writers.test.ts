@@ -17,9 +17,7 @@ describe("live clocking writers", () => {
 		const clockInBot = source("../teams/commands/clock-in.ts");
 		const clockOutBot = source("../teams/commands/clock-out.ts");
 
-		for (const writer of [api, onBehalf]) {
-			expect(writer).toContain("clockingService");
-		}
+		expect(api).toContain("clockingService");
 		// Bots reach the web's shared live clock core (#277), never the raw service.
 		expect(clockInBot).toContain("clockInAs(");
 		expect(clockOutBot).toContain("clockOutAs(");
@@ -54,11 +52,15 @@ describe("live clocking writers", () => {
 		expect(mobileApi).toContain("await clockIn(");
 		expect(mobileApi).toContain("await clockOut(");
 		expect(mobileApi).not.toContain("clockingService");
-		// On-behalf closes through the completed-work operation once adopted and the
-		// shared legacy closer before (#276); its route only adapts HTTP.
-		expect(onBehalf).toContain("closeActiveWork(coordination");
-		expect(onBehalf).toContain("clockingService.clockOut");
+		// On-behalf is a Clocking clock-out on behalf of the period's owner (#482):
+		// the module owns authorization, both admissions and the follow-ups.
+		expect(onBehalf).toContain(".run(");
+		expect(onBehalf).toContain("onBehalf: true");
+		expect(onBehalf).not.toContain("clockingService");
+		expect(onBehalf).not.toContain("closeActiveWork");
+		expect(onBehalf).not.toContain("resolveManualEntryTarget(");
 		expect(onBehalf).not.toContain("createTimeEntry(");
+		expect(onBehalf).not.toContain("@/db");
 		expect(onBehalfRoute).toContain("closeWorkOnBehalf(");
 		expect(onBehalfRoute).not.toContain("clockingService");
 		expect(onBehalfRoute).not.toContain("@/db");

@@ -78,7 +78,7 @@ In clocking, ending the current live work and resuming new live work after the b
 _Avoid_: Pause
 
 **On-behalf clock-out**:
-A clock-out a manager performs for an employee's live work.
+A clock-out whose subject is another employee's named live work, performed by an organization owner, an admin or the employee's direct manager; never by the employee themselves.
 _Avoid_: Manager clock-out, forced clock-out
 
 **Departure clock-out**:

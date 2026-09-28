@@ -133,6 +133,15 @@ export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter
 		: { writer: "web_clock_out", writerVersion: WEB_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) };
 }
 
+/** The receipt writer of an on-behalf clock-out of another employee's work (#276). */
+export const MANAGER_ON_BEHALF_WRITER = {
+	writer: "manager_on_behalf",
+	writerVersion: 1,
+	// The established device evidence of on-behalf clock-out entries.
+	deviceInfo: "web-on-behalf",
+	ipAddress: null,
+} as const satisfies CloseActiveWorkWriter;
+
 /** Versioned web request evidence. A retry must carry exactly the same command. */
 export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
 	version: typeof CLOSE_ACTIVE_WORK_COMMAND_VERSION;
