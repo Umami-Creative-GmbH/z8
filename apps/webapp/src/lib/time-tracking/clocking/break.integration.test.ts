@@ -317,6 +317,31 @@ describe("Clocking break through run on PostgreSQL", () => {
 			]);
 		});
 
+		it.each([
+			["with", { ipAddress: "203.0.113.7", userAgent: "test-agent" }],
+			["without", undefined],
+		] as const)("records the break's entry source %s the adapter's request", async (_, request) => {
+			await startWork();
+			const { clocking } = newClocking();
+
+			await expect(clocking.run(takeBreak({ request }))).resolves.toMatchObject({
+				outcome: "executed",
+			});
+
+			// The writer reads no request scope (#524): only a legacy break stores the
+			// adapter's evidence; otherwise the entries name the channel.
+			const expected =
+				admission === "legacy" && request
+					? { ip_address: request.ipAddress, device_info: request.userAgent }
+					: { ip_address: null, device_info: "web" };
+			const { rows } = await admin.query<{ ip_address: string | null; device_info: string }>(
+				`select ip_address, device_info from time_entry
+				 where employee_id = $1 order by timestamp offset 1`,
+				[ids.employee],
+			);
+			expect(rows).toEqual([expected, expected]);
+		});
+
 		it("writes the closed segment's canonical work record from the period", async () => {
 			const active = await startWork();
 			await admin.query("update work_period set work_category_id = $2 where id = $1", [

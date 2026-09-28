@@ -380,6 +380,7 @@ vi.mock("./approvals", () => ({
 vi.mock("./auth", () => ({
 	getCurrentSession: mockState.getCurrentSession,
 	getCurrentEmployee: mockState.getCurrentEmployee,
+	getRequestMetadata: async () => ({ ipAddress: "127.0.0.1", userAgent: "test-agent" }),
 	getUserTimezone: mockState.getUserTimezone,
 }));
 
@@ -396,8 +397,11 @@ vi.mock("./compliance", () => ({
 }));
 
 vi.mock("./entry-helpers", () => ({
-	createTimeEntry: mockState.createTimeEntry,
 	validateProjectAssignment: mockState.validateProjectAssignment,
+}));
+
+vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
+	createTimeEntry: mockState.createTimeEntry,
 }));
 
 vi.mock("./policy-helpers", () => ({

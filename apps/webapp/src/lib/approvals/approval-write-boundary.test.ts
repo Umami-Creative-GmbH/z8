@@ -5172,7 +5172,7 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
-			"src/app/[locale]/(app)/time-tracking/actions/entry-helpers.ts": [
+			"src/lib/time-tracking/time-entry-writer.ts": [
 				{
 					columns: ["is_superseded", "replaces_entry_id", "type"],
 					functionName: "createTimeEntry",
@@ -5677,7 +5677,7 @@ export function renamedCreateTimeRecord() {
 
 	it("allows only an exact uncertainty-bearing source exception", () => {
 		const path =
-			"src/app/[locale]/(app)/time-tracking/actions/entry-helpers.ts";
+			"src/lib/time-tracking/time-entry-writer.ts";
 		const capabilities = SOURCE_WRITE_EXCEPTIONS[path] as unknown as Array<
 			Record<string, unknown>
 		>;

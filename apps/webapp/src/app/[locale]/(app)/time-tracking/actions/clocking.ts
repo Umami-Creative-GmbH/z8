@@ -42,6 +42,7 @@ import {
 	type PolicyClockOutSurchargeSnapshot,
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { createTimeEntry } from "@/lib/time-tracking/time-entry-writer";
 import {
 	resolveFallbackTimezoneCapture,
 	resolveTimeEntryTimezoneCapture,
@@ -91,13 +92,11 @@ import {
 	type CurrentEmployee,
 	getCurrentEmployee,
 	getCurrentSession,
+	getRequestMetadata,
 	getUserTimezone,
 } from "./auth";
 import { calculateBreaksTakenToday } from "./compliance";
-import {
-	createTimeEntry,
-	validateProjectAssignment,
-} from "./entry-helpers";
+import { validateProjectAssignment } from "./entry-helpers";
 import {
 	resolveManualEntryTarget,
 	resolveManualEntryTargetZone,
@@ -757,6 +756,7 @@ export async function addBreakToActiveSession(
 			fallback: await getUserTimezone(session.user.id),
 		},
 		body: { kind: "break", breakMinutes },
+		request: await getRequestMetadata(),
 	});
 	if (outcome.outcome === "refused") {
 		const { failure } = outcome;
@@ -1197,6 +1197,7 @@ export async function createManualTimeEntry(
 		};
 		let immediateSurchargeSnapshot: PolicyClockOutSurchargeSnapshot | null =
 			null;
+		const requestMetadata = await getRequestMetadata();
 		const runtime = createOrdinaryApprovalRuntime();
 		const committed = await runtime.repository.withTransaction(async (context) => {
 			const tx = context.dbService.db as unknown as typeof db;
@@ -1231,6 +1232,7 @@ export async function createManualTimeEntry(
 					createdBy: session.user.id,
 					notes: `Manual entry: ${data.reason}`,
 					...clockInTimezoneCapture,
+					request: requestMetadata,
 				},
 				tx,
 			);
@@ -1244,6 +1246,7 @@ export async function createManualTimeEntry(
 						createdBy: session.user.id,
 						notes: data.reason,
 						...clockOutTimezoneCapture,
+						request: requestMetadata,
 						chainAfter: clockInEntry,
 					},
 					tx,

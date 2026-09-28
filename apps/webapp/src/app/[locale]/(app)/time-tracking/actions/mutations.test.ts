@@ -92,8 +92,11 @@ vi.mock("./auth", () => ({
 }));
 
 vi.mock("./entry-helpers", () => ({
-	createTimeEntry: vi.fn(),
 	validateProjectAssignment: vi.fn(),
+}));
+
+vi.mock("@/lib/time-tracking/time-entry-writer", () => ({
+	createTimeEntry: vi.fn(),
 }));
 
 vi.mock("./shared", () => ({
