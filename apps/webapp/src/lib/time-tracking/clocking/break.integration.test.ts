@@ -34,6 +34,9 @@ vi.mock("@/lib/billing/guard", () => ({
 const { createClocking } = await import("./clocking");
 const { recordingFollowUps } = await import("./follow-ups");
 const { coordinatedTransactions } = await import("./transactions");
+const { canonicalWorkRecordClient } = await import(
+	"@/app/[locale]/(app)/time-tracking/actions.canonical"
+);
 type BreakCommand = import("./types").BreakCommand;
 type ClockTransactions = import("./transactions").ClockTransactions;
 
@@ -44,6 +47,7 @@ const ids = {
 	employee: "f4800000-0000-4000-8000-000000000001",
 	other: "f4800000-0000-4000-8000-000000000002",
 	project: "f4800000-0000-4000-8000-000000000011",
+	workCategory: "f4800000-0000-4000-8000-000000000012",
 	holidayCategory: "f4800000-0000-4000-8000-000000000021",
 	holiday: "f4800000-0000-4000-8000-000000000022",
 } as const;
@@ -145,6 +149,23 @@ describe("Clocking break through run on PostgreSQL", () => {
 		return rows;
 	}
 
+	/** The canonical work record a closed period points at, with its attribution. */
+	async function canonicalRecord(periodId: string) {
+		const { rows } = await admin.query(
+			`select wp.duration_minutes as period_duration, tr.start_at, tr.end_at, tr.duration_minutes,
+			        tr.record_kind, tr.approval_state, tr.origin, tr.created_by,
+			        trw.work_category_id, trw.work_location_type,
+			        (select json_agg(tra.project_id) from time_record_allocation tra
+			         where tra.record_id = tr.id and tra.allocation_kind = 'project') as project_ids
+			 from work_period wp
+			 join time_record tr on tr.id = wp.canonical_record_id
+			 left join time_record_work trw on trw.record_id = tr.id
+			 where wp.id = $1`,
+			[periodId],
+		);
+		return only(rows);
+	}
+
 	async function addHoliday(day: string) {
 		await admin.query(
 			`insert into holiday_category (id, organization_id, type, name, blocks_time_entry, updated_at)
@@ -209,6 +230,11 @@ describe("Clocking break through run on PostgreSQL", () => {
 			`insert into project (id, organization_id, name, status, is_active, created_by, updated_at)
 			 values ($1, $2, 'Project', 'active', true, $3, $4)`,
 			[ids.project, ids.organization, ids.otherUser, timestamp],
+		);
+		await admin.query(
+			`insert into work_category (id, organization_id, name, created_by, updated_at)
+			 values ($1, $2, 'Category', $3, $4)`,
+			[ids.workCategory, ids.organization, ids.otherUser, timestamp],
 		);
 	}
 
@@ -287,6 +313,31 @@ describe("Clocking break through run on PostgreSQL", () => {
 				{ type: "clock_out", timezone: "Europe/Berlin" },
 				{ type: "clock_in", timezone: "Europe/Berlin" },
 			]);
+		});
+
+		it("writes the closed segment's canonical work record from the period", async () => {
+			const active = await startWork();
+			await admin.query("update work_period set work_category_id = $2 where id = $1", [
+				active.id,
+				ids.workCategory,
+			]);
+			const { clocking } = newClocking();
+
+			await expect(clocking.run(takeBreak())).resolves.toMatchObject({ outcome: "executed" });
+
+			expect(await canonicalRecord(active.id)).toEqual({
+				period_duration: 105,
+				start_at: new Date("2026-07-22T08:00:00Z"),
+				end_at: new Date("2026-07-22T09:45:00Z"),
+				duration_minutes: 105,
+				record_kind: "work",
+				approval_state: "approved",
+				origin: "clock",
+				created_by: ids.user,
+				work_category_id: ids.workCategory,
+				work_location_type: "home",
+				project_ids: [ids.project],
+			});
 		});
 
 		it.each(["client", "derived"] as const)(
@@ -491,6 +542,33 @@ describe("Clocking break through run on PostgreSQL", () => {
 			expect((await periods()).map(({ is_active }) => is_active)).toEqual([false, true]);
 			expect(followUps.closures).toEqual([]);
 		});
+	});
+
+	it("rolls back the whole legacy break when its canonical record fails to write", async () => {
+		await setAdmission("inactive");
+		await startWork();
+		const { clocking, followUps } = newClocking();
+		const create = canonicalWorkRecordClient.createForCompletedPeriod;
+		// The record's rows are written, then the write fails.
+		const failing = vi
+			.spyOn(canonicalWorkRecordClient, "createForCompletedPeriod")
+			.mockImplementationOnce(async (input, client) => {
+				await create(input, client);
+				throw new Error("canonical record write failed");
+			});
+		const before = await snapshot();
+
+		try {
+			await expect(clocking.run(takeBreak())).resolves.toMatchObject({
+				outcome: "refused",
+				failure: { code: "unconfirmed" },
+			});
+			expect(failing).toHaveBeenCalledOnce();
+		} finally {
+			failing.mockRestore();
+		}
+		expect(await snapshot()).toEqual(before);
+		expect(followUps.closures).toEqual([]);
 	});
 
 	it("replays a legacy break after the organization adopts appends", async () => {

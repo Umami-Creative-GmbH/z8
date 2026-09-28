@@ -1030,6 +1030,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 		{
 			columns: [
 				"approval_status",
+				"canonical_record_id",
 				"clock_out_id",
 				"duration_minutes",
 				"end_time",

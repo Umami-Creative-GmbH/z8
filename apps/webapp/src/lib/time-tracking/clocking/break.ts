@@ -2,6 +2,7 @@ import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
 import { createTimeEntry } from "@/app/[locale]/(app)/time-tracking/actions/entry-helpers";
+import { canonicalWorkRecordClient } from "@/app/[locale]/(app)/time-tracking/actions.canonical";
 import { type employee, timeEntry, workPeriod } from "@/db/schema";
 import {
 	compareInstants,
@@ -256,9 +257,11 @@ export async function takeBreak(
 
 /**
  * The established break writes of organizations that have not adopted: the
- * hash-chained clock-out and clock-in entries, the closed target and a resumed
- * period in the target's location. The resumed clock-in entry takes the
- * operation ID, which is what the legacy replay matches.
+ * hash-chained clock-out and clock-in entries, the closed target with its
+ * canonical work record, and a resumed period in the target's location. The
+ * record, the surcharge snapshot and the closed period all derive from the
+ * locked start and duration, so both representations agree (#388). The resumed
+ * clock-in entry takes the operation ID, which is what the legacy replay matches.
  */
 async function takeLegacyBreak(
 	coordination: WorkTransactionContext,
@@ -272,7 +275,14 @@ async function takeLegacyBreak(
 	coordination.assertEmployee(organizationId, employeeId);
 	const tx = coordination.db;
 	const [period] = await tx
-		.select({ id: workPeriod.id, approvalStatus: workPeriod.approvalStatus })
+		.select({
+			id: workPeriod.id,
+			approvalStatus: workPeriod.approvalStatus,
+			startTime: workPeriod.startTime,
+			projectId: workPeriod.projectId,
+			workCategoryId: workPeriod.workCategoryId,
+			workLocationType: workPeriod.workLocationType,
+		})
 		.from(workPeriod)
 		.where(
 			and(
@@ -286,16 +296,34 @@ async function takeLegacyBreak(
 	if (!period) throw new ClockingConflictError("Active work period changed");
 	await assertNoUnresolvedWorkPeriodReview(tx, organizationId, period);
 
+	const start = instantFromDate(period.startTime);
+	const workLocationType = (period.workLocationType as WorkLocationType | null) ?? null;
 	const breakStart = dateFromInstant(endpoints.close.instant);
-	const durationMinutes = deriveWorkDurationMinutes(target.start, endpoints.close.instant);
+	const durationMinutes = deriveWorkDurationMinutes(start, endpoints.close.instant);
 	const surchargeSnapshot: PolicyClockOutSurchargeSnapshot =
 		await resolvePolicyClockOutSurchargeSnapshotInTransaction({
 			dbService: { db: tx },
 			organizationId,
 			employeeId,
-			startTime: target.start,
+			startTime: start,
 			endTime: endpoints.close.instant,
 		});
+	const canonicalRecord = await canonicalWorkRecordClient.createForCompletedPeriod(
+		{
+			organizationId,
+			employeeId,
+			startAt: period.startTime,
+			endAt: breakStart,
+			durationMinutes,
+			approvalState: "approved",
+			createdBy: actorUserId,
+			workCategoryId: period.workCategoryId,
+			workLocationType,
+			projectId: period.projectId,
+			origin: "clock",
+		},
+		tx,
+	);
 	const clockOutEntry = await createTimeEntry(
 		{
 			employeeId,
@@ -315,6 +343,7 @@ async function takeLegacyBreak(
 			durationMinutes,
 			isActive: false,
 			approvalStatus: "approved",
+			canonicalRecordId: canonicalRecord.id,
 			pendingChanges: null,
 			updatedAt: new Date(),
 		})
@@ -326,7 +355,7 @@ async function takeLegacyBreak(
 				eq(workPeriod.isActive, true),
 			),
 		)
-		.returning({ id: workPeriod.id, projectId: workPeriod.projectId });
+		.returning({ id: workPeriod.id });
 	if (!closedPeriod) throw new ClockingConflictError("Active work period changed");
 
 	// Occupancy of the resumed interval, after the closure so the closed target no
@@ -357,7 +386,7 @@ async function takeLegacyBreak(
 			organizationId,
 			clockInId: clockInEntry.id,
 			startTime: dateFromInstant(endpoints.resume.instant),
-			workLocationType: target.workLocationType ?? ("office" satisfies WorkLocationType),
+			workLocationType: workLocationType ?? ("office" satisfies WorkLocationType),
 		})
 		.returning({ id: workPeriod.id });
 	if (!resumedPeriod) throw new Error("New work period was not inserted");
@@ -370,9 +399,9 @@ async function takeLegacyBreak(
 			employeeId,
 			actorUserId,
 			workPeriodId: target.workPeriodId,
-			start: target.start,
+			start,
 			durationMinutes,
-			projectId: closedPeriod.projectId,
+			projectId: period.projectId,
 			surchargeSnapshot,
 			balanceRefreshCommitted: false,
 		},
