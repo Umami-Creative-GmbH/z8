@@ -23,7 +23,6 @@ import { createLogger } from "@/lib/logger";
 import type { AttributionIntent } from "@/lib/time-tracking/close-active-work";
 import {
 	type ClockInRefusal,
-	type ClockInResult,
 	type ClockOutRefusal,
 	type ClockOutResult,
 	clocking,
@@ -186,14 +185,6 @@ export async function GET(request: NextRequest) {
 	}
 }
 
-/**
- * POST /api/time-entries
- * The legacy direct clock route (#483): a thin adapter over the Clocking module
- * for old consumers, the legacy desktop transport and the old service-worker and
- * extension queues. It keeps only its transport checks: the capture evidence
- * with its committed-action pre-read ahead of the age window, and the #266 queue
- * fence. Its commands are legacy commands, which adopted organizations refuse.
- */
 const REPLAY_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
 const ACTION_ID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 
@@ -288,7 +279,7 @@ function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
 			);
 		case "failed":
 		case "unconfirmed":
-			logger.error({ error: failure.cause }, "Legacy clock action failed");
+			logger.error({ error: failure.cause }, "Legacy clock command failed");
 			break;
 	}
 	const { status, error } = FAILURE_REPLIES[failure.code];
@@ -296,12 +287,19 @@ function refusedResponse(failure: ClockInRefusal | ClockOutRefusal) {
 }
 
 /** The entry alone, as legacy consumers read it; closure advice stays with the web. */
-function entryOf(result: ClockOutResult | ClockInResult) {
-	const { complianceWarnings, breakAdjustment, pendingApproval, ...entry } =
-		result as ClockOutResult;
+function entryOf(result: ClockOutResult) {
+	const { complianceWarnings, breakAdjustment, pendingApproval, ...entry } = result;
 	return entry;
 }
 
+/**
+ * POST /api/time-entries
+ * The legacy direct clock route (#483): a thin adapter over the Clocking module
+ * for old consumers, the legacy desktop transport and the old service-worker and
+ * extension queues. It keeps only its transport checks: the capture evidence
+ * with its committed-action pre-read ahead of the age window, and the #266 queue
+ * fence. Its commands are legacy commands, which adopted organizations refuse.
+ */
 export async function POST(request: NextRequest) {
 	// Opt out of caching - must be awaited immediately, not stored as promise
 	await connection();
@@ -473,13 +471,13 @@ async function runLegacyClockCommand(resolvedHeaders: Headers, body: any) {
 						},
 					});
 		if (outcome.outcome === "refused") return refusedResponse(outcome.failure);
-		// A committed action answers as it did when it was first saved.
+		// A replayed command answers as it did when it was first saved.
 		return NextResponse.json({ entry: entryOf(outcome.result) }, { status: 201 });
 	} catch (error) {
 		if (error instanceof ClockingAccessError) {
 			return NextResponse.json({ error: error.message }, { status: 403 });
 		}
-		logger.error({ error }, "Legacy clock action failed");
+		logger.error({ error }, "Legacy clock command failed");
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

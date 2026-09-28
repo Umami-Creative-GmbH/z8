@@ -81,6 +81,14 @@ export function planClockIn(command: ClockInCommand, employee: Employee): ClockI
 }
 
 /**
+ * The device evidence a legacy start of this command may carry. Before #483 the
+ * legacy route marked its extension replays apart from its other commands.
+ */
+function legacyDeviceEvidence(command: ClockInCommand): string[] {
+	return command.legacy ? [command.channel, "extension-replay"] : [command.channel];
+}
+
+/**
  * A receipt-less start committed under this identity by the legacy writer, whose
  * clock-in entry takes the operation ID. Another entry of the employee under the
  * ID, or a different start, is a collision. The read stays in the organization:
@@ -118,7 +126,7 @@ async function replayLegacyClockIn(
 	if (
 		entry.type !== "clock_in" ||
 		entry.isSuperseded ||
-		entry.deviceInfo !== command.channel ||
+		!legacyDeviceEvidence(command).includes(entry.deviceInfo ?? "") ||
 		(at.kind === "occurred" &&
 			compareInstants(instantFromDate(entry.timestamp), at.instant) !== 0) ||
 		!period ||
