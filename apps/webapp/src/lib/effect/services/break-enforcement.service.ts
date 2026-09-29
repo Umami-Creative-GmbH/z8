@@ -628,15 +628,23 @@ export async function runBreakEnforcementCheck(options?: {
  * Export internal function for testing purposes.
  * This allows tests to verify the break deficit calculation logic
  * without going through the full Effect service infrastructure.
+ * It looks the policy up as the internal calculation does: at `policyAt`,
+ * within the organization.
  */
 export const calculateBreakDeficitForTesting = (
 	params: {
 		employeeId: string;
+		organizationId: string;
+		policyAt: Instant;
 		sessionDurationMinutes: number;
 		breaksTakenMinutes: number;
 	},
 	mockPolicyService: {
-		getEffectivePolicy: (employeeId: string) => Effect.Effect<
+		getEffectivePolicyAt: (input: {
+			employeeId: string;
+			organizationId: string;
+			at: Instant;
+		}) => Effect.Effect<
 			{
 				policyId: string;
 				policyName: string;
@@ -676,7 +684,11 @@ export const calculateBreakDeficitForTesting = (
 > =>
 	Effect.gen(function* (_) {
 		const policy = yield* _(
-			mockPolicyService.getEffectivePolicy(params.employeeId),
+			mockPolicyService.getEffectivePolicyAt({
+				employeeId: params.employeeId,
+				organizationId: params.organizationId,
+				at: params.policyAt,
+			}),
 		);
 		return calculateBreakDeficit({
 			sessionDurationMinutes: params.sessionDurationMinutes,

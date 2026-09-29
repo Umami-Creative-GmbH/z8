@@ -130,24 +130,29 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 		return policyId;
 	}
 
-	async function assign(
+	/** The assignment priorities the schema names: the employee's wins over the default. */
+	const assignmentPriority = { employee: 2, organization: 0 } as const;
+
+	/** Assigns `policyId` to the employee or as the organization default, in force in `window`. */
+	async function assignPolicy(
 		policyId: string,
 		organizationId: string,
-		type: "employee" | "organization",
-		effectiveFrom: string | null = null,
+		type: keyof typeof assignmentPriority,
+		window: { from?: string; until?: string } = {},
 	) {
 		await admin.query(
 			`insert into work_policy_assignment
 			 (policy_id, organization_id, assignment_type, employee_id, priority, effective_from,
-			  is_active, created_by, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, true, $7, now())`,
+			  effective_until, is_active, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, true, $8, now())`,
 			[
 				policyId,
 				organizationId,
 				type,
 				type === "employee" ? ids.employee : null,
-				type === "employee" ? 2 : 0,
-				effectiveFrom ? new Date(effectiveFrom) : null,
+				assignmentPriority[type],
+				window.from ? new Date(window.from) : null,
+				window.until ? new Date(window.until) : null,
 				ids.user,
 			],
 		);
@@ -343,17 +348,15 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 
 	// #549: the rule is the one in force when the closed work ended, in its organization.
 	it("applies the break rule in force at the work's end when the assignment changed before enforcement", async () => {
-		// The 30-minute policy ends that evening; a 45-minute one applies from the next day.
-		await admin.query("update work_policy_assignment set effective_until = $2 where id = $1", [
-			ids.policyAssignment,
-			new Date("2026-07-22T20:00:00Z"),
-		]);
-		await assign(
-			await stricterPolicy(ids.organization),
-			ids.organization,
-			"employee",
-			"2026-07-23T00:00:00Z",
+		// The 45-minute policy applies when the work starts and again from the next day;
+		// the 30-minute one only from mid-work until that evening, so it holds at the end.
+		await admin.query(
+			"update work_policy_assignment set effective_from = $2, effective_until = $3 where id = $1",
+			[ids.policyAssignment, new Date("2026-07-22T10:00:00Z"), new Date("2026-07-22T20:00:00Z")],
 		);
+		const stricter = await stricterPolicy(ids.organization);
+		await assignPolicy(stricter, ids.organization, "employee", { until: "2026-07-22T09:59:59Z" });
+		await assignPolicy(stricter, ids.organization, "employee", { from: "2026-07-23T00:00:00Z" });
 		const closed = await work("2026-07-22T07:30:00Z", "2026-07-22T14:31:00Z");
 
 		await expect(followUp(closed, "2026-07-23T09:00:00Z")).resolves.toMatchObject({
@@ -366,8 +369,12 @@ describe("legacy break enforcement judges the work by its own day and policy on 
 		// The organization's own rule is its default; the other organization's
 		// employee-level assignment names the same employee id.
 		await admin.query("delete from work_policy_assignment where id = $1", [ids.policyAssignment]);
-		await assign(ids.policy, ids.organization, "organization");
-		await assign(await stricterPolicy(ids.otherOrganization), ids.otherOrganization, "employee");
+		await assignPolicy(ids.policy, ids.organization, "organization");
+		await assignPolicy(
+			await stricterPolicy(ids.otherOrganization),
+			ids.otherOrganization,
+			"employee",
+		);
 		const closed = await work("2026-07-22T07:30:00Z", "2026-07-22T14:31:00Z");
 
 		await expect(followUp(closed, "2026-07-22T14:35:00Z")).resolves.toMatchObject({
