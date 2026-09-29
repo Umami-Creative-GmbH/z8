@@ -1,22 +1,22 @@
-import type { Instant } from "@/lib/datetime/temporal-core";
 import type { BreakEnforcementResult } from "@/lib/effect/services/break-enforcement.service";
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
+import type { ClosedWork } from "../clock-out-effects";
 import type { PolicyClockOutSurchargeSnapshot } from "../policy-clock-out-surcharge-snapshot";
 import type { ClockOutResult } from "./types";
 
 const logger = createLogger("Clocking:FollowUps");
 
-/** The committed facts of one executed live closure that its follow-ups need. */
-export type ClosedLiveWork = {
+/**
+ * The committed facts of one executed live closure that its follow-ups need.
+ * Its start's day also bounds the balance refresh.
+ */
+export type ClosedLiveWork = ClosedWork & {
 	organizationId: string;
 	employeeId: string;
 	/** The human who completed the work. */
 	actorUserId: string;
 	workPeriodId: string;
-	/** Where the closed work started; its local day bounds the balance refresh. */
-	start: Instant;
-	durationMinutes: number;
 	/** The closed period's project, whatever the command's attribution intent. */
 	projectId: string | null;
 	surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null;
@@ -51,9 +51,8 @@ export type ClockOutFollowUpEffects = {
 		employeeId: string;
 		organizationId: string;
 		workPeriodId: string;
-		durationMinutes: number;
-		/** The closed work's start; its local day and week in `timezone` are checked. */
-		workStart: Instant;
+		/** Its start's local day and week in `timezone` are checked. */
+		work: ClosedWork;
 		timezone: string;
 	}): Promise<ComplianceWarning[]>;
 	enforceBreaks(input: {
@@ -108,8 +107,11 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 						employeeId,
 						organizationId,
 						workPeriodId,
-						durationMinutes: closure.durationMinutes,
-						workStart: closure.start,
+						work: {
+							start: closure.start,
+							end: closure.end,
+							durationMinutes: closure.durationMinutes,
+						},
 						timezone: closure.timezone,
 					}),
 				[],

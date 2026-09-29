@@ -296,6 +296,7 @@ describe("Clocking break through run on PostgreSQL", () => {
 					actorUserId: ids.user,
 					workPeriodId: active.id,
 					start: expect.anything(),
+					end: expect.anything(),
 					durationMinutes: 105,
 					projectId: ids.project,
 					surchargeSnapshot: expect.objectContaining({ version: expect.anything() }),
@@ -305,6 +306,8 @@ describe("Clocking break through run on PostgreSQL", () => {
 				},
 			]);
 			expect(followUps.closures[0]?.start.toString()).toBe("2026-07-22T08:00:00Z");
+			// The break's start ends the closed work; its policy judges the work (#548).
+			expect(followUps.closures[0]?.end.toString()).toBe("2026-07-22T09:45:00Z");
 			// Each endpoint keeps its own capture.
 			const { rows: entries } = await admin.query<{ type: string; timezone: string }>(
 				`select type, timezone from time_entry where employee_id = $1 order by timestamp`,
