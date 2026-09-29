@@ -16,6 +16,8 @@ export type ClosedLiveWork = {
 	workPeriodId: string;
 	/** Where the closed work started; its local day bounds the balance refresh. */
 	start: Instant;
+	/** Where the closed work ended; the policy in force here judges it. */
+	end: Instant;
 	durationMinutes: number;
 	/** The closed period's project, whatever the command's attribution intent. */
 	projectId: string | null;
@@ -54,6 +56,8 @@ export type ClockOutFollowUpEffects = {
 		durationMinutes: number;
 		/** The closed work's start; its local day and week in `timezone` are checked. */
 		workStart: Instant;
+		/** The closed work's end; the policy in force here judges it. */
+		workEnd: Instant;
 		timezone: string;
 	}): Promise<ComplianceWarning[]>;
 	enforceBreaks(input: {
@@ -110,6 +114,7 @@ export function afterCommitFollowUps(effects: ClockOutFollowUpEffects): ClockFol
 						workPeriodId,
 						durationMinutes: closure.durationMinutes,
 						workStart: closure.start,
+						workEnd: closure.end,
 						timezone: closure.timezone,
 					}),
 				[],

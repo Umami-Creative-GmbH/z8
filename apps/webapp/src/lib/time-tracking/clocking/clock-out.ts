@@ -344,6 +344,7 @@ export async function closeClockOut(
 			actorUserId: plan.command.principal.userId,
 			workPeriodId: result.workPeriodId,
 			start: parseInstant(result.segment.startAt),
+			end: parseInstant(result.segment.endAt),
 			durationMinutes: result.segment.durationMinutes,
 			projectId: result.attribution.projectId,
 			surchargeSnapshot: closed.surchargeSnapshot,
@@ -486,6 +487,7 @@ async function closeLegacyClockOut(
 			actorUserId: command.principal.userId,
 			workPeriodId: target.workPeriodId,
 			start: target.start,
+			end: eventInstant,
 			durationMinutes: closed.durationMinutes,
 			projectId,
 			// Assigned inside the closer's callback, which narrowing cannot see.

@@ -89,6 +89,9 @@ _Avoid_: Pause
 A clock-out whose subject is another employee's named live work, performed by an organization owner, an admin or the employee's direct manager; never by the employee themselves.
 _Avoid_: Manager clock-out, forced clock-out
 
+**Compliance check**:
+The clock-out follow-up that judges closed work against the employee's working-time rules and records its violations. It applies the work policy in force when the work ended, as the policy clock-out break snapshot does. It counts the totals of the local day and week in which the work started, and dates each violation at the work's start, so a violation falls on the day and in the week whose total broke the rule. When the check runs never matters, and recorded violations are never re-evaluated.
+
 **Departure clock-out**:
 The clock-out of a departing employee's live work, performed as part of offboarding. Its principal is the departure, which runs only enlisted in its own departure's work transaction and is exempt from billing; its follow-ups (except compliance advice) are staged as durable work.
 _Avoid_: Offboarding clock-out

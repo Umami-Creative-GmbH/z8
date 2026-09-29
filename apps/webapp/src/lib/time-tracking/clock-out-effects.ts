@@ -36,14 +36,21 @@ const logger = createLogger("TimeTracking:ClockOutEffects");
  * its violations. Totals come from `readComplianceTotals`, never from the
  * request session, and cover the work's own local day and week in `timezone`,
  * so on-behalf, bot, API and worker closures are judged like self clock-outs.
+ *
+ * The work is judged by the policy in force when it ended, as the policy
+ * clock-out break snapshot captures it (ADR 0003), and each violation is dated
+ * at the work's start: the day and week whose totals broke the rule (#548).
+ * When the check runs does not matter.
  */
 export async function checkComplianceAfterClockOut(input: {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
 	durationMinutes: number;
-	/** Where the closed work started. */
+	/** Where the closed work started; its violations are dated here. */
 	workStart: Instant;
+	/** Where the closed work ended; the policy in force here judges it. */
+	workEnd: Instant;
 	timezone: string;
 }): Promise<ComplianceWarning[]> {
 	const { employeeId, organizationId, workPeriodId } = input;
@@ -61,6 +68,7 @@ export async function checkComplianceAfterClockOut(input: {
 				workPolicyService.checkCompliance({
 					employeeId,
 					organizationId,
+					policyAt: input.workEnd,
 					currentSessionMinutes: input.durationMinutes,
 					totalDailyMinutes: totals.dailyMinutes,
 					totalWeeklyMinutes: totals.weeklyMinutes,
@@ -68,29 +76,26 @@ export async function checkComplianceAfterClockOut(input: {
 				}),
 			);
 
-			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(
-					workPolicyService.getEffectivePolicy(employeeId, organizationId),
-				);
-				if (effectivePolicy?.regulation) {
-					for (const warning of result.warnings) {
-						if (warning.severity === "violation") {
-							yield* _(
-								workPolicyService.logViolation({
-									employeeId,
-									organizationId,
-									policyId: effectivePolicy.policyId,
-									workPeriodId,
-									violationType: warning.type,
-									details: {
-										actualMinutes: warning.actualValue,
-										limitMinutes: warning.limitValue,
-										warningShownAt: new Date().toISOString(),
-										userContinued: true,
-									},
-								}),
-							);
-						}
+			const { policyId } = result;
+			if (policyId) {
+				for (const warning of result.warnings) {
+					if (warning.severity === "violation") {
+						yield* _(
+							workPolicyService.logViolation({
+								employeeId,
+								organizationId,
+								policyId,
+								workPeriodId,
+								violationDate: input.workStart,
+								violationType: warning.type,
+								details: {
+									actualMinutes: warning.actualValue,
+									limitMinutes: warning.limitValue,
+									warningShownAt: new Date().toISOString(),
+									userContinued: true,
+								},
+							}),
+						);
 					}
 				}
 			}

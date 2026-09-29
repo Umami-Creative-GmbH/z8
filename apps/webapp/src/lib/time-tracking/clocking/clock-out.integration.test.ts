@@ -338,9 +338,10 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			});
 			// Instants compare by their canonical strings.
 			expect(
-				followUps.closures.map(({ start, ...closure }) => ({
+				followUps.closures.map(({ start, end, ...closure }) => ({
 					...closure,
 					start: start.toString(),
+					end: end.toString(),
 				})),
 			).toEqual([
 				{
@@ -349,6 +350,8 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 					actorUserId: ids.user,
 					workPeriodId: periodId,
 					start: "2026-07-22T08:00:00Z",
+					// The exact end, not the rounded duration: its policy judges the work (#548).
+					end: "2026-07-22T09:00:40Z",
 					durationMinutes: 61,
 					projectId: ids.assignedProject,
 					surchargeSnapshot: expect.any(Object),
