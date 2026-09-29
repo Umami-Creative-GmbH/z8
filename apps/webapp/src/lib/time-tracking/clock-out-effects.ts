@@ -31,6 +31,15 @@ import type { PolicyClockOutSurchargeSnapshot } from "./policy-clock-out-surchar
 
 const logger = createLogger("TimeTracking:ClockOutEffects");
 
+/** One closed stretch of work: its exact endpoints and its rounded duration. */
+export type ClosedWork = {
+	/** Where the work started; its local day and week are checked, its violations dated here. */
+	start: Instant;
+	/** Where the work ended exactly; the policy in force here judges it. */
+	end: Instant;
+	durationMinutes: number;
+};
+
 /**
  * Checks one closed period against the employee's working-time rules and logs
  * its violations. Totals come from `readComplianceTotals`, never from the
@@ -38,27 +47,23 @@ const logger = createLogger("TimeTracking:ClockOutEffects");
  * so on-behalf, bot, API and worker closures are judged like self clock-outs.
  *
  * The work is judged by the policy assigned as of its end, the instant the
- * policy clock-out break snapshot also reads (ADR 0003), and each violation is dated
- * at the work's start: the day and week whose totals broke the rule (#548).
- * When the check runs does not matter.
+ * policy clock-out break snapshot also reads (ADR 0003), and each violation is
+ * dated at the work's start: the day and week whose totals broke the rule
+ * (#548). When the check runs does not matter.
  */
 export async function checkComplianceAfterClockOut(input: {
 	employeeId: string;
 	organizationId: string;
 	workPeriodId: string;
-	durationMinutes: number;
-	/** Where the closed work started; its violations are dated here. */
-	workStart: Instant;
-	/** Where the closed work ended; the policy in force here judges it. */
-	workEnd: Instant;
+	work: ClosedWork;
 	timezone: string;
 }): Promise<ComplianceWarning[]> {
-	const { employeeId, organizationId, workPeriodId } = input;
+	const { employeeId, organizationId, workPeriodId, work } = input;
 	try {
 		const totals = await readComplianceTotals({
 			organizationId,
 			employeeId,
-			workStart: input.workStart,
+			workStart: work.start,
 			timezone: input.timezone,
 		});
 
@@ -68,8 +73,8 @@ export async function checkComplianceAfterClockOut(input: {
 				workPolicyService.checkCompliance({
 					employeeId,
 					organizationId,
-					policyAt: input.workEnd,
-					currentSessionMinutes: input.durationMinutes,
+					policyAt: work.end,
+					currentSessionMinutes: work.durationMinutes,
 					totalDailyMinutes: totals.dailyMinutes,
 					totalWeeklyMinutes: totals.weeklyMinutes,
 					breaksTakenMinutes: totals.breakMinutes,
@@ -86,7 +91,7 @@ export async function checkComplianceAfterClockOut(input: {
 								organizationId,
 								policyId,
 								workPeriodId,
-								violationDate: input.workStart,
+								violationAt: work.start,
 								violationType: warning.type,
 								details: {
 									actualMinutes: warning.actualValue,

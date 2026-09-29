@@ -47,6 +47,7 @@ function expectDeterministicAssignmentOrder(query: { sql: string }) {
 function createDatabaseLayer(options?: {
 	multipleValidEmployeePolicies?: boolean;
 	regulatedPolicies?: boolean;
+	missingEmployee?: boolean;
 }) {
 	const relationalDb = drizzle.mock({ schema });
 	const employeeQueries: Array<{ params: unknown[]; sql: string }> = [];
@@ -121,6 +122,7 @@ function createDatabaseLayer(options?: {
 					employeeQueries.push(
 						relationalDb.query.employee.findFirst(query as never).toSQL(),
 					);
+					if (options?.missingEmployee) return undefined;
 					return {
 						id: "employee-1",
 						organizationId: "organization-1",
@@ -286,6 +288,34 @@ describe("WorkPolicyService.checkCompliance", () => {
 		}
 		expect(context.findFirstAssignment).not.toHaveBeenCalled();
 	});
+
+	it("fails instead of passing an employee outside the organization", async () => {
+		const context = createDatabaseLayer({ missingEmployee: true });
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* WorkPolicyService;
+				return yield* service.checkCompliance({
+					employeeId: "employee-1",
+					organizationId: "organization-1",
+					policyAt: parseInstant("2026-09-20T06:00:40Z"),
+					currentSessionMinutes: 481,
+					totalDailyMinutes: 481,
+					totalWeeklyMinutes: 481,
+					breaksTakenMinutes: 0,
+				});
+			}).pipe(Effect.either, Effect.provide(context.layer)),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: { _tag: "NotFoundError", entityId: "employee-1" },
+		});
+		expect(context.employeeQueries[0].params).toEqual(
+			expect.arrayContaining(["employee-1", "organization-1"]),
+		);
+		expect(context.assignmentQueries).toHaveLength(0);
+	});
 });
 
 describe("WorkPolicyService.logViolation", () => {
@@ -299,7 +329,7 @@ describe("WorkPolicyService.logViolation", () => {
 					employeeId: "employee-1",
 					organizationId: "organization-1",
 					policyId: "policy-org-1",
-					violationDate: parseInstant("2026-09-19T22:00:00Z"),
+					violationAt: parseInstant("2026-09-19T22:00:00Z"),
 					violationType: "max_daily",
 					details: { actualMinutes: 481, limitMinutes: 480 },
 				});
