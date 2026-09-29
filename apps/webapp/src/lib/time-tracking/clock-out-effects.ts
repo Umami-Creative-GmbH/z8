@@ -37,8 +37,8 @@ const logger = createLogger("TimeTracking:ClockOutEffects");
  * request session, and cover the work's own local day and week in `timezone`,
  * so on-behalf, bot, API and worker closures are judged like self clock-outs.
  *
- * The work is judged by the policy in force when it ended, as the policy
- * clock-out break snapshot captures it (ADR 0003), and each violation is dated
+ * The work is judged by the policy assigned as of its end, the instant the
+ * policy clock-out break snapshot also reads (ADR 0003), and each violation is dated
  * at the work's start: the day and week whose totals broke the rule (#548).
  * When the check runs does not matter.
  */

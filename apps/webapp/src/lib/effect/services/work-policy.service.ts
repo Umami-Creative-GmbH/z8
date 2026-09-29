@@ -624,37 +624,32 @@ export const WorkPolicyServiceLive = Layer.effect(
 				return null;
 			});
 
-		const employeeNotFound = (employeeId: string) =>
-			new NotFoundError({
-				message: "Employee not found",
-				entityType: "employee",
-				entityId: employeeId,
+		/** The employee's policy as of `at`; fails when the employee is not found. */
+		const effectivePolicyOf = (employeeId: string, organizationId: string | undefined, at: Date) =>
+			Effect.gen(function* (_) {
+				const emp = yield* _(
+					findEmployeeForPolicy("getEmployeeForPolicy", employeeId, organizationId),
+				);
+				if (!emp) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+								entityId: employeeId,
+							}),
+						),
+					);
+				}
+				return yield* _(resolveEffectivePolicy(emp, organizationId, at));
 			});
 
 		return WorkPolicyService.of({
 			getEffectivePolicy: (employeeId, organizationId) =>
-				Effect.gen(function* (_) {
-					const emp = yield* _(
-						findEmployeeForPolicy("getEmployeeForPolicy", employeeId, organizationId),
-					);
-					if (!emp) {
-						return yield* _(Effect.fail(employeeNotFound(employeeId)));
-					}
-					return yield* _(resolveEffectivePolicy(emp, organizationId, new Date()));
-				}),
+				effectivePolicyOf(employeeId, organizationId, new Date()),
 
 			getEffectivePolicyAt: (input) =>
-				Effect.gen(function* (_) {
-					const emp = yield* _(
-						findEmployeeForPolicy("getEmployeeForPolicy", input.employeeId, input.organizationId),
-					);
-					if (!emp) {
-						return yield* _(Effect.fail(employeeNotFound(input.employeeId)));
-					}
-					return yield* _(
-						resolveEffectivePolicy(emp, input.organizationId, dateFromInstant(input.at)),
-					);
-				}),
+				effectivePolicyOf(input.employeeId, input.organizationId, dateFromInstant(input.at)),
 
 			checkCompliance: (input) =>
 				Effect.gen(function* (_) {

@@ -14,4 +14,5 @@ The organization configuration guard exists so that a writer of configuration ca
 
 - A departure's work transaction keeps `organization: "none"`, even though it deactivates the employee's work policy assignments.
 - A new team-level or organization-level assignment is not blocked by the row locks of a concurrent break snapshot. The snapshot applies the policy it saw and records it; this is accepted.
+- The clock-out compliance check also reads the policy assigned as of the work's end, without locking it, and records violations that are never re-evaluated (#548). It decides nothing about the work itself, so it does not need the guard either.
 - If a reader ever starts deciding from work policies in a way that must not interleave with a policy change (for example a manual rejection or an approval route based on the schedule), revisit this decision and move work policies into organization configuration.
