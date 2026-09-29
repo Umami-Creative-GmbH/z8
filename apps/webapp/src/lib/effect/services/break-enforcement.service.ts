@@ -3,7 +3,7 @@ import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { timeEntry, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type AutomaticBreakAdjustmentOutcome,
 	type LegacyBreakPlan,
@@ -124,11 +124,14 @@ export class BreakEnforcementService extends Context.Tag(
 		) => Effect.Effect<ProcessUnprocessedPeriodsResult, DatabaseError>;
 
 		/**
-		 * Calculate break deficit for a given work session
+		 * Calculate break deficit for a given work session under the policy in force
+		 * at `policyAt` within the organization.
 		 * Returns the number of break minutes that need to be added
 		 */
 		readonly calculateBreakDeficit: (params: {
 			employeeId: string;
+			organizationId: string;
+			policyAt: Instant;
 			sessionDurationMinutes: number;
 			breaksTakenMinutes: number;
 		}) => Effect.Effect<
@@ -158,11 +161,14 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		const workPolicyService = yield* _(WorkPolicyService);
 
 		/**
-		 * Internal function to calculate break deficit
+		 * Internal function to calculate break deficit under the policy in force at
+		 * `policyAt` within the organization (ADR 0003), never at the time it runs.
 		 * Can be called directly without going through the service interface
 		 */
 		const calculateBreakDeficitInternal = (params: {
 			employeeId: string;
+			organizationId: string;
+			policyAt: Instant;
 			sessionDurationMinutes: number;
 			breaksTakenMinutes: number;
 		}): Effect.Effect<
@@ -180,7 +186,11 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		> =>
 			Effect.gen(function* (_) {
 				const policy = yield* _(
-					workPolicyService.getEffectivePolicy(params.employeeId),
+					workPolicyService.getEffectivePolicyAt({
+						employeeId: params.employeeId,
+						organizationId: params.organizationId,
+						at: params.policyAt,
+					}),
 				);
 
 				// If no policy or no regulation enabled, no break requirements
@@ -208,8 +218,8 @@ export const BreakEnforcementServiceLive = Layer.effect(
 
 		/**
 		 * The established legacy plan from plain reads: the period, the breaks already
-		 * taken on its own day and the effective policy, with the established placement
-		 * and arithmetic. Only a legacy organization's adjustment uses it; its writes run
+		 * taken on its own day and the policy in force when it ended, with the established
+		 * placement and arithmetic. Only a legacy organization's adjustment uses it; its writes run
 		 * in the coordinated owner.
 		 */
 		const planLegacyBreakEnforcement = (
@@ -292,10 +302,13 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					),
 				);
 
-				// Calculate break deficit
+				// The rule in force when the work ended, as the adopted break snapshot
+				// looks it up (#549): never the rule on the day enforcement runs.
 				const deficitResult = yield* _(
 					calculateBreakDeficitInternal({
 						employeeId: input.employeeId,
+						organizationId: input.organizationId,
+						policyAt: instantFromDate(endTime),
 						sessionDurationMinutes: input.sessionDurationMinutes,
 						breaksTakenMinutes: breaksTaken,
 					}),

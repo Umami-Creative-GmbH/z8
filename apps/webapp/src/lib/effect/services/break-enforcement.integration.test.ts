@@ -1,6 +1,7 @@
 /**
  * #547: a legacy organization's break enforcement counts the breaks already taken on
- * the closed work's own local day, never on the day the follow-up runs.
+ * the closed work's own local day, never on the day the follow-up runs. #549: it applies
+ * the break rule in force when the work ended, looked up within its organization.
  *
  * PostgreSQL contract: pnpm --filter webapp test:integration
  * The real follow-up effect (`clockOutFollowUpEffects.enforceBreaks`) and the real
@@ -41,7 +42,7 @@ type WorkOptions = {
 	rejected?: boolean;
 };
 
-describe("legacy break enforcement counts the work's own day on PostgreSQL", () => {
+describe("legacy break enforcement judges the work by its own day and policy on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 	const admin = integrationAdminPool();
 
@@ -102,6 +103,53 @@ describe("legacy break enforcement counts the work's own day on PostgreSQL", () 
 			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active, created_by, updated_at)
 			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6)`,
 			[ids.policyAssignment, ids.policy, ids.organization, ids.employee, ids.user, timestamp],
+		);
+	}
+
+	/** A second policy requiring 45 minutes after 6 hours, in `organizationId`. */
+	async function stricterPolicy(organizationId: string) {
+		const [policyId, regulationId] = [randomUUID(), randomUUID()];
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into work_policy
+			 (id, organization_id, name, schedule_enabled, regulation_enabled, is_active, created_by, updated_at)
+			 values ($1, $2, 'T549 stricter break', false, true, true, $3, $4)`,
+			[policyId, organizationId, ids.user, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_regulation (id, policy_id, max_uninterrupted_minutes, updated_at)
+			 values ($1, $2, 360, $3)`,
+			[regulationId, policyId, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_break_rule
+			 (id, regulation_id, working_minutes_threshold, required_break_minutes, updated_at)
+			 values ($1, $2, 360, 45, $3)`,
+			[randomUUID(), regulationId, timestamp],
+		);
+		return policyId;
+	}
+
+	async function assign(
+		policyId: string,
+		organizationId: string,
+		type: "employee" | "organization",
+		effectiveFrom: string | null = null,
+	) {
+		await admin.query(
+			`insert into work_policy_assignment
+			 (policy_id, organization_id, assignment_type, employee_id, priority, effective_from,
+			  is_active, created_by, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, true, $7, now())`,
+			[
+				policyId,
+				organizationId,
+				type,
+				type === "employee" ? ids.employee : null,
+				type === "employee" ? 2 : 0,
+				effectiveFrom ? new Date(effectiveFrom) : null,
+				ids.user,
+			],
 		);
 	}
 
@@ -291,6 +339,41 @@ describe("legacy break enforcement counts the work's own day on PostgreSQL", () 
 		expect((await periods()).filter((period) => period.id === closed.id)).toMatchObject([
 			{ end_time: new Date("2026-07-22T13:30:00Z"), was_auto_adjusted: true },
 		]);
+	});
+
+	// #549: the rule is the one in force when the closed work ended, in its organization.
+	it("applies the break rule in force at the work's end when the assignment changed before enforcement", async () => {
+		// The 30-minute policy ends that evening; a 45-minute one applies from the next day.
+		await admin.query("update work_policy_assignment set effective_until = $2 where id = $1", [
+			ids.policyAssignment,
+			new Date("2026-07-22T20:00:00Z"),
+		]);
+		await assign(
+			await stricterPolicy(ids.organization),
+			ids.organization,
+			"employee",
+			"2026-07-23T00:00:00Z",
+		);
+		const closed = await work("2026-07-22T07:30:00Z", "2026-07-22T14:31:00Z");
+
+		await expect(followUp(closed, "2026-07-23T09:00:00Z")).resolves.toMatchObject({
+			wasAdjusted: true,
+			adjustment: { breakMinutes: 30, regulationName: "T547 break" },
+		});
+	});
+
+	it("ignores the employee's assignment in another organization", async () => {
+		// The organization's own rule is its default; the other organization's
+		// employee-level assignment names the same employee id.
+		await admin.query("delete from work_policy_assignment where id = $1", [ids.policyAssignment]);
+		await assign(ids.policy, ids.organization, "organization");
+		await assign(await stricterPolicy(ids.otherOrganization), ids.otherOrganization, "employee");
+		const closed = await work("2026-07-22T07:30:00Z", "2026-07-22T14:31:00Z");
+
+		await expect(followUp(closed, "2026-07-22T14:35:00Z")).resolves.toMatchObject({
+			wasAdjusted: true,
+			adjustment: { breakMinutes: 30, regulationName: "T547 break" },
+		});
 	});
 
 	it("does not count a gap before work that starts after the closed work ends", async () => {
