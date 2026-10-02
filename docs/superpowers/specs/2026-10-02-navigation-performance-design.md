@@ -1,6 +1,6 @@
 # Navigation performance improvements
 
-Status: proposed written spec. The user approved the overall design and four staged changes on October 2, 2026. This document requires review before the detailed implementation plan is written. Implementation is outside the current planning stage.
+Status: approved written spec. The user approved the overall design, four staged changes, and this written spec on October 2, 2026. Detailed implementation planning may proceed; implementation requires review of the written plan and selection of its execution method.
 
 ## Purpose and scope
 
@@ -170,4 +170,4 @@ Before implementing tickets, publish/link the approved spec in GitHub, create it
 
 ## Review result
 
-The written spec preserves the four agreed areas and separates persistent catalog caching from request-local auth reuse. It specifies region dependencies, safe error handling, explicit translation merging/fallback behavior, acceptance tests, and staged rollback. It does not promise an unmeasured speedup or treat the existing production observations as a historical regression. The next stage is user review of this document, followed by a detailed implementation plan and selection of its execution method.
+The written spec preserves the four agreed areas and separates persistent catalog caching from request-local auth reuse. It specifies region dependencies, safe error handling, explicit translation merging/fallback behavior, acceptance tests, and staged rollback. It does not promise an unmeasured speedup or treat the existing production observations as a historical regression. User review is complete. The next stage is review of the written implementation plans and selection of their execution method.
