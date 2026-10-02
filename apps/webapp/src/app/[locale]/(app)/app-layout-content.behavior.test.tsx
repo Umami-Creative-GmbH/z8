@@ -2,6 +2,11 @@ import { renderToReadableStream } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AppLayout from "./layout";
 
+vi.mock("@tolgee/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@tolgee/react")>()),
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 const mockState = vi.hoisted(() => ({
 	checkBillingAccess: vi.fn(),
 	findMember: vi.fn(),

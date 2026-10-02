@@ -1,6 +1,7 @@
 "use client";
 
 import { IconEdit, IconPlus } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ export function VacationPolicyButton({
 	size = "default",
 	children,
 }: VacationPolicyButtonProps) {
+	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -42,12 +44,12 @@ export function VacationPolicyButton({
 					(existingPolicy ? (
 						<>
 							<IconEdit className="mr-2 size-4" />
-							Edit Policy
+							{t("settings.vacation.editPolicy", "Edit Policy")}
 						</>
 					) : (
 						<>
 							<IconPlus className="mr-2 size-4" />
-							Create Policy
+							{t("settings.vacation.createPolicy", "Create Policy")}
 						</>
 					))}
 			</Button>

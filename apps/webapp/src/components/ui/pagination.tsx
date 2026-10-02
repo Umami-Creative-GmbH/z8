@@ -1,13 +1,21 @@
-import { IconChevronLeft, IconChevronRight, IconDots } from "@tabler/icons-react";
+"use client";
+
+import {
+	IconChevronLeft,
+	IconChevronRight,
+	IconDots,
+} from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import type * as React from "react";
 import type { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+	const { t } = useTranslate();
 	return (
 		<nav
-			aria-label="pagination"
+			aria-label={t("common.pagination.pagination", "pagination")}
 			data-slot="pagination"
 			className={cn("mx-auto flex w-full justify-center", className)}
 			{...props}
@@ -15,7 +23,10 @@ function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
 	);
 }
 
-function PaginationContent({ className, ...props }: React.ComponentProps<"ul">) {
+function PaginationContent({
+	className,
+	...props
+}: React.ComponentProps<"ul">) {
 	return (
 		<ul
 			data-slot="pagination-content"
@@ -63,35 +74,52 @@ function PaginationLink({
 	);
 }
 
-function PaginationPrevious({ className, ...props }: React.ComponentProps<typeof PaginationLink>) {
+function PaginationPrevious({
+	className,
+	...props
+}: React.ComponentProps<typeof PaginationLink>) {
+	const { t } = useTranslate();
 	return (
 		<PaginationLink
-			aria-label="Go to previous page"
+			aria-label={t(
+				"common.pagination.goToPreviousPage",
+				"Go to previous page",
+			)}
 			size="default"
 			className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
 			{...props}
 		>
 			<IconChevronLeft />
-			<span className="hidden sm:block">Previous</span>
+			<span className="hidden sm:block">
+				{t("common.previous", "Previous")}
+			</span>
 		</PaginationLink>
 	);
 }
 
-function PaginationNext({ className, ...props }: React.ComponentProps<typeof PaginationLink>) {
+function PaginationNext({
+	className,
+	...props
+}: React.ComponentProps<typeof PaginationLink>) {
+	const { t } = useTranslate();
 	return (
 		<PaginationLink
-			aria-label="Go to next page"
+			aria-label={t("common.pagination.goToNextPage", "Go to next page")}
 			size="default"
 			className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
 			{...props}
 		>
-			<span className="hidden sm:block">Next</span>
+			<span className="hidden sm:block">{t("common.next", "Next")}</span>
 			<IconChevronRight />
 		</PaginationLink>
 	);
 }
 
-function PaginationEllipsis({ className, ...props }: React.ComponentProps<"span">) {
+function PaginationEllipsis({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	const { t } = useTranslate();
 	return (
 		<span
 			aria-hidden
@@ -100,7 +128,9 @@ function PaginationEllipsis({ className, ...props }: React.ComponentProps<"span"
 			{...props}
 		>
 			<IconDots className="size-4" />
-			<span className="sr-only">More pages</span>
+			<span className="sr-only">
+				{t("common.pagination.morePages", "More pages")}
+			</span>
 		</span>
 	);
 }

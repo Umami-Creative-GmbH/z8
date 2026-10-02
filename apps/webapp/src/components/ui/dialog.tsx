@@ -2,6 +2,7 @@
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import * as React from "react";
 import { use } from "react";
 
@@ -13,9 +14,8 @@ import {
 } from "@/components/ui/base-ui-compat";
 import { cn } from "@/lib/utils";
 
-const DialogDismissContext = React.createContext<React.RefObject<DismissEventHandlers> | null>(
-	null,
-);
+const DialogDismissContext =
+	React.createContext<React.RefObject<DismissEventHandlers> | null>(null);
 
 type DialogProps = Omit<DialogPrimitive.Root.Props, "children"> & {
 	children?: React.ReactNode;
@@ -31,8 +31,13 @@ type DialogContentProps = DialogPrimitive.Popup.Props & {
 
 function Dialog({ children, onOpenChange, ...props }: DialogProps) {
 	const dismissHandlersRef = React.useRef<DismissEventHandlers>({});
-	const handleOpenChange: DialogPrimitive.Root.Props["onOpenChange"] = (open, eventDetails) => {
-		if (cancelDismissIfPrevented(open, eventDetails, dismissHandlersRef.current)) {
+	const handleOpenChange: DialogPrimitive.Root.Props["onOpenChange"] = (
+		open,
+		eventDetails,
+	) => {
+		if (
+			cancelDismissIfPrevented(open, eventDetails, dismissHandlersRef.current)
+		) {
 			return;
 		}
 
@@ -41,7 +46,11 @@ function Dialog({ children, onOpenChange, ...props }: DialogProps) {
 
 	return (
 		<DialogDismissContext.Provider value={dismissHandlersRef}>
-			<DialogPrimitive.Root data-slot="dialog" onOpenChange={handleOpenChange} {...props}>
+			<DialogPrimitive.Root
+				data-slot="dialog"
+				onOpenChange={handleOpenChange}
+				{...props}
+			>
 				{children}
 			</DialogPrimitive.Root>
 		</DialogDismissContext.Provider>
@@ -90,7 +99,10 @@ function DialogClose({
 	);
 }
 
-function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) {
+function DialogOverlay({
+	className,
+	...props
+}: DialogPrimitive.Backdrop.Props) {
 	return (
 		<DialogPrimitive.Backdrop
 			data-slot="dialog-overlay"
@@ -112,6 +124,7 @@ function DialogContent({
 	showCloseButton = true,
 	...props
 }: DialogContentProps) {
+	const { t } = useTranslate();
 	const dismissHandlersRef = use(DialogDismissContext);
 
 	React.useEffect(() => {
@@ -119,7 +132,11 @@ function DialogContent({
 			return;
 		}
 
-		const handlers = { onEscapeKeyDown, onInteractOutside, onPointerDownOutside };
+		const handlers = {
+			onEscapeKeyDown,
+			onInteractOutside,
+			onPointerDownOutside,
+		};
 		dismissHandlersRef.current = handlers;
 
 		return () => {
@@ -127,7 +144,12 @@ function DialogContent({
 				dismissHandlersRef.current = {};
 			}
 		};
-	}, [dismissHandlersRef, onEscapeKeyDown, onInteractOutside, onPointerDownOutside]);
+	}, [
+		dismissHandlersRef,
+		onEscapeKeyDown,
+		onInteractOutside,
+		onPointerDownOutside,
+	]);
 
 	return (
 		<DialogPortal data-slot="dialog-portal">
@@ -147,7 +169,7 @@ function DialogContent({
 						className="ring-offset-background focus:ring-ring data-[open]:bg-accent data-[open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
 					>
 						<IconX />
-						<span className="sr-only">Close</span>
+						<span className="sr-only">{t("common.close", "Close")}</span>
 					</DialogPrimitive.Close>
 				)}
 			</DialogPrimitive.Popup>
@@ -169,7 +191,10 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
 			data-slot="dialog-footer"
-			className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+			className={cn(
+				"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+				className,
+			)}
 			{...props}
 		/>
 	);

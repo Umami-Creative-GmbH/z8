@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ReportsContainer } from "@/components/reports/reports-container";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee } from "./actions";
@@ -43,8 +44,11 @@ async function ReportsPageContent() {
 
 function ReportsPageLoading() {
 	return (
-		<div
-			aria-label="Loading employee reports"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.employeeReports",
+				labelDefault: "Loading employee reports",
+			}}
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
 			role="status"
 		>
@@ -55,7 +59,7 @@ function ReportsPageLoading() {
 			<div className="px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

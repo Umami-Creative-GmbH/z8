@@ -96,6 +96,7 @@ interface PresetFormSectionProps {
 
 function getInitialValues(
 	mode: ReviewMode,
+	t: TranslationFunction,
 	preset?: WorkPolicyPresetWithSource | null,
 ): WorkPolicyPresetInput {
 	const values = buildPresetReviewValues(preset);
@@ -103,42 +104,88 @@ function getInitialValues(
 		...values,
 		name:
 			mode === "copySystem" && values.name
-				? `${values.name} Copy`
+				? t("settings.workPolicies.presetReview.copyName", "{name} Copy", {
+						name: values.name,
+					})
 				: values.name,
 		description: values.description ?? "",
 	};
 }
 
-function getDialogCopy(mode: ReviewMode) {
+function getDialogCopy(mode: ReviewMode, t: TranslationFunction) {
 	switch (mode) {
 		case "editCustom":
 			return {
-				title: "Edit custom preset",
-				description: "Review this preset before saving your changes.",
-				submitLabel: "Save custom preset",
-				success: "Preset updated",
+				title: t(
+					"settings.workPolicies.editCustom.title",
+					"Edit custom preset",
+				),
+				description: t(
+					"settings.workPolicies.editCustom.description",
+					"Review this preset before saving your changes.",
+				),
+				submitLabel: t(
+					"settings.workPolicies.editCustom.submit",
+					"Save custom preset",
+				),
+				success: t(
+					"settings.workPolicies.editCustom.success",
+					"Preset updated",
+				),
 			};
 		case "copySystem":
 			return {
-				title: "Copy system preset",
-				description: "Review the system preset and save it as a custom preset.",
-				submitLabel: "Save custom preset",
-				success: "Preset copied",
+				title: t(
+					"settings.workPolicies.copySystem.title",
+					"Copy system preset",
+				),
+				description: t(
+					"settings.workPolicies.copySystem.description",
+					"Review the system preset and save it as a custom preset.",
+				),
+				submitLabel: t(
+					"settings.workPolicies.copySystem.submit",
+					"Save custom preset",
+				),
+				success: t("settings.workPolicies.copySystem.success", "Preset copied"),
 			};
 		case "useAsPolicy":
 			return {
-				title: "Create policy from preset",
-				description: "Review the preset values before creating a work policy.",
-				submitLabel: "Create policy",
-				success: "Policy created",
+				title: t(
+					"settings.workPolicies.useAsPolicy.title",
+					"Create policy from preset",
+				),
+				description: t(
+					"settings.workPolicies.useAsPolicy.description",
+					"Review the preset values before creating a work policy.",
+				),
+				submitLabel: t(
+					"settings.workPolicies.useAsPolicy.submit",
+					"Create policy",
+				),
+				success: t(
+					"settings.workPolicies.useAsPolicy.success",
+					"Policy created",
+				),
 			};
 		default:
 			return {
-				title: "Create custom preset",
-				description:
+				title: t(
+					"settings.workPolicies.createCustom.title",
+					"Create custom preset",
+				),
+				description: t(
+					"settings.workPolicies.createCustom.description",
 					"Review and save reusable policy defaults for your organization.",
-				submitLabel: "Save custom preset",
-				success: "Preset created",
+				),
+				submitLabel: t(
+					"settings.workPolicies.createCustom.submit",
+					"Save custom preset",
+				),
+				success: t(
+					"settings.workPolicies.createCustom.success",
+					"Preset created",
+				),
 			};
 	}
 }
@@ -164,10 +211,10 @@ function WorkPolicyPresetReviewDialogContent({
 	const [serverError, setServerError] = useState<string | null>(null);
 	const [setAsDefault, setSetAsDefault] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const copy = getDialogCopy(mode);
+	const copy = getDialogCopy(mode, t);
 
 	const form = useForm({
-		defaultValues: getInitialValues(mode, preset),
+		defaultValues: getInitialValues(mode, t, preset),
 		onSubmit: async ({ value }) => {
 			setServerError(null);
 
@@ -188,7 +235,10 @@ function WorkPolicyPresetReviewDialogContent({
 						if (!preset) {
 							return {
 								success: false,
-								error: "Select a preset to continue",
+								error: t(
+									"settings.workPolicies.presetReview.selectPreset",
+									"Select a preset to continue",
+								),
 							} as const;
 						}
 
@@ -217,9 +267,7 @@ function WorkPolicyPresetReviewDialogContent({
 					})();
 
 					if (result.success) {
-						toast.success(
-							t("settings.workPolicies.presetReviewSuccess", copy.success),
-						);
+						toast.success(copy.success);
 						onSuccess();
 						onOpenChange(false);
 						return;
@@ -246,7 +294,7 @@ function WorkPolicyPresetReviewDialogContent({
 
 	function handleOpenChange(nextOpen: boolean) {
 		if (nextOpen) {
-			form.reset(getInitialValues(mode, preset));
+			form.reset(getInitialValues(mode, t, preset));
 		}
 		onOpenChange(nextOpen);
 	}
@@ -255,12 +303,8 @@ function WorkPolicyPresetReviewDialogContent({
 		<Dialog open={open} onOpenChange={handleOpenChange}>
 			<DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto overscroll-contain sm:max-w-2xl">
 				<DialogHeader>
-					<DialogTitle>
-						{t(`settings.workPolicies.${mode}.title`, copy.title)}
-					</DialogTitle>
-					<DialogDescription>
-						{t(`settings.workPolicies.${mode}.description`, copy.description)}
-					</DialogDescription>
+					<DialogTitle>{copy.title}</DialogTitle>
+					<DialogDescription>{copy.description}</DialogDescription>
 				</DialogHeader>
 
 				<form className="space-y-5">
@@ -302,7 +346,7 @@ function WorkPolicyPresetReviewDialogContent({
 									className="mr-2 size-4 animate-spin"
 								/>
 							)}
-							{t(`settings.workPolicies.${mode}.submit`, copy.submitLabel)}
+							{copy.submitLabel}
 						</Button>
 					</DialogFooter>
 				</form>
@@ -457,7 +501,10 @@ function RegulationDefaultsSection({ form, t }: PresetFormSectionProps) {
 					{(field) => (
 						<div className="space-y-2">
 							<Label htmlFor="preset-review-max-daily-hours">
-								Max daily hours
+								{t(
+									"settings.workPolicies.presetReview.maxDailyHours",
+									"Max daily hours",
+								)}
 							</Label>
 							<Input
 								id="preset-review-max-daily-hours"
@@ -484,7 +531,10 @@ function RegulationDefaultsSection({ form, t }: PresetFormSectionProps) {
 					{(field) => (
 						<div className="space-y-2">
 							<Label htmlFor="preset-review-max-weekly-hours">
-								Max weekly hours
+								{t(
+									"settings.workPolicies.presetReview.maxWeeklyHours",
+									"Max weekly hours",
+								)}
 							</Label>
 							<Input
 								id="preset-review-max-weekly-hours"
@@ -511,7 +561,10 @@ function RegulationDefaultsSection({ form, t }: PresetFormSectionProps) {
 					{(field) => (
 						<div className="space-y-2">
 							<Label htmlFor="preset-review-max-uninterrupted-hours">
-								Max uninterrupted hours
+								{t(
+									"settings.workPolicies.presetReview.maxUninterruptedHours",
+									"Max uninterrupted hours",
+								)}
 							</Label>
 							<Input
 								id="preset-review-max-uninterrupted-hours"
@@ -571,18 +624,30 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 								>
 									<div className="flex items-center justify-between">
 										<p className="text-sm font-medium">
-											Break rule {ruleIndex + 1}
+											{t(
+												"settings.workPolicies.presetReview.breakRuleNumber",
+												"Break rule {number}",
+												{ number: ruleIndex + 1 },
+											)}
 										</p>
 										<Button
 											type="button"
 											variant="ghost"
 											size="icon"
-											aria-label="Remove break rule"
+											aria-label={t(
+												"settings.workPolicies.presetReview.removeBreakRule",
+												"Remove break rule",
+											)}
 											className="size-8 text-destructive hover:text-destructive"
 											onClick={() => rulesField.removeValue(ruleIndex)}
 										>
 											<IconTrash aria-hidden="true" className="size-4" />
-											<span className="sr-only">Remove break rule</span>
+											<span className="sr-only">
+												{t(
+													"settings.workPolicies.presetReview.removeBreakRule",
+													"Remove break rule",
+												)}
+											</span>
 										</Button>
 									</div>
 
@@ -595,7 +660,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 													<Label
 														htmlFor={`preset-review-break-threshold-${ruleIndex}`}
 													>
-														After working hours
+														{t(
+															"settings.workPolicies.presetReview.afterWorkingHours",
+															"After working hours",
+														)}
 													</Label>
 													<Input
 														id={`preset-review-break-threshold-${ruleIndex}`}
@@ -632,7 +700,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 													<Label
 														htmlFor={`preset-review-break-required-${ruleIndex}`}
 													>
-														Break required minutes
+														{t(
+															"settings.workPolicies.presetReview.breakRequiredMinutes",
+															"Break required minutes",
+														)}
 													</Label>
 													<Input
 														id={`preset-review-break-required-${ruleIndex}`}
@@ -704,7 +775,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																		<Label
 																			htmlFor={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
 																		>
-																			Split count
+																			{t(
+																				"settings.workPolicies.presetReview.splitCount",
+																				"Split count",
+																			)}
 																		</Label>
 																		<Input
 																			id={`preset-review-break-split-${ruleIndex}-${optionIndex}`}
@@ -735,7 +809,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																		<Label
 																			htmlFor={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
 																		>
-																			Min split minutes
+																			{t(
+																				"settings.workPolicies.presetReview.minSplitMinutes",
+																				"Min split minutes",
+																			)}
 																		</Label>
 																		<Input
 																			id={`preset-review-break-min-split-${ruleIndex}-${optionIndex}`}
@@ -768,7 +845,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																		<Label
 																			htmlFor={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
 																		>
-																			Longest split minutes
+																			{t(
+																				"settings.workPolicies.presetReview.longestSplitMinutes",
+																				"Longest split minutes",
+																			)}
 																		</Label>
 																		<Input
 																			id={`preset-review-break-longest-split-${ruleIndex}-${optionIndex}`}
@@ -797,7 +877,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																type="button"
 																variant="ghost"
 																size="icon"
-																aria-label="Remove break option"
+																aria-label={t(
+																	"settings.workPolicies.presetReview.removeBreakOption",
+																	"Remove break option",
+																)}
 																className="self-end text-destructive hover:text-destructive"
 																onClick={() =>
 																	optionsField.removeValue(optionIndex)
@@ -811,7 +894,10 @@ function BreakRulesField({ form, t }: PresetFormSectionProps) {
 																	className="size-4"
 																/>
 																<span className="sr-only">
-																	Remove break option
+																	{t(
+																		"settings.workPolicies.presetReview.removeBreakOption",
+																		"Remove break option",
+																	)}
 																</span>
 															</Button>
 														</div>

@@ -1,4 +1,8 @@
+"use client";
+
+import { useTranslate } from "@tolgee/react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import type { LoadingTranslation } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -17,31 +21,50 @@ export function SettingsPageSkeleton({
 	label,
 }: {
 	variant?: "form" | "list";
-	label: string;
+	label: string | LoadingTranslation;
 }) {
+	const { t } = useTranslate();
 	const isForm = variant === "form";
 	const hidden = true;
 	return (
 		<div
 			className={
-				isForm ? "flex flex-1 flex-col gap-6 p-4 md:p-6" : "flex flex-1 flex-col gap-4 p-4"
+				isForm
+					? "flex flex-1 flex-col gap-6 p-4 md:p-6"
+					: "flex flex-1 flex-col gap-4 p-4"
 			}
 			role="status"
-			aria-label={label}
+			aria-label={
+				typeof label === "string"
+					? label
+					: t(label.labelKey, label.labelDefault)
+			}
 		>
 			<div className="space-y-2">
-				<Skeleton aria-hidden={hidden} className={isForm ? "h-8 w-48" : "h-8 w-64"} />
+				<Skeleton
+					aria-hidden={hidden}
+					className={isForm ? "h-8 w-48" : "h-8 w-64"}
+				/>
 				<Skeleton aria-hidden={hidden} className="h-4 w-96" />
 			</div>
 			<Card>
 				<CardHeader>
 					<Skeleton aria-hidden={hidden} className="h-6 w-48" />
-					<Skeleton aria-hidden={hidden} className={isForm ? "h-4 w-72" : "h-4 w-96"} />
+					<Skeleton
+						aria-hidden={hidden}
+						className={isForm ? "h-4 w-72" : "h-4 w-96"}
+					/>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-4">
-						<Skeleton aria-hidden={hidden} className={isForm ? "h-32 w-full" : "h-24 w-full"} />
-						<Skeleton aria-hidden={hidden} className={isForm ? "h-10 w-32" : "h-24 w-full"} />
+						<Skeleton
+							aria-hidden={hidden}
+							className={isForm ? "h-32 w-full" : "h-24 w-full"}
+						/>
+						<Skeleton
+							aria-hidden={hidden}
+							className={isForm ? "h-10 w-32" : "h-24 w-full"}
+						/>
 					</div>
 				</CardContent>
 			</Card>
@@ -131,7 +154,10 @@ export function ProfileSettingsSkeleton() {
 						<CardContent>
 							<div className="space-y-3">
 								{[1, 2].map((i) => (
-									<div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+									<div
+										key={i}
+										className="flex items-center justify-between p-3 border rounded-lg"
+									>
 										<div className="space-y-2 flex-1">
 											<Skeleton className="h-4 w-32" />
 											<Skeleton className="h-3 w-48" />
@@ -324,7 +350,10 @@ export function HolidaysSkeleton() {
 						<CardContent>
 							<div className="space-y-3">
 								{[1, 2, 3, 4].map((i) => (
-									<div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+									<div
+										key={i}
+										className="flex items-center justify-between p-4 border rounded-lg"
+									>
 										<div className="space-y-2 flex-1">
 											<Skeleton className="h-5 w-40" />
 											<Skeleton className="h-4 w-32" />
@@ -367,13 +396,18 @@ export function AdjustmentHistorySkeleton() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									{["Employee", "Team", "Adjustment", "Reason", "Adjusted By", "Date"].map(
-										(header) => (
-											<TableHead key={header}>
-												<Skeleton className="h-4 w-20" />
-											</TableHead>
-										),
-									)}
+									{[
+										"Employee",
+										"Team",
+										"Adjustment",
+										"Reason",
+										"Adjusted By",
+										"Date",
+									].map((header) => (
+										<TableHead key={header}>
+											<Skeleton className="h-4 w-20" />
+										</TableHead>
+									))}
 								</TableRow>
 							</TableHeader>
 							<TableBody>

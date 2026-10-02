@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { ImportHub } from "@/components/settings/import/import-hub";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
@@ -43,7 +44,14 @@ async function ImportPageContent() {
 
 function ImportPageLoading() {
 	return (
-		<div className="p-6" role="status" aria-label="Loading import settings">
+		<LoadingRegion
+			className="p-6"
+			role="status"
+			label={{
+				labelKey: "common.loadingRegions.importSettings",
+				labelDefault: "Loading import settings",
+			}}
+		>
 			<div className="mx-auto max-w-5xl space-y-6">
 				<div className="space-y-2">
 					<Skeleton aria-hidden="true" className="h-8 w-48" />
@@ -52,7 +60,7 @@ function ImportPageLoading() {
 				<Skeleton aria-hidden="true" className="h-10 w-64" />
 				<Skeleton aria-hidden="true" className="h-64 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

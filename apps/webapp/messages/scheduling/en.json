@@ -100,6 +100,22 @@
       "dragHint": "Drag a template onto the calendar to create a shift",
       "empty": "No templates available. Create templates in Settings to quickly add shifts.",
       "title": "Shift Templates"
+    },
+    "publish": {
+      "warningsDetectedBeforePublish": "Warnings detected before publish",
+      "complianceAcknowledgmentRequired": "Compliance Acknowledgment Required",
+      "cancel": "Cancel",
+      "acknowledgeAndPublish": "Acknowledge and Publish",
+      "button": "Publish ({count})",
+      "complianceWarnings": "{count, plural, one {Compliance checks found # warning; you will need to acknowledge it before publishing.} other {Compliance checks found # warnings; you will need to acknowledge them before publishing.}}",
+      "notifyEmployees": "{count, plural, one {Publish # draft shift and notify employees} other {Publish # draft shifts and notify employees}}",
+      "totalFindings": "{count, plural, one {# total finding} other {# total findings}}",
+      "restTime": "Rest time: {count}",
+      "maxHours": "Max hours: {count}",
+      "overtime": "Overtime: {count}",
+      "publishing": "Publishing…",
+      "coverageWarning": "Some time blocks don't meet minimum staffing requirements.",
+      "acknowledgmentDescription": "Publishing will proceed, but this schedule has compliance warnings that must be acknowledged first."
     }
   }
 }

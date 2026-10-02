@@ -196,7 +196,8 @@
         "description": "Hours variance from expected work hours over time",
         "empty": "No trend data available",
         "title": "Overtime & Undertime Trend"
-      }
+      },
+      "hoursPerWeekAbbreviation": "h/wk"
     }
   }
 }

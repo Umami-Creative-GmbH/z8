@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LocationManagement } from "@/components/settings/location-management";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -28,14 +29,17 @@ async function LocationSettingsPageContent() {
 
 function LocationSettingsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading location settings"
+			label={{
+				labelKey: "common.loadingRegions.locationSettings",
+				labelDefault: "Loading location settings",
+			}}
 		>
 			<Skeleton className="h-8 w-48" aria-hidden="true" />
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

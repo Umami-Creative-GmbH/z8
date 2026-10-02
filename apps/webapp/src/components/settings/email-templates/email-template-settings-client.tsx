@@ -11,10 +11,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { EmailTemplateEditorDocument, EmailTemplateKey } from "@/db/schema";
+import type {
+	EmailTemplateEditorDocument,
+	EmailTemplateKey,
+} from "@/db/schema";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
 import { useRouter } from "@/navigation";
-import { EmailTemplateEditor, type EmailTemplateEditorHandle } from "./email-template-editor";
+import { getEmailTemplateCopy } from "./email-template-copy";
+import {
+	EmailTemplateEditor,
+	type EmailTemplateEditorHandle,
+} from "./email-template-editor";
 import { EmailTemplateList } from "./email-template-list";
 
 export interface EmailTemplateOverride {
@@ -52,7 +59,10 @@ const createDraft = ({
 	editorDocument: override?.editorDocument ?? {
 		type: "doc",
 		content: [
-			{ type: "paragraph", content: [{ type: "text", text: definition.starterDraftPlainText }] },
+			{
+				type: "paragraph",
+				content: [{ type: "text", text: definition.starterDraftPlainText }],
+			},
 		],
 	},
 });
@@ -65,7 +75,9 @@ const hasUnchangedDefaultStarterBody = (
 	draft.html === template.definition.starterDraftHtml &&
 	draft.plainText === template.definition.starterDraftPlainText;
 
-export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettingsClientProps) {
+export function EmailTemplateSettingsClient({
+	templates,
+}: EmailTemplateSettingsClientProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
 	const editorRef = useRef<EmailTemplateEditorHandle>(null);
@@ -75,21 +87,36 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 	);
 	const [drafts, setDrafts] = useState<Record<string, Draft>>(() =>
 		Object.fromEntries(
-			templates.map((template) => [template.definition.key, createDraft(template)]),
+			templates.map((template) => [
+				template.definition.key,
+				createDraft(template),
+			]),
 		),
 	);
 	const [overrideKeys, setOverrideKeys] = useState<Set<EmailTemplateKey>>(
 		() =>
 			new Set(
-				templates.flatMap((template) => (template.override ? [template.definition.key] : [])),
+				templates.flatMap((template) =>
+					template.override ? [template.definition.key] : [],
+				),
 			),
 	);
 
-	const effectiveTemplates = templates.map((template) =>
-		overrideKeys.has(template.definition.key) ? template : { ...template, override: null },
-	);
+	const templateCopy = getEmailTemplateCopy(t);
+	const effectiveTemplates = templates.map((template) => ({
+		...template,
+		definition: {
+			...template.definition,
+			...templateCopy[template.definition.key],
+		},
+		override: overrideKeys.has(template.definition.key)
+			? template.override
+			: null,
+	}));
 	const selectedTemplate =
-		effectiveTemplates.find((template) => template.definition.key === selectedKey) ?? null;
+		effectiveTemplates.find(
+			(template) => template.definition.key === selectedKey,
+		) ?? null;
 	const draft = selectedKey ? drafts[selectedKey] : null;
 
 	const updateDraft = (partial: Partial<Draft>) => {
@@ -122,7 +149,11 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 	};
 
 	const handleSave = () => {
-		if (selectedTemplate && draft && hasUnchangedDefaultStarterBody(selectedTemplate, draft)) {
+		if (
+			selectedTemplate &&
+			draft &&
+			hasUnchangedDefaultStarterBody(selectedTemplate, draft)
+		) {
 			toast.error(
 				t(
 					"settings.emailTemplates.editBodyBeforeSaving",
@@ -141,13 +172,18 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 			const result = await saveEmailTemplate(input);
 			if (result.success) {
 				setOverrideKeys((current) => new Set(current).add(input.templateKey));
-				toast.success(t("settings.emailTemplates.saved", "Email template saved"));
+				toast.success(
+					t("settings.emailTemplates.saved", "Email template saved"),
+				);
 				refresh();
 				return;
 			}
 			toast.error(
 				result.errors?.join("\n") ??
-					t("settings.emailTemplates.saveFailed", "Failed to save email template"),
+					t(
+						"settings.emailTemplates.saveFailed",
+						"Failed to save email template",
+					),
 			);
 		});
 	};
@@ -161,7 +197,12 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 		startTransition(async () => {
 			const result = await sendEmailTemplateTest(input);
 			if (result.success) {
-				toast.success(t("settings.emailTemplates.testSent", "Test email sent to your account"));
+				toast.success(
+					t(
+						"settings.emailTemplates.testSent",
+						"Test email sent to your account",
+					),
+				);
 				return;
 			}
 			toast.error(
@@ -192,14 +233,20 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 					}),
 				}));
 				toast.success(
-					t("settings.emailTemplates.reset", "Email template reset to system template"),
+					t(
+						"settings.emailTemplates.reset",
+						"Email template reset to system template",
+					),
 				);
 				refresh();
 				return;
 			}
 			toast.error(
 				result.errors?.join("\n") ??
-					t("settings.emailTemplates.resetFailed", "Failed to reset email template"),
+					t(
+						"settings.emailTemplates.resetFailed",
+						"Failed to reset email template",
+					),
 			);
 		});
 	};
@@ -228,7 +275,10 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 				<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 					<div className="space-y-1">
 						<p className="font-medium text-primary text-sm">
-							{t("settings.emailTemplates.eyebrow", "Operational communications")}
+							{t(
+								"settings.emailTemplates.eyebrow",
+								"Operational communications",
+							)}
 						</p>
 						<h1 className="font-semibold text-2xl tracking-tight">
 							{t("settings.emailTemplates.title", "Email Templates")}
@@ -266,7 +316,9 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 					<Card>
 						<CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
 							<div className="space-y-2">
-								<CardTitle className="text-xl">{selectedTemplate.definition.label}</CardTitle>
+								<CardTitle className="text-xl">
+									{selectedTemplate.definition.label}
+								</CardTitle>
 								<p className="text-muted-foreground text-sm leading-6">
 									{selectedTemplate.definition.description}
 								</p>
@@ -275,7 +327,10 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 						<CardContent className="space-y-6">
 							<div className="rounded-xl border bg-muted/25 p-4 text-sm">
 								<p className="font-medium">
-									{t("settings.emailTemplates.defaultFallback", "Default fallback")}
+									{t(
+										"settings.emailTemplates.defaultFallback",
+										"Default fallback",
+									)}
 								</p>
 								<p className="mt-1 text-muted-foreground">
 									{t(
@@ -300,14 +355,24 @@ export function EmailTemplateSettingsClient({ templates }: EmailTemplateSettings
 								onSubjectChange={(subject) => updateDraft({ subject })}
 								onHtmlChange={(html) => updateDraft({ html })}
 								onPlainTextChange={(plainText) => updateDraft({ plainText })}
-								onEditorDocumentChange={(editorDocument) => updateDraft({ editorDocument })}
+								onEditorDocumentChange={(editorDocument) =>
+									updateDraft({ editorDocument })
+								}
 								onInsertVariable={handleInsertVariable}
 								onSubjectFocus={() => undefined}
 							/>
 
 							<div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
-								<Button type="button" variant="outline" onClick={handleReset} disabled={isPending}>
-									{t("settings.emailTemplates.actions.reset", "Reset to system template")}
+								<Button
+									type="button"
+									variant="outline"
+									onClick={handleReset}
+									disabled={isPending}
+								>
+									{t(
+										"settings.emailTemplates.actions.reset",
+										"Reset to system template",
+									)}
 								</Button>
 								<Button
 									type="button"

@@ -6,6 +6,7 @@ import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { loadRouteTranslations } from "@/tolgee/load-translations";
@@ -82,9 +83,13 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 
 function RootRouteShell() {
 	return (
-		<main
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading application"
+			as="main"
+			label={{
+				labelKey: "common.loadingRegions.application",
+				labelDefault: "Loading application",
+			}}
 			className="flex min-h-svh bg-background"
 		>
 			<aside className="hidden w-72 shrink-0 space-y-4 border-r p-4 md:block">
@@ -103,7 +108,7 @@ function RootRouteShell() {
 					<Skeleton className="min-h-64 w-full flex-1" />
 				</div>
 			</section>
-		</main>
+		</LoadingRegion>
 	);
 }
 

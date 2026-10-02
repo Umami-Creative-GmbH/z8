@@ -124,7 +124,10 @@
         "status": "Status",
         "usedSeats": "Used seats"
       },
-      "title": "Billing Dashboard"
+      "title": "Billing Dashboard",
+      "seatsSynced": "Seats synced",
+      "failedToSyncSeats": "Failed to sync seats",
+      "syncSeatsFor": "Sync seats for {organizationName}"
     },
     "diagnostics": {
       "actions": {

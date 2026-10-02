@@ -257,7 +257,8 @@
         "updated": "Preset updated successfully",
         "updateFailed": "Failed to update preset",
         "year": "Year",
-        "yearValue": "Year {year}"
+        "yearValue": "Year {year}",
+        "namePlaceholder": "e.g., Germany - Bavaria"
       },
       "recurrence": {
         "none": "One-time",

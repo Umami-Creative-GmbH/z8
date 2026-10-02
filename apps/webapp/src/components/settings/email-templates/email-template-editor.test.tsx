@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmailTemplateDefinition } from "@/lib/email/template-registry";
+import { render } from "@/test/render-with-translations";
 import { EmailTemplateEditor } from "./email-template-editor";
 
 vi.mock("next/dynamic", () => ({
@@ -23,7 +24,13 @@ vi.mock("next/dynamic", () => ({
 }));
 
 vi.mock("@react-email/editor", () => ({
-	EmailEditor: ({ className, placeholder }: { className?: string; placeholder?: string }) => (
+	EmailEditor: ({
+		className,
+		placeholder,
+	}: {
+		className?: string;
+		placeholder?: string;
+	}) => (
 		<div data-testid="react-email-editor-module" className={className}>
 			{placeholder}
 		</div>

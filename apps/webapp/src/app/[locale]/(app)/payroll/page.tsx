@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { PayrollWorkspace } from "@/components/payroll/payroll-workspace";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import {
@@ -42,10 +43,13 @@ async function PayrollPageContent() {
 
 function PayrollPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6"
 			role="status"
-			aria-label="Loading payroll workspace"
+			label={{
+				labelKey: "common.loadingRegions.payrollWorkspace",
+				labelDefault: "Loading payroll workspace",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-56" />
@@ -57,7 +61,7 @@ function PayrollPageLoading() {
 				<Skeleton aria-hidden="true" className="h-28 w-full" />
 			</div>
 			<Skeleton aria-hidden="true" className="h-80 w-full" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

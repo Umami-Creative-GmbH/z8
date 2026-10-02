@@ -37,13 +37,13 @@
         "teamPolicyDescription": "Select a vacation policy and team. This overrides the company default for team members."
       },
       "carryover": "Carryover",
-      "createPolicy": "Create Vacation Policy",
+      "createPolicy": "Create Policy",
       "createPolicyBtn": "Create Policy",
       "current": "Current",
       "days": "days",
       "default": "Default",
       "description": "Manage vacation policies and assignments for your organization",
-      "editPolicy": "Edit \"{name}\"",
+      "editPolicy": "Edit Policy",
       "employees": {
         "detail": {
           "addManualAdjustment": "Add Manual Adjustment",
@@ -176,7 +176,9 @@
         "policies": "Policies"
       },
       "title": "Vacation Management",
-      "updatePolicy": "Update Policy"
+      "updatePolicy": "Update Policy",
+      "vacationPolicies": "Vacation Policies",
+      "createDifferentPoliciesForVariousTeamsOrEmployeeGroups": "Create different policies for various teams or employee groups"
     }
   },
   "vacation": {

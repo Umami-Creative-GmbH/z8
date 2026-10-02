@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 
 const mockState = vi.hoisted(() => ({
 	callOrder: [] as string[],

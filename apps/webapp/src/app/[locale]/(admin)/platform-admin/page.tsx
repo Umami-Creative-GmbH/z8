@@ -22,6 +22,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
@@ -461,10 +462,13 @@ async function AdminDashboardContent() {
 
 function AdminDashboardLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="space-y-10"
 			role="status"
-			aria-label="Loading platform admin overview"
+			label={{
+				labelKey: "common.loadingRegions.platformAdminOverview",
+				labelDefault: "Loading platform admin overview",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-36" />
@@ -478,7 +482,7 @@ function AdminDashboardLoading() {
 				<Skeleton aria-hidden="true" className="h-5 w-36" />
 				<DashboardAnalyticsPreviewLoading />
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }
 

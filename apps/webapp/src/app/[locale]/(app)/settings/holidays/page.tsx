@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { HolidayManagement } from "@/components/settings/holiday/holiday-management";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -28,14 +29,17 @@ async function HolidaySettingsPageContent() {
 
 function HolidaySettingsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading holiday settings"
+			label={{
+				labelKey: "common.loadingRegions.holidaySettings",
+				labelDefault: "Loading holiday settings",
+			}}
 		>
 			<Skeleton className="h-8 w-48" aria-hidden="true" />
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

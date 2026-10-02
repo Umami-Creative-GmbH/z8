@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { ProjectReportsContainer } from "@/components/reports/projects/project-reports-container";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployeeProjectReportAccess } from "./actions";
@@ -63,8 +64,11 @@ async function ProjectReportsPageContent() {
 
 function ProjectReportsPageLoading() {
 	return (
-		<div
-			aria-label="Loading project reports"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.projectReports",
+				labelDefault: "Loading project reports",
+			}}
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
 			role="status"
 		>
@@ -75,7 +79,7 @@ function ProjectReportsPageLoading() {
 			<div className="px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

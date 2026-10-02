@@ -1,6 +1,7 @@
 "use client";
 
 import { IconRefresh } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -12,7 +13,11 @@ interface SyncSeatsButtonProps {
 	organizationName: string;
 }
 
-export function SyncSeatsButton({ organizationId, organizationName }: SyncSeatsButtonProps) {
+export function SyncSeatsButton({
+	organizationId,
+	organizationName,
+}: SyncSeatsButtonProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 
@@ -22,27 +27,43 @@ export function SyncSeatsButton({ organizationId, organizationName }: SyncSeatsB
 			variant="outline"
 			size="sm"
 			disabled={isPending}
-			aria-label={`Sync seats for ${organizationName}`}
+			aria-label={t(
+				"admin.billing.syncSeatsFor",
+				"Sync seats for {organizationName}",
+				{ organizationName },
+			)}
 			onClick={() => {
 				startTransition(async () => {
 					try {
 						const result = await syncOrganizationSeatsAction(organizationId);
 
 						if (result.success) {
-							toast.success("Seats synced");
+							toast.success(t("admin.billing.seatsSynced", "Seats synced"));
 							router.refresh();
 							return;
 						}
 
-						toast.error(result.error || "Failed to sync seats");
+						toast.error(
+							result.error ||
+								t("admin.billing.failedToSyncSeats", "Failed to sync seats"),
+						);
 					} catch {
-						toast.error("Failed to sync seats");
+						toast.error(
+							t("admin.billing.failedToSyncSeats", "Failed to sync seats"),
+						);
 					}
 				});
 			}}
 		>
-			<IconRefresh className={`size-4 ${isPending ? "animate-spin" : ""}`} aria-hidden="true" />
-			<span className="sr-only">Sync seats for {organizationName}</span>
+			<IconRefresh
+				className={`size-4 ${isPending ? "animate-spin" : ""}`}
+				aria-hidden="true"
+			/>
+			<span className="sr-only">
+				{t("admin.billing.syncSeatsFor", "Sync seats for {organizationName}", {
+					organizationName,
+				})}
+			</span>
 		</Button>
 	);
 }

@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { isValidElement, Suspense } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 import OnboardingLayout from "./layout";
 import source from "./layout.tsx?raw";
 

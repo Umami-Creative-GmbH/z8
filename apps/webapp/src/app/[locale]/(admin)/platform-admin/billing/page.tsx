@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -518,10 +519,13 @@ function SubscriptionsTableLoading() {
 
 function AdminBillingPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="space-y-10"
 			role="status"
-			aria-label="Loading platform billing"
+			label={{
+				labelKey: "common.loadingRegions.platformBilling",
+				labelDefault: "Loading platform billing",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-52" />
@@ -535,6 +539,6 @@ function AdminBillingPageLoading() {
 				<Skeleton aria-hidden="true" className="h-5 w-44" />
 				<SubscriptionsTableLoading />
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }

@@ -238,7 +238,15 @@
     "clockInSavedForSending": "Clock-in saved on this device. It is sent automatically and is not confirmed yet.",
     "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
     "clockInSavedHeld": "Clock-in saved on this device but not sent. Review saved records.",
-    "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records."
+    "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records.",
+    "timezoneMismatch": {
+      "cancel": "Cancel",
+      "continueOnce": "Continue once",
+      "updateTimezoneAndContinue": "Update timezone and continue",
+      "description": "Your device timezone is {browserTimezone}, but your saved timezone is {savedTimezone}.",
+      "title": "Confirm Timezone for This Entry",
+      "help": "Choose whether to use your device timezone only for this action or update your saved timezone before continuing."
+    }
   },
   "wellness": {
     "water": {

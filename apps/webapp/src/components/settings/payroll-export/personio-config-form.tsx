@@ -214,7 +214,7 @@ function PersonioCredentialsCard({
 				<div className="flex items-center gap-4">
 					<Image
 						src="/personio.svg"
-						alt="Personio Logo"
+						alt={t("common.brandLogo", "{brand} logo", { brand: "Personio" })}
 						width={48}
 						height={48}
 						className="size-12"

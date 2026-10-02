@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CustomerManagement } from "@/components/settings/customer-management";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -28,14 +29,17 @@ async function CustomerSettingsPageContent() {
 
 function CustomerSettingsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading customer settings"
+			label={{
+				labelKey: "common.loadingRegions.customerSettings",
+				labelDefault: "Loading customer settings",
+			}}
 		>
 			<Skeleton className="h-8 w-48" aria-hidden="true" />
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</div>
+		</LoadingRegion>
 	);
 }
 
