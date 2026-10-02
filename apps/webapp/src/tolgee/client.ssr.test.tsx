@@ -21,7 +21,9 @@ describe("render-local SSR catalogs", () => {
 		}
 		expect(
 			renderToString(
-				<TolgeeNextProvider language="en" staticData={{}}>
+				<TolgeeNextProvider
+					slice={{ locale: "en", namespaces: [], keyOwners: {}, records: {} }}
+				>
 					<Content />
 				</TolgeeNextProvider>,
 			),
@@ -36,16 +38,24 @@ describe("render-local SSR catalogs", () => {
 		}
 		const first = renderToString(
 			<TolgeeNextProvider
-				language="en"
-				staticData={{ en: { settings: { title: "First render" } } }}
+				slice={{
+					locale: "en",
+					namespaces: [],
+					keyOwners: {},
+					records: { en: { settings: { title: "First render" } } },
+				}}
 			>
 				<Content />
 			</TolgeeNextProvider>,
 		);
 		const second = renderToString(
 			<TolgeeNextProvider
-				language="en"
-				staticData={{ en: { settings: { title: "Second render" } } }}
+				slice={{
+					locale: "en",
+					namespaces: [],
+					keyOwners: {},
+					records: { en: { settings: { title: "Second render" } } },
+				}}
 			>
 				<Content />
 			</TolgeeNextProvider>,

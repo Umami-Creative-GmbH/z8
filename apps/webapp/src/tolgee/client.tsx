@@ -1,17 +1,9 @@
 "use client";
 
-import {
-	TolgeeProvider,
-	type TolgeeStaticData,
-	useTolgee,
-} from "@tolgee/react";
+import { TolgeeProvider, useTolgee } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-	CATALOG_SOURCE_METADATA,
-	type CatalogSlice,
-	normalizeCatalogLocale,
-} from "./catalog-slices";
+import { type CatalogSlice, normalizeCatalogLocale } from "./catalog-slices";
 import {
 	applyCatalogRecords,
 	hasCatalogNamespaces,
@@ -19,11 +11,14 @@ import {
 	type TolgeeInstance,
 } from "./catalog-store";
 import { loadClientCatalogSlice } from "./client-catalog-loader";
+import {
+	FeatureCatalogContext,
+	prepareCatalogForRender,
+} from "./feature-provider";
 import { type Namespace, TolgeeBase } from "./shared";
 
 type Props = {
-	language: string;
-	staticData: TolgeeStaticData;
+	slice: CatalogSlice;
 	children: React.ReactNode;
 };
 const tolgeeCache = new Map<string, TolgeeInstance>();
@@ -45,64 +40,11 @@ function getOrCreateTolgee(language: string) {
 	return instance;
 }
 
-function transitionalSlice(
-	locale: string,
-	records: TolgeeStaticData,
-): CatalogSlice {
-	const keyOwners: Record<string, Namespace> = {};
-	const tree = records[locale];
-	const read = (path: string[]) =>
-		path.reduce<unknown>(
-			(value, key) =>
-				value && typeof value === "object"
-					? (value as Record<string, unknown>)[key]
-					: undefined,
-			tree,
-		);
-	for (const [encoded, contributors] of Object.entries(
-		CATALOG_SOURCE_METADATA[locale].collisions,
-	)) {
-		const path = JSON.parse(encoded) as string[];
-		const value = read(path);
-		if (typeof value !== "string") continue;
-		for (const namespace of contributors) {
-			const alias =
-				namespace === "common"
-					? path
-					: [`${namespace}:${path[0]}`, ...path.slice(1)];
-			if (read(alias) === value) keyOwners[encoded] = namespace;
-		}
-	}
-	return { locale, namespaces: [], records, keyOwners };
-}
-
-function applyForRender(tolgee: TolgeeInstance, incoming: CatalogSlice) {
-	tolgee.setEmitterActive(false);
-	try {
-		return applyCatalogRecords(tolgee, incoming);
-	} finally {
-		tolgee.setEmitterActive(true);
-	}
-}
-
-export const TolgeeNextProvider = ({
-	language,
-	staticData,
-	children,
-}: Props) => {
+export const TolgeeNextProvider = ({ slice, children }: Props) => {
 	const { refresh } = useRouter();
-	const locale = normalizeCatalogLocale(language);
+	const locale = normalizeCatalogLocale(slice.locale);
 	const tolgee = useMemo(() => getOrCreateTolgee(locale), [locale]);
-	// Transitional root props still carry the complete dictionary. Task 4 supplies
-	// explicit slices; presence of these records alone does not assert readiness.
-	const incoming = useMemo(
-		() => transitionalSlice(locale, staticData),
-		[locale, staticData],
-	);
-	const records = useMemo(
-		() => applyForRender(tolgee, incoming),
-		[tolgee, incoming],
-	);
+	const cumulative = prepareCatalogForRender(tolgee, slice);
 	useEffect(() => {
 		const subscription = tolgee.on("permanentChange", () => {
 			if (!isApplyingCatalogRecords(tolgee)) refresh();
@@ -110,13 +52,17 @@ export const TolgeeNextProvider = ({
 		return () => subscription.unsubscribe();
 	}, [refresh, tolgee]);
 	return (
-		<TolgeeProvider
-			key={locale}
-			ssr={{ language: locale, staticData: records }}
-			tolgee={tolgee}
+		<FeatureCatalogContext.Provider
+			value={{ locale, tolgee, slice: cumulative }}
 		>
-			{children}
-		</TolgeeProvider>
+			<TolgeeProvider
+				key={locale}
+				ssr={{ language: locale, staticData: cumulative.records }}
+				tolgee={tolgee}
+			>
+				{children}
+			</TolgeeProvider>
+		</FeatureCatalogContext.Provider>
 	);
 };
 

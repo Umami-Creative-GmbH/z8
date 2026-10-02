@@ -5,6 +5,7 @@ import { SettingsContentLoading } from "@/components/shells/settings-content-loa
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
 async function SettingsNavigation() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
@@ -45,25 +46,28 @@ function SettingsBreadcrumbsLoading() {
 
 export default function SettingsLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
 	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
-			<Suspense fallback={<SettingsNavigationLoading />}>
-				<SettingsNavigation />
-			</Suspense>
-			<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-				<Suspense fallback={<SettingsBreadcrumbsLoading />}>
-					<SettingsBreadcrumbs />
+		<RouteTranslationBoundary route="/settings" params={params}>
+			<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+				<Suspense fallback={<SettingsNavigationLoading />}>
+					<SettingsNavigation />
 				</Suspense>
-				<Suspense fallback={<SettingsContentLoading />}>
-					<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">
-						{children}
-					</div>
-				</Suspense>
-			</main>
-		</div>
+				<main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+					<Suspense fallback={<SettingsBreadcrumbsLoading />}>
+						<SettingsBreadcrumbs />
+					</Suspense>
+					<Suspense fallback={<SettingsContentLoading />}>
+						<div className="min-w-0 flex-1 overflow-auto overflow-x-hidden">
+							{children}
+						</div>
+					</Suspense>
+				</main>
+			</div>
+		</RouteTranslationBoundary>
 	);
 }

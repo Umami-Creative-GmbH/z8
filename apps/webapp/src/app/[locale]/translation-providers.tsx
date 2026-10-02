@@ -1,21 +1,21 @@
 "use client";
 
-import type { TolgeeStaticData } from "@tolgee/react";
 import { NextIntlClientProvider } from "next-intl";
 import type { ReactNode } from "react";
+import type { CatalogSlice } from "@/tolgee/catalog-slices";
 import { TolgeeNextProvider } from "@/tolgee/client";
 
 export function TranslationProviders({
 	children,
 	locale,
-	records,
+	slice,
 }: {
 	children: ReactNode;
 	locale: string;
-	records: TolgeeStaticData;
+	slice: CatalogSlice;
 }) {
 	return (
-		<TolgeeNextProvider language={locale} staticData={records}>
+		<TolgeeNextProvider slice={slice}>
 			<NextIntlClientProvider locale={locale} messages={{ locale }}>
 				{children}
 			</NextIntlClientProvider>

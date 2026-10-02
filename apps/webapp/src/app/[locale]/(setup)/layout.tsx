@@ -1,11 +1,21 @@
 import type { ReactNode } from "react";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
 
 interface SetupLayoutProps {
 	children: ReactNode;
+	params: Promise<{ locale: string }>;
 }
 
-export default async function SetupLayout({ children }: SetupLayoutProps) {
+export default function SetupLayout({ children, params }: SetupLayoutProps) {
+	return (
+		<RouteTranslationBoundary route="/setup" params={params}>
+			<SetupLayoutContent>{children}</SetupLayoutContent>
+		</RouteTranslationBoundary>
+	);
+}
+
+async function SetupLayoutContent({ children }: { children: ReactNode }) {
 	const t = await getTranslate();
 
 	return (
@@ -18,7 +28,10 @@ export default async function SetupLayout({ children }: SetupLayoutProps) {
 					{t("setup:setup.layout.title", "Initial Setup")}
 				</h1>
 				<p className="text-sm text-muted-foreground">
-					{t("setup:setup.layout.subtitle", "Configure your platform to get started")}
+					{t(
+						"setup:setup.layout.subtitle",
+						"Configure your platform to get started",
+					)}
 				</p>
 			</div>
 			{children}

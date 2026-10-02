@@ -15,6 +15,7 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { Link } from "@/navigation";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { getTranslate } from "@/tolgee/server";
 
 async function getCurrentEmployee(userId: string) {
@@ -25,13 +26,17 @@ async function getCurrentEmployee(userId: string) {
 
 export default function AnalyticsLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<Suspense fallback={<AnalyticsLayoutLoading />}>
-			<AnalyticsLayoutContent>{children}</AnalyticsLayoutContent>
-		</Suspense>
+		<RouteTranslationBoundary route="/analytics" params={params}>
+			<Suspense fallback={<AnalyticsLayoutLoading />}>
+				<AnalyticsLayoutContent>{children}</AnalyticsLayoutContent>
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }
 
@@ -58,10 +63,7 @@ async function AnalyticsLayoutContent({
 }: {
 	children: React.ReactNode;
 }) {
-	const [t, session] = await Promise.all([
-		getTranslate(),
-		getRequestSession(),
-	]);
+	const [t, session] = await Promise.all([getTranslate(), getRequestSession()]);
 	if (!session?.user) {
 		redirect("/sign-in");
 	}

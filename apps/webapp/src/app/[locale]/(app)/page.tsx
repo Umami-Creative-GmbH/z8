@@ -9,6 +9,7 @@ import {
 	getUserOrganizations,
 } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
 async function DashboardPageContent() {
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
@@ -64,10 +65,16 @@ function DashboardPageLoading() {
 	);
 }
 
-export default function Page() {
+export default function Page({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
 	return (
-		<Suspense fallback={<DashboardPageLoading />}>
-			<DashboardPageContent />
-		</Suspense>
+		<RouteTranslationBoundary route="/" params={params}>
+			<Suspense fallback={<DashboardPageLoading />}>
+				<DashboardPageContent />
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }

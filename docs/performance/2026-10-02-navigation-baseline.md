@@ -12,7 +12,8 @@ Before shipping, the operator should collect at least 20 first visits and 20 rep
 - Cache Components and Partial Prefetching were already enabled.
 - Dependencies installed from the frozen lockfile with pnpm; no dependency changes.
 - Initial selected unit baseline: 5 files, 10 passing tests; inherited Vitest/Vite configuration warning.
-- This selected baseline does not establish that the full repository unit suite passes. Task 1's full run had 136 failures, 12,622 passes and 33 skips; the failures have not been reproduced against the predecessor and cannot be called pre-existing.
+- The original full unit run on clean `0325fc3af08da20c1d7572b9ae029b6ce0f048ff`, before independent Excel edits, recorded **12,606 passed, 135 failed, 33 skipped**. Artifacts: `.superpowers/sdd/2026-10-02-navigation-performance/pre-change-unit-results.json` and `pre-change-unit-run.log`.
+- The streaming head `12e1e9ff3` had the same 135 failing names and 80 additional passing tests, established by `pre-change-versus-streaming.json` in that directory. Matching names establish observed overlap, not identical causes or a green suite. These unit counts do not establish a navigation latency gain or replace the pending controlled authenticated baseline.
 - The Next development-loop preflight lacks `agent-browser`; its runtime gate remains pending.
 - The three required Vercel quality skills are unavailable in the installed skill catalog.
 

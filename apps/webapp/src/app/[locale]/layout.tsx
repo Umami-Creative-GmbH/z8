@@ -8,7 +8,7 @@ import { SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
-import { loadRouteTranslations } from "@/tolgee/load-translations";
+import { loadShellTranslations } from "@/tolgee/load-translations";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,13 +33,10 @@ async function TranslationProvider({
 	locale: string;
 	children: ReactNode;
 }) {
-	const records = await loadRouteTranslations(locale).catch((error) => {
-		console.warn("Failed to load Tolgee records:", error);
-		return {};
-	});
+	const slice = await loadShellTranslations(locale);
 
 	return (
-		<TranslationProviders locale={locale} records={records}>
+		<TranslationProviders locale={locale} slice={slice}>
 			{children}
 		</TranslationProviders>
 	);
@@ -124,7 +121,10 @@ function AppProviders({
 			<FontSizeProvider>
 				<Suspense
 					fallback={
-						<TranslationProviders locale={locale} records={{}}>
+						<TranslationProviders
+							locale={locale}
+							slice={{ locale, namespaces: [], records: {}, keyOwners: {} }}
+						>
 							<ApplicationContent>
 								<RootRouteShell />
 							</ApplicationContent>

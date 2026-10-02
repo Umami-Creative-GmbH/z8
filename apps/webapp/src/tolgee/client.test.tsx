@@ -14,11 +14,8 @@ import {
 } from "./catalog-store";
 import { TolgeeNextProvider, useNamespaces } from "./client";
 import { loadClientCatalogSlice } from "./client-catalog-loader";
-import {
-	loadCatalogSlice,
-	loadCompleteServerTranslations,
-} from "./load-translations";
-import type { Namespace } from "./shared";
+import { loadCatalogSlice } from "./load-translations";
+import { ALL_NAMESPACES, type Namespace } from "./shared";
 
 const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
@@ -58,8 +55,12 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		}
 		const { rerender } = render(
 			<TolgeeNextProvider
-				language="en"
-				staticData={{ en: { settings: { title: "Settings" } } }}
+				slice={{
+					locale: "en",
+					namespaces: [],
+					keyOwners: {},
+					records: { en: { settings: { title: "Settings" } } },
+				}}
 			>
 				<QueryProvider>
 					<QueryIdentity />
@@ -71,8 +72,12 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		expect(queryInstance).toBeDefined();
 		rerender(
 			<TolgeeNextProvider
-				language="en"
-				staticData={{ en: { reports: { title: "Reports" } } }}
+				slice={{
+					locale: "en",
+					namespaces: [],
+					keyOwners: {},
+					records: { en: { reports: { title: "Reports" } } },
+				}}
 			>
 				<QueryProvider>
 					<QueryIdentity />
@@ -97,7 +102,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 			return null;
 		}
 		render(
-			<TolgeeNextProvider language="es" staticData={{ es: {} }}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "es",
+					namespaces: [],
+					keyOwners: {},
+					records: { es: {} },
+				}}
+			>
 				<Capture />
 			</TolgeeNextProvider>,
 		);
@@ -114,10 +126,10 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		);
 	});
 	it("preserves complete-root collision ownership after a smaller lazy slice", async () => {
-		const records = await loadCompleteServerTranslations("el");
+		const slice = await loadCatalogSlice("el", ALL_NAMESPACES);
 		const common = await loadCatalogSlice("el", ["common"]);
 		render(
-			<TolgeeNextProvider language="el" staticData={records}>
+			<TolgeeNextProvider slice={slice}>
 				<Probe />
 			</TolgeeNextProvider>,
 		);
@@ -138,7 +150,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 				}),
 		);
 		const { rerender } = render(
-			<TolgeeNextProvider language="fr" staticData={{ fr: {} }}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "fr",
+					namespaces: [],
+					keyOwners: {},
+					records: { fr: {} },
+				}}
+			>
 				<Probe namespaces={["reports"]} />
 			</TolgeeNextProvider>,
 		);
@@ -152,7 +171,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		);
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		rerender(
-			<TolgeeNextProvider language="de" staticData={{ de: {} }}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "de",
+					namespaces: [],
+					keyOwners: {},
+					records: { de: {} },
+				}}
+			>
 				<Probe namespaces={["reports"]} />
 			</TolgeeNextProvider>,
 		);
@@ -175,7 +201,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		vi.mocked(loadClientCatalogSlice).mockRejectedValue(new Error("offline"));
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		const view = render(
-			<TolgeeNextProvider language="it" staticData={{ it: {} }}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "it",
+					namespaces: [],
+					keyOwners: {},
+					records: { it: {} },
+				}}
+			>
 				<Probe namespaces={["reports"]} />
 			</TolgeeNextProvider>,
 		);
@@ -194,7 +227,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 				}),
 		);
 		render(
-			<TolgeeNextProvider language="it" staticData={{ it: {} }}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "it",
+					namespaces: [],
+					keyOwners: {},
+					records: { it: {} },
+				}}
+			>
 				<Probe namespaces={["reports"]} />
 			</TolgeeNextProvider>,
 		);
@@ -216,7 +256,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		const records = { gsw: {} };
 		const view = render(
-			<TolgeeNextProvider language="gsw" staticData={records}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "gsw",
+					namespaces: [],
+					keyOwners: {},
+					records: records,
+				}}
+			>
 				<Probe namespaces={["reports"]} />
 			</TolgeeNextProvider>,
 		);
@@ -226,7 +273,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 			),
 		);
 		view.rerender(
-			<TolgeeNextProvider language="gsw" staticData={records}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "gsw",
+					namespaces: [],
+					keyOwners: {},
+					records: records,
+				}}
+			>
 				<Probe />
 			</TolgeeNextProvider>,
 		);
@@ -234,7 +288,14 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 			() => new Promise(() => {}),
 		);
 		view.rerender(
-			<TolgeeNextProvider language="gsw" staticData={records}>
+			<TolgeeNextProvider
+				slice={{
+					locale: "gsw",
+					namespaces: [],
+					keyOwners: {},
+					records: records,
+				}}
+			>
 				<Probe namespaces={["reports"]} />
 			</TolgeeNextProvider>,
 		);
@@ -246,8 +307,12 @@ describe("TolgeeNextProvider with real Tolgee", () => {
 	it("guards nested catalog injection but refreshes once for an actual permanent edit", async () => {
 		render(
 			<TolgeeNextProvider
-				language="pl"
-				staticData={{ pl: { settings: { title: "Settings" } } }}
+				slice={{
+					locale: "pl",
+					namespaces: [],
+					keyOwners: {},
+					records: { pl: { settings: { title: "Settings" } } },
+				}}
 			>
 				<Probe />
 			</TolgeeNextProvider>,

@@ -16,6 +16,7 @@ function keys(
  * Absent source keys keep the predecessor's component default-value fallback.
  */
 export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
+	...keys("auth", ["auth.terms.service", "auth.terms.privacy"]),
 	// The complete catalog's only colliding primary leaf is won by teamsBot.
 	// Keep the explicit dependency even though common's shared subtree includes it.
 	...keys("teamsBot", ["common.more"]),
@@ -74,6 +75,9 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"timeTracking.workLocationRemote",
 	]),
 	...keys("dashboard", [
+		"dashboard.layout.saveFailed",
+		"dashboard.layout.saveFailedDescription",
+		"dashboard.layout.saved",
 		"dashboard.customize",
 		"dashboard.birthday.title",
 		"dashboard.hydration.title",
@@ -261,6 +265,9 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.demoData.title",
 	]),
 	...keys("settings/people", [
+		"settings.permissions.title",
+		"settings.employees.details",
+		"settings.teams.details",
 		"settings.employees.description",
 		"settings.employees.title",
 		"settings.roles.description",
@@ -283,6 +290,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.workDiagnostics.title",
 	]),
 	...keys("settings/vacation", [
+		"settings.vacation.history.title",
 		"settings.vacation.description",
 		"settings.vacation.title",
 	]),

@@ -207,6 +207,13 @@ export function isApplyingCatalogRecords(instance: TolgeeInstance): boolean {
 	return (catalogs.get(instance.addStaticData)?.applying ?? 0) > 0;
 }
 
+/** Internal immutable snapshot; consumers must never mutate its records or owners. */
+export function getCatalogSlice(
+	instance: TolgeeInstance,
+): CatalogSlice | undefined {
+	return catalogs.get(instance.addStaticData)?.slice;
+}
+
 export function hasCatalogNamespaces(
 	instance: TolgeeInstance,
 	namespaces: readonly Namespace[],

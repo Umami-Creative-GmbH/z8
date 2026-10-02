@@ -21,6 +21,7 @@ import {
 } from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	parseCookieConsentScript,
@@ -33,13 +34,17 @@ export async function generateStaticParams() {
 
 export default function AuthLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<Suspense fallback={<AuthLayoutLoading />}>
-			<AuthLayoutContent>{children}</AuthLayoutContent>
-		</Suspense>
+		<RouteTranslationBoundary route="/sign-in" params={params}>
+			<Suspense fallback={<AuthLayoutLoading />}>
+				<AuthLayoutContent>{children}</AuthLayoutContent>
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }
 
