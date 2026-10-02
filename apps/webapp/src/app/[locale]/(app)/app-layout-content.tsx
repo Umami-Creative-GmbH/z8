@@ -19,7 +19,7 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { subscription, userSettings } from "@/db/schema";
 import { env } from "@/env";
-import { getRequestSession } from "@/lib/auth/request-session";
+import { getRenderSession } from "@/lib/auth/render-session";
 import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
 import {
 	type BillingAccessResult,
@@ -72,7 +72,7 @@ export async function AuthenticatedAppContent({
 	const [{ locale }, headersList] = await Promise.all([params, headers()]);
 
 	// Centralized auth check - protects all routes in the (app) group
-	const session = await getRequestSession();
+	const session = await getRenderSession();
 
 	if (!session?.user) {
 		// Session cookie exists but is invalid - redirect to session-expired handler

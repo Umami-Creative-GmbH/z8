@@ -16,15 +16,16 @@ function exportsName(source: string, name: string) {
 // #445: every export of a "use server" module can become a public endpoint, so
 // reads that take employee or user IDs from the caller stay out of them.
 describe("time-tracking read helper surface", () => {
-	it.each(["actions/queries.ts", "actions/policy-helpers.ts", "actions/auth.ts"])(
-		"keeps %s a server-only helper module",
-		(file) => {
-			const source = readSource(file);
+	it.each([
+		"actions/queries.ts",
+		"actions/policy-helpers.ts",
+		"actions/auth.ts",
+	])("keeps %s a server-only helper module", (file) => {
+		const source = readSource(file);
 
-			expect(source).toContain('import "server-only";');
-			expect(source).not.toContain('"use server"');
-		},
-	);
+		expect(source).toContain('import "server-only";');
+		expect(source).not.toContain('"use server"');
+	});
 
 	it.each(["getActiveWorkPeriod", "getWorkPeriods", "getTimeSummary"])(
 		"exposes no unauthenticated %s from the actions module",
@@ -34,12 +35,14 @@ describe("time-tracking read helper surface", () => {
 	);
 
 	it("drops the uncalled presence status copy from the queries module", () => {
-		expect(exportsName(readSource("actions/queries.ts"), "getPresenceStatus")).toBe(false);
+		expect(
+			exportsName(readSource("actions/queries.ts"), "getPresenceStatus"),
+		).toBe(false);
 	});
 
 	it("loads page data through the guarded query helpers", () => {
-		expect(readSource("page-data.ts")).toContain(
-			'import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions/queries";',
+		expect(readSource("page-data.ts")).toMatch(
+			/import\s*\{\s*getActiveWorkPeriod,\s*getTimeSummary,\s*getWorkPeriods,?\s*\}\s*from "\.\/actions\/queries";/,
 		);
 	});
 });

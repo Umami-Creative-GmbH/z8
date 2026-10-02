@@ -1,11 +1,14 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
-import { employee, userSettings } from "@/db/schema";
-import { getRequestSession, type RequestSession } from "@/lib/auth/request-session";
+import { type employee, userSettings } from "@/db/schema";
+import {
+	getRequestSession,
+	type RequestSession,
+} from "@/lib/auth/request-session";
+import { resolveEmployeeContext } from "./employee-context";
 import { DEFAULT_TIMEZONE } from "./shared";
 
 export type AuthSession = NonNullable<RequestSession>;
@@ -16,42 +19,13 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
 	return session ?? null;
 }
 
-async function getEmployeeForUser(
-	userId: string,
-	activeOrganizationId?: string | null,
-): Promise<CurrentEmployee | null> {
-	if (!activeOrganizationId) {
-		return null;
-	}
-
-	const [approvedMembership, employeeForActiveOrg] = await Promise.all([
-		db.query.member.findFirst({
-			columns: { id: true },
-			where: and(
-				eq(member.userId, userId),
-				eq(member.organizationId, activeOrganizationId),
-				eq(member.status, "approved"),
-			),
-		}),
-		db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, userId),
-			eq(employee.organizationId, activeOrganizationId),
-			eq(employee.isActive, true),
-		),
-		}),
-	]);
-
-	return approvedMembership ? (employeeForActiveOrg ?? null) : null;
-}
-
 export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
 		return null;
 	}
 
-	return getEmployeeForUser(session.user.id, session.session?.activeOrganizationId);
+	return (await resolveEmployeeContext(session))?.employee ?? null;
 }
 
 export async function getUserTimezone(userId: string): Promise<string> {
@@ -63,12 +37,17 @@ export async function getUserTimezone(userId: string): Promise<string> {
 	return settings?.timezone || DEFAULT_TIMEZONE;
 }
 
-export async function getRequestMetadata(): Promise<{ ipAddress: string; userAgent: string }> {
+export async function getRequestMetadata(): Promise<{
+	ipAddress: string;
+	userAgent: string;
+}> {
 	const requestHeaders = await headers();
 
 	return {
 		ipAddress:
-			requestHeaders.get("x-forwarded-for") || requestHeaders.get("x-real-ip") || "unknown",
+			requestHeaders.get("x-forwarded-for") ||
+			requestHeaders.get("x-real-ip") ||
+			"unknown",
 		userAgent: requestHeaders.get("user-agent") || "unknown",
 	};
 }

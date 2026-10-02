@@ -1,13 +1,47 @@
+import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
-import { getSafeEmployeeWorkBalance } from "./page-data";
+import {
+	getActiveWorkPeriod,
+	getTimeSummary,
+	getWorkPeriods,
+} from "./actions/queries";
+import {
+	getSafeEmployeeWorkBalance,
+	getTimeTrackingPageData,
+} from "./page-data";
+import { getWorkdayTimelineData } from "./workday-timeline-data";
+
+const renderingState = vi.hoisted(() => ({
+	context: vi.fn(),
+	session: vi.fn(),
+	redirect: vi.fn((url: string) => {
+		throw new Error(`redirect:${url}`);
+	}),
+}));
+
+vi.mock("./render-context", () => ({
+	getTimeTrackingRenderContext: renderingState.context,
+}));
+vi.mock("@/lib/auth/render-session", () => ({
+	getRenderSession: renderingState.session,
+}));
+vi.mock("next/navigation", () => ({ redirect: renderingState.redirect }));
+vi.mock("next-intl/server", () => ({ getLocale: vi.fn(async () => "de") }));
 
 vi.mock("next/headers", () => ({
-	headers: vi.fn(),
+	headers: vi.fn(
+		async () =>
+			new Headers({ "x-pathname": "/de/time-tracking?date=2026-10-02" }),
+	),
 }));
 
 vi.mock("@/db", () => ({
 	db: {},
+}));
+
+vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
+	getPrimaryEligibleManagerIdForRequester: vi.fn(async () => null),
 }));
 
 vi.mock("@/db/auth-schema", () => ({
@@ -62,6 +96,97 @@ const balanceRequest = {
 	organizationId: "org-1",
 };
 
+describe("getTimeTrackingPageData authorization", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		renderingState.context.mockResolvedValue(null);
+		renderingState.session.mockResolvedValue(null);
+	});
+
+	it("uses the session-expired redirect before loading protected data", async () => {
+		await expect(getTimeTrackingPageData()).rejects.toThrow(
+			"redirect:/api/auth/session-expired?locale=de&callbackUrl=%2Fde%2Ftime-tracking%3Fdate%3D2026-10-02",
+		);
+		expect(getActiveWorkPeriod).not.toHaveBeenCalled();
+		expect(getWorkPeriods).not.toHaveBeenCalled();
+		expect(getTimeSummary).not.toHaveBeenCalled();
+		expect(getWorkdayTimelineData).not.toHaveBeenCalled();
+		expect(getEmployeeWorkBalance).not.toHaveBeenCalled();
+	});
+
+	it("preserves the no-employee result without reading protected data", async () => {
+		renderingState.context.mockResolvedValue({
+			userId: "user-1",
+			employeeName: "Test Employee",
+			employee: null,
+			membershipRole: null,
+			timezone: "UTC",
+			weekStartDay: "sunday",
+			timeFormat: "24h",
+		});
+		renderingState.session.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: "org-1" },
+		});
+		await expect(getTimeTrackingPageData()).resolves.toMatchObject({
+			currentEmployee: null,
+		});
+		expect(renderingState.redirect).not.toHaveBeenCalled();
+		expect(getActiveWorkPeriod).not.toHaveBeenCalled();
+		expect(getWorkPeriods).not.toHaveBeenCalled();
+		expect(getTimeSummary).not.toHaveBeenCalled();
+		expect(getWorkdayTimelineData).not.toHaveBeenCalled();
+		expect(getEmployeeWorkBalance).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		["owner", true],
+		["admin", true],
+		["employee", false],
+	])(
+		"uses the approved %s role for page approval capability",
+		async (role, expected) => {
+			renderingState.context.mockResolvedValue({
+				userId: "user-1",
+				employeeName: "Test Employee",
+				employee: { id: "employee-1", organizationId: "org-1" },
+				membershipRole: role,
+				timezone: "UTC",
+				weekStartDay: "sunday",
+				timeFormat: "24h",
+			});
+			renderingState.session.mockResolvedValue({
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-1" },
+			});
+			vi.mocked(getWorkdayTimelineData).mockResolvedValue({
+				success: false,
+				selectedDate: {
+					dateKey: "2026-10-02",
+					todayDateKey: "2026-10-02",
+					previousDateKey: "2026-10-01",
+					nextDateKey: "2026-10-03",
+					label: "October 2",
+					startUtc: DateTime.utc(2026, 10, 2),
+					endUtc: DateTime.utc(2026, 10, 3),
+				},
+				error: "Timeline unavailable",
+			});
+			const { getWeekRangeInTimezone } = await import(
+				"@/lib/time-tracking/timezone-utils"
+			);
+			vi.mocked(getWeekRangeInTimezone).mockReturnValue({
+				start: DateTime.utc(2026, 9, 27),
+				end: DateTime.utc(2026, 10, 3),
+			});
+			await expect(getTimeTrackingPageData()).resolves.toMatchObject({
+				currentEmployee: { id: "employee-1", organizationId: "org-1" },
+				canApproveTimeEntries: expected,
+			});
+		},
+	);
+});
+
 describe("getSafeEmployeeWorkBalance", () => {
 	beforeEach(() => {
 		vi.mocked(getEmployeeWorkBalance).mockReset();
@@ -72,12 +197,17 @@ describe("getSafeEmployeeWorkBalance", () => {
 		const error = new Error("balance failed");
 		vi.mocked(getEmployeeWorkBalance).mockRejectedValue(error);
 
-		await expect(getSafeEmployeeWorkBalance(balanceRequest)).resolves.toBeNull();
+		await expect(
+			getSafeEmployeeWorkBalance(balanceRequest),
+		).resolves.toBeNull();
 
-		expect(console.error).toHaveBeenCalledWith("Failed to load employee work balance", {
-			employeeId: "employee-1",
-			organizationId: "org-1",
-			error,
-		});
+		expect(console.error).toHaveBeenCalledWith(
+			"Failed to load employee work balance",
+			{
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				error,
+			},
+		);
 	});
 });
