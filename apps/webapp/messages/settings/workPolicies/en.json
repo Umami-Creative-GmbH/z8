@@ -198,7 +198,54 @@
       "violationAcknowledged": "Violation acknowledged",
       "violationsLoadError": "Failed to load violations",
       "workSchedule": "Work Schedule",
-      "workScheduleDescription": "Define working hours and days"
+      "workScheduleDescription": "Define working hours and days",
+      "presetReview": {
+        "maxDailyHours": "Max daily hours",
+        "maxWeeklyHours": "Max weekly hours",
+        "maxUninterruptedHours": "Max uninterrupted hours",
+        "removeBreakRule": "Remove break rule",
+        "afterWorkingHours": "After working hours",
+        "breakRequiredMinutes": "Break required minutes",
+        "splitCount": "Split count",
+        "minSplitMinutes": "Min split minutes",
+        "longestSplitMinutes": "Longest split minutes",
+        "removeBreakOption": "Remove break option",
+        "copyName": "{name} Copy",
+        "breakRuleNumber": "Break rule {number}",
+        "selectPreset": "Select a preset to continue"
+      },
+      "presets": {
+        "failedToFetchPresets": "Failed to fetch presets",
+        "searchPresets": "Search presets...",
+        "presetSource": "Preset source",
+        "presetCountry": "Preset country",
+        "international": "International",
+        "cycleSummary": "Cycle {cycle}",
+        "hoursSummary": "Hours {hours}",
+        "dailySummary": "Daily {duration}",
+        "weeklySummary": "Weekly {duration}",
+        "uninterruptedSummary": "Uninterrupted {duration}",
+        "breakSummary": "{breakDuration} after {workDuration}",
+        "noBreakRules": "No break rules"
+      },
+      "editCustom": {
+        "title": "Edit custom preset",
+        "description": "Review this preset before saving your changes.",
+        "submit": "Save custom preset",
+        "success": "Preset updated"
+      },
+      "copySystem": {
+        "title": "Copy system preset",
+        "description": "Review the system preset and save it as a custom preset.",
+        "submit": "Save custom preset",
+        "success": "Preset copied"
+      },
+      "createCustom": {
+        "title": "Create custom preset",
+        "description": "Review and save reusable policy defaults for your organization.",
+        "submit": "Save custom preset",
+        "success": "Preset created"
+      }
     },
     "workSchedules": {
       "allDays": "All days",

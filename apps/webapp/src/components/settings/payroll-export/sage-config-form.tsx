@@ -29,7 +29,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { SageLohnConfig } from "@/lib/payroll-export/types";
 
 interface SageConfigFormProps {
@@ -53,7 +58,8 @@ export function SageConfigForm({
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm({
-		defaultValues: (initialConfig?.config ?? DEFAULT_CONFIG) satisfies SageLohnConfig,
+		defaultValues: (initialConfig?.config ??
+			DEFAULT_CONFIG) satisfies SageLohnConfig,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveSageConfigAction({
@@ -62,12 +68,20 @@ export function SageConfigForm({
 				});
 
 				if (result.success) {
-					toast.success(t("settings.payrollExport.sage.saveSuccess", "Configuration saved"));
+					toast.success(
+						t("settings.payrollExport.sage.saveSuccess", "Configuration saved"),
+					);
 					onConfigSaved?.();
 				} else {
-					toast.error(t("settings.payrollExport.sage.saveError", "Failed to save configuration"), {
-						description: result.error,
-					});
+					toast.error(
+						t(
+							"settings.payrollExport.sage.saveError",
+							"Failed to save configuration",
+						),
+						{
+							description: result.error,
+						},
+					);
 				}
 			});
 		},
@@ -78,7 +92,13 @@ export function SageConfigForm({
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-4">
-						<Image src="/sage.png" alt="Sage Logo" width={48} height={48} className="size-12" />
+						<Image
+							src="/sage.png"
+							alt={t("common.brandLogo", "{brand} logo", { brand: "Sage" })}
+							width={48}
+							height={48}
+							className="size-12"
+						/>
 						<div>
 							<CardTitle className="flex items-center gap-2">
 								{t("settings.payrollExport.sage.title", "Sage Lohn")}
@@ -112,7 +132,10 @@ export function SageConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="personnelNumberType">
-										{t("settings.payrollExport.sage.personnelNumberType", "Personnel Number Type")}
+										{t(
+											"settings.payrollExport.sage.personnelNumberType",
+											"Personnel Number Type",
+										)}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -144,7 +167,9 @@ export function SageConfigForm({
 								</div>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) => field.handleChange(v as "employeeNumber" | "employeeId")}
+									onValueChange={(v) =>
+										field.handleChange(v as "employeeNumber" | "employeeId")
+									}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -173,7 +198,10 @@ export function SageConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="outputFormat">
-										{t("settings.payrollExport.sage.outputFormat", "Output Format")}
+										{t(
+											"settings.payrollExport.sage.outputFormat",
+											"Output Format",
+										)}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -205,7 +233,9 @@ export function SageConfigForm({
 								</div>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) => field.handleChange(v as "datev_compatible" | "sage_native")}
+									onValueChange={(v) =>
+										field.handleChange(v as "datev_compatible" | "sage_native")
+									}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -234,7 +264,10 @@ export function SageConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeZeroHours" className="text-base">
-										{t("settings.payrollExport.sage.includeZeroHours", "Include Zero Hours")}
+										{t(
+											"settings.payrollExport.sage.includeZeroHours",
+											"Include Zero Hours",
+										)}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(

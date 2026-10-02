@@ -21,6 +21,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Table,
@@ -949,9 +950,12 @@ function WorkerQueueLoading() {
 	];
 
 	return (
-		<div
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading worker queue"
+			label={{
+				labelKey: "common.loadingRegions.workerQueue",
+				labelDefault: "Loading worker queue",
+			}}
 			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
 			role="status"
 		>
@@ -1038,7 +1042,7 @@ function WorkerQueueLoading() {
 					</CardContent>
 				</Card>
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }
 

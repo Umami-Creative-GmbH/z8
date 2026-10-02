@@ -811,7 +811,32 @@ const sourceShape1: CatalogSourceMetadata = {
 export const CATALOG_SOURCE_METADATA: Readonly<
 	Record<string, CatalogSourceMetadata>
 > = {
-	en: sourceShape0,
+	en: {
+		...sourceShape0,
+		sources: {
+			...sourceShape0.sources,
+			common: {
+				...sourceShape0.sources.common,
+				common: {
+					...(sourceShape0.sources.common.common as CatalogSourceMask),
+					brandLogo: 1,
+					breadcrumb: 1,
+					carousel: 1,
+					datePicker: 1,
+					durationMinutes: 1,
+					fieldPresets: 1,
+					focusInput: 1,
+					loadingLabel: 1,
+					loadingRegions: 1,
+					notifications: 1,
+					pagination: 1,
+					sidebar: 1,
+					timeInput: 1,
+					worksCouncil: 1,
+				},
+			},
+		},
+	},
 	de: sourceShape0,
 	fr: sourceShape1,
 	es: sourceShape1,

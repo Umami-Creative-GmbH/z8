@@ -159,7 +159,9 @@ function WellnessSettings({
 									{t("onboarding.wellness.customInterval", "Custom Interval")}
 								</Label>
 								<span className="text-sm font-medium">
-									{field.state.value} min
+									{t("common.durationMinutes", "{count} min", {
+										count: field.state.value,
+									})}
 								</span>
 							</div>
 							<Slider
@@ -171,8 +173,16 @@ function WellnessSettings({
 								disabled={loading}
 							/>
 							<div className="flex justify-between text-xs text-muted-foreground">
-								<span>{CUSTOM_INTERVAL_RANGE.min} min</span>
-								<span>{CUSTOM_INTERVAL_RANGE.max} min</span>
+								<span>
+									{t("common.durationMinutes", "{count} min", {
+										count: CUSTOM_INTERVAL_RANGE.min,
+									})}
+								</span>
+								<span>
+									{t("common.durationMinutes", "{count} min", {
+										count: CUSTOM_INTERVAL_RANGE.max,
+									})}
+								</span>
 							</div>
 						</div>
 					)}

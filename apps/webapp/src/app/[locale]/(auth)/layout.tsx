@@ -10,6 +10,7 @@ import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
@@ -50,9 +51,12 @@ export default function AuthLayout({
 
 function AuthLayoutLoading() {
 	return (
-		<div
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading authentication"
+			label={{
+				labelKey: "common.loadingRegions.authentication",
+				labelDefault: "Loading authentication",
+			}}
 			className="relative min-h-svh overflow-x-hidden bg-background"
 			data-testid="auth-layout-loading"
 			role="status"
@@ -84,7 +88,7 @@ function AuthLayoutLoading() {
 					<Skeleton aria-hidden="true" className="h-3 w-24" />
 				</div>
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }
 

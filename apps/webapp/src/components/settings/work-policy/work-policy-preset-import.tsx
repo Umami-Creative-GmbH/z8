@@ -30,7 +30,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -47,7 +53,6 @@ import {
 	getPresetSource,
 	type PresetSourceFilter,
 	parsePresetBreakRules,
-	summarizeBreakRules,
 	summarizeMinutes,
 } from "./work-policy-preset-utils";
 
@@ -128,19 +133,59 @@ const countryFlags: Record<string, string> = {
 	INT: "🌍",
 };
 
-function getCountryLabel(countryCode: string | null | undefined): string {
-	if (!countryCode) return "International";
+function getCountryLabel(
+	countryCode: string | null | undefined,
+	t: ReturnType<typeof useTranslate>["t"],
+): string {
+	if (!countryCode)
+		return t("settings.workPolicies.presets.international", "International");
 	return `${countryFlags[countryCode] ?? countryFlags.INT} ${countryCode}`;
 }
 
-function getPresetSummary(preset: WorkPolicyPresetWithSource): string[] {
+function getPresetSummary(
+	preset: WorkPolicyPresetWithSource,
+	t: ReturnType<typeof useTranslate>["t"],
+): string[] {
+	const cycles = {
+		daily: t("settings.workSchedules.daily", "Daily"),
+		weekly: t("settings.workSchedules.weekly", "Weekly"),
+		biweekly: t("settings.workSchedules.biweekly", "Biweekly"),
+		monthly: t("settings.workSchedules.monthly", "Monthly"),
+		yearly: t("settings.workSchedules.yearly", "Yearly"),
+	};
+	const rules = parsePresetBreakRules(preset.breakRulesJson);
 	return [
-		`Cycle ${preset.scheduleCycle ?? "-"}`,
-		`Hours ${preset.hoursPerCycle ?? "-"}`,
-		`Daily ${summarizeMinutes(preset.maxDailyMinutes)}`,
-		`Weekly ${summarizeMinutes(preset.maxWeeklyMinutes)}`,
-		`Uninterrupted ${summarizeMinutes(preset.maxUninterruptedMinutes)}`,
-		summarizeBreakRules(parsePresetBreakRules(preset.breakRulesJson)),
+		t("settings.workPolicies.presets.cycleSummary", "Cycle {cycle}", {
+			cycle: preset.scheduleCycle ? cycles[preset.scheduleCycle] : "-",
+		}),
+		t("settings.workPolicies.presets.hoursSummary", "Hours {hours}", {
+			hours: preset.hoursPerCycle ?? "-",
+		}),
+		t("settings.workPolicies.presets.dailySummary", "Daily {duration}", {
+			duration: summarizeMinutes(preset.maxDailyMinutes),
+		}),
+		t("settings.workPolicies.presets.weeklySummary", "Weekly {duration}", {
+			duration: summarizeMinutes(preset.maxWeeklyMinutes),
+		}),
+		t(
+			"settings.workPolicies.presets.uninterruptedSummary",
+			"Uninterrupted {duration}",
+			{ duration: summarizeMinutes(preset.maxUninterruptedMinutes) },
+		),
+		rules.length
+			? rules
+					.map((rule) =>
+						t(
+							"settings.workPolicies.presets.breakSummary",
+							"{breakDuration} after {workDuration}",
+							{
+								breakDuration: summarizeMinutes(rule.requiredBreakMinutes),
+								workDuration: summarizeMinutes(rule.workingMinutesThreshold),
+							},
+						),
+					)
+					.join(", ")
+			: t("settings.workPolicies.presets.noBreakRules", "No break rules"),
 	];
 }
 
@@ -150,7 +195,10 @@ export function WorkPolicyPresetImport({
 }: WorkPolicyPresetImportProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [uiState, dispatch] = useReducer(presetImportUiReducer, presetImportInitialState);
+	const [uiState, dispatch] = useReducer(
+		presetImportUiReducer,
+		presetImportInitialState,
+	);
 
 	const presetsQueryKey = queryKeys.workPolicies.presets(organizationId);
 
@@ -163,7 +211,13 @@ export function WorkPolicyPresetImport({
 		queryFn: async () => {
 			const result = await getWorkPolicyPresets(organizationId);
 			if (!result.success) {
-				throw new Error(result.error || "Failed to fetch presets");
+				throw new Error(
+					result.error ||
+						t(
+							"settings.workPolicies.presets.failedToFetchPresets",
+							"Failed to fetch presets",
+						),
+				);
 			}
 			return result.data;
 		},
@@ -172,26 +226,41 @@ export function WorkPolicyPresetImport({
 	});
 
 	const archiveMutation = useMutation({
-		mutationFn: (presetId: string) => archiveWorkPolicyPreset(organizationId, presetId),
+		mutationFn: (presetId: string) =>
+			archiveWorkPolicyPreset(organizationId, presetId),
 		onSuccess: (result) => {
 			if (!result.success) {
 				toast.error(
-					result.error || t("settings.workPolicies.archivePresetError", "Failed to archive preset"),
+					result.error ||
+						t(
+							"settings.workPolicies.archivePresetError",
+							"Failed to archive preset",
+						),
 				);
 				return;
 			}
 
-			toast.success(t("settings.workPolicies.archivePresetSuccess", "Preset archived"));
+			toast.success(
+				t("settings.workPolicies.archivePresetSuccess", "Preset archived"),
+			);
 			queryClient.invalidateQueries({ queryKey: presetsQueryKey });
 			dispatch({ type: "setArchivePreset", value: null });
 			onImportSuccess();
 		},
 		onError: () => {
-			toast.error(t("settings.workPolicies.archivePresetError", "Failed to archive preset"));
+			toast.error(
+				t(
+					"settings.workPolicies.archivePresetError",
+					"Failed to archive preset",
+				),
+			);
 		},
 	});
 
-	const openReviewDialog = (mode: ReviewMode, preset: WorkPolicyPresetWithSource | null = null) => {
+	const openReviewDialog = (
+		mode: ReviewMode,
+		preset: WorkPolicyPresetWithSource | null = null,
+	) => {
 		dispatch({ type: "openReview", mode, preset });
 	};
 
@@ -242,7 +311,10 @@ export function WorkPolicyPresetImport({
 			<Card>
 				<CardContent className="py-8 text-center">
 					<p className="text-destructive">
-						{t("settings.workPolicies.presetsLoadError", "Failed to load presets")}
+						{t(
+							"settings.workPolicies.presetsLoadError",
+							"Failed to load presets",
+						)}
 					</p>
 				</CardContent>
 			</Card>
@@ -265,18 +337,29 @@ export function WorkPolicyPresetImport({
 				</div>
 				<Button onClick={() => openReviewDialog("createCustom")}>
 					<IconPlus className="mr-2 size-4" />
-					{t("settings.workPolicies.createCustomPreset", "Create custom preset")}
+					{t(
+						"settings.workPolicies.createCustomPreset",
+						"Create custom preset",
+					)}
 				</Button>
 			</div>
 
 			<div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
 				<Input
-					aria-label={t("settings.workPolicies.searchPresets", "Search presets")}
+					aria-label={t(
+						"settings.workPolicies.searchPresets",
+						"Search presets",
+					)}
 					autoComplete="off"
 					name="preset-search"
 					value={uiState.search}
-					onChange={(event) => dispatch({ type: "setSearch", value: event.target.value })}
-					placeholder="Search presets..."
+					onChange={(event) =>
+						dispatch({ type: "setSearch", value: event.target.value })
+					}
+					placeholder={t(
+						"settings.workPolicies.presets.searchPresets",
+						"Search presets...",
+					)}
 				/>
 				<Select
 					value={uiState.sourceFilter}
@@ -287,7 +370,13 @@ export function WorkPolicyPresetImport({
 						})
 					}
 				>
-					<SelectTrigger className="w-full sm:w-36" aria-label="Preset source">
+					<SelectTrigger
+						className="w-full sm:w-36"
+						aria-label={t(
+							"settings.workPolicies.presets.presetSource",
+							"Preset source",
+						)}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -304,9 +393,17 @@ export function WorkPolicyPresetImport({
 				</Select>
 				<Select
 					value={uiState.countryFilter}
-					onValueChange={(value) => dispatch({ type: "setCountryFilter", value })}
+					onValueChange={(value) =>
+						dispatch({ type: "setCountryFilter", value })
+					}
 				>
-					<SelectTrigger className="w-full sm:w-36" aria-label="Preset country">
+					<SelectTrigger
+						className="w-full sm:w-36"
+						aria-label={t(
+							"settings.workPolicies.presets.presetCountry",
+							"Preset country",
+						)}
+					>
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
@@ -315,7 +412,7 @@ export function WorkPolicyPresetImport({
 						</SelectItem>
 						{countries.map((countryCode) => (
 							<SelectItem key={countryCode} value={countryCode}>
-								{getCountryLabel(countryCode)}
+								{getCountryLabel(countryCode, t)}
 							</SelectItem>
 						))}
 					</SelectContent>
@@ -346,7 +443,10 @@ export function WorkPolicyPresetImport({
 			) : filteredPresets.length === 0 ? (
 				<Card>
 					<CardContent className="py-8 text-center text-muted-foreground text-sm">
-						{t("settings.workPolicies.noMatchingPresets", "No presets match your filters")}
+						{t(
+							"settings.workPolicies.noMatchingPresets",
+							"No presets match your filters",
+						)}
 					</CardContent>
 				</Card>
 			) : (
@@ -354,31 +454,42 @@ export function WorkPolicyPresetImport({
 					{filteredPresets.map((preset) => {
 						const source = getPresetSource(preset);
 						const isArchiving =
-							archiveMutation.variables === preset.id && archiveMutation.isPending;
+							archiveMutation.variables === preset.id &&
+							archiveMutation.isPending;
 
 						return (
 							<Card key={preset.id} className="flex flex-col">
 								<CardHeader className="pb-3">
 									<div className="flex items-start justify-between gap-3">
 										<div className="space-y-2">
-											<CardTitle className="text-base leading-tight">{preset.name}</CardTitle>
+											<CardTitle className="text-base leading-tight">
+												{preset.name}
+											</CardTitle>
 											<div className="flex flex-wrap gap-2">
-												<Badge variant={source === "system" ? "secondary" : "outline"}>
+												<Badge
+													variant={
+														source === "system" ? "secondary" : "outline"
+													}
+												>
 													{source === "system"
 														? t("settings.workPolicies.systemPreset", "System")
 														: t("settings.workPolicies.customPreset", "Custom")}
 												</Badge>
-												<Badge variant="outline">{getCountryLabel(preset.countryCode)}</Badge>
+												<Badge variant="outline">
+													{getCountryLabel(preset.countryCode, t)}
+												</Badge>
 											</div>
 										</div>
 									</div>
 									{preset.description ? (
-										<CardDescription className="line-clamp-2">{preset.description}</CardDescription>
+										<CardDescription className="line-clamp-2">
+											{preset.description}
+										</CardDescription>
 									) : null}
 								</CardHeader>
 								<CardContent className="flex flex-1 flex-col justify-between gap-4">
 									<div className="grid gap-2 text-sm">
-										{getPresetSummary(preset).map((summary) => (
+										{getPresetSummary(preset, t).map((summary) => (
 											<div
 												key={summary}
 												className="rounded-md bg-muted/50 px-3 py-2 text-muted-foreground"
@@ -389,7 +500,10 @@ export function WorkPolicyPresetImport({
 									</div>
 
 									<div className="grid gap-2">
-										<Button size="sm" onClick={() => openReviewDialog("useAsPolicy", preset)}>
+										<Button
+											size="sm"
+											onClick={() => openReviewDialog("useAsPolicy", preset)}
+										>
 											<IconFilePlus className="mr-2 size-4" />
 											{t("settings.workPolicies.useAsPolicy", "Use as policy")}
 										</Button>
@@ -400,7 +514,10 @@ export function WorkPolicyPresetImport({
 												onClick={() => openReviewDialog("copySystem", preset)}
 											>
 												<IconCopy className="mr-2 size-4" />
-												{t("settings.workPolicies.copyToCustomPreset", "Copy to custom preset")}
+												{t(
+													"settings.workPolicies.copyToCustomPreset",
+													"Copy to custom preset",
+												)}
 											</Button>
 										) : (
 											<div className="grid grid-cols-2 gap-2">
@@ -442,7 +559,9 @@ export function WorkPolicyPresetImport({
 
 			<WorkPolicyPresetReviewDialog
 				open={uiState.reviewOpen}
-				onOpenChange={(open) => dispatch({ type: "setReviewOpen", value: open })}
+				onOpenChange={(open) =>
+					dispatch({ type: "setReviewOpen", value: open })
+				}
 				organizationId={organizationId}
 				mode={uiState.reviewMode}
 				preset={uiState.reviewPreset}
@@ -458,7 +577,10 @@ export function WorkPolicyPresetImport({
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>
-							{t("settings.workPolicies.archivePresetTitle", "Archive custom preset?")}
+							{t(
+								"settings.workPolicies.archivePresetTitle",
+								"Archive custom preset?",
+							)}
 						</AlertDialogTitle>
 						<AlertDialogDescription>
 							{t(
@@ -475,13 +597,17 @@ export function WorkPolicyPresetImport({
 							disabled={!uiState.archivePreset || archiveMutation.isPending}
 							onClick={(event) => {
 								event.preventDefault();
-								if (uiState.archivePreset) archiveMutation.mutate(uiState.archivePreset.id);
+								if (uiState.archivePreset)
+									archiveMutation.mutate(uiState.archivePreset.id);
 							}}
 						>
 							{archiveMutation.isPending ? (
 								<IconLoader2 className="mr-2 size-4 animate-spin" />
 							) : null}
-							{t("settings.workPolicies.confirmArchivePreset", "Archive preset")}
+							{t(
+								"settings.workPolicies.confirmArchivePreset",
+								"Archive preset",
+							)}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
+
 import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
@@ -10,8 +12,10 @@ const inputGroupAddonVariants = cva(
 	{
 		variants: {
 			align: {
-				"inline-start": "order-first pl-3 has-[>button]:ml-[-0.45rem] has-[>kbd]:ml-[-0.35rem]",
-				"inline-end": "order-last pr-3 has-[>button]:mr-[-0.45rem] has-[>kbd]:mr-[-0.35rem]",
+				"inline-start":
+					"order-first pl-3 has-[>button]:ml-[-0.45rem] has-[>kbd]:ml-[-0.35rem]",
+				"inline-end":
+					"order-last pr-3 has-[>button]:mr-[-0.45rem] has-[>kbd]:mr-[-0.35rem]",
 				"block-start":
 					"order-first w-full justify-start px-3 pt-3 [.border-b]:pb-3 group-has-[>input]/input-group:pt-2.5",
 				"block-end":
@@ -32,11 +36,13 @@ function InputGroupAddon({
 	className,
 	align = "inline-start",
 	...props
-}: React.ComponentProps<"button"> & VariantProps<typeof inputGroupAddonVariants>) {
+}: React.ComponentProps<"button"> &
+	VariantProps<typeof inputGroupAddonVariants>) {
+	const { t } = useTranslate();
 	return (
 		<button
 			type="button"
-			aria-label="Focus input"
+			aria-label={t("common.focusInput", "Focus input")}
 			data-slot="input-group-addon"
 			data-align={align}
 			className={cn(inputGroupAddonVariants({ align }), className)}

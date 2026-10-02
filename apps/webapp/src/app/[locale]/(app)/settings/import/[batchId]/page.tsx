@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ImportReviewPage } from "@/components/settings/import/import-review-page";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { importBatch } from "@/db/schema";
@@ -64,7 +65,14 @@ async function ImportReviewRouteContent({ params }: ImportReviewRouteProps) {
 
 function ImportReviewRouteLoading() {
 	return (
-		<div className="p-6" role="status" aria-label="Loading import review">
+		<LoadingRegion
+			className="p-6"
+			role="status"
+			label={{
+				labelKey: "common.loadingRegions.importReview",
+				labelDefault: "Loading import review",
+			}}
+		>
 			<div className="mx-auto max-w-6xl space-y-6">
 				<div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
 					{IMPORT_REVIEW_SUMMARY_LOADING_KEYS.map((key) => (
@@ -73,7 +81,7 @@ function ImportReviewRouteLoading() {
 				</div>
 				<Skeleton aria-hidden="true" className="h-80 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

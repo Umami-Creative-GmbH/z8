@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/db";
@@ -42,10 +43,13 @@ export default function AnalyticsLayout({
 
 function AnalyticsLayoutLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
 			role="status"
-			aria-label="Loading analytics navigation"
+			label={{
+				labelKey: "common.loadingRegions.analyticsNavigation",
+				labelDefault: "Loading analytics navigation",
+			}}
 		>
 			<div className="space-y-2 px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-9 w-48" />
@@ -54,7 +58,7 @@ function AnalyticsLayoutLoading() {
 			<div className="px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-10 w-full max-w-3xl" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

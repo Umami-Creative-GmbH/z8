@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 import { DatePicker } from "./date-picker";
 
 describe("DatePicker", () => {
@@ -21,7 +22,13 @@ describe("DatePicker", () => {
 		const handleChange = vi.fn();
 		const handleBlur = vi.fn();
 
-		render(<DatePicker value="2024-05-01" onBlur={handleBlur} onChange={handleChange} />);
+		render(
+			<DatePicker
+				value="2024-05-01"
+				onBlur={handleBlur}
+				onChange={handleChange}
+			/>,
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: /2024/i }));
 		fireEvent.click(screen.getByRole("button", { name: /clear date/i }));

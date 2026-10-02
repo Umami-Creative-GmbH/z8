@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -134,10 +135,13 @@ async function AbsencesPageContent() {
 
 function AbsencesPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
 			role="status"
-			aria-label="Loading absences"
+			label={{
+				labelKey: "common.loadingRegions.absences",
+				labelDefault: "Loading absences",
+			}}
 		>
 			<div className="space-y-2 px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-8 w-44" />
@@ -147,7 +151,7 @@ function AbsencesPageLoading() {
 			<div className="px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

@@ -1,15 +1,23 @@
 "use client";
 
 import { IconCalendar } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { formatDateOnly, parseDateOnly } from "./date-picker-utils";
 
-type DatePickerProps = Omit<React.ComponentProps<typeof Button>, "onChange" | "value"> & {
+type DatePickerProps = Omit<
+	React.ComponentProps<typeof Button>,
+	"onChange" | "value"
+> & {
 	value?: string | null;
 	onChange: (value: string) => void;
 	placeholder?: string;
@@ -22,7 +30,7 @@ function DatePicker({
 	value,
 	onChange,
 	onBlur,
-	placeholder = "Pick a date",
+	placeholder,
 	min,
 	max,
 	required,
@@ -30,6 +38,7 @@ function DatePicker({
 	className,
 	...props
 }: DatePickerProps) {
+	const { t } = useTranslate();
 	const [open, setOpen] = React.useState(false);
 	const selectedDate = parseDateOnly(value);
 	const displayValue = formatDateOnly(value);
@@ -69,7 +78,9 @@ function DatePicker({
 					{...props}
 				>
 					<IconCalendar className="size-4" />
-					{displayValue || placeholder}
+					{displayValue ||
+						placeholder ||
+						t("common.datePicker.placeholder", "Pick a date")}
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent align="start" className="w-auto p-0">
@@ -88,7 +99,7 @@ function DatePicker({
 							type="button"
 							variant="ghost"
 						>
-							Clear date
+							{t("common.datePicker.clearDate", "Clear date")}
 						</Button>
 					</div>
 				) : null}

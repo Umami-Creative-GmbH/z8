@@ -1,6 +1,7 @@
 "use client";
 
 import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -29,6 +30,7 @@ export function PublishComplianceDialog({
 	onConfirm,
 	isConfirming,
 }: PublishComplianceDialogProps) {
+	const { t } = useTranslate();
 	if (!summary) {
 		return null;
 	}
@@ -38,24 +40,48 @@ export function PublishComplianceDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconAlertTriangle className="size-5 text-amber-600" aria-hidden="true" />
-						Compliance Acknowledgment Required
+						<IconAlertTriangle
+							className="size-5 text-amber-600"
+							aria-hidden="true"
+						/>
+						{t(
+							"scheduling.publish.complianceAcknowledgmentRequired",
+							"Compliance Acknowledgment Required",
+						)}
 					</ActionPanelTitle>
 					<ActionPanelDescription>
-						Publishing will proceed, but this schedule has compliance warnings that must be
-						acknowledged first.
+						{t(
+							"scheduling.publish.acknowledgmentDescription",
+							"Publishing will proceed, but this schedule has compliance warnings that must be acknowledged first.",
+						)}
 					</ActionPanelDescription>
 				</ActionPanelHeader>
 
 				<ActionPanelBody>
 					<div className="rounded-md border border-amber-300/70 bg-amber-50/60 p-3">
 						<p className="text-sm font-medium text-amber-900">
-							{summary.totalFindings} total finding{summary.totalFindings === 1 ? "" : "s"}
+							{t(
+								"scheduling.publish.totalFindings",
+								"{count, plural, one {# total finding} other {# total findings}}",
+								{ count: summary.totalFindings },
+							)}
 						</p>
 						<div className="mt-2 flex flex-wrap gap-2">
-							<Badge variant="outline">Rest time: {summary.byType.restTime}</Badge>
-							<Badge variant="outline">Max hours: {summary.byType.maxHours}</Badge>
-							<Badge variant="outline">Overtime: {summary.byType.overtime}</Badge>
+							<Badge variant="outline">
+								{t("scheduling.publish.restTime", "Rest time: {count}", {
+									count: summary.byType.restTime,
+								})}
+							</Badge>
+							<Badge variant="outline">
+								{t("scheduling.publish.maxHours", "Max hours: {count}", {
+									count: summary.byType.maxHours,
+								})}
+							</Badge>
+							<Badge variant="outline">
+								{t("scheduling.publish.overtime", "Overtime: {count}", {
+									count: summary.byType.overtime,
+								})}
+							</Badge>
 						</div>
 					</div>
 				</ActionPanelBody>
@@ -67,16 +93,19 @@ export function PublishComplianceDialog({
 						onClick={() => onOpenChange(false)}
 						disabled={isConfirming}
 					>
-						Cancel
+						{t("scheduling.publish.cancel", "Cancel")}
 					</Button>
 					<Button type="button" onClick={onConfirm} disabled={isConfirming}>
 						{isConfirming ? (
 							<>
 								<IconLoader2 className="mr-2 size-4 animate-spin" />
-								Publishing…
+								{t("scheduling.publish.publishing", "Publishing…")}
 							</>
 						) : (
-							"Acknowledge and Publish"
+							t(
+								"scheduling.publish.acknowledgeAndPublish",
+								"Acknowledge and Publish",
+							)
 						)}
 					</Button>
 				</ActionPanelFooter>

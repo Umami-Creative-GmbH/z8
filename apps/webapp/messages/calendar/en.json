@@ -315,6 +315,7 @@
     },
     "workPeriod": {
       "editedBy": "(edited by {name} at {date})"
-    }
+    },
+    "loadEventsError": "Failed to load calendar events: {message}"
   }
 }

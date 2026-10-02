@@ -48,7 +48,8 @@
         "description": "Configure how calendar sync works for your organization.",
         "title": "Sync Behavior"
       },
-      "title": "Calendar Sync"
+      "title": "Calendar Sync",
+      "titleTemplatePlaceholder": "Out of Office - {categoryName}"
     },
     "clockinImport": {
       "credentials": {

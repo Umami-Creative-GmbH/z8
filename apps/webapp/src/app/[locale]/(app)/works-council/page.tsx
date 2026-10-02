@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorksCouncilDashboard } from "@/components/works-council/works-council-dashboard";
 import { db } from "@/db";
@@ -91,9 +92,12 @@ async function WorksCouncilPageContent({
 
 function WorksCouncilPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading Works Council portal"
+			label={{
+				labelKey: "common.loadingRegions.worksCouncilPortal",
+				labelDefault: "Loading Works Council portal",
+			}}
 			aria-labelledby="works-council-loading-label"
 			aria-live="polite"
 			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
@@ -113,7 +117,7 @@ function WorksCouncilPageLoading() {
 				<Skeleton aria-hidden="true" className="h-28 w-full" />
 			</div>
 			<Skeleton aria-hidden="true" className="h-80 w-full" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

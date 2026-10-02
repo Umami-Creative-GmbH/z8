@@ -2,8 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 import { AuthenticatedAppShell } from "./app-layout-shell";
 
 const APP_ROUTE_ROOT = join(process.cwd(), "src/app/[locale]/(app)");

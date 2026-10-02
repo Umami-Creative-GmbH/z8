@@ -9,8 +9,18 @@ import { useShallow } from "zustand/react/shallow";
 import { AnalyticsDateRangePicker } from "@/components/analytics/date-range-picker";
 import { ExportButton } from "@/components/analytics/export-button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
 import {
 	Table,
 	TableBody,
@@ -24,21 +34,43 @@ import type { DateRange, WorkHoursAnalyticsData } from "@/lib/analytics/types";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
 import { getWorkHoursAnalyticsData } from "../actions";
 
-const Area = dynamic(() => import("recharts").then((mod) => mod.Area), { ssr: false });
-const AreaChart = dynamic(() => import("recharts").then((mod) => mod.AreaChart), { ssr: false });
-const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), { ssr: false });
-const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((mod) => mod.CartesianGrid), {
+const Area = dynamic(() => import("recharts").then((mod) => mod.Area), {
 	ssr: false,
 });
-const Line = dynamic(() => import("recharts").then((mod) => mod.Line), { ssr: false });
-const LineChart = dynamic(() => import("recharts").then((mod) => mod.LineChart), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), { ssr: false });
+const AreaChart = dynamic(
+	() => import("recharts").then((mod) => mod.AreaChart),
+	{ ssr: false },
+);
+const Bar = dynamic(() => import("recharts").then((mod) => mod.Bar), {
+	ssr: false,
+});
+const BarChart = dynamic(() => import("recharts").then((mod) => mod.BarChart), {
+	ssr: false,
+});
+const CartesianGrid = dynamic(
+	() => import("recharts").then((mod) => mod.CartesianGrid),
+	{
+		ssr: false,
+	},
+);
+const Line = dynamic(() => import("recharts").then((mod) => mod.Line), {
+	ssr: false,
+});
+const LineChart = dynamic(
+	() => import("recharts").then((mod) => mod.LineChart),
+	{ ssr: false },
+);
+const XAxis = dynamic(() => import("recharts").then((mod) => mod.XAxis), {
+	ssr: false,
+});
+const YAxis = dynamic(() => import("recharts").then((mod) => mod.YAxis), {
+	ssr: false,
+});
 
 function areDateRangesEqual(left: DateRange, right: DateRange) {
 	return (
-		left.start.getTime() === right.start.getTime() && left.end.getTime() === right.end.getTime()
+		left.start.getTime() === right.start.getTime() &&
+		left.end.getTime() === right.end.getTime()
 	);
 }
 
@@ -58,7 +90,10 @@ function VarianceTrendCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.workHours.varianceTrend.title", "Overtime & Undertime Trend")}
+					{t(
+						"analytics.workHours.varianceTrend.title",
+						"Overtime & Undertime Trend",
+					)}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -84,7 +119,12 @@ function VarianceTrendCard({
 					>
 						<AreaChart data={data}>
 							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
+							<XAxis
+								dataKey="date"
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+							/>
 							<YAxis tickLine={false} axisLine={false} />
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<Area
@@ -107,7 +147,10 @@ function VarianceTrendCard({
 					</ChartContainer>
 				) : (
 					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t("analytics.workHours.varianceTrend.empty", "No trend data available")}
+						{t(
+							"analytics.workHours.varianceTrend.empty",
+							"No trend data available",
+						)}
 					</div>
 				)}
 			</CardContent>
@@ -125,9 +168,14 @@ function DailyWorkHoursCard({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>{t("analytics.workHours.daily.title", "Daily Work Hours")}</CardTitle>
+				<CardTitle>
+					{t("analytics.workHours.daily.title", "Daily Work Hours")}
+				</CardTitle>
 				<CardDescription>
-					{t("analytics.workHours.daily.description", "Actual vs expected work hours per day")}
+					{t(
+						"analytics.workHours.daily.description",
+						"Actual vs expected work hours per day",
+					)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>
@@ -147,7 +195,12 @@ function DailyWorkHoursCard({
 					>
 						<LineChart data={data}>
 							<CartesianGrid strokeDasharray="3 3" />
-							<XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} />
+							<XAxis
+								dataKey="date"
+								tickLine={false}
+								tickMargin={10}
+								axisLine={false}
+							/>
 							<YAxis tickLine={false} axisLine={false} />
 							<ChartTooltip content={<ChartTooltipContent />} />
 							<Line
@@ -169,7 +222,10 @@ function DailyWorkHoursCard({
 					</ChartContainer>
 				) : (
 					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t("analytics.workHours.daily.empty", "No daily hours data available")}
+						{t(
+							"analytics.workHours.daily.empty",
+							"No daily hours data available",
+						)}
 					</div>
 				)}
 			</CardContent>
@@ -188,7 +244,10 @@ function EmployeeWorkHoursCard({
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.workHours.employeeComparison.title", "Employee Work Hours")}
+					{t(
+						"analytics.workHours.employeeComparison.title",
+						"Employee Work Hours",
+					)}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -200,13 +259,18 @@ function EmployeeWorkHoursCard({
 			<CardContent>
 				{employees.length === 0 ? (
 					<div className="flex h-[200px] items-center justify-center text-muted-foreground">
-						{t("analytics.common.noDataForPeriod", "No data available for the selected period")}
+						{t(
+							"analytics.common.noDataForPeriod",
+							"No data available for the selected period",
+						)}
 					</div>
 				) : (
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("analytics.common.employee", "Employee")}</TableHead>
+								<TableHead>
+									{t("analytics.common.employee", "Employee")}
+								</TableHead>
 								<TableHead className="text-right">
 									{t("analytics.common.totalHours", "Total Hours")}
 								</TableHead>
@@ -222,14 +286,22 @@ function EmployeeWorkHoursCard({
 						<TableBody>
 							{employees.map((employee) => (
 								<TableRow key={employee.employeeId}>
-									<TableCell className="font-medium">{employee.employeeName}</TableCell>
-									<TableCell className="text-right">{employee.totalHours.toFixed(1)}h</TableCell>
+									<TableCell className="font-medium">
+										{employee.employeeName}
+									</TableCell>
+									<TableCell className="text-right">
+										{employee.totalHours.toFixed(1)}h
+									</TableCell>
 									<TableCell className="text-right">
 										{(employee.totalHours + employee.overtimeHours).toFixed(1)}h
 									</TableCell>
 									<TableCell className="text-right">
 										<span
-											className={employee.overtimeHours >= 0 ? "text-green-600" : "text-orange-600"}
+											className={
+												employee.overtimeHours >= 0
+													? "text-green-600"
+													: "text-orange-600"
+											}
 										>
 											{employee.overtimeHours >= 0 ? "+" : ""}
 											{employee.overtimeHours.toFixed(1)}h
@@ -245,7 +317,11 @@ function EmployeeWorkHoursCard({
 														: "destructive"
 											}
 										>
-											{employee.avgHoursPerWeek.toFixed(0)}h/wk
+											{employee.avgHoursPerWeek.toFixed(0)}
+											{t(
+												"analytics.workHours.hoursPerWeekAbbreviation",
+												"h/wk",
+											)}
 										</Badge>
 									</TableCell>
 								</TableRow>
@@ -258,12 +334,21 @@ function EmployeeWorkHoursCard({
 	);
 }
 
-function WorkHoursDistributionCard({ data, t }: { data: WorkHoursBarData; t: WorkHoursTranslate }) {
+function WorkHoursDistributionCard({
+	data,
+	t,
+}: {
+	data: WorkHoursBarData;
+	t: WorkHoursTranslate;
+}) {
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle>
-					{t("analytics.workHours.distribution.title", "Work Hours Distribution")}
+					{t(
+						"analytics.workHours.distribution.title",
+						"Work Hours Distribution",
+					)}
 				</CardTitle>
 				<CardDescription>
 					{t(
@@ -276,7 +361,10 @@ function WorkHoursDistributionCard({ data, t }: { data: WorkHoursBarData; t: Wor
 				{data.length > 0 ? (
 					<ChartContainer
 						config={{
-							hours: { label: t("analytics.common.hours", "Hours"), color: "hsl(var(--chart-4))" },
+							hours: {
+								label: t("analytics.common.hours", "Hours"),
+								color: "hsl(var(--chart-4))",
+							},
 						}}
 						className="h-[300px]"
 					>
@@ -297,7 +385,10 @@ function WorkHoursDistributionCard({ data, t }: { data: WorkHoursBarData; t: Wor
 					</ChartContainer>
 				) : (
 					<div className="flex h-[300px] items-center justify-center text-muted-foreground">
-						{t("analytics.workHours.distribution.empty", "No distribution data available")}
+						{t(
+							"analytics.workHours.distribution.empty",
+							"No distribution data available",
+						)}
 					</div>
 				)}
 			</CardContent>
@@ -316,14 +407,17 @@ export default function WorkHoursPage() {
 	const hasUserChangedRange = useRef(false);
 	const [dateRange, setDateRange] = useState<DateRange | null>(null);
 	const [loading, setLoading] = useState(true);
-	const [workHoursData, setWorkHoursData] = useState<WorkHoursAnalyticsData | null>(null);
+	const [workHoursData, setWorkHoursData] =
+		useState<WorkHoursAnalyticsData | null>(null);
 
 	useEffect(() => {
 		if (!isHydrated || hasUserChangedRange.current) {
 			return;
 		}
 
-		const nextDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
+		const nextDateRange = getAnalyticsDateRangeForPreset("current_month", {
+			timezone,
+		});
 		setDateRange((currentDateRange) =>
 			currentDateRange && areDateRangesEqual(currentDateRange, nextDateRange)
 				? currentDateRange
@@ -341,8 +435,14 @@ export default function WorkHoursPage() {
 			return;
 		}
 
-		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset("current_month", { timezone });
-		if (!hasUserChangedRange.current && !areDateRangesEqual(dateRange, expectedDefaultDateRange)) {
+		const expectedDefaultDateRange = getAnalyticsDateRangeForPreset(
+			"current_month",
+			{ timezone },
+		);
+		if (
+			!hasUserChangedRange.current &&
+			!areDateRangesEqual(dateRange, expectedDefaultDateRange)
+		) {
 			return;
 		}
 		const range = dateRange;
@@ -367,7 +467,10 @@ export default function WorkHoursPage() {
 
 				console.error("Failed to load work hours analytics data:", error);
 				toast.error(
-					t("analytics.workHours.errors.loadData", "Failed to load work hours analytics data"),
+					t(
+						"analytics.workHours.errors.loadData",
+						"Failed to load work hours analytics data",
+					),
 				);
 			})
 			.finally(() => {
@@ -396,7 +499,10 @@ export default function WorkHoursPage() {
 			{/* Controls */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				{dateRange ? (
-					<AnalyticsDateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+					<AnalyticsDateRangePicker
+						value={dateRange}
+						onChange={handleDateRangeChange}
+					/>
 				) : (
 					<p className="text-sm text-muted-foreground">
 						{t(
@@ -409,8 +515,14 @@ export default function WorkHoursPage() {
 					data={{
 						data: employees,
 						headers: [
-							{ key: "employeeName", label: t("analytics.common.employee", "Employee") },
-							{ key: "totalHours", label: t("analytics.common.totalHours", "Total Hours") },
+							{
+								key: "employeeName",
+								label: t("analytics.common.employee", "Employee"),
+							},
+							{
+								key: "totalHours",
+								label: t("analytics.common.totalHours", "Total Hours"),
+							},
 							{
 								key: "overtimeHours",
 								label: t("analytics.common.overtimeHours", "Overtime Hours"),
@@ -421,7 +533,10 @@ export default function WorkHoursPage() {
 							},
 							{
 								key: "avgHoursPerWeek",
-								label: t("analytics.workHours.avgHoursPerWeek", "Avg Hours/Week"),
+								label: t(
+									"analytics.workHours.avgHoursPerWeek",
+									"Avg Hours/Week",
+								),
 							},
 						],
 						filename: `work-hours-${dateRange?.start.toISOString().split("T")[0] ?? "pending"}`,

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CoverageRulesManagement } from "@/components/settings/coverage-rules-management";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
 	getSchedulingSettingsAccessContext,
@@ -35,10 +36,13 @@ async function CoverageRulesSettingsContent() {
 
 function CoverageRulesSettingsLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading coverage rule settings"
+			label={{
+				labelKey: "common.loadingRegions.coverageRuleSettings",
+				labelDefault: "Loading coverage rule settings",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-56" />
@@ -46,7 +50,7 @@ function CoverageRulesSettingsLoading() {
 			</div>
 			<Skeleton aria-hidden="true" className="h-40 w-full" />
 			<Skeleton aria-hidden="true" className="h-64 w-full" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

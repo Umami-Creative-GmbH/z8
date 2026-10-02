@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslate } from "@tolgee/react";
+
 import "@react-email/editor/themes/default.css";
 import type { EmailEditorRef } from "@react-email/editor";
 import dynamic from "next/dynamic";
@@ -23,13 +25,18 @@ const ReactEmailEditor = dynamic(
 	() => import("@react-email/editor").then((module) => module.EmailEditor),
 	{
 		ssr: false,
-		loading: () => (
-			<div className="flex min-h-56 items-center justify-center rounded-lg border bg-muted/30 text-muted-foreground text-sm">
-				Loading email editor…
-			</div>
-		),
+		loading: EmailEditorLoading,
 	},
 );
+
+function EmailEditorLoading() {
+	const { t } = useTranslate();
+	return (
+		<div className="flex min-h-56 items-center justify-center rounded-lg border bg-muted/30 text-muted-foreground text-sm">
+			{t("settings.emailTemplates.editor.loading", "Loading email editor…")}
+		</div>
+	);
+}
 
 interface EmailTemplateEditorProps {
 	ref?: Ref<EmailTemplateEditorHandle>;
@@ -68,6 +75,7 @@ export function EmailTemplateEditor({
 	onInsertVariable,
 	onSubjectFocus,
 }: EmailTemplateEditorProps) {
+	const { t } = useTranslate();
 	const bodyEditorRef = useRef<EmailEditorRef>(null);
 	const subjectRef = useRef<HTMLInputElement>(null);
 	const updateVersionRef = useRef(0);
@@ -93,7 +101,9 @@ export function EmailTemplateEditor({
 	return (
 		<div className="space-y-5">
 			<div className="grid gap-2">
-				<Label htmlFor="email-template-subject">Subject</Label>
+				<Label htmlFor="email-template-subject">
+					{t("settings.emailTemplates.editor.subject", "Subject")}
+				</Label>
 				<Input
 					ref={subjectRef}
 					id="email-template-subject"
@@ -106,11 +116,20 @@ export function EmailTemplateEditor({
 
 			<div className="grid gap-3">
 				<div className="space-y-1">
-					<p id="email-template-body-label" className="font-medium text-sm leading-none">
-						Email body
+					<p
+						id="email-template-body-label"
+						className="font-medium text-sm leading-none"
+					>
+						{t("settings.emailTemplates.editor.emailBody", "Email body")}
 					</p>
-					<p id="email-template-body-description" className="text-muted-foreground text-xs">
-						Compose the rich HTML email sent for this system event.
+					<p
+						id="email-template-body-description"
+						className="text-muted-foreground text-xs"
+					>
+						{t(
+							"settings.emailTemplates.editor.bodyDescription",
+							"Compose the rich HTML email sent for this system event.",
+						)}
 					</p>
 				</div>
 				<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
@@ -122,7 +141,10 @@ export function EmailTemplateEditor({
 						<ReactEmailEditor
 							ref={bodyEditorRef}
 							content={editorDocument}
-							placeholder="Write the operational email body..."
+							placeholder={t(
+								"settings.emailTemplates.editor.bodyPlaceholder",
+								"Write the operational email body...",
+							)}
 							className="min-h-64 [&_.ProseMirror]:min-h-64 [&_.ProseMirror]:!bg-background [&_.ProseMirror]:p-3 [&_.ProseMirror]:text-foreground [&_.ProseMirror]:caret-foreground [&_.ProseMirror]:outline-none dark:[&_.ProseMirror]:!bg-card"
 							onUpdate={async (editorRef: EmailEditorRef) => {
 								const updateVersion = updateVersionRef.current + 1;
@@ -131,7 +153,8 @@ export function EmailTemplateEditor({
 									editorRef.getEmail(),
 									Promise.resolve(editorRef.getJSON()),
 								]);
-								const isLatestUpdate = updateVersion === updateVersionRef.current;
+								const isLatestUpdate =
+									updateVersion === updateVersionRef.current;
 								if (!isLatestUpdate) {
 									return;
 								}
@@ -146,7 +169,9 @@ export function EmailTemplateEditor({
 			</div>
 
 			<div className="grid gap-2">
-				<Label htmlFor="email-template-html-fallback">HTML fallback</Label>
+				<Label htmlFor="email-template-html-fallback">
+					{t("settings.emailTemplates.editor.htmlFallback", "HTML fallback")}
+				</Label>
 				<Textarea
 					id="email-template-html-fallback"
 					value={html}
@@ -154,7 +179,10 @@ export function EmailTemplateEditor({
 					className="min-h-24 font-mono text-xs"
 				/>
 				<p className="text-muted-foreground text-xs">
-					Used for validation and as a safe fallback if the visual editor cannot render.
+					{t(
+						"settings.emailTemplates.editor.fallbackDescription",
+						"Used for validation and as a safe fallback if the visual editor cannot render.",
+					)}
 				</p>
 			</div>
 

@@ -1,64 +1,95 @@
 "use client";
 
 import { IconFileText } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { exportAvvToPDF, generateAvvFilename } from "@/lib/avv/avv-pdf-generator";
+import {
+	exportAvvToPDF,
+	generateAvvFilename,
+} from "@/lib/avv/avv-pdf-generator";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 
 interface AvvDownloadButtonProps {
 	organizationName: string;
 }
 
-export function AvvDownloadButton({ organizationName }: AvvDownloadButtonProps) {
+export function AvvDownloadButton({
+	organizationName,
+}: AvvDownloadButtonProps) {
+	const { t } = useTranslate();
 	const [loading, setLoading] = useState(false);
 
 	const handleDownload = async () => {
 		setLoading(true);
-		await runWithCleanup(async () => {
-			const downloadResult = await exportAvvToPDF(organizationName)
-				.then((data) => ({
-					ok: true as const,
-					value: {
-						data,
-						filename: generateAvvFilename(organizationName),
+		await runWithCleanup(
+			async () => {
+				const downloadResult = await exportAvvToPDF(organizationName)
+					.then((data) => ({
+						ok: true as const,
+						value: {
+							data,
+							filename: generateAvvFilename(organizationName),
+						},
+					}))
+					.catch((error) => ({ ok: false as const, error }));
+
+				if (!downloadResult.ok) {
+					console.error("AVV download failed:", downloadResult.error);
+					toast.error(
+						t("settings.avv.download.downloadFailed", "Download failed"),
+						{
+							description:
+								downloadResult.error instanceof Error
+									? downloadResult.error.message
+									: t(
+											"settings.avv.download.errorOccurred",
+											"An error occurred",
+										),
+						},
+					);
+					return;
+				}
+
+				const { data, filename } = downloadResult.value;
+				const blob = new Blob([data as BlobPart], { type: "application/pdf" });
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+
+				toast.success(
+					t(
+						"settings.avv.download.downloaded",
+						"Data processing agreement downloaded",
+					),
+					{
+						description: t(
+							"settings.avv.download.filename",
+							"File: {filename}",
+							{ filename },
+						),
 					},
-				}))
-				.catch((error) => ({ ok: false as const, error }));
-
-			if (!downloadResult.ok) {
-				console.error("AVV download failed:", downloadResult.error);
-				toast.error("IconDownload fehlgeschlagen", {
-					description:
-						downloadResult.error instanceof Error
-							? downloadResult.error.message
-							: "Ein Fehler ist aufgetreten",
-				});
-				return;
-			}
-
-			const { data, filename } = downloadResult.value;
-			const blob = new Blob([data as BlobPart], { type: "application/pdf" });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement("a");
-			a.href = url;
-			a.download = filename;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(url);
-
-			toast.success("AVV erfolgreich heruntergeladen", {
-				description: `Datei: ${filename}`,
-			});
-		}, () => setLoading(false));
+				);
+			},
+			() => setLoading(false),
+		);
 	};
 
 	return (
 		<Button onClick={handleDownload} disabled={loading} size="lg">
 			<IconFileText className="mr-2 size-4" aria-hidden="true" />
-			{loading ? "Generiere PDF\u2026" : "AVV als PDF herunterladen"}
+			{loading
+				? t("settings.avv.download.generating", "Generating PDF…")
+				: t(
+						"settings.avv.download.button",
+						"Download data processing agreement as PDF",
+					)}
 		</Button>
 	);
 }

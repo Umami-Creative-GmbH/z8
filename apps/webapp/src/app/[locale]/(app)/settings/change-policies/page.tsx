@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ChangePolicyManagement } from "@/components/settings/change-policy/change-policy-management";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -28,14 +29,17 @@ async function ChangePoliciesSettingsPageContent() {
 
 function ChangePoliciesSettingsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading change policy settings"
+			label={{
+				labelKey: "common.loadingRegions.changePolicySettings",
+				labelDefault: "Loading change policy settings",
+			}}
 		>
 			<Skeleton className="h-8 w-48" aria-hidden="true" />
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

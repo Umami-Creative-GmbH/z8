@@ -1,6 +1,7 @@
 "use client";
 
 import { IconBell } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOrganization } from "@/hooks/use-organization";
@@ -8,10 +9,14 @@ import { cn } from "@/lib/utils";
 import { NotificationPopover } from "./notification-popover";
 
 export function NotificationBell() {
+	const { t } = useTranslate();
 	const { organizationId } = useOrganization();
 	const hasOrganization = Boolean(organizationId);
 
-	const { unreadCount } = useNotifications({ enabled: hasOrganization, organizationId });
+	const { unreadCount } = useNotifications({
+		enabled: hasOrganization,
+		organizationId,
+	});
 
 	return (
 		<NotificationPopover>
@@ -19,7 +24,11 @@ export function NotificationBell() {
 				size="icon"
 				variant="ghost"
 				className="relative size-9"
-				aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+				aria-label={t(
+					"common.notifications.bellLabel",
+					"{count, plural, =0 {Notifications} other {Notifications (# unread)}}",
+					{ count: unreadCount },
+				)}
 			>
 				<IconBell className="size-5" />
 				{unreadCount > 0 && (

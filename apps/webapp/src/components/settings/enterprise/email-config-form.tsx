@@ -378,7 +378,10 @@ function ProviderFieldsSection({
 							</Label>
 							<Input
 								id="fromName"
-								placeholder="Your Company Name"
+								placeholder={t(
+									"settings.enterprise.emailConfig.yourCompanyName",
+									"Your Company Name",
+								)}
 								value={field.state.value ?? ""}
 								onChange={(e) => field.handleChange(e.target.value)}
 								onBlur={field.handleBlur}

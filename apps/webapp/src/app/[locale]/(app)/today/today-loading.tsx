@@ -1,3 +1,4 @@
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const TODAY_SUMMARY_LOADING_KEYS = [
@@ -21,8 +22,11 @@ const TODAY_SUPPORTING_LOADING_KEYS = [
 
 export function TodayPageLoading() {
 	return (
-		<div
-			aria-label="Loading today's manager briefing"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.todaySManagerBriefing",
+				labelDefault: "Loading today's manager briefing",
+			}}
 			className="@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6"
 			role="status"
 		>
@@ -51,6 +55,6 @@ export function TodayPageLoading() {
 					<Skeleton aria-hidden="true" className="h-52 w-full" key={key} />
 				))}
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }

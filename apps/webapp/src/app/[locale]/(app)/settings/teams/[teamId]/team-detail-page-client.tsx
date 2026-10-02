@@ -1,6 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { use } from "react";
 import {
 	AddMemberDialog,
@@ -17,6 +18,7 @@ export function TeamDetailPageClient({
 }: {
 	params: Promise<{ teamId: string }>;
 }) {
+	const { t } = useTranslate();
 	const { teamId } = use(params);
 	const {
 		canManageMembers,
@@ -39,7 +41,7 @@ export function TeamDetailPageClient({
 			<div className="flex flex-1 flex-col gap-4 p-4">
 				<output
 					className="flex items-center justify-center p-8"
-					aria-label="Loading team"
+					aria-label={t("common.loadingRegions.team", "Loading team")}
 				>
 					<IconLoader2
 						className="size-8 animate-spin text-muted-foreground"

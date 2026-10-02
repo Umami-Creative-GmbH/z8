@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { WellnessSettingsForm } from "@/components/settings/wellness-settings-form";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";
@@ -48,7 +49,14 @@ async function WellnessPageContent() {
 
 function WellnessPageLoading() {
 	return (
-		<div className="p-6" role="status" aria-label="Loading wellness settings">
+		<LoadingRegion
+			className="p-6"
+			role="status"
+			label={{
+				labelKey: "common.loadingRegions.wellnessSettings",
+				labelDefault: "Loading wellness settings",
+			}}
+		>
 			<div className="mx-auto max-w-2xl space-y-6">
 				<div className="space-y-2">
 					<Skeleton aria-hidden="true" className="h-8 w-56" />
@@ -56,7 +64,7 @@ function WellnessPageLoading() {
 				</div>
 				<Skeleton aria-hidden="true" className="h-80 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

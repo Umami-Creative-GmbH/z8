@@ -1,8 +1,16 @@
+"use client";
+
 import { IconLoader2 } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import type { SettingsIconName } from "@/components/settings/settings-config";
 import { SETTINGS_ICON_MAP } from "@/components/settings/settings-icons";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Link } from "@/navigation";
 
 interface SettingsCardProps {
@@ -22,6 +30,7 @@ export function SettingsCard({
 	disabled,
 	loading,
 }: SettingsCardProps) {
+	const { t } = useTranslate();
 	const Icon = SETTINGS_ICON_MAP[icon];
 
 	if (loading) {
@@ -31,7 +40,9 @@ export function SettingsCard({
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex-1 min-w-0">
 							<CardTitle className="text-lg">{title}</CardTitle>
-							<CardDescription className="mt-1.5">{description}</CardDescription>
+							<CardDescription className="mt-1.5">
+								{description}
+							</CardDescription>
 						</div>
 						<div className="rounded-lg bg-muted p-2 flex-shrink-0">
 							<IconLoader2 className="size-6 text-muted-foreground animate-spin" />
@@ -49,12 +60,16 @@ export function SettingsCard({
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-2">
-								<CardTitle className="text-lg text-muted-foreground">{title}</CardTitle>
+								<CardTitle className="text-lg text-muted-foreground">
+									{title}
+								</CardTitle>
 								<Badge variant="outline" className="text-xs">
-									Disabled
+									{t("settings.notifications.status.disabled", "Disabled")}
 								</Badge>
 							</div>
-							<CardDescription className="mt-1.5">{description}</CardDescription>
+							<CardDescription className="mt-1.5">
+								{description}
+							</CardDescription>
 						</div>
 						<div className="rounded-lg bg-muted p-2 flex-shrink-0">
 							<Icon className="size-6 text-muted-foreground" />
@@ -72,7 +87,9 @@ export function SettingsCard({
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex-1 min-w-0">
 							<CardTitle className="text-lg">{title}</CardTitle>
-							<CardDescription className="mt-1.5">{description}</CardDescription>
+							<CardDescription className="mt-1.5">
+								{description}
+							</CardDescription>
 						</div>
 						<div className="rounded-lg bg-primary/10 p-2 group-hover:bg-primary/20 transition-colors flex-shrink-0">
 							<Icon className="size-6 text-primary" />

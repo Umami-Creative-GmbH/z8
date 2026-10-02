@@ -13,7 +13,15 @@
         "descriptionSuffix": ". No further sub-processors are used.",
         "title": "Hosting & Sub-processors"
       },
-      "title": "Data Processing Agreement (DPA)"
+      "title": "Data Processing Agreement (DPA)",
+      "download": {
+        "downloadFailed": "Download failed",
+        "errorOccurred": "An error occurred",
+        "downloaded": "Data processing agreement downloaded",
+        "filename": "File: {filename}",
+        "generating": "Generating PDF…",
+        "button": "Download data processing agreement as PDF"
+      }
     },
     "billing": {
       "description": "Manage your subscription, payment methods, and invoices",
@@ -196,7 +204,226 @@
       "systemTemplates": "System templates",
       "testFailed": "Failed to send test email",
       "testSent": "Test email sent to your account",
-      "title": "Email Templates"
+      "title": "Email Templates",
+      "editor": {
+        "subject": "Subject",
+        "emailBody": "Email body",
+        "loading": "Loading email editor…",
+        "bodyDescription": "Compose the rich HTML email sent for this system event.",
+        "bodyPlaceholder": "Write the operational email body...",
+        "htmlFallback": "HTML fallback",
+        "fallbackDescription": "Used for validation and as a safe fallback if the visual editor cannot render."
+      },
+      "emailTemplates": "Email templates",
+      "variables": {
+        "allowedVariables": "Allowed variables",
+        "fallbackSafe": "Fallback safe",
+        "insert": "Insert {label}",
+        "description": "Insert only approved placeholders. Values are replaced when the email is sent."
+      },
+      "categories": {
+        "auth": "Account access",
+        "absences": "Absences",
+        "billing": "Billing",
+        "timecorrections": "Time corrections",
+        "teams": "Teams",
+        "security": "Security",
+        "exports": "Exports"
+      },
+      "definitions": {
+        "email-verification": {
+          "label": "Email verification",
+          "description": "Sent when a user needs to verify their email address."
+        },
+        "password-reset": {
+          "label": "Password reset",
+          "description": "Sent when a user requests a password reset link."
+        },
+        "organization-invitation": {
+          "label": "Organization invitation",
+          "description": "Sent when a user is invited to join an organization."
+        },
+        "absence-request-submitted": {
+          "label": "Absence request submitted",
+          "description": "Confirms that an employee submitted an absence request."
+        },
+        "absence-request-pending-approval": {
+          "label": "Absence request pending approval",
+          "description": "Notifies a manager that an absence request needs approval."
+        },
+        "absence-request-approved": {
+          "label": "Absence request approved",
+          "description": "Notifies an employee that their absence request was approved."
+        },
+        "absence-recorded-by-manager": {
+          "label": "Absence recorded by manager",
+          "description": "Notifies an employee that a manager recorded an absence on their behalf."
+        },
+        "absence-request-rejected": {
+          "label": "Absence request rejected",
+          "description": "Notifies an employee that their absence request was rejected."
+        },
+        "time-correction-pending-approval": {
+          "label": "Time correction pending approval",
+          "description": "Notifies a manager that a time correction needs approval."
+        },
+        "time-correction-approved": {
+          "label": "Time correction approved",
+          "description": "Notifies an employee that their time correction was approved."
+        },
+        "time-correction-rejected": {
+          "label": "Time correction rejected",
+          "description": "Notifies an employee that their time correction was rejected."
+        },
+        "team-member-added": {
+          "label": "Team member added",
+          "description": "Notifies a member that they were added to a team."
+        },
+        "team-member-removed": {
+          "label": "Team member removed",
+          "description": "Notifies a member that they were removed from a team."
+        },
+        "security-alert": {
+          "label": "Security alert",
+          "description": "Notifies a user about an important account security event."
+        },
+        "export-ready": {
+          "label": "Export ready",
+          "description": "Notifies a user that a requested export is ready to download."
+        },
+        "export-failed": {
+          "label": "Export failed",
+          "description": "Notifies a user that a requested export could not be generated."
+        }
+      },
+      "variableDefinitions": {
+        "userName": {
+          "label": "User name"
+        },
+        "verificationUrl": {
+          "label": "Verification URL"
+        },
+        "appUrl": {
+          "label": "App URL"
+        },
+        "resetUrl": {
+          "label": "Reset URL"
+        },
+        "email": {
+          "label": "Email"
+        },
+        "organizationName": {
+          "label": "Organization name"
+        },
+        "inviterName": {
+          "label": "Inviter name"
+        },
+        "role": {
+          "label": "Role"
+        },
+        "invitationUrl": {
+          "label": "Invitation URL"
+        },
+        "employeeName": {
+          "label": "Employee name"
+        },
+        "startDate": {
+          "label": "Start date"
+        },
+        "endDate": {
+          "label": "End date"
+        },
+        "absenceType": {
+          "label": "Absence type"
+        },
+        "days": {
+          "label": "Days"
+        },
+        "managerName": {
+          "label": "Manager name"
+        },
+        "notes": {
+          "label": "Notes"
+        },
+        "approvalUrl": {
+          "label": "Approval URL"
+        },
+        "approverName": {
+          "label": "Approver name"
+        },
+        "rejectionReason": {
+          "label": "Rejection reason"
+        },
+        "date": {
+          "label": "Date"
+        },
+        "originalClockIn": {
+          "label": "Original clock-in"
+        },
+        "originalClockOut": {
+          "label": "Original clock-out"
+        },
+        "correctedClockIn": {
+          "label": "Corrected clock-in"
+        },
+        "correctedClockOut": {
+          "label": "Corrected clock-out"
+        },
+        "reason": {
+          "label": "Reason"
+        },
+        "memberName": {
+          "label": "Member name"
+        },
+        "teamName": {
+          "label": "Team name"
+        },
+        "addedByName": {
+          "label": "Added by"
+        },
+        "teamUrl": {
+          "label": "Team URL"
+        },
+        "removedByName": {
+          "label": "Removed by"
+        },
+        "eventType": {
+          "label": "Event type"
+        },
+        "timestamp": {
+          "label": "Timestamp"
+        },
+        "ipAddress": {
+          "label": "IP address"
+        },
+        "userAgent": {
+          "label": "User agent"
+        },
+        "securitySettingsUrl": {
+          "label": "Security settings URL"
+        },
+        "recipientName": {
+          "label": "Recipient name"
+        },
+        "categories": {
+          "label": "Categories"
+        },
+        "fileSize": {
+          "label": "File size"
+        },
+        "downloadUrl": {
+          "label": "Download URL"
+        },
+        "expiresAt": {
+          "label": "Expires at"
+        },
+        "errorMessage": {
+          "label": "Error message"
+        },
+        "retryUrl": {
+          "label": "Retry URL"
+        }
+      }
     },
     "error": {
       "actions": {

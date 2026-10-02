@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { PayrollReadinessDashboard } from "@/components/settings/payroll-readiness/payroll-readiness-dashboard";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getPayrollReadiness } from "@/lib/payroll-readiness/get-payroll-readiness";
@@ -84,10 +85,13 @@ async function PayrollReadinessContent({
 
 function PayrollReadinessPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
 			role="status"
-			aria-label="Loading payroll readiness"
+			label={{
+				labelKey: "common.loadingRegions.payrollReadiness",
+				labelDefault: "Loading payroll readiness",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-56" />
@@ -99,7 +103,7 @@ function PayrollReadinessPageLoading() {
 				<Skeleton aria-hidden="true" className="h-28 w-full" />
 			</div>
 			<Skeleton aria-hidden="true" className="h-72 w-full" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

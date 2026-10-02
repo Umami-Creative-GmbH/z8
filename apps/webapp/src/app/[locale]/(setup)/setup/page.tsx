@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { SetupWizardForm } from "@/components/setup/setup-wizard-form";
 import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { setupBootstrap } from "@/lib/setup/bootstrap.server";
 import { isPlatformConfigured } from "@/lib/setup/config-cache";
@@ -32,9 +33,12 @@ export default function SetupPage(props: SetupPageProps) {
 
 function SetupPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading platform setup"
+			label={{
+				labelKey: "common.loadingRegions.platformSetup",
+				labelDefault: "Loading platform setup",
+			}}
 			className="w-full max-w-md"
 			role="status"
 		>
@@ -51,7 +55,7 @@ function SetupPageLoading() {
 				<Skeleton aria-hidden="true" className="h-10 w-full" />
 				<Skeleton aria-hidden="true" className="h-10 w-32" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

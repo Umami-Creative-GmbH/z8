@@ -344,7 +344,10 @@ function OAuthCredentialsSection({
 								{selectedProvider === "apple" ? (
 									<Textarea
 										id="clientSecret"
-										placeholder="Paste your .p8 private key contents"
+										placeholder={t(
+											"settings.enterprise.socialOAuth.pasteYourP8PrivateKeyContents",
+											"Paste your .p8 private key contents",
+										)}
 										value={field.state.value}
 										onChange={(e) => field.handleChange(e.target.value)}
 										onBlur={field.handleBlur}

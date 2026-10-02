@@ -72,17 +72,24 @@ function formatDate(dateStr: string | null | undefined) {
 	return DateTime.fromISO(dateStr).toLocaleString(DateTime.DATE_SHORT);
 }
 
-function formatScopes(scopes: string[]) {
-	if (scopes.length === 0) return "No permissions";
+function formatScopes(
+	scopes: string[],
+	t: ReturnType<typeof useTranslate>["t"],
+) {
+	if (scopes.length === 0)
+		return t("settings.apiKeys.noPermissions", "No permissions");
 	if (scopes.length <= 2) return scopes.join(", ");
 	return `${scopes.slice(0, 2).join(", ")} +${scopes.length - 2}`;
 }
 
-function getExpirationStatus(expiresAt: string | null) {
+function getExpirationStatus(
+	expiresAt: string | null,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
 	if (!expiresAt)
 		return {
 			status: "never",
-			label: "Never expires",
+			label: t("settings.apiKeys.neverExpires", "Never expires"),
 			variant: "secondary" as const,
 		};
 
@@ -93,14 +100,16 @@ function getExpirationStatus(expiresAt: string | null) {
 	if (daysUntilExpiry < 0) {
 		return {
 			status: "expired",
-			label: "Expired",
+			label: t("settings.apiKeys.expired", "Expired"),
 			variant: "destructive" as const,
 		};
 	}
 	if (daysUntilExpiry <= 7) {
 		return {
 			status: "expiring",
-			label: `Expires in ${daysUntilExpiry}d`,
+			label: t("settings.apiKeys.expiresInDays", "Expires in {days}d", {
+				days: daysUntilExpiry,
+			}),
 			variant: "warning" as const,
 		};
 	}
@@ -258,7 +267,7 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 						</TableHeader>
 						<TableBody>
 							{apiKeys.map((apiKey) => {
-								const expStatus = getExpirationStatus(apiKey.expiresAt);
+								const expStatus = getExpirationStatus(apiKey.expiresAt, t);
 								return (
 									<TableRow key={apiKey.id}>
 										<TableCell>
@@ -301,7 +310,7 @@ function ApiKeysCard({ viewModel }: { viewModel: ApiKeyPageViewModel }) {
 											<Tooltip>
 												<TooltipTrigger>
 													<span className="text-sm">
-														{formatScopes(apiKey.scopes)}
+														{formatScopes(apiKey.scopes, t)}
 													</span>
 												</TooltipTrigger>
 												<TooltipContent>
