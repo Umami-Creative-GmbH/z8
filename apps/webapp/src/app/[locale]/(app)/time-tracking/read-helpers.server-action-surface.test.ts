@@ -21,6 +21,8 @@ describe("time-tracking read helper surface", () => {
 		"actions/policy-helpers.ts",
 		"actions/auth.ts",
 		"read-queries.ts",
+		"region-data.ts",
+		"timeline-serialization.ts",
 	])("keeps %s a server-only helper module", (file) => {
 		const source = readSource(file);
 
@@ -42,18 +44,26 @@ describe("time-tracking read helper surface", () => {
 	});
 
 	it("loads page reads from the authorized render context", () => {
-		expect(readSource("page-data.ts")).toMatch(
-			/import\s*\{\s*readActiveWorkPeriod,\s*readTimeSummary,\s*readWorkPeriods,?\s*\}\s*from "\.\/read-queries";/,
+		expect(readSource("page-data.ts")).toContain(
+			'import { readActiveWorkPeriod } from "./read-queries";',
+		);
+		expect(readSource("page-data.ts")).toContain(
+			'import { readHistoryRegion, readSummaryRegion } from "./region-data";',
 		);
 		expect(readSource("page-data.ts")).toContain(
 			"getTimeTrackingRenderContext()",
 		);
 	});
 
-	it.each(["readActiveWorkPeriod", "readWorkPeriods", "readTimeSummary"])(
-		"keeps internal %s out of public server actions",
-		(name) => {
-			expect(exportsName(readSource("actions.ts"), name)).toBe(false);
-		},
-	);
+	it.each([
+		"readActiveWorkPeriod",
+		"readWorkPeriods",
+		"readTimeSummary",
+		"readSummaryRegion",
+		"readHistoryRegion",
+		"getSafeEmployeeWorkBalance",
+		"serializeWorkdayTimelineResult",
+	])("keeps internal %s out of public server actions", (name) => {
+		expect(exportsName(readSource("actions.ts"), name)).toBe(false);
+	});
 });

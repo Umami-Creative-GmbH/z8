@@ -1,10 +1,7 @@
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
-import {
-	getSafeEmployeeWorkBalance,
-	getTimeTrackingPageData,
-} from "./page-data";
+import { getTimeTrackingPageData } from "./page-data";
 import {
 	readActiveWorkPeriod,
 	readTimeSummary,
@@ -212,29 +209,4 @@ describe("getTimeTrackingPageData authorization", () => {
 			);
 		},
 	);
-});
-
-describe("getSafeEmployeeWorkBalance", () => {
-	beforeEach(() => {
-		vi.mocked(getEmployeeWorkBalance).mockReset();
-		vi.spyOn(console, "error").mockImplementation(() => {});
-	});
-
-	it("returns null and logs when work balance loading fails", async () => {
-		const error = new Error("balance failed");
-		vi.mocked(getEmployeeWorkBalance).mockRejectedValue(error);
-
-		await expect(
-			getSafeEmployeeWorkBalance(balanceRequest),
-		).resolves.toBeNull();
-
-		expect(console.error).toHaveBeenCalledWith(
-			"Failed to load employee work balance",
-			{
-				employeeId: "employee-1",
-				organizationId: "org-1",
-				error,
-			},
-		);
-	});
 });
