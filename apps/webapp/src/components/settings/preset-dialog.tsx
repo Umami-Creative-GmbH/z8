@@ -349,7 +349,10 @@ function PresetDetailsForm({
 								value={field.state.value}
 								onChange={(e) => field.handleChange(e.target.value)}
 								onBlur={field.handleBlur}
-								placeholder="e.g., Germany - Bavaria"
+								placeholder={t(
+									"settings.holidays.presets.namePlaceholder",
+									"e.g., Germany - Bavaria",
+								)}
 							/>
 							{field.state.meta.errors.length > 0 && (
 								<p className="text-sm text-destructive">

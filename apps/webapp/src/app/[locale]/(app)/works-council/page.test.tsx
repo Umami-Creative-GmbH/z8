@@ -2,10 +2,11 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
+import { render } from "@/test/render-with-translations";
 
 const mockState = vi.hoisted(() => ({
 	connection: vi.fn(async () => undefined),

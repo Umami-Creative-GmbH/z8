@@ -2,8 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { render } from "@/test/render-with-translations";
 import { AdminLayoutShell } from "./admin-layout-shell";
 
 const ADMIN_ROUTE_ROOT = join(process.cwd(), "src/app/[locale]/(admin)");

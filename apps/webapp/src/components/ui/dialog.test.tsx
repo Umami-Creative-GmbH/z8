@@ -1,11 +1,18 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 
 import { Button } from "./button";
-import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "./dialog";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogTitle,
+	DialogTrigger,
+} from "./dialog";
 
 describe("Dialog", () => {
 	it("opens an accessible dialog from its trigger", async () => {
@@ -22,7 +29,9 @@ describe("Dialog", () => {
 
 		await user.click(screen.getByRole("button", { name: "Open dialog" }));
 
-		expect(screen.getByRole("dialog", { name: "Schedule review" })).toBeTruthy();
+		expect(
+			screen.getByRole("dialog", { name: "Schedule review" }),
+		).toBeTruthy();
 	});
 
 	it("treats a Z8 Button as a native button when used asChild", async () => {

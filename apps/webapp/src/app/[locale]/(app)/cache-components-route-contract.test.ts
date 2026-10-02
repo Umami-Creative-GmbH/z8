@@ -1,10 +1,12 @@
 import { existsSync, globSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TolgeeProvider } from "@tolgee/react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
+import { createTestTolgee } from "@/test/render-with-translations";
 
 const APP_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -36,7 +38,8 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		contentComponent: "DashboardPageContent",
 		fallbackComponent: "DashboardPageLoading",
 		reasonCategory: "trusted-request-auth",
-		reason: "Dashboard auth and domain database lookups must execute per request.",
+		reason:
+			"Dashboard auth and domain database lookups must execute per request.",
 		operation: "const [onboardingStatus, organizations, pendingInvitationId] =",
 	},
 	{
@@ -48,7 +51,8 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		reasonCategory: "current-period",
 		reason:
 			"The current analytics preview range and live platform analytics must be resolved per request.",
-		operation: 'const params = parsePlatformAnalyticsParams({ range: "30d", bucket: "week" });',
+		operation:
+			'const params = parsePlatformAnalyticsParams({ range: "30d", bucket: "week" });',
 	},
 	{
 		file: "src/app/[locale]/(admin)/platform-admin/analytics/page.tsx",
@@ -83,7 +87,8 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		contentComponent: "AuthLayoutContent",
 		fallbackComponent: "AuthLayoutLoading",
 		reasonCategory: "trusted-request-auth",
-		reason: "Host, domain, consent, Turnstile, and random auth data must remain request-specific.",
+		reason:
+			"Host, domain, consent, Turnstile, and random auth data must remain request-specific.",
 		operation: "const headersList = await headers();",
 	},
 	{
@@ -117,7 +122,8 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		contentComponent: "AbsencesPageContent",
 		fallbackComponent: "AbsencesPageLoading",
 		reasonCategory: "current-calendar",
-		reason: "The employee's current local calendar year must be resolved per request.",
+		reason:
+			"The employee's current local calendar year must be resolved per request.",
 		operation: "const now = DateTime.now().setZone(timezone);",
 	},
 	{
@@ -134,7 +140,8 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		contentComponent: "WellnessPageContent",
 		fallbackComponent: "WellnessPageLoading",
 		reasonCategory: "effect-current-time",
-		reason: "The wellness Effect program requires synchronous current-time execution per request.",
+		reason:
+			"The wellness Effect program requires synchronous current-time execution per request.",
 		operation: "const [, settingsResult, t] = await Promise.all([",
 	},
 	{
@@ -153,8 +160,10 @@ const REVIEWED_RETAINED_CONNECTION_BOUNDARIES = [
 		coordinatorComponent: "PayrollReadinessPageContent",
 		coordinatorFallbackComponent: "PayrollReadinessPageLoading",
 		reasonCategory: "current-period",
-		reason: "The default payroll-readiness period must be resolved per request.",
-		operation: "const period = getPayrollReadinessPeriod(resolvedSearchParams);",
+		reason:
+			"The default payroll-readiness period must be resolved per request.",
+		operation:
+			"const period = getPayrollReadinessPeriod(resolvedSearchParams);",
 	},
 	{
 		file: "src/app/[locale]/(app)/settings/work-diagnostics/page.tsx",
@@ -401,7 +410,8 @@ const SHELL_WORK_QUEUE = [
 		fallbackAriaLabel: "Loading today's manager briefing",
 		resolvedComponentFile: "src/app/[locale]/(app)/today/today-briefing.tsx",
 		resolvedComponent: "TodayBriefing",
-		resolvedOuterFrameClass: "@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6",
+		resolvedOuterFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 px-4 py-4 md:py-6 lg:px-6",
 		fallbackGeometryGroups: [
 			{
 				keyArray: "TODAY_SUMMARY_LOADING_KEYS",
@@ -411,7 +421,8 @@ const SHELL_WORK_QUEUE = [
 			{
 				keyArray: "TODAY_ACTION_LOADING_KEYS",
 				itemCount: 2,
-				frameClass: "grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]",
+				frameClass:
+					"grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]",
 			},
 			{
 				keyArray: "TODAY_SUPPORTING_LOADING_KEYS",
@@ -433,7 +444,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/travel-expenses/page.tsx",
 		fallbackComponent: "TravelExpensesPageLoading",
 		contentComponent: "TravelExpensesPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-4 py-4 md:py-6",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-4 py-4 md:py-6",
 		fallbackAriaLabel: "Loading travel expenses",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -442,16 +454,19 @@ const SHELL_WORK_QUEUE = [
 		fallbackComponent: "MyRequestsPageLoading",
 		contentComponent: "MyRequestsPageContent",
 		fallbackAriaLabel: "Loading your requests",
-		resolvedComponentFile: "src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
+		resolvedComponentFile:
+			"src/app/[locale]/(app)/my-requests/my-requests-client.tsx",
 		resolvedComponent: "MyRequestsClient",
-		resolvedOuterFrameClass: "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		resolvedOuterFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		requiresSynchronousDefaultExport: true,
 	},
 	{
 		file: "src/app/[locale]/(app)/reports/page.tsx",
 		fallbackComponent: "ReportsPageLoading",
 		contentComponent: "ReportsPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		fallbackAriaLabel: "Loading employee reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -459,7 +474,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/reports/projects/page.tsx",
 		fallbackComponent: "ProjectReportsPageLoading",
 		contentComponent: "ProjectReportsPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		fallbackAriaLabel: "Loading project reports",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -635,7 +651,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/analytics/layout.tsx",
 		fallbackComponent: "AnalyticsLayoutLoading",
 		contentComponent: "AnalyticsLayoutContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		fallbackAriaLabel: "Loading analytics navigation",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -667,7 +684,8 @@ const SHELL_WORK_QUEUE = [
 		file: "src/app/[locale]/(app)/absences/page.tsx",
 		fallbackComponent: "AbsencesPageLoading",
 		contentComponent: "AbsencesPageContent",
-		fallbackFrameClass: "@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
+		fallbackFrameClass:
+			"@container/main flex flex-1 flex-col gap-6 py-4 md:py-6",
 		fallbackAriaLabel: "Loading absences",
 		requiresSynchronousDefaultExport: true,
 	},
@@ -728,14 +746,18 @@ const QUALITY_REVIEWED_SHELL_ROUTES = SHELL_WORK_QUEUE.filter(
 );
 
 const CROSS_FILE_RESOLVED_SHELL_ROUTES = SHELL_WORK_QUEUE.filter(
-	(route): route is CrossFileResolvedShellRoute => "resolvedComponentFile" in route,
+	(route): route is CrossFileResolvedShellRoute =>
+		"resolvedComponentFile" in route,
 );
 
 function appPath(file: string): string {
 	return join(APP_ROOT, file.replace(/^src\/app\//, ""));
 }
 
-function getFallbackSource(route: QualityReviewedShellRoute, routeSource: string): string {
+function getFallbackSource(
+	route: QualityReviewedShellRoute,
+	routeSource: string,
+): string {
 	return "fallbackComponentFile" in route
 		? readFileSync(appPath(route.fallbackComponentFile), "utf8")
 		: routeSource;
@@ -842,11 +864,14 @@ function escapeRegExp(value: string): string {
 function hasImportedConnectionCall(source: string): boolean {
 	const sourceWithoutComments = maskComments(source);
 	const localIdentifiers: string[] = [];
-	const namedNextServerImport = /\bimport\s*\{([^}]*)\}\s*from\s*(["'])next\/server\2/g;
+	const namedNextServerImport =
+		/\bimport\s*\{([^}]*)\}\s*from\s*(["'])next\/server\2/g;
 
 	for (const match of sourceWithoutComments.matchAll(namedNextServerImport)) {
 		for (const specifier of match[1].split(",")) {
-			const connectionImport = specifier.match(/^\s*connection(?:\s+as\s+([A-Za-z_$][\w$]*))?\s*$/);
+			const connectionImport = specifier.match(
+				/^\s*connection(?:\s+as\s+([A-Za-z_$][\w$]*))?\s*$/,
+			);
 			if (connectionImport) {
 				localIdentifiers.push(connectionImport[1] ?? "connection");
 			}
@@ -855,11 +880,16 @@ function hasImportedConnectionCall(source: string): boolean {
 
 	const callableSource = maskStrings(sourceWithoutComments);
 	return localIdentifiers.some((identifier) =>
-		new RegExp(`(?<![\\w$.])${escapeRegExp(identifier)}\\s*\\(`).test(callableSource),
+		new RegExp(`(?<![\\w$.])${escapeRegExp(identifier)}\\s*\\(`).test(
+			callableSource,
+		),
 	);
 }
 
-function findJsxOpeningTagEnd(source: string, start: number): number | undefined {
+function findJsxOpeningTagEnd(
+	source: string,
+	start: number,
+): number | undefined {
 	let braceDepth = 0;
 
 	for (let index = start; index < source.length; index += 1) {
@@ -875,7 +905,10 @@ function findJsxOpeningTagEnd(source: string, start: number): number | undefined
 	return undefined;
 }
 
-function findMatchingSuspenseClose(source: string, openingTagEnd: number): number | undefined {
+function findMatchingSuspenseClose(
+	source: string,
+	openingTagEnd: number,
+): number | undefined {
 	const suspenseTag = /<\/?Suspense\b/g;
 	suspenseTag.lastIndex = openingTagEnd;
 	let depth = 1;
@@ -894,7 +927,10 @@ function findMatchingSuspenseClose(source: string, openingTagEnd: number): numbe
 	return undefined;
 }
 
-function findNamedFunctionBody(source: string, functionName: string): string | undefined {
+function findNamedFunctionBody(
+	source: string,
+	functionName: string,
+): string | undefined {
 	const searchableSource = maskStrings(maskComments(source));
 	const declarationPattern = new RegExp(
 		`\\bfunction\\s+${escapeRegExp(functionName)}\\s*\\([^)]*\\)\\s*\\{`,
@@ -906,7 +942,11 @@ function findNamedFunctionBody(source: string, functionName: string): string | u
 	const openingBrace = declaration.index + declaration[0].lastIndexOf("{");
 	let depth = 1;
 
-	for (let index = openingBrace + 1; index < searchableSource.length; index += 1) {
+	for (
+		let index = openingBrace + 1;
+		index < searchableSource.length;
+		index += 1
+	) {
 		if (searchableSource[index] === "{") {
 			depth += 1;
 		} else if (searchableSource[index] === "}") {
@@ -922,7 +962,10 @@ function findNamedFunctionBody(source: string, functionName: string): string | u
 
 function hasFocusedSuspenseBoundary(
 	source: string,
-	{ fallbackComponent, contentComponent }: { fallbackComponent: string; contentComponent: string },
+	{
+		fallbackComponent,
+		contentComponent,
+	}: { fallbackComponent: string; contentComponent: string },
 ): boolean {
 	const searchableSource = maskStrings(maskComments(source));
 	const suspenseOpening = /<Suspense\b/g;
@@ -938,10 +981,17 @@ function hasFocusedSuspenseBoundary(
 		const openingTag = searchableSource.slice(match.index, openingTagEnd);
 		if (!fallbackPattern.test(openingTag)) continue;
 
-		const closingTagStart = findMatchingSuspenseClose(searchableSource, openingTagEnd);
+		const closingTagStart = findMatchingSuspenseClose(
+			searchableSource,
+			openingTagEnd,
+		);
 		if (!closingTagStart) continue;
 
-		if (contentPattern.test(searchableSource.slice(openingTagEnd, closingTagStart))) {
+		if (
+			contentPattern.test(
+				searchableSource.slice(openingTagEnd, closingTagStart),
+			)
+		) {
 			return true;
 		}
 	}
@@ -961,13 +1011,17 @@ function hasDefaultExportFocusedSuspenseBoundary(
 		? findNamedFunctionBody(source, defaultExport[1])
 		: undefined;
 
-	return defaultExportBody ? hasFocusedSuspenseBoundary(defaultExportBody, boundary) : false;
+	return defaultExportBody
+		? hasFocusedSuspenseBoundary(defaultExportBody, boundary)
+		: false;
 }
 
 function hasSynchronousDefaultExport(source: string): boolean {
 	const searchableSource = maskStrings(maskComments(source));
 
-	return /\bexport\s+default\s+function\s+[A-Za-z_$][\w$]*\s*\(/.test(searchableSource);
+	return /\bexport\s+default\s+function\s+[A-Za-z_$][\w$]*\s*\(/.test(
+		searchableSource,
+	);
 }
 
 function hasExpectedLoadingFrame(
@@ -984,20 +1038,40 @@ function hasExpectedLoadingFrame(
 		fallbackNestedSkeletonComponent?: string;
 	},
 ): boolean {
+	// The client region renders the same native frame and translates its label.
+	source = source.replace(
+		/<LoadingRegion\b([^>]*)>/gs,
+		(_match, attributes: string) =>
+			`<div${attributes.replace(/label=\{\{\s*labelKey:\s*"[^"]+",\s*labelDefault:\s*("[^"]+")[,\s]*\}\}/g, "aria-label=$1")}>`,
+	);
+	source = source.replace(
+		/label=\{\{\s*labelKey:\s*"[^"]+",\s*labelDefault:\s*("[^"]+")[,\s]*\}\}/g,
+		"label=$1",
+	);
 	const fallbackBody = findNamedFunctionBody(source, fallbackComponent);
-	const sharedSkeleton = fallbackBody?.match(/<SettingsPageSkeleton\s+label="([^"]+)"\s*\/>/);
+	const sharedSkeleton = fallbackBody?.match(
+		/<SettingsPageSkeleton\s+label="([^"]+)"\s*\/>/,
+	);
 	if (sharedSkeleton) {
 		const markup = renderToStaticMarkup(
-			createElement(SettingsPageSkeleton, { label: sharedSkeleton[1] }),
+			createElement(
+				TolgeeProvider,
+				{ tolgee: createTestTolgee() },
+				createElement(SettingsPageSkeleton, { label: sharedSkeleton[1] }),
+			),
 		);
 		const outerFrame = markup.match(/^<div\b[^>]*>/)?.[0] ?? "";
-		const placeholders = [...markup.matchAll(/<div\b[^>]*data-slot="skeleton"[^>]*>/g)];
+		const placeholders = [
+			...markup.matchAll(/<div\b[^>]*data-slot="skeleton"[^>]*>/g),
+		];
 		return (
 			outerFrame.includes(`class="${expectedOuterFrameClass}"`) &&
 			outerFrame.includes('role="status"') &&
 			outerFrame.includes(`aria-label="${fallbackAriaLabel}"`) &&
 			placeholders.length > 0 &&
-			placeholders.every(([placeholder]) => placeholder.includes('aria-hidden="true"'))
+			placeholders.every(([placeholder]) =>
+				placeholder.includes('aria-hidden="true"'),
+			)
 		);
 	}
 	const outerElement = fallbackBody?.match(/<div\b[^>]*>/)?.[0];
@@ -1060,12 +1134,17 @@ function hasExpectedMappedLoadingGeometry(
 	return groups.every(({ component, keyArray, itemCount, frameClass }) => {
 		if (
 			component &&
-			!new RegExp(`<${escapeRegExp(component)}\\b`).test(maskStrings(maskComments(fallbackBody)))
+			!new RegExp(`<${escapeRegExp(component)}\\b`).test(
+				maskStrings(maskComments(fallbackBody)),
+			)
 		) {
 			return false;
 		}
 
-		const geometryBody = findNamedFunctionBody(source, component ?? fallbackComponent);
+		const geometryBody = findNamedFunctionBody(
+			source,
+			component ?? fallbackComponent,
+		);
 		if (!geometryBody) return false;
 		const keyArrayPattern = new RegExp(
 			`const\\s+${escapeRegExp(keyArray)}\\s*=\\s*\\[([^\\]]*)\\]`,
@@ -1094,7 +1173,9 @@ function hasExpectedResolvedOuterFrame(
 	const resolvedBody = findNamedFunctionBody(source, resolvedComponent);
 	const outerElement = resolvedBody?.match(/<div\b[^>]*>/)?.[0];
 
-	return outerElement?.includes(`className="${resolvedOuterFrameClass}"`) ?? false;
+	return (
+		outerElement?.includes(`className="${resolvedOuterFrameClass}"`) ?? false
+	);
 }
 
 function expectedOuterFrameClass(route: QualityReviewedShellRoute): string {
@@ -1106,10 +1187,19 @@ function expectedOuterFrameClass(route: QualityReviewedShellRoute): string {
 describe("connection call source detection", () => {
 	it.each([
 		['import { connection } from "next/server"; await connection();', true],
-		['import { connection as waitForRequest } from "next/server"; await waitForRequest();', true],
-		['import { connection } from "next/server"; // connection()\nreturn null;', false],
+		[
+			'import { connection as waitForRequest } from "next/server"; await waitForRequest();',
+			true,
+		],
+		[
+			'import { connection } from "next/server"; // connection()\nreturn null;',
+			false,
+		],
 		['import { connection } from "next/server"; database.connection();', false],
-		['import { connection } from "next/server"; const text = "connection()";', false],
+		[
+			'import { connection } from "next/server"; const text = "connection()";',
+			false,
+		],
 		['import { connection } from "next/server"; return null;', false],
 		["await connection();", false],
 	])("detects only an imported direct call in %#", (source, expected) => {
@@ -1117,7 +1207,9 @@ describe("connection call source detection", () => {
 	});
 
 	it("normalizes platform-specific glob separators", () => {
-		expect(normalizeGlobPath("[locale]\\(app)\\page.tsx")).toBe("[locale]/(app)/page.tsx");
+		expect(normalizeGlobPath("[locale]\\(app)\\page.tsx")).toBe(
+			"[locale]/(app)/page.tsx",
+		);
 	});
 });
 
@@ -1154,7 +1246,9 @@ describe("focused Suspense boundary detection", () => {
 		`;
 
 		expect(hasFocusedSuspenseBoundary(source, boundary)).toBe(true);
-		expect(hasDefaultExportFocusedSuspenseBoundary(source, boundary)).toBe(false);
+		expect(hasDefaultExportFocusedSuspenseBoundary(source, boundary)).toBe(
+			false,
+		);
 	});
 
 	it.each([
@@ -1255,7 +1349,9 @@ describe("App Router connection escape hatches", () => {
 
 	it("matches the reviewed and pending page/layout inventory exactly", () => {
 		const actualFiles = globSync("**/{page,layout}.tsx", { cwd: APP_ROOT })
-			.filter((file) => hasImportedConnectionCall(readFileSync(join(APP_ROOT, file), "utf8")))
+			.filter((file) =>
+				hasImportedConnectionCall(readFileSync(join(APP_ROOT, file), "utf8")),
+			)
 			.map((file) => `src/app/${normalizeGlobPath(file)}`)
 			.sort();
 		const retainedFiles = [...REVIEWED_RETAINED_CONNECTION_FILES].sort();
@@ -1267,7 +1363,10 @@ describe("App Router connection escape hatches", () => {
 	});
 
 	it("lists only files that exist", () => {
-		for (const file of [...REVIEWED_RETAINED_CONNECTION_FILES, ...PENDING_CONNECTION_FILES]) {
+		for (const file of [
+			...REVIEWED_RETAINED_CONNECTION_FILES,
+			...PENDING_CONNECTION_FILES,
+		]) {
 			expect(existsSync(appPath(file)), file).toBe(true);
 		}
 	});
@@ -1275,21 +1374,34 @@ describe("App Router connection escape hatches", () => {
 	it.each(REVIEWED_RETAINED_CONNECTION_BOUNDARIES)(
 		"keeps an approved reachable request boundary in $file",
 		(boundary) => {
-			const source = readFileSync(appPath(boundary.file), "utf8").replace(/\r\n/g, "\n");
-			const contentBody = findNamedFunctionBody(source, boundary.contentComponent);
+			const source = readFileSync(appPath(boundary.file), "utf8").replace(
+				/\r\n/g,
+				"\n",
+			);
+			const contentBody = findNamedFunctionBody(
+				source,
+				boundary.contentComponent,
+			);
 			const reasonAndOperation = `// ${boundary.reason}\n\tawait connection();\n\t${boundary.operation}`;
 
-			expect(APPROVED_CONNECTION_REASON_CATEGORIES.has(boundary.reasonCategory)).toBe(true);
+			expect(
+				APPROVED_CONNECTION_REASON_CATEGORIES.has(boundary.reasonCategory),
+			).toBe(true);
 			expect(hasImportedConnectionCall(source), boundary.file).toBe(true);
 			expect(contentBody, boundary.file).toContain(reasonAndOperation);
 			if ("authorizationOperation" in boundary) {
-				expect(contentBody, boundary.file).toContain(boundary.authorizationOperation);
-				expect(contentBody?.indexOf(boundary.authorizationOperation)).toBeLessThan(
-					contentBody?.indexOf(reasonAndOperation) ?? -1,
+				expect(contentBody, boundary.file).toContain(
+					boundary.authorizationOperation,
 				);
+				expect(
+					contentBody?.indexOf(boundary.authorizationOperation),
+				).toBeLessThan(contentBody?.indexOf(reasonAndOperation) ?? -1);
 			}
 			if ("coordinatorComponent" in boundary) {
-				const coordinatorBody = findNamedFunctionBody(source, boundary.coordinatorComponent);
+				const coordinatorBody = findNamedFunctionBody(
+					source,
+					boundary.coordinatorComponent,
+				);
 				expect(
 					hasDefaultExportFocusedSuspenseBoundary(source, {
 						fallbackComponent: boundary.coordinatorFallbackComponent,
@@ -1298,11 +1410,16 @@ describe("App Router connection escape hatches", () => {
 					boundary.file,
 				).toBe(true);
 				expect(
-					coordinatorBody ? hasFocusedSuspenseBoundary(coordinatorBody, boundary) : false,
+					coordinatorBody
+						? hasFocusedSuspenseBoundary(coordinatorBody, boundary)
+						: false,
 					boundary.file,
 				).toBe(true);
 			} else {
-				expect(hasDefaultExportFocusedSuspenseBoundary(source, boundary), boundary.file).toBe(true);
+				expect(
+					hasDefaultExportFocusedSuspenseBoundary(source, boundary),
+					boundary.file,
+				).toBe(true);
 			}
 		},
 	);
@@ -1316,12 +1433,15 @@ describe("low-risk route streaming boundaries", () => {
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 
-	it.each(SHELL_WORK_QUEUE)("keeps a focused Suspense fallback in $file", (route) => {
-		const { file } = route;
-		const source = readFileSync(appPath(file), "utf8");
+	it.each(SHELL_WORK_QUEUE)(
+		"keeps a focused Suspense fallback in $file",
+		(route) => {
+			const { file } = route;
+			const source = readFileSync(appPath(file), "utf8");
 
-		expect(hasFocusedSuspenseBoundary(source, route), file).toBe(true);
-	});
+			expect(hasFocusedSuspenseBoundary(source, route), file).toBe(true);
+		},
+	);
 
 	it.each(QUALITY_REVIEWED_SHELL_ROUTES)(
 		"keeps an aligned accessible loading frame in $file",
@@ -1329,7 +1449,10 @@ describe("low-risk route streaming boundaries", () => {
 			const source = readFileSync(appPath(route.file), "utf8");
 			const fallbackSource = getFallbackSource(route, source);
 
-			expect(hasDefaultExportFocusedSuspenseBoundary(source, route), route.file).toBe(true);
+			expect(
+				hasDefaultExportFocusedSuspenseBoundary(source, route),
+				route.file,
+			).toBe(true);
 			expect(
 				hasExpectedLoadingFrame(fallbackSource, {
 					...route,
@@ -1343,7 +1466,10 @@ describe("low-risk route streaming boundaries", () => {
 	it.each(CROSS_FILE_RESOLVED_SHELL_ROUTES)(
 		"derives the fallback frame from resolved content in $file",
 		(route) => {
-			const resolvedSource = readFileSync(appPath(route.resolvedComponentFile), "utf8");
+			const resolvedSource = readFileSync(
+				appPath(route.resolvedComponentFile),
+				"utf8",
+			);
 
 			expect(
 				hasExpectedResolvedOuterFrame(resolvedSource, route),
@@ -1352,47 +1478,54 @@ describe("low-risk route streaming boundaries", () => {
 		},
 	);
 
-	it.each(SHELL_WORK_QUEUE.filter((route) => "fallbackNestedSkeletonComponent" in route))(
-		"reuses the reviewed feature skeleton geometry in $file",
-		(route) => {
-			const source = readFileSync(appPath(route.file), "utf8");
-			const nestedSource = readFileSync(
-				join(APP_ROOT, "../..", route.fallbackNestedSkeletonFile),
-				"utf8",
-			);
+	it.each(
+		SHELL_WORK_QUEUE.filter(
+			(route) => "fallbackNestedSkeletonComponent" in route,
+		),
+	)("reuses the reviewed feature skeleton geometry in $file", (route) => {
+		const source = readFileSync(appPath(route.file), "utf8");
+		const nestedSource = readFileSync(
+			join(APP_ROOT, "../..", route.fallbackNestedSkeletonFile),
+			"utf8",
+		);
 
-			expect(hasExpectedNestedSkeletonGeometry(source, nestedSource, route), route.file).toBe(true);
-		},
-	);
+		expect(
+			hasExpectedNestedSkeletonGeometry(source, nestedSource, route),
+			route.file,
+		).toBe(true);
+	});
 
-	it.each(SHELL_WORK_QUEUE.filter((route) => "fallbackGeometryGroups" in route))(
-		"keeps meaningful loading geometry in $file",
-		(route) => {
-			const source = readFileSync(appPath(route.file), "utf8");
-			const fallbackSource =
-				"fallbackComponentFile" in route
-					? readFileSync(appPath(route.fallbackComponentFile), "utf8")
-					: source;
+	it.each(
+		SHELL_WORK_QUEUE.filter((route) => "fallbackGeometryGroups" in route),
+	)("keeps meaningful loading geometry in $file", (route) => {
+		const source = readFileSync(appPath(route.file), "utf8");
+		const fallbackSource =
+			"fallbackComponentFile" in route
+				? readFileSync(appPath(route.fallbackComponentFile), "utf8")
+				: source;
 
-			expect(
-				hasExpectedMappedLoadingGeometry(
-					fallbackSource,
-					route.fallbackComponent,
-					route.fallbackGeometryGroups,
-				),
-				route.file,
-			).toBe(true);
-		},
-	);
+		expect(
+			hasExpectedMappedLoadingGeometry(
+				fallbackSource,
+				route.fallbackComponent,
+				route.fallbackGeometryGroups,
+			),
+			route.file,
+		).toBe(true);
+	});
 
 	it.each(
 		SHELL_WORK_QUEUE.filter(
 			(route) =>
-				"requiresSynchronousDefaultExport" in route && route.requiresSynchronousDefaultExport,
+				"requiresSynchronousDefaultExport" in route &&
+				route.requiresSynchronousDefaultExport,
 		),
-	)("keeps request reads behind the default export boundary in $file", (route) => {
-		const source = readFileSync(appPath(route.file), "utf8");
+	)(
+		"keeps request reads behind the default export boundary in $file",
+		(route) => {
+			const source = readFileSync(appPath(route.file), "utf8");
 
-		expect(hasSynchronousDefaultExport(source), route.file).toBe(true);
-	});
+			expect(hasSynchronousDefaultExport(source), route.file).toBe(true);
+		},
+	);
 });

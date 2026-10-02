@@ -145,7 +145,8 @@
         "invalid": "Verification Failed",
         "valid": "Verification Passed",
         "verifiedAt": "Verified at {time}"
-      }
+      },
+      "wORMProtected": "WORM protected"
     },
     "auditLog": {
       "action": "Action",

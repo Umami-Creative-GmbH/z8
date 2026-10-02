@@ -73,7 +73,6 @@ import { useRouter } from "@/navigation";
 
 const PRONOUN_PRESETS = ["she/her", "he/him", "they/them"] as const;
 const CUSTOM_PRONOUN_VALUE = "__custom__";
-const PRONOUNS_MAX_LENGTH_MESSAGE = "Pronouns must be 50 characters or less";
 
 interface ProfileFormProps {
 	user: {
@@ -90,8 +89,16 @@ interface ProfileFormProps {
 const BIRTHDAY_START_MONTH = new Date(1940, 0);
 const BIRTHDAY_DEFAULT_MONTH = new Date(2000, 0);
 
-function validatePronouns(value: string) {
-	return value.trim().length > 50 ? PRONOUNS_MAX_LENGTH_MESSAGE : undefined;
+function validatePronouns(
+	value: string,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
+	return value.trim().length > 50
+		? t(
+				"validation.pronounsMaxLength",
+				"Pronouns must be 50 characters or less",
+			)
+		: undefined;
 }
 
 type ProfileFormValues = {
@@ -845,9 +852,9 @@ function ProfilePronounsField({
 		<form.Field
 			name="pronouns"
 			validators={{
-				onBlur: ({ value }) => validatePronouns(value),
-				onChange: ({ value }) => validatePronouns(value),
-				onSubmit: ({ value }) => validatePronouns(value),
+				onBlur: ({ value }) => validatePronouns(value, t),
+				onChange: ({ value }) => validatePronouns(value, t),
+				onSubmit: ({ value }) => validatePronouns(value, t),
 			}}
 		>
 			{(field) => {
@@ -884,7 +891,11 @@ function ProfilePronounsField({
 							}
 						>
 							<TFormControl hasError={hasError}>
-								<SelectTrigger aria-label={`${label} presets`}>
+								<SelectTrigger
+									aria-label={t("common.fieldPresets", "{label} presets", {
+										label,
+									})}
+								>
 									<SelectValue
 										placeholder={t(
 											"settings.profile.pronouns.placeholder",

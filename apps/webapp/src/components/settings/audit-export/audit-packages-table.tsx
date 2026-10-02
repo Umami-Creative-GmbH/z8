@@ -28,7 +28,13 @@ import {
 } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -38,14 +44,19 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import type { VerificationResult } from "@/lib/audit-export";
-import { formatDateOnly, formatDateTime, formatTimeOnly } from "@/lib/datetime/format";
+import {
+	formatDateOnly,
+	formatDateTime,
+	formatTimeOnly,
+} from "@/lib/datetime/format";
 import { useRouter } from "@/navigation";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 
 function formatFileSize(bytes: number): string {
 	if (bytes < 1024) return `${bytes} B`;
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-	if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	if (bytes < 1024 * 1024 * 1024)
+		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
@@ -54,7 +65,10 @@ interface AuditPackagesTableProps {
 	packages: AuditPackageInfo[];
 }
 
-export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTableProps) {
+export function AuditPackagesTable({
+	organizationId,
+	packages,
+}: AuditPackagesTableProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useOrganizationTimezone();
@@ -73,7 +87,11 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 				setVerificationResult({ packageId, result: result.data });
 			} else {
 				toast.error(
-					result.error || t("settings.auditExport.packages.verifyError", "Verification failed"),
+					result.error ||
+						t(
+							"settings.auditExport.packages.verifyError",
+							"Verification failed",
+						),
 				);
 			}
 		} catch (error) {
@@ -92,7 +110,10 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 						{t("settings.auditExport.packages.title", "Audit Packages")}
 					</CardTitle>
 					<CardDescription>
-						{t("settings.auditExport.packages.emptyDescription", "No audit packages created yet")}
+						{t(
+							"settings.auditExport.packages.emptyDescription",
+							"No audit packages created yet",
+						)}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
@@ -132,11 +153,21 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 					<Table>
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("settings.auditExport.packages.colDate", "Date")}</TableHead>
-								<TableHead>{t("settings.auditExport.packages.colType", "Type")}</TableHead>
-								<TableHead>{t("settings.auditExport.packages.colStatus", "Status")}</TableHead>
-								<TableHead>{t("settings.auditExport.packages.colFiles", "Files")}</TableHead>
-								<TableHead>{t("settings.auditExport.packages.colSize", "Size")}</TableHead>
+								<TableHead>
+									{t("settings.auditExport.packages.colDate", "Date")}
+								</TableHead>
+								<TableHead>
+									{t("settings.auditExport.packages.colType", "Type")}
+								</TableHead>
+								<TableHead>
+									{t("settings.auditExport.packages.colStatus", "Status")}
+								</TableHead>
+								<TableHead>
+									{t("settings.auditExport.packages.colFiles", "Files")}
+								</TableHead>
+								<TableHead>
+									{t("settings.auditExport.packages.colSize", "Size")}
+								</TableHead>
 								<TableHead>
 									{t("settings.auditExport.packages.colRetention", "Retention")}
 								</TableHead>
@@ -151,10 +182,16 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 									<TableCell>
 										<div className="flex flex-col">
 											<span className="font-medium">
-												{formatDateOnly(new Date(pkg.createdAt), { locale, timezone })}
+												{formatDateOnly(new Date(pkg.createdAt), {
+													locale,
+													timezone,
+												})}
 											</span>
 											<span className="text-xs text-muted-foreground">
-												{formatTimeOnly(new Date(pkg.createdAt), { locale, timezone })}
+												{formatTimeOnly(new Date(pkg.createdAt), {
+													locale,
+													timezone,
+												})}
 											</span>
 										</div>
 									</TableCell>
@@ -163,8 +200,14 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 											{pkg.exportType === "data"
 												? t("settings.auditExport.packages.typeData", "Data")
 												: pkg.exportType === "payroll"
-													? t("settings.auditExport.packages.typePayroll", "Payroll")
-													: t("settings.auditExport.packages.typeAuditPack", "Audit Pack")}
+													? t(
+															"settings.auditExport.packages.typePayroll",
+															"Payroll",
+														)
+													: t(
+															"settings.auditExport.packages.typeAuditPack",
+															"Audit Pack",
+														)}
 										</Badge>
 									</TableCell>
 									<TableCell>
@@ -172,12 +215,20 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 									</TableCell>
 									<TableCell>{pkg.fileCount ?? "-"}</TableCell>
 									<TableCell>
-										{pkg.fileSizeBytes ? formatFileSize(pkg.fileSizeBytes) : "-"}
+										{pkg.fileSizeBytes
+											? formatFileSize(pkg.fileSizeBytes)
+											: "-"}
 									</TableCell>
 									<TableCell>
 										<div className="flex items-center gap-1">
 											{pkg.objectLockEnabled && (
-												<IconLock className="size-4 text-green-600" title="WORM protected" />
+												<IconLock
+													className="size-4 text-green-600"
+													title={t(
+														"settings.auditExport.wORMProtected",
+														"WORM protected",
+													)}
+												/>
 											)}
 											<span>{pkg.retentionYears}y</span>
 										</div>
@@ -219,16 +270,24 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 							{verificationResult?.result.isValid ? (
 								<>
 									<IconCheck className="size-5 text-green-600" />
-									{t("settings.auditExport.verification.valid", "Verification Passed")}
+									{t(
+										"settings.auditExport.verification.valid",
+										"Verification Passed",
+									)}
 								</>
 							) : (
 								<>
 									<IconX className="size-5 text-red-600" />
-									{t("settings.auditExport.verification.invalid", "Verification Failed")}
+									{t(
+										"settings.auditExport.verification.invalid",
+										"Verification Failed",
+									)}
 								</>
 							)}
 						</ActionPanelTitle>
-						<ActionPanelDescription>{verificationResult?.result.summary}</ActionPanelDescription>
+						<ActionPanelDescription>
+							{verificationResult?.result.summary}
+						</ActionPanelDescription>
 					</ActionPanelHeader>
 					<ActionPanelBody className="space-y-4">
 						{verificationResult && (
@@ -250,18 +309,27 @@ export function AuditPackagesTable({ organizationId, packages }: AuditPackagesTa
 											)}
 											<div className="flex-1 min-w-0">
 												<p className="font-medium text-sm">{check.name}</p>
-												<p className="text-xs text-muted-foreground">{check.details}</p>
+												<p className="text-xs text-muted-foreground">
+													{check.details}
+												</p>
 											</div>
 										</div>
 									))}
 								</div>
 								<p className="text-xs text-muted-foreground text-center">
-									{t("settings.auditExport.verification.verifiedAt", "Verified at {time}", {
-										time: formatDateTime(verificationResult.result.verifiedAt, {
-											locale,
-											timezone,
-										}),
-									})}
+									{t(
+										"settings.auditExport.verification.verifiedAt",
+										"Verified at {time}",
+										{
+											time: formatDateTime(
+												verificationResult.result.verifiedAt,
+												{
+													locale,
+													timezone,
+												},
+											),
+										},
+									)}
 								</p>
 							</>
 						)}

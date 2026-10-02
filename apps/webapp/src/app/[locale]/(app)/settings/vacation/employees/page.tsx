@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -60,10 +61,13 @@ async function EmployeeAllowancesContent() {
 
 function EmployeeAllowancesLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading employee vacation allowances"
+			label={{
+				labelKey: "common.loadingRegions.employeeVacationAllowances",
+				labelDefault: "Loading employee vacation allowances",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-64" />
@@ -82,7 +86,7 @@ function EmployeeAllowancesLoading() {
 					</div>
 				</CardContent>
 			</Card>
-		</div>
+		</LoadingRegion>
 	);
 }
 

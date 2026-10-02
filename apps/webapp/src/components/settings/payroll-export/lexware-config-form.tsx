@@ -29,7 +29,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { LexwareLohnConfig } from "@/lib/payroll-export/types";
 
 interface LexwareConfigFormProps {
@@ -54,7 +59,8 @@ export function LexwareConfigForm({
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm({
-		defaultValues: (initialConfig?.config ?? DEFAULT_CONFIG) satisfies LexwareLohnConfig,
+		defaultValues: (initialConfig?.config ??
+			DEFAULT_CONFIG) satisfies LexwareLohnConfig,
 		onSubmit: async ({ value }) => {
 			startTransition(async () => {
 				const result = await saveLexwareConfigAction({
@@ -63,11 +69,19 @@ export function LexwareConfigForm({
 				});
 
 				if (result.success) {
-					toast.success(t("settings.payrollExport.lexware.saveSuccess", "Configuration saved"));
+					toast.success(
+						t(
+							"settings.payrollExport.lexware.saveSuccess",
+							"Configuration saved",
+						),
+					);
 					onConfigSaved?.();
 				} else {
 					toast.error(
-						t("settings.payrollExport.lexware.saveError", "Failed to save configuration"),
+						t(
+							"settings.payrollExport.lexware.saveError",
+							"Failed to save configuration",
+						),
 						{
 							description: result.error,
 						},
@@ -84,18 +98,24 @@ export function LexwareConfigForm({
 					<div className="flex items-center gap-4">
 						<Image
 							src="/lexware.svg"
-							alt="Lexware Logo"
+							alt={t("common.brandLogo", "{brand} logo", { brand: "Lexware" })}
 							width={48}
 							height={48}
 							className="size-12"
 						/>
 						<div>
 							<CardTitle className="flex items-center gap-2">
-								{t("settings.payrollExport.lexware.title", "Lexware lohn+gehalt")}
+								{t(
+									"settings.payrollExport.lexware.title",
+									"Lexware lohn+gehalt",
+								)}
 								{initialConfig && (
 									<Badge variant="secondary" className="gap-1">
 										<IconCheck className="size-3" aria-hidden="true" />
-										{t("settings.payrollExport.lexware.configured", "Configured")}
+										{t(
+											"settings.payrollExport.lexware.configured",
+											"Configured",
+										)}
 									</Badge>
 								)}
 							</CardTitle>
@@ -157,7 +177,9 @@ export function LexwareConfigForm({
 								</div>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) => field.handleChange(v as "employeeNumber" | "employeeId")}
+									onValueChange={(v) =>
+										field.handleChange(v as "employeeNumber" | "employeeId")
+									}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -186,7 +208,10 @@ export function LexwareConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeZeroHours" className="text-base">
-										{t("settings.payrollExport.lexware.includeZeroHours", "Include Zero Hours")}
+										{t(
+											"settings.payrollExport.lexware.includeZeroHours",
+											"Include Zero Hours",
+										)}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(
@@ -209,7 +234,10 @@ export function LexwareConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeStunden" className="text-base">
-										{t("settings.payrollExport.lexware.includeStunden", "Include Hours Column")}
+										{t(
+											"settings.payrollExport.lexware.includeStunden",
+											"Include Hours Column",
+										)}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(

@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 import { VariablePalette } from "./variable-palette";
 
 describe("VariablePalette", () => {
@@ -34,14 +35,17 @@ describe("VariablePalette", () => {
 						name: "verificationUrl",
 						label: "Verification URL",
 						description: "Verification link.",
-						example: "https://app.z8-time.app/verify-email?token=preview-token-with-a-long-value",
+						example:
+							"https://app.z8-time.app/verify-email?token=preview-token-with-a-long-value",
 					},
 				]}
 				onInsert={vi.fn()}
 			/>,
 		);
 
-		const button = screen.getByRole("button", { name: "Insert Verification URL" });
+		const button = screen.getByRole("button", {
+			name: "Insert Verification URL",
+		});
 		const token = screen.getByText("{{verificationUrl}}");
 		const example = screen.getByText(
 			"https://app.z8-time.app/verify-email?token=preview-token-with-a-long-value",

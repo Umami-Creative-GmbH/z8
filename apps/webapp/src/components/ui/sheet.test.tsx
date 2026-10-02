@@ -2,10 +2,11 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as React from "react";
 import { describe, expect, it } from "vitest";
+import { render } from "@/test/render-with-translations";
 
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "./sheet";
 
@@ -24,7 +25,9 @@ describe("Sheet", () => {
 
 		await user.click(screen.getByRole("button", { name: "Open sheet" }));
 
-		expect(screen.getByRole("dialog", { name: "Employee details" })).toBeTruthy();
+		expect(
+			screen.getByRole("dialog", { name: "Employee details" }),
+		).toBeTruthy();
 	});
 
 	it("keeps the sheet open when onPointerDownOutside prevents dismissal", async () => {
@@ -50,12 +53,16 @@ describe("Sheet", () => {
 
 		render(<ControlledSheet />);
 
-		const overlay = document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]');
+		const overlay = document.querySelector<HTMLElement>(
+			'[data-slot="sheet-overlay"]',
+		);
 		expect(overlay).toBeTruthy();
 
 		await user.click(overlay as HTMLElement);
 
-		expect(screen.getByRole("dialog", { name: "Protected panel" })).toBeTruthy();
+		expect(
+			screen.getByRole("dialog", { name: "Protected panel" }),
+		).toBeTruthy();
 	});
 
 	it("uses wrapper-owned CSS state instead of Web Animations for closing", async () => {
@@ -77,7 +84,9 @@ describe("Sheet", () => {
 
 		await user.click(screen.getByRole("button", { name: "Close" }));
 
-		const overlay = document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]');
+		const overlay = document.querySelector<HTMLElement>(
+			'[data-slot="sheet-overlay"]',
+		);
 		const dialog = screen.getByRole("dialog", { name: "Animated panel" });
 
 		expect(overlay?.getAttribute("data-sheet-open")).toBe("false");
@@ -96,9 +105,13 @@ describe("Sheet", () => {
 			</Sheet>,
 		);
 
-		await user.click(screen.getByRole("button", { name: "Open animated sheet" }));
+		await user.click(
+			screen.getByRole("button", { name: "Open animated sheet" }),
+		);
 
-		const overlay = document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]');
+		const overlay = document.querySelector<HTMLElement>(
+			'[data-slot="sheet-overlay"]',
+		);
 		const dialog = screen.getByRole("dialog", { name: "Opening panel" });
 
 		expect(overlay?.className).toContain("transition-opacity");
@@ -106,11 +119,19 @@ describe("Sheet", () => {
 	});
 
 	it("uses CSS keyframes for entry without requestAnimationFrame timing", async () => {
-		const sheetSource = await readFile(join(process.cwd(), "src/components/ui/sheet.tsx"), "utf8");
-		const globalsSource = await readFile(join(process.cwd(), "src/app/globals.css"), "utf8");
+		const sheetSource = await readFile(
+			join(process.cwd(), "src/components/ui/sheet.tsx"),
+			"utf8",
+		);
+		const globalsSource = await readFile(
+			join(process.cwd(), "src/app/globals.css"),
+			"utf8",
+		);
 
 		expect(sheetSource).not.toContain("requestAnimationFrame");
-		expect(sheetSource).toContain("data-[sheet-open=true]:animate-sheet-fade-in");
+		expect(sheetSource).toContain(
+			"data-[sheet-open=true]:animate-sheet-fade-in",
+		);
 		expect(sheetSource).toContain(
 			"data-[sheet-side=right]:data-[sheet-open=true]:animate-sheet-enter-right",
 		);
@@ -119,7 +140,10 @@ describe("Sheet", () => {
 	});
 
 	it("uses wrapper-owned lifecycle without Web Animations", async () => {
-		const source = await readFile(join(process.cwd(), "src/components/ui/sheet.tsx"), "utf8");
+		const source = await readFile(
+			join(process.cwd(), "src/components/ui/sheet.tsx"),
+			"utf8",
+		);
 
 		expect(source).toContain("renderedOpen");
 		expect(source).toContain("visualOpen");
@@ -127,7 +151,9 @@ describe("Sheet", () => {
 		expect(source).not.toContain("preventUnmountOnClose");
 		expect(source).not.toContain("commitStyles");
 		expect(source).not.toContain("animate(");
-		expect(source).not.toContain("motion-safe:data-[starting-style]:animate-in");
+		expect(source).not.toContain(
+			"motion-safe:data-[starting-style]:animate-in",
+		);
 		expect(source).not.toContain("motion-safe:data-[ending-style]:animate-out");
 	});
 });

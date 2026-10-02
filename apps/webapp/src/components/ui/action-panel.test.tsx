@@ -2,8 +2,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { render } from "@/test/render-with-translations";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -16,7 +17,10 @@ import {
 
 describe("ActionPanel", () => {
 	it("composes the Sheet primitive instead of Radix dialog internals", () => {
-		const source = readFileSync(join(process.cwd(), "src/components/ui/action-panel.tsx"), "utf8");
+		const source = readFileSync(
+			join(process.cwd(), "src/components/ui/action-panel.tsx"),
+			"utf8",
+		);
 
 		expect(source).toContain("SheetContent");
 		expect(source).not.toContain("DialogPrimitive");
@@ -55,7 +59,9 @@ describe("ActionPanel", () => {
 			</ActionPanel>,
 		);
 
-		const dialogClassName = screen.getByRole("dialog", { name: "Right-only panel" }).className;
+		const dialogClassName = screen.getByRole("dialog", {
+			name: "Right-only panel",
+		}).className;
 
 		expect(dialogClassName).toContain("right-0");
 		expect(dialogClassName).not.toContain("left-0");
@@ -70,9 +76,9 @@ describe("ActionPanel", () => {
 			</ActionPanel>,
 		);
 
-		expect(screen.getByRole("dialog", { name: "Compact panel" }).className).toContain(
-			"sm:max-w-md",
-		);
+		expect(
+			screen.getByRole("dialog", { name: "Compact panel" }).className,
+		).toContain("sm:max-w-md");
 
 		rerender(
 			<ActionPanel open>
@@ -82,7 +88,9 @@ describe("ActionPanel", () => {
 			</ActionPanel>,
 		);
 
-		expect(screen.getByRole("dialog", { name: "Wide panel" }).className).toContain("lg:max-w-3xl");
+		expect(
+			screen.getByRole("dialog", { name: "Wide panel" }).className,
+		).toContain("lg:max-w-3xl");
 	});
 
 	it("uses mobile-safe width and stacked footer actions", () => {
@@ -95,12 +103,18 @@ describe("ActionPanel", () => {
 			</ActionPanel>,
 		);
 
-		const dialogClassName = screen.getByRole("dialog", { name: "Responsive panel" }).className;
+		const dialogClassName = screen.getByRole("dialog", {
+			name: "Responsive panel",
+		}).className;
 		expect(dialogClassName).toContain("w-[calc(100vw-0.75rem)]");
 		expect(dialogClassName).toContain("sm:w-3/4");
-		expect(screen.getByText("Footer actions").className).toContain("flex-col-reverse");
+		expect(screen.getByText("Footer actions").className).toContain(
+			"flex-col-reverse",
+		);
 		expect(screen.getByText("Footer actions").className).toContain("*:w-full");
-		expect(screen.getByText("Footer actions").className).toContain("sm:*:w-auto");
+		expect(screen.getByText("Footer actions").className).toContain(
+			"sm:*:w-auto",
+		);
 	});
 
 	it("uses the muted sheet surface", () => {
@@ -108,12 +122,16 @@ describe("ActionPanel", () => {
 			<ActionPanel open>
 				<ActionPanelContent>
 					<ActionPanelTitle>Form panel</ActionPanelTitle>
-					<ActionPanelDescription>Form panel description</ActionPanelDescription>
+					<ActionPanelDescription>
+						Form panel description
+					</ActionPanelDescription>
 				</ActionPanelContent>
 			</ActionPanel>,
 		);
 
-		const dialogClassName = screen.getByRole("dialog", { name: "Form panel" }).className;
+		const dialogClassName = screen.getByRole("dialog", {
+			name: "Form panel",
+		}).className;
 		expect(dialogClassName).toContain("bg-muted");
 	});
 
@@ -126,12 +144,18 @@ describe("ActionPanel", () => {
 			</ActionPanel>,
 		);
 
-		const dialogClassName = screen.getByRole("dialog", { name: "Animated panel" }).className;
+		const dialogClassName = screen.getByRole("dialog", {
+			name: "Animated panel",
+		}).className;
 
 		expect(dialogClassName).toContain("transition-transform");
 		expect(dialogClassName).toContain("data-[sheet-open=true]:translate-x-0");
-		expect(dialogClassName).not.toContain("motion-safe:data-[starting-style]:animate-in");
-		expect(dialogClassName).not.toContain("motion-safe:data-[ending-style]:animate-out");
+		expect(dialogClassName).not.toContain(
+			"motion-safe:data-[starting-style]:animate-in",
+		);
+		expect(dialogClassName).not.toContain(
+			"motion-safe:data-[ending-style]:animate-out",
+		);
 	});
 
 	it("can hide the close button", () => {

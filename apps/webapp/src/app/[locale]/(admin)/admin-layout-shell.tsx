@@ -1,3 +1,4 @@
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function AdminLayoutShell() {
@@ -8,14 +9,18 @@ export function AdminLayoutShell() {
 				<Skeleton className="ml-3 h-5 w-36" />
 				<Skeleton className="ml-auto size-8 rounded-full" />
 			</header>
-			<main
+			<LoadingRegion
 				aria-busy="true"
-				aria-label="Loading admin console"
+				as="main"
+				label={{
+					labelKey: "common.loadingRegions.adminConsole",
+					labelDefault: "Loading admin console",
+				}}
 				className="mx-auto max-w-screen-2xl space-y-4 px-6 py-8"
 			>
 				<Skeleton className="h-8 w-52" />
 				<Skeleton className="h-64 w-full" />
-			</main>
+			</LoadingRegion>
 		</div>
 	);
 }

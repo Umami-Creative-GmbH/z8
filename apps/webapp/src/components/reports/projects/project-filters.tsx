@@ -24,7 +24,10 @@ interface ProjectFiltersProps {
 	isGenerating?: boolean;
 }
 
-export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFiltersProps) {
+export function ProjectFilters({
+	onGenerate,
+	isGenerating = false,
+}: ProjectFiltersProps) {
 	const { t } = useTranslate();
 	const statusFilterId = useId();
 	const { isHydrated, timezone } = useOrganizationSettings(
@@ -78,7 +81,8 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 			return;
 		}
 
-		const statusArray = statusFilter === "all" ? undefined : statusFilter.split(",");
+		const statusArray =
+			statusFilter === "all" ? undefined : statusFilter.split(",");
 		onGenerate(dateRange, statusArray);
 	};
 
@@ -93,23 +97,39 @@ export function ProjectFilters({ onGenerate, isGenerating = false }: ProjectFilt
 								{t("reports.projects.filter.period", "Period")}
 							</legend>
 							{dateRange ? (
-								<DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
+								<DateRangePicker
+									value={dateRange}
+									onChange={handleDateRangeChange}
+								/>
 							) : (
 								<p className="text-sm text-muted-foreground">
-									Loading organization settings before enabling presets.
+									{t(
+										"reports.filter.loadingSettings",
+										"Loading organization settings before enabling presets.",
+									)}
 								</p>
 							)}
 						</fieldset>
 
 						{/* Status Filter */}
 						<div className="space-y-2">
-							<Label htmlFor={statusFilterId} className="text-sm font-medium leading-none">
+							<Label
+								htmlFor={statusFilterId}
+								className="text-sm font-medium leading-none"
+							>
 								{t("reports.projects.filter.status", "Status")}
 							</Label>
-							<Select value={statusFilter} onValueChange={setStatusFilter} disabled={isGenerating}>
+							<Select
+								value={statusFilter}
+								onValueChange={setStatusFilter}
+								disabled={isGenerating}
+							>
 								<SelectTrigger id={statusFilterId}>
 									<SelectValue
-										placeholder={t("reports.projects.filter.selectStatus", "Select status filter")}
+										placeholder={t(
+											"reports.projects.filter.selectStatus",
+											"Select status filter",
+										)}
 									/>
 								</SelectTrigger>
 								<SelectContent>

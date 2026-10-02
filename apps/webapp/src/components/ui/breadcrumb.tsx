@@ -1,11 +1,21 @@
+"use client";
+
 import { IconChevronRight, IconDots } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import type * as React from "react";
 
 import { Slot } from "@/components/ui/slot";
 import { cn } from "@/lib/utils";
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
-	return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
+	const { t } = useTranslate();
+	return (
+		<nav
+			aria-label={t("common.breadcrumb.breadcrumb", "breadcrumb")}
+			data-slot="breadcrumb"
+			{...props}
+		/>
+	);
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
@@ -60,7 +70,11 @@ function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
 	);
 }
 
-function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<"li">) {
+function BreadcrumbSeparator({
+	children,
+	className,
+	...props
+}: React.ComponentProps<"li">) {
 	return (
 		<li
 			aria-hidden="true"
@@ -74,7 +88,11 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
 	);
 }
 
-function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span">) {
+function BreadcrumbEllipsis({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	const { t } = useTranslate();
 	return (
 		<span
 			aria-hidden="true"
@@ -84,7 +102,7 @@ function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span"
 			{...props}
 		>
 			<IconDots className="size-4" />
-			<span className="sr-only">More</span>
+			<span className="sr-only">{t("common.breadcrumb.more", "More")}</span>
 		</span>
 	);
 }

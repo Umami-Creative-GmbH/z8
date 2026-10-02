@@ -519,7 +519,11 @@ function EventCustomizationCard({
 								id="eventTitleTemplate"
 								value={field.state.value}
 								onChange={(event) => field.handleChange(event.target.value)}
-								placeholder="Out of Office - {categoryName}"
+								placeholder={t(
+									"settings.calendar.titleTemplatePlaceholder",
+									"Out of Office - {categoryName}",
+									{ categoryName: "{categoryName}" },
+								)}
 								disabled={controlsDisabled}
 							/>
 							<p className="text-xs text-muted-foreground">

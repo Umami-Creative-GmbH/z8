@@ -4,18 +4,29 @@ import { Suspense } from "react";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
 import { VacationManagement } from "@/components/settings/vacation/vacation-management";
 import { VacationPoliciesTable } from "@/components/settings/vacation/vacation-policies-table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { ensureDefaultAbsenceCategoriesForOrganization } from "@/lib/absences/default-absence-categories";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { getTranslate } from "@/tolgee/server";
 
 async function VacationSettingsContent() {
-	const settingsRouteContext = await getCurrentSettingsRouteContext();
+	const [t, settingsRouteContext] = await Promise.all([
+		getTranslate(),
+		getCurrentSettingsRouteContext(),
+	]);
 
 	if (!settingsRouteContext || settingsRouteContext.accessTier === "member") {
 		redirect("/settings");
 	}
 
-	const organizationId = settingsRouteContext.authContext.session.activeOrganizationId;
+	const organizationId =
+		settingsRouteContext.authContext.session.activeOrganizationId;
 
 	if (!organizationId) {
 		redirect("/settings");
@@ -42,10 +53,13 @@ async function VacationSettingsContent() {
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<IconCalendar className="size-5" />
-							Vacation Policies
+							{t("settings.vacation.vacationPolicies", "Vacation Policies")}
 						</CardTitle>
 						<CardDescription>
-							Create different policies for various teams or employee groups
+							{t(
+								"settings.vacation.createDifferentPoliciesForVariousTeamsOrEmployeeGroups",
+								"Create different policies for various teams or employee groups",
+							)}
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -61,7 +75,15 @@ async function VacationSettingsContent() {
 }
 
 function VacationSettingsLoading() {
-	return <SettingsPageSkeleton variant="list" label="Loading vacation settings" />;
+	return (
+		<SettingsPageSkeleton
+			variant="list"
+			label={{
+				labelKey: "common.loadingRegions.vacationSettings",
+				labelDefault: "Loading vacation settings",
+			}}
+		/>
+	);
 }
 
 export default function VacationSettingsPage() {

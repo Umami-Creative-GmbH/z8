@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { collectPlatformDiagnostics } from "@/lib/platform-diagnostics";
@@ -45,10 +46,13 @@ export async function PlatformDiagnosticsPageContent() {
 
 function PlatformDiagnosticsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="space-y-10"
 			role="status"
-			aria-label="Loading deployment diagnostics"
+			label={{
+				labelKey: "common.loadingRegions.deploymentDiagnostics",
+				labelDefault: "Loading deployment diagnostics",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-64" />
@@ -79,6 +83,6 @@ function PlatformDiagnosticsPageLoading() {
 					))}
 				</div>
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }

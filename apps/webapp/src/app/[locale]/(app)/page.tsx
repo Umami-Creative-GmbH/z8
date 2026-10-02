@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	getOnboardingStatus,
 	getPendingInvitationId,
@@ -52,15 +53,18 @@ async function DashboardPageContent() {
 
 function DashboardPageLoading() {
 	return (
-		<div
-			aria-label="Loading dashboard"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.dashboard",
+				labelDefault: "Loading dashboard",
+			}}
 			className="@container/main flex flex-1 flex-col gap-2"
 			role="status"
 		>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<SectionCardsSkeleton aria-hidden="true" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

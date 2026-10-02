@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-
 import { ExportOperationsDashboard } from "@/components/settings/export-operations/export-operations-dashboard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { getExportOperationsCockpit } from "@/lib/export-operations/get-export-operations-cockpit";
@@ -55,10 +55,13 @@ async function ExportOperationsPageContent() {
 
 function ExportOperationsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
 			role="status"
-			aria-label="Loading export operations"
+			label={{
+				labelKey: "common.loadingRegions.exportOperations",
+				labelDefault: "Loading export operations",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-48" />
@@ -106,7 +109,7 @@ function ExportOperationsPageLoading() {
 					</div>
 				</CardContent>
 			</Card>
-		</div>
+		</LoadingRegion>
 	);
 }
 

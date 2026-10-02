@@ -363,7 +363,9 @@ function SuccessFactorsHeader({
 			<div className="flex items-center gap-4">
 				<Image
 					src="/successfactors.svg"
-					alt="SAP SuccessFactors Logo"
+					alt={t("common.brandLogo", "{brand} logo", {
+						brand: "SAP SuccessFactors",
+					})}
 					width={48}
 					height={48}
 					className="size-12"

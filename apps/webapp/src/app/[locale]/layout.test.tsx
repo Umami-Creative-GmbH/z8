@@ -5,6 +5,11 @@ import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import LocaleLayout from "./layout";
 
+vi.mock("@tolgee/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@tolgee/react")>()),
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+
 function findFontSizeInitScript(node: React.ReactNode): {
 	children: React.ReactNode;
 	id?: string;

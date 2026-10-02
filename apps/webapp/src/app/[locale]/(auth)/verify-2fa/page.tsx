@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { TwoFactorVerificationForm } from "@/components/two-factor-verification-form";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getRequestSession } from "@/lib/auth/request-session";
 
@@ -30,10 +31,13 @@ export async function Verify2FAPageContent() {
 
 function Verify2FAPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="mx-auto w-full max-w-md"
 			role="status"
-			aria-label="Loading two-factor verification"
+			label={{
+				labelKey: "common.loadingRegions.twoFactorVerification",
+				labelDefault: "Loading two-factor verification",
+			}}
 		>
 			<Card>
 				<CardHeader className="space-y-2">
@@ -49,6 +53,6 @@ function Verify2FAPageLoading() {
 					<Skeleton aria-hidden="true" className="mx-auto h-9 w-44" />
 				</CardContent>
 			</Card>
-		</div>
+		</LoadingRegion>
 	);
 }

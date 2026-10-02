@@ -2,8 +2,9 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 
 vi.mock("@/hooks/use-mobile", () => ({
 	useIsMobile: () => true,
@@ -57,15 +58,29 @@ describe("SidebarMenuButton", () => {
 
 describe("Sidebar", () => {
 	it("uses CSS motion for synchronized offcanvas content expansion", async () => {
-		const source = await readFile(join(process.cwd(), "src/components/ui/sidebar.tsx"), "utf8");
-		const globalsSource = await readFile(join(process.cwd(), "src/app/globals.css"), "utf8");
+		const source = await readFile(
+			join(process.cwd(), "src/components/ui/sidebar.tsx"),
+			"utf8",
+		);
+		const globalsSource = await readFile(
+			join(process.cwd(), "src/app/globals.css"),
+			"utf8",
+		);
 
 		expect(source).toContain("transform-gpu");
 		expect(source).toContain("transition-[transform,opacity]");
-		expect(source).toContain("group-data-[collapsible=offcanvas]:-translate-x-full");
-		expect(source).toContain("group-data-[collapsible=offcanvas]:translate-x-full");
-		expect(source).toContain("peer-data-[state=collapsed]:animate-sidebar-inset-collapse");
-		expect(source).toContain("peer-data-[state=expanded]:animate-sidebar-inset-expand");
+		expect(source).toContain(
+			"group-data-[collapsible=offcanvas]:-translate-x-full",
+		);
+		expect(source).toContain(
+			"group-data-[collapsible=offcanvas]:translate-x-full",
+		);
+		expect(source).toContain(
+			"peer-data-[state=collapsed]:animate-sidebar-inset-collapse",
+		);
+		expect(source).toContain(
+			"peer-data-[state=expanded]:animate-sidebar-inset-expand",
+		);
 		expect(source).not.toContain("requestAnimationFrame");
 		expect(source).not.toContain("animate(");
 		expect(source).not.toContain("getBoundingClientRect");

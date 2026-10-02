@@ -3,7 +3,12 @@ import { ExportForm } from "@/components/settings/export/export-form";
 import { ExportHistory } from "@/components/settings/export/export-history";
 import { StorageSettingsForm } from "@/components/settings/export/storage-settings-form";
 import { SettingsPageSkeleton } from "@/components/settings/settings-skeletons";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import { isExportS3Configured } from "@/lib/storage/export-s3-client";
@@ -23,19 +28,29 @@ async function ExportSettingsContent() {
 		getExportHistoryAction(organizationId),
 	]);
 
-	const storageConfig = storageConfigResult.success ? storageConfigResult.data : null;
+	const storageConfig = storageConfigResult.success
+		? storageConfigResult.data
+		: null;
 	const exports = historyResult.success ? historyResult.data : [];
 
 	return (
 		<div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 			<div className="space-y-1">
-				<h1 className="text-2xl font-semibold">{t("settings.dataExport.title", "Data Export")}</h1>
+				<h1 className="text-2xl font-semibold">
+					{t("settings.dataExport.title", "Data Export")}
+				</h1>
 				<p className="text-muted-foreground">
-					{t("settings.dataExport.description", "Export your organization's data")}
+					{t(
+						"settings.dataExport.description",
+						"Export your organization's data",
+					)}
 				</p>
 			</div>
 
-			<Tabs defaultValue={s3Configured ? "export" : "storage"} className="w-full">
+			<Tabs
+				defaultValue={s3Configured ? "export" : "storage"}
+				className="w-full"
+			>
 				<TabsList>
 					<TabsTrigger value="export">
 						{t("settings.dataExport.tabs.newExport", "New Export")}
@@ -54,7 +69,10 @@ async function ExportSettingsContent() {
 						<Card className="border-warning">
 							<CardHeader>
 								<CardTitle>
-									{t("settings.dataExport.storageNotConfigured.title", "Storage Not Configured")}
+									{t(
+										"settings.dataExport.storageNotConfigured.title",
+										"Storage Not Configured",
+									)}
 								</CardTitle>
 								<CardDescription>
 									{t(
@@ -70,7 +88,10 @@ async function ExportSettingsContent() {
 					<ExportHistory exports={exports} organizationId={organizationId} />
 				</TabsContent>
 				<TabsContent value="storage" className="mt-4">
-					<StorageSettingsForm organizationId={organizationId} initialConfig={storageConfig} />
+					<StorageSettingsForm
+						organizationId={organizationId}
+						initialConfig={storageConfig}
+					/>
 				</TabsContent>
 			</Tabs>
 		</div>
@@ -78,7 +99,14 @@ async function ExportSettingsContent() {
 }
 
 function ExportSettingsLoading() {
-	return <SettingsPageSkeleton label="Loading data export settings" />;
+	return (
+		<SettingsPageSkeleton
+			label={{
+				labelKey: "common.loadingRegions.dataExportSettings",
+				labelDefault: "Loading data export settings",
+			}}
+		/>
+	);
 }
 
 export default function ExportSettingsPage() {
