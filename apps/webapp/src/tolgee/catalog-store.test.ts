@@ -270,4 +270,86 @@ describe("cumulative catalogs", () => {
 		expect(actual.t("reports.title")).not.toBe("reports.title");
 		expect(isApplyingCatalogRecords(instance)).toBe(false);
 	});
+	it("rolls back a successful nested application when the outer listener throws and permits the same slice to retry", async () => {
+		const instance = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
+			language: "en",
+		});
+		const baseline = await loadCatalogSlice("en", ["common"]);
+		const outer = await loadCatalogSlice("en", ["reports"]);
+		const inner = await loadCatalogSlice("en", ["calendar"]);
+		const later = await loadCatalogSlice("en", ["dashboard"]);
+		applyCatalogRecords(instance, baseline);
+		const before = structuredClone(
+			instance.getRecord({ language: "en" })?.data,
+		);
+		let nested = false;
+		const failure = new Error("outer cache listener failed");
+		let cacheEvents = 0;
+		const subscription = instance.on("cache", () => {
+			cacheEvents++;
+			expect(isApplyingCatalogRecords(instance)).toBe(true);
+			if (nested) return;
+			nested = true;
+			applyCatalogRecords(instance, inner);
+			expect(hasCatalogNamespaces(instance, ["calendar"])).toBe(true);
+			throw failure;
+		});
+		expect(() => applyCatalogRecords(instance, outer)).toThrow(failure);
+		expect(cacheEvents).toBe(2);
+		subscription.unsubscribe();
+		expect(isApplyingCatalogRecords(instance)).toBe(false);
+		expect(hasCatalogNamespaces(instance, ["common"])).toBe(true);
+		expect(hasCatalogNamespaces(instance, ["reports"])).toBe(false);
+		expect(hasCatalogNamespaces(instance, ["calendar"])).toBe(false);
+		expect(instance.getRecord({ language: "en" })?.data).toEqual(before);
+		const retried = instance.on("cache", () => {
+			cacheEvents++;
+			expect(isApplyingCatalogRecords(instance)).toBe(true);
+		});
+		applyCatalogRecords(instance, inner);
+		expect(hasCatalogNamespaces(instance, ["calendar"])).toBe(true);
+		expect(instance.t("absences.title")).toBe("Absences");
+		expect(instance.t("calendar:absences.title")).toBe("Absences");
+		applyCatalogRecords(instance, later);
+		expect(
+			hasCatalogNamespaces(instance, ["common", "calendar", "dashboard"]),
+		).toBe(true);
+		expect(instance.t("absences.title")).toBe("Absences");
+		expect(instance.t("calendar:absences.title")).toBe("Absences");
+		expect(cacheEvents).toBe(4);
+		retried.unsubscribe();
+		expect(
+			instance.getRecord({ language: "en" })?.data["reports.title"],
+		).toBeUndefined();
+		expect(isApplyingCatalogRecords(instance)).toBe(false);
+	});
+	it("keeps the outer application when its listener catches an inner application failure", async () => {
+		const instance = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
+			language: "en",
+		});
+		const outer = await loadCatalogSlice("en", ["reports"]);
+		const inner = await loadCatalogSlice("en", ["calendar"]);
+		let entered = false;
+		const subscription = instance.on("cache", () => {
+			if (entered) throw new Error("inner listener failed");
+			entered = true;
+			expect(() => applyCatalogRecords(instance, inner)).toThrow(
+				"inner listener failed",
+			);
+			expect(isApplyingCatalogRecords(instance)).toBe(true);
+		});
+		applyCatalogRecords(instance, outer);
+		subscription.unsubscribe();
+		expect(hasCatalogNamespaces(instance, ["reports"])).toBe(true);
+		expect(hasCatalogNamespaces(instance, ["calendar"])).toBe(false);
+		expect(instance.t("reports.title")).toBe("Employee Reports");
+		expect(
+			instance.getRecord({ language: "en" })?.data["absences.title"],
+		).toBeUndefined();
+		applyCatalogRecords(instance, inner);
+		expect(hasCatalogNamespaces(instance, ["reports", "calendar"])).toBe(true);
+		expect(instance.t("reports.title")).toBe("Employee Reports");
+		expect(instance.t("absences.title")).toBe("Absences");
+		expect(isApplyingCatalogRecords(instance)).toBe(false);
+	});
 });

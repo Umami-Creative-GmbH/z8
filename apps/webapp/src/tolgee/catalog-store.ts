@@ -18,6 +18,8 @@ type InstanceCatalog = {
 	slice: CatalogSlice;
 	applying: number;
 	applied: WeakSet<CatalogSlice>;
+	/** All identities added by the active application and its nested calls. */
+	applicationJournal: CatalogSlice[];
 };
 // Tolgee's SSR wrapper spreads the instance but retains these methods. Keying by
 // the underlying cache method keeps the wrapper and live instance in one store.
@@ -155,6 +157,7 @@ export function applyCatalogRecords(
 			},
 			applying: 0,
 			applied: new WeakSet(),
+			applicationJournal: [],
 		};
 		catalogs.set(instance.addStaticData, state);
 	}
@@ -164,16 +167,38 @@ export function applyCatalogRecords(
 	// Commit the cumulative dictionary before emitting cache events, so nested
 	// feature injections see every earlier contribution.
 	const previous = state.slice;
+	const previousSdkData = instance.getRecord({
+		language: incoming.locale,
+	})?.data;
+	const checkpoint = state.applicationJournal.length;
 	state.slice = merged;
 	state.applied.add(incoming);
+	state.applicationJournal.push(incoming);
 	try {
 		instance.addStaticData(merged.records);
 	} catch (error) {
 		state.slice = previous;
-		state.applied.delete(incoming);
+		for (const slice of state.applicationJournal.splice(checkpoint)) {
+			state.applied.delete(slice);
+		}
+		// Tolgee writes its cache before invoking synchronous listeners. A listener
+		// can apply another slice successfully, then throw. Restore both dictionaries
+		// without invoking that listener again; every rolled-back identity can retry.
+		if (
+			instance.getRecord({ language: incoming.locale })?.data !==
+			previousSdkData
+		) {
+			instance.setEmitterActive(false);
+			try {
+				instance.addStaticData(previous.records);
+			} finally {
+				instance.setEmitterActive(true);
+			}
+		}
 		throw error;
 	} finally {
 		state.applying--;
+		if (state.applying === 0) state.applicationJournal.length = 0;
 	}
 	return state.slice.records;
 }
