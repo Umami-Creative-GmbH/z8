@@ -2,14 +2,14 @@ import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import {
-	getActiveWorkPeriod,
-	getTimeSummary,
-	getWorkPeriods,
-} from "./actions/queries";
-import {
 	getSafeEmployeeWorkBalance,
 	getTimeTrackingPageData,
 } from "./page-data";
+import {
+	readActiveWorkPeriod,
+	readTimeSummary,
+	readWorkPeriods,
+} from "./read-queries";
 import { getWorkdayTimelineData } from "./workday-timeline-data";
 
 const renderingState = vi.hoisted(() => ({
@@ -58,7 +58,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/datetime/drizzle-adapter", () => ({
-	dateToDB: vi.fn(),
+	dateToDB: vi.fn((dateTime: DateTime) => dateTime.toJSDate()),
 }));
 
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
@@ -81,10 +81,16 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: vi.fn(),
 }));
 
-vi.mock("./actions/queries", () => ({
-	getActiveWorkPeriod: vi.fn(),
-	getTimeSummary: vi.fn(),
-	getWorkPeriods: vi.fn(),
+vi.mock("./read-queries", () => ({
+	readActiveWorkPeriod: vi.fn(),
+	readTimeSummary: vi.fn(),
+	readWorkPeriods: vi.fn(),
+}));
+
+vi.mock("./actions/auth", () => ({
+	getCurrentEmployee: vi.fn(() => {
+		throw new Error("Render must not authenticate again");
+	}),
 }));
 
 vi.mock("./workday-timeline-data", () => ({
@@ -107,9 +113,9 @@ describe("getTimeTrackingPageData authorization", () => {
 		await expect(getTimeTrackingPageData()).rejects.toThrow(
 			"redirect:/api/auth/session-expired?locale=de&callbackUrl=%2Fde%2Ftime-tracking%3Fdate%3D2026-10-02",
 		);
-		expect(getActiveWorkPeriod).not.toHaveBeenCalled();
-		expect(getWorkPeriods).not.toHaveBeenCalled();
-		expect(getTimeSummary).not.toHaveBeenCalled();
+		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
+		expect(readWorkPeriods).not.toHaveBeenCalled();
+		expect(readTimeSummary).not.toHaveBeenCalled();
 		expect(getWorkdayTimelineData).not.toHaveBeenCalled();
 		expect(getEmployeeWorkBalance).not.toHaveBeenCalled();
 	});
@@ -132,9 +138,9 @@ describe("getTimeTrackingPageData authorization", () => {
 			currentEmployee: null,
 		});
 		expect(renderingState.redirect).not.toHaveBeenCalled();
-		expect(getActiveWorkPeriod).not.toHaveBeenCalled();
-		expect(getWorkPeriods).not.toHaveBeenCalled();
-		expect(getTimeSummary).not.toHaveBeenCalled();
+		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
+		expect(readWorkPeriods).not.toHaveBeenCalled();
+		expect(readTimeSummary).not.toHaveBeenCalled();
 		expect(getWorkdayTimelineData).not.toHaveBeenCalled();
 		expect(getEmployeeWorkBalance).not.toHaveBeenCalled();
 	});
@@ -179,10 +185,31 @@ describe("getTimeTrackingPageData authorization", () => {
 				start: DateTime.utc(2026, 9, 27),
 				end: DateTime.utc(2026, 10, 3),
 			});
+			vi.mocked(readWorkPeriods).mockResolvedValue([
+				{ id: "history-period" },
+			] as Awaited<ReturnType<typeof readWorkPeriods>>);
+			vi.mocked(readTimeSummary).mockResolvedValue({
+				todayMinutes: 60,
+				weekMinutes: 60,
+				monthMinutes: 60,
+			});
 			await expect(getTimeTrackingPageData()).resolves.toMatchObject({
 				currentEmployee: { id: "employee-1", organizationId: "org-1" },
 				canApproveTimeEntries: expected,
+				workPeriods: [{ id: "history-period" }],
+				summary: { todayMinutes: 60, weekMinutes: 60, monthMinutes: 60 },
 			});
+			expect(readActiveWorkPeriod).toHaveBeenCalledWith(balanceRequest);
+			expect(readTimeSummary).toHaveBeenCalledWith(
+				balanceRequest,
+				"UTC",
+				"sunday",
+			);
+			expect(readWorkPeriods).toHaveBeenCalledWith(
+				balanceRequest,
+				new Date("2026-09-27T00:00:00Z"),
+				new Date("2026-10-03T00:00:00Z"),
+			);
 		},
 	);
 });

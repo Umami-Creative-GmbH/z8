@@ -15,10 +15,10 @@ import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import { getTranslate } from "@/tolgee/server";
 import {
-	getActiveWorkPeriod,
-	getTimeSummary,
-	getWorkPeriods,
-} from "./actions/queries";
+	readActiveWorkPeriod,
+	readTimeSummary,
+	readWorkPeriods,
+} from "./read-queries";
 import { getTimeTrackingRenderContext } from "./render-context";
 import type {
 	SelectedWorkdayDate,
@@ -67,6 +67,10 @@ export async function getTimeTrackingPageData(
 	const endDate = dateToDB(end)!;
 	const canApproveTimeEntries =
 		membershipRole === "admin" || membershipRole === "owner";
+	const scope = {
+		employeeId: currentEmployee.id,
+		organizationId: currentEmployee.organizationId,
+	};
 
 	const [
 		activeWorkPeriod,
@@ -77,9 +81,9 @@ export async function getTimeTrackingPageData(
 		workBalance,
 		managerId,
 	] = await Promise.all([
-		getActiveWorkPeriod(currentEmployee.id),
-		getWorkPeriods(currentEmployee.id, startDate, endDate),
-		getTimeSummary(currentEmployee.id, timezone, weekStartDay),
+		readActiveWorkPeriod(scope),
+		readWorkPeriods(scope, startDate, endDate),
+		readTimeSummary(scope, timezone, weekStartDay),
 		getTranslate(),
 		getWorkdayTimelineData({
 			employeeId: currentEmployee.id,

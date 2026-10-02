@@ -20,6 +20,7 @@ describe("time-tracking read helper surface", () => {
 		"actions/queries.ts",
 		"actions/policy-helpers.ts",
 		"actions/auth.ts",
+		"read-queries.ts",
 	])("keeps %s a server-only helper module", (file) => {
 		const source = readSource(file);
 
@@ -40,9 +41,19 @@ describe("time-tracking read helper surface", () => {
 		).toBe(false);
 	});
 
-	it("loads page data through the guarded query helpers", () => {
+	it("loads page reads from the authorized render context", () => {
 		expect(readSource("page-data.ts")).toMatch(
-			/import\s*\{\s*getActiveWorkPeriod,\s*getTimeSummary,\s*getWorkPeriods,?\s*\}\s*from "\.\/actions\/queries";/,
+			/import\s*\{\s*readActiveWorkPeriod,\s*readTimeSummary,\s*readWorkPeriods,?\s*\}\s*from "\.\/read-queries";/,
+		);
+		expect(readSource("page-data.ts")).toContain(
+			"getTimeTrackingRenderContext()",
 		);
 	});
+
+	it.each(["readActiveWorkPeriod", "readWorkPeriods", "readTimeSummary"])(
+		"keeps internal %s out of public server actions",
+		(name) => {
+			expect(exportsName(readSource("actions.ts"), name)).toBe(false);
+		},
+	);
 });
