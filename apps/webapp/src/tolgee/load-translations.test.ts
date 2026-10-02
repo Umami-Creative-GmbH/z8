@@ -25,6 +25,19 @@ vi.mock("./shared", async (importOriginal) => ({
 	loadNamespaces: mockState.loadNamespaces,
 }));
 
+vi.mock("./catalog-slices", async (original) => ({
+	...(await original<typeof import("./catalog-slices")>()),
+	CATALOG_SOURCE_METADATA: {
+		en: {
+			collisions: {
+				'["a.b"]': ["common", "dashboard"],
+				'["a","b"]': ["common", "dashboard"],
+				'["a:b"]': ["common", "dashboard"],
+			},
+		},
+	},
+}));
+
 import {
 	loadCatalogSlice,
 	loadRouteTranslations,
@@ -82,6 +95,7 @@ describe("loadRouteTranslations", () => {
 		expect(mockState.loadNamespaces).toHaveBeenCalledWith("en", ["dashboard"], {
 			strict: true,
 		});
+		expect(mockState.loadNamespaces).toHaveBeenCalledTimes(1);
 	});
 	it("strictly loads every namespace into the locale cache", async () => {
 		await loadRouteTranslations("en");

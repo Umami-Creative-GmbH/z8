@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
+	CATALOG_SOURCE_METADATA,
+	type CatalogSourceMask,
 	canonicalizeNamespaces,
 	normalizeCatalogLocale,
 } from "./catalog-slices";
@@ -57,6 +59,70 @@ function predecessor(locale: string, namespaces: readonly Namespace[]) {
 }
 
 describe("public catalog slices", () => {
+	it.each(ALL_LANGUAGES)(
+		"checks generated source membership and collisions against fresh %s catalogs",
+		(locale) => {
+			const raw = Object.fromEntries(
+				ALL_NAMESPACES.map((namespace) => [
+					namespace,
+					JSON.parse(
+						readFileSync(
+							join(process.cwd(), "messages", namespace, `${locale}.json`),
+							"utf8",
+						),
+					),
+				]),
+			);
+			function at(tree: unknown, path: string[]): unknown {
+				return path.reduce<unknown>(
+					(value, key) =>
+						value && typeof value === "object"
+							? (value as Record<string, unknown>)[key]
+							: undefined,
+					tree,
+				);
+			}
+			function shape(
+				namespace: Namespace,
+				value: Record<string, unknown>,
+				path: string[] = [],
+			): CatalogSourceMask {
+				return Object.fromEntries(
+					Object.entries(value).map(([key, child]) => {
+						const next = [...path, key];
+						const shared = ALL_NAMESPACES.some(
+							(other) =>
+								other !== namespace && at(raw[other], next) !== undefined,
+						);
+						return [
+							key,
+							typeof child === "string" || !shared
+								? 1
+								: shape(namespace, child as Record<string, unknown>, next),
+						];
+					}),
+				);
+			}
+			const contributors = new Map<string, Namespace[]>();
+			for (const namespace of ALL_NAMESPACES)
+				for (const [path] of leaves(raw[namespace]))
+					contributors.set(path, [
+						...(contributors.get(path) ?? []),
+						namespace,
+					]);
+			expect(CATALOG_SOURCE_METADATA[locale]).toEqual({
+				sources: Object.fromEntries(
+					ALL_NAMESPACES.map((namespace) => [
+						namespace,
+						shape(namespace, raw[namespace]),
+					]),
+				),
+				collisions: Object.fromEntries(
+					[...contributors].filter(([, sources]) => sources.length > 1),
+				),
+			});
+		},
+	);
 	it("validates and canonicalizes namespace identity in predecessor priority order", () => {
 		expect(canonicalizeNamespaces(["reports", "common", "reports"])).toEqual([
 			"common",

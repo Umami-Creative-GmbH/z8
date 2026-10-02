@@ -310,7 +310,7 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 	return merged;
 }
 
-export function TolgeeBase() {
+export function TolgeeBase(options: { loadAllLanguageCatalogs?: boolean } = {}) {
 	const tolgee = Tolgee().use(FormatIcu());
 
 	// Only load DevTools in development AND on the client side
@@ -332,8 +332,8 @@ export function TolgeeBase() {
 		observerOptions: {
 			fullKeyEncode: false,
 		},
-		// Lazy load all translations for each language (merged namespaces)
-		staticData: Object.fromEntries(
+		// Server/bot callers retain complete fallback; provider instances disable it.
+		staticData: options.loadAllLanguageCatalogs === false ? {} : Object.fromEntries(
 			ALL_LANGUAGES.map((language) => [language, () => loadAllNamespacesForLanguage(language)]),
 		),
 	});
