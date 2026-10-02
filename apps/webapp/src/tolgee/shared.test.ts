@@ -25,6 +25,20 @@ beforeEach(() => {
 });
 
 describe("Tolgee route translations", () => {
+	it("does not mutate the imported module while preserving in-load alias unions", async () => {
+		const first = { settings: { first: "First" } };
+		const second = { settings: { second: "Second" } };
+		const loaded = await loadNamespaceImport(
+			"settings/generic",
+			"en",
+			async () => ({ default: first }),
+			{ strict: true },
+		);
+		const merged = mergeTreeTranslations([loaded.data, second]);
+		expect(merged).toEqual({ settings: { first: "First", second: "Second" } });
+		expect(loaded.data.settings).toEqual(merged.settings);
+		expect(first).toEqual({ settings: { first: "First" } });
+	});
 	it("lists every language supported by Tolgee and the language switchers", () => {
 		expect(ALL_LANGUAGES).toEqual([
 			"en",

@@ -168,7 +168,7 @@ const namespaceImports: Record<
 ) as Record<Namespace, Record<string, () => Promise<unknown>>>;
 
 // Tolgee's expected translation data type
-type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
+export type TreeTranslationsData = { [key: string]: TreeTranslationsData | string };
 
 export type LoadNamespacesOptions = {
 	strict?: boolean;
@@ -184,7 +184,9 @@ export async function loadNamespaceImport(
 		const mod = await importFn();
 		const data =
 			(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
-		return { ns, data };
+		// Merging shares branches within one load, including its aliases.
+		// Keep those branches separate from the cached imported JSON module.
+		return { ns, data: structuredClone(data) };
 	} catch (error) {
 		if (options.strict) {
 			throw error;
@@ -291,7 +293,7 @@ async function loadAllNamespacesForLanguage(lang: string): Promise<TreeTranslati
 					const mod = await importFn();
 					const data =
 						(mod as { default?: TreeTranslationsData }).default || (mod as TreeTranslationsData);
-					return { ns, data };
+					return { ns, data: structuredClone(data) };
 				} catch (error) {
 					console.warn(`Failed to load namespace ${ns} for ${lang}:`, error);
 					return null;

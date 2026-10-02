@@ -1,0 +1,340 @@
+import type { CatalogSlice } from "./catalog-slices";
+import type { Namespace, TreeTranslationsData } from "./shared";
+
+export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
+function keys(
+	namespace: Namespace,
+	paths: readonly string[],
+): ShellCatalogKey[] {
+	return paths.map((path) => ({ namespace, path: path.split(".") }));
+}
+
+/** Explicit shell projection: global prompts, navigation/search/preferences, header
+ * controls and their dialogs, banners, widget labels, and every route title.
+ * Dynamic families (notifications, offline states, roles, errors) retain full subtrees.
+ * Settings entries contain only labels/descriptions needed by search and route metadata.
+ * Absent source keys keep the predecessor's component default-value fallback.
+ */
+export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
+	// The complete catalog's only colliding primary leaf is won by teamsBot.
+	// Keep the explicit dependency even though common's shared subtree includes it.
+	...keys("teamsBot", ["common.more"]),
+	...keys("common", [
+		"actions",
+		"appSearch",
+		"common",
+		"errors",
+		"header",
+		"loading",
+		"nav",
+		"notifications",
+		"offline",
+		"presence",
+		"roles",
+		"user",
+		"userAvatar",
+		"billing.trialBanner",
+	]),
+	...keys("timeTracking", [
+		"timeTracking.errors",
+		"timeTracking.quickBreak",
+		"timeTracking.timezoneMismatch",
+		"timeTracking.addNotePrompt",
+		"timeTracking.budget",
+		"timeTracking.clockIn",
+		"timeTracking.clockInSavedForReview",
+		"timeTracking.clockInSavedForSending",
+		"timeTracking.clockInSavedHeld",
+		"timeTracking.clockInSuccess",
+		"timeTracking.clockOut",
+		"timeTracking.clockOutSavedForReview",
+		"timeTracking.clockOutSavedForSending",
+		"timeTracking.clockOutSavedHeld",
+		"timeTracking.clockOutSuccess",
+		"timeTracking.clockedOutSuccess",
+		"timeTracking.clockingIn",
+		"timeTracking.clockingOut",
+		"timeTracking.currentlyClockedIn",
+		"timeTracking.deadline",
+		"timeTracking.noCategory",
+		"timeTracking.noProject",
+		"timeTracking.notesPlaceholder",
+		"timeTracking.notesSaved",
+		"timeTracking.project",
+		"timeTracking.readyToClockIn",
+		"timeTracking.selectCategory",
+		"timeTracking.selectProject",
+		"timeTracking.startedAt",
+		"timeTracking.unknownCategory",
+		"timeTracking.unknownProject",
+		"timeTracking.workCategory",
+		"timeTracking.workLocationHome",
+		"timeTracking.workLocationOffice",
+		"timeTracking.workLocationOther",
+		"timeTracking.workLocationRemote",
+	]),
+	...keys("dashboard", [
+		"dashboard.customize",
+		"dashboard.birthday.title",
+		"dashboard.hydration.title",
+		"dashboard.managed-employees.title",
+		"dashboard.manager-today.title",
+		"dashboard.pending-approvals.title",
+		"dashboard.presence.workLocation",
+		"dashboard.quick-stats.title",
+		"dashboard.recently-approved.title",
+		"dashboard.team-overview.title",
+		"dashboard.upcoming-time-off.title",
+		"dashboard.vacation.title",
+		"dashboard.whos-out.title",
+	]),
+	...keys("organization", [
+		"organization.role",
+		"organization.slugErrors",
+		"organization.create",
+		"organization.createDialog.description",
+		"organization.createDialog.title",
+		"organization.createError",
+		"organization.createSuccess",
+		"organization.delete.bannerDescription",
+		"organization.delete.bannerLearnMore",
+		"organization.delete.bannerTitle",
+		"organization.joinOrCreate",
+		"organization.nameLabel",
+		"organization.namePlaceholder",
+		"organization.noEmployeeRecord",
+		"organization.noOrganizations",
+		"organization.slugDescription",
+		"organization.slugLabel",
+		"organization.slugPlaceholder",
+		"organization.slugTaken",
+		"organization.switchFailed",
+		"organization.switchTo",
+		"organization.switching",
+	]),
+	...keys("reports", ["reports.projects.title"]),
+	...keys("settings/enterprise", [
+		"settings.apiKeys.description",
+		"settings.apiKeys.title",
+		"settings.enterpriseIdentitySetup.description",
+		"settings.enterpriseIdentitySetup.title",
+	]),
+	...keys("settings/rules", [
+		"settings.approvalEscalation.navDescription",
+		"settings.approvalEscalation.title",
+		"settings.approvalPolicies.description",
+		"settings.approvalPolicies.title",
+		"settings.changePolicies.description",
+		"settings.changePolicies.title",
+		"settings.coverageRules.description",
+		"settings.coverageRules.title",
+		"settings.shiftTemplates.description",
+		"settings.shiftTemplates.title",
+		"settings.surcharges.description",
+		"settings.surcharges.title",
+		"settings.workCategories.description",
+		"settings.workCategories.title",
+	]),
+	...keys("settings/auditExport", [
+		"settings.auditExport.description",
+		"settings.auditExport.title",
+		"settings.auditLog.description",
+		"settings.auditLog.title",
+	]),
+	...keys("settings/generic", [
+		"settings.avv.description",
+		"settings.avv.title",
+		"settings.billing.description",
+		"settings.billing.title",
+		"settings.customDomains.description",
+		"settings.customDomains.title",
+		"settings.customers.description",
+		"settings.customers.title",
+		"settings.emailConfig.description",
+		"settings.emailConfig.title",
+		"settings.emailTemplates.description",
+		"settings.emailTemplates.title",
+		"settings.export.description",
+		"settings.export.title",
+		"settings.exportOperations.description",
+		"settings.exportOperations.title",
+		"settings.group.account",
+		"settings.group.administration",
+		"settings.group.data",
+		"settings.group.enterprise",
+		"settings.group.notifications",
+		"settings.group.organization",
+		"settings.implementationChecklist.description",
+		"settings.implementationChecklist.title",
+		"settings.import.description",
+		"settings.import.title",
+		"settings.locations.description",
+		"settings.locations.title",
+		"settings.notifications.description",
+		"settings.notifications.title",
+		"settings.organizations.description",
+		"settings.organizations.title",
+		"settings.payrollAccess.description",
+		"settings.payrollAccess.title",
+		"settings.profile.description",
+		"settings.profile.title",
+		"settings.projects.description",
+		"settings.projects.title",
+		"settings.security.description",
+		"settings.security.title",
+		"settings.statistics.description",
+		"settings.statistics.title",
+		"settings.timezone.picker.empty",
+		"settings.timezone.picker.groups.africa",
+		"settings.timezone.picker.groups.americas",
+		"settings.timezone.picker.groups.asia",
+		"settings.timezone.picker.groups.australiaPacific",
+		"settings.timezone.picker.groups.europe",
+		"settings.timezone.picker.groups.utcOther",
+		"settings.timezone.picker.labels.africaCairo",
+		"settings.timezone.picker.labels.africaJohannesburg",
+		"settings.timezone.picker.labels.africaLagos",
+		"settings.timezone.picker.labels.africaNairobi",
+		"settings.timezone.picker.labels.americaAnchorage",
+		"settings.timezone.picker.labels.americaBuenosAires",
+		"settings.timezone.picker.labels.americaChicago",
+		"settings.timezone.picker.labels.americaDenver",
+		"settings.timezone.picker.labels.americaLosAngeles",
+		"settings.timezone.picker.labels.americaMexicoCity",
+		"settings.timezone.picker.labels.americaNewYork",
+		"settings.timezone.picker.labels.americaSaoPaulo",
+		"settings.timezone.picker.labels.americaToronto",
+		"settings.timezone.picker.labels.americaVancouver",
+		"settings.timezone.picker.labels.asiaBangkok",
+		"settings.timezone.picker.labels.asiaDubai",
+		"settings.timezone.picker.labels.asiaHongKong",
+		"settings.timezone.picker.labels.asiaKolkata",
+		"settings.timezone.picker.labels.asiaSeoul",
+		"settings.timezone.picker.labels.asiaShanghai",
+		"settings.timezone.picker.labels.asiaSingapore",
+		"settings.timezone.picker.labels.asiaTokyo",
+		"settings.timezone.picker.labels.australiaBrisbane",
+		"settings.timezone.picker.labels.australiaMelbourne",
+		"settings.timezone.picker.labels.australiaPerth",
+		"settings.timezone.picker.labels.australiaSydney",
+		"settings.timezone.picker.labels.europeAmsterdam",
+		"settings.timezone.picker.labels.europeAthens",
+		"settings.timezone.picker.labels.europeBerlin",
+		"settings.timezone.picker.labels.europeBrussels",
+		"settings.timezone.picker.labels.europeHelsinki",
+		"settings.timezone.picker.labels.europeIstanbul",
+		"settings.timezone.picker.labels.europeLondon",
+		"settings.timezone.picker.labels.europeMadrid",
+		"settings.timezone.picker.labels.europeMoscow",
+		"settings.timezone.picker.labels.europeParis",
+		"settings.timezone.picker.labels.europeRome",
+		"settings.timezone.picker.labels.europeStockholm",
+		"settings.timezone.picker.labels.europeVienna",
+		"settings.timezone.picker.labels.europeWarsaw",
+		"settings.timezone.picker.labels.pacificAuckland",
+		"settings.timezone.picker.labels.pacificHonolulu",
+		"settings.timezone.picker.labels.utc",
+		"settings.timezone.picker.search",
+		"settings.travelExpenses.description",
+		"settings.travelExpenses.title",
+		"settings.webhooks.description",
+		"settings.webhooks.title",
+		"settings.wellness.description",
+		"settings.wellness.title",
+		"settings.worksCouncil.description",
+		"settings.worksCouncil.title",
+	]),
+	...keys("settings/integrations", [
+		"settings.calendar.description",
+		"settings.calendar.title",
+		"settings.discord.description",
+		"settings.discord.title",
+		"settings.slack.description",
+		"settings.slack.title",
+		"settings.teamsNotifications.description",
+		"settings.teamsNotifications.title",
+		"settings.telegram.description",
+		"settings.telegram.title",
+	]),
+	...keys("settings/demo", [
+		"settings.demoData.description",
+		"settings.demoData.title",
+	]),
+	...keys("settings/people", [
+		"settings.employees.description",
+		"settings.employees.title",
+		"settings.roles.description",
+		"settings.roles.title",
+		"settings.skills.description",
+		"settings.skills.title",
+		"settings.teams.description",
+		"settings.teams.title",
+	]),
+	...keys("settings/holidays", [
+		"settings.holidays.description",
+		"settings.holidays.title",
+	]),
+	...keys("settings/payrollExport", [
+		"settings.payrollExport.description",
+		"settings.payrollExport.title",
+		"settings.payrollReadiness.description",
+		"settings.payrollReadiness.title",
+		"settings.workDiagnostics.description",
+		"settings.workDiagnostics.title",
+	]),
+	...keys("settings/vacation", [
+		"settings.vacation.description",
+		"settings.vacation.title",
+	]),
+	...keys("settings/workPolicies", [
+		"settings.workPolicies.description",
+		"settings.workPolicies.title",
+	]),
+];
+
+function readPath(
+	tree: TreeTranslationsData,
+	path: readonly string[],
+): TreeTranslationsData | string | undefined {
+	let value: TreeTranslationsData | string | undefined = tree;
+	for (const key of path)
+		value = typeof value === "object" ? value[key] : undefined;
+	return value;
+}
+function copyPath(
+	source: TreeTranslationsData,
+	target: TreeTranslationsData,
+	path: readonly string[],
+) {
+	const value = readPath(source, path);
+	if (value === undefined) return;
+	let current = target;
+	for (const key of path.slice(0, -1)) {
+		if (typeof current[key] !== "object") current[key] = {};
+		current = current[key] as TreeTranslationsData;
+	}
+	current[path[path.length - 1]] = structuredClone(value);
+}
+
+export function projectShellCatalog(complete: CatalogSlice): CatalogSlice {
+	const source = complete.records[complete.locale] as TreeTranslationsData;
+	const tree: TreeTranslationsData = {};
+	for (const { namespace, path } of SHELL_CATALOG_KEYS) {
+		// Primary words always come from the complete predecessor winner, even when
+		// the manifest source shares a subtree with a later namespace.
+		copyPath(source, tree, path);
+		if (namespace !== "common")
+			copyPath(source, tree, [`${namespace}:${path[0]}`, ...path.slice(1)]);
+	}
+	const keyOwners = Object.fromEntries(
+		Object.entries(complete.keyOwners).filter(
+			([encoded]) => typeof readPath(tree, JSON.parse(encoded)) === "string",
+		),
+	);
+	return {
+		locale: complete.locale,
+		namespaces: [],
+		records: { [complete.locale]: tree },
+		keyOwners,
+	};
+}
