@@ -154,6 +154,16 @@ describe("getTimeTrackingRenderContext", () => {
 			expect(state.findMember).toHaveBeenCalledTimes(1);
 			expect(state.findEmployee).toHaveBeenCalledTimes(1);
 			expect(state.findSettings).toHaveBeenCalledTimes(1);
+			expect(state.findSettings).toHaveBeenCalledWith({
+				where: { type: "eq", column: "userSettings.userId", value: "user-1" },
+				columns: {
+					locale: true,
+					weekStartDay: true,
+					timeFormat: true,
+					timezone: true,
+					helpImproveProduct: true,
+				},
+			});
 		},
 	);
 
