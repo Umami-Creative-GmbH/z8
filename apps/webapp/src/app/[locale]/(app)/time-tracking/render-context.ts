@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { isAccountBanned } from "@/lib/auth/account-ban";
 import { getRenderSession } from "@/lib/auth/render-session";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
@@ -30,7 +31,7 @@ export const getTimeTrackingRenderContext = cache(
 		const session = await getRenderSession();
 		if (
 			!session?.user ||
-			session.user.banned === true ||
+			isAccountBanned(session.user) ||
 			("ssoRequired" in session && session.ssoRequired === true)
 		) {
 			return null;

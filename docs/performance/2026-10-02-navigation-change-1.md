@@ -35,3 +35,9 @@ No Phase secrets or production database credentials were acquired. An authentica
 The [Next dev loop skill](../../../.agents/skills/next-dev-loop/SKILL.md) requires both Next's runtime endpoint and `agent-browser`: “These are hard floors, not soft preferences.” The controller's preflight found `agent-browser` unavailable, so that runtime workflow remains pending. The three required Vercel quality skills are also unavailable in the installed catalog. No tooling/dependency installation or weaker substitute is claimed as completing those gates.
 
 Whole-branch review and the ticket PR to `dev` are controller delivery steps. No push, merge or deployment is included in this task's scoped-read commit.
+
+## Final review repair
+
+The final review found that the render context rejected every `banned: true` user, including an authoritative valid session whose temporary ban had expired. It now calls the existing expiry-aware `isAccountBanned` policy. Active and permanent bans still deny before employee/settings I/O; an expired temporary ban returns the authorized organization-scoped employee context and the real page composition reaches its clock region without the session-expired redirect. No fresh action, membership, SSO, reader or timekeeping predicates changed.
+
+The expired-ban regression failed before the source change and passed afterward; the focused policy/context run has 30 passing tests. Final combined coverage has 343 passing tests in 31 files, and the configured typecheck, direct app production build (1,438 pages), four-file Biome and React Doctor checks pass. Doctor's numerical score is unavailable. See the [final baseline update](2026-10-02-navigation-baseline.md#final-review-repair-evidence) for the full-suite result and unchanged acceptance gates.

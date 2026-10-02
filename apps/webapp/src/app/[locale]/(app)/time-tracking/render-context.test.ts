@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactElement } from "react";
+import { Temporal } from "temporal-polyfill";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
 	getSession: vi.fn(),
@@ -42,8 +44,40 @@ vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ type: "and", conditions }),
 	eq: (column: unknown, value: unknown) => ({ type: "eq", column, value }),
 }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }));
+vi.mock("@/tolgee/server", () => ({ getTranslate: vi.fn() }));
+vi.mock("./read-queries", () => ({ readActiveWorkPeriod: vi.fn() }));
+vi.mock("./region-data", () => ({
+	readHistoryRegion: vi.fn(),
+	readSummaryRegion: vi.fn(),
+}));
+vi.mock("./workday-timeline-data", () => ({ getWorkdayTimelineData: vi.fn() }));
+vi.mock("./region-fallbacks", () => ({
+	ClockLoading: () => null,
+	HistoryLoading: () => null,
+	RegionLoadError: () => null,
+	SummaryLoading: () => null,
+	TimelineLoading: () => null,
+}));
+vi.mock("@/components/errors/no-employee-error", () => ({
+	NoEmployeeError: () => null,
+}));
+vi.mock("@/components/time-tracking/clock-in-out-widget", () => ({
+	ClockInOutWidget: () => null,
+}));
+vi.mock("@/components/time-tracking/personal-workday-timeline", () => ({
+	PersonalWorkdayTimeline: () => null,
+}));
+vi.mock("@/components/time-tracking/time-entries-table", () => ({
+	TimeEntriesTable: () => null,
+}));
+vi.mock("@/components/time-tracking/weekly-summary-cards", () => ({
+	WeeklySummaryCards: () => null,
+}));
 
 import { getCurrentEmployee } from "./actions/auth";
+import { ClockRegion, TimeTrackingPageContent } from "./regions";
 import { getTimeTrackingRenderContext } from "./render-context";
 
 function session(activeOrganizationId: string | null = "org-1") {
@@ -56,6 +90,9 @@ function session(activeOrganizationId: string | null = "org-1") {
 describe("getTimeTrackingRenderContext", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
+		vi.spyOn(Temporal.Now, "instant").mockReturnValue(
+			Temporal.Instant.from("2026-10-02T12:00:00Z"),
+		);
 		state.getSession.mockResolvedValue(session());
 		state.canAccessSso.mockResolvedValue(true);
 		state.findMember.mockResolvedValue({ id: "member-1", role: "owner" });
@@ -67,10 +104,28 @@ describe("getTimeTrackingRenderContext", () => {
 		});
 		state.findSettings.mockResolvedValue(undefined);
 	});
+	afterEach(() => vi.restoreAllMocks());
 
 	it.each([
 		["absent", null],
-		["banned", { ...session(), user: { ...session().user, banned: true } }],
+		[
+			"permanently banned",
+			{
+				...session(),
+				user: { ...session().user, banned: true, banExpires: null },
+			},
+		],
+		[
+			"actively banned",
+			{
+				...session(),
+				user: {
+					...session().user,
+					banned: true,
+					banExpires: new Date("2026-10-03T12:00:00Z"),
+				},
+			},
+		],
 		["SSO-required", { ...session(), ssoRequired: true }],
 	])("denies a %s session without employee I/O", async (_name, value) => {
 		state.getSession.mockResolvedValue(value);
@@ -78,6 +133,34 @@ describe("getTimeTrackingRenderContext", () => {
 		expect(state.findMember).not.toHaveBeenCalled();
 		expect(state.findEmployee).not.toHaveBeenCalled();
 		expect(state.findSettings).not.toHaveBeenCalled();
+	});
+
+	it("returns authorized employee context after a temporary ban expires without expiring the session", async () => {
+		state.getSession.mockResolvedValue({
+			...session(),
+			user: {
+				...session().user,
+				banned: true,
+				banExpires: new Date("2026-10-01T12:00:00Z"),
+			},
+		});
+		expect(await getTimeTrackingRenderContext()).toMatchObject({
+			userId: "user-1",
+			employee: { id: "employee-1", organizationId: "org-1" },
+			membershipRole: "owner",
+		});
+		const content = (await TimeTrackingPageContent({
+			searchParams: Promise.resolve({}),
+		})) as ReactElement<{
+			children: ReactElement<{
+				children: ReactElement<{ context: unknown }>;
+			}>[];
+		}>;
+		const clock = content.props.children[0].props.children;
+		expect(clock.type).toBe(ClockRegion);
+		expect(clock.props.context).toMatchObject({
+			employee: { id: "employee-1", organizationId: "org-1" },
+		});
 	});
 
 	it("denies failed organization SSO before employee I/O", async () => {
