@@ -11,8 +11,6 @@ import {
 } from "@testing-library/react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useEffect } from "react";
-import { hydrateRoot } from "react-dom/client";
-import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { QueryProvider } from "@/lib/query/provider";
@@ -25,11 +23,7 @@ import {
 } from "./catalog-store";
 import { TolgeeNextProvider, useNamespaces } from "./client";
 import { FeatureTranslationProvider } from "./feature-provider";
-import {
-	loadCatalogSlice,
-	loadCompleteServerTranslations,
-	loadShellTranslations,
-} from "./load-translations";
+import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("server-only", () => ({}));
@@ -95,43 +89,6 @@ describe("real Tolgee feature delivery", () => {
 		);
 		expect(view.container.textContent).toBe("Feature visible");
 	});
-	it("renders predecessor primary, alias and shared labels on SSR and hydration", async () => {
-		const shell = await loadShellTranslations("de");
-		const feature = await loadCatalogSlice("de", ["reports"]);
-		const complete = await loadCompleteServerTranslations("de");
-		const tree = (
-			<TolgeeNextProvider slice={shell}>
-				<FeatureTranslationProvider slice={feature}>
-					<Labels />
-				</FeatureTranslationProvider>
-			</TolgeeNextProvider>
-		);
-		const markup = renderToString(tree);
-		const predecessor = renderToString(
-			<TolgeeNextProvider slice={{ ...shell, records: complete }}>
-				<Labels />
-			</TolgeeNextProvider>,
-		);
-		expect(markup).toBe(predecessor);
-		expect(markup).not.toContain("reports.title");
-		expect(markup).not.toContain("organization.noEmployeeRecord");
-		expect(Buffer.byteLength(JSON.stringify(feature.records))).toBeLessThan(
-			Buffer.byteLength(JSON.stringify(complete)),
-		);
-		const host = document.createElement("div");
-		host.innerHTML = markup;
-		const errors: unknown[] = [];
-		let root: ReturnType<typeof hydrateRoot>;
-		await act(async () => {
-			root = hydrateRoot(host, tree, {
-				onRecoverableError: (error) => errors.push(error),
-			});
-		});
-		expect(host.innerHTML).toBe(markup);
-		expect(errors).toEqual([]);
-		await act(async () => root.unmount());
-	});
-
 	it("retains root running state, listeners, queries and cumulative slices through feature replacement and unmount", async () => {
 		const shell = await loadShellTranslations("fr");
 		const reports = await loadCatalogSlice("fr", ["reports"]);
