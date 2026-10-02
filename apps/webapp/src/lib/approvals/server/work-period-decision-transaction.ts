@@ -142,7 +142,9 @@ export function workPeriodDecisionTarget(
 	observation: string,
 	approvalRequestId: string,
 ): WorkPeriodDecisionTarget | null {
-	const [rawPeriod, rawRequests, rawWorkflows] = JSON.parse(observation) as unknown[];
+	const parsed: unknown = JSON.parse(observation);
+	if (!Array.isArray(parsed)) return null;
+	const [rawPeriod, rawRequests, rawWorkflows] = parsed;
 	const period = objectOrNull(rawPeriod);
 	if (!period) return null;
 	const request = (Array.isArray(rawRequests) ? rawRequests : [])
