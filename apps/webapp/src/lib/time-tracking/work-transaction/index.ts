@@ -312,8 +312,9 @@ async function coordinate<R extends WorkRoute, A, T>(
 	const routed = await route();
 	const scope = normalizeRoute(routed);
 	const writeTargets = new Set(scope.writeTargets);
+	const routedEmployees = new Set(scope.employees);
 	for (const target of writeTargets) {
-		if (!scope.employees.includes(target)) {
+		if (!routedEmployees.has(target)) {
 			throw new WorkTransactionProtocolViolation(`write target ${target} is not a routed employee`);
 		}
 	}

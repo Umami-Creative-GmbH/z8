@@ -69,6 +69,11 @@ describe("workPeriodDecisionTarget", () => {
 			),
 		).toBeNull();
 	});
+
+	it("names no target for an observation that is not an array", () => {
+		expect(workPeriodDecisionTarget("null", "request-1")).toBeNull();
+		expect(workPeriodDecisionTarget(JSON.stringify({ id: "request-1" }), "request-1")).toBeNull();
+	});
 });
 
 describe("workPeriodDecisionPlan", () => {

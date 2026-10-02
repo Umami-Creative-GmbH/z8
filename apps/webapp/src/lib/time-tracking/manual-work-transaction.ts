@@ -84,15 +84,17 @@ export function withManualWorkTransaction<T>(
 			},
 		},
 		(scope) => {
-			const { employees } = scope.route;
-			const { approvalRouted, policyIds, stageIds } = scope.route.snapshot;
+			const employees = new Set(scope.route.employees);
+			const { approvalRouted } = scope.route.snapshot;
+			const policyIds = new Set(scope.route.snapshot.policyIds);
+			const stageIds = new Set(scope.route.snapshot.stageIds);
 			// The target is always a write target, so this refuses only a settled scope.
 			const assertActive = () => scope.assertEmployee(input.organizationId, input.targetEmployeeId);
 			// Anything outside the routed scope needs the approval participants routed.
 			const widen = () => scope.restart({ widen: true });
 			const assertParticipant = (organizationId: string, employeeId: string) => {
 				assertActive();
-				if (organizationId !== input.organizationId || !employees.includes(employeeId)) widen();
+				if (organizationId !== input.organizationId || !employees.has(employeeId)) widen();
 			};
 			const assertApprovalPolicy = (
 				organizationId: string,
@@ -102,8 +104,8 @@ export function withManualWorkTransaction<T>(
 				assertActive();
 				if (
 					organizationId !== input.organizationId ||
-					!policyIds.includes(policyId) ||
-					policyStageIds.some((id) => !stageIds.includes(id))
+					!policyIds.has(policyId) ||
+					policyStageIds.some((id) => !stageIds.has(id))
 				) {
 					widen();
 				}

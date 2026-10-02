@@ -29,8 +29,9 @@ export async function lockLifecycleScope(
 	for (const userId of userIds) {
 		await holdGuard(tx, userConfigurationAccessGuard(userId, "exclusive"));
 	}
+	const held = new Set(userIds);
 	const confirmed = await lifecycleUserIds(tx, organizationId, employeeId);
-	if (confirmed.some((userId) => !userIds.includes(userId))) {
+	if (confirmed.some((userId) => !held.has(userId))) {
 		throw new AuthorizationScopeChanged();
 	}
 	await holdGuard(tx, employeeCoordinationGuard(employeeId));
