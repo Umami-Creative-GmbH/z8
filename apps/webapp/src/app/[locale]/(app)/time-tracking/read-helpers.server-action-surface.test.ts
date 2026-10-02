@@ -23,6 +23,7 @@ describe("time-tracking read helper surface", () => {
 		"read-queries.ts",
 		"region-data.ts",
 		"timeline-serialization.ts",
+		"regions.tsx",
 	])("keeps %s a server-only helper module", (file) => {
 		const source = readSource(file);
 
@@ -44,15 +45,17 @@ describe("time-tracking read helper surface", () => {
 	});
 
 	it("loads page reads from the authorized render context", () => {
-		expect(readSource("page-data.ts")).toContain(
+		expect(readSource("regions.tsx")).toContain(
 			'import { readActiveWorkPeriod } from "./read-queries";',
 		);
-		expect(readSource("page-data.ts")).toContain(
+		expect(readSource("regions.tsx")).toContain(
 			'import { readHistoryRegion, readSummaryRegion } from "./region-data";',
 		);
-		expect(readSource("page-data.ts")).toContain(
+		expect(readSource("regions.tsx")).toContain(
 			"getTimeTrackingRenderContext()",
 		);
+		expect(readSource("page.tsx")).not.toContain("getTimeTrackingPageData");
+		expect(readSource("page-data.ts")).not.toContain("getTimeTrackingPageData");
 	});
 
 	it.each([
