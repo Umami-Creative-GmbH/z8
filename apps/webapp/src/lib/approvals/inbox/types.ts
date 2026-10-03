@@ -84,7 +84,25 @@ export interface ApprovalInboxDetailChange {
 	requested: ApprovalInboxDetailChangeValue;
 }
 
+export interface ApprovalInboxTimeEndpoint {
+	at: string;
+	utcOffsetMinutes: number | null;
+}
+
+export interface ApprovalInboxTimeRange {
+	start: ApprovalInboxTimeEndpoint | null;
+	end: ApprovalInboxTimeEndpoint | null;
+}
+
+export interface ApprovalInboxTimeComparison {
+	type: "time_comparison";
+	action: "edit" | "delete";
+	original: ApprovalInboxTimeRange;
+	requested: ApprovalInboxTimeRange;
+}
+
 export type ApprovalInboxDetailSection =
+	| ApprovalInboxTimeComparison
 	| {
 			type: "key_value";
 			title: string | ApprovalInboxLocalizedText;

@@ -242,18 +242,18 @@ export function AcceptInvitationFormBody({
 					{!fatalError && !session ? (
 						<>
 							<Button asChild className="w-full">
-								<Link href={withCallbackUrl("/sign-in", callbackUrl)}>
-									{t(
-										"auth.sign-in-invited-email",
-										"Sign in with invited email",
-									)}
-								</Link>
-							</Button>
-							<Button asChild className="w-full" variant="outline">
 								<Link href={signUpUrl}>
 									{t(
 										"auth.create-account-invited-email",
 										"Create account with invited email",
+									)}
+								</Link>
+							</Button>
+							<Button asChild className="w-full" variant="outline">
+								<Link href={withCallbackUrl("/sign-in", callbackUrl)}>
+									{t(
+										"auth.sign-in-invited-email",
+										"Sign in with invited email",
 									)}
 								</Link>
 							</Button>

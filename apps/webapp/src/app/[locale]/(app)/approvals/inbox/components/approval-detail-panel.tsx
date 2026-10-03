@@ -4,6 +4,7 @@ import { IconCheck, IconLoader2, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -81,6 +82,10 @@ function renderDetailSection(
 	section: ApprovalInboxDetailSection,
 ) {
 	switch (section.type) {
+		case "time_comparison":
+			return (
+				<TimeCorrectionComparison key="time-comparison" comparison={section} />
+			);
 		case "key_value":
 			return (
 				<section key={localizedText(t, section.title)}>

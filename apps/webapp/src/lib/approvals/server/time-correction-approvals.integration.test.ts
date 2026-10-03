@@ -1643,6 +1643,59 @@ describe(
 
 		beforeEach(seedTask13);
 
+		it.each(["approve", "reject"] as const)(
+			"finalizes a resubmitted rejected legacy manual entry in PostgreSQL: %s",
+			async (action) => {
+				const approvalId = "b5000000-0000-4000-8000-000000000055";
+				await runSqlStatements(pool, [
+					{ text: "update work_period set approval_status = 'rejected' where id = $1 and organization_id = $2", values: [ids.period, ids.organization] },
+					{ text: "update time_record set approval_state = 'rejected' where id = $1 and organization_id = $2", values: [ids.canonical, ids.organization] },
+				]);
+				await database.insert(schema.approvalRequest).values({
+					id: approvalId,
+					organizationId: ids.organization,
+					entityType: "time_entry",
+					entityId: ids.period,
+					requestedBy: ids.requester,
+					approverId: ids.manager,
+					status: "pending",
+					metadata: { timeCorrection: { action: "edit", clockInCorrectionId: ids.correction } },
+					updatedAt: new Date(now.epochMilliseconds),
+				});
+				await database.transaction(async (tx) => {
+					await tx.execute(sql`update approval_request set
+						status = ${action === "approve" ? "approved" : "rejected"},
+						approved_at = ${action === "approve" ? new Date(now.epochMilliseconds) : null},
+						rejection_reason = ${action === "reject" ? "Incorrect times" : null}
+						where id = ${approvalId} and organization_id = ${ids.organization}`);
+					await finalizeTimeCorrectionTerminalInTransaction({
+						dbService: { db: tx } as unknown as ApprovalDbService,
+						organizationId: ids.organization,
+						workPeriodId: ids.period,
+						expectedApprovalWorkflowId: null,
+						expectedApprovalWorkflowVersion: null,
+						expectedRequesterEmployeeId: ids.requester,
+						actorEmployeeId: ids.manager,
+						actorUserId: ids.managerUser,
+						correction: { action: "edit", clockInCorrectionId: ids.correction },
+						legacyApprovalRequestId: approvalId,
+						transition: action === "approve" ? { kind: "approve", reason: null } : { kind: "reject", reason: "Incorrect times" },
+						finalizedAt: now,
+						allowMetadataLessLegacyFallback: false,
+					});
+				});
+				const after = await durableSnapshot();
+				expect(after.work_period).toMatchObject([{
+					approval_status: action === "approve" ? "approved" : "rejected",
+					clock_in_id: action === "approve" ? ids.correction : ids.originalIn,
+				}]);
+				expect(after.time_record).toMatchObject([{
+					approval_state: action === "approve" ? "approved" : "rejected",
+					duration_minutes: action === "approve" ? 465 : 480,
+				}]);
+			},
+		);
+
 		it("persists and replays repository-backed current metadata-only evidence", async () => {
 			const submissionKey = "task3-current-metadata-only";
 			const first = await submitMetadataOnlyCorrection(submissionKey);
