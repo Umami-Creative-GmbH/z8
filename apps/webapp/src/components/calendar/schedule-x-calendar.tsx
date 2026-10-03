@@ -43,17 +43,18 @@ import type {
 	DailyWorkHoursSummaries,
 } from "@/lib/calendar/types";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";
+import { calendarEventComponents } from "./calendar-work-event";
 import { ScheduleXCalendarHeader } from "./schedule-x-calendar-header";
 import {
 	filterEventsForScheduleXView,
 	resolveClickableCalendarEvent,
 } from "./schedule-x-calendar-utils";
 import { useScheduleXDomLifecycle } from "./use-schedule-x-dom-lifecycle";
-import { formatWorkPeriodEditedBy } from "./work-period-dialog-utils";
 import {
 	type WorkPeriodActions,
 	WorkPeriodContextMenu,
 } from "./work-period-context-menu";
+import { formatWorkPeriodEditedBy } from "./work-period-dialog-utils";
 
 export type ViewMode = "day" | "week" | "month" | "year";
 
@@ -155,7 +156,10 @@ export function ScheduleXCalendarWrapper({
 			clockOutAllowedWorkPeriodIds,
 			editedByLabel: (event) => formatWorkPeriodEditedBy(event, timeZone, t),
 		},
-	);
+	).map(({ _customContent, ...event }) => ({
+		...event,
+		_calendarTimeGridContent: _customContent?.timeGrid,
+	}));
 
 	// Generate break events only for day/week view
 	const scheduleXEvents = (() => {
@@ -479,7 +483,10 @@ function ScheduleXCalendarBody({
 				<span hidden aria-hidden="true" data-requirement-sum-icon>
 					<IconSum size={12} aria-hidden="true" focusable="false" />
 				</span>
-				<ScheduleXCalendar calendarApp={calendar} />
+				<ScheduleXCalendar
+					calendarApp={calendar}
+					customComponents={calendarEventComponents}
+				/>
 			</div>
 		</div>
 	);

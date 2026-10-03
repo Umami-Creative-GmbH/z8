@@ -173,7 +173,8 @@
       "surcharge": "Supplemento",
       "surchargeBreakdown": "Dettaglio supplementi",
       "time": "Tempo",
-      "type": "Tipo"
+      "type": "Tipo",
+      "workLocation": "Luogo di lavoro"
     },
     "edit": {
       "deleteEntry": "Elimina voce",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Impossibile salvare le note",
       "projectSaved": "Progetto aggiornato",
       "projectSaveFailed": "Impossibile aggiornare il progetto",
-      "split": "Dividi"
+      "split": "Dividi",
+      "locationRequired": "Seleziona un luogo di lavoro.",
+      "time": {
+        "noChanges": "Modifica prima la data, l’ora o il luogo di lavoro.",
+        "edit": "Modifica voce"
+      }
     },
     "employeeSelector": {
       "error": "Impossibile caricare i membri del team",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Non registrato"
     }
   }
 }

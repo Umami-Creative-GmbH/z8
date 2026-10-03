@@ -183,7 +183,8 @@ describe(
 
 		function adminEdit(
 			workPeriodId: string,
-			values: { clockInTime?: string; clockOutTime: string; clockOutDate?: string },
+			values: { clockInTime?: string; clockOutTime: string; clockOutDate?: string;
+			workLocationType?: "office" | "home" | "remote" | "other"; },
 			submissionId: string = randomUUID(),
 		) {
 			actAs(ids.adminUser, { isOrgAdmin: true });
@@ -194,6 +195,7 @@ describe(
 				clockInTime: values.clockInTime ?? "08:00",
 				clockOutDate: values.clockOutDate ?? "2026-07-22",
 				clockOutTime: values.clockOutTime,
+			workLocationType: values.workLocationType,
 				reason: "Forgot to clock out",
 			});
 		}
@@ -400,6 +402,80 @@ describe(
 
 		afterAll(async () => {
 			await cleanup();
+		});
+
+		it.each(["active", "inactive"] as const)(
+		"changes calendar location without replacing endpoints under %s admission",
+		async (admission) => {
+			const period = await recordWork(
+				dayStart,
+				dayStart.add({ hours: 1, seconds: 40 }),
+				ids.projectA,
+				adminOwner,
+			);
+			await setAdmission(admission);
+			const before = await graph(period.id);
+			await expect(
+				adminEdit(period.id, {
+					clockOutTime: "09:00",
+					workLocationType: "home",
+				}),
+			).resolves.toMatchObject({ success: true, data: { status: "applied" } });
+			const after = await graph(period.id);
+			expect(after).toMatchObject({
+				work_location_type: "home",
+				detail_location: "home",
+				record_updated_by: ids.adminUser,
+				start_time: before.start_time,
+				end_time: before.end_time,
+				clock_in_id: before.clock_in_id,
+				clock_out_id: before.clock_out_id,
+				project_id: before.project_id,
+				duration_minutes: before.duration_minutes,
+			});
+			if (admission === "inactive") {
+				const { rows } = await admin.query(
+					"select changes from audit_log where organization_id = $1 and entity_id = $2",
+					[ids.organization, period.id],
+				);
+				expect(
+					rows.some(
+						(row) => JSON.parse(row.changes).workLocationType?.after === "home",
+					),
+				).toBe(true);
+			}
+		},
+	);
+
+		it.each([
+			["active", "admin"], ["inactive", "admin"],
+			["active", "self_service"], ["inactive", "self_service"],
+			["active", "on_behalf"], ["inactive", "on_behalf"],
+		] as const)("records a missing Office location through %s admission and %s editing", async (admission, route) => {
+			const owner = route === "admin" ? adminOwner : requesterOwner;
+			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, owner);
+			await admin.query("update work_period set work_location_type = null where id = $1 and organization_id = $2", [period.id, ids.organization]);
+			await admin.query("update time_record_work set work_location_type = null where record_id = (select canonical_record_id from work_period where id = $1 and organization_id = $2)", [period.id, ids.organization]);
+			await setAdmission(admission);
+			actAs(route === "self_service" ? ids.requesterUser : ids.adminUser, { isOrgAdmin: route !== "self_service" });
+			const before = await graph(period.id);
+			const result = await updateWorkPeriodTimes({
+				workPeriodId: period.id, submissionId: randomUUID(), workLocationType: "office", reason: "Recorded office location",
+				clockInDate: "2026-07-22", clockInTime: "08:00", clockOutDate: "2026-07-22", clockOutTime: "09:00",
+			});
+			expect(result).toMatchObject({ success: true });
+			const after = await graph(period.id);
+			expect(after).toMatchObject({ clock_in_id: before.clock_in_id, clock_out_id: before.clock_out_id, start_time: before.start_time, end_time: before.end_time });
+			if (result.success && result.data?.status === "applied") {
+				expect(after).toMatchObject({ work_location_type: "office", detail_location: "office" });
+			} else {
+				expect(result).toMatchObject({ data: { status: "pending" } });
+				if (admission === "active") {
+					const { rows } = await admin.query("select result from completed_work_operation where organization_id = $1 and kind = 'submit_time_correction' and result->>'workPeriodId' = $2", [ids.organization, period.id]);
+					expect(rows).toHaveLength(1);
+					expect(rows[0].result).toMatchObject({ intent: "metadata_only", changeMask: { workLocation: true } });
+				}
+			}
 		});
 
 		it("corrects adopted work atomically with one derived duration and exact append linkage", async () => {
@@ -686,7 +762,7 @@ describe(
 
 			// Rejected work still occupies its interval; deleted work does not.
 			await admin.query("update work_period set approval_status = 'rejected' where id = $1", [
-				noon.id,
+				noon.id
 			]);
 			await expect(
 				adminEdit(morning.id, { clockInTime: "09:00", clockOutTime: "12:30" }),
@@ -900,7 +976,8 @@ describe(
 			});
 			const { rows: revision } = await admin.query<{ graph_revision: number; project_id: string }>(
 				"select graph_revision, project_id from work_period where id = $1",
-				[active.id],
+				[active.id,
+		]
 			);
 			expect(only(revision)).toEqual({ graph_revision: 1, project_id: ids.projectB });
 			await expect(
@@ -950,7 +1027,7 @@ describe(
 			});
 			expect(replayed.status).toBe(201);
 			expect(((await replayed.json()) as { entry: { id: string } }).entry.id).toBe(
-				created.entry.id,
+				created.entry.id
 			);
 			expect(await snapshot()).toEqual(committed);
 
@@ -1006,7 +1083,7 @@ describe(
 		it("holds work without a canonical record for review instead of rebuilding it", async () => {
 			const period = await recordWork(dayStart, dayStart.add({ hours: 1 }), undefined, adminOwner);
 			await admin.query("update work_period set canonical_record_id = null where id = $1", [
-				period.id,
+				period.id
 			]);
 			const before = await snapshot();
 			await expect(adminEdit(period.id, { clockOutTime: "09:30" })).resolves.toEqual({
@@ -1054,5 +1131,5 @@ describe(
 			await clearOrganizationTimeData(ids.organization);
 			expect(await receipts()).toHaveLength(0);
 		});
-	},
+	}
 );

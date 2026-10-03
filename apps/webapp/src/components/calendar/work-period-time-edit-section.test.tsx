@@ -50,6 +50,7 @@ const event: CalendarEvent = {
 };
 
 const values = {
+	workLocationType: "office",
 	clockInDate: "2026-09-01",
 	clockInTime: "09:00",
 	clockOutDate: "2026-09-01",
@@ -85,8 +86,46 @@ function renderSection(onTimesUpdated = vi.fn()) {
 }
 
 describe("WorkPeriodTimeSection", () => {
+	it("allows location-only edits for work completed within a single minute", async () => {
+		getContext.mockResolvedValue({ success: true, data: { access: { kind: "self_service" }, timezone: "Europe/Berlin", values: { ...values, clockOutTime: "09:00" } } });
+		updateTimes.mockResolvedValue({ success: true, data: { status: "applied" } });
+		const { onTimesUpdated } = renderSection();
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Home" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		await waitFor(() => expect(onTimesUpdated).toHaveBeenCalledOnce());
+	});
+	it("asks for a recorded location before saving an entry with no location", async () => {
+		updateTimes.mockResolvedValue({ success: true, data: { status: "applied" } });
+		getContext.mockResolvedValue({ success: true, data: { access: { kind: "self_service" }, timezone: "Europe/Berlin", values: { ...values, workLocationType: null } } });
+		renderSection();
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+		fireEvent.change(screen.getByLabelText("Clock out time"), { target: { value: "16:30" } });
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		await waitFor(() => expect(toastError).toHaveBeenCalledWith("Choose a work location."));
+		expect(updateTimes).not.toHaveBeenCalled();
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
+	});
+
+	it("saves a location-only change without requiring a time change", async () => {
+		mockAccess({ kind: "self_service" });
+		updateTimes.mockResolvedValue({
+			success: true,
+			data: { status: "applied" },
+		});
+		const { onTimesUpdated } = renderSection();
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+		await waitFor(() => expect(onTimesUpdated).toHaveBeenCalledTimes(1));
+		expect(updateTimes).toHaveBeenCalledWith(
+			expect.objectContaining({
+				...values,
+				workLocationType: "remote",
+			}),
+		);
 	});
 
 	it("lets admins move an entry to another date and applies it directly", async () => {
@@ -97,7 +136,7 @@ describe("WorkPeriodTimeSection", () => {
 		});
 		const { onTimesUpdated } = renderSection();
 
-		fireEvent.click(await screen.findByRole("button", { name: "Edit time" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
 		fireEvent.change(screen.getByLabelText("Clock in date"), {
 			target: { value: "2026-08-03" },
 		});
@@ -130,7 +169,7 @@ describe("WorkPeriodTimeSection", () => {
 		});
 		const { onTimesUpdated } = renderSection();
 
-		fireEvent.click(await screen.findByRole("button", { name: "Edit time" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
 		fireEvent.change(screen.getByLabelText("Clock out date"), {
 			target: { value: "2026-09-02" },
 		});
@@ -170,7 +209,7 @@ describe("WorkPeriodTimeSection", () => {
 		mockAccess({ kind: "self_service" });
 		renderSection();
 
-		fireEvent.click(await screen.findByRole("button", { name: "Edit time" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
 		fireEvent.change(screen.getByLabelText("Clock out time"), {
 			target: { value: "16:30" },
 		});
@@ -183,7 +222,7 @@ describe("WorkPeriodTimeSection", () => {
 		mockAccess({ kind: "admin" });
 		renderSection();
 
-		fireEvent.click(await screen.findByRole("button", { name: "Edit time" }));
+		fireEvent.click(await screen.findByRole("button", { name: "Edit entry" }));
 		fireEvent.change(screen.getByLabelText("Clock out time"), {
 			target: { value: "08:00" },
 		});
@@ -210,7 +249,7 @@ describe("WorkPeriodTimeSection", () => {
 				"Entries older than 30 days can only be edited by an admin.",
 			),
 		).toBeTruthy();
-		expect(screen.queryByRole("button", { name: "Edit time" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Edit entry" })).toBeNull();
 	});
 
 	it("hides editing for other employees' entries without a hint", async () => {
@@ -218,7 +257,7 @@ describe("WorkPeriodTimeSection", () => {
 		renderSection();
 
 		await waitFor(() => expect(getContext).toHaveBeenCalled());
-		expect(screen.queryByRole("button", { name: "Edit time" })).toBeNull();
+		expect(screen.queryByRole("button", { name: "Edit entry" })).toBeNull();
 		expect(screen.getByText("09:00 - 17:00")).toBeTruthy();
 	});
 });

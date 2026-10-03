@@ -98,6 +98,19 @@ function automaticPeriod() {
 }
 
 describe("getWorkPeriodsForMonth", () => {
+	it.each(["office", "home", "remote", "other", null])(
+		"exposes recorded location %s to the calendar",
+		async (workLocationType) => {
+			const row = automaticPeriod();
+			mockDb.where.mockResolvedValue([
+				{ ...row, period: { ...row.period, workLocationType } },
+			]);
+			const [event] = await getWorkPeriodsForMonth(4, 2026, {
+				organizationId: "org-1",
+			});
+			expect(event.metadata.workLocationType).toBe(workLocationType);
+		},
+	);
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-04T10:30:00.000Z"));

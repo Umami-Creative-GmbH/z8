@@ -173,7 +173,8 @@
       "surcharge": "Tillegg",
       "surchargeBreakdown": "Fordeling av tillegg",
       "time": "Tid",
-      "type": "Type"
+      "type": "Type",
+      "workLocation": "Arbeidssted"
     },
     "edit": {
       "deleteEntry": "Slett oppføring",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Kunne ikke lagre notater",
       "projectSaved": "Prosjekt oppdatert",
       "projectSaveFailed": "Kunne ikke oppdatere prosjekt",
-      "split": "Del opp"
+      "split": "Del opp",
+      "locationRequired": "Velg et arbeidssted.",
+      "time": {
+        "noChanges": "Endre først dato, klokkeslett eller arbeidssted.",
+        "edit": "Rediger oppføring"
+      }
     },
     "employeeSelector": {
       "error": "Kunne ikke laste inn teammedlemmer",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Ikke registrert"
     }
   }
 }

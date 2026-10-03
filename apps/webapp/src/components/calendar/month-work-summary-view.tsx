@@ -4,6 +4,7 @@ import { IconChevronLeft, IconChevronRight, IconReload } from "@tabler/icons-rea
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
@@ -177,6 +178,7 @@ function MonthTotalCard({ total, t }: { total: WorkPeriodTotal | null; t: Transl
 }
 
 function EventBadges({ events }: { events: CalendarEvent[] }) {
+	const { t } = useTranslate();
 	if (events.length === 0) return null;
 
 	return (
@@ -185,11 +187,17 @@ function EventBadges({ events }: { events: CalendarEvent[] }) {
 				<span
 					key={event.id}
 					className={cn(
-						"truncate rounded border px-1.5 py-0.5 text-left font-medium text-[10px] leading-4",
+						"flex min-w-0 items-center gap-1 rounded border px-1.5 py-0.5 text-left font-medium text-[10px] leading-4",
 						getEventBadgeClassName(event.type),
 					)}
 				>
-					{event.title}
+					{event.type === "work_period" ? (
+						<WorkLocationIndicator
+							value={event.metadata.workLocationType}
+							t={t}
+						/>
+					) : null}
+					<span className="truncate">{event.title}</span>
 				</span>
 			))}
 			{events.length > 2 ? (
