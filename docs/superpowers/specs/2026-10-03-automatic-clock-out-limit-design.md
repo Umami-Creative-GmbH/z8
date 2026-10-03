@@ -2,7 +2,9 @@
 
 Date: 2026-10-03
 
-Status: Behavior approved in conversation; written specification awaiting review.
+Status: Written specification approved by the user on 2026-10-03; implementation plan awaiting review.
+
+GitHub: [Spec issue #568](https://github.com/Umami-Creative-GmbH/z8/issues/568), assigned to KaiSoellch.
 
 ## Intent and agreed behavior
 
