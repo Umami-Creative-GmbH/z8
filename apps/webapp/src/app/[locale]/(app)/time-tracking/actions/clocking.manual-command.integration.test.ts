@@ -421,6 +421,88 @@ describe("strict versioned manual commands on PostgreSQL", () => {
 	});
 
 	describe("committed graph and replay", () => {
+		it.each(["legacy", "versioned"] as const)("rejects invalid work locations in %s submissions without writing", async (representation) => {
+			if (representation === "legacy") await setAppend(null);
+			const before = await snapshot();
+			const invalid = representation === "legacy"
+				? { submissionId: randomUUID(), date: "2026-09-01", clockInTime: "08:00", clockOutTime: "12:30", reason: "Forgot to clock in", workLocationType: "spaceship" }
+				: { ...manualCommand(), workLocationType: "spaceship" };
+			await expect(submit(invalid)).resolves.toMatchObject({ success: false });
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it.each([
+			["self", ids.employeeUser, false],
+			["manager", ids.managerUser, false],
+			["pending approval", ids.employeeUser, true],
+		] as const)(
+			"persists work location for %s entries and replays it exactly",
+			async (_name, actor, pending) => {
+				if (pending)
+					await seedChangePolicy({ selfServiceDays: 0, approvalDays: 365 });
+				const command = manualCommand({
+					workLocationType: "home",
+					browserTimezone: actor === ids.managerUser ? null : "Europe/Berlin",
+				});
+				await expect(submit(command, actor)).resolves.toMatchObject({
+				success: true,
+			});
+				const { rows } = await admin.query(
+					`select p.work_location_type as period_location, w.work_location_type as record_location,
+				 p.approval_status from work_period p join time_record_work w on w.record_id = p.canonical_record_id
+				 where p.organization_id = $1 and p.id = $2`,
+					[ids.organization, command.submissionId],
+				);
+				expect(only(rows)).toEqual({
+					period_location: "home",
+					record_location: "home",
+					approval_status: pending ? "pending" : "approved",
+				});
+				const before = await snapshot();
+				await expect(submit(command, actor)).resolves.toMatchObject({
+				success: true,
+				data: { disposition: "replayed" },
+			});
+				await expect(
+					submit({ ...command, workLocationType: "remote" }, actor),
+				).resolves.toMatchObject({
+				success: false,
+				code: "manual_entry_collision",
+			});
+				expect(await snapshot()).toEqual(before);
+			},
+		);
+
+		it("persists the selected location for legacy entries and rejects a changed retry", async () => {
+			await setAppend(null);
+			const legacy = {
+				submissionId: randomUUID(),
+				date: "2026-09-01",
+				clockInTime: "08:00",
+				clockOutTime: "12:30",
+				reason: "Forgot to clock in",
+				timezone: "Europe/Berlin",
+				workLocationType: "other",
+			};
+			await expect(submit(legacy)).resolves.toMatchObject({ success: true });
+			const { rows } = await admin.query(
+				`select p.work_location_type as period_location, w.work_location_type as record_location
+				 from work_period p join time_record_work w on w.record_id = p.canonical_record_id
+				 where p.organization_id = $1 and p.id = $2`,
+				[ids.organization, legacy.submissionId],
+			);
+			expect(only(rows)).toEqual({
+				period_location: "other",
+				record_location: "other",
+			});
+			const before = await snapshot();
+			await expect(submit(legacy)).resolves.toMatchObject({ success: true });
+			await expect(
+				submit({ ...legacy, workLocationType: "home" }),
+			).resolves.toMatchObject({ success: false });
+			expect(await snapshot()).toEqual(before);
+		});
+
 		it("commits the exact interval, captures, receipt and balance intent in one operation", async () => {
 			const command = manualCommand();
 

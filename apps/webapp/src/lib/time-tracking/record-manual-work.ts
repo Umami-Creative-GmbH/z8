@@ -80,6 +80,7 @@ export type ManualWorkFacts = {
 	reason: string;
 	projectId: string | null;
 	workCategoryId: string | null;
+	workLocationType?: ManualTimeEntryCommand["workLocationType"];
 	daysBack: number;
 	policy: ManualPolicyEvidence | null;
 	approval: ManualApprovalIntent;
@@ -126,7 +127,11 @@ export type ManualWorkResult = {
 		startUtcOffsetMinutes: number;
 		endUtcOffsetMinutes: number;
 	};
-	attribution: { projectId: string | null; workCategoryId: string | null };
+	attribution: {
+		projectId: string | null;
+		workCategoryId: string | null;
+		workLocationType?: ManualTimeEntryCommand["workLocationType"];
+	};
 	revisions: { workPeriod: { source: null; result: number } };
 	append: {
 		admission: "append";
@@ -344,7 +349,7 @@ export async function recordManualWork(
 		organizationId,
 		recordKind: "work",
 		workCategoryId: facts.workCategoryId,
-		workLocationType: null,
+		workLocationType: facts.workLocationType ?? null,
 		computationMetadata: null,
 	});
 	if (facts.projectId) {
@@ -371,6 +376,7 @@ export async function recordManualWork(
 			durationMinutes: facts.durationMinutes,
 			projectId: facts.projectId,
 			workCategoryId: facts.workCategoryId,
+			workLocationType: facts.workLocationType ?? null,
 			canonicalRecordId: record.id,
 			isActive: false,
 			approvalStatus: approvalState,
@@ -478,7 +484,13 @@ export async function recordManualWork(
 			startUtcOffsetMinutes: facts.startOffsetMinutes,
 			endUtcOffsetMinutes: facts.endOffsetMinutes,
 		},
-		attribution: { projectId: facts.projectId, workCategoryId: facts.workCategoryId },
+		attribution: {
+			projectId: facts.projectId,
+			workCategoryId: facts.workCategoryId,
+			...(facts.workLocationType !== undefined
+				? { workLocationType: facts.workLocationType }
+				: {}),
+		},
 		revisions: { workPeriod: { source: null, result: resultRevision } },
 		append: {
 			admission: "append",
