@@ -2246,11 +2246,28 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	}
 	const period = periodRows[0] as LockedTimeCorrectionPeriod;
 	const expectedSource = input.expectedSource;
+	// Legacy manual submissions remain rejected until a manager accepts their
+	// corrected times. They can already submit a correction; refusing that
+	// baseline here strands both decisions. Keep this recovery limited to a
+	// completed legacy entry with an actual time proposal and no competing work.
+	const rejectedLegacyResubmission =
+		!adoptedScope &&
+		expectedSource === undefined &&
+		input.expectedApprovalWorkflowId === null &&
+		period.approvalWorkflowId === null &&
+		input.legacyApprovalRequestId !== null &&
+		period.approvalStatus === "rejected" &&
+		!period.isActive &&
+		period.clockOutId !== null &&
+		period.endTime !== null &&
+		period.pendingChanges === null &&
+		correction.action === "edit" &&
+		Boolean(correction.clockInCorrectionId || correction.clockOutCorrectionId);
 	if (
 		period.id !== input.workPeriodId ||
 		period.organizationId !== input.organizationId ||
 		period.deletedAt !== null ||
-		period.approvalStatus !== "approved" ||
+		(period.approvalStatus !== "approved" && !rejectedLegacyResubmission) ||
 		(expectedSource !== undefined &&
 			(expectedSource.employeeId !== period.employeeId ||
 				expectedSource.approvalWorkflowId !== period.approvalWorkflowId ||
@@ -3036,6 +3053,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 	const updatedPeriods = await input.dbService.db
 		.update(workPeriod)
 		.set({
+			...(rejectedLegacyResubmission
+				? { approvalStatus: "approved" as const }
+				: {}),
 			...(hasEndpointCorrection
 				? {
 						clockInId: correctedPeriod.clockIn.id,
@@ -3109,6 +3129,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		const updatedCanonical = await input.dbService.db
 			.update(timeRecord)
 			.set({
+				...(rejectedLegacyResubmission
+					? { approvalState: "approved" as const }
+					: {}),
 				startAt: instantToTimeCorrectionDate(correctedPeriod.clockIn.instant),
 				endAt: correctedPeriod.clockOut
 					? instantToTimeCorrectionDate(correctedPeriod.clockOut.instant)

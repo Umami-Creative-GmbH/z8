@@ -14,7 +14,6 @@ import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,
 } from "../presentation/absence-review";
-import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import {
 	buildTimeReviewSections,
 	prepareTimeReviewEvidence,
@@ -24,6 +23,7 @@ import {
 	prepareTravelExpenseReviewEvidence,
 } from "../presentation/travel-expense-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import { ApprovalInboxBadRequestError } from "./current-actor";
 import {
 	countOrdinaryCanonicalApprovals,
@@ -45,6 +45,7 @@ import type {
 	ApprovalInboxItem,
 	ApprovalInboxListResult,
 	ApprovalInboxRiskLevel,
+	ApprovalInboxTimeComparison,
 	ApprovalInboxType,
 	ApprovalInboxWarning,
 } from "./types";
@@ -611,6 +612,7 @@ interface TimeCorrectionReviewDetail {
 	clockOut: { original: Date | null; requested: Date | null } | null;
 	metadataChanges?: TimeCorrectionMetadataChanges;
 	isOrphaned: boolean;
+	timeComparison?: ApprovalInboxTimeComparison;
 }
 
 function hasPendingCorrectionDetail(entity: unknown): entity is {
@@ -658,7 +660,7 @@ function buildTimeCorrectionDetailSections(
 		},
 	];
 
-	if (correction.clockIn) {
+	if (correction.clockIn && !correction.timeComparison) {
 		rows.push({
 			label: { key: "approvals:approvals.clockIn", fallback: "Clock in" },
 			value: formatCorrectionChange(
@@ -669,7 +671,7 @@ function buildTimeCorrectionDetailSections(
 		});
 	}
 
-	if (correction.clockOut) {
+	if (correction.clockOut && !correction.timeComparison) {
 		rows.push({
 			label: { key: "approvals:approvals.clockOut", fallback: "Clock out" },
 			value: formatCorrectionChange(
@@ -721,6 +723,7 @@ function buildTimeCorrectionDetailSections(
 	}
 
 	const sections: ApprovalInboxDetailSection[] = [
+		...(correction.timeComparison ? [correction.timeComparison] : []),
 		{
 			type: "key_value",
 			title: {

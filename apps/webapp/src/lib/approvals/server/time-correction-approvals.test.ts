@@ -146,14 +146,14 @@ vi.mock("@/lib/work-balance/service", () => ({
 
 import { db as globalDb } from "@/db";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
+import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
-import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
+import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
-import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import {
 	approveTimeCorrectionWithCurrentApproverEffect,
@@ -9614,6 +9614,55 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		expect(mutations).toEqual([]);
 	});
 
+	it.each(["approve", "reject"] as const)(
+		"decides a resubmitted correction of a rejected legacy manual entry: %s",
+		async (action) => {
+			const { dbService, mutations } = createFinalizerDb({
+				period: {
+					...terminalPeriod,
+					approvalWorkflowId: null,
+					approvalStatus: "rejected",
+				},
+				canonical: { ...canonicalRecord, approvalState: "rejected" },
+				legacyRequest: {
+					...legacyRequest,
+					status: action === "approve" ? "approved" : "rejected",
+					approvedAt: action === "approve" ? legacyRequest.approvedAt : null,
+					rejectionReason: action === "reject" ? "Incorrect times" : null,
+				},
+				workflow: null,
+			});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						expectedApprovalWorkflowId: null,
+						expectedApprovalWorkflowVersion: null,
+						transition:
+							action === "approve"
+								? { kind: "approve", reason: null }
+								: { kind: "reject", reason: "Incorrect times" },
+					}),
+				),
+			).resolves.toMatchObject({
+				transition: action === "approve" ? "approved" : "rejected",
+			});
+			if (action === "approve") {
+				expect(
+					mutations.find(({ table }) => table === workPeriod)?.values,
+				).toMatchObject({
+					approvalStatus: "approved",
+					clockInId: ids.correctionIn,
+					clockOutId: ids.correctionOut,
+				});
+				expect(
+					mutations.find(({ table }) => table === timeRecord)?.values,
+				).toMatchObject({ approvalState: "approved" });
+			} else {
+				expect(mutations).toEqual([]);
+			}
+		},
+	);
+
 	it("rejects a non-approved work-period source state before writing", async () => {
 		const { dbService, mutations } = createFinalizerDb({
 			period: { ...terminalPeriod, approvalStatus: "rejected" },
@@ -9624,6 +9673,42 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		).rejects.toThrow(/changed|finaliz/i);
 		expect(mutations).toEqual([]);
 	});
+
+	it.each([
+		["pending work", { approvalStatus: "pending" }],
+		["active work", { isActive: true }],
+		["unfinished work", { endTime: null, clockOutId: null }],
+		[
+			"another pending change",
+			{ pendingChanges: { startTime: "2026-07-18T22:30:00Z" } },
+		],
+	] as const)(
+		"refuses rejected legacy resubmission with %s",
+		async (_label, patch) => {
+			const { dbService, mutations } = createFinalizerDb({
+				period: {
+					...terminalPeriod,
+					approvalWorkflowId: null,
+					approvalStatus: "rejected",
+					...patch,
+				},
+				canonical: { ...canonicalRecord, approvalState: "rejected" },
+				legacyRequest,
+				workflow: null,
+			});
+			await expect(
+				finalizeTimeCorrectionTerminalInTransaction(
+					approveInput(dbService, {
+						expectedApprovalWorkflowId: null,
+						expectedApprovalWorkflowVersion: null,
+					}),
+				),
+			).rejects.toMatchObject({
+				details: { reason: "work_period_source_mismatch" },
+			});
+			expect(mutations).toEqual([]);
+		},
+	);
 
 	it("rejects stale canonical current-value parity before writing", async () => {
 		const { dbService, mutations } = createFinalizerDb({

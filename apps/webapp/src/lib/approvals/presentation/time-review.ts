@@ -255,6 +255,34 @@ export function buildTimeReviewSections(evidence: TimeReviewEvidence): {
 		});
 	}
 	if (evidence.kind === "time_correction") {
+		const { baseline, requested, intent, changeMask } = evidence.revision.facts;
+		if (intent !== "metadata_only") {
+			const endpoint = (
+				value: Pick<WorkPeriodEndpointFacts, "at" | "utcOffsetMinutes"> | null,
+			) =>
+				value
+					? { at: value.at, utcOffsetMinutes: value.utcOffsetMinutes }
+					: null;
+			sections.push({
+				type: "time_comparison",
+				action: intent,
+				original: {
+					start: endpoint(baseline.clockIn),
+					end: endpoint(baseline.clockOut),
+				},
+				requested:
+					intent === "delete"
+						? { start: null, end: null }
+						: {
+								start: endpoint(
+									changeMask.clockIn ? requested.clockIn : baseline.clockIn,
+								),
+								end: endpoint(
+									changeMask.clockOut ? requested.clockOut : baseline.clockOut,
+								),
+							},
+			});
+		}
 		sections.push({
 			type: "key_value",
 			title: text("approvals:approvals.evidence.requestedCorrectionTitle", "Requested correction"),

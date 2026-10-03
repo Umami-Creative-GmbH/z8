@@ -125,6 +125,40 @@ describe("buildPendingCorrectionReview", () => {
 		});
 	});
 
+	it("compares both captured endpoints when only the clock-in is corrected", () => {
+		const corrected = {
+			id: "clock-in-correction",
+			timestamp: new Date("2026-05-22T14:15:00Z"),
+			utcOffsetMinutes: 60,
+			replacesEntryId: period.clockIn.id,
+			isSuperseded: false,
+		};
+		const review = buildPendingCorrectionReview(period, { metadata: null }, [
+			corrected,
+		]);
+		expect(review.timeComparison).toEqual({
+			type: "time_comparison",
+			action: "edit",
+			original: {
+				start: {
+					at: period.clockIn.timestamp.toISOString(),
+					utcOffsetMinutes: 120,
+				},
+				end: {
+					at: period.clockOut.timestamp.toISOString(),
+					utcOffsetMinutes: -300,
+				},
+			},
+			requested: {
+				start: { at: corrected.timestamp.toISOString(), utcOffsetMinutes: 60 },
+				end: {
+					at: period.clockOut.timestamp.toISOString(),
+					utcOffsetMinutes: -300,
+				},
+			},
+		});
+	});
+
 	it("resolves a legacy request when exactly one matching correction entry exists", () => {
 		const correction = {
 			id: "clock-in-correction",

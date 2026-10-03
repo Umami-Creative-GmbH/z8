@@ -1,5 +1,7 @@
 {
   "approvals": {
+    "timeComparison": "Zeitvergleich",
+    "elapsedMinutes": "{minutes} Min. Arbeitszeit",
     "absenceApproved": "Abwesenheitsantrag genehmigt",
     "absenceRejected": "Abwesenheitsantrag abgelehnt",
     "absenceRequests": "Abwesenheitsanträge",
