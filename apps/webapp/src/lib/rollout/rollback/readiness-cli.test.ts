@@ -40,6 +40,13 @@ const REPORT = assessRollbackReadiness({
 		],
 	},
 	durable: {
+		automaticClockOut: {
+			executions: 0,
+			tasks: 0,
+			unfinishedTasks: 0,
+			settings: 0,
+			enabledSettings: 0,
+		},
 		rebuildIntents: { organization: 1, user: 0 },
 		breakAdjustments: 0,
 		payrollJobsInFlight: 0,

@@ -18,9 +18,7 @@ describe("automatic clock-out settings and durable storage on PostgreSQL", () =>
 		await fixture?.close();
 	});
 	const load = (organizationId: string) =>
-		fixture.db.transaction((tx) =>
-			loadAutoClockOutSettings(tx, organizationId),
-		);
+		fixture.db.transaction((tx) => loadAutoClockOutSettings(tx, organizationId));
 	const save = (organizationId: string, enabled: boolean, minutes: number) =>
 		saveAutoClockOutSettings(
 			{
@@ -84,9 +82,7 @@ describe("automatic clock-out settings and durable storage on PostgreSQL", () =>
 		"rejects invalid minute limit %s before persisting settings",
 		async (minutes) => {
 			const organizationId = await fixture.createOrganization();
-			await expect(save(organizationId, true, minutes)).rejects.toThrow(
-				RangeError,
-			);
+			await expect(save(organizationId, true, minutes)).rejects.toThrow(RangeError);
 			expect((await load(organizationId)).revision).toBe(0);
 		},
 	);
@@ -119,14 +115,7 @@ describe("automatic clock-out settings and durable storage on PostgreSQL", () =>
 		 recipient_user_id, provenance_user_id, clock_out_entry_id, closure_payload, processed_at)
 		 values ($1, $2, $3, $4, '2026-10-03T08:00:00Z', '2026-10-03T20:00:00Z',
 		 720, 0, 'Europe/Berlin', 120, $5, $5, $6, '{"source":"automatic-clock-out"}', '2026-10-03T20:05:00Z')`,
-			[
-				id,
-				organizationId,
-				employeeId,
-				randomUUID(),
-				fixture.ownerUserId,
-				randomUUID(),
-			],
+			[id, organizationId, employeeId, randomUUID(), fixture.ownerUserId, randomUUID()],
 		);
 		return id;
 	}
@@ -190,9 +179,7 @@ describe("automatic clock-out settings and durable storage on PostgreSQL", () =>
 
 	it("restricts scan state to the internal maintenance row", async () => {
 		await expect(
-			fixture.pool.query(
-				"insert into automatic_clock_out_scan_state (id) values ('tenant')",
-			),
+			fixture.pool.query("insert into automatic_clock_out_scan_state (id) values ('tenant')"),
 		).rejects.toMatchObject({ code: "23514" });
 		await expect(
 			fixture.pool.query(

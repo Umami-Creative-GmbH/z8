@@ -64,7 +64,6 @@ const closureSchema = z.object({
 
 export type AutoClockOutNotificationTransport = {
 	preferences(userId: string): Promise<Record<NotificationChannel, boolean>>;
-	availability(organizationId: string): Promise<Record<NotificationChannel, boolean>>;
 	locale(input: { userId: string; organizationId: string }): Promise<string>;
 	insertInApp(params: CreateNotificationParams): Promise<unknown>;
 	deliver(
@@ -167,6 +166,7 @@ export function createAutoClockOutDelivery(deps: {
 						);
 					} else if (claim.kind === "plan_notification") {
 						const stageChannels = async (channels: NotificationChannel[]) => {
+							if (channels.length === 0) return;
 							const now = dateFromInstant(deps.clock.nowInstant());
 							await deps.database
 								.insert(automaticClockOutTask)
@@ -195,8 +195,8 @@ export function createAutoClockOutDelivery(deps: {
 						// Optional configuration/transport outages must not delay the mandatory inbox.
 						await stageChannels(["in_app"]);
 						const preferences = await deps.transport.preferences(facts.recipientUserId);
-						const available = await deps.transport.availability(claim.organizationId);
-						const channels = planAutoClockOutChannels(preferences, available);
+						// Each enabled channel owns its availability lookup and retry independently.
+						const channels = planAutoClockOutChannels(preferences);
 						await stageChannels(channels);
 					} else if (claim.kind === "notification_channel") {
 						const channel = z.enum(NOTIFICATION_CHANNELS).parse(claim.payload.channel);
@@ -281,7 +281,6 @@ export async function runAutoClockOutDelivery(deps: {
 		transport: {
 			preferences: (userId) =>
 				service.loadNotificationChannelPreferences(userId, "automatic_clock_out"),
-			availability: (organizationId) => service.loadNotificationChannelAvailability(organizationId, { durable: true }),
 			locale: resolveRecipientNotificationLocale,
 			insertInApp: service.insertInAppNotification,
 			deliver: (channel, params) =>

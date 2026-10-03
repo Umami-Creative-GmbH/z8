@@ -13,10 +13,7 @@ export function effectiveAutoClockOutSettings(
 	);
 }
 
-export function parseAutoClockOutDuration(
-	hours: number,
-	minutes: number,
-): number {
+export function parseAutoClockOutDuration(hours: number, minutes: number): number {
 	if (
 		!Number.isSafeInteger(hours) ||
 		hours < 0 ||
@@ -24,9 +21,7 @@ export function parseAutoClockOutDuration(
 		minutes < 0 ||
 		minutes > 59
 	) {
-		throw new RangeError(
-			"Duration requires nonnegative integral hours and minutes from 0 to 59",
-		);
+		throw new RangeError("Duration requires nonnegative integral hours and minutes from 0 to 59");
 	}
 	const total = hours * 60 + minutes;
 	if (!Number.isSafeInteger(total) || total < 1 || total > 2_147_483_647) {
@@ -35,10 +30,7 @@ export function parseAutoClockOutDuration(
 	return total;
 }
 
-export function autoClockOutCutoff(
-	start: Instant,
-	settings: AutoClockOutSettings,
-): Instant | null {
+export function autoClockOutCutoff(start: Instant, settings: AutoClockOutSettings): Instant | null {
 	return settings.autoClockOutEnabled
 		? start.add({ minutes: settings.maxUninterruptedMinutes })
 		: null;

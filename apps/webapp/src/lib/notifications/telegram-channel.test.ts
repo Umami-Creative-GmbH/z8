@@ -73,10 +73,17 @@ const localizeOutboundNotificationMock = vi.mocked(localizeOutboundNotification)
 describe("sendTelegramNotification", () => {
 	it("returns unavailable for an unlinked recipient and retries unacknowledged durable sends", async () => {
 		const { sendTelegramNotification } = await import("./telegram-channel");
-		const params = { userId: "user-123", organizationId: "org-123", type: "automatic_clock_out" as const, title: "Automatic", message: "Ended" };
+		const params = {
+			userId: "user-123",
+			organizationId: "org-123",
+			type: "automatic_clock_out" as const,
+			title: "Automatic",
+			message: "Ended",
+		};
 		getChatIdMock.mockResolvedValue(null);
 		await expect(sendTelegramNotification(params, { durable: true })).resolves.toBe("unavailable");
-		getChatIdMock.mockResolvedValue("chat-123"); sendMessageMock.mockResolvedValue(null);
+		getChatIdMock.mockResolvedValue("chat-123");
+		sendMessageMock.mockResolvedValue(null);
 		await expect(sendTelegramNotification(params, { durable: true })).rejects.toThrow();
 		await expect(sendTelegramNotification(params)).resolves.toBeUndefined();
 	});

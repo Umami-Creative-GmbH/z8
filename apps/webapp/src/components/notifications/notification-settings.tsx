@@ -610,7 +610,10 @@ function NotificationSettingsView({
 											if (hasMandatoryInbox(type) && channel === "in_app") {
 												return (
 													<span key={channel} className="text-xs text-muted-foreground">
-														{t("common:notifications.preferences.mandatoryInbox", "Always delivered to your inbox")}
+														{t(
+															"common:notifications.preferences.mandatoryInbox",
+															"Always delivered to your inbox",
+														)}
 													</span>
 												);
 											}

@@ -83,7 +83,10 @@ export async function loadNotificationChannelAvailability(
 		in_app: true,
 		push: isPushAvailable(),
 		email: !emailTransport.toLowerCase().startsWith("console"),
-		teams, telegram, discord, slack,
+		teams,
+		telegram,
+		discord,
+		slack,
 	};
 }
 
@@ -162,6 +165,19 @@ export async function deliverNotificationToChannel(
 	notificationId: string | null,
 	options: { durable?: boolean } = {},
 ): Promise<"sent" | "unavailable"> {
+	let botActionUrl = params.actionUrl;
+	if (
+		options.durable &&
+		params.type === "automatic_clock_out" &&
+		botActionUrl &&
+		["slack", "teams", "telegram", "discord"].includes(channel)
+	) {
+		const { getOrganizationBaseUrl } = await import("@/lib/app-url");
+		botActionUrl = new URL(
+			botActionUrl,
+			await getOrganizationBaseUrl(params.organizationId),
+		).toString();
+	}
 	const botChannelPayload = {
 		userId: params.userId,
 		organizationId: params.organizationId,
@@ -170,65 +186,98 @@ export async function deliverNotificationToChannel(
 		message: params.message,
 		entityType: params.entityType,
 		entityId: params.entityId,
-		actionUrl: params.actionUrl,
+		actionUrl: botActionUrl,
 		metadata: params.metadata,
 	};
 	switch (channel) {
 		case "push": {
 			if (!isPushAvailable()) return "unavailable";
-			const result = await sendPushToUser(params.userId, {
-				title: params.title,
-				body: params.message,
-				icon: "/icons/icon-192x192.png",
-				badge: "/icons/badge-72x72.png",
-				tag: params.type,
-				data: {
-					notificationId: notificationId ?? undefined,
-					type: params.type,
-					actionUrl: params.actionUrl,
-					url: params.actionUrl,
+			const result = await sendPushToUser(
+				params.userId,
+				{
+					title: params.title,
+					body: params.message,
+					icon: "/icons/icon-192x192.png",
+					badge: "/icons/badge-72x72.png",
+					tag: params.type,
+					data: {
+						notificationId: notificationId ?? undefined,
+						type: params.type,
+						actionUrl: params.actionUrl,
+						url: params.actionUrl,
+					},
 				},
-			}, options.durable ? { throwOnError: true } : undefined);
+				options.durable ? { throwOnError: true } : undefined,
+			);
 			if (options.durable && result.failed > 0) throw new Error("push_delivery_failed");
 			if (options.durable && result.sent === 0) return "unavailable";
 			return "sent";
 		}
 		case "email": {
-			const sent = await sendEmailNotification({
-				userId: params.userId,
-				type: params.type,
-				title: params.title,
-				message: params.message,
-				metadata: params.metadata,
-				organizationId: params.organizationId,
-				...(options.durable ? { actionUrl: params.actionUrl } : {}),
-			}, options.durable ? { throwOnError: true } : undefined);
+			const sent = await sendEmailNotification(
+				{
+					userId: params.userId,
+					type: params.type,
+					title: params.title,
+					message: params.message,
+					metadata: params.metadata,
+					organizationId: params.organizationId,
+					...(options.durable ? { actionUrl: params.actionUrl } : {}),
+				},
+				options.durable ? { throwOnError: true } : undefined,
+			);
 			if (options.durable && !sent) return "unavailable";
 			return "sent";
 		}
 		case "teams":
-			if (!(await isTeamsAvailable(params.organizationId, options.durable ? { throwOnError: true } : undefined))) return "unavailable";
+			if (
+				!(await isTeamsAvailable(
+					params.organizationId,
+					options.durable ? { throwOnError: true } : undefined,
+				))
+			)
+				return "unavailable";
 			if (options.durable) {
 				if ((await sendTeamsNotification(botChannelPayload, { durable: true })) === "unavailable")
 					return "unavailable";
 			} else await sendTeamsNotification(botChannelPayload);
 			return "sent";
 		case "telegram":
-			if (!(await isTelegramAvailable(params.organizationId, options.durable ? { throwOnError: true } : undefined))) return "unavailable";
+			if (
+				!(await isTelegramAvailable(
+					params.organizationId,
+					options.durable ? { throwOnError: true } : undefined,
+				))
+			)
+				return "unavailable";
 			if (options.durable) {
-				if ((await sendTelegramNotification(botChannelPayload, { durable: true })) === "unavailable")
+				if (
+					(await sendTelegramNotification(botChannelPayload, { durable: true })) === "unavailable"
+				)
 					return "unavailable";
 			} else await sendTelegramNotification(botChannelPayload);
 			return "sent";
 		case "discord":
-			if (!(await isDiscordAvailable(params.organizationId, options.durable ? { throwOnError: true } : undefined))) return "unavailable";
+			if (
+				!(await isDiscordAvailable(
+					params.organizationId,
+					options.durable ? { throwOnError: true } : undefined,
+				))
+			)
+				return "unavailable";
 			if (options.durable) {
 				if ((await sendDiscordNotification(botChannelPayload, { durable: true })) === "unavailable")
 					return "unavailable";
 			} else await sendDiscordNotification(botChannelPayload);
 			return "sent";
 		case "slack":
-			if (!(await isSlackAvailable(params.organizationId, options.durable ? { throwOnError: true } : undefined))) return "unavailable";
+			if (
+				!(await isSlackAvailable(
+					params.organizationId,
+					options.durable ? { throwOnError: true } : undefined,
+				))
+			)
+				return "unavailable";
 			if (options.durable) {
 				if ((await sendSlackNotification(botChannelPayload, { durable: true })) === "unavailable")
 					return "unavailable";

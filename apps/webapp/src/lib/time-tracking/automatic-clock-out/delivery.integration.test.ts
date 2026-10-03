@@ -4,8 +4,9 @@ import {
 	deliverNotificationToChannel,
 	insertInAppNotification,
 } from "@/lib/notifications/notification-service";
-import { isTeamsAvailable } from "@/lib/notifications/teams-channel";
 import { NOTIFICATION_CHANNELS, type NotificationChannel } from "@/lib/notifications/types";
+import { assessRollbackReadiness } from "@/lib/rollout/rollback/readiness";
+import { readRollbackSnapshot } from "@/lib/rollout/rollback/readiness-reader";
 import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
 import { createAutoClockOutCommands } from "./commands";
 import { createAutoClockOutDelivery } from "./delivery";
@@ -58,6 +59,115 @@ describe("automatic clock-out durable delivery", () => {
 		markBalanceDirty: vi.fn(),
 		checkProjectBudget: vi.fn(),
 	};
+	it("accounts for receipt-less legacy closure, pending inbox, drained evidence and persisted settings in rollback readiness", async () => {
+		const organizationId = await fixture.createOrganization();
+		const otherOrganizationId = await fixture.createOrganization();
+		const person = await fixture.seedEmployee({ organizationId });
+		const service = createClockingService({
+			transaction: (body) => fixture.db.transaction((tx) => body(createDatabaseClockingStore(tx))),
+		});
+		const opened = await service.clockIn({
+			organizationId,
+			employeeId: person.employeeId,
+			createdBy: person.userId,
+			action: {
+				instant: NOW.subtract({ hours: 12 }),
+				timezone: "Europe/Berlin",
+				utcOffsetMinutes: 120,
+				timezoneSource: "user_setting",
+			},
+			source: { deviceInfo: "test", ipAddress: null },
+			workLocationType: "office",
+		});
+		if (!("period" in opened)) throw new Error("Expected live work");
+		expect(
+			(
+				await createAutoClockOutCommands({
+					database: fixture.db,
+					clock: { nowInstant: () => NOW },
+				}).close({ organizationId, employeeId: person.employeeId, workPeriodId: opened.period.id })
+			).status,
+		).toBe("closed");
+		await runner({
+			insert: async () => {
+				throw new Error("inbox offline");
+			},
+		})(100);
+		const snapshot = () => fixture.db.transaction((tx) => readRollbackSnapshot(tx, organizationId));
+		const pending = await snapshot();
+		expect(pending.receipts).toEqual({ kinds: {}, writers: {} });
+		expect(pending.durable.automaticClockOut).toEqual({
+			executions: 1,
+			tasks: 4,
+			unfinishedTasks: 1,
+			settings: 0,
+			enabledSettings: 0,
+		});
+		expect(assessRollbackReadiness(pending).durable.findings).toContainEqual({
+			code: "automatic_clock_out_work_pending",
+			severity: "blocker",
+			count: 1,
+		});
+		const foreign = await fixture.db.transaction((tx) =>
+			readRollbackSnapshot(tx, otherOrganizationId),
+		);
+		expect(foreign.durable.automaticClockOut).toEqual({
+			executions: 0,
+			tasks: 0,
+			unfinishedTasks: 0,
+			settings: 0,
+			enabledSettings: 0,
+		});
+		expect(assessRollbackReadiness(foreign).floor.pins).not.toContainEqual(
+			expect.objectContaining({ migration: "0111_automatic_clock_out" }),
+		);
+		await fixture.pool.query(
+			"update automatic_clock_out_task set available_at=$2 where organization_id=$1 and status='pending'",
+			[organizationId, new Date(NOW.epochMilliseconds)],
+		);
+		await createAutoClockOutTaskOutbox(fixture.db).claimDue(NOW, 100);
+		expect((await snapshot()).durable.automaticClockOut.unfinishedTasks).toBe(1);
+		// Failed delivery remains unfinished; exhaustion is not successful draining.
+		await fixture.pool.query(
+			"update automatic_clock_out_task set status='failed', claim_token=null, lease_expires_at=null where organization_id=$1 and status='processing'",
+			[organizationId],
+		);
+		expect((await snapshot()).durable.automaticClockOut.unfinishedTasks).toBe(1);
+		// Operator-authorized retry of the test's failed inbox.
+		await fixture.pool.query(
+			"update automatic_clock_out_task set status='pending', available_at=$2 where organization_id=$1 and status='failed'",
+			[organizationId, new Date(NOW.epochMilliseconds)],
+		);
+		await runner()(100);
+		const drained = assessRollbackReadiness(await snapshot());
+		expect(drained.verdict).toBe("ready");
+		expect(drained.durable.automaticClockOut.unfinishedTasks).toBe(0);
+		expect(drained.durable.findings).not.toContainEqual(
+			expect.objectContaining({ code: "automatic_clock_out_work_pending" }),
+		);
+		expect(drained.floor).toMatchObject({
+			schema: "0111_automatic_clock_out",
+			release: "0111_automatic_clock_out",
+		});
+		await fixture.pool.query(
+			"insert into organization_time_tracking_settings (organization_id, auto_clock_out_enabled) values ($1, true)",
+			[organizationId],
+		);
+		expect(assessRollbackReadiness(await snapshot()).durable.findings).toContainEqual({
+			code: "automatic_clock_out_enforcement_running",
+			severity: "hold",
+			count: 1,
+		});
+		await fixture.pool.query(
+			"update organization_time_tracking_settings set auto_clock_out_enabled=false where organization_id=$1",
+			[organizationId],
+		);
+		const disabled = assessRollbackReadiness(await snapshot());
+		expect(disabled.durable.automaticClockOut).toMatchObject({ settings: 1, enabledSettings: 0 });
+		expect(disabled.durable.findings).not.toContainEqual(
+			expect.objectContaining({ code: "automatic_clock_out_enforcement_running" }),
+		);
+	});
 	it("preserves an actual committed clock-out while failed follow-ups recover independently", async () => {
 		const organizationId = await fixture.createOrganization();
 		const person = await fixture.seedEmployee({ organizationId });
@@ -109,7 +219,7 @@ describe("automatic clock-out durable delivery", () => {
 	});
 	function runner(
 		options: {
-			availability?: () => Promise<Record<NotificationChannel, boolean>>;
+			enabled?: NotificationChannel[];
 			insert?: typeof insertInAppNotification;
 			deliver?: (
 				channel: Exclude<NotificationChannel, "in_app">,
@@ -121,8 +231,7 @@ describe("automatic clock-out durable delivery", () => {
 			clock: { nowInstant: () => NOW },
 			effects,
 			transport: {
-				preferences: async () => channels(["email", "teams"]),
-				availability: options.availability ?? (async () => channels(["in_app", "email"])),
+				preferences: async () => channels(options.enabled ?? ["email"]),
 				locale: async () => "de",
 				insertInApp: options.insert ?? insertInAppNotification,
 				deliver: options.deliver ?? (async () => "sent"),
@@ -192,79 +301,47 @@ describe("automatic clock-out durable delivery", () => {
 			[facts.organizationId],
 		);
 	});
-	it("delivers mandatory inbox even if optional channel planning fails", async () => {
-		const { facts } = await seedExecution(fixture);
-		expect(
-			await runner({
-				availability: async () => {
-					throw new Error("transport config offline");
-				},
-			})(100),
-		).toMatchObject({ claimed: 2, completed: 1, deferred: 1 });
-		expect(
-			(
-				await fixture.pool.query("select * from notification where organization_id=$1", [
-					facts.organizationId,
-				])
-			).rowCount,
-		).toBe(1);
-		await fixture.pool.query(
-			"update automatic_clock_out_task set status='failed' where organization_id=$1 and status='pending'",
-			[facts.organizationId],
-		);
-	});
-	for (const phase of ["planning", "delivery"] as const) {
-		it(`recovers a Teams availability lookup failure during ${phase} without losing delivery or duplicating inbox`, async () => {
+	for (const enabled of [true, false]) {
+		it(`isolates a ${enabled ? "enabled" : "disabled"} failed Teams lookup from healthy email and recovers without resending`, async () => {
 			const { facts } = await seedExecution(fixture);
-			teamsEnabled.mockResolvedValue(true);
-			const run = runner({
-				availability: async () =>
-					channels(
-						(await isTeamsAvailable(facts.organizationId, { throwOnError: true }))
-							? ["in_app", "teams"]
-							: ["in_app"],
-					),
-				deliver: async (channel) =>
-					deliverNotificationToChannel(
-						channel,
-						{
-							userId: facts.actorUserId,
-							organizationId: facts.organizationId,
-							type: "automatic_clock_out",
-							title: "Ended",
-							message: "Ended",
-						},
-						null,
-						{ durable: true },
-					),
-			});
-			if (phase === "delivery") await run(1);
 			teamsEnabled.mockRejectedValue(new Error("lookup offline"));
-			expect(await run(100)).toMatchObject({ completed: 1, deferred: 1 });
+			const email = vi.fn(async () => "sent" as const);
+			const run = runner({
+				enabled: enabled ? ["email", "teams"] : ["email"],
+				deliver: async (channel) =>
+					channel === "email"
+						? email()
+						: deliverNotificationToChannel(
+								channel,
+								{
+									userId: facts.actorUserId,
+									organizationId: facts.organizationId,
+									type: "automatic_clock_out",
+									title: "Ended",
+									message: "Ended",
+								},
+								null,
+								{ durable: true },
+							),
+			});
+			teamsEnabled.mockClear();
+			expect(await run(100)).toMatchObject({ completed: 3, deferred: enabled ? 1 : 0 });
+			expect(email).toHaveBeenCalledOnce();
+			if (!enabled) expect(teamsEnabled).not.toHaveBeenCalled();
 			const pending = (
 				await fixture.pool.query(
-					"select status, claim_token, lease_expires_at from automatic_clock_out_task where organization_id=$1 and status='pending'",
+					"select kind, payload->>'channel' as channel from automatic_clock_out_task where organization_id=$1 and status='pending'",
 					[facts.organizationId],
 				)
 			).rows;
-			expect(pending).toEqual([{ status: "pending", claim_token: null, lease_expires_at: null }]);
+			expect(pending).toEqual(enabled ? [{ kind: "notification_channel", channel: "teams" }] : []);
 			teamsEnabled.mockResolvedValue(true);
 			await fixture.pool.query(
 				"update automatic_clock_out_task set available_at=$2 where organization_id=$1 and status='pending'",
 				[facts.organizationId, new Date(NOW.epochMilliseconds)],
 			);
-			expect(await run(100)).toMatchObject({
-				completed: phase === "planning" ? 2 : 1,
-				deferred: 0,
-			});
-			expect(
-				(
-					await fixture.pool.query(
-						"select payload->>'outcome' as outcome from automatic_clock_out_task where organization_id=$1 and payload->>'channel'='teams'",
-						[facts.organizationId],
-					)
-				).rows,
-			).toEqual([{ outcome: "sent" }]);
+			expect(await run(100)).toMatchObject({ completed: enabled ? 1 : 0, deferred: 0 });
+			expect(email).toHaveBeenCalledOnce();
 			expect(
 				(
 					await fixture.pool.query("select * from notification where organization_id=$1", [
@@ -274,6 +351,37 @@ describe("automatic clock-out durable delivery", () => {
 			).toBe(1);
 		});
 	}
+	it("exhausts only the failed channel while planner and healthy channel remain completed", async () => {
+		const { facts } = await seedExecution(fixture);
+		const send = vi.fn(async (channel: Exclude<NotificationChannel, "in_app">) => {
+			if (channel === "teams") throw new Error("lookup offline");
+			return "sent" as const;
+		});
+		const run = runner({ enabled: ["email", "teams"], deliver: send });
+		await run(100);
+		for (let attempt = 2; attempt <= 8; attempt++) {
+			await fixture.pool.query(
+				"update automatic_clock_out_task set available_at=$2 where organization_id=$1 and status='pending'",
+				[facts.organizationId, new Date(NOW.epochMilliseconds)],
+			);
+			await run(100);
+		}
+		expect(
+			(
+				await fixture.pool.query(
+					"select kind, status, payload->>'channel' as channel from automatic_clock_out_task where organization_id=$1 order by kind, channel",
+					[facts.organizationId],
+				)
+			).rows,
+		).toEqual([
+			{ kind: "notification_channel", status: "completed", channel: "email" },
+			{ kind: "notification_channel", status: "completed", channel: "in_app" },
+			{ kind: "notification_channel", status: "failed", channel: "teams" },
+			{ kind: "plan_notification", status: "completed", channel: null },
+		]);
+		expect(send.mock.calls.filter(([channel]) => channel === "email")).toHaveLength(1);
+		expect(send.mock.calls.filter(([channel]) => channel === "teams")).toHaveLength(8);
+	});
 	it("recovers a committed closure while enforcement is disabled and inbox muted, with one inbox after lost insert acknowledgement", async () => {
 		const { facts } = await seedExecution(fixture);
 		await fixture.pool.query(

@@ -30,10 +30,7 @@ export type AutoClockOutOutcome =
 	  }
 	| { status: "deferred"; reason: string };
 
-export type AutoClockOutTaskKind =
-	| "follow_up"
-	| "plan_notification"
-	| "notification_channel";
+export type AutoClockOutTaskKind = "follow_up" | "plan_notification" | "notification_channel";
 
 export type AutoClockOutTaskClaim = {
 	id: string;

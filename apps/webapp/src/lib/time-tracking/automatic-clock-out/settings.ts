@@ -6,10 +6,7 @@ import {
 	type WorkTransactionClient,
 	withOrganizationConfigurationMutation,
 } from "../work-transaction";
-import {
-	effectiveAutoClockOutSettings,
-	parseAutoClockOutDuration,
-} from "./policy";
+import { effectiveAutoClockOutSettings, parseAutoClockOutDuration } from "./policy";
 import type { AutoClockOutSettings } from "./types";
 
 export async function loadAutoClockOutSettings(
@@ -19,8 +16,7 @@ export async function loadAutoClockOutSettings(
 	const [stored] = await tx
 		.select({
 			autoClockOutEnabled: organizationTimeTrackingSettings.autoClockOutEnabled,
-			maxUninterruptedMinutes:
-				organizationTimeTrackingSettings.maxUninterruptedMinutes,
+			maxUninterruptedMinutes: organizationTimeTrackingSettings.maxUninterruptedMinutes,
 			revision: organizationTimeTrackingSettings.revision,
 		})
 		.from(organizationTimeTrackingSettings)
@@ -38,38 +34,34 @@ export async function saveAutoClockOutSettings(
 	},
 	deps: { database: typeof db; clock: Clock },
 ): Promise<AutoClockOutSettings> {
-	return withOrganizationConfigurationMutation(
-		deps.database,
-		input.organizationId,
-		async (tx) => {
-			const minutes = input.maxUninterruptedMinutes;
-			parseAutoClockOutDuration(Math.floor(minutes / 60), minutes % 60);
-			const now = dateFromInstant(deps.clock.nowInstant());
-			const [stored] = await tx
-				.insert(organizationTimeTrackingSettings)
-				.values({
-					organizationId: input.organizationId,
+	return withOrganizationConfigurationMutation(deps.database, input.organizationId, async (tx) => {
+		const minutes = input.maxUninterruptedMinutes;
+		parseAutoClockOutDuration(Math.floor(minutes / 60), minutes % 60);
+		const now = dateFromInstant(deps.clock.nowInstant());
+		const [stored] = await tx
+			.insert(organizationTimeTrackingSettings)
+			.values({
+				organizationId: input.organizationId,
+				autoClockOutEnabled: input.autoClockOutEnabled,
+				maxUninterruptedMinutes: minutes,
+				revision: 1,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.onConflictDoUpdate({
+				target: organizationTimeTrackingSettings.organizationId,
+				set: {
 					autoClockOutEnabled: input.autoClockOutEnabled,
 					maxUninterruptedMinutes: minutes,
-					revision: 1,
-					createdAt: now,
+					revision: sql`${organizationTimeTrackingSettings.revision} + 1`,
 					updatedAt: now,
-				})
-				.onConflictDoUpdate({
-					target: organizationTimeTrackingSettings.organizationId,
-					set: {
-						autoClockOutEnabled: input.autoClockOutEnabled,
-						maxUninterruptedMinutes: minutes,
-						revision: sql`${organizationTimeTrackingSettings.revision} + 1`,
-						updatedAt: now,
-					},
-				})
-				.returning();
-			return {
-				autoClockOutEnabled: stored.autoClockOutEnabled,
-				maxUninterruptedMinutes: stored.maxUninterruptedMinutes,
-				revision: stored.revision,
-			};
-		},
-	);
+				},
+			})
+			.returning();
+		return {
+			autoClockOutEnabled: stored.autoClockOutEnabled,
+			maxUninterruptedMinutes: stored.maxUninterruptedMinutes,
+			revision: stored.revision,
+		};
+	});
 }

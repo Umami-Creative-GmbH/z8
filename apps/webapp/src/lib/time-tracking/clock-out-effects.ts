@@ -51,13 +51,16 @@ export type ClosedWork = {
  * dated at the work's start: the day and week whose totals broke the rule
  * (#548). When the check runs does not matter.
  */
-export async function checkComplianceAfterClockOut(input: {
-	employeeId: string;
-	organizationId: string;
-	workPeriodId: string;
-	work: ClosedWork;
-	timezone: string;
-}, options: { throwOnError?: boolean } = {}): Promise<ComplianceWarning[]> {
+export async function checkComplianceAfterClockOut(
+	input: {
+		employeeId: string;
+		organizationId: string;
+		workPeriodId: string;
+		work: ClosedWork;
+		timezone: string;
+	},
+	options: { throwOnError?: boolean } = {},
+): Promise<ComplianceWarning[]> {
 	const { employeeId, organizationId, workPeriodId, work } = input;
 	try {
 		const totals = await readComplianceTotals({
@@ -185,11 +188,14 @@ export async function checkProjectBudgetAfterClockOut(
 
 	const totalHours = await getProjectTotalHours(projectId, organizationId);
 
-	await checkProjectBudgetWarnings({
-		projectId,
-		projectName: assignedProject.name,
-		organizationId,
-		budgetHours,
-		usedHours: totalHours,
-	}, options);
+	await checkProjectBudgetWarnings(
+		{
+			projectId,
+			projectName: assignedProject.name,
+			organizationId,
+			budgetHours,
+			usedHours: totalHours,
+		},
+		options,
+	);
 }

@@ -237,10 +237,10 @@ export async function getWorkPeriodsForMonth(
 						instantFromDate(automaticExecution.cutoffTime),
 					) === 0
 						? {
-							cutoffAt: instantFromDate(automaticExecution.cutoffTime).toString(),
-							limitMinutes: automaticExecution.maxUninterruptedMinutes,
-							processedAt: instantFromDate(automaticExecution.processedAt).toString(),
-						}
+								cutoffAt: instantFromDate(automaticExecution.cutoffTime).toString(),
+								limitMinutes: automaticExecution.maxUninterruptedMinutes,
+								processedAt: instantFromDate(automaticExecution.processedAt).toString(),
+							}
 						: undefined;
 				const editedBy = resolveWorkPeriodEditedBy({
 					ownerUserId: user.id,

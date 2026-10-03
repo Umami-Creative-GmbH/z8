@@ -24,6 +24,13 @@ function untouched(overrides: Partial<RollbackSnapshot> = {}): RollbackSnapshot 
 		},
 		escalation: { owner: null, automationPaused: false, pendingTransferred: [] },
 		durable: {
+			automaticClockOut: {
+				executions: 0,
+				tasks: 0,
+				unfinishedTasks: 0,
+				settings: 0,
+				enabledSettings: 0,
+			},
 			rebuildIntents: { organization: 0, user: 0 },
 			breakAdjustments: 0,
 			payrollJobsInFlight: 0,
@@ -44,6 +51,65 @@ const ADOPTED_APPEND: RollbackSnapshot["append"] = {
 };
 
 describe("assessRollbackReadiness", () => {
+	it.each([0, 3])(
+		"pins receipt-less automatic evidence with %i unfinished tasks",
+		(unfinishedTasks) => {
+			const snapshot = untouched();
+			snapshot.durable.automaticClockOut = {
+				executions: 1,
+				tasks: 3,
+				unfinishedTasks,
+				settings: 0,
+				enabledSettings: 0,
+			};
+			const report = assessRollbackReadiness(snapshot);
+			expect(report.verdict).toBe(unfinishedTasks ? "blocked" : "ready");
+			expect(report.durable.findings).toEqual(
+				unfinishedTasks
+					? [{ code: "automatic_clock_out_work_pending", severity: "blocker", count: 3 }]
+					: [],
+			);
+			expect(report.floor).toMatchObject({
+				schema: "0111_automatic_clock_out",
+				release: "0111_automatic_clock_out",
+			});
+			expect(report.floor.pins).toEqual([
+				{
+					migration: "0111_automatic_clock_out",
+					subject: "automatic clock-out executions",
+					rows: 1,
+					limits: "release",
+				},
+				{
+					migration: "0111_automatic_clock_out",
+					subject: "automatic clock-out tasks",
+					rows: 3,
+					limits: "release",
+				},
+			]);
+		},
+	);
+	it.each([0, 1])(
+		"pins persisted automatic settings with %i enabled controls",
+		(enabledSettings) => {
+			const snapshot = untouched();
+			snapshot.durable.automaticClockOut = {
+				executions: 0,
+				tasks: 0,
+				unfinishedTasks: 0,
+				settings: 1,
+				enabledSettings,
+			};
+			const report = assessRollbackReadiness(snapshot);
+			expect(report.verdict).toBe(enabledSettings ? "hold" : "ready");
+			expect(report.durable.findings).toEqual(
+				enabledSettings
+					? [{ code: "automatic_clock_out_enforcement_running", severity: "hold", count: 1 }]
+					: [],
+			);
+			expect(report.floor).toMatchObject({ schema: "0111_automatic_clock_out", release: null });
+		},
+	);
 	it("pins automatic clock-out receipts to the release that understands their writer", () => {
 		const report = assessRollbackReadiness(
 			untouched({ receipts: { kinds: {}, writers: { automatic_clock_out: 1 } } }),
@@ -347,6 +413,13 @@ describe("assessRollbackReadiness", () => {
 		const report = assessRollbackReadiness(
 			untouched({
 				durable: {
+					automaticClockOut: {
+						executions: 0,
+						tasks: 0,
+						unfinishedTasks: 0,
+						settings: 0,
+						enabledSettings: 0,
+					},
 					rebuildIntents: { organization: 1, user: 2 },
 					breakAdjustments: 4,
 					payrollJobsInFlight: 1,
@@ -508,7 +581,10 @@ describe("assessRollbackReadiness", () => {
 			assessRollbackReadiness(
 				untouched({
 					escalation: { owner: "escalation", automationPaused: false, pendingTransferred: [] },
-					durable: { ...untouched().durable, payrollJobsInFlight: 1 },
+					durable: {
+						...untouched().durable,
+						payrollJobsInFlight: 1,
+					},
 				}),
 			).verdict,
 		).toBe("blocked");

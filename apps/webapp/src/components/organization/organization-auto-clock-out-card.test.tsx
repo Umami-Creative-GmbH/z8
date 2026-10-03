@@ -61,6 +61,41 @@ describe("OrganizationAutoClockOutCard", () => {
 		});
 	});
 	afterEach(cleanup);
+	it.each([
+		["", "5"],
+		["0", "0"],
+	])(
+		"can disable after invalid draft %s/%s and retain configured duration",
+		async (hours, minutes) => {
+			show("owner", 485);
+			fireEvent.change(screen.getByLabelText("Hours"), { target: { value: hours } });
+			fireEvent.change(screen.getByLabelText("Minutes"), { target: { value: minutes } });
+			fireEvent.click(screen.getByRole("switch"));
+			fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+			await waitFor(() =>
+				expect(mocks.save).toHaveBeenCalledWith({
+					organizationId: "org-1",
+					autoClockOutEnabled: false,
+					maxUninterruptedMinutes: 485,
+				}),
+			);
+			expect(screen.getByLabelText("Hours")).toHaveProperty("value", "8");
+			expect(screen.getByLabelText("Minutes")).toHaveProperty("value", "5");
+		},
+	);
+	it("retains a valid edited duration when disabling", async () => {
+		show();
+		fireEvent.change(screen.getByLabelText("Hours"), { target: { value: "9" } });
+		fireEvent.click(screen.getByRole("switch"));
+		fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+		await waitFor(() =>
+			expect(mocks.save).toHaveBeenCalledWith({
+				organizationId: "org-1",
+				autoClockOutEnabled: false,
+				maxUninterruptedMinutes: 540,
+			}),
+		);
+	});
 	it("renders enabled twelve-hour missing-row defaults with accessible labels and help", () => {
 		show();
 		expect(

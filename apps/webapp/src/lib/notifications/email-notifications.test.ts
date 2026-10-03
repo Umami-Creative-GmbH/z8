@@ -68,13 +68,36 @@ const renderOrganizationEmailTemplateMock = vi.mocked(renderOrganizationEmailTem
 describe("sendEmailNotification", () => {
 	it("preserves durable console unavailability instead of treating it as a delivery error", async () => {
 		sendEmailMock.mockResolvedValue({ success: false, unavailable: true });
-		await expect(sendEmailNotification({ userId: "user_123", organizationId: "org", type: "automatic_clock_out", title: "Ended", message: "Ended" }, { throwOnError: true })).resolves.toBe(false);
+		await expect(
+			sendEmailNotification(
+				{
+					userId: "user_123",
+					organizationId: "org",
+					type: "automatic_clock_out",
+					title: "Ended",
+					message: "Ended",
+				},
+				{ throwOnError: true },
+			),
+		).resolves.toBe(false);
 		expect(sendEmailMock).toHaveBeenCalledWith(expect.any(Object), { durable: true });
 	});
 	it("sends automatic clock-out generic email and propagates transport failure only for durable callers", async () => {
-		const params = { userId: "user_123", organizationId: "org", type: "automatic_clock_out" as const, title: "Automatically clocked out", message: "720 minutes", actionUrl: "/calendar/employee?date=2026-10-24" };
+		const params = {
+			userId: "user_123",
+			organizationId: "org",
+			type: "automatic_clock_out" as const,
+			title: "Automatically clocked out",
+			message: "720 minutes",
+			actionUrl: "/calendar/employee?date=2026-10-24",
+		};
 		await expect(sendEmailNotification(params, { throwOnError: true })).resolves.toBe(true);
-		expect(sendEmailMock).toHaveBeenCalledWith(expect.objectContaining({ html: expect.stringContaining("/calendar/employee?date=2026-10-24") }), { durable: true });
+		expect(sendEmailMock).toHaveBeenCalledWith(
+			expect.objectContaining({
+				html: expect.stringContaining("/calendar/employee?date=2026-10-24"),
+			}),
+			{ durable: true },
+		);
 		findUserMock.mockResolvedValue({ email: "alex@example.com", name: "Alex" });
 		sendEmailMock.mockResolvedValue({ success: false, error: "provider unavailable" });
 		await expect(sendEmailNotification(params, { throwOnError: true })).rejects.toThrow();

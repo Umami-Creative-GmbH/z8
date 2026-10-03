@@ -129,7 +129,26 @@ export function OrganizationAutoClockOutCard({
 											<TFormControl aria-describedby={helpId}>
 												<Switch
 													checked={field.state.value}
-													onCheckedChange={field.handleChange}
+													onCheckedChange={(enabled) => {
+														if (!enabled) {
+															try {
+																durationFromFields(
+																	form.state.values.hours,
+																	form.state.values.minutes,
+																);
+															} catch {
+																form.setFieldValue(
+																	"hours",
+																	String(Math.floor(settings.maxUninterruptedMinutes / 60)),
+																);
+																form.setFieldValue(
+																	"minutes",
+																	String(settings.maxUninterruptedMinutes % 60),
+																);
+															}
+														}
+														field.handleChange(enabled);
+													}}
 													disabled={!canEdit || pending}
 												/>
 											</TFormControl>

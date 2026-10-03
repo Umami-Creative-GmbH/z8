@@ -78,11 +78,6 @@ describe("scheduled automatic clock-out complete path", () => {
 						(typeof NOTIFICATION_CHANNELS)[number],
 						boolean
 					>,
-				availability: async () =>
-					Object.fromEntries(NOTIFICATION_CHANNELS.map((c) => [c, c === "in_app"])) as Record<
-						(typeof NOTIFICATION_CHANNELS)[number],
-						boolean
-					>,
 				locale: async () => "en",
 				insertInApp: failInbox
 					? async () => {

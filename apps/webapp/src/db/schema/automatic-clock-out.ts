@@ -42,9 +42,7 @@ export const automaticClockOutExecution = pgTable(
 			.notNull()
 			.references(() => user.id),
 		clockOutEntryId: uuid("clock_out_entry_id").notNull(),
-		closurePayload: jsonb("closure_payload")
-			.$type<Record<string, unknown>>()
-			.notNull(),
+		closurePayload: jsonb("closure_payload").$type<Record<string, unknown>>().notNull(),
 		processedAt: timestamp("processed_at", { withTimezone: true }).notNull(),
 	},
 	(table) => [
@@ -58,18 +56,12 @@ export const automaticClockOutExecution = pgTable(
 			table.organizationId,
 			table.employeeId,
 		),
-		index("automaticClockOutExecution_org_period_idx").on(
-			table.organizationId,
-			table.workPeriodId,
-		),
+		index("automaticClockOutExecution_org_period_idx").on(table.organizationId, table.workPeriodId),
 		check(
 			"automatic_clock_out_execution_limit_check",
 			sql`${table.maxUninterruptedMinutes} BETWEEN 1 AND 2147483647`,
 		),
-		check(
-			"automatic_clock_out_execution_revision_check",
-			sql`${table.settingsRevision} >= 0`,
-		),
+		check("automatic_clock_out_execution_revision_check", sql`${table.settingsRevision} >= 0`),
 		check(
 			"automatic_clock_out_execution_cutoff_check",
 			sql`${table.cutoffTime} = ${table.startTime} + ${table.maxUninterruptedMinutes} * INTERVAL '1 minute'`,
@@ -103,18 +95,12 @@ export const automaticClockOutTask = pgTable(
 			.notNull(),
 		claimToken: uuid("claim_token"),
 		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
-		availableAt: timestamp("available_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		availableAt: timestamp("available_at", { withTimezone: true }).defaultNow().notNull(),
 		attemptCount: integer("attempt_count").default(0).notNull(),
 		// Only sanitized transport/processing summaries belong here, never secrets.
 		lastError: text("last_error"),
-		createdAt: timestamp("created_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
 		foreignKey({
@@ -131,20 +117,9 @@ export const automaticClockOutTask = pgTable(
 				automaticClockOutExecution.employeeId,
 			],
 		}).onDelete("cascade"),
-		uniqueIndex("automaticClockOutTask_org_dedupe_idx").on(
-			table.organizationId,
-			table.dedupeKey,
-		),
-		index("automaticClockOutTask_due_idx").on(
-			table.status,
-			table.availableAt,
-			table.id,
-		),
-		index("automaticClockOutTask_lease_idx").on(
-			table.status,
-			table.leaseExpiresAt,
-			table.id,
-		),
+		uniqueIndex("automaticClockOutTask_org_dedupe_idx").on(table.organizationId, table.dedupeKey),
+		index("automaticClockOutTask_due_idx").on(table.status, table.availableAt, table.id),
+		index("automaticClockOutTask_lease_idx").on(table.status, table.leaseExpiresAt, table.id),
 		check(
 			"automatic_clock_out_task_kind_check",
 			sql`${table.kind} IN ('follow_up', 'plan_notification', 'notification_channel')`,
@@ -153,18 +128,12 @@ export const automaticClockOutTask = pgTable(
 			"automatic_clock_out_task_status_check",
 			sql`${table.status} IN ('pending', 'processing', 'completed', 'failed')`,
 		),
-		check(
-			"automatic_clock_out_task_attempts_check",
-			sql`${table.attemptCount} >= 0`,
-		),
+		check("automatic_clock_out_task_attempts_check", sql`${table.attemptCount} >= 0`),
 		check(
 			"automatic_clock_out_task_lease_check",
 			sql`(${table.status} = 'processing' AND ${table.claimToken} IS NOT NULL AND ${table.leaseExpiresAt} IS NOT NULL) OR (${table.status} <> 'processing' AND ${table.claimToken} IS NULL AND ${table.leaseExpiresAt} IS NULL)`,
 		),
-		check(
-			"automatic_clock_out_task_payload_check",
-			sql`jsonb_typeof(${table.payload}) = 'object'`,
-		),
+		check("automatic_clock_out_task_payload_check", sql`jsonb_typeof(${table.payload}) = 'object'`),
 	],
 );
 
@@ -177,15 +146,10 @@ export const automaticClockOutScanState = pgTable(
 		cursor: jsonb("cursor").$type<AutoClockOutCandidate>(),
 		claimToken: uuid("claim_token"),
 		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
-		updatedAt: timestamp("updated_at", { withTimezone: true })
-			.defaultNow()
-			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
-		check(
-			"automatic_clock_out_scan_state_id_check",
-			sql`${table.id} = 'maintenance'`,
-		),
+		check("automatic_clock_out_scan_state_id_check", sql`${table.id} = 'maintenance'`),
 		check(
 			"automatic_clock_out_scan_state_lease_check",
 			sql`(${table.claimToken} IS NULL) = (${table.leaseExpiresAt} IS NULL)`,

@@ -29,28 +29,17 @@ describe("automatic clock-out notification", () => {
 			titleKey: "common:notifications.content.automaticClockOut.title",
 		});
 	});
-	it("always includes inbox and only enabled available optional channels", () => {
+	it("always includes inbox and stages enabled optional channels for independent availability checks", () => {
 		expect(
-			planAutoClockOutChannels(
-				{
-					in_app: false,
-					email: true,
-					push: false,
-					teams: true,
-					telegram: false,
-					slack: false,
-					discord: false,
-				},
-				{
-					in_app: true,
-					email: true,
-					push: true,
-					teams: false,
-					telegram: true,
-					slack: true,
-					discord: true,
-				},
-			),
-		).toEqual(["in_app", "email"]);
+			planAutoClockOutChannels({
+				in_app: false,
+				email: true,
+				push: false,
+				teams: true,
+				telegram: false,
+				slack: false,
+				discord: false,
+			}),
+		).toEqual(["in_app", "email", "teams"]);
 	});
 });

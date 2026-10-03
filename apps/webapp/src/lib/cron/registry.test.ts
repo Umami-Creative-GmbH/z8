@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CRON_JOBS } from "./registry";
 
-const autoClockOut = vi.hoisted(() => ({ imported: vi.fn(), run: vi.fn(async () => ({ closed: 1 })) }));
+const autoClockOut = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ closed: 1 })),
+}));
 vi.mock("@/lib/jobs/auto-clock-out", () => {
 	autoClockOut.imported();
 	return { runAutoClockOutMaintenance: autoClockOut.run };

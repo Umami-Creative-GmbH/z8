@@ -151,7 +151,10 @@ async function getUserName(userId: string): Promise<string> {
 /**
  * Send email notification based on notification type
  */
-export async function sendEmailNotification(params: EmailNotificationParams, options: { throwOnError?: boolean } = {}): Promise<boolean> {
+export async function sendEmailNotification(
+	params: EmailNotificationParams,
+	options: { throwOnError?: boolean } = {},
+): Promise<boolean> {
 	const { userId, type, metadata, organizationId } = params;
 	const sendNotificationEmail = options.throwOnError
 		? (message: SendEmailParams) => sendEmail(message, { durable: true })
@@ -170,9 +173,18 @@ export async function sendEmailNotification(params: EmailNotificationParams, opt
 		const hasI18nTitle = typeof i18nMetadata?.titleKey === "string";
 		const hasI18nMessage = typeof i18nMetadata?.messageKey === "string";
 		if (type === "automatic_clock_out") {
-			const localized = organizationId ? await localizeOutboundNotification({ ...params, organizationId }) : params;
-			const actionUrl = params.actionUrl?.startsWith("/calendar/") ? new URL(params.actionUrl, appUrl).toString() : appUrl;
-			const result = await sendNotificationEmail({ to: email, subject: localized.title, html: renderLocalizedDefaultEmailHtml(localized, actionUrl), organizationId });
+			const localized = organizationId
+				? await localizeOutboundNotification({ ...params, organizationId })
+				: params;
+			const actionUrl = params.actionUrl?.startsWith("/calendar/")
+				? new URL(params.actionUrl, appUrl).toString()
+				: appUrl;
+			const result = await sendNotificationEmail({
+				to: email,
+				subject: localized.title,
+				html: renderLocalizedDefaultEmailHtml(localized, actionUrl),
+				organizationId,
+			});
 			if (result.unavailable) return false;
 			if (!result.success && options.throwOnError) throw new Error("email_delivery_failed");
 			return result.success;

@@ -4,11 +4,8 @@ import type { AutoClockOutDecision } from "./types";
 
 export function planAutoClockOutChannels(
 	preferences: Record<NotificationChannel, boolean>,
-	available: Record<NotificationChannel, boolean>,
 ): NotificationChannel[] {
-	return NOTIFICATION_CHANNELS.filter(
-		(channel) => channel === "in_app" || (preferences[channel] && available[channel]),
-	);
+	return NOTIFICATION_CHANNELS.filter((channel) => channel === "in_app" || preferences[channel]);
 }
 
 export function buildAutoClockOutNotification(input: {
