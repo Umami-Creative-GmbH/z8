@@ -142,6 +142,7 @@ import {
 } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import {
+	getRecordedWorkLocationType,
 	isWorkLocationType,
 	normalizeWorkLocationType,
 	type WorkLocationType,
@@ -526,7 +527,7 @@ export async function editSameDayTimeEntry(
 	);
 	const metadataChanged =
 		data.workLocationType !==
-			normalizeWorkLocationType(selectedWorkPeriod.workLocationType) ||
+			getRecordedWorkLocationType(selectedWorkPeriod.workLocationType) ||
 		data.workCategoryId !== selectedWorkPeriod.workCategoryId;
 	const now = new Date();
 
@@ -753,7 +754,7 @@ export async function editSameDayTimeEntry(
 				});
 				const lockedMetadataChanged =
 					proposedMetadata.workLocationType !==
-						normalizeWorkLocationType(lockedPeriod.workLocationType) ||
+						getRecordedWorkLocationType(lockedPeriod.workLocationType) ||
 					proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId;
 				if (!clockInChanged && !clockOutChanged && !lockedMetadataChanged) {
 					throw new ValidationError({
@@ -1551,7 +1552,7 @@ async function recordAdoptedSubmission(
 		const endpoint = request.endpoints.find(({ endpointType }) => endpointType === type);
 		return endpoint ? requestedEndpoint(endpoint) : null;
 	};
-	const currentLocation = normalizeWorkLocationType(lockedPeriod.workLocationType);
+	const currentLocation = getRecordedWorkLocationType(lockedPeriod.workLocationType);
 	const canonical = input.authority.authority === "canonical";
 	const [bound] = canonical
 		? []
@@ -1760,7 +1761,7 @@ function submitCorrectionInTransaction(
 		});
 		const metadataChanged =
 			proposedMetadata.workLocationType !==
-				normalizeWorkLocationType(lockedPeriod.workLocationType) ||
+				getRecordedWorkLocationType(lockedPeriod.workLocationType) ||
 			proposedMetadata.workCategoryId !== lockedPeriod.workCategoryId;
 		if (
 			input.action === "edit" &&
@@ -1848,6 +1849,7 @@ function submitCorrectionInTransaction(
 		});
 		const v2SubmissionKey = `time-correction-cycle:v2:${input.submissionId}:${businessSubmissionKey}`;
 		const sourceMetadataUnchanged =
+			// Preserve the historical v1 identity lookup for old timestamp-only receipts.
 			proposedMetadata.workLocationType ===
 				normalizeWorkLocationType(lockedPeriod.workLocationType) &&
 			proposedMetadata.workCategoryId === lockedPeriod.workCategoryId;

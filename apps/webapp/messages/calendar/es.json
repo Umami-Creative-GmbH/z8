@@ -173,7 +173,8 @@
       "surcharge": "Recargo",
       "surchargeBreakdown": "Desglose de recargos",
       "time": "Tiempo",
-      "type": "Tipo"
+      "type": "Tipo",
+      "workLocation": "Lugar de trabajo"
     },
     "edit": {
       "deleteEntry": "Eliminar entrada",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Error al guardar notas",
       "projectSaved": "Proyecto actualizado",
       "projectSaveFailed": "Error al actualizar el proyecto",
-      "split": "Dividir"
+      "split": "Dividir",
+      "locationRequired": "Seleccione un lugar de trabajo.",
+      "time": {
+        "noChanges": "Cambie primero la fecha, la hora o el lugar de trabajo.",
+        "edit": "Editar entrada"
+      }
     },
     "employeeSelector": {
       "error": "No se han podido cargar los miembros del equipo",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "No registrado"
     }
   }
 }

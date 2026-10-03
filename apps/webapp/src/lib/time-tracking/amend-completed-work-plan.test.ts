@@ -106,14 +106,19 @@ describe("planCompletedWorkAmendment", () => {
 		).toThrow(AmendmentNoChangeError);
 	});
 
-	it("compares a submitted location with the normalized legacy location", () => {
+	it("records an explicitly selected office location for a missing legacy location", () => {
 		const legacy = { ...source, workLocationType: null };
-		expect(() =>
+		expect(
 			planCompletedWorkAmendment(legacy, {
 				...preserveAll,
 				workLocation: { kind: "replace", id: "office" },
 			}),
-		).toThrow(AmendmentNoChangeError);
+		).toMatchObject({ changes: { workLocation: true }, result: { workLocationType: "office" } });
+	});
+	it("preserves equivalence of the retired field alias and remote", () => {
+		expect(() => planCompletedWorkAmendment({ ...source, workLocationType: "field" }, {
+			...preserveAll, workLocation: { kind: "replace", id: "remote" },
+		})).toThrow(AmendmentNoChangeError);
 	});
 
 	it("rejects an amendment that changes nothing", () => {

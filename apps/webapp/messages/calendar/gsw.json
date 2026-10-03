@@ -173,7 +173,8 @@
       "surcharge": "Zueschlag",
       "surchargeBreakdown": "Zueschlagsufschlüsslig",
       "time": "Ziit",
-      "type": "Typ"
+      "type": "Typ",
+      "workLocation": "Arbeitsort"
     },
     "edit": {
       "deleteEntry": "Iitrag lösche",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Notize chönd nöd gspicheret werde",
       "projectSaved": "Projekt aktualisiert",
       "projectSaveFailed": "Projekt cha nöd aktualisiert werde",
-      "split": "Teile"
+      "split": "Teile",
+      "locationRequired": "Wähl en Arbeitsort.",
+      "time": {
+        "noChanges": "Ändere zerscht Datum, Ziit oder Arbeitsort.",
+        "edit": "Iitrag bearbeite"
+      }
     },
     "employeeSelector": {
       "error": "Teammitglieder chönd nöd glade werde",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Nöd erfasst"
     }
   }
 }

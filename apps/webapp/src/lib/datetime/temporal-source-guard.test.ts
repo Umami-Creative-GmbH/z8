@@ -44,6 +44,7 @@ const MIGRATED_CALENDAR_DIALOGS = [
 	"components/calendar/work-period-edit-sections.tsx",
 ] as const;
 const SCHEDULE_X_GLOBAL_POLYFILL_ALLOWLIST = new Set([
+	"components/calendar/calendar-work-event.test.tsx",
 	"components/calendar/schedule-x-calendar.test.tsx",
 	"components/calendar/schedule-x-wrapper.tsx",
 	"components/scheduling/scheduler/shift-scheduler.tsx",

@@ -17,7 +17,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import type { AttributionIntent } from "./close-active-work";
 import { validateTimeCorrectionRange } from "./time-correction-temporal";
 import { deriveWorkDurationMinutes } from "./work-duration";
-import { isWorkLocationType, normalizeWorkLocationType } from "./work-location";
+import { getRecordedWorkLocationType, isWorkLocationType } from "./work-location";
 
 /**
  * `minute` is a wall-clock minute from an editing form: an endpoint whose stored
@@ -112,13 +112,12 @@ function resolveAttributions(
 	}
 	const project = resolveAttribution(intent.project, source.projectId);
 	const workCategory = resolveAttribution(intent.workCategory, source.workCategoryId);
-	// Legacy rows may hold no location or a retired alias; the UI shows and
-	// submits the normalized value, which is not a change.
+	// Retired aliases retain their meaning; selecting a missing location records a change.
 	const workLocation = resolveAttribution(
 		intent.workLocation,
 		source.workLocationType,
 		(value, current) =>
-			value === current || (value !== null && value === normalizeWorkLocationType(current)),
+			value === current || (value !== null && value === getRecordedWorkLocationType(current)),
 	);
 	return {
 		changes: {

@@ -493,7 +493,7 @@ describe("ScheduleXCalendarWrapper running clock-out action", () => {
 		);
 
 		const calendarConfig = useCalendarAppMock.mock.calls[0]?.[0];
-		expect(calendarConfig.events[0]?._customContent?.timeGrid).toContain(
+		expect(calendarConfig.events[0]?._calendarTimeGridContent).toContain(
 			"data-running-clock-out-button",
 		);
 	});

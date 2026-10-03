@@ -84,6 +84,7 @@ export interface SurchargeBreakdown {
 export interface WorkPeriodEvent extends CalendarEvent {
 	type: "work_period";
 	metadata: {
+		workLocationType?: string | null;
 		durationMinutes: number;
 		employeeId: string;
 		employeeName: string;

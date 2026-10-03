@@ -71,7 +71,7 @@ export const ROUTE_NAMESPACES: Record<string, Namespace[]> = {
 	// Main app routes
 	"/": ["common", "dashboard"],
 	"/analytics": ["common", "analytics"],
-	"/calendar": ["common", "calendar"],
+	"/calendar": ["common", "calendar", "timeTracking"],
 	"/absences": ["common", "calendar"],
 	"/time-tracking": ["common", "timeTracking", "compliance"],
 	"/travel-expenses": ["common", "travelExpenses"],

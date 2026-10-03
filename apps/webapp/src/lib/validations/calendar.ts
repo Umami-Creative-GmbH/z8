@@ -74,6 +74,7 @@ export const timeEntryEventSchema = calendarEventSchema.extend({
 export const workPeriodEventSchema = calendarEventSchema.extend({
 	type: z.literal("work_period"),
 	metadata: z.object({
+		workLocationType: z.string().nullable().optional(),
 		durationMinutes: z.number().int(),
 		employeeName: z.string(),
 		clockInUtcOffsetMinutes: z.number().int().optional(),

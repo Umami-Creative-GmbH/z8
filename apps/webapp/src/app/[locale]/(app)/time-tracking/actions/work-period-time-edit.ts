@@ -10,11 +10,11 @@ import {
 	employee,
 	workPeriod,
 } from "@/db/schema";
+import { resolveOnBehalfCorrectionAuthority } from "@/lib/approvals/server/time-correction-on-behalf";
 import {
 	editSameDayTimeEntry,
 	requestTimeCorrectionEffect,
 } from "@/lib/approvals/server/time-correction-submission";
-import { resolveOnBehalfCorrectionAuthority } from "@/lib/approvals/server/time-correction-on-behalf";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import {
 	isBillingMutationAllowed,
@@ -41,10 +41,15 @@ import {
 } from "@/lib/time-tracking/admin-work-period-time-edit";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
+import {
+	isWorkLocationType,
+	normalizeWorkLocationType,
+	WORK_LOCATION_TYPES,
+	type WorkLocationType,
+} from "@/lib/time-tracking/work-location";
 import {
 	haveWorkPeriodDatesChanged,
-	haveWorkPeriodTimesChanged,
+	haveWorkPeriodEditValuesChanged,
 	resolveWorkPeriodTimeEditAccess,
 	resolveWorkPeriodTimeEditRoute,
 	type WorkPeriodTimeEditAccess,
@@ -68,6 +73,7 @@ export interface WorkPeriodTimeEditContext {
 }
 
 export interface UpdateWorkPeriodTimesInput extends WorkPeriodTimeEditValues {
+	workLocationType?: WorkLocationType;
 	workPeriodId: string;
 	submissionId: string;
 	reason: string;
@@ -75,6 +81,7 @@ export interface UpdateWorkPeriodTimesInput extends WorkPeriodTimeEditValues {
 
 const workPeriodIdSchema = z.uuid();
 const updateWorkPeriodTimesSchema = z.object({
+	workLocationType: z.enum(WORK_LOCATION_TYPES).optional(),
 	workPeriodId: z.uuid(),
 	submissionId: z.uuid(),
 	clockInDate: z.iso.date(),
@@ -303,6 +310,11 @@ async function loadTimeEditTarget(
 				access,
 				timezone,
 				values: {
+					workLocationType: isWorkLocationType(period.workLocationType)
+						? period.workLocationType
+						: period.workLocationType === "field"
+							? "remote"
+							: null,
 					clockInDate: clockIn.date,
 					clockInTime: clockIn.time,
 					clockOutDate: clockOut.date,
@@ -352,6 +364,9 @@ async function applyAdminEdit(
 ): Promise<ServerActionResult<{ status: "applied" | "pending" }>> {
 	const { period, organizationId, context } = target;
 	const submitted = {
+		...(input.workLocationType !== undefined && {
+			workLocationType: input.workLocationType,
+		}),
 		clockInDate: input.clockInDate,
 		clockInTime: input.clockInTime,
 		clockOutDate: input.clockOutDate,
@@ -397,16 +412,17 @@ async function applyAdminEdit(
 	}
 
 	try {
-		const clockIn = parseWallClock(
-			input.clockInDate,
-			input.clockInTime,
-			context.timezone,
-		);
-		const clockOut = parseWallClock(
-			input.clockOutDate,
-			input.clockOutTime,
-			context.timezone,
-		);
+		// Unchanged wall times retain their exact instant, including a later DST fold.
+		const clockIn =
+			input.clockInDate === context.values.clockInDate &&
+			input.clockInTime === context.values.clockInTime
+				? period.startTime
+				: parseWallClock(input.clockInDate, input.clockInTime, context.timezone);
+		const clockOut =
+			input.clockOutDate === context.values.clockOutDate &&
+			input.clockOutTime === context.values.clockOutTime
+				? period.endTime
+				: parseWallClock(input.clockOutDate, input.clockOutTime, context.timezone);
 		if (
 			compareInstants(instantFromDate(clockOut), systemClock.nowInstant()) > 0
 		) {
@@ -446,6 +462,7 @@ async function applyAdminEdit(
 			submissionId: input.submissionId,
 			submitted,
 			expected: {
+				workLocationType: period.workLocationType,
 				employeeId: period.employeeId,
 				clockInId: period.clockInId,
 				clockOutId: period.clockOutId,
@@ -538,6 +555,7 @@ export async function updateWorkPeriodTimes(
 	}
 
 	const next: WorkPeriodTimeEditValues = {
+		workLocationType: input.workLocationType,
 		clockInDate: input.clockInDate,
 		clockInTime: input.clockInTime,
 		clockOutDate: input.clockOutDate,
@@ -551,7 +569,7 @@ export async function updateWorkPeriodTimes(
 	// a retried submission that already committed shows its values as current.
 	if (
 		route === "approval_request" &&
-		!haveWorkPeriodTimesChanged(values, next)
+		!haveWorkPeriodEditValuesChanged(values, next)
 	) {
 		return {
 			success: false,
@@ -565,14 +583,15 @@ export async function updateWorkPeriodTimes(
 		return { success: false, error: "Reason is required" };
 	}
 
-	// Employee edits reuse the existing correction flows, which keep metadata unchanged.
+	// Reuse the correction flows for both endpoints and location changes.
 	const correction = {
 		workPeriodId: target.period.id,
 		newClockInDate: next.clockInDate,
 		newClockInTime: next.clockInTime,
 		newClockOutDate: next.clockOutDate,
 		newClockOutTime: next.clockOutTime,
-		workLocationType: normalizeWorkLocationType(target.period.workLocationType),
+		workLocationType:
+			input.workLocationType ?? normalizeWorkLocationType(target.period.workLocationType),
 		workCategoryId: target.period.workCategoryId,
 	};
 
