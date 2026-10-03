@@ -89,14 +89,18 @@ describe("Temporal source guard", () => {
 		);
 		const packageSource = readFileSync(join(process.cwd(), "package.json"), "utf8");
 
-		expect(sourceOffenders.map((filePath) => relative(SOURCE_ROOT, filePath))).toEqual([]);
+		expect(
+			sourceOffenders.map((filePath) =>
+				relative(SOURCE_ROOT, filePath).replace(/\\/g, "/"),
+			),
+		).toEqual([]);
 		expect(packageSource).not.toMatch(CHAMPION_POLYFILL);
 	});
 
 	it("limits global Temporal patching to Schedule-X integration modules", () => {
 		const offenders = collectSourceFiles(SOURCE_ROOT)
 			.filter((filePath) => TEMPORAL_GLOBAL_IMPORT.test(readFileSync(filePath, "utf8")))
-			.map((filePath) => relative(SOURCE_ROOT, filePath))
+			.map((filePath) => relative(SOURCE_ROOT, filePath).replace(/\\/g, "/"))
 			.filter((filePath) => !SCHEDULE_X_GLOBAL_POLYFILL_ALLOWLIST.has(filePath));
 
 		expect(offenders).toEqual([]);
@@ -110,7 +114,7 @@ describe("Temporal source guard", () => {
 				return !/(?:^|[/\\])__tests__(?:[/\\]|$)|\.test\.tsx?$/.test(relativePath);
 			})
 			.filter((filePath) => APPLICATION_DRIZZLE_ADAPTER_IMPORT.test(readFileSync(filePath, "utf8")))
-			.map((filePath) => relative(SOURCE_ROOT, filePath));
+			.map((filePath) => relative(SOURCE_ROOT, filePath).replace(/\\/g, "/"));
 
 		expect(offenders).toEqual([]);
 	});

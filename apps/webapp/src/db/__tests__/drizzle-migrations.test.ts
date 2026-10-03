@@ -1,23 +1,24 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
+import { readTestText } from "@/test/read-test-text";
 
-const migration0004 = readFileSync(
+const migration0004 = readTestText(
 	new URL("../../../drizzle/0004_hard_bill_hollister.sql", import.meta.url),
 	"utf8",
 );
-const migration0008 = readFileSync(
+const migration0008 = readTestText(
 	new URL("../../../drizzle/0008_demo_data_feature_flag.sql", import.meta.url),
 	"utf8",
 );
-const migration0014 = readFileSync(
+const migration0014 = readTestText(
 	new URL(
 		"../../../drizzle/0014_team_membership_primary_manager.sql",
 		import.meta.url,
 	),
 	"utf8",
 );
-const migration0019 = readFileSync(
+const migration0019 = readTestText(
 	new URL("../../../drizzle/0019_regular_sandman.sql", import.meta.url),
 	"utf8",
 );
@@ -42,7 +43,7 @@ const migration0030SnapshotUrl = new URL(
 	import.meta.url,
 );
 const migrationJournal = JSON.parse(
-	readFileSync(
+	readTestText(
 		new URL("../../../drizzle/meta/_journal.json", import.meta.url),
 		"utf8",
 	),
@@ -56,7 +57,7 @@ const migrationJournal = JSON.parse(
 	}>;
 };
 const migration0008Snapshot = JSON.parse(
-	readFileSync(
+	readTestText(
 		new URL("../../../drizzle/meta/0008_snapshot.json", import.meta.url),
 		"utf8",
 	),
@@ -65,7 +66,7 @@ const migration0008Snapshot = JSON.parse(
 		"public.organization": { columns: Record<string, { default?: boolean }> };
 	};
 };
-const migration0032 = readFileSync(
+const migration0032 = readTestText(
 	new URL(
 		"../../../drizzle/0032_works_council_feature_flag.sql",
 		import.meta.url,
@@ -73,7 +74,7 @@ const migration0032 = readFileSync(
 	"utf8",
 );
 const migration0032Snapshot = JSON.parse(
-	readFileSync(
+	readTestText(
 		new URL("../../../drizzle/meta/0032_snapshot.json", import.meta.url),
 		"utf8",
 	),
@@ -163,7 +164,7 @@ const migration0061SnapshotUrl = new URL(
 function readRequiredMigration(url: URL, label: string): string {
 	const exists = existsSync(url);
 	expect(exists, `${label} must exist`).toBe(true);
-	return exists ? readFileSync(url, "utf8") : "";
+	return exists ? readTestText(url, "utf8") : "";
 }
 
 type ExpectedEnum = { name: string; values: string[] };
@@ -2129,8 +2130,8 @@ ALTER TABLE "approval_workflow_stage" ADD CONSTRAINT "stage_workflow_fk" FOREIGN
 	});
 
 	it("preserves exact 0055 and 0056 approval migration semantics", () => {
-		const migration0055 = readFileSync(migration0054Url, "utf8");
-		const migration0056 = readFileSync(migration0055Url, "utf8");
+		const migration0055 = readTestText(migration0054Url, "utf8");
+		const migration0056 = readTestText(migration0055Url, "utf8");
 		const migration0060 = readRequiredMigration(
 			migration0060Url,
 			"0060 approval workflow recovery migration",
@@ -2262,10 +2263,10 @@ ALTER TABLE "approval_workflow_stage" ADD CONSTRAINT "stage_workflow_fk" FOREIGN
 		expect(existsSync(migration0055SnapshotUrl)).toBe(true);
 		if (!existsSync(migration0055SnapshotUrl)) return;
 		const previous = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot & { id: string };
 		const snapshot = JSON.parse(
-			readFileSync(migration0055SnapshotUrl, "utf8"),
+			readTestText(migration0055SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		expect(snapshot.prevId).toBe(previous.id);
 		expect(
@@ -2318,7 +2319,7 @@ ALTER TABLE "approval_workflow_stage" ADD CONSTRAINT "stage_workflow_fk" FOREIGN
 			expect(additiveMigrationViolations(unsafeSql), unsafeSql).not.toEqual([]);
 		}
 
-		const migration0054 = readFileSync(migration0054Url, "utf8");
+		const migration0054 = readTestText(migration0054Url, "utf8");
 		expect(
 			migrationStatements(migration0054).filter((statement) =>
 				/\bDROP\b/i.test(statement),
@@ -2543,7 +2544,7 @@ ALTER TABLE "approval_outbox" ADD CONSTRAINT "duplicate_outbox_event_fk" FOREIGN
 		).toContain("shift_request_approval_workflow_organization_check");
 
 		const snapshot = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		const workflowTable = snapshot.tables["public.approval_workflow"];
 		const snapshotWithUnexpectedColumn: MigrationSnapshot = {
@@ -2702,7 +2703,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		).toBe(true);
 		expect(existsSync(migration0020Url)).toBe(true);
 
-		const migration0020 = readFileSync(migration0020Url, "utf8");
+		const migration0020 = readTestText(migration0020Url, "utf8");
 
 		expect(migration0020.trim()).toBe(
 			'ALTER TABLE "organization" DROP COLUMN "fiscal_year_start_month";',
@@ -2717,7 +2718,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		).toBe(true);
 		expect(existsSync(migration0026Url)).toBe(true);
 
-		const migration0026 = readFileSync(migration0026Url, "utf8");
+		const migration0026 = readTestText(migration0026Url, "utf8");
 		const guardPosition = migration0026.indexOf("DO $$");
 		const insertPosition = migration0026.indexOf(
 			'INSERT INTO "employee_managers"',
@@ -2804,7 +2805,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(existsSync(migration0030SnapshotUrl)).toBe(true);
 
 		const snapshot = JSON.parse(
-			readFileSync(migration0030SnapshotUrl, "utf8"),
+			readTestText(migration0030SnapshotUrl, "utf8"),
 		) as {
 			tables: Record<string, { columns: Record<string, unknown> }>;
 		};
@@ -2837,7 +2838,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(existsSync(migration0035Url)).toBe(true);
 
-		const migration0035 = readFileSync(migration0035Url, "utf8");
+		const migration0035 = readTestText(migration0035Url, "utf8");
 
 		expect(migration0035).toContain(
 			'ADD COLUMN IF NOT EXISTS "metadata" jsonb',
@@ -2862,7 +2863,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("infers historical time entry timezone capture without fixed location values", () => {
 		expect(existsSync(migration0036Url)).toBe(true);
 
-		const migration0036 = readFileSync(migration0036Url, "utf8");
+		const migration0036 = readTestText(migration0036Url, "utf8");
 
 		expect(migration0036).toContain(
 			'ADD COLUMN IF NOT EXISTS "utc_offset_minutes" integer',
@@ -2886,7 +2887,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(existsSync(migration0036SnapshotUrl)).toBe(true);
 
 		const snapshot = JSON.parse(
-			readFileSync(migration0036SnapshotUrl, "utf8"),
+			readTestText(migration0036SnapshotUrl, "utf8"),
 		) as {
 			tables: Record<string, { columns: Record<string, unknown> }>;
 		};
@@ -2908,7 +2909,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("uses the holiday category primary key for category assignment foreign keys", () => {
 		expect(existsSync(migration0037Url)).toBe(true);
 
-		const migration0037 = readFileSync(migration0037Url, "utf8");
+		const migration0037 = readTestText(migration0037Url, "utf8");
 
 		expect(migration0037).toContain(
 			'FOREIGN KEY ("category_id") REFERENCES "public"."holiday_category"("id")',
@@ -2927,7 +2928,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(existsSync(migration0038SnapshotUrl)).toBe(true);
 
 		const snapshot = JSON.parse(
-			readFileSync(migration0038SnapshotUrl, "utf8"),
+			readTestText(migration0038SnapshotUrl, "utf8"),
 		) as {
 			tables: Record<
 				string,
@@ -2975,7 +2976,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		]);
 		expect(existsSync(migration0048Url)).toBe(true);
 
-		const migration0048 = readFileSync(migration0048Url, "utf8");
+		const migration0048 = readTestText(migration0048Url, "utf8");
 
 		expect(migration0048).toContain('ADD COLUMN IF NOT EXISTS "scope" text');
 		expect(migration0048).toContain(
@@ -3001,7 +3002,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		expect(recoveryEntry?.when).toBeGreaterThan(latestPriorWhen);
 		expect(existsSync(migration0051Url)).toBe(true);
 
-		const migration0051 = readFileSync(migration0051Url, "utf8");
+		const migration0051 = readTestText(migration0051Url, "utf8");
 		expect(migration0051).toContain("WHEN duplicate_object THEN null");
 		expect(migration0051).toContain(
 			'ALTER TABLE "absence_entry" ADD COLUMN IF NOT EXISTS "sick_detail" "sick_detail";',
@@ -3024,7 +3025,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		);
 		expect(existsSync(migration0052Url)).toBe(true);
 
-		const migration0052 = readFileSync(migration0052Url, "utf8");
+		const migration0052 = readTestText(migration0052Url, "utf8");
 		expect(migration0052).toContain("\"timezone_source\" = 'backfill'");
 		expect(migration0052).toContain("\"timezone\" = 'Europe/Berlin'");
 		expect(migration0052).toContain('"utc_offset_minutes" = 120');
@@ -3069,13 +3070,13 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		if (!existsSync(migration0054SnapshotUrl)) return;
 
 		const previousSnapshot = JSON.parse(
-			readFileSync(
+			readTestText(
 				new URL("../../../drizzle/meta/0054_snapshot.json", import.meta.url),
 				"utf8",
 			),
 		) as { id: string };
 		const snapshot = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 
 		// Approval expansion follows dev's employee invitation identity snapshot.
@@ -3133,7 +3134,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		);
 		const recovery = migration0054.slice(recoveryStart, recoveryEnd);
 		const snapshot = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		const recoveryStatements = migrationStatements(recovery);
 		const tableStatement = recoveryStatements.find((statement) =>
@@ -3211,7 +3212,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 			"0055 approval workflow expansion migration",
 		);
 		const snapshot = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		const telegramTable = snapshot.tables["public.telegram_digest_delivery"];
 
@@ -3233,13 +3234,13 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 			"0055 approval workflow expansion migration",
 		);
 		const snapshot0050 = JSON.parse(
-			readFileSync(
+			readTestText(
 				new URL("../../../drizzle/meta/0050_snapshot.json", import.meta.url),
 				"utf8",
 			),
 		) as MigrationSnapshot;
 		const snapshot0054 = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		const deployedInvitation = snapshot0050.tables["public.invitation"];
 		const latestInvitation = snapshot0054.tables["public.invitation"];
@@ -3270,7 +3271,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 			"0055 approval workflow expansion migration",
 		);
 		const snapshot = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		const sqlEnums = parsedEnums(migration0054);
 		const sqlTables = parsedTables(migration0054);
@@ -3309,7 +3310,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 			"0055 approval workflow expansion migration",
 		);
 		const snapshot = JSON.parse(
-			readFileSync(migration0054SnapshotUrl, "utf8"),
+			readTestText(migration0054SnapshotUrl, "utf8"),
 		) as MigrationSnapshot;
 		const migrationForeignKeys = parsedForeignKeys(migration0054);
 		const migrationCheckConstraints = parsedCheckConstraints(migration0054);
@@ -3439,7 +3440,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	it("deterministically repairs employee invitation draft identity", () => {
 		expect(existsSync(migration0054InvitationDraftIdentityUrl)).toBe(true);
 
-		const migration0054 = readFileSync(
+		const migration0054 = readTestText(
 			migration0054InvitationDraftIdentityUrl,
 			"utf8",
 		);
@@ -3552,7 +3553,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	});
 
 	it("serializes every employee writer by organization and normalized user email", () => {
-		const migration0054 = readFileSync(
+		const migration0054 = readTestText(
 			migration0054InvitationDraftIdentityUrl,
 			"utf8",
 		);
@@ -3599,7 +3600,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 				.slice(0, migrationIndex)
 				.map((entry) => entry.when),
 		);
-		const migration0058 = readFileSync(migration0058ActivityUrl, "utf8");
+		const migration0058 = readTestText(migration0058ActivityUrl, "utf8");
 
 		expect(migrationIndex).toBeGreaterThanOrEqual(0);
 		expect(migrationEntry?.when).toBeGreaterThan(latestPriorWhen);
@@ -3619,10 +3620,10 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 		if (!existsSync(migration0058ActivitySnapshotUrl)) return;
 
 		const previousSnapshot = JSON.parse(
-			readFileSync(migration0057SnapshotUrl, "utf8"),
+			readTestText(migration0057SnapshotUrl, "utf8"),
 		) as { id: string };
 		const snapshot = JSON.parse(
-			readFileSync(migration0058ActivitySnapshotUrl, "utf8"),
+			readTestText(migration0058ActivitySnapshotUrl, "utf8"),
 		) as {
 			prevId: string;
 			tables: Record<
@@ -3663,7 +3664,7 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 describe("approval workflow rollout pre-creation migration (#359)", () => {
 	const tag = "0107_approval_workflow_rollout_precreate";
 	const migrationUrl = new URL(`../../../drizzle/${tag}.sql`, import.meta.url);
-	const migration = existsSync(migrationUrl) ? readFileSync(migrationUrl, "utf8") : "";
+	const migration = existsSync(migrationUrl) ? readTestText(migrationUrl, "utf8") : "";
 
 	it("registers the backfill after every prior migration", () => {
 		const index = migrationJournal.entries.findIndex((entry) => entry.tag === tag);
