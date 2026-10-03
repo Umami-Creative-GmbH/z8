@@ -264,7 +264,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "time_entry",
 		},
 		{
-			columns: ["duration_minutes", "end_at", "start_at"],
+			columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
 			functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
 			operation: "update",
 			semantic: "ordinary_finalization",
@@ -1078,7 +1078,13 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			table: "work_period",
 		},
 		{
-			columns: ["clock_in_id", "clock_out_id", "duration_minutes", "end_time", "start_time"],
+			columns: [
+				"clock_in_id",
+				"clock_out_id",
+				"duration_minutes",
+				"end_time",
+				"start_time",
+			],
 			functionName: "splitLegacyWorkPeriod",
 			operation: "insert",
 			table: "work_period",
@@ -1297,6 +1303,7 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 	"src/lib/approvals/server/time-correction-approvals.ts": [
 		{
 			columns: [
+				"approval_status",
 				"clock_in_id",
 				"clock_out_id",
 				"duration_minutes",
