@@ -45,7 +45,7 @@ The old production baseline has only three exploratory repeat samples per route 
 
 ## Remaining acceptance work
 
-#557 remains open. The implementation issues stay closed; this run confirms a limited deployed subset of their parent acceptance criteria.
+#557 is closed as implemented; the gates below move to #571, which tracks them in an operator-configured fixture environment. The implementation issues stay closed; this run confirms a limited deployed subset of their parent acceptance criteria.
 
 | Gate | Status / missing evidence |
 | --- | --- |
