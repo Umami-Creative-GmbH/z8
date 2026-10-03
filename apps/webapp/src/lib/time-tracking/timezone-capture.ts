@@ -6,6 +6,7 @@ export type TimeEntryTimezoneSource =
 	| "browser"
 	| "user_setting"
 	| "manager_target_user_setting"
+	| "system_target_user_setting"
 	| "historical_inference"
 	| "backfill";
 

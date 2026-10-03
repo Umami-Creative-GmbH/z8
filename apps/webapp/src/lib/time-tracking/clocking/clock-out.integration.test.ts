@@ -324,6 +324,10 @@ describe("Clocking clock-out through run on PostgreSQL", () => {
 			expect(outcome).toMatchObject({
 				outcome: "executed",
 				result: { id: command.identity.id, type: "clock_out" },
+				receipt:
+					admission === "append"
+						? { actors: { completing: { kind: "human", userId: ids.user } } }
+						: null,
 				// 60m40s rounds half up in both representations.
 				durationMinutes: 61,
 			});

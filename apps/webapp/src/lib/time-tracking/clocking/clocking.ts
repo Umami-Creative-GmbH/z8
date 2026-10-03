@@ -300,6 +300,13 @@ function eventCapture(
 	eventInstant: Instant,
 	deviceZone = command.zone.device,
 ) {
+	if (command.principal.kind === "automatic_clock_out") {
+		return resolveFallbackTimezoneCapture({
+			timestamp: dateFromInstant(eventInstant),
+			timezone: command.zone.fallback,
+			timezoneSource: "system_target_user_setting",
+		});
+	}
 	// On behalf or at a departure, the event is the subject's, in their zone: never
 	// the principal's device.
 	if (command.subject.onBehalf || command.principal.kind === "departure") {
@@ -352,9 +359,26 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	function isEnlistedFor(command: ClockLookupQuery) {
 		const { enlistment } = transactions;
 		const { principal } = command;
+		if (principal.kind === "automatic_clock_out") {
+			if (enlistment?.kind !== "automatic_clock_out") return false;
+			const { decision } = enlistment;
+			return (
+				command.organizationId === decision.organizationId &&
+				command.subject.employeeId === decision.employeeId &&
+				!command.subject.onBehalf &&
+				principal.operationId === decision.operationId &&
+				principal.workPeriodId === decision.workPeriodId &&
+				principal.userId === decision.provenanceUserId &&
+				command.identity.id === decision.operationId &&
+				command.identity.origin === "derived" &&
+				command.channel === "automatic-clock-out"
+			);
+		}
+		if (command.channel === "automatic-clock-out") return false;
 		if (principal.kind !== "departure") return enlistment === undefined;
 		return (
-			enlistment?.departureId === principal.departureId &&
+			enlistment?.kind === "departure" &&
+			enlistment.departureId === principal.departureId &&
 			enlistment.organizationId === command.organizationId &&
 			enlistment.employeeId === command.subject.employeeId
 		);
@@ -706,6 +730,27 @@ export function createClocking(ports: ClockingPorts): Clocking {
 	}
 
 	async function run(command: ClockCommand): Promise<ClockOutcome> {
+		// System authority is the bound decision, never merely a supplied principal.
+		if (!isEnlistedFor(command)) return refused({ code: "access_denied" });
+		const automatic = command.principal.kind === "automatic_clock_out";
+		if (automatic) {
+			const binding = transactions.enlistment;
+			if (
+				binding?.kind !== "automatic_clock_out" ||
+				command.body.kind !== "clock_out" ||
+				command.body.target?.kind !== "period" ||
+				command.body.target.workPeriodId !== binding.decision.workPeriodId ||
+				command.at.kind !== "occurred" ||
+				compareInstants(command.at.instant, binding.decision.cutoff) !== 0 ||
+				command.zone.device !== null ||
+				command.zone.fallback !== binding.decision.timezone ||
+				command.body.project.kind !== "preserve" ||
+				command.body.workCategory.kind !== "preserve" ||
+				command.payload !== undefined ||
+				command.legacy !== undefined
+			)
+				return refused({ code: "access_denied" });
+		}
 		if (
 			!CANONICAL_UUID.test(command.identity.id) ||
 			(command.payload && command.payload.operationId !== command.identity.id)
@@ -731,12 +776,13 @@ export function createClocking(ports: ClockingPorts): Clocking {
 		) {
 			return refused({ code: "invalid_command" });
 		}
-		if (!isEnlistedFor(command)) return refused({ code: "access_denied" });
 		const subject = await authorizedSubject({ ...command, kind: command.body.kind });
 		if (!subject) return refused({ code: "access_denied" });
 		// Offboarding is never blocked by a lapsed subscription; seats recount through
 		// the departure's billing sync (#476 decision 8).
-		const billing = departure ? null : await requireBillingForMutation(command.organizationId);
+		// Automatic closure likewise only ends already-live work.
+		const billing =
+			departure || automatic ? null : await requireBillingForMutation(command.organizationId);
 		if (billing && !isBillingMutationAllowed(billing)) {
 			return refused({
 				code: "billing_required",

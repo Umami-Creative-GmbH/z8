@@ -74,6 +74,7 @@ export type ClockChannel =
 	| "web"
 	| "mobile"
 	| "api"
+	| "automatic-clock-out"
 	| `${BotPlatform}-bot`
 	| typeof DEPARTURE_CLOCK_OUT_WRITER.deviceInfo;
 
@@ -127,6 +128,7 @@ export type CloseActiveWorkWriter = {
 
 /** The receipt writer of a live clock channel: bots share one, the platform stays in the command. */
 export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter {
+	if (channel === AUTOMATIC_CLOCK_OUT_WRITER.deviceInfo) return AUTOMATIC_CLOCK_OUT_WRITER;
 	if (channel === DEPARTURE_CLOCK_OUT_WRITER.deviceInfo) return DEPARTURE_CLOCK_OUT_WRITER;
 	if (channel === "api") {
 		return {
@@ -160,6 +162,17 @@ export const DEPARTURE_CLOCK_OUT_WRITER = {
 	deviceInfo: "employee-offboarding",
 	ipAddress: null,
 } as const satisfies CloseActiveWorkWriter;
+
+export const AUTOMATIC_CLOCK_OUT_WRITER = {
+	writer: "automatic_clock_out",
+	writerVersion: 1,
+	deviceInfo: "automatic-clock-out",
+	ipAddress: null,
+} as const satisfies CloseActiveWorkWriter;
+
+export type CompletingActor =
+	| { kind: "human"; userId: string }
+	| { kind: "system"; process: "automatic_clock_out" };
 
 /** Versioned web request evidence. A retry must carry exactly the same command. */
 export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
@@ -210,7 +223,7 @@ export type CloseActiveWorkResult = {
 	owner: { employeeId: string };
 	actors: {
 		clockIn: { kind: "human"; userId: string };
-		completing: { kind: "human"; userId: string };
+		completing: CompletingActor;
 	};
 	workPeriodId: string;
 	clockInEntryId: string;
@@ -356,8 +369,10 @@ export type CloseActiveWorkInput = {
 	organizationId: string;
 	employeeId: string;
 	teamId: string | null;
-	/** The authenticated human completing the work. */
+	/** Required database creator provenance; system closures use the clock-in creator. */
 	actorUserId: string;
+	/** Internal evidence; omission retains the existing human actor behavior. */
+	completingActor?: CompletingActor;
 	workPeriodId: string;
 	command: CloseActiveWorkOperationCommand;
 	writer: CloseActiveWorkWriter;
@@ -394,8 +409,11 @@ export async function closeActiveWork(
 		commandVersion: input.command.version,
 		command: input.command,
 		appendAdmission: closed.result.append.admission,
-		actorKind: "human",
-		actorUserId: input.actorUserId,
+		actorKind: closed.result.actors.completing.kind,
+		actorUserId:
+			closed.result.actors.completing.kind === "human"
+				? closed.result.actors.completing.userId
+				: null,
 		workPeriodId: closed.result.workPeriodId,
 		resultVersion: CLOSE_ACTIVE_WORK_RESULT_VERSION,
 		result: closed.result,
@@ -420,8 +438,14 @@ export async function closeActiveWorkGraph(
 	if (!(await store.isOrganizationMember(employeeId, organizationId))) {
 		throw new ClockingOrganizationError();
 	}
-	// A departure closes the work of the employee whose access it has just ended.
-	if (input.writer.writer !== DEPARTURE_CLOCK_OUT_WRITER.writer) {
+	// Enlisted departures and automatic closures may end existing work after access ends.
+	if (
+		input.writer.writer !== DEPARTURE_CLOCK_OUT_WRITER.writer &&
+		!(
+			input.writer.writer === AUTOMATIC_CLOCK_OUT_WRITER.writer &&
+			input.completingActor?.kind === "system"
+		)
+	) {
 		await assertEmployeeMayClock(store, { employeeId, organizationId });
 	}
 	if (await store.getEntryByActionId(employeeId, organizationId, clockOutEntryId)) {
@@ -593,7 +617,10 @@ export async function closeActiveWorkGraph(
 		owner: { employeeId },
 		actors: {
 			clockIn: { kind: "human", userId: clockIn.createdBy },
-			completing: { kind: "human", userId: input.actorUserId },
+			completing: input.completingActor ?? {
+				kind: "human",
+				userId: input.actorUserId,
+			},
 		},
 		workPeriodId: period.id,
 		clockInEntryId: clockIn.id,

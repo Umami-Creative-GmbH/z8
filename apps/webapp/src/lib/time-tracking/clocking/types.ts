@@ -34,7 +34,14 @@ export type OperationIdentity = {
  */
 export type ClockPrincipal =
 	| { kind: "user"; userId: string }
-	| { kind: "departure"; departureId: string; userId: string };
+	| { kind: "departure"; departureId: string; userId: string }
+	/** userId supplies required creator provenance, never human authority. */
+	| {
+			kind: "automatic_clock_out";
+			userId: string;
+			operationId: string;
+			workPeriodId: string;
+	  };
 
 /**
  * The employee whose live work changes: the principal's own, or, `onBehalf`,
