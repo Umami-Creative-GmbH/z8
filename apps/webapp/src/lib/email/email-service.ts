@@ -87,7 +87,10 @@ function getSystemTransport(): EmailTransport {
  * Get the email transport for a specific organization
  * Returns org-specific transport if configured and active, otherwise system default
  */
-async function getTransportForOrg(organizationId?: string): Promise<EmailTransport> {
+async function getTransportForOrg(
+	organizationId?: string,
+	options: { throwOnError?: boolean } = {},
+): Promise<EmailTransport> {
 	// No org specified, use system default
 	if (!organizationId) {
 		return getSystemTransport();
@@ -108,6 +111,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 		if (config.transportType === "resend") {
 			const apiKey = await getOrgSecret(organizationId, "email/resend_api_key");
 			if (!apiKey) {
+				if (options.throwOnError) throw new Error("email_transport_secret_unavailable");
 				logger.warn(
 					{ organizationId },
 					"Resend API key not found in Vault, falling back to system default",
@@ -128,6 +132,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 		if (config.transportType === "smtp") {
 			const password = await getOrgSecret(organizationId, "email/smtp_password");
 			if (!password) {
+				if (options.throwOnError) throw new Error("email_transport_secret_unavailable");
 				logger.warn(
 					{ organizationId },
 					"SMTP password not found in Vault, falling back to system default",
@@ -136,6 +141,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 			}
 
 			if (!config.smtpHost || !config.smtpPort || !config.smtpUsername) {
+				if (options.throwOnError) throw new Error("email_transport_config_incomplete");
 				logger.warn({ organizationId }, "Incomplete SMTP config, falling back to system default");
 				return getSystemTransport();
 			}
@@ -155,6 +161,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 			});
 		}
 
+		if (options.throwOnError) throw new Error("email_transport_type_unknown");
 		// Unknown transport type, use system default
 		logger.warn(
 			{ organizationId, transportType: config.transportType },
@@ -162,6 +169,7 @@ async function getTransportForOrg(organizationId?: string): Promise<EmailTranspo
 		);
 		return getSystemTransport();
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.error({ error, organizationId }, "Error getting org transport, using system default");
 		return getSystemTransport();
 	}
@@ -185,15 +193,15 @@ export interface SendEmailParams {
  * If organizationId is provided and the org has custom email config,
  * it will be used. Otherwise, falls back to system default.
  */
-export async function sendEmail({
-	to,
-	subject,
-	html,
-	from,
-	actionUrl,
-	organizationId,
-}: SendEmailParams): Promise<EmailTransportResult> {
-	const transport = await getTransportForOrg(organizationId);
+export async function sendEmail(
+	{ to, subject, html, from, actionUrl, organizationId }: SendEmailParams,
+	options: { durable?: boolean } = {},
+): Promise<EmailTransportResult> {
+	const transport = await getTransportForOrg(organizationId, { throwOnError: options.durable });
+	// Check the actual selected transport; a planning-time check can become stale.
+	if (options.durable && transport.getName().toLowerCase().startsWith("console")) {
+		return { success: false, unavailable: true };
+	}
 
 	logger.debug(
 		{
@@ -274,7 +282,10 @@ export async function sendTestEmail(
  * Get the name of the transport that would be used for an organization
  * Useful for UI display
  */
-export async function getTransportName(organizationId?: string): Promise<string> {
-	const transport = await getTransportForOrg(organizationId);
+export async function getTransportName(
+	organizationId?: string,
+	options: { throwOnError?: boolean } = {},
+): Promise<string> {
+	const transport = await getTransportForOrg(organizationId, options);
 	return transport.getName();
 }

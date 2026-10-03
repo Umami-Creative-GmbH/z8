@@ -1,35 +1,37 @@
 import { describe, expect, it, vi } from "vitest";
-import { sendDiscordNotification } from "./discord-channel";
+import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
 import { loadNotificationChannelAvailability } from "./notification-service";
-import { sendSlackNotification } from "./slack-channel";
-import { sendTeamsNotification } from "./teams-channel";
+import { isSlackAvailable, sendSlackNotification } from "./slack-channel";
+import { isTeamsAvailable, sendTeamsNotification } from "./teams-channel";
+import { isTelegramAvailable } from "./telegram-channel";
 
 const mocks = vi.hoisted(() => ({
 	recipient: vi.fn(async () => null),
 	send: vi.fn(async () => null),
+	enabled: vi.fn(async () => true),
 }));
 vi.mock("@/lib/teams", () => ({
-	isTeamsEnabledForOrganization: async () => true,
+	isTeamsEnabledForOrganization: mocks.enabled,
 	isBotConfigured: () => true,
 	sendApprovalCardToManager: vi.fn(),
 	getConversationReferenceForUser: mocks.recipient,
 	sendProactiveMessage: mocks.send,
 }));
 vi.mock("@/lib/slack", () => ({
-	isSlackEnabledForOrganization: async () => true,
+	isSlackEnabledForOrganization: mocks.enabled,
 	getBotConfigByOrganization: async () => ({ botAccessToken: "test" }),
 	sendApprovalMessageToManager: vi.fn(),
 	getChannelIdForUser: mocks.recipient,
 	postMessage: mocks.send,
 }));
 vi.mock("@/lib/discord", () => ({
-	isDiscordEnabledForOrganization: async () => true,
+	isDiscordEnabledForOrganization: mocks.enabled,
 	getBotConfigByOrganization: async () => ({ botToken: "test" }),
 	sendApprovalMessageToManager: vi.fn(),
 	getChannelIdForUser: mocks.recipient,
 	sendMessage: mocks.send,
 }));
-vi.mock("@/lib/telegram", () => ({ isTelegramEnabledForOrganization: async () => false }));
+vi.mock("@/lib/telegram", () => ({ isTelegramEnabledForOrganization: mocks.enabled }));
 vi.mock("@/lib/discord/formatters", () => ({ buildNotificationEmbed: () => [] }));
 vi.mock("@/lib/email/email-service", () => ({
 	getTransportName: async () => "Console (Development)",
@@ -43,6 +45,30 @@ const params = {
 	message: "Ended",
 };
 describe("durable notification channel outcomes", () => {
+	for (const [name, available] of Object.entries({
+		teams: isTeamsAvailable,
+		slack: isSlackAvailable,
+		discord: isDiscordAvailable,
+		telegram: isTelegramAvailable,
+	})) {
+		it(`${name} retries strict lookup failures and recovers while preserving best-effort defaults`, async () => {
+			mocks.enabled.mockRejectedValue(new Error("lookup offline"));
+			await expect(available("org", { throwOnError: true })).rejects.toThrow("lookup offline");
+			await expect(available("org")).resolves.toBe(false);
+			mocks.enabled.mockResolvedValue(true);
+			await expect(available("org", { throwOnError: true })).resolves.toBe(true);
+		});
+	}
+	it("propagates planning lookup errors only for durable availability", async () => {
+		mocks.enabled.mockRejectedValue(new Error("lookup offline"));
+		await expect(loadNotificationChannelAvailability("org", { durable: true })).rejects.toThrow(
+			"lookup offline",
+		);
+		await expect(loadNotificationChannelAvailability("org")).resolves.toMatchObject({
+			teams: false,
+		});
+		mocks.enabled.mockResolvedValue(true);
+	});
 	for (const [name, send] of Object.entries({
 		teams: sendTeamsNotification,
 		slack: sendSlackNotification,

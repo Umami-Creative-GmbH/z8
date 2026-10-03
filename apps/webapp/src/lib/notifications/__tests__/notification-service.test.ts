@@ -781,6 +781,18 @@ describe("Notification Service", () => {
 	});
 
 	describe("single-channel delivery for durable callers", () => {
+		test.each(botChannels)("retries $channel availability resolution failures only for durable delivery", async ({ channel, available, send }) => {
+			available.mockImplementation(async (_org: string, options?: { throwOnError?: boolean }) => {
+				if (options?.throwOnError) throw new Error("lookup offline");
+				return false;
+			});
+			const { deliverNotificationToChannel } = await import("../notification-service");
+			await expect(deliverNotificationToChannel(channel, params, null, { durable: true })).rejects.toThrow("lookup offline");
+			await expect(deliverNotificationToChannel(channel, params, null)).resolves.toBe("unavailable");
+			expect(send).not.toHaveBeenCalled();
+			available.mockResolvedValue(true);
+			await expect(deliverNotificationToChannel(channel, params, null, { durable: true })).resolves.toBe("sent");
+		});
 		const params = {
 			userId: "user-1",
 			organizationId: "org-1",

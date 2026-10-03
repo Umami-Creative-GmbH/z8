@@ -9,7 +9,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { EmailTemplateKey } from "@/db/schema";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
-import { sendEmail } from "@/lib/email/email-service";
+import { type SendEmailParams, sendEmail } from "@/lib/email/email-service";
 import { renderOrganizationEmailTemplate } from "@/lib/email/template-renderer";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
@@ -153,6 +153,9 @@ async function getUserName(userId: string): Promise<string> {
  */
 export async function sendEmailNotification(params: EmailNotificationParams, options: { throwOnError?: boolean } = {}): Promise<boolean> {
 	const { userId, type, metadata, organizationId } = params;
+	const sendNotificationEmail = options.throwOnError
+		? (message: SendEmailParams) => sendEmail(message, { durable: true })
+		: sendEmail;
 
 	try {
 		const email = await getUserEmail(userId, options.throwOnError);
@@ -169,7 +172,8 @@ export async function sendEmailNotification(params: EmailNotificationParams, opt
 		if (type === "automatic_clock_out") {
 			const localized = organizationId ? await localizeOutboundNotification({ ...params, organizationId }) : params;
 			const actionUrl = params.actionUrl?.startsWith("/calendar/") ? new URL(params.actionUrl, appUrl).toString() : appUrl;
-			const result = await sendEmail({ to: email, subject: localized.title, html: renderLocalizedDefaultEmailHtml(localized, actionUrl), organizationId });
+			const result = await sendNotificationEmail({ to: email, subject: localized.title, html: renderLocalizedDefaultEmailHtml(localized, actionUrl), organizationId });
+			if (result.unavailable) return false;
 			if (!result.success && options.throwOnError) throw new Error("email_delivery_failed");
 			return result.success;
 		}
@@ -431,13 +435,14 @@ export async function sendEmailNotification(params: EmailNotificationParams, opt
 				? renderLocalizedDefaultEmailHtml(localizedEmailContent, appUrl)
 				: rendered.html;
 
-		const result = await sendEmail({
+		const result = await sendNotificationEmail({
 			to: email,
 			subject: rendered.subject,
 			html,
 			organizationId, // Use org-specific email config if available
 		});
 
+		if (result.unavailable) return false;
 		if (result.success) {
 			logger.info({ userId, type, email: `${email.slice(0, 3)}***` }, "Email notification sent");
 			return true;

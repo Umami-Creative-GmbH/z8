@@ -31,11 +31,13 @@ interface DiscordNotificationParams {
  */
 export async function isDiscordAvailable(
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	try {
 		const { isDiscordEnabledForOrganization } = await import("@/lib/discord");
 		return await isDiscordEnabledForOrganization(organizationId);
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.debug(
 			{ error, organizationId },
 			"Discord availability check failed",

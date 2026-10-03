@@ -281,7 +281,7 @@ export async function runAutoClockOutDelivery(deps: {
 		transport: {
 			preferences: (userId) =>
 				service.loadNotificationChannelPreferences(userId, "automatic_clock_out"),
-			availability: service.loadNotificationChannelAvailability,
+			availability: (organizationId) => service.loadNotificationChannelAvailability(organizationId, { durable: true }),
 			locale: resolveRecipientNotificationLocale,
 			insertInApp: service.insertInAppNotification,
 			deliver: (channel, params) =>

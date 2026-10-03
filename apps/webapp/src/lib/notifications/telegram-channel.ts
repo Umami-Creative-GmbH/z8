@@ -34,11 +34,13 @@ interface TelegramNotificationParams {
  */
 export async function isTelegramAvailable(
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	try {
 		const { isTelegramEnabledForOrganization } = await import("@/lib/telegram");
 		return await isTelegramEnabledForOrganization(organizationId);
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.debug(
 			{ error, organizationId },
 			"Telegram availability check failed",

@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { insertInAppNotification } from "@/lib/notifications/notification-service";
+import {
+	deliverNotificationToChannel,
+	insertInAppNotification,
+} from "@/lib/notifications/notification-service";
+import { isTeamsAvailable } from "@/lib/notifications/teams-channel";
 import { NOTIFICATION_CHANNELS, type NotificationChannel } from "@/lib/notifications/types";
 import { createClockingService, createDatabaseClockingStore } from "../clocking-core";
 import { createAutoClockOutCommands } from "./commands";
@@ -22,6 +26,14 @@ vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }
 
 vi.mock("@/lib/events", () => ({ publishEventAsync: vi.fn() }));
 vi.mock("@/lib/notifications/email-notifications", () => ({ sendEmailNotification: vi.fn() }));
+const teamsEnabled = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/teams", () => ({
+	isBotConfigured: () => true,
+	isTeamsEnabledForOrganization: teamsEnabled,
+	getConversationReferenceForUser: async () => "recipient",
+	sendProactiveMessage: async () => ({ id: "acknowledged" }),
+	sendApprovalCardToManager: vi.fn(),
+}));
 
 describe("automatic clock-out durable delivery", () => {
 	let fixture: Awaited<ReturnType<typeof createLifecycleDatabaseFixture>>;
@@ -201,6 +213,67 @@ describe("automatic clock-out durable delivery", () => {
 			[facts.organizationId],
 		);
 	});
+	for (const phase of ["planning", "delivery"] as const) {
+		it(`recovers a Teams availability lookup failure during ${phase} without losing delivery or duplicating inbox`, async () => {
+			const { facts } = await seedExecution(fixture);
+			teamsEnabled.mockResolvedValue(true);
+			const run = runner({
+				availability: async () =>
+					channels(
+						(await isTeamsAvailable(facts.organizationId, { throwOnError: true }))
+							? ["in_app", "teams"]
+							: ["in_app"],
+					),
+				deliver: async (channel) =>
+					deliverNotificationToChannel(
+						channel,
+						{
+							userId: facts.actorUserId,
+							organizationId: facts.organizationId,
+							type: "automatic_clock_out",
+							title: "Ended",
+							message: "Ended",
+						},
+						null,
+						{ durable: true },
+					),
+			});
+			if (phase === "delivery") await run(1);
+			teamsEnabled.mockRejectedValue(new Error("lookup offline"));
+			expect(await run(100)).toMatchObject({ completed: 1, deferred: 1 });
+			const pending = (
+				await fixture.pool.query(
+					"select status, claim_token, lease_expires_at from automatic_clock_out_task where organization_id=$1 and status='pending'",
+					[facts.organizationId],
+				)
+			).rows;
+			expect(pending).toEqual([{ status: "pending", claim_token: null, lease_expires_at: null }]);
+			teamsEnabled.mockResolvedValue(true);
+			await fixture.pool.query(
+				"update automatic_clock_out_task set available_at=$2 where organization_id=$1 and status='pending'",
+				[facts.organizationId, new Date(NOW.epochMilliseconds)],
+			);
+			expect(await run(100)).toMatchObject({
+				completed: phase === "planning" ? 2 : 1,
+				deferred: 0,
+			});
+			expect(
+				(
+					await fixture.pool.query(
+						"select payload->>'outcome' as outcome from automatic_clock_out_task where organization_id=$1 and payload->>'channel'='teams'",
+						[facts.organizationId],
+					)
+				).rows,
+			).toEqual([{ outcome: "sent" }]);
+			expect(
+				(
+					await fixture.pool.query("select * from notification where organization_id=$1", [
+						facts.organizationId,
+					])
+				).rowCount,
+			).toBe(1);
+		});
+	}
 	it("recovers a committed closure while enforcement is disabled and inbox muted, with one inbox after lost insert acknowledgement", async () => {
 		const { facts } = await seedExecution(fixture);
 		await fixture.pool.query(

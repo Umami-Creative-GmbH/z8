@@ -31,6 +31,7 @@ interface TeamsNotificationParams {
  */
 export async function isTeamsAvailable(
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	try {
 		// Dynamically import to avoid circular dependencies
@@ -44,8 +45,9 @@ export async function isTeamsAvailable(
 		}
 
 		// Organization must have Teams enabled
-		return await isTeamsEnabledForOrganization(organizationId);
+		return await isTeamsEnabledForOrganization(organizationId, options);
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.debug({ error, organizationId }, "Teams availability check failed");
 		return false;
 	}

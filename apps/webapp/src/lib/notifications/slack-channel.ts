@@ -31,11 +31,13 @@ interface SlackNotificationParams {
  */
 export async function isSlackAvailable(
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	try {
 		const { isSlackEnabledForOrganization } = await import("@/lib/slack");
 		return await isSlackEnabledForOrganization(organizationId);
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.debug({ error, organizationId }, "Slack availability check failed");
 		return false;
 	}

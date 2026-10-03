@@ -70,6 +70,7 @@ export async function resolveTenant(tenantId: string): Promise<TenantResolutionR
  */
 export async function getTenantConfigByOrganization(
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<ResolvedTenant | null> {
 	try {
 		const config = await db.query.teamsTenantConfig.findFirst({
@@ -95,6 +96,7 @@ export async function getTenantConfigByOrganization(
 			serviceUrl: config.serviceUrl,
 		};
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.error({ error, organizationId }, "Failed to get tenant config by organization");
 		return null;
 	}
@@ -125,8 +127,11 @@ export async function updateTenantServiceUrl(tenantId: string, serviceUrl: strin
  * @param organizationId - Z8 organization ID
  * @returns Whether Teams is enabled and active for this org
  */
-export async function isTeamsEnabledForOrganization(organizationId: string): Promise<boolean> {
-	const config = await getTenantConfigByOrganization(organizationId);
+export async function isTeamsEnabledForOrganization(
+	organizationId: string,
+	options: { throwOnError?: boolean } = {},
+): Promise<boolean> {
+	const config = await getTenantConfigByOrganization(organizationId, options);
 	return config !== null && config.setupStatus === "active";
 }
 

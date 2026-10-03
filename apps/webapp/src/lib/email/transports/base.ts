@@ -21,6 +21,8 @@ export interface EmailMessage {
  */
 export interface EmailTransportResult {
 	success: boolean;
+	/** Durable callers cannot deliver through the development console transport. */
+	unavailable?: boolean;
 	messageId?: string;
 	error?: string;
 }
