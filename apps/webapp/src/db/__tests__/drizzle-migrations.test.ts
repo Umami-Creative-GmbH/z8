@@ -3661,6 +3661,21 @@ CREATE UNIQUE INDEX "reordered_forbidden_delivery_fanout_idx" ON "approval_outbo
 	});
 });
 
+describe("automatic clock-out storage migration (#568)", () => {
+	it("registers a fresh migration after the entire existing chain", () => {
+		const index = migrationJournal.entries.findIndex(
+			(entry) => entry.tag === "0111_automatic_clock_out",
+		);
+		expect(index).toBeGreaterThan(0);
+		expect(migrationJournal.entries[index]?.when).toBeGreaterThan(
+			Math.max(...migrationJournal.entries.slice(0, index).map((entry) => entry.when)),
+		);
+		expect(
+			existsSync(new URL("../../../drizzle/0111_automatic_clock_out.sql", import.meta.url)),
+		).toBe(true);
+	});
+});
+
 describe("approval workflow rollout pre-creation migration (#359)", () => {
 	const tag = "0107_approval_workflow_rollout_precreate";
 	const migrationUrl = new URL(`../../../drizzle/${tag}.sql`, import.meta.url);

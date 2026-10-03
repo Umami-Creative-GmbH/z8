@@ -398,21 +398,24 @@ describe("cron schedule mutations", () => {
 		expect(mocks.reconcileCronJobSchedule).not.toHaveBeenCalled();
 	});
 
-	it("rejects high-risk schedule updates without confirmation before persistence or reconciliation", async () => {
-		const result = await updateCronSchedule({
-			jobName: "cron:billing-seat-reconciliation",
-			presetId: "daily-midnight",
-		});
+	it.each(["cron:billing-seat-reconciliation", "cron:auto-clock-out"])(
+		"rejects high-risk schedule updates for %s without confirmation before persistence or reconciliation",
+		async (jobName) => {
+			const result = await updateCronSchedule({
+				jobName,
+				presetId: "daily-midnight",
+			});
 
-		expect(result).toMatchObject({
-			success: false,
-			code: "ValidationError",
-			error: "High-risk cron schedule changes require confirmation",
-		});
-		expect(mocks.upsertCronScheduleOverride).not.toHaveBeenCalled();
-		expect(mocks.deleteCronScheduleOverride).not.toHaveBeenCalled();
-		expect(mocks.reconcileCronJobSchedule).not.toHaveBeenCalled();
-	});
+			expect(result).toMatchObject({
+				success: false,
+				code: "ValidationError",
+				error: "High-risk cron schedule changes require confirmation",
+			});
+			expect(mocks.upsertCronScheduleOverride).not.toHaveBeenCalled();
+			expect(mocks.deleteCronScheduleOverride).not.toHaveBeenCalled();
+			expect(mocks.reconcileCronJobSchedule).not.toHaveBeenCalled();
+		},
+	);
 
 	it("returns success with warning when reconciliation fails after saving", async () => {
 		mocks.reconcileCronJobSchedule.mockResolvedValue({

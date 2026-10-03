@@ -18,6 +18,21 @@ function appImports(relativePath: string) {
 // #524: bots, API routes and the departure worker run the Clocking module
 // outside a web request, so it must not reach into the web actions.
 describe("Clocking module layering", () => {
+	it("keeps automatic transaction authority out of ordinary network adapters", () => {
+		const adapters = [
+			"../../../app/api/time-entries/route.ts",
+			"../../../app/api/time-entries/commands/route.ts",
+			"../../../app/api/time-entries/commands/frozen-clock-command.ts",
+			"../../../app/[locale]/(app)/time-tracking/actions/clocking.ts",
+			"../../../app/[locale]/(app)/time-tracking/actions/clock-out-on-behalf.ts",
+			"./on-behalf.ts",
+		];
+		for (const adapter of adapters) {
+			expect(source(adapter)).not.toMatch(
+				/automaticClockOutTransactions|kind:\s*"automatic_clock_out"/,
+			);
+		}
+	});
 	it("imports nothing from the app layer", () => {
 		const moduleFiles = readdirSync(fileURLToPath(new URL(".", import.meta.url))).filter(
 			(file) => file.endsWith(".ts") && !file.includes(".test."),

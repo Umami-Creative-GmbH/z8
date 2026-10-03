@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
+import { installedCli } from "@/test/installed-cli";
 import { parseInstant, parsePlainDate } from "./temporal-core";
 import {
 	formatCapturedOffsetInstant,
@@ -118,8 +119,8 @@ describe("formatPlainDate", () => {
 
 		// The marker lets the child run this assertion once without recursively spawning another runner.
 		await execFileAsync(
-			"pnpm",
-			["exec", "vitest", "run", "src/lib/datetime/temporal-format.test.ts", "--reporter=dot"],
+			process.execPath,
+			[installedCli("vitest"), "run", "src/lib/datetime/temporal-format.test.ts", "--reporter=dot"],
 			{
 				cwd: process.cwd(),
 				env: {

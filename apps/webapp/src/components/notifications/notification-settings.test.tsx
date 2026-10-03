@@ -57,6 +57,12 @@ function mockNotificationPreferences(availableChannels: Record<NotificationChann
 }
 
 describe("NotificationSettings", () => {
+	it("explains mandatory automatic clock-out inbox delivery without a disable switch", () => {
+		render(<NotificationSettings />);
+		expect(screen.getByText("Always delivered to your inbox")).toBeTruthy();
+		expect(screen.queryByLabelText("In-App notifications for Automatic clock-out")).toBeNull();
+		expect(screen.getByLabelText("Email notifications for Automatic clock-out")).toBeTruthy();
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 

@@ -5,7 +5,9 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
+import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
+import { OrganizationAutoClockOutCard } from "./organization-auto-clock-out-card";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
 import { OrganizationFeaturesCard } from "./organization-features-card";
@@ -13,6 +15,7 @@ import { OrganizationLanguageCard } from "./organization-language-card";
 import { OrganizationTimezoneCard } from "./organization-timezone-card";
 
 interface OrganizationTabProps {
+	autoClockOutSettings: AutoClockOutSettings;
 	organization: typeof authSchema.organization.$inferSelect;
 	memberCount: number;
 	currentMemberRole: "owner" | "admin" | "member";
@@ -21,6 +24,7 @@ interface OrganizationTabProps {
 }
 
 export function OrganizationTab({
+	autoClockOutSettings,
 	organization,
 	memberCount,
 	currentMemberRole,
@@ -57,6 +61,13 @@ export function OrganizationTab({
 				surchargesEnabled={organization.surchargesEnabled ?? false}
 				demoDataEnabled={organization.demoDataEnabled ?? true}
 				worksCouncilEnabled={organization.worksCouncilEnabled ?? false}
+				currentMemberRole={currentMemberRole}
+			/>
+
+			<OrganizationAutoClockOutCard
+				key={organization.id}
+				organizationId={organization.id}
+				settings={autoClockOutSettings}
 				currentMemberRole={currentMemberRole}
 			/>
 

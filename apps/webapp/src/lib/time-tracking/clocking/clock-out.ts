@@ -16,6 +16,7 @@ import { createClockingService, createDatabaseClockingStore } from "../clocking-
 import { clockingService } from "../clocking-service";
 import {
 	type AttributionIntent,
+	AUTOMATIC_CLOCK_OUT_WRITER,
 	attributionValue,
 	type CloseActiveWorkCommand,
 	type CloseActiveWorkOperationCommand,
@@ -138,6 +139,26 @@ function planDepartureClockOut(
 
 export function planClockOut(command: ClockOutCommand, employee: Employee): ClockOutPlan {
 	const { principal } = command;
+	if (principal.kind === "automatic_clock_out") {
+		if (command.body.target?.kind !== "period" || command.at.kind !== "occurred") {
+			throw new Error("Automatic clock-out names no period or cutoff");
+		}
+		const receiptCommand = {
+			version: 1,
+			operationId: command.identity.id,
+			workPeriodId: command.body.target.workPeriodId,
+			requestedInstant: instantToCanonicalString(command.at.instant),
+			timezone: command.zone.fallback,
+			project: command.body.project,
+			workCategory: command.body.workCategory,
+		};
+		return {
+			command,
+			employee,
+			receiptCommand,
+			writer: AUTOMATIC_CLOCK_OUT_WRITER,
+		};
+	}
 	if (principal.kind === "departure") {
 		return planDepartureClockOut(command, employee, principal.departureId);
 	}
@@ -165,7 +186,13 @@ export function planClockOut(command: ClockOutCommand, employee: Employee): Cloc
  * same identity from another principal is not this command.
  */
 function receiptReplay(plan: ClockOutPlan, receipt: CloseActiveWorkReceipt): ClockOutReplay {
-	if (receipt.result.actors.completing.userId !== plan.command.principal.userId) {
+	const actor = receipt.result.actors.completing;
+	const principal = plan.command.principal;
+	if (
+		principal.kind === "automatic_clock_out"
+			? actor.kind !== "system" || actor.process !== "automatic_clock_out"
+			: actor.kind !== "human" || actor.userId !== principal.userId
+	) {
 		throw new CompletedWorkCollisionError();
 	}
 	const { approval } = receipt.result;
@@ -328,6 +355,7 @@ export async function closeClockOut(
 		employeeId: employee.id,
 		teamId: employee.teamId,
 		actorUserId: plan.command.principal.userId,
+		completingActor: completingActor(plan.command),
 		workPeriodId: input.target.workPeriodId,
 		command: receiptCommand,
 		writer,
@@ -342,6 +370,7 @@ export async function closeClockOut(
 			organizationId: employee.organizationId,
 			employeeId: employee.id,
 			actorUserId: plan.command.principal.userId,
+			completingActor: completingActor(plan.command),
 			workPeriodId: result.workPeriodId,
 			start: parseInstant(result.segment.startAt),
 			end: parseInstant(result.segment.endAt),
@@ -383,13 +412,12 @@ async function legacyAttribution(
 }
 
 /**
- * The legacy closer of a departure, which closes the work of the employee whose
- * access it has just ended: it has no access gate, and it runs only in the
- * departure's work transaction.
+ * The legacy closer for trusted enlisted closures. It may end already-live work
+ * after access ends, and runs only inside the enclosing work transaction.
  */
-const departureLegacyClocking = createClockingService({
+const enlistedLegacyClocking = createClockingService({
 	transaction: () => {
-		throw new Error("A departure clock-out runs in its departure work transaction");
+		throw new Error("An enlisted clock-out runs in its enclosing work transaction");
 	},
 	storeForCoordinatedTransaction: (scope) => createDatabaseClockingStore(scope.db),
 });
@@ -419,8 +447,7 @@ async function closeLegacyClockOut(
 	);
 	const endTime = dateFromInstant(eventInstant);
 	let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
-	const closer =
-		writer.writer === DEPARTURE_CLOCK_OUT_WRITER.writer ? departureLegacyClocking : clockingService;
+	const closer = command.principal.kind !== "user" ? enlistedLegacyClocking : clockingService;
 	const closed = await closer.clockOut({
 		coordination,
 		actionId: command.identity.id,
@@ -485,6 +512,7 @@ async function closeLegacyClockOut(
 			organizationId: employee.organizationId,
 			employeeId: employee.id,
 			actorUserId: command.principal.userId,
+			completingActor: completingActor(command),
 			workPeriodId: target.workPeriodId,
 			start: target.start,
 			end: eventInstant,
@@ -496,4 +524,10 @@ async function closeLegacyClockOut(
 		},
 		receipt: null,
 	};
+}
+
+function completingActor(command: ClockOutCommand) {
+	return command.principal.kind === "automatic_clock_out"
+		? { kind: "system" as const, process: "automatic_clock_out" as const }
+		: undefined;
 }

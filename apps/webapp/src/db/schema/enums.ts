@@ -251,6 +251,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"approval_escalation_attention",
 	// Employee offboarding follow-up review (admins/owners, primary manager)
 	"employee_offboarding_review",
+	"automatic_clock_out",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [

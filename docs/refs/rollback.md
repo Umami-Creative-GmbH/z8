@@ -34,7 +34,7 @@ first, or no compatible rollback exists). The overall verdict is the worst secti
 | Append adoption | The append control mode and its activation, and the employee positions by admission |
 | Approval cards | Delivery controls, presentation controls, open delivery work by provider and effect |
 | Escalation | Ownership, whether automation is paused, and pending time/expense approvals with a committed transfer |
-| Durable work | Balance rebuild intents, break adjustment intents, payroll jobs in flight with stored input, held import rows |
+| Durable work | Balance rebuild intents, break adjustment intents, payroll jobs in flight with stored input, held import rows, automatic clock-out executions/tasks/settings |
 | Floors | Committed rows that pin the oldest schema a rollback may keep, and the rows that also pin the oldest code it may target |
 
 ### Findings
@@ -55,6 +55,8 @@ first, or no compatible rollback exists). The overall verdict is the worst secti
 | `payroll_jobs_in_flight` | blocker | Export jobs not yet finished that have stored input. A release without #322 ignores stored inputs, so a retry would reread work. Drain or complete them. |
 | `break_adjustments_pending` | hold | Automatic break adjustment intents. A binary without #441 ignores them, and they stay inert until re-adoption. |
 | `import_rows_held` | hold | Import rows held by the reviewed-import commit. Older code neither clears nor re-commits them. Never reset them by hand (#284). |
+| `automatic_clock_out_work_pending` | blocker | Pending, processing or failed automatic clock-out tasks. Keep compatible recovery running and drain them; failed tasks require explicit operator resolution. Disabling enforcement does not cancel committed follow-ups or employee notifications. |
+| `automatic_clock_out_enforcement_running` | hold | Persisted enabled automatic clock-out settings can admit new closures. Pause enforcement through Organization Settings before a rollback window, or explicitly retain compatible enforcement and recovery. |
 
 ### Schema and release floors
 
@@ -65,6 +67,7 @@ Every committed value that a migration admitted pins that migration:
 - legacy card lifecycles (0093), replacement work (0096), cycle-keyed legacy delivery (0108)
   and legacy escalation replacement delivery (0109);
 - rebuild intents (0099, 0101), the historical repair control (0102), payroll inputs and control (0104), proposals and continuation positions (0105), and break adjustment intents (0106).
+- automatic clock-out executions, tasks in every status, and persisted settings (0111), including receipt-less legacy closures.
 
 `floor.schema` is the newest pinned migration. Never narrow a CHECK or drop a column or
 table below it: the rows would be rejected, or lose the remote identities and replay
@@ -78,12 +81,28 @@ evidence they hold.
 - cycle-keyed legacy delivery, because binaries below #384 plan cycle rows source-wide;
 - legacy escalation replacement delivery, because binaries below #408 plan initial cards
   for transferred legacy requests and never retire former holders' cards as "Reassigned";
+- automatic clock-out executions and tasks (0111): older code cannot preserve their
+  system attribution and delivery recovery. Completed tasks still pin the release;
+  draining clears the pending-work blocker without lowering either evidence floor;
 - any value this release does not know, which a newer release committed. It pins as
   `unknown (newer than this release)`.
 
 The other pins are rows that earlier releases ignore safely (#296, #305, #311, #320,
 #322, #323). They limit only the schema. Pins are constraints on the target, not
 findings: they never change the verdict.
+
+Automatic clock-out settings alone pin the schema, but do not pin the code. Persisted
+enabled settings add the enforcement hold above; persisted disabled settings do not.
+The reader does not invent settings rows for implicit defaults or receipts for legacy
+closures. An organization with no automatic evidence or settings gets no automatic
+pin or finding. Because missing settings effectively enable enforcement, operators
+must still pause fresh automatic closures through Organization Settings for every
+affected organization before draining a rollback window. Keep the five-minute worker
+running on a compatible release to recover committed tasks after this pause. Never
+delete executions, tasks or settings to clear findings, and never mark failed work
+completed merely to obtain `ready`. A failed task needs an explicit, evidenced recovery
+decision; an older binary alone cannot provide it. These code floors constrain the
+target even when the report is `ready` and every delivery has completed.
 
 ### Not visible to the report
 

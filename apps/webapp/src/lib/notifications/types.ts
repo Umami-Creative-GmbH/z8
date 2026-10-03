@@ -55,9 +55,15 @@ export const NOTIFICATION_TYPES = [
 	"approval_escalation_attention",
 	// Employee offboarding follow-up review
 	"employee_offboarding_review",
+	"automatic_clock_out",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+/** System closure evidence is always delivered to the employee's inbox. */
+export function hasMandatoryInbox(type: NotificationType): boolean {
+	return type === "automatic_clock_out";
+}
 
 // Notification channel enum values
 export const NOTIFICATION_CHANNELS = [

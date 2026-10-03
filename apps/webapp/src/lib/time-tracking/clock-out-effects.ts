@@ -51,13 +51,16 @@ export type ClosedWork = {
  * dated at the work's start: the day and week whose totals broke the rule
  * (#548). When the check runs does not matter.
  */
-export async function checkComplianceAfterClockOut(input: {
-	employeeId: string;
-	organizationId: string;
-	workPeriodId: string;
-	work: ClosedWork;
-	timezone: string;
-}): Promise<ComplianceWarning[]> {
+export async function checkComplianceAfterClockOut(
+	input: {
+		employeeId: string;
+		organizationId: string;
+		workPeriodId: string;
+		work: ClosedWork;
+		timezone: string;
+	},
+	options: { throwOnError?: boolean } = {},
+): Promise<ComplianceWarning[]> {
 	const { employeeId, organizationId, workPeriodId, work } = input;
 	try {
 		const totals = await readComplianceTotals({
@@ -110,6 +113,7 @@ export async function checkComplianceAfterClockOut(input: {
 
 		return await Effect.runPromise(complianceEffect);
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.error({ error }, "Failed to check compliance after clock-out");
 		return [];
 	}
@@ -162,6 +166,7 @@ export async function enforceBreaksAfterClockOut(input: {
 export async function checkProjectBudgetAfterClockOut(
 	projectId: string,
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<void> {
 	const assignedProject = await db.query.project.findFirst({
 		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
@@ -183,11 +188,14 @@ export async function checkProjectBudgetAfterClockOut(
 
 	const totalHours = await getProjectTotalHours(projectId, organizationId);
 
-	await checkProjectBudgetWarnings({
-		projectId,
-		projectName: assignedProject.name,
-		organizationId,
-		budgetHours,
-		usedHours: totalHours,
-	});
+	await checkProjectBudgetWarnings(
+		{
+			projectId,
+			projectName: assignedProject.name,
+			organizationId,
+			budgetHours,
+			usedHours: totalHours,
+		},
+		options,
+	);
 }

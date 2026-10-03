@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
+import { installedCli } from "@/test/installed-cli";
 import { buildApprovalMessage, buildResolvedApprovalMessage } from "./formatters";
 
 const execFileAsync = promisify(execFile);
@@ -43,8 +44,13 @@ describe("Telegram approval temporal formatting", () => {
 		if (process.env.TELEGRAM_TEMPORAL_HONOLULU_HOST === "1") return;
 
 		await execFileAsync(
-			"pnpm",
-			["exec", "vitest", "run", "src/lib/telegram/formatters.temporal.test.ts", "--reporter=dot"],
+			process.execPath,
+			[
+				installedCli("vitest"),
+				"run",
+				"src/lib/telegram/formatters.temporal.test.ts",
+				"--reporter=dot",
+			],
 			{
 				cwd: process.cwd(),
 				env: {

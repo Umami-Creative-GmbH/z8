@@ -9,6 +9,7 @@
 		"drizzle-orm": "^0.45.2",
 		"luxon": "^3.7.2",
 		"pg": "^8.23.0",
+		"temporal-polyfill": "1.0.4",
 		"zod": "^4.5.4"
 	}
 }

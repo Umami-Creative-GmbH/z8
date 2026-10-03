@@ -40,7 +40,10 @@ interface BudgetWarningParams {
  * Check and send budget warning notifications for a project
  * Called after time is booked to a project
  */
-export async function checkProjectBudgetWarnings(params: BudgetWarningParams): Promise<void> {
+export async function checkProjectBudgetWarnings(
+	params: BudgetWarningParams,
+	options: { throwOnError?: boolean } = {},
+): Promise<void> {
 	try {
 		const percentUsed = (params.usedHours / params.budgetHours) * 100;
 
@@ -103,23 +106,26 @@ export async function checkProjectBudgetWarnings(params: BudgetWarningParams): P
 
 				await Promise.all(
 					managers.map((manager) =>
-						createNotification({
-							userId: manager.userId,
-							organizationId: params.organizationId,
-							type: notificationType,
-							title,
-							message,
-							entityType: "project",
-							entityId: params.projectId,
-							actionUrl: "/settings/projects",
-							metadata: {
-								projectName: params.projectName,
-								threshold,
-								usedHours: params.usedHours,
-								budgetHours: params.budgetHours,
-								percentUsed: Math.round(percentUsed),
+						createNotification(
+							{
+								userId: manager.userId,
+								organizationId: params.organizationId,
+								type: notificationType,
+								title,
+								message,
+								entityType: "project",
+								entityId: params.projectId,
+								actionUrl: "/settings/projects",
+								metadata: {
+									projectName: params.projectName,
+									threshold,
+									usedHours: params.usedHours,
+									budgetHours: params.budgetHours,
+									percentUsed: Math.round(percentUsed),
+								},
 							},
-						}),
+							options,
+						),
 					),
 				);
 			}),
@@ -141,6 +147,7 @@ export async function checkProjectBudgetWarnings(params: BudgetWarningParams): P
 		);
 	} catch (error) {
 		logger.error({ error, params }, "Failed to check project budget warnings");
+		if (options.throwOnError) throw error;
 	}
 }
 

@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	getWorkPeriodsForMonth,
-	workPeriodOverlapsCalendarMonth,
-} from "./work-period-service";
+import { automaticClockOutExecution, workPeriod } from "@/db/schema";
+import { getWorkPeriodsForMonth, workPeriodOverlapsCalendarMonth } from "./work-period-service";
 
 const mockOperators = vi.hoisted(() => ({
 	and: vi.fn((...conditions: unknown[]) => ({ conditions, type: "and" })),
@@ -51,6 +49,54 @@ vi.mock("@/db", () => ({
 	},
 }));
 
+function automaticPeriod() {
+	return {
+		period: {
+			id: "period-auto",
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			startTime: new Date("2026-05-04T06:00:00Z"),
+			endTime: new Date("2026-05-04T18:00:00Z"),
+			durationMinutes: 720,
+			isActive: false,
+			clockInId: "in-1",
+			clockOutId: "out-auto",
+		},
+		user: { id: "user-1", name: "Ada" },
+		clockInEntry: {
+			id: "in-1",
+			type: "clock_in",
+			createdBy: "user-1",
+			createdAt: new Date("2026-05-04T06:00:00Z"),
+			utcOffsetMinutes: 120,
+			timezone: "Europe/Berlin",
+		},
+		clockOutEntry: {
+			id: "out-auto",
+			type: "clock_out",
+			createdBy: "source-admin",
+			createdAt: new Date("2026-05-04T18:03:00Z"),
+			utcOffsetMinutes: 120,
+			timezone: "Europe/Berlin",
+			notes: "editable note",
+		},
+		clockOutEditorName: "Source Admin",
+		clockInEditorName: "Ada",
+		automaticExecution: {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			workPeriodId: "period-auto",
+			clockOutEntryId: "out-auto",
+			startTime: new Date("2026-05-04T06:00:00Z"),
+			cutoffTime: new Date("2026-05-04T18:00:00Z"),
+			maxUninterruptedMinutes: 720,
+			processedAt: new Date("2026-05-04T18:03:00Z"),
+		},
+		surcharge: null,
+		project: null,
+	};
+}
+
 describe("getWorkPeriodsForMonth", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
@@ -71,6 +117,101 @@ describe("getWorkPeriodsForMonth", () => {
 	afterEach(() => {
 		vi.useRealTimers();
 		vi.clearAllMocks();
+	});
+
+	it("exposes immutable scoped execution evidence for the standing automatic endpoint", async () => {
+		mockDb.where.mockResolvedValue([automaticPeriod()]);
+		const [event] = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		expect(event.metadata.automaticClockOut).toEqual({
+			cutoffAt: "2026-05-04T18:00:00Z",
+			limitMinutes: 720,
+			processedAt: "2026-05-04T18:03:00Z",
+		});
+		expect(event.metadata.editedByName).toBeUndefined();
+		expect(mockDb.leftJoin).toHaveBeenCalledWith(automaticClockOutExecution, {
+			type: "and",
+			conditions: [
+				{
+					type: "eq",
+					column: automaticClockOutExecution.organizationId,
+					value: workPeriod.organizationId,
+				},
+				{ type: "eq", column: automaticClockOutExecution.employeeId, value: workPeriod.employeeId },
+				{
+					type: "eq",
+					column: automaticClockOutExecution.clockOutEntryId,
+					value: workPeriod.clockOutId,
+				},
+			],
+		});
+	});
+	it("retains human correction audit and removes automatic metadata from its new endpoint", async () => {
+		const row = automaticPeriod();
+		row.period.clockOutId = "correction-1";
+		row.period.endTime = new Date("2026-05-04T17:00:00Z");
+		row.clockOutEntry = {
+			...row.clockOutEntry,
+			id: "correction-1",
+			type: "correction",
+			createdBy: "manager-1",
+			createdAt: new Date("2026-05-05T10:00:00Z"),
+		};
+		row.clockOutEditorName = "Grace Manager";
+		mockDb.where.mockResolvedValue([row]);
+		const [event] = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		expect(event.metadata.automaticClockOut).toBeUndefined();
+		expect(event.metadata.editedByName).toBe("Grace Manager");
+		expect(event.metadata.editedAt).toEqual(new Date("2026-05-05T10:00:00Z"));
+	});
+	it("preserves automatic clock-out source after a start-only human correction", async () => {
+		const row = automaticPeriod();
+		row.period.startTime = new Date("2026-05-04T07:00:00Z");
+		row.period.clockInId = "in-correction";
+		row.clockInEntry = {
+			...row.clockInEntry,
+			id: "in-correction",
+			type: "correction",
+			createdBy: "manager-1",
+			createdAt: new Date("2026-05-05T10:00:00Z"),
+		};
+		row.clockInEditorName = "Grace Manager";
+		mockDb.where.mockResolvedValue([row]);
+		const [event] = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		expect(event.metadata.automaticClockOut).toMatchObject({
+			limitMinutes: 720,
+			cutoffAt: "2026-05-04T18:00:00Z",
+		});
+		expect(event.metadata.editedByName).toBe("Grace Manager");
+	});
+	it.each(["organizationId", "employeeId", "clockOutEntryId"] as const)(
+		"refuses mismatched execution %s",
+		async (key) => {
+			const row = automaticPeriod();
+			row.automaticExecution[key] = "other";
+			mockDb.where.mockResolvedValue([row]);
+			const [event] = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+			expect(event.metadata.automaticClockOut).toBeUndefined();
+		},
+	);
+	it("keeps the automatic terminal source after a break deduction or split carries it to another segment", async () => {
+		const row = automaticPeriod();
+		row.period.id = "period-terminal-segment";
+		row.period.startTime = new Date("2026-05-04T16:00:00Z");
+		mockDb.where.mockResolvedValue([row]);
+		const [event] = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		expect(event.id).toBe("period-terminal-segment");
+		expect(event.metadata.automaticClockOut).toEqual({
+			cutoffAt: "2026-05-04T18:00:00Z",
+			limitMinutes: 720,
+			processedAt: "2026-05-04T18:03:00Z",
+		});
+	});
+	it("does not label a modified endpoint time automatic", async () => {
+		const row = automaticPeriod();
+		row.period.endTime = new Date("2026-05-04T17:00:00Z");
+		mockDb.where.mockResolvedValue([row]);
+		const [event] = await getWorkPeriodsForMonth(4, 2026, { organizationId: "org-1" });
+		expect(event.metadata.automaticClockOut).toBeUndefined();
 	});
 
 	it("uses employee calendar timezone boundaries when querying month work periods", async () => {

@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
+import { compareInstants } from "@/lib/datetime/temporal-core";
+import type { AutoClockOutDecision } from "../automatic-clock-out/types";
 import { createOrdinaryApprovalRuntime } from "../ordinary-approval-runtime";
 import {
 	type WebClockInTransactionInput,
@@ -30,11 +32,12 @@ export type DepartureEnlistment = {
  */
 export interface ClockTransactions {
 	/**
-	 * Set only by the enlisted adapter. A departure principal runs only through
-	 * the adapter enlisted for its departure, and nothing else runs there (#476
-	 * decision 20).
+	 * Set only by trusted enlisted adapters. Their principal runs only inside its
+	 * matching departure or automatic closure, and nothing else runs there.
 	 */
-	readonly enlistment?: DepartureEnlistment;
+	readonly enlistment?:
+		| ({ kind: "departure" } & DepartureEnlistment)
+		| { kind: "automatic_clock_out"; decision: Readonly<AutoClockOutDecision> };
 	/** A closure's work transaction, with its approval participation. */
 	run<T>(
 		scope: WebClockOutTransactionInput,
@@ -57,7 +60,7 @@ export function coordinatedTransactions(): ClockTransactions {
 }
 
 function refuseApproval(): never {
-	throw new Error("A departure clock-out does not participate in approval");
+	throw new Error("An enlisted clock-out does not participate in approval");
 }
 
 /**
@@ -66,7 +69,7 @@ function refuseApproval(): never {
  */
 const noApproval = new Proxy({} as ApprovalWorkflowTransactionContext, { get: refuseApproval });
 
-/** The closure's context over one savepoint of the departure's sealed scope. */
+/** The closure's context over one savepoint of its coordinator's sealed scope. */
 function enlistedContext(
 	savepoint: WorkTransactionScope<WorkRoute, unknown>,
 ): WorkTransactionContext {
@@ -97,7 +100,7 @@ export function enlistedTransactions(
 	enlistment: DepartureEnlistment,
 ): ClockTransactions {
 	return {
-		enlistment,
+		enlistment: { kind: "departure", ...enlistment },
 		run(input, operation) {
 			if (
 				input.organizationId !== enlistment.organizationId ||
@@ -108,5 +111,33 @@ export function enlistedTransactions(
 			return scope.savepoint((savepoint) => operation(enlistedContext(savepoint)));
 		},
 		start: () => Promise.reject(new Error("A departure only closes work")),
+	};
+}
+
+/** Trusted composition only: closes exactly the decision protected by this scope. */
+export function automaticClockOutTransactions(
+	scope: WorkTransactionScope,
+	decision: AutoClockOutDecision,
+): ClockTransactions {
+	scope.assertEmployee(decision.organizationId, decision.employeeId);
+	const bound = Object.freeze({
+		...decision,
+		settings: Object.freeze({ ...decision.settings }),
+	});
+	return {
+		enlistment: Object.freeze({ kind: "automatic_clock_out", decision: bound }),
+		run(input, operation) {
+			if (
+				input.organizationId !== bound.organizationId ||
+				input.employeeId !== bound.employeeId ||
+				input.userId !== bound.provenanceUserId ||
+				input.submissionId !== bound.operationId ||
+				(input.workPeriodId !== undefined && input.workPeriodId !== bound.workPeriodId) ||
+				(input.endTime !== undefined && compareInstants(input.endTime, bound.cutoff) !== 0)
+			)
+				return Promise.reject(new Error("Clock command is outside its automatic closure"));
+			return scope.savepoint((savepoint) => operation(enlistedContext(savepoint)));
+		},
+		start: () => Promise.reject(new Error("An automatic clock-out only closes work")),
 	};
 }

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import type { SurchargeCalculationDetails } from "@/db/schema";
 import {
+	automaticClockOutExecution,
 	employee,
 	project,
 	surchargeCalculation,
@@ -118,12 +119,28 @@ export async function getWorkPeriodsForMonth(
 				clockOutEditorName: clockOutEditor.name,
 				surcharge: surchargeCalculation,
 				project: project,
+				automaticExecution: {
+					organizationId: automaticClockOutExecution.organizationId,
+					employeeId: automaticClockOutExecution.employeeId,
+					clockOutEntryId: automaticClockOutExecution.clockOutEntryId,
+					cutoffTime: automaticClockOutExecution.cutoffTime,
+					maxUninterruptedMinutes: automaticClockOutExecution.maxUninterruptedMinutes,
+					processedAt: automaticClockOutExecution.processedAt,
+				},
 			})
 			.from(workPeriod)
 			.innerJoin(employee, eq(workPeriod.employeeId, employee.id))
 			.innerJoin(user, eq(employee.userId, user.id))
 			.leftJoin(clockInEntry, eq(workPeriod.clockInId, clockInEntry.id))
 			.leftJoin(clockOutEntry, eq(workPeriod.clockOutId, clockOutEntry.id))
+			.leftJoin(
+				automaticClockOutExecution,
+				and(
+					eq(automaticClockOutExecution.organizationId, workPeriod.organizationId),
+					eq(automaticClockOutExecution.employeeId, workPeriod.employeeId),
+					eq(automaticClockOutExecution.clockOutEntryId, workPeriod.clockOutId),
+				),
+			)
 			.leftJoin(clockInEditor, eq(clockInEntry.createdBy, clockInEditor.id))
 			.leftJoin(clockOutEditor, eq(clockOutEntry.createdBy, clockOutEditor.id))
 			.leftJoin(
@@ -146,6 +163,7 @@ export async function getWorkPeriodsForMonth(
 				clockOutEditorName,
 				surcharge,
 				project: proj,
+				automaticExecution,
 			}) => {
 				const notes = clockOutEntry?.notes?.trim();
 				const projectPrefix = proj?.name ? `[${proj.name}] ` : "";
@@ -204,6 +222,26 @@ export async function getWorkPeriodsForMonth(
 					};
 				}
 
+				// Historical execution remains system evidence only while its endpoint stands.
+				// A start-only correction keeps the automatic clock-out and its own human audit.
+				const automaticClockOut =
+					automaticExecution &&
+					automaticExecution.organizationId === filters.organizationId &&
+					automaticExecution.organizationId === period.organizationId &&
+					automaticExecution.employeeId === period.employeeId &&
+					automaticExecution.clockOutEntryId === period.clockOutId &&
+					clockOutEntry?.id === period.clockOutId &&
+					period.endTime &&
+					compareInstants(
+						instantFromDate(period.endTime),
+						instantFromDate(automaticExecution.cutoffTime),
+					) === 0
+						? {
+								cutoffAt: instantFromDate(automaticExecution.cutoffTime).toString(),
+								limitMinutes: automaticExecution.maxUninterruptedMinutes,
+								processedAt: instantFromDate(automaticExecution.processedAt).toString(),
+							}
+						: undefined;
 				const editedBy = resolveWorkPeriodEditedBy({
 					ownerUserId: user.id,
 					endpoints: [
@@ -213,12 +251,14 @@ export async function getWorkPeriodsForMonth(
 							createdAt: clockInEntry.createdAt,
 							editorName: clockInEditorName ?? null,
 						},
-						clockOutEntry && {
-							type: clockOutEntry.type,
-							createdBy: clockOutEntry.createdBy,
-							createdAt: clockOutEntry.createdAt,
-							editorName: clockOutEditorName ?? null,
-						},
+						clockOutEntry && !automaticClockOut
+							? {
+									type: clockOutEntry.type,
+									createdBy: clockOutEntry.createdBy,
+									createdAt: clockOutEntry.createdAt,
+									editorName: clockOutEditorName ?? null,
+								}
+							: null,
 					],
 				});
 				const durationMinutes = period.durationMinutes ?? 0;
@@ -272,6 +312,7 @@ export async function getWorkPeriodsForMonth(
 						notes: notes || undefined,
 						startTime: startTimeFormatted,
 						endTime: endTimeFormatted,
+						...(automaticClockOut && { automaticClockOut }),
 						// Project fields (only included if assigned to a project)
 						...(proj && {
 							projectId: proj.id,

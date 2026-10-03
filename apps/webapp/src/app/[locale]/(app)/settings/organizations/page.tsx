@@ -8,6 +8,7 @@ import * as authSchema from "@/db/auth-schema";
 import { organizationNotificationSettings } from "@/db/schema";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { loadAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
@@ -37,6 +38,7 @@ async function OrganizationsPageContent() {
 		currentMember,
 		memberCountRows,
 		organizationNotificationSettingsRecord,
+		autoClockOutSettings,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -62,6 +64,7 @@ async function OrganizationsPageContent() {
 			),
 			columns: { defaultLanguage: true },
 		}),
+		loadAutoClockOutSettings(db, organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -89,6 +92,7 @@ async function OrganizationsPageContent() {
 
 	return (
 		<OrganizationsPageClient
+			autoClockOutSettings={autoClockOutSettings}
 			organization={organization}
 			memberCount={memberCountRows[0]?.value ?? 0}
 			currentMemberRole={

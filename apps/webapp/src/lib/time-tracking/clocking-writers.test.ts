@@ -1,12 +1,25 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { clockSource, liveClockOutWriter } from "./close-active-work";
 
 function source(relativePath: string) {
 	return readFileSync(fileURLToPath(new URL(relativePath, import.meta.url)), "utf8");
 }
 
 describe("live clocking writers", () => {
+	it("records the automatic closure as its own writer and source", () => {
+		expect(liveClockOutWriter("automatic-clock-out")).toEqual({
+			writer: "automatic_clock_out",
+			writerVersion: 1,
+			deviceInfo: "automatic-clock-out",
+			ipAddress: null,
+		});
+		expect(clockSource("automatic-clock-out")).toEqual({
+			deviceInfo: "automatic-clock-out",
+			ipAddress: null,
+		});
+	});
 	it("routes API, web actions, and bot commands through the canonical transactional writer", () => {
 		const api = source("../../app/api/time-entries/route.ts");
 		const mobileApi = source("../../app/api/mobile/time-clock/route.ts");

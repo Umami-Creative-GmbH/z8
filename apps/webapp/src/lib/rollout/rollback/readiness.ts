@@ -45,6 +45,8 @@ export type RollbackFindingCode =
 	| "rebuild_intents_pending"
 	| "payroll_jobs_in_flight"
 	| "break_adjustments_pending"
+	| "automatic_clock_out_work_pending"
+	| "automatic_clock_out_enforcement_running"
 	| "import_rows_held";
 
 export interface RollbackFinding {
@@ -120,6 +122,14 @@ export interface RollbackSnapshot {
 		}>;
 	};
 	durable: {
+		automaticClockOut: {
+			executions: number;
+			tasks: number;
+			/** Pending, processing and failed tasks still require compatible recovery. */
+			unfinishedTasks: number;
+			settings: number;
+			enabledSettings: number;
+		};
 		rebuildIntents: { organization: number; user: number };
 		breakAdjustments: number;
 		/** Payroll export jobs not yet finished whose work input is stored (#322). */
@@ -163,6 +173,7 @@ export interface RollbackEscalationReadiness extends Section {
 }
 
 export interface RollbackDurableReadiness extends Section {
+	automaticClockOut: RollbackSnapshot["durable"]["automaticClockOut"];
 	rebuildIntents: { organization: number; user: number };
 	breakAdjustments: number;
 	payrollJobsInFlight: number;
@@ -241,6 +252,7 @@ const RECEIPT_WRITER_MIGRATIONS: Record<CompletedWorkWriter, string> = {
 	historical_repair_proposal: "0105_historical_work_proposals",
 	automatic_break_enforcement: "0106_automatic_break_adjustment",
 	employee_departure: "0110_departure_clock_out_writer",
+	automatic_clock_out: "0111_automatic_clock_out",
 };
 
 const PROVIDER_MIGRATIONS: Record<ApprovalDeliveryProvider, string> = {
@@ -407,6 +419,18 @@ function assessEscalation({ escalation }: RollbackSnapshot): RollbackEscalationR
 
 function assessDurable({ durable }: RollbackSnapshot): RollbackDurableReadiness {
 	const findings: RollbackFinding[] = [];
+	counted(
+		findings,
+		"automatic_clock_out_work_pending",
+		"blocker",
+		durable.automaticClockOut.unfinishedTasks,
+	);
+	counted(
+		findings,
+		"automatic_clock_out_enforcement_running",
+		"hold",
+		durable.automaticClockOut.enabledSettings,
+	);
 	// Pre-#421 binaries ignore intents, and pre-#428 ones widen user intents.
 	counted(
 		findings,
@@ -422,6 +446,7 @@ function assessDurable({ durable }: RollbackSnapshot): RollbackDurableReadiness 
 	counted(findings, "import_rows_held", "hold", durable.heldImportRows);
 	return section(
 		{
+			automaticClockOut: durable.automaticClockOut,
 			rebuildIntents: durable.rebuildIntents,
 			breakAdjustments: durable.breakAdjustments,
 			payrollJobsInFlight: durable.payrollJobsInFlight,
@@ -510,6 +535,24 @@ function assessFloor(snapshot: RollbackSnapshot): RollbackReadiness["floor"] {
 	pin("0104_payroll_work_collection", "payroll stored inputs", durable.payrollStoredInputs);
 	pin("0105_historical_work_proposals", "historical work proposals", durable.proposals);
 	pin("0106_automatic_break_adjustment", "break adjustment intents", durable.breakAdjustments);
+	// Legacy admission has no completed-work receipt: execution/task rows own its evidence.
+	pin(
+		"0111_automatic_clock_out",
+		"automatic clock-out executions",
+		durable.automaticClockOut.executions,
+		"release",
+	);
+	pin(
+		"0111_automatic_clock_out",
+		"automatic clock-out tasks",
+		durable.automaticClockOut.tasks,
+		"release",
+	);
+	pin(
+		"0111_automatic_clock_out",
+		"automatic clock-out settings",
+		durable.automaticClockOut.settings,
+	);
 
 	pins.sort(
 		(left, right) =>
