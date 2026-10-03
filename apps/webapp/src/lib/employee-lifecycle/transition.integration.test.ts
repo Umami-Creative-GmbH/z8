@@ -3,11 +3,11 @@
  * Exercises the serialized departure transition against real locks and triggers.
  */
 import { sql } from "drizzle-orm";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { runDepartureTransaction } from "./departure-transaction";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
@@ -30,7 +30,7 @@ function recordingClockOut(result: DepartureClockOutResult = { kind: "not_runnin
 	return { port, calls };
 }
 
-describeLifecycleDatabase("departure transition", () => {
+describe("departure transition", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {
@@ -77,7 +77,9 @@ describeLifecycleDatabase("departure transition", () => {
 	}
 
 	function execute(identity: DepartureIdentity, port: DepartureClockOutPort, now = AFTER_CUTOFF) {
-		return fixture.db.transaction((tx) => executeDepartureInTransaction(tx, identity, now, port));
+		return runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, now, port),
+		);
 	}
 
 	async function row<T>(sql: string, params: unknown[]) {
@@ -184,13 +186,13 @@ describeLifecycleDatabase("departure transition", () => {
 		const failingPort: DepartureClockOutPort = {
 			async close(input) {
 				// A write inside the savepoint that must not survive the failure.
-				await input.transaction.execute(sql`
+				await input.scope.db.execute(sql`
 					insert into employee_departure_task
 					(organization_id, employee_id, employment_period_id, kind, dedupe_key)
 					values (${input.organizationId}, ${input.employeeId}, ${input.employmentPeriodId},
 					        'clock_postprocess', ${orphanKey})
 				`);
-				await input.transaction.execute(sql`select 1 / 0`);
+				await input.scope.db.execute(sql`select 1 / 0`);
 				return { kind: "not_running" };
 			},
 		};

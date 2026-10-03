@@ -32,7 +32,12 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { DatevLohnConfig } from "@/lib/payroll-export/types";
 
 interface DatevConfigFormProps {
@@ -74,12 +79,23 @@ export function DatevConfigForm({
 				});
 
 				if (result.success) {
-					toast.success(t("settings.payrollExport.datev.saveSuccess", "Configuration saved"));
+					toast.success(
+						t(
+							"settings.payrollExport.datev.saveSuccess",
+							"Configuration saved",
+						),
+					);
 					onConfigSaved?.();
 				} else {
-					toast.error(t("settings.payrollExport.datev.saveError", "Failed to save configuration"), {
-						description: result.error,
-					});
+					toast.error(
+						t(
+							"settings.payrollExport.datev.saveError",
+							"Failed to save configuration",
+						),
+						{
+							description: result.error,
+						},
+					);
 				}
 			});
 		},
@@ -99,7 +115,7 @@ export function DatevConfigForm({
 					<div className="flex items-center gap-4">
 						<Image
 							src="/datev.svg"
-							alt="DATEV Logo"
+							alt={t("common.brandLogo", "{brand} logo", { brand: "DATEV" })}
 							width={48}
 							height={48}
 							className="size-12 dark:invert"
@@ -143,7 +159,10 @@ export function DatevConfigForm({
 								<div className="space-y-2">
 									<div className="flex items-center gap-2">
 										<Label htmlFor="mandantennummer">
-											{t("settings.payrollExport.datev.mandantennummer", "Mandantennummer")}
+											{t(
+												"settings.payrollExport.datev.mandantennummer",
+												"Mandantennummer",
+											)}
 										</Label>
 										<TooltipProvider>
 											<Tooltip>
@@ -190,7 +209,10 @@ export function DatevConfigForm({
 								<div className="space-y-2">
 									<div className="flex items-center gap-2">
 										<Label htmlFor="beraternummer">
-											{t("settings.payrollExport.datev.beraternummer", "Beraternummer")}
+											{t(
+												"settings.payrollExport.datev.beraternummer",
+												"Beraternummer",
+											)}
 										</Label>
 										<TooltipProvider>
 											<Tooltip>
@@ -233,7 +255,10 @@ export function DatevConfigForm({
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
 									<Label htmlFor="personnelNumberType">
-										{t("settings.payrollExport.datev.personnelNumberType", "Personnel Number Type")}
+										{t(
+											"settings.payrollExport.datev.personnelNumberType",
+											"Personnel Number Type",
+										)}
 									</Label>
 									<TooltipProvider>
 										<Tooltip>
@@ -253,7 +278,9 @@ export function DatevConfigForm({
 								</div>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) => field.handleChange(v as "employeeNumber" | "employeeId")}
+									onValueChange={(v) =>
+										field.handleChange(v as "employeeNumber" | "employeeId")
+									}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -282,7 +309,10 @@ export function DatevConfigForm({
 							<div className="flex items-center justify-between rounded-lg border p-4">
 								<div className="space-y-0.5">
 									<Label htmlFor="includeZeroHours" className="text-base">
-										{t("settings.payrollExport.datev.includeZeroHours", "Include Zero Hours")}
+										{t(
+											"settings.payrollExport.datev.includeZeroHours",
+											"Include Zero Hours",
+										)}
 									</Label>
 									<p className="text-sm text-muted-foreground">
 										{t(

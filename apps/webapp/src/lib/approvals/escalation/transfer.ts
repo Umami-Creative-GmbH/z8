@@ -17,8 +17,10 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
+import { readApprovalAuthoritySnapshots } from "../authority";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	type ApprovalAssignmentSnapshot,
@@ -66,9 +68,7 @@ import {
 	type DatabaseTransaction,
 	type EscalationRuntime,
 	employeeNames,
-	fixedGateContext,
 	isTransitionRace,
-	readDecisionAuthorityForDiscovery,
 	readEscalationOwnership,
 	readEscalationPolicy,
 } from "./transfer-context";
@@ -187,7 +187,7 @@ function unsupportedReplacementRoute(
 ): string | null {
 	return unsupportedCanonicalReplacementRoute({
 		workflowType: current.workflowType,
-		mirror: gate.behavior.mirror,
+		compatibilityWriting: gate.compatibilityWriting,
 		pendingSiblingCount: pendingSiblings(current).length,
 	});
 }
@@ -203,7 +203,7 @@ async function compatibilityConflict(
 	gate: ApprovalWriteGateResult,
 ): Promise<JsonObject | null> {
 	const legacyId = current.stage.legacyApprovalRequestId;
-	if (!legacyId || gate.behavior.mirror !== "canonical_to_legacy") return null;
+	if (!legacyId || !gate.compatibilityWriting) return null;
 	const [legacy] = await tx
 		.select({
 			approverId: approvalRequest.approverId,
@@ -548,15 +548,15 @@ export async function processDueEscalations(input: {
 	// actionableAt >= assignedAt (or the request's creation) for every
 	// evidence kind, so this prefilter never skips due work.
 	const cutoff = now.subtract({ hours: policy.responseWindowHours });
-	// Each kind's authority selects what is discovered; every transfer
-	// transaction re-reads the mode under that kind's write gate.
-	const authorities = await readDecisionAuthorityForDiscovery(
+	// Each kind's authority snapshot selects what is discovered; every
+	// transfer transaction re-reads it under that kind's write gate.
+	const authorities = await readApprovalAuthoritySnapshots(
 		db,
 		organizationId,
 		ESCALATION_WORKFLOW_TYPES,
 	);
 	const canonicalTypes = CANONICAL_ESCALATION_WORKFLOW_TYPES.filter(
-		(workflowType) => authorities.get(workflowType) === "canonical",
+		(workflowType) => authorities.get(workflowType)?.authority === "canonical",
 	);
 	const legacyEntityTypes = (
 		Object.keys(LEGACY_ESCALATION_ENTITY_TYPES) as LegacyEscalationEntityType[]
@@ -566,7 +566,8 @@ export async function processDueEscalations(input: {
 		// while any time kind is legacy-authoritative (#439).
 		LEGACY_ESCALATION_ENTITY_TYPES[entityType].some(
 			(workflowType) =>
-				workflowType === "travel_expense" || authorities.get(workflowType) === "legacy",
+				workflowType === "travel_expense" ||
+				authorities.get(workflowType)?.authority === "legacy",
 		),
 	);
 
@@ -601,7 +602,9 @@ export async function processDueEscalations(input: {
 
 	const summary: ProcessDueEscalationsSummary = {
 		...emptySummary(organizationId, "processed"),
-		authorities: Object.fromEntries(authorities),
+		authorities: Object.fromEntries(
+			[...authorities].map(([workflowType, { authority }]) => [workflowType, authority]),
+		),
 	};
 	const runtime = createEscalationRuntime(null);
 	for (const item of work) {
@@ -742,7 +745,7 @@ async function processDueAssignment(
 			return { kind: "suppressed" };
 		}
 		const gate = await context.writeGate.acquire({ organizationId, workflowType });
-		if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+		if (gate.authority !== "canonical") {
 			// Legacy-authoritative kinds transfer (or are held) through their own path.
 			return { kind: "legacy_authority" };
 		}
@@ -845,7 +848,10 @@ async function processDueAssignment(
 		});
 		const committed = await commitCanonicalTransfer({
 			runtime,
-			context: fixedGateContext(context, organizationId, gate, workflowType),
+			context: {
+				...context,
+				writeGate: pinApprovalWriteGate({ organizationId, workflowType, authority: gate }),
+			},
 			current,
 			recipientEmployeeId: decision.recipientEmployeeId,
 			operationKey,
@@ -980,7 +986,7 @@ async function prepareHumanEscalation(
 		organizationId: actor.organizationId,
 		workflowType,
 	});
-	if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+	if (gate.authority !== "canonical") {
 		return { kind: "unsupported", route: "legacy_authority" };
 	}
 	const snapshot = await context.repository.loadSnapshot({
@@ -1114,12 +1120,14 @@ export async function escalateAssignmentByManager(input: {
 				const policy = await readEscalationPolicy(tx, actor.organizationId);
 				const outcome = await commitCanonicalTransfer({
 					runtime,
-					context: fixedGateContext(
-						context,
-						actor.organizationId,
-						prepared.gate,
-						prepared.current.workflowType,
-					),
+					context: {
+						...context,
+						writeGate: pinApprovalWriteGate({
+							organizationId: actor.organizationId,
+							workflowType: prepared.current.workflowType,
+							authority: prepared.gate,
+						}),
+					},
 					current: prepared.current,
 					recipientEmployeeId: recipient.employeeId,
 					operationKey,

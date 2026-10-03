@@ -13,13 +13,9 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -27,38 +23,16 @@ const harness = vi.hoisted(() => ({
 	logs: [] as { context: unknown; message: unknown }[],
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -74,10 +48,9 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("./shared", async (importOriginal) => {
 	const original = await importOriginal<typeof import("./shared")>();
@@ -92,27 +65,6 @@ vi.mock("./shared", async (importOriginal) => {
 
 const { clockIn, addBreakToActiveSession: addBreakAction } = await import("./clocking");
 const { addBreakToActiveSession: addBreakFromCalendarActions } = await import("../actions");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`active break PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t304-active-break-org",
@@ -139,9 +91,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("web active breaks through the close/resume operation on PostgreSQL", () => {
+describe("web active breaks through the close/resume operation on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string) {
 		harness.userId = userId;
@@ -294,23 +246,6 @@ describeIntegration("web active breaks through the close/resume operation on Pos
 		await setAdmission("active");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Active break PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.logs.length = 0;
 		await seed();
@@ -318,9 +253,6 @@ describeIntegration("web active breaks through the close/resume operation on Pos
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("closes and resumes adopted work in one operation with exact endpoints and carried attribution", async () => {

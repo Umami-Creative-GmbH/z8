@@ -15,52 +15,27 @@
 
 import { randomUUID } from "node:crypto";
 import { Effect, Layer } from "effect";
-import { Pool, type PoolClient } from "pg";
+import type { PoolClient } from "pg";
 import type Stripe from "stripe";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -96,15 +71,9 @@ vi.mock("@/lib/billing/billing-system-email", () => ({
 	sendBillingSystemEmail: async () => undefined,
 }));
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+);
 
 vi.mock("./approvals", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./approvals")>()),
@@ -138,27 +107,6 @@ const { SubscriptionService } = await import("@/lib/effect/services/billing/subs
 const { requireBillingForMutation } = await import("@/lib/billing/guard");
 const { StripeService } = await import("@/lib/effect/services/billing/stripe.service");
 const { SeatSyncService } = await import("@/lib/effect/services/billing/seat-sync.service");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`manual billing PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t317-billing-org",
@@ -252,9 +200,9 @@ function manualCommand(overrides: Partial<ManualTimeEntryCommand> = {}): ManualT
 	};
 }
 
-describeIntegration("manual command billing revalidation on PostgreSQL", () => {
+describe("manual command billing revalidation on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 8 });
+	const admin = integrationAdminPool();
 	const configurationKey = JSON.stringify(["work-organization-configuration", ids.organization]);
 	const previousBillingEnabled = env.BILLING_ENABLED;
 
@@ -399,20 +347,6 @@ describeIntegration("manual command billing revalidation on PostgreSQL", () => {
 	}
 
 	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Manual billing PostgreSQL is disabled");
-		}
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = "true";
 	});
 
@@ -423,9 +357,6 @@ describeIntegration("manual command billing revalidation on PostgreSQL", () => {
 	afterAll(async () => {
 		(env as { BILLING_ENABLED: "true" | "false" }).BILLING_ENABLED = previousBillingEnabled;
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	describe("concurrent billing changes", () => {

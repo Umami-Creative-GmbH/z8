@@ -245,7 +245,7 @@ canonical authority is skipped as `canonicalAuthority`), locks the request
 | Journal and the request's lineage disagree, lineage unreadable, or current approver is not the last replacement | hold `ambiguous_history` |
 | Policy disabled or before the exact deadline | not due |
 | Chain stage (the stage row binds the approver) | hold `unsupported_route` once due |
-| Shadow/ready request without an observed pending workflow | hold `unsupported_route` (`legacy_observation_missing`) |
+| Shadow/ready request whose observed workflow is not pending, or (time kinds) names another pending holder | hold `ambiguous_history` (`legacy_observation_contradicted`) |
 | Lineage already had a scheduled transfer | hold `replacement_overdue` |
 | No eligible candidate | hold `no_eligible_backup` |
 | Otherwise | transfer to the first ordered candidate |
@@ -339,8 +339,9 @@ cancellation removed the request.
 - Everything under [Activation blockers](#activation-blockers) (ownership
   writer, delivery, starvation).
 - Legacy chain stages are held, not transferred.
-- Shadow/ready requests submitted before shadowing have no observation and are
-  held (`legacy_observation_missing`).
+- Shadow/ready requests submitted before shadowing have no observed workflow;
+  the legacy write coordinator late-mirrors them before mirroring the transfer
+  (#475, approvals ADR 0001).
 - Replacement notification and old-card retirement: since #408, escalation's
   replacement pass expands legacy absence and expense transfer events into
   their legacy delivery lifecycle (replacement card, "Reassigned" former
@@ -615,16 +616,17 @@ read (`submission`, `timeCorrectionOriginalWorkMetadata`, workflow bindings).
 ### Shadow mirroring
 
 With `mirror = legacy_to_canonical` (`shadow`, `ready`), the transfer mirrors
-into the pending observation the work period is bound to
-(`work_period.approval_workflow_id`), against that observation's version, in
-the transfer's transaction. Both captures accept a well-formed `escalation`
+into the observed workflow of the request (the workflow of the work period's
+kind with a stage for the request, found by the legacy write coordinator),
+against that workflow's version, in the transfer's transaction. A request
+submitted before shadowing has none: the coordinator late-mirrors it first
+(#475). Both captures accept a well-formed `escalation`
 key (`splitLegacyEscalationLineage`) and carry it on the captured request, so
 the planner rebuilds former holders, the current holder and `pendingSince`
 exactly as for absences. A malformed or accessor lineage fails the capture.
 Holds instead of a transfer:
 
-- No bound pending observation: `legacy_observation_missing` (once due).
-- An observation whose pending holder for the request is not the request's
+- An observed workflow that is not pending, or whose pending holder for the request is not the request's
   approver: `ambiguous_history` with cause `legacy_observation_contradicted`.
   The mirror rebuilds history from legacy rows, so it would overwrite such an
   observation instead of reconciling it.

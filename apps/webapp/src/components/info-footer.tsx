@@ -37,7 +37,9 @@ export function InfoFooter() {
 					{t("info.trust-center", "Trust Center")}
 				</a>
 				{" · "}
-				<Link href="/licenses">Open Source Licenses</Link>
+				<Link href="/licenses">
+					{t("info.openSourceLicenses", "Open Source Licenses")}
+				</Link>
 			</div>
 		</div>
 	);

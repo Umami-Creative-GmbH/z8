@@ -8,6 +8,7 @@ import * as authSchema from "./auth-schema";
 import { getPostgresSslConfig } from "./postgres-ssl";
 import { configurePostgresUtcTypes, withUtcPostgresSession } from "./postgres-utc";
 import * as schema from "./schema";
+import { refuseConnectionsInUnitTestProject } from "./unit-project-guard";
 
 const logger = createLogger("Database");
 
@@ -27,21 +28,23 @@ configurePostgresUtcTypes();
 
 function createPool(): Pool {
 	return new Pool(
-		withUtcPostgresSession({
-			host: env.POSTGRES_HOST!,
-			port: Number(env.POSTGRES_PORT!),
-			database: env.POSTGRES_DB!,
-			user: env.POSTGRES_USER!,
-			password: env.POSTGRES_PASSWORD!,
-			ssl: getPostgresSslConfig(),
-			options: env.PGOPTIONS,
-			// With PgBouncer handling connection pooling, we can use smaller app-side pools
-			// PgBouncer manages the actual connections to PostgreSQL
-			max: parseInt(env.POSTGRES_POOL_MAX || "10", 10),
-			min: parseInt(env.POSTGRES_POOL_MIN || "2", 10),
-			idleTimeoutMillis: 30000, // 30 seconds - connections return to pool faster
-			connectionTimeoutMillis: 10000, // 10 seconds - more generous timeout for high load
-		}),
+		refuseConnectionsInUnitTestProject(
+			withUtcPostgresSession({
+				host: env.POSTGRES_HOST!,
+				port: Number(env.POSTGRES_PORT!),
+				database: env.POSTGRES_DB!,
+				user: env.POSTGRES_USER!,
+				password: env.POSTGRES_PASSWORD!,
+				ssl: getPostgresSslConfig(),
+				options: env.PGOPTIONS,
+				// With PgBouncer handling connection pooling, we can use smaller app-side pools
+				// PgBouncer manages the actual connections to PostgreSQL
+				max: parseInt(env.POSTGRES_POOL_MAX || "10", 10),
+				min: parseInt(env.POSTGRES_POOL_MIN || "2", 10),
+				idleTimeoutMillis: 30000, // 30 seconds - connections return to pool faster
+				connectionTimeoutMillis: 10000, // 10 seconds - more generous timeout for high load
+			}),
+		),
 	);
 }
 

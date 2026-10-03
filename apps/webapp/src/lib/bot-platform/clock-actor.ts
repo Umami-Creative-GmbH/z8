@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { ClockActor } from "@/app/[locale]/(app)/time-tracking/actions/clocking";
+import type { ClockActor } from "@/lib/time-tracking/clocking/types";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
 import type { BotCommandContext } from "@/lib/bot-platform/types";

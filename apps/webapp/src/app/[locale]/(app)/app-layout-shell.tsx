@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslate } from "@tolgee/react";
 import {
 	Sidebar,
 	SidebarContent,
@@ -9,6 +12,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function AuthenticatedAppShell() {
+	const { t } = useTranslate();
 	return (
 		<SidebarProvider
 			style={
@@ -35,7 +39,13 @@ export function AuthenticatedAppShell() {
 					<Skeleton className="h-10 w-full" />
 				</SidebarFooter>
 			</Sidebar>
-			<SidebarInset aria-busy="true" aria-label="Loading application">
+			<SidebarInset
+				aria-busy="true"
+				aria-label={t(
+					"common.loadingRegions.application",
+					"Loading application",
+				)}
+			>
 				<header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b px-4 lg:px-6">
 					<Skeleton className="size-7" />
 					<Skeleton className="h-5 w-36" />

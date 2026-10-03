@@ -1,25 +1,16 @@
 import "server-only";
 
-import { db } from "@/db";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
-import type {
-	ApprovalWorkflowDatabase,
-	ApprovalWorkflowRepository,
-} from "@/lib/approvals/workflow/repository";
+import {
+	type ApprovalRuntimeFactory,
+	approvalWorkTransactionPort,
+} from "@/lib/approvals/workflow/work-transaction-port";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import { lockWebClockOutResources, routeWebClockOutResources } from "./web-clock-out-resources";
 import {
-	assertSameWebClockOutResources,
-	lockWebClockOutResources,
-	routeWebClockOutResources,
-	WorkTransactionScopeChanged,
-} from "./web-clock-out-resources";
-import {
-	acquireAdoptionGate,
-	acquireEmployeeCoordination,
-	acquireOrganizationConfigurationGuard,
-	acquireUserConfigurationAccessGuards,
-	readAppendAdmission,
-	sealWorkTransactionScope,
+	runWorkTransaction,
+	type SealedWorkTransactionScope,
+	type WorkRoute,
 	type WorkTransactionAdmission,
 	type WorkTransactionScope,
 } from "./work-transaction";
@@ -27,7 +18,7 @@ import {
 export type { WorkTransactionClient } from "./work-transaction";
 
 /** Trusted server composition only; no transaction/savepoint or adoption upgrade capability. */
-export interface WorkTransactionContext extends WorkTransactionScope {
+export interface WorkTransactionContext extends SealedWorkTransactionScope {
 	readonly approval: ApprovalWorkflowTransactionContext;
 	/**
 	 * Read from the organization's append control under the adoption gate. `append`
@@ -67,122 +58,77 @@ function refuseApprovalRouting(): never {
 	throw new Error("Live clock-out does not route approval");
 }
 
-type ApprovalRuntimeFactory = (database: ApprovalWorkflowDatabase) => {
-	repository: ApprovalWorkflowRepository;
-};
-
-export async function withWebClockOutTransaction<T>(
+/**
+ * Web clock-out as a work transaction. The routed resources decide the
+ * coordinated users and employees, the source identities (the terminal-break
+ * ownership key and each routed source period's submission keys) and the row
+ * locks; the policy clock-out write gate stays pinned, because replay of a
+ * committed clock-out that carries historical approval evidence reads through it.
+ */
+export function withWebClockOutTransaction<T>(
 	input: WebClockOutTransactionInput,
 	createApprovalRuntime: ApprovalRuntimeFactory,
 	operation: (context: WorkTransactionContext) => Promise<T>,
 ): Promise<T> {
-	for (let attempt = 0; ; attempt += 1) {
-		try {
-			return await runAttempt(input, createApprovalRuntime, operation);
-		} catch (error) {
-			if (!(error instanceof WorkTransactionScopeChanged) || attempt >= 2)
-				throw error;
-		}
-	}
+	return runWorkTransaction(
+		{
+			organizationId: input.organizationId,
+			approval: approvalWorkTransactionPort(createApprovalRuntime),
+			route: async (db) => {
+				const resources = await routeWebClockOutResources(db, input);
+				const ids = (table: string) =>
+					resources.filter((row) => row.table === table).map((row) => row.id);
+				return {
+					users: ids("user"),
+					employees: ids("employee"),
+					writeTargets: [input.employeeId],
+					approvalGate: "policy_clock_out",
+					// The existing terminal-break/work-balance ownership key, then each
+					// source period's submission keys; not a second employee key.
+					sourceIdentities: [
+						[input.organizationId, input.employeeId],
+						...resources
+							.filter((row) => row.table === "work_period" && row.source)
+							.flatMap((row) =>
+								["manual_time_submission", "policy_clock_out"].map((kind) => [
+									input.organizationId,
+									kind,
+									"time_entry",
+									row.id,
+								]),
+							),
+					],
+					snapshot: resources,
+				};
+			},
+			lockRows: (db, route) => lockWebClockOutResources(db, input, route.snapshot),
+		},
+		(scope) =>
+			operation(
+				sealWorkTransactionContext(scope, {
+					approval: {
+						...scope.approval,
+						activationResolver: {
+							async resolve() {
+								return refuseApprovalRouting();
+							},
+						},
+					},
+					assertParticipant: refuseApprovalRouting,
+					assertApprovalPolicy: refuseApprovalRouting,
+				}),
+			),
+	);
 }
 
-async function runAttempt<T>(
-	input: WebClockOutTransactionInput,
-	createApprovalRuntime: ApprovalRuntimeFactory,
-	operation: (context: WorkTransactionContext) => Promise<T>,
-): Promise<T> {
-	return db.transaction(async (transaction) => {
-		const routed = await routeWebClockOutResources(transaction, input);
-		let active = true;
-		const assertActive = () => {
-			if (!active) throw new Error("Work transaction is no longer active");
-		};
-		// The approval repository constructs its usual collaborators and checks its
-		// reservation/CAS invariants, borrowing this transaction rather than nesting one.
-		const runtime = createApprovalRuntime({
-			transaction: async (callback) => {
-				assertActive();
-				return callback(transaction);
-			},
-		});
-		try {
-			return await runtime.repository.withTransaction(async (approval) => {
-				await acquireAdoptionGate(transaction, input.organizationId);
-				const admission = await readAppendAdmission(transaction, input.organizationId);
-				const authority = await approval.writeGate.acquire({
-					organizationId: input.organizationId,
-					workflowType: "policy_clock_out",
-				});
-				await acquireOrganizationConfigurationGuard(
-					transaction,
-					input.organizationId,
-				);
-				await acquireUserConfigurationAccessGuards(
-					transaction,
-					routed.filter((row) => row.table === "user").map((row) => row.id),
-				);
-				await acquireEmployeeCoordination(
-					transaction,
-					routed
-						.filter((row) => row.table === "employee")
-						.map((row) => row.id),
-				);
-				assertSameWebClockOutResources(
-					routed,
-					await routeWebClockOutResources(transaction, input),
-				);
-				await lockWebClockOutResources(transaction, input, routed);
-				assertSameWebClockOutResources(
-					routed,
-					await routeWebClockOutResources(transaction, input),
-				);
-				// The policy clock-out write gate stays: replay of a committed clock-out
-				// that carries historical approval evidence reads through it.
-				const writeGate: ApprovalWorkflowTransactionContext["writeGate"] = {
-					async acquire(scope) {
-						assertActive();
-						if (
-							scope.organizationId !== input.organizationId ||
-							scope.workflowType !== "policy_clock_out"
-						) {
-							throw new Error("Approval scope is outside the work transaction");
-						}
-						return authority;
-					},
-				};
-				return operation(
-					sealWorkTransactionScope({
-						db: transaction,
-						approval: {
-							...approval,
-							activationResolver: {
-								async resolve() {
-									return refuseApprovalRouting();
-								},
-							},
-							writeGate,
-							compatibilityWriter:
-								approval.compatibilityWriter.withWriteGate(writeGate),
-						},
-						admission,
-						assertParticipant: refuseApprovalRouting,
-						assertApprovalPolicy: refuseApprovalRouting,
-						assertEmployee(organizationId: string, employeeId: string) {
-							assertActive();
-							if (
-								organizationId !== input.organizationId ||
-								employeeId !== input.employeeId
-							) {
-								throw new Error(
-									"Employee scope is outside the work transaction",
-								);
-							}
-						},
-					}),
-				);
-			});
-		} finally {
-			active = false;
-		}
-	});
+/**
+ * The operation's context over a coordinator scope with approval checks. The
+ * scope's restart, savepoint and route stay with the coordinator writer.
+ */
+export function sealWorkTransactionContext<C extends WorkTransactionContext>(
+	scope: WorkTransactionScope<WorkRoute, ApprovalWorkflowTransactionContext>,
+	context: Omit<C, keyof SealedWorkTransactionScope>,
+): C {
+	const { restart: _restart, savepoint: _savepoint, route: _route, ...sealed } = scope;
+	return Object.freeze({ ...sealed, ...context }) as C;
 }

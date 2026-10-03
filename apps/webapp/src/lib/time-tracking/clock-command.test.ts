@@ -1,8 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
-	admitClockCommandAge,
 	checkBreakClockContinuity,
 	parseClockCommand,
 	verifyClockCommandContext,
@@ -241,42 +239,6 @@ describe("break commands (#281)", () => {
 		};
 		expect(assess(within)).toBeNull();
 		expect(assess(beyond)).toEqual({ code: "clock_discontinuity", from: "lastActivity" });
-	});
-});
-
-describe("admitClockCommandAge", () => {
-	const now = parseInstant("2026-09-25T12:00:00Z");
-	const at = (offset: { minutes?: number; days?: number; milliseconds?: number }) =>
-		now.add({
-			minutes: offset.minutes ?? 0,
-			hours: (offset.days ?? 0) * 24,
-			milliseconds: offset.milliseconds ?? 0,
-		});
-
-	it("admits immediate commands up to five minutes past or future, inclusive", () => {
-		expect(admitClockCommandAge("immediate", at({ minutes: -5 }), now)).toEqual({ admitted: true });
-		expect(admitClockCommandAge("immediate", at({ minutes: 5 }), now)).toEqual({ admitted: true });
-		expect(admitClockCommandAge("immediate", at({ minutes: -5, milliseconds: -1 }), now)).toEqual({
-			admitted: false,
-			reason: "too_old",
-		});
-		expect(admitClockCommandAge("immediate", at({ minutes: 5, milliseconds: 1 }), now)).toEqual({
-			admitted: false,
-			reason: "in_future",
-		});
-	});
-
-	it("admits delayed commands up to seven elapsed days past and five minutes future", () => {
-		expect(admitClockCommandAge("delayed", at({ days: -7 }), now)).toEqual({ admitted: true });
-		expect(admitClockCommandAge("delayed", at({ minutes: 5 }), now)).toEqual({ admitted: true });
-		expect(admitClockCommandAge("delayed", at({ days: -7, milliseconds: -1 }), now)).toEqual({
-			admitted: false,
-			reason: "too_old",
-		});
-		expect(admitClockCommandAge("delayed", at({ minutes: 5, milliseconds: 1 }), now)).toEqual({
-			admitted: false,
-			reason: "in_future",
-		});
 	});
 });
 

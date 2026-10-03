@@ -5,9 +5,10 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import type { Pool } from "pg";
+import { beforeEach, describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool, openIntegrationPool } from "@/test/integration-database";
 import {
 	APPROVAL_EXPANSION_CONTRACT,
 	type ApprovalExpansionCatalog,
@@ -34,33 +35,7 @@ import {
 	type ApprovalWorkflowDatabase,
 	createApprovalWorkflowRepository,
 } from "./repository";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "./repository-integration-harness";
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`approval workflow repository PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 const organizationOne = "integration-org-1";
 const organizationTwo = "integration-org-2";
 const userOne = "integration-user-1";
@@ -532,8 +507,8 @@ function materializedPlanWithChildUpdates(): ApprovalMaterializedTransitionPlan 
 	};
 }
 
-describeIntegration("approval workflow repository PostgreSQL contract", () => {
-	const pool = new Pool({ connectionString: databaseUrl, max: 8 });
+describe("approval workflow repository PostgreSQL contract", () => {
+	const pool = integrationAdminPool();
 	const database = drizzle({ client: pool });
 	const repository = createApprovalWorkflowRepository({
 		db: database as unknown as ApprovalWorkflowDatabase,
@@ -547,25 +522,6 @@ describeIntegration("approval workflow repository PostgreSQL contract", () => {
 			plan: async () => commandResult(organizationOne, workflowOne),
 		},
 		clock: { nowInstant: () => now },
-	});
-
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await pool.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error(
-				"Approval workflow repository integration test is not enabled",
-			);
-		}
 	});
 
 	beforeEach(async () => {
@@ -604,10 +560,6 @@ describeIntegration("approval workflow repository PostgreSQL contract", () => {
 		await seedOrganizationGraph(organizationTwo, userTwo, employeeTwo);
 		await seedRoot(organizationOne, workflowOne, employeeOne);
 		await seedRoot(organizationTwo, workflowTwo, employeeTwo);
-	});
-
-	afterAll(async () => {
-		await pool.end();
 	});
 
 	async function seedOrganizationGraph(
@@ -1112,7 +1064,7 @@ describeIntegration("approval workflow repository PostgreSQL contract", () => {
 			releaseWinner = resolve;
 		});
 		let winnerClaim: unknown;
-		const observer = new Pool({ connectionString: databaseUrl, max: 1 });
+		const observer = openIntegrationPool({ max: 1 });
 		const loserApplicationName = `approval-workflow-loser-${randomUUID()}`;
 		let loser: Promise<unknown> | undefined;
 		const winner = repository.withTransaction(

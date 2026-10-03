@@ -15,13 +15,9 @@
 
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -29,54 +25,50 @@ const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
 	server: "https://app.t275.test" as string | null,
 	notifications: [] as string[],
-	/** Runs once between a submission's replay check and its fresh preflight. */
+	/**
+	 * Runs once between a submission's replay check and its fresh preflight: the
+	 * holiday check of a start or break, or a clock-out's project eligibility.
+	 */
 	beforeFreshPreflight: null as (() => Promise<void>) | null,
 }));
+
+async function runFreshPreflightHook() {
+	const hook = harness.beforeFreshPreflight;
+	harness.beforeFreshPreflight = null;
+	await hook?.();
+}
 
 vi.mock("@/lib/time-tracking/validation", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/time-tracking/validation")>();
 	return {
 		...original,
 		validateTimeEntry: async (...args: Parameters<typeof original.validateTimeEntry>) => {
-			const hook = harness.beforeFreshPreflight;
-			harness.beforeFreshPreflight = null;
-			await hook?.();
+			await runFreshPreflightHook();
 			return original.validateTimeEntry(...args);
 		},
 	};
 });
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
+vi.mock("@/lib/time-tracking/project-eligibility", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/time-tracking/project-eligibility")>();
+	return {
+		...original,
+		isProjectEligible: async (...args: Parameters<typeof original.isProjectEligible>) => {
+			await runFreshPreflightHook();
+			return original.isProjectEligible(...args);
+		},
+	};
 });
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -92,11 +84,9 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billing/guard")>()),
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async (importOriginal) =>
+	(await import("@/test/integration-harness")).billingGuard(importOriginal),
+);
 
 vi.mock("@/lib/domain/request-origin", () => ({
 	resolvePublicRequestOrigin: async () => {
@@ -131,27 +121,6 @@ const commands = await import("./route");
 const lookupRoute = await import("./[operationId]/route");
 const legacyRoute = await import("../route");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`direct clock commands PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t275-clock-command-org",
@@ -247,9 +216,9 @@ async function lookup(operationId: string) {
 	return { status: response.status, body: (await response.json()) as Record<string, any> };
 }
 
-describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
+describe("frozen direct-HTTP clock commands on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -380,23 +349,6 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		await setAdmission("active");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Direct clock command PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.now = now;
 		harness.server = server;
@@ -408,9 +360,6 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	/**
@@ -932,7 +881,8 @@ describeIntegration("frozen direct-HTTP clock commands on PostgreSQL", () => {
 		harness.now = now.add({ hours: 2 });
 		const close = clockOutCommand(
 			{ clockInOperationId: start.operationId },
-			{ occurredAt: harness.now.toString() },
+			// Its project's eligibility is the preflight read the hook precedes.
+			{ occurredAt: harness.now.toString(), project: { kind: "replace", id: ids.projectA } },
 		);
 		let first: Awaited<ReturnType<typeof submit>> | undefined;
 		// The identical request commits after this retry's replay check, so the

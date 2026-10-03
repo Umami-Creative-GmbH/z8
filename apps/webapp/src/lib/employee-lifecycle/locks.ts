@@ -1,31 +1,58 @@
-import { sql } from "drizzle-orm";
-import { protectAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
-import type { LifecycleTransaction } from "./types";
+import { and, eq, sql } from "drizzle-orm";
+import { employee } from "@/db/schema";
+import { AuthorizationScopeChanged } from "@/lib/authorization/authorization-mutation";
+import {
+	employeeCoordinationGuard,
+	holdGuard,
+	userConfigurationAccessGuard,
+} from "@/lib/time-tracking/work-transaction/ranks";
+import type { LifecycleClient } from "./types";
 
 /**
- * Lock order for lifecycle transitions: exclusive configuration/access
- * protection of the employee's user (#313: transitions change access and
- * active state, which manual creation reads under the shared counterpart, and
- * #264 ranks it before employee coordination), then the employee advisory lock
- * (the canonical clocking key; sorted by ID when several are needed), then the
- * organization row, then scoped rows. Clocking already holds the employee lock
- * before its surcharge snapshot locks the organization row, so taking the
- * organization first here could deadlock a departure against a clock-out.
- * Member/owner mutations and the owner-invariant triggers take the same
+ * Lifecycle transitions take their guards in the acquisition protocol's rank
+ * order (#264, #477): exclusive configuration/access protection of the employee's user
+ * (#313: transitions change access and active state, which manual creation
+ * reads under the shared counterpart), then the employee key (the canonical
+ * clocking key), then the organization row, then scoped rows. A departure runs
+ * as a work transaction (`departure-transaction.ts`) whose coordinator takes
+ * these after the shared adoption gate. The other lifecycle commands keep their
+ * own transactions and take the same guards here, recorded in the transaction's
+ * ledger. Member/owner mutations and the owner-invariant triggers take the same
  * organization row lock, so owner checks still serialize with them.
  */
 export async function lockLifecycleScope(
-	tx: LifecycleTransaction,
+	tx: LifecycleClient,
 	organizationId: string,
 	employeeId: string,
 ): Promise<void> {
-	await protectAuthorizationMutation(tx, { organizationId, employeeIds: [employeeId] });
-	await lockLifecycleEmployee(tx, employeeId);
+	const userIds = await lifecycleUserIds(tx, organizationId, employeeId);
+	for (const userId of userIds) {
+		await holdGuard(tx, userConfigurationAccessGuard(userId, "exclusive"));
+	}
+	const held = new Set(userIds);
+	const confirmed = await lifecycleUserIds(tx, organizationId, employeeId);
+	if (confirmed.some((userId) => !held.has(userId))) {
+		throw new AuthorizationScopeChanged();
+	}
+	await holdGuard(tx, employeeCoordinationGuard(employeeId));
 	await lockLifecycleOrganization(tx, organizationId);
 }
 
+/** The users (at most one) whose configuration and access the employee's transition changes. */
+export async function lifecycleUserIds(
+	tx: Pick<LifecycleClient, "select">,
+	organizationId: string,
+	employeeId: string,
+): Promise<string[]> {
+	const rows = await tx
+		.select({ userId: employee.userId })
+		.from(employee)
+		.where(and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId)));
+	return rows.map(({ userId }) => userId);
+}
+
 export async function lockLifecycleOrganization(
-	tx: LifecycleTransaction,
+	tx: Pick<LifecycleClient, "execute">,
 	organizationId: string,
 ): Promise<void> {
 	const result = await tx.execute(sql`
@@ -34,19 +61,11 @@ export async function lockLifecycleOrganization(
 	if (result.rows.length !== 1) throw new Error("organization_not_found");
 }
 
-/** Same key as canonical clocking, so departures serialize with clock actions. */
-export async function lockLifecycleEmployee(
-	tx: LifecycleTransaction,
-	employeeId: string,
-): Promise<void> {
-	await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${employeeId}, 0))`);
-}
-
 /**
  * The executor reads after taking locks and relies on each statement seeing
  * rows committed by transactions it waited for.
  */
-export async function assertReadCommitted(tx: LifecycleTransaction): Promise<void> {
+export async function assertReadCommitted(tx: Pick<LifecycleClient, "execute">): Promise<void> {
 	const result = await tx.execute<{ level: string }>(
 		sql`SELECT current_setting('transaction_isolation') AS level`,
 	);

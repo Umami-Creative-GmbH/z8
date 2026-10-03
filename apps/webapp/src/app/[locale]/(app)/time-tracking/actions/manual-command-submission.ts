@@ -16,6 +16,7 @@ import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 } from "@/lib/time-tracking/close-active-work";
+import { reconcileImmediateSurcharges } from "@/lib/time-tracking/clock-out-effects";
 import {
 	type ManualTimeEntryCommand,
 	parseManualTimeEntryCommand,
@@ -36,8 +37,7 @@ import {
 	sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification,
 } from "./approvals";
-import { createOrdinaryApprovalRuntime } from "./clocking";
-import { reconcileImmediateSurcharges } from "./compliance";
+import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
 import { MANUAL_ENTRY_TARGET_AUTH_ERROR, resolveManualEntryTarget } from "./manual-entry-target";
 import type { ManualActor, ManualPreparationRejection } from "./manual-preparation";
 import { prepareManualWork } from "./manual-preparation";

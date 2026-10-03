@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
+import { screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 
 vi.mock("@/hooks/use-notifications", () => ({
 	useNotifications: () => ({ unreadCount: 3 }),
@@ -13,7 +14,9 @@ vi.mock("@/hooks/use-organization", () => ({
 }));
 
 vi.mock("./notification-popover", () => ({
-	NotificationPopover: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	NotificationPopover: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 describe("NotificationBell", () => {

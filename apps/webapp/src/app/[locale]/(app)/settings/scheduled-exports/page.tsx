@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ScheduledExportsTable } from "@/components/settings/scheduled-exports/scheduled-exports-table";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 import {
@@ -49,10 +50,13 @@ async function ScheduledExportsContent() {
 
 function ScheduledExportsLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-6 p-4 md:p-6"
 			role="status"
-			aria-label="Loading scheduled exports"
+			label={{
+				labelKey: "common.loadingRegions.scheduledExports",
+				labelDefault: "Loading scheduled exports",
+			}}
 		>
 			<div className="space-y-2">
 				<Skeleton aria-hidden="true" className="h-8 w-48" />
@@ -71,7 +75,7 @@ function ScheduledExportsLoading() {
 					</div>
 				</CardContent>
 			</Card>
-		</div>
+		</LoadingRegion>
 	);
 }
 

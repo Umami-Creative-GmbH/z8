@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SkillCatalogManagement } from "@/components/settings/skill-catalog-management";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 
@@ -28,14 +29,17 @@ async function SkillsSettingsPageContent() {
 
 function SkillsSettingsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="flex flex-1 flex-col gap-4 p-4"
 			role="status"
-			aria-label="Loading skill settings"
+			label={{
+				labelKey: "common.loadingRegions.skillSettings",
+				labelDefault: "Loading skill settings",
+			}}
 		>
 			<Skeleton className="h-8 w-48" aria-hidden="true" />
 			<Skeleton className="h-64 w-full" aria-hidden="true" />
-		</div>
+		</LoadingRegion>
 	);
 }
 

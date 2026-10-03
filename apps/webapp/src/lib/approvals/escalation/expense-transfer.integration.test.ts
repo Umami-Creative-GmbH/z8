@@ -16,13 +16,9 @@
  */
 
 import { NextRequest } from "next/server";
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -32,37 +28,15 @@ const harness = vi.hoisted(() => ({
 	versionCounter: 0,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 8,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => undefined,
-}));
-
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -82,25 +56,18 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t326e.example.test",
 }));
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+);
 
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t326-public",
@@ -136,13 +103,14 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 }));
 
-vi.mock("@/lib/vault", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/vault")>()),
-	getOrgSecret: async () => "326326327:AAT326-escalated_expenses",
-}));
+vi.mock("@/lib/vault", async (importOriginal) =>
+	(await import("@/test/integration-harness")).vault(importOriginal, async () => "326326327:AAT326-escalated_expenses"),
+);
 
 // The best-effort fast path only runs the owner sooner; each test runs it explicitly.
-vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: () => undefined }));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(),
+);
 
 const BOT_TOKEN = "326326327:AAT326-escalated_expenses";
 
@@ -161,27 +129,6 @@ const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { parseInstant } = await import("@/lib/datetime/temporal-core");
 const { db } = await import("@/db");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`escalated expenses PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const MANAGER_TELEGRAM_ID = 32_611;
 const MANAGER_CHAT_ID = 326_111;
@@ -223,9 +170,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("escalated legacy travel expenses (PostgreSQL)", () => {
+describe("escalated legacy travel expenses (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 4 });
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 32_610;
 	const originalFetch = globalThis.fetch;
@@ -499,23 +446,6 @@ describeIntegration("escalated legacy travel expenses (PostgreSQL)", () => {
 		return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Escalated expenses PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		actAs(null);
 		calls.length = 0;
@@ -528,9 +458,6 @@ describeIntegration("escalated legacy travel expenses (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("transfers a due expense request at its exact deadline; only the replacement decides it", async () => {

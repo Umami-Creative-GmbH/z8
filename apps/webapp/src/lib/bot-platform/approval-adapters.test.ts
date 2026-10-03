@@ -88,11 +88,46 @@ vi.mock("@/lib/approvals/workflow/runtime", () => ({
 vi.mock("@/lib/approvals/domain-adapters/work-period-legacy-state", () => ({
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: state.legacyEvidence,
 }));
-vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) =>
-	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks or the decision's observation:
+// decisions run the real plan on the work transaction fake (real ledger,
+// recorded guards) over the database of the suite's approval context, routed to
+// the fixture's target. work-period-decision-transaction.test.ts and the
+// PostgreSQL suites prove the observed routing.
+const decisionRouting = vi.hoisted(() => ({
+	kind: "manual_time_submission" as "manual_time_submission" | "policy_clock_out",
+	ownerEmployeeId: "requester",
+}));
+vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/approvals/server/work-period-decision-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withWorkPeriodDecisionTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withWorkPeriodDecisionTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(
+				{
+					...actual.workPeriodDecisionPlan(input, createRuntime),
+					route: async () => {
+						const target = { ...decisionRouting };
+						return {
+							users: [input.actorUserId],
+							employees: [target.ownerEmployeeId],
+							writeTargets: [target.ownerEmployeeId],
+							approvalGate: target.kind,
+							snapshot: { observation: "unobserved", target },
+						};
+					},
+				},
+				operation,
+			),
+	};
+});
 vi.mock(
 	"@/lib/approvals/domain-adapters/legacy-write-coordinator",
 	async (importOriginal) => {
@@ -147,15 +182,18 @@ vi.mock("@/lib/approvals/presentation/bound-card", () => ({
 }));
 // Legacy absence cards (#384): legacy-bound-approval.integration.test.ts. The
 // fixtures here model canonical absence authority.
-vi.mock("@/lib/approvals/evidence/legacy-absence", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-absence")>()),
-	hasLegacyAbsenceAuthority: async () => false,
-}));
+vi.mock("@/lib/approvals/authority", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/approvals/authority")>();
+	return {
+		...actual,
+		readApprovalAuthoritySnapshot: async () => actual.resolveApprovalAuthority("canonical"),
+	};
+});
 // Legacy time cards (#432): legacy-time-bound-approval.integration.test.ts. The
 // time fixtures here have no legacy revision, so they keep the existing path.
 vi.mock("@/lib/approvals/evidence/legacy-time", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-time")>()),
-	isLegacyTimeAuthorityRequest: async () => false,
+	readTimeRequestAuthority: async () => "undetermined",
 }));
 // Historical replays here were never card decisions: no evidence names a binding.
 vi.mock("@/lib/approvals/evidence/store", async (importOriginal) => ({
@@ -220,6 +258,7 @@ vi.mock("@/lib/teams/conversation-manager", () => ({
 
 import { Effect } from "effect";
 import { db } from "@/db";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { handleTelegramUpdate } from "@/lib/telegram/bot-handler";
 import { sendSlackNotification } from "@/lib/notifications/slack-channel";
 import { sendTelegramNotification } from "@/lib/notifications/telegram-channel";
@@ -719,7 +758,7 @@ describe.each(platformCases)(
 						) =>
 							run({
 								dbService: { db },
-								writeGate: { acquire: async () => ({ mode: "legacy" }) },
+								writeGate: { acquire: async () => approvalWriteGateResult("legacy") },
 								compatibilityWriter: { withWriteGate: () => ({}) },
 							}),
 					},

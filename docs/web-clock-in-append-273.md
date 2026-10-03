@@ -31,7 +31,7 @@ Clock-in has no approval participation. One transaction acquires, in order:
 4. The existing exclusive employee key `hashtextextended(employeeId, 0)`.
 5. In append mode, the employee's `time_entry_append_position` row `FOR UPDATE`.
 
-The key builders now live in `lib/time-tracking/work-transaction.ts` and are shared
+The key builders now live in `lib/time-tracking/work-transaction/` and are shared
 with the web clock-out coordinator (#272). Their SQL and order are unchanged there.
 Both coordinators hand the clocking core a sealed `WorkTransactionScope`.
 

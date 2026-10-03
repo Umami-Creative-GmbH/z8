@@ -11,6 +11,7 @@ import {
 	formatInstant,
 	formatPlainDate,
 } from "@/lib/datetime/temporal-format";
+import { readApprovalAuthoritySnapshot } from "../authority";
 import { readApprovalPresentationMode } from "../evidence/invocation";
 import {
 	isLegacyRequestInRevisionLifecycle,
@@ -19,7 +20,6 @@ import {
 	loadLegacyTravelExpenseSubmittedRevision,
 	readApprovalEvidenceMode,
 } from "../evidence/store";
-import { hasLegacyTravelExpenseAuthority } from "../evidence/travel-expense-decision";
 import type { TravelExpenseMoney } from "../evidence/travel-expense-facts";
 import { compareTravelExpenseWithSubmittedRevision } from "../evidence/travel-expense-submission";
 import type { ApprovalDatabase } from "../server/types";
@@ -201,7 +201,11 @@ export async function prepareBoundTravelExpenseCard(
 		.limit(1);
 	if (!request) return null;
 	// Expense claims have legacy authority only; never bind under another.
-	if (!(await hasLegacyTravelExpenseAuthority(database, organizationId))) return null;
+	const { authority } = await readApprovalAuthoritySnapshot(database, {
+		organizationId,
+		workflowType: "travel_expense",
+	});
+	if (authority !== "legacy") return null;
 	const [evidenceMode, presentationMode] = await Promise.all([
 		readApprovalEvidenceMode(database, { organizationId, workflowType: "travel_expense" }),
 		readApprovalPresentationMode(database, {

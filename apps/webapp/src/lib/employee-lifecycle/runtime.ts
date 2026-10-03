@@ -1,7 +1,7 @@
 /**
  * Production composition for the employee lifecycle, shared by the web app
- * and the BullMQ worker. Deliberately free of `server-only` (the worker runs
- * in plain Node) and of Next.js request APIs.
+ * and the BullMQ worker, which resolves `server-only` through its preload
+ * (`src/worker-preload.mjs`). Free of Next.js request APIs at call time.
  */
 import { and, eq } from "drizzle-orm";
 import { Effect, Layer } from "effect";
@@ -16,20 +16,13 @@ import {
 	SubscriptionServiceLive,
 } from "@/lib/effect/services/billing";
 import {
-	BreakEnforcementService,
-	BreakEnforcementServiceLive,
-} from "@/lib/effect/services/break-enforcement.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
-import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
-import {
 	deliverNotificationToChannel,
 	insertInAppNotification,
 	loadNotificationChannelPreferences,
 } from "@/lib/notifications/notification-service";
 import { resolveRecipientNotificationLocale } from "@/lib/notifications/recipient-locale";
 import { secondaryStorage } from "@/lib/redis";
-import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { clockOutFollowUpEffects } from "@/lib/time-tracking/clocking";
 import { createApprovalHandoverHandler, createApprovalHandoverRuntime } from "./approval-handover";
 import { createDepartureClockOut } from "./clock-out";
 import { createClockPostprocessHandler } from "./clock-postprocess";
@@ -111,35 +104,7 @@ export function createProductionDepartureTaskHandlers(options: {
 		// The open clock_repair review is the durable record; nothing is safe to
 		// retry automatically against that period.
 		clock_repair: async () => {},
-		clock_postprocess: createClockPostprocessHandler({
-			enforceBreaks: (input) =>
-				Effect.runPromise(
-					Effect.gen(function* (_) {
-						const breakService = yield* _(BreakEnforcementService);
-						return yield* _(breakService.enforceBreaksAfterClockOut(input));
-					}).pipe(
-						Effect.provide(BreakEnforcementServiceLive),
-						Effect.provide(WorkPolicyServiceLive),
-						Effect.provide(DatabaseServiceLive),
-					),
-				),
-			reconcileSurcharges: (input) =>
-				Effect.runPromise(
-					Effect.gen(function* (_) {
-						const surchargeService = yield* _(SurchargeService);
-						yield* _(
-							surchargeService.reconcileWorkPeriods({
-								organizationId: input.organizationId,
-								employeeId: input.employeeId,
-								surchargePeriodIds: input.affectedWorkPeriodIds,
-								staleSurchargePeriodIds: [],
-								surchargeSnapshot: input.snapshot,
-							}),
-						);
-					}).pipe(Effect.provide(SurchargeServiceLive), Effect.provide(DatabaseServiceLive)),
-				),
-			markWorkBalanceDirty: (input) => markEmployeeWorkBalanceDirty(input),
-		}),
+		clock_postprocess: createClockPostprocessHandler(clockOutFollowUpEffects),
 	};
 }
 

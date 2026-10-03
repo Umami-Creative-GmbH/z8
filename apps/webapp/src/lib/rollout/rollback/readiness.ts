@@ -13,6 +13,8 @@ import {
 	type TimeEntryAppendAdmission,
 	type TimeEntryAppendMode,
 } from "@/db/schema/time-entry-append";
+import { approvalAuthorityOf } from "@/lib/approvals/authority";
+import type { ApprovalWorkflowLifecycleMode } from "@/lib/approvals/workflow/ports";
 
 /**
  * Rollback readiness of one organization (#331 / T66): what a compatible
@@ -78,7 +80,7 @@ export interface RollbackSnapshot {
 			workflowType: string;
 			provider: ApprovalDeliveryProvider;
 			/** The kind's stored rollout mode; null without a rollout row. */
-			lifecycleMode: string | null;
+			lifecycleMode: ApprovalWorkflowLifecycleMode | null;
 		}>;
 		presentationControls: Array<{
 			workflowType: string;
@@ -238,6 +240,7 @@ const RECEIPT_WRITER_MIGRATIONS: Record<CompletedWorkWriter, string> = {
 	work_period_split: "0103_completed_work_split",
 	historical_repair_proposal: "0105_historical_work_proposals",
 	automatic_break_enforcement: "0106_automatic_break_adjustment",
+	employee_departure: "0110_departure_clock_out_writer",
 };
 
 const PROVIDER_MIGRATIONS: Record<ApprovalDeliveryProvider, string> = {
@@ -325,7 +328,7 @@ function pauseLeavesNoCard(control: RollbackSnapshot["cards"]["deliveryControls"
 	if (control.workflowType === "travel_expense") return true;
 	return (
 		control.workflowType === "absence" &&
-		(control.lifecycleMode === "canonical" || control.lifecycleMode === "complete")
+		approvalAuthorityOf(control.lifecycleMode) === "canonical"
 	);
 }
 

@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import {
 	employee as employeeTable,
 	teamMembership as teamMembershipTable,
@@ -55,11 +56,26 @@ const state = vi.hoisted(() => ({
 	events: [] as string[],
 }));
 
-vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
-	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks: corrections run on the work
+// transaction fake (real ledger, recorded guards) over the database of the
+// suite's approval context. The PostgreSQL suites prove the protocol.
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withTimeCorrectionWorkTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withTimeCorrectionWorkTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(actual.timeCorrectionWorkPlan(input, createRuntime), operation),
+	};
+});
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/datetime/temporal-core")>()),
@@ -365,7 +381,12 @@ function configure(result: {
 	const tx = transactionDb();
 	state.withTransaction.mockImplementation(async (operation) => {
 		state.events.push("transaction");
-		const context = { dbService: { db: tx } };
+		const context = {
+			dbService: { db: tx },
+			// The submission owner is stubbed; the coordinator pins a legacy gate.
+			writeGate: { acquire: async () => approvalWriteGateResult("legacy") },
+			compatibilityWriter: { withWriteGate: () => ({}) },
+		};
 		return operation(context);
 	});
 	const autoCompletion = {
@@ -571,6 +592,14 @@ function configureDirectCategoryEdit(input: {
 vi.mock("@/lib/time-tracking/completed-work-transaction", async () => {
 	const { db } = await import("@/db");
 	return {
+		routeCompletedWork: async (
+			_db: unknown,
+			input: { employeeId: string; actorUserId: string | null },
+		) => ({
+			users: input.actorUserId === null ? [] : [input.actorUserId],
+			employees: [input.employeeId],
+			writeTargets: [input.employeeId],
+		}),
 		withCompletedWorkTransaction: (
 			_input: unknown,
 			operation: (scope: unknown) => Promise<unknown>,

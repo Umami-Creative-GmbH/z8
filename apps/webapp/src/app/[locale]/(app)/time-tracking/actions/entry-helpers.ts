@@ -1,130 +1,17 @@
 import "server-only";
 
-// Server-side helpers only (#327): not server actions, so their raw entry writers
-// cannot be invoked from a client without the callers' authorization.
+// Server-side helpers only (#327): not server actions, so they cannot be invoked
+// from a client without the callers' authorization. The raw entry writers live in
+// `@/lib/time-tracking/time-entry-writer` (#524).
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { project, timeEntry, workPeriod } from "@/db/schema";
+import { project, workPeriod } from "@/db/schema";
 import {
-	checkProjectBudgetWarnings,
-	getProjectTotalHours,
-} from "@/lib/notifications/project-notification-triggers";
-import { calculateHash } from "@/lib/time-tracking/blockchain";
-import { isProjectEligible, listEligibleProjects } from "@/lib/time-tracking/project-eligibility";
-import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
-import { getRequestMetadata } from "./auth";
-import { BOOKABLE_PROJECT_STATUSES } from "./shared";
-
-type TimeEntryDbClient = Pick<typeof db, "insert" | "select">;
-type TimeEntryUpdateDbClient = Pick<typeof db, "update">;
-
-export async function createTimeEntry(
-	params: {
-		employeeId: string;
-		organizationId: string;
-		type: "clock_in" | "clock_out" | "correction";
-		timestamp: Date;
-		createdBy: string;
-		utcOffsetMinutes: number;
-		timezone: string;
-		timezoneSource: TimeEntryTimezoneSource;
-		replacesEntryId?: string;
-		notes?: string;
-		location?: string;
-		isSuperseded?: boolean;
-		chainAfter?: Pick<
-			typeof timeEntry.$inferSelect,
-			"id" | "hash" | "employeeId" | "organizationId"
-		>;
-	},
-	client: TimeEntryDbClient = db,
-): Promise<typeof timeEntry.$inferSelect> {
-	const {
-		employeeId,
-		organizationId,
-		type,
-		timestamp,
-		createdBy,
-		utcOffsetMinutes,
-		timezone,
-		timezoneSource,
-		replacesEntryId,
-		notes,
-		location,
-		isSuperseded,
-		chainAfter,
-	} = params;
-
-	if (
-		chainAfter &&
-		(chainAfter.employeeId !== employeeId || chainAfter.organizationId !== organizationId)
-	) {
-		throw new Error(
-			"Time entry chain predecessor must belong to the same employee and organization",
-		);
-	}
-
-	const [previousEntry, { ipAddress, userAgent }] = await Promise.all([
-		chainAfter ??
-			client
-				.select()
-				.from(timeEntry)
-				.where(
-					and(eq(timeEntry.employeeId, employeeId), eq(timeEntry.organizationId, organizationId)),
-				)
-				.orderBy(desc(timeEntry.createdAt))
-				.limit(1)
-				.then(([entry]) => entry),
-		getRequestMetadata(),
-	]);
-	const previousHash = previousEntry?.hash || null;
-	const hash = calculateHash({
-		employeeId,
-		type,
-		timestamp: timestamp.toISOString(),
-		previousHash,
-	});
-
-	const [entry] = await client
-		.insert(timeEntry)
-		.values({
-			employeeId,
-			organizationId,
-			type,
-			timestamp,
-			hash,
-			previousHash,
-			previousEntryId: previousEntry?.id ?? null,
-			ipAddress,
-			deviceInfo: userAgent,
-			createdBy,
-			utcOffsetMinutes,
-			timezone,
-			timezoneSource,
-			replacesEntryId,
-			notes,
-			location,
-			...(isSuperseded === undefined ? {} : { isSuperseded }),
-		})
-		.returning();
-
-	return entry;
-}
-
-export async function markTimeEntrySuperseded(
-	entryId: string,
-	supersededById: string,
-	client: TimeEntryUpdateDbClient = db,
-): Promise<void> {
-	await client
-		.update(timeEntry)
-		.set({
-			isSuperseded: true,
-			supersededById,
-		})
-		.where(eq(timeEntry.id, entryId));
-}
+	BOOKABLE_PROJECT_STATUSES,
+	isProjectEligible,
+	listEligibleProjects,
+} from "@/lib/time-tracking/project-eligibility";
 
 export async function validateProjectAssignment(
 	projectId: string,
@@ -203,37 +90,4 @@ export async function getAssignedProjectsWithHours(
 	}
 
 	return { projectsById, hoursByProjectId };
-}
-
-export async function checkProjectBudgetAfterClockOut(
-	projectId: string,
-	organizationId: string,
-): Promise<void> {
-	const assignedProject = await db.query.project.findFirst({
-		where: and(eq(project.id, projectId), eq(project.organizationId, organizationId)),
-		columns: {
-			id: true,
-			name: true,
-			budgetHours: true,
-		},
-	});
-
-	if (!assignedProject?.budgetHours) {
-		return;
-	}
-
-	const budgetHours = Number.parseFloat(assignedProject.budgetHours);
-	if (Number.isNaN(budgetHours) || budgetHours <= 0) {
-		return;
-	}
-
-	const totalHours = await getProjectTotalHours(projectId, organizationId);
-
-	await checkProjectBudgetWarnings({
-		projectId,
-		projectName: assignedProject.name,
-		organizationId,
-		budgetHours,
-		usedHours: totalHours,
-	});
 }

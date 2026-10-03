@@ -16,6 +16,7 @@ import {
 } from "@/lib/effect/errors";
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseApproved, onTravelExpenseRejected } from "@/lib/notifications/triggers";
+import { acquireApprovalWriteGate } from "../authority";
 import { recordLegacyDeliveryIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
@@ -44,7 +45,6 @@ import {
 } from "../evidence/store";
 import {
 	findLegacyTravelExpenseDecisionReplay,
-	hasLegacyTravelExpenseAuthority,
 	prepareLegacyTravelExpenseDecisionEvidence,
 	recordLegacyTravelExpenseDecisionEvidence,
 	travelExpenseDecisionIdempotencyKey,
@@ -59,7 +59,6 @@ import {
 	resolvePolicyAndCreateApproval,
 } from "../policies/chain-service";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
-import { acquireApprovalWriteLock } from "../workflow/cutover";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import type {
 	ApprovalAction,
@@ -590,8 +589,8 @@ export async function executeTravelExpenseDecisionInTransaction(
 		// A binding is validated only together with its invocation; never ignored.
 		throw new ApprovalEvidenceError("binding_mismatch");
 	}
-	// Shared rollout lock first, so evidence and admission reads are stable.
-	await acquireApprovalWriteLock(dbService, {
+	// Gated read first, so authority, evidence and admission reads are stable.
+	const gate = await acquireApprovalWriteGate(dbService, {
 		organizationId,
 		workflowType: "travel_expense",
 	});
@@ -638,7 +637,7 @@ export async function executeTravelExpenseDecisionInTransaction(
 		}
 		// Expense claims have legacy authority only; a card never decides under
 		// another (#384 cutover rule).
-		if (!(await hasLegacyTravelExpenseAuthority(database, organizationId))) {
+		if (gate.authority !== "legacy") {
 			throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
 		}
 		invocation = { key: approvalInvocationIdempotencyKey(identity), command };

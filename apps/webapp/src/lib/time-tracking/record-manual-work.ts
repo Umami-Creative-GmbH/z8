@@ -56,7 +56,7 @@ import {
 } from "./policy-clock-out-surcharge-snapshot";
 import type { AppendReviewReason } from "./time-entry-append";
 import { loadWorkOccupants } from "./work-occupancy";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const MANUAL_WORK_RESULT_VERSION = 1;
 export const MANUAL_ENTRY_WRITER_VERSION = 1;
@@ -171,7 +171,7 @@ const MANUAL_KIND = "create_completed_work";
  * work that no longer stands is a collision; nothing is re-executed or repaired.
  */
 export async function replayManualWork(
-	scope: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	scope: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	input: { organizationId: string; employeeId: string; command: ManualTimeEntryCommand },
 ): Promise<ManualWorkResult | null> {
 	scope.assertEmployee(input.organizationId, input.employeeId);

@@ -12,7 +12,7 @@ import {
 	mapToHolidayFormValues,
 } from "@/lib/holidays/date-holidays-service";
 import { holidayImportSchema } from "@/lib/holidays/validation";
-import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 /**
  * POST /api/org-admin/holidays/import

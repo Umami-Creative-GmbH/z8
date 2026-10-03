@@ -13,50 +13,24 @@
  * and work-balance marking boundaries are replaced.
  */
 
-import { Pool } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 8,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -76,48 +50,36 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://chain-observation.example.test",
 }));
 
-vi.mock("@/lib/email/email-service", () => ({
-	sendEmail: async () => ({ success: true }),
-}));
+vi.mock("@/lib/email/email-service", async () =>
+	(await import("@/test/integration-harness")).emailService(),
+);
 
-vi.mock("@/lib/email/render", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/email/render")>();
-	return {
-		...original,
-		renderAbsenceRequestSubmitted: async () => "<p>submitted</p>",
-		renderAbsenceRequestPendingApproval: async () => "<p>pending</p>",
-		renderAbsenceRequestApproved: async () => "<p>approved</p>",
-		renderAbsenceRequestRejected: async () => "<p>rejected</p>",
-	};
-});
+vi.mock("@/lib/email/render", async (importOriginal) =>
+	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
+);
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	const ignore = async () => undefined;
-	return {
-		...original,
-		onAbsenceRequestSubmitted: ignore,
-		onAbsenceRequestPendingApproval: ignore,
-		onAbsenceRequestApproved: ignore,
-		onAbsenceRequestRejected: ignore,
-		onApprovedAbsenceCancelledByEmployee: ignore,
-	};
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
+		"onAbsenceRequestSubmitted",
+		"onAbsenceRequestPendingApproval",
+		"onAbsenceRequestApproved",
+		"onAbsenceRequestRejected",
+		"onApprovedAbsenceCancelledByEmployee",
+	]),
+);
 
-vi.mock("@/lib/queue", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/queue")>()),
-	addCalendarSyncJob: async () => undefined,
-}));
+vi.mock("@/lib/queue", async (importOriginal) =>
+	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
+);
 
 vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/work-balance/service")>()),
@@ -128,27 +90,6 @@ const { requestAbsenceEffect } = await import(
 	"@/app/[locale]/(app)/absences/request-absence-effect"
 );
 const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy absence chain observation PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "lacs-legacy-chain-org",
@@ -165,6 +106,7 @@ const ids = {
 	secondStage: "e3193000-0000-4000-8000-000000000003",
 } as const;
 type ObservingRolloutMode = "shadow" | "ready";
+type RolloutMode = "legacy" | ObservingRolloutMode;
 
 function only<T>(rows: readonly T[]): T {
 	const [row] = rows;
@@ -174,8 +116,8 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("legacy absence chain observation (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string) {
 		harness.userId = userId;
@@ -189,7 +131,7 @@ describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
 		]);
 	}
 
-	async function seed(mode: ObservingRolloutMode) {
+	async function seed(mode: RolloutMode) {
 		await cleanup();
 		const timestamp = new Date("2026-07-01T00:00:00Z");
 		await admin.query(
@@ -303,20 +245,6 @@ describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
 	}
 
 	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy absence chain observation PostgreSQL is disabled");
-		}
 		// `defaultNow()` almost always yields microseconds; pin them so the case
 		// never depends on the clock landing on a whole millisecond.
 		await admin.query(
@@ -347,7 +275,6 @@ describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
 			await admin.query(`drop trigger if exists lacs_sub_millisecond_created_at on ${table}`);
 		}
 		await admin.query("drop function if exists lacs_sub_millisecond_created_at()");
-		await admin.end();
 	});
 
 	it.each<ObservingRolloutMode>(["shadow", "ready"])(
@@ -405,6 +332,91 @@ describeIntegration("legacy absence chain observation (PostgreSQL)", () => {
 				submitted_matches_chain: true,
 			});
 			expect(await absenceStatus(absenceId)).toBe("approved");
+		},
+	);
+
+	async function workflowCount(absenceId: string): Promise<number> {
+		const { rows } = await admin.query<{ count: number }>(
+			`select count(*)::int as count from approval_workflow
+			 where organization_id = $1 and source_id = $2`,
+			[ids.organization, absenceId],
+		);
+		return only(rows).count;
+	}
+
+	async function lateMirrorKeys(): Promise<string[]> {
+		const { rows } = await admin.query<{ idempotency_key: string }>(
+			`select idempotency_key from approval_workflow_event
+			 where organization_id = $1 and idempotency_key like 'late-mirror:%'
+			 order by idempotency_key`,
+			[ids.organization],
+		);
+		return rows.map((row) => row.idempotency_key);
+	}
+
+	it.each<ObservingRolloutMode>(["shadow", "ready"])(
+		"late-mirrors a legacy-mode submission decided after the move to %s (#475)",
+		async (mode) => {
+			await seed("legacy");
+
+			actAs(ids.requesterUser);
+			const submitted = await requestAbsenceEffect({
+				categoryId: ids.category,
+				startDate: "2026-08-10",
+				endDate: "2026-08-11",
+				startPeriod: "full_day",
+				endPeriod: "full_day",
+				durationKind: "full_day",
+				notes: null,
+			});
+			if (!submitted.success) {
+				throw new Error(`Submission failed: ${submitted.error}`);
+			}
+			const absenceId = submitted.data.absenceId;
+			expect(await workflowCount(absenceId)).toBe(0);
+			await admin.query(
+				`update approval_workflow_rollout set lifecycle_mode = $2, updated_at = now()
+				 where organization_id = $1 and workflow_type = 'absence'`,
+				[ids.organization, mode],
+			);
+
+			const firstRequestId = await pendingRequestId(absenceId);
+			actAs(ids.managerUser);
+			expect(
+				await approveAbsenceEffect(absenceId, { approvalRequestId: firstRequestId }),
+			).toEqual({ success: true, data: undefined });
+			// Mirrored first as a fresh submission, then the stage decision on top.
+			expect(await observedWorkflow(absenceId)).toMatchObject({
+				status: "pending",
+				current_stage_order: 2,
+				submitted_matches_chain: true,
+			});
+			const lateMirrored = await lateMirrorKeys();
+			expect(lateMirrored[0]).toBe(
+				`late-mirror:${ids.organization}:absence:absence_entry:${absenceId}:${firstRequestId}`,
+			);
+
+			// A retry of the late-mirrored decision finds the decided request (without
+			// decision evidence there is no receipt to replay) and mirrors nothing again.
+			expect(
+				await approveAbsenceEffect(absenceId, { approvalRequestId: firstRequestId }),
+			).toMatchObject({ success: false, error: "Approval request is already approved" });
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+			expect(await workflowCount(absenceId)).toBe(1);
+
+			// The next stage decides onto the same observed workflow, without a request id.
+			actAs(ids.secondManagerUser);
+			expect(await approveAbsenceEffect(absenceId)).toEqual({
+				success: true,
+				data: undefined,
+			});
+			expect(await observedWorkflow(absenceId)).toMatchObject({
+				status: "approved",
+				current_stage_order: null,
+			});
+			expect(await absenceStatus(absenceId)).toBe("approved");
+			expect(await lateMirrorKeys()).toEqual(lateMirrored);
+			expect(await workflowCount(absenceId)).toBe(1);
 		},
 	);
 });

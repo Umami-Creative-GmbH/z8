@@ -1,4 +1,5 @@
 import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 
 export type TimeEntryTimezoneSource =
@@ -16,6 +17,13 @@ export interface TimeEntryTimezoneCapture {
 
 export function isValidIanaTimezone(timezone: string | null | undefined): timezone is string {
 	return isValidIanaTimeZone(timezone);
+}
+
+/** The zone an entry was captured in, or its captured offset as a fixed zone. */
+export function capturedZone(entry: { timezone: string | null; utcOffsetMinutes: number }): string {
+	return isValidIanaTimezone(entry.timezone)
+		? entry.timezone
+		: offsetMinutesToTimeZoneId(entry.utcOffsetMinutes);
 }
 
 export function getUtcOffsetMinutesForZone(timestamp: Date, timezone: string): number {

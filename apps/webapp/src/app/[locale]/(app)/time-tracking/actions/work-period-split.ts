@@ -31,14 +31,17 @@ import {
 	splitCompletedWork,
 } from "@/lib/time-tracking/split-completed-work";
 import { resolveWorkPeriodSplit } from "@/lib/time-tracking/split-work-period";
+import {
+	createTimeEntry,
+	type TimeEntryRequestMetadata,
+} from "@/lib/time-tracking/time-entry-writer";
 import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
 import { WorkIntervalError } from "@/lib/time-tracking/work-duration";
 import { assertNoUnresolvedWorkPeriodReview } from "@/lib/time-tracking/work-period-review";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import { getCurrentEmployee, getCurrentSession, getRequestMetadata, getUserTimezone } from "./auth";
 import { calculateAndPersistSurcharges } from "./compliance";
-import { createTimeEntry } from "./entry-helpers";
 import { logger } from "./shared";
 
 export type SplitWorkPeriodResult = ServerActionResult<{
@@ -239,6 +242,7 @@ export async function splitOwnWorkPeriod(
 						durations: resolvedSplit,
 						beforeNotes: request.beforeNotes,
 						afterNotes: request.afterNotes,
+						request: { ipAddress, userAgent },
 					})),
 				};
 			},
@@ -282,7 +286,7 @@ export async function splitOwnWorkPeriod(
  * now inside the coordinated transaction and behind the unresolved-review guard.
  */
 async function splitLegacyWorkPeriod(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -293,6 +297,7 @@ async function splitLegacyWorkPeriod(
 		durations: { firstDurationMinutes: number; secondDurationMinutes: number };
 		beforeNotes?: string;
 		afterNotes?: string;
+		request: TimeEntryRequestMetadata;
 	},
 ): Promise<{ firstPeriodId: string; secondPeriodId: string }> {
 	const { organizationId, employeeId, period } = input;
@@ -338,6 +343,7 @@ async function splitLegacyWorkPeriod(
 			timestamp: input.splitAtDate,
 			createdBy: input.actorUserId,
 			...input.splitTimezoneCapture,
+			request: input.request,
 			notes: input.beforeNotes,
 		},
 		tx,
@@ -350,6 +356,7 @@ async function splitLegacyWorkPeriod(
 			timestamp: input.splitAtDate,
 			createdBy: input.actorUserId,
 			...input.splitTimezoneCapture,
+			request: input.request,
 			notes: input.afterNotes,
 		},
 		tx,

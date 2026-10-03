@@ -1,24 +1,21 @@
 /**
- * #327 / T62 runtime evidence: the legacy direct clock writer in adopted organizations.
+ * #327 / T62 runtime evidence: the legacy direct clock writer in adopted organizations,
+ * and since #483 the route as a legacy command adapter over the Clocking module.
  *
- * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
+ * Local contract: pnpm --filter webapp test:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
- * The real legacy `POST /api/time-entries` handler (membership, employee, capture and
- * legacy replay checks, the #266 queue fence and the uncoordinated clocking core) and
- * the real frozen command handler run against that database. Only the session, request
+ * The real legacy `POST /api/time-entries` handler (membership, employee, capture checks,
+ * the #266 queue fence and the production Clocking module) runs against that database. Only the session, request
  * headers, external billing provisioning, notification delivery and the Next cache are
  * replaced. Adoption is enabled per test organization by inserting its append control
  * row directly, as the operator's activation step does: production has no setter.
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool, type PoolClient } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import type { PoolClient } from "pg";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -26,37 +23,15 @@ const harness = vi.hoisted(() => ({
 	headers: {} as Record<string, string>,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 vi.mock("next/headers", () => ({ headers: async () => new Headers(harness.headers) }));
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -72,34 +47,11 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billing/guard")>()),
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async (importOriginal) =>
+	(await import("@/test/integration-harness")).billingGuard(importOriginal),
+);
 
 const legacyRoute = await import("./route");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy direct writer PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t327-legacy-writer-org",
@@ -119,9 +71,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("legacy direct clock writer in adopted organizations on PostgreSQL", () => {
+describe("legacy direct clock writer in adopted organizations on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 8 });
+	const admin = integrationAdminPool();
 	const openHolders = new Set<Holder>();
 
 	type Holder = {
@@ -228,6 +180,22 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 		replay: true,
 	});
 
+	/** A legacy desktop clock action: a server-unchecked instant, no identity. */
+	const desktopClock = (type: "clock_in" | "clock_out", timestamp: string) => ({ type, timestamp });
+
+	async function workPeriods() {
+		const { rows } = await admin.query<{
+			start_time: Date;
+			end_time: Date | null;
+			canonical_record_id: string | null;
+		}>(
+			`select start_time, end_time, canonical_record_id from work_period
+			 where employee_id = $1 order by start_time`,
+			[ids.requester],
+		);
+		return rows;
+	}
+
 	const refused = {
 		status: 409,
 		body: {
@@ -294,23 +262,6 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 		return holder;
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy direct writer PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		for (const holder of [...openHolders]) await holder.commit();
 		harness.userId = ids.requesterUser;
@@ -322,9 +273,6 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 	afterAll(async () => {
 		for (const holder of [...openHolders]) await holder.commit();
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("keeps the legacy writer for organizations without an active control", async () => {
@@ -334,6 +282,69 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 
 		await setAdmission(null);
 		await expect(post(legacyClock("clock_in"))).resolves.toMatchObject({ status: 201 });
+	});
+
+	it("closes legacy work with its canonical record and follows the closure up", async () => {
+		await setAdmission(null);
+		await expect(post(desktopClock("clock_in", "2026-07-22T08:00:00Z"))).resolves.toMatchObject({
+			status: 201,
+		});
+		const clockOut = await post(desktopClock("clock_out", "2026-07-22T10:00:00Z"));
+
+		expect(clockOut).toMatchObject({ status: 201, body: { entry: { type: "clock_out" } } });
+		// Only the entry answers; closure advice stays with the web.
+		expect(Object.keys(clockOut.body)).toEqual(["entry"]);
+		expect(clockOut.body.entry).not.toHaveProperty("complianceWarnings");
+		expect(await workPeriods()).toEqual([
+			{
+				start_time: new Date("2026-07-22T08:00:00Z"),
+				end_time: new Date("2026-07-22T10:00:00Z"),
+				canonical_record_id: expect.any(String),
+			},
+		]);
+		const { rows: balances } = await admin.query(
+			"select is_dirty from employee_work_balance where employee_id = $1",
+			[ids.requester],
+		);
+		expect(balances).toEqual([{ is_dirty: true }]);
+	});
+
+	it("refuses a legacy clock-in inside recorded work or on a blocking holiday, never a clock-out", async () => {
+		await setAdmission(null);
+		await post(desktopClock("clock_in", "2026-07-22T08:00:00Z"));
+		await post(desktopClock("clock_out", "2026-07-22T10:00:00Z"));
+		const before = await snapshot();
+
+		await expect(post(desktopClock("clock_in", "2026-07-22T09:00:00Z"))).resolves.toEqual({
+			status: 409,
+			body: { error: "Clock-in overlaps recorded work" },
+		});
+		expect(await snapshot()).toEqual(before);
+
+		await expect(post(desktopClock("clock_in", "2026-07-22T20:00:00Z"))).resolves.toMatchObject({
+			status: 201,
+		});
+		await admin.query(
+			`insert into holiday_category (id, organization_id, type, name, blocks_time_entry, updated_at)
+			 values ('f3270000-0000-4000-8000-000000000021', $1, 'public_holiday', 'Closed', true, now())`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into holiday (id, organization_id, category_id, name, start_date, end_date, created_by, updated_at)
+			 values ('f3270000-0000-4000-8000-000000000022', $1, 'f3270000-0000-4000-8000-000000000021',
+			         'Closing day', '2026-07-23T00:00:00', '2026-07-23T23:59:59', $2, now())`,
+			[ids.organization, ids.requesterUser],
+		);
+		// A holiday never leaves live work running.
+		await expect(post(desktopClock("clock_out", "2026-07-23T02:00:00Z"))).resolves.toMatchObject({
+			status: 201,
+		});
+		const closed = await snapshot();
+		await expect(post(desktopClock("clock_in", "2026-07-23T08:00:00Z"))).resolves.toEqual({
+			status: 409,
+			body: { error: "Clock-in is not allowed on a holiday" },
+		});
+		expect(await snapshot()).toEqual(closed);
 	});
 
 	it("refuses fresh legacy clock-ins and clock-outs in an adopted organization without writes", async () => {
@@ -365,16 +376,17 @@ describeIntegration("legacy direct clock writer in adopted organizations on Post
 
 	it("still answers committed legacy actions after adoption, with no writes", async () => {
 		await setAdmission(null);
-		const clockInId = randomUUID();
-		const clockOutId = randomUUID();
-		const clockIn = await post(extensionClock("clock_in", clockInId));
-		const clockOut = await post(extensionClock("clock_out", clockOutId));
+		// A queued action resends its captured instant; another instant is another command.
+		const clockInAction = extensionClock("clock_in");
+		const clockOutAction = extensionClock("clock_out");
+		const clockIn = await post(clockInAction);
+		const clockOut = await post(clockOutAction);
 		expect([clockIn.status, clockOut.status]).toEqual([201, 201]);
 		await setAdmission("active");
 		const before = await snapshot();
 
-		await expect(post(extensionClock("clock_in", clockInId))).resolves.toEqual(clockIn);
-		await expect(post(extensionClock("clock_out", clockOutId))).resolves.toEqual(clockOut);
+		await expect(post(clockInAction)).resolves.toEqual(clockIn);
+		await expect(post(clockOutAction)).resolves.toEqual(clockOut);
 		expect(await snapshot()).toEqual(before);
 	});
 

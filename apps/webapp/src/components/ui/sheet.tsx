@@ -2,6 +2,7 @@
 
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { IconX } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import * as React from "react";
 import { use } from "react";
 
@@ -76,7 +77,9 @@ function Sheet({
 	...props
 }: SheetProps) {
 	const dismissHandlersRef = React.useRef<DismissEventHandlers>({});
-	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
+	const [uncontrolledOpen, setUncontrolledOpen] = React.useState(
+		defaultOpen ?? false,
+	);
 	const targetOpen = openProp ?? uncontrolledOpen;
 	const [{ renderedOpen, visualOpen }, dispatchAnimation] = React.useReducer(
 		sheetAnimationReducer,
@@ -104,8 +107,13 @@ function Sheet({
 		dismissHandlersRef.current = handlers ?? {};
 	};
 
-	const handleOpenChange: SheetPrimitive.Root.Props["onOpenChange"] = (open, eventDetails) => {
-		if (cancelDismissIfPrevented(open, eventDetails, dismissHandlersRef.current)) {
+	const handleOpenChange: SheetPrimitive.Root.Props["onOpenChange"] = (
+		open,
+		eventDetails,
+	) => {
+		if (
+			cancelDismissIfPrevented(open, eventDetails, dismissHandlersRef.current)
+		) {
 			return;
 		}
 
@@ -200,6 +208,7 @@ function SheetContent({
 	showCloseButton = true,
 	...props
 }: SheetContentProps) {
+	const { t } = useTranslate();
 	const context = use(SheetContext);
 	const setDismissHandlers = context?.setDismissHandlers;
 
@@ -208,14 +217,23 @@ function SheetContent({
 			return;
 		}
 
-		const handlers = { onEscapeKeyDown, onInteractOutside, onPointerDownOutside };
+		const handlers = {
+			onEscapeKeyDown,
+			onInteractOutside,
+			onPointerDownOutside,
+		};
 		setDismissHandlers(handlers);
 
 		return () => {
 			setDismissHandlers(null);
 		};
 		// oxlint-disable-next-line react-hooks/exhaustive-deps -- setDismissHandlers is the context callback used by this effect.
-	}, [setDismissHandlers, onEscapeKeyDown, onInteractOutside, onPointerDownOutside]);
+	}, [
+		setDismissHandlers,
+		onEscapeKeyDown,
+		onInteractOutside,
+		onPointerDownOutside,
+	]);
 
 	return (
 		<SheetPortal>
@@ -242,7 +260,7 @@ function SheetContent({
 				{showCloseButton && (
 					<SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[open]:bg-secondary">
 						<IconX className="size-4" />
-						<span className="sr-only">Close</span>
+						<span className="sr-only">{t("common.close", "Close")}</span>
 					</SheetPrimitive.Close>
 				)}
 			</SheetPrimitive.Popup>

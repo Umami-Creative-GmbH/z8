@@ -741,7 +741,8 @@
       "teamLevel": "Team Level",
       "teamLevelDescription": "Override organization default for specific teams",
       "title": "Work Categories",
-      "usedInSets": "Used in Sets"
+      "usedInSets": "Used in Sets",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Create category sets with different time factors for various work types"
     }
   }
 }

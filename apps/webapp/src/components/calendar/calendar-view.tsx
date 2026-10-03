@@ -100,7 +100,8 @@ function useClockOutOnBehalf({
 		setIsClockOutPending(true);
 		const workPeriodId = pendingClockOutEvent.id;
 		const operationId =
-			operationIdsRef.current.get(workPeriodId) ?? globalThis.crypto.randomUUID();
+			operationIdsRef.current.get(workPeriodId) ??
+			globalThis.crypto.randomUUID();
 		operationIdsRef.current.set(workPeriodId, operationId);
 
 		await (async () => {
@@ -189,6 +190,7 @@ function CalendarViewContent({
 	initialDateKey,
 	initialTimezone,
 }: CalendarViewProps) {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const locale = useLocale();
 	const timeFormat = useTimeFormat();
@@ -442,7 +444,11 @@ function CalendarViewContent({
 			{/* Error message */}
 			{error && (
 				<div className="bg-destructive/10 text-destructive px-4 py-2 rounded-md text-sm shrink-0">
-					Failed to load calendar events: {error.message}
+					{t(
+						"calendar.loadEventsError",
+						"Failed to load calendar events: {message}",
+						{ message: error.message },
+					)}
 				</div>
 			)}
 

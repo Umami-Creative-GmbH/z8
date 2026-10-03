@@ -20,13 +20,9 @@
  * transport (fetch) are replaced.
  */
 
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -36,37 +32,15 @@ const harness = vi.hoisted(() => ({
 	versionCounter: 0,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 10,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => undefined,
-}));
-
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -86,45 +60,30 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t408.example.test",
 }));
 
-vi.mock("@/lib/email/email-service", () => ({
-	sendEmail: async () => ({ success: true }),
-}));
+vi.mock("@/lib/email/email-service", async () =>
+	(await import("@/test/integration-harness")).emailService(),
+);
 
-vi.mock("@/lib/email/render", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/email/render")>();
-	return {
-		...original,
-		renderAbsenceRequestSubmitted: async () => "<p>submitted</p>",
-		renderAbsenceRequestPendingApproval: async () => "<p>pending</p>",
-		renderAbsenceRequestApproved: async () => "<p>approved</p>",
-		renderAbsenceRequestRejected: async () => "<p>rejected</p>",
-	};
-});
+vi.mock("@/lib/email/render", async (importOriginal) =>
+	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
+);
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+);
 
-vi.mock("@/lib/queue", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/queue")>()),
-	addCalendarSyncJob: async () => undefined,
-}));
+vi.mock("@/lib/queue", async (importOriginal) =>
+	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
+);
 
 vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/work-balance/service")>()),
@@ -161,18 +120,15 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	deletePrivateObject: async () => undefined,
 }));
 
-vi.mock("@/lib/vault", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/vault")>()),
-	getOrgSecret: async () => "408408408:AAT408-legacy_replacement_test",
-}));
+vi.mock("@/lib/vault", async (importOriginal) =>
+	(await import("@/test/integration-harness")).vault(importOriginal, async () => "408408408:AAT408-legacy_replacement_test"),
+);
 
 // The best-effort fast path only runs the passes sooner; recording the calls
 // keeps each test's delivery passes explicit and deterministic.
-vi.mock("@/lib/approvals/delivery/kick", () => ({
-	kickApprovalDelivery: (input: { organizationId: string; workflowId?: string | null }) => {
-		harness.kicks.push(input);
-	},
-}));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(harness.kicks),
+);
 
 const BOT_TOKEN = "408408408:AAT408-legacy_replacement_test";
 const PDF_BYTES = Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "utf8");
@@ -201,27 +157,6 @@ const { processDueEscalations } = await import("./transfer");
 const { expandEscalationTransferEvents, processEscalationReplacementDeliveries } = await import(
 	"./replacement-delivery"
 );
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Legacy replacement delivery PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const TELEGRAM = { manager: 40_801, backup: 40_802, third: 40_803 } as const;
 const CHAT = { manager: 408_111, backup: 408_222, third: 408_333 } as const;
@@ -280,9 +215,9 @@ function minutes(count: number) {
 	return T0.add({ minutes: count });
 }
 
-describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () => {
+describe("legacy escalation replacement delivery (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 90_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 3 });
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 40_800;
 	const originalFetch = globalThis.fetch;
@@ -820,23 +755,6 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 		return result;
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy replacement delivery PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		actAs(null);
 		harness.kicks.length = 0;
@@ -853,9 +771,6 @@ describeIntegration("legacy escalation replacement delivery (PostgreSQL)", () =>
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	for (const subject of ["absence", "travel_expense"] as const) {

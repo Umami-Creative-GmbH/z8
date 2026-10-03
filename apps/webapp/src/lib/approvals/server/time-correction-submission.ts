@@ -63,14 +63,15 @@ import {
 	resolveOnBehalfCorrectionAuthority,
 } from "@/lib/approvals/server/time-correction-on-behalf";
 import {
-	acquireTimeCorrectionWorkScope,
-	retryTimeCorrectionWorkTransaction,
+	timeCorrectionAuthority,
+	withTimeCorrectionWorkTransaction,
 } from "@/lib/approvals/server/time-correction-work-transaction";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import {
 	deriveApprovalWorkflowId,
 	deriveTimeCorrectionRowId,
 } from "@/lib/approvals/workflow/identity";
+import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	isBillingMutationAllowed,
@@ -127,7 +128,7 @@ import {
 import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-work";
 import type { TimeEntryAppend } from "@/lib/time-tracking/time-entry-append";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type { SealedWorkTransactionScope } from "@/lib/time-tracking/work-transaction";
 import {
 	dirtyFromDateForTimeCorrection,
 	instantFromTimeCorrectionBoundary,
@@ -146,6 +147,7 @@ import {
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import type { ApprovalWriteGateResult } from "../authority";
 
 type CorrectionTimesResult =
 	| {
@@ -1119,9 +1121,9 @@ function transactionDbService(
 	return { db: transactionDb, query: dbService.query };
 }
 
-function createCorrectionRuntime(dbService: ApprovalDbService) {
+function createCorrectionRuntime(database: ApprovalWorkflowDatabase) {
 	return createProductionApprovalWorkflowRuntime({
-		db: dbService.db,
+		db: database,
 		adapters: {
 			absence: {
 				clock: systemClock,
@@ -1486,7 +1488,7 @@ function requestedEndpoint(endpoint: SubmissionEndpoint): RequestedCorrectionEnd
  * before the proposal is committed; approval checks it again (#301).
  */
 async function assertSubmittedIntervalFree(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: SubmitCorrectionInput,
 	period: LockedSubmissionPeriod,
 ) {
@@ -1505,7 +1507,7 @@ async function assertSubmittedIntervalFree(
 }
 
 type AdoptedSubmissionContext = {
-	scope: WorkTransactionScope;
+	scope: SealedWorkTransactionScope;
 	input: SubmitCorrectionInput;
 	lockedPeriod: LockedSubmissionPeriod;
 	submissionKey: string;
@@ -1522,7 +1524,7 @@ type AdoptedSubmissionContext = {
 async function recordAdoptedSubmission(
 	input: AdoptedSubmissionContext & {
 		correctionEntries: Array<typeof timeEntry.$inferSelect>;
-		authorityMode: string;
+		authority: ApprovalWriteGateResult;
 		result: { kind: string; approvalRequestId: string; chainInstanceId?: string | null };
 		submittedRevision: number;
 	},
@@ -1550,7 +1552,7 @@ async function recordAdoptedSubmission(
 		return endpoint ? requestedEndpoint(endpoint) : null;
 	};
 	const currentLocation = normalizeWorkLocationType(lockedPeriod.workLocationType);
-	const canonical = input.authorityMode === "canonical" || input.authorityMode === "complete";
+	const canonical = input.authority.authority === "canonical";
 	const [bound] = canonical
 		? []
 		: await scope.db
@@ -1573,8 +1575,9 @@ async function recordAdoptedSubmission(
 				authority: "legacy",
 				approvalRequestId: input.result.approvalRequestId,
 				chainInstanceId: input.result.chainInstanceId ?? null,
-				observedWorkflowId:
-					input.authorityMode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+				observedWorkflowId: input.authority.shadowMirroring
+					? (bound?.approvalWorkflowId ?? null)
+					: null,
 			};
 	const operationId = deriveTimeCorrectionOperationId({
 		organizationId: request.organizationId,
@@ -1711,12 +1714,9 @@ export async function submitCorrection(input: {
 			conflictType: "time_correction_actor_stale",
 		});
 	}
-	const runtime = createCorrectionRuntime(input.dbService);
 	const requestMetadata = await getRequestMetadata();
 	try {
-		return await retryTimeCorrectionWorkTransaction(() =>
-			submitCorrectionInTransaction(runtime, input, requestMetadata),
-		);
+		return await submitCorrectionInTransaction(input, requestMetadata);
 	} catch (error) {
 		// Evidence holds and adopted work outcomes answer as typed 409 conflicts.
 		throw translateCorrectionWorkError(translateWorkPeriodEvidenceError(error));
@@ -1724,20 +1724,22 @@ export async function submitCorrection(input: {
 }
 
 function submitCorrectionInTransaction(
-	runtime: ReturnType<typeof createCorrectionRuntime>,
 	input: Parameters<typeof submitCorrection>[0],
 	requestMetadata: { ipAddress: string; userAgent: string },
 ) {
-	return runtime.repository.withTransaction(async (outerContext) => {
-		// Shared work protocol (#301) before any row lock: adoption gate, the
-		// time-correction approval gate, configuration, access, employee key.
-		const work = await acquireTimeCorrectionWorkScope(outerContext, {
-			organizationId: input.organizationId,
-			ownerEmployeeId: input.employeeId,
-			actorUserId: input.userId,
-		});
-		const context = work.context;
-		const adopted = work.scope.admission === "append" ? work.scope : null;
+	// A work transaction (#301, #477): before any row lock the coordinator takes the
+	// adoption gate, the pinned time-correction approval gate, configuration,
+	// access and employee keys; the approval runtime borrows its transaction.
+	const work = {
+		organizationId: input.organizationId,
+		actorUserId: input.userId,
+		owner: input.employeeId,
+		database: input.dbService.db,
+	};
+	return withTimeCorrectionWorkTransaction(work, createCorrectionRuntime, async (scope) => {
+		const context = scope.approval;
+		const authority = await timeCorrectionAuthority(scope, input.organizationId);
+		const adopted = scope.admission === "append" ? scope : null;
 		const tx = context.dbService.db as unknown as typeof db;
 		const { lockedEmployee, lockedTeamId, lockedPeriod } =
 			await lockTimeCorrectionSubmissionActorAndPeriodInTransaction({
@@ -2016,8 +2018,7 @@ function submitCorrectionInTransaction(
 			}
 		}
 		if (evidenceFacts && result.disposition === "executed") {
-			const canonical =
-				work.authority.mode === "canonical" || work.authority.mode === "complete";
+			const canonical = authority.authority === "canonical";
 			const [bound] = await tx
 				.select({ approvalWorkflowId: workPeriod.approvalWorkflowId })
 				.from(workPeriod)
@@ -2049,16 +2050,16 @@ function submitCorrectionInTransaction(
 								"chainInstanceId" in result && typeof result.chainInstanceId === "string"
 									? result.chainInstanceId
 									: null,
-							observedWorkflowId:
-								work.authority.mode === "legacy" ? null : (bound?.approvalWorkflowId ?? null),
+							observedWorkflowId: authority.shadowMirroring
+								? (bound?.approvalWorkflowId ?? null)
+								: null,
 							autoCompleted: result.kind === "auto_completed",
 						},
 			});
 		}
 		if (
 			result.disposition === "executed" &&
-			work.authority.mode !== "canonical" &&
-			work.authority.mode !== "complete" &&
+			authority.authority === "legacy" &&
 			(result.kind === "default_created" || result.kind === "chain_created")
 		) {
 			// The legacy cycle's first lifecycle intent, only while a delivery
@@ -2095,7 +2096,7 @@ function submitCorrectionInTransaction(
 				await recordAdoptedSubmission({
 					...receiptInput,
 					correctionEntries,
-					authorityMode: work.authority.mode,
+					authority,
 					result,
 					submittedRevision,
 				});

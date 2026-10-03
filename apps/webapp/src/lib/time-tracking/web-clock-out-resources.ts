@@ -7,13 +7,6 @@ import type {
 	WorkTransactionClient,
 } from "./web-clock-out-transaction";
 
-export class WorkTransactionScopeChanged extends Error {
-	constructor() {
-		super("Work transaction resources changed; restart routing");
-		this.name = "WorkTransactionScopeChanged";
-	}
-}
-
 type Resource = Readonly<{
 	table: string;
 	id: string;
@@ -218,37 +211,11 @@ export async function routeWebClockOutResources(
 	return resources;
 }
 
-export function assertSameWebClockOutResources(
-	before: readonly Resource[],
-	after: readonly Resource[],
-) {
-	if (JSON.stringify(before) !== JSON.stringify(after))
-		throw new WorkTransactionScopeChanged();
-}
-
 export async function lockWebClockOutResources(
 	db: WorkTransactionClient,
 	input: WebClockOutTransactionInput,
 	resources: readonly Resource[],
 ) {
-	// Existing terminal-break/work-balance ownership key, not a second employee key.
-	const auxiliaryKeys = [
-		JSON.stringify([input.organizationId, input.employeeId]),
-	];
-	for (const resource of resources.filter(
-		(row) => row.table === "work_period" && row.source,
-	)) {
-		for (const kind of ["manual_time_submission", "policy_clock_out"]) {
-			auxiliaryKeys.push(
-				JSON.stringify([input.organizationId, kind, "time_entry", resource.id]),
-			);
-		}
-	}
-	for (const key of [...new Set(auxiliaryKeys)].sort()) {
-		await db.execute(
-			sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`,
-		);
-	}
 	for (const definition of resourceQueries(
 		input,
 		resources.filter((row) => row.table === "employee").map((row) => row.id),

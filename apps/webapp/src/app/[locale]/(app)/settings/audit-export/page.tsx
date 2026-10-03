@@ -14,12 +14,16 @@ import { getAuditConfigAction, getAuditPackagesAction } from "./actions";
 
 export const metadata = {
 	title: "Audit Export Settings",
-	description: "Configure GoBD-compliant audit export hardening with cryptographic proofs",
+	description:
+		"Configure GoBD-compliant audit export hardening with cryptographic proofs",
 };
 
 async function AuditExportSettingsContent() {
 	// Parallelize all initial fetches to avoid waterfalls
-	const [t, orgAccess] = await Promise.all([getTranslate(), requireOrgAdminSettingsAccess()]);
+	const [t, orgAccess] = await Promise.all([
+		getTranslate(),
+		requireOrgAdminSettingsAccess(),
+	]);
 	const { organizationId } = orgAccess;
 	const ownedOrganization = await db.query.organization.findFirst({
 		where: eq(organization.id, organizationId),
@@ -65,7 +69,10 @@ async function AuditExportSettingsContent() {
 				</TabsList>
 
 				<TabsContent value="config" className="mt-4 space-y-6">
-					<AuditConfigForm organizationId={organizationId} initialConfig={config} />
+					<AuditConfigForm
+						organizationId={organizationId}
+						initialConfig={config}
+					/>
 				</TabsContent>
 
 				<TabsContent value="packages" className="mt-4 space-y-6">
@@ -73,7 +80,10 @@ async function AuditExportSettingsContent() {
 						organizationId={organizationId}
 						organizationTimezone={organizationTimezone}
 					/>
-					<AuditPackagesTable organizationId={organizationId} packages={packages} />
+					<AuditPackagesTable
+						organizationId={organizationId}
+						packages={packages}
+					/>
 				</TabsContent>
 
 				{config && (
@@ -91,7 +101,14 @@ async function AuditExportSettingsContent() {
 }
 
 function AuditExportSettingsLoading() {
-	return <SettingsPageSkeleton label="Loading audit export settings" />;
+	return (
+		<SettingsPageSkeleton
+			label={{
+				labelKey: "common.loadingRegions.auditExportSettings",
+				labelDefault: "Loading audit export settings",
+			}}
+		/>
+	);
 }
 
 export default function AuditExportSettingsPage() {

@@ -112,7 +112,9 @@
         "failed": "Could not clock in. Please try again.",
         "noProfile": "Employee profile not found.",
         "success": "Clocked in at {time}.",
-        "unconfirmed": "Your clock-in could not be confirmed. Check your status before trying again."
+        "unconfirmed": "Your clock-in could not be confirmed. Check your status before trying again.",
+        "holidayBlocked": "Cannot clock in on a holiday.",
+        "occupied": "This time overlaps other recorded work."
       },
       "clockout": {
         "appendReview": "Your time history needs review before you can clock out. Please contact your administrator.",
@@ -123,7 +125,10 @@
         "notClockedIn": "You are not currently clocked in.",
         "success": "Clocked out at {time}. Duration: {hours}h {minutes}m.",
         "successAt": "Clocked out at {time}.",
-        "unconfirmed": "Your clock-out could not be confirmed. Check your status before trying again."
+        "unconfirmed": "Your clock-out could not be confirmed. Check your status before trying again.",
+        "beforeClockIn": "Clock-out must be after clock-in.",
+        "projectNotAllowed": "Cannot assign to this project.",
+        "workCategoryNotAllowed": "Cannot assign to this work category."
       },
       "compliance": {
         "error": "Failed to retrieve compliance data. Please try again later.",

@@ -34,7 +34,7 @@ import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "@/lib/approvals/server/time-correction-category-authorization";
-import { BOOKABLE_PROJECT_STATUSES } from "@/app/[locale]/(app)/time-tracking/actions/shared";
+import { BOOKABLE_PROJECT_STATUSES } from "./project-eligibility";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import {
 	compareInstants,
@@ -76,7 +76,7 @@ import type { WorkLocationType } from "./work-location";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const AMEND_COMPLETED_WORK_COMMAND_VERSION = 1;
 export const AMEND_COMPLETED_WORK_RESULT_VERSION = 1;
@@ -221,7 +221,7 @@ export type AmendCompletedWorkInput = {
 	request: { ipAddress: string | null; deviceInfo: string | null };
 };
 
-type TransactionClient = WorkTransactionScope["db"];
+type TransactionClient = SealedWorkTransactionScope["db"];
 
 const logger = createLogger("CompletedWorkAmendment");
 
@@ -292,7 +292,7 @@ type ReplayInput = {
  * conflict behavior and never recreate work.
  */
 export async function replayAmendCompletedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: ReplayInput,
 ): Promise<AmendCompletedWorkReceipt | null> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
@@ -400,7 +400,7 @@ export async function replayCommittedAmendment(
 
 /** In one coordinated scope: exact replay first, otherwise the fresh operation. */
 export async function replayOrAmendCompletedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: AmendCompletedWorkInput,
 ): Promise<AmendCompletedWorkReceipt> {
 	return (await replayAmendCompletedWork(scope, input)) ?? (await amendCompletedWork(scope, input));
@@ -544,7 +544,7 @@ async function assertProjectEligible(
  * same transaction, so an existing receipt with this identity is a collision.
  */
 export async function amendCompletedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: AmendCompletedWorkInput,
 ): Promise<AmendCompletedWorkReceipt> {
 	const { organizationId, employeeId, command, intent: requested } = input;

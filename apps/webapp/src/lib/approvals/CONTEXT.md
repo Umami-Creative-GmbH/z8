@@ -18,6 +18,14 @@ _Avoid_: "legacy mode" when authority is meant
 Copying each legacy write into a canonical workflow while legacy authority still decides, in lifecycle modes `shadow` and `ready`.
 _Avoid_: mirroring (unqualified), shadow observation
 
+**Observed workflow**:
+The canonical workflow that shadow mirroring keeps for one legacy request. It follows the legacy request and never decides.
+_Avoid_: shadow workflow, mirror
+
+**Late mirroring**:
+Mirroring a legacy request that was submitted before shadow mirroring began, as a fresh submission, when it is first acted on under shadow mirroring, so the action itself can be mirrored onto its new observed workflow.
+_Avoid_: backfill, bootstrap
+
 **Compatibility writing**:
 Keeping legacy requests in step with canonical workflows once canonical authority decides, in lifecycle mode `canonical`.
 _Avoid_: reverse mirroring

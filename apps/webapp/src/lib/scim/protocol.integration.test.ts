@@ -8,14 +8,10 @@ import { sso } from "@better-auth/sso";
 import { betterAuth } from "better-auth/minimal";
 import { organization } from "better-auth/plugins/organization";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, describe, expect, it } from "vitest";
 import { captureAuthTransactions } from "@/lib/auth/auth-transaction";
 import { authDatabaseSchema } from "@/lib/auth-database-schema";
+import { integrationAdminPool } from "@/test/integration-database";
 import {
 	createSCIMCallbackModelRegistration,
 	createZ8SCIMPlugin,
@@ -27,18 +23,6 @@ import {
 	runDueSCIMDecommission,
 } from "./decommission";
 import { guardSCIMSubjectAcquisitions } from "./projection-guards";
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const sentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const required = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const configuration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required,
-	sentinel,
-});
-if (configuration.status === "error") throw new Error(configuration.reason);
-const describeIntegration =
-	configuration.status === "enabled" ? describe : describe.skip;
 
 const runId = randomUUID();
 const organizationIds: string[] = [];
@@ -69,8 +53,8 @@ async function expectSafeSCIMError(
 	return error;
 }
 
-describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
-	const pool = new Pool({ connectionString: databaseUrl, max: 8 });
+describe("managed SCIM protocol PostgreSQL contract", () => {
+	const pool = integrationAdminPool();
 	const database = drizzle({ client: pool, schema: authDatabaseSchema });
 	const auth = betterAuth({
 		baseURL: "http://localhost:3000",
@@ -99,22 +83,6 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 		],
 	});
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required,
-			sentinel,
-			currentDatabase: async () => {
-				const result = await pool.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled")
-			throw new Error("SCIM protocol test is not enabled");
-	});
-
 	afterAll(async () => {
 		try {
 			for (const connectionId of connectionIds) {
@@ -129,7 +97,6 @@ describeIntegration("managed SCIM protocol PostgreSQL contract", () => {
 				]);
 			}
 		} finally {
-			await pool.end();
 		}
 	});
 

@@ -163,7 +163,11 @@ export function WellnessSettingsForm({
 											)}
 										</Label>
 										<div className="flex items-center gap-2">
-											<span className="text-sm tabular-nums">{value} min</span>
+											<span className="text-sm tabular-nums">
+												{t("common.durationMinutes", "{count} min", {
+													count: value,
+												})}
+											</span>
 											<span
 												className={`rounded-full px-2 py-0.5 text-xs font-medium ${
 													isRecommended

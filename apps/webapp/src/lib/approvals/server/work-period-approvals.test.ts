@@ -3,6 +3,7 @@ import { getTableName } from "drizzle-orm";
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
+import { approvalWriteGateResult } from "../authority";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import { createLegacyApprovalObservationPlanner } from "../workflow/legacy-observation-planner";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
@@ -58,11 +59,46 @@ vi.mock("@/lib/notifications/triggers", () => notificationMocks);
 vi.mock("@/lib/time-tracking/policy-clock-out-terminal-break", () => ({
 	applyPolicyClockOutTerminalBreakInTransaction: terminalBreakMocks.enforce,
 }));
-vi.mock("./work-period-decision-transaction", async (importOriginal) =>
-	(await import("@/test/work-period-decision-transaction")).legacyWorkPeriodDecisionTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks or the decision's observation:
+// decisions run the real plan on the work transaction fake (real ledger,
+// recorded guards) over the database of the suite's approval context, routed to
+// the fixture's target. work-period-decision-transaction.test.ts and the
+// PostgreSQL suites prove the observed routing.
+const decisionRouting = vi.hoisted(() => ({
+	kind: "manual_time_submission" as "manual_time_submission" | "policy_clock_out",
+	ownerEmployeeId: "employee-1",
+}));
+vi.mock("./work-period-decision-transaction", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("./work-period-decision-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withWorkPeriodDecisionTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withWorkPeriodDecisionTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(
+				{
+					...actual.workPeriodDecisionPlan(input, createRuntime),
+					route: async () => {
+						const target = { ...decisionRouting };
+						return {
+							users: [input.actorUserId],
+							employees: [target.ownerEmployeeId],
+							writeTargets: [target.ownerEmployeeId],
+							approvalGate: target.kind,
+							snapshot: { observation: "unobserved", target },
+						};
+					},
+				},
+				operation,
+			),
+	};
+});
 vi.mock("../domain-adapters/work-period-legacy-state", () => ({
 	captureOrdinaryWorkPeriodLegacyState: legacyCaptureMocks.capture,
 	loadOrdinaryWorkPeriodLegacyDecisionEvidence: legacyCaptureMocks.load,
@@ -97,6 +133,11 @@ vi.mock("../workflow/transition-engine", async (importOriginal) => ({
 	fingerprintApprovalWorkflowCommand: (command: unknown) =>
 		JSON.stringify(command),
 }));
+
+beforeEach(() => {
+	decisionRouting.kind = "manual_time_submission";
+	decisionRouting.ownerEmployeeId = "employee-1";
+});
 
 const workPeriodApprovals = await import("./work-period-approvals");
 const { ApprovalAssignmentReassignedError } = await import("../escalation/decision-authority");
@@ -449,6 +490,7 @@ describe("stable ordinary work-period decisions", () => {
 			],
 		};
 		const transactionDb = {
+			execute: vi.fn(async () => ({ rows: [{ id: "workflow-1" }] })),
 			query: {
 				employee: {
 					findMany: vi.fn().mockResolvedValue([currentApprover]),
@@ -566,7 +608,7 @@ describe("stable ordinary work-period decisions", () => {
 		const context = {
 			dbService: { db: transactionDb },
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({ mode }),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			compatibilityWriter: {
 				withWriteGate: vi.fn().mockReturnThis(),
@@ -586,7 +628,7 @@ describe("stable ordinary work-period decisions", () => {
 				query: <T>(_name: string, operation: () => Promise<T>) =>
 					Effect.promise(operation),
 			} as never,
-			runtime: runtime as never,
+			createRuntime: () => runtime as never,
 			organizationId: "org-1",
 			approvalRequestId: targetId,
 			workPeriodId: "period-1",
@@ -733,7 +775,7 @@ describe("stable ordinary work-period decisions", () => {
 			});
 			const context = {
 				dbService: { db: dbService.db },
-				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 				compatibilityWriter: {
 					withWriteGate: vi.fn().mockReturnValue({
 						withWriteGate: vi.fn().mockReturnThis(),
@@ -742,15 +784,16 @@ describe("stable ordinary work-period decisions", () => {
 					mirrorLegacyToCanonical,
 				},
 				repository: {
-					loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+					loadSnapshot: vi.fn().mockResolvedValue(observedWorkflowSnapshot()),
 				},
 			};
 			const execution = executeOrdinaryWorkPeriodDecisionInTransaction({
 				dbService,
-				runtime: {
-					repository: { withTransaction: async (run) => run(context) },
-					transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
-				} as never,
+				createRuntime: () =>
+					({
+						repository: { withTransaction: async (run) => run(context) },
+						transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+					}) as never,
 				organizationId: "org-1",
 				approvalRequestId: "approval-1",
 				workPeriodId: "period-1",
@@ -795,12 +838,13 @@ describe("stable ordinary work-period decisions", () => {
 		await expect(
 			executeOrdinaryWorkPeriodDecisionInTransaction({
 				dbService: { db: transactionDb, query: vi.fn() } as never,
-				runtime: {
-					repository: {
-						withTransaction: (run: (value: unknown) => unknown) => run(context),
-					},
-					transitionEngine: { executeInTransactionWithDisposition },
-				} as never,
+				createRuntime: () =>
+					({
+						repository: {
+							withTransaction: (run: (value: unknown) => unknown) => run(context),
+						},
+						transitionEngine: { executeInTransactionWithDisposition },
+					}) as never,
 				organizationId: "org-1",
 				approvalRequestId: "approval-1",
 				workPeriodId: "period-1",
@@ -808,7 +852,8 @@ describe("stable ordinary work-period decisions", () => {
 				decision: { kind: "approve", reason: null },
 			}),
 		).rejects.toThrow("Ordinary work-period decision failed");
-		expect(context.writeGate.acquire).not.toHaveBeenCalled();
+		// Only the work transaction's rank-2 acquisition, before any read.
+		expect(context.writeGate.acquire).toHaveBeenCalledOnce();
 		expect(executeInTransactionWithDisposition).not.toHaveBeenCalled();
 	});
 
@@ -859,7 +904,7 @@ describe("stable ordinary work-period decisions", () => {
 		const context = {
 			dbService: { db: dbService.db },
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({ mode: "legacy" }),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")),
 			},
 			compatibilityWriter: {
 				withWriteGate: vi.fn().mockReturnThis(),
@@ -877,7 +922,7 @@ describe("stable ordinary work-period decisions", () => {
 
 		const execution = executeOrdinaryWorkPeriodDecisionInTransaction({
 			dbService,
-			runtime: runtime as never,
+			createRuntime: () => runtime as never,
 			organizationId: "org-1",
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
@@ -954,7 +999,7 @@ describe("stable ordinary work-period decisions", () => {
 		});
 		const context = {
 			dbService: { db: dbService.db },
-			writeGate: { acquire: vi.fn().mockResolvedValue({ mode: "legacy" }) },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
 			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
 			repository: { loadSnapshot: vi.fn() },
 		};
@@ -967,7 +1012,7 @@ describe("stable ordinary work-period decisions", () => {
 		) =>
 			executeOrdinaryWorkPeriodDecisionInTransaction({
 				dbService,
-				runtime: runtime as never,
+				createRuntime: () => runtime as never,
 				organizationId: "org-1",
 				approvalRequestId: "approval-1",
 				workPeriodId: "period-1",
@@ -1117,11 +1162,11 @@ describe("stable ordinary work-period decisions", () => {
 		const context = {
 			dbService: { db: dbService.db },
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({ mode }),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			compatibilityWriter,
 			repository: {
-				loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+				loadSnapshot: vi.fn().mockResolvedValue(observedWorkflowSnapshot()),
 			},
 		};
 		const runtime = {
@@ -1135,7 +1180,7 @@ describe("stable ordinary work-period decisions", () => {
 
 		const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
 			dbService,
-			runtime: runtime as never,
+			createRuntime: () => runtime as never,
 			organizationId: "org-1",
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
@@ -1158,7 +1203,7 @@ describe("stable ordinary work-period decisions", () => {
 		["ready", "approve"],
 		["ready", "reject"],
 	] as const)(
-		"bootstraps a pre-canonical manual submission in %s mode for %s",
+		"late-mirrors a manual submission from before shadow mirroring in %s mode for %s",
 		async (mode, action) => {
 			const pendingAt = parseInstant("2026-07-15T09:59:00Z");
 			const terminalAt = parseInstant("2026-07-15T10:00:00Z");
@@ -1260,12 +1305,16 @@ describe("stable ordinary work-period decisions", () => {
 						organizationId: "org-1",
 						sourceId: "period-1",
 						requesterEmployeeId: "employee-1",
+						stages: planned.snapshot.stages.map((stage) => ({
+							...stage,
+							legacyApprovalRequestId: "approval-1",
+						})),
 					},
 				};
 			});
 			const context = {
 				dbService: { db: dbService.db },
-				writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+				writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 				compatibilityWriter: {
 					withWriteGate: vi.fn().mockReturnValue({
 						withWriteGate: vi.fn().mockReturnThis(),
@@ -1278,10 +1327,11 @@ describe("stable ordinary work-period decisions", () => {
 
 			const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
 				dbService,
-				runtime: {
-					repository: { withTransaction: async (run) => run(context) },
-					transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
-				} as never,
+				createRuntime: () =>
+					({
+						repository: { withTransaction: async (run) => run(context) },
+						transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+					}) as never,
 				organizationId: "org-1",
 				approvalRequestId: "approval-1",
 				workPeriodId: "period-1",
@@ -1303,10 +1353,14 @@ describe("stable ordinary work-period decisions", () => {
 			expect(context.repository.loadSnapshot).not.toHaveBeenCalled();
 			expect(mirrorLegacyToCanonical).toHaveBeenCalledTimes(2);
 			expect(
-				mirrorLegacyToCanonical.mock.calls.map(
-					([call]) => call.expectedVersion,
-				),
-			).toEqual([null, 1]);
+				mirrorLegacyToCanonical.mock.calls.map(([call]) => [
+					call.idempotencyKey,
+					call.expectedVersion,
+				]),
+			).toEqual([
+				["late-mirror:org-1:manual_time_submission:time_entry:period-1:approval-1", null],
+				[expect.stringMatching(/^ordinary-decision:org-1:period-1:approval-1:/), 1],
+			]);
 			expect(dbService.updateSets).toContainEqual(
 				expect.objectContaining({ approvalWorkflowId: expect.any(String) }),
 			);
@@ -1358,19 +1412,20 @@ describe("stable ordinary work-period decisions", () => {
 		};
 		const context = {
 			dbService: { db: dbService.db },
-			writeGate: { acquire: vi.fn().mockResolvedValue({ mode }) },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)) },
 			compatibilityWriter,
 			repository: {
-				loadSnapshot: vi.fn().mockResolvedValue({ version: 2 }),
+				loadSnapshot: vi.fn().mockResolvedValue(observedWorkflowSnapshot()),
 			},
 		};
 
 		const executed = await executeOrdinaryWorkPeriodDecisionInTransaction({
 			dbService,
-			runtime: {
-				repository: { withTransaction: async (run) => run(context) },
-				transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
-			} as never,
+			createRuntime: () =>
+				({
+					repository: { withTransaction: async (run) => run(context) },
+					transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+				}) as never,
 			organizationId: "org-1",
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
@@ -1421,6 +1476,7 @@ describe("stable ordinary work-period decisions", () => {
 	});
 
 	it("runs Task8A once across policy clock-out approval and exact terminal replay", async () => {
+		decisionRouting.kind = "policy_clock_out";
 		const dbService = createDecisionDbService({ kind: "policy_clock_out" });
 		const database = dbService.db as unknown as {
 			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
@@ -1457,7 +1513,7 @@ describe("stable ordinary work-period decisions", () => {
 		}));
 		const context = {
 			dbService: { db: dbService.db },
-			writeGate: { acquire: vi.fn().mockResolvedValue({ mode: "legacy" }) },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
 			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
 			repository: { loadSnapshot: vi.fn() },
 		};
@@ -1467,7 +1523,7 @@ describe("stable ordinary work-period decisions", () => {
 		} as never;
 		const input = {
 			dbService,
-			runtime,
+			createRuntime: () => runtime,
 			organizationId: "org-1",
 			approvalRequestId: "approval-1",
 			workPeriodId: "period-1",
@@ -1702,6 +1758,29 @@ const period = {
 	isActive: false,
 	deletedAt: null,
 };
+
+/** The workflow the legacy write coordinator observes for approval-1 (#475). */
+function observedWorkflowSnapshot(overrides: Record<string, unknown> = {}) {
+	return {
+		id: "workflow-1",
+		organizationId: "org-1",
+		workflowType: "manual_time_submission",
+		sourceType: "time_entry",
+		sourceId: "period-1",
+		requesterEmployeeId: "employee-1",
+		status: "pending",
+		version: 2,
+		stages: [
+			{
+				id: "stage-1",
+				legacyApprovalRequestId: "approval-1",
+				status: "pending",
+				assignments: [],
+			},
+		],
+		...overrides,
+	};
+}
 
 const canonicalRecord = {
 	id: "record-1",
@@ -1974,7 +2053,10 @@ function createDecisionDbService(options?: {
 		};
 	};
 	const db = {
-		execute: vi.fn(),
+		// The coordinator's observed-workflow lookup: an unlinked period has none.
+		execute: vi.fn(async () => ({
+			rows: options?.autoCompleted || options?.unlinked ? [] : [{ id: "workflow-1" }],
+		})),
 		query: {
 			approvalRequest: {
 				findFirst: vi

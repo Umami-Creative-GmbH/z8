@@ -25,7 +25,7 @@ import "server-only";
  *   review guard, so a failed adjustment leaves the committed closure intact.
  */
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, exists, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
 	completedWorkOperation,
@@ -48,15 +48,15 @@ import {
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
 } from "./automatic-break-intent";
-import { breakMinutesTakenBefore, planAutomaticBreak } from "./automatic-break-plan";
+import { planAutomaticBreak } from "./automatic-break-plan";
 import { calculateHash } from "./blockchain";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
+import { readBreakMinutesTakenBefore } from "./breaks-taken";
 import {
 	type CompletedWorkFollowUp,
 	CompletedWorkIntegrityError,
@@ -69,13 +69,13 @@ import {
 	resolvePolicyClockOutSurchargeSnapshotInTransaction,
 } from "./policy-clock-out-surcharge-snapshot";
 import { admitTimeEntryAppend } from "./time-entry-append";
-import { isValidIanaTimezone, resolveFallbackTimezoneCapture } from "./timezone-capture";
+import { capturedZone, resolveFallbackTimezoneCapture } from "./timezone-capture";
 import { assertWorkOccupancyFree, WorkOccupancyConflictError } from "./work-occupancy";
 import {
 	assertNoUnresolvedWorkPeriodReview,
 	isUnresolvedWorkPeriodReview,
 } from "./work-period-review";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const AUTOMATIC_BREAK_ADJUSTMENT_COMMAND_VERSION = 1;
 export const AUTOMATIC_BREAK_ADJUSTMENT_RESULT_VERSION = 1;
@@ -228,13 +228,6 @@ export type AutomaticBreakAdjustmentResult = {
 	followUps: CompletedWorkFollowUp[];
 };
 
-/** The zone an entry was captured in, or its captured offset as a fixed zone. */
-function capturedZone(entry: { timezone: string | null; utcOffsetMinutes: number }): string {
-	return isValidIanaTimezone(entry.timezone)
-		? entry.timezone
-		: offsetMinutesToTimeZoneId(entry.utcOffsetMinutes);
-}
-
 function regulationFrom(
 	snapshot: Awaited<ReturnType<typeof resolvePolicyClockOutBreakSnapshotInTransaction>>,
 ): (BreakPolicyRegulation & { policyId: string }) | null {
@@ -267,7 +260,7 @@ function regulationFrom(
  * and resolved by the outcome: deleted once final, kept `deferred` while blocked.
  */
 export async function adjustAutomaticBreakInTransaction(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: AutomaticBreakTarget & { trigger: AutomaticBreakAdjustmentTrigger; now: Instant },
 ): Promise<AutomaticBreakAdjustmentOutcome> {
 	const { organizationId, employeeId, workPeriodId } = input;
@@ -486,37 +479,21 @@ export async function adjustAutomaticBreakInTransaction(
 	// Breaks already taken on the work's local start day, in the zone captured with the
 	// work's start (its offset when no zone was captured), never a viewer's or today's
 	// setting: the plan depends on the work's facts, not on the date it is evaluated.
-	const startZone = capturedZone(sourceClockIn);
+	const alreadyTakenBreakMinutes = await readBreakMinutesTakenBefore(tx, {
+		organizationId,
+		employeeId,
+		workPeriodId: period.id,
+		startAt: sourceStart,
+		endAt: sourceEnd,
+		startZone: capturedZone(sourceClockIn),
+	});
 	// The break entries are captured like the closure they divide.
 	const timezone = capturedZone(sourceClockOut);
-	const dayStart = sourceStart.toZonedDateTimeISO(startZone).startOfDay().toInstant();
-	const dayWork = await tx
-		.select({ id: workPeriod.id, startTime: workPeriod.startTime, endTime: workPeriod.endTime })
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, organizationId),
-				eq(workPeriod.employeeId, employeeId),
-				eq(workPeriod.isActive, false),
-				isNull(workPeriod.deletedAt),
-				ne(workPeriod.approvalStatus, "rejected"),
-				gte(workPeriod.startTime, dateFromInstant(dayStart)),
-				lte(workPeriod.startTime, period.endTime),
-			),
-		);
-	const intervals = [
-		...dayWork.flatMap((work) =>
-			work.id !== period.id && work.endTime
-				? [{ startAt: instantFromDate(work.startTime), endAt: instantFromDate(work.endTime) }]
-				: [],
-		),
-		{ startAt: sourceStart, endAt: sourceEnd },
-	];
 	const plan = planAutomaticBreak({
 		sourceStart,
 		sourceEnd,
 		sourceDurationMinutes: period.durationMinutes,
-		alreadyTakenBreakMinutes: breakMinutesTakenBefore(intervals, sourceEnd),
+		alreadyTakenBreakMinutes,
 		regulation,
 	});
 	if (!plan) return resolveIntent({ kind: "not_required" });
@@ -919,7 +896,7 @@ export async function adjustAutomaticBreakInTransaction(
  * was made from, and an unresolved review refuses the adjustment without writes.
  */
 export async function applyLegacyAutomaticBreakInTransaction(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: AutomaticBreakTarget & {
 		trigger: AutomaticBreakAdjustmentTrigger;
 		plan: LegacyBreakPlan;

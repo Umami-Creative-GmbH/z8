@@ -29,7 +29,10 @@ import {
 import type { AbsenceRequest } from "@/lib/absences/types";
 import { getOrganizationBaseUrl } from "@/lib/app-url";
 import { captureAbsenceLegacyApprovalState } from "@/lib/approvals/domain-adapters/absence-legacy-state";
-import { createLegacyApprovalWriteCoordinator } from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "@/lib/approvals/domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { AbsenceRawCoverageInput } from "@/lib/approvals/evidence/absence-facts";
 import { captureCanonicalAbsenceSubmissionEvidence } from "@/lib/approvals/evidence/absence-submission";
@@ -51,6 +54,7 @@ import {
 } from "@/lib/approvals/server/time-correction-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
+import { pinApprovalWriteGate } from "@/lib/approvals/workflow/pinned-write-gate";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
 import {
 	ApprovalWorkflowStartError,
@@ -495,23 +499,16 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						organizationId: currentEmployee.organizationId,
 						workflowType: "absence",
 					});
-					const fixedGate = {
-						acquire: async (input: {
-							organizationId: string;
-							workflowType: "absence";
-						}) => {
-							if (
-								input.organizationId !== currentEmployee.organizationId ||
-								input.workflowType !== "absence"
-							) {
-								throw new Error("Approval submission gate scope mismatch");
-							}
-							return gate;
-						},
-					};
+					// The legacy coordinator and the transition engine rebind the
+					// compatibility writer to this gate themselves.
+					const pinnedGate = pinApprovalWriteGate({
+						organizationId: currentEmployee.organizationId,
+						workflowType: "absence",
+						authority: gate,
+					});
 					const context = {
 						...approvalContext,
-						writeGate: fixedGate,
+						writeGate: pinnedGate,
 					} as ApprovalWorkflowTransactionContext;
 					const bindSourceWorkflow: StartApprovalWorkflowInput["bindSourceWorkflow"] =
 						async (workflowId) => {
@@ -552,11 +549,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							};
 						};
 
-					if (
-						gate.mode === "legacy" ||
-						gate.mode === "shadow" ||
-						gate.mode === "ready"
-					) {
+					if (gate.authority === "legacy") {
 						const transactionalDbService = createTransactionDbService(
 							dbService,
 							approvalContext.dbService,
@@ -565,8 +558,15 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							params.approvalWorkflow.create ?? createApprovalWorkflow;
 						const capturedAt = approvalLifecycle.nowInstant();
 						const coordinator = createLegacyApprovalWriteCoordinator({
-							writeGate: fixedGate,
 							compatibilityWriter: approvalContext.compatibilityWriter,
+							observedWorkflows: createObservedWorkflowReader(approvalContext),
+						});
+						// A submission has no legacy request yet: nothing to observe.
+						const observation = await coordinator.observe({
+							gate,
+							sourceIdentity,
+							requesterEmployeeId: currentEmployee.id,
+							legacyApprovalRequestId: null,
 						});
 						const captureState = () =>
 							approvalLifecycle.captureLegacyState({
@@ -578,12 +578,9 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 						let mirrored: LegacyObservedMirror | null = null;
 
 						approvalWorkflowResult = await coordinator.execute({
-							organizationId: currentEmployee.organizationId,
-							workflowType: "absence",
-							sourceIdentity,
+							observation,
 							actor,
 							idempotencyKey: submissionKey,
-							expectedVersion: null,
 							captureState,
 							mutate:
 								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
@@ -774,7 +771,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 								endAt: canonicalValues.timeRecord.endAt,
 							},
 						});
-						if (gate.mode === "canonical") {
+						if (gate.compatibilityWriting) {
 							await approvalContext.compatibilityWriter.mirrorCanonicalToLegacy(
 								{
 									result: {

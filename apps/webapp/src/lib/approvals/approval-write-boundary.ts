@@ -88,6 +88,10 @@ export const CANONICAL_WRITE_OWNERS = {
 	"src/lib/approvals/delivery/intents.ts": {
 		approval_delivery_intent: ["insert"],
 	},
+	// The gated authority read inserts a missing rollout row as `legacy` (#474).
+	"src/lib/approvals/authority/gate.ts": {
+		approval_workflow_rollout: ["insert"],
+	},
 	// Immutable invocation association, inserted by the bound decision owner.
 	"src/lib/approvals/evidence/invocation.ts": {
 		approval_invocation: ["insert"],
@@ -113,9 +117,6 @@ export const CANONICAL_WRITE_OWNERS = {
 		approval_chain_stage_instance: ["insert", "update"],
 		approval_request: ["insert", "update", "delete"],
 		approval_workflow_stage: ["update"],
-	},
-	"src/lib/approvals/workflow/cutover.ts": {
-		approval_workflow_rollout: ["insert"],
 	},
 	// Pre-creates a new organization's legacy rollout rows in its creation
 	// transaction (#359), called from the coordinated organization hooks.
@@ -181,7 +182,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	"src/app/[locale]/(app)/time-tracking/actions.canonical.ts": [
+	"src/lib/time-tracking/canonical-work-record.ts": [
 		{
 			columns: [
 				"approval_state",
@@ -1025,27 +1026,28 @@ export const SOURCE_WRITE_EXCEPTIONS = {
 			uncertainty: "dynamic_payload",
 		},
 	],
-	"src/app/[locale]/(app)/time-tracking/actions/clocking.ts": [
+	"src/lib/time-tracking/clocking/break.ts": [
 		{
 			columns: [
 				"approval_status",
+				"canonical_record_id",
 				"clock_out_id",
 				"duration_minutes",
 				"end_time",
 				"pending_changes",
 			],
-			functionName: "addLegacyBreak",
+			functionName: "takeLegacyBreak",
 			operation: "update",
 			table: "work_period",
 		},
 		{
 			columns: ["clock_in_id", "start_time"],
-			functionName: "addLegacyBreak",
+			functionName: "takeLegacyBreak",
 			operation: "insert",
 			table: "work_period",
 		},
 	],
-	"src/app/[locale]/(app)/time-tracking/actions/entry-helpers.ts": [
+	"src/lib/time-tracking/time-entry-writer.ts": [
 		{
 			columns: ["is_superseded", "replaces_entry_id", "type"],
 			functionName: "createTimeEntry",

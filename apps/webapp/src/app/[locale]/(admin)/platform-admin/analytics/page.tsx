@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PlatformAnalyticsCharts } from "@/components/platform-admin/platform-analytics-charts";
 import { LocalizedLoadingLabel } from "@/components/shells/localized-loading-label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parsePlatformAnalyticsParams } from "@/lib/platform-analytics/range";
 import { getPlatformAnalyticsData } from "@/lib/platform-analytics/service";
@@ -249,10 +250,13 @@ function PlatformAnalyticsSectionHeading({
 
 function PlatformAnalyticsPageLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="space-y-8"
 			role="status"
-			aria-label="Loading platform analytics"
+			label={{
+				labelKey: "common.loadingRegions.platformAnalytics",
+				labelDefault: "Loading platform analytics",
+			}}
 		>
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 				<div className="space-y-2">
@@ -268,6 +272,6 @@ function PlatformAnalyticsPageLoading() {
 				</div>
 				<PlatformAnalyticsLoading />
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }

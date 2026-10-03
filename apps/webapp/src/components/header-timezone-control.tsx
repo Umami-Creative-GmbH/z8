@@ -1,15 +1,23 @@
 "use client";
 
 import { IconClock } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { updateTimezone } from "@/app/[locale]/(app)/settings/profile/actions";
-import { useTimeFormat, useUserTimezone } from "@/components/providers/user-preferences-provider";
+import {
+	useTimeFormat,
+	useUserTimezone,
+} from "@/components/providers/user-preferences-provider";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 import { formatHeaderTimezone } from "./header-timezone-control-utils";
@@ -21,6 +29,7 @@ function getInitialCurrentTime() {
 }
 
 export function HeaderTimezoneControl() {
+	const { t } = useTranslate();
 	const router = useRouter();
 	const savedTimezone = useUserTimezone();
 	const timeFormat = useTimeFormat();
@@ -32,7 +41,8 @@ export function HeaderTimezoneControl() {
 	useEffect(() => {
 		let interval: number | undefined;
 		const current = DateTime.now();
-		const millisecondsUntilNextMinute = 60_000 - (current.second * 1_000 + current.millisecond);
+		const millisecondsUntilNextMinute =
+			60_000 - (current.second * 1_000 + current.millisecond);
 		const timeout = window.setTimeout(() => {
 			setNow(DateTime.now());
 			interval = window.setInterval(() => {
@@ -59,27 +69,45 @@ export function HeaderTimezoneControl() {
 	async function handleSave() {
 		setPending(true);
 
-		await runWithCleanup(async () => {
-		try {
-			const result = await updateTimezone(selectedTimezone);
+		await runWithCleanup(
+			async () => {
+				try {
+					const result = await updateTimezone(selectedTimezone);
 
-			if (!result) {
-				toast.error("An error occurred while updating timezone");
-				return;
-			}
+					if (!result) {
+						toast.error(
+							t(
+								"header.timezone.updateError",
+								"An error occurred while updating timezone",
+							),
+						);
+						return;
+					}
 
-			if (!result.success) {
-				toast.error(result.error || "Failed to update timezone");
-				return;
-			}
+					if (!result.success) {
+						toast.error(
+							result.error ||
+								t("header.timezone.updateFailed", "Failed to update timezone"),
+						);
+						return;
+					}
 
-			toast.success("Timezone updated successfully");
-			setOpen(false);
-			router.refresh();
-		} catch {
-			toast.error("An error occurred while updating timezone");
-		}
-		}, () => setPending(false));
+					toast.success(
+						t("header.timezone.updated", "Timezone updated successfully"),
+					);
+					setOpen(false);
+					router.refresh();
+				} catch {
+					toast.error(
+						t(
+							"header.timezone.updateError",
+							"An error occurred while updating timezone",
+						),
+					);
+				}
+			},
+			() => setPending(false),
+		);
 	}
 
 	return (
@@ -94,14 +122,21 @@ export function HeaderTimezoneControl() {
 		>
 			<PopoverTrigger asChild>
 				<Button
-					aria-label={`Current timezone ${displayTimezone}, ${timeLabel}, ${offsetLabel}`}
+					aria-label={t(
+						"header.timezone.current",
+						"Current timezone {timezone}, {time}, {offset}",
+						{ timezone: displayTimezone, time: timeLabel, offset: offsetLabel },
+					)}
 					className="h-9 gap-1 px-2 sm:gap-2 sm:px-3"
 					suppressHydrationWarning
 					type="button"
 					variant="ghost"
 				>
 					<IconClock className="hidden size-4 sm:block" aria-hidden="true" />
-					<span className="hidden font-medium tabular-nums sm:inline" suppressHydrationWarning>
+					<span
+						className="hidden font-medium tabular-nums sm:inline"
+						suppressHydrationWarning
+					>
 						{timeLabel}
 					</span>
 					<Badge variant="secondary" className="font-mono text-[11px]">
@@ -111,11 +146,19 @@ export function HeaderTimezoneControl() {
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-80 space-y-4">
 				<div className="space-y-1">
-					<p className="text-sm font-medium">Saved timezone</p>
-					<p className="break-all text-muted-foreground text-sm">{savedTimezone}</p>
+					<p className="text-sm font-medium">
+						{t("header.timezone.savedTimezone", "Saved timezone")}
+					</p>
+					<p className="break-all text-muted-foreground text-sm">
+						{savedTimezone}
+					</p>
 				</div>
 
-				<TimezonePicker value={selectedTimezone} onChange={setDraftTimezone} disabled={pending} />
+				<TimezonePicker
+					value={selectedTimezone}
+					onChange={setDraftTimezone}
+					disabled={pending}
+				/>
 
 				<Button
 					aria-busy={pending}
@@ -124,7 +167,9 @@ export function HeaderTimezoneControl() {
 					onClick={handleSave}
 					type="button"
 				>
-					{pending ? "Saving..." : "Save timezone"}
+					{pending
+						? t("header.timezone.saving", "Saving...")
+						: t("header.timezone.saveTimezone", "Save timezone")}
 				</Button>
 			</PopoverContent>
 		</Popover>

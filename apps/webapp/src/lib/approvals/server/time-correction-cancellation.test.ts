@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	approvalChainInstance,
@@ -7,6 +8,8 @@ import {
 	employee,
 	workPeriod,
 } from "@/db/schema";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
+import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 
 const ids = {
 	organization: "10000000-0000-4000-8000-000000000001",
@@ -28,11 +31,37 @@ const state = vi.hoisted(() => ({
 	recordIntent: vi.fn(async (_database: unknown, _input: Record<string, unknown>) => false),
 }));
 
-vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
-	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks: corrections run on the work
+// transaction fake (real ledger, recorded guards) over the database of the
+// suite's approval context. The PostgreSQL suites prove the protocol.
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withTimeCorrectionWorkTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withTimeCorrectionWorkTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+			}).run(actual.timeCorrectionWorkPlan(input, createRuntime), operation),
+	};
+});
+vi.mock("@/lib/time-tracking/completed-work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/completed-work-transaction")>()),
+	routeCompletedWork: async (
+		_db: unknown,
+		input: { employeeId: string; actorUserId: string | null },
+	) => ({
+		users: input.actorUserId === null ? [] : [input.actorUserId],
+		employees: [input.employeeId],
+		writeTargets: [input.employeeId],
+	}),
+}));
 
 vi.mock("@/db", () => ({ db: {} }));
 // Withdrawal intents (#432): legacy-time-bound-approval.integration.test.ts.
@@ -66,6 +95,9 @@ it("keeps cancellation timestamp comparisons inside the Temporal boundary", () =
 	expect(source).not.toContain(".getTime()");
 });
 
+/** The pending legacy request the observed workflow's stage names (#475). */
+const pendingRequestId = "10000000-0000-4000-8000-000000000005";
+
 function workflow(status: "pending" | "cancelled" = "pending") {
 	return {
 		id: ids.workflow,
@@ -76,6 +108,7 @@ function workflow(status: "pending" | "cancelled" = "pending") {
 		requesterEmployeeId: ids.employee,
 		status,
 		version: status === "pending" ? 4 : 5,
+		stages: [{ legacyApprovalRequestId: pendingRequestId }],
 		contextSnapshot: {
 			timeCorrection: {
 				action: "edit",
@@ -91,16 +124,7 @@ function createCanonicalHarness(input?: {
 	disposition?: "executed" | "replayed";
 }) {
 	const snapshot = workflow(input?.status);
-	const gate = vi.fn().mockResolvedValue({
-		mode: input?.mode ?? "canonical",
-		behavior: {
-			serveFrom: "canonical",
-			writeLegacy: input?.mode !== "complete",
-			writeCanonical: true,
-			decideCanonical: true,
-			mirror: input?.mode === "complete" ? "none" : "canonical_to_legacy",
-		},
-	});
+	const gate = vi.fn().mockResolvedValue(approvalWriteGateResult(input?.mode ?? "canonical"));
 	const context = {
 		dbService: {
 			db: {
@@ -362,6 +386,10 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 		.mockReturnValueOnce(requestMutation)
 		.mockReturnValueOnce(correctionMutation);
 	const database = {
+		// The coordinator's observed-workflow lookup (#475).
+		execute: vi.fn(async (statement: SQL) =>
+			answerObservedWorkflowLookup(statement, [workflow()]),
+		),
 		query: {
 			approvalChainInstance: {
 				findMany: vi.fn().mockResolvedValue([]),
@@ -370,6 +398,8 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 				findMany: vi.fn().mockResolvedValue([]),
 			},
 			approvalRequest: {
+				// The requester's latest legacy request on the work period.
+				findFirst: vi.fn().mockResolvedValue({ id: pendingRequestId }),
 				// After a capture, the persisted request row the capture described:
 				// the tombstone keeps its submission evidence (#301).
 				findMany: vi.fn(async () => {
@@ -430,16 +460,7 @@ function createLegacyHarness(mode: "legacy" | "shadow" | "ready") {
 	const context = {
 		dbService: { db: database },
 		writeGate: {
-			acquire: vi.fn().mockResolvedValue({
-				mode,
-				behavior: {
-					serveFrom: "legacy",
-					writeLegacy: true,
-					writeCanonical: mode !== "legacy",
-					decideCanonical: false,
-					mirror: mode === "legacy" ? "none" : "legacy_to_canonical",
-				},
-			}),
+			acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 		},
 		repository: {
 			loadSnapshot: vi.fn().mockResolvedValue(workflow()),

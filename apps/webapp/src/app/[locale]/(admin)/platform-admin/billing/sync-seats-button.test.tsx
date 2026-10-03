@@ -1,10 +1,11 @@
 /* @vitest-environment jsdom */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 import { syncOrganizationSeatsAction } from "./actions";
 import { SyncSeatsButton } from "./sync-seats-button";
 
@@ -29,7 +30,9 @@ const useRouterMock = vi.mocked(useRouter);
 const toastMock = vi.mocked(toast);
 
 function renderButton() {
-	render(<SyncSeatsButton organizationId="org_123" organizationName="Acme GmbH" />);
+	render(
+		<SyncSeatsButton organizationId="org_123" organizationName="Acme GmbH" />,
+	);
 }
 
 describe("SyncSeatsButton", () => {
@@ -43,7 +46,9 @@ describe("SyncSeatsButton", () => {
 		const user = userEvent.setup();
 
 		renderButton();
-		await user.click(screen.getByRole("button", { name: "Sync seats for Acme GmbH" }));
+		await user.click(
+			screen.getByRole("button", { name: "Sync seats for Acme GmbH" }),
+		);
 
 		await waitFor(() => {
 			expect(syncSeats).toHaveBeenCalledWith("org_123");
@@ -53,11 +58,16 @@ describe("SyncSeatsButton", () => {
 	});
 
 	it("shows the action error and does not refresh when the sync fails", async () => {
-		syncSeats.mockResolvedValue({ success: false, error: "Billing is disabled" });
+		syncSeats.mockResolvedValue({
+			success: false,
+			error: "Billing is disabled",
+		});
 		const user = userEvent.setup();
 
 		renderButton();
-		await user.click(screen.getByRole("button", { name: "Sync seats for Acme GmbH" }));
+		await user.click(
+			screen.getByRole("button", { name: "Sync seats for Acme GmbH" }),
+		);
 
 		await waitFor(() => {
 			expect(toastMock.error).toHaveBeenCalledWith("Billing is disabled");
@@ -70,7 +80,9 @@ describe("SyncSeatsButton", () => {
 		const user = userEvent.setup();
 
 		renderButton();
-		await user.click(screen.getByRole("button", { name: "Sync seats for Acme GmbH" }));
+		await user.click(
+			screen.getByRole("button", { name: "Sync seats for Acme GmbH" }),
+		);
 
 		await waitFor(() => {
 			expect(toastMock.error).toHaveBeenCalledWith("Failed to sync seats");

@@ -3,7 +3,7 @@
  * Clock actions serialize with departures and never start work past a cutoff.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	ClockingAccessError,
@@ -12,18 +12,18 @@ import {
 } from "@/lib/time-tracking/clocking-core";
 import { createDepartureClockOut } from "./clock-out";
 import { assertEmployeeMayClock } from "./clocking-gate";
+import { runDepartureTransaction } from "./departure-transaction";
 import { preserveLateClockEvidence } from "./late-clock-evidence";
 import { findOpenDepartureClockRepairs } from "./reviews";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "./testing/database.test.fixture";
 import { executeDepartureInTransaction } from "./transition";
 import type { DepartureClockOutPort } from "./types";
 
-describeLifecycleDatabase("clocking against departures", () => {
+describe("clocking against departures", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {
@@ -122,8 +122,8 @@ describeLifecycleDatabase("clocking against departures", () => {
 		};
 		const now: Instant = parseInstant(new Date().toISOString());
 
-		const departure = fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, now, holdingClockOut),
+		const departure = runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, now, holdingClockOut),
 		);
 		await locksTaken;
 		const racingClockIn = clockIn(target).then(
@@ -141,8 +141,8 @@ describeLifecycleDatabase("clocking against departures", () => {
 	async function depart(target: SeededEmployee, cutoff: Date) {
 		const identity = await schedule(target, cutoff);
 		const now = parseInstant(new Date().toISOString());
-		await fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, now, createDepartureClockOut()),
+		await runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, now, createDepartureClockOut()),
 		);
 		return identity;
 	}
@@ -171,8 +171,8 @@ describeLifecycleDatabase("clocking against departures", () => {
 		).rejects.toBeInstanceOf(ClockingAccessError);
 		expect(await activePeriods(target)).toBe(1);
 
-		await fixture.db.transaction((tx) =>
-			executeDepartureInTransaction(tx, identity, actionAt, createDepartureClockOut()),
+		await runDepartureTransaction(fixture.db, identity, (scope) =>
+			executeDepartureInTransaction(scope, identity, actionAt, createDepartureClockOut()),
 		);
 		const closed = await fixture.pool.query<{ end_time: Date }>(
 			`select end_time from work_period where employee_id = $1`,

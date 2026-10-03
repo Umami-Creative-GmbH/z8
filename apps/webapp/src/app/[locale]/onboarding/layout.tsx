@@ -6,26 +6,35 @@ import { FontSizeToggle } from "@/components/font-size-toggle";
 import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
 export default function OnboardingLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<Suspense fallback={<OnboardingLayoutLoading />}>
-			<OnboardingLayoutContent>{children}</OnboardingLayoutContent>
-		</Suspense>
+		<RouteTranslationBoundary route="/onboarding" params={params}>
+			<Suspense fallback={<OnboardingLayoutLoading />}>
+				<OnboardingLayoutContent>{children}</OnboardingLayoutContent>
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }
 
 function OnboardingLayoutLoading() {
 	return (
-		<div
+		<LoadingRegion
 			className="relative min-h-svh overflow-x-hidden bg-background"
 			role="status"
-			aria-label="Loading onboarding"
+			label={{
+				labelKey: "common.loadingRegions.onboarding",
+				labelDefault: "Loading onboarding",
+			}}
 		>
 			<div className="flex min-h-svh flex-col px-4 pt-4 sm:px-8 sm:pt-6 lg:px-10">
 				<div className="flex justify-end gap-2">
@@ -44,7 +53,7 @@ function OnboardingLayoutLoading() {
 					className="mx-auto mb-3 h-4 w-64 max-w-full"
 				/>
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

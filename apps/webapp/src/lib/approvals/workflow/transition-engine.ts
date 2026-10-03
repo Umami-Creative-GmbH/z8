@@ -7,6 +7,7 @@ import type {
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
 import { mapSequentially } from "../sequential";
+import { pinApprovalWriteGate } from "./pinned-write-gate";
 import type {
 	ApprovalCommandActorResolver,
 	ApprovalCommandResult,
@@ -16,7 +17,6 @@ import type {
 	ApprovalWorkflowAuthorizationGrant,
 	ApprovalWorkflowCommandRequest,
 	ApprovalWorkflowSourceLoader,
-	ApprovalWriteGate,
 } from "./ports";
 import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
@@ -486,7 +486,7 @@ export function createApprovalTransitionEngine(
 				workflowType: workflow.workflowType,
 			});
 			assertSnapshotScope(request, workflow);
-			if (!gate.behavior.decideCanonical || !gate.behavior.writeCanonical) {
+			if (gate.authority !== "canonical") {
 				throw engineError("forbidden", {
 					field: "canonical_authority",
 					mode: gate.mode,
@@ -842,20 +842,16 @@ export function createApprovalTransitionEngine(
 					finalization,
 				});
 			}
-			if (gate.behavior.mirror === "canonical_to_legacy") {
-				const fixedGate: ApprovalWriteGate = {
-					acquire: async (scope) => {
-						if (
-							scope.organizationId !== result.snapshot.organizationId ||
-							scope.workflowType !== result.snapshot.workflowType
-						) {
-							invariant({ mirror: "write_gate_scope" });
-						}
-						return gate;
-					},
-				};
+			if (gate.compatibilityWriting) {
 				await context.compatibilityWriter
-					.withWriteGate(fixedGate)
+					.withWriteGate(
+						pinApprovalWriteGate({
+							organizationId: result.snapshot.organizationId,
+							workflowType: result.snapshot.workflowType,
+							authority: gate,
+							refuse: () => invariant({ mirror: "write_gate_scope" }),
+						}),
+					)
 					.mirrorCanonicalToLegacy({ result });
 			}
 			await context.projectionWriter.write(result.projection);

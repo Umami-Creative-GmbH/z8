@@ -6,9 +6,10 @@ import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
 import { SWUpdatePrompt } from "@/components/offline";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
-import { loadRouteTranslations } from "@/tolgee/load-translations";
+import { loadShellTranslations } from "@/tolgee/load-translations";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,13 +34,10 @@ async function TranslationProvider({
 	locale: string;
 	children: ReactNode;
 }) {
-	const records = await loadRouteTranslations(locale).catch((error) => {
-		console.warn("Failed to load Tolgee records:", error);
-		return {};
-	});
+	const slice = await loadShellTranslations(locale);
 
 	return (
-		<TranslationProviders locale={locale} records={records}>
+		<TranslationProviders locale={locale} slice={slice}>
 			{children}
 		</TranslationProviders>
 	);
@@ -82,9 +80,13 @@ function ApplicationContent({ children }: { children: ReactNode }) {
 
 function RootRouteShell() {
 	return (
-		<main
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading application"
+			as="main"
+			label={{
+				labelKey: "common.loadingRegions.application",
+				labelDefault: "Loading application",
+			}}
 			className="flex min-h-svh bg-background"
 		>
 			<aside className="hidden w-72 shrink-0 space-y-4 border-r p-4 md:block">
@@ -103,7 +105,7 @@ function RootRouteShell() {
 					<Skeleton className="min-h-64 w-full flex-1" />
 				</div>
 			</section>
-		</main>
+		</LoadingRegion>
 	);
 }
 
@@ -124,7 +126,10 @@ function AppProviders({
 			<FontSizeProvider>
 				<Suspense
 					fallback={
-						<TranslationProviders locale={locale} records={{}}>
+						<TranslationProviders
+							locale={locale}
+							slice={{ locale, namespaces: [], records: {}, keyOwners: {} }}
+						>
 							<ApplicationContent>
 								<RootRouteShell />
 							</ApplicationContent>

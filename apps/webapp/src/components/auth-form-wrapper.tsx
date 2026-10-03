@@ -1,6 +1,7 @@
 "use client";
 
 import { IconArrowLeft } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +29,7 @@ export function AuthFormWrapper({
 	backHref,
 	...props
 }: AuthFormWrapperProps) {
+	const { t } = useTranslate();
 	const appName = branding?.appName || "z8";
 	const visibleBuildHash = buildHash ?? env.NEXT_PUBLIC_BUILD_HASH;
 
@@ -39,17 +41,28 @@ export function AuthFormWrapper({
 		: undefined;
 
 	return (
-		<div className={cn("mx-auto w-full max-w-md", className)} style={customStyles} {...props}>
+		<div
+			className={cn("mx-auto w-full max-w-md", className)}
+			style={customStyles}
+			{...props}
+		>
 			<Card className="relative w-full border-white/30 bg-white/20 shadow-xl shadow-black/5 backdrop-blur-[40px] sm:shadow-xl dark:border-white/10 dark:bg-slate-950/20 dark:shadow-black/30 [&_.text-muted-foreground]:text-foreground/75 [&_[data-slot=input]]:bg-background/85 dark:[&_[data-slot=input]]:bg-background/80">
 				<CardContent className="p-5 sm:p-8">
 					<form className="w-full" method="post" {...formProps}>
 						<div className="flex flex-col gap-6">
-							<div className={cn("flex items-center gap-4", backHref ? "" : "justify-center")}>
+							<div
+								className={cn(
+									"flex items-center gap-4",
+									backHref ? "" : "justify-center",
+								)}
+							>
 								{backHref ? (
 									<Button asChild size="icon" variant="ghost">
 										<Link href={backHref}>
 											<IconArrowLeft className="size-4" />
-											<span className="sr-only">Back to login</span>
+											<span className="sr-only">
+												{t("auth.wrapper.backToLogin", "Back to login")}
+											</span>
 										</Link>
 									</Button>
 								) : null}
@@ -57,7 +70,9 @@ export function AuthFormWrapper({
 									{branding?.logoUrl ? (
 										<div className="relative mb-2 h-12 w-32">
 											<Image
-												alt={`${appName} logo`}
+												alt={t("auth.wrapper.logo", "{appName} logo", {
+													appName,
+												})}
 												className="object-contain"
 												fill
 												sizes="128px"
@@ -77,7 +92,9 @@ export function AuthFormWrapper({
 				</CardContent>
 				{visibleBuildHash ? (
 					<div className="absolute right-3 bottom-1.5 text-[10px] text-foreground/55">
-						Version {visibleBuildHash}
+						{t("auth.wrapper.version", "Version {version}", {
+							version: visibleBuildHash,
+						})}
 					</div>
 				) : null}
 			</Card>

@@ -25,7 +25,7 @@ running unchanged.
 apps/webapp/src/lib/time-tracking/clock-command.ts      # `break` shape, endpoint/observation rules, clock continuity
 apps/webapp/src/lib/time-tracking/close-resume-work.ts  # the operation: close graph + start graph + one receipt
 apps/webapp/src/lib/time-tracking/work-period-review.ts # unresolved-review guard, shared with #286 amendments
-apps/webapp/src/app/[locale]/(app)/time-tracking/actions/clock-command.ts  # submit/replay/lookup of breaks
+apps/webapp/src/lib/time-tracking/clocking/break.ts     # submit/replay of breaks, through the Clocking module (#481)
 apps/webapp/drizzle/0097_close_resume_work.sql          # widens the receipt kind check
 apps/desktop/src-tauri/src/break_evidence.rs            # observations, idle tracker, continuity rule
 apps/desktop/src-tauri/src/frozen_command.rs            # freeze_break
@@ -108,8 +108,9 @@ and writes its own receipt. Their behavior and receipts are unchanged.
 
 A failure at any step rolls back every write. Before the transaction, the server checks
 the target (`target_unknown` / `target_not_active`, never a different active period),
-delayed admission for the idle start, the return and the confirmation, holidays in each
-endpoint's own zone. The break never routes approval (#361). Replay, lookup and the race recheck work
+delayed admission for the idle start, the return and the confirmation, and a holiday on
+the resumed half only (since #481; a holiday never refuses closing work). The break never
+routes approval (#361). Replay, lookup and the race recheck work
 as in #275: an exact committed receipt replays without writes and returns no post-commit
 advice; a changed command under the same identity is a `collision`. Lookup reports
 `standing` only while both the closure and the resumed start still stand.

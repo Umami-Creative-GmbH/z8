@@ -8,6 +8,10 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
+
+/** The closed work's end, the instant the policy is looked up at. */
+const workEnd = instantFromDate(new Date("2024-01-15T17:00:00Z"));
 
 // Mock data
 const mockRegulation = {
@@ -143,7 +147,7 @@ vi.mock("@/lib/time-tracking/timezone-utils", () => ({
 
 // Mock work policy service
 const mockWorkPolicyService = {
-	getEffectivePolicy: vi.fn(),
+	getEffectivePolicyAt: vi.fn(),
 	checkCompliance: vi.fn(),
 	calculateBreakRequirements: vi.fn(),
 	logViolation: vi.fn(),
@@ -155,12 +159,12 @@ describe("Break Enforcement Service", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockQueryResults = {};
-		mockWorkPolicyService.getEffectivePolicy.mockReset();
+		mockWorkPolicyService.getEffectivePolicyAt.mockReset();
 	});
 
 	describe("calculateBreakDeficit", () => {
 		test("should return zero deficit when no regulation exists", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(null),
 			);
 
@@ -172,6 +176,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 540,
 						breaksTakenMinutes: 0,
 					},
@@ -182,10 +188,15 @@ describe("Break Enforcement Service", () => {
 			expect(result.deficit).toBe(0);
 			expect(result.applicableRule).toBeNull();
 			expect(result.regulationId).toBeNull();
+			expect(mockWorkPolicyService.getEffectivePolicyAt).toHaveBeenCalledWith({
+				employeeId: "emp-123",
+				organizationId: "org-123",
+				at: workEnd,
+			});
 		});
 
 		test("should return zero deficit when work duration is below threshold", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -197,6 +208,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 300, // 5 hours - below 6 hour threshold
 						breaksTakenMinutes: 0,
 					},
@@ -210,7 +223,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should calculate correct deficit for 6+ hour shift with no breaks", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -222,6 +235,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 420, // 7 hours
 						breaksTakenMinutes: 0,
 					},
@@ -237,7 +252,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should calculate correct deficit for 9+ hour shift", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -250,6 +265,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 541, // Just over 9 hours
 						breaksTakenMinutes: 0,
 					},
@@ -265,7 +282,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should subtract breaks already taken from deficit", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -278,6 +295,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 541, // Just over 9 hours
 						breaksTakenMinutes: 30, // Already took 30 mins
 					},
@@ -289,7 +308,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should return zero deficit when sufficient breaks already taken", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -301,6 +320,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 540, // 9 hours
 						breaksTakenMinutes: 60, // Already took 60 mins (more than 45 required)
 					},
@@ -312,7 +333,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should include maxUninterruptedMinutes in result", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -324,6 +345,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 420,
 						breaksTakenMinutes: 0,
 					},
@@ -348,7 +371,7 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: 360, // 6 hours
 			};
 
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation }),
 			);
 
@@ -361,6 +384,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 541,
 						breaksTakenMinutes: 0,
 					},
@@ -379,7 +404,7 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: 480, // 8 hours - higher than threshold
 			};
 
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation }),
 			);
 
@@ -391,6 +416,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 420, // 7 hours
 						breaksTakenMinutes: 0,
 					},
@@ -427,7 +454,7 @@ describe("Break Enforcement Service", () => {
 				],
 			};
 
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation: multiRuleRegulation }),
 			);
 
@@ -440,6 +467,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 420,
 						breaksTakenMinutes: 0,
 					},
@@ -453,6 +482,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 600,
 						breaksTakenMinutes: 0,
 					},
@@ -466,6 +497,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 780,
 						breaksTakenMinutes: 0,
 					},
@@ -483,7 +516,7 @@ describe("Break Enforcement Service", () => {
 				breakRules: [],
 			};
 
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed({ ...mockPolicy, regulation: noBreakRulesRegulation }),
 			);
 
@@ -495,6 +528,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 540,
 						breaksTakenMinutes: 0,
 					},
@@ -512,7 +547,7 @@ describe("Break Enforcement Service", () => {
 				maxUninterruptedMinutes: null,
 			};
 
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed({
 					...mockPolicy,
 					regulation: noMaxUninterruptedRegulation,
@@ -528,6 +563,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 541,
 						breaksTakenMinutes: 0,
 					},
@@ -540,7 +577,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should handle zero session duration", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -552,6 +589,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 0,
 						breaksTakenMinutes: 0,
 					},
@@ -563,7 +602,7 @@ describe("Break Enforcement Service", () => {
 		});
 
 		test("should handle very long shifts (16+ hours)", async () => {
-			mockWorkPolicyService.getEffectivePolicy.mockReturnValue(
+			mockWorkPolicyService.getEffectivePolicyAt.mockReturnValue(
 				Effect.succeed(mockPolicy),
 			);
 
@@ -575,6 +614,8 @@ describe("Break Enforcement Service", () => {
 				calculateBreakDeficitForTesting(
 					{
 						employeeId: "emp-123",
+						organizationId: "org-123",
+						policyAt: workEnd,
 						sessionDurationMinutes: 960, // 16 hours
 						breaksTakenMinutes: 0,
 					},

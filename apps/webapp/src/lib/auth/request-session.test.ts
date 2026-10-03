@@ -38,10 +38,23 @@ describe("getRequestSession", () => {
 	});
 
 	it("waits for the request connection before querying the session", async () => {
-		await expect(getRequestSession()).resolves.toMatchObject({ user: { id: "user-1" } });
+		await expect(getRequestSession()).resolves.toMatchObject({
+			user: { id: "user-1" },
+		});
 
 		expect(mockState.calls).toEqual(["connection", "getSession"]);
-		expect(mockState.getSession).toHaveBeenCalledWith({ headers: mockState.headers });
+		expect(mockState.getSession).toHaveBeenCalledWith({
+			headers: mockState.headers,
+		});
+	});
+
+	it("evaluates the authoritative session again on each direct call", async () => {
+		await getRequestSession();
+		mockState.getSession.mockResolvedValueOnce(null);
+
+		await expect(getRequestSession()).resolves.toBeNull();
+		expect(mockState.getSession).toHaveBeenCalledTimes(2);
+		expect(mockState.connection).toHaveBeenCalledTimes(2);
 	});
 
 	it("never starts the session query while the connection is withheld", async () => {
@@ -63,7 +76,9 @@ function listSourceFiles(directory: string): string[] {
 		if (entry.isDirectory()) {
 			return entry.name === "__tests__" ? [] : listSourceFiles(fullPath);
 		}
-		return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name) ? [fullPath] : [];
+		return /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)
+			? [fullPath]
+			: [];
 	});
 }
 
@@ -71,14 +86,18 @@ describe("request-time session lookups", () => {
 	it("call getSession only through getRequestSession outside route handlers", () => {
 		// Route handlers and the proxy never run inside a prerender.
 		const isRouteBoundary = (file: string) =>
-			file.startsWith("app/api/") || file.endsWith("/route.ts") || file === "proxy.ts";
+			file.startsWith("app/api/") ||
+			file.endsWith("/route.ts") ||
+			file === "proxy.ts";
 		const allowed = new Set(["lib/auth/request-session.ts"]);
 
 		const offenders = listSourceFiles(sourceRoot)
 			.map((file) => path.relative(sourceRoot, file).split(path.sep).join("/"))
 			.filter((file) => !isRouteBoundary(file) && !allowed.has(file))
 			.filter((file) =>
-				readFileSync(path.join(sourceRoot, file), "utf8").includes("auth.api.getSession("),
+				readFileSync(path.join(sourceRoot, file), "utf8").includes(
+					"auth.api.getSession(",
+				),
 			);
 
 		expect(offenders).toEqual([]);

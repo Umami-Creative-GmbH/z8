@@ -33,6 +33,7 @@
 		"luxon": "^3.7.2",
 		"nanoid": "^6.0.1",
 		"next": "16.3.4",
+		"next-intl": "^4.14.2",
 		"node-vault": "^0.12.0",
 		"nodemailer": "^10.0.1",
 		"papaparse": "^5.7.0",

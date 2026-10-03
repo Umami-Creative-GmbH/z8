@@ -27,8 +27,8 @@ import {
 	workCategory,
 	workPeriod,
 } from "@/db/schema";
-import type { BotPlatform } from "@/lib/bot-platform/types";
 import type { WorkPeriodPostCommitDescriptor } from "@/lib/approvals/server/work-period-submission";
+import type { BotPlatform } from "@/lib/bot-platform/types";
 import {
 	comparePlainDates,
 	dateFromInstant,
@@ -57,15 +57,25 @@ import {
 import type { TimeEntryTimezoneSource } from "./timezone-capture";
 import type { WorkTransactionContext } from "./web-clock-out-transaction";
 import { deriveWorkDurationMinutes } from "./work-duration";
-import type { WorkTransactionAdmission, WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope, WorkTransactionAdmission } from "./work-transaction";
 
 export const CLOSE_ACTIVE_WORK_COMMAND_VERSION = 1;
 export const CLOSE_ACTIVE_WORK_RESULT_VERSION = 1;
 export const WEB_CLOCK_OUT_WRITER_VERSION = 1;
 export const BOT_CLOCK_OUT_WRITER_VERSION = 1;
+export const DIRECT_HTTP_WRITER_VERSION = 1;
 
-/** The adapter a live clock command arrived through; stored as device evidence. */
-export type ClockChannel = "web" | "mobile" | `${BotPlatform}-bot`;
+/**
+ * The adapter a live clock command arrived through; stored as device evidence.
+ * `api` is direct HTTP: frozen clock commands and the legacy route's commands.
+ * `employee-offboarding` is the departure's own clock-out (#485).
+ */
+export type ClockChannel =
+	| "web"
+	| "mobile"
+	| "api"
+	| `${BotPlatform}-bot`
+	| typeof DEPARTURE_CLOCK_OUT_WRITER.deviceInfo;
 
 /** Entry source evidence. Bots keep their established `ip_address = "bot"`. */
 export function clockSource(channel: ClockChannel) {
@@ -117,10 +127,39 @@ export type CloseActiveWorkWriter = {
 
 /** The receipt writer of a live clock channel: bots share one, the platform stays in the command. */
 export function liveClockOutWriter(channel: ClockChannel): CloseActiveWorkWriter {
+	if (channel === DEPARTURE_CLOCK_OUT_WRITER.deviceInfo) return DEPARTURE_CLOCK_OUT_WRITER;
+	if (channel === "api") {
+		return {
+			writer: "direct_http",
+			writerVersion: DIRECT_HTTP_WRITER_VERSION,
+			...clockSource(channel),
+		};
+	}
 	return channel.endsWith("-bot")
 		? { writer: "bot_clock_out", writerVersion: BOT_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) }
 		: { writer: "web_clock_out", writerVersion: WEB_CLOCK_OUT_WRITER_VERSION, ...clockSource(channel) };
 }
+
+/** The receipt writer of an on-behalf clock-out of another employee's work (#276). */
+export const MANAGER_ON_BEHALF_WRITER = {
+	writer: "manager_on_behalf",
+	writerVersion: 1,
+	// The established device evidence of on-behalf clock-out entries.
+	deviceInfo: "web-on-behalf",
+	ipAddress: null,
+} as const satisfies CloseActiveWorkWriter;
+
+/**
+ * The receipt writer of a departure's clock-out of the departing employee's work
+ * (#485), inside the offboarding work transaction.
+ */
+export const DEPARTURE_CLOCK_OUT_WRITER = {
+	writer: "employee_departure",
+	writerVersion: 1,
+	// The established device evidence of departure clock-out entries.
+	deviceInfo: "employee-offboarding",
+	ipAddress: null,
+} as const satisfies CloseActiveWorkWriter;
 
 /** Versioned web request evidence. A retry must carry exactly the same command. */
 export type CloseActiveWorkCommand = CloseActiveWorkOperationCommand & {
@@ -235,7 +274,7 @@ export class CompletedWorkAttributionError extends Error {
  * writer or command is a collision; nothing is re-executed or repaired.
  */
 export async function replayCloseActiveWork(
-	context: Pick<WorkTransactionScope, "db" | "assertEmployee">,
+	context: Pick<SealedWorkTransactionScope, "db" | "assertEmployee">,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -279,7 +318,7 @@ export async function replayCloseActiveWork(
  * closure's clock-out to the segment it generated from the period, never replacing it.
  */
 export async function findStandingClosure(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	scope: { organizationId: string; employeeId: string },
 	result: Pick<CloseActiveWorkResult, "clockOutEntryId" | "workPeriodId">,
 ): Promise<Entry | null> {
@@ -381,7 +420,10 @@ export async function closeActiveWorkGraph(
 	if (!(await store.isOrganizationMember(employeeId, organizationId))) {
 		throw new ClockingOrganizationError();
 	}
-	await assertEmployeeMayClock(store, { employeeId, organizationId });
+	// A departure closes the work of the employee whose access it has just ended.
+	if (input.writer.writer !== DEPARTURE_CLOCK_OUT_WRITER.writer) {
+		await assertEmployeeMayClock(store, { employeeId, organizationId });
+	}
 	if (await store.getEntryByActionId(employeeId, organizationId, clockOutEntryId)) {
 		throw new CompletedWorkCollisionError();
 	}

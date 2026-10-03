@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { ApprovalCompatibilityWriter } from "@/lib/approvals/workflow/compatibility-writer";
 import type { ApprovalWriteGate } from "@/lib/approvals/workflow/ports";
@@ -167,16 +168,7 @@ function createLegacyApprovalLifecycle(
 				operation({
 					dbService: { db: tx },
 					writeGate: {
-						acquire: vi.fn().mockResolvedValue({
-							mode: "legacy",
-							behavior: {
-								serveFrom: "legacy",
-								writeLegacy: true,
-								writeCanonical: false,
-								decideCanonical: false,
-								mirror: "none",
-							},
-						}),
+						acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")),
 					},
 					compatibilityWriter: createCompatibilityWriterFixture(),
 				} as unknown as ApprovalWorkflowTransactionContext),
@@ -608,22 +600,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 				},
 			},
 		};
-		const gateResult = {
-			mode,
-			behavior: {
-				serveFrom:
-					mode === "canonical" || mode === "complete" ? "canonical" : "legacy",
-				writeLegacy: mode !== "complete",
-				writeCanonical: mode !== "legacy",
-				decideCanonical: mode === "canonical" || mode === "complete",
-				mirror:
-					mode === "shadow" || mode === "ready"
-						? "legacy_to_canonical"
-						: mode === "canonical"
-							? "canonical_to_legacy"
-							: "none",
-			},
-		};
+		const gateResult = approvalWriteGateResult(mode);
 		const compatibilityWriter = createCompatibilityWriterFixture({
 			mirrorLegacyToCanonical: vi.fn(async () => {
 				calls.push("mirror");

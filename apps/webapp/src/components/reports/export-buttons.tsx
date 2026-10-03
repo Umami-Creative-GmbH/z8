@@ -1,15 +1,24 @@
 "use client";
 
-import { IconDownload, IconFileSpreadsheet, IconFileText } from "@tabler/icons-react";
+import {
+	IconDownload,
+	IconFileSpreadsheet,
+	IconFileText,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useDisplayContext } from "@/hooks/use-display-context";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { exportToCSV, generateCSVFilename } from "@/lib/reports/exporters/csv-exporter";
-import { exportToExcel, generateExcelFilename } from "@/lib/reports/exporters/excel-exporter";
-import { exportToPDF, generatePDFFilename } from "@/lib/reports/exporters/pdf-exporter";
+import {
+	exportToCSV,
+	generateCSVFilename,
+} from "@/lib/reports/exporters/csv-exporter";
+import {
+	exportToPDF,
+	generatePDFFilename,
+} from "@/lib/reports/exporters/pdf-exporter";
 import type { ReportData } from "@/lib/reports/types";
 
 interface ExportButtonsProps {
@@ -17,6 +26,10 @@ interface ExportButtonsProps {
 }
 
 type ExportFormat = "pdf" | "excel" | "csv";
+
+function loadExcelExporter() {
+	return import("@/lib/reports/exporters/excel-exporter");
+}
 
 export function ExportButtons({ reportData }: ExportButtonsProps) {
 	const { t } = useTranslate();
@@ -40,10 +53,13 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 			}
 
 			if (format === "excel") {
+				const { exportToExcel, generateExcelFilename } =
+					await loadExcelExporter();
 				return {
 					data: await exportToExcel(reportData),
 					filename: generateExcelFilename(reportData),
-					mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+					mimeType:
+						"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 				};
 			}
 
@@ -63,7 +79,10 @@ export function ExportButtons({ reportData }: ExportButtonsProps) {
 				description:
 					exportResult.error instanceof Error
 						? exportResult.error.message
-						: t("reports.export.errorDescription", "An error occurred while exporting the report"),
+						: t(
+								"reports.export.errorDescription",
+								"An error occurred while exporting the report",
+							),
 			});
 			setLoading(null);
 			return;

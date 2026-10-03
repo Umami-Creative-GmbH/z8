@@ -15,12 +15,8 @@
  * Telegram HTTP transport (fetch) are replaced.
  */
 
-import { Pool } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -28,38 +24,16 @@ const harness = vi.hoisted(() => ({
 	kicks: [] as Array<{ organizationId: string; workflowId?: string | null }>,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 8,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -79,65 +53,50 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t384.example.test",
 }));
 
-vi.mock("@/lib/email/email-service", () => ({
-	sendEmail: async () => ({ success: true }),
-}));
+vi.mock("@/lib/email/email-service", async () =>
+	(await import("@/test/integration-harness")).emailService(),
+);
 
-vi.mock("@/lib/email/render", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/email/render")>();
-	return {
-		...original,
-		renderAbsenceRequestSubmitted: async () => "<p>submitted</p>",
-		renderAbsenceRequestPendingApproval: async () => "<p>pending</p>",
-		renderAbsenceRequestApproved: async () => "<p>approved</p>",
-		renderAbsenceRequestRejected: async () => "<p>rejected</p>",
-	};
-});
+vi.mock("@/lib/email/render", async (importOriginal) =>
+	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
+);
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	const ignore = async () => undefined;
-	return {
-		...original,
-		onAbsenceRequestSubmitted: ignore,
-		onAbsenceRequestPendingApproval: ignore,
-		onAbsenceRequestApproved: ignore,
-		onAbsenceRequestRejected: ignore,
-		onApprovedAbsenceCancelledByEmployee: ignore,
-	};
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
+		"onAbsenceRequestSubmitted",
+		"onAbsenceRequestPendingApproval",
+		"onAbsenceRequestApproved",
+		"onAbsenceRequestRejected",
+		"onApprovedAbsenceCancelledByEmployee",
+	]),
+);
 
-vi.mock("@/lib/queue", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/queue")>()),
-	addCalendarSyncJob: async () => undefined,
-}));
+vi.mock("@/lib/queue", async (importOriginal) =>
+	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
+);
 
 vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/work-balance/service")>()),
 	markEmployeeWorkBalanceDirty: async () => undefined,
 }));
 
-vi.mock("@/lib/vault", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/vault")>()),
-	getOrgSecret: async () => "384384384:AAT384-legacy_card_test",
-}));
+vi.mock("@/lib/vault", async (importOriginal) =>
+	(await import("@/test/integration-harness")).vault(importOriginal, async () => "384384384:AAT384-legacy_card_test"),
+);
 
 // The post-commit fast path only runs the owner sooner; tests run it explicitly.
-vi.mock("@/lib/approvals/delivery/kick", () => ({
-	kickApprovalDelivery: (input: { organizationId: string; workflowId?: string | null }) => {
-		harness.kicks.push(input);
-	},
-}));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(harness.kicks),
+);
 
 const { requestAbsenceEffect } = await import(
 	"@/app/[locale]/(app)/absences/request-absence-effect"
@@ -154,27 +113,6 @@ const { recordLegacyDeliveryIntent } = await import("@/lib/approvals/delivery/in
 const { db } = await import("@/db");
 const { sendApprovalMessageToManager } = await import("./approval-handler");
 const { handleTelegramUpdate } = await import("./bot-handler");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`Legacy absence bound approval PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const BOT_TOKEN = "384384384:AAT384-legacy_card_test";
 const OTHER_BOT_TOKEN = "384384385:AAT384-other_org_bot";
@@ -238,8 +176,8 @@ function bindingOf(callbackData: string | undefined): string {
 	return (JSON.parse(callbackData ?? "{}") as { b: string }).b;
 }
 
-describeIntegration("Legacy absence Telegram cards with reviewed bindings (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("Legacy absence Telegram cards with reviewed bindings (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 8000;
 	const originalFetch = globalThis.fetch;
@@ -634,23 +572,6 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 		return calls.slice(before).filter((call) => call.method === "sendMessage");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy absence bound approval PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -665,7 +586,6 @@ describeIntegration("Legacy absence Telegram cards with reviewed bindings (Postg
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	for (const mode of ["legacy", "shadow", "ready"] as const) {

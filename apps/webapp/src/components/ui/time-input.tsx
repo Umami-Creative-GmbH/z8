@@ -1,6 +1,7 @@
 "use client";
 
 import { IconClock } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import type * as React from "react";
 import {
 	startTransition,
@@ -173,6 +174,7 @@ function TimeInput({
 	timeFormat,
 	...props
 }: TimeInputProps) {
+	const { t } = useTranslate();
 	const inputRef = useRef<HTMLInputElement>(null);
 	const pickerAnchorRef = useRef<HTMLInputElement>(null);
 	const onChangeRef = useRef(onChange);
@@ -321,7 +323,11 @@ function TimeInput({
 				/>
 				{pickerFormat === "12h" ? (
 					<Button
-						aria-label={`Switch to ${period === "AM" ? "PM" : "AM"}`}
+						aria-label={t(
+							"common.timeInput.switchPeriod",
+							"Switch to {period}",
+							{ period: period === "AM" ? "PM" : "AM" },
+						)}
 						className="h-full rounded-none border-y-0 border-l border-r-0 px-2.5 shadow-none"
 						disabled={props.disabled}
 						onClick={handlePeriodToggle}
@@ -332,7 +338,7 @@ function TimeInput({
 					</Button>
 				) : null}
 				<Button
-					aria-label="Open time picker"
+					aria-label={t("common.timeInput.openTimePicker", "Open time picker")}
 					className="h-full rounded-none border-y-0 border-l border-r-0 px-2.5 shadow-none"
 					disabled={props.disabled}
 					onClick={() => pickerAnchorRef.current?.click()}

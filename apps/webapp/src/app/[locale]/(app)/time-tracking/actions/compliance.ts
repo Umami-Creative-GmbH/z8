@@ -1,32 +1,22 @@
 import "server-only";
 
-// Post-clock-out maintenance for callers that have already authorized the
-// employee (#443): not server actions, so a client cannot run it for any ID.
+// Web-side break and surcharge helpers for callers that have already authorized
+// the employee (#443): not server actions, so a client cannot run them for any ID.
+// The clock-out follow-up effects live in `@/lib/time-tracking/clock-out-effects`.
 
 import { and, eq, gte, lte } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import {
-	type BreakEnforcementResult,
-	BreakEnforcementService,
-	BreakEnforcementServiceLive,
-} from "@/lib/effect/services/break-enforcement.service";
 import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	calculateSurchargeForWorkPeriod,
 	SurchargeService,
 	SurchargeServiceLive,
 } from "@/lib/effect/services/surcharge.service";
-import {
-	type ComplianceWarning,
-	WorkPolicyService,
-	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
-import { getTimeSummary } from "./queries";
 import { logger } from "./shared";
 
 export async function calculateBreaksTakenToday(
@@ -66,71 +56,6 @@ export async function calculateBreaksTakenToday(
 	return totalBreakMinutes;
 }
 
-export async function checkComplianceAfterClockOut(
-	employeeId: string,
-	organizationId: string,
-	workPeriodId: string,
-	currentSessionMinutes: number,
-	timezone: string = "UTC",
-): Promise<ComplianceWarning[]> {
-	try {
-		const [timeSummary, breaksTaken] = await Promise.all([
-			getTimeSummary(employeeId, timezone),
-			calculateBreaksTakenToday(employeeId, timezone),
-		]);
-
-		const complianceEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
-			const result = yield* _(
-				workPolicyService.checkCompliance({
-					employeeId,
-					currentSessionMinutes,
-					totalDailyMinutes: timeSummary.todayMinutes,
-					totalWeeklyMinutes: timeSummary.weekMinutes,
-					breaksTakenMinutes: breaksTaken,
-				}),
-			);
-
-			if (result.warnings.length > 0) {
-				const effectivePolicy = yield* _(
-					workPolicyService.getEffectivePolicy(employeeId),
-				);
-				if (effectivePolicy?.regulation) {
-					for (const warning of result.warnings) {
-						if (warning.severity === "violation") {
-							yield* _(
-								workPolicyService.logViolation({
-									employeeId,
-									organizationId,
-									policyId: effectivePolicy.policyId,
-									workPeriodId,
-									violationType: warning.type,
-									details: {
-										actualMinutes: warning.actualValue,
-										limitMinutes: warning.limitValue,
-										warningShownAt: new Date().toISOString(),
-										userContinued: true,
-									},
-								}),
-							);
-						}
-					}
-				}
-			}
-
-			return result.warnings;
-		}).pipe(
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		return await Effect.runPromise(complianceEffect);
-	} catch (error) {
-		logger.error({ error }, "Failed to check compliance after clock-out");
-		return [];
-	}
-}
-
 export async function calculateAndPersistSurcharges(
 	workPeriodId: string,
 	organizationId: string,
@@ -160,61 +85,5 @@ export async function calculateAndPersistSurcharges(
 			{ error, workPeriodId },
 			"Failed to calculate surcharges after clock-out",
 		);
-	}
-}
-
-export async function reconcileImmediateSurcharges(input: {
-	organizationId: string;
-	employeeId: string;
-	affectedWorkPeriodIds: string[];
-	snapshot: PolicyClockOutSurchargeSnapshot;
-}): Promise<void> {
-	const surchargeEffect = Effect.gen(function* (_) {
-		const surchargeService = yield* _(SurchargeService);
-		yield* _(
-			surchargeService.reconcileWorkPeriods({
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				surchargePeriodIds: input.affectedWorkPeriodIds,
-				staleSurchargePeriodIds: [],
-				surchargeSnapshot: input.snapshot,
-			}),
-		);
-	}).pipe(
-		Effect.provide(SurchargeServiceLive),
-		Effect.provide(DatabaseServiceLive),
-	);
-
-	await Effect.runPromise(surchargeEffect);
-}
-
-export async function enforceBreaksAfterClockOut(input: {
-	employeeId: string;
-	organizationId: string;
-	workPeriodId: string;
-	sessionDurationMinutes: number;
-	timezone: string;
-	createdBy: string;
-}): Promise<BreakEnforcementResult> {
-	try {
-		const enforcementEffect = Effect.gen(function* (_) {
-			const breakService = yield* _(BreakEnforcementService);
-			return yield* _(breakService.enforceBreaksAfterClockOut(input));
-		}).pipe(
-			Effect.provide(BreakEnforcementServiceLive),
-			Effect.provide(WorkPolicyServiceLive),
-			Effect.provide(DatabaseServiceLive),
-		);
-
-		return await Effect.runPromise(enforcementEffect);
-	} catch (error) {
-		logger.error(
-			{ error, workPeriodId: input.workPeriodId },
-			"Failed to enforce breaks after clock-out",
-		);
-		return {
-			wasAdjusted: false,
-			affectedWorkPeriodIds: [input.workPeriodId],
-		};
 	}
 }

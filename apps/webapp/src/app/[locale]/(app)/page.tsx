@@ -3,12 +3,14 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	getOnboardingStatus,
 	getPendingInvitationId,
 	getUserOrganizations,
 } from "@/lib/auth-helpers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
 async function DashboardPageContent() {
 	// Fetch onboarding status and organizations in parallel to eliminate waterfall
@@ -52,22 +54,31 @@ async function DashboardPageContent() {
 
 function DashboardPageLoading() {
 	return (
-		<div
-			aria-label="Loading dashboard"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.dashboard",
+				labelDefault: "Loading dashboard",
+			}}
 			className="@container/main flex flex-1 flex-col gap-2"
 			role="status"
 		>
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<SectionCardsSkeleton aria-hidden="true" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 
-export default function Page() {
+export default function Page({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
 	return (
-		<Suspense fallback={<DashboardPageLoading />}>
-			<DashboardPageContent />
-		</Suspense>
+		<RouteTranslationBoundary route="/" params={params}>
+			<Suspense fallback={<DashboardPageLoading />}>
+				<DashboardPageContent />
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }

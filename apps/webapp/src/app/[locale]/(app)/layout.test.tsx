@@ -17,17 +17,24 @@ describe("AppLayout", () => {
 	it("keeps auth checks and protected children inside the async layout", () => {
 		expect(source).not.toContain("auth.api.getSession");
 		expect(source).not.toContain("redirect(");
-		expect(contentSource).toContain("getRequestSession()");
+		expect(contentSource).toContain("getRenderSession()");
 		expect(contentSource).toContain("redirect(");
 		expect(contentSource).toContain("<ServerAppSidebar");
 		expect(contentSource).toContain("{children}");
 	});
 
 	it("defers auth database instrumentation until request time", () => {
-		const contentStart = contentSource.indexOf("export async function AuthenticatedAppContent");
-		const connectionCall = contentSource.indexOf("await connection();", contentStart);
+		const contentStart = contentSource.indexOf(
+			"export async function AuthenticatedAppContent",
+		);
+		const connectionCall = contentSource.indexOf(
+			"await connection();",
+			contentStart,
+		);
 		expect(contentSource).toContain('import { connection } from "next/server"');
 		expect(connectionCall).toBeGreaterThan(contentStart);
-		expect(connectionCall).toBeLessThan(contentSource.indexOf("getRequestSession()"));
+		expect(connectionCall).toBeLessThan(
+			contentSource.indexOf("getRenderSession()"),
+		);
 	});
 });

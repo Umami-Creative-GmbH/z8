@@ -16,13 +16,9 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
-import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { dateFromInstant, type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -31,37 +27,15 @@ const harness = vi.hoisted(() => ({
 	failCompliance: false,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
-
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -81,11 +55,9 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/billing/guard")>()),
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async (importOriginal) =>
+	(await import("@/test/integration-harness")).billingGuard(importOriginal),
+);
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
@@ -97,9 +69,8 @@ vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	};
 });
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions/compliance", async (importOriginal) => {
-	const original =
-		await importOriginal<typeof import("@/app/[locale]/(app)/time-tracking/actions/compliance")>();
+vi.mock("@/lib/time-tracking/clock-out-effects", async (importOriginal) => {
+	const original = await importOriginal<typeof import("@/lib/time-tracking/clock-out-effects")>();
 	return {
 		...original,
 		checkComplianceAfterClockOut: async (
@@ -115,27 +86,6 @@ const route = await import("./route");
 const { clockIn, clockOutAs } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 const { db } = await import("@/db");
 const { clearOrganizationTimeData } = await import("@/lib/demo/demo-data.service");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`on-behalf clock-out PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t276-on-behalf-org",
@@ -158,6 +108,12 @@ const ids = {
 	assignmentA: "f2761000-0000-4000-8000-000000000003",
 	categoryA: "f2761000-0000-4000-8000-000000000004",
 	categoryB: "f2761000-0000-4000-8000-000000000005",
+	policy: "f2762000-0000-4000-8000-000000000001",
+	regulation: "f2762000-0000-4000-8000-000000000002",
+	policyAssignment: "f2762000-0000-4000-8000-000000000003",
+	laterPolicy: "f2762000-0000-4000-8000-000000000004",
+	laterRegulation: "f2762000-0000-4000-8000-000000000005",
+	laterPolicyAssignment: "f2762000-0000-4000-8000-000000000006",
 } as const;
 const clockInAt = parseInstant("2026-09-20T08:00:00Z");
 // 8h0m40s after the clock-in: the operation rounds half up to 481 minutes.
@@ -183,9 +139,9 @@ async function post(body: unknown) {
 	return { status: response.status, body: (await response.json()) as Record<string, any> };
 }
 
-describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
+describe("manager on-behalf clock-out on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string | null, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -220,9 +176,11 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 		return only(rows);
 	}
 
+	/** Closure receipts; an adopted clock-in keeps its own start receipt (#479). */
 	async function receipts() {
 		const { rows } = await admin.query(
-			"select * from completed_work_operation where organization_id = any($1) order by created_at",
+			`select * from completed_work_operation
+			 where organization_id = any($1) and kind = 'close_active_work' order by created_at`,
 			[[ids.organization, ids.otherOrganization]],
 		);
 		return rows;
@@ -251,10 +209,14 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 	}
 
 	/** Starts the employee's running work through the real web clock-in action. */
-	async function clockInAs(userId: string, organizationId: string = ids.organization) {
+	async function clockInAs(
+		userId: string,
+		organizationId: string = ids.organization,
+		instant: Instant = clockInAt,
+	) {
 		actAs(userId, organizationId);
 		await expect(
-			clockIn("office", { instant: clockInAt, browserTimezone: "America/New_York" }),
+			clockIn("office", { instant, browserTimezone: "America/New_York" }),
 		).resolves.toMatchObject({ success: true });
 		const { rows } = await admin.query<{ id: string; clock_in_id: string }>(
 			`select wp.id, wp.clock_in_id from work_period wp join employee e on e.id = wp.employee_id
@@ -386,23 +348,6 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 		await setAdmission("active");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("On-behalf clock-out PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.now = clockOutAt;
 		harness.failCompliance = false;
@@ -411,9 +356,6 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it("closes the target's running work as one graph owned by the target and completed by the manager", async () => {
@@ -509,6 +451,184 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 			[ids.target],
 		);
 		expect(only(balances)).toMatchObject({ is_dirty: true });
+	});
+
+	/** A daily and weekly limit for the target, as an employee-level work policy. */
+	async function seedWorkingTimeLimits(
+		limits: { daily: number; weekly: number },
+		policy: {
+			id: string;
+			regulationId: string;
+			assignmentId: string;
+			effectiveFrom?: Instant;
+			effectiveUntil?: Instant;
+		} = { id: ids.policy, regulationId: ids.regulation, assignmentId: ids.policyAssignment },
+	) {
+		const timestamp = new Date("2026-07-01T00:00:00Z");
+		await admin.query(
+			`insert into work_policy
+			 (id, organization_id, name, schedule_enabled, regulation_enabled, is_active, created_by, updated_at)
+			 values ($1, $2, $3, false, true, true, $4, $5)`,
+			[policy.id, ids.organization, `T524 limits ${policy.id}`, ids.ownerUser, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_regulation (id, policy_id, max_daily_minutes, max_weekly_minutes, updated_at)
+			 values ($1, $2, $3, $4, $5)`,
+			[policy.regulationId, policy.id, limits.daily, limits.weekly, timestamp],
+		);
+		await admin.query(
+			`insert into work_policy_assignment
+			 (id, policy_id, organization_id, assignment_type, employee_id, priority, is_active,
+			  effective_from, effective_until, created_by, updated_at)
+			 values ($1, $2, $3, 'employee', $4, 2, true, $5, $6, $7, $8)`,
+			[
+				policy.assignmentId,
+				policy.id,
+				ids.organization,
+				ids.target,
+				policy.effectiveFrom ? dateFromInstant(policy.effectiveFrom) : null,
+				policy.effectiveUntil ? dateFromInstant(policy.effectiveUntil) : null,
+				ids.ownerUser,
+				timestamp,
+			],
+		);
+	}
+
+	/** Closes the target's work on behalf while the follow-ups' own clock reads `checkedAt`. */
+	async function closeCheckedAt(workPeriodId: string, checkedAt: Instant) {
+		vi.useFakeTimers({ toFake: ["Date"], now: dateFromInstant(checkedAt) });
+		try {
+			return await closeAs(ids.managerUser, { workPeriodId, operationId: randomUUID() });
+		} finally {
+			vi.useRealTimers();
+		}
+	}
+
+	async function violations() {
+		const { rows } = await admin.query(
+			`select policy_id, violation_type, violation_date, details
+			 from work_policy_violation where organization_id = $1`,
+			[ids.organization],
+		);
+		return rows;
+	}
+
+	/** Earlier closed work for the target, hung off the running period's clock-in. */
+	async function seedEarlierWork(start: string, minutes: number, deleted = false) {
+		const startAt = parseInstant(start);
+		const startTime = dateFromInstant(startAt);
+		await admin.query(
+			`insert into work_period (organization_id, employee_id, clock_in_id, start_time, end_time,
+			  duration_minutes, is_active, approval_status, deleted_at, updated_at)
+			 select organization_id, employee_id, clock_in_id, $2, $3, $4, false, 'approved', $5, now()
+			 from work_period where employee_id = $1 and end_time is null`,
+			[
+				ids.target,
+				startTime,
+				dateFromInstant(startAt.add({ minutes })),
+				minutes,
+				deleted ? startTime : null,
+			],
+		);
+	}
+
+	it("checks the target's compliance on the closed work's own day in the target's zone (#524)", async () => {
+		const running = await clockInAs(ids.targetUser);
+		// The running work starts at 04:00 on Sunday 2026-09-20 in New York, the
+		// first day of a Sunday week.
+		await seedWorkingTimeLimits({ daily: 500, weekly: 600 });
+		// Same New York day: counts toward both totals.
+		await seedEarlierWork("2026-09-20T05:00:00Z", 60);
+		// Same UTC day but Saturday evening in New York: the previous day and week.
+		await seedEarlierWork("2026-09-20T01:00:00Z", 120);
+		// Deleted work never counts.
+		await seedEarlierWork("2026-09-20T06:30:00Z", 300, true);
+
+		// The manager's session is not the target's: totals must not depend on it.
+		const executed = await closeAs(ids.managerUser, {
+			workPeriodId: running.id,
+			operationId: randomUUID(),
+		});
+
+		expect(executed.status).toBe(201);
+		const { rows } = await admin.query(
+			`select employee_id, work_period_id, policy_id, violation_type, details
+			 from work_policy_violation where organization_id = $1`,
+			[ids.organization],
+		);
+		// 60 + 481 minutes that day exceed the daily limit; the week (541) stays
+		// within its limit, which the Saturday work would have broken.
+		expect(rows).toHaveLength(1);
+		expect(only(rows)).toMatchObject({
+			employee_id: ids.target,
+			work_period_id: running.id,
+			policy_id: ids.policy,
+			violation_type: "max_daily",
+		});
+		expect(JSON.parse(only(rows).details)).toMatchObject({
+			actualMinutes: 541,
+			limitMinutes: 500,
+		});
+	});
+
+	it("dates the violation at the closed work's start, on its own local day (#548)", async () => {
+		// Saturday 2026-09-19 18:00 to Sunday 02:00:40 in New York. The manager
+		// closes it after local midnight, so the check runs on the next local day.
+		const start = parseInstant("2026-09-19T22:00:00Z");
+		const end = parseInstant("2026-09-20T06:00:40Z");
+		const running = await clockInAs(ids.targetUser, ids.organization, start);
+		await seedWorkingTimeLimits({ daily: 400, weekly: 3000 });
+		harness.now = end;
+
+		const executed = await closeCheckedAt(running.id, end);
+
+		expect(executed.status).toBe(201);
+		// 481 minutes on Saturday exceed the daily limit. The violation falls on
+		// Saturday, the day whose total broke it, not on the Sunday of the check.
+		expect(only(await violations())).toMatchObject({
+			policy_id: ids.policy,
+			violation_type: "max_daily",
+			violation_date: dateFromInstant(start),
+		});
+	});
+
+	it("judges the work by the policy in force when it ended, and records that policy (#548)", async () => {
+		const running = await clockInAs(ids.targetUser);
+		// The target's assignment changes an hour after the work ends; the check
+		// runs an hour after that.
+		const changedAt = clockOutAt.add({ hours: 1 });
+		await seedWorkingTimeLimits(
+			{ daily: 400, weekly: 3000 },
+			{
+				id: ids.policy,
+				regulationId: ids.regulation,
+				assignmentId: ids.policyAssignment,
+				effectiveUntil: changedAt,
+			},
+		);
+		await seedWorkingTimeLimits(
+			{ daily: 300, weekly: 3000 },
+			{
+				id: ids.laterPolicy,
+				regulationId: ids.laterRegulation,
+				assignmentId: ids.laterPolicyAssignment,
+				effectiveFrom: changedAt,
+			},
+		);
+
+		const executed = await closeCheckedAt(running.id, changedAt.add({ hours: 1 }));
+
+		expect(executed.status).toBe(201);
+		const violation = only(await violations());
+		expect(violation).toMatchObject({
+			policy_id: ids.policy,
+			violation_type: "max_daily",
+			violation_date: dateFromInstant(clockInAt),
+		});
+		expect(JSON.parse(violation.details)).toMatchObject({
+			actualMinutes: 481,
+			limitMinutes: 400,
+		});
 	});
 
 	it("preserves omitted attribution and validates explicit changes against the target", async () => {
@@ -719,7 +839,8 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 	async function closures() {
 		const { rows } = await admin.query<{ clock_outs: number; writers: string[] | null }>(
 			`select (select count(*)::int from time_entry where employee_id = $1 and type = 'clock_out') as clock_outs,
-			        (select array_agg(writer order by writer) from completed_work_operation where employee_id = $1) as writers`,
+			        (select array_agg(writer order by writer) from completed_work_operation
+			         where employee_id = $1 and kind = 'close_active_work') as writers`,
 			[ids.target],
 		);
 		return only(rows);
@@ -842,7 +963,7 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 		});
 	});
 
-	it("keeps the legacy closure before adoption, preserving attribution and replaying its identity", async () => {
+	it("keeps the legacy closure before adoption, with its canonical record, preserving attribution and replaying its identity", async () => {
 		await setAdmission("inactive");
 		const running = await clockInAs(ids.targetUser);
 		await admin.query("update work_period set project_id = $2 where id = $1", [
@@ -867,6 +988,12 @@ describeIntegration("manager on-behalf clock-out on PostgreSQL", () => {
 			clock_out_created_by: ids.managerUser,
 			clock_out_timezone: "America/New_York",
 			clock_out_timezone_source: "manager_target_user_setting",
+			// Every legacy close writes the canonical work record (#476 decision 10).
+			canonical_record_id: expect.any(String),
+			record_created_by: ids.managerUser,
+			record_minutes: 481,
+			record_state: "approved",
+			record_projects: [ids.projectA],
 		});
 		expect(await receipts()).toEqual([]);
 		const committed = await snapshot();

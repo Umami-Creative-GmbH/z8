@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { readTestText } from "@/test/read-test-text";
 import { useSession } from "./auth-client";
 
 function SessionProbe() {
@@ -18,7 +18,7 @@ describe("useSession auth client wrapper", () => {
 	});
 
 	it("uses a single shared Better Auth client instance", () => {
-		const source = readFileSync(authClientSourcePath, "utf8");
+		const source = readTestText(authClientSourcePath, "utf8");
 		const clientInstantiations = source.match(/createAuthClient\(createClientConfig\(\)\)/g);
 
 		expect(clientInstantiations).toHaveLength(1);
@@ -27,7 +27,7 @@ describe("useSession auth client wrapper", () => {
 	});
 
 	it("delegates to the client hook without an early return", () => {
-		const source = readFileSync(authClientSourcePath, "utf8");
+		const source = readTestText(authClientSourcePath, "utf8");
 
 		expect(source).toContain("export function useSession() {");
 		expect(source).toContain(".useSession();\n}");

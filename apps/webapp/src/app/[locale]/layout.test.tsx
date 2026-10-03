@@ -3,7 +3,13 @@
 import { readFileSync } from "node:fs";
 import { renderToReadableStream } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import type { CatalogSlice } from "@/tolgee/catalog-slices";
 import LocaleLayout from "./layout";
+
+vi.mock("@tolgee/react", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@tolgee/react")>()),
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
 
 function findFontSizeInitScript(node: React.ReactNode): {
 	children: React.ReactNode;
@@ -43,7 +49,14 @@ function findFontSizeInitScript(node: React.ReactNode): {
 const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(async () => null),
 	findUserSettings: vi.fn(),
-	loadRouteTranslations: vi.fn(async () => ({})),
+	loadShellTranslations: vi.fn(
+		async (): Promise<CatalogSlice> => ({
+			locale: "en",
+			namespaces: [],
+			records: {},
+			keyOwners: {},
+		}),
+	),
 	setRequestLocale: vi.fn(),
 }));
 
@@ -140,16 +153,14 @@ vi.mock("@/lib/auth", () => ({
 vi.mock("@/tolgee/client", () => ({
 	TolgeeNextProvider: ({
 		children,
-		language,
-		staticData,
+		slice,
 	}: {
 		children: React.ReactNode;
-		language: string;
-		staticData: Record<string, unknown>;
+		slice: CatalogSlice;
 	}) => (
 		<div
-			data-tolgee-language={language}
-			data-tolgee-static-data={JSON.stringify(staticData)}
+			data-tolgee-language={slice.locale}
+			data-tolgee-static-data={JSON.stringify(slice.records)}
 		>
 			{children}
 		</div>
@@ -157,7 +168,7 @@ vi.mock("@/tolgee/client", () => ({
 }));
 
 vi.mock("@/tolgee/load-translations", () => ({
-	loadRouteTranslations: mockState.loadRouteTranslations,
+	loadShellTranslations: mockState.loadShellTranslations,
 }));
 
 vi.mock("@/tolgee/shared", () => ({
@@ -231,8 +242,8 @@ describe("LocaleLayout", () => {
 			// Consume the stream so the async translation provider resolves.
 		}
 
-		expect(mockState.loadRouteTranslations).toHaveBeenCalledWith("en");
-		expect(mockState.loadRouteTranslations.mock.calls[0]).toHaveLength(1);
+		expect(mockState.loadShellTranslations).toHaveBeenCalledWith("en");
+		expect(mockState.loadShellTranslations.mock.calls[0]).toHaveLength(1);
 
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 		expect(source).not.toContain("next/headers");
@@ -244,17 +255,16 @@ describe("LocaleLayout", () => {
 		const source = readFileSync("src/app/[locale]/layout.tsx", "utf8");
 
 		expect(source).toMatch(
-			/<TranslationProviders locale=\{locale\} records=\{\{\}\}>\s*<ApplicationContent>\s*<RootRouteShell \/>\s*<\/ApplicationContent>\s*<\/TranslationProviders>/,
+			/<TranslationProviders\s+locale=\{locale\}\s+slice=\{\{ locale, namespaces: \[\], records: \{\}, keyOwners: \{\} \}\}\s*>\s*<ApplicationContent>\s*<RootRouteShell \/>\s*<\/ApplicationContent>\s*<\/TranslationProviders>/,
 		);
 	});
 
 	it("streams a neutral shell without rendering route content twice", async () => {
-		let resolveTranslations: (translations: Record<string, unknown>) => void =
-			() => {};
+		let resolveTranslations: (translations: CatalogSlice) => void = () => {};
 		let childRenderCount = 0;
-		mockState.loadRouteTranslations.mockImplementation(
+		mockState.loadShellTranslations.mockImplementation(
 			() =>
-				new Promise<Record<string, unknown>>((resolve) => {
+				new Promise<CatalogSlice>((resolve) => {
 					resolveTranslations = resolve;
 				}),
 		);
@@ -310,7 +320,12 @@ describe("LocaleLayout", () => {
 			).toBeGreaterThanOrEqual(3);
 			expect(childRenderCount).toBe(0);
 
-			resolveTranslations({});
+			resolveTranslations({
+				locale: "en",
+				namespaces: [],
+				records: {},
+				keyOwners: {},
+			});
 			let streamedHtml = firstChunk;
 			while (true) {
 				const next = await reader.read();
@@ -324,17 +339,26 @@ describe("LocaleLayout", () => {
 			expect(streamedHtml).toContain("Resolved route content");
 			expect(childRenderCount).toBe(1);
 		} finally {
-			resolveTranslations({});
-			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
+			resolveTranslations({
+				locale: "en",
+				namespaces: [],
+				records: {},
+				keyOwners: {},
+			});
+			mockState.loadShellTranslations.mockImplementation(async () => ({
+				locale: "en",
+				namespaces: [],
+				records: {},
+				keyOwners: {},
+			}));
 		}
 	});
 
 	it("renders the translation-context shell while route translations are pending", async () => {
-		let resolveTranslations: (translations: Record<string, unknown>) => void =
-			() => {};
-		mockState.loadRouteTranslations.mockImplementation(
+		let resolveTranslations: (translations: CatalogSlice) => void = () => {};
+		mockState.loadShellTranslations.mockImplementation(
 			() =>
-				new Promise<Record<string, unknown>>((resolve) => {
+				new Promise<CatalogSlice>((resolve) => {
 					resolveTranslations = resolve;
 				}),
 		);
@@ -347,7 +371,12 @@ describe("LocaleLayout", () => {
 			const stream = await renderToReadableStream(layout);
 			const reader = stream.getReader();
 			const { value } = await reader.read();
-			resolveTranslations({});
+			resolveTranslations({
+				locale: "en",
+				namespaces: [],
+				records: {},
+				keyOwners: {},
+			});
 			while (!(await reader.read()).done) {
 				// Consume the resolved translation branch so the stream ends without an abort.
 			}
@@ -384,7 +413,12 @@ describe("LocaleLayout", () => {
 				intlProvider?.querySelectorAll('[data-slot="skeleton"]').length,
 			).toBeGreaterThanOrEqual(3);
 		} finally {
-			mockState.loadRouteTranslations.mockImplementation(async () => ({}));
+			mockState.loadShellTranslations.mockImplementation(async () => ({
+				locale: "en",
+				namespaces: [],
+				records: {},
+				keyOwners: {},
+			}));
 		}
 	});
 

@@ -153,7 +153,12 @@
     "last-name": "Last Name",
     "last-name-placeholder": "Doe…",
     "secure-password-description": "Use a password you can recognize quickly during busy workdays without compromising security.",
-    "secure-password-heading": "Set a secure password"
+    "secure-password-heading": "Set a secure password",
+    "wrapper": {
+      "backToLogin": "Back to login",
+      "logo": "{appName} logo",
+      "version": "Version {version}"
+    }
   },
   "profile": {
     "change-password": "Change Password",

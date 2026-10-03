@@ -1,15 +1,6 @@
 import "server-only";
 
-import { db } from "@/db";
-import {
-	acquireAdoptionGate,
-	acquireEmployeeCoordination,
-	acquireOrganizationConfigurationGuard,
-	acquireUserConfigurationAccessGuards,
-	readAppendAdmission,
-	sealWorkTransactionScope,
-	type WorkTransactionScope,
-} from "./work-transaction";
+import { runWorkTransaction, type WorkRoute, type WorkTransactionScope } from "./work-transaction";
 
 export interface WebClockInTransactionInput {
 	organizationId: string;
@@ -17,40 +8,27 @@ export interface WebClockInTransactionInput {
 	userId: string;
 }
 
+/** The requester's access and the clocking employee, who is also the only write target. */
+function routeWebClockIn(input: WebClockInTransactionInput): WorkRoute {
+	return {
+		users: [input.userId],
+		employees: [input.employeeId],
+		writeTargets: [input.employeeId],
+	};
+}
+
 /**
- * Outer transaction owner for the live web clock-in (#273). Clock-in has no
- * approval participation, so it acquires the shared adoption gate, organization
- * configuration and requester access guards, then the existing exclusive
- * employee key. The organization's append control is read under the adoption
- * gate: no control row, or an inactive one, keeps the legacy head selection.
+ * Work transaction for the live web clock-in (#273). Clock-in has no approval
+ * participation, so the coordinator takes the shared adoption gate (reading the
+ * append control under it), organization configuration and requester access
+ * guards, then the existing exclusive employee key.
  */
-export async function withWebClockInTransaction<T>(
+export function withWebClockInTransaction<T>(
 	input: WebClockInTransactionInput,
 	operation: (scope: WorkTransactionScope) => Promise<T>,
 ): Promise<T> {
-	return db.transaction(async (transaction) => {
-		await acquireAdoptionGate(transaction, input.organizationId);
-		const admission = await readAppendAdmission(transaction, input.organizationId);
-		await acquireOrganizationConfigurationGuard(transaction, input.organizationId);
-		await acquireUserConfigurationAccessGuards(transaction, [input.userId]);
-		await acquireEmployeeCoordination(transaction, [input.employeeId]);
-
-		let active = true;
-		try {
-			return await operation(
-				sealWorkTransactionScope({
-					db: transaction,
-					admission,
-					assertEmployee(organizationId: string, employeeId: string) {
-						if (!active) throw new Error("Work transaction is no longer active");
-						if (organizationId !== input.organizationId || employeeId !== input.employeeId) {
-							throw new Error("Employee scope is outside the work transaction");
-						}
-					},
-				}),
-			);
-		} finally {
-			active = false;
-		}
-	});
+	return runWorkTransaction(
+		{ organizationId: input.organizationId, route: async () => routeWebClockIn(input) },
+		operation,
+	);
 }

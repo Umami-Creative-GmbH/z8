@@ -8,10 +8,9 @@ import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Effect } from "effect";
-import { Pool, type PoolClient } from "pg";
+import type { Pool, PoolClient } from "pg";
 import {
 	afterAll,
-	beforeAll,
 	beforeEach,
 	describe,
 	expect,
@@ -22,25 +21,22 @@ import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
 import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
-import { loadOrdinaryWorkPeriodLegacyDecisionEvidence } from "../domain-adapters/work-period-legacy-state";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
+import { openIntegrationPool } from "@/test/integration-database";
 import type { OrdinaryWorkPeriodApprovalKind } from "../domain-adapters/work-period-contract";
+import { loadOrdinaryWorkPeriodLegacyDecisionEvidence } from "../domain-adapters/work-period-legacy-state";
 import {
 	countOrdinaryCanonicalApprovals,
 	loadOrdinaryCanonicalApprovals,
 } from "../inbox/ordinary-canonical-read";
-import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
-import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "../workflow/repository-integration-harness";
-import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { resolveApprovalReviewArrival } from "../presentation/review-arrival";
 import { parseApprovalReviewTarget } from "../presentation/review-navigation";
+import type { ApprovalWorkflowLifecycleMode } from "../workflow/ports";
+import type { ApprovalWorkflowDatabase } from "../workflow/repository";
+import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import type { ApprovalDbService, CurrentApprover } from "./types";
 import {
 	completeOrdinaryWorkPeriodDecisionAfterCommit,
@@ -60,10 +56,9 @@ const reviewSession = vi.hoisted(() => ({
 }));
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
 vi.mock("next/headers", async (importOriginal) => ({
 	...(await importOriginal<typeof import("next/headers")>()),
@@ -106,7 +101,8 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 	it("registers the complete Task 11 mode, rollback, race, isolation, and split matrix", () => {
 		for (const scenario of [
 			"composes submission and terminal decisions in %s mode",
-			"bootstraps an unmarked pre-canonical manual $action in $mode mode",
+			"late-mirrors an unmarked pre-shadow manual $action in $mode mode",
+			"late-mirrors a pre-shadow decision once and replays its retry in %s mode",
 			"preserves policy snapshot through production submission capture in %s mode",
 			"retains terminal policy evidence for $action with split=$split in $mode mode",
 			"rolls back terminal policy $evidence evidence in $mode mode",
@@ -171,7 +167,7 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 			"async function withRollbackClient",
 		);
 		const helperEnd = integrationSource.indexOf(
-			"describeIntegration(",
+			"describe(",
 			helperStart,
 		);
 		expect(integrationSource.slice(helperStart, helperEnd)).toContain(
@@ -266,29 +262,6 @@ describe("ordinary work-period PostgreSQL case registration", () => {
 		}
 	});
 });
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`ordinary work-period PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const databaseSchema = { ...authSchema, ...schema };
 const now = parseInstant("2099-07-22T17:00:00Z");
@@ -472,10 +445,10 @@ async function withRollbackClient<T>(
 	return result.value;
 }
 
-describeIntegration(
+describe(
 	"ordinary work-period PostgreSQL concurrency and rollback",
 	() => {
-		const pool = new Pool({ connectionString: databaseUrl, max: 20 });
+		const pool = openIntegrationPool({ max: 20 });
 		const database = drizzle({ client: pool, schema: databaseSchema });
 		const manager: CurrentApprover = {
 			id: ids.manager,
@@ -489,9 +462,11 @@ describeIntegration(
 			},
 		};
 
-		function runtime() {
+		function runtime(
+			borrowed: ApprovalWorkflowDatabase = database as unknown as ApprovalWorkflowDatabase,
+		) {
 			return createProductionApprovalWorkflowRuntime({
-				db: database as unknown as ApprovalWorkflowDatabase,
+				db: borrowed,
 				adapters: {
 					absence: {
 						clock: systemClock,
@@ -877,7 +852,7 @@ describeIntegration(
 		) {
 			return executeOrdinaryWorkPeriodDecisionInTransaction({
 				dbService: dbService(database),
-				runtime: runtime(),
+				createRuntime: runtime,
 				organizationId: ids.organization,
 				approvalRequestId,
 				workPeriodId: ids.period,
@@ -1701,28 +1676,10 @@ describeIntegration(
 			throw new Error("Timed out observing Task 11 employee advisory lock");
 		}
 
-		beforeAll(async () => {
-			const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl,
-				required: integrationRequired,
-				sentinel: testSentinel,
-				currentDatabase: async () => {
-					const result = await pool.query<{ database_name: string }>(
-						"select current_database() as database_name",
-					);
-					return result.rows[0]?.database_name ?? "";
-				},
-			});
-			if (enabled.status !== "enabled") {
-				throw new Error("Ordinary work-period PostgreSQL is disabled");
-			}
-		});
-
 		beforeEach(() => seed());
 
 		afterAll(async () => {
 			await cleanup();
-			await pool.end();
 		});
 
 		it("decodes the ordinary source database boundary before strict validation", async () => {
@@ -1760,7 +1717,7 @@ describeIntegration(
 				{ mode, action: "approve" as const },
 				{ mode, action: "reject" as const },
 			]),
-		)("bootstraps an unmarked pre-canonical manual $action in $mode mode", async ({
+		)("late-mirrors an unmarked pre-shadow manual $action in $mode mode", async ({
 			mode,
 			action,
 		}) => {
@@ -1828,7 +1785,61 @@ describeIntegration(
 				approval_status: expectedStatus,
 				approval_workflow_id: workflows[0]?.id,
 			});
+			// Late mirroring (#475): the shared coordinator path and its receipt.
+			const lateMirrorKey = `late-mirror:${ids.organization}:manual_time_submission:time_entry:${ids.period}:${submitted.result.approvalRequestId}`;
+			const lateMirrorEvents = async () =>
+				(
+					await pool.query<{ count: string }>(
+						`select count(*) from approval_workflow_event
+						 where organization_id = $1 and workflow_id = $2
+						 and (idempotency_key = $3 or idempotency_key like $3 || ':%')`,
+						[ids.organization, workflows[0]?.id, lateMirrorKey],
+					)
+				).rows[0]?.count;
+			expect(Number(await lateMirrorEvents())).toBeGreaterThan(0);
 		});
+
+		it.each(["shadow", "ready"] as const)(
+			"late-mirrors a pre-shadow decision once and replays its retry in %s mode",
+			async (mode) => {
+				await seed("manual_time_submission", false, "legacy");
+				const submitted = await submit("manual_time_submission");
+				await pool.query(
+					`update approval_workflow_rollout set lifecycle_mode = $1, updated_at = now()
+					 where organization_id = $2 and workflow_type = 'manual_time_submission'`,
+					[mode, ids.organization],
+				);
+				const lateMirrorEvents = async () =>
+					(
+						await pool.query<{ idempotency_key: string }>(
+							`select idempotency_key from approval_workflow_event
+							 where organization_id = $1 and idempotency_key like 'late-mirror:%'
+							 order by idempotency_key`,
+							[ids.organization],
+						)
+					).rows.map((row) => row.idempotency_key);
+
+				await expect(
+					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
+				).resolves.toMatchObject({ result: { action: "approve" } });
+				const decided = await snapshot();
+				const lateMirrored = await lateMirrorEvents();
+				expect(lateMirrored.length).toBeGreaterThan(0);
+				expect(lateMirrored[0]).toMatch(
+					`late-mirror:${ids.organization}:manual_time_submission:time_entry:${ids.period}:${submitted.result.approvalRequestId}`,
+				);
+				expect(decided.approval_workflow).toEqual([
+					expect.objectContaining({ status: "approved", version: 2 }),
+				]);
+
+				// The retry replays: no second late mirror or observed workflow.
+				await expect(
+					decide(submitted.result.approvalRequestId, { kind: "approve", reason: null }),
+				).resolves.toMatchObject({ result: { action: "approve" }, postCommit: null });
+				expect(await lateMirrorEvents()).toEqual(lateMirrored);
+				expect(await snapshot()).toEqual(decided);
+			},
+		);
 
 		it.each(
 			modes,

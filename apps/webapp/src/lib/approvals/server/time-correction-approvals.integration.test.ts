@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool, type PoolClient } from "pg";
+import type { Pool, PoolClient } from "pg";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import { configurePostgresUtcTypes } from "@/db/postgres-utc";
@@ -16,6 +16,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool, openIntegrationPool } from "@/test/integration-database";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	deriveApprovalAssignmentId,
@@ -29,10 +30,6 @@ import type {
 	ApprovalWorkflowSnapshot,
 } from "../workflow/ports";
 import type { ApprovalWorkflowDatabase } from "../workflow/repository";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "../workflow/repository-integration-harness";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import {
 	bindTimeCorrectionWorkflowToWorkPeriod,
@@ -226,19 +223,13 @@ describe("time correction PostgreSQL non-live contracts", () => {
 		expect(binding).toContain("updated.length !== 1");
 	});
 
-	it("runs only against a label-owned disposable database and includes this suite", () => {
+	// The integration project includes this suite by its suffix and sets
+	// PGOPTIONS itself (src/test/vitest-projects.test.ts); the shared suite
+	// runner exports the database URL (repository-integration-runner.test.ts).
+	it("runs only against a label-owned disposable database", () => {
 		expect(runnerSource).toContain("docker run --detach");
 		expect(runnerSource).toContain(
 			"--label z8.agent-owned=approval-workflow-repository-test",
-		);
-		expect(runnerSource).toContain(
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=",
-		);
-		expect(runnerSource).toContain(
-			"src/lib/approvals/server/time-correction-approvals.integration.test.ts",
-		);
-		expect(runnerSource).toContain(
-			'PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC"',
 		);
 		expect(runnerSource).not.toMatch(
 			/(^|[^A-Z_])(?:DATABASE_URL|POSTGRES_URL|PGHOST)=/m,
@@ -267,28 +258,6 @@ describe("time correction PostgreSQL non-live contracts", () => {
 	});
 });
 
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired =
-	process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration =
-	resolveApprovalWorkflowRepositoryTestConfiguration({
-		databaseUrl,
-		required: integrationRequired,
-		sentinel: testSentinel,
-	});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`time correction PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 const organizationId = "task12-replay-race-org";
 const userId = "task12-replay-race-user";
 const employeeId = "a1000000-0000-4000-8000-000000000001";
@@ -473,8 +442,8 @@ async function waitForTask13LockWait(
 	throw new Error(`Timed out observing ${input.blocker.table} row-lock wait`);
 }
 
-describeIntegration("time correction source-lock PostgreSQL contract", () => {
-	const pool = new Pool({ connectionString: databaseUrl, max: 4 });
+describe("time correction source-lock PostgreSQL contract", () => {
+	const pool = integrationAdminPool();
 	const database = drizzle({ client: pool, schema: databaseSchema });
 
 	async function cleanup() {
@@ -493,22 +462,6 @@ describeIntegration("time correction source-lock PostgreSQL contract", () => {
 			},
 		]);
 	}
-
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await pool.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled")
-			throw new Error("Approval workflow integration test is disabled");
-	});
 
 	beforeEach(async () => {
 		await cleanup();
@@ -553,7 +506,6 @@ describeIntegration("time correction source-lock PostgreSQL contract", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await pool.end();
 	});
 
 	it("makes the post-lock READ COMMITTED snapshot observe the winning new cycle", async () => {
@@ -723,10 +675,10 @@ describeIntegration("time correction source-lock PostgreSQL contract", () => {
 	});
 });
 
-describeIntegration(
+describe(
 	"Task 13 time correction PostgreSQL races and atomicity",
 	() => {
-		const pool = new Pool({ connectionString: databaseUrl, max: 16 });
+		const pool = openIntegrationPool({ max: 16 });
 		const database = drizzle({ client: pool, schema: databaseSchema });
 		const now = parseInstant("2026-07-20T12:00:00Z");
 		const ids = {
@@ -1642,19 +1594,6 @@ describeIntegration(
 		}
 
 		beforeAll(async () => {
-			const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-				databaseUrl,
-				required: integrationRequired,
-				sentinel: testSentinel,
-				currentDatabase: async () => {
-					const result = await pool.query<{ database_name: string }>(
-						"select current_database() as database_name",
-					);
-					return result.rows[0]?.database_name ?? "";
-				},
-			});
-			if (enabled.status !== "enabled")
-				throw new Error("Task 13 PostgreSQL is disabled");
 			await runSqlStatements(pool, [
 				{
 					text: `create or replace function task13_fail_time_correction_cas() returns trigger as $$
@@ -1889,7 +1828,6 @@ describeIntegration(
 				},
 				{ text: "drop function if exists task13_fail_time_correction_cas()" },
 			]);
-			await pool.end();
 		});
 
 		it.each(["approval", "cancellation"] as const)(

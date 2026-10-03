@@ -7,7 +7,6 @@ import { member } from "@/db/auth-schema";
 import {
 	absenceEntry,
 	approvalRequest,
-	approvalWorkflow,
 	employee,
 	holiday,
 	timeRecord,
@@ -54,9 +53,13 @@ import {
 } from "@/lib/notifications/triggers";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
+import { assertReviewBindingAuthority } from "../authority";
 import type { ApprovalActionOptions } from "../domain/types";
 import { captureAbsenceLegacyApprovalState } from "../domain-adapters/absence-legacy-state";
-import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "../domain-adapters/legacy-write-coordinator";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import {
 	ApprovalAssignmentReassignedError,
@@ -95,7 +98,6 @@ import {
 	loadLegacyReviewBinding,
 	loadLegacySubmittedRevisionSource,
 	loadReviewBinding,
-	loadReviewBindingAuthority,
 } from "../evidence/store";
 import {
 	ApprovalAuditLogger,
@@ -108,6 +110,7 @@ import {
 import { isEligibleManagerForApprovalRequest } from "../policies/manager-eligibility-db";
 import { classifyLegacyStage } from "../policies/requester-auto-approval";
 import type { ApprovalPolicyEvaluationContext } from "../policies/types";
+import { pinApprovalWriteGate } from "../workflow/pinned-write-gate";
 import type { VerifiedLegacyApprovalState } from "../workflow/ports";
 import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
@@ -332,6 +335,24 @@ function requireInvocationBinding(bindingId: string | undefined): string {
 	return bindingId;
 }
 
+/** The absence's pending legacy request, when it has exactly one. */
+async function findOnlyPendingLegacyAbsenceRequest(
+	database: ApprovalDbService["db"],
+	input: { organizationId: string; absenceId: string },
+): Promise<string | null> {
+	const pending = await database.query.approvalRequest.findMany({
+		where: and(
+			eq(approvalRequest.organizationId, input.organizationId),
+			eq(approvalRequest.entityType, "absence_entry"),
+			eq(approvalRequest.entityId, input.absenceId),
+			eq(approvalRequest.status, "pending"),
+		),
+		columns: { id: true },
+		limit: 2,
+	});
+	return pending.length === 1 ? (pending[0]?.id ?? null) : null;
+}
+
 function rejectionReasonFingerprint(reason: string | undefined): string {
 	return createHash("sha256")
 		.update(reason ?? "")
@@ -381,6 +402,7 @@ export async function executeAbsenceDecisionInTransaction(
 			columns: {
 				id: true,
 				organizationId: true,
+				employeeId: true,
 				approvalWorkflowId: true,
 			},
 		});
@@ -396,24 +418,17 @@ export async function executeAbsenceDecisionInTransaction(
 			organizationId: input.organizationId,
 			workflowType: "absence",
 		});
-		const fixedGate = {
-			acquire: async (scope: {
-				organizationId: string;
-				workflowType: "absence";
-			}) => {
-				if (
-					scope.organizationId !== input.organizationId ||
-					scope.workflowType !== "absence"
-				) {
-					throw new Error("Absence decision gate scope mismatch");
-				}
-				return gate;
-			},
-		};
-		const decisionContext = {
+		// The legacy coordinator and the transition engine rebind the
+		// compatibility writer to this gate themselves.
+		const pinnedGate = pinApprovalWriteGate({
+			organizationId: input.organizationId,
+			workflowType: "absence",
+			authority: gate,
+		});
+		const decisionContext: ApprovalWorkflowTransactionContext = {
 			...context,
-			writeGate: fixedGate,
-		} as ApprovalWorkflowTransactionContext;
+			writeGate: pinnedGate,
+		};
 		const sourceIdentity = {
 			organizationId: input.organizationId,
 			workflowType: "absence" as const,
@@ -458,6 +473,7 @@ export async function executeAbsenceDecisionInTransaction(
 				// fixed, so the committed evidence belongs to that authority.
 				return {
 					mode: gate.mode,
+					authority: gate.authority,
 					actor: currentEmployee,
 					domainResult: undefined,
 					commandResult: undefined,
@@ -481,22 +497,17 @@ export async function executeAbsenceDecisionInTransaction(
 			}
 		}
 
-		const legacyAuthority =
-			gate.mode === "legacy" || gate.mode === "shadow" || gate.mode === "ready";
 		if (input.reviewedBindingId !== undefined) {
 			// Cutover: a binding decides only under the authority it was issued
-			// for, read under the rollout gate (#384). A legacy binding never
-			// decides under canonical authority, nor the other way round.
-			const authority = await loadReviewBindingAuthority(transactionDb, {
+			// for, read under the rollout gate (#384).
+			await assertReviewBindingAuthority(transactionDb, {
 				organizationId: input.organizationId,
 				bindingId: input.reviewedBindingId,
+				gate,
 			});
-			if (authority !== (legacyAuthority ? "legacy" : "canonical")) {
-				throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
-			}
 		}
 
-		if (legacyAuthority) {
+		if (gate.authority === "legacy") {
 			// A legacy binding is validated only together with its invocation; a
 			// card decision is admitted only for verified providers (#384).
 			if (input.reviewedBindingId !== undefined && !invocation) {
@@ -536,30 +547,6 @@ export async function executeAbsenceDecisionInTransaction(
 					throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
 				}
 			}
-			let expectedVersion: number | null = null;
-			if (gate.mode !== "legacy") {
-				const observedWorkflow =
-					await transactionDb.query.approvalWorkflow.findFirst({
-						where: and(
-							eq(approvalWorkflow.organizationId, input.organizationId),
-							eq(approvalWorkflow.workflowType, "absence"),
-							eq(approvalWorkflow.sourceType, "absence_entry"),
-							eq(approvalWorkflow.sourceId, input.absenceId),
-							eq(approvalWorkflow.status, "pending"),
-						),
-						columns: { id: true, version: true },
-					});
-				if (observedWorkflow) {
-					if (
-						typeof observedWorkflow.id !== "string" ||
-						!Number.isInteger(observedWorkflow.version) ||
-						observedWorkflow.version < 1
-					) {
-						throw new Error("Scoped canonical absence workflow is invalid");
-					}
-					expectedVersion = observedWorkflow.version;
-				}
-			}
 			const legacyEvidence =
 				input.legacyEvidence ?? defaultLegacyDecisionEvidence;
 			const evidenceActor = {
@@ -583,6 +570,7 @@ export async function executeAbsenceDecisionInTransaction(
 			if (replayed) {
 				return {
 					mode: gate.mode,
+					authority: gate.authority,
 					actor: currentEmployee,
 					domainResult: undefined,
 					commandResult: undefined,
@@ -633,21 +621,31 @@ export async function executeAbsenceDecisionInTransaction(
 				approvalRequestId: input.approvalRequestId,
 				actorEmployeeId: currentEmployee.id,
 			});
+			const coordinator = createLegacyApprovalWriteCoordinator({
+				compatibilityWriter: decisionContext.compatibilityWriter,
+				observedWorkflows: createObservedWorkflowReader(decisionContext),
+			});
+			// Organization management may decide without naming a request: the
+			// owner then decides the absence's only pending one.
+			const observation = await coordinator.observe({
+				gate,
+				sourceIdentity,
+				requesterEmployeeId: absence.employeeId,
+				legacyApprovalRequestId:
+					decidedRequestId ??
+					(await findOnlyPendingLegacyAbsenceRequest(transactionDb, {
+						organizationId: input.organizationId,
+						absenceId: input.absenceId,
+					})),
+			});
 			// Unchanged legacy key: it stays the shadow observation key and is
 			// stored verbatim as the legacy receipt key.
-			const idempotencyKey = `absence:${input.absenceId}:${input.action}:${expectedVersion ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`;
+			const idempotencyKey = `absence:${input.absenceId}:${input.action}:${observation.workflow?.version ?? "initial"}:${rejectionReasonFingerprint(input.reason)}`;
 			let observed: LegacyObservedMirror | null = null;
-			const coordinator = createLegacyApprovalWriteCoordinator({
-				writeGate: fixedGate,
-				compatibilityWriter: decisionContext.compatibilityWriter,
-			});
 			const domainResult = await coordinator.execute({
-				organizationId: input.organizationId,
-				workflowType: "absence",
-				sourceIdentity,
+				observation,
 				actor,
 				idempotencyKey,
-				expectedVersion,
 				captureState,
 				mutate: () =>
 					input.processLegacy(dbService, currentEmployee, "existing"),
@@ -700,6 +698,7 @@ export async function executeAbsenceDecisionInTransaction(
 				: false;
 			return {
 				mode: gate.mode,
+				authority: gate.authority,
 				actor: currentEmployee,
 				domainResult,
 				commandResult: undefined,
@@ -791,6 +790,7 @@ export async function executeAbsenceDecisionInTransaction(
 		}
 		return {
 			mode: gate.mode,
+			authority: gate.authority,
 			actor: currentEmployee,
 			domainResult: undefined,
 			commandResult,
@@ -1835,10 +1835,7 @@ function authenticatedAbsenceDecisionEffect(
 		);
 
 		if (
-			(execution.mode === "legacy" ||
-				execution.mode === "shadow" ||
-				execution.mode === "ready") &&
-			execution.domainResult
+			execution.authority === "legacy" && execution.domainResult
 		) {
 			const postCommit =
 				action === "approve"
@@ -1869,9 +1866,7 @@ function authenticatedAbsenceDecisionEffect(
 			);
 		}
 		if (
-			execution.mode === "canonical" ||
-			execution.mode === "complete" ||
-			execution.deliveryIntent
+			execution.authority === "canonical" || execution.deliveryIntent
 		) {
 			// Refreshes of delivered cards were committed as intents with the
 			// transition (or the legacy decision, #384); this only runs them sooner.

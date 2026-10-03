@@ -3,15 +3,14 @@ import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
+import { readReviewBindingAuthority } from "@/lib/approvals/authority";
 import {
 	APPROVAL_INVOCATION_SCHEME_VERSION,
 	type ApprovalInvocationScheme,
 } from "@/lib/approvals/evidence/invocation";
-import {
-	type DecisionEvidenceRecord,
-	type LegacyDecisionEvidenceRecord,
-	loadReviewBindingAuthority,
-	loadReviewBindingWorkflowType,
+import type {
+	DecisionEvidenceRecord,
+	LegacyDecisionEvidenceRecord,
 } from "@/lib/approvals/evidence/store";
 import { isTimeApprovalWorkflowType } from "@/lib/approvals/time-approval-kinds";
 import {
@@ -215,13 +214,13 @@ export async function attemptBoundBotApproval(
 	// reaches its kind's owner (absence, or a time kind, #325). Bindings and their revisions are
 	// immutable and outlive their committed invocations, so routing on them
 	// keeps exact replays intact.
-	const scope = { organizationId: input.organizationId, bindingId: input.bindingId };
-	const [authority, workflowType] = await Promise.all([
-		loadReviewBindingAuthority(db, scope),
-		loadReviewBindingWorkflowType(db, scope),
-	]);
+	const binding = await readReviewBindingAuthority(db, {
+		organizationId: input.organizationId,
+		bindingId: input.bindingId,
+	});
+	const workflowType = binding?.kind ?? null;
 	const result =
-		authority === "legacy"
+		binding?.authority === "legacy"
 			? workflowType === "absence"
 				? await decideBoundLegacyAbsenceInvocation(decision)
 				: isTimeApprovalWorkflowType(workflowType)

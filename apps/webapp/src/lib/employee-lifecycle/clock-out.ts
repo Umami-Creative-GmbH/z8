@@ -1,48 +1,72 @@
 import { and, eq, isNull } from "drizzle-orm";
 import { organization } from "@/db/auth-schema";
 import { employee, userSettings, workPeriod } from "@/db/schema";
-import { compareInstants, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { employeeDepartureTask } from "@/db/schema/employee-lifecycle";
 import {
-	ClockingAppendAdoptedError,
-	type ClockingTransaction,
-	createClockingService,
-	createDatabaseClockingStore,
-} from "@/lib/time-tracking/clocking-core";
-import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
-import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot.types";
-import { resolveFallbackTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
+	compareInstants,
+	dateFromInstant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
+import { createLogger } from "@/lib/logger";
+import { createClocking } from "@/lib/time-tracking/clocking/clocking";
+import { type ClosedLiveWork, durableFollowUps } from "@/lib/time-tracking/clocking/follow-ups";
+import { enlistedTransactions } from "@/lib/time-tracking/clocking/transactions";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import type { ClockPostprocessPayload } from "./clock-postprocess";
 import type { DepartureClockOutPort } from "./types";
 
-// Only the caller-owned lifecycle transaction is accepted: the departure,
-// its clock-out and its follow-up intent commit or roll back together.
-const canonicalClocking = createClockingService({
-	transaction: () => {
-		throw new Error("departure_clock_out_requires_lifecycle_transaction");
-	},
-	storeForTransaction: (transaction) =>
-		createDatabaseClockingStore(transaction as ClockingTransaction),
-});
+const logger = createLogger("EmployeeDepartureClockOut");
+
+type CloseInput = Parameters<DepartureClockOutPort["close"]>[0];
+
+/**
+ * The durable `clock_postprocess` task, staged in the departure's transaction so
+ * it commits with the closure (#476 decision 14). Its handler runs the shared
+ * clock-out follow-up effects (`clock-postprocess.ts`).
+ */
+async function stageClockPostprocess(input: CloseInput, closure: ClosedLiveWork) {
+	const payload: ClockPostprocessPayload = {
+		workPeriodId: closure.workPeriodId,
+		durationMinutes: closure.durationMinutes,
+		periodStartedAt: dateFromInstant(closure.start).toISOString(),
+		timezone: closure.timezone,
+		createdBy: closure.actorUserId,
+		surchargeSnapshot: closure.surchargeSnapshot,
+		projectId: closure.projectId,
+		balanceRefreshCommitted: closure.balanceRefreshCommitted,
+	};
+	await input.scope.db
+		.insert(employeeDepartureTask)
+		.values({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			employmentPeriodId: input.employmentPeriodId,
+			departureId: input.departureId,
+			kind: "clock_postprocess",
+			dedupeKey: `clock-postprocess:${input.clockOutActionId}`,
+			payload,
+		})
+		.onConflictDoNothing();
+}
 
 /**
  * Closes the target's running work period at the departure cutoff through the
- * canonical clocking core: guarded close, hash chain and the departure's
- * stable action ID, so a retry replays instead of writing a second entry.
- * The capture uses the target's own effective timezone, never the admin's or
- * the worker's. A period that began after the cutoff is left untouched and
- * reported for repair rather than closed with a negative duration.
+ * Clocking module (#485), enlisted in the departure's work transaction: the
+ * admission's writer (the append writer in adopted organizations), the canonical
+ * work record, and the departure's stable action ID as a derived identity, so a
+ * retry replays instead of writing a second entry. The capture uses the target's
+ * own effective timezone, never the admin's or the worker's. A period that began
+ * after the cutoff is left untouched and reported for repair rather than closed
+ * with a negative duration. The follow-ups are staged as durable work.
  */
 export function createDepartureClockOut(): DepartureClockOutPort {
 	return {
 		async close(input) {
-			const tx = input.transaction;
+			const { scope } = input;
+			const tx = scope.db;
 			const [period] = await tx
-				.select({
-					id: workPeriod.id,
-					startTime: workPeriod.startTime,
-					projectId: workPeriod.projectId,
-					workCategoryId: workPeriod.workCategoryId,
-				})
+				.select({ id: workPeriod.id, startTime: workPeriod.startTime })
 				.from(workPeriod)
 				.where(
 					and(
@@ -75,61 +99,49 @@ export function createDepartureClockOut(): DepartureClockOutPort {
 					and(eq(employee.organizationId, input.organizationId), eq(employee.id, input.employeeId)),
 				)
 				.limit(1);
-			const cutoffDate = dateFromInstant(input.cutoff);
-			const capture = resolveFallbackTimezoneCapture({
-				timestamp: cutoffDate,
-				timezone: resolveEffectiveTimezone(zones?.userTimezone, zones?.organizationTimezone),
-				timezoneSource: "manager_target_user_setting",
-			});
 
-			let surchargeSnapshot: PolicyClockOutSurchargeSnapshot | null = null;
-			let closed: Awaited<ReturnType<typeof canonicalClocking.clockOut>>;
-			try {
-				closed = await canonicalClocking.clockOut({
-					employeeId: input.employeeId,
+			const clocking = createClocking({
+				clock: systemClock,
+				transactions: enlistedTransactions(scope, {
 					organizationId: input.organizationId,
-					createdBy: input.actorUserId,
-					actionId: input.clockOutActionId,
-					workPeriodId: period.id,
-					transaction: tx,
-					action: { instant: input.cutoff, ...capture },
-					source: { ipAddress: null, deviceInfo: "employee-offboarding" },
-					notes: `Employee departure ${input.departureId}`,
-					projectId: period.projectId,
-					workCategoryId: period.workCategoryId,
-					beforePeriodClose: async ({ transaction, activePeriod }) => {
-						surchargeSnapshot = await resolvePolicyClockOutSurchargeSnapshotInTransaction({
-							dbService: { db: transaction as ClockingTransaction },
-							organizationId: input.organizationId,
-							employeeId: input.employeeId,
-							startTime: instantFromDate(activePeriod.startTime),
-							endTime: input.cutoff,
-						});
-						return undefined;
-					},
-				});
-			} catch (error) {
-				// Adopted organizations accept only coordinated writers (#327). Nothing
-				// was written: the period stays open for the canonical correction flow
-				// and the departure records a timer repair with its own reason.
-				if (error instanceof ClockingAppendAdoptedError) {
-					return { kind: "repair_required", workPeriodId: period.id, reason: "append_adopted" };
-				}
-				throw error;
-			}
-
-			return {
-				kind: "closed",
-				workPeriodId: period.id,
-				clockOutEntryId: closed.entry.id,
-				postprocess: {
-					durationMinutes: closed.durationMinutes,
-					periodStartedAt: closed.activePeriod.startTime.toISOString(),
-					timezone: capture.timezone,
-					createdBy: input.actorUserId,
-					surchargeSnapshot,
+					employeeId: input.employeeId,
+					departureId: input.departureId,
+				}),
+				followUps: durableFollowUps((closure) => stageClockPostprocess(input, closure)),
+			});
+			const outcome = await clocking.run({
+				organizationId: input.organizationId,
+				principal: { kind: "departure", departureId: input.departureId, userId: input.actorUserId },
+				subject: { employeeId: input.employeeId },
+				identity: { origin: "derived", id: input.clockOutActionId },
+				channel: "employee-offboarding",
+				at: { kind: "occurred", instant: input.cutoff },
+				zone: {
+					device: null,
+					fallback: resolveEffectiveTimezone(zones?.userTimezone, zones?.organizationTimezone),
 				},
-			};
+				body: {
+					kind: "clock_out",
+					target: { kind: "period", workPeriodId: period.id },
+					project: { kind: "preserve" },
+					workCategory: { kind: "preserve" },
+				},
+			});
+			if (outcome.outcome !== "refused") {
+				return { kind: "closed", workPeriodId: period.id, clockOutEntryId: outcome.result.id };
+			}
+			const { failure } = outcome;
+			// The closure may be written into this transaction: the caller's savepoint
+			// rolls it back and records the repair.
+			if (failure.code === "unconfirmed") {
+				throw failure.cause ?? new Error("Departure clock-out unconfirmed");
+			}
+			// Every other refusal wrote nothing.
+			logger.warn(
+				{ departureId: input.departureId, organizationId: input.organizationId, failure },
+				"Departure clock-out refused",
+			);
+			return { kind: "repair_required", workPeriodId: period.id, reason: "clock_out_failed" };
 		},
 	};
 }

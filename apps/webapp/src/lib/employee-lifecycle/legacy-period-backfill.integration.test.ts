@@ -2,10 +2,9 @@
  * PostgreSQL contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * Covers the migration-owned legacy employment period backfill.
  */
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 	type SeedEmployeeInput,
 } from "./testing/database.test.fixture";
@@ -23,7 +22,7 @@ type PeriodRow = {
 	legacy_diagnostic: string | null;
 };
 
-describeLifecycleDatabase("legacy employment period backfill", () => {
+describe("legacy employment period backfill", () => {
 	let fixture: LifecycleDatabaseFixture;
 
 	beforeAll(async () => {

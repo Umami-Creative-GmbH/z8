@@ -86,8 +86,8 @@ vi.mock("@/lib/approvals/evidence", async (importOriginal) => ({
 	captureTravelExpenseSubmissionEvidence: mockState.captureEvidence,
 }));
 
-vi.mock("@/lib/approvals/workflow/cutover", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/approvals/workflow/cutover")>()),
+vi.mock("@/lib/approvals/authority", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/approvals/authority")>()),
 	acquireApprovalWriteLock: mockState.acquireWriteLock,
 }));
 

@@ -37,15 +37,16 @@ Every demo write runs in a transaction that acquires, in order:
    add the requester's and approver's users, because routing depends on their
    access.
 5. The exclusive employee key `hashtextextended(employeeId, 0)`, which every clocking
-   writer shares.
+   writer shares. Corrections also take the approver's key, because they
+   row-lock the approver (#491).
 6. Existing row locks. Corrections keep their employee, manager, team, period,
    endpoint and canonical-record locks. Adopted appends lock the
    `time_entry_append_position` row.
 
-The key builders are the shared ones in `lib/time-tracking/work-transaction.ts`.
+The key builders are the shared ones in `lib/time-tracking/work-transaction/`.
 `withDemoWorkTransaction` opens one transaction per employee. The correction path
-runs inside the approval workflow transaction and gets its scope from
-`acquireDemoWorkScope`.
+is its own work transaction (#491): the coordinator opens it, and the approval
+runtime borrows it with the `time_correction` gate pinned at rank 2.
 
 ## Generation
 

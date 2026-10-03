@@ -4,10 +4,10 @@ import {
 	approvalChainStageInstance,
 	approvalRequest,
 	approvalSubmittedRevision,
-	approvalWorkflowRollout,
 } from "@/db/schema";
+import { type ApprovalAuthority, readApprovalAuthoritySnapshot } from "../authority";
 import type { ApprovalDatabase } from "../server/types";
-import { isTimeApprovalWorkflowType, type TimeApprovalWorkflowType } from "../time-approval-kinds";
+import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import {
 	loadLegacyTimeCorrectionSubmittedRevision,
 	loadLegacyWorkPeriodSubmittedRevision,
@@ -34,44 +34,23 @@ export const LEGACY_TIME_ACTIONABLE_PROVIDERS: readonly ApprovalPresentationProv
 ];
 
 /**
- * Whether a time kind is decided by legacy authority in the organization
- * (rollout `legacy`, `shadow`, `ready` or none). A legacy binding is issued and
- * decides only then, so it never decides under canonical authority.
+ * The approval authority of an exact time request (#432): its kind is the one
+ * its cycle's legacy revision names. A request whose cycle has no legacy
+ * revision is `undetermined`: no legacy card is issued for it and no card
+ * decides it, so it keeps the existing path. A snapshot read, for
+ * presentation only.
  */
-export async function hasLegacyTimeAuthority(
-	database: ApprovalDatabase,
-	input: { organizationId: string; workflowType: TimeApprovalWorkflowType },
-): Promise<boolean> {
-	const [rollout] = await database
-		.select({ mode: approvalWorkflowRollout.lifecycleMode })
-		.from(approvalWorkflowRollout)
-		.where(
-			and(
-				eq(approvalWorkflowRollout.organizationId, input.organizationId),
-				eq(approvalWorkflowRollout.workflowType, input.workflowType),
-			),
-		)
-		.limit(1);
-	return rollout?.mode !== "canonical" && rollout?.mode !== "complete";
-}
-
-/**
- * Whether an exact time request is decided by legacy authority: its cycle has
- * a legacy submitted revision and the revision's kind has legacy authority
- * (#432). A request without a legacy revision keeps the existing path.
- */
-export async function isLegacyTimeAuthorityRequest(
+export async function readTimeRequestAuthority(
 	database: ApprovalDatabase,
 	input: { organizationId: string; approvalRequestId: string },
-): Promise<boolean> {
+): Promise<ApprovalAuthority | "undetermined"> {
 	const cycle = await loadLegacyTimeCycleRevision(database, input);
-	return (
-		cycle !== null &&
-		(await hasLegacyTimeAuthority(database, {
-			organizationId: input.organizationId,
-			workflowType: cycle.kind,
-		}))
-	);
+	if (cycle === null) return "undetermined";
+	const { authority } = await readApprovalAuthoritySnapshot(database, {
+		organizationId: input.organizationId,
+		workflowType: cycle.kind,
+	});
+	return authority;
 }
 
 export type LegacyTimeCycleRevision =

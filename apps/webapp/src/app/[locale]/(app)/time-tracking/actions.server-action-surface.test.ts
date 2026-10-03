@@ -4,13 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const timeTrackingDir = dirname(fileURLToPath(import.meta.url));
+const actions = await import("./actions");
 
 // #443: every export of a "use server" module can become a public endpoint, so
 // writers that take employee or organization IDs from the caller stay out of them.
 describe("time-tracking server action surface", () => {
 	it("exposes no unauthenticated post-clock-out writer from the actions module", async () => {
-		const actions = await import("./actions");
-
 		for (const name of [
 			"checkComplianceAfterClockOut",
 			"calculateAndPersistSurcharges",

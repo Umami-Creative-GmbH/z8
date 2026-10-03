@@ -48,7 +48,7 @@ import {
 	interpretImportedWorkInterval,
 } from "./imported-work-interval";
 import { resolveFallbackTimezoneCapture, type TimeEntryTimezoneCapture } from "./timezone-capture";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const IMPORTED_WORK_COMMAND_VERSION = 1;
 export const IMPORTED_WORK_RESULT_VERSION = 1;
@@ -145,7 +145,7 @@ export function importedWorkSourceKey(source: ImportedWorkSource): string {
  * never re-executed or repaired.
  */
 export async function replayImportedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: { organizationId: string; employeeId: string; command: ImportedWorkCommand },
 ): Promise<ImportedWorkOutcome | null> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
@@ -205,7 +205,7 @@ export async function replayImportedWork(
  * adopted (`append`) admission mode. Holds are returned before any write.
  */
 export async function recordImportedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: RecordImportedWorkInput,
 ): Promise<ImportedWorkOutcome> {
 	const { organizationId, employeeId, command } = input;
@@ -405,7 +405,7 @@ export async function recordImportedWork(
  * one work segment is never counted twice and deleted work stays excluded.
  */
 async function findOccupants(
-	tx: WorkTransactionScope["db"],
+	tx: SealedWorkTransactionScope["db"],
 	scope: { organizationId: string; employeeId: string },
 	start: Instant,
 	end: Instant | null,

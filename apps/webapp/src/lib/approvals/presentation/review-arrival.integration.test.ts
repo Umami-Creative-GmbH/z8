@@ -12,50 +12,24 @@
  */
 
 import type { NextRequest } from "next/server";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 8,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -75,48 +49,36 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t289.example.test",
 }));
 
-vi.mock("@/lib/email/email-service", () => ({
-	sendEmail: async () => ({ success: true }),
-}));
+vi.mock("@/lib/email/email-service", async () =>
+	(await import("@/test/integration-harness")).emailService(),
+);
 
-vi.mock("@/lib/email/render", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/email/render")>();
-	return {
-		...original,
-		renderAbsenceRequestSubmitted: async () => "<p>submitted</p>",
-		renderAbsenceRequestPendingApproval: async () => "<p>pending</p>",
-		renderAbsenceRequestApproved: async () => "<p>approved</p>",
-		renderAbsenceRequestRejected: async () => "<p>rejected</p>",
-	};
-});
+vi.mock("@/lib/email/render", async (importOriginal) =>
+	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
+);
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	const ignore = async () => undefined;
-	return {
-		...original,
-		onAbsenceRequestSubmitted: ignore,
-		onAbsenceRequestPendingApproval: ignore,
-		onAbsenceRequestApproved: ignore,
-		onAbsenceRequestRejected: ignore,
-		onApprovedAbsenceCancelledByEmployee: ignore,
-	};
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
+		"onAbsenceRequestSubmitted",
+		"onAbsenceRequestPendingApproval",
+		"onAbsenceRequestApproved",
+		"onAbsenceRequestRejected",
+		"onApprovedAbsenceCancelledByEmployee",
+	]),
+);
 
-vi.mock("@/lib/queue", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/queue")>()),
-	addCalendarSyncJob: async () => undefined,
-}));
+vi.mock("@/lib/queue", async (importOriginal) =>
+	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
+);
 
 vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/work-balance/service")>()),
@@ -133,27 +95,6 @@ const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { prepareApprovalPresentation } = await import("@/lib/approvals/presentation");
 const { resolveApprovalReviewArrival } = await import("./review-arrival");
 const { parseApprovalReviewTarget } = await import("./review-navigation");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`approval review arrival PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t289-review-org",
@@ -178,8 +119,8 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("exact-item approval review arrival (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 2 });
+describe("exact-item approval review arrival (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string, organizationId: string = ids.organization) {
 		harness.userId = userId;
@@ -304,23 +245,6 @@ describeIntegration("exact-item approval review arrival (PostgreSQL)", () => {
 		return { absenceId: result.data.absenceId, requestId: only(rows).id };
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Approval review arrival PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		harness.userId = null;
 		harness.organizationId = null;
@@ -328,7 +252,6 @@ describeIntegration("exact-item approval review arrival (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("sends an exact link that the assigned approver's arrival opens with evidenced facts", async () => {

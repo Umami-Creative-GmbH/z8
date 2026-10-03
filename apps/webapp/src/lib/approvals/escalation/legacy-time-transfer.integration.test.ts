@@ -22,51 +22,25 @@
 
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
 	organizationId: null as string | null,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 12,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
-
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -121,25 +95,18 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => ({
 	},
 }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/app-url", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/app-url")>()),
 	getOrganizationBaseUrl: async () => "https://t439.example.test",
 }));
 
-vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
-	return Object.fromEntries(
-		Object.entries(original).map(([name, value]) => [
-			name,
-			typeof value === "function" ? async () => undefined : value,
-		]),
-	);
-});
+vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
+	(await import("@/test/integration-harness")).notificationTriggers(importOriginal),
+);
 
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOriginal) => ({
 	...(await importOriginal<
@@ -176,7 +143,9 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", async (importOrigin
 });
 
 // The best-effort fast path only runs the owner sooner.
-vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: () => undefined }));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(),
+);
 
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
@@ -199,27 +168,6 @@ const { submitHistoricalPolicyClockOut } = await import(
 	"@/lib/time-tracking/__tests__/historical-policy-clock-out"
 );
 const { db } = await import("@/db");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`legacy time transfer PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const TIME_KINDS = ["manual_time_submission", "policy_clock_out", "time_correction"] as const;
 type TimeKind = (typeof TIME_KINDS)[number];
@@ -256,9 +204,9 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("escalated legacy time approvals (PostgreSQL)", () => {
+describe("escalated legacy time approvals (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 6 });
+	const admin = integrationAdminPool();
 
 	function actAs(userId: string | null) {
 		harness.userId = userId;
@@ -641,32 +589,12 @@ describeIntegration("escalated legacy time approvals (PostgreSQL)", () => {
 		return { workPeriodId, request, transfer: only(await journal()) };
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Legacy time transfer PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		actAs(null);
 	});
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	describe.each(MODES)("under %s authority", (mode) => {
@@ -1151,23 +1079,59 @@ describeIntegration("escalated legacy time approvals (PostgreSQL)", () => {
 			await expectUntouched(request, workPeriodId, null);
 		});
 
-		it("holds a mirroring mode without a pending observation", async () => {
-			await seed();
-			const workPeriodId = await submit("time_correction");
-			const request = await pendingRequest(workPeriodId);
-			// Submitted before shadowing: nothing observed the request.
-			await setMode("shadow");
+		it.each(TIME_KINDS)(
+			"late-mirrors a %s submitted before shadowing, then mirrors its transfer (#475)",
+			async (kind) => {
+				await seed();
+				const workPeriodId = await submit(kind);
+				const request = await pendingRequest(workPeriodId);
+				// Submitted before shadowing: nothing observed the request yet.
+				await setMode("shadow");
 
-			expect(await escalateAt(request.created_at, 60)).toMatchObject({
-				transferred: 0,
-				held: { unsupported_route: 1 },
-			});
-			expect(only(await openAttention())).toMatchObject({
-				approval_type: "time_correction",
-				evidence: { route: "legacy_observation_missing" },
-			});
-			await expectUntouched(request, workPeriodId, null);
-		});
+				expect(await escalateAt(request.created_at, 60)).toMatchObject({ transferred: 1 });
+				expect(await openAttention()).toEqual([]);
+				const transfer = only(await journal());
+				expect(transfer.observed_workflow_id).toEqual(expect.any(String));
+				const { rows: events } = await admin.query<{
+					event_type: string;
+					idempotency_key: string;
+				}>(
+					`select event_type, idempotency_key from approval_workflow_event
+					 where workflow_id = $1 order by occurred_at, idempotency_key`,
+					[transfer.observed_workflow_id],
+				);
+				// The late mirror, as a fresh submission, precedes the transfer.
+				const lateMirrorKey = `late-mirror:${ids.organization}:${kind}:time_entry:${workPeriodId}:${request.id}`;
+				expect(events[0]?.idempotency_key).toBe(lateMirrorKey);
+				expect(events.at(-1)).toMatchObject({ event_type: "assignment.escalated" });
+				expect(transfer.observed_event_id).toEqual(expect.any(String));
+				const { rows: workflows } = await admin.query<{ status: string; version: number }>(
+					`select status::text as status, version from approval_workflow
+					 where organization_id = $1 and source_id = $2`,
+					[ids.organization, workPeriodId],
+				);
+				expect(workflows).toEqual([{ status: "pending", version: 2 }]);
+				const { rows: assignments } = await admin.query(
+					`select approver_employee_id, status from approval_stage_assignment
+					 where workflow_id = $1 order by assignment_sequence`,
+					[transfer.observed_workflow_id],
+				);
+				expect(assignments).toEqual([
+					{ approver_employee_id: ids.manager, status: "cancelled" },
+					{ approver_employee_id: ids.backup, status: "pending" },
+				]);
+
+				// The replacement's decision lands on the same observed workflow.
+				const decided = await decideAs(ids.backupUser, request.id, "approve");
+				expect(decided).toMatchObject({ status: 200, body: { success: true } });
+				const { rows: after } = await admin.query<{ id: string; status: string }>(
+					`select id, status::text as status from approval_workflow
+					 where organization_id = $1 and source_id = $2`,
+					[ids.organization, workPeriodId],
+				);
+				expect(after).toEqual([{ id: transfer.observed_workflow_id, status: "approved" }]);
+			},
+		);
 
 		it("holds a transfer the shadow observation contradicts", async () => {
 			await seed({ mode: "shadow" });

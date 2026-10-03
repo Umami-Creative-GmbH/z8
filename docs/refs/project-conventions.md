@@ -28,6 +28,17 @@ New migrations must have a `when` greater than every prior migration.
 
 If a migration was committed with an older `when` and production may have already advanced past it, do not only edit the old journal entry. Add a new idempotent recovery migration with a later `when` so production databases that skipped the old migration are fixed safely.
 
+## PostgreSQL Integration Suites
+
+Name every suite that needs a real database `*.integration.test.ts`. Vitest's `integration` project in `apps/webapp/vitest.config.ts` discovers them by that suffix, so no runner or CI list needs editing. `pnpm test` runs only the `unit` project.
+
+- `pnpm --filter webapp test:integration` starts a label-owned PostgreSQL 16 container and hands it to `scripts/run-postgres-integration-suites.sh`. CI's integration job calls the same script. Extra arguments reach Vitest, so a file path runs one suite.
+- `apps/webapp/src/test/integration-database.ts` is the only way a suite reaches the database. The project's setup file (`src/test/integration-setup.ts`) binds `@/db` to it, verifies the disposable database before each suite's first hook, and closes every pool after the last one. Without the database, a suite fails; it never skips.
+- In a suite, use `integrationAdminPool()` for raw seeding and assertions and `openIntegrationPool({ max })` when a test needs connections of its own. Do not build a `pg` pool, a gate or a `vi.mock("@/db")` binding by hand. To observe production queries, rebind with `integrationDbModule({ logQuery })`.
+- Take the standard fakes (Next request scope, billing, email, queue, vault, delivery kick, notification triggers) from `src/test/integration-harness.ts` instead of re-declaring them, e.g. `vi.mock("next/cache", async (importOriginal) => (await import("@/test/integration-harness")).nextCache(importOriginal))`.
+- The module throws when a `unit` project file calls it. A misnamed suite therefore fails `pnpm test` instead of silently skipping.
+- In the `unit` project the real `@/db` pool refuses every connection (`src/db/unit-project-guard.ts`), so a misnamed suite that only reaches PostgreSQL through production code fails too. `src/test/unit-setup.ts` fails the test even when the code under test swallowed the error. Unit tests may still import `@/db` for schema exports or mock it.
+
 ## RBAC
 
 Z8 uses [CASL](https://casl.js.org/) for role-based access control. Prefer existing authorization helpers and ability checks over ad-hoc role checks.

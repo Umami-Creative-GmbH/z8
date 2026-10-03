@@ -5,6 +5,7 @@ import type {
 } from "typescript/unstable/sync";
 import {
 	type NativeSourceContext,
+	normalizeNativeSourceFileName,
 	withNativeProgram,
 	withNativeSource,
 } from "@/lib/typescript/native-source-analysis";
@@ -283,6 +284,14 @@ const TRUSTED_TRANSACTION_TYPE_EXPORTS = new Map<
 		new Map([["DatabaseTransaction", "database_receiver"]]),
 	],
 	[
+		"lib/approvals/server/time-correction-work-transaction",
+		new Map([["TimeCorrectionWorkScope", "approval_db_service"]]),
+	],
+	[
+		"lib/approvals/server/work-period-decision-transaction",
+		new Map([["WorkPeriodDecisionScope", "approval_db_service"]]),
+	],
+	[
 		"lib/time-tracking/manual-work-transaction",
 		new Map([["ManualWorkTransactionContext", "approval_db_service"]]),
 	],
@@ -293,6 +302,7 @@ const TRUSTED_TRANSACTION_TYPE_EXPORTS = new Map<
 	[
 		"lib/time-tracking/work-transaction",
 		new Map([
+			["SealedWorkTransactionScope", "approval_db_service"],
 			["WorkTransactionClient", "database_receiver"],
 			["WorkTransactionScope", "approval_db_service"],
 		]),
@@ -2800,7 +2810,9 @@ export function analyzeApprovalWriteMutationSources(
 					diagnosticsByFileName.set(diagnostic.fileName, diagnostics);
 				}
 				for (const [fileName, input] of uniqueSourceInputs) {
-					const sourceFile = program.getSourceFile(fileName);
+					const sourceFile = program.getSourceFile(
+						normalizeNativeSourceFileName(fileName),
+					);
 					if (!sourceFile) {
 						results.push({
 							error: `Native source could not be retrieved: ${fileName}`,

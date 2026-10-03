@@ -1,5 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import type { ApprovalWriteGateResult } from "../authority/resolution";
 import type { ApprovedCancellationAuthorization } from "../domain-adapters/registry";
 import type { ApprovalTerminalFinalizationResult } from "../domain-adapters/types";
 import type { OrdinaryWorkPeriodApprovalSource } from "../domain-adapters/work-period-contract";
@@ -51,22 +52,9 @@ export interface ApprovalDbService {
 	db: ApprovalTransactionClient;
 }
 
-export interface ApprovalCutoverBehavior {
-	serveFrom: "legacy" | "canonical";
-	writeLegacy: boolean;
-	writeCanonical: boolean;
-	decideCanonical: boolean;
-	mirror: "none" | "legacy_to_canonical" | "canonical_to_legacy";
-}
-
-export interface ApprovalWriteGateResult {
-	mode: ApprovalWorkflowLifecycleMode;
-	behavior: ApprovalCutoverBehavior;
-}
-
 export interface ApprovalWriteGate {
 	/**
-	 * Acquires the transaction-scoped rollout lock before reading behavior.
+	 * Acquires the transaction-scoped rollout lock before reading authority.
 	 * The future engine must call this for every write, including complete mode.
 	 */
 	acquire(input: {
@@ -752,3 +740,5 @@ export interface ApprovalWorkflowSourceLoader {
 		actor: ApprovalEventActorIdentity;
 	}): Promise<ApprovalWorkflowSourceMap[Type]>;
 }
+
+export type { ApprovalWriteGateResult };

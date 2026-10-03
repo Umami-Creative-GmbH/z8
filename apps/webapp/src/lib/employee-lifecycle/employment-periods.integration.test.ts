@@ -3,14 +3,13 @@
  * Employment coverage, windows at departure, and rehire.
  */
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createDepartureCommands } from "./commands";
 import { isDateKeyEmployed } from "./employment-coverage";
 import { loadEmploymentCoverage, resolveTermsEmploymentPeriod } from "./employment-periods";
 import {
 	createLifecycleDatabaseFixture,
-	describeLifecycleDatabase,
 	type LifecycleDatabaseFixture,
 } from "./testing/database.test.fixture";
 import type { DepartureClockOutPort, LifecycleActor, RehireEmployee } from "./types";
@@ -21,7 +20,7 @@ const clockOut: DepartureClockOutPort = {
 	},
 };
 
-describeLifecycleDatabase("employment periods", () => {
+describe("employment periods", () => {
 	let fixture: LifecycleDatabaseFixture;
 	let now: Instant = parseInstant("2026-09-14T08:00:00Z");
 

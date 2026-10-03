@@ -311,7 +311,7 @@ export function TimeClockPopover({
 				"holidayName" in result ? result.holidayName : undefined;
 			const errorMessage = holidayName
 				? t(
-						"timeTracking.errors.holidayBlocked",
+						"timeTracking.errors.holidayBlockedClockIn",
 						"Cannot clock in on {holidayName}",
 						{
 							holidayName,

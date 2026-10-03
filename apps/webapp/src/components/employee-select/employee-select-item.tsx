@@ -1,6 +1,7 @@
 "use client";
 
 import { IconCheck } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
@@ -15,12 +16,6 @@ const roleColors = {
 	employee: "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300",
 } as const;
 
-const roleLabels = {
-	admin: "Admin",
-	manager: "Manager",
-	employee: "Employee",
-} as const;
-
 /**
  * Single employee row in the selection list
  */
@@ -31,6 +26,12 @@ export function EmployeeSelectItem({
 	onClick,
 	disabled = false,
 }: EmployeeSelectItemProps) {
+	const { t } = useTranslate();
+	const roleLabels = {
+		admin: t("roles.admin", "Admin"),
+		manager: t("roles.manager", "Manager"),
+		employee: t("roles.employee", "Employee"),
+	};
 	const name = buildAuthUserDisplayName(employee.user);
 	const pronouns = normalizePronouns(employee.pronouns);
 	const displayName = pronouns ? `${name} (${pronouns})` : name;
@@ -87,7 +88,7 @@ export function EmployeeSelectItem({
 					<span className="font-medium truncate">{displayName}</span>
 					{isInactive && (
 						<Badge variant="secondary" className="text-xs shrink-0">
-							Inactive
+							{t("employeeSelect.inactive", "Inactive")}
 						</Badge>
 					)}
 				</div>

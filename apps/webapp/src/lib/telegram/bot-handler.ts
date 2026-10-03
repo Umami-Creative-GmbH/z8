@@ -49,7 +49,7 @@ export async function handleTelegramUpdate(
 		if (update.callback_query) {
 			await handleCallbackQuery(update.callback_query, bot, update.update_id);
 		} else if (update.message) {
-			await handleMessage(update.message, bot);
+			await handleMessage(update.message, bot, update.update_id);
 		}
 	} catch (error) {
 		logger.error(
@@ -60,11 +60,21 @@ export async function handleTelegramUpdate(
 }
 
 /**
+ * The update's invocation ID, the same on every redelivery. Update IDs are
+ * sequential per bot, so the bot's ID (the token's public prefix) scopes them.
+ */
+function telegramInvocationId(bot: ResolvedTelegramBot, updateId: number | undefined) {
+	if (updateId === undefined) return undefined;
+	return `${bot.botToken.split(":")[0]}:${updateId}`;
+}
+
+/**
  * Handle incoming text message
  */
 async function handleMessage(
 	message: TelegramUpdate["message"] & {},
 	bot: ResolvedTelegramBot,
+	updateId: number,
 ): Promise<void> {
 	const chatId = String(message.chat.id);
 	const telegramUserId = String(message.from?.id);
@@ -159,6 +169,7 @@ async function handleMessage(
 		employeeId: userResult.user.employeeId,
 		userId: userResult.user.userId,
 		platformUserId: telegramUserId,
+		invocationId: telegramInvocationId(bot, updateId),
 		config: {
 			organizationId: bot.organizationId,
 			enableApprovals: bot.enableApprovals,
@@ -219,7 +230,13 @@ async function handleCallbackQuery(
 				bot,
 			);
 		} else if (callbackData.a === "cmd") {
-			await handleCommandCallback(query, callbackData as CommandCallbackData, telegramUserId, bot);
+			await handleCommandCallback(
+				query,
+				callbackData as CommandCallbackData,
+				telegramUserId,
+				bot,
+				updateId,
+			);
 		} else if (callbackData.a === "lang") {
 			await handleLanguageCallback(
 				query,
@@ -337,6 +354,7 @@ async function handleCommandCallback(
 	data: CommandCallbackData,
 	telegramUserId: string,
 	bot: ResolvedTelegramBot,
+	updateId: number | undefined,
 ): Promise<void> {
 	const chatId = String(query.message?.chat.id);
 	if (!chatId) return;
@@ -362,6 +380,7 @@ async function handleCommandCallback(
 		employeeId: userResult.user.employeeId,
 		userId: userResult.user.userId,
 		platformUserId: telegramUserId,
+		invocationId: telegramInvocationId(bot, updateId),
 		config: {
 			organizationId: bot.organizationId,
 			enableApprovals: bot.enableApprovals,

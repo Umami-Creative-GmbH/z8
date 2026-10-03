@@ -8,15 +8,21 @@ const runnerPath = fileURLToPath(
 		import.meta.url,
 	),
 );
+const suitesPath = fileURLToPath(
+	new URL(
+		"../../../../scripts/run-postgres-integration-suites.sh",
+		import.meta.url,
+	),
+);
 
-async function readRunner() {
+async function readScript(scriptPath: string) {
 	// Windows autocrlf checkouts read CRLF; the contract is written against LF.
-	return (await readFile(runnerPath, "utf8")).replace(/\r\n/g, "\n");
+	return (await readFile(scriptPath, "utf8")).replace(/\r\n/g, "\n");
 }
 
 describe("approval workflow repository integration runner", () => {
-	it("owns a labelled PostgreSQL 16 lifecycle and passes both test gates", async () => {
-		const runner = await readRunner();
+	it("owns a labelled PostgreSQL 16 lifecycle and hands its URL to the shared suite runner", async () => {
+		const runner = await readScript(runnerPath);
 
 		expect(runner).toContain("postgres:16");
 		expect(runner).toContain(
@@ -24,15 +30,6 @@ describe("approval workflow repository integration runner", () => {
 		);
 		expect(runner).toContain("approval_workflow_repository_test_");
 		expect(runner).toContain("pg_isready");
-		expect(runner).toContain("APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED=1");
-		expect(runner).toContain(`POSTGRES_HOST=127.0.0.1 \\
-POSTGRES_PORT="$host_port" \\
-POSTGRES_DB="$database_name" \\
-POSTGRES_USER=postgres \\
-POSTGRES_PASSWORD="$database_password" \\
-POSTGRES_SSL_MODE=disable \\
-PGOPTIONS="-c statement_timeout=15000 -c timezone=UTC" \\
-APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).not.toContain("--throw-deprecation");
 		expect(runner).toContain("docker inspect");
 		expect(runner).toContain("trap cleanup EXIT");
@@ -40,48 +37,46 @@ APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=`);
 		expect(runner).toContain("PostgreSQL 16 is ready");
 		expect(runner).toContain("Removed disposable PostgreSQL container");
 		expect(runner).toContain(
-			"src/lib/approvals/workflow/transition-engine.integration.test.ts",
+			[
+				'bash "$app_directory/scripts/run-postgres-integration-suites.sh" \\',
+				// biome-ignore lint/suspicious/noTemplateCurlyInString: shell variables
+				'\t"postgresql://postgres:${database_password}@127.0.0.1:${host_port}/${database_name}"',
+			].join("\n"),
 		);
-		expect(runner).toContain(
-			"src/lib/approvals/server/time-correction-approvals.integration.test.ts",
-		);
-		expect(runner).toContain(
-			"src/lib/approvals/server/work-period-approvals.integration.test.ts",
-		);
-		expect(runner).toContain(
-			"src/lib/scim/scim-callback-atomicity.integration.test.ts",
-		);
-		expect(runner).toContain(
-			"src/lib/scim/seat-sync-outbox.integration.test.ts",
-		);
-		expect(runner).toContain("src/lib/scim/protocol.integration.test.ts");
-		expect(runner).toContain(
-			'"src/app/[locale]/(app)/time-tracking/actions/clocking.web-clock-out.integration.test.ts"',
-		);
-		expect(runner).toContain(
-			"src/lib/cron/legacy-escalation-fencing.integration.test.ts",
-		);
+		expect(runner).not.toContain(".integration.test.ts");
 	});
 
 	it("passes the required database safety environment to the migration verifier", async () => {
-		const runner = await readRunner();
-		const verifierCommandBlock = runner.match(
-			/(?:^[A-Z][A-Z_]*=.* \\\n)+^pnpm --dir "\$app_directory" exec tsx \.\/scripts\/verify-approval-migration-recovery\.ts$/m,
-		)?.[0];
+		const suites = await readScript(suitesPath);
+		const verifierLine =
+			"SKIP_ENV_VALIDATION=1 pnpm exec tsx ./scripts/verify-approval-migration-recovery.ts";
+		const beforeVerifier = suites.slice(0, suites.indexOf(verifierLine));
 
-		expect(verifierCommandBlock).toBeDefined();
+		expect(suites).toContain(verifierLine);
 		for (const assignment of [
-			"POSTGRES_HOST=127.0.0.1",
-			'POSTGRES_PORT="$host_port"',
-			'POSTGRES_DB="$database_name"',
-			"POSTGRES_USER=postgres",
-			'POSTGRES_PASSWORD="$database_password"',
-			"POSTGRES_SSL_MODE=disable",
-			"SKIP_ENV_VALIDATION=1",
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL=",
-			"APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test",
+			"export POSTGRES_HOST=",
+			"export POSTGRES_PORT=",
+			"export POSTGRES_DB=",
+			"export POSTGRES_USER=",
+			"export POSTGRES_PASSWORD=",
+			"export POSTGRES_SSL_MODE=disable",
+			'export APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL="$database_url"',
+			"export APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL=approval-workflow-repository-test",
 		]) {
-			expect(verifierCommandBlock).toContain(assignment);
+			expect(beforeVerifier).toContain(assignment);
 		}
+	});
+
+	it("runs the whole integration project after the verifier, with no suite list", async () => {
+		const suites = await readScript(suitesPath);
+		const vitestLine = 'pnpm exec vitest run --project integration "$@"';
+
+		expect(suites).toContain(vitestLine);
+		expect(suites.indexOf(vitestLine)).toBeGreaterThan(
+			suites.indexOf("verify-approval-migration-recovery.ts"),
+		);
+		expect(suites).not.toContain(".integration.test.ts");
+		// The integration project's env owns it; the script must not fork it.
+		expect(suites).not.toContain("PGOPTIONS");
 	});
 });

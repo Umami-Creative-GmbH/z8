@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ShiftScheduler } from "@/components/scheduling/scheduler/shift-scheduler";
 import { parseSchedulerFocus } from "@/components/scheduling/scheduler/shift-scheduler-utils";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { getAuthContext } from "@/lib/auth-helpers";
@@ -86,8 +87,11 @@ async function SchedulingPageContent({
 
 function SchedulingPageLoading() {
 	return (
-		<div
-			aria-label="Loading shift schedule"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.shiftSchedule",
+				labelDefault: "Loading shift schedule",
+			}}
 			className="@container/main flex flex-1 flex-col gap-2"
 			role="status"
 		>
@@ -96,7 +100,7 @@ function SchedulingPageLoading() {
 				<Skeleton aria-hidden="true" className="h-5 w-80" />
 				<Skeleton aria-hidden="true" className="h-[520px] w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

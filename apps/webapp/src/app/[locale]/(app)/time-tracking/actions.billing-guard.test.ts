@@ -114,46 +114,34 @@ describe("legacy time-tracking action billing guards", () => {
 		);
 	});
 
-	it("guards clock-in before creating time entries", () => {
-		expectBillingGuardBeforeWrite(
-			"clockInAs",
-			"clockingService.clockIn({",
-			clockingSource,
-		);
-	});
-
-	it("captures browser timezone context in live clock-in entries", () => {
+	it("leaves clock-in billing, holiday, capture and occupancy to the Clocking module", () => {
+		// Proven through `run` in lib/time-tracking/clocking/clock-in.integration.test.ts.
 		const body = functionBody("clockInAs", clockingSource);
 
-		expect(body).toContain("actionContext: ClockActionContext = {}");
-		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
-		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
-		expect(body).toContain('browserSource: "browser"');
-		expect(body).toContain('fallbackSource: "user_setting"');
+		expect(body).toContain("await clocking.run({");
+		expect(body).toContain("device: actionContext.browserTimezone ?? null");
+		expect(body).not.toContain("requireBillingForMutation");
+		expect(body).not.toContain("clockingService");
 	});
 
-	it("guards clock-out before creating time entries", () => {
-		expectBillingGuardBeforeWrite(
-			"clockOutAs",
-			"clockingService.clockOut({",
-			clockingSource,
-		);
-	});
-
-	it("captures browser timezone context in live clock-out entries", () => {
+	it("leaves clock-out billing, capture and follow-ups to the Clocking module", () => {
+		// Proven through `run` in lib/time-tracking/clocking/clock-out.integration.test.ts.
 		const body = functionBody("clockOutAs", clockingSource);
 
-		expect(body).toContain("actionContext: ClockOutActionContext");
-		expect(body).toContain("resolveTimeEntryTimezoneCapture({");
-		expect(body).toContain("browserTimezone: actionContext.browserTimezone");
-		expect(body).toContain('browserSource: "browser"');
-		expect(body).toContain('fallbackSource: "user_setting"');
+		expect(body).toContain("await clocking.run({");
+		expect(body).toContain("device: actionContext.browserTimezone ?? null");
+		expect(body).not.toContain("requireBillingForMutation");
 	});
 
-	it("guards break insertion before delegating to the clocking mutation", () => {
-		expectBillingGuardBeforeWrite(
-			"addBreakToActiveSession",
-			"addBreakToActiveSessionAction(breakMinutes, actionContext)",
+	it("leaves break billing, holiday, capture and occupancy to the Clocking module", () => {
+		// Proven through `run` in lib/time-tracking/clocking/break.integration.test.ts.
+		const body = functionBody("addBreakToActiveSession", clockingSource);
+
+		expect(body).toContain("await clocking.run({");
+		expect(body).toContain('body: { kind: "break", breakMinutes }');
+		expect(body).not.toContain("requireBillingForMutation");
+		expect(functionBody("addBreakToActiveSession")).toContain(
+			"return addBreakToActiveSessionAction(breakMinutes, actionContext);",
 		);
 	});
 
@@ -206,18 +194,6 @@ describe("legacy time-tracking action billing guards", () => {
 		);
 		expect(body).toContain(
 			"await markWorkBalanceDirtyAfterSameDayEditBestEffort(",
-		);
-		expect(body).toContain("dirtyFromDate:");
-	});
-
-	it("marks work balances dirty after clockOut changes payable time", () => {
-		// Every live clock-out adapter shares the post-commit follow-ups (#275).
-		expect(functionBody("clockOutAs", clockingSource)).toContain(
-			"await completeClockOutAfterCommit(",
-		);
-		const body = functionBody("completeClockOutAfterCommit", clockingSource);
-		expect(body).toContain(
-			"await markWorkBalanceDirtyAfterClockOutBestEffort(",
 		);
 		expect(body).toContain("dirtyFromDate:");
 	});

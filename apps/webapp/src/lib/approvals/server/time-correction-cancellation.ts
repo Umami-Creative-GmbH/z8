@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { db } from "@/db";
+import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
 	approvalChainInstance,
@@ -19,7 +19,10 @@ import {
 import { ConflictError } from "@/lib/effect/errors";
 import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
-import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "../domain-adapters/legacy-write-coordinator";
 import { buildRequesterCancellationMarker } from "../domain-adapters/time-correction-cancellation-marker";
 import {
 	normalizeTimeCorrectionOriginalWorkMetadata,
@@ -29,11 +32,10 @@ import { captureTimeCorrectionLegacyApprovalState } from "../domain-adapters/tim
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
 import { cancelLegacyTimeCorrectionApprovalRows } from "../workflow/compatibility-writer";
 import { splitLegacyEscalationLineage } from "../workflow/legacy-escalation-lineage";
-import type {
-	ApprovalWriteGate,
-	VerifiedLegacyApprovalState,
-} from "../workflow/ports";
+import type { VerifiedLegacyApprovalState } from "../workflow/ports";
+import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import {
 	deriveTimeCorrectionOperationId,
 	loadTimeCorrectionReceipt,
@@ -47,8 +49,8 @@ import {
 	lockTimeCorrectionSubmissionSourceInTransaction,
 } from "./time-correction-approvals";
 import {
-	acquireTimeCorrectionWorkScope,
-	retryTimeCorrectionWorkTransaction,
+	timeCorrectionAuthority,
+	withTimeCorrectionWorkTransaction,
 } from "./time-correction-work-transaction";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "./work-period-approvals";
 
@@ -62,8 +64,9 @@ export interface CancelPendingTimeCorrectionInput {
 export async function cancelPendingTimeCorrection(
 	input: CancelPendingTimeCorrectionInput,
 ): Promise<{ replayed: boolean }> {
-	const runtime = createProductionApprovalWorkflowRuntime({
-		db,
+	const createRuntime = (database: ApprovalWorkflowDatabase) =>
+		createProductionApprovalWorkflowRuntime({
+		db: database,
 		adapters: {
 			absence: {
 				clock: systemClock,
@@ -88,14 +91,27 @@ export async function cancelPendingTimeCorrection(
 		canManageApproval: async () => false,
 		clock: systemClock,
 	});
+	const runtime = attemptApprovalRuntime(createRuntime);
 
 	// Set by the committed attempt: a legacy cycle's withdrawal intent (#432).
 	let deliveryIntent = false;
 	try {
-		const cancelled = await retryTimeCorrectionWorkTransaction(() =>
-			runtime.repository.withTransaction(async (outerContext) => {
+		// A work transaction (#301, #477): the coordinator takes the adoption gate,
+		// the pinned time-correction approval gate, configuration, access and the
+		// employee keys before any row lock; the approval runtime borrows it.
+		const cancelled = await withTimeCorrectionWorkTransaction(
+			{
+				organizationId: input.organizationId,
+				actorUserId: input.requesterUserId,
+				owner: input.requesterEmployeeId,
+				refuse: () => {
+					throw new Error("Time correction cancellation is unavailable");
+				},
+			},
+			runtime.factory,
+			async (scope) => {
 			deliveryIntent = false;
-			const database = outerContext.dbService.db as typeof db;
+			const database = scope.approval.dbService.db as typeof db;
 			const [requesters, memberships, periods] = await Promise.all([
 				database.query.employee.findMany({
 					where: and(
@@ -147,15 +163,8 @@ export async function cancelPendingTimeCorrection(
 				throw new Error("Time correction cancellation is unavailable");
 			}
 
-			// Shared work protocol (#301) before any row lock: adoption gate, the
-			// time-correction approval gate, configuration, access, employee key.
-			const work = await acquireTimeCorrectionWorkScope(outerContext, {
-				organizationId: input.organizationId,
-				ownerEmployeeId: input.requesterEmployeeId,
-				actorUserId: input.requesterUserId,
-			});
-			const context = work.context;
-			const adopted = work.scope.admission === "append";
+			const context = scope.approval;
+			const adopted = scope.admission === "append";
 			let lockedPeriod: Awaited<
 				ReturnType<typeof lockTimeCorrectionSubmissionSourceInTransaction>
 			>;
@@ -171,28 +180,37 @@ export async function cancelPendingTimeCorrection(
 			} catch {
 				throw new Error("Time correction cancellation is unavailable");
 			}
-			const gate = work.authority;
-			const fixedGate = fixedCancellationGate(input.organizationId, gate);
-			const transactionContext: ApprovalWorkflowTransactionContext = {
-				...context,
-				writeGate: fixedGate,
-				compatibilityWriter:
-					context.compatibilityWriter.withWriteGate(fixedGate),
-			};
-			if (
-				gate.mode === "legacy" ||
-				gate.mode === "shadow" ||
-				gate.mode === "ready"
-			) {
-				const observedWorkflow =
-					gate.mode === "legacy"
-						? null
-						: await loadCancellationWorkflow(
-								context,
-								input,
-								lockedPeriod.approvalWorkflowId,
-								true,
-							);
+			const gate = await timeCorrectionAuthority(scope, input.organizationId);
+			if (gate.authority === "legacy") {
+				const coordinator = createLegacyApprovalWriteCoordinator({
+					compatibilityWriter: context.compatibilityWriter,
+					observedWorkflows: createObservedWorkflowReader(context),
+				});
+				const observe = (legacyApprovalRequestId: string | null) =>
+					coordinator.observe({
+						gate,
+						sourceIdentity: {
+							organizationId: input.organizationId,
+							workflowType: "time_correction",
+							sourceType: "time_entry",
+							sourceId: input.workPeriodId,
+						},
+						requesterEmployeeId: input.requesterEmployeeId,
+						legacyApprovalRequestId,
+					});
+				// The workflow observing the requester's latest legacy request: the
+				// pending correction's, or a cancelled one's for a replay.
+				const latestObservation = await observe(
+					await findLatestLegacyRequestId(database, input),
+				);
+				const observedWorkflow = latestObservation.workflow;
+				if (
+					observedWorkflow &&
+					observedWorkflow.status !== "pending" &&
+					observedWorkflow.status !== "cancelled"
+				) {
+					throw new Error("Time correction cancellation is unavailable");
+				}
 				const capturedAt = systemClock.nowInstant();
 				const cancelledAt = instantToDB(capturedAt);
 				if (!cancelledAt) {
@@ -236,7 +254,11 @@ export async function cancelPendingTimeCorrection(
 						isExactLegacyCancellationReplay(replayState, input, {
 							chainInstanceId: cancelledReplay.chainInstanceId,
 							approvalRequestId: cancelledReplay.approvalRequestId,
-							approvalWorkflowId: observedWorkflow?.id ?? null,
+							// A late-mirrored cycle was never bound to the work period.
+							approvalWorkflowId:
+								observedWorkflow && lockedPeriod.approvalWorkflowId !== null
+									? observedWorkflow.id
+									: null,
 						})
 					) {
 						return { replayed: true };
@@ -252,13 +274,20 @@ export async function cancelPendingTimeCorrection(
 					workPeriodId: input.workPeriodId,
 					capturedAt,
 				});
+				const legacy = exactPendingLegacyEvidence(before, input);
+				// The workflow observing the pending cycle, bound to the work period
+				// unless the cycle predates shadow mirroring (then late-mirrored).
+				const observation =
+					legacy.cycle.approvalRequestId === latestObservation.legacyApprovalRequestId
+						? latestObservation
+						: await observe(legacy.cycle.approvalRequestId);
+				const pendingWorkflow = observation.workflow;
 				if (
-					before.sourceSnapshot.approvalWorkflowId !==
-					(observedWorkflow?.id ?? null)
+					before.sourceSnapshot.approvalWorkflowId !== (pendingWorkflow?.id ?? null) ||
+					(pendingWorkflow && pendingWorkflow.status !== "pending")
 				) {
 					throw new Error("Time correction cancellation is unavailable");
 				}
-				const legacy = exactPendingLegacyEvidence(before, input);
 				// The capture normalizes request metadata to the correction payload;
 				// the durable tombstone keeps the persisted submission evidence (#301).
 				const persistedRequests = await database.query.approvalRequest.findMany({
@@ -278,35 +307,24 @@ export async function cancelPendingTimeCorrection(
 					authority: "legacy",
 					approvalRequestId: legacy.cycle.approvalRequestId,
 					chainInstanceId: legacy.cycle.chainInstanceId ?? null,
-					observedWorkflowId: observedWorkflow?.id ?? null,
+					observedWorkflowId: pendingWorkflow?.id ?? null,
 				};
 				const expectedSource = cancellationSourceFromCapture({
 					state: before,
 					input,
-					expectedApprovalWorkflowId: observedWorkflow?.id ?? null,
+					expectedApprovalWorkflowId: pendingWorkflow?.id ?? null,
 					correction: legacy.correction,
 				});
 				let captureCount = 0;
-				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: fixedGate,
-					compatibilityWriter: transactionContext.compatibilityWriter,
-				});
+				let mirroredWorkflowId: string | null = null;
 				await coordinator.execute({
-					organizationId: input.organizationId,
-					workflowType: "time_correction",
-					sourceIdentity: {
-						organizationId: input.organizationId,
-						workflowType: "time_correction",
-						sourceType: "time_entry",
-						sourceId: input.workPeriodId,
-					},
+					observation,
 					actor: {
 						kind: "employee",
 						employeeId: input.requesterEmployeeId,
 						userId: input.requesterUserId,
 					},
-					idempotencyKey: cancellationKey(input, observedWorkflow?.id),
-					expectedVersion: observedWorkflow?.version ?? null,
+					idempotencyKey: cancellationKey(input, pendingWorkflow?.id),
 					captureState: async () => {
 						captureCount += 1;
 						if (captureCount === 1) return before;
@@ -348,27 +366,19 @@ export async function cancelPendingTimeCorrection(
 							),
 						});
 					},
-					afterMirror: async () => {
-						await deleteCancelledTimeCorrectionsInTransaction({
-							dbService: context.dbService as never,
-							organizationId: input.organizationId,
-							workPeriodId: input.workPeriodId,
-							expectedSource,
-							correction: legacy.correction,
-							lifecycle,
-						});
+					afterMirror: async (observed) => {
+						mirroredWorkflowId = observed.snapshot.id;
 					},
 				});
-				if (gate.mode === "legacy") {
-					await deleteCancelledTimeCorrectionsInTransaction({
-						dbService: context.dbService as never,
-						organizationId: input.organizationId,
-						workPeriodId: input.workPeriodId,
-						expectedSource,
-						correction: legacy.correction,
-						lifecycle,
-					});
-				}
+				await deleteCancelledTimeCorrectionsInTransaction({
+					dbService: context.dbService as never,
+					organizationId: input.organizationId,
+					workPeriodId: input.workPeriodId,
+					expectedSource,
+					correction: legacy.correction,
+					// The workflow the cancellation was mirrored onto, late-mirrored or not.
+					lifecycle: { ...lifecycle, observedWorkflowId: mirroredWorkflowId },
+				});
 				// The cycle is withdrawn with the correction (#432): a lifecycle
 				// intent, written only while a delivery control exists, lets the
 				// delivery owner refresh the cycle's sent cards.
@@ -394,8 +404,8 @@ export async function cancelPendingTimeCorrection(
 				true,
 			);
 			const execution =
-				await runtime.transitionEngine.executeInTransactionWithDisposition(
-					transactionContext,
+				await runtime.current().transitionEngine.executeInTransactionWithDisposition(
+					context,
 					{
 						organizationId: input.organizationId,
 						workflowId: workflow.id,
@@ -406,7 +416,7 @@ export async function cancelPendingTimeCorrection(
 					},
 				);
 			return { replayed: execution.disposition === "replayed" };
-		}),
+			},
 		);
 		if (deliveryIntent) {
 			// The withdrawal intent committed; this only runs the owner sooner.
@@ -1043,6 +1053,24 @@ function cancellationSourceFromCapture(input: {
 	};
 }
 
+/** The requester's latest legacy request on the work period, if any. */
+async function findLatestLegacyRequestId(
+	database: typeof db,
+	input: CancelPendingTimeCorrectionInput,
+): Promise<string | null> {
+	const latest = await database.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.organizationId, input.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+			eq(approvalRequest.entityId, input.workPeriodId),
+			eq(approvalRequest.requestedBy, input.requesterEmployeeId),
+		),
+		orderBy: [desc(approvalRequest.createdAt), desc(approvalRequest.id)],
+		columns: { id: true },
+	});
+	return latest?.id ?? null;
+}
+
 function cancellationKey(
 	input: CancelPendingTimeCorrectionInput,
 	workflowId: string | undefined,
@@ -1267,20 +1295,3 @@ function requesterCancellationSubmission(
 
 const CANCELLATION_UUID =
 	/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function fixedCancellationGate(
-	organizationId: string,
-	gate: Awaited<ReturnType<ApprovalWriteGate["acquire"]>>,
-): ApprovalWriteGate {
-	return {
-		acquire: async (scope) => {
-			if (
-				scope.organizationId !== organizationId ||
-				scope.workflowType !== "time_correction"
-			) {
-				throw new Error("Time correction cancellation is unavailable");
-			}
-			return gate;
-		},
-	};
-}

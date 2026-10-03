@@ -25,6 +25,10 @@ A guard's position in the acquisition protocol: adoption gate, approval write ga
 A named protection a work transaction holds until commit, either shared (many readers) or exclusive (one writer).
 _Avoid_: lock (when the rank matters)
 
+**Organization configuration**:
+The organization's settings that decide whether new work is accepted and how it is routed when it is recorded: timezone, holidays, change policies, project and work-category eligibility, organization-wide authorization and billing entitlement. Work policies and surcharge models are not organization configuration: they are evidence captured with the work they apply to.
+_Avoid_: org settings, policy configuration
+
 **Adoption gate**:
 The organization-wide guard every writer of time data holds shared, and that switching an organization's admission holds exclusively. A work transaction reads the admission once, under this gate; in an adopted organization, writers outside a work transaction are refused.
 
@@ -73,14 +77,21 @@ _Avoid_: Clock request, clock action
 A clock command fixed on the employee's device when it happened and submitted later, possibly delayed or offline.
 _Avoid_: v2 command, direct command
 
+**Legacy clock command**:
+A clock command from an old consumer of the legacy direct route, such as the legacy desktop or an old browser queue. It commits only while the organization is not adopted; afterwards only its committed actions are answered.
+_Avoid_: v1 command, old command
+
 **Break**:
 In clocking, ending the current live work and resuming new live work after the break interval.
 _Avoid_: Pause
 
 **On-behalf clock-out**:
-A clock-out a manager performs for an employee's live work.
+A clock-out whose subject is another employee's named live work, performed by an organization owner, an admin or the employee's direct manager; never by the employee themselves.
 _Avoid_: Manager clock-out, forced clock-out
 
+**Compliance check**:
+The clock-out follow-up that judges closed work against the employee's working-time rules and records its violations. It applies the work policy assigned as of the instant the work ended, the instant the policy clock-out break snapshot also reads. It counts the totals of the local day and week in which the work started, and dates each violation at the work's start, so a violation falls on the day and in the week whose total broke the rule. When the check runs never matters, and recorded violations are never re-evaluated.
+
 **Departure clock-out**:
-The clock-out of a departing employee's live work, performed as part of offboarding.
+The clock-out of a departing employee's live work, performed as part of offboarding. Its principal is the departure, which runs only enlisted in its own departure's work transaction and is exempt from billing; its follow-ups (except compliance advice) are staged as durable work.
 _Avoid_: Offboarding clock-out

@@ -1,8 +1,9 @@
 /* @vitest-environment jsdom */
 
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { StrictMode, useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@/test/render-with-translations";
 
 const { createMock, destroyMock, instances } = vi.hoisted(() => ({
 	createMock: vi.fn(),

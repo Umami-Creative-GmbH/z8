@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTranslate } from "@/tolgee/server";
 import { getMyRequests } from "./actions";
@@ -40,8 +41,11 @@ async function MyRequestsPageContent() {
 
 function MyRequestsPageLoading() {
 	return (
-		<div
-			aria-label="Loading your requests"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.yourRequests",
+				labelDefault: "Loading your requests",
+			}}
 			className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6"
 			role="status"
 		>
@@ -57,7 +61,7 @@ function MyRequestsPageLoading() {
 			<section className="px-4 lg:px-6">
 				<Skeleton aria-hidden="true" className="h-80 w-full" />
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }
 

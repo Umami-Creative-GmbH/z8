@@ -40,7 +40,7 @@ The scope names the organization and the changed facts:
 | `route(tx)` | Scope derived from current rows | Available for discovered scope; no adopted writer currently needs it |
 
 The keys and hash seed are the ones `acquireOrganizationConfigurationGuard` and
-`acquireUserConfigurationAccessGuards` take shared (`lib/time-tracking/work-transaction.ts`).
+`acquireUserConfigurationAccessGuards` take shared (`lib/time-tracking/work-transaction/`).
 The exclusive counterparts `acquireExclusiveOrganizationConfigurationGuard` (shared with the
 #311 timezone writer) and `acquireExclusiveUserConfigurationAccessGuards` live beside them, so
 both sides build the key in one place.
@@ -72,7 +72,7 @@ already took:
 | Target team | `addTeamMember`, `removeTeamMember` | Target employee's user. The membership and compatibility `employee.teamId` now commit together; removal re-reads the current team under protection. |
 | Team existence | `deleteTeam` | Organization-wide. The "no members" check runs inside the protected transaction. |
 | Active state | `deactivateEmployeeAction`, `reactivateEmployeeAction` | Target employee's user, before the organization row lock |
-| Access, employment, managers on rehire | Departure schedule/revise/cancel/execute, due-departure materialization, rehire (all via `lockLifecycleScope`) | Target employee's user, before the employee key |
+| Access, employment, managers on rehire | Departure schedule/revise/cancel and rehire (via `lockLifecycleScope`); departure execution, immediate offboarding and due-departure materialization (a departure work transaction since #492, which takes the adoption gate first) | Target employee's user, before the employee key |
 | Team permission flags | `PermissionsService.grantPermissions`, `revokePermissions` | Grantee's user |
 | Custom-role assignment | `CustomRoleService.assignRole`, `unassignRole` | Holder's user |
 | Custom-role grants | `CustomRoleService.setPermissions` (delete + insert, now atomic), `deleteRole` | Organization-wide |

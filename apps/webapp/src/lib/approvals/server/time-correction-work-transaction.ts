@@ -4,132 +4,89 @@ import "server-only";
  * Shared outer work transaction for approval-based time corrections (#301 / T37).
  *
  * Correction submission, decision (finalization, including business deletion)
- * and cancellation run inside the approval repository transaction. Before any
- * row lock they take the #264 acquisition protocol for the work they may change:
- *
- * 1. the organization adoption gate, with the append control read under it;
- * 2. the `time_correction` approval write gate (rank 2);
- * 3. the organization configuration guard;
- * 4. the sorted user access guards (the actor and the owner's user);
- * 5. the sorted exclusive employee keys (the owner and every employee record of
- *    the actor).
- *
- * The routed scope is re-read under those locks; a changed scope throws
- * `WorkTransactionScopeChanged` and the caller restarts the whole transaction
- * instead of acquiring an earlier-ranked lock late. The approval gate result is
- * fixed on the returned context, so the existing submission, decision and
- * cancellation code never re-acquires it after its row locks.
+ * and cancellation run as work transactions (#477): the coordinator opens the
+ * transaction and the approval runtime borrows it. Before any row lock the
+ * coordinator takes the acquisition protocol for the work they may change: the
+ * adoption gate, the `time_correction` approval write gate (pinned on the
+ * borrowed approval context, so the submission, decision and cancellation code
+ * never re-acquires it after its row locks), organization configuration, the
+ * actor's and the owner's user access, then the owner's and the actor's
+ * employee keys. A routed scope that changed under those guards restarts the
+ * attempt instead of acquiring an earlier-ranked lock late.
  *
  * Legacy organizations keep their established writes; they only run inside the
  * same coordinated transaction, so an adoption change never interleaves with a
  * started correction lifecycle transition.
  */
-import { routeScope, sameScope } from "@/lib/time-tracking/completed-work-transaction";
-import { WorkTransactionScopeChanged } from "@/lib/time-tracking/web-clock-out-resources";
+import { routeCompletedWork } from "@/lib/time-tracking/completed-work-transaction";
 import {
-	acquireAdoptionGate,
-	acquireEmployeeCoordination,
-	acquireOrganizationConfigurationGuard,
-	acquireUserConfigurationAccessGuards,
-	readAppendAdmission,
-	sealWorkTransactionScope,
+	runWorkTransaction,
+	type WorkPlan,
+	type WorkRoute,
 	type WorkTransactionClient,
+	type WorkTransactionDatabase,
 	type WorkTransactionScope,
 } from "@/lib/time-tracking/work-transaction";
 import type { ApprovalWorkflowTransactionContext } from "../domain-adapters/types";
-import type { ApprovalWriteGate, ApprovalWriteGateResult } from "../workflow/ports";
+import {
+	type ApprovalRuntimeFactory,
+	approvalWorkTransactionPort,
+} from "../workflow/work-transaction-port";
 
-export interface TimeCorrectionWorkRoute {
+export interface TimeCorrectionWorkInput {
 	organizationId: string;
-	/** The employee who owns the corrected work (the correction requester). */
-	ownerEmployeeId: string;
 	/** The authenticated human acting (requester or deciding approver). */
 	actorUserId: string;
+	/**
+	 * The employee who owns the corrected work (the correction requester), or
+	 * the plain reads that find it; null routes no owner, so nothing may be written.
+	 */
+	owner: string | ((db: WorkTransactionClient) => Promise<string | null>);
+	/** Replaces the pinned gate's refusal of another scope. */
+	refuse?: () => never;
+	/** The caller's database, which opens the transaction; defaults to the application database. */
+	database?: WorkTransactionDatabase;
 }
 
-export interface TimeCorrectionWorkTransaction {
-	scope: WorkTransactionScope;
-	/** The `time_correction` approval gate result, acquired at rank 2. */
-	authority: ApprovalWriteGateResult;
-	/** The caller's context with the acquired approval gate fixed. */
-	context: ApprovalWorkflowTransactionContext;
-}
+/** The borrowed approval context carries the `time_correction` gate pinned at rank 2. */
+export type TimeCorrectionWorkScope = WorkTransactionScope<
+	WorkRoute,
+	ApprovalWorkflowTransactionContext
+>;
 
-/** An approval gate that returns the already acquired `time_correction` authority. */
-export function fixedTimeCorrectionWriteGate(
-	organizationId: string,
-	authority: ApprovalWriteGateResult,
-): ApprovalWriteGate {
+export function timeCorrectionWorkPlan(
+	input: TimeCorrectionWorkInput,
+	createApprovalRuntime: ApprovalRuntimeFactory,
+): WorkPlan<WorkRoute, ApprovalWorkflowTransactionContext> {
 	return {
-		acquire: async (scope) => {
-			if (scope.organizationId !== organizationId || scope.workflowType !== "time_correction") {
-				throw new Error("Time correction rollout scope mismatch");
-			}
-			return authority;
+		organizationId: input.organizationId,
+		database: input.database,
+		approval: approvalWorkTransactionPort(createApprovalRuntime, { refuse: input.refuse }),
+		route: async (db) => {
+			const owner = typeof input.owner === "string" ? input.owner : await input.owner(db);
+			const routed =
+				owner === null
+					? { users: [input.actorUserId], employees: [], writeTargets: [] }
+					: await routeCompletedWork(db, {
+							organizationId: input.organizationId,
+							employeeId: owner,
+							actorUserId: input.actorUserId,
+						});
+			return { ...routed, approvalGate: "time_correction" };
 		},
 	};
 }
 
-/**
- * Acquires the protocol on the caller's approval repository transaction. Must be
- * called before any row lock of the transaction; routing reads before it are
- * plain reads.
- */
-export async function acquireTimeCorrectionWorkScope(
-	context: ApprovalWorkflowTransactionContext,
-	route: TimeCorrectionWorkRoute,
-): Promise<TimeCorrectionWorkTransaction> {
-	const transaction = context.dbService.db as unknown as WorkTransactionClient;
-	const routeInput = {
-		organizationId: route.organizationId,
-		employeeId: route.ownerEmployeeId,
-		actorUserId: route.actorUserId,
-	};
-	const routed = await routeScope(transaction, routeInput);
-	await acquireAdoptionGate(transaction, route.organizationId);
-	const admission = await readAppendAdmission(transaction, route.organizationId);
-	const authority = await context.writeGate.acquire({
-		organizationId: route.organizationId,
-		workflowType: "time_correction",
-	});
-	await acquireOrganizationConfigurationGuard(transaction, route.organizationId);
-	await acquireUserConfigurationAccessGuards(transaction, routed.userIds);
-	await acquireEmployeeCoordination(transaction, routed.employeeIds);
-	if (!sameScope(routed, await routeScope(transaction, routeInput))) {
-		throw new WorkTransactionScopeChanged();
-	}
-
-	const scope = sealWorkTransactionScope({
-		db: transaction,
-		admission,
-		assertEmployee(organizationId: string, employeeId: string) {
-			if (organizationId !== route.organizationId || employeeId !== route.ownerEmployeeId) {
-				throw new Error("Employee scope is outside the work transaction");
-			}
-		},
-	});
-	const writeGate = fixedTimeCorrectionWriteGate(route.organizationId, authority);
-	return {
-		scope,
-		authority,
-		context: {
-			...context,
-			writeGate,
-			compatibilityWriter: context.compatibilityWriter.withWriteGate(writeGate),
-		},
-	};
+/** Runs one correction lifecycle transition as a work transaction. */
+export function withTimeCorrectionWorkTransaction<T>(
+	input: TimeCorrectionWorkInput,
+	createApprovalRuntime: ApprovalRuntimeFactory,
+	operation: (scope: TimeCorrectionWorkScope) => Promise<T>,
+): Promise<T> {
+	return runWorkTransaction(timeCorrectionWorkPlan(input, createApprovalRuntime), operation);
 }
 
-/**
- * Runs one coordinated correction transaction, restarting it (at most twice)
- * when the routed scope changed before its locks were held.
- */
-export async function retryTimeCorrectionWorkTransaction<T>(run: () => Promise<T>): Promise<T> {
-	for (let attempt = 0; ; attempt += 1) {
-		try {
-			return await run();
-		} catch (error) {
-			if (!(error instanceof WorkTransactionScopeChanged) || attempt >= 2) throw error;
-		}
-	}
+/** The `time_correction` gate result the coordinator acquired at rank 2 and pinned. */
+export function timeCorrectionAuthority(scope: TimeCorrectionWorkScope, organizationId: string) {
+	return scope.approval.writeGate.acquire({ organizationId, workflowType: "time_correction" });
 }

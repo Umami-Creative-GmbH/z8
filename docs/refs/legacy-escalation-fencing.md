@@ -135,7 +135,7 @@ messages are replaced. It covers:
 - fail-closed behavior when the control table is unreadable;
 - organization-delete cascade of the control row.
 
-`legacy-escalation-schedulers.redis.integration.test.ts` is opt-in with
+`legacy-escalation-schedulers.redis.test.ts` is opt-in with
 `LEGACY_ESCALATION_REDIS_TEST_URL` pointing at a disposable loopback Redis/Valkey.
 It uses real BullMQ to cover:
 

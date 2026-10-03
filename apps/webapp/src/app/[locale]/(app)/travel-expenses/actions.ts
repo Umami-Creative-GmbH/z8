@@ -18,7 +18,7 @@ import {
 	loadTravelExpenseApprover,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { acquireApprovalWriteLock } from "@/lib/approvals/workflow/cutover";
+import { acquireApprovalWriteLock } from "@/lib/approvals/authority";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { getAuthContext } from "@/lib/auth-helpers";
 import {

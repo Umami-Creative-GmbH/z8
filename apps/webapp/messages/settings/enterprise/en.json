@@ -70,7 +70,11 @@
       "status": "Status",
       "title": "API Keys",
       "updated": "API key updated",
-      "usage": "{count} of {max} keys used"
+      "usage": "{count} of {max} keys used",
+      "noPermissions": "No permissions",
+      "neverExpires": "Never expires",
+      "expired": "Expired",
+      "expiresInDays": "Expires in {days}d"
     },
     "branding": {
       "appName": {
@@ -572,7 +576,8 @@
         "title": "Social Login Providers",
         "unverified": "Unverified",
         "updateConfigError": "Failed to update config",
-        "updated": "{provider} OAuth updated successfully"
+        "updated": "{provider} OAuth updated successfully",
+        "pasteYourP8PrivateKeyContents": "Paste your .p8 private key contents"
       },
       "sso": {
         "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",
@@ -622,6 +627,9 @@
         "domains": "Custom Domain",
         "social-oauth": "Social Login",
         "sso": "SSO Providers"
+      },
+      "emailConfig": {
+        "yourCompanyName": "Your Company Name"
       }
     },
     "enterpriseIdentitySetup": {

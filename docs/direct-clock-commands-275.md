@@ -27,8 +27,8 @@ resolutions of [#263](https://github.com/Umami-Creative-GmbH/z8/issues/263#issue
 lib/time-tracking/clock-command.ts             # v2 shape, age windows, context check (pure)
 lib/time-tracking/start-live-work.ts           # start operation + start_live_work receipt
 lib/time-tracking/close-active-work.ts         # now writer-parameterized (web_clock_out, direct_http)
-app/[locale]/(app)/time-tracking/actions/clock-command.ts  # submit + lookup orchestration
-app/api/time-entries/commands/...              # HTTP adapter
+lib/time-tracking/clocking/                    # Clocking module: run + lookup (since #481)
+app/api/time-entries/commands/...              # frozen clock command adapter over the module
 drizzle/0084_direct_clock_commands.sql         # widens receipt kind/writer checks
 ```
 
@@ -78,13 +78,20 @@ collision, never new work.
 
 ## Order of checks
 
-1. Session (401), current membership and active employee (`access_denied`, 403),
-   context assertions (409), billing (402).
-2. Committed replay by receipt, in every adoption mode. It runs before any fresh check,
+Since #481 the route is a frozen clock command adapter over the Clocking module
+(`lib/time-tracking/clocking`). The adapter owns step 1; the module owns the rest and maps every failure to one code, which the route's status table
+translates exhaustively.
+
+1. Adapter: session (401), current membership and active employee (`access_denied`,
+   403), context assertions (409), break clock continuity (422). It chooses the age
+   window from the command's mode and passes it as `freshness`, with the frozen bytes
+   as `payload`.
+2. Module: authorization and billing (402).
+3. Committed replay by receipt, in every adoption mode. It runs before any fresh check,
    so it is independent of the server clock, holidays, occupancy and append admission.
    An existing `time_entry` with the operation ID but no matching receipt is a
    collision, because each v2 operation writes its receipt with its entry.
-3. Fresh admission, measured from the authoritative server instant:
+4. Fresh admission, measured from the authoritative server instant:
 
    | Mode | Past | Future |
    | --- | --- | --- |
@@ -93,21 +100,22 @@ collision, never new work.
 
    Outside the window: `admission_window` with `too_old` or `in_future` (422).
    Older uncommitted work stays with the client for review.
-4. Holiday validity in the event zone, target resolution and attribution eligibility.
-   A live clock-out never routes approval (#361).
-5. The fresh transaction, through the existing owners: replay again, then refuse with
-   `not_adopted` unless the append control is active, then the operation.
+5. The holiday of a start or of a break's resumed half (a holiday never refuses a
+   clock-out), target resolution and attribution eligibility. A live clock-out never
+   routes approval (#361).
+6. The work transaction: replay again, then refuse with `frozen_not_accepted` (wire
+   `not_adopted`, 409) unless the append control is active, then the operation.
 
 If a fresh attempt is refused after step 2, the server repeats the replay check before
 it answers. An identical request may have committed in between, which makes a preflight
 read such as the close target stale. In that case the committed receipt is returned
 (`replayed`), not the late refusal (`target_not_active`).
 
-Committed evidence the operation cannot interpret, such as an unsupported receipt version
-or an active period without its clock-in entry, is `integrity_review_required` (409). It
-is held for review, not resent.
+Committed evidence the operation cannot interpret, such as an unsupported receipt version,
+is a `collision` (409) since #481; it was `integrity_review_required` before. It is held
+for review, not resent.
 
-A thrown error returns `{ "outcome": "unknown" }` (500). The client looks the command up
+An unconfirmed or failed run returns `{ "outcome": "unknown" }` (500). The client looks the command up
 and, if it is not committed, resends the same command. It never mints a new identity
 for the same action.
 

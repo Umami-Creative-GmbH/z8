@@ -6,7 +6,7 @@ import { changePolicy, changePolicyAssignment, employee, team, teamPermissions }
 import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AppLayer } from "@/lib/effect/runtime";
-import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/organization-configuration-guard";
+import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,

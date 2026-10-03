@@ -12,8 +12,8 @@ import {
 	useElapsedTimer,
 	useTimeClock,
 } from "@/lib/query";
-import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
+import { getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
 import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
@@ -172,7 +172,7 @@ export function useClockInOutWidget(
 			"holidayName" in result ? result.holidayName : undefined;
 		const errorMessage = holidayName
 			? t(
-					"timeTracking.errors.holidayBlocked",
+					"timeTracking.errors.holidayBlockedClockIn",
 					"Cannot clock in on {holidayName}",
 					{
 						holidayName,
@@ -369,7 +369,12 @@ export function useClockInOutWidget(
 					await submitTimezoneMismatch(timezoneMismatch);
 					setTimezoneMismatch(null);
 				} catch {
-					toast.error("An error occurred while updating timezone");
+					toast.error(
+						t(
+							"header.timezone.updateError",
+							"An error occurred while updating timezone",
+						),
+					);
 				}
 			},
 			() => {

@@ -72,10 +72,17 @@ import {
 import type { TimeEntryTimezoneCapture } from "@/lib/time-tracking/timezone-capture";
 import { normalizeWorkLocationType } from "@/lib/time-tracking/work-location";
 import { assertWorkOccupancyFree } from "@/lib/time-tracking/work-occupancy";
-import type { WorkTransactionScope } from "@/lib/time-tracking/work-transaction";
+import type {
+	SealedWorkTransactionScope,
+	WorkTransactionClient,
+	WorkTransactionDatabase,
+} from "@/lib/time-tracking/work-transaction";
 import { markEmployeeWorkBalanceDirty } from "@/lib/work-balance/service";
 import type { ApprovalActionOptions } from "../domain/types";
-import { createLegacyApprovalWriteCoordinator } from "../domain-adapters/legacy-write-coordinator";
+import {
+	createLegacyApprovalWriteCoordinator,
+	createObservedWorkflowReader,
+} from "../domain-adapters/legacy-write-coordinator";
 import {
 	type CurrentTimeCorrectionWorkflowContract,
 	normalizeTimeCorrectionOriginalWorkMetadata,
@@ -132,9 +139,14 @@ import type {
 } from "../policies/types";
 import { mapSequentially } from "../sequential";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
+import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
-import type { ApprovalWorkflowRepository } from "../workflow/repository";
+import type {
+	ApprovalWorkflowDatabase,
+	ApprovalWorkflowRepository,
+} from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
+import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import { startApprovalWorkflow } from "../workflow/start-workflow";
 import {
 	type ApprovalTransitionEngine,
@@ -146,8 +158,8 @@ import {
 	lockTrustedTimeCorrectionEmployeeTeamId,
 } from "./time-correction-category-authorization";
 import {
-	acquireTimeCorrectionWorkScope,
-	retryTimeCorrectionWorkTransaction,
+	timeCorrectionAuthority,
+	withTimeCorrectionWorkTransaction,
 } from "./time-correction-work-transaction";
 import type {
 	ApprovalDbService,
@@ -2087,7 +2099,7 @@ function correctionSegment(input: {
  * rejection that leaves the graph unchanged).
  */
 async function recordAdoptedCorrectionFinalization(input: {
-	scope: WorkTransactionScope;
+	scope: SealedWorkTransactionScope;
 	organizationId: string;
 	employeeId: string;
 	actorUserId: string;
@@ -3585,28 +3597,6 @@ function requesterAutoCompletionActor(input: {
 	};
 }
 
-function fixedTimeCorrectionGate(
-	organizationId: string,
-	authority: Awaited<
-		ReturnType<ApprovalWorkflowTransactionContext["writeGate"]["acquire"]>
-	>,
-) {
-	return {
-		acquire: async (scope: {
-			organizationId: string;
-			workflowType: "time_correction";
-		}) => {
-			if (
-				scope.organizationId !== organizationId ||
-				scope.workflowType !== "time_correction"
-			) {
-				throw new Error("Time correction rollout scope mismatch");
-			}
-			return authority;
-		},
-	};
-}
-
 function resultCycle(
 	result: TimeCorrectionApprovalWorkflowResult,
 ): ExpectedTimeCorrectionLegacyCycle {
@@ -3896,23 +3886,13 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 				workCategoryId: lockedSource.workCategoryId,
 			})
 		: undefined;
-	const authority = await input.context.writeGate.acquire({
-		organizationId: input.organizationId,
-		workflowType: "time_correction",
-	});
-	const fixedGate = fixedTimeCorrectionGate(input.organizationId, authority);
-	const transactionContext = {
-		...input.context,
-		writeGate: fixedGate,
-		compatibilityWriter:
-			input.context.compatibilityWriter.withWriteGate(fixedGate),
-	} as ApprovalWorkflowTransactionContext;
+	const { authority, context: transactionContext } =
+		await acquirePinnedApprovalContext(input.context, {
+			organizationId: input.organizationId,
+			workflowType: "time_correction",
+		});
 
-	if (
-		authority.mode === "legacy" ||
-		authority.mode === "shadow" ||
-		authority.mode === "ready"
-	) {
+	if (authority.authority === "legacy") {
 		if (input.submissionId) {
 			const cycleRequests =
 				await input.dbService.db.query.approvalRequest.findMany({
@@ -4071,25 +4051,29 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const capture =
 			input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 		const coordinator = createLegacyApprovalWriteCoordinator({
-			writeGate: fixedGate,
 			compatibilityWriter: transactionContext.compatibilityWriter,
+			observedWorkflows: createObservedWorkflowReader(transactionContext),
 		});
-		const result = await coordinator.execute({
-			organizationId: input.organizationId,
-			workflowType: "time_correction",
+		// A submission has no legacy request yet: nothing to observe.
+		const observation = await coordinator.observe({
+			gate: authority,
 			sourceIdentity: {
 				organizationId: input.organizationId,
 				workflowType: "time_correction",
 				sourceType: "time_entry",
 				sourceId: input.workPeriodId,
 			},
+			requesterEmployeeId: input.requesterEmployeeId,
+			legacyApprovalRequestId: null,
+		});
+		const result = await coordinator.execute({
+			observation,
 			actor: {
 				kind: "employee",
 				employeeId: input.requesterEmployeeId,
 				userId: null,
 			},
 			idempotencyKey: input.submissionKey,
-			expectedVersion: null,
 			captureState: async () => {
 				captureCount += 1;
 				return await capture({
@@ -4302,7 +4286,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			workflowId: replaySnapshot.id,
 		});
 		const compatibilityId =
-			authority.mode === "canonical"
+			authority.compatibilityWriting
 				? await resolveOriginalTimeCorrectionCompatibilityApprovalId({
 						dbService: input.dbService,
 						organizationId: input.organizationId,
@@ -4316,7 +4300,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		const approvalRequestId =
 			compatibilityId ??
 			originalHumanStage?.legacyApprovalRequestId ??
-			(authority.mode === "canonical" ? originalHumanStage?.id : null) ??
+			(authority.compatibilityWriting ? originalHumanStage?.id : null) ??
 			originalHumanStage?.assignments.at(0)?.id ??
 			replaySnapshot.id;
 		if (evidence.resultKind === "auto_completed") {
@@ -4452,7 +4436,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 			};
 		},
 	});
-	if (started.kind === "created" && authority.mode === "canonical") {
+	if (started.kind === "created" && authority.compatibilityWriting) {
 		await transactionContext.compatibilityWriter.mirrorCanonicalToLegacy({
 			result: {
 				snapshot: started.snapshot,
@@ -4463,7 +4447,7 @@ export async function executeTimeCorrectionSubmissionInTransaction(
 		});
 	}
 	const compatibilityId =
-		authority.mode === "canonical"
+		authority.compatibilityWriting
 			? await resolveTimeCorrectionCompatibilityApprovalId({
 					dbService: input.dbService,
 					organizationId: input.organizationId,
@@ -4654,7 +4638,10 @@ export async function completeTimeCorrectionDecisionAfterCommit<
 }
 
 export interface ExecuteTimeCorrectionDecisionInput {
-	runtime: TimeCorrectionDecisionRuntime;
+	/** Builds the runtime over the database it is handed: the borrowed work transaction. */
+	createRuntime(database: ApprovalWorkflowDatabase): TimeCorrectionDecisionRuntime;
+	/** The caller's database, which opens the transaction; defaults to the application database. */
+	database?: WorkTransactionDatabase;
 	/**
 	 * A reviewed-binding card action. The target is then the exact bound
 	 * canonical assignment (#325) or, under legacy authority, the exact bound
@@ -4788,13 +4775,62 @@ function parseCompatibilityTargetMetadata(
 	};
 }
 
+/**
+ * The owner of the decided correction's work, routed from its approval target
+ * with plain reads: the legacy request's requester, or the requester of the
+ * canonical workflow the assignment (or the workflow id itself) names.
+ */
+async function routeTimeCorrectionDecisionOwner(
+	db: WorkTransactionClient,
+	input: Pick<ExecuteTimeCorrectionDecisionInput, "organizationId" | "approvalRequestId">,
+): Promise<string | null> {
+	const request = await db.query.approvalRequest.findFirst({
+		where: and(
+			eq(approvalRequest.id, input.approvalRequestId),
+			eq(approvalRequest.organizationId, input.organizationId),
+			eq(approvalRequest.entityType, "time_entry"),
+		),
+		columns: { requestedBy: true },
+	});
+	if (request) return request.requestedBy;
+	const assignment = await db.query.approvalStageAssignment.findFirst({
+		where: and(
+			eq(approvalStageAssignment.id, input.approvalRequestId),
+			eq(approvalStageAssignment.organizationId, input.organizationId),
+		),
+		columns: { workflowId: true },
+	});
+	const workflow = await db.query.approvalWorkflow.findFirst({
+		where: and(
+			eq(approvalWorkflow.id, assignment?.workflowId ?? input.approvalRequestId),
+			eq(approvalWorkflow.organizationId, input.organizationId),
+			eq(approvalWorkflow.sourceType, "time_entry"),
+		),
+		columns: { requesterEmployeeId: true },
+	});
+	return workflow?.requesterEmployeeId ?? null;
+}
+
 export async function executeTimeCorrectionDecisionInTransaction(
 	input: ExecuteTimeCorrectionDecisionInput,
 ) {
+	const runtime = attemptApprovalRuntime(input.createRuntime);
 	try {
-		return await retryTimeCorrectionWorkTransaction(() =>
-			input.runtime.repository.withTransaction(async (outerContext) => {
-			const transactionDb = outerContext.dbService
+		// A work transaction (#301, #477) routed from the approval target: the
+		// coordinator takes the adoption gate, the pinned time-correction approval
+		// gate, configuration and access guards and the employee keys before any
+		// read here; the approval runtime borrows its transaction.
+		return await withTimeCorrectionWorkTransaction(
+			{
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				owner: (db) => routeTimeCorrectionDecisionOwner(db, input),
+				database: input.database,
+			},
+			runtime.factory,
+			async (scope) => {
+			const context = scope.approval;
+			const transactionDb = context.dbService
 				.db as unknown as ApprovalDbService["db"];
 			const dbService: ApprovalDbService = {
 				db: transactionDb,
@@ -4961,6 +4997,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					entityType: "approval_request",
 				});
 			}
+			// The owner changed since routing: route again under fresh reads.
+			if (!scope.route.writeTargets.includes(period.employeeId)) scope.restart();
 			const kind = await classifyPersistedTimeApprovalRequest(transactionDb, {
 				organizationId: input.organizationId,
 				request,
@@ -4996,31 +5034,9 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				};
 			}
 
-			// Shared work protocol (#301): the reads above only routed the
-			// decision. Before any row lock take the adoption gate, the
-			// time-correction approval gate, configuration and access guards and
-			// the employee keys; the finalizer re-reads everything under them.
-			const work = await acquireTimeCorrectionWorkScope(outerContext, {
-				organizationId: input.organizationId,
-				ownerEmployeeId: period.employeeId,
-				actorUserId: input.actorUserId,
-			});
-			const context = work.context;
-			const authority = work.authority;
-			const fixedGate = fixedTimeCorrectionGate(
-				input.organizationId,
-				authority,
-			);
-			const decisionContext = {
-				...context,
-				writeGate: fixedGate,
-				compatibilityWriter:
-					context.compatibilityWriter.withWriteGate(fixedGate),
-			} as ApprovalWorkflowTransactionContext;
+			const authority = await timeCorrectionAuthority(scope, input.organizationId);
 			const legacyAuthority =
-				authority.mode === "legacy" ||
-				authority.mode === "shadow" ||
-				authority.mode === "ready";
+				authority.authority === "legacy";
 			if (input.bound && boundCommand) {
 				await admitFreshTimeInvocation(transactionDb, {
 					organizationId: input.organizationId,
@@ -5031,7 +5047,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				await assertTimeBindingAuthority(transactionDb, {
 					organizationId: input.organizationId,
 					bound: input.bound,
-					legacyAuthority,
+					gate: authority,
 				});
 				if (legacyAuthority) {
 					// A legacy binding names the exact legacy request and the current
@@ -5109,31 +5125,6 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const capturedAt = (
 					input.nowInstant ?? (() => systemClock.nowInstant())
 				)();
-				const observedWorkflow =
-					authority.mode === "legacy"
-						? null
-						: period.approvalWorkflowId
-							? await context.repository.loadSnapshot({
-									organizationId: input.organizationId,
-									workflowId: period.approvalWorkflowId,
-								})
-							: null;
-				if (
-					authority.mode !== "legacy" &&
-					(!observedWorkflow ||
-						observedWorkflow.organizationId !== input.organizationId ||
-						observedWorkflow.workflowType !== "time_correction" ||
-						observedWorkflow.sourceType !== "time_entry" ||
-						observedWorkflow.sourceId !== period.id ||
-						observedWorkflow.requesterEmployeeId !== period.employeeId ||
-						observedWorkflow.status !== "pending")
-				) {
-					throw new ConflictError({
-						message:
-							"Approval workflow decision conflicts with the current state",
-						conflictType: "approval_transition",
-					});
-				}
 				// Fresh evidence checks (#301) before the legacy mutation: an
 				// evidenced lifecycle must still match its submitted revision.
 				const evidencePlan = await prepareLegacyTimeCorrectionDecisionEvidence(
@@ -5149,25 +5140,35 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				const capture =
 					input.captureLegacyState ?? captureTimeCorrectionLegacyApprovalState;
 				const coordinator = createLegacyApprovalWriteCoordinator({
-					writeGate: fixedGate,
-					compatibilityWriter: decisionContext.compatibilityWriter,
+					compatibilityWriter: context.compatibilityWriter,
+					observedWorkflows: createObservedWorkflowReader(context),
 				});
-				const domainResult = await coordinator.execute({
-					organizationId: input.organizationId,
-					workflowType: "time_correction",
+				const observation = await coordinator.observe({
+					gate: authority,
 					sourceIdentity: {
 						organizationId: input.organizationId,
 						workflowType: "time_correction",
 						sourceType: "time_entry",
 						sourceId: period.id,
 					},
+					requesterEmployeeId: period.employeeId,
+					legacyApprovalRequestId: request.id,
+				});
+				// The request is pending, so the workflow observing it must be too.
+				if (observation.workflow && observation.workflow.status !== "pending") {
+					throw new ConflictError({
+						message: "Approval workflow decision conflicts with the current state",
+						conflictType: "approval_transition",
+					});
+				}
+				const domainResult = await coordinator.execute({
+					observation,
 					actor: {
 						kind: "employee",
 						employeeId: actor.id,
 						userId: actor.userId,
 					},
 					idempotencyKey: legacyIdempotencyKey,
-					expectedVersion: observedWorkflow?.version ?? null,
 					captureState: () =>
 						capture({
 							dbService,
@@ -5349,8 +5350,8 @@ export async function executeTimeCorrectionDecisionInTransaction(
 				? boundTimeInvocationKey(input.bound)
 				: `time-correction:${input.organizationId}:${workflow.id}:${input.approvalRequestId}:${input.action}:${decisionFingerprint(input.reason)}`;
 			const commandResult =
-				await input.runtime.transitionEngine.executeInTransaction(
-					decisionContext,
+				await runtime.current().transitionEngine.executeInTransaction(
+					context,
 					{
 						organizationId: input.organizationId,
 						workflowId: workflow.id,
@@ -5396,7 +5397,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					terminal: null,
 				},
 			};
-		}),
+			},
 		);
 	} catch (error) {
 		// A bound card action keeps its exact outcome for the card (#325, #432).
@@ -5465,8 +5466,9 @@ export function decideTimeCorrectionWithStableTargetEffect(
 ) {
 	return Effect.tryPromise({
 		try: async () => {
-			const runtime = createProductionApprovalWorkflowRuntime({
-				db: dbService.db,
+			const createRuntime = (database: ApprovalWorkflowDatabase) =>
+				createProductionApprovalWorkflowRuntime({
+				db: database,
 				adapters: {
 					absence: {
 						clock: systemClock,
@@ -5531,7 +5533,8 @@ export function decideTimeCorrectionWithStableTargetEffect(
 				execution = await completeTimeCorrectionDecisionAfterCommit({
 					execute: () =>
 						executeTimeCorrectionDecisionInTransaction({
-							runtime,
+							createRuntime,
+							database: dbService.db,
 							organizationId: currentEmployee.organizationId,
 							actorEmployeeId: currentEmployee.id,
 							actorUserId: currentEmployee.userId,
@@ -5574,7 +5577,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 				}
 				const ordinary = await executeOrdinaryWorkPeriodDecisionInTransaction({
 					dbService,
-					runtime,
+					createRuntime,
 					organizationId: currentEmployee.organizationId,
 					approvalRequestId,
 					workPeriodId: error.workPeriodId,

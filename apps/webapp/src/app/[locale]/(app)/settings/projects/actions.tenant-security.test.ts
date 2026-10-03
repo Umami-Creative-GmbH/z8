@@ -14,6 +14,12 @@ const entryHelpersSource = readFileSync(
 	fileURLToPath(new URL("../../time-tracking/actions/entry-helpers.ts", import.meta.url)),
 	"utf8",
 );
+const clockOutEffectsSource = readFileSync(
+	fileURLToPath(
+		new URL("../../../../../lib/time-tracking/clock-out-effects.ts", import.meta.url),
+	),
+	"utf8",
+);
 const projectEligibilitySource = readFileSync(
 	fileURLToPath(
 		new URL("../../../../../lib/time-tracking/project-eligibility.ts", import.meta.url),
@@ -63,11 +69,9 @@ describe("project relationship tenant security", () => {
 		expect(projectEligibilitySource).toContain(
 			"eq(projectAssignment.organizationId, target.organizationId)",
 		);
-		const apiValidationCall = apiRouteSource.slice(
-			apiRouteSource.indexOf("validateProjectAssignment("),
-			apiRouteSource.indexOf(");", apiRouteSource.indexOf("validateProjectAssignment(")),
-		);
-		expect(apiValidationCall).toContain("requestedOrgId");
+		// The legacy route leaves project eligibility to the Clocking module (#483).
+		expect(apiRouteSource).toContain("clocking.run(");
+		expect(apiRouteSource).not.toContain("validateProjectAssignment(");
 	});
 
 	it("scopes project selectors and assigned-project reads to the requested organization", () => {
@@ -86,7 +90,7 @@ describe("project relationship tenant security", () => {
 
 	it("filters legacy project relationships and aggregates by organization", () => {
 		const projectsBody = functionBody(projectsSource, "getProjects");
-		const budgetBody = functionBody(entryHelpersSource, "checkProjectBudgetAfterClockOut");
+		const budgetBody = functionBody(clockOutEffectsSource, "checkProjectBudgetAfterClockOut");
 
 		expect(projectsBody).toContain("manager.employee?.organizationId !== organizationId");
 		expect(projectsBody).toContain("assignment.team?.organizationId !== organizationId");

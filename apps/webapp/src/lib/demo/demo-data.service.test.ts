@@ -16,6 +16,11 @@ import {
 } from "@/db/schema";
 import { classifyAppendLineage } from "@/lib/time-tracking/append-lineage";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
+import {
+	approvalWriteGateGuard,
+	Rank,
+	recordGuard,
+} from "@/lib/time-tracking/work-transaction/ranks";
 
 type RolloutMode = "legacy" | "shadow" | "ready" | "canonical" | "complete";
 
@@ -176,6 +181,21 @@ vi.mock("./demo-configuration", async () => {
 
 vi.mock("@/db", () => ({
 	db: {
+		// A fresh client per work transaction, as a fresh transaction would be;
+		// the approval context borrows the same client.
+		transaction: vi.fn(async function (
+			this: object,
+			body: (client: object) => Promise<unknown>,
+		) {
+			const client = Object.create(this);
+			const previous = mocks.transactionDb;
+			mocks.transactionDb = client;
+			try {
+				return await body(client);
+			} finally {
+				mocks.transactionDb = previous;
+			}
+		}),
 		execute: vi.fn(async (query: { queryChunks?: unknown[] }) => {
 			mocks.acquisitions.push(advisoryLockLabel(query));
 			return { rows: [] };
@@ -385,14 +405,19 @@ vi.mock("@/db", () => ({
 
 /** The approval transaction context the demo correction path composes with. */
 function transactionContext() {
+	const client = mocks.transactionDb as object;
 	return {
-		dbService: { db: mocks.transactionDb },
+		dbService: { db: client },
 		writeGate: {
-			acquire: async (scope: { workflowType: string }) => {
+			acquire: async (scope: { organizationId: string; workflowType: string }) => {
+				// The gate records rank 2 in a work transaction, as the real one does.
+				const { key } = approvalWriteGateGuard(scope.organizationId, scope.workflowType);
+				recordGuard(client, Rank.approvalWriteGate, key, "shared");
 				mocks.acquisitions.push(`approval:${scope.workflowType}`);
 				return { mode: mocks.mode };
 			},
 		},
+		compatibilityWriter: { withWriteGate: () => ({}) },
 	};
 }
 
@@ -1088,14 +1113,15 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 		await generateDemoPendingTimeCorrectionApprovals(options);
 
 		// Adoption gate, approval gate, configuration, sorted admin/requester/approver
-		// access, then the requester key (#285).
-		expect(mocks.acquisitions.slice(0, 7)).toEqual([
+		// access, then the requester's and the row-locked approver's keys (#285, #491).
+		expect(mocks.acquisitions.slice(0, 8)).toEqual([
 			'shared:["completed-work-adoption","org-1"]',
 			"approval:time_correction",
 			'shared:["work-organization-configuration","org-1"]',
 			'shared:["work-user-configuration-access","user-1"]',
 			'shared:["work-user-configuration-access","user-2"]',
 			"exclusive:20000000-0000-4000-8000-000000000001",
+			"exclusive:20000000-0000-4000-8000-000000000002",
 			"row:employee",
 		]);
 	});
@@ -1364,11 +1390,13 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 		const replay = await generateDemoPendingTimeCorrectionApprovals(options);
 
 		expect(replay).toEqual({ pendingTimeCorrectionApprovalsCreated: 0 });
+		// Admitted on the work transaction's client.
 		expect(mocks.admitAppend).toHaveBeenCalledWith(
-			db,
+			expect.any(Object),
 			{ organizationId: "org-1", employeeId: "20000000-0000-4000-8000-000000000001" },
 			"demo_correction",
 		);
+		expect(Object.getPrototypeOf(mocks.admitAppend.mock.calls[0]?.[0])).toBe(db);
 		// The admitted predecessor, not the latest-created row, was linked and recorded.
 		expect(mocks.recordAppend).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -1471,7 +1499,8 @@ describe("generateDemoPendingTimeCorrectionApprovals", () => {
 		expect(result).toEqual({ pendingTimeCorrectionApprovalsCreated: 5 });
 		expect(mocks.withTransaction).toHaveBeenCalledTimes(5);
 		expect(mocks.executeSubmission).toHaveBeenCalledTimes(5);
-		expect(mocks.createRuntime).toHaveBeenCalledOnce();
+		// One runtime per borrowed work transaction.
+		expect(mocks.createRuntime).toHaveBeenCalledTimes(5);
 		expect(
 			vi.mocked(db.query.workPeriod.findMany).mock.calls[0]?.[0],
 		).toMatchObject({

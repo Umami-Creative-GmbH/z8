@@ -30,6 +30,7 @@ import {
 	loadReviewBinding,
 } from "../evidence/store";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
+import type { ApprovalWorkflowDatabase } from "../workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { ApprovalTransitionEngineError } from "../workflow/transition-engine";
 import {
@@ -100,9 +101,9 @@ type BoundTimeDecisionInput = {
  * by the engine first) may decide; a card never reaches management or
  * eligible-manager authority.
  */
-function boundTimeRuntime(database: ApprovalDatabase) {
+function boundTimeRuntime(database: ApprovalWorkflowDatabase) {
 	return createProductionApprovalWorkflowRuntime({
-		db: database as never,
+		db: database,
 		adapters: {
 			absence: {
 				clock: systemClock,
@@ -230,12 +231,12 @@ export async function decideBoundTimeInvocation(
 	) {
 		return { status: "not_found" };
 	}
-	const runtime = boundTimeRuntime(database);
 	const reason = input.action === "reject" ? (input.reason ?? "") : null;
 	try {
 		if (workflow.workflowType === "time_correction") {
 			const execution = await executeTimeCorrectionDecisionInTransaction({
-				runtime,
+				createRuntime: boundTimeRuntime,
+				database: database as ApprovalDbService["db"],
 				bound,
 				organizationId: input.organizationId,
 				actorEmployeeId: input.actorEmployeeId,
@@ -268,7 +269,7 @@ export async function decideBoundTimeInvocation(
 			execute: () =>
 				executeOrdinaryWorkPeriodDecisionInTransaction({
 					dbService,
-					runtime,
+					createRuntime: boundTimeRuntime,
 					bound,
 					organizationId: input.organizationId,
 					approvalRequestId: binding.assignmentId,
@@ -368,7 +369,6 @@ export async function decideBoundLegacyTimeInvocation(
 	) {
 		return { status: "not_found" };
 	}
-	const runtime = boundTimeRuntime(database);
 	const dbService: ApprovalDbService = {
 		db: database as ApprovalDbService["db"],
 		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
@@ -382,7 +382,8 @@ export async function decideBoundLegacyTimeInvocation(
 			const execution = await completeTimeCorrectionDecisionAfterCommit({
 				execute: () =>
 					executeTimeCorrectionDecisionInTransaction({
-						runtime,
+						createRuntime: boundTimeRuntime,
+						database: dbService.db,
 						bound,
 						organizationId: input.organizationId,
 						actorEmployeeId: input.actorEmployeeId,
@@ -425,7 +426,7 @@ export async function decideBoundLegacyTimeInvocation(
 				execute: () =>
 					executeOrdinaryWorkPeriodDecisionInTransaction({
 						dbService,
-						runtime,
+						createRuntime: boundTimeRuntime,
 						bound,
 						organizationId: input.organizationId,
 						approvalRequestId: binding.legacyApprovalRequestId,

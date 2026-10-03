@@ -64,7 +64,38 @@
       "restPeriodBlocked": "Rest period not complete",
       "restPeriodBlockedDesc": "You must complete the required rest period before clocking in. Request an exception if needed.",
       "appendReviewRequired": "Clock-in needs a review of your time history",
-      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator."
+      "appendReviewRequiredDesc": "Your earlier time entries could not be verified, so a new clock-in was not saved. Please contact your administrator.",
+      "notClockedIn": "You are not currently clocked in",
+      "projectNotAllowed": "Cannot assign to this project",
+      "workCategoryNotAllowed": "Cannot assign to this work category",
+      "clockOutBeforeClockIn": "Clock-out must be after clock-in",
+      "clockOutCollision": "This clock-out conflicts with an earlier request or changed work. Please refresh and try again.",
+      "clockOutAppendReview": "Your time history needs review before you can clock out. Please contact your administrator.",
+      "clockOutNotAllowed": "You cannot clock out this work.",
+      "clockOutRetry": "Failed to clock out. Please try again.",
+      "notAuthenticated": "Not authenticated",
+      "employeeProfileNotFound": "Employee profile not found",
+      "alreadyClockedIn": "You are already clocked in",
+      "holidayBlockedClockIn": "Cannot clock in on {holidayName}",
+      "clockInOccupied": "This time overlaps other recorded work",
+      "invalidWorkLocation": "Invalid work location type",
+      "clockInCollision": "This clock-in conflicts with an earlier request. Please refresh and try again.",
+      "clockInAppendReview": "Your time history needs review before you can clock in. Please contact your administrator.",
+      "clockInNotAllowed": "You cannot clock in.",
+      "clockInRetry": "Failed to clock in. Please try again.",
+      "breakDurationInvalid": "Enter a break duration of at least 1 minute.",
+      "breakTooLong": "Break duration must be shorter than your current session.",
+      "holidayBlockedBreak": "Cannot resume work after a break on {holidayName}",
+      "breakOccupied": "The break overlaps other recorded work.",
+      "breakNotAllowed": "You cannot add a break to this work.",
+      "breakAwaitingApproval": "This work period is awaiting approval and cannot be edited. Add the break once it is resolved.",
+      "breakPendingCorrection": "A time correction approval is already pending for this work period. Add the break once it is resolved.",
+      "breakRetry": "Failed to add break. Please try again.",
+      "clockTargetNotActive": "This work period is no longer active. Refresh your clock status.",
+      "clockTargetUnknown": "The work period to close was not found. Refresh your clock status.",
+      "clockNotAllowedAtTime": "Clocking is not allowed at this time",
+      "clockAttributionNotAllowed": "The selected project or category is not available",
+      "clockCommandRejected": "The server did not accept this clock action"
     },
     "manualEntry": {
       "addButton": "Add Manual Entry",
@@ -207,7 +238,15 @@
     "clockInSavedForSending": "Clock-in saved on this device. It is sent automatically and is not confirmed yet.",
     "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
     "clockInSavedHeld": "Clock-in saved on this device but not sent. Review saved records.",
-    "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records."
+    "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records.",
+    "timezoneMismatch": {
+      "cancel": "Cancel",
+      "continueOnce": "Continue once",
+      "updateTimezoneAndContinue": "Update timezone and continue",
+      "description": "Your device timezone is {browserTimezone}, but your saved timezone is {savedTimezone}.",
+      "title": "Confirm Timezone for This Entry",
+      "help": "Choose whether to use your device timezone only for this action or update your saved timezone before continuing."
+    }
   },
   "wellness": {
     "water": {

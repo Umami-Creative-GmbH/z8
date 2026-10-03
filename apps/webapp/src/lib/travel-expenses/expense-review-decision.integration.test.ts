@@ -16,14 +16,10 @@
 
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
-import { Pool } from "pg";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalInboxDetailResult } from "@/lib/approvals/inbox/types";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -35,37 +31,15 @@ const harness = vi.hoisted(() => ({
 	versionCounter: 0,
 }));
 
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 10,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => undefined,
-}));
-
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 vi.mock("@/lib/auth", () => ({
 	auth: {
@@ -137,18 +111,15 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 	},
 }));
 
-vi.mock("@/lib/vault", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/vault")>()),
-	getOrgSecret: async () => "296296296:AAT296-expense_cards_test",
-}));
+vi.mock("@/lib/vault", async (importOriginal) =>
+	(await import("@/test/integration-harness")).vault(importOriginal, async () => "296296296:AAT296-expense_cards_test"),
+);
 
 // The best-effort fast path only runs the owner sooner; recording the calls
 // keeps each test's delivery passes explicit and deterministic.
-vi.mock("@/lib/approvals/delivery/kick", () => ({
-	kickApprovalDelivery: (input: { organizationId: string; workflowId?: string | null }) => {
-		harness.kicks.push(input);
-	},
-}));
+vi.mock("@/lib/approvals/delivery/kick", async () =>
+	(await import("@/test/integration-harness")).deliveryKick(harness.kicks),
+);
 
 const BOT_TOKEN = "296296296:AAT296-expense_cards_test";
 const RECEIVER_SCOPE = "telegram-bot:296296296";
@@ -177,27 +148,6 @@ const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-decision");
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`expense review and decisions PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const MANAGER_TELEGRAM_ID = 29_601;
 const MANAGER_CHAT_ID = 296_555;
@@ -240,8 +190,8 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
-	const admin = new Pool({ connectionString: databaseUrl, max: 4 });
+describe("expense review, decisions and cards (PostgreSQL)", () => {
+	const admin = integrationAdminPool();
 	const calls: TelegramCall[] = [];
 	let nextMessageId = 9600;
 	const originalFetch = globalThis.fetch;
@@ -663,23 +613,6 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 		);
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Expense review and decisions PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(() => {
 		actAs(null);
 		harness.notifications = [];
@@ -696,7 +629,6 @@ describeIntegration("expense review, decisions and cards (PostgreSQL)", () => {
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
 	});
 
 	it("reviews the exact claim from its frozen submission and holds changed or unevidenced claims", async () => {

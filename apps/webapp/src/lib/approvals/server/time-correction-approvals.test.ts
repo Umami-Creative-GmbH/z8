@@ -62,11 +62,51 @@ vi.mock("../evidence/time-correction-evidence", async (importOriginal) => ({
 	recordCanonicalTimeCorrectionDecisionEvidence: async () => undefined,
 }));
 
-vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) =>
-	(await import("@/test/time-correction-work-transaction")).legacyTimeCorrectionWorkTransaction(
-		await importOriginal(),
-	),
-);
+// Mock databases cannot model the advisory locks: corrections run on the work
+// transaction fake (real ledger, recorded guards) over the database of the
+// suite's approval context. Harnesses whose reads are stateful name the
+// decision's owner instead of routing it from their target reads. The
+// PostgreSQL suites prove the protocol and the decision's owner routing.
+type MockDatabase = { transaction<T>(body: (client: object) => Promise<T>): Promise<T> };
+const correctionRouting = vi.hoisted(() => ({ decisionOwner: null as string | null }));
+vi.mock("@/lib/approvals/server/time-correction-work-transaction", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/server/time-correction-work-transaction")>();
+	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
+	return {
+		...actual,
+		withTimeCorrectionWorkTransaction: (
+			...[input, createRuntime, operation]: Parameters<
+				typeof actual.withTimeCorrectionWorkTransaction
+			>
+		) =>
+			fakeWorkTransaction({
+				recordApprovalGate: true,
+				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
+				// A caller's mocked database opens the attempts, as it would in production.
+				...(input.database && {
+					transaction: (body) => (input.database as never as MockDatabase).transaction(body),
+				}),
+			}).run(
+				actual.timeCorrectionWorkPlan(
+					{ ...input, owner: correctionRouting.decisionOwner ?? input.owner },
+					createRuntime,
+				),
+				operation,
+			),
+	};
+});
+vi.mock("@/lib/time-tracking/completed-work-transaction", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/completed-work-transaction")>()),
+	routeCompletedWork: async (
+		_db: unknown,
+		input: { employeeId: string; actorUserId: string | null },
+	) => ({
+		users: input.actorUserId === null ? [] : [input.actorUserId],
+		employees: [input.employeeId],
+		writeTargets: [input.employeeId],
+	}),
+}));
 
 // The legacy transfer journal and its request lock are verified against
 // PostgreSQL (#439, legacy-time-transfer.integration.test.ts); these
@@ -105,9 +145,11 @@ vi.mock("@/lib/work-balance/service", () => ({
 }));
 
 import { db as globalDb } from "@/db";
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
+import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
@@ -311,7 +353,11 @@ describe("time correction transaction boundaries", () => {
 			},
 		};
 		const processOrdinary = vi.fn().mockResolvedValue({ committed: true });
-		const context = { dbService: { db: transactionDb } } as never;
+		const context = {
+			dbService: { db: transactionDb },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
+			compatibilityWriter: { withWriteGate: () => ({}) },
+		} as never;
 		const runtime = {
 			repository: {
 				withTransaction: vi.fn(async (operation) => operation(context)),
@@ -320,7 +366,7 @@ describe("time correction transaction boundaries", () => {
 		};
 
 		const result = await executeTimeCorrectionDecisionInTransaction({
-			runtime: runtime as never,
+			createRuntime: () => runtime as never,
 			organizationId: "org-1",
 			actorEmployeeId: "manager-1",
 			actorUserId: "user-manager",
@@ -388,11 +434,12 @@ describe("time correction transaction boundaries", () => {
 				},
 			},
 		};
-		const acquire = vi.fn();
+		const acquire = vi.fn().mockResolvedValue(approvalWriteGateResult("legacy"));
 		const processOrdinary = vi.fn().mockResolvedValue({ committed: true });
 		const context = {
 			dbService: { db: transactionDb },
 			writeGate: { acquire },
+			compatibilityWriter: { withWriteGate: () => ({}) },
 		} as never;
 		const runtime = {
 			repository: {
@@ -402,7 +449,7 @@ describe("time correction transaction boundaries", () => {
 		};
 
 		const result = await executeTimeCorrectionDecisionInTransaction({
-			runtime: runtime as never,
+			createRuntime: () => runtime as never,
 			organizationId: "org-1",
 			actorEmployeeId: "manager-1",
 			actorUserId: "user-manager",
@@ -423,7 +470,13 @@ describe("time correction transaction boundaries", () => {
 				kind: "manual_time_submission",
 			}),
 		);
-		expect(acquire).not.toHaveBeenCalled();
+		// The work transaction takes only the time-correction gate before any read;
+		// the ordinary owner decides under its own kind's gate.
+		expect(acquire).toHaveBeenCalledOnce();
+		expect(acquire).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			workflowType: "time_correction",
+		});
 		expect(onTimeCorrectionApproved).not.toHaveBeenCalled();
 		expect(onTimeCorrectionRejected).not.toHaveBeenCalled();
 		expect(markEmployeeWorkBalanceDirty).not.toHaveBeenCalled();
@@ -502,19 +555,7 @@ describe("time correction transaction boundaries", () => {
 			workLocationType: "office",
 			workCategoryId: "71000000-0000-4000-8000-000000000802",
 		};
-		const authority = {
-			mode: input.mode,
-			behavior: {
-				serveFrom: "canonical" as const,
-				writeLegacy: input.mode === "canonical",
-				writeCanonical: true,
-				decideCanonical: true,
-				mirror:
-					input.mode === "canonical"
-						? ("canonical_to_legacy" as const)
-						: ("none" as const),
-			},
-		};
+		const authority = approvalWriteGateResult(input.mode);
 		const snapshots = new Map<string, ApprovalWorkflowSnapshot>();
 		const submissionWorkflows = new Map<string, string>();
 		const compatibilityRows: Array<Record<string, unknown>> = [];
@@ -814,6 +855,8 @@ describe("time correction transaction boundaries", () => {
 		const submissionLockTables: unknown[] = [];
 		const db = {
 			execute: vi.fn(async (query: SQL) => {
+				const observed = answerObservedWorkflowLookup(query, snapshots.values());
+				if (observed) return observed;
 				const rendered = new PgDialect().sqlToQuery(query).sql;
 				if (rendered.includes("from employee")) {
 					return {
@@ -1270,18 +1313,24 @@ describe("time correction transaction boundaries", () => {
 				decisionApprovalRequestId = approvalRequestId;
 				employeeRead = 0;
 				memberRead = 0;
-				return executeTimeCorrectionDecisionInTransaction({
-					runtime,
-					organizationId: "org-1",
-					actorEmployeeId: ids.manager,
-					actorUserId: "user-manager",
-					approvalRequestId,
-					action,
-					reason,
-					processLegacy: async () => {
-						throw new Error("Legacy processing is outside canonical authority");
-					},
-				});
+				// Its workflow reads toggle: name the owner instead of routing it.
+				correctionRouting.decisionOwner = ids.requester;
+				try {
+					return await executeTimeCorrectionDecisionInTransaction({
+						createRuntime: () => runtime,
+						organizationId: "org-1",
+						actorEmployeeId: ids.manager,
+						actorUserId: "user-manager",
+						approvalRequestId,
+						action,
+						reason,
+						processLegacy: async () => {
+							throw new Error("Legacy processing is outside canonical authority");
+						},
+					});
+				} finally {
+					correctionRouting.decisionOwner = null;
+				}
 			},
 			terminalFinalizations: () => terminalFinalizations,
 			requesterIdentityLookup: db.query.employee.findFirst,
@@ -1552,19 +1601,7 @@ describe("time correction transaction boundaries", () => {
 			failureEvidence = { point, ...evidence, state: durableSnapshot() };
 			throw new Error(`injected:${point}`);
 		};
-		const authority = {
-			mode,
-			behavior: {
-				serveFrom: "legacy" as const,
-				writeLegacy: true,
-				writeCanonical: mode !== "legacy",
-				decideCanonical: false,
-				mirror:
-					mode === "legacy"
-						? ("none" as const)
-						: ("legacy_to_canonical" as const),
-			},
-		};
+		const authority = approvalWriteGateResult(mode);
 		const acquire = vi.fn().mockResolvedValue(authority);
 		const captureEnvelope = () => {
 			captureRead += 1;
@@ -1674,7 +1711,10 @@ describe("time correction transaction boundaries", () => {
 			},
 		});
 		const db = {
-			execute: vi.fn(async () => captureEnvelope()),
+			execute: vi.fn(
+				async (query: SQL) =>
+					answerObservedWorkflowLookup(query, workflows.values()) ?? captureEnvelope(),
+			),
 			query: {
 				approvalRequest: {
 					findMany: vi.fn(async () => requests),
@@ -2137,7 +2177,7 @@ describe("time correction transaction boundaries", () => {
 					},
 				};
 				return executeTimeCorrectionDecisionInTransaction({
-					runtime,
+					createRuntime: () => runtime,
 					organizationId: "org-1",
 					actorEmployeeId: ids.manager,
 					actorUserId: "user-manager",
@@ -2249,19 +2289,7 @@ describe("time correction transaction boundaries", () => {
 				approver: "31000000-0000-4000-8000-000000000102",
 				correction: "61000000-0000-4000-8000-000000000101",
 			};
-			const authority = {
-				mode,
-				behavior: {
-					serveFrom: "canonical" as const,
-					writeLegacy: mode === "canonical",
-					writeCanonical: true,
-					decideCanonical: true,
-					mirror:
-						mode === "canonical"
-							? ("canonical_to_legacy" as const)
-							: ("none" as const),
-				},
-			};
+			const authority = approvalWriteGateResult(mode);
 			let sourceWorkflowId: string | null = null;
 			let persistedSnapshot: ApprovalWorkflowSnapshot | null = null;
 			const execute = vi.fn().mockResolvedValue({ rows: [{ policies: [] }] });
@@ -5062,16 +5090,7 @@ describe("time correction transaction boundaries", () => {
 			.mockResolvedValueOnce(null)
 			.mockResolvedValue({ approverId: "emp-manager" });
 		dbService.db.query.approvalRequest.findMany = vi.fn().mockResolvedValue([]);
-		const acquire = vi.fn().mockResolvedValue({
-			mode: "legacy",
-			behavior: {
-				serveFrom: "legacy",
-				writeLegacy: true,
-				writeCanonical: false,
-				decideCanonical: false,
-				mirror: "none",
-			},
-		});
+		const acquire = vi.fn().mockResolvedValue(approvalWriteGateResult("legacy"));
 		const context = {
 			dbService,
 			writeGate: { acquire },
@@ -5157,16 +5176,7 @@ describe("time correction transaction boundaries", () => {
 				},
 				updatedAt: new Date("2026-07-20T10:00:00.000Z"),
 			});
-		const acquire = vi.fn().mockResolvedValue({
-			mode: "legacy",
-			behavior: {
-				serveFrom: "legacy",
-				writeLegacy: true,
-				writeCanonical: false,
-				decideCanonical: false,
-				mirror: "none",
-			},
-		});
+		const acquire = vi.fn().mockResolvedValue(approvalWriteGateResult("legacy"));
 		const context = {
 			dbService,
 			writeGate: { acquire },

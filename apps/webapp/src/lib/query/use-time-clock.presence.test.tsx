@@ -153,11 +153,14 @@ describe("useTimeClock presence invalidation", () => {
 		expect(fetchMock).toHaveBeenCalledWith("/api/time-clock", {
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({
-				action: "clock_in",
-				workLocationType: "remote",
-				browserTimezone: "Europe/Berlin",
-			}),
+			body: expect.any(String),
+		});
+		// One client identity per request; a retry of it replays the committed start.
+		expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
+			action: "clock_in",
+			workLocationType: "remote",
+			browserTimezone: "Europe/Berlin",
+			submissionId: expect.stringMatching(/^[0-9a-f-]{36}$/),
 		});
 	});
 

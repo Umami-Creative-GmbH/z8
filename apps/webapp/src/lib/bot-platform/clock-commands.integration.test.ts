@@ -14,13 +14,9 @@
  */
 
 import type { TurnContext } from "botbuilder";
-import { Pool } from "pg";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	resolveApprovalWorkflowRepositoryTestConfiguration,
-	verifyApprovalWorkflowRepositoryTestDatabase,
-} from "@/lib/approvals/workflow/repository-integration-harness";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Instant } from "@/lib/datetime/temporal-core";
+import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
 	now: null as Instant | null,
@@ -28,25 +24,6 @@ const harness = vi.hoisted(() => ({
 	discord: [] as unknown[],
 	discordFailures: 0,
 }));
-
-vi.mock("@/db", async () => {
-	const { Pool } = await import("pg");
-	const { drizzle } = await import("drizzle-orm/node-postgres");
-	const authSchema = await import("@/db/auth-schema");
-	const schema = await import("@/db/schema");
-	const { configurePostgresUtcTypes, withUtcPostgresSession } = await import("@/db/postgres-utc");
-	configurePostgresUtcTypes();
-	const pool = new Pool(
-		withUtcPostgresSession({
-			connectionString:
-				process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL ??
-				"postgresql://unconfigured@127.0.0.1:1/unconfigured",
-			max: 8,
-		}),
-	);
-	const db = drizzle({ client: pool, schema: { ...authSchema, ...schema } });
-	return { ...authSchema, ...schema, db, pool };
-});
 
 vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/lib/datetime/temporal-core")>();
@@ -59,26 +36,22 @@ vi.mock("@/lib/datetime/temporal-core", async (importOriginal) => {
 });
 
 // getRequestSession awaits connection(), which throws outside a Next request scope.
-vi.mock("next/server", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/server")>()),
-	connection: async () => {},
-}));
+vi.mock("next/server", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextServer(importOriginal),
+);
 
-vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 
-vi.mock("next/cache", async (importOriginal) => ({
-	...(await importOriginal<typeof import("next/cache")>()),
-	revalidatePath: vi.fn(),
-	revalidateTag: vi.fn(),
-}));
+vi.mock("next/cache", async (importOriginal) =>
+	(await import("@/test/integration-harness")).nextCache(importOriginal),
+);
 
 // Bots never read a web session.
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: async () => null } } }));
 
-vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: async () => ({ canAccess: true }),
-	isBillingMutationAllowed: (access: { canAccess: boolean }) => access.canAccess,
-}));
+vi.mock("@/lib/billing/guard", async () =>
+	(await import("@/test/integration-harness")).billingGuard(),
+);
 
 vi.mock("@/lib/telegram/api", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/telegram/api")>()),
@@ -125,27 +98,6 @@ const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
 const { handleDiscordInteraction } = await import("@/lib/discord/bot-handler");
 const { InteractionType } = await import("@/lib/discord/types");
 const { handleBotActivity } = await import("@/lib/teams/bot-handler");
-
-const databaseUrl = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL;
-const testSentinel = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_SENTINEL;
-const integrationRequired = process.env.APPROVAL_WORKFLOW_REPOSITORY_TEST_REQUIRED === "1";
-const integrationConfiguration = resolveApprovalWorkflowRepositoryTestConfiguration({
-	databaseUrl,
-	required: integrationRequired,
-	sentinel: testSentinel,
-});
-if (integrationConfiguration.status === "error") {
-	throw new Error(
-		`Invalid approval workflow repository test configuration: ${integrationConfiguration.reason}`,
-	);
-}
-const describeIntegration =
-	integrationConfiguration.status === "enabled" ? describe : describe.skip;
-if (integrationConfiguration.status === "unavailable") {
-	describe.skip(`bot clocking PostgreSQL unavailable: ${integrationConfiguration.reason}`, () => {
-		it("requires the label-owned disposable PostgreSQL runner", () => {});
-	});
-}
 
 const ids = {
 	organization: "t277-bot-clock-org",
@@ -215,6 +167,7 @@ const startWrites: Record<AdmissionMode, readonly (readonly [string, string])[]>
 		["time_entry", "insert"],
 		["time_entry_append_position", "insert"],
 		["work_period", "insert"],
+		["completed_work_operation", "insert"],
 	],
 	inactive: [
 		["time_entry", "insert"],
@@ -230,8 +183,18 @@ function only<T>(rows: readonly T[]): T {
 	return row;
 }
 
-/** Sends one command through the real adapter and returns the reply it delivered. */
-async function send(platform: Platform, command: "clockin" | "clockout", at: Instant) {
+let invocationSequence = 0;
+
+/**
+ * Sends one command through the real adapter and returns the reply it delivered.
+ * Each send is a new platform invocation unless it names one to redeliver.
+ */
+async function send(
+	platform: Platform,
+	command: "clockin" | "clockout",
+	at: Instant,
+	invocation: number = ++invocationSequence,
+) {
 	harness.now = at;
 	switch (platform) {
 		case "slack": {
@@ -259,7 +222,7 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 			const before = harness.telegram.length;
 			await handleTelegramUpdate(
 				{
-					update_id: 1,
+					update_id: invocation,
 					message: {
 						message_id: 1,
 						date: 0,
@@ -283,7 +246,7 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 			const before = harness.discord.length;
 			await handleDiscordInteraction(
 				{
-					id: "interaction-277",
+					id: `interaction-${invocation}`,
 					token: "interaction-token",
 					type: InteractionType.APPLICATION_COMMAND,
 					data: { name: command },
@@ -307,8 +270,9 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 			await handleBotActivity({
 				activity: {
 					type: "message",
+					id: `activity-${invocation}`,
 					text: command,
-					conversation: { tenantId: ids.teamsTenant },
+					conversation: { id: "a:t277-conversation", tenantId: ids.teamsTenant },
 					from: { aadObjectId: ids.platformUser, name: "Requester" },
 				},
 				sendActivity: async (message: unknown) => {
@@ -320,9 +284,9 @@ async function send(platform: Platform, command: "clockin" | "clockout", at: Ins
 	}
 }
 
-describeIntegration("bot clocking through the shared clock commands on PostgreSQL", () => {
+describe("bot clocking through the shared clock commands on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const admin = new Pool({ connectionString: databaseUrl, max: 4 });
+	const admin = integrationAdminPool();
 
 	async function setAdmission(mode: "active" | "inactive") {
 		await admin.query(
@@ -380,7 +344,7 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		const { rows } = await admin.query(
 			`select id, writer, writer_version, append_admission, actor_kind, actor_user_id, work_period_id,
 			        command, result -> 'segment' as segment
-			 from completed_work_operation where organization_id = $1`,
+			 from completed_work_operation where organization_id = $1 and kind = 'close_active_work'`,
 			[ids.organization],
 		);
 		return rows;
@@ -464,23 +428,6 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		await setAdmission("active");
 	}
 
-	beforeAll(async () => {
-		const enabled = await verifyApprovalWorkflowRepositoryTestDatabase({
-			databaseUrl,
-			required: integrationRequired,
-			sentinel: testSentinel,
-			currentDatabase: async () => {
-				const result = await admin.query<{ database_name: string }>(
-					"select current_database() as database_name",
-				);
-				return result.rows[0]?.database_name ?? "";
-			},
-		});
-		if (enabled.status !== "enabled") {
-			throw new Error("Bot clocking PostgreSQL is disabled");
-		}
-	});
-
 	beforeEach(async () => {
 		harness.telegram.length = 0;
 		harness.discord.length = 0;
@@ -490,9 +437,6 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 
 	afterAll(async () => {
 		await cleanup();
-		await admin.end();
-		const { pool } = (await import("@/db")) as unknown as { pool: Pool };
-		await pool.end();
 	});
 
 	it.each(platforms)(
@@ -694,7 +638,7 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 		);
 
 		it.each(platforms)(
-			"%s treats a repeated unkeyed clock-out as a fresh command",
+			"%s treats a new clock-out invocation as a fresh command",
 			async (platform) => {
 				await send(platform, "clockin", clockInAt);
 				await send(platform, "clockout", clockInAt.add({ hours: 1 }));
@@ -829,6 +773,42 @@ describeIntegration("bot clocking through the shared clock commands on PostgreSQ
 			expect(await snapshot()).toEqual(before);
 		},
 	);
+
+	it.each(["telegram", "discord", "teams"] as const)(
+		"%s replays a redelivered invocation instead of clocking again",
+		async (platform) => {
+			await setAdmission("inactive");
+			await expect(send(platform, "clockin", clockInAt, 9001)).resolves.toContain(
+				"Clocked in at 08:00.",
+			);
+			const started = await snapshot();
+			// The platform redelivers the same invocation later.
+			await expect(
+				send(platform, "clockin", clockInAt.add({ seconds: 30 }), 9001),
+			).resolves.toContain("Clocked in at 08:00.");
+			expect(await snapshot()).toEqual(started);
+
+			await expect(send(platform, "clockout", clockInAt.add({ hours: 1 }), 9002)).resolves.toContain(
+				"Clocked out at 09:00. Duration: 1h 0m.",
+			);
+			const closed = await snapshot();
+			await expect(
+				send(platform, "clockout", clockInAt.add({ hours: 1, seconds: 30 }), 9002),
+			).resolves.toContain("Clocked out at 09:00. Duration: 1h 0m.");
+			expect(await snapshot()).toEqual(closed);
+		},
+	);
+
+	it.each(platforms)("%s says since when work runs on a repeated clock-in", async (platform) => {
+		await send(platform, "clockin", clockInAt);
+		const before = await snapshot();
+
+		await expect(send(platform, "clockin", clockInAt.add({ minutes: 65 }))).resolves.toContain(
+			"You are already clocked in since 08:00 (1h 5m).",
+		);
+
+		expect(await snapshot()).toEqual(before);
+	});
 
 	it("keeps a committed clock-out when its Discord reply cannot be delivered", async () => {
 		await send("discord", "clockin", clockInAt);

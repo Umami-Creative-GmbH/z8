@@ -1,8 +1,13 @@
 "use client";
 
 import { IconAlertTriangle, IconLoader2, IconSend } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface PublishFabProps {
@@ -22,6 +27,7 @@ export function PublishFab({
 	hasComplianceWarnings = false,
 	complianceFindingsCount = 0,
 }: PublishFabProps) {
+	const { t } = useTranslate();
 	const hasWarnings = hasCoverageGaps || hasComplianceWarnings;
 
 	return (
@@ -43,7 +49,7 @@ export function PublishFab({
 					{isPublishing ? (
 						<>
 							<IconLoader2 className="size-5 mr-2 animate-spin" />
-							Publishing…
+							{t("scheduling.publish.publishing", "Publishing…")}
 						</>
 					) : (
 						<>
@@ -52,7 +58,9 @@ export function PublishFab({
 							) : (
 								<IconSend className="size-5 mr-2" aria-hidden="true" />
 							)}
-							Publish ({draftCount})
+							{t("scheduling.publish.button", "Publish ({count})", {
+								count: draftCount,
+							})}
 						</>
 					)}
 				</Button>
@@ -61,24 +69,36 @@ export function PublishFab({
 				{hasWarnings ? (
 					<div className="space-y-1">
 						<p className="font-medium text-amber-600 dark:text-amber-400">
-							Warnings detected before publish
+							{t(
+								"scheduling.publish.warningsDetectedBeforePublish",
+								"Warnings detected before publish",
+							)}
 						</p>
 						{hasCoverageGaps && (
 							<p className="text-sm">
-								Some time blocks don&apos;t meet minimum staffing requirements.
+								{t(
+									"scheduling.publish.coverageWarning",
+									"Some time blocks don't meet minimum staffing requirements.",
+								)}
 							</p>
 						)}
 						{hasComplianceWarnings && (
 							<p className="text-sm">
-								Compliance checks found {complianceFindingsCount} warning
-								{complianceFindingsCount === 1 ? "" : "s"}; you will need to acknowledge them before
-								publishing.
+								{t(
+									"scheduling.publish.complianceWarnings",
+									"{count, plural, one {Compliance checks found # warning; you will need to acknowledge it before publishing.} other {Compliance checks found # warnings; you will need to acknowledge them before publishing.}}",
+									{ count: complianceFindingsCount },
+								)}
 							</p>
 						)}
 					</div>
 				) : (
 					<p>
-						Publish {draftCount} draft shift{draftCount !== 1 ? "s" : ""} and notify employees
+						{t(
+							"scheduling.publish.notifyEmployees",
+							"{count, plural, one {Publish # draft shift and notify employees} other {Publish # draft shifts and notify employees}}",
+							{ count: draftCount },
+						)}
 					</p>
 				)}
 			</TooltipContent>

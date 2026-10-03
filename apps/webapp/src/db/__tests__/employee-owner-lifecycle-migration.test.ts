@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readTestText } from "@/test/read-test-text";
 
-const migration = readFileSync(
+const migration = readTestText(
 	new URL(
 		"../../../drizzle/0054_employee_invitation_draft_identity.sql",
 		import.meta.url,

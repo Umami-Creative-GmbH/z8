@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import type {
@@ -93,6 +94,7 @@ async function readCommandCapabilities(): Promise<BrowserClockCommandCapabilitie
 }
 
 export function useOfflineClock() {
+	const { t } = useTranslate();
 	const isOnline = useOnlineStatus();
 	const queryClient = useQueryClient();
 	const { data: session } = useSession();
@@ -378,7 +380,7 @@ export function useOfflineClock() {
 				operationId: request.operationId,
 			}).catch(() => {});
 		}
-		return toBrowserClockActionResult(record);
+		return toBrowserClockActionResult(record, t);
 	};
 
 	const triggerSync = async () => {

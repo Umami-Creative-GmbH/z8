@@ -4,6 +4,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { TravelExpenseManagement } from "@/components/travel-expenses/travel-expense-management";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { Link } from "@/navigation";
@@ -66,8 +67,11 @@ async function TravelExpensesPageContent() {
 
 function TravelExpensesPageLoading() {
 	return (
-		<div
-			aria-label="Loading travel expenses"
+		<LoadingRegion
+			label={{
+				labelKey: "common.loadingRegions.travelExpenses",
+				labelDefault: "Loading travel expenses",
+			}}
 			className="@container/main flex flex-1 flex-col gap-4 py-4 md:py-6"
 			role="status"
 		>
@@ -76,7 +80,7 @@ function TravelExpensesPageLoading() {
 				<Skeleton aria-hidden="true" className="h-10 w-64" />
 				<Skeleton aria-hidden="true" className="h-96 w-full" />
 			</div>
-		</div>
+		</LoadingRegion>
 	);
 }
 

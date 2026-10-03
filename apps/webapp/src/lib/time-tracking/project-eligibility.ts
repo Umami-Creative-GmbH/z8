@@ -3,7 +3,9 @@ import "server-only";
 import { and, eq, inArray, or, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { project, projectAssignment } from "@/db/schema";
-import { BOOKABLE_PROJECT_STATUSES } from "@/app/[locale]/(app)/time-tracking/actions/shared";
+
+/** Project statuses that accept booked time. */
+export const BOOKABLE_PROJECT_STATUSES = ["planned", "active", "paused"] as const;
 
 /**
  * The one project booking-eligibility rule (#258 §6, #315): an active project

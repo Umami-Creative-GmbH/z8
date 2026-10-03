@@ -55,7 +55,7 @@ import type { TimeEntryTimezoneCapture } from "./timezone-capture";
 import { WorkIntervalError } from "./work-duration";
 import { assertWorkOccupancyFree } from "./work-occupancy";
 import { assertNoUnresolvedWorkPeriodReview } from "./work-period-review";
-import type { WorkTransactionScope } from "./work-transaction";
+import type { SealedWorkTransactionScope } from "./work-transaction";
 
 export const SPLIT_COMPLETED_WORK_COMMAND_VERSION = 1;
 export const SPLIT_COMPLETED_WORK_RESULT_VERSION = 1;
@@ -158,7 +158,7 @@ export type SplitCompletedWorkInput = {
 	request: { ipAddress: string | null; deviceInfo: string | null };
 };
 
-type TransactionClient = WorkTransactionScope["db"];
+type TransactionClient = SealedWorkTransactionScope["db"];
 
 function staleSource(): ConflictError {
 	return new ConflictError({
@@ -182,7 +182,7 @@ type ReplayInput = Pick<
  * is a collision, and so is committed work that no longer stands as committed.
  */
 export async function replaySplitCompletedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: ReplayInput,
 ): Promise<SplitCompletedWorkReceipt | null> {
 	scope.assertEmployee(input.organizationId, input.employeeId);
@@ -299,7 +299,7 @@ export async function replayCommittedSplit(
  * transaction, so an existing receipt with this identity is a collision.
  */
 export async function splitCompletedWork(
-	scope: WorkTransactionScope,
+	scope: SealedWorkTransactionScope,
 	input: SplitCompletedWorkInput,
 ): Promise<SplitCompletedWorkReceipt> {
 	const { organizationId, employeeId, command } = input;

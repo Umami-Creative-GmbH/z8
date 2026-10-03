@@ -1,16 +1,13 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@tolgee/react", () => ({
-	useTranslate: () => ({
-		t: (_key: string, defaultValue?: string) => defaultValue ?? _key,
-	}),
-}));
+import { render } from "@/test/render-with-translations";
 
 vi.mock("next/image", () => ({
-	default: ({ alt, src }: { alt: string; src: string }) => <img alt={alt} src={src} />,
+	default: ({ alt, src }: { alt: string; src: string }) => (
+		<img alt={alt} src={src} />
+	),
 }));
 
 vi.mock("@/navigation", () => ({
@@ -71,15 +68,25 @@ describe("AuthFormWrapper", () => {
 		expect(card?.className).toContain("bg-white/20");
 		expect(card?.className).toContain("dark:bg-slate-950/20");
 		expect(card?.className).toContain("backdrop-blur-[40px]");
-		expect(card?.className).toContain("[&_.text-muted-foreground]:text-foreground/75");
+		expect(card?.className).toContain(
+			"[&_.text-muted-foreground]:text-foreground/75",
+		);
 		expect(card?.className).toContain("[&_[data-slot=input]]:bg-background/85");
-		expect(card?.className).toContain("dark:[&_[data-slot=input]]:bg-background/80");
+		expect(card?.className).toContain(
+			"dark:[&_[data-slot=input]]:bg-background/80",
+		);
 		expect(card?.className).toContain("relative");
 		expect(card?.className).toContain("sm:shadow-xl");
 		expect(cardContent?.className).toContain("p-5");
 		expect(cardContent?.className).toContain("sm:p-8");
-		expect(screen.getByText("Version build-123").className).toContain("right-3");
-		expect(screen.getByText("Version build-123").className).toContain("text-foreground/55");
-		expect(screen.getByText("Version build-123").className).toContain("bottom-1.5");
+		expect(screen.getByText("Version build-123").className).toContain(
+			"right-3",
+		);
+		expect(screen.getByText("Version build-123").className).toContain(
+			"text-foreground/55",
+		);
+		expect(screen.getByText("Version build-123").className).toContain(
+			"bottom-1.5",
+		);
 	});
 });

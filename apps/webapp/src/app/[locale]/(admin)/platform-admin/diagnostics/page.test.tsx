@@ -116,7 +116,7 @@ describe("PlatformDiagnosticsPageLoading", () => {
 		expect(fallbackSource).toContain('className="space-y-10"');
 		expect(fallbackSource).toContain('role="status"');
 		expect(fallbackSource).toContain(
-			'aria-label="Loading deployment diagnostics"',
+			'labelDefault: "Loading deployment diagnostics"',
 		);
 		expect(overviewIndex).toBeGreaterThanOrEqual(0);
 		expect(gridIndex).toBeGreaterThan(overviewIndex);

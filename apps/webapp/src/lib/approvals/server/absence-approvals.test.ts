@@ -76,6 +76,7 @@ vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
 	isEligibleManagerForApprovalRequest,
 }));
 
+import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { ApprovalEvidenceError } from "@/lib/approvals/evidence/errors";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
@@ -123,6 +124,43 @@ function inactiveLegacyEvidence() {
 /** No legacy escalation transfer touched the decided request. */
 function noLegacyTransfers() {
 	return { findTransferredRequest: vi.fn(async () => null) };
+}
+
+/**
+ * The legacy write coordinator's observed-workflow read (#475): the absence's
+ * only pending request, the stage lookup, then the repository snapshot.
+ */
+function observedWorkflowRead(
+	observed: { version: number } | null,
+	legacyApprovalRequestId = "approval-target-1",
+) {
+	const snapshot = observed && {
+		id: "workflow-1",
+		organizationId: "org-1",
+		workflowType: "absence",
+		sourceType: "absence_entry",
+		sourceId: "absence-1",
+		requesterEmployeeId: "emp-requester",
+		status: "pending",
+		version: observed.version,
+		stages: [
+			{
+				id: "stage-1",
+				legacyApprovalRequestId,
+				sequence: 1,
+				status: "pending",
+				assignments: [],
+			},
+		],
+	};
+	return {
+		pendingRequests: {
+			findMany: vi.fn().mockResolvedValue([{ id: legacyApprovalRequestId }]),
+		},
+		execute: vi.fn(async () => ({ rows: snapshot ? [{ id: snapshot.id }] : [] })),
+		loadSnapshot: vi.fn(async () => snapshot),
+		mirrored: { snapshot: { id: "workflow-1" } },
+	};
 }
 
 describe("absence canonical decision errors", () => {
@@ -1703,11 +1741,16 @@ describe("absence decision rollout routing", () => {
 				},
 			};
 		});
+		const observedRead = observedWorkflowRead(
+			mode === "shadow" || mode === "ready" ? { version: 4 } : null,
+		);
 		const context = {
 			dbService: {
 				db: {
 					transaction: innerTransaction,
+					execute: observedRead.execute,
 					query: {
+						approvalRequest: observedRead.pendingRequests,
 						employee: {
 							findMany: vi.fn().mockResolvedValue([
 								{
@@ -1728,43 +1771,18 @@ describe("absence decision rollout routing", () => {
 							findFirst: vi.fn().mockResolvedValue({
 								id: "absence-1",
 								organizationId: "org-1",
+								employeeId: "emp-requester",
 								approvalWorkflowId:
 									mode === "canonical" || mode === "complete"
 										? "workflow-1"
 										: null,
 							}),
 						},
-						approvalWorkflow: {
-							findFirst: vi
-								.fn()
-								.mockResolvedValue(
-									mode === "shadow" || mode === "ready"
-										? { id: "workflow-1", version: 4 }
-										: null,
-								),
-						},
 					},
 				},
 			},
 			writeGate: {
-				acquire: vi.fn(async () => ({
-					mode,
-					behavior: {
-						serveFrom:
-							mode === "canonical" || mode === "complete"
-								? "canonical"
-								: "legacy",
-						writeLegacy: mode !== "complete",
-						writeCanonical: mode !== "legacy",
-						decideCanonical: mode === "canonical" || mode === "complete",
-						mirror:
-							mode === "shadow" || mode === "ready"
-								? "legacy_to_canonical"
-								: mode === "canonical"
-									? "canonical_to_legacy"
-									: "none",
-					},
-				})),
+				acquire: vi.fn(async () => (approvalWriteGateResult(mode))),
 			},
 			compatibilityWriter: {
 				withWriteGate() {
@@ -1772,11 +1790,14 @@ describe("absence decision rollout routing", () => {
 				},
 				mirrorLegacyToCanonical: vi.fn(async () => {
 					events.push("mirror");
-					return {};
+					return observedRead.mirrored;
 				}),
 			},
 			repository: {
-				loadSnapshot: vi.fn().mockResolvedValue({
+				loadSnapshot:
+					mode === "shadow" || mode === "ready"
+						? observedRead.loadSnapshot
+						: vi.fn().mockResolvedValue({
 					id: "workflow-1",
 					organizationId: "org-1",
 					workflowType: "absence",
@@ -2007,16 +2028,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "canonical",
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: true,
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: "canonical_to_legacy",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("canonical")),
 			},
 			repository: {
 				loadSnapshot: vi.fn(async () => structuredClone(snapshot)),
@@ -2105,16 +2117,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "complete",
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: false,
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: "none",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("complete")),
 			},
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({
@@ -2250,10 +2253,13 @@ describe("absence decision rollout routing", () => {
 			if (failurePoint === "mirror") throw new Error("mirror failed");
 			return {};
 		});
+		const observedRead = observedWorkflowRead({ version: 4 });
 		const context = {
 			dbService: {
 				db: {
+					execute: observedRead.execute,
 					query: {
+						approvalRequest: observedRead.pendingRequests,
 						employee: {
 							findMany: vi.fn().mockResolvedValue([
 								{
@@ -2269,29 +2275,17 @@ describe("absence decision rollout routing", () => {
 							findFirst: vi.fn().mockResolvedValue({
 								id: "absence-1",
 								organizationId: "org-1",
+								employeeId: "emp-requester",
 								approvalWorkflowId: null,
 							}),
-						},
-						approvalWorkflow: {
-							findFirst: vi
-								.fn()
-								.mockResolvedValue({ id: "workflow-1", version: 4 }),
 						},
 					},
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "shadow",
-					behavior: {
-						serveFrom: "legacy",
-						writeLegacy: true,
-						writeCanonical: true,
-						decideCanonical: false,
-						mirror: "legacy_to_canonical",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("shadow")),
 			},
+			repository: { loadSnapshot: observedRead.loadSnapshot },
 			compatibilityWriter: {
 				withWriteGate() {
 					return this;
@@ -2392,16 +2386,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode,
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: mode === "canonical",
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: mode === "canonical" ? "canonical_to_legacy" : "none",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({
@@ -2497,16 +2482,7 @@ describe("absence decision rollout routing", () => {
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode: "canonical",
-					behavior: {
-						serveFrom: "canonical",
-						writeLegacy: true,
-						writeCanonical: true,
-						decideCanonical: true,
-						mirror: "canonical_to_legacy",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("canonical")),
 			},
 			repository: {
 				loadSnapshot: vi.fn().mockResolvedValue({
@@ -2557,10 +2533,16 @@ describe("legacy absence decision evidence routing", () => {
 			snapshot: { id: "workflow-1" },
 			events: [{ id: "event-1" }],
 		};
+		const observedRead = observedWorkflowRead(
+			mode === "shadow" ? { version: 4 } : null,
+			"approval-1",
+		);
 		const context = {
 			dbService: {
 				db: {
+					execute: observedRead.execute,
 					query: {
+						approvalRequest: observedRead.pendingRequests,
 						employee: {
 							findMany: vi.fn().mockResolvedValue([
 								{
@@ -2576,31 +2558,17 @@ describe("legacy absence decision evidence routing", () => {
 							findFirst: vi.fn().mockResolvedValue({
 								id: "absence-1",
 								organizationId: "org-1",
+								employeeId: "emp-requester",
 								approvalWorkflowId: null,
 							}),
-						},
-						approvalWorkflow: {
-							findFirst: vi
-								.fn()
-								.mockResolvedValue(
-									mode === "shadow" ? { id: "workflow-1", version: 4 } : null,
-								),
 						},
 					},
 				},
 			},
 			writeGate: {
-				acquire: vi.fn().mockResolvedValue({
-					mode,
-					behavior: {
-						serveFrom: "legacy",
-						writeLegacy: true,
-						writeCanonical: mode === "shadow",
-						decideCanonical: false,
-						mirror: mode === "shadow" ? "legacy_to_canonical" : "none",
-					},
-				}),
+				acquire: vi.fn().mockResolvedValue(approvalWriteGateResult(mode)),
 			},
+			repository: { loadSnapshot: observedRead.loadSnapshot },
 			compatibilityWriter: {
 				withWriteGate() {
 					return this;

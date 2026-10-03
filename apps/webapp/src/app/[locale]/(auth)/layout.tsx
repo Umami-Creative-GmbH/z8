@@ -10,6 +10,7 @@ import { InfoFooter } from "@/components/info-footer";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { DomainAuthProvider } from "@/lib/auth/domain-auth-context";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/domain";
 import { getCustomDomainFromHeaders } from "@/lib/domain/request-domain";
 import { getCookieConsentScript } from "@/lib/platform-settings";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import {
 	parseCookieConsentScript,
@@ -33,21 +35,28 @@ export async function generateStaticParams() {
 
 export default function AuthLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<Suspense fallback={<AuthLayoutLoading />}>
-			<AuthLayoutContent>{children}</AuthLayoutContent>
-		</Suspense>
+		<RouteTranslationBoundary route="/sign-in" params={params}>
+			<Suspense fallback={<AuthLayoutLoading />}>
+				<AuthLayoutContent>{children}</AuthLayoutContent>
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }
 
 function AuthLayoutLoading() {
 	return (
-		<div
+		<LoadingRegion
 			aria-busy="true"
-			aria-label="Loading authentication"
+			label={{
+				labelKey: "common.loadingRegions.authentication",
+				labelDefault: "Loading authentication",
+			}}
 			className="relative min-h-svh overflow-x-hidden bg-background"
 			data-testid="auth-layout-loading"
 			role="status"
@@ -79,7 +88,7 @@ function AuthLayoutLoading() {
 					<Skeleton aria-hidden="true" className="h-3 w-24" />
 				</div>
 			</section>
-		</div>
+		</LoadingRegion>
 	);
 }
 

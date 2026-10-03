@@ -1,8 +1,9 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
-import { workPeriod } from "@/db/schema";
+import { timeEntry, workPeriod } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type AutomaticBreakAdjustmentOutcome,
 	type LegacyBreakPlan,
@@ -10,7 +11,8 @@ import {
 	runAutomaticBreakAdjustment,
 } from "@/lib/time-tracking/automatic-break-adjustment";
 import { calculateBreakDeficit } from "@/lib/time-tracking/break-policy-calculation";
-import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
+import { readBreakMinutesTakenBefore } from "@/lib/time-tracking/breaks-taken";
+import { capturedZone } from "@/lib/time-tracking/timezone-capture";
 import { DatabaseError, NotFoundError } from "../errors";
 import { DatabaseService, DatabaseServiceLive } from "./database.service";
 import { SurchargeService, SurchargeServiceLive } from "./surcharge.service";
@@ -28,6 +30,7 @@ export interface EnforceBreaksInput {
 	organizationId: string;
 	workPeriodId: string;
 	sessionDurationMinutes: number;
+	/** The zone a legacy adjustment's break entries are captured in; not the day counted. */
 	timezone: string;
 	createdBy: string;
 }
@@ -121,11 +124,14 @@ export class BreakEnforcementService extends Context.Tag(
 		) => Effect.Effect<ProcessUnprocessedPeriodsResult, DatabaseError>;
 
 		/**
-		 * Calculate break deficit for a given work session
+		 * Calculate break deficit for a given work session under the policy in force
+		 * at `policyAt` within the organization.
 		 * Returns the number of break minutes that need to be added
 		 */
 		readonly calculateBreakDeficit: (params: {
 			employeeId: string;
+			organizationId: string;
+			policyAt: Instant;
 			sessionDurationMinutes: number;
 			breaksTakenMinutes: number;
 		}) => Effect.Effect<
@@ -155,58 +161,14 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		const workPolicyService = yield* _(WorkPolicyService);
 
 		/**
-		 * Calculate total break minutes taken today (gaps between work periods)
-		 */
-		const calculateBreaksTakenToday = (
-			employeeId: string,
-			timezone: string,
-		): Effect.Effect<number, DatabaseError> =>
-			Effect.gen(function* (_) {
-				const { start: todayStartDT, end: todayEndDT } =
-					getTodayRangeInTimezone(timezone);
-				const todayStart = dateToDB(todayStartDT);
-				const todayEnd = dateToDB(todayEndDT);
-				if (!todayStart || !todayEnd) return 0;
-
-				const periods = yield* _(
-					dbService.query("getWorkPeriodsForBreakCalc", async () => {
-						return await dbService.db.query.workPeriod.findMany({
-							where: and(
-								eq(workPeriod.employeeId, employeeId),
-								gte(workPeriod.startTime, todayStart),
-								lte(workPeriod.startTime, todayEnd),
-							),
-							orderBy: (wp, { asc }) => [asc(wp.startTime)],
-						});
-					}),
-				);
-
-				// Calculate gaps between consecutive work periods
-				let totalBreakMinutes = 0;
-
-				for (let i = 0; i < periods.length - 1; i++) {
-					const currentEnd = periods[i].endTime;
-					const nextStart = periods[i + 1].startTime;
-
-					if (currentEnd && nextStart) {
-						const gapMs = nextStart.getTime() - currentEnd.getTime();
-						const gapMinutes = Math.floor(gapMs / 60000);
-						// Only count gaps > 1 minute as breaks
-						if (gapMinutes > 1) {
-							totalBreakMinutes += gapMinutes;
-						}
-					}
-				}
-
-				return totalBreakMinutes;
-			});
-
-		/**
-		 * Internal function to calculate break deficit
+		 * Internal function to calculate break deficit under the policy in force at
+		 * `policyAt` within the organization (ADR 0003), never at the time it runs.
 		 * Can be called directly without going through the service interface
 		 */
 		const calculateBreakDeficitInternal = (params: {
 			employeeId: string;
+			organizationId: string;
+			policyAt: Instant;
 			sessionDurationMinutes: number;
 			breaksTakenMinutes: number;
 		}): Effect.Effect<
@@ -224,7 +186,11 @@ export const BreakEnforcementServiceLive = Layer.effect(
 		> =>
 			Effect.gen(function* (_) {
 				const policy = yield* _(
-					workPolicyService.getEffectivePolicy(params.employeeId),
+					workPolicyService.getEffectivePolicyAt({
+						employeeId: params.employeeId,
+						organizationId: params.organizationId,
+						at: params.policyAt,
+					}),
 				);
 
 				// If no policy or no regulation enabled, no break requirements
@@ -251,9 +217,10 @@ export const BreakEnforcementServiceLive = Layer.effect(
 			});
 
 		/**
-		 * The established legacy plan from plain reads: the period, today's breaks and the
-		 * effective policy, with the established placement and arithmetic. Only a legacy
-		 * organization's adjustment uses it; its writes run in the coordinated owner.
+		 * The established legacy plan from plain reads: the period, the breaks already
+		 * taken on its own day and the policy in force when it ended, with the established
+		 * placement and arithmetic. Only a legacy organization's adjustment uses it; its writes run
+		 * in the coordinated owner.
 		 */
 		const planLegacyBreakEnforcement = (
 			input: EnforceBreaksInput,
@@ -288,15 +255,60 @@ export const BreakEnforcementServiceLive = Layer.effect(
 					return null;
 				}
 
-				// Calculate breaks taken today
+				// Breaks already taken on the work's own local start day, counted as the
+				// adopted adjustment counts them (#547): never the day enforcement runs,
+				// and never `input.timezone`, which only captures the break entries.
+				const clockIn = yield* _(
+					dbService.query("getClockInCaptureForEnforcement", async () => {
+						const [entry] = await dbService.db
+							.select({
+								timezone: timeEntry.timezone,
+								utcOffsetMinutes: timeEntry.utcOffsetMinutes,
+							})
+							.from(timeEntry)
+							.where(
+								and(
+									eq(timeEntry.id, period.clockInId),
+									eq(timeEntry.organizationId, input.organizationId),
+									eq(timeEntry.employeeId, input.employeeId),
+								),
+							)
+							.limit(1);
+						return entry;
+					}),
+				);
+				if (!clockIn) {
+					return yield* _(
+						Effect.fail(
+							new NotFoundError({
+								message: "Clock-in entry not found",
+								entityType: "timeEntry",
+								entityId: period.clockInId,
+							}),
+						),
+					);
+				}
+				const endTime = period.endTime;
 				const breaksTaken = yield* _(
-					calculateBreaksTakenToday(input.employeeId, input.timezone),
+					dbService.query("getBreaksTakenBeforeWork", () =>
+						readBreakMinutesTakenBefore(dbService.db, {
+							organizationId: input.organizationId,
+							employeeId: input.employeeId,
+							workPeriodId: period.id,
+							startAt: instantFromDate(period.startTime),
+							endAt: instantFromDate(endTime),
+							startZone: capturedZone(clockIn),
+						}),
+					),
 				);
 
-				// Calculate break deficit
+				// The rule in force when the work ended, as the adopted break snapshot
+				// looks it up (#549): never the rule on the day enforcement runs.
 				const deficitResult = yield* _(
 					calculateBreakDeficitInternal({
 						employeeId: input.employeeId,
+						organizationId: input.organizationId,
+						policyAt: instantFromDate(endTime),
 						sessionDurationMinutes: input.sessionDurationMinutes,
 						breaksTakenMinutes: breaksTaken,
 					}),
@@ -616,15 +628,23 @@ export async function runBreakEnforcementCheck(options?: {
  * Export internal function for testing purposes.
  * This allows tests to verify the break deficit calculation logic
  * without going through the full Effect service infrastructure.
+ * It looks the policy up as the internal calculation does: at `policyAt`,
+ * within the organization.
  */
 export const calculateBreakDeficitForTesting = (
 	params: {
 		employeeId: string;
+		organizationId: string;
+		policyAt: Instant;
 		sessionDurationMinutes: number;
 		breaksTakenMinutes: number;
 	},
 	mockPolicyService: {
-		getEffectivePolicy: (employeeId: string) => Effect.Effect<
+		getEffectivePolicyAt: (input: {
+			employeeId: string;
+			organizationId: string;
+			at: Instant;
+		}) => Effect.Effect<
 			{
 				policyId: string;
 				policyName: string;
@@ -664,7 +684,11 @@ export const calculateBreakDeficitForTesting = (
 > =>
 	Effect.gen(function* (_) {
 		const policy = yield* _(
-			mockPolicyService.getEffectivePolicy(params.employeeId),
+			mockPolicyService.getEffectivePolicyAt({
+				employeeId: params.employeeId,
+				organizationId: params.organizationId,
+				at: params.policyAt,
+			}),
 		);
 		return calculateBreakDeficit({
 			sessionDurationMinutes: params.sessionDurationMinutes,

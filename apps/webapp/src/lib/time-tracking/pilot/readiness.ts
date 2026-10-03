@@ -6,7 +6,9 @@ import {
 	type TimeEntryAppendAdmission,
 	type TimeEntryAppendMode,
 } from "@/db/schema/time-entry-append";
+import { resolveApprovalAuthority } from "@/lib/approvals/authority";
 import type { TimeApprovalWorkflowType } from "@/lib/approvals/time-approval-kinds";
+import type { ApprovalWorkflowLifecycleMode } from "@/lib/approvals/workflow/ports";
 import type { AppendContinuity, AppendLineageAssessment } from "../append-assurance";
 import type { WorkFindingKind, WorkFindingTreatment } from "../historical-work-diagnostics";
 
@@ -86,7 +88,7 @@ export interface TimePilotPendingEvidence {
 export interface TimePilotApprovalKindEvidence {
 	workflowType: TimeApprovalWorkflowType;
 	/** Stored rollout mode; null when the organization has no rollout row. */
-	lifecycleMode: string | null;
+	lifecycleMode: ApprovalWorkflowLifecycleMode | null;
 	evidenceMode: ApprovalEvidenceMode;
 	pending: TimePilotPendingEvidence;
 }
@@ -159,7 +161,7 @@ export interface TimePilotApprovalKindReadiness extends Section {
 	workflowType: TimeApprovalWorkflowType;
 	/** `unverified`: a `shadow`, `ready` or `complete` rollout, not verified for time kinds. */
 	authority: "legacy" | "canonical" | "unverified";
-	lifecycleMode: string | null;
+	lifecycleMode: ApprovalWorkflowLifecycleMode | null;
 	evidenceMode: ApprovalEvidenceMode;
 	pending: TimePilotPendingEvidence & { total: number };
 }
@@ -301,11 +303,14 @@ function assessHistory(snapshot: TimePilotSnapshot): TimePilotHistoryReadiness {
 	);
 }
 
-function authorityOf(lifecycleMode: string | null): TimePilotApprovalKindReadiness["authority"] {
-	if (lifecycleMode === null || lifecycleMode === "legacy") return "legacy";
-	if (lifecycleMode === "canonical") return "canonical";
-	// `shadow`, `ready` and `complete` were never exercised for time kinds.
-	return "unverified";
+function authorityOf(
+	lifecycleMode: ApprovalWorkflowLifecycleMode | null,
+): TimePilotApprovalKindReadiness["authority"] {
+	const rollout = resolveApprovalAuthority(lifecycleMode);
+	// Shadow mirroring (`shadow`, `ready`) and canonical authority without
+	// compatibility writing (`complete`) were never exercised for time kinds.
+	if (rollout.authority === "legacy") return rollout.shadowMirroring ? "unverified" : "legacy";
+	return rollout.compatibilityWriting ? "canonical" : "unverified";
 }
 
 function assessApprovalKind(kind: TimePilotApprovalKindEvidence): TimePilotApprovalKindReadiness {

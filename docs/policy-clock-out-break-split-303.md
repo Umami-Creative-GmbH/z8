@@ -50,9 +50,10 @@ canonical resolutions of [#252](https://github.com/Umami-Creative-GmbH/z8/issues
 
 ## Coordination
 
-`acquireWorkPeriodDecisionScope` (`lib/approvals/server/work-period-decision-transaction.ts`)
-runs on the approval repository transaction before any row lock. It takes the
-#264 locks in this order:
+`withWorkPeriodDecisionTransaction` (`lib/approvals/server/work-period-decision-transaction.ts`)
+runs the decision as a work transaction (#477): the coordinator opens the
+transaction and the approval runtime borrows it through the approval port
+(#491). Before any read of the decision it takes the #264 locks in this order:
 
 1. the shared adoption gate, with the append control read under it;
 2. the ordinary approval write gate of the decided kind (rank 2);
@@ -63,20 +64,20 @@ runs on the approval repository transaction before any row lock. It takes the
 
 Previously this position held only the write gate.
 
-The decision routes from plain reads of its request, workflow and period.
-Before its first read it records an observation of those rows:
+The decision routes from an observation of its rows:
 
 - the period;
 - its legacy requests;
-- its workflows, with their versions, stages and assignments.
+- its workflows, with their versions, stages, assignments, kind and requester.
 
-Under the locks it takes that observation again and re-reads the routed scope.
-A change in either throws `WorkTransactionScopeChanged`.
-`retryWorkPeriodDecisionTransaction` then restarts the transaction, at most
-twice. The restart matters for a second decision that waited for the first one:
-it replays the committed decision from fresh reads instead of deciding on stale
-ones. Two existing concurrent-duplicate PostgreSQL tests failed until this
-check was added.
+The decided kind (which sets the rank-2 gate) and the owner come from that
+observation, and the observation is the route's snapshot. Under the locks the
+coordinator takes it again and re-routes; a change restarts the attempt, within
+its budget of 3. The restart matters for a second decision that waited for the
+first one: it replays the committed decision from fresh reads instead of
+deciding on stale ones. Two existing concurrent-duplicate PostgreSQL tests
+failed until this check was added. A decision whose own reads disagree with the
+routed owner or kind fails closed.
 
 The sealed scope is registered for the transaction client. The terminal split
 (`lib/time-tracking/policy-clock-out-terminal-break.ts`) looks it up with

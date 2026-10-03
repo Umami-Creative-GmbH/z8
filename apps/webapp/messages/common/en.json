@@ -239,7 +239,116 @@
         "description": "Reload the page to continue. Your last action was not saved.",
         "title": "Z8 was updated"
       }
-    }
+    },
+    "breadcrumb": {
+      "breadcrumb": "breadcrumb",
+      "more": "More"
+    },
+    "carousel": {
+      "previousSlide": "Previous slide",
+      "nextSlide": "Next slide",
+      "roleDescription": "carousel",
+      "slideRoleDescription": "slide"
+    },
+    "sidebar": {
+      "sidebar": "Sidebar",
+      "displaysTheMobileSidebar": "Displays the mobile sidebar.",
+      "toggleSidebar": "Toggle Sidebar"
+    },
+    "focusInput": "Focus input",
+    "pagination": {
+      "pagination": "pagination",
+      "goToPreviousPage": "Go to previous page",
+      "goToNextPage": "Go to next page",
+      "morePages": "More pages"
+    },
+    "loadingLabel": "Loading",
+    "timeInput": {
+      "openTimePicker": "Open time picker",
+      "switchPeriod": "Switch to {period}"
+    },
+    "datePicker": {
+      "clearDate": "Clear date",
+      "placeholder": "Pick a date"
+    },
+    "worksCouncil": {
+      "insufficientData": "Insufficient data",
+      "exportReviewPack": "Export review pack",
+      "from": "From",
+      "to": "To",
+      "updateRange": "Update Range",
+      "policyChanges": "Policy changes",
+      "scheduleChanges": "Schedule changes",
+      "complianceFindings": "Compliance findings",
+      "changeReviewLog": "Change review log",
+      "scheduleReview": "Schedule review",
+      "identityHidden": "Identity hidden",
+      "unassignedTeam": "Unassigned team",
+      "scheduleEntry": "{identity} - {start} to {end}",
+      "title": "Works Council",
+      "disabledDescription": "Works Council Mode is not enabled for this organization.",
+      "description": "Privacy-filtered workforce review for the selected period.",
+      "changeLogDescription": "Workforce-impacting changes scoped to this organization and period.",
+      "changeLogEmpty": "No changes found for this period.",
+      "scheduleDescription": "Privacy-filtered schedule entries for the selected period.",
+      "scheduleEmpty": "No schedule entries found for this period."
+    },
+    "loadingRegions": {
+      "adminConsole": "Loading admin console",
+      "platformAnalytics": "Loading platform analytics",
+      "platformBilling": "Loading platform billing",
+      "deploymentDiagnostics": "Loading deployment diagnostics",
+      "platformAdminOverview": "Loading platform admin overview",
+      "workerQueue": "Loading worker queue",
+      "absences": "Loading absences",
+      "analyticsNavigation": "Loading analytics navigation",
+      "application": "Loading application",
+      "yourRequests": "Loading your requests",
+      "dashboard": "Loading dashboard",
+      "payrollWorkspace": "Loading payroll workspace",
+      "employeeReports": "Loading employee reports",
+      "projectReports": "Loading project reports",
+      "shiftSchedule": "Loading shift schedule",
+      "auditExportSettings": "Loading audit export settings",
+      "changePolicySettings": "Loading change policy settings",
+      "coverageRuleSettings": "Loading coverage rule settings",
+      "customerSettings": "Loading customer settings",
+      "demoDataSettings": "Loading demo data settings",
+      "dataExportSettings": "Loading data export settings",
+      "exportOperations": "Loading export operations",
+      "holidaySettings": "Loading holiday settings",
+      "importSettings": "Loading import settings",
+      "importReview": "Loading import review",
+      "locationSettings": "Loading location settings",
+      "payrollExportSettings": "Loading payroll export settings",
+      "payrollReadiness": "Loading payroll readiness",
+      "projectSettings": "Loading project settings",
+      "customRoleSettings": "Loading custom role settings",
+      "scheduledExports": "Loading scheduled exports",
+      "shiftTemplateSettings": "Loading shift template settings",
+      "skillSettings": "Loading skill settings",
+      "surchargeSettings": "Loading surcharge settings",
+      "team": "Loading team",
+      "travelExpenseSettings": "Loading travel expense settings",
+      "employeeVacationAllowances": "Loading employee vacation allowances",
+      "vacationSettings": "Loading vacation settings",
+      "wellnessSettings": "Loading wellness settings",
+      "workCategorySettings": "Loading work category settings",
+      "workPolicySettings": "Loading work policy settings",
+      "todaySManagerBriefing": "Loading today's manager briefing",
+      "travelExpenses": "Loading travel expenses",
+      "worksCouncilPortal": "Loading Works Council portal",
+      "authentication": "Loading authentication",
+      "twoFactorVerification": "Loading two-factor verification",
+      "platformSetup": "Loading platform setup",
+      "onboarding": "Loading onboarding"
+    },
+    "brandLogo": "{brand} logo",
+    "durationMinutes": "{count} min",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# unread)}}"
+    },
+    "fieldPresets": "{label} presets"
   },
   "employeeSelect": {
     "countSelected": "{count} employees selected",
@@ -256,7 +365,8 @@
     "status": "Status",
     "team": "Team",
     "totalEmployees": "{count} employees",
-    "tryDifferentSearch": "Try adjusting your search or filters"
+    "tryDifferentSearch": "Try adjusting your search or filters",
+    "inactive": "Inactive"
   },
   "errors": {
     "failedToLoad": "Failed to load data",
@@ -286,13 +396,23 @@
   },
   "header": {
     "clock-in": "Clock In",
-    "clock-out": "Clock Out"
+    "clock-out": "Clock Out",
+    "timezone": {
+      "savedTimezone": "Saved timezone",
+      "saving": "Saving...",
+      "saveTimezone": "Save timezone",
+      "current": "Current timezone {timezone}, {time}, {offset}",
+      "updateError": "An error occurred while updating timezone",
+      "updated": "Timezone updated successfully",
+      "updateFailed": "Failed to update timezone"
+    }
   },
   "info": {
     "agb": "T&Cs",
     "back-to-login": "Back to login",
     "imprint": "Imprint",
-    "trust-center": "Trust Center"
+    "trust-center": "Trust Center",
+    "openSourceLicenses": "Open Source Licenses"
   },
   "loading": {
     "chart": "Loading chart",
@@ -582,7 +702,8 @@
     "first-name-required": "First Name is required",
     "invalid-email": "Invalid email address",
     "last-name-required": "Last Name is required",
-    "password-required": "Password is required"
+    "password-required": "Password is required",
+    "pronounsMaxLength": "Pronouns must be 50 characters or less"
   },
   "workBalance": {
     "label": "All-time balance",
