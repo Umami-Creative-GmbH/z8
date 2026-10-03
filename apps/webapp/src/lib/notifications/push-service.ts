@@ -129,6 +129,7 @@ export async function sendPushNotification(
 export async function sendPushToUser(
 	userId: string,
 	payload: PushPayload,
+	options: { throwOnError?: boolean } = {},
 ): Promise<{ sent: number; failed: number; expired: string[] }> {
 	if (!configureWebPush()) {
 		return { sent: 0, failed: 0, expired: [] };
@@ -205,6 +206,7 @@ export async function sendPushToUser(
 		return { sent, failed, expired };
 	} catch (error) {
 		logger.error({ error, userId }, "Failed to send push notifications to user");
+		if (options.throwOnError) throw error;
 		return { sent: 0, failed: 0, expired: [] };
 	}
 }

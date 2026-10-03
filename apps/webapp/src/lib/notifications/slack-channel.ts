@@ -46,7 +46,8 @@ export async function isSlackAvailable(
  */
 export async function sendSlackNotification(
 	params: SlackNotificationParams,
-): Promise<void> {
+	options: { durable?: boolean } = {},
+): Promise<undefined | "unavailable"> {
 	try {
 		const {
 			getChannelIdForUser,
@@ -56,7 +57,7 @@ export async function sendSlackNotification(
 		} = await import("@/lib/slack");
 
 		const botConfig = await getBotConfigByOrganization(params.organizationId);
-		if (!botConfig) return;
+		if (!botConfig) return options.durable ? "unavailable" : undefined;
 
 		// One owner per delivery effect (#294): where the approval delivery owner
 		// has the absence card, this path sends neither the card nor a plain
@@ -65,7 +66,7 @@ export async function sendSlackNotification(
 			params.type === "approval_request_submitted" &&
 			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "slack" }))
 		) {
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// Handle approval-related notifications specially
@@ -96,11 +97,11 @@ export async function sendSlackNotification(
 						params.organizationId,
 						botConfig.botAccessToken,
 					);
-					return;
+					return options.durable ? "unavailable" : undefined;
 				}
 			}
 			// Missing approval/recipient evidence must not fall through to raw details.
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// For other notifications, send a simple message
@@ -113,7 +114,7 @@ export async function sendSlackNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"No Slack channel found for user",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		let text = `*${params.title}*\n\n${params.message}`;
@@ -121,16 +122,18 @@ export async function sendSlackNotification(
 			text += `\n\n<${params.actionUrl}|View in Z8>`;
 		}
 
-		await postMessage(botConfig.botAccessToken, {
+		const acknowledgement = await postMessage(botConfig.botAccessToken, {
 			channel: channelId,
 			text,
 		});
+		if (options.durable && !acknowledgement) throw new Error("slack_delivery_unacknowledged");
 
 		logger.debug(
 			{ userId: params.userId, type: params.type },
 			"Slack notification sent",
 		);
 	} catch (error) {
+		if (options.durable) throw error;
 		logger.error({ error, params }, "Failed to send Slack notification");
 		throw error;
 	}

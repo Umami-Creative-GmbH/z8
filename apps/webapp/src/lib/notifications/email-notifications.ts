@@ -23,6 +23,7 @@ interface LocalizedEmailContent {
 }
 
 interface EmailNotificationParams {
+	actionUrl?: string;
 	userId: string;
 	type: NotificationType;
 	title: string;
@@ -117,7 +118,7 @@ function renderLocalizedDefaultEmailHtml(content: LocalizedEmailContent, appUrl:
 /**
  * Get user email by ID
  */
-async function getUserEmail(userId: string): Promise<string | null> {
+async function getUserEmail(userId: string, throwOnError = false): Promise<string | null> {
 	try {
 		const userRecord = await db.query.user.findFirst({
 			where: eq(user.id, userId),
@@ -126,6 +127,7 @@ async function getUserEmail(userId: string): Promise<string | null> {
 		return userRecord?.email || null;
 	} catch (error) {
 		logger.error({ error, userId }, "Failed to get user email");
+		if (throwOnError) throw error;
 		return null;
 	}
 }
@@ -149,11 +151,11 @@ async function getUserName(userId: string): Promise<string> {
 /**
  * Send email notification based on notification type
  */
-export async function sendEmailNotification(params: EmailNotificationParams): Promise<boolean> {
+export async function sendEmailNotification(params: EmailNotificationParams, options: { throwOnError?: boolean } = {}): Promise<boolean> {
 	const { userId, type, metadata, organizationId } = params;
 
 	try {
-		const email = await getUserEmail(userId);
+		const email = await getUserEmail(userId, options.throwOnError);
 		if (!email) {
 			logger.warn({ userId, type }, "No email found for user, skipping email notification");
 			return false;
@@ -164,6 +166,13 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 		const i18nMetadata = getI18nMetadata(metadata);
 		const hasI18nTitle = typeof i18nMetadata?.titleKey === "string";
 		const hasI18nMessage = typeof i18nMetadata?.messageKey === "string";
+		if (type === "automatic_clock_out") {
+			const localized = organizationId ? await localizeOutboundNotification({ ...params, organizationId }) : params;
+			const actionUrl = params.actionUrl?.startsWith("/calendar/") ? new URL(params.actionUrl, appUrl).toString() : appUrl;
+			const result = await sendEmail({ to: email, subject: localized.title, html: renderLocalizedDefaultEmailHtml(localized, actionUrl), organizationId });
+			if (!result.success && options.throwOnError) throw new Error("email_delivery_failed");
+			return result.success;
+		}
 
 		let templateKey: EmailTemplateKey | null = null;
 		let templateData: Record<string, unknown> | null = null;
@@ -435,9 +444,11 @@ export async function sendEmailNotification(params: EmailNotificationParams): Pr
 		}
 
 		logger.error({ userId, type, error: result.error }, "Failed to send email notification");
+		if (options.throwOnError) throw new Error("email_delivery_failed");
 		return false;
 	} catch (error) {
 		logger.error({ error, userId, type }, "Error sending email notification");
+		if (options.throwOnError) throw error;
 		return false;
 	}
 }

@@ -52,7 +52,8 @@ export async function isTelegramAvailable(
  */
 export async function sendTelegramNotification(
 	params: TelegramNotificationParams,
-): Promise<void> {
+	options: { durable?: boolean } = {},
+): Promise<undefined | "unavailable"> {
 	try {
 		const {
 			getChatIdForUser,
@@ -63,7 +64,7 @@ export async function sendTelegramNotification(
 		const { escapeMarkdownV2 } = await import("@/lib/telegram/formatters");
 
 		const botConfig = await getBotConfigByOrganization(params.organizationId);
-		if (!botConfig) return;
+		if (!botConfig) return options.durable ? "unavailable" : undefined;
 		const display = await resolveRecipientDisplayContext({
 			userId: params.userId,
 			organizationId: params.organizationId,
@@ -73,7 +74,7 @@ export async function sendTelegramNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"Telegram notification recipient has no scoped display context",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// One owner per delivery effect (#291): where the approval delivery owner
@@ -83,7 +84,7 @@ export async function sendTelegramNotification(
 			params.type === "approval_request_submitted" &&
 			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "telegram" }))
 		) {
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// Handle approval-related notifications specially
@@ -114,11 +115,11 @@ export async function sendTelegramNotification(
 						params.organizationId,
 						botConfig.botToken,
 					);
-					return;
+					return options.durable ? "unavailable" : undefined;
 				}
 			}
 			// Missing approval/recipient evidence must not fall through to raw details.
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// For other notifications, send a simple message
@@ -134,7 +135,7 @@ export async function sendTelegramNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"Rejecting Telegram notification for a recipient outside the organization",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		const temporal = await resolveBotTemporalContext({
@@ -147,7 +148,7 @@ export async function sendTelegramNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"Rejecting Telegram notification without recipient display context",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		const chatId = await getChatIdForUser(params.userId, params.organizationId);
@@ -156,7 +157,7 @@ export async function sendTelegramNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"No Telegram chat found for user",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		const localized = await localizeOutboundNotification({
@@ -172,17 +173,19 @@ export async function sendTelegramNotification(
 			text += `\n\n[View in Z8](${escapeMarkdownV2(params.actionUrl)})`;
 		}
 
-		await sendMessage(botConfig.botToken, {
+		const acknowledgement = await sendMessage(botConfig.botToken, {
 			chat_id: chatId,
 			text,
 			parse_mode: "MarkdownV2",
 		});
+		if (options.durable && !acknowledgement) throw new Error("telegram_delivery_unacknowledged");
 
 		logger.debug(
 			{ userId: params.userId, type: params.type },
 			"Telegram notification sent",
 		);
 	} catch (error) {
+		if (options.durable) throw error;
 		logger.error({ error, params }, "Failed to send Telegram notification");
 		throw error;
 	}

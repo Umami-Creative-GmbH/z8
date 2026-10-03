@@ -244,6 +244,21 @@ const outcomeTypes = [
 ] as const;
 
 describe("Notification Service", () => {
+	test("automatic clock-out inbox remains mandatory when its stored preference is muted", async () => {
+		mockFindMany.mockImplementation(async () => [createMockPreference({ notificationType: "automatic_clock_out", channel: "in_app", enabled: false })]);
+		const { loadNotificationChannelPreferences } = await import("../notification-service");
+		expect((await loadNotificationChannelPreferences("user-1", "automatic_clock_out")).in_app).toBe(true);
+	});
+	test("durable push retries failed subscriptions and identifies an unavailable recipient", async () => {
+		const { deliverNotificationToChannel } = await import("../notification-service");
+		const params = { userId: "user-1", organizationId: "org-1", type: "automatic_clock_out" as const, title: "Automatic", message: "Ended" };
+		mockIsPushAvailable.mockReturnValue(true);
+		mockSendPushToUser.mockImplementation(async () => ({ sent: 1, failed: 1, expired: [] }));
+		await expect(deliverNotificationToChannel("push", params, null, { durable: true })).rejects.toThrow();
+		mockSendPushToUser.mockImplementation(async () => ({ sent: 0, failed: 0, expired: [] }));
+		await expect(deliverNotificationToChannel("push", params, null, { durable: true })).resolves.toBe("unavailable");
+		mockIsPushAvailable.mockReturnValue(false);
+	});
 	beforeEach(() => {
 		// Reset module cache and clear all mocks before each test
 		vi.resetModules();

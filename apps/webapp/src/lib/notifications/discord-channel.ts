@@ -49,7 +49,8 @@ export async function isDiscordAvailable(
  */
 export async function sendDiscordNotification(
 	params: DiscordNotificationParams,
-): Promise<void> {
+	options: { durable?: boolean } = {},
+): Promise<undefined | "unavailable"> {
 	try {
 		const {
 			getChannelIdForUser,
@@ -60,7 +61,7 @@ export async function sendDiscordNotification(
 		const { buildNotificationEmbed } = await import("@/lib/discord/formatters");
 
 		const botConfig = await getBotConfigByOrganization(params.organizationId);
-		if (!botConfig) return;
+		if (!botConfig) return options.durable ? "unavailable" : undefined;
 
 		// One owner per delivery effect: where the approval delivery owner has
 		// the absence card, this path sends neither the card nor a plain
@@ -69,7 +70,7 @@ export async function sendDiscordNotification(
 			params.type === "approval_request_submitted" &&
 			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "discord" }))
 		) {
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// Handle approval-related notifications specially
@@ -100,11 +101,11 @@ export async function sendDiscordNotification(
 						params.organizationId,
 						botConfig.botToken,
 					);
-					return;
+					return options.durable ? "unavailable" : undefined;
 				}
 			}
 			// Missing approval/recipient evidence must not fall through to raw details.
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// For other notifications, send a simple embed
@@ -117,7 +118,7 @@ export async function sendDiscordNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"No Discord DM channel found for user",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		const embeds = buildNotificationEmbed(
@@ -126,13 +127,15 @@ export async function sendDiscordNotification(
 			params.actionUrl,
 		);
 
-		await sendMessage(botConfig.botToken, channelId, { embeds });
+		const acknowledgement = await sendMessage(botConfig.botToken, channelId, { embeds });
+		if (options.durable && !acknowledgement) throw new Error("discord_delivery_unacknowledged");
 
 		logger.debug(
 			{ userId: params.userId, type: params.type },
 			"Discord notification sent",
 		);
 	} catch (error) {
+		if (options.durable) throw error;
 		logger.error({ error, params }, "Failed to send Discord notification");
 		throw error;
 	}

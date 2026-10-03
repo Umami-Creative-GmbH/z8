@@ -367,6 +367,10 @@
         "approval_handover": "{employeeName}: Genehmigungsaufgaben brauchen eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
         "future_work": "{employeeName}: Zukünftige Arbeit muss geprüft werden (Austritt wirksam {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Zukünftige Vertragsbedingungen müssen geprüft werden (Austritt wirksam {cutoff}, {timezone})."
+      },
+      "automaticClockOut": {
+        "title": "Automatisch ausgestempelt",
+        "message": "Du wurdest nach {duration} Minuten ununterbrochener Arbeit am {cutoff} ({timezone}) automatisch ausgestempelt, weil das Zeitlimit deiner Organisation erreicht wurde."
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -416,7 +420,11 @@
         "errorToast": "Fehler bei Push-Benachrichtigung"
       },
       "toggleAria": "{channel}-Benachrichtigungen für {type}",
-      "updateFailed": "Einstellung konnte nicht aktualisiert werden"
+      "updateFailed": "Einstellung konnte nicht aktualisiert werden",
+      "mandatoryInbox": "Wird immer in deinem Posteingang zugestellt",
+      "types": {
+        "automatic_clock_out": "Automatisches Ausstempeln"
+      }
     },
     "search": {
       "ariaLabel": "Benachrichtigungen durchsuchen",

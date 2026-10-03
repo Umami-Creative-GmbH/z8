@@ -29,6 +29,7 @@ import type {
 	NotificationType,
 	NotificationWithMeta,
 } from "./types";
+import { hasMandatoryInbox } from "./types";
 
 const logger = createLogger("NotificationService");
 
@@ -65,6 +66,26 @@ export function getTimeAgo(date: Date): string {
 
 export type NotificationChannelPreferences = Record<NotificationChannel, boolean>;
 
+/** Use transport owners' organization availability checks before staging optional delivery. */
+export async function loadNotificationChannelAvailability(
+	organizationId: string,
+): Promise<NotificationChannelPreferences> {
+	const { getTransportName } = await import("@/lib/email/email-service");
+	const [emailTransport, teams, telegram, discord, slack] = await Promise.all([
+		getTransportName(organizationId),
+		isTeamsAvailable(organizationId),
+		isTelegramAvailable(organizationId),
+		isDiscordAvailable(organizationId),
+		isSlackAvailable(organizationId),
+	]);
+	return {
+		in_app: true,
+		push: isPushAvailable(),
+		email: !emailTransport.toLowerCase().startsWith("console"),
+		teams, telegram, discord, slack,
+	};
+}
+
 /** Channel preferences for one notification type; a missing preference means enabled. */
 export async function loadNotificationChannelPreferences(
 	userId: string,
@@ -81,7 +102,7 @@ export async function loadNotificationChannelPreferences(
 		return !preference || preference.enabled;
 	};
 	return {
-		in_app: enabled("in_app"),
+		in_app: hasMandatoryInbox(type) || enabled("in_app"),
 		push: enabled("push"),
 		email: enabled("email"),
 		teams: enabled("teams"),
@@ -138,6 +159,7 @@ export async function deliverNotificationToChannel(
 	channel: ExternalNotificationChannel,
 	params: CreateNotificationParams,
 	notificationId: string | null,
+	options: { durable?: boolean } = {},
 ): Promise<"sent" | "unavailable"> {
 	const botChannelPayload = {
 		userId: params.userId,
@@ -153,7 +175,7 @@ export async function deliverNotificationToChannel(
 	switch (channel) {
 		case "push": {
 			if (!isPushAvailable()) return "unavailable";
-			await sendPushToUser(params.userId, {
+			const result = await sendPushToUser(params.userId, {
 				title: params.title,
 				body: params.message,
 				icon: "/icons/icon-192x192.png",
@@ -165,34 +187,51 @@ export async function deliverNotificationToChannel(
 					actionUrl: params.actionUrl,
 					url: params.actionUrl,
 				},
-			});
+			}, options.durable ? { throwOnError: true } : undefined);
+			if (options.durable && result.failed > 0) throw new Error("push_delivery_failed");
+			if (options.durable && result.sent === 0) return "unavailable";
 			return "sent";
 		}
-		case "email":
-			await sendEmailNotification({
+		case "email": {
+			const sent = await sendEmailNotification({
 				userId: params.userId,
 				type: params.type,
 				title: params.title,
 				message: params.message,
 				metadata: params.metadata,
 				organizationId: params.organizationId,
-			});
+				...(options.durable ? { actionUrl: params.actionUrl } : {}),
+			}, options.durable ? { throwOnError: true } : undefined);
+			if (options.durable && !sent) return "unavailable";
 			return "sent";
+		}
 		case "teams":
 			if (!(await isTeamsAvailable(params.organizationId))) return "unavailable";
-			await sendTeamsNotification(botChannelPayload);
+			if (options.durable) {
+				if ((await sendTeamsNotification(botChannelPayload, { durable: true })) === "unavailable")
+					return "unavailable";
+			} else await sendTeamsNotification(botChannelPayload);
 			return "sent";
 		case "telegram":
 			if (!(await isTelegramAvailable(params.organizationId))) return "unavailable";
-			await sendTelegramNotification(botChannelPayload);
+			if (options.durable) {
+				if ((await sendTelegramNotification(botChannelPayload, { durable: true })) === "unavailable")
+					return "unavailable";
+			} else await sendTelegramNotification(botChannelPayload);
 			return "sent";
 		case "discord":
 			if (!(await isDiscordAvailable(params.organizationId))) return "unavailable";
-			await sendDiscordNotification(botChannelPayload);
+			if (options.durable) {
+				if ((await sendDiscordNotification(botChannelPayload, { durable: true })) === "unavailable")
+					return "unavailable";
+			} else await sendDiscordNotification(botChannelPayload);
 			return "sent";
 		case "slack":
 			if (!(await isSlackAvailable(params.organizationId))) return "unavailable";
-			await sendSlackNotification(botChannelPayload);
+			if (options.durable) {
+				if ((await sendSlackNotification(botChannelPayload, { durable: true })) === "unavailable")
+					return "unavailable";
+			} else await sendSlackNotification(botChannelPayload);
 			return "sent";
 	}
 }

@@ -60,6 +60,11 @@ export const NOTIFICATION_TYPES = [
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
+/** System closure evidence is always delivered to the employee's inbox. */
+export function hasMandatoryInbox(type: NotificationType): boolean {
+	return type === "automatic_clock_out";
+}
+
 // Notification channel enum values
 export const NOTIFICATION_CHANNELS = [
 	"in_app",
