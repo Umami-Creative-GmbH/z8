@@ -85,3 +85,7 @@ Native and Temporal diagnosis reports are copied into this plan's ignored SDD wo
 ## Controller verification and self-review
 
 All three tasks are self-contained. Task 3 modifies tests that validate Tasks 1 and 2 but consumes their production interfaces unchanged; sequential execution avoids races in those test files. Task 3's diagnosed fixtures and negative controls extend the source/collision and restoration review focus. After task reviews, collect one full unit JSON and compare with the previous inventory; perform a bounded rerun/diagnosis for newly appearing or remaining clock/path failures. Broader portability work needs its own reviewed scope rather than weakening tests. Final whole-follow-up review covers only commits after the current dev base, not the already merged performance PR. Do not push, merge or ship this follow-up without user authorization.
+
+## Completion record
+
+All four tasks and their reviews are complete. The initial full inventory failed three timeout cases; focused diagnosis and Task4 repaired the persistent import fixture. A recorded controller ruling justified one final full run on the repaired source with two workers, retaining default timeouts and assertions: 12999 passed, zero failed,33 skipped. All configured typechecks passed and final code review approved. See docs/performance/2026-10-03-verification-portability.md for exact revisions, evidence and limits. Delivery remains the user's choice.
