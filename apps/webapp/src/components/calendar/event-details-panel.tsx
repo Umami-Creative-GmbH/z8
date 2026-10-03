@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { Temporal } from "temporal-polyfill";
 import { Badge } from "@/components/ui/badge";
 import {
 	Sheet,
@@ -9,8 +10,9 @@ import {
 	SheetHeader,
 	SheetTitle,
 } from "@/components/ui/sheet";
-import type { CalendarEvent } from "@/lib/calendar/types";
+import type { CalendarEvent, WorkPeriodEvent } from "@/lib/calendar/types";
 import { format } from "@/lib/datetime/luxon-utils";
+import { formatUtcOffset, offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { useProjectsEnabled } from "@/stores/organization-settings-store";
 
 interface EventDetailsPanelProps {
@@ -188,21 +190,7 @@ function WorkPeriodDetails({
 	projectsEnabled: boolean;
 	t: Translate;
 }) {
-	const metadata = event.metadata as {
-		durationMinutes: number;
-		employeeName: string;
-		startTime?: string;
-		endTime?: string;
-		projectName?: string;
-		projectColor?: string;
-		surchargeMinutes?: number;
-		totalCreditedMinutes?: number;
-		surchargeBreakdown?: Array<{
-			ruleName: string;
-			percentage: number;
-			surchargeMinutes: number;
-		}>;
-	};
+	const metadata = event.metadata as WorkPeriodEvent["metadata"];
 	const hasSurcharge =
 		metadata.surchargeMinutes && metadata.surchargeMinutes > 0;
 	return (
@@ -292,8 +280,44 @@ function WorkPeriodDetails({
 					value={`${metadata.startTime} - ${metadata.endTime}`}
 				/>
 			)}
+			{metadata.automaticClockOut && (
+				<div className="space-y-3 rounded-md border p-3">
+					<Badge variant="secondary">
+						{t("calendar.details.automaticClockOut", "Automatically clocked out")}
+					</Badge>
+					<DetailValue
+						label={t("calendar.details.source", "Source")}
+						value={t("calendar.details.system", "System")}
+					/>
+					<DetailValue
+						label={t("calendar.details.automaticLimit", "Uninterrupted work limit")}
+						value={formatDuration(metadata.automaticClockOut.limitMinutes)}
+					/>
+					<DetailValue
+						label={t("calendar.details.automaticCutoff", "Clock-out cutoff")}
+						value={formatAutomaticCutoff(metadata)}
+					/>
+				</div>
+			)}
+			{metadata.editedByName && (
+				<DetailValue
+					label={t("calendar.details.editedBy", "Edited by")}
+					value={metadata.editedByName}
+				/>
+			)}
 		</div>
 	);
+}
+
+function formatAutomaticCutoff(metadata: WorkPeriodEvent["metadata"]): string {
+	const instant = Temporal.Instant.from(metadata.automaticClockOut!.cutoffAt);
+	const offset = metadata.clockOutUtcOffsetMinutes;
+	const zone =
+		offset !== undefined ? offsetMinutesToTimeZoneId(offset) : metadata.clockOutTimezone || "UTC";
+	const local = instant.toZonedDateTimeISO(zone);
+	const date = local.toPlainDate().toString();
+	const time = local.toPlainTime().toString({ smallestUnit: "minute" });
+	return `${date} ${time} (${offset !== undefined ? formatUtcOffset(offset) : zone})`;
 }
 
 function TimeEntryDetails({

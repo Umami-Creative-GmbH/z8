@@ -159,6 +159,12 @@
       "title": "In Pause umwandeln?"
     },
     "details": {
+      "automaticClockOut": "Automatisch ausgestempelt",
+      "automaticLimit": "Limit für ununterbrochene Arbeit",
+      "automaticCutoff": "Ausgestempelt zum Zeitlimit",
+      "source": "Quelle",
+      "system": "System",
+      "editedBy": "Bearbeitet von",
       "baseWorked": "Basis Arbeitszeit",
       "blocksTimeEntry": "Blockiert Zeiterfassung",
       "category": "Kategorie",
