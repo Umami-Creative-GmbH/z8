@@ -5,9 +5,11 @@ import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
 	approvalWorkflow,
+	auditLog,
 	employee,
 	timeEntry,
 	timeRecord,
+	timeRecordWork,
 	workPeriod,
 } from "@/db/schema";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -41,6 +43,7 @@ import {
 	type TimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import type { WorkTransactionClient } from "@/lib/time-tracking/work-transaction";
+import type { WorkLocationType } from "./work-location";
 
 type Transaction = WorkTransactionClient;
 
@@ -52,6 +55,7 @@ export interface AdminWorkPeriodTimeEditInput {
 	submissionId: string;
 	/** The form values exactly as submitted, before interpretation. */
 	submitted: {
+		workLocationType?: WorkLocationType;
 		clockInDate: string;
 		clockInTime: string;
 		clockOutDate: string;
@@ -59,6 +63,7 @@ export interface AdminWorkPeriodTimeEditInput {
 	};
 	/** Snapshot the caller validated against; the edit fails if the period changed since. */
 	expected: {
+		workLocationType?: string | null;
 		employeeId: string;
 		clockInId: string;
 		clockOutId: string;
@@ -171,6 +176,8 @@ async function lockExpectedWorkPeriod(
 		});
 	}
 	if (
+		(input.expected.workLocationType !== undefined &&
+			period.workLocationType !== input.expected.workLocationType) ||
 		period.clockInId !== input.expected.clockInId ||
 		period.clockOutId !== input.expected.clockOutId ||
 		!period.endTime ||
@@ -271,24 +278,29 @@ export async function replayAdminWorkPeriodTimeEdit(
 function adminEditIntent(
 	input: AdminWorkPeriodTimeEditInput,
 ): AmendCompletedWorkIntent {
-	const endpoint = (timestamp: Date) => ({
-		kind: "set" as const,
-		at: instantToCanonicalString(instantFromTimeCorrectionBoundary(timestamp)),
-		// Wall-clock minutes: an endpoint still inside its shown minute keeps its instant.
-		precision: "minute" as const,
-		...resolveFallbackTimezoneCapture({
-			timestamp,
-			timezone: input.timezone,
-			timezoneSource: input.timezoneSource,
-		}),
-	});
+	const endpoint = (timestamp: Date, original: Date) =>
+		timestamp.getTime() === original.getTime()
+			? { kind: "preserve" as const }
+			: {
+					kind: "set" as const,
+					at: instantToCanonicalString(instantFromTimeCorrectionBoundary(timestamp)),
+					precision: "minute" as const,
+					...resolveFallbackTimezoneCapture({
+						timestamp,
+						timezone: input.timezone,
+						timezoneSource: input.timezoneSource,
+					}),
+				};
 	return {
 		workPeriodId: input.workPeriodId,
-		clockIn: endpoint(input.clockIn),
-		clockOut: endpoint(input.clockOut),
+		clockIn: endpoint(input.clockIn, input.expected.startTime),
+		clockOut: endpoint(input.clockOut, input.expected.endTime),
 		project: { kind: "preserve" },
 		workCategory: { kind: "preserve" },
-		workLocation: { kind: "preserve" },
+		workLocation:
+			input.submitted.workLocationType === undefined
+				? { kind: "preserve" }
+				: { kind: "replace", id: input.submitted.workLocationType },
 		notes: input.notes,
 	};
 }
@@ -364,20 +376,20 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 	const newEnd = instantFromTimeCorrectionBoundary(input.clockOut);
 	const clockInChanged =
 		compareInstants(
-			newStart,
-			instantFromTimeCorrectionBoundary(input.expected.startTime),
+			newStart.round({ smallestUnit: "minute", roundingMode: "trunc" }),
+			instantFromTimeCorrectionBoundary(input.expected.startTime).round({
+				smallestUnit: "minute",
+				roundingMode: "trunc",
+			}),
 		) !== 0;
 	const clockOutChanged =
 		compareInstants(
-			newEnd,
-			instantFromTimeCorrectionBoundary(input.expected.endTime),
+			newEnd.round({ smallestUnit: "minute", roundingMode: "trunc" }),
+			instantFromTimeCorrectionBoundary(input.expected.endTime).round({
+				smallestUnit: "minute",
+				roundingMode: "trunc",
+			}),
 		) !== 0;
-	if (!clockInChanged && !clockOutChanged) {
-		throw new ValidationError({
-			message: "At least one correction value must change",
-			field: "correction",
-		});
-	}
 
 	const captureFor = (timestamp: Date): TimeEntryTimezoneCapture =>
 		resolveFallbackTimezoneCapture({
@@ -410,7 +422,24 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 		await lockActorAndTarget(tx, input);
 		const period = await lockExpectedWorkPeriod(tx, input);
 
-		const originals = await tx
+		const locationChanged =
+			input.submitted.workLocationType !== undefined &&
+			input.submitted.workLocationType !== period.workLocationType;
+		if (!clockInChanged && !clockOutChanged && !locationChanged) {
+			throw new ValidationError({
+				message: "At least one correction value must change",
+				field: "correction",
+			});
+		}
+		if (locationChanged && !period.canonicalRecordId) {
+			throw new ConflictError({
+				message: "Canonical work record is missing",
+				conflictType: "canonical_work_missing",
+			});
+		}
+
+		const originals = endpoints.length
+			? await tx
 			.select()
 			.from(timeEntry)
 			.where(
@@ -423,7 +452,8 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 					),
 				),
 			)
-			.for("update");
+			.for("update")
+			: [];
 		if (
 			originals.length !== endpoints.length ||
 			originals.some((entry) => entry.isSuperseded)
@@ -499,8 +529,18 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 			previousEntry = correction;
 		}
 
-		const durationMinutes = Math.floor(newStart.until(newEnd).total("minutes"));
-		const updatedAt = new Date();
+		const startTime = clockInChanged ? input.clockIn : period.startTime;
+		const endTime = clockOutChanged
+			? input.clockOut
+			: (period.endTime ?? input.expected.endTime);
+		const durationMinutes = clockInChanged || clockOutChanged
+			? Math.floor(
+					instantFromTimeCorrectionBoundary(startTime)
+						.until(instantFromTimeCorrectionBoundary(endTime))
+						.total("minutes"),
+				)
+			: period.durationMinutes;
+		const updatedAt = new Date(systemClock.nowInstant().epochMilliseconds);
 		const updatedPeriods = await tx
 			.update(workPeriod)
 			.set({
@@ -510,8 +550,9 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 				clockOutId:
 					replacementIds.get(input.expected.clockOutId) ??
 					input.expected.clockOutId,
-				startTime: input.clockIn,
-				endTime: input.clockOut,
+				startTime,
+				endTime,
+				workLocationType: input.submitted.workLocationType ?? period.workLocationType,
 				durationMinutes,
 				updatedAt,
 			})
@@ -537,8 +578,8 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 			await tx
 				.update(timeRecord)
 				.set({
-					startAt: input.clockIn,
-					endAt: input.clockOut,
+					startAt: startTime,
+					endAt: endTime,
 					durationMinutes,
 					updatedAt,
 					updatedBy: input.actorUserId,
@@ -551,6 +592,48 @@ async function applyLegacyAdminWorkPeriodTimeEdit(
 						eq(timeRecord.recordKind, "work"),
 					),
 				);
+		}
+		if (locationChanged) {
+			const canonicalRecordId = period.canonicalRecordId;
+			if (!canonicalRecordId) {
+				throw new ConflictError({
+					message: "Canonical work record is missing",
+					conflictType: "canonical_work_missing",
+				});
+			}
+			const updated = await tx
+				.update(timeRecordWork)
+				.set({ workLocationType: input.submitted.workLocationType })
+				.where(
+					and(
+						eq(timeRecordWork.recordId, canonicalRecordId),
+						eq(timeRecordWork.organizationId, input.organizationId),
+						eq(timeRecordWork.recordKind, "work"),
+					),
+				)
+				.returning({ recordId: timeRecordWork.recordId });
+			if (updated.length !== 1)
+				throw new ConflictError({
+					message: "Canonical work metadata update failed",
+					conflictType: "canonical_work_missing",
+				});
+			await tx.insert(auditLog).values({
+				organizationId: input.organizationId,
+				entityType: "work_period",
+				entityId: period.id,
+				action: "update",
+				performedBy: input.actorUserId,
+				employeeId: period.employeeId,
+				changes: JSON.stringify({
+					workLocationType: {
+						before: period.workLocationType,
+						after: input.submitted.workLocationType,
+					},
+				}),
+				metadata: JSON.stringify({ reason: input.notes }),
+				ipAddress: input.ipAddress,
+				userAgent: input.deviceInfo,
+			});
 		}
 
 		return originals;

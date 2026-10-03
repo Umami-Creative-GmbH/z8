@@ -1,4 +1,5 @@
 import type { EditCapability } from "@/lib/effect/services/change-policy.service";
+import type { WorkLocationType } from "./work-location";
 
 /**
  * What the current viewer may do with the clock-in/clock-out times of a work period.
@@ -103,10 +104,22 @@ export function resolveWorkPeriodTimeEditRoute(
 }
 
 export interface WorkPeriodTimeEditValues {
+	workLocationType?: WorkLocationType | null;
 	clockInDate: string;
 	clockInTime: string;
 	clockOutDate: string;
 	clockOutTime: string;
+}
+
+export function haveWorkPeriodEditValuesChanged(
+	original: WorkPeriodTimeEditValues,
+	next: WorkPeriodTimeEditValues,
+): boolean {
+	return (
+		haveWorkPeriodTimesChanged(original, next) ||
+		(next.workLocationType !== undefined &&
+			next.workLocationType !== original.workLocationType)
+	);
 }
 
 export function haveWorkPeriodDatesChanged(

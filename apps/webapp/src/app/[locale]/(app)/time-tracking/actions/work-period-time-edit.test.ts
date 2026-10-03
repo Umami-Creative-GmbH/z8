@@ -113,6 +113,41 @@ function unchangedInput() {
 }
 
 describe("work period time edit actions", () => {
+	it("preserves unchanged admin endpoints in the second DST fold when changing only location", async () => {
+		state.isOrgAdmin.mockResolvedValue(true);
+		state.selectLimit.mockResolvedValue([{ ...ownPeriod,
+			startTime: new Date("2025-10-26T01:30:20Z"), endTime: new Date("2025-10-26T02:30:40Z"),
+		}]);
+		const result = await updateWorkPeriodTimes({ ...unchangedInput(), clockInDate: "2025-10-26", clockOutDate: "2025-10-26", clockInTime: "02:30", clockOutTime: "03:30", workLocationType: "home" });
+		expect(result.success).toBe(true);
+		expect(state.applyAdminEdit).toHaveBeenCalledWith(expect.objectContaining({ clockIn: new Date("2025-10-26T01:30:20Z"), clockOut: new Date("2025-10-26T02:30:40Z") }));
+	});
+	it("submits a location-only correction through the employee's approval policy", async () => {
+		state.getEditCapability.mockResolvedValue({ type: "approval_required" });
+		const result = await updateWorkPeriodTimes({
+			...unchangedInput(),
+			workLocationType: "home",
+			reason: "Worked from home",
+		});
+		expect(result).toEqual({ success: true, data: { status: "pending" } });
+		expect(state.requestCorrection).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workLocationType: "home",
+				newClockInTime: "09:00",
+				newClockOutTime: "17:00",
+			}),
+		);
+	});
+
+	it("passes the selected location to direct self-service edits", async () => {
+		await updateWorkPeriodTimes({
+			...unchangedInput(),
+			workLocationType: "other",
+		});
+		expect(state.editSameDay).toHaveBeenCalledWith(
+			expect.objectContaining({ workLocationType: "other" }),
+		);
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 		state.getCurrentEmployee.mockResolvedValue({
@@ -156,6 +191,7 @@ describe("work period time edit actions", () => {
 				access: { kind: "self_service" },
 				timezone: "Europe/Berlin",
 				values: {
+					workLocationType: "remote",
 					clockInDate: "2026-09-01",
 					clockInTime: "09:00",
 					clockOutDate: "2026-09-01",

@@ -1,13 +1,9 @@
 import {
 	IconAlertTriangle,
-	IconBuilding,
 	IconCheck,
 	IconClock,
 	IconClockPause,
-	IconDots,
-	IconHome,
 	IconLoader2,
-	IconMapPin,
 	IconX,
 } from "@tabler/icons-react";
 import type { TFnType } from "@tolgee/react";
@@ -17,6 +13,14 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
+import { workLocationIcons } from "./work-location-indicator";
+
+const {
+	office: IconBuilding,
+	home: IconHome,
+	remote: IconMapPin,
+	other: IconCompass,
+} = workLocationIcons;
 
 export function ActiveSessionSummary({
 	elapsedSeconds,
@@ -67,7 +71,7 @@ export function WorkLocationSelector({
 	onChange,
 	t,
 }: {
-	value: WorkLocationType;
+	value: WorkLocationType | null;
 	onChange: (value: WorkLocationType) => void;
 	t: TFnType;
 }) {
@@ -76,10 +80,10 @@ export function WorkLocationSelector({
 			type="single"
 			variant="outline"
 			size="sm"
-			value={value}
+			value={value ?? ""}
 			onValueChange={(nextValue) => {
 				if (nextValue) {
-					onChange(nextValue as typeof value);
+					onChange(nextValue as WorkLocationType);
 				}
 			}}
 			className="w-full"
@@ -103,7 +107,7 @@ export function WorkLocationSelector({
 				</span>
 			</ToggleGroupItem>
 			<ToggleGroupItem value="other" aria-label={t("timeTracking.workLocationOther", "Other")}>
-				<IconDots className="size-4" />
+				<IconCompass className="size-4" />
 				<span className="hidden @[20rem]/widget:inline text-xs">
 					{t("timeTracking.workLocationOther", "Other")}
 				</span>

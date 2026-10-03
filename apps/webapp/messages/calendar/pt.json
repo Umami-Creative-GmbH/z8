@@ -173,7 +173,8 @@
       "surcharge": "Sobretaxa",
       "surchargeBreakdown": "Detalhamento de sobretaxas",
       "time": "Tempo",
-      "type": "Tipo"
+      "type": "Tipo",
+      "workLocation": "Local de trabalho"
     },
     "edit": {
       "deleteEntry": "Excluir entrada",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Falha ao guardar notas",
       "projectSaved": "Projeto atualizado",
       "projectSaveFailed": "Falha ao atualizar o projeto",
-      "split": "Dividir"
+      "split": "Dividir",
+      "locationRequired": "Escolha um local de trabalho.",
+      "time": {
+        "noChanges": "Altere primeiro a data, a hora ou o local de trabalho.",
+        "edit": "Editar registo"
+      }
     },
     "employeeSelector": {
       "error": "Não foi possível carregar os membros da equipe",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Não registado"
     }
   }
 }

@@ -173,7 +173,8 @@
       "surcharge": "Dopłata",
       "surchargeBreakdown": "Szczegóły dopłaty",
       "time": "Czas",
-      "type": "Typ"
+      "type": "Typ",
+      "workLocation": "Miejsce pracy"
     },
     "edit": {
       "deleteEntry": "Usuń wpis",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Nie udało się zapisać notatek",
       "projectSaved": "Projekt zaktualizowany",
       "projectSaveFailed": "Nie udało się zaktualizować projektu",
-      "split": "Podziel"
+      "split": "Podziel",
+      "locationRequired": "Wybierz miejsce pracy.",
+      "time": {
+        "noChanges": "Najpierw zmień datę, godzinę lub miejsce pracy.",
+        "edit": "Edytuj wpis"
+      }
     },
     "employeeSelector": {
       "error": "Nie można załadować członków zespołu",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Nie zapisano"
     }
   }
 }

@@ -201,6 +201,7 @@ export async function getWorkPeriodsForMonth(
 						descriptionKey: "calendar.calendar.workPeriod.runningDescription",
 						color: eventColor,
 						metadata: {
+							workLocationType: period.workLocationType ?? null,
 							durationMinutes,
 							employeeId: period.employeeId,
 							employeeName: user.name,
@@ -306,6 +307,7 @@ export async function getWorkPeriodsForMonth(
 						: "calendar.calendar.workPeriod.fallbackDescription",
 					color: eventColor,
 					metadata: {
+						workLocationType: period.workLocationType ?? null,
 						durationMinutes,
 						employeeId: period.employeeId,
 						employeeName: user.name,

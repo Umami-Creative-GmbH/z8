@@ -179,7 +179,8 @@
       "surcharge": "Surcharge",
       "surchargeBreakdown": "Surcharge Breakdown",
       "time": "Time",
-      "type": "Type"
+      "type": "Type",
+      "workLocation": "Work location"
     },
     "edit": {
       "deleteEntry": "Delete entry",
@@ -198,9 +199,9 @@
         "clockOutDate": "Clock out date",
         "clockOutTime": "Clock out time",
         "directHint": "This change applies immediately.",
-        "edit": "Edit time",
+        "edit": "Edit entry",
         "invalidRange": "Clock out must be after clock in.",
-        "noChanges": "Change the date or time first.",
+        "noChanges": "Change the date, time, or work location first.",
         "noteLabel": "Note (optional)",
         "notePlaceholder": "Add a note about this change…",
         "pendingCorrection": "A time change for this entry is already waiting for approval.",
@@ -215,7 +216,8 @@
         "onBehalfHint": "This change follows the employee's approval chain. If you are their approver, it applies right away.",
         "submitOnBehalf": "Submit change",
         "submittedOnBehalf": "Change submitted to the employee's approver"
-      }
+      },
+      "locationRequired": "Choose a work location."
     },
     "employeeSelector": {
       "error": "Unable to load team members",
@@ -322,6 +324,9 @@
     "workPeriod": {
       "editedBy": "(edited by {name} at {date})"
     },
-    "loadEventsError": "Failed to load calendar events: {message}"
+    "loadEventsError": "Failed to load calendar events: {message}",
+    "workLocation": {
+      "notRecorded": "Not recorded"
+    }
   }
 }

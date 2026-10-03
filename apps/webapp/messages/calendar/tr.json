@@ -173,7 +173,8 @@
       "surcharge": "Ek Ücret",
       "surchargeBreakdown": "Ek Ücret Dökümü",
       "time": "Zaman",
-      "type": "Tür"
+      "type": "Tür",
+      "workLocation": "Çalışma konumu"
     },
     "edit": {
       "deleteEntry": "Girdiyi sil",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Notlar kaydedilemedi",
       "projectSaved": "Proje güncellendi",
       "projectSaveFailed": "Proje güncellenemedi",
-      "split": "Böl"
+      "split": "Böl",
+      "locationRequired": "Bir çalışma konumu seçin.",
+      "time": {
+        "noChanges": "Önce tarihi, saati veya çalışma konumunu değiştirin.",
+        "edit": "Kaydı düzenle"
+      }
     },
     "employeeSelector": {
       "error": "Ekip üyeleri yüklenemedi",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Kaydedilmemiş"
     }
   }
 }

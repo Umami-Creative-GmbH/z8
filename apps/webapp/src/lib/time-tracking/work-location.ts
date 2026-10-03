@@ -8,6 +8,12 @@ export function isWorkLocationType(value: string | null | undefined): value is W
 	return typeof value === "string" && WORK_LOCATION_TYPE_SET.has(value);
 }
 
+/** Missing locations stay distinct from an explicitly recorded Office location. */
+export function getRecordedWorkLocationType(value: string | null | undefined): WorkLocationType | null {
+	if (value === "field") return "remote";
+	return isWorkLocationType(value) ? value : null;
+}
+
 export function normalizeWorkLocationType(value: string | null | undefined): WorkLocationType {
 	if (value === "field") {
 		return "remote";

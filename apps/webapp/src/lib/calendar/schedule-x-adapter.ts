@@ -16,6 +16,7 @@ export interface ScheduleXEvent {
 	_customContent?: {
 		timeGrid?: string;
 	};
+	_workPeriodTimes?: { start: string; end?: string };
 	_eventData: CalendarEvent; // Store original for details panel
 }
 
@@ -362,6 +363,11 @@ export function calendarEventToScheduleX(
 				event.metadata.clockOutUtcOffsetMinutes ?? event.metadata.clockInUtcOffsetMinutes,
 				timeZone,
 			);
+			// Keep recorded endpoint labels separate from synthetic layout endpoints.
+			const workPeriodTimes = {
+				start: start.toPlainTime().toString({ smallestUnit: "minute" }),
+				end: event.metadata.isRunning ? undefined : end.toPlainTime().toString({ smallestUnit: "minute" }),
+			};
 			if (
 				typeof event.metadata.clockInUtcOffsetMinutes === "number" &&
 				typeof event.metadata.clockOutUtcOffsetMinutes === "number" &&
@@ -416,6 +422,7 @@ export function calendarEventToScheduleX(
 				start,
 				end,
 				calendarId,
+				_workPeriodTimes: workPeriodTimes,
 				...((event.metadata.isRunning || timezoneLabel || editedByLabel) && {
 					_customContent: {
 						timeGrid: event.metadata.isRunning

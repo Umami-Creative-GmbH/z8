@@ -12,6 +12,8 @@ import {
 	updateWorkPeriodTimes,
 	type WorkPeriodTimeEditContext,
 } from "@/app/[locale]/(app)/time-tracking/actions/work-period-time-edit";
+import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
+import { WorkLocationIndicator } from "@/components/time-tracking/work-location-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +25,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
 import {
 	haveWorkPeriodDatesChanged,
+	haveWorkPeriodEditValuesChanged,
 	haveWorkPeriodTimesChanged,
 	resolveWorkPeriodTimeEditRoute,
 	type WorkPeriodTimeEditAccess,
@@ -158,13 +161,23 @@ function WorkPeriodTimeEditForm({
 	const form = useForm({
 		defaultValues: { ...context.values, reason: "" } as TimeEditFormValues,
 		onSubmit: async ({ value }) => {
-			if (!haveWorkPeriodTimesChanged(context.values, value)) {
+			if (!value.workLocationType) {
+				toast.error(t("calendar.edit.locationRequired", "Choose a work location."));
+				return;
+			}
+			if (!haveWorkPeriodEditValuesChanged(context.values, value)) {
 				toast.error(
-					t("calendar.edit.time.noChanges", "Change the date or time first."),
+					t(
+						"calendar.edit.time.noChanges",
+						"Change the date, time, or work location first.",
+					),
 				);
 				return;
 			}
-			if (!isChronological(value)) {
+			if (
+				haveWorkPeriodTimesChanged(context.values, value) &&
+				!isChronological(value)
+			) {
 				toast.error(
 					t(
 						"calendar.edit.time.invalidRange",
@@ -191,6 +204,7 @@ function WorkPeriodTimeEditForm({
 				workPeriodId,
 				submissionId,
 				...value,
+				workLocationType: value.workLocationType ?? undefined,
 			}).catch(() => null);
 
 			if (!result?.success) {
@@ -316,6 +330,25 @@ function WorkPeriodTimeEditForm({
 				}
 			/>
 
+			<form.Field name="workLocationType">
+				{(field) => (
+					<fieldset className="@container/widget space-y-1.5">
+						<legend className="text-sm font-medium">
+							{t("calendar.details.workLocation", "Work location")}
+						</legend>
+						<WorkLocationSelector
+							value={field.state.value ?? null}
+							onChange={field.handleChange}
+							t={t}
+						/>
+						{!field.state.value ? (
+							<p className="text-xs text-muted-foreground">
+								{t("calendar.workLocation.notRecorded", "Not recorded")}
+							</p>
+						) : null}
+					</fieldset>
+				)}
+			</form.Field>
 			<form.Subscribe
 				selector={(state) => ({
 					route: routeFor(state.values),
@@ -442,7 +475,7 @@ export function WorkPeriodTimeSection({
 						className="h-7 px-2"
 					>
 						<IconPencil className="mr-1 size-4" aria-hidden="true" />
-						{t("calendar.edit.time.edit", "Edit time")}
+						{t("calendar.edit.time.edit", "Edit entry")}
 					</Button>
 				) : null}
 			</div>
@@ -464,6 +497,17 @@ export function WorkPeriodTimeSection({
 					<p className="font-medium">
 						{formatEventTimeRange(event, displayContext)}
 					</p>
+					<div className="mt-2 space-y-1">
+						<p className="text-sm text-muted-foreground">
+							{t("calendar.details.workLocation", "Work location")}
+						</p>
+						<WorkLocationIndicator
+							value={event.metadata.workLocationType}
+							t={t}
+							showLabel
+							missingLabel={t("calendar.workLocation.notRecorded", "Not recorded")}
+						/>
+					</div>
 					{context ? <BlockedHint access={context.access} t={t} /> : null}
 				</>
 			)}

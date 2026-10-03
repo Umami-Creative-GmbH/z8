@@ -173,7 +173,8 @@
       "surcharge": "Tillägg",
       "surchargeBreakdown": "Uppdelning av tillägg",
       "time": "Tid",
-      "type": "Typ"
+      "type": "Typ",
+      "workLocation": "Arbetsplats"
     },
     "edit": {
       "deleteEntry": "Ta bort post",
@@ -181,7 +182,12 @@
       "notesSaveFailed": "Kunde inte spara anteckningar",
       "projectSaved": "Projekt uppdaterat",
       "projectSaveFailed": "Kunde inte uppdatera projekt",
-      "split": "Dela"
+      "split": "Dela",
+      "locationRequired": "Välj en arbetsplats.",
+      "time": {
+        "noChanges": "Ändra först datum, tid eller arbetsplats.",
+        "edit": "Redigera post"
+      }
     },
     "employeeSelector": {
       "error": "Kunde inte läsa in teammedlemmar",
@@ -279,6 +285,9 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "workLocation": {
+      "notRecorded": "Inte registrerad"
     }
   }
 }
