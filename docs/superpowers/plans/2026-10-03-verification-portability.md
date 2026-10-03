@@ -77,10 +77,10 @@ Native and Temporal diagnosis reports are copied into this plan's ignored SDD wo
 
 **Interfaces:** Move the identical real `await import("./actions")` to top-level collection scope, matching the existing actions.canonical.test.ts pattern. Keep all four runtime absence assertions and both source-module assertions unchanged. No mock, production edit, persisted timeout increase or database guard change.
 
-- [ ] Read action-surface-timeout-diagnosis.md in the owned workspace. Existing full and single-worker runs already reproduce the 5,000 ms timeout. The diagnostic-only 30-second run settles in 6,855 ms with all three assertions passing; its environment-scrub preparation failed, so do not claim that run scrubbed inherited variables.
-- [ ] Move only the real namespace import out of the test callback into collection setup. Preserve the tested runtime namespace and assertions. This is a test arrangement repair, not an application import optimization.
-- [ ] Run this file with the normal timeout and one worker, then the three earlier timeout files together with one worker; do not run another full inventory. Run scoped Biome with checkout line endings and all configured typechecks. No credentials, weakening assertions or warning suppression.
-- [ ] Self-review and commit only this test with `test: initialize server action surface before assertions`. Report exact commands/counts, import arrangement, normal-budget checks and limits.
+- [x] Read action-surface-timeout-diagnosis.md in the owned workspace. Existing full and single-worker runs already reproduce the 5,000 ms timeout. The diagnostic-only 30-second run settles in 6,855 ms with all three assertions passing; its environment-scrub preparation failed, so do not claim that run scrubbed inherited variables.
+- [x] Move only the real namespace import out of the test callback into collection setup. Preserve the tested runtime namespace and assertions. This is a test arrangement repair, not an application import optimization.
+- [x] Run this file with the normal timeout and one worker, then the three earlier timeout files together with one worker; do not run another full inventory. Run scoped Biome with checkout line endings and all configured typechecks. No credentials, weakening assertions or warning suppression.
+- [x] Self-review and commit only this test with `test: initialize server action surface before assertions`. Report exact commands/counts, import arrangement, normal-budget checks and limits.
 
 ## Controller verification and self-review
 
