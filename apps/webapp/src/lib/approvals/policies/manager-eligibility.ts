@@ -3,6 +3,7 @@ export interface EligibleManagerEmployee {
 	organizationId: string;
 	isActive: boolean;
 	role: "admin" | "manager" | "employee";
+	teamId?: string | null;
 }
 
 export interface EligibleManagerLink {
@@ -126,6 +127,10 @@ function teamManagerIds(input: ResolveEligibleManagersInput) {
 				: [],
 		),
 	);
+	// Invitation provisioning stores the primary team on the employee. Include
+	// it even when no additional team_membership row has been created yet.
+	const requester = resolvableRequester(input);
+	if (requester?.teamId) requesterTeamIds.add(requester.teamId);
 
 	return uniqueSorted(
 		input.teams.flatMap((team) =>

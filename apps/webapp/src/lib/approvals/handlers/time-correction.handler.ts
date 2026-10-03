@@ -28,6 +28,7 @@ import type {
 	ApprovalTimelineEvent,
 	ApprovalTypeHandler,
 } from "../domain/types";
+import type { ApprovalInboxTimeComparison } from "../inbox/types";
 import {
 	categoryIdsFromTimeCorrectionMetadata,
 	categoryNamesForOrganization,
@@ -121,6 +122,7 @@ interface WorkPeriodWithRelations {
 interface CorrectionEntryForReview {
 	id: string;
 	timestamp: Date;
+	utcOffsetMinutes?: number;
 	replacesEntryId: string | null;
 	isSuperseded?: boolean;
 	supersededById?: string | null;
@@ -134,6 +136,7 @@ interface PendingTimeCorrectionReview {
 	clockOut: { original: Date | null; requested: Date | null } | null;
 	metadataChanges?: TimeCorrectionMetadataChanges;
 	isOrphaned: boolean;
+	timeComparison?: ApprovalInboxTimeComparison;
 }
 
 interface PublicApprovalStage {
@@ -505,9 +508,50 @@ export function buildPendingCorrectionReview(
 		workMetadata,
 		categoryNamesById,
 	);
+	const endpoint = (
+		entry: { timestamp: Date; utcOffsetMinutes?: number } | null | undefined,
+	) =>
+		entry
+			? {
+					at: entry.timestamp.toISOString(),
+					utcOffsetMinutes: entry.utcOffsetMinutes ?? null,
+				}
+			: null;
+	const action = metadata?.action ?? "edit";
+	const hasTimeChange = Boolean(
+		matchingClockInCorrection ||
+			matchingClockOutCorrection ||
+			hasMetadataCorrectionIds,
+	);
 
 	return {
-		action: metadata?.action ?? "edit",
+		action,
+		...(hasTimeChange || action === "delete"
+			? {
+					timeComparison: {
+						type: "time_comparison" as const,
+						action,
+						original: {
+							start: endpoint(period.clockIn),
+							end: endpoint(period.clockOut),
+						},
+						requested:
+							action === "delete"
+								? { start: null, end: null }
+								: {
+										start:
+											metadata?.clockInCorrectionId || matchingClockInCorrection
+												? endpoint(matchingClockInCorrection)
+												: endpoint(period.clockIn),
+										end:
+											metadata?.clockOutCorrectionId ||
+											matchingClockOutCorrection
+												? endpoint(matchingClockOutCorrection)
+												: endpoint(period.clockOut),
+									},
+					},
+				}
+			: {}),
 		clockIn:
 			matchingClockInCorrection || metadata?.clockInCorrectionId
 				? {

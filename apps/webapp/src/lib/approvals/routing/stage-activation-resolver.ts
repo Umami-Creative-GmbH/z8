@@ -159,6 +159,7 @@ function decodeEmployees(rows: unknown[]): EligibleManagerEmployee[] {
 			!nonEmptyString(row.id) ||
 			!nonEmptyString(row.organizationId) ||
 			typeof row.isActive !== "boolean" ||
+			(row.teamId != null && !nonEmptyString(row.teamId)) ||
 			(row.role !== "admin" &&
 				row.role !== "manager" &&
 				row.role !== "employee")
@@ -170,6 +171,7 @@ function decodeEmployees(rows: unknown[]): EligibleManagerEmployee[] {
 			organizationId: row.organizationId,
 			isActive: row.isActive,
 			role: row.role,
+			teamId: row.teamId ?? null,
 		};
 	});
 }
@@ -291,7 +293,8 @@ export function createDatabaseStageActivationResolver(
 								'isActive', employee.is_active AND NOT employee_departure_denies_access(
 									employee.organization_id, employee.id, now()
 								),
-								'role', employee.role
+								'role', employee.role,
+								'teamId', employee.team_id
 							)
 							order by employee.id
 						)

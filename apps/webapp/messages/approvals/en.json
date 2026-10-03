@@ -1,5 +1,7 @@
 {
   "approvals": {
+    "timeComparison": "Time comparison",
+    "elapsedMinutes": "{minutes} min elapsed",
     "absenceApproved": "Absence request approved",
     "absenceRejected": "Absence request rejected",
     "absenceRequests": "Absence Requests",

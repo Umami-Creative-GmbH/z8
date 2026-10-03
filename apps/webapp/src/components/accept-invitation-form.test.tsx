@@ -39,8 +39,10 @@ vi.mock("@/lib/auth-client", () => ({
 }));
 
 vi.mock("@/navigation", () => ({
-	Link: ({ children, href }: { children: ReactNode; href: string }) => (
-		<a href={href}>{children}</a>
+	Link: ({ children, href, ...props }: React.ComponentProps<"a">) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
 	),
 	useRouter: () => ({ push: pushMock }),
 }));
@@ -94,6 +96,20 @@ describe("AcceptInvitationForm", () => {
 		expect(
 			screen.getByRole("link", { name: "Create account with invited email" }).getAttribute("href"),
 		).toContain("/sign-up");
+		const actions = screen.getAllByRole("link");
+		expect(actions[0].textContent).toBe("Create account with invited email");
+		expect(actions[0].className).toContain("bg-primary");
+		const registration = new URL(
+			actions[0].getAttribute("href")!,
+			"https://example.com",
+		);
+		expect(registration.searchParams.get("invitedEmail")).toBe(
+			"alex@example.com",
+		);
+		expect(registration.searchParams.get("invitationId")).toBe("invite_123");
+		expect(registration.searchParams.get("callbackUrl")).toBe(
+			"/accept-invitation/invite_123",
+		);
 	});
 
 	it("shows one clear message when the signed-in account does not match the invitation", () => {

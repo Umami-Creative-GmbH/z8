@@ -58,6 +58,28 @@ const employees = [
 ];
 
 describe("resolveEligibleManagers", () => {
+	it("routes an invited employee through their primary team before membership rows exist", () => {
+		const provisionedEmployees = employees.map((employee) => ({
+			...employee,
+			teamId: employee.id === "requester" ? "team-a" : null,
+		}));
+		expect(
+			resolvePrimaryEligibleManager({
+				organizationId: "org-1",
+				requesterEmployeeId: "requester",
+				employees: provisionedEmployees,
+				managerLinks: [],
+				teamMemberships: [],
+				teams: [
+					{
+						id: "team-a",
+						organizationId: "org-1",
+						primaryManagerId: "team-manager-a",
+					},
+				],
+			}),
+		).toMatchObject({ ok: true, source: "team", managerId: "team-manager-a" });
+	});
 	it("uses active direct managers before team managers", () => {
 		expect(
 			resolveEligibleManagers({
@@ -76,6 +98,32 @@ describe("resolveEligibleManagers", () => {
 			}),
 		).toEqual({ ok: true, source: "direct", managerIds: ["direct-b"] });
 	});
+
+	it.each([
+		["another organization's team", "org-2", "team-manager-a"],
+		["another organization's manager", "org-1", "other-org-manager"],
+		["an inactive manager", "org-1", "inactive-manager"],
+		["an employee without manager permission", "org-1", "employee-role"],
+	] as const)(
+		"does not route the invited primary team through %s",
+		(_label, organizationId, managerId) => {
+			expect(
+				resolveEligibleManagers({
+					organizationId: "org-1",
+					requesterEmployeeId: "requester",
+					employees: employees.map((row) => ({
+						...row,
+						teamId: row.id === "requester" ? "team-a" : null,
+					})),
+					managerLinks: [],
+					teamMemberships: [],
+					teams: [
+						{ id: "team-a", organizationId, primaryManagerId: managerId },
+					],
+				}),
+			).toMatchObject({ ok: false });
+		},
+	);
 
 	it("falls back to primary managers for every team membership", () => {
 		expect(

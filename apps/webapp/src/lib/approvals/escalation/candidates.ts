@@ -32,6 +32,7 @@ export async function loadEscalationCandidateFacts(
 				organizationId: employee.organizationId,
 				isActive: employee.isActive,
 				role: employee.role,
+				teamId: employee.teamId,
 				userId: employee.userId,
 			})
 			.from(employee)

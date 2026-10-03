@@ -168,6 +168,24 @@ function expectInvalidStageResolver(promise: Promise<unknown>) {
 }
 
 describe("createDatabaseStageActivationResolver", () => {
+	it("resolves the invitation's primary team without a membership row", async () => {
+		const rows = directoryRows.map((group) => [...group]);
+		rows[0] = rows[0].map((row) =>
+			(row as { id: string }).id === requesterId ? { ...(row as object), teamId: "team-1" } : row,
+		);
+		rows[1] = [];
+		rows[2] = [];
+		rows[3] = [{ id: "team-1", organizationId: "org-1", primaryManagerId: managerAId }];
+		const fake = database([directoryEnvelope(rows)]);
+		await expect(createDatabaseStageActivationResolver().resolve(
+			activationInput({ dbService: fake.dbService }),
+		)).resolves.toMatchObject({
+			assignments: [{ approverEmployeeId: managerAId, metadata: {} }],
+		});
+		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
+		expect(rendered.sql).toMatch(/'role', employee\.role,\s*'teamId', employee\.team_id/);
+	});
+
 	it("resolves a sequential time-correction stage from the real adapter routing contract", async () => {
 		const correctionWorkflow = workflow({
 			workflowType: "time_correction",

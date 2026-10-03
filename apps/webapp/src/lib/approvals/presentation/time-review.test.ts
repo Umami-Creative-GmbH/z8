@@ -232,6 +232,18 @@ describe("buildTimeReviewSections", () => {
 			decisions: [intermediate, final],
 			categoryNames: { "cat-old": "Consulting" },
 		});
+		expect(reviewed.sections).toContainEqual({
+			type: "time_comparison",
+			action: "edit",
+			original: {
+				start: { at: "2026-10-05T06:00:00Z", utcOffsetMinutes: 120 },
+				end: { at: "2026-10-05T14:00:00Z", utcOffsetMinutes: 120 },
+			},
+			requested: {
+				start: { at: "2026-10-05T06:00:00Z", utcOffsetMinutes: 120 },
+				end: { at: "2026-10-05T15:00:00Z", utcOffsetMinutes: 60 },
+			},
+		});
 		expect(rows(reviewed.sections, "Requested correction")).toEqual([
 			["Employee", "Avery Requester"],
 			["Request", "Change times"],
