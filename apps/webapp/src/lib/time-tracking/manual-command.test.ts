@@ -26,6 +26,29 @@ const command = {
 };
 
 describe("parseManualTimeEntryCommand", () => {
+	it.each(["office", "home", "remote", "other"])(
+		"preserves the selected %s work location",
+		(workLocationType) => {
+			const submitted = { ...command, workLocationType };
+			expect(parseManualTimeEntryCommand(submitted)).toEqual({
+				ok: true,
+				command: submitted,
+			});
+		},
+	);
+
+	it.each(["field", "spaceship", "", null, undefined, 7])(
+		"rejects invalid work location %s",
+		(workLocationType) => {
+			expect(
+				parseManualTimeEntryCommand({ ...command, workLocationType }),
+			).toEqual({
+				ok: false,
+				rejection: { reason: "invalid_command", field: "workLocationType" },
+			});
+		},
+	);
+
 	it("accepts a complete version-2 command unchanged", () => {
 		expect(parseManualTimeEntryCommand(structuredClone(command))).toEqual({
 			ok: true,

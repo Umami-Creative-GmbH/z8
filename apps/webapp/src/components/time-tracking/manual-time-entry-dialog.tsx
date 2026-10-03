@@ -24,6 +24,7 @@ import {
 	type ManualTimeEntryResult,
 } from "@/app/[locale]/(app)/time-tracking/actions/types";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
+import { WorkLocationSelector } from "@/components/time-tracking/clock-in-out-widget-parts";
 import {
 	canDiscardManualRecovery,
 	frozenManualCommand,
@@ -87,6 +88,7 @@ import {
 	formatTimeInZone,
 	getTimezoneAbbreviation,
 } from "@/lib/time-tracking/timezone-utils";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { useRouter } from "@/navigation";
 
 interface Props {
@@ -111,6 +113,7 @@ interface FormValues {
 	reason: string;
 	projectId: string | undefined;
 	workCategoryId: string | undefined;
+	workLocationType: WorkLocationType;
 	/** Version-2 commands: the chosen occurrence of a repeated wall-clock time. */
 	clockInOccurrence: ManualEndpointOccurrence | undefined;
 	clockOutOccurrence: ManualEndpointOccurrence | undefined;
@@ -317,6 +320,7 @@ function buildManualCommand(input: {
 		reason: value.reason,
 		projectId: value.projectId ?? null,
 		workCategoryId: value.workCategoryId ?? null,
+		workLocationType: value.workLocationType,
 	};
 	const interval = interpretManualInterval({
 		command,
@@ -389,6 +393,7 @@ function getDefaultValues(
 		reason: "",
 		projectId: undefined,
 		workCategoryId: undefined,
+		workLocationType: "office",
 		clockInOccurrence: undefined,
 		clockOutOccurrence: undefined,
 	};
@@ -1154,6 +1159,24 @@ function ManualEntryFormContent({
 						)}
 					</form.Field>
 
+					<form.Field name="workLocationType">
+						{(field) => (
+							<fieldset
+								className="@container/widget grid gap-2"
+								disabled={!isContextReady || isTimezoneContinuationPending}
+							>
+								<legend className="mb-2 text-sm font-medium">
+									{t("timeTracking.workLocation", "Work location")}
+								</legend>
+								<WorkLocationSelector
+									value={field.state.value}
+									onChange={field.handleChange}
+									t={t}
+								/>
+							</fieldset>
+						)}
+					</form.Field>
+
 					<form.Field name="projectId">
 						{(field) => (
 							<ProjectSelectorView
@@ -1482,6 +1505,10 @@ function ConnectedManualRecoveryPanel({
 		form.setFieldValue("reason", command.reason);
 		form.setFieldValue("projectId", command.projectId ?? undefined);
 		form.setFieldValue("workCategoryId", command.workCategoryId ?? undefined);
+		form.setFieldValue(
+			"workLocationType",
+			command.workLocationType ?? "office",
+		);
 		recovery.discard(record);
 	}
 
@@ -1715,6 +1742,7 @@ export function ManualTimeEntryDialog({
 				browserTimezone,
 				projectId: value.projectId,
 				workCategoryId: value.workCategoryId,
+				workLocationType: value.workLocationType,
 			});
 		}
 

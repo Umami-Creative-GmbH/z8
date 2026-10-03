@@ -12,11 +12,11 @@ import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/tempora
 import { ValidationError } from "@/lib/effect/errors";
 import type { BillingSuspensionReason } from "@/lib/effect/services/billing/billing-access";
 import { readBillingAccessInTransaction } from "@/lib/effect/services/billing/billing-configuration";
+import { reconcileImmediateSurcharges } from "@/lib/time-tracking/clock-out-effects";
 import {
 	CompletedWorkCollisionError,
 	CompletedWorkIntegrityError,
 } from "@/lib/time-tracking/close-active-work";
-import { reconcileImmediateSurcharges } from "@/lib/time-tracking/clock-out-effects";
 import {
 	type ManualTimeEntryCommand,
 	parseManualTimeEntryCommand,
@@ -25,6 +25,7 @@ import {
 	manualSubmissionIdentity,
 	withManualWorkTransaction,
 } from "@/lib/time-tracking/manual-work-transaction";
+import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
 import {
 	type ManualWorkRejection,
 	type ManualWorkResult,
@@ -37,7 +38,6 @@ import {
 	sendManualEntryApprovalNotifications,
 	sendManualEntryApprovedNotification,
 } from "./approvals";
-import { createOrdinaryApprovalRuntime } from "@/lib/time-tracking/ordinary-approval-runtime";
 import { MANUAL_ENTRY_TARGET_AUTH_ERROR, resolveManualEntryTarget } from "./manual-entry-target";
 import type { ManualActor, ManualPreparationRejection } from "./manual-preparation";
 import { prepareManualWork } from "./manual-preparation";
@@ -140,6 +140,7 @@ export async function submitManualTimeEntryCommand(input: {
 						reason: prepared.reason,
 						projectId: prepared.projectId,
 						workCategoryId: prepared.workCategoryId,
+						workLocationType: prepared.workLocationType,
 						daysBack: prepared.daysBack,
 						policy: prepared.policy,
 						approval: prepared.approval,

@@ -48,7 +48,7 @@ import {
 	resolveTimeEntryTimezoneCapture,
 } from "@/lib/time-tracking/timezone-capture";
 import { validateTimeEntryRange } from "@/lib/time-tracking/validation";
-import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import { isWorkLocationType, type WorkLocationType } from "@/lib/time-tracking/work-location";
 import { APPEND_REVIEW_REQUIRED_CODE } from "@/lib/time-tracking/time-clock-client";
 import {
 	approvalDbServiceForTransaction,
@@ -140,6 +140,7 @@ type ManualSubmissionRequestEvidence = {
 	browserTimezone: string | null;
 	projectId: string | null;
 	workCategoryId: string | null;
+	workLocationType?: WorkLocationType;
 };
 
 type ManualSubmissionResultEvidence = {
@@ -161,6 +162,7 @@ function manualRequestEvidence(
 		browserTimezone: data.browserTimezone ?? null,
 		projectId: data.projectId ?? null,
 		workCategoryId: data.workCategoryId ?? null,
+		...(data.workLocationType !== undefined ? { workLocationType: data.workLocationType } : {}),
 	};
 }
 
@@ -215,6 +217,7 @@ function parseManualSubmissionMetadata(input: {
 		"browserTimezone",
 		"projectId",
 		"workCategoryId",
+		...(input.request.workLocationType !== undefined ? ["workLocationType"] : []),
 	]);
 	for (const [key, expected] of Object.entries(input.request)) {
 		if (request[key] !== expected) throw new Error("Submission collision");
@@ -299,6 +302,7 @@ async function findManualSubmissionEvidence(input: {
 	if (
 		period.projectId !== input.request.projectId ||
 		period.workCategoryId !== input.request.workCategoryId ||
+		(period.workLocationType ?? null) !== (input.request.workLocationType ?? null) ||
 		period.clockIn?.notes !== `Manual entry: ${input.request.reason}` ||
 		period.clockOut?.notes !== input.request.reason ||
 		(marker !== null &&
@@ -974,6 +978,9 @@ export async function createManualTimeEntry(
 		return targetResolution;
 	}
 	const { targetEmployee, isOwnEntry } = targetResolution;
+	if (data.workLocationType !== undefined && !isWorkLocationType(data.workLocationType)) {
+		return { success: false, error: "Invalid work location type" };
+	}
 	const requestEvidence = manualRequestEvidence(data);
 	try {
 		const runtime = createOrdinaryApprovalRuntime();
@@ -1271,6 +1278,7 @@ export async function createManualTimeEntry(
 						approvalState: requiresApproval ? "pending" : "approved",
 						createdBy: session.user.id,
 						workCategoryId: data.workCategoryId || null,
+						workLocationType: data.workLocationType ?? null,
 						projectId: data.projectId || null,
 						computationMetadata: manualSubmissionMetadata({
 							submissionId,
@@ -1294,6 +1302,7 @@ export async function createManualTimeEntry(
 				durationMinutes,
 				projectId: data.projectId || null,
 				workCategoryId: data.workCategoryId || null,
+				workLocationType: data.workLocationType ?? null,
 				canonicalRecordId: canonicalRecord.id,
 				approvalStatus: requiresApproval ? "pending" : "approved",
 				pendingChanges: requiresApproval
