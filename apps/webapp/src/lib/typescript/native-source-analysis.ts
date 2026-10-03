@@ -50,7 +50,7 @@ type SynchronousCallback<T> = ((context: NativeSourceContext) => T) &
 
 let runtime: NativeRuntime | undefined;
 
-function normalizeFileName(fileName: string): string {
+export function normalizeNativeSourceFileName(fileName: string): string {
 	const segments: string[] = [];
 	for (const segment of fileName.replaceAll("\\", "/").split("/")) {
 		if (!segment || segment === ".") continue;
@@ -236,11 +236,11 @@ export function withNativeProgram<T>(
 		throw new Error(CALLBACK_SCOPE_ERROR);
 	}
 
-	const normalizedEntryFileName = normalizeFileName(entryFileName);
+	const normalizedEntryFileName = normalizeNativeSourceFileName(entryFileName);
 	const normalizedSources = new Map<string, string>();
 	const originalFileNames = new Map<string, string>();
 	for (const [fileName, source] of sources) {
-		const normalizedFileName = normalizeFileName(fileName);
+		const normalizedFileName = normalizeNativeSourceFileName(fileName);
 		const originalFileName = originalFileNames.get(normalizedFileName);
 		if (originalFileName !== undefined && originalFileName !== fileName) {
 			throw new Error(

@@ -56,7 +56,8 @@ describe("tenant-owned API mutations", () => {
 					}
 
 					for (const file of files) {
-						const normalizedPath = file.replaceAll("\\", "/");
+						const normalizedPath =
+							nativeSourceAnalysis.normalizeNativeSourceFileName(file);
 						const sourceFile = program.getSourceFile(normalizedPath);
 						if (!sourceFile) {
 							throw new Error(

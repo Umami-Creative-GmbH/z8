@@ -5,6 +5,7 @@ import type {
 } from "typescript/unstable/sync";
 import {
 	type NativeSourceContext,
+	normalizeNativeSourceFileName,
 	withNativeProgram,
 	withNativeSource,
 } from "@/lib/typescript/native-source-analysis";
@@ -2809,7 +2810,9 @@ export function analyzeApprovalWriteMutationSources(
 					diagnosticsByFileName.set(diagnostic.fileName, diagnostics);
 				}
 				for (const [fileName, input] of uniqueSourceInputs) {
-					const sourceFile = program.getSourceFile(fileName);
+					const sourceFile = program.getSourceFile(
+						normalizeNativeSourceFileName(fileName),
+					);
 					if (!sourceFile) {
 						results.push({
 							error: `Native source could not be retrieved: ${fileName}`,

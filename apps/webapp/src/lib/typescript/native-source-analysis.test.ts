@@ -9,6 +9,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import {
 	closeNativeSourceAnalysis,
 	type NativeSourceContext,
+	normalizeNativeSourceFileName,
 	withNativeProgram,
 	withNativeSource,
 } from "./native-source-analysis";
@@ -180,6 +181,88 @@ describe("native source analysis", () => {
 
 		expect(codes).toContain(1160);
 	});
+
+	it.each([
+		[
+			"Windows backslashes",
+			"C:\\repo\\entry.ts",
+			"C:\\repo\\nested\\..\\secondary.ts",
+			"C:\\repo\\nested\\..\\broken.ts",
+			"/C:/repo/secondary.ts",
+			"/C:/repo/broken.ts",
+		],
+		[
+			"Windows forward slashes",
+			"C:/repo/entry.ts",
+			"C:/repo/nested/../secondary.ts",
+			"C:/repo/nested/../broken.ts",
+			"/C:/repo/secondary.ts",
+			"/C:/repo/broken.ts",
+		],
+		[
+			"relative dot segments",
+			"./repo/entry.ts",
+			"./repo/nested/../secondary.ts",
+			"./repo/nested/../broken.ts",
+			"/repo/secondary.ts",
+			"/repo/broken.ts",
+		],
+		[
+			"POSIX absolute paths",
+			"/repo/entry.ts",
+			"/repo/secondary.ts",
+			"/repo/broken.ts",
+			"/repo/secondary.ts",
+			"/repo/broken.ts",
+		],
+	] as const)(
+		"retrieves secondary batch sources with %s and retains their diagnostics",
+		(_name, entry, secondary, broken, expectedSecondary, expectedBroken) => {
+			const result = withNativeProgram(
+				new Map([
+					[entry, "const entryOnly = true;"],
+					[secondary, "const secondaryAnswer = 42;"],
+					[broken, "const broken = `unterminated"],
+				]),
+				entry,
+				({ program }) => {
+					const secondarySource = program.getSourceFile(
+						normalizeNativeSourceFileName(secondary),
+					);
+					const brokenSource = program.getSourceFile(
+						normalizeNativeSourceFileName(broken),
+					);
+					if (!secondarySource || !brokenSource) {
+						throw new Error("Expected both secondary batch sources");
+					}
+					const identifiers: string[] = [];
+					secondarySource.forEachChild(function visit(node) {
+						if (isIdentifier(node)) identifiers.push(node.text);
+						node.forEachChild(visit);
+					});
+					return {
+						fileName: secondarySource.fileName,
+						text: secondarySource.text,
+						identifiers,
+						brokenFileName: brokenSource.fileName,
+						brokenText: brokenSource.text,
+						codes: program
+							.getSyntacticDiagnostics(brokenSource.fileName)
+							.map((diagnostic) => diagnostic.code),
+					};
+				},
+			);
+
+			expect(result).toMatchObject({
+				fileName: expectedSecondary,
+				text: "const secondaryAnswer = 42;",
+				identifiers: ["secondaryAnswer"],
+				brokenFileName: expectedBroken,
+				brokenText: "const broken = `unterminated",
+			});
+			expect(result.codes).toContain(1160);
+		},
+	);
 
 	it("throws a normalized path-bearing error when the entry is absent", () => {
 		expect(() =>
