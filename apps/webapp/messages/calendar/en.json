@@ -159,6 +159,12 @@
       "title": "Convert to Break?"
     },
     "details": {
+      "automaticClockOut": "Automatically clocked out",
+      "automaticLimit": "Uninterrupted work limit",
+      "automaticCutoff": "Clock-out cutoff",
+      "source": "Source",
+      "system": "System",
+      "editedBy": "Edited by",
       "baseWorked": "Base worked",
       "blocksTimeEntry": "Blocks time tracking",
       "category": "Category",

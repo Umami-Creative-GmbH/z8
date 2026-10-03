@@ -57,7 +57,7 @@ export async function authorizedSubject(query: AuthorizationQuery): Promise<Empl
 		)
 		.limit(1);
 	if (!row) return null;
-	if (principal.kind === "departure") {
+	if (principal.kind === "departure" || principal.kind === "automatic_clock_out") {
 		return query.kind === "clock_out" && !subject.onBehalf ? row : null;
 	}
 	if (!subject.onBehalf) return row.userId === principal.userId ? row : null;

@@ -3,11 +3,12 @@ import {
 	render as testingLibraryRender,
 } from "@testing-library/react";
 import { FormatIcu } from "@tolgee/format-icu";
-import { Tolgee, TolgeeProvider } from "@tolgee/react";
+import { TolgeeCore, TolgeeProvider } from "@tolgee/react";
 import type { ReactElement, ReactNode } from "react";
 
 export function createTestTolgee(language = "en", translations = {}) {
-	return Tolgee()
+	// The web factory starts extension-handshake timers that outlive jsdom teardown.
+	return TolgeeCore()
 		.use(FormatIcu())
 		.init({
 			language,

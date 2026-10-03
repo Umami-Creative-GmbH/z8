@@ -2,6 +2,7 @@ import type { BreakEnforcementResult } from "@/lib/effect/services/break-enforce
 import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import type { ClosedWork } from "../clock-out-effects";
+import type { CompletingActor } from "../close-active-work";
 import type { PolicyClockOutSurchargeSnapshot } from "../policy-clock-out-surcharge-snapshot";
 import type { ClockOutResult } from "./types";
 
@@ -14,8 +15,10 @@ const logger = createLogger("Clocking:FollowUps");
 export type ClosedLiveWork = ClosedWork & {
 	organizationId: string;
 	employeeId: string;
-	/** The human who completed the work. */
+	/** Required creator provenance for follow-up writes. */
 	actorUserId: string;
+	/** Omission preserves historical human closure payloads. */
+	completingActor?: CompletingActor;
 	workPeriodId: string;
 	/** The closed period's project, whatever the command's attribution intent. */
 	projectId: string | null;
@@ -195,7 +198,9 @@ export function durableFollowUps(
 }
 
 /** Records every closure it is asked to follow up, for tests. */
-export function recordingFollowUps(): ClockFollowUps & { readonly closures: ClosedLiveWork[] } {
+export function recordingFollowUps(): ClockFollowUps & {
+	readonly closures: ClosedLiveWork[];
+} {
 	const closures: ClosedLiveWork[] = [];
 	return {
 		closures,

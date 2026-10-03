@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
+import { installedCli } from "@/test/installed-cli";
 import * as rolloutScript from "../../../../scripts/approval-workflow-rollout";
 import {
 	type ApprovalRolloutDatabase,
@@ -39,7 +40,7 @@ function cli(args: readonly string[]) {
 	]) {
 		delete environment[name];
 	}
-	return spawnSync("pnpm", ["exec", "tsx", scriptPath, ...args], {
+	return spawnSync(process.execPath, [installedCli("tsx"), scriptPath, ...args], {
 		cwd: webappRoot,
 		env: environment,
 		encoding: "utf8",
@@ -72,8 +73,8 @@ describe("approval workflow rollout CLI", () => {
 
 	it("can be imported through tsx without executing main", () => {
 		const result = spawnSync(
-			"pnpm",
-			["exec", "tsx", "--eval", `import('./${scriptPath}')`],
+			process.execPath,
+			[installedCli("tsx"), "--eval", `import('./${scriptPath}')`],
 			{ cwd: webappRoot, encoding: "utf8", timeout: 12_000 },
 		);
 		expectChildCompleted(result);

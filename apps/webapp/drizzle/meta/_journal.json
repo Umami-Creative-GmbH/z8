@@ -778,6 +778,13 @@
       "when": 1793808000000,
       "tag": "0110_departure_clock_out_writer",
       "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1793894400000,
+      "tag": "0111_automatic_clock_out",
+      "breakpoints": true
     }
   ]
 }

@@ -145,6 +145,7 @@ append admission, and commits a receipt where its operation defines one.
 | W22 absence neighbors | Not work-graph writers | — |
 | W23 package verification | Consumer only | — |
 | **W24 departure clock-out** (new) | Participates (#485): closes through the Clocking module, enlisted in the departure work transaction; adopted organizations close through the append writer (`employee_departure` receipts) | departure and Clocking suites |
+| **W25 automatic clock-out** | Participates (#568): Clocking closes only the period and cutoff bound to its work transaction decision. Append receipts use `automatic_clock_out` with system actor evidence; legacy keeps its ordinary writer and automatic source evidence. Required creator FKs retain the original clock-in creator. Release floor: `0111_automatic_clock_out`. | Clocking automatic-clock-out suite in both admissions |
 
 Only these writers of `time_entry`/`work_period` choose between legacy and adopted
 paths: the legacy admin edit, `addLegacyBreak`, `splitLegacyWorkPeriod`, the legacy

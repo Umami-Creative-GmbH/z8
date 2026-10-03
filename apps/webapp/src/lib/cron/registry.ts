@@ -12,8 +12,8 @@
  */
 
 import type { JobsOptions } from "bullmq";
-import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalDeliveryJobResult } from "@/lib/approvals/delivery/scheduled-job";
+import type { LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/scheduled-job";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
@@ -296,6 +296,16 @@ export const CRON_JOBS = {
 				throw new SCIMMaintenanceDegradedError(result);
 			}
 			return result;
+		},
+		defaultJobOptions: { attempts: 1, priority: 8 },
+	},
+
+	"cron:auto-clock-out": {
+		schedule: "*/5 * * * *",
+		description: "Close overdue uninterrupted work and recover durable automatic clock-out tasks",
+		processor: async () => {
+			const { runAutoClockOutMaintenance } = await import("@/lib/jobs/auto-clock-out");
+			return runAutoClockOutMaintenance();
 		},
 		defaultJobOptions: { attempts: 1, priority: 8 },
 	},

@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "title": "Automatic clock-out",
+      "description": "Set the maximum duration of uninterrupted live work. Employees are automatically clocked out at this limit.",
+      "enabled": "Automatic clock-out",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "help": "A recorded break or new clock-in resets the allowance. Changes apply to work already in progress. Checks run every five minutes; clock-out is recorded at the limit, even if the check runs later. Employees always receive an inbox notification.",
+      "adminOnly": "Only organization admins and owners can change these settings.",
+      "invalidDuration": "Enter a valid duration: whole hours and 0–59 minutes, totaling at least one minute.",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saved": "Automatic clock-out settings saved",
+      "saveFailed": "Failed to update automatic clock-out settings"
+    },
     "create": "Create Organization",
     "createDialog": {
       "description": "Set up your organization to get started",

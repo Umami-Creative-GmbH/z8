@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { act, render, screen } from "@testing-library/react";
 import { FormatIcu } from "@tolgee/format-icu";
-import { Tolgee, TolgeeProvider } from "@tolgee/react";
+import { TolgeeCore, TolgeeProvider } from "@tolgee/react";
 import { describe, expect, it, vi } from "vitest";
 import { createTestTolgee } from "@/test/render-with-translations";
 import extractor from "../../tolgee-extractor.mjs";
@@ -13,7 +13,7 @@ import { LoadingRegion } from "./ui/loading-region";
 
 describe("remaining UI translations", () => {
 	it("updates an accessible loading label when the language changes", async () => {
-		const tolgee = Tolgee()
+		const tolgee = TolgeeCore()
 			.use(FormatIcu())
 			.init({
 				language: "en",

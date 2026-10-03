@@ -31,6 +31,7 @@ interface TeamsNotificationParams {
  */
 export async function isTeamsAvailable(
 	organizationId: string,
+	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	try {
 		// Dynamically import to avoid circular dependencies
@@ -44,8 +45,9 @@ export async function isTeamsAvailable(
 		}
 
 		// Organization must have Teams enabled
-		return await isTeamsEnabledForOrganization(organizationId);
+		return await isTeamsEnabledForOrganization(organizationId, options);
 	} catch (error) {
+		if (options.throwOnError) throw error;
 		logger.debug({ error, organizationId }, "Teams availability check failed");
 		return false;
 	}
@@ -59,7 +61,8 @@ export async function isTeamsAvailable(
  */
 export async function sendTeamsNotification(
 	params: TeamsNotificationParams,
-): Promise<void> {
+	options: { durable?: boolean } = {},
+): Promise<undefined | "unavailable"> {
 	try {
 		// Dynamically import Teams module to avoid circular dependencies
 		const {
@@ -75,7 +78,7 @@ export async function sendTeamsNotification(
 			params.type === "approval_request_submitted" &&
 			(await isApprovalNotificationDeliveredByOwner({ ...params, provider: "teams" }))
 		) {
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// Handle approval-related notifications specially
@@ -108,11 +111,11 @@ export async function sendTeamsNotification(
 						emp.id,
 						params.organizationId,
 					);
-					return;
+					return options.durable ? "unavailable" : undefined;
 				}
 			}
 			// Missing approval/recipient evidence must not fall through to raw details.
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// For other notifications, send a simple message
@@ -126,7 +129,7 @@ export async function sendTeamsNotification(
 				{ userId: params.userId, organizationId: params.organizationId },
 				"No Teams conversation found for user",
 			);
-			return;
+			return options.durable ? "unavailable" : undefined;
 		}
 
 		// Build message text
@@ -135,16 +138,18 @@ export async function sendTeamsNotification(
 			text += `\n\n[View in Z8](${params.actionUrl})`;
 		}
 
-		await sendProactiveMessage(conversationRef, {
+		const acknowledgement = await sendProactiveMessage(conversationRef, {
 			type: "message",
 			text,
 		});
+		if (options.durable && !acknowledgement) throw new Error("teams_delivery_unacknowledged");
 
 		logger.debug(
 			{ userId: params.userId, type: params.type },
 			"Teams notification sent",
 		);
 	} catch (error) {
+		if (options.durable) throw error;
 		logger.error({ error, params }, "Failed to send Teams notification");
 		throw error;
 	}

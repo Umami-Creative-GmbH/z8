@@ -72,6 +72,64 @@ const sendSystemEmail = async () => {
 };
 
 describe("email service system transport selection", () => {
+	const durableParams = {
+		to: "alex@example.com",
+		subject: "Automatic clock-out",
+		html: "<p>Ended</p>",
+		organizationId: "org_123",
+	};
+	const smtpConfig = {
+		isActive: true,
+		transportType: "smtp",
+		smtpHost: "smtp.example.com",
+		smtpPort: 587,
+		smtpUsername: "user",
+		fromEmail: "team@example.com",
+	};
+	it("does not report a planned SMTP email as sent after its transport changes to console", async () => {
+		dbFindFirstMock.mockResolvedValue(smtpConfig);
+		getOrgSecretMock.mockResolvedValue("password");
+		const { getTransportName, sendEmail } = await import("./email-service");
+		await expect(getTransportName("org_123", { throwOnError: true })).resolves.toBe(
+			"SMTP (Organization)",
+		);
+		dbFindFirstMock.mockResolvedValue(null);
+		await expect(sendEmail(durableParams, { durable: true })).resolves.toEqual({
+			success: false,
+			unavailable: true,
+		});
+		await expect(sendEmail(durableParams)).resolves.toMatchObject({
+			success: true,
+			messageId: "console-message",
+		});
+	});
+	it("retries strict transport lookup failure during planning and sending, then sends after recovery", async () => {
+		dbFindFirstMock.mockRejectedValue(new Error("lookup offline"));
+		const { getTransportName, sendEmail } = await import("./email-service");
+		await expect(getTransportName("org_123", { throwOnError: true })).rejects.toThrow(
+			"lookup offline",
+		);
+		await expect(sendEmail(durableParams, { durable: true })).rejects.toThrow("lookup offline");
+		await expect(sendEmail(durableParams)).resolves.toMatchObject({
+			success: true,
+			messageId: "console-message",
+		});
+		dbFindFirstMock.mockResolvedValue(smtpConfig);
+		getOrgSecretMock.mockResolvedValue("password");
+		await expect(sendEmail(durableParams, { durable: true })).resolves.toMatchObject({
+			success: true,
+			messageId: "org-smtp-message",
+		});
+	});
+	it("does not silently fall back when an active durable transport secret cannot be resolved", async () => {
+		dbFindFirstMock.mockResolvedValue(smtpConfig);
+		const { sendEmail } = await import("./email-service");
+		await expect(sendEmail(durableParams, { durable: true })).rejects.toThrow();
+		await expect(sendEmail(durableParams)).resolves.toMatchObject({
+			success: true,
+			messageId: "console-message",
+		});
+	});
 	beforeEach(() => {
 		vi.resetModules();
 		vi.unstubAllEnvs();

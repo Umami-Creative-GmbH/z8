@@ -250,6 +250,16 @@ async function readDurable(
 	const [row] = await select(
 		transaction,
 		sql`select
+			(select count(*)::int from automatic_clock_out_execution
+				where organization_id = ${organizationId}) as automatic_executions,
+			(select count(*)::int from automatic_clock_out_task
+				where organization_id = ${organizationId}) as automatic_tasks,
+			(select count(*)::int from automatic_clock_out_task
+				where organization_id = ${organizationId} and status <> 'completed') as automatic_unfinished_tasks,
+			(select count(*)::int from organization_time_tracking_settings
+				where organization_id = ${organizationId}) as automatic_settings,
+			(select count(*)::int from organization_time_tracking_settings
+				where organization_id = ${organizationId} and auto_clock_out_enabled) as automatic_enabled_settings,
 			(select count(*)::int from work_balance_rebuild_intent
 				where organization_id = ${organizationId} and reason = 'organization_timezone') as organization_rebuilds,
 			(select count(*)::int from work_balance_rebuild_intent
@@ -275,6 +285,13 @@ async function readDurable(
 				where organization_id = ${organizationId}) as repair_control`,
 	);
 	return {
+		automaticClockOut: {
+			executions: Number(row?.automatic_executions ?? 0),
+			tasks: Number(row?.automatic_tasks ?? 0),
+			unfinishedTasks: Number(row?.automatic_unfinished_tasks ?? 0),
+			settings: Number(row?.automatic_settings ?? 0),
+			enabledSettings: Number(row?.automatic_enabled_settings ?? 0),
+		},
 		rebuildIntents: {
 			organization: Number(row?.organization_rebuilds ?? 0),
 			user: Number(row?.user_rebuilds ?? 0),

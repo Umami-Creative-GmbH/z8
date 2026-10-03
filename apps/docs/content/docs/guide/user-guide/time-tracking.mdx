@@ -66,6 +66,20 @@ On mobile, the home screen is optimized for starting and ending work quickly:
 
 ---
 
+## Automatic Clock-Out
+
+Organizations have an automatic clock-out limit enabled by default at **12 hours** of uninterrupted live work. An approved organization owner or admin can change the hours and minutes, or disable the limit, in **Settings → Organizations → Automatic clock-out**. The limit applies to everyone in that organization and continues to work when your browser is closed.
+
+A recorded break followed by resumed work, or a new clock-in, starts a fresh allowance. Automatic break deductions made after clock-out do not reset this limit. This measures uninterrupted work, not your total hours for the day.
+
+Z8 checks every five minutes. Your displayed status can therefore update a few minutes after the limit, but the recorded clock-out is exactly **the start of that uninterrupted period plus the configured limit**. An outage or a busy recovery queue can delay observation further; it does not extend the recorded allowance. Work left running overnight is also checked.
+
+Saved settings apply to work already in progress. Lowering the limit can produce a clock-out timestamp earlier than the time you save the setting. Disabling the limit stops new automatic closures; notifications and follow-up processing for already completed closures still finish.
+
+You always receive an inbox notification with the recorded cutoff and a link to the affected calendar day. Optional email, push, and connected chat channels follow your notification preferences and available organization integrations. Calendar details identify the clock-out as **Automatic clock-out**, performed by the system.
+
+If the recorded time needs correcting, use the usual time correction process below. Your organization's permissions and approval rules still apply. Corrections keep their own human audit trail; changing the clock-out endpoint replaces its automatic label, while changing only the start leaves an unchanged automatic clock-out identifiable.
+
 ## Reminders and Timeline
 
 The time tracking page may show reminder cards for breaks, hydration, or other organization-configured prompts. Treat these as operational guidance: they help you keep records accurate, but they do not replace your organization's time policy.

@@ -17,6 +17,7 @@ export * from "./audit";
 // Audit export (signed packages, WORM retention)
 export * from "./audit-export";
 export * from "./audit-pack";
+export * from "./automatic-clock-out";
 // Billing & subscriptions (Stripe integration)
 export * from "./billing";
 export * from "./billing-seat-delivery";
@@ -60,6 +61,7 @@ export * from "./notification";
 // Domain tables
 export * from "./organization";
 export * from "./organization-notification-settings";
+export * from "./organization-time-tracking-settings";
 // Payroll export
 export * from "./payroll-access";
 export * from "./payroll-blocker";

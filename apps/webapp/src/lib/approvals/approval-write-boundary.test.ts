@@ -4497,7 +4497,7 @@ db.delete(approvalOutbox);`,
 					table: "time_entry",
 				},
 				{
-					columns: ["duration_minutes", "end_at", "start_at"],
+					columns: ["approval_state", "duration_minutes", "end_at", "start_at"],
 					functionName: "finalizeTimeCorrectionTerminalDetailedInTransaction",
 					operation: "update",
 					semantic: "ordinary_finalization",
@@ -5315,6 +5315,7 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/server/time-correction-approvals.ts": [
 				{
 					columns: [
+						"approval_status",
 						"clock_in_id",
 						"clock_out_id",
 						"duration_minutes",
@@ -5773,8 +5774,7 @@ export function renamedCreateTimeRecord() {
 	});
 
 	it("allows only an exact uncertainty-bearing source exception", () => {
-		const path =
-			"src/lib/time-tracking/time-entry-writer.ts";
+		const path = "src/lib/time-tracking/time-entry-writer.ts";
 		const capabilities = SOURCE_WRITE_EXCEPTIONS[path] as unknown as Array<
 			Record<string, unknown>
 		>;

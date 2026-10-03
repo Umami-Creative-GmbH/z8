@@ -34,6 +34,7 @@ import { Switch } from "@/components/ui/switch";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import {
+	hasMandatoryInbox,
 	NOTIFICATION_CHANNELS,
 	type NotificationChannel,
 	type NotificationType,
@@ -75,6 +76,7 @@ const NOTIFICATION_CATEGORIES = [
 			"time_correction_submitted",
 			"time_correction_approved",
 			"time_correction_rejected",
+			"automatic_clock_out",
 		] as NotificationType[],
 	},
 	{
@@ -155,6 +157,7 @@ const NOTIFICATION_CATEGORIES = [
 
 // Human-readable labels for notification types
 const TYPE_LABELS: Record<NotificationType, string> = {
+	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
 	approval_request_rejected: "Request rejected",
@@ -604,6 +607,16 @@ function NotificationSettingsView({
 									</span>
 									<div className="flex max-w-full flex-wrap items-center gap-3">
 										{visibleChannels.map((channel) => {
+											if (hasMandatoryInbox(type) && channel === "in_app") {
+												return (
+													<span key={channel} className="text-xs text-muted-foreground">
+														{t(
+															"common:notifications.preferences.mandatoryInbox",
+															"Always delivered to your inbox",
+														)}
+													</span>
+												);
+											}
 											const isEnabled = matrix[type]?.[channel] ?? true;
 											const toggleId = `${type}-${channel}`;
 											const isPending = pendingToggle === toggleId;
