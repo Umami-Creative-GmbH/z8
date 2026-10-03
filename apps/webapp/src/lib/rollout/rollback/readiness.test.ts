@@ -44,6 +44,18 @@ const ADOPTED_APPEND: RollbackSnapshot["append"] = {
 };
 
 describe("assessRollbackReadiness", () => {
+	it("pins automatic clock-out receipts to the release that understands their writer", () => {
+		const report = assessRollbackReadiness(
+			untouched({ receipts: { kinds: {}, writers: { automatic_clock_out: 1 } } }),
+		);
+		expect(report.floor.release).toBe("0111_automatic_clock_out");
+		expect(report.floor.pins).toContainEqual({
+			migration: "0111_automatic_clock_out",
+			subject: "receipt writer automatic_clock_out",
+			rows: 1,
+			limits: "release",
+		});
+	});
 	it("reports an organization that never adopted anything as ready with no floor", () => {
 		const report = assessRollbackReadiness(untouched());
 

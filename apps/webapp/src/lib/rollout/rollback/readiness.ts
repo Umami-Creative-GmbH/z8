@@ -241,6 +241,7 @@ const RECEIPT_WRITER_MIGRATIONS: Record<CompletedWorkWriter, string> = {
 	historical_repair_proposal: "0105_historical_work_proposals",
 	automatic_break_enforcement: "0106_automatic_break_adjustment",
 	employee_departure: "0110_departure_clock_out_writer",
+	automatic_clock_out: "0111_automatic_clock_out",
 };
 
 const PROVIDER_MIGRATIONS: Record<ApprovalDeliveryProvider, string> = {

@@ -55,6 +55,7 @@ export const NOTIFICATION_TYPES = [
 	"approval_escalation_attention",
 	// Employee offboarding follow-up review
 	"employee_offboarding_review",
+	"automatic_clock_out",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

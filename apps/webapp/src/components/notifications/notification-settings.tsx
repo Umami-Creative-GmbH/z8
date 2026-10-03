@@ -155,6 +155,7 @@ const NOTIFICATION_CATEGORIES = [
 
 // Human-readable labels for notification types
 const TYPE_LABELS: Record<NotificationType, string> = {
+	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
 	approval_request_approved: "Request approved",
 	approval_request_rejected: "Request rejected",
