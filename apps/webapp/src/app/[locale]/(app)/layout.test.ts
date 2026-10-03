@@ -21,15 +21,6 @@ describe("app layout locale preference", () => {
 });
 
 describe("app layout user preferences", () => {
-	it("passes the saved user timezone to the client preference provider", () => {
-		const source = stripComments(
-			readFileSync(join(APP_ROUTE_ROOT, "app-layout-content.tsx"), "utf8"),
-		);
-
-		expect(source).toContain("getUserTimezone(session.user.id)");
-		expect(source).toContain("timezone={timezone}");
-	});
-
 	it("passes server-loaded organization settings to the client provider", () => {
 		const source = stripComments(
 			readFileSync(join(APP_ROUTE_ROOT, "app-layout-content.tsx"), "utf8"),
@@ -79,7 +70,7 @@ describe("authenticated app request gate", () => {
 		);
 
 		expect(source).toContain("await Promise.all([params, headers()])");
-		expect(source).toContain("const session = await getRequestSession();");
+		expect(source).toContain("const session = await getRenderSession();");
 		expect(source).toMatch(
 			/`\/api\/auth\/session-expired\?locale=\$\{locale\}&callbackUrl=\$\{encodeURIComponent\(pathname\)\}`/,
 		);

@@ -7,6 +7,13 @@ import { render } from "@/test/render-with-translations";
 import OnboardingLayout from "./layout";
 import source from "./layout.tsx?raw";
 
+// Translation acquisition/lifecycle is exercised with real Tolgee in route-boundary.test.tsx.
+vi.mock("@/tolgee/route-boundary", () => ({
+	RouteTranslationBoundary: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
+}));
+
 vi.mock("next/image", () => ({
 	default: ({ alt, className }: { alt: string; className?: string }) => (
 		<img alt={alt} className={className} data-testid="onboarding-background" />
@@ -35,9 +42,12 @@ vi.mock("@/components/theme-toggle", () => ({
 
 describe("OnboardingLayout", () => {
 	it("keeps random content in an async child behind neutral shell geometry", () => {
-		const layout = OnboardingLayout({
+		const boundary = OnboardingLayout({
+			params: Promise.resolve({ locale: "en" }),
 			children: <div>private onboarding child</div>,
 		});
+		expect(boundary.props.route).toBe("/onboarding");
+		const layout = boundary.props.children;
 
 		expect(layout).not.toBeInstanceOf(Promise);
 		expect(isValidElement(layout)).toBe(true);
@@ -63,9 +73,12 @@ describe("OnboardingLayout", () => {
 	});
 
 	it("uses the auth-style full-screen glass shell", async () => {
-		const layout = OnboardingLayout({
+		const boundary = OnboardingLayout({
+			params: Promise.resolve({ locale: "en" }),
 			children: <div data-slot="card">Onboarding content</div>,
 		});
+		expect(boundary.props.route).toBe("/onboarding");
+		const layout = boundary.props.children;
 		if (!isValidElement(layout) || !isValidElement(layout.props.children)) {
 			throw new Error("Expected onboarding content boundary");
 		}

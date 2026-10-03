@@ -14,10 +14,6 @@ const mockState = vi.hoisted(() => ({
 	findUserSettings: vi.fn(),
 	getOrganizationSettings: vi.fn(),
 	getSession: vi.fn(),
-	getUserLocaleRaw: vi.fn(),
-	getUserTimeFormat: vi.fn(),
-	getUserTimezone: vi.fn(),
-	getUserWeekStartDay: vi.fn(),
 	headers: vi.fn(),
 	loggerError: vi.fn(),
 	protectedChildRender: vi.fn(),
@@ -70,9 +66,13 @@ vi.mock("@/components/organization/organization-deletion-banner", () => ({
 }));
 
 vi.mock("@/components/posthog-provider", () => ({
-	PostHogProvider: ({ children }: { children: React.ReactNode }) => (
-		<>{children}</>
-	),
+	PostHogProvider: ({
+		children,
+		helpImproveProduct,
+	}: {
+		children: React.ReactNode;
+		helpImproveProduct: boolean;
+	}) => <div data-consent={String(helpImproveProduct)}>{children}</div>,
 }));
 
 vi.mock("@/components/providers/organization-settings-provider", () => ({
@@ -84,8 +84,24 @@ vi.mock("@/components/providers/organization-settings-provider", () => ({
 }));
 
 vi.mock("@/components/providers/user-preferences-provider", () => ({
-	UserPreferencesProvider: ({ children }: { children: React.ReactNode }) => (
-		<>{children}</>
+	UserPreferencesProvider: ({
+		children,
+		weekStartDay,
+		timeFormat,
+		timezone,
+	}: {
+		children: React.ReactNode;
+		weekStartDay: string;
+		timeFormat: string;
+		timezone: string;
+	}) => (
+		<div
+			data-week-start={weekStartDay}
+			data-time-format={timeFormat}
+			data-timezone={timezone}
+		>
+			{children}
+		</div>
 	),
 }));
 
@@ -149,10 +165,6 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: mockState.getSession } },
 }));
 
-vi.mock("@/lib/bot-platform/i18n", () => ({
-	getUserLocaleRaw: mockState.getUserLocaleRaw,
-}));
-
 vi.mock("@/lib/effect/services/billing/billing-enforcement.service", () => ({
 	BillingEnforcementService: {},
 	BillingEnforcementServiceLive: {},
@@ -164,18 +176,6 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("@/lib/organization-settings", () => ({
 	getOrganizationSettings: mockState.getOrganizationSettings,
-}));
-
-vi.mock("@/lib/user-preferences/time-format-server", () => ({
-	getUserTimeFormat: mockState.getUserTimeFormat,
-}));
-
-vi.mock("@/lib/user-preferences/timezone-server", () => ({
-	getUserTimezone: mockState.getUserTimezone,
-}));
-
-vi.mock("@/lib/user-preferences/week-start-server", () => ({
-	getUserWeekStartDay: mockState.getUserWeekStartDay,
 }));
 
 vi.mock("@/proxy", () => ({
@@ -221,11 +221,11 @@ async function serverRender(pathname: string) {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	mockState.getUserLocaleRaw.mockResolvedValue(null);
-	mockState.getUserWeekStartDay.mockResolvedValue(1);
-	mockState.getUserTimeFormat.mockResolvedValue("24h");
-	mockState.getUserTimezone.mockResolvedValue("UTC");
 	mockState.findUserSettings.mockResolvedValue({ helpImproveProduct: true });
+	mockState.getSession.mockResolvedValue({
+		session: { activeOrganizationId: "organization-1" },
+		user: { id: "user-1" },
+	});
 	mockState.getOrganizationSettings.mockResolvedValue({});
 	mockState.findMember.mockResolvedValue({ role: "owner" });
 	mockState.findSubscription.mockResolvedValue(null);
@@ -236,6 +236,68 @@ beforeEach(() => {
 });
 
 describe("authenticated app layout gates", () => {
+	it("redirects a supported saved locale before checking billing", async () => {
+		mockState.findUserSettings.mockResolvedValue({ locale: "de" });
+		const { errors } = await serverRender("/en/time-tracking");
+		expect(mockState.redirect).toHaveBeenCalledWith("/de/time-tracking");
+		expect(errors).toEqual([
+			expect.objectContaining({ message: "TEST_REDIRECT:/de/time-tracking" }),
+		]);
+		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
+			"organization-1",
+			"user-1",
+		);
+	});
+
+	it.each([null, "", "invalid", "en"])(
+		"does not redirect saved locale %j",
+		async (locale) => {
+			mockState.findUserSettings.mockResolvedValue({ locale });
+			const { errors } = await serverRender("/en/time-tracking");
+			expect(errors).toEqual([]);
+			expect(mockState.redirect).not.toHaveBeenCalled();
+			expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
+			expect(mockState.findUserSettings).toHaveBeenCalledOnce();
+		},
+	);
+
+	it("passes exact saved preferences and explicit false consent to providers", async () => {
+		mockState.findUserSettings.mockResolvedValue({
+			locale: "en",
+			weekStartDay: "monday",
+			timeFormat: "12h",
+			timezone: "Europe/Berlin",
+			helpImproveProduct: false,
+		});
+		const { errors, html } = await serverRender("/en/time-tracking");
+		expect(errors).toEqual([]);
+		expect(html).toContain('data-consent="false"');
+		expect(html).toContain('data-week-start="monday"');
+		expect(html).toContain('data-time-format="12h"');
+		expect(html).toContain('data-timezone="Europe/Berlin"');
+		expect(mockState.findUserSettings).toHaveBeenCalledOnce();
+	});
+
+	it("keeps preference defaults and loads organization settings without an active organization", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: null },
+		});
+		mockState.findUserSettings.mockResolvedValue(undefined);
+		const { errors, html } = await serverRender("/en/time-tracking");
+		expect(errors).toEqual([]);
+		expect(html).toContain('data-consent="true"');
+		expect(html).toContain('data-week-start="sunday"');
+		expect(html).toContain('data-time-format="24h"');
+		expect(html).toContain('data-timezone="UTC"');
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
+			null,
+			"user-1",
+		);
+		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
+	});
+
 	it("does not invoke protected children or downstream loaders for an invalid session", async () => {
 		mockState.getSession.mockResolvedValue(null);
 
@@ -251,10 +313,6 @@ describe("authenticated app layout gates", () => {
 			}),
 		]);
 		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
-		expect(mockState.getUserLocaleRaw).not.toHaveBeenCalled();
-		expect(mockState.getUserWeekStartDay).not.toHaveBeenCalled();
-		expect(mockState.getUserTimeFormat).not.toHaveBeenCalled();
-		expect(mockState.getUserTimezone).not.toHaveBeenCalled();
 		expect(mockState.findUserSettings).not.toHaveBeenCalled();
 		expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();

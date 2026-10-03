@@ -5,6 +5,13 @@ import { Suspense, use } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 
+// Translation acquisition/lifecycle is exercised with real Tolgee in route-boundary.test.tsx.
+vi.mock("@/tolgee/route-boundary", () => ({
+	RouteTranslationBoundary: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
@@ -40,7 +47,12 @@ function PendingContent() {
 
 describe("SettingsLayout", () => {
 	it("keeps navigation and breadcrumbs outside the child content boundary", () => {
-		const layout = SettingsLayout({ children: <PendingContent /> });
+		const boundary = SettingsLayout({
+			params: Promise.resolve({ locale: "en" }),
+			children: <PendingContent />,
+		});
+		expect(boundary.props.route).toBe("/settings");
+		const layout = boundary.props.children;
 		const [navigationBoundary, main] = layout.props.children;
 		const [breadcrumbsBoundary, contentBoundary] = main.props.children;
 
@@ -57,7 +69,12 @@ describe("SettingsLayout", () => {
 	});
 
 	it("shows the content fallback without hiding breadcrumbs while children wait", () => {
-		const layout = SettingsLayout({ children: <PendingContent /> });
+		const boundary = SettingsLayout({
+			params: Promise.resolve({ locale: "en" }),
+			children: <PendingContent />,
+		});
+		expect(boundary.props.route).toBe("/settings");
+		const layout = boundary.props.children;
 		const main = layout.props.children[1];
 
 		render(main);

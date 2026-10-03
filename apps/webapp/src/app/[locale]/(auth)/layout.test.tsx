@@ -19,6 +19,13 @@ const mockState = vi.hoisted(() => ({
 	env: {},
 }));
 
+// Translation acquisition/lifecycle is exercised with real Tolgee in route-boundary.test.tsx.
+vi.mock("@/tolgee/route-boundary", () => ({
+	RouteTranslationBoundary: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
+}));
+
 vi.mock("next/headers", () => ({
 	headers: mockState.headers,
 }));
@@ -117,7 +124,12 @@ describe("AuthLayout", () => {
 	});
 
 	it("places request-dependent auth content behind Suspense", () => {
-		const layout = AuthLayout({ children: <div>Auth content</div> });
+		const boundary = AuthLayout({
+			params: Promise.resolve({ locale: "en" }),
+			children: <div>Auth content</div>,
+		});
+		expect(boundary.props.route).toBe("/sign-in");
+		const layout = boundary.props.children;
 
 		expect(layout).not.toBeInstanceOf(Promise);
 		expect(isValidElement(layout)).toBe(true);
@@ -127,9 +139,12 @@ describe("AuthLayout", () => {
 	});
 
 	it("renders neutral fallback geometry without tenant or child data", () => {
-		const layout = AuthLayout({
+		const boundary = AuthLayout({
+			params: Promise.resolve({ locale: "en" }),
 			children: <div>secret.acme.example tenant sign-in</div>,
 		});
+		expect(boundary.props.route).toBe("/sign-in");
+		const layout = boundary.props.children;
 		if (!isValidElement<{ fallback: React.ReactNode }>(layout)) {
 			throw new Error("Expected AuthLayout to return Suspense");
 		}

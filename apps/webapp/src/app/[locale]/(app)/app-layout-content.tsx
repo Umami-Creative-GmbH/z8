@@ -17,10 +17,9 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
-import { subscription, userSettings } from "@/db/schema";
+import { subscription } from "@/db/schema";
 import { env } from "@/env";
-import { getRequestSession } from "@/lib/auth/request-session";
-import { getUserLocaleRaw } from "@/lib/bot-platform/i18n";
+import { getRenderSession } from "@/lib/auth/render-session";
 import {
 	type BillingAccessResult,
 	BillingEnforcementService,
@@ -28,9 +27,7 @@ import {
 } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { getOrganizationSettings } from "@/lib/organization-settings";
-import { getUserTimeFormat } from "@/lib/user-preferences/time-format-server";
-import { getUserTimezone } from "@/lib/user-preferences/timezone-server";
-import { getUserWeekStartDay } from "@/lib/user-preferences/week-start-server";
+import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { DOMAIN_HEADERS } from "@/proxy";
 
 const logger = createLogger("app-layout");
@@ -72,7 +69,7 @@ export async function AuthenticatedAppContent({
 	const [{ locale }, headersList] = await Promise.all([params, headers()]);
 
 	// Centralized auth check - protects all routes in the (app) group
-	const session = await getRequestSession();
+	const session = await getRenderSession();
 
 	if (!session?.user) {
 		// Session cookie exists but is invalid - redirect to session-expired handler
@@ -85,24 +82,17 @@ export async function AuthenticatedAppContent({
 
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [
-		dbLocale,
+	const [preferences, organizationSettings] = await Promise.all([
+		getRenderUserPreferences(session.user.id),
+		getOrganizationSettings(activeOrganizationId, session.user.id),
+	]);
+	const {
+		locale: dbLocale,
 		weekStartDay,
 		timeFormat,
 		timezone,
-		analyticsSettings,
-		organizationSettings,
-	] = await Promise.all([
-		getUserLocaleRaw(session.user.id),
-		getUserWeekStartDay(session.user.id),
-		getUserTimeFormat(session.user.id),
-		getUserTimezone(session.user.id),
-		db.query.userSettings.findFirst({
-			where: eq(userSettings.userId, session.user.id),
-			columns: { helpImproveProduct: true },
-		}),
-		getOrganizationSettings(activeOrganizationId, session.user.id),
-	]);
+		helpImproveProduct,
+	} = preferences;
 	if (dbLocale && dbLocale !== locale) {
 		// User has a saved locale preference that differs from current URL - redirect
 		const pathname = headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
@@ -166,7 +156,6 @@ export async function AuthenticatedAppContent({
 		billingAccess.state === "trialing" &&
 		trialDaysRemaining !== null &&
 		!hasPreparedTrialSubscription;
-	const helpImproveProduct = analyticsSettings?.helpImproveProduct ?? true;
 
 	return (
 		<PostHogProvider

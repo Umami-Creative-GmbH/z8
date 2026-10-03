@@ -8,16 +8,21 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
 export default function OnboardingLayout({
 	children,
+	params,
 }: {
 	children: React.ReactNode;
+	params: Promise<{ locale: string }>;
 }) {
 	return (
-		<Suspense fallback={<OnboardingLayoutLoading />}>
-			<OnboardingLayoutContent>{children}</OnboardingLayoutContent>
-		</Suspense>
+		<RouteTranslationBoundary route="/onboarding" params={params}>
+			<Suspense fallback={<OnboardingLayoutLoading />}>
+				<OnboardingLayoutContent>{children}</OnboardingLayoutContent>
+			</Suspense>
+		</RouteTranslationBoundary>
 	);
 }
 

@@ -16,15 +16,20 @@ function exportsName(source: string, name: string) {
 // #445: every export of a "use server" module can become a public endpoint, so
 // reads that take employee or user IDs from the caller stay out of them.
 describe("time-tracking read helper surface", () => {
-	it.each(["actions/queries.ts", "actions/policy-helpers.ts", "actions/auth.ts"])(
-		"keeps %s a server-only helper module",
-		(file) => {
-			const source = readSource(file);
+	it.each([
+		"actions/queries.ts",
+		"actions/policy-helpers.ts",
+		"actions/auth.ts",
+		"read-queries.ts",
+		"region-data.ts",
+		"timeline-serialization.ts",
+		"regions.tsx",
+	])("keeps %s a server-only helper module", (file) => {
+		const source = readSource(file);
 
-			expect(source).toContain('import "server-only";');
-			expect(source).not.toContain('"use server"');
-		},
-	);
+		expect(source).toContain('import "server-only";');
+		expect(source).not.toContain('"use server"');
+	});
 
 	it.each(["getActiveWorkPeriod", "getWorkPeriods", "getTimeSummary"])(
 		"exposes no unauthenticated %s from the actions module",
@@ -34,12 +39,34 @@ describe("time-tracking read helper surface", () => {
 	);
 
 	it("drops the uncalled presence status copy from the queries module", () => {
-		expect(exportsName(readSource("actions/queries.ts"), "getPresenceStatus")).toBe(false);
+		expect(
+			exportsName(readSource("actions/queries.ts"), "getPresenceStatus"),
+		).toBe(false);
 	});
 
-	it("loads page data through the guarded query helpers", () => {
-		expect(readSource("page-data.ts")).toContain(
-			'import { getActiveWorkPeriod, getTimeSummary, getWorkPeriods } from "./actions/queries";',
+	it("loads page reads from the authorized render context", () => {
+		expect(readSource("regions.tsx")).toContain(
+			'import { readActiveWorkPeriod } from "./read-queries";',
 		);
+		expect(readSource("regions.tsx")).toContain(
+			'import { readHistoryRegion, readSummaryRegion } from "./region-data";',
+		);
+		expect(readSource("regions.tsx")).toContain(
+			"getTimeTrackingRenderContext()",
+		);
+		expect(readSource("page.tsx")).not.toContain("getTimeTrackingPageData");
+		expect(readSource("page-data.ts")).not.toContain("getTimeTrackingPageData");
+	});
+
+	it.each([
+		"readActiveWorkPeriod",
+		"readWorkPeriods",
+		"readTimeSummary",
+		"readSummaryRegion",
+		"readHistoryRegion",
+		"getSafeEmployeeWorkBalance",
+		"serializeWorkdayTimelineResult",
+	])("keeps internal %s out of public server actions", (name) => {
+		expect(exportsName(readSource("actions.ts"), name)).toBe(false);
 	});
 });
