@@ -272,7 +272,10 @@ export async function checkTargetPackage(target) {
     const driftedFiles = [];
     for (const filePath of checkedFiles) {
       const generated = await fs.readFile(filePath, "utf8");
-      if (generated !== originalFiles.get(filePath)) {
+      if (
+        generated.replace(/\r\n/g, "\n") !==
+        originalFiles.get(filePath).replace(/\r\n/g, "\n")
+      ) {
         driftedFiles.push(path.relative(REPO_ROOT, filePath));
       }
     }

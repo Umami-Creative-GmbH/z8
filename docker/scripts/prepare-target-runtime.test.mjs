@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 
 import { checkTargetPackage, collectTarget } from "./prepare-target-runtime.mjs";
 
@@ -253,11 +254,15 @@ test("generated migrated runtime manifests exclude the champion polyfill", async
 	}
 });
 
-test("generated schema-only runtimes exclude untraced Temporal packages", async () => {
+test("generated schema runtimes include Temporal only when traced", async () => {
+	const webappPackageJson = JSON.parse(
+		await fs.readFile(new URL("../../apps/webapp/package.json", import.meta.url), "utf8"),
+	);
 	for (const target of ["migration", "db-seed"]) {
-		const [packageJsonText, lockfile] = await Promise.all([
+		const [packageJsonText, lockfile, trace] = await Promise.all([
 			fs.readFile(new URL(`../targets/${target}/package.json`, import.meta.url), "utf8"),
 			fs.readFile(new URL(`../targets/${target}/pnpm-lock.yaml`, import.meta.url), "utf8"),
+			collectTarget(target),
 		]);
 		const packageJson = JSON.parse(packageJsonText);
 
@@ -266,8 +271,13 @@ test("generated schema-only runtimes exclude untraced Temporal packages", async 
 			"module",
 			`${target} must execute traced TypeScript as ESM for import-only packages`,
 		);
-		assert.equal(packageJson.dependencies["temporal-polyfill"], undefined);
-		assert.doesNotMatch(lockfile, /temporal-polyfill@/);
+		// The conservative tracer also follows type-only schema imports.
+		const tracesTemporal = trace.packages.includes("temporal-polyfill");
+		assert.equal(
+			packageJson.dependencies["temporal-polyfill"],
+			tracesTemporal ? webappPackageJson.dependencies["temporal-polyfill"] : undefined,
+		);
+		assert.equal(/temporal-polyfill@/.test(lockfile), tracesTemporal);
 		assert.doesNotMatch(packageJsonText, /@js-temporal\/polyfill/);
 		assert.doesNotMatch(lockfile, /@js-temporal\/polyfill/);
 	}
@@ -340,7 +350,7 @@ test("target manifest check fails when generated dependencies drift", async () =
 		await assert.rejects(
 			checkTargetPackage("migration"),
 			(error) => {
-				assert.match(error.message, /docker\/targets\/migration\/package\.json/);
+				assert.match(error.message, /docker[\\/]targets[\\/]migration[\\/]package\.json/);
 				assert.match(error.message, /pnpm docker:sync:non-web-targets/);
 				return true;
 			},
@@ -368,7 +378,7 @@ test("copied migration runtime includes pnpm workspace config for frozen install
 			"docker/scripts/prepare-target-runtime.mjs",
 			"copy",
 			"migration",
-			new URL(".", outputUrl).pathname,
+			fileURLToPath(outputUrl),
 		], {
 			cwd: new URL("../../", import.meta.url),
 		});
