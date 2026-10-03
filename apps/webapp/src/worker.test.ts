@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/cron", () => ({
 	CRON_JOBS: {
+		"cron:auto-clock-out": { processor: mocks.cronProcessor },
 		"cron:telemetry": {
 			processor: mocks.cronProcessor,
 		},
@@ -33,7 +34,7 @@ vi.mock("@/lib/cron", () => ({
 	getJobExecutionByBullmqJobId: mocks.getJobExecutionByBullmqJobId,
 	getOrCreateSchedulerJobExecution: mocks.getOrCreateSchedulerJobExecution,
 	isCronJobName: (type: string) =>
-		type === "cron:telemetry" || type === "cron:scim-maintenance",
+		type === "cron:auto-clock-out" || type === "cron:telemetry" || type === "cron:scim-maintenance",
 	listCronScheduleOverrides: vi.fn(),
 	markJobCompleted: mocks.markJobCompleted,
 	markJobFailed: mocks.markJobFailed,
@@ -106,7 +107,7 @@ function createCronJob({
 	executionId?: string;
 	attemptsMade?: number;
 	attempts?: number;
-	type?: "cron:telemetry" | "cron:scim-maintenance";
+	type?: "cron:telemetry" | "cron:scim-maintenance" | "cron:auto-clock-out";
 }) {
 	const data = {
 		type,
@@ -426,6 +427,17 @@ describe("processJob cron failure semantics", () => {
 		expect(mocks.cronProcessor).toHaveBeenCalledTimes(1);
 	});
 
+	it("dispatches duplicate automatic clock-out jobs through the same generic registry path", async () => {
+		const job = createCronJob({
+			type: "cron:auto-clock-out",
+			executionId: "auto-execution",
+			attempts: 1,
+		});
+		await processJob(job);
+		await processJob(job);
+		expect(mocks.cronProcessor).toHaveBeenCalledTimes(2);
+		expect(mocks.markJobCompleted).toHaveBeenCalledTimes(2);
+	});
 	it("uses an API-provided execution ID without creating or persisting another", async () => {
 		const job = createCronJob({
 			executionId: "execution-api",

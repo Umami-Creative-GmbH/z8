@@ -1,7 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { AutoClockOutTaskLeaseNotOwnedError, createAutoClockOutTaskOutbox } from "./outbox";
 import { NOW, seedExecution } from "./testing.test.fixture";
+
+const logger = vi.hoisted(() => ({ error: vi.fn() }));
+vi.mock("@/lib/logger", () => ({ createLogger: () => logger }));
 
 describe("automatic clock-out task leases", () => {
 	let fixture: Awaited<ReturnType<typeof createLifecycleDatabaseFixture>>;
@@ -67,5 +70,42 @@ describe("automatic clock-out task leases", () => {
 			at = at.add({ seconds: Math.min(30 * 2 ** (attempt - 1), 3600) });
 		}
 		expect(await box.claimDue(at.add({ hours: 2 }), 100)).toEqual([]);
+		expect(logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: facts.organizationId,
+				reason: "attempts_exhausted",
+			}),
+			"Automatic clock-out task exhausted its attempts",
+		);
+	});
+	it("reports an expired eighth crash exactly when it becomes failed, without payloads", async () => {
+		const { facts } = await seedExecution(fixture);
+		const box = createAutoClockOutTaskOutbox(fixture.db);
+		const [claim] = await box.claimDue(NOW, 100);
+		await fixture.pool.query(
+			"update automatic_clock_out_task set attempt_count=8 where organization_id=$1 and id=$2",
+			[facts.organizationId, claim.id],
+		);
+		logger.error.mockClear();
+		expect(await box.claimDue(NOW.add({ minutes: 5 }), 100)).toEqual([]);
+		expect(logger.error).toHaveBeenCalledExactlyOnceWith(
+			{
+				organizationId: facts.organizationId,
+				taskId: claim.id,
+				operationId: facts.operationId,
+				reason: "attempts_exhausted",
+			},
+			"Automatic clock-out task exhausted its attempts",
+		);
+		expect(await box.claimDue(NOW.add({ minutes: 6 }), 100)).toEqual([]);
+		expect(logger.error).toHaveBeenCalledOnce();
+		expect(
+			(
+				await fixture.pool.query(
+					"select status, claim_token, lease_expires_at from automatic_clock_out_task where organization_id=$1 and id=$2",
+					[facts.organizationId, claim.id],
+				)
+			).rows[0],
+		).toEqual({ status: "failed", claim_token: null, lease_expires_at: null });
 	});
 });

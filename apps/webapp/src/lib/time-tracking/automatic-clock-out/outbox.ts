@@ -2,7 +2,16 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { createLogger } from "@/lib/logger";
 import type { AutoClockOutTaskClaim, AutoClockOutTaskKind } from "./types";
+
+const logger = createLogger("AutomaticClockOutOutbox");
+function reportExhausted(scope: { organizationId: string; taskId: string; operationId: string }) {
+	logger.error(
+		{ ...scope, reason: "attempts_exhausted" },
+		"Automatic clock-out task exhausted its attempts",
+	);
+}
 
 export class AutoClockOutTaskLeaseNotOwnedError extends Error {
 	constructor() {
@@ -21,9 +30,19 @@ export function createAutoClockOutTaskOutbox(database: Pick<typeof db, "execute"
 				throw new Error("invalid_task_limit");
 			const at = dateFromInstant(now);
 			// A worker that repeatedly crashes before defer must also stop at eight attempts.
-			await database.execute(
-				sql`UPDATE automatic_clock_out_task SET status = 'failed', claim_token = NULL, lease_expires_at = NULL, last_error = 'attempts_exhausted', updated_at = ${at} WHERE status = 'processing' AND lease_expires_at <= ${at} AND attempt_count >= 8`,
+			const exhausted = await database.execute<{
+				id: string;
+				organization_id: string;
+				operation_id: string;
+			}>(
+				sql`UPDATE automatic_clock_out_task SET status = 'failed', claim_token = NULL, lease_expires_at = NULL, last_error = 'attempts_exhausted', updated_at = ${at} WHERE status = 'processing' AND lease_expires_at <= ${at} AND attempt_count >= 8 RETURNING id, organization_id, operation_id`,
 			);
+			for (const task of exhausted.rows)
+				reportExhausted({
+					organizationId: task.organization_id,
+					taskId: task.id,
+					operationId: task.operation_id,
+				});
 			const result = await database.execute<{
 				id: string;
 				organization_id: string;
@@ -86,6 +105,12 @@ export function createAutoClockOutTaskOutbox(database: Pick<typeof db, "execute"
 				sql`UPDATE automatic_clock_out_task SET status = ${failed ? "failed" : "pending"}, claim_token = NULL, lease_expires_at = NULL, available_at = ${dateFromInstant(now.add({ seconds }))}, last_error = ${errorText}, updated_at = ${dateFromInstant(now)} WHERE ${owned(claim)} RETURNING id`,
 			);
 			if (result.rows.length !== 1) throw new AutoClockOutTaskLeaseNotOwnedError();
+			if (failed)
+				reportExhausted({
+					organizationId: claim.organizationId,
+					taskId: claim.id,
+					operationId: claim.operationId,
+				});
 			return failed ? "failed" : "deferred";
 		},
 	};

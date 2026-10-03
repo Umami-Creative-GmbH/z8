@@ -29,6 +29,10 @@ describe("cron schedule presets", () => {
 		expect(isHighRiskCronJob("cron:scim-maintenance")).toBe(true);
 		expect(isHighRiskCronJob("cron:execution-cleanup")).toBe(true);
 		expect(isHighRiskCronJob("cron:export")).toBe(false);
+		expect(isHighRiskCronJob("cron:auto-clock-out")).toBe(true);
+		expect(
+			resolveEffectiveCronSchedules({ overrides: [] })["cron:auto-clock-out"].effectivePattern,
+		).toBe("*/5 * * * *");
 	});
 
 	it("resolves overrides over registry defaults", () => {

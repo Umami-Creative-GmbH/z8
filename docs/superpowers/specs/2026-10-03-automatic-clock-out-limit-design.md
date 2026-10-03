@@ -2,7 +2,7 @@
 
 Date: 2026-10-03
 
-Status: Written specification approved by the user on 2026-10-03; implementation plan awaiting review.
+Status: Written specification and implementation plan approved on 2026-10-03. Implementation follows the selected Subagent-driven workflow; final whole-branch review is pending.
 
 GitHub: [Spec issue #568](https://github.com/Umami-Creative-GmbH/z8/issues/568), assigned to KaiSoellch.
 
@@ -166,4 +166,4 @@ This design follows the Timekeeping Reference and the accepted Time Tracking ADR
 
 ## Review checkpoint
 
-Review this written specification before creating the implementation plan. Behavioral approval permits this specification; approval of this file permits the Superpowers writing-plans stage. Product implementation has not started.
+The user approved this specification and its implementation plan and selected Subagent-driven execution. Tasks 1–5 have passed their independent review gates; Task 6 adds scheduled maintenance and final verification. Build and authenticated browser verification require the unavailable Phase runtime environment. Final whole-branch review and any PR publication remain separate gates; plan approval does not authorize merging.

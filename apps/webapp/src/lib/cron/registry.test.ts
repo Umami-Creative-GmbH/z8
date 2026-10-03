@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CRON_JOBS } from "./registry";
 
+const autoClockOut = vi.hoisted(() => ({ imported: vi.fn(), run: vi.fn(async () => ({ closed: 1 })) }));
+vi.mock("@/lib/jobs/auto-clock-out", () => {
+	autoClockOut.imported();
+	return { runAutoClockOutMaintenance: autoClockOut.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -225,5 +230,16 @@ describe("CRON_JOBS telemetry", () => {
 		expect(getOrCreateTelemetryIdentity).not.toHaveBeenCalled();
 		expect(calculateTelemetryMetrics).not.toHaveBeenCalled();
 		expect(sendTelemetryReport).not.toHaveBeenCalled();
+	});
+});
+
+describe("automatic clock-out cron", () => {
+	it("loads maintenance lazily and observes overdue work every five minutes", async () => {
+		expect(autoClockOut.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:auto-clock-out"].schedule).toBe("*/5 * * * *");
+		expect(
+			await CRON_JOBS["cron:auto-clock-out"].processor({ triggeredAt: "2026-10-25T06:00:00Z" }),
+		).toEqual({ closed: 1 });
+		expect(autoClockOut.run).toHaveBeenCalledOnce();
 	});
 });

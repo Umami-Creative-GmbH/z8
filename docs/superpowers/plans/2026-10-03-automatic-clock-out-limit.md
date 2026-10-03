@@ -1,5 +1,7 @@
 # Organization Automatic Clock-Out Limit Implementation Plan
 
+Status: Approved on 2026-10-03; Subagent-driven execution selected. Tasks 1–5 passed independent review. Task 6 implementation, full unit tests, feature PostgreSQL regressions, and full typecheck are complete; Task 6 and whole-branch reviews are pending. Remaining formatter diagnostics are recorded separately from passing lint/assist checks. Production build and authenticated browser checks require the unavailable Phase runtime environment.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Automatically close overdue uninterrupted live work at an organization-configured limit and notify the employee.
@@ -210,4 +212,4 @@ expect(repeatedScan.closed).toBe(0);
 
 The six tasks cover settings/permissions, UTC cutoff/break semantics, both admissions and system evidence, atomicity/races/replay, durable domain effects and mandatory inbox delivery, optional channels, UI/source display, scheduler fairness/recovery, and verification. Each Review Focus line has an owning task and explicit assertions. Task interfaces use the shared contract names above.
 
-Review this plan and choose Subagent-driven or Native execution before product implementation. Subagent-driven provides independent implementation/review gates per task; Native executes sequentially in this chat and performs one independent whole-branch review. Given the six tasks and correctness-sensitive concurrent writes, Subagent-driven is recommended.
+The user approved this plan and selected Subagent-driven execution. Independent implementation/review gates apply to each task, followed by final whole-branch review. Runtime checks blocked by missing Phase credentials and browser tooling must be reported explicitly. PR publication requires authorization, and this approval does not authorize merging.
