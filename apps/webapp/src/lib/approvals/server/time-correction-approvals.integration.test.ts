@@ -1643,14 +1643,65 @@ describe(
 
 		beforeEach(seedTask13);
 
-		it.each(["approve", "reject"] as const)(
-			"finalizes a resubmitted rejected legacy manual entry in PostgreSQL: %s",
-			async (action) => {
+		it.each([
+			["approve", "clock_in"],
+			["reject", "clock_in"],
+			["approve", "clock_out"],
+			["reject", "clock_out"],
+		] as const)(
+			"finalizes a resubmitted rejected legacy manual entry in PostgreSQL: %s %s",
+			async (action, endpoint) => {
 				const approvalId = "b5000000-0000-4000-8000-000000000055";
+				const isClockOut = endpoint === "clock_out";
+				const decisionAt = isClockOut ? parseInstant("2026-10-03T10:00:00Z") : now;
+				const correction = isClockOut
+					? {
+							action: "edit" as const,
+							clockOutCorrectionId: ids.correction,
+							workLocationType: "office" as const,
+							workCategoryId: null,
+						}
+					: { action: "edit" as const, clockInCorrectionId: ids.correction };
+				const originalWorkMetadata = {
+					workLocationType: "office" as const,
+					workCategoryId: null,
+				};
 				await runSqlStatements(pool, [
-					{ text: "update work_period set approval_status = 'rejected' where id = $1 and organization_id = $2", values: [ids.period, ids.organization] },
-					{ text: "update time_record set approval_state = 'rejected' where id = $1 and organization_id = $2", values: [ids.canonical, ids.organization] },
+					{
+						text: "update work_period set approval_status = 'rejected' where id = $1 and organization_id = $2",
+						values: [ids.period, ids.organization],
+					},
+					{
+						text: "update time_record set approval_state = 'rejected' where id = $1 and organization_id = $2",
+						values: [ids.canonical, ids.organization],
+					},
 				]);
+				if (isClockOut) {
+					// Production source shape: a 615-minute rejected entry and a
+					// clock-out-only proposal with unchanged office/null metadata.
+					await runSqlStatements(pool, [
+						{
+							text: "update time_entry set timestamp = '2026-10-01 06:15:00' where id = $1 and organization_id = $2",
+							values: [ids.originalIn, ids.organization],
+						},
+						{
+							text: "update time_entry set timestamp = '2026-10-01 16:30:00' where id = $1 and organization_id = $2",
+							values: [ids.originalOut, ids.organization],
+						},
+						{
+							text: "update time_entry set timestamp = '2026-10-01 17:00:00', replaces_entry_id = $3 where id = $1 and organization_id = $2",
+							values: [ids.correction, ids.organization, ids.originalOut],
+						},
+						{
+							text: "update work_period set start_time = '2026-10-01 06:15:00', end_time = '2026-10-01 16:30:00', duration_minutes = 615 where id = $1 and organization_id = $2",
+							values: [ids.period, ids.organization],
+						},
+						{
+							text: "update time_record set start_at = '2026-10-01 06:15:00', end_at = '2026-10-01 16:30:00', duration_minutes = 615 where id = $1 and organization_id = $2",
+							values: [ids.canonical, ids.organization],
+						},
+					]);
+				}
 				await database.insert(schema.approvalRequest).values({
 					id: approvalId,
 					organizationId: ids.organization,
@@ -1659,13 +1710,18 @@ describe(
 					requestedBy: ids.requester,
 					approverId: ids.manager,
 					status: "pending",
-					metadata: { timeCorrection: { action: "edit", clockInCorrectionId: ids.correction } },
-					updatedAt: new Date(now.epochMilliseconds),
+					metadata: {
+						timeCorrection: correction,
+						...(isClockOut
+							? { timeCorrectionOriginalWorkMetadata: originalWorkMetadata }
+							: {}),
+					},
+					updatedAt: new Date(decisionAt.epochMilliseconds),
 				});
 				await database.transaction(async (tx) => {
 					await tx.execute(sql`update approval_request set
 						status = ${action === "approve" ? "approved" : "rejected"},
-						approved_at = ${action === "approve" ? new Date(now.epochMilliseconds) : null},
+						approved_at = ${action === "approve" ? new Date(decisionAt.epochMilliseconds) : null},
 						rejection_reason = ${action === "reject" ? "Incorrect times" : null}
 						where id = ${approvalId} and organization_id = ${ids.organization}`);
 					await finalizeTimeCorrectionTerminalInTransaction({
@@ -1677,22 +1733,41 @@ describe(
 						expectedRequesterEmployeeId: ids.requester,
 						actorEmployeeId: ids.manager,
 						actorUserId: ids.managerUser,
-						correction: { action: "edit", clockInCorrectionId: ids.correction },
+						correction,
+						...(isClockOut
+							? { expectedOriginalWorkMetadata: originalWorkMetadata }
+							: {}),
 						legacyApprovalRequestId: approvalId,
-						transition: action === "approve" ? { kind: "approve", reason: null } : { kind: "reject", reason: "Incorrect times" },
-						finalizedAt: now,
+						transition:
+							action === "approve"
+								? { kind: "approve", reason: null }
+								: { kind: "reject", reason: "Incorrect times" },
+						finalizedAt: decisionAt,
 						allowMetadataLessLegacyFallback: false,
 					});
 				});
 				const after = await durableSnapshot();
-				expect(after.work_period).toMatchObject([{
-					approval_status: action === "approve" ? "approved" : "rejected",
-					clock_in_id: action === "approve" ? ids.correction : ids.originalIn,
-				}]);
-				expect(after.time_record).toMatchObject([{
-					approval_state: action === "approve" ? "approved" : "rejected",
-					duration_minutes: action === "approve" ? 465 : 480,
-				}]);
+				expect(after.work_period).toMatchObject([
+					{
+						approval_status: action === "approve" ? "approved" : "rejected",
+						clock_in_id:
+							action === "approve" && !isClockOut ? ids.correction : ids.originalIn,
+						clock_out_id:
+							action === "approve" && isClockOut ? ids.correction : ids.originalOut,
+					},
+				]);
+				expect(after.time_record).toMatchObject([
+					{
+						approval_state: action === "approve" ? "approved" : "rejected",
+						duration_minutes: isClockOut
+							? action === "approve"
+								? 645
+								: 615
+							: action === "approve"
+								? 465
+								: 480,
+					},
+				]);
 			},
 		);
 
