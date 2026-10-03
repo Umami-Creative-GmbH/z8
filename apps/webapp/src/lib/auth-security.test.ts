@@ -1,7 +1,8 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readTestText } from "@/test/read-test-text";
 import { getSSOTrustedOrigins } from "./auth";
 
 const productionSourceRoot = join(process.cwd(), "src");
@@ -47,7 +48,7 @@ function readScimCredentialTokenFlowSources() {
 	return Object.fromEntries(
 		Object.entries(scimCredentialTokenFlowPaths).map(([name, path]) => [
 			name,
-			readFileSync(join(productionSourceRoot, path), "utf8"),
+			readTestText(join(productionSourceRoot, path), "utf8"),
 		]),
 	) as Record<keyof typeof scimCredentialTokenFlowPaths, string>;
 }
@@ -329,7 +330,7 @@ describe("SSO trusted origins", () => {
 	});
 
 	it("does not derive operator trust from tenant-owned provider rows", () => {
-		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const source = readTestText(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 		const trustedOriginsSource = source.slice(
 			source.indexOf("export async function getSSOTrustedOrigins"),
 			source.indexOf("async function getUserPrimaryOrganizationId"),
@@ -353,7 +354,7 @@ describe("Better Auth 1.7 core configuration", () => {
 			"scimToken",
 		];
 		const violations = productionSourceFiles().flatMap((path) => {
-			const source = readFileSync(path, "utf8");
+			const source = readTestText(path, "utf8");
 			const relativePath = relative(productionSourceRoot, path);
 			const identifiers = syntaxIdentifiers(source);
 			return legacyNames
@@ -472,7 +473,7 @@ describe("Better Auth 1.7 core configuration", () => {
 	});
 
 	it("registers managed SCIM with native Drizzle transactions and the dedicated secret", () => {
-		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const source = readTestText(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 
 		expect(source).toContain(
 			"createZ8SCIMPlugin(getSCIMCredentialHashSecret())",
@@ -487,7 +488,7 @@ describe("Better Auth 1.7 core configuration", () => {
 	});
 
 	it("enables joins in advanced database without trusting proxy headers", () => {
-		const source = readFileSync(join(process.cwd(), "src/lib/auth.ts"), "utf8");
+		const source = readTestText(join(process.cwd(), "src/lib/auth.ts"), "utf8");
 
 		expect(source).toMatch(
 			/advanced:\s*\{\s*database:\s*\{\s*joins:\s*true,?\s*\},\s*ipAddress:\s*\{\s*ipv6Subnet:\s*64,?\s*\},?\s*\}/,
@@ -497,7 +498,7 @@ describe("Better Auth 1.7 core configuration", () => {
 	});
 
 	it("does not retain SCIM provider credentials in application-owned schema", () => {
-		const source = readFileSync(
+		const source = readTestText(
 			join(process.cwd(), "src/db/schema/scim.ts"),
 			"utf8",
 		);

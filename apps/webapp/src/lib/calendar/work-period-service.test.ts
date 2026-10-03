@@ -160,7 +160,6 @@ describe("getWorkPeriodsForMonth", () => {
 				durationMinutes: 150,
 				employeeId: "employee-1",
 				employeeName: "Ada Lovelace",
-				startTime: "8:00 AM",
 				isRunning: true,
 				projectId: "project-1",
 				projectName: "Payroll",
@@ -170,6 +169,7 @@ describe("getWorkPeriodsForMonth", () => {
 				clockInTimezone: "Europe/Berlin",
 			},
 		});
+		expect(events[0]?.metadata.startTime?.replace(/\s/gu, " ")).toBe("8:00 AM");
 		expect(events[0]?.metadata).not.toHaveProperty("endTime");
 		expect(events[0]?.metadata).not.toHaveProperty("clockOutUtcOffsetMinutes");
 		expect(events[0]?.metadata).not.toHaveProperty("clockOutTimezone");

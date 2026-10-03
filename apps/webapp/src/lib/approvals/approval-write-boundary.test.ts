@@ -1,5 +1,6 @@
+import * as filesystem from "node:fs";
 import {
-	chmodSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -9,7 +10,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, relative } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import * as nativeSourceAnalysis from "@/lib/typescript/native-source-analysis";
 import * as approvalWriteBoundary from "./approval-write-boundary";
@@ -30,6 +31,12 @@ import {
 	analyzeApprovalWriteMutationSources,
 	analyzeApprovalWriteMutations,
 } from "./approval-write-boundary-typescript";
+
+// Give Vitest a replaceable builtin namespace; all functions forward to real fs
+// except the exact targets controlled by the two restored spies below.
+vi.mock("node:fs", async (importOriginal) => ({
+	...(await importOriginal<typeof import("node:fs")>()),
+}));
 
 const FILE_NAME = "/repo/apps/webapp/src/lib/approvals/fixture.ts";
 const CHAIN_SERVICE_FILE_NAME =
@@ -3222,6 +3229,8 @@ function withApprovalWriteTree(
 		}
 		run(workspaceRoot);
 	} finally {
+		expect(dirname(resolve(workspaceRoot))).toBe(resolve(tmpdir()));
+		expect(basename(workspaceRoot)).toMatch(/^approval-write-boundary-/);
 		rmSync(workspaceRoot, { force: true, recursive: true });
 	}
 }
@@ -3257,7 +3266,7 @@ describe("approval write boundary production ownership", () => {
 					const batchSources = withNativeProgram.mock.calls[0]?.[0];
 					expect(
 						[...(batchSources?.keys() ?? [])].map((fileName) =>
-							relative(workspaceRoot, fileName),
+							relative(workspaceRoot, fileName).replace(/\\/g, "/"),
 						),
 					).toEqual(["src/a-protected.ts", "src/z-protected.ts"]);
 				} finally {
@@ -3269,13 +3278,18 @@ describe("approval write boundary production ownership", () => {
 
 	it("fails closed when a configured root is a symlink", () => {
 		withApprovalWriteTree(
-			{ "real-src/unowned.ts": WORKFLOW_INSERT },
-			(workspaceRoot) => {
+			{ "outside/unowned.ts": WORKFLOW_INSERT },
+			(containerRoot) => {
+				const workspaceRoot = join(containerRoot, "workspace");
+				mkdirSync(workspaceRoot);
 				symlinkSync(
-					join(workspaceRoot, "real-src"),
+					join(containerRoot, "outside"),
 					join(workspaceRoot, "linked-src"),
-					"dir",
+					process.platform === "win32" ? "junction" : "dir",
 				);
+				expect(
+					lstatSync(join(workspaceRoot, "linked-src")).isSymbolicLink(),
+				).toBe(true);
 
 				expect(
 					scanApprovalWriteBoundary({
@@ -3293,6 +3307,9 @@ describe("approval write boundary production ownership", () => {
 						path: "linked-src",
 					},
 				]);
+				expect(
+					readFileSync(join(containerRoot, "outside/unowned.ts"), "utf8"),
+				).toBe(WORKFLOW_INSERT);
 			},
 		);
 	});
@@ -4039,39 +4056,92 @@ db.delete(approvalOutbox);`,
 	it("excludes exact test, spec, migration, generated, and symlink categories", () => {
 		withApprovalWriteTree(
 			{
-				"drizzle/0055_guard_fixture.ts": WORKFLOW_INSERT,
-				"scripts/__tests__/guard-fixture.ts": WORKFLOW_INSERT,
-				"scripts/__specs__/guard-fixture.ts": WORKFLOW_INSERT,
-				"scripts/guard-fixture.spec.ts": WORKFLOW_INSERT,
-				"scripts/guard-fixture.test.ts": WORKFLOW_INSERT,
-				"scripts/guard-fixture.spec.mjs": WORKFLOW_INSERT,
-				"scripts/guard-fixture.test.js": WORKFLOW_INSERT,
-				"src/db/auth-schema.ts": WORKFLOW_INSERT,
-				"src/db/migrations/guard-fixture.ts": WORKFLOW_INSERT,
-				"src/production-tests/guard-fixture.ts": WORKFLOW_INSERT,
+				"workspace/drizzle/0055_guard_fixture.ts": WORKFLOW_INSERT,
+				"workspace/scripts/__tests__/guard-fixture.ts": WORKFLOW_INSERT,
+				"workspace/scripts/__specs__/guard-fixture.ts": WORKFLOW_INSERT,
+				"workspace/scripts/guard-fixture.spec.ts": WORKFLOW_INSERT,
+				"workspace/scripts/guard-fixture.test.ts": WORKFLOW_INSERT,
+				"workspace/scripts/guard-fixture.spec.mjs": WORKFLOW_INSERT,
+				"workspace/scripts/guard-fixture.test.js": WORKFLOW_INSERT,
+				"workspace/src/db/auth-schema.ts": WORKFLOW_INSERT,
+				"workspace/src/db/migrations/guard-fixture.ts": WORKFLOW_INSERT,
+				"workspace/src/production-tests/guard-fixture.ts": WORKFLOW_INSERT,
+				"outside/unowned.ts": WORKFLOW_INSERT,
 			},
-			(workspaceRoot) => {
+			(containerRoot) => {
+				const workspaceRoot = join(containerRoot, "workspace");
 				symlinkSync(
-					join(workspaceRoot, "src/production-tests"),
+					join(containerRoot, "outside"),
 					join(workspaceRoot, "src/symlinked-production"),
-					"dir",
+					process.platform === "win32" ? "junction" : "dir",
 				);
-				symlinkSync(
-					join(workspaceRoot, "src/production-tests/guard-fixture.ts"),
-					join(workspaceRoot, "scripts/symlinked-fixture.ts"),
-					"file",
-				);
+				const directoryLink = join(workspaceRoot, "src/symlinked-production");
+				expect(lstatSync(directoryLink).isSymbolicLink()).toBe(true);
+				const fileLink = join(workspaceRoot, "scripts/symlinked-fixture.ts");
+				const realLstat = filesystem.lstatSync;
+				let fileLinkIntercepted = 0;
+				const fileLinkStat =
+					process.platform === "win32"
+						? vi
+								.spyOn(filesystem, "lstatSync")
+								.mockImplementation((...args) => {
+									const stat = realLstat(...args);
+									if (args[0] === fileLink) {
+										fileLinkIntercepted++;
+										return new Proxy(stat, {
+											get(target, key) {
+												return key === "isSymbolicLink"
+													? () => true
+													: Reflect.get(target, key);
+											},
+										});
+									}
+									return stat;
+								})
+						: undefined;
+				try {
+					if (process.platform === "win32") {
+						writeFileSync(fileLink, WORKFLOW_INSERT);
+					} else {
+						symlinkSync(
+							join(containerRoot, "outside/unowned.ts"),
+							fileLink,
+							"file",
+						);
+						expect(lstatSync(fileLink).isSymbolicLink()).toBe(true);
+					}
 
-				const findings = scanApprovalWriteBoundary({
-					roots: ["src", "scripts", "drizzle"],
-					workspaceRoot,
-				});
-				expect(findings).toEqual([
-					expect.objectContaining({
-						kind: "mutation",
-						path: "src/production-tests/guard-fixture.ts",
-					}),
-				]);
+					const findings = scanApprovalWriteBoundary({
+						roots: ["src", "scripts", "drizzle"],
+						workspaceRoot,
+					});
+					expect(findings).toEqual([
+						expect.objectContaining({
+							kind: "mutation",
+							path: "src/production-tests/guard-fixture.ts",
+						}),
+					]);
+					if (process.platform === "win32") expect(fileLinkIntercepted).toBe(1);
+					expect(
+						readFileSync(join(containerRoot, "outside/unowned.ts"), "utf8"),
+					).toBe(WORKFLOW_INSERT);
+				} finally {
+					fileLinkStat?.mockRestore();
+				}
+				if (process.platform === "win32")
+					expect(lstatSync(fileLink).isSymbolicLink()).toBe(false);
+				expect(filesystem.lstatSync).toBe(realLstat);
+				if (process.platform === "win32") {
+					expect(
+						scanApprovalWriteBoundary({
+							roots: ["src", "scripts", "drizzle"],
+							workspaceRoot,
+						}).map(({ path }) => path),
+					).toEqual([
+						"scripts/symlinked-fixture.ts",
+						"src/production-tests/guard-fixture.ts",
+					]);
+				}
 			},
 		);
 	});
@@ -4170,7 +4240,19 @@ db.delete(approvalOutbox);`,
 			{ "src/unreadable.ts": WORKFLOW_INSERT },
 			(workspaceRoot) => {
 				const fileName = join(workspaceRoot, "src/unreadable.ts");
-				chmodSync(fileName, 0);
+				const realOpen = filesystem.openSync;
+				let intercepted = 0;
+				const open = vi
+					.spyOn(filesystem, "openSync")
+					.mockImplementation((...args) => {
+						if (args[0] === fileName) {
+							intercepted++;
+							throw Object.assign(new Error("forced read denial"), {
+								code: "EACCES",
+							});
+						}
+						return realOpen(...args);
+					});
 				try {
 					expect(
 						scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
@@ -4184,9 +4266,24 @@ db.delete(approvalOutbox);`,
 							path: "src/unreadable.ts",
 						},
 					]);
+					expect(intercepted).toBe(1);
 				} finally {
-					chmodSync(fileName, 0o600);
+					open.mockRestore();
 				}
+				expect(filesystem.openSync).toBe(realOpen);
+				expect(
+					scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot }),
+				).toEqual([
+					{
+						column: 1,
+						kind: "mutation",
+						line: 2,
+						operation: "insert",
+						path: "src/unreadable.ts",
+						table: "approval_workflow",
+					},
+				]);
+				expect(readFileSync(fileName, "utf8")).toBe(WORKFLOW_INSERT);
 			},
 		);
 	});

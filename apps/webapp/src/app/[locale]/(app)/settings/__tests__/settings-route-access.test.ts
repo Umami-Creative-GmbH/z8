@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import {
 	ORG_ADMIN_SETTINGS_ROUTES,
 	resolveSettingsAccessTier,
 } from "@/lib/settings-access";
+import { readTestText } from "@/test/read-test-text";
 
 const SETTINGS_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
@@ -46,7 +47,7 @@ function stripComments(source: string): string {
 describe("org-admin settings route access", () => {
 	it("keeps settings layout mobile overflow guards in place", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "layout.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "layout.tsx"), "utf8"),
 		);
 
 		expect(source).toContain(
@@ -67,7 +68,7 @@ describe("org-admin settings route access", () => {
 			"teams-notifications/page.tsx",
 		]) {
 			const source = stripComments(
-				readFileSync(join(SETTINGS_ROOT, pagePath), "utf8"),
+				readTestText(join(SETTINGS_ROOT, pagePath), "utf8"),
 			);
 
 			expect(source).toContain('className="p-4 sm:p-6"');
@@ -79,7 +80,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps payroll officer settings on the shared detail page spacing", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "payroll-access/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "payroll-access/page.tsx"), "utf8"),
 		);
 
 		expect(source).toContain(
@@ -133,7 +134,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the export operations page on the shared org-admin helper", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "export-operations/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "export-operations/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
@@ -220,10 +221,10 @@ describe("org-admin settings route access", () => {
 
 	it("guards direct demo route and mutations with the demo data feature helper", () => {
 		const pageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "demo/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "demo/page.tsx"), "utf8"),
 		);
 		const actionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "demo/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "demo/actions.ts"), "utf8"),
 		);
 
 		expect(pageSource.includes("assertDemoDataEnabledForOrganization(")).toBe(
@@ -238,10 +239,10 @@ describe("org-admin settings route access", () => {
 
 	it("lets the calendar route use scoped settings access while keeping mutations org-admin only", () => {
 		const pageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "calendar/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "calendar/page.tsx"), "utf8"),
 		);
 		const actionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "calendar/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "calendar/actions.ts"), "utf8"),
 		);
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -271,10 +272,10 @@ describe("org-admin settings route access", () => {
 
 	it("lets the surcharges route use scoped settings access with read-only manager controls", () => {
 		const pageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "surcharges/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "surcharges/page.tsx"), "utf8"),
 		);
 		const actionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "surcharges/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "surcharges/actions.ts"), "utf8"),
 		);
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -294,7 +295,7 @@ describe("org-admin settings route access", () => {
 
 	it("lets the locations route use scoped settings access instead of the org-admin helper", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "locations/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "locations/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -303,7 +304,7 @@ describe("org-admin settings route access", () => {
 
 	it("checks location detail access from the shared settings route context before rendering", () => {
 		const source = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "locations/[locationId]/page.tsx"),
 				"utf8",
 			),
@@ -317,7 +318,7 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared org-admin parity helpers for location assignment mutations", () => {
 		const source = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "locations/assignment-actions.ts"),
 				"utf8",
 			),
@@ -333,7 +334,7 @@ describe("org-admin settings route access", () => {
 
 		for (const relativePath of pages) {
 			const source = stripComments(
-				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+				readTestText(join(SETTINGS_ROOT, relativePath), "utf8"),
 			);
 
 			expect(source.includes("getSchedulingSettingsAccessContext(")).toBe(true);
@@ -346,7 +347,7 @@ describe("org-admin settings route access", () => {
 
 		for (const relativePath of pages) {
 			const source = stripComments(
-				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+				readTestText(join(SETTINGS_ROOT, relativePath), "utf8"),
 			);
 
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -356,7 +357,7 @@ describe("org-admin settings route access", () => {
 
 	it("lets the holidays route use scoped settings access instead of the org-admin helper", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "holidays/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "holidays/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -369,7 +370,7 @@ describe("org-admin settings route access", () => {
 
 		for (const relativePath of pages) {
 			const source = stripComments(
-				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+				readTestText(join(SETTINGS_ROOT, relativePath), "utf8"),
 			);
 
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -379,7 +380,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps vacation employee allowances on shared org-admin route access instead of employee-role checks", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "vacation/employees/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "vacation/employees/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
@@ -391,10 +392,10 @@ describe("org-admin settings route access", () => {
 
 	it("lets the work-categories route use scoped settings access and read-only manager controls", () => {
 		const pageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "work-categories/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "work-categories/page.tsx"), "utf8"),
 		);
 		const actionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "work-categories/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "work-categories/actions.ts"), "utf8"),
 		);
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -422,7 +423,7 @@ describe("org-admin settings route access", () => {
 
 		for (const relativePath of pages) {
 			const source = stripComments(
-				readFileSync(join(SETTINGS_ROOT, relativePath), "utf8"),
+				readTestText(join(SETTINGS_ROOT, relativePath), "utf8"),
 			);
 
 			expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -432,7 +433,7 @@ describe("org-admin settings route access", () => {
 
 	it("checks employee detail access at page entry before rendering the client surface", () => {
 		const source = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "employees/[employeeId]/page.tsx"),
 				"utf8",
 			),
@@ -444,19 +445,19 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared scoped access helpers instead of admin-only checks for employee and skill actions", () => {
 		const employeeMutationsSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "employees/employee-mutations.actions.ts"),
 				"utf8",
 			),
 		);
 		const rateMutationsSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "employees/rate-mutations.actions.ts"),
 				"utf8",
 			),
 		);
 		const skillsActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
 		);
 
 		expect(
@@ -482,7 +483,7 @@ describe("org-admin settings route access", () => {
 
 	it("does not re-export type-only skill shapes from the server actions module", () => {
 		const skillsActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "skills/actions.ts"), "utf8"),
 		);
 
 		expect(skillsActionsSource).not.toMatch(
@@ -498,13 +499,13 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the implementation checklist context loader server-only", () => {
 		const actionsSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "implementation-checklist/actions.ts"),
 				"utf8",
 			),
 		);
 		const queriesSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "implementation-checklist/queries.ts"),
 				"utf8",
 			),
@@ -521,16 +522,16 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared scoped access helpers for vacation and work-policy actions", () => {
 		const vacationActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "vacation/actions.ts"), "utf8"),
 		);
 		const vacationAssignmentActionsSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "vacation/assignment-actions.ts"),
 				"utf8",
 			),
 		);
 		const workPolicyActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "work-policies/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "work-policies/actions.ts"), "utf8"),
 		);
 
 		expect(
@@ -577,10 +578,10 @@ describe("org-admin settings route access", () => {
 
 	it("uses scoped holiday access helpers for reads while keeping mutations org-admin only", () => {
 		const holidayActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "holidays/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "holidays/actions.ts"), "utf8"),
 		);
 		const presetActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "holidays/preset-actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "holidays/preset-actions.ts"), "utf8"),
 		);
 
 		expect(
@@ -619,10 +620,10 @@ describe("org-admin settings route access", () => {
 
 	it("lets the change-policies route use scoped settings access and manager-aware actions", () => {
 		const pageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "change-policies/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "change-policies/page.tsx"), "utf8"),
 		);
 		const actionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "change-policies/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "change-policies/actions.ts"), "utf8"),
 		);
 
 		expect(pageSource.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -647,10 +648,10 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared scoped access helpers for project and customer actions", () => {
 		const projectActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "projects/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "projects/actions.ts"), "utf8"),
 		);
 		const customerActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "customers/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "customers/actions.ts"), "utf8"),
 		);
 
 		expect(
@@ -675,13 +676,13 @@ describe("org-admin settings route access", () => {
 
 	it("uses shared scheduling scope helpers for shift templates and coverage actions", () => {
 		const templateActionsSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "../scheduling/actions/template-actions.ts"),
 				"utf8",
 			),
 		);
 		const coverageActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "coverage-rules/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "coverage-rules/actions.ts"), "utf8"),
 		);
 
 		expect(
@@ -706,7 +707,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the skills read api on settings access tier checks instead of employee-only role checks", () => {
 		const source = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "../../../api/settings/skills/route.ts"),
 				"utf8",
 			),
@@ -721,16 +722,16 @@ describe("org-admin settings route access", () => {
 
 	it("keeps audit log and permissions settings surfaces on shared settings access helpers", () => {
 		const auditLogSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "audit-log/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "audit-log/page.tsx"), "utf8"),
 		);
 		const auditLogActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "audit-log/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "audit-log/actions.ts"), "utf8"),
 		);
 		const permissionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "permissions/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "permissions/page.tsx"), "utf8"),
 		);
 		const permissionsActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "permissions/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "permissions/actions.ts"), "utf8"),
 		);
 
 		expect(auditLogSource.includes("requireOrgAdminSettingsAccess(")).toBe(
@@ -767,10 +768,10 @@ describe("org-admin settings route access", () => {
 
 	it("keeps enterprise and travel-expense actions on shared org-admin helpers instead of employee-role checks", () => {
 		const travelExpensesSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "travel-expenses/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "travel-expenses/actions.ts"), "utf8"),
 		);
 		const enterpriseActionsSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "enterprise/actions.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "enterprise/actions.ts"), "utf8"),
 		);
 
 		expect(
@@ -791,13 +792,13 @@ describe("org-admin settings route access", () => {
 
 	it("keeps enterprise identity setup on org-admin settings access", () => {
 		const setupPageSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "enterprise/identity-setup/page.tsx"),
 				"utf8",
 			),
 		);
 		const settingsAccessSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "../../../../lib/settings-access.ts"),
 				"utf8",
 			),
@@ -814,7 +815,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the scheduled exports page shell on shared org-admin parity helpers", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "scheduled-exports/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "scheduled-exports/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("requireOrgAdminSettingsAccess(")).toBe(true);
@@ -825,7 +826,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the demo data feature flag out of direct Better Auth organization input", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "../../../../lib/auth.ts"), "utf8"),
 		);
 		const demoDataField = source.slice(
 			source.indexOf("demoDataEnabled:"),
@@ -837,7 +838,7 @@ describe("org-admin settings route access", () => {
 
 	it("narrows manager employee editing away from org-admin-only form controls", () => {
 		const source = stripComments(
-			readFileSync(
+			readTestText(
 				join(
 					SETTINGS_ROOT,
 					"employees/[employeeId]/employee-edit-form-card.tsx",
@@ -853,7 +854,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps the employee skill controls visible for scoped managers instead of admin-only clients", () => {
 		const detailClientSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(
 					SETTINGS_ROOT,
 					"employees/[employeeId]/employee-detail-page-client.tsx",
@@ -862,7 +863,7 @@ describe("org-admin settings route access", () => {
 			),
 		);
 		const employeeSkillsCardSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(
 					SETTINGS_ROOT,
 					"../../../../components/settings/employee-skills-card.tsx",
@@ -879,13 +880,13 @@ describe("org-admin settings route access", () => {
 
 	it("keeps employee list invite visibility on settings access tier instead of employee admin role", () => {
 		const pageClientSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "employees/employees-page-client.tsx"),
 				"utf8",
 			),
 		);
 		const querySource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "../../../../lib/query/use-employees.ts"),
 				"utf8",
 			),
@@ -905,7 +906,7 @@ describe("org-admin settings route access", () => {
 
 	it("keeps organization management org-admin-only and separate from teams", () => {
 		const source = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "organizations/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "organizations/page.tsx"), "utf8"),
 		);
 
 		expect(source.includes("getCurrentSettingsRouteContext(")).toBe(true);
@@ -916,16 +917,16 @@ describe("org-admin settings route access", () => {
 
 	it("derives team detail capabilities from scoped team data instead of employee-only checks", () => {
 		const pageSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "teams/[teamId]/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "teams/[teamId]/page.tsx"), "utf8"),
 		);
 		const clientSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "teams/[teamId]/team-detail-page-client.tsx"),
 				"utf8",
 			),
 		);
 		const controllerSource = stripComments(
-			readFileSync(
+			readTestText(
 				join(SETTINGS_ROOT, "teams/[teamId]/use-team-detail-page.ts"),
 				"utf8",
 			),
@@ -976,7 +977,7 @@ describe("org-admin settings route access", () => {
 				continue;
 			}
 
-			const source = stripComments(readFileSync(absolutePath, "utf8"));
+			const source = stripComments(readTestText(absolutePath, "utf8"));
 
 			if (!source.includes("requireOrgAdminSettingsAccess(")) {
 				offenders.push(relativePath);
@@ -1001,7 +1002,7 @@ describe("org-admin settings route access", () => {
 
 	it("streams fail-closed billing access behind a focused boundary", () => {
 		const billingSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "billing/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "billing/page.tsx"), "utf8"),
 		);
 
 		expect(billingSource).not.toContain("connection(");
@@ -1021,7 +1022,7 @@ describe("org-admin settings route access", () => {
 
 	it("streams fail-closed AVV access behind a focused boundary", () => {
 		const avvSource = stripComments(
-			readFileSync(join(SETTINGS_ROOT, "avv/page.tsx"), "utf8"),
+			readTestText(join(SETTINGS_ROOT, "avv/page.tsx"), "utf8"),
 		);
 
 		expect(avvSource).not.toContain("connection(");

@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { readTestText } from "@/test/read-test-text";
 
 const appDir = join(import.meta.dirname, "../../app");
 
@@ -215,7 +215,7 @@ describe("explicit-organization privileged server actions", () => {
 		actionCases,
 	)("guards %s before its first side effect", (_name, path, action, sideEffect, guardCall = "requireActiveOrganizationActionActor") => {
 		const section = actionSection(
-			readFileSync(join(appDir, path), "utf8"),
+			readTestText(join(appDir, path), "utf8"),
 			action,
 		);
 		const guard = section.indexOf(guardCall);
@@ -231,7 +231,7 @@ describe("explicit-organization privileged server actions", () => {
 		["import review", "[locale]/(app)/settings/import/review-actions.ts"],
 		["Telegram", "[locale]/(app)/settings/telegram/actions.ts"],
 	] as const)("uses the lifecycle-aware actor check in the shared %s gate", (_name, path) => {
-		const source = readFileSync(join(appDir, path), "utf8");
+		const source = readTestText(join(appDir, path), "utf8");
 		expect(source).toContain("runActiveOrganizationActionActorCheck({");
 	});
 
@@ -253,7 +253,7 @@ describe("explicit-organization privileged server actions", () => {
 			/inviteCodeService\.getById\(\s*inviteCodeId,\s*organizationId/,
 		],
 	] as const)("passes organization scope through %s", (action, scopedCall) => {
-		const source = readFileSync(
+		const source = readTestText(
 			join(
 				appDir,
 				"[locale]/(app)/settings/organizations/invite-code-actions.ts",
@@ -287,7 +287,7 @@ describe("explicit-organization privileged API routes", () => {
 	it.each(
 		routeCases,
 	)("guards %s before organization mutation", (_name, path, sideEffect) => {
-		const source = readFileSync(join(appDir, path), "utf8");
+		const source = readTestText(join(appDir, path), "utf8");
 		const mutation = source.indexOf(sideEffect);
 		const guard = source.lastIndexOf(
 			"requireActiveOrganizationActionActor",

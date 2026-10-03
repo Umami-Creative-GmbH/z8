@@ -56,7 +56,10 @@ function collectActiveSourceFiles(dir: string): string[] {
 }
 
 function allowsRadixEraStateHooks(file: string) {
-	return relative(process.cwd(), file) === "src/components/ui/drawer.tsx";
+	return (
+		relative(process.cwd(), file).replace(/\\/g, "/") ===
+		"src/components/ui/drawer.tsx"
+	);
 }
 
 function sourceOrLocalReExportsUseBaseUi(file: string) {
@@ -102,7 +105,7 @@ describe("Base UI wrapper conventions", () => {
 			}
 
 			const source = readFileSync(file, "utf8");
-			const filePath = relative(process.cwd(), file);
+			const filePath = relative(process.cwd(), file).replace(/\\/g, "/");
 
 			return radixEraStaticHookPatterns.flatMap(({ name, pattern }) => {
 				const match = source.match(pattern);
