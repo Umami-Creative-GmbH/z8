@@ -189,11 +189,7 @@
       "system": "System",
       "time": "Zeit",
       "type": "Typ",
-      "workLocation": "Arbeitsort",
-      "pendingApproval": "Genehmigung ausstehend",
-      "pendingApprovalDescription": "Dieser Arbeitszeitraum wartet auf die Genehmigung durch eine Führungskraft. Die erfassten Zeiten können sich bei Ablehnung ändern.",
-      "rejected": "Abgelehnt",
-      "rejectedDescription": "Diese Änderung wurde von einer Führungskraft abgelehnt. Die ursprünglichen Zeiten wurden wiederhergestellt."
+      "workLocation": "Arbeitsort"
     },
     "edit": {
       "deleteEntry": "Eintrag löschen",
@@ -250,8 +246,7 @@
       "absence": "Abwesenheit",
       "holiday": "Feiertag",
       "timeEntry": "Zeiteintrag",
-      "workPeriod": "Arbeitszeitraum",
-      "break": "Pause"
+      "workPeriod": "Arbeitszeitraum"
     },
     "filter": {
       "absences": "Abwesenheiten",
@@ -286,9 +281,7 @@
       "nextMonth": "Nächster Monat",
       "previousMonth": "Vorheriger Monat",
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
-      "weekSum": "Summe",
-      "dayLabel": "{date}: {actual} erfasst, {required} Sollzeit, {delta} {status}.",
-      "dayEvents": "{count, plural, one {# Ereignis} other {# Ereignisse}}: {titles}"
+      "weekSum": "Summe"
     },
     "requirements": {
       "status": {

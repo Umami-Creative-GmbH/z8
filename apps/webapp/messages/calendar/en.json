@@ -189,11 +189,7 @@
       "system": "System",
       "time": "Time",
       "type": "Type",
-      "workLocation": "Work location",
-      "pendingApproval": "Pending Approval",
-      "pendingApprovalDescription": "This work period is awaiting manager approval. The recorded times may change if rejected.",
-      "rejected": "Rejected",
-      "rejectedDescription": "This work period change was rejected by a manager. The original times have been restored."
+      "workLocation": "Work location"
     },
     "edit": {
       "deleteEntry": "Delete entry",
@@ -250,8 +246,7 @@
       "absence": "Absence",
       "holiday": "Holiday",
       "timeEntry": "Time Entry",
-      "workPeriod": "Work Period",
-      "break": "Break"
+      "workPeriod": "Work Period"
     },
     "filter": {
       "absences": "Absences",
@@ -286,9 +281,7 @@
       "nextMonth": "Next month",
       "previousMonth": "Previous month",
       "totalDescription": "Recorded time compared with policy hours",
-      "weekSum": "Sum",
-      "dayLabel": "{date}: {actual} recorded, {required} required, {delta} {status}.",
-      "dayEvents": "{count, plural, one {# event} other {# events}}: {titles}"
+      "weekSum": "Sum"
     },
     "requirements": {
       "status": {
