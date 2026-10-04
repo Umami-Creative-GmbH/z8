@@ -293,6 +293,42 @@ describe("ManualTimeEntryDialog layout", () => {
 		);
 	});
 
+	it.each([1, 2] as const)(
+		"selects and submits a work location for command version %s",
+		async (manualCommandVersion) => {
+			renderDialog(
+				{
+					open: true,
+					hideTrigger: true,
+					targetEmployeeId: "employee-2",
+					defaultDate: "2026-05-12",
+					defaultClockInTime: "10:15",
+					defaultClockOutTime: "15:45",
+				},
+				{ manualCommandVersion },
+			);
+			expect(
+				screen
+				.getByRole("radio", { name: "Office" })
+					.getAttribute("aria-checked"),
+			).toBe("true");
+			fireEvent.click(screen.getByRole("radio", { name: "Home" }));
+			expect(
+				screen
+				.getByRole("radio", { name: "Home" })
+					.getAttribute("aria-checked"),
+			).toBe("true");
+			fireEvent.change(screen.getByLabelText("Reason"), {
+			target: { value: "Forgot to clock out" },
+		});
+			fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+			await waitFor(() => expect(createManualTimeEntry).toHaveBeenCalled());
+			expect(createManualTimeEntry.mock.calls[0]?.[0]).toMatchObject({
+				workLocationType: "home",
+			});
+		},
+	);
+
 	it("keeps the form body naturally sized and preserves footer action spacing", () => {
 		const source = readFileSync(
 			join(
@@ -514,6 +550,7 @@ describe("ManualTimeEntryDialog layout", () => {
 				browserTimezone: null,
 				projectId: "project-1",
 				workCategoryId: "category-1",
+				workLocationType: "office",
 			});
 		});
 		expect(randomUUID).toHaveBeenCalledOnce();
@@ -1354,13 +1391,22 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 					submissionId,
 					targetEmployeeId: "employee-2",
 					date: "2025-10-26",
-					clockIn: { time: "01:00", occurrence: null, displayedOffsetMinutes: 120 },
-					clockOut: { time: "02:30", occurrence: "later", displayedOffsetMinutes: 60 },
+					clockIn: {
+						time: "01:00",
+						occurrence: null,
+						displayedOffsetMinutes: 120,
+					},
+					clockOut: {
+						time: "02:30",
+						occurrence: "later",
+						displayedOffsetMinutes: 60,
+					},
 					zone: { basis: "target", timezone: "Europe/Berlin" },
 					browserTimezone: null,
 					reason: "Forgot to clock out",
 					projectId: null,
 					workCategoryId: null,
+					workLocationType: "office",
 				},
 				RECOVERY_CONTEXT,
 			),
@@ -1444,7 +1490,7 @@ describe("ManualTimeEntryDialog version-2 commands (#308)", () => {
 			{ manualCommandVersion: 2 },
 		);
 		// Unambiguous in the saved UTC zone: no choice is offered yet.
-		expect(screen.queryByRole("radio")).toBeNull();
+		expect(screen.queryByRole("radio", { name: /UTC[+-]/ })).toBeNull();
 
 		enterReasonAndSubmit();
 		fireEvent.click(await screen.findByRole("button", { name: "Continue once" }));

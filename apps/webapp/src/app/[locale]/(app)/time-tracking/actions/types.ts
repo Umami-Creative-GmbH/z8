@@ -1,9 +1,9 @@
 import type { approvalStatusEnum } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type { OperationIdentity } from "@/lib/time-tracking/clocking/types";
-import type { ManualCommandRejection } from "./manual-command-submission";
+import type { ClockChannel } from "@/lib/time-tracking/close-active-work";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import type { ManualCommandRejection } from "./manual-command-submission";
 
 export interface CorrectionRequest {
 	workPeriodId: string;
@@ -103,6 +103,7 @@ export interface ManualTimeEntryInput {
 	browserTimezone?: string | null;
 	projectId?: string;
 	workCategoryId?: string;
+	workLocationType?: WorkLocationType;
 }
 
 /** What a manual submission committed, for either command representation. */

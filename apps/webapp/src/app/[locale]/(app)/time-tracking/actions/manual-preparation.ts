@@ -68,6 +68,7 @@ export type PreparedManualWork = {
 	reason: string;
 	projectId: string | null;
 	workCategoryId: string | null;
+	workLocationType: ManualTimeEntryCommand["workLocationType"];
 	daysBack: number;
 	policy: ManualPolicyEvidence | null;
 	approval: ManualApprovalIntent;
@@ -325,6 +326,7 @@ export async function prepareManualWork(
 			reason: command.reason.trim(),
 			projectId: command.projectId,
 			workCategoryId: command.workCategoryId,
+			workLocationType: command.workLocationType,
 			daysBack,
 			policy,
 			approval: evaluateManualApprovalIntent({ exemption, policy, daysBack }),

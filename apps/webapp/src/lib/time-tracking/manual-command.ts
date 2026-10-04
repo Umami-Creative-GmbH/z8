@@ -10,6 +10,7 @@ import { Temporal } from "temporal-polyfill";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
 import { deriveWorkDurationMinutes } from "./work-duration";
+import { isWorkLocationType, type WorkLocationType } from "./work-location";
 
 export const MANUAL_TIME_ENTRY_COMMAND_VERSION = 2;
 
@@ -47,6 +48,8 @@ export type ManualTimeEntryCommand = {
 	reason: string;
 	projectId: string | null;
 	workCategoryId: string | null;
+	/** Omitted by older frozen commands; keep their submitted representation intact. */
+	workLocationType?: WorkLocationType;
 };
 
 export type ManualCommandRejection = { reason: "invalid_command"; field: string };
@@ -145,7 +148,22 @@ export function parseManualTimeEntryCommand(
 	| { ok: true; command: ManualTimeEntryCommand }
 	| { ok: false; rejection: ManualCommandRejection } {
 	try {
-		const record = exactRecord(value, COMMAND_KEYS, "command");
+		const hasWorkLocation = Boolean(
+			value &&
+				typeof value === "object" &&
+				Object.hasOwn(value, "workLocationType"),
+		);
+		const record = exactRecord(
+			value,
+			hasWorkLocation ? [...COMMAND_KEYS, "workLocationType"] : COMMAND_KEYS,
+			"command",
+		);
+		if (
+			hasWorkLocation &&
+			!isWorkLocationType(record.workLocationType as string)
+		) {
+			throw new InvalidCommandField("workLocationType");
+		}
 		if (record.version !== MANUAL_TIME_ENTRY_COMMAND_VERSION) {
 			throw new InvalidCommandField("version");
 		}
@@ -188,6 +206,9 @@ export function parseManualTimeEntryCommand(
 				reason: record.reason,
 				projectId: nullableId(record.projectId, "projectId"),
 				workCategoryId: nullableId(record.workCategoryId, "workCategoryId"),
+				...(hasWorkLocation
+					? { workLocationType: record.workLocationType as WorkLocationType }
+					: {}),
 			},
 		};
 	} catch (error) {

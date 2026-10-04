@@ -197,6 +197,7 @@ describe("frozen manual command recovery (#310)", () => {
 		actions.createManualTimeEntry.mockImplementationOnce(lostResponse);
 		const first = mountDialog(targetContext());
 
+		await user.click(screen.getByRole("radio", { name: "Remote" }));
 		await fillAndSubmit(user);
 
 		await waitFor(() => expect(actions.createManualTimeEntry).toHaveBeenCalledOnce());
@@ -207,12 +208,17 @@ describe("frozen manual command recovery (#310)", () => {
 			targetEmployeeId: "employee-2",
 			date: "2026-05-12",
 			clockIn: { time: "10:15", occurrence: null, displayedOffsetMinutes: 120 },
-			clockOut: { time: "15:45", occurrence: null, displayedOffsetMinutes: 120 },
+			clockOut: {
+				time: "15:45",
+				occurrence: null,
+				displayedOffsetMinutes: 120,
+			},
 			zone: { basis: "target", timezone: "Europe/Berlin" },
 			browserTimezone: null,
 			reason: "Forgot to clock out",
 			projectId: "project-1",
 			workCategoryId: "category-1",
+			workLocationType: "remote",
 		});
 		expect(sentContext).toEqual(MANAGER);
 		expect(actions.toast.error).toHaveBeenCalledWith(
@@ -363,6 +369,7 @@ describe("frozen manual command recovery (#310)", () => {
 		const user = userEvent.setup();
 		actions.createManualTimeEntry.mockImplementationOnce(lostResponse);
 		mountDialog(targetContext());
+		await user.click(screen.getByRole("radio", { name: "Home" }));
 		await fillAndSubmit(user);
 		await waitFor(() => expect(recoveryItem()).toBeTruthy());
 		const [frozen] = actions.createManualTimeEntry.mock.calls[0] ?? [];
@@ -396,7 +403,9 @@ describe("frozen manual command recovery (#310)", () => {
 		expect(actions.createManualTimeEntry).toHaveBeenCalledOnce();
 
 		// Conclusive absence: its values become the editable draft for a fresh submission.
+		await user.click(screen.getByRole("radio", { name: "Office" }));
 		await user.click(within(recoveryItem()).getByRole("button", { name: "Edit as new entry" }));
+		expect(screen.getByRole("radio", { name: "Home" }).getAttribute("aria-checked")).toBe("true");
 		expect(screen.getByLabelText<HTMLTextAreaElement>("Reason").value).toBe("Forgot to clock out");
 		expect(screen.queryByRole("region", { name: "Unconfirmed entries" })).toBeNull();
 		actions.createManualTimeEntry.mockResolvedValueOnce(saved());

@@ -110,6 +110,7 @@ export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
 	durationMinutes: number;
 	projectId: string | null;
 	workCategoryId: string | null;
+	workLocationType?: (typeof workPeriod.$inferInsert)["workLocationType"];
 	canonicalRecordId: string;
 	approvalStatus: "pending" | "approved";
 	pendingChanges: unknown;
@@ -127,6 +128,9 @@ export async function insertOrdinaryWorkPeriodSourceInTransaction(input: {
 			durationMinutes: input.durationMinutes,
 			projectId: input.projectId,
 			workCategoryId: input.workCategoryId,
+			...(input.workLocationType !== undefined
+				? { workLocationType: input.workLocationType }
+				: {}),
 			canonicalRecordId: input.canonicalRecordId,
 			isActive: false,
 			approvalStatus: input.approvalStatus,
