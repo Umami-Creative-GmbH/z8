@@ -39,6 +39,7 @@ const AUTH_ROUTES = [
 const AUTH_SET = new Set(AUTH_ROUTES);
 const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/sign-in": ["setup"],
+	"/setup": ["auth"],
 	"/init": ["organization"],
 	"/analytics": ["reports"],
 	"/calendar": ["timeTracking"],

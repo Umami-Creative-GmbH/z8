@@ -21,13 +21,24 @@
       },
       "description": "Arbeitszeiträume an Lohnabrechnungssysteme wie DATEV oder Personio exportieren",
       "export": {
+        "allEmployees": "Alle Mitarbeiter",
+        "allProjects": "Alle Projekte",
+        "allTeams": "Alle Teams",
         "asyncDescription": "Ihr Export wird verarbeitet. Überprüfen Sie den Verlauf für den Fortschritt.",
         "asyncStarted": "Export gestartet",
         "customRange": "Benutzerdefinierter Bereich",
         "dateRange": "Datumsbereich",
         "description": "Arbeitszeiträume und Abwesenheiten im DATEV Lohn & Gehalt-Format exportieren",
+        "employees": "Mitarbeiter",
         "endDate": "Enddatum",
         "error": "Export fehlgeschlagen",
+        "exportButtonDatev": "Nach DATEV exportieren",
+        "exportButtonLexware": "Nach Lexware exportieren",
+        "exportButtonPersonio": "Nach Personio exportieren",
+        "exportButtonSage": "Nach Sage exportieren",
+        "exportButtonSuccessFactorsApi": "Nach SAP SuccessFactors (API) exportieren",
+        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors-CSV exportieren",
+        "exportButtonWorkday": "Nach Workday exportieren",
         "exporting": "Export läuft…",
         "filters": "Filter (Optional)",
         "format": "Exportformat",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Monat",
         "monthSelection": "Monat auswählen",
+        "projects": "Projekte",
         "startDate": "Startdatum",
         "success": "Export heruntergeladen",
+        "teams": "Teams",
         "title": "Lohndaten exportieren",
         "unavailable": {
           "missingConfiguration": "Konfiguration",
           "missingCredentials": "Anmeldedaten"
         },
-        "year": "Jahr",
-        "allEmployees": "Alle Mitarbeiter",
-        "allProjects": "Alle Projekte",
-        "allTeams": "Alle Teams",
-        "employees": "Mitarbeiter",
-        "employeesSelected": "{{count}} ausgewählt",
-        "exportButtonDatev": "Export nach DATEV",
-        "exportButtonLexware": "Export nach Lexware",
-        "exportButtonPersonio": "Export nach Personio",
-        "exportButtonSage": "Export nach Sage",
-        "exportButtonSuccessFactorsApi": "Export nach SAP SuccessFactors (API)",
-        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV exportieren",
-        "exportButtonWorkday": "Export nach Workday",
-        "projects": "Projekte",
-        "projectsSelected": "{{count}} ausgewählt",
-        "teams": "Teams",
-        "teamsSelected": "{{count}} ausgewählt"
+        "year": "Jahr"
       },
       "history": {
         "description": "Frühere DATEV-Exporte ansehen und herunterladen",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Genehmigungsposteingang prüfen",
+        "payrollExport": "Einstellungen für Lohnabrechnungsexport öffnen",
+        "timeTracking": "Zeiterfassung prüfen",
+        "travelExpenses": "Reisekosten prüfen"
+      },
+      "affectedEmployees": {
+        "name": "Mitarbeiter",
+        "noNumber": "Nicht festgelegt",
+        "number": "Personalnummer"
+      },
+      "checks": {
+        "count": "Anzahl"
+      },
+      "checkStatus": {
+        "fail": "Blockiert",
+        "pass": "Bereit",
+        "unavailable": "Überprüfung nicht möglich",
+        "warning": "Warnung"
+      },
       "description": "Prüfen Sie, ob ein Lohnabrechnungszeitraum bereit ist, bevor Sie Zeit-, Abwesenheits- und Lohndaten exportieren.",
+      "openPayrollExport": "Lohnabrechnungsexport öffnen",
+      "status": {
+        "blocked": "Blockiert",
+        "ready": "Bereit für Lohnabrechnung",
+        "unavailable": "Überprüfung nicht möglich"
+      },
+      "summary": {
+        "affectedEmployees": "Betroffene Mitarbeiter",
+        "affectedEmployeesDescription": "Mitarbeiter, die mit offenen Bereitschaftspunkten verknüpft sind.",
+        "blockers": "Blocker",
+        "blockersDescription": "Erforderliche Prüfungen, die den Export derzeit blockieren.",
+        "exportTargets": "Konfigurierte Exportziele",
+        "exportTargetsDescription": "Aktive Exportziele für die Lohnabrechnung.",
+        "period": "Zeitraum",
+        "periodDescription": "Abrechnungszeitraum, der überprüft wird.",
+        "status": "Status",
+        "statusDescription": "Gesamte Exportbereitschaft für die Lohnabrechnung.",
+        "warnings": "Warnungen",
+        "warningsDescription": "Nicht blockierende Probleme, die vor dem Export überprüft werden sollten."
+      },
       "title": "Bereitschaft der Lohnabrechnung"
     },
     "workDiagnostics": {
+      "allEmployees": "Alle Mitarbeiter anzeigen",
+      "append": {
+        "continued": "Mitarbeiter, die an einen genehmigten Anker anschließen: {count}. Der Verlauf vor jedem Anker wird nicht überprüft.",
+        "counts": "Bei {verified} von {total} Mitarbeitern ist die Herkunft anhand gespeicherter Nachweise verifiziert.",
+        "description": "Ein von der Vollständigkeit unabhängiger Aspekt: Herkunft und Kontinuität gespeicherter Zeiteinträge. Dies entscheidet nicht über die Bereitschaft zur Lohnabrechnung.",
+        "interruptions": "Kontinuitätsunterbrechungen",
+        "issues": "Herkunftsprobleme und Kandidaten",
+        "limitations": "Einschränkungen",
+        "title": "Sicherung der Zeiteintragskette"
+      },
+      "blocking": "Blockiert die Vollständigkeit",
       "description": "Fehlende oder widersprüchliche Zeiterfassungen und Probleme in der Zeiteintragskette finden",
+      "evidence": {
+        "entries": "Zeiteinträge",
+        "timeRecords": "Zeitaufzeichnungen",
+        "workPeriods": "Arbeitszeiträume"
+      },
+      "findings": {
+        "description": "Jede Feststellung ist ein schreibgeschützter Nachweis. Nur die nachfolgende Behebung historischer Lücken füllt fehlende Werte aus Nachweisen und mit separater Autorisierung; die Änderung bereits festgelegter Arbeitszeiten erfordert eine separat autorisierte Überprüfung.",
+        "employees": "Mitarbeiter",
+        "empty": "Keine fehlenden, widersprüchlichen oder zweifelhaften historischen Arbeitszeiten in diesem Bereich.",
+        "evidence": "Nachweise",
+        "finding": "Feststellung",
+        "provenance": "Provenienz",
+        "title": "Feststellungen",
+        "treatment": "Behandlung"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Ausstehende Arbeit ohne Genehmigungsanfrage",
+        "approvalStateConflict": "Genehmigungsstatus stimmen nicht überein",
+        "canonicalDetailMissing": "Arbeitsdetails im Zeiteintrag fehlen",
+        "canonicalLinkMissing": "Verknüpfung zum Zeiteintrag fehlt",
+        "canonicalLinkShared": "Mehrere Arbeitszeiträume verknüpfen denselben Zeiteintrag",
+        "canonicalLinkUnresolved": "Verknüpfter Zeiteintrag nicht gefunden",
+        "canonicalMissing": "Zeiteintrag fehlt",
+        "captureInferred": "Zeitzonenerfassung nach dem Ereignis abgeleitet",
+        "deletedWorkPayable": "Gelöschte Arbeit enthält weiterhin einen vergütbaren Zeiteintrag",
+        "durationConflict": "Gespeicherte Zeitdauern stimmen nicht überein",
+        "durationMissing": "Gespeicherte Zeitdauer fehlt",
+        "emptyInterval": "Start entspricht Ende",
+        "endpointConflict": "Start- oder Endzeiten stimmen nicht überein",
+        "endpointEntryMissing": "Ausstempel-Eintrag fehlt",
+        "endpointEntrySuperseded": "Arbeitszeitraum verweist auf einen ersetzten Stempel-Eintrag",
+        "endpointEntryUnresolved": "Stempel-Eintrag nicht gefunden",
+        "endpointMissing": "Endzeit fehlt",
+        "manualEvidenceUnreadable": "Beleg für manuelle Einreichung nicht lesbar",
+        "manualHolidayCheckDatesDiffer": "Feiertagsprüfung nutzte andere Daten als die Arbeitszeit",
+        "manualInterpretationAmbiguous": "Zeit des manuellen Eintrags durch Zeitumstellung übersprungen oder wiederholt",
+        "manualInterpretationMismatch": "Manueller Eintrag mit anderen Zeiten gespeichert als eingereicht",
+        "manualTrimmed": "Manueller Eintrag beim Speichern gekürzt",
+        "manualZoneUnrecorded": "Zeitzone des manuellen Eintrags nicht erfasst",
+        "metadataCanonicalOnly": "Zuweisung nur im Zeiteintrag",
+        "metadataConflict": "Zuweisungen stimmen nicht überein",
+        "metadataMissing": "Zuweisung im Zeiteintrag fehlt",
+        "multipleActiveWork": "Mehr als ein aktiver Arbeitszeitraum",
+        "negativeDuration": "Negative Dauer",
+        "openStateConflict": "Offener und geschlossener Status stimmen nicht überein",
+        "overlappingWork": "Überlappende Arbeitszeiten",
+        "ownershipConflict": "Eigentümerkonflikt",
+        "relinkedCanonicalResidue": "Nach Neuverknüpfung verbliebener Zeiteintrag",
+        "reversedInterval": "Ende vor Beginn",
+        "storedElapsedDiscrepancy": "Gespeicherte Minuten weichen von der verstrichenen Zeit ab",
+        "workOutsideOrganizationEmployees": "Arbeit außerhalb der Mitarbeiter der Organisation zugeordnet"
+      },
+      "nextMonth": "Nächster Monat",
+      "ownerUnknown": "Eigentümer nicht ermittelt",
       "pageDescription": "Diagnose auf Datensatzebene für vergangene Arbeit: fehlende oder widersprüchliche Darstellungen, Übernahmeherkunft, mutmaßliche Fehler bei manueller Eingabe und Validierung der Zeiteintragskette.",
+      "previousMonth": "Vorheriger Monat",
       "proposals": {
         "addChange": "Änderung hinzufügen",
         "after": "Neuer Wert",
@@ -370,6 +473,12 @@
         "valueRequired": "Geben Sie den neuen Wert ein.",
         "work": "Arbeitszeitraum"
       },
+      "provenance": {
+        "ambiguous": "Mehrdeutige Herkunft",
+        "freshBackdated": "Neuer rückdatierter Schreibvorgang",
+        "postAdoption": "Schreibvorgang nach Übernahme",
+        "preAdoption": "Historie vor Übernahme"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Ersteller des Ausstempel-Eintrags",
@@ -413,7 +522,37 @@
         "title": "Reparatur historischer Lücken",
         "work": "Arbeitszeitraum"
       },
-      "title": "Arbeitsdiagnose"
+      "shape": {
+        "conflicting": "Widersprüchlich",
+        "disclosure": "Offenlegung",
+        "missing": "Fehlend",
+        "suspectedDefect": "Vermuteter Fehler"
+      },
+      "status": {
+        "complete": "Vollständig",
+        "completeDescription": "Keine relevanten fehlenden oder widersprüchlichen Nachweise, einschließlich ausstehender, abgelehnter und offener Arbeiten.",
+        "incomplete": "Unvollständig",
+        "incompleteDescription": "Nicht betroffene Daten können zur Überprüfung verwendet werden, aber dieser Umfang ist nicht vollständig.",
+        "widenedEmployees": "Daten konnten nicht ermittelt werden, daher sind betroffene Mitarbeitende für jeden Zeitraum ungewiss.",
+        "widenedOrganization": "Zuständigkeit konnte nicht ermittelt werden, daher ist die gesamte Organisation ungewiss."
+      },
+      "summary": {
+        "affected": "Betroffene Mitarbeitende",
+        "affectedDescription": "Mitarbeitende, deren Arbeit in diesem Umfang nicht ermittelt werden kann.",
+        "blocking": "Blockierende Feststellungen",
+        "blockingDescription": "Fehlende oder widersprüchliche Nachweise, die relevante Arbeiten ungewiss machen.",
+        "scope": "Umfang",
+        "scopeAll": "Alle Mitarbeitenden. Die Daten decken die Kalendertage aller Zeitzonen ab.",
+        "status": "Vollständigkeit"
+      },
+      "title": "Arbeitsdiagnose",
+      "treatment": {
+        "disclosed": "Offengelegte Einschränkung",
+        "historicalGap": "Historische Lücke",
+        "integrityIncident": "Integritätsvorfall",
+        "investigationRequired": "Untersuchung erforderlich",
+        "reviewRequired": "Überprüfung erforderlich"
+      }
     }
   }
 }

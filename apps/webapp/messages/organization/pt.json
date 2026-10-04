@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Apenas administradores e proprietários da organização podem alterar essas configurações.",
+      "description": "Defina a duração máxima de trabalho ininterrupto em tempo real. A saída dos funcionários é registrada automaticamente ao atingir esse limite.",
+      "enabled": "Registro de saída automático",
+      "help": "Um intervalo registrado ou um novo registro de entrada redefine o limite. As alterações se aplicam ao trabalho já em andamento. As verificações são executadas a cada cinco minutos; o registro de saída é registrado no limite, mesmo que a verificação seja executada mais tarde. Os funcionários sempre recebem uma notificação na caixa de entrada.",
+      "hours": "Horas",
+      "invalidDuration": "Insira uma duração válida: horas inteiras e 0–59 minutos, totalizando pelo menos um minuto.",
+      "minutes": "Minutos",
+      "save": "Salvar alterações",
+      "saved": "Configurações de registro de saída automático salvas",
+      "saveFailed": "Falha ao atualizar as configurações de registro de saída automático",
+      "saving": "Salvando…",
+      "title": "Registro de saída automático"
+    },
     "create": "Criar organização",
     "createDialog": {
       "description": "Configure a sua organização para começar",
@@ -120,7 +134,7 @@
       "expired": "Expirado",
       "expires": "Expira em",
       "inactive": "Inativo",
-      "invitationActionsLabel": "Ações para o convite para {email}",
+      "invitationActionsLabel": "Ações para o convite para ${row.original.email}",
       "invitationCancelError": "Falha ao cancelar convite",
       "invitationCancelSuccess": "Convite cancelado",
       "invitationResendError": "Falha ao reenviar convite",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} convite(s) aguardando aceitação}}",
       "invitedBy": "Convidado por",
       "member": "Membro",
-      "memberActionsLabel": "Ações para {name}",
+      "memberActionsLabel": "Ações para ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} membro(s) nesta organização}}",
       "noInvitationResults": "Nenhum convite corresponde à sua pesquisa.",
       "noInvitations": "Nenhum convite pendente.",
@@ -256,7 +270,7 @@
       "title": "Equipes"
     },
     "timezone": {
-      "balances-recalculating": "Os saldos de trabalho estão a ser recalculados para o novo fuso horário e ficam ocultos até estarem prontos.",
+      "balances-recalculating": "Os saldos de trabalho estão sendo recalculados para o novo fuso horário e permanecerão ocultos até que estejam prontos.",
       "default": "Fuso horário predefinido",
       "description": "Defina o fuso horário padrão para a sua organização. Isto é usado para monitorização de ausências, relatórios e outras funcionalidades baseadas em datas. Utilizadores individuais podem substituir isto nas suas definições de perfil.",
       "owner-only": "Apenas os proprietários da organização podem alterar a definição de fuso horário.",

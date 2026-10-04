@@ -19,42 +19,91 @@
     "commandPlaceholder": "Søk etter sider, personer, team, innstillinger eller handlinger…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "oppføring",
+          "hours": "timer",
+          "manual": "manuell",
+          "time": "tid"
+        },
         "subtitle": "Registrer timer for et tidligere skift eller en korrigering",
         "title": "Legg til manuell timeregistrering"
       },
       "createProject": {
+        "keywords": {
+          "create": "opprett",
+          "project": "prosjekt",
+          "settings": "innstillinger"
+        },
         "subtitle": "Åpne prosjektinnstillinger for å definere et nytt prosjekt",
         "title": "Opprett prosjekt"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "inviter",
+          "member": "medlem",
+          "teammate": "teammedlem"
+        },
         "subtitle": "Åpne organisasjonsadministrasjon for å legge til en kollega",
         "title": "Inviter teammedlem"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "godkjenninger",
+          "inbox": "innboks",
+          "review": "se gjennom"
+        },
         "subtitle": "Gå gjennom ventende forespørsler fra ansatte",
         "title": "Åpne innboks for godkjenninger"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "mine",
+          "requests": "forespørsler"
+        },
         "subtitle": "Gå gjennom dine innsendte fravær og utgifter",
         "title": "Åpne mine forespørsler"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Sjekk om timedata er klare for lønn",
-        "title": "Åpne lønnsklargjøring"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "eksporter",
+          "payroll": "lønn",
+          "wages": "lønn"
+        },
         "subtitle": "Gjennomgå avgrenset lønnsarbeidsområde",
         "title": "Åpne lønn"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "eksporter",
+          "payroll": "lønn",
+          "readiness": "klargjøring"
+        },
+        "subtitle": "Sjekk om timedata er klare for lønn",
+        "title": "Åpne lønnsklargjøring"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "preferanser",
+          "settings": "innstillinger"
+        },
         "subtitle": "Administrer innstillinger for profil, sikkerhet og organisasjon",
         "title": "Åpne innstillinger"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "fravær",
+          "timeOff": "fri",
+          "vacation": "ferie"
+        },
         "subtitle": "Opprett en forespørsel om ferie, sykefravær eller permisjon",
         "title": "Be om fravær"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "utgift",
+          "reimbursement": "refusjon",
+          "travel": "reise"
+        },
         "subtitle": "Opprett en refusjonsforespørsel for reiseutgifter",
         "title": "Send inn reiseutgift"
       }
@@ -70,7 +119,14 @@
     "search": "Søk",
     "searchOrRunCommand": "Søk eller kjør kommando",
     "teamAbsences": {
-      "description": "Gjennomgå fraværsstatistikk for ansatte og registrer fravær"
+      "description": "Gjennomgå fraværsstatistikk for ansatte og registrer fravær",
+      "keywords": {
+        "absence": "fravær",
+        "manager": "leder",
+        "sick": "syk",
+        "team": "team",
+        "vacation": "ferie"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Godkjenn",
     "assign": "Tildel",
     "back": "Tilbake",
+    "brandLogo": "{brand}-logo",
+    "breadcrumb": {
+      "breadcrumb": "brødsmulesti",
+      "more": "Mer"
+    },
     "cancel": "Avbryt",
+    "carousel": {
+      "nextSlide": "Neste lysbilde",
+      "previousSlide": "Forrige lysbilde",
+      "roleDescription": "karusell",
+      "slideRoleDescription": "lysbilde"
+    },
     "clear": "Tøm",
     "clearSearch": "Tøm søk",
     "clearSelection": "Tøm",
@@ -117,10 +184,17 @@
     "copy": "Kopier",
     "create": "Opprett",
     "current": "Gjeldende",
+    "datePicker": {
+      "clearDate": "Fjern dato",
+      "placeholder": "Velg en dato"
+    },
     "days": {
+      "count": "{count} dager",
       "friday": "Fredag",
+      "half": "0,5 dag",
       "label": "dager",
       "monday": "Mandag",
+      "one": "1 dag",
       "saturday": "Lørdag",
       "sunday": "Søndag",
       "thursday": "Torsdag",
@@ -129,14 +203,24 @@
     },
     "delete": "Slett",
     "deleting": "Sletter...",
+    "deployment": {
+      "skew": {
+        "description": "Last inn siden på nytt for å fortsette. Den siste handlingen din ble ikke lagret.",
+        "title": "Z8 ble oppdatert"
+      }
+    },
     "description": "Beskrivelse",
     "deselectAll": "Fjern all merking",
     "details": "Detaljer",
     "download": "Last ned",
+    "duplicate": "Dupliser",
+    "durationMinutes": "{count} min",
     "edit": "Rediger",
     "enabled": "Aktivert",
     "error": "Feil",
     "error-occurred": "Det oppsto en feil",
+    "fieldPresets": "{label}-forhåndsinnstillinger",
+    "focusInput": "Fokuser inndatafelt",
     "gender": {
       "female": "Kvinne",
       "male": "Mann",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Gå til dashbord",
     "inactive": "Inaktiv",
+    "label": "Etikett",
     "loading": "Laster...",
+    "loadingLabel": "Laster",
+    "loadingRegions": {
+      "absences": "Laster inn fravær",
+      "adminConsole": "Laster inn administrasjonskonsoll",
+      "analyticsNavigation": "Laster inn analysenavigasjon",
+      "application": "Laster inn applikasjon",
+      "auditExportSettings": "Laster inn innstillinger for revisjonseksport",
+      "authentication": "Laster inn autentisering",
+      "changePolicySettings": "Laster inn innstillinger for endringsretningslinjer",
+      "coverageRuleSettings": "Laster inn innstillinger for dekningsregler",
+      "customerSettings": "Laster inn kundeinnstillinger",
+      "customRoleSettings": "Laster inn innstillinger for egendefinerte roller",
+      "dashboard": "Laster inn dashbord",
+      "dataExportSettings": "Laster inn innstillinger for dataeksport",
+      "demoDataSettings": "Laster inn innstillinger for demodata",
+      "deploymentDiagnostics": "Laster inn distribusjonsdiagnostikk",
+      "employeeReports": "Laster inn ansattrapporter",
+      "employeeVacationAllowances": "Laster inn feriekvoter for ansatte",
+      "exportOperations": "Laster inn eksportoperasjoner",
+      "holidaySettings": "Laster inn innstillinger for helligdager",
+      "importReview": "Laster inn importgjennomgang",
+      "importSettings": "Laster inn importinnstillinger",
+      "locationSettings": "Laster inn stedsinnstillinger",
+      "onboarding": "Laster inn onboarding",
+      "payrollExportSettings": "Laster inn innstillinger for lønnseksport",
+      "payrollReadiness": "Laster inn lønnsklarhet",
+      "payrollWorkspace": "Laster inn arbeidsområde for lønn",
+      "platformAdminOverview": "Laster inn oversikt for plattformadministrator",
+      "platformAnalytics": "Laster inn plattformanalyse",
+      "platformBilling": "Laster inn plattformfakturering",
+      "platformSetup": "Laster inn plattformoppsett",
+      "projectReports": "Laster inn prosjektrapporter",
+      "projectSettings": "Laster inn prosjektinnstillinger",
+      "scheduledExports": "Laster inn planlagte eksporter",
+      "shiftSchedule": "Laster inn skiftplan",
+      "shiftTemplateSettings": "Laster inn innstillinger for skiftmaler",
+      "skillSettings": "Laster inn ferdighetsinnstillinger",
+      "surchargeSettings": "Laster inn tilleggsinnstillinger",
+      "team": "Laster inn team",
+      "todaySManagerBriefing": "Laster inn dagens lederbriefing",
+      "travelExpenses": "Laster inn reiseutgifter",
+      "travelExpenseSettings": "Laster inn innstillinger for reiseutgifter",
+      "twoFactorVerification": "Laster inn totrinnsverifisering",
+      "vacationSettings": "Laster inn ferieinnstillinger",
+      "wellnessSettings": "Laster inn velværeinnstillinger",
+      "workCategorySettings": "Laster inn innstillinger for arbeidskategorier",
+      "workerQueue": "Laster inn arbeiderkø",
+      "workPolicySettings": "Laster inn innstillinger for arbeidsretningslinjer",
+      "worksCouncilPortal": "Laster inn Works Council-portal",
+      "yourRequests": "Laster inn forespørslene dine"
+    },
     "loadMore": "Last inn mer",
     "months": {
       "april": "April",
@@ -169,11 +305,20 @@
     "next": "Neste",
     "notApplicable": "N/A",
     "not-available": "Ikke tilgjengelig",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Varsler} other {Varsler (# uleste)}}"
+    },
     "open": "Åpne",
     "openEnded": "Uten sluttdato",
     "openMenu": "Åpne meny",
     "optional": "valgfritt",
     "or": "Eller",
+    "pagination": {
+      "goToNextPage": "Gå til neste side",
+      "goToPreviousPage": "Gå til forrige side",
+      "morePages": "Flere sider",
+      "pagination": "paginering"
+    },
     "pending": "Ventende",
     "present": "Tilstede",
     "previous": "Forrige",
@@ -194,6 +339,11 @@
     "select-language": "Velg språk",
     "set": "sett",
     "sets": "sett",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Viser sidemenyen for mobil.",
+      "sidebar": "Sidemeny",
+      "toggleSidebar": "Veksle sidemeny"
+    },
     "skip": "Hopp over",
     "start": "Start",
     "status": "Status",
@@ -205,6 +355,10 @@
         "reload": "Last inn på nytt",
         "title": "Oppdatering tilgjengelig"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Åpne tidsvelger",
+      "switchPeriod": "Bytt til {period}"
     },
     "to": "til",
     "today": "I dag",
@@ -233,11 +387,34 @@
       "tue": "Tir",
       "we": "On",
       "wed": "Ons"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Endringer med innvirkning på arbeidsstyrken begrenset til denne organisasjonen og perioden.",
+      "changeLogEmpty": "Ingen endringer funnet for denne perioden.",
+      "changeReviewLog": "Logg for endringsgjennomgang",
+      "complianceFindings": "Samsvarsfunn",
+      "description": "Personvernfiltrert gjennomgang av arbeidsstyrken for den valgte perioden.",
+      "disabledDescription": "Bedriftsrådsmodus er ikke aktivert for denne organisasjonen.",
+      "exportReviewPack": "Eksporter gjennomgangspakke",
+      "from": "Fra",
+      "identityHidden": "Identitet skjult",
+      "insufficientData": "Utilstrekkelige data",
+      "policyChanges": "Retningslinjeendringer",
+      "scheduleChanges": "Tidsplanendringer",
+      "scheduleDescription": "Personvernfiltrerte tidsplanoppføringer for den valgte perioden.",
+      "scheduleEmpty": "Ingen tidsplanoppføringer funnet for denne perioden.",
+      "scheduleEntry": "{identity} - {start} til {end}",
+      "scheduleReview": "Gjennomgang av tidsplan",
+      "title": "Bedriftsråd",
+      "to": "Til",
+      "unassignedTeam": "Ikke-tildelt team",
+      "updateRange": "Oppdater intervall"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} ansatte valgt",
     "countWithMore": "{count} ansatte (+{more} flere)",
+    "inactive": "Inaktiv",
     "noEmployeesFound": "Ingen ansatte funnet",
     "removeSelected": "Fjern {name}",
     "role": "Rolle",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Kontakt administrator",
       "createOrg": "Opprett organisasjon",
-      "description": "Du trenger en ansattprofil for å {feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
+      "description": "Du trenger en ansattprofil for å ${feature}. Vennligst opprett en organisasjon eller kontakt administratoren din.",
       "emailBody": "Hei,nnJeg trenger en ansattprofil konfigurert for å få tilgang til plattformfunksjonene. Kan du hjelpe meg med dette?nnTakk!",
       "emailSubject": "Oppsett av ansattprofil kreves",
       "helpText": "Hvis du ble invitert til en organisasjon, kan du be administratoren din om å opprette ansattprofilen din.",
@@ -270,8 +447,14 @@
       "waiting": "Venter du på en invitasjon?",
       "waitingDesc": "Administratoren din vil sende deg en invitasjon på e-post. Sjekk innboksen og søppelposten din."
     },
+    "notFound": {
+      "description": "Siden kan være flyttet, lenken kan være utdatert, eller adressen kan være feil.",
+      "title": "Siden ble ikke funnet"
+    },
     "unexpected": {
-      "digest": "Referanse: {digest}"
+      "description": "Vi kunne ikke laste denne siden akkurat nå. Prøv igjen, eller gå tilbake til et trygt sted i appen.",
+      "digest": "Referanse: {digest}",
+      "title": "Noe gikk galt"
     }
   },
   "generic": {
@@ -280,17 +463,36 @@
   },
   "header": {
     "clock-in": "Stemple inn",
-    "clock-out": "Stemple ut"
+    "clock-out": "Stemple ut",
+    "timezone": {
+      "current": "Gjeldende tidssone {timezone}, {time}, {offset}",
+      "savedTimezone": "Lagret tidssone",
+      "saveTimezone": "Lagre tidssone",
+      "saving": "Lagrer...",
+      "updated": "Tidssonen ble oppdatert",
+      "updateError": "Det oppsto en feil under oppdatering av tidssone",
+      "updateFailed": "Kunne ikke oppdatere tidssone"
+    }
   },
   "info": {
     "agb": "Vilkår og betingelser",
     "back-to-login": "Tilbake til innlogging",
     "imprint": "Impressum",
+    "licenses": "Åpen kildekode-lisenser",
+    "openSourceLicenses": "Åpen kildekode-lisenser",
     "trust-center": "Tillitssenter"
   },
   "loading": {
+    "application": "Laster inn applikasjon",
+    "authentication": "Laster inn autentisering",
+    "calendar": "Laster inn kalender",
     "chart": "Laster inn diagram",
-    "settings": "Laster inn innstillinger"
+    "licenses": "Laster inn lisenser",
+    "platformAnalytics": "Laster inn plattformanalyse",
+    "settings": "Laster inn innstillinger",
+    "setup": "Laster inn oppsett",
+    "teamAbsences": "Laster inn tabell for teamfravær",
+    "workerQueue": "Laster inn arbeidskø"
   },
   "nav": {
     "absences": "Fravær",
@@ -326,6 +528,23 @@
       "viewAll": "Vis alle varsler"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} registrerte {absenceType} for {dateRange} på dine vegne.",
+        "title": "Fravær registrert"
+      },
+      "absenceRequestRejected": {
+        "title": "Fraværsforespørsel avslått"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Godkjenningsoppgaver trenger en stedfortreder",
+        "clock_out": "Må gjennomgås: utstempling ved offboarding",
+        "clock_repair": "Tidtakerreparasjon påkrevd",
+        "employment_terms": "Fremtidige ansettelsesvilkår må gjennomgås",
+        "future_work": "Fremtidig arbeid må gjennomgås"
+      },
+      "newAbsenceRequest": {
+        "title": "Ny fraværsforespørsel"
+      },
       "passwordChanged": {
         "message": "Passordet ditt ble endret. Hvis du ikke har gjort denne endringen, må du kontakte brukerstøtte umiddelbart.",
         "title": "Passord endret"
@@ -361,6 +580,7 @@
     "preferences": {
       "disabled": "Varsling deaktivert",
       "enabled": "Varsling aktivert",
+      "mandatoryInbox": "Leveres alltid til innboksen din",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Motta varsler om ventende godkjenningsforespørsler",
@@ -397,6 +617,9 @@
       "selectAllAria": "Velg alle synlige varsler",
       "selectNamedAria": "Velg {title}",
       "visibleSelected": "{count} synlige valgt"
+    },
+    "time": {
+      "justNow": "akkurat nå"
     },
     "timeline": {
       "earlier": "Tidligere",
@@ -469,6 +692,15 @@
     },
     "clockedIn": "Stemplet inn",
     "clockedOut": "Stemplet ut"
+  },
+  "rateLimit": {
+    "countdownLabel": "sekunder til du kan prøve igjen",
+    "jsonMessage": "Forespørselsgrensen er overskredet. Prøv igjen senere.",
+    "message": "Du har sendt for mange forespørsler. Vennligst vent før du prøver igjen.",
+    "retryButton": "Prøv igjen",
+    "retryingButton": "Prøver på nytt...",
+    "title": "For mange forespørsler",
+    "waitingButton": "Vennligst vent..."
   },
   "roles": {
     "admin": "Admin",
@@ -552,7 +784,8 @@
     "first-name-required": "Fornavn er påkrevd",
     "invalid-email": "Ugyldig e-postadresse",
     "last-name-required": "Etternavn er påkrevd",
-    "password-required": "Passord er påkrevd"
+    "password-required": "Passord er påkrevd",
+    "pronounsMaxLength": "Pronomen må være 50 tegn eller færre"
   },
   "workBalance": {
     "label": "Totalsaldo",
@@ -561,6 +794,6 @@
     "updatedEveryThreeHours": "Oppdateres hver 3. time"
   },
   "worksCouncil": {
-    "loadingLabel": "Laster inn bedriftsutvalg"
+    "loadingLabel": "Laster inn samarbeidsutvalg"
   }
 }

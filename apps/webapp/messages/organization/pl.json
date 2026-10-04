@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Tylko administratorzy i właściciele organizacji mogą zmieniać te ustawienia.",
+      "description": "Ustaw maksymalny czas trwania nieprzerwanej pracy na żywo. Po osiągnięciu tego limitu pracownicy są automatycznie wyrejestrowywani.",
+      "enabled": "Automatyczne zakończenie pracy",
+      "help": "Zarejestrowana przerwa lub ponowne rozpoczęcie pracy resetuje limit. Zmiany dotyczą pracy będącej już w toku. Sprawdzanie odbywa się co pięć minut; zakończenie pracy jest rejestrowane po osiągnięciu limitu, nawet jeśli sprawdzenie nastąpi później. Pracownicy zawsze otrzymują powiadomienie w skrzynce odbiorczej.",
+      "hours": "Godziny",
+      "invalidDuration": "Wprowadź prawidłowy czas trwania: pełne godziny i 0–59 minut, łącznie co najmniej jedną minutę.",
+      "minutes": "Minuty",
+      "save": "Zapisz zmiany",
+      "saved": "Zapisano ustawienia automatycznego zakończenia pracy",
+      "saveFailed": "Nie udało się zaktualizować ustawień automatycznego zakończenia pracy",
+      "saving": "Zapisywanie…",
+      "title": "Automatyczne zakończenie pracy"
+    },
     "create": "Utwórz organizację",
     "createDialog": {
       "description": "Skonfiguruj swoją organizację, aby rozpocząć",
@@ -120,7 +134,7 @@
       "expired": "Wygasło",
       "expires": "Wygasa",
       "inactive": "Nieaktywny",
-      "invitationActionsLabel": "Akcje dla zaproszenia do {email}",
+      "invitationActionsLabel": "Akcje dla zaproszenia do ${row.original.email}",
       "invitationCancelError": "Nie udało się anulować zaproszenia",
       "invitationCancelSuccess": "Zaproszenie anulowane",
       "invitationResendError": "Nie udało się ponownie wysłać zaproszenia",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} zaproszeń oczekujących na zaakceptowanie}}",
       "invitedBy": "Zaproszony przez",
       "member": "Członek",
-      "memberActionsLabel": "Akcje dla {name}",
+      "memberActionsLabel": "Akcje dla ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} członków w tej organizacji}}",
       "noInvitationResults": "Brak zaproszeń pasujących do wyszukiwania.",
       "noInvitations": "Brak oczekujących zaproszeń.",
@@ -256,7 +270,7 @@
       "title": "Zespoły"
     },
     "timezone": {
-      "balances-recalculating": "Salda czasu pracy są przeliczane dla nowej strefy czasowej i pozostają ukryte, dopóki nie będą gotowe.",
+      "balances-recalculating": "Salda czasu pracy są przeliczane dla nowej strefy czasowej i pozostaną ukryte, dopóki nie będą gotowe.",
       "default": "Domyślna strefa czasowa",
       "description": "Ustaw domyślną strefę czasową dla swojej organizacji. Jest ona używana do śledzenia nieobecności, raportów i innych funkcji opartych na dacie. Poszczególni użytkownicy mogą zmienić to ustawienie w swoich profilach.",
       "owner-only": "Tylko właściciele organizacji mogą zmieniać ustawienia strefy czasowej.",

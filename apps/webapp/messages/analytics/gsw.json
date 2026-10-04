@@ -191,6 +191,7 @@
         "loadData": "D'Analysedate für d'Arbeitsstunde händ nöd chönne glade werde"
       },
       "expectedHours": "Erwarteti Stunde",
+      "hoursPerWeekAbbreviation": "h/Wu.",
       "variance": "Abwiichig",
       "varianceTrend": {
         "description": "Stundeabwiichig vo de erwartete Arbeitsstunde über Ziit",

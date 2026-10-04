@@ -21,7 +21,9 @@
         "description": "Utwórz swój pierwszy klucz API, aby umożliwić programowy dostęp do swojej organizacji.",
         "title": "Brak kluczy API"
       },
+      "expired": "Wygasło",
       "expires": "Wygasa",
+      "expiresInDays": "Wygasa za {days}d",
       "form": {
         "create": "Utwórz klucz",
         "enabled": "Klucz włączony",
@@ -47,6 +49,8 @@
       "keyCopied": "Klucz API skopiowany do schowka",
       "lastUsed": "Ostatnio używany",
       "name": "Nazwa",
+      "neverExpires": "Nigdy nie wygasa",
+      "noPermissions": "Brak uprawnień",
       "prefix": "Prefiks klucza",
       "prefixCopied": "Prefiks klucza skopiowany",
       "scopes": "Uprawnienia",
@@ -265,6 +269,9 @@
         "vaultUnavailable": "Vault niedostępny",
         "vaultUnavailableDesc": "HashiCorp Vault jest niedostępny. Sekrety nie mogą być bezpiecznie przechowywane."
       },
+      "emailConfig": {
+        "yourCompanyName": "Nazwa Twojej firmy"
+      },
       "enableProviderHelp": "Włącz lub wyłącz tego dostawcę",
       "identity": {
         "accessPolicy": {
@@ -370,81 +377,81 @@
           "action": {
             "create": "Utwórz połączenie SCIM",
             "creating": "Tworzenie połączenia SCIM",
-            "decommission": "Wycofaj",
+            "decommission": "Wycofaj z eksploatacji",
             "reconcile": "Odśwież status tworzenia",
             "refresh": "Odśwież status",
-            "rotate": "Zmień poświadczenie",
+            "rotate": "Zrotuj dane uwierzytelniające",
             "selectRole": "Najpierw wybierz domyślny szablon roli"
           },
           "credential": {
             "close": "Zamknij",
-            "confirmClose": "Potwierdź zapisanie poświadczenia przed zamknięciem.",
-            "copied": "Poświadczenie skopiowano do schowka.",
-            "copy": "Kopiuj poświadczenie",
-            "description": "Skopiuj i zapisz to poświadczenie teraz. Nie można go wyświetlić ponownie.",
-            "label": "Poświadczenie",
-            "saved": "Zapisałem to poświadczenie",
-            "title": "Poświadczenie SCIM",
-            "warning": "To poświadczenie jest wyświetlane raz. Przechowuj je bezpiecznie u dostawcy tożsamości."
+            "confirmClose": "Przed zamknięciem potwierdź, że dane uwierzytelniające zostały zapisane.",
+            "copied": "Skopiowano dane uwierzytelniające do schowka.",
+            "copy": "Skopiuj dane uwierzytelniające",
+            "description": "Skopiuj i zapisz te dane uwierzytelniające teraz. Nie będzie można ich ponownie wyświetlić.",
+            "label": "Dane uwierzytelniające",
+            "saved": "Dane uwierzytelniające zostały zapisane",
+            "title": "Dane uwierzytelniające SCIM",
+            "warning": "Te dane uwierzytelniające są wyświetlane tylko raz. Zapisz je bezpiecznie u swojego dostawcy tożsamości."
           },
           "credentials": {
-            "credential": "Poświadczenie",
-            "empty": "Nie wydano żadnych poświadczeń.",
+            "credential": "Dane uwierzytelniające",
+            "empty": "Nie wygenerowano żadnych danych uwierzytelniających.",
             "expires": "Wygasa",
-            "lastUsedAria": "Ostatnie użycie: {value} UTC",
-            "revoke": "Unieważnij",
+            "lastUsedAria": "Ostatnio użyto: {value} UTC",
+            "revoke": "Odwołaj",
             "status": {
-              "active": "Aktywne",
-              "revoked": "Unieważnione"
+              "active": "aktywne",
+              "revoked": "odwołane"
             },
-            "title": "Poświadczenia",
-            "unused": "Jeszcze nie użyto"
+            "title": "Dane uwierzytelniające",
+            "unused": "Jeszcze nieużywane"
           },
-          "description": "Połącz dostawcę tożsamości, aby udostępniać i zarządzać dostępem pracowników.",
+          "description": "Weryfikacja SCIM aktualizuje się po wysłaniu przez dostawcę tożsamości zmiany użytkownika testowego lub grupy.",
           "dialog": {
             "cancel": "Anuluj",
             "decommission": {
-              "description": "To trwale wycofuje aprowizację SCIM i nie można tego cofnąć.",
+              "description": "Spowoduje to trwałe wycofanie aprowizacji SCIM z eksploatacji i nie można tego cofnąć.",
               "title": "Wycofaj SCIM"
             },
             "revoke": {
-              "description": "To natychmiast uniemożliwia poświadczeniu aprowizowanie użytkowników.",
+              "description": "Spowoduje to natychmiastowe zablokowanie możliwości aprowizacji użytkowników przy użyciu tych danych uwierzytelniających.",
               "title": "Unieważnij poświadczenie"
             }
           },
           "endpoint": "Punkt końcowy",
           "events": {
-            "empty": "Nie zarejestrowano zdarzeń aprowizacji.",
-            "error": "Nie można było załadować zdarzeń. Odśwież status i spróbuj ponownie.",
+            "empty": "Nie zarejestrowano żadnych zdarzeń aprowizacji.",
+            "error": "Nie udało się załadować zdarzeń. Odśwież stan i spróbuj ponownie.",
             "title": "Ostatnie zdarzenia"
           },
           "expiry": "Wygaśnięcie poświadczenia",
           "expiry.value": "1 rok",
-          "refreshHelp": "Odśwież status, aby wczytać bezpieczne metadane połączenia.",
+          "refreshHelp": "Odśwież stan, aby załadować metadane bezpiecznego połączenia.",
           "status": {
-            "active-unverified": "aktywne, niezweryfikowane",
+            "active-unverified": "aktywne niezweryfikowane",
             "creating": "tworzenie",
             "creation_failed": "tworzenie nie powiodło się",
-            "decommissioned": "wycofane",
+            "decommissioned": "wycofano",
             "decommissioning": "wycofywanie",
-            "disconnected": "rozłączone",
+            "disconnected": "rozłączono",
             "refreshing": "odświeżanie",
             "revoking": "unieważnianie",
-            "rotating": "zmiana",
-            "verified": "zweryfikowane"
+            "rotating": "rotowanie",
+            "verified": "zweryfikowano"
           },
           "title": "Aprowizacja SCIM",
           "toast": {
-            "createError": "Nie można było utworzyć połączenia SCIM.",
-            "reconcileError": "Nie można było uzgodnić tworzenia SCIM.",
-            "refreshError": "Nie można było odświeżyć statusu SCIM.",
-            "rotateError": "Nie można było zmienić poświadczenia SCIM.",
-            "updateError": "Nie można było zaktualizować połączenia SCIM."
+            "createError": "Nie można utworzyć połączenia SCIM.",
+            "reconcileError": "Nie można uzgodnić utworzenia SCIM.",
+            "refreshError": "Nie można odświeżyć stanu SCIM.",
+            "rotateError": "Nie można przeprowadzić rotacji poświadczenia SCIM.",
+            "updateError": "Nie można zaktualizować połączenia SCIM."
           },
           "verification": "Weryfikacja",
           "verification.awaiting": "Oczekiwanie na użycie przez dostawcę",
-          "verification.observed": "Zaobserwowano",
-          "wizardDescription": "Skonfiguruj zarządzane aprowizowanie użytkowników bez zmiany aktywacji firmowej."
+          "verification.observed": "Zaobserwowane",
+          "wizardDescription": "Skonfiguruj zarządzane aprowizowanie użytkowników bez zmiany aktywacji przedsiębiorstwa."
         },
         "sso": {
           "action": {
@@ -564,6 +571,7 @@
           "customDomain": "Użytkownicy logujący się przez Twoją domenę niestandardową będą używać Twojej aplikacji OAuth"
         },
         "keyId": "Identyfikator klucza",
+        "pasteYourP8PrivateKeyContents": "Wklej zawartość klucza prywatnego .p8",
         "privateKey": "Klucz prywatny (.p8)",
         "removed": "Usunięto OAuth dla {provider}",
         "removeDialogDescription": "Czy na pewno chcesz usunąć tę konfigurację OAuth? Użytkownicy powrócą do współdzielonych danych uwierzytelniających OAuth (jeśli są dostępne).",

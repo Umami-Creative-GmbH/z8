@@ -114,6 +114,12 @@
         "none": "Aucun canal de messagerie n'est connecté.",
         "title": "Préférences de distribution par canal"
       },
+      "conflict": {
+        "differingTimeouts": "Les canaux utilisaient des délais d'expiration différents ; le plus court est devenu la fenêtre de réponse.",
+        "disabledActiveSource": "L'escalade était désactivée pour certains canaux actifs. Ils ne transmettent toujours pas les messages d'escalade.",
+        "inactiveSourceEnabled": "L'escalade était activée pour certains canaux inactifs. Ils n'ont pas été pris en compte dans la politique.",
+        "invalidTimeout": "Un canal avait un délai d'expiration non valide et n'a pas été utilisé pour la fenêtre de réponse."
+      },
       "description": "Examinez la politique d'escalade de l'organisation, la façon dont elle a été migrée depuis les paramètres des canaux et les conditions nécessitant un responsable d'approbation.",
       "dispose": {
         "confirm": "Clôturer l'élément",
@@ -121,6 +127,12 @@
         "noteLabel": "Note de traitement",
         "noteRequired": "Saisissez une note de traitement.",
         "title": "Clôturer l'élément requérant une attention"
+      },
+      "event": {
+        "alerted": "Administrateurs alertés",
+        "disposed": "Traité",
+        "raised": "Déclenché",
+        "resolved": "Résolu"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Impossible de charger les paramètres d'escalade.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Saisissez un nombre entier d'heures compris entre 1 et 720.",
         "windowLabel": "Délai de réponse"
       },
+      "reason": {
+        "ambiguousHistory": "Historique d'escalade ambigu",
+        "deliveryExhausted": "Tentatives de distribution épuisées",
+        "deliveryUnavailable": "Aucune destination de distribution disponible",
+        "noEligibleBackup": "Aucun approbateur suppléant éligible",
+        "replacementOverdue": "L'approbateur suppléant est en retard",
+        "unsupportedRoute": "Chemin de décision non pris en charge"
+      },
       "revisions": {
         "changedBy": "Modifié par",
         "migration": "Migration des paramètres",
@@ -207,16 +227,26 @@
       "activePolicyTableDescription": "Les politiques sont évaluées par priorité ; la première politique active correspondante fournit la chaîne d'approbation.",
       "activeStatus": "Statut actif",
       "addPolicy": "Ajouter une politique",
+      "addStage": "Ajouter une étape",
       "approvalType": {
         "absence": "Absence",
         "complianceException": "Exception de conformité",
-        "manualTimeSubmission": "Saisie manuelle du temps",
+        "manualTimeSubmission": "Saisie manuelle des heures",
         "policyClockOut": "Pointage de sortie selon la politique",
         "shiftRequest": "Demande de quart",
-        "timeCorrection": "Correction de temps",
+        "timeCorrection": "Correction du temps",
         "travelExpense": "Frais de déplacement"
       },
       "approvalTypes": "Types d'approbation",
+      "approver": "Approbateur",
+      "approverEmployeeId": "Identifiant employé de l'approbateur",
+      "approverEmployeeIdPlaceholder": "Exemple : employee_123…",
+      "approverType": {
+        "directManager": "Responsable direct",
+        "managerManager": "Responsable du responsable",
+        "organizationAdmin": "Administrateur de l'organisation",
+        "specificEmployee": "Employé spécifique"
+      },
       "conditionsCount": "Nombre de conditions",
       "createPolicy": "Créer une politique d'approbation",
       "defaultStageLabel": "Examen par le manager",
@@ -225,9 +255,25 @@
       "dialogDescription": "Définissez quand une chaîne d'approbation s'applique et quels approbateurs gèrent chaque étape séquentielle.",
       "editPolicy": "Modifier la politique",
       "empty": "Aucune politique d'approbation configurée pour le moment. Créez une politique pour définir votre première chaîne d'approbation.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Envoyer la demande au responsable par défaut lorsque cette étape ne peut pas identifier d'approbateur.",
+          "label": "Responsable par défaut"
+        },
+        "fail": {
+          "description": "Rejeter la demande lorsque cette étape ne peut pas identifier d'approbateur.",
+          "label": "Faire échouer la demande"
+        },
+        "label": "Comportement de secours",
+        "organizationAdmin": {
+          "description": "Envoyer la demande à un administrateur de l'organisation lorsque cette étape ne peut pas identifier d'approbateur.",
+          "label": "Administrateur de l'organisation"
+        }
+      },
       "loadFailed": "Les politiques d'approbation n'ont pas pu être chargées.",
       "loading": "Chargement des politiques…",
       "namePlaceholder": "Exemple : Escalade d'absence…",
+      "noStages": "Aucune étape d'approbation n'a encore été configurée.",
       "preview": {
         "ariaLabel": "Aperçu de la chaîne d'approbation",
         "badge": "Shell d'aperçu",
@@ -242,7 +288,11 @@
         "title": "Résumé de la chaîne d'aperçu"
       },
       "priority": "Priorité",
+      "removeStage": "Supprimer l'étape",
+      "stageNumber": "Étape {number}",
+      "stages": "Étapes d'approbation",
       "stagesCount": "Nombre d'étapes",
+      "stagesDescription": "Les étapes s'exécutent dans l'ordre ; chaque demande n'avance qu'après avoir été acceptée par l'approbateur actuel.",
       "status": {
         "active": "Actif",
         "inactive": "Inactif"
@@ -255,21 +305,6 @@
       "validation": {
         "activePolicyRequiresStage": "Les politiques actives nécessitent au moins une étape d'approbation.",
         "specificEmployeeRequiresId": "Les étapes spécifiques aux employés nécessitent un identifiant d'employé approbateur."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Envoyez la demande au responsable par défaut lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Responsable par défaut"
-        },
-        "fail": {
-          "description": "Rejetez la demande lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Rejeter la demande"
-        },
-        "label": "Comportement de secours",
-        "organizationAdmin": {
-          "description": "Envoyez la demande à un administrateur de l'organisation lorsque cette étape ne peut pas déterminer d'approbateur.",
-          "label": "Administrateur de l'organisation"
-        }
       }
     },
     "changePolicies": {
@@ -659,6 +694,7 @@
       "createCategoriesFirst": "Créez d'abord les catégories dans l'onglet Catégories",
       "createCategory": "Créer une catégorie",
       "createCategoryDescription": "Créez une nouvelle catégorie de travail pouvant être attribuée à plusieurs ensembles",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Créer des ensembles de catégories avec différents coefficients de temps pour divers types de travail",
       "createFirstSet": "Créer le premier ensemble",
       "createSet": "Créer un ensemble",
       "createSetDescription": "Créez un nouvel ensemble de catégories et sélectionnez les catégories à inclure",

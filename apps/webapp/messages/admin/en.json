@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Monitor subscriptions, revenue, and payment status",
+      "failedToSyncSeats": "Failed to sync seats",
       "intervals": {
         "month": "Monthly",
         "year": "Yearly"
@@ -102,6 +103,7 @@
         "trialing": "Trialing",
         "trialingDescription": "In trial period"
       },
+      "seatsSynced": "Seats synced",
       "sections": {
         "recentSubscriptions": "Recent Subscriptions",
         "revenueMetrics": "Revenue Metrics"
@@ -112,6 +114,7 @@
         "pastDue": "Past Due",
         "trialing": "Trial"
       },
+      "syncSeatsFor": "Sync seats for {organizationName}",
       "table": {
         "actions": "Actions",
         "billing": "Billing",
@@ -124,10 +127,7 @@
         "status": "Status",
         "usedSeats": "Used seats"
       },
-      "title": "Billing Dashboard",
-      "seatsSynced": "Seats synced",
-      "failedToSyncSeats": "Failed to sync seats",
-      "syncSeatsFor": "Sync seats for {organizationName}"
+      "title": "Billing Dashboard"
     },
     "diagnostics": {
       "actions": {

@@ -130,6 +130,24 @@ function deferred<T>() {
 }
 
 describe("PayrollWorkspace", () => {
+	it("renders the period heading in the selected German locale", () => {
+		activeLocale = "de";
+		render(
+			<PayrollWorkspace
+				initialSummary={buildSummary({
+					period: {
+						start: "2026-10-01",
+						end: "2026-10-31",
+						label: "October 2026",
+					},
+				})}
+				exportFormats={[]}
+			/>,
+		);
+		expect(screen.getByText("Oktober 2026")).toBeTruthy();
+		expect(screen.queryByText("October 2026")).toBeNull();
+	});
+
 	beforeEach(() => {
 		vi.resetAllMocks();
 		translateOverrides = {};

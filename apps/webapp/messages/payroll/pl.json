@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Nie masz dostępu do danych płacowych aktywnej organizacji.",
+      "help": "Poproś administratora organizacji o przyznanie dostępu do płac, jeśli potrzebujesz tego obszaru roboczego.",
+      "title": "Brak dostępu do płac"
+    },
     "actions": {
       "apply": "Zastosuj",
       "downloadPdf": "Pobierz PDF",
@@ -12,18 +17,18 @@
       "dateUnavailable": "Data niedostępna",
       "missingClockOut": "Brak godziny wyjścia",
       "needReview": "{count, plural, one {# blokada płacowa wymaga sprawdzenia} few {# blokady płacowe wymagają sprawdzenia} other {# blokad płacowych wymaga sprawdzenia}}",
-      "offboardingClockRepair": "Wyrejestrowanie przy odejściu wymaga poprawy",
+      "offboardingClockRepair": "Rejestracja wyjścia w procesie offboardingu wymaga naprawy",
       "openApprovals": "Otwarte zatwierdzenia",
       "openCalendar": "Otwórz kalendarz",
-      "openWork": "Praca bez wyrejestrowania",
+      "openWork": "Praca bez rejestracji wyjścia",
       "openWorkDiagnostics": "Otwórz diagnostykę pracy",
       "pendingAbsence": "Oczekująca nieobecność",
       "pendingTimeCorrection": "Oczekująca korekta czasu",
-      "pendingWorkApproval": "Praca oczekuje na zatwierdzenie",
+      "pendingWorkApproval": "Praca oczekująca na zatwierdzenie",
       "refreshAfterClearFailed": "Blokada usunięta, ale nie można było odświeżyć listy płac",
-      "uncertainHistoricalWork": "Praca historyczna wymaga sprawdzenia",
+      "uncertainHistoricalWork": "Historyczny czas pracy wymaga weryfikacji",
       "unknownEmployee": "Nieznany pracownik",
-      "unresolvedWorkMinutes": "Minuty pracy wymagają sprawdzenia"
+      "unresolvedWorkMinutes": "Minuty pracy wymagają weryfikacji"
     },
     "description": "Sprawdź sumy płac, gotowość i eksporty dla wybranego okresu.",
     "employeeTotals": {
@@ -48,12 +53,13 @@
       "activeOrganizationEmployeeRequired": "Wymagany jest kontekst aktywnego pracownika organizacji",
       "authenticationRequired": "Wymagane uwierzytelnienie",
       "blockerNotDismissible": "Nie można odrzucić blokady listy płac",
+      "dataTemporarilyUnavailable": "Dane płacowe są tymczasowo niedostępne",
       "employeeIdsMustBeArray": "employeeIds musi być tablicą",
       "employeeIdsMustContainOnlyStrings": "employeeIds musi zawierać tylko ciągi znaków",
       "endDateAfterStart": "Data końcowa musi być późniejsza lub równa dacie początkowej",
-      "exportBlockedByOffboardingClockRepair": "Eksport zablokowany: najpierw popraw wyrejestrowanie przy odejściu",
-      "exportBlockedByUncertainWork": "Eksport zablokowany: najpierw wyjaśnij niepewną pracę w wybranym zakresie",
-      "exportBlockedByUnresolvedWorkMinutes": "Eksport zablokowany: najpierw wyjaśnij minuty pracy wymagające sprawdzenia",
+      "exportBlockedByOffboardingClockRepair": "Eksport zablokowany: najpierw napraw zakończenie pracy w ramach offboardingu",
+      "exportBlockedByUncertainWork": "Eksport zablokowany: najpierw wyjaśnij niepewny czas pracy w wybranym zakresie",
+      "exportBlockedByUnresolvedWorkMinutes": "Eksport zablokowany: najpierw rozpatrz minuty pracy wymagające weryfikacji",
       "exportFormatNotConfigured": "Format eksportu płac nie jest skonfigurowany",
       "invalidBlockerId": "Nieprawidłowy identyfikator blokady listy płac",
       "invalidBlockerType": "Nieprawidłowy typ blokady listy płac",
@@ -113,6 +119,11 @@
       "ready": "Gotowe",
       "workedHours": "Przepracowane godziny"
     },
-    "title": "Lista płac"
+    "title": "Lista płac",
+    "unavailable": {
+      "description": "Nie udało się bezpiecznie przygotować danych płacowych.",
+      "help": "Spróbuj ponownie później. Jeśli problem będzie się powtarzał, skontaktuj się z administratorem organizacji.",
+      "title": "Płace tymczasowo niedostępne"
+    }
   }
 }

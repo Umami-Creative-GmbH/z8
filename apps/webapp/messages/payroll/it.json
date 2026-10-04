@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Non hai accesso ai dati sulle buste paga per l'organizzazione attiva.",
+      "help": "Chiedi a un amministratore dell'organizzazione di assegnare l'accesso alle buste paga se hai bisogno di questo spazio di lavoro.",
+      "title": "Nessun accesso alle buste paga"
+    },
     "actions": {
       "apply": "Applica",
       "downloadPdf": "Scarica PDF",
@@ -12,18 +17,18 @@
       "dateUnavailable": "Data non disponibile",
       "missingClockOut": "Uscita mancante",
       "needReview": "{count} blocchi delle buste paga richiedono una revisione",
-      "offboardingClockRepair": "La timbratura di uscita per la cessazione va corretta",
+      "offboardingClockRepair": "La timbratura di uscita di offboarding richiede una correzione",
       "openApprovals": "Approvazioni aperte",
       "openCalendar": "Apri calendario",
-      "openWork": "Lavoro senza timbratura di uscita",
+      "openWork": "Ore lavorate senza timbratura di uscita",
       "openWorkDiagnostics": "Apri diagnostica del lavoro",
       "pendingAbsence": "Assenza in sospeso",
       "pendingTimeCorrection": "Correzione oraria in sospeso",
       "pendingWorkApproval": "Lavoro in attesa di approvazione",
       "refreshAfterClearFailed": "Blocco rimosso, ma non è stato possibile aggiornare le buste paga",
-      "uncertainHistoricalWork": "Lavoro storico da verificare",
+      "uncertainHistoricalWork": "Il lavoro pregresso richiede una revisione",
       "unknownEmployee": "Dipendente sconosciuto",
-      "unresolvedWorkMinutes": "Minuti di lavoro da verificare"
+      "unresolvedWorkMinutes": "I minuti di lavoro richiedono una revisione"
     },
     "description": "Revisiona i totali delle buste paga, la preparazione e le esportazioni per il periodo selezionato.",
     "employeeTotals": {
@@ -48,12 +53,13 @@
       "activeOrganizationEmployeeRequired": "È richiesto il contesto del dipendente dell'organizzazione attiva",
       "authenticationRequired": "Autenticazione richiesta",
       "blockerNotDismissible": "Impossibile rimuovere il blocco delle buste paga",
+      "dataTemporarilyUnavailable": "I dati sulle buste paga non sono temporaneamente disponibili",
       "employeeIdsMustBeArray": "employeeIds deve essere un array",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve contenere solo stringhe",
       "endDateAfterStart": "La data di fine deve essere uguale o successiva alla data di inizio",
-      "exportBlockedByOffboardingClockRepair": "Esportazione bloccata: correggi prima la timbratura di uscita per la cessazione",
-      "exportBlockedByUncertainWork": "Esportazione bloccata: risolvi prima il lavoro incerto nell'ambito selezionato",
-      "exportBlockedByUnresolvedWorkMinutes": "Esportazione bloccata: risolvi prima i minuti di lavoro da verificare",
+      "exportBlockedByOffboardingClockRepair": "Esportazione bloccata: correggi prima la timbratura di uscita per l'offboarding",
+      "exportBlockedByUncertainWork": "Esportazione bloccata: risolvi prima le ore lavorate incerte nell'ambito selezionato",
+      "exportBlockedByUnresolvedWorkMinutes": "Esportazione bloccata: risolvi prima i minuti di lavoro da revisionare",
       "exportFormatNotConfigured": "Il formato di esportazione buste paga non è configurato",
       "invalidBlockerId": "ID blocco buste paga non valido",
       "invalidBlockerType": "Tipo di blocco buste paga non valido",
@@ -113,6 +119,11 @@
       "ready": "Pronto",
       "workedHours": "Ore lavorate"
     },
-    "title": "Buste paga"
+    "title": "Buste paga",
+    "unavailable": {
+      "description": "Impossibile preparare i dati sulle buste paga in modo sicuro.",
+      "help": "Riprova più tardi. Se il problema persiste, contatta un amministratore dell'organizzazione.",
+      "title": "Buste paga temporaneamente non disponibili"
+    }
   }
 }

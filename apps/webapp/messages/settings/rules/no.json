@@ -114,6 +114,12 @@
         "none": "Ingen meldingskanaler er tilkoblet.",
         "title": "Leveringsinnstillinger for kanal"
       },
+      "conflict": {
+        "differingTimeouts": "Kanalene brukte ulike tidsavbrudd; det korteste ble svarvinduet.",
+        "disabledActiveSource": "Noen aktive kanaler hadde eskaleringer slått av. De leverer fortsatt ikke eskaleringsmeldinger.",
+        "inactiveSourceEnabled": "Noen inaktive kanaler hadde eskaleringer slått på. De ble ikke regnet med i retningslinjen.",
+        "invalidTimeout": "En kanal hadde et ugyldig tidsavbrudd og ble ikke brukt for svarvinduet."
+      },
       "description": "Gå gjennom organisasjonens eskaleringspolicy, hvordan den ble migrert fra kanalinnstillinger, og betingelser som krever en godkjenningsansvarlig.",
       "dispose": {
         "confirm": "Lukk element",
@@ -121,6 +127,12 @@
         "noteLabel": "Behandlingsnotat",
         "noteRequired": "Angi et behandlingsnotat.",
         "title": "Lukk oppmerksomhetselement"
+      },
+      "event": {
+        "alerted": "Administratorer varslet",
+        "disposed": "Forkastet",
+        "raised": "Utløst",
+        "resolved": "Løst"
       },
       "hoursValue": "{hours} t",
       "loadFailed": "Kunne ikke laste inn eskaleringsinnstillinger.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Angi et helt antall timer mellom 1 og 720.",
         "windowLabel": "Svarvindu"
       },
+      "reason": {
+        "ambiguousHistory": "Tvetydig eskaleringshistorikk",
+        "deliveryExhausted": "Leveringsforsøk oppbrukt",
+        "deliveryUnavailable": "Ingen leveringsdestinasjon tilgjengelig",
+        "noEligibleBackup": "Ingen kvalifisert reservegodkjenner",
+        "replacementOverdue": "Erstatningsgodkjenner har overskredet fristen",
+        "unsupportedRoute": "Ikke-støttet beslutningsbane"
+      },
       "revisions": {
         "changedBy": "Endret av",
         "migration": "Innstillingsmigrering",
@@ -207,6 +227,7 @@
       "activePolicyTableDescription": "Policyer evalueres etter prioritet; den første samsvarende aktive policyen gir godkjenningskjeden.",
       "activeStatus": "Aktiv status",
       "addPolicy": "Legg til policy",
+      "addStage": "Legg til trinn",
       "approvalType": {
         "absence": "Fravær",
         "complianceException": "Samsvarsunntak",
@@ -217,6 +238,15 @@
         "travelExpense": "Reiseutgift"
       },
       "approvalTypes": "Godkjenningstyper",
+      "approver": "Godkjenner",
+      "approverEmployeeId": "Godkjenners ansatt-ID",
+      "approverEmployeeIdPlaceholder": "Eksempel: employee_123…",
+      "approverType": {
+        "directManager": "Nærmeste leder",
+        "managerManager": "Leders leder",
+        "organizationAdmin": "Organisasjonsadministrator",
+        "specificEmployee": "Spesifikk ansatt"
+      },
       "conditionsCount": "Antall betingelser",
       "createPolicy": "Opprett godkjenningspolicy",
       "defaultStageLabel": "Ledervurdering",
@@ -225,9 +255,25 @@
       "dialogDescription": "Definer når en godkjenningskjede gjelder og hvilke godkjennere som håndterer hvert sekvensielle trinn.",
       "editPolicy": "Rediger policy",
       "empty": "Ingen godkjenningspolicyer er konfigurert ennå. Opprett en policy for å definere din første godkjenningskjede.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Send forespørselen til standardleder når dette trinnet ikke kan finne en godkjenner.",
+          "label": "Standardleder"
+        },
+        "fail": {
+          "description": "Avvis forespørselen når dette trinnet ikke kan finne en godkjenner.",
+          "label": "Avvis forespørsel"
+        },
+        "label": "Reserveatferd",
+        "organizationAdmin": {
+          "description": "Send forespørselen til en organisasjonsadministrator når dette trinnet ikke kan finne en godkjenner.",
+          "label": "Organisasjonsadministrator"
+        }
+      },
       "loadFailed": "Kunne ikke laste inn godkjenningspolicyer.",
       "loading": "Laster inn policyer…",
       "namePlaceholder": "Eksempel: Fraværseskalering…",
+      "noStages": "Ingen godkjenningstrinn er konfigurert ennå.",
       "preview": {
         "ariaLabel": "Forhåndsvisning av godkjenningskjede",
         "badge": "Forhåndsvisningsskall",
@@ -242,7 +288,11 @@
         "title": "Forhåndsvisning av kjedesammendrag"
       },
       "priority": "Prioritet",
+      "removeStage": "Fjern trinn",
+      "stageNumber": "Trinn {number}",
+      "stages": "Godkjenningstrinn",
       "stagesCount": "Antall trinn",
+      "stagesDescription": "Trinnene kjøres i rekkefølge; hver forespørsel går først videre etter at gjeldende godkjenner har godtatt den.",
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"
@@ -644,6 +694,7 @@
       "createCategoriesFirst": "Opprett kategorier i Kategorier-fanen først",
       "createCategory": "Opprett kategori",
       "createCategoryDescription": "Opprett en ny arbeidskategori som kan tilordnes flere sett",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Opprett kategorisett med ulike tidsfaktorer for forskjellige arbeidstyper",
       "createFirstSet": "Opprett første sett",
       "createSet": "Opprett sett",
       "createSetDescription": "Opprett et nytt kategorisett og velg hvilke kategorier som skal inkluderes",

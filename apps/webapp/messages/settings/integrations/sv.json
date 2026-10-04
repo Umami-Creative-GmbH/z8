@@ -48,7 +48,8 @@
         "description": "Konfigurera hur kalendersynkronisering fungerar för din organisation.",
         "title": "Synkroniseringsbeteende"
       },
-      "title": "Kalendersynkronisering"
+      "title": "Kalendersynkronisering",
+      "titleTemplatePlaceholder": "Frånvarande – {categoryName}"
     },
     "clockinImport": {
       "credentials": {
@@ -105,6 +106,17 @@
         "description": "Ange din e-postadress och API-nyckel för Clockodo. Du hittar din API-nyckel i Clockodo under Min profil > API-nyckel. Inloggningsuppgifter sparas inte.",
         "email": "Clockodo-e-post",
         "title": "Inloggningsuppgifter för Clockodo"
+      },
+      "entity": {
+        "absences": "Frånvaro",
+        "entries": "Tidregistreringar",
+        "holidayQuotas": "Semesterkvoter",
+        "nonBusinessDays": "Arbetsfria dagar",
+        "services": "Tjänster / Arbetskategorier",
+        "surcharges": "Tillägg",
+        "targetHours": "Måltimmar / Arbetspolicyer",
+        "teams": "Team",
+        "users": "Användare / Anställda"
       },
       "errors": {
         "connectionFailed": "Kunde inte ansluta till Clockodo",

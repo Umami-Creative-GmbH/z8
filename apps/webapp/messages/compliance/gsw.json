@@ -55,6 +55,9 @@
           "restPeriodViolations": "Ruehziitverstöss: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Zuletzt aktualisiert: {time}"
+      },
       "links": {
         "inspectCompliance": "Compliance prüefe",
         "inspectInAuditLog": "Im Audit-Log prüefe",
@@ -62,6 +65,11 @@
         "openAuditLog": "Audit-Protokoll öffne",
         "openComplianceSettings": "Compliance-Iistellige öffne",
         "reviewAuditExport": "Audit-Export überprüefe"
+      },
+      "overview": "Compliance-Übersicht",
+      "recentEvents": {
+        "empty": "Es wurden kürzlich keine kritischen Ereignisse festgestellt.",
+        "title": "Kürzliche kritische Ereignisse"
       },
       "sections": {
         "accessControls": {

@@ -55,6 +55,9 @@
           "restPeriodViolations": "Överträdelser av viloperiod: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Senast uppdaterad: {time}"
+      },
       "links": {
         "inspectCompliance": "Granska efterlevnad",
         "inspectInAuditLog": "Granska i granskningsloggen",
@@ -62,6 +65,11 @@
         "openAuditLog": "Öppna granskningsloggen",
         "openComplianceSettings": "Öppna inställningar för efterlevnad",
         "reviewAuditExport": "Granska granskningsexport"
+      },
+      "overview": "Efterlevnadsöversikt",
+      "recentEvents": {
+        "empty": "Inga kritiska händelser upptäcktes nyligen.",
+        "title": "Senaste kritiska händelser"
       },
       "sections": {
         "accessControls": {

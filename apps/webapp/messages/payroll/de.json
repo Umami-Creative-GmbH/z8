@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Sie haben keinen Zugriff auf Lohnabrechnungsdaten für die aktive Organisation.",
+      "help": "Bitten Sie einen Organisationsadministrator um Zuweisung des Lohnabrechnungszugriffs, falls Sie diesen Arbeitsbereich benötigen.",
+      "title": "Kein Zugriff auf Lohnabrechnung"
+    },
     "actions": {
       "apply": "Anwenden",
       "downloadPdf": "PDF herunterladen",
@@ -12,7 +17,7 @@
       "dateUnavailable": "Datum nicht verfügbar",
       "missingClockOut": "Fehlendes Ausstempeln",
       "needReview": "{count} Lohnabrechnungsblocker müssen überprüft werden",
-      "offboardingClockRepair": "Ausstempeln beim Austritt muss korrigiert werden",
+      "offboardingClockRepair": "Offboarding-Ausstempeln muss korrigiert werden",
       "openApprovals": "Offene Genehmigungen",
       "openCalendar": "Kalender öffnen",
       "openWork": "Arbeit ohne Ausstempeln",
@@ -21,9 +26,9 @@
       "pendingTimeCorrection": "Ausstehende Zeitkorrektur",
       "pendingWorkApproval": "Arbeit wartet auf Genehmigung",
       "refreshAfterClearFailed": "Blocker entfernt, aber die Gehaltsabrechnung konnte nicht aktualisiert werden",
-      "uncertainHistoricalWork": "Historische Arbeit muss geprüft werden",
+      "uncertainHistoricalWork": "Historische Arbeit muss überprüft werden",
       "unknownEmployee": "Unbekannter Mitarbeiter",
-      "unresolvedWorkMinutes": "Arbeitsminuten müssen geprüft werden"
+      "unresolvedWorkMinutes": "Arbeitsminuten müssen überprüft werden"
     },
     "description": "Überprüfen Sie die Lohnabrechnungssummen, die Bereitschaft und die Exporte für den ausgewählten Zeitraum.",
     "employeeTotals": {
@@ -48,12 +53,13 @@
       "activeOrganizationEmployeeRequired": "Aktiver Organisations-Mitarbeiterkontext ist erforderlich",
       "authenticationRequired": "Authentifizierung erforderlich",
       "blockerNotDismissible": "Gehaltsabrechnungs-Blocker kann nicht verworfen werden",
+      "dataTemporarilyUnavailable": "Lohnabrechnungsdaten sind vorübergehend nicht verfügbar",
       "employeeIdsMustBeArray": "employeeIds muss ein Array sein",
       "employeeIdsMustContainOnlyStrings": "employeeIds darf nur Strings enthalten",
       "endDateAfterStart": "Das Enddatum muss nach oder am Startdatum liegen",
-      "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigiere zuerst das Ausstempeln beim Austritt",
-      "exportBlockedByUncertainWork": "Export blockiert: Bitte zuerst die unsichere Arbeit im gewählten Umfang klären",
-      "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Bitte zuerst die zu prüfenden Arbeitsminuten klären",
+      "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigieren Sie zuerst das Offboarding-Ausstempeln",
+      "exportBlockedByUncertainWork": "Export blockiert: Klären Sie zuerst die unklaren Arbeitszeiten im ausgewählten Zeitraum",
+      "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Klären Sie zuerst die zu überprüfenden Arbeitsminuten",
       "exportFormatNotConfigured": "Das Lohnabrechnungs-Exportformat ist nicht konfiguriert",
       "invalidBlockerId": "Ungültige Gehaltsabrechnungs-Blocker-ID",
       "invalidBlockerType": "Ungültiger Gehaltsabrechnungs-Blockertyp",
@@ -113,6 +119,11 @@
       "ready": "Bereit",
       "workedHours": "Geleistete Stunden"
     },
-    "title": "Lohnabrechnung"
+    "title": "Lohnabrechnung",
+    "unavailable": {
+      "description": "Lohnabrechnungsdaten konnten nicht sicher aufbereitet werden.",
+      "help": "Bitte versuchen Sie es später erneut. Wenn das Problem weiterhin besteht, wenden Sie sich an einen Organisationsadministrator.",
+      "title": "Lohnabrechnung vorübergehend nicht verfügbar"
+    }
   }
 }

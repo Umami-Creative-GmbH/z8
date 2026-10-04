@@ -19,42 +19,91 @@
     "commandPlaceholder": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "Iitrag",
+          "hours": "Stunde",
+          "manual": "manuell",
+          "time": "Ziit"
+        },
         "subtitle": "Stunden für eine vergangene Schicht oder Korrektur erfassen",
         "title": "Manuelle Zeiterfassung hinzufügen"
       },
       "createProject": {
+        "keywords": {
+          "create": "erstelle",
+          "project": "Projekt",
+          "settings": "iistellige"
+        },
         "subtitle": "Projekteinstellungen öffnen, um ein neues Projekt zu definieren",
         "title": "Projekt erstellen"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "iilade",
+          "member": "mitgliid",
+          "teammate": "teamkolleg"
+        },
         "subtitle": "Organisationsverwaltung öffnen, um einen Kollegen hinzuzufügen",
         "title": "Teammitglied einladen"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "gnämigunge",
+          "inbox": "poschtiigang",
+          "review": "überprüefe"
+        },
         "subtitle": "Ausstehende Mitarbeiteranfragen überprüfen",
         "title": "Genehmigungseingang öffnen"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "mini",
+          "requests": "aafrooge"
+        },
         "subtitle": "Eingereichte Abwesenheiten und Spesen überprüfen",
         "title": "Meine Anfragen öffnen"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
-        "title": "Lohnabrechnungsbereitschaft öffnen"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "export",
+          "payroll": "lohnabrechnig",
+          "wages": "löhn"
+        },
         "subtitle": "Lohnabrechnigs-Arbeitsbereich überprüefe",
         "title": "Lohnabrechnig öffne"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "export",
+          "payroll": "lohnabrechnig",
+          "readiness": "bereitschaft"
+        },
+        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
+        "title": "Lohnabrechnungsbereitschaft öffnen"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "präferänze",
+          "settings": "iistellige"
+        },
         "subtitle": "Profil, Sicherheit und Organisationseinstellungen verwalten",
         "title": "Einstellungen öffnen"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "abwäseheit",
+          "timeOff": "freiziit",
+          "vacation": "ferie"
+        },
         "subtitle": "Urlaubs-, Krankheits- oder Freistellungsantrag starten",
         "title": "Abwesenheit beantragen"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "späse",
+          "reimbursement": "rückvergüetig",
+          "travel": "raise"
+        },
         "subtitle": "Rückerstattungsantrag für Reisekosten erstellen",
         "title": "Reisespesen einreichen"
       }
@@ -70,7 +119,14 @@
     "search": "Suche",
     "searchOrRunCommand": "Suchen oder Befehl ausführen",
     "teamAbsences": {
-      "description": "Abwesenheitskennzahlen der Mitarbeiter prüfen und Abwesenheiten erfassen"
+      "description": "Abwesenheitskennzahlen der Mitarbeiter prüfen und Abwesenheiten erfassen",
+      "keywords": {
+        "absence": "abwäseheit",
+        "manager": "manager",
+        "sick": "chrank",
+        "team": "Team",
+        "vacation": "Ferie"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Bestätige",
     "assign": "Zueordne",
     "back": "Zrugg",
+    "brandLogo": "{brand}-Logo",
+    "breadcrumb": {
+      "breadcrumb": "Breadcrumb",
+      "more": "Meh"
+    },
     "cancel": "Abbräche",
+    "carousel": {
+      "nextSlide": "Nöchsti Folie",
+      "previousSlide": "Vorherigi Folie",
+      "roleDescription": "Karussell",
+      "slideRoleDescription": "Folie"
+    },
     "clear": "Lösche",
     "clearSearch": "Suech lösche",
     "clearSelection": "Lösche",
@@ -117,10 +184,17 @@
     "copy": "Kopiere",
     "create": "Erstelle",
     "current": "Aktuell",
+    "datePicker": {
+      "clearDate": "Datum lösche",
+      "placeholder": "Datum uswähle"
+    },
     "days": {
+      "count": "{count} Täg",
       "friday": "Friitig",
+      "half": "0.5 Tag",
       "label": "Täg",
       "monday": "Mäntig",
+      "one": "1 Tag",
       "saturday": "Samschtig",
       "sunday": "Sunntig",
       "thursday": "Donschtig",
@@ -129,14 +203,24 @@
     },
     "delete": "Lösche",
     "deleting": "Am Lösche...",
+    "deployment": {
+      "skew": {
+        "description": "Lad d Siite neu, zum wiitermache. Dini letscht Aktion isch nöd gspicheret worde.",
+        "title": "Z8 isch aktualisiert worde"
+      }
+    },
     "description": "Beschriibig",
     "deselectAll": "Alli abwähle",
     "details": "Details",
     "download": "Abelade",
+    "duplicate": "Dupliziere",
+    "durationMinutes": "{count} min",
     "edit": "Bearbeite",
     "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Es isch en Fehler ufträtte",
+    "fieldPresets": "{label}-Voristellige",
+    "focusInput": "Iigab fokussiere",
     "gender": {
       "female": "Wiiblich",
       "male": "Männlich",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Zum Dashboard",
     "inactive": "Inaktiv",
+    "label": "Label",
     "loading": "Am Lade...",
+    "loadingLabel": "Wird glade...",
+    "loadingRegions": {
+      "absences": "Absänze werded glade...",
+      "adminConsole": "Admin-Konsole wird glade...",
+      "analyticsNavigation": "Analytics-Navigation wird glade",
+      "application": "Applikation wird glade",
+      "auditExportSettings": "Audit-Export-Iistellige werdet glade",
+      "authentication": "Authentifizierig wird glade",
+      "changePolicySettings": "Änderigsrichtlinie-Iistellige werdet glade",
+      "coverageRuleSettings": "Deckigsregle-Iistellige werdet glade",
+      "customerSettings": "Chunde-Iistellige werdet glade",
+      "customRoleSettings": "Benutzerdefinierti Rolle-Iistellige werdet glade",
+      "dashboard": "Dashboard wird glade",
+      "dataExportSettings": "Date-Export-Iistellige werdet glade",
+      "demoDataSettings": "Demo-Date-Iistellige werdet glade",
+      "deploymentDiagnostics": "Deployment-Diagnose werdet glade",
+      "employeeReports": "Mitarbeiterbricht werdet glade",
+      "employeeVacationAllowances": "Mitarbeiter-Ferienguethabe werdet glade",
+      "exportOperations": "Export-Vorgäng werdet glade",
+      "holidaySettings": "Fiirtig-Iistellige werdet glade",
+      "importReview": "Import-Überprüefig wird glade",
+      "importSettings": "Import-Iistellige werdet glade",
+      "locationSettings": "Standort-Iistellige werdet glade",
+      "onboarding": "Onboarding wird glade",
+      "payrollExportSettings": "Lohnabrechnigs-Export-Iistellige werdet glade",
+      "payrollReadiness": "Lohnabrechnigs-Bereitschaft wird glade",
+      "payrollWorkspace": "Lohnabrechnigs-Arbetsbereich wird glade",
+      "platformAdminOverview": "Plattform-Admin-Übersicht wird glade",
+      "platformAnalytics": "Plattform-Analytics wird glade",
+      "platformBilling": "Plattform-Abrechnung wird geladen",
+      "platformSetup": "Plattform-Setup wird geladen",
+      "projectReports": "Projektberichte werden geladen",
+      "projectSettings": "Projekteinstellungen werden geladen",
+      "scheduledExports": "Geplante Exporte werden geladen",
+      "shiftSchedule": "Schichtplan wird geladen",
+      "shiftTemplateSettings": "Schichtvorlagen-Einstellungen werden geladen",
+      "skillSettings": "Skill-Einstellungen werden geladen",
+      "surchargeSettings": "Zuschlagseinstellungen werden geladen",
+      "team": "Team wird geladen",
+      "todaySManagerBriefing": "Heutiges Manager-Briefing wird geladen",
+      "travelExpenses": "Spesen werden geladen",
+      "travelExpenseSettings": "Speseneinstellungen werden geladen",
+      "twoFactorVerification": "Zwei-Faktor-Verifizierung wird geladen",
+      "vacationSettings": "Ferieneinstellungen werden geladen",
+      "wellnessSettings": "Wellness-Einstellungen werden geladen",
+      "workCategorySettings": "Arbeitskategorie-Einstellungen werden geladen",
+      "workerQueue": "Worker-Warteschlange wird geladen",
+      "workPolicySettings": "Arbeitsrichtlinien-Einstellungen werden geladen",
+      "worksCouncilPortal": "Betriebsrat-Portal wird geladen",
+      "yourRequests": "Ihre Anfragen werden geladen"
+    },
     "loadMore": "Meh lade",
     "months": {
       "april": "April",
@@ -169,11 +305,20 @@
     "next": "Wiiter",
     "notApplicable": "n. v.",
     "not-available": "Nöd verfüegbar",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Benachrichtigungen} other {Benachrichtigungen (# ungelesen)}}"
+    },
     "open": "Öffne",
     "openEnded": "Offes Ändi",
     "openMenu": "Menü öffne",
     "optional": "optional",
     "or": "Oder",
+    "pagination": {
+      "goToNextPage": "Zur nächsten Seite gehen",
+      "goToPreviousPage": "Zur vorherigen Seite gehen",
+      "morePages": "Weitere Seiten",
+      "pagination": "Sitenummerierig"
+    },
     "pending": "Usschtändig",
     "present": "Aawesend",
     "previous": "Zrugg",
@@ -194,6 +339,11 @@
     "select-language": "Sprach uswähle",
     "set": "setze",
     "sets": "Sets",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Zeigt di mobil Siteläischte aa.",
+      "sidebar": "Siteläischte",
+      "toggleSidebar": "Siteläischte umschalte"
+    },
     "skip": "Überspringe",
     "start": "Start",
     "status": "Status",
@@ -205,6 +355,10 @@
         "reload": "Neu lade",
         "title": "Update verfügbar"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Ziituswahl öffne",
+      "switchPeriod": "Uf {period} wechsle"
     },
     "to": "bis",
     "today": "Hüt",
@@ -233,11 +387,34 @@
       "tue": "Die",
       "we": "Mi",
       "wed": "Mit"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Änderige mit Uswirkige uf d Belegschaft für die Organisation und Periode.",
+      "changeLogEmpty": "Käi Änderige für die Periode gfunde.",
+      "changeReviewLog": "Änderigsüberprüefigs-Protokoll",
+      "complianceFindings": "Compliance-Ergebnis",
+      "description": "Daateschutzgfiltereti Belegschaftsüberprüefig für di usgwählti Periode.",
+      "disabledDescription": "De Betriibsrat-Modus isch für die Organisation nöd aktiviert.",
+      "exportReviewPack": "Überprüefigspaket exportiere",
+      "from": "Vo",
+      "identityHidden": "Identität usblendet",
+      "insufficientData": "Zwenig Daate",
+      "policyChanges": "Richtlinie-Änderige",
+      "scheduleChanges": "Planänderige",
+      "scheduleDescription": "Daateschutzgfiltereti Planiträg für di usgwählti Periode.",
+      "scheduleEmpty": "Käi Planiträg für die Periode gfunde.",
+      "scheduleEntry": "{identity} - {start} bis {end}",
+      "scheduleReview": "Planüberprüefig",
+      "title": "Betriibsrat",
+      "to": "Bis",
+      "unassignedTeam": "Nöd zuegwisnigs Team",
+      "updateRange": "Bereich aktualisiere"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} Aagstellti usgwählt",
     "countWithMore": "{count} Aagstellti (+{more} wiiteri)",
+    "inactive": "Inaktiv",
     "noEmployeesFound": "Kei Aagstellti gfunde",
     "removeSelected": "{name} entferne",
     "role": "Rolle",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktiere",
       "createOrg": "Organisation erstelle",
-      "description": "Du bruchsch es Mitarbeiterprofil für {feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
+      "description": "Du bruchsch es Mitarbeiterprofil für ${feature}. Bitte erstel en Organisation oder kontaktier din Administrator.",
       "emailBody": "Hallo,\n\nich bruche es Mitarbeiterprofil, zum uf d'Plattform-Funktione zuegriffe. Chöntsch du mir bitte debi hälfe?\n\nDanke!",
       "emailSubject": "Mitarbeiterprofil-Irichtig erforderlich",
       "helpText": "Wenn du zu ere Organisation iglade worde bisch, bitt din Administrator, dis Mitarbeiterprofil izrichte.",
@@ -270,8 +447,14 @@
       "waiting": "Wartisch uf en Iladig?",
       "waitingDesc": "Din Administrator schickt dir en Iladigs-E-Mail. Prüef din Postigang und de Spam-Ordner."
     },
+    "notFound": {
+      "description": "D Siite isch villicht verschobe worde, de Link isch veraltet oder d Adrässe isch nöd korrekt.",
+      "title": "Siite nöd gfunde"
+    },
     "unexpected": {
-      "digest": "Referänz: {digest}"
+      "description": "Mir händ die Siite grad nöd chönne lade. Bitte probier's nomal oder gang zrugg zunere sichere Siite i de App.",
+      "digest": "Referänz: {digest}",
+      "title": "Öppis isch schiefgloffe"
     }
   },
   "generic": {
@@ -280,25 +463,36 @@
   },
   "header": {
     "clock-in": "Istämple",
-    "clock-out": "Ufstämple"
+    "clock-out": "Ufstämple",
+    "timezone": {
+      "current": "Aktuelli Zitzone {timezone}, {time}, {offset}",
+      "savedTimezone": "Gspiichereti Zitzone",
+      "saveTimezone": "Zitzone spiichere",
+      "saving": "Am Spiichere...",
+      "updated": "Zitzone erfolgriich aktualisiert",
+      "updateError": "Beim Aktualisiere vo de Zitzone isch en Fehler ufträtte",
+      "updateFailed": "Zitzone hät nöd chönne aktualisiert werde"
+    }
   },
   "info": {
     "agb": "AGB",
     "back-to-login": "Zrugg zum Login",
     "imprint": "Impressum",
+    "licenses": "Open-Source-Lizenze",
+    "openSourceLicenses": "Open-Source-Lizenze",
     "trust-center": "Trust Center"
   },
   "loading": {
-    "chart": "Diagramm wird glade",
-    "settings": "Istellige wärde glade",
-    "application": "Awändig wird glade",
-    "authentication": "Amäldig wird glade",
+    "application": "Aawändig wird glade",
+    "authentication": "Authentifizierig wird glade",
     "calendar": "Kaländer wird glade",
-    "licenses": "Lizänze wärde glade",
-    "platformAnalytics": "Plattform-Analyse wird glade",
+    "chart": "Diagramm wird geladen",
+    "licenses": "Lizenze werded glade",
+    "platformAnalytics": "Plattform-Analysene werded glade",
+    "settings": "Einstellungen werden geladen",
     "setup": "Iirichtig wird glade",
-    "teamAbsences": "Team-Abweseheite wärde glade",
-    "workerQueue": "Uuftragswarteschlange wird glade"
+    "teamAbsences": "Team-Absänzetabelle wird glade",
+    "workerQueue": "Worker-Warteschlanga wird glade"
   },
   "nav": {
     "absences": "Abweseheite",
@@ -334,6 +528,23 @@
       "viewAll": "Alli Benachrichtigunge aaluege"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} hät {absenceType} für {dateRange} i dim Name iitrait.",
+        "title": "Absänz erfasst"
+      },
+      "absenceRequestRejected": {
+        "title": "Abwesenheitsantrag abgelehnt"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Genehmigungsaufgaben erfordern eine Stellvertretung",
+        "clock_out": "Überprüfung erforderlich: Offboarding-Ausstempeln",
+        "clock_repair": "Timer-Reparatur erforderlich",
+        "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
+        "future_work": "Zukünftige Arbeit muss überprüft werden"
+      },
+      "newAbsenceRequest": {
+        "title": "Neue Abwesenheitsanfrage"
+      },
       "passwordChanged": {
         "message": "Dis Passwort isch erfolgrych gänderet worde. Falls du die Änderig nid sälber gmacht häsch, bitte mäld di sofort bim Support.",
         "title": "Passwort gänderet"
@@ -377,6 +588,7 @@
     "preferences": {
       "disabled": "Benachrichtigung deaktiviert",
       "enabled": "Benachrichtigung aktiviert",
+      "mandatoryInbox": "Immer in Ihren Posteingang zugestellt",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Benachrichtigunge für usschtändigi Genehmigungsaaträg erhalte",
@@ -413,6 +625,9 @@
       "selectAllAria": "Alli sichtbare Benachrichtigunge uswähle",
       "selectNamedAria": "{title} uswähle",
       "visibleSelected": "{count} sichtbar usgwählt"
+    },
+    "time": {
+      "justNow": "gerade eben"
     },
     "timeline": {
       "earlier": "Früener",
@@ -485,6 +700,15 @@
     },
     "clockedIn": "Iigstämplet",
     "clockedOut": "Uusgstämplet"
+  },
+  "rateLimit": {
+    "countdownLabel": "Sekunden, bis Sie es erneut versuchen können",
+    "jsonMessage": "Anfragelimit überschritten. Bitte versuchen Sie es später erneut.",
+    "message": "Sie haben zu viele Anfragen gestellt. Bitte warten Sie, bevor Sie es erneut versuchen.",
+    "retryButton": "Erneut versuchen",
+    "retryingButton": "Erneuter Versuch...",
+    "title": "Zu viele Anfragen",
+    "waitingButton": "Bitte warten..."
   },
   "roles": {
     "admin": "Admin",
@@ -568,7 +792,8 @@
     "first-name-required": "Vorname isch erforderlich",
     "invalid-email": "Ungültigi E-Mail-Adress",
     "last-name-required": "Nachname isch erforderlich",
-    "password-required": "Passwort isch erforderlich"
+    "password-required": "Passwort isch erforderlich",
+    "pronounsMaxLength": "Pronomen dürfen maximal 50 Zeichen lang sein"
   },
   "workBalance": {
     "label": "Gsamtbilanz",
@@ -577,6 +802,6 @@
     "updatedEveryThreeHours": "Wird alli 3 Stunde aktualisiert"
   },
   "worksCouncil": {
-    "loadingLabel": "Betriebsratsportal wird glade"
+    "loadingLabel": "Betriebsrat wird geladen"
   }
 }

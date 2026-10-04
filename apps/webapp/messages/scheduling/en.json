@@ -21,6 +21,22 @@
       "managerDescription": "Manage and plan employee shifts",
       "title": "Shift Schedule"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Acknowledge and Publish",
+      "acknowledgmentDescription": "Publishing will proceed, but this schedule has compliance warnings that must be acknowledged first.",
+      "button": "Publish ({count})",
+      "cancel": "Cancel",
+      "complianceAcknowledgmentRequired": "Compliance Acknowledgment Required",
+      "complianceWarnings": "{count, plural, one {Compliance checks found # warning; you will need to acknowledge it before publishing.} other {Compliance checks found # warnings; you will need to acknowledge them before publishing.}}",
+      "coverageWarning": "Some time blocks don't meet minimum staffing requirements.",
+      "maxHours": "Max hours: {count}",
+      "notifyEmployees": "{count, plural, one {Publish # draft shift and notify employees} other {Publish # draft shifts and notify employees}}",
+      "overtime": "Overtime: {count}",
+      "publishing": "Publishing…",
+      "restTime": "Rest time: {count}",
+      "totalFindings": "{count, plural, one {# total finding} other {# total findings}}",
+      "warningsDetectedBeforePublish": "Warnings detected before publish"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} finding(s) detected before publish.",
@@ -100,22 +116,6 @@
       "dragHint": "Drag a template onto the calendar to create a shift",
       "empty": "No templates available. Create templates in Settings to quickly add shifts.",
       "title": "Shift Templates"
-    },
-    "publish": {
-      "warningsDetectedBeforePublish": "Warnings detected before publish",
-      "complianceAcknowledgmentRequired": "Compliance Acknowledgment Required",
-      "cancel": "Cancel",
-      "acknowledgeAndPublish": "Acknowledge and Publish",
-      "button": "Publish ({count})",
-      "complianceWarnings": "{count, plural, one {Compliance checks found # warning; you will need to acknowledge it before publishing.} other {Compliance checks found # warnings; you will need to acknowledge them before publishing.}}",
-      "notifyEmployees": "{count, plural, one {Publish # draft shift and notify employees} other {Publish # draft shifts and notify employees}}",
-      "totalFindings": "{count, plural, one {# total finding} other {# total findings}}",
-      "restTime": "Rest time: {count}",
-      "maxHours": "Max hours: {count}",
-      "overtime": "Overtime: {count}",
-      "publishing": "Publishing…",
-      "coverageWarning": "Some time blocks don't meet minimum staffing requirements.",
-      "acknowledgmentDescription": "Publishing will proceed, but this schedule has compliance warnings that must be acknowledged first."
     }
   }
 }

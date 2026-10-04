@@ -4,6 +4,34 @@
 
 # Z8 - Modern Workforce Management
 
+## Local development
+
+Use Node.js 24 or newer and pnpm. After `pnpm install`, run
+`pnpm dev:webapp` with your usual Phase environment. The webapp uses
+[Portless](https://portless.sh) at **https://z8.localhost** instead of port 3000.
+`pnpm dev` and `pnpm --filter webapp dev` use the same setup. Portless assigns
+an available backend port and shares one local proxy across projects. Other
+projects need their own Portless names. Git worktrees automatically receive
+a hostname prefix; use the URL printed at startup.
+
+On first launch, Portless sets up its local HTTPS certificate authority and
+may request permission to trust it or update the hosts file. To check the
+setup, run `pnpm --filter webapp exec portless doctor`; to trust the certificate
+manually, run `pnpm --filter webapp exec portless trust`. Existing proxy settings
+can change the scheme, suffix, or proxy port, so the startup URL is authoritative.
+
+The dev launcher sets `APP_URL`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL`,
+`MAIN_DOMAIN`, `PLATFORM_DOMAIN`, and `PASSKEY_RP_ID` from the Portless URL,
+overriding stale local URL settings supplied by Phase. Production commands are
+unaffected. OAuth providers must allow the new callback URL, and passkeys for
+another hostname may need to be registered again. Tenant subdomains require
+Portless's optional wildcard routing setup.
+
+For direct access without the proxy, use `pnpm --filter webapp dev:direct`
+(Next.js's normal port selection applies). For Webpack, use
+`pnpm --filter webapp dev:webpack`. On Windows PowerShell, use `pnpm.cmd` if
+execution policy blocks the `pnpm.ps1` shim.
+
 Z8 is a workforce management platform built for organizations that need reliable time tracking, audit-ready records, and clear operational control under German labor law and GoBD compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*).
 
 Across Web, Mobile, and Desktop, Z8 gives teams a dependable operational system for time tracking, absences, travel expenses, and day-to-day workforce management.

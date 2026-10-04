@@ -55,6 +55,9 @@
           "restPeriodViolations": "Naruszenia okresów odpoczynku: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Ostatnio odświeżono: {time}"
+      },
       "links": {
         "inspectCompliance": "Sprawdź zgodność",
         "inspectInAuditLog": "Sprawdź w dzienniku audytu",
@@ -62,6 +65,11 @@
         "openAuditLog": "Otwórz dziennik audytu",
         "openComplianceSettings": "Otwórz ustawienia zgodności",
         "reviewAuditExport": "Przejrzyj eksport audytu"
+      },
+      "overview": "Przegląd zgodności",
+      "recentEvents": {
+        "empty": "Nie wykryto ostatnio żadnych zdarzeń krytycznych.",
+        "title": "Ostatnie zdarzenia krytyczne"
       },
       "sections": {
         "accessControls": {

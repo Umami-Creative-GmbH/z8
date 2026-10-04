@@ -1,18 +1,18 @@
 {
   "organization": {
     "autoClockOut": {
-      "title": "Automatisches Ausstempeln",
-      "description": "Lege die maximale Dauer ununterbrochener laufender Arbeit fest. Mitarbeitende werden bei Erreichen dieses Limits automatisch ausgestempelt.",
+      "adminOnly": "Nur Administratoren und Eigentümer der Organisation können diese Einstellungen ändern.",
+      "description": "Legen Sie die maximale Dauer ununterbrochener Live-Arbeit fest. Mitarbeiter werden bei diesem Limit automatisch ausgestempelt.",
       "enabled": "Automatisches Ausstempeln",
+      "help": "Eine erfasste Pause oder ein erneutes Einstempeln setzt das Zeitkontingent zurück. Änderungen gelten auch für bereits laufende Arbeitszeiten. Prüfungen finden alle fünf Minuten statt; das Ausstempeln wird genau am Grenzwert erfasst, selbst wenn die Prüfung später erfolgt. Mitarbeitende erhalten stets eine Benachrichtigung im Posteingang.",
       "hours": "Stunden",
+      "invalidDuration": "Geben Sie eine gültige Dauer ein: volle Stunden und 0–59 Minuten, insgesamt mindestens eine Minute.",
       "minutes": "Minuten",
-      "help": "Eine erfasste Pause oder erneutes Einstempeln setzt das Zeitlimit zurück. Änderungen gelten auch für bereits laufende Arbeit. Die Prüfung erfolgt alle fünf Minuten; die Ausstempelzeit wird auf das Limit gesetzt, auch wenn die Prüfung später erfolgt. Mitarbeitende erhalten immer eine Benachrichtigung im Posteingang.",
-      "adminOnly": "Nur Admins und Inhaber der Organisation können diese Einstellungen ändern.",
-      "invalidDuration": "Gib eine gültige Dauer ein: ganze Stunden und 0–59 Minuten, insgesamt mindestens eine Minute.",
       "save": "Änderungen speichern",
-      "saving": "Wird gespeichert…",
       "saved": "Einstellungen für automatisches Ausstempeln gespeichert",
-      "saveFailed": "Einstellungen für automatisches Ausstempeln konnten nicht gespeichert werden"
+      "saveFailed": "Einstellungen für automatisches Ausstempeln konnten nicht aktualisiert werden",
+      "saving": "Wird gespeichert…",
+      "title": "Automatisches Ausstempeln"
     },
     "create": "Organisation erstellen",
     "createDialog": {
@@ -134,7 +134,7 @@
       "expired": "Abgelaufen",
       "expires": "Läuft ab",
       "inactive": "Inaktiv",
-      "invitationActionsLabel": "Aktionen für Einladung an {email}",
+      "invitationActionsLabel": "Aktionen für Einladung an ${row.original.email}",
       "invitationCancelError": "Fehler beim Stornieren der Einladung",
       "invitationCancelSuccess": "Einladung storniert",
       "invitationResendError": "Fehler beim erneuten Senden der Einladung",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, one {# Einladung wartet darauf, angenommen zu werden} other {# Einladungen warten darauf, angenommen zu werden}}",
       "invitedBy": "Eingeladen von",
       "member": "Mitglied",
-      "memberActionsLabel": "Aktionen für {name}",
+      "memberActionsLabel": "Aktionen für ${row.original.user.name}",
       "memberCount": "{count, plural, one {# Mitglied in dieser Organisation} other {# Mitglieder in dieser Organisation}}",
       "noInvitationResults": "Keine Einladungen entsprechen Ihrer Suche.",
       "noInvitations": "Keine ausstehenden Einladungen.",
@@ -270,7 +270,7 @@
       "title": "Teams"
     },
     "timezone": {
-      "balances-recalculating": "Arbeitszeitsalden werden für die neue Zeitzone neu berechnet und bis dahin ausgeblendet.",
+      "balances-recalculating": "Arbeitszeitsalden werden für die neue Zeitzone neu berechnet und bleiben ausgeblendet, bis sie fertiggestellt sind.",
       "default": "Standard-Zeitzone",
       "description": "Legen Sie die Standardzeitzone für Ihre Organisation fest. Diese wird für die Abwesenheitsverfolgung, Berichte und andere datumsbasierte Funktionen verwendet. Einzelne Benutzer können dies in ihren Profileinstellungen überschreiben.",
       "owner-only": "Nur Organisationsinhaber können die Zeitzoneneinstellung ändern.",

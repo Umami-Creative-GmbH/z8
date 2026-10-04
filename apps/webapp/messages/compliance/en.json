@@ -55,6 +55,9 @@
           "restPeriodViolations": "Rest-period violations: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Last refreshed: {time}"
+      },
       "links": {
         "inspectCompliance": "Inspect compliance",
         "inspectInAuditLog": "Inspect in Audit Log",
@@ -62,6 +65,11 @@
         "openAuditLog": "Open Audit Log",
         "openComplianceSettings": "Open Compliance Settings",
         "reviewAuditExport": "Review audit export"
+      },
+      "overview": "Compliance overview",
+      "recentEvents": {
+        "empty": "No recent critical events were detected.",
+        "title": "Recent Critical Events"
       },
       "sections": {
         "accessControls": {

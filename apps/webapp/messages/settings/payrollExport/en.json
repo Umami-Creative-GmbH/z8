@@ -21,13 +21,24 @@
       },
       "description": "Export work periods to payroll systems like DATEV or Personio",
       "export": {
+        "allEmployees": "All Employees",
+        "allProjects": "All Projects",
+        "allTeams": "All Teams",
         "asyncDescription": "Your export is being processed. Check the history tab for progress.",
         "asyncStarted": "Export started",
         "customRange": "Custom Range",
         "dateRange": "Date Range",
         "description": "Export work periods and absences to DATEV Lohn & Gehalt format",
+        "employees": "Employees",
         "endDate": "End Date",
         "error": "Export failed",
+        "exportButtonDatev": "Export to DATEV",
+        "exportButtonLexware": "Export to Lexware",
+        "exportButtonPersonio": "Export to Personio",
+        "exportButtonSage": "Export to Sage",
+        "exportButtonSuccessFactorsApi": "Export to SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Export SAP SuccessFactors CSV",
+        "exportButtonWorkday": "Export to Workday",
         "exporting": "Exporting…",
         "filters": "Filters (Optional)",
         "format": "Export Format",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Month",
         "monthSelection": "Select Month",
+        "projects": "Projects",
         "startDate": "Start Date",
         "success": "Export downloaded",
+        "teams": "Teams",
         "title": "Export Payroll Data",
         "unavailable": {
           "missingConfiguration": "config",
           "missingCredentials": "credentials"
         },
-        "year": "Year",
-        "allEmployees": "All Employees",
-        "allProjects": "All Projects",
-        "allTeams": "All Teams",
-        "employees": "Employees",
-        "employeesSelected": "{{count}} selected",
-        "exportButtonDatev": "Export to DATEV",
-        "exportButtonLexware": "Export to Lexware",
-        "exportButtonPersonio": "Export to Personio",
-        "exportButtonSage": "Export to Sage",
-        "exportButtonSuccessFactorsApi": "Export to SAP SuccessFactors (API)",
-        "exportButtonSuccessFactorsCsv": "Export SAP SuccessFactors CSV",
-        "exportButtonWorkday": "Export to Workday",
-        "projects": "Projects",
-        "projectsSelected": "{{count}} selected",
-        "teams": "Teams",
-        "teamsSelected": "{{count}} selected"
+        "year": "Year"
       },
       "history": {
         "description": "View and download previous DATEV exports",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Review approval inbox",
+        "payrollExport": "Open payroll export settings",
+        "timeTracking": "Review time tracking",
+        "travelExpenses": "Review travel expenses"
+      },
+      "affectedEmployees": {
+        "name": "Employee",
+        "noNumber": "Not set",
+        "number": "Employee number"
+      },
+      "checks": {
+        "count": "Count"
+      },
+      "checkStatus": {
+        "fail": "Blocked",
+        "pass": "Ready",
+        "unavailable": "Unable to verify",
+        "warning": "Warning"
+      },
       "description": "Check whether a payroll period is ready before exporting time, absence, and payroll data.",
+      "openPayrollExport": "Open payroll export",
+      "status": {
+        "blocked": "Blocked",
+        "ready": "Ready for payroll",
+        "unavailable": "Unable to verify"
+      },
+      "summary": {
+        "affectedEmployees": "Affected employees",
+        "affectedEmployeesDescription": "Employees linked to open readiness items.",
+        "blockers": "Blockers",
+        "blockersDescription": "Required checks currently blocking export.",
+        "exportTargets": "Configured export targets",
+        "exportTargetsDescription": "Active payroll export destinations.",
+        "period": "Period",
+        "periodDescription": "Payroll period being verified.",
+        "status": "Status",
+        "statusDescription": "Overall payroll export readiness.",
+        "warnings": "Warnings",
+        "warningsDescription": "Non-blocking issues to review before export."
+      },
       "title": "Payroll Readiness"
     },
     "workDiagnostics": {
+      "allEmployees": "Show all employees",
+      "append": {
+        "continued": "Employees continuing from an approved anchor: {count}. History before each anchor is not verified.",
+        "counts": "{verified} of {total} employees have lineage verified from stored evidence.",
+        "description": "A separate claim from completeness: lineage and continuity of stored time entries. It does not decide payroll readiness.",
+        "interruptions": "Continuity interruptions",
+        "issues": "Lineage issues and candidates",
+        "limitations": "Limitations",
+        "title": "Time entry chain assurance"
+      },
+      "blocking": "Blocks completeness",
       "description": "Find missing or conflicting time records and time entry chain issues",
+      "evidence": {
+        "entries": "Time entries",
+        "timeRecords": "Time records",
+        "workPeriods": "Work periods"
+      },
+      "findings": {
+        "description": "Every finding is read-only evidence. Only the historical gap repair below fills missing values, from evidence and with separate authorization; changing established work needs a separately authorized review.",
+        "employees": "Employees",
+        "empty": "No missing, conflicting or suspected historical work in this scope.",
+        "evidence": "Evidence",
+        "finding": "Finding",
+        "provenance": "Provenance",
+        "title": "Findings",
+        "treatment": "Treatment"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Pending work without an approval request",
+        "approvalStateConflict": "Approval states disagree",
+        "canonicalDetailMissing": "Time record work detail missing",
+        "canonicalLinkMissing": "Time record link missing",
+        "canonicalLinkShared": "Several work periods link one time record",
+        "canonicalLinkUnresolved": "Linked time record not found",
+        "canonicalMissing": "Time record missing",
+        "captureInferred": "Time zone capture inferred after the event",
+        "deletedWorkPayable": "Deleted work still has a payable time record",
+        "durationConflict": "Stored durations disagree",
+        "durationMissing": "Stored duration missing",
+        "emptyInterval": "Start equals end",
+        "endpointConflict": "Start or end times disagree",
+        "endpointEntryMissing": "Clock-out entry missing",
+        "endpointEntrySuperseded": "Work period points to a replaced clock entry",
+        "endpointEntryUnresolved": "Clock entry not found",
+        "endpointMissing": "End time missing",
+        "manualEvidenceUnreadable": "Manual submission evidence unreadable",
+        "manualHolidayCheckDatesDiffer": "Holiday check used different dates than the work",
+        "manualInterpretationAmbiguous": "Manual entry time skipped or repeated by a clock change",
+        "manualInterpretationMismatch": "Manual entry saved at different times than submitted",
+        "manualTrimmed": "Manual entry shortened on save",
+        "manualZoneUnrecorded": "Manual entry time zone not recorded",
+        "metadataCanonicalOnly": "Assignment only on time record",
+        "metadataConflict": "Assignments disagree",
+        "metadataMissing": "Assignment missing on time record",
+        "multipleActiveWork": "More than one active work period",
+        "negativeDuration": "Negative duration",
+        "openStateConflict": "Open and closed state disagree",
+        "overlappingWork": "Overlapping work",
+        "ownershipConflict": "Ownership conflict",
+        "relinkedCanonicalResidue": "Time record left behind by relinking",
+        "reversedInterval": "End before start",
+        "storedElapsedDiscrepancy": "Stored minutes differ from elapsed time",
+        "workOutsideOrganizationEmployees": "Work owned outside the organization's employees"
+      },
+      "nextMonth": "Next month",
+      "ownerUnknown": "Owner not established",
       "pageDescription": "Record-level diagnostics for historical work: missing or conflicting representations, adoption provenance, suspected manual-entry defects and time entry chain assurance.",
+      "previousMonth": "Previous month",
       "proposals": {
         "addChange": "Add change",
         "after": "New value",
@@ -370,6 +473,12 @@
         "valueRequired": "Enter the new value.",
         "work": "Work period"
       },
+      "provenance": {
+        "ambiguous": "Ambiguous provenance",
+        "freshBackdated": "Fresh backdated write",
+        "postAdoption": "Post-adoption write",
+        "preAdoption": "Pre-adoption history"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Author of the clock-out entry",
@@ -413,7 +522,37 @@
         "title": "Historical gap repair",
         "work": "Work period"
       },
-      "title": "Work Diagnostics"
+      "shape": {
+        "conflicting": "Conflicting",
+        "disclosure": "Disclosure",
+        "missing": "Missing",
+        "suspectedDefect": "Suspected defect"
+      },
+      "status": {
+        "complete": "Complete",
+        "completeDescription": "No relevant missing or conflicting evidence, including pending, rejected and open work.",
+        "incomplete": "Incomplete",
+        "incompleteDescription": "Unaffected data is usable for review, but this scope is not complete.",
+        "widenedEmployees": "Dates could not be established, so affected employees are uncertain for every period.",
+        "widenedOrganization": "Ownership could not be established, so the whole organization is uncertain."
+      },
+      "summary": {
+        "affected": "Affected employees",
+        "affectedDescription": "Employees whose work in this scope cannot be established.",
+        "blocking": "Blocking findings",
+        "blockingDescription": "Missing or conflicting evidence that makes relevant work uncertain.",
+        "scope": "Scope",
+        "scopeAll": "All employees. Dates cover every time zone's calendar days.",
+        "status": "Completeness"
+      },
+      "title": "Work Diagnostics",
+      "treatment": {
+        "disclosed": "Disclosed limitation",
+        "historicalGap": "Historical gap",
+        "integrityIncident": "Integrity incident",
+        "investigationRequired": "Investigation required",
+        "reviewRequired": "Review required"
+      }
     }
   }
 }

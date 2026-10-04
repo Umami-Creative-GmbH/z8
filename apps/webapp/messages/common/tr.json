@@ -19,42 +19,91 @@
     "commandPlaceholder": "Sayfaları, kişileri, ekipleri, ayarları veya eylemleri arayın…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "giriş",
+          "hours": "saat",
+          "manual": "manuel",
+          "time": "zaman"
+        },
         "subtitle": "Geçmiş bir vardiya veya düzeltme için saat kaydı girin",
         "title": "Manuel zaman girişi ekle"
       },
       "createProject": {
+        "keywords": {
+          "create": "oluştur",
+          "project": "proje",
+          "settings": "ayarlar"
+        },
         "subtitle": "Yeni bir proje tanımlamak için proje ayarlarını açın",
         "title": "Proje oluştur"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "davet et",
+          "member": "üye",
+          "teammate": "ekip arkadaşı"
+        },
         "subtitle": "Bir iş arkadaşı eklemek için organizasyon yönetimini açın",
         "title": "Ekip arkadaşını davet et"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "onaylar",
+          "inbox": "gelen kutusu",
+          "review": "incele"
+        },
         "subtitle": "Bekleyen çalışan taleplerini inceleyin",
         "title": "Onay kutusunu aç"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "benimkiler",
+          "requests": "talepler"
+        },
         "subtitle": "Gönderdiğiniz izin ve masraf taleplerini inceleyin",
         "title": "Taleplerimi aç"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Zaman verilerinin bordro için hazır olup olmadığını kontrol edin",
-        "title": "Bordro hazırlığını aç"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "dışa aktar",
+          "payroll": "bordro",
+          "wages": "ücretler"
+        },
         "subtitle": "Kapsamlı bordro çalışma alanını incele",
         "title": "Bordroyu aç"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "dışa aktar",
+          "payroll": "bordro",
+          "readiness": "hazırlık durumu"
+        },
+        "subtitle": "Zaman verilerinin bordro için hazır olup olmadığını kontrol edin",
+        "title": "Bordro hazırlığını aç"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "tercihler",
+          "settings": "ayarlar"
+        },
         "subtitle": "Profilinizi, güvenliğinizi ve organizasyon ayarlarınızı yönetin",
         "title": "Ayarları aç"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "devamsızlık",
+          "timeOff": "izin",
+          "vacation": "tatil"
+        },
         "subtitle": "Tatil, hastalık izni veya izin talebi başlatın",
         "title": "İzin talep et"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "masraf",
+          "reimbursement": "geri ödeme",
+          "travel": "seyahat"
+        },
         "subtitle": "Seyahat masrafları için geri ödeme talebi oluşturun",
         "title": "Seyahat masrafı gönder"
       }
@@ -70,7 +119,14 @@
     "search": "Ara",
     "searchOrRunCommand": "Ara veya komut çalıştır",
     "teamAbsences": {
-      "description": "Çalışan izin metriklerini inceleyin ve izinleri kaydedin"
+      "description": "Çalışan izin metriklerini inceleyin ve izinleri kaydedin",
+      "keywords": {
+        "absence": "devamsızlık",
+        "manager": "yönetici",
+        "sick": "Hasta",
+        "team": "Ekip",
+        "vacation": "Tatil"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Onayla",
     "assign": "Ata",
     "back": "Geri",
+    "brandLogo": "{brand} logosu",
+    "breadcrumb": {
+      "breadcrumb": "İçerik haritası",
+      "more": "Daha fazla"
+    },
     "cancel": "İptal",
+    "carousel": {
+      "nextSlide": "Sonraki slayt",
+      "previousSlide": "Önceki slayt",
+      "roleDescription": "Karusel",
+      "slideRoleDescription": "Slayt"
+    },
     "clear": "Temizle",
     "clearSearch": "Aramayı temizle",
     "clearSelection": "Temizle",
@@ -117,10 +184,17 @@
     "copy": "Kopyala",
     "create": "Oluştur",
     "current": "Mevcut",
+    "datePicker": {
+      "clearDate": "Tarihi temizle",
+      "placeholder": "Bir tarih seçin"
+    },
     "days": {
+      "count": "{count} gün",
       "friday": "Cuma",
+      "half": "0,5 gün",
       "label": "günler",
       "monday": "Pazartesi",
+      "one": "1 gün",
       "saturday": "Cumartesi",
       "sunday": "Pazar",
       "thursday": "Perşembe",
@@ -129,14 +203,24 @@
     },
     "delete": "Sil",
     "deleting": "Siliniyor...",
+    "deployment": {
+      "skew": {
+        "description": "Devam etmek için sayfayı yeniden yükleyin. Son işleminiz kaydedilmedi.",
+        "title": "Z8 güncellendi"
+      }
+    },
     "description": "Açıklama",
     "deselectAll": "Tümünün Seçimini Kaldır",
     "details": "Ayrıntılar",
     "download": "İndir",
+    "duplicate": "Çoğalt",
+    "durationMinutes": "{count} dk.",
     "edit": "Düzenle",
     "enabled": "Etkin",
     "error": "Hata",
     "error-occurred": "Bir hata oluştu",
+    "fieldPresets": "{label} ön ayarları",
+    "focusInput": "Giriş alanına odaklan",
     "gender": {
       "female": "Kadın",
       "male": "Erkek",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Panele Git",
     "inactive": "Etkin değil",
+    "label": "Etiket",
     "loading": "Yükleniyor...",
+    "loadingLabel": "Yükleniyor",
+    "loadingRegions": {
+      "absences": "Devamsızlıklar yükleniyor",
+      "adminConsole": "Yönetici konsolu yükleniyor",
+      "analyticsNavigation": "Analitik gezintisi yükleniyor",
+      "application": "Uygulama yükleniyor",
+      "auditExportSettings": "Denetim dışa aktarma ayarları yükleniyor",
+      "authentication": "Kimlik doğrulama yükleniyor",
+      "changePolicySettings": "Değişiklik politikası ayarları yükleniyor",
+      "coverageRuleSettings": "Kapsam kuralı ayarları yükleniyor",
+      "customerSettings": "Müşteri ayarları yükleniyor",
+      "customRoleSettings": "Özel rol ayarları yükleniyor",
+      "dashboard": "Pano yükleniyor",
+      "dataExportSettings": "Veri dışa aktarma ayarları yükleniyor",
+      "demoDataSettings": "Demo veri ayarları yükleniyor",
+      "deploymentDiagnostics": "Dağıtım tanılamaları yükleniyor",
+      "employeeReports": "Çalışan raporları yükleniyor",
+      "employeeVacationAllowances": "Çalışan izin hakları yükleniyor",
+      "exportOperations": "Dışa aktarma işlemleri yükleniyor",
+      "holidaySettings": "Tatil ayarları yükleniyor",
+      "importReview": "İçe aktarma incelemesi yükleniyor",
+      "importSettings": "İçe aktarma ayarları yükleniyor",
+      "locationSettings": "Konum ayarları yükleniyor",
+      "onboarding": "İlk katılım yükleniyor",
+      "payrollExportSettings": "Bordro dışa aktarma ayarları yükleniyor",
+      "payrollReadiness": "Bordro hazırlığı yükleniyor",
+      "payrollWorkspace": "Bordro çalışma alanı yükleniyor",
+      "platformAdminOverview": "Platform yöneticisi genel bakışı yükleniyor",
+      "platformAnalytics": "Platform analitiği yükleniyor",
+      "platformBilling": "Platform faturalandırması yükleniyor",
+      "platformSetup": "Platform kurulumu yükleniyor",
+      "projectReports": "Proje raporları yükleniyor",
+      "projectSettings": "Proje ayarları yükleniyor",
+      "scheduledExports": "Zamanlanmış dışa aktarmalar yükleniyor",
+      "shiftSchedule": "Vardiya çizelgesi yükleniyor",
+      "shiftTemplateSettings": "Vardiya şablonu ayarları yükleniyor",
+      "skillSettings": "Beceri ayarları yükleniyor",
+      "surchargeSettings": "Ek ücret ayarları yükleniyor",
+      "team": "Ekip yükleniyor",
+      "todaySManagerBriefing": "Günün yönetici bilgilendirmesi yükleniyor",
+      "travelExpenses": "Seyahat masrafları yükleniyor",
+      "travelExpenseSettings": "Seyahat masrafı ayarları yükleniyor",
+      "twoFactorVerification": "İki faktörlü doğrulama yükleniyor",
+      "vacationSettings": "İzin ayarları yükleniyor",
+      "wellnessSettings": "Esenlik ayarları yükleniyor",
+      "workCategorySettings": "Çalışma kategorisi ayarları yükleniyor",
+      "workerQueue": "Çalışan kuyruğu yükleniyor",
+      "workPolicySettings": "Çalışma politikası ayarları yükleniyor",
+      "worksCouncilPortal": "İş Konseyi portalı yükleniyor",
+      "yourRequests": "Talepleriniz yükleniyor"
+    },
     "loadMore": "Daha Fazla Yükle",
     "months": {
       "april": "Nisan",
@@ -169,11 +305,20 @@
     "next": "İleri",
     "notApplicable": "N/A",
     "not-available": "Mevcut değil",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Bildirimler} other {Bildirimler (# okunmamış)}}"
+    },
     "open": "Aç",
     "openEnded": "Ucu açık",
     "openMenu": "Menüyü aç",
     "optional": "isteğe bağlı",
     "or": "Veya",
+    "pagination": {
+      "goToNextPage": "Sonraki sayfaya git",
+      "goToPreviousPage": "Önceki sayfaya git",
+      "morePages": "Daha fazla sayfa",
+      "pagination": "Sayfalama"
+    },
     "pending": "Beklemede",
     "present": "Mevcut",
     "previous": "Önceki",
@@ -194,6 +339,11 @@
     "select-language": "Dil seç",
     "set": "ayarla",
     "sets": "setler",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Mobil kenar çubuğunu görüntüler.",
+      "sidebar": "Kenar Çubuğu",
+      "toggleSidebar": "Kenar Çubuğunu Aç/Kapat"
+    },
     "skip": "Atla",
     "start": "Başlat",
     "status": "Durum",
@@ -205,6 +355,10 @@
         "reload": "Yeniden yükle",
         "title": "Güncelleme mevcut"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Saat seçiciyi aç",
+      "switchPeriod": "{period} dönemine geç"
     },
     "to": "ile",
     "today": "Bugün",
@@ -233,11 +387,34 @@
       "tue": "Sal",
       "we": "Çar",
       "wed": "Çar"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Bu kuruluş ve dönem kapsamındaki iş gücünü etkileyen değişiklikler.",
+      "changeLogEmpty": "Bu dönem için değişiklik bulunamadı.",
+      "changeReviewLog": "Değişiklik inceleme günlüğü",
+      "complianceFindings": "Uyumluluk bulguları",
+      "description": "Seçilen dönem için gizlilik filtreli iş gücü incelemesi.",
+      "disabledDescription": "Bu kuruluş için İş Konseyi Modu etkin değil.",
+      "exportReviewPack": "İnceleme paketini dışa aktar",
+      "from": "Başlangıç",
+      "identityHidden": "Kimlik gizli",
+      "insufficientData": "Yetersiz veri",
+      "policyChanges": "Politika değişiklikleri",
+      "scheduleChanges": "Program değişiklikleri",
+      "scheduleDescription": "Seçilen dönem için gizlilik filtreli program girişleri.",
+      "scheduleEmpty": "Bu dönem için program girişi bulunamadı.",
+      "scheduleEntry": "{identity} - {start} ila {end}",
+      "scheduleReview": "Program incelemesi",
+      "title": "İş Konseyi",
+      "to": "Bitiş",
+      "unassignedTeam": "Atanmamış ekip",
+      "updateRange": "Aralığı Güncelle"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} çalışan seçildi",
     "countWithMore": "{count} çalışan (+{more} daha)",
+    "inactive": "Etkin Değil",
     "noEmployeesFound": "Çalışan bulunamadı",
     "removeSelected": "{name} öğesini kaldır",
     "role": "Rol",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Yöneticiyle İletişime Geçin",
       "createOrg": "Organizasyon Oluştur",
-      "description": "{feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
+      "description": "${feature} için bir çalışan profiline ihtiyacınız var. Lütfen bir organizasyon oluşturun veya yöneticinizle iletişime geçin.",
       "emailBody": "Merhaba,\n\nPlatform özelliklerine erişebilmek için bir çalışan profiline ihtiyacım var. Bu konuda bana yardımcı olabilir misiniz?\n\nTeşekkürler!",
       "emailSubject": "Çalışan Profili Kurulumu Gerekli",
       "helpText": "Bir organizasyona davet edildiyseniz, yöneticinizden çalışan profilinizi oluşturmasını isteyin.",
@@ -270,8 +447,14 @@
       "waiting": "Davetiye mi bekliyorsunuz?",
       "waitingDesc": "Yöneticiniz size bir davet e-postası gönderecek. Gelen kutunuzu ve spam klasörünüzü kontrol edin."
     },
+    "notFound": {
+      "description": "Sayfa taşınmış olabilir, bağlantı güncelliğini yitirmiş olabilir veya adres yanlış olabilir.",
+      "title": "Sayfa bulunamadı"
+    },
     "unexpected": {
-      "digest": "Referans: {digest}"
+      "description": "Şu anda bu sayfayı yükleyemedik. Lütfen tekrar deneyin veya uygulamada güvenli bir sayfaya dönün.",
+      "digest": "Referans: {digest}",
+      "title": "Bir şeyler ters gitti"
     }
   },
   "generic": {
@@ -280,25 +463,36 @@
   },
   "header": {
     "clock-in": "Giriş Yap",
-    "clock-out": "Çıkış Yap"
+    "clock-out": "Çıkış Yap",
+    "timezone": {
+      "current": "Geçerli saat dilimi {timezone}, {time}, {offset}",
+      "savedTimezone": "Kaydedilen saat dilimi",
+      "saveTimezone": "Saat dilimini kaydet",
+      "saving": "Kaydediliyor...",
+      "updated": "Saat dilimi başarıyla güncellendi",
+      "updateError": "Saat dilimi güncellenirken bir hata oluştu",
+      "updateFailed": "Saat dilimi güncellenemedi"
+    }
   },
   "info": {
     "agb": "Şartlar ve Koşullar",
     "back-to-login": "Giriş ekranına dön",
     "imprint": "Künye",
+    "licenses": "Açık Kaynak Lisansları",
+    "openSourceLicenses": "Açık Kaynak Lisansları",
     "trust-center": "Güven Merkezi"
   },
   "loading": {
-    "chart": "Grafik yükleniyor",
-    "settings": "Ayarlar yükleniyor",
     "application": "Uygulama yükleniyor",
     "authentication": "Kimlik doğrulama yükleniyor",
     "calendar": "Takvim yükleniyor",
+    "chart": "Grafik yükleniyor",
     "licenses": "Lisanslar yükleniyor",
     "platformAnalytics": "Platform analizleri yükleniyor",
+    "settings": "Ayarlar yükleniyor",
     "setup": "Kurulum yükleniyor",
-    "teamAbsences": "Ekip devamsızlıkları yükleniyor",
-    "workerQueue": "İş kuyruğu yükleniyor"
+    "teamAbsences": "Ekip izinleri tablosu yükleniyor",
+    "workerQueue": "İşçi kuyruğu yükleniyor"
   },
   "nav": {
     "absences": "İzinler",
@@ -334,6 +528,23 @@
       "viewAll": "Tüm bildirimleri görüntüle"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName}, sizin adınıza {dateRange} için {absenceType} kaydetti.",
+        "title": "İzin kaydedildi"
+      },
+      "absenceRequestRejected": {
+        "title": "İzin talebi reddedildi"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Onay görevleri için bir vekil gerekiyor",
+        "clock_out": "İnceleme gerekiyor: işten ayrılış çıkış kaydı",
+        "clock_repair": "Zamanlayıcı onarımı gerekiyor",
+        "employment_terms": "Gelecekteki istihdam koşullarının incelenmesi gerekiyor",
+        "future_work": "Gelecekteki çalışmaların incelenmesi gerekiyor"
+      },
+      "newAbsenceRequest": {
+        "title": "Yeni izin talebi"
+      },
       "passwordChanged": {
         "message": "Parolanız başarıyla değiştirildi. Bu değişikliği siz yapmadıysanız, lütfen derhal destek ekibiyle iletişime geçin.",
         "title": "Parola değiştirildi"
@@ -377,6 +588,7 @@
     "preferences": {
       "disabled": "Bildirim devre dışı bırakıldı",
       "enabled": "Bildirim etkinleştirildi",
+      "mandatoryInbox": "Her zaman gelen kutunuza iletilir",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Bekleyen onay talepleri için uyarılar alın",
@@ -413,6 +625,9 @@
       "selectAllAria": "Görünen tüm bildirimleri seç",
       "selectNamedAria": "{title} öğesini seç",
       "visibleSelected": "{count} görünür öğe seçildi"
+    },
+    "time": {
+      "justNow": "az önce"
     },
     "timeline": {
       "earlier": "Daha önce",
@@ -485,6 +700,15 @@
     },
     "clockedIn": "Giriş yapıldı",
     "clockedOut": "Çıkış yapıldı"
+  },
+  "rateLimit": {
+    "countdownLabel": "yeniden deneyebilmeniz için kalan saniye",
+    "jsonMessage": "İstek sınırı aşıldı. Lütfen daha sonra tekrar deneyin.",
+    "message": "Çok fazla istekte bulundunuz. Lütfen tekrar denemeden önce bekleyin.",
+    "retryButton": "Tekrar Dene",
+    "retryingButton": "Tekrar deneniyor...",
+    "title": "Çok Fazla İstek",
+    "waitingButton": "Lütfen bekleyin..."
   },
   "roles": {
     "admin": "Yönetici",
@@ -568,7 +792,8 @@
     "first-name-required": "Ad gerekli",
     "invalid-email": "Geçersiz e-posta adresi",
     "last-name-required": "Soyad gerekli",
-    "password-required": "Şifre gerekli"
+    "password-required": "Şifre gerekli",
+    "pronounsMaxLength": "Zamirler 50 karakter veya daha az olmalıdır"
   },
   "workBalance": {
     "label": "Tüm zamanların bakiyesi",
@@ -577,6 +802,6 @@
     "updatedEveryThreeHours": "Her 3 saatte bir güncellenir"
   },
   "worksCouncil": {
-    "loadingLabel": "İş konseyi portalı yükleniyor"
+    "loadingLabel": "İş konseyi yükleniyor"
   }
 }

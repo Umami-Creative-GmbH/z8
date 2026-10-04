@@ -8,6 +8,14 @@
         "title": "Detalles del contrato"
       },
       "description": "Descargue su contrato de procesamiento de datos conforme al Art. 28 del RGPD.",
+      "download": {
+        "button": "Descargar el acuerdo de procesamiento de datos en PDF",
+        "downloaded": "Acuerdo de procesamiento de datos descargado",
+        "downloadFailed": "Error al descargar",
+        "errorOccurred": "Se ha producido un error",
+        "filename": "Archivo: {filename}",
+        "generating": "Generando PDF…"
+      },
       "hosting": {
         "descriptionPrefix": "Todos los datos están alojados en servidores de ",
         "descriptionSuffix": ". No se utilizan otros subprocesadores.",
@@ -92,7 +100,7 @@
         "description": "Selecciona las categorías de datos que deseas exportar",
         "selectAll": "Seleccionar todo",
         "selectAtLeastOne": "Por favor, selecciona al menos una categoría",
-        "startExport": "Iniciar exportación ({count})",
+        "startExport": "Iniciar exportación (${selectedCategories.size})",
         "startingExport": "Iniciando exportación...",
         "submitError": "Error al iniciar la exportación",
         "submitSuccess": "Exportación iniciada correctamente",
@@ -115,7 +123,7 @@
         "downloadSuccess": "Descarga iniciada",
         "emptyDescription": "Aún no hay exportaciones",
         "emptyHint": "Cree su primera exportación usando el formulario de arriba",
-        "moreCategories": "+{count} más",
+        "moreCategories": "+${exp.categories.length - 3} más",
         "statusCompleted": "Completado",
         "statusFailed": "Fallido",
         "statusPending": "Pendiente",
@@ -140,7 +148,7 @@
         "endpointDescription": "Para servicios compatibles con S3 como MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Deje en blanco para mantener las credenciales existentes",
-        "lastVerified": "Última verificación: {date}",
+        "lastVerified": "Última verificación: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Región",
         "regionDescription": "Región de AWS donde se encuentra su bucket",
         "regionPlaceholder": "us-east-1",
@@ -179,10 +187,95 @@
         "save": "Guardar",
         "sendTest": "Enviar prueba"
       },
+      "categories": {
+        "absences": "Ausencias",
+        "auth": "Acceso a la cuenta",
+        "billing": "Facturación",
+        "exports": "Exportaciones",
+        "security": "Seguridad",
+        "teams": "Equipos",
+        "timecorrections": "Correcciones de tiempo"
+      },
       "defaultFallback": "Respaldo predeterminado",
       "defaultFallbackDescription": "Si esta plantilla utiliza el valor predeterminado del sistema, Z8 envía la copia y el asunto del sistema:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Notifica a un empleado que un responsable registró una ausencia en su nombre.",
+          "label": "Ausencia registrada por el responsable"
+        },
+        "absence-request-approved": {
+          "description": "Notifica a un empleado que su solicitud de ausencia fue aprobada.",
+          "label": "Solicitud de ausencia aprobada"
+        },
+        "absence-request-pending-approval": {
+          "description": "Notifica a un responsable que una solicitud de ausencia requiere aprobación.",
+          "label": "Solicitud de ausencia pendiente de aprobación"
+        },
+        "absence-request-rejected": {
+          "description": "Notifica a un empleado que su solicitud de ausencia fue rechazada.",
+          "label": "Solicitud de ausencia rechazada"
+        },
+        "absence-request-submitted": {
+          "description": "Confirma que un empleado envió una solicitud de ausencia.",
+          "label": "Solicitud de ausencia enviada"
+        },
+        "email-verification": {
+          "description": "Se envía cuando un usuario necesita verificar su dirección de correo electrónico.",
+          "label": "Verificación de correo electrónico"
+        },
+        "export-failed": {
+          "description": "Notifica a un usuario que no se pudo generar una exportación solicitada.",
+          "label": "Error en la exportación"
+        },
+        "export-ready": {
+          "description": "Notifica a un usuario que una exportación solicitada está lista para descargar.",
+          "label": "Exportación lista"
+        },
+        "organization-invitation": {
+          "description": "Se envía cuando se invita a un usuario a unirse a una organización.",
+          "label": "Invitación a la organización"
+        },
+        "password-reset": {
+          "description": "Se envía cuando un usuario solicita un enlace para restablecer su contraseña.",
+          "label": "Restablecimiento de contraseña"
+        },
+        "security-alert": {
+          "description": "Notifica a un usuario sobre un evento de seguridad importante de la cuenta.",
+          "label": "Alerta de seguridad"
+        },
+        "team-member-added": {
+          "description": "Notifica a un miembro que fue añadido a un equipo.",
+          "label": "Miembro del equipo añadido"
+        },
+        "team-member-removed": {
+          "description": "Notifica a un miembro que fue eliminado de un equipo.",
+          "label": "Miembro del equipo eliminado"
+        },
+        "time-correction-approved": {
+          "description": "Notifica a un empleado que su corrección de horas fue aprobada.",
+          "label": "Corrección de horas aprobada"
+        },
+        "time-correction-pending-approval": {
+          "description": "Notifica a un responsable que una corrección de horas necesita aprobación.",
+          "label": "Corrección de horas pendiente de aprobación"
+        },
+        "time-correction-rejected": {
+          "description": "Notifica a un empleado que su corrección de horas fue rechazada.",
+          "label": "Corrección de horas rechazada"
+        }
+      },
       "description": "Personalice los correos electrónicos que envía su organización",
       "editBodyBeforeSaving": "Edite el cuerpo del correo electrónico antes de guardar una primera plantilla personalizada.",
+      "editor": {
+        "bodyDescription": "Redacte el correo electrónico en formato HTML enriquecido enviado para este evento del sistema.",
+        "bodyPlaceholder": "Escriba el cuerpo del correo electrónico operativo...",
+        "emailBody": "Cuerpo del correo electrónico",
+        "fallbackDescription": "Se utiliza para validación y como alternativa segura si el editor visual no puede renderizar.",
+        "htmlFallback": "Alternativa HTML",
+        "loading": "Cargando el editor de correo electrónico…",
+        "subject": "Asunto"
+      },
+      "emailTemplates": "Plantillas de correo electrónico",
       "empty": "No hay plantillas de correo electrónico disponibles para esta organización.",
       "eyebrow": "Comunicaciones operativas",
       "reset": "Plantilla de correo electrónico restablecida a la plantilla del sistema",
@@ -196,7 +289,141 @@
       "systemTemplates": "Plantillas del sistema",
       "testFailed": "Error al enviar el correo electrónico de prueba",
       "testSent": "Correo electrónico de prueba enviado a su cuenta",
-      "title": "Plantillas de correo electrónico"
+      "title": "Plantillas de correo electrónico",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Tipo de ausencia"
+        },
+        "addedByName": {
+          "label": "Añadido por"
+        },
+        "approvalUrl": {
+          "label": "URL de aprobación"
+        },
+        "approverName": {
+          "label": "Nombre del aprobador"
+        },
+        "appUrl": {
+          "label": "URL de la aplicación"
+        },
+        "categories": {
+          "label": "Categorías"
+        },
+        "correctedClockIn": {
+          "label": "Fichaje de entrada corregido"
+        },
+        "correctedClockOut": {
+          "label": "Fichaje de salida corregido"
+        },
+        "date": {
+          "label": "Fecha"
+        },
+        "days": {
+          "label": "Días"
+        },
+        "downloadUrl": {
+          "label": "URL de descarga"
+        },
+        "email": {
+          "label": "Correo electrónico"
+        },
+        "employeeName": {
+          "label": "Nombre del empleado"
+        },
+        "endDate": {
+          "label": "Fecha de finalización"
+        },
+        "errorMessage": {
+          "label": "Mensaje de error"
+        },
+        "eventType": {
+          "label": "Tipo de evento"
+        },
+        "expiresAt": {
+          "label": "Vence el"
+        },
+        "fileSize": {
+          "label": "Tamaño del archivo"
+        },
+        "invitationUrl": {
+          "label": "URL de invitación"
+        },
+        "inviterName": {
+          "label": "Nombre de quien invita"
+        },
+        "ipAddress": {
+          "label": "Dirección IP"
+        },
+        "managerName": {
+          "label": "Nombre del responsable"
+        },
+        "memberName": {
+          "label": "Nombre del miembro"
+        },
+        "notes": {
+          "label": "Notas"
+        },
+        "organizationName": {
+          "label": "Nombre de la organización"
+        },
+        "originalClockIn": {
+          "label": "Fichaje de entrada original"
+        },
+        "originalClockOut": {
+          "label": "Fichaje de salida original"
+        },
+        "reason": {
+          "label": "Motivo"
+        },
+        "recipientName": {
+          "label": "Nombre del destinatario"
+        },
+        "rejectionReason": {
+          "label": "Motivo de rechazo"
+        },
+        "removedByName": {
+          "label": "Eliminado por"
+        },
+        "resetUrl": {
+          "label": "URL de restablecimiento"
+        },
+        "retryUrl": {
+          "label": "URL de reintento"
+        },
+        "role": {
+          "label": "Rol"
+        },
+        "securitySettingsUrl": {
+          "label": "URL de configuración de seguridad"
+        },
+        "startDate": {
+          "label": "Fecha de inicio"
+        },
+        "teamName": {
+          "label": "Nombre del equipo"
+        },
+        "teamUrl": {
+          "label": "URL del equipo"
+        },
+        "timestamp": {
+          "label": "Marca de tiempo"
+        },
+        "userAgent": {
+          "label": "Agente de usuario"
+        },
+        "userName": {
+          "label": "Nombre de usuario"
+        },
+        "verificationUrl": {
+          "label": "URL de verificación"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Variables permitidas",
+        "description": "Inserte solo marcadores de posición aprobados. Los valores se sustituyen cuando se envía el correo electrónico.",
+        "fallbackSafe": "Alternativa segura",
+        "insert": "Insertar {label}"
+      }
     },
     "error": {
       "actions": {
@@ -235,6 +462,8 @@
           "description": "{name} necesita una configuración de exportación de nómina antes de poder ejecutarse.",
           "title": "La exportación de nómina programada está bloqueada"
         },
+        "description": "Problemas de exportación que pueden requerir la atención del administrador.",
+        "empty": "No hay alertas en este momento",
         "payrollFailed": {
           "description": "La última exportación de nómina no se completó.",
           "title": "Error en la exportación de nómina"
@@ -242,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} no se completó correctamente.",
           "title": "Error en la exportación programada"
-        }
+        },
+        "title": "Alertas"
       },
       "description": "Supervise la actividad de nómina, auditoría y exportación programada de su organización.",
       "errors": {
@@ -251,7 +481,56 @@
         "summary": "Los recuentos se basan en los datos de exportación que se pudieron cargar.",
         "upcomingRuns": "Los datos de exportación programada no están disponibles temporalmente."
       },
-      "title": "Operaciones de exportación"
+      "links": {
+        "audit": "Abrir configuración de exportación de auditoría",
+        "payroll": "Abrir configuración de exportación de nómina",
+        "scheduled": "Abrir configuración de exportación programada"
+      },
+      "partialData": "Datos parciales",
+      "recentActivity": {
+        "description": "Últimos eventos de nómina, auditoría y exportación programada.",
+        "empty": "No hay actividad de exportación reciente",
+        "export": "Exportar",
+        "link": "Configuración",
+        "status": "Estado",
+        "title": "Actividad reciente",
+        "when": "Ocurrido"
+      },
+      "severity": {
+        "error": "Error",
+        "warning": "Advertencia"
+      },
+      "status": {
+        "assembling": "Ensamblando paquete",
+        "collecting": "Recopilando datos",
+        "completed": "Completado",
+        "failed": "Fallido",
+        "hardening": "Aplicando endurecimiento",
+        "lineageExpanding": "Expandiendo linaje",
+        "pending": "Pendiente",
+        "processing": "Procesando",
+        "requested": "Solicitado"
+      },
+      "summary": {
+        "activeSchedules": "Programaciones activas",
+        "activeSchedulesDescription": "Programaciones de exportación recurrentes habilitadas.",
+        "failedRuns": "Ejecuciones fallidas (7 días)",
+        "failedRunsDescription": "Ejecuciones fallidas de nómina, auditoría y programadas en la última semana.",
+        "lastAuditPack": "Último paquete de auditoría",
+        "lastAuditPackDescription": "Generación del paquete de auditoría más reciente.",
+        "lastPayrollExport": "Última exportación de nómina",
+        "lastPayrollExportDescription": "Finalización de la exportación de nómina más reciente.",
+        "none": "Nunca"
+      },
+      "title": "Operaciones de exportación",
+      "upcomingRuns": {
+        "description": "Las próximas exportaciones programadas en cola para esta organización.",
+        "empty": "No hay próximas ejecuciones",
+        "link": "Configuración",
+        "name": "Nombre",
+        "title": "Próximas ejecuciones",
+        "when": "Programado para"
+      }
     },
     "group": {
       "account": "Cuenta",
@@ -293,6 +572,16 @@
         "commitQueued": "Se han puesto en cola {count} filas aceptadas para su confirmación",
         "committing": "Confirmando...",
         "description": "Revise las filas de importación almacenadas, resuelva los problemas de bloqueo y confirme los registros aceptados cuando el lote esté listo.",
+        "hold": {
+          "appendReviewRequired": "El historial de horas del empleado debe revisarse antes de poder añadir nuevas entradas.",
+          "invalidInterval": "Las horas del proveedor carecen de un desfase explícito, no están en orden o están en el futuro.",
+          "label": "Retenido para revisión",
+          "occupancyConflict": "El horario se superpone con trabajo ya registrado para este empleado.",
+          "operationCollision": "Esta fila entra en conflicto con su importación confirmada anterior.",
+          "providerDurationMismatch": "La duración del proveedor difiere de las horas de inicio y fin.",
+          "sourceCollision": "Este registro del proveedor ya se ha importado.",
+          "unlocatedBreak": "El proveedor reporta descansos sin sus horarios, por lo que se desconoce el intervalo trabajado."
+        },
         "issueGroups": {
           "currentMarkers": "Las filas actuales incluyen {blockingRows} marcadores de problemas de bloqueo y {warningRows} de advertencia.",
           "description": "Las áreas de revisión agrupadas ayudan a mantener visibles los controles de calidad antes de confirmar las filas aceptadas.",
@@ -306,17 +595,17 @@
           "status": "Estado",
           "title": "Filas"
         },
-        "title": "Revisión de importación",
-        "hold": {
-          "appendReviewRequired": "El historial de tiempo del empleado debe revisarse antes de poder añadir nuevas entradas.",
-          "invalidInterval": "Las horas del proveedor no tienen un desfase explícito, no están en orden o están en el futuro.",
-          "label": "Retenida para revisión",
-          "occupancyConflict": "El tiempo se solapa con trabajo ya registrado para este empleado.",
-          "operationCollision": "Esta fila entra en conflicto con su importación confirmada anterior.",
-          "providerDurationMismatch": "La duración del proveedor difiere de las horas de inicio y fin.",
-          "sourceCollision": "Este registro del proveedor ya se ha importado.",
-          "unlocatedBreak": "El proveedor informa de pausas sin sus horas, por lo que se desconoce el intervalo trabajado."
-        }
+        "status": {
+          "accepted": "Aceptado",
+          "blocked": "Bloqueado",
+          "commitFailed": "Error al confirmar",
+          "committed": "Confirmado",
+          "committing": "Confirmando",
+          "needsMapping": "Requiere asignación",
+          "rejected": "Rechazado",
+          "staged": "Preparado"
+        },
+        "title": "Revisión de importación"
       },
       "title": "Importar datos"
     },
@@ -626,30 +915,30 @@
         "title": "Todos los proyectos"
       },
       "members": {
-        "addManager": "Añadir jefe de proyecto",
+        "addManager": "Agregar gestor de proyectos",
         "assignEmployee": "Asignar empleado",
         "assignTeam": "Asignar equipo",
         "count": "{count, plural, one {# miembro} other {# miembros}}",
         "employeeAssigned": "Empleado asignado",
-        "employeeAssignFailed": "No se pudo asignar el empleado",
+        "employeeAssignFailed": "Error al asignar el empleado",
         "employeePicker": "Empleado a asignar",
         "employees": "Empleados",
         "manage": "Gestionar miembros de {name}",
-        "managerAdded": "Jefe de proyecto añadido",
-        "managerAddFailed": "No se pudo añadir el jefe de proyecto",
-        "managerPicker": "Jefe de proyecto a añadir",
-        "managers": "Jefes de proyecto",
-        "managersReadOnly": "Solo los administradores de la organización pueden cambiar los jefes de proyecto.",
+        "managerAdded": "Gestor de proyectos agregado",
+        "managerAddFailed": "Error al agregar el gestor de proyectos",
+        "managerPicker": "Gestor de proyectos a agregar",
+        "managers": "Gestores de proyectos",
+        "managersReadOnly": "Solo los administradores de la organización pueden cambiar los gestores de proyectos.",
         "noEmployees": "No hay empleados asignados",
-        "noManagers": "No hay jefes de proyecto",
+        "noManagers": "Sin gestores de proyectos",
         "noTeams": "No hay equipos asignados",
-        "remove": "Quitar {name}",
-        "removed": "{name} quitado",
-        "removeFailed": "No se pudo quitar {name}",
-        "selectEmployee": "Seleccionar un empleado",
-        "selectTeam": "Seleccionar un equipo",
+        "remove": "Eliminar {name}",
+        "removed": "{name} eliminado",
+        "removeFailed": "Error al eliminar {name}",
+        "selectEmployee": "Selecciona un empleado",
+        "selectTeam": "Selecciona un equipo",
         "teamAssigned": "Equipo asignado",
-        "teamAssignFailed": "No se pudo asignar el equipo",
+        "teamAssignFailed": "Error al asignar el equipo",
         "teamPicker": "Equipo a asignar",
         "teams": "Equipos",
         "title": "Miembros del proyecto"
@@ -662,20 +951,47 @@
       "description": "Gestiona tu contraseña, autenticación de dos factores, claves de acceso y sesiones activas",
       "title": "Configuración de seguridad",
       "twoFactor": {
+        "backupCodesCopied": "Códigos de respaldo copiados al portapapeles",
+        "backupCodesRegenerated": "Códigos de respaldo regenerados",
+        "cancel": "Cancelar",
         "confirmPasswordToEnable": "Confirma tu contraseña para habilitar la autenticación de dos factores",
         "confirmPasswordToRegenerate": "Confirma tu contraseña para regenerar los códigos de respaldo",
         "continue": "Continuar",
+        "copyCodes": "Copiar códigos",
         "description": "Añade una capa extra de seguridad a tu cuenta",
         "disable": "Deshabilitar",
+        "disable2fa": "Desactivar 2FA",
+        "disableDescription": "Esto eliminará la capa adicional de seguridad de tu cuenta. Introduce tu contraseña para confirmar.",
+        "disabledToast": "Autenticación de dos factores desactivada",
+        "disableFailed": "Error al desactivar la 2FA",
+        "disableTitle": "¿Desactivar la autenticación de dos factores?",
         "enable": "Habilitar la autenticación de dos factores",
+        "enabledToast": "Autenticación de dos factores activada",
+        "enablePasswordRequiredDescription": "Introduce tu contraseña para activar la 2FA",
+        "enterAuthenticatorCode": "Introduce el código de 6 dígitos de tu aplicación de autenticación",
         "enterPasswordTitle": "Introduce tu contraseña",
+        "enterSixDigitCode": "Introduce un código de 6 dígitos",
+        "invalidCode": "Código no válido",
+        "passwordLabel": "Contraseña",
+        "passwordPlaceholder": "Introduce tu contraseña...",
+        "passwordRequired": "Se requiere contraseña",
         "regenerateBackupCodes": "Regenerar códigos de respaldo",
         "regenerateCodes": "Regenerar códigos",
+        "regenerateFailed": "Error al regenerar los códigos de respaldo",
+        "saveBackupCodesDescription": "Guarda estos códigos en un lugar seguro. Puedes usarlos para acceder a tu cuenta si pierdes el acceso a tu aplicación de autenticación. Cada código solo se puede usar una vez.",
+        "saveBackupCodesTitle": "Guarda tus códigos de respaldo",
+        "savedCodes": "He guardado estos códigos",
+        "scanQrCode": "Escanea el código QR con tu aplicación de autenticación",
+        "setupFailed": "Error al configurar la 2FA",
+        "setupTitle": "Configurar la autenticación de dos factores",
         "status": {
           "disabled": "Deshabilitado",
           "enabled": "Activado"
         },
-        "title": "Autenticación de dos factores"
+        "title": "Autenticación de dos factores",
+        "unexpectedError": "Se ha producido un error inesperado",
+        "verificationFailed": "Error de verificación",
+        "verifyAndEnable": "Verificar y activar"
       }
     },
     "sessions": {
@@ -879,8 +1195,14 @@
       "title": "Configuración de bienestar"
     },
     "workBalanceRecalculation": {
+      "confirm": "Confirmar recálculo",
+      "confirmMessage": "Confirme antes de poner en cola este recálculo.",
+      "description": "Ponga en cola una reconstrucción completa de los datos acumulados de balance de trabajo mensuales y anuales para {employeeName}. Esta tarea de mantenimiento se ejecuta en segundo plano y no bloquea esta página.",
+      "queued": "Recálculo puesto en cola",
+      "recalculate": "Recalcular balance de trabajo",
       "requestError": "Error al poner en cola el recálculo del saldo de trabajo",
-      "requestSuccess": "Recálculo del saldo de trabajo en cola"
+      "requestSuccess": "Recálculo del saldo de trabajo en cola",
+      "title": "Recálculo del balance de trabajo"
     },
     "workerQueue": {
       "cards": {

@@ -191,6 +191,7 @@
         "loadData": "Échec du chargement des données analytiques des heures de travail"
       },
       "expectedHours": "Heures attendues",
+      "hoursPerWeekAbbreviation": "h/sem.",
       "variance": "Écart",
       "varianceTrend": {
         "description": "Écart des heures par rapport aux heures de travail attendues au fil du temps",

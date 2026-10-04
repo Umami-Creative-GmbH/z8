@@ -8,6 +8,14 @@
         "title": "Vertragsdetails"
       },
       "description": "Laden Sie Ihren Auftragsverarbeitungsvertrag gemäss Art. 28 DSGVO herunter.",
+      "download": {
+        "button": "Uftragsverarbeitigsvertrag als PDF abelade",
+        "downloaded": "Uftragsverarbeitigsvertrag abeglade",
+        "downloadFailed": "Download fählgschlage",
+        "errorOccurred": "Es isch en Fähler ufträtte",
+        "filename": "Datei: {filename}",
+        "generating": "PDF wird generiert…"
+      },
       "hosting": {
         "descriptionPrefix": "Alle Daten werden auf Servern von ",
         "descriptionSuffix": ". Es werden keine weiteren Unterauftragsverarbeiter eingesetzt.",
@@ -92,7 +100,7 @@
         "description": "Wähl d Datekategorie us, wo du exportiere wotsch",
         "selectAll": "Alli uswähle",
         "selectAtLeastOne": "Bitte wähl mindischtens eini Kategorie us",
-        "startExport": "Export starte ({count})",
+        "startExport": "Export starte (${selectedCategories.size})",
         "startingExport": "Export wird gstartet...",
         "submitError": "Export-Start isch fählgschlage",
         "submitSuccess": "Export erfolgriich gstartet",
@@ -115,7 +123,7 @@
         "downloadSuccess": "Download gstartet",
         "emptyDescription": "No kei Export vorhande",
         "emptyHint": "Erstell dine erschte Export mit em Formular obe",
-        "moreCategories": "+{count} meh",
+        "moreCategories": "+${exp.categories.length - 3} meh",
         "statusCompleted": "Abgschlosse",
         "statusFailed": "Fählgschlage",
         "statusPending": "Usstehend",
@@ -140,7 +148,7 @@
         "endpointDescription": "Für S3-kompatibli Dienscht wie MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leer lah, zum die bestehende Zugangsdate z'bhalte",
-        "lastVerified": "Zuletscht prüeft: {date}",
+        "lastVerified": "Zuletscht prüeft: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Region",
         "regionDescription": "AWS-Region, wo Ihr Bucket sich befindet",
         "regionPlaceholder": "us-east-1",
@@ -179,10 +187,95 @@
         "save": "Spychere",
         "sendTest": "Test sende"
       },
+      "categories": {
+        "absences": "Abwäseheite",
+        "auth": "Konto-Zuegang",
+        "billing": "Abrechnig",
+        "exports": "Export",
+        "security": "Sicherheit",
+        "teams": "Teams",
+        "timecorrections": "Zitkorrekture"
+      },
       "defaultFallback": "Standard-Fallback",
       "defaultFallbackDescription": "Wenn die Vorlage de System-Standard verwendet, verschickt Z8 die System-Kopie und de Betreff:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Benachrichtigt en Mitarbeiter, dass e vorgsetzti Person en Abweseheit für ihn erfasst hät.",
+          "label": "Abweseheit dur vorgsetzti Person erfasst"
+        },
+        "absence-request-approved": {
+          "description": "Benachrichtigt en Mitarbeiter, dass sin Abweseheitsaadrag bewilligt worde isch.",
+          "label": "Abweseheitsaadrag bewilligt"
+        },
+        "absence-request-pending-approval": {
+          "description": "Benachrichtigt e vorgsetzti Person, dass en Abweseheitsaadrag no mues bewilligt werde.",
+          "label": "Abweseheitsaadrag pendent"
+        },
+        "absence-request-rejected": {
+          "description": "Benachrichtigt en Mitarbeiter, dass sin Abweseheitsaadrag abglehnt worde isch.",
+          "label": "Abweseheitsaadrag abglehnt"
+        },
+        "absence-request-submitted": {
+          "description": "Bestätigt, dass en Mitarbeiter en Abweseheitsaadrag iigreicht hät.",
+          "label": "Abweseheitsaadrag iigreicht"
+        },
+        "email-verification": {
+          "description": "Wird gschickt, wenn en Benutzer syni E-Mail-Adrässe mues bestätige.",
+          "label": "E-Mail-Bestätigung"
+        },
+        "export-failed": {
+          "description": "Benachrichtigt en Benutzer, dass en aagforderte Export nöd hät chönne generiert werde.",
+          "label": "Export fählgschlage"
+        },
+        "export-ready": {
+          "description": "Benachrichtigt en Benutzer, dass en aagforderte Export parat isch zum Aabelade.",
+          "label": "Export parat"
+        },
+        "organization-invitation": {
+          "description": "Wird gschickt, wenn en Benutzer dezue iiglade wird, enere Organisation biizträtte.",
+          "label": "Organisations-Iiladig"
+        },
+        "password-reset": {
+          "description": "Wird gschickt, wenn en Benutzer en Link zum Passwort zruggsetze aaforderet.",
+          "label": "Passwort zruggsetze"
+        },
+        "security-alert": {
+          "description": "Benachrichtigt en Benutzer über es wichtigs Kontosicherheitsereignis.",
+          "label": "Sicherheitswarnig"
+        },
+        "team-member-added": {
+          "description": "Benachrichtigt es Mitglied, dass es zumene Team hinzuegfüegt worde isch.",
+          "label": "Teammitglied hinzuegfüegt"
+        },
+        "team-member-removed": {
+          "description": "Benachrichtigt es Mitglied, dass es us emene Team entfernt worde isch.",
+          "label": "Teammitglied entfernt"
+        },
+        "time-correction-approved": {
+          "description": "Benachrichtigt en Mitarbeiter, dass sini Zitchorrektur genehmigt worde isch.",
+          "label": "Zitchorrektur genehmigt"
+        },
+        "time-correction-pending-approval": {
+          "description": "Benachrichtigt en Vorgesetzte, dass e Zitchorrektur muess genehmigt werde.",
+          "label": "Zitchorrektur wartet uf Genehmigung"
+        },
+        "time-correction-rejected": {
+          "description": "Benachrichtigt en Mitarbeiter, dass sini Zitchorrektur abglehnt worde isch.",
+          "label": "Zitchorrektur abglehnt"
+        }
+      },
       "description": "Passid Sie d'E-Mails aa, wo Ihre Organisation verschickt",
       "editBodyBeforeSaving": "Bearbeite Sie de E-Mail-Inhalt, bevor Sie die erschti benutzerdefinierte Vorlage spychered.",
+      "editor": {
+        "bodyDescription": "Erstell di Rich-HTML-E-Mail, wo für das Systemereignis verschickt wird.",
+        "bodyPlaceholder": "Schriib de betrieblich E-Mail-Text...",
+        "emailBody": "E-Mail-Text",
+        "fallbackDescription": "Wird für d Validierig und als sichere Fallback bruucht, wenn de visuell Editor nöd cha darstelle.",
+        "htmlFallback": "HTML-Fallback",
+        "loading": "E-Mail-Editor wird glade…",
+        "subject": "Betreff"
+      },
+      "emailTemplates": "E-Mail-Vorlage",
       "empty": "Es sind kei E-Mail-Vorlage für die Organisation verfüegbar.",
       "eyebrow": "Operativi Kommunikation",
       "reset": "E-Mail-Vorlage uf System-Vorlage zruggsetzt",
@@ -196,7 +289,141 @@
       "systemTemplates": "System-Vorlage",
       "testFailed": "Test-E-Mail konnte nöd versändet wärde",
       "testSent": "Test-E-Mail isch a dis Konto versändet worde",
-      "title": "E-Mail-Vorlage"
+      "title": "E-Mail-Vorlage",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Abweseheitstyp"
+        },
+        "addedByName": {
+          "label": "Hinzuegfüegt vo"
+        },
+        "approvalUrl": {
+          "label": "Genehmigungs-URL"
+        },
+        "approverName": {
+          "label": "Name vom Genehmiger"
+        },
+        "appUrl": {
+          "label": "App-URL"
+        },
+        "categories": {
+          "label": "Kategorie"
+        },
+        "correctedClockIn": {
+          "label": "Korrigierts Iistämple"
+        },
+        "correctedClockOut": {
+          "label": "Korrigierts Uusstämple"
+        },
+        "date": {
+          "label": "Datum"
+        },
+        "days": {
+          "label": "Tääg"
+        },
+        "downloadUrl": {
+          "label": "Download-URL"
+        },
+        "email": {
+          "label": "E-Mail"
+        },
+        "employeeName": {
+          "label": "Mitarbeitername"
+        },
+        "endDate": {
+          "label": "Änddatum"
+        },
+        "errorMessage": {
+          "label": "Fählermäldig"
+        },
+        "eventType": {
+          "label": "Ereignistyp"
+        },
+        "expiresAt": {
+          "label": "Lauft ab am"
+        },
+        "fileSize": {
+          "label": "Dateigrössi"
+        },
+        "invitationUrl": {
+          "label": "Iiladigs-URL"
+        },
+        "inviterName": {
+          "label": "Iilader-Name"
+        },
+        "ipAddress": {
+          "label": "IP-Adrässe"
+        },
+        "managerName": {
+          "label": "Manager-Name"
+        },
+        "memberName": {
+          "label": "Mitglidername"
+        },
+        "notes": {
+          "label": "Notize"
+        },
+        "organizationName": {
+          "label": "Organisationsname"
+        },
+        "originalClockIn": {
+          "label": "Ursprünglichs Iistämple"
+        },
+        "originalClockOut": {
+          "label": "Ursprünglichs Uusstämple"
+        },
+        "reason": {
+          "label": "Grund"
+        },
+        "recipientName": {
+          "label": "Empfängername"
+        },
+        "rejectionReason": {
+          "label": "Ablehnigsgrund"
+        },
+        "removedByName": {
+          "label": "Entfernt vo"
+        },
+        "resetUrl": {
+          "label": "Reset-URL"
+        },
+        "retryUrl": {
+          "label": "Retry-URL"
+        },
+        "role": {
+          "label": "Rolle"
+        },
+        "securitySettingsUrl": {
+          "label": "Sicherheitsiistellige-URL"
+        },
+        "startDate": {
+          "label": "Startdatum"
+        },
+        "teamName": {
+          "label": "Teamname"
+        },
+        "teamUrl": {
+          "label": "Team-URL"
+        },
+        "timestamp": {
+          "label": "Zitstämpel"
+        },
+        "userAgent": {
+          "label": "User-Agent"
+        },
+        "userName": {
+          "label": "Benutzername"
+        },
+        "verificationUrl": {
+          "label": "Verifizierigs-URL"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Erlaubti Variable",
+        "description": "Nume freigäbeni Platzhalter iifüege. Wärt wärded bim Versände vo de E-Mail ersetzt.",
+        "fallbackSafe": "Fallback-sicher",
+        "insert": "{label} iifüege"
+      }
     },
     "error": {
       "actions": {
@@ -235,6 +462,8 @@
           "description": "{name} brucht e Konfiguration für de Lohnabrechnigs-Export, bevor er cha starte.",
           "title": "Geplante Lohnabrechnigs-Export isch blockiert"
         },
+        "description": "Export-Problem, wo d Ufmerksamkeit vomene Administrator bruuche chönted.",
+        "empty": "Aktuell kei Warnige",
         "payrollFailed": {
           "description": "De letscht Lohnabrechnigs-Export isch nöd fertig worde.",
           "title": "Lohnabrechnigs-Export gschiteret"
@@ -242,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} isch nöd erfolgriich fertig worde.",
           "title": "Geplante Export gschiteret"
-        }
+        },
+        "title": "Warnige"
       },
       "description": "Überwach d'Aktivitäte vo de Lohnabrechnig, Audit und geplante Export für dini Organisation.",
       "errors": {
@@ -251,7 +481,56 @@
         "summary": "D'Aazaale basiered uf de Exportdate, wo hätted chönne glade wärde.",
         "upcomingRuns": "Date vom geplante Export sind vorübergehend nöd verfügbar."
       },
-      "title": "Export-Vorgäng"
+      "links": {
+        "audit": "Audit-Export-Iistellige öffne",
+        "payroll": "Lohn-Export-Iistellige öffne",
+        "scheduled": "Iistellige für planti Export öffne"
+      },
+      "partialData": "Teilwiisi Date",
+      "recentActivity": {
+        "description": "Neuischti Ereignis vo Lohn-, Audit- und plante Export.",
+        "empty": "Kei chürzlichi Export-Aktivität",
+        "export": "Exportiere",
+        "link": "Iistellige",
+        "status": "Status",
+        "title": "Letschti Aktivitäte",
+        "when": "Ufträtte"
+      },
+      "severity": {
+        "error": "Fähler",
+        "warning": "Warnig"
+      },
+      "status": {
+        "assembling": "Paket wird zämegstellt",
+        "collecting": "Date wärded gsammlet",
+        "completed": "Abgschlosse",
+        "failed": "Fählgschlage",
+        "hardening": "Härtig wird aagwändet",
+        "lineageExpanding": "Lineage wird erwiiteret",
+        "pending": "Usschtehend",
+        "processing": "Wird verarbeitet",
+        "requested": "Aagforderet"
+      },
+      "summary": {
+        "activeSchedules": "Aktivi Zytplän",
+        "activeSchedulesDescription": "Aktivierti widerchehrendi Export-Zytplän.",
+        "failedRuns": "Fählgschlagni Durchläuf (7 Täg)",
+        "failedRunsDescription": "Fählgschlagni Lohn-, Audit- und planti Durchläuf i de letschte Wuche.",
+        "lastAuditPack": "Letschts Audit-Paket",
+        "lastAuditPackDescription": "Neuschte Erschtellig vom Audit-Paket.",
+        "lastPayrollExport": "Letschte Lohnexport",
+        "lastPayrollExportDescription": "Neuschte Abschluss vom Lohnexport.",
+        "none": "Nie"
+      },
+      "title": "Export-Vorgäng",
+      "upcomingRuns": {
+        "description": "Di nächschte plante Export i de Warteschlang für die Organisation.",
+        "empty": "Käi bevorstehende Läuf",
+        "link": "Istellige",
+        "name": "Name",
+        "title": "Bevorstehendi Läuf",
+        "when": "Planet für"
+      }
     },
     "group": {
       "account": "Konto",
@@ -293,6 +572,16 @@
         "commitQueued": "{count} akzeptierte Zeilen für die Übernahme in die Warteschlange gestellt",
         "committing": "Wird übernommen...",
         "description": "Überprüfen Sie die importierten Zeilen, lösen Sie blockierende Probleme und übernehmen Sie die akzeptierten Datensätze, sobald der Stapel bereit ist.",
+        "hold": {
+          "appendReviewRequired": "D Ziterfassig vom Mitarbeiter muess überprüeft werde, bevor neui Iträg hinzuegfüegt werde chönd.",
+          "invalidInterval": "Bi de Aagabe vom Abieter fählt en explizite Zitversatz, si sind nöd i de Reihefolg oder liged i de Zuekunft.",
+          "label": "Zur Überprüefig zruggbhalte",
+          "occupancyConflict": "D Zit überschnidet sich mit bereits erfasster Arbet für dä Mitarbeiter.",
+          "operationCollision": "Die Ziile staht im Konflikt mit irem früener übertreite Import.",
+          "providerDurationMismatch": "D Duur vom Abieter wiicht vo de Start- und Endzite ab.",
+          "sourceCollision": "Dä Datesatz vom Abieter isch bereits importiert worde.",
+          "unlocatedBreak": "De Abieter mäldet Pause ohni Zite, drum isch s gschaffte Intervall unbekannt."
+        },
         "issueGroups": {
           "currentMarkers": "Die aktuellen Zeilen enthalten {blockingRows} blockierende und {warningRows} warnende Problemmarkierungen.",
           "description": "Gruppierte Überprüfungsbereiche helfen dabei, Qualitätskontrollen sichtbar zu halten, bevor akzeptierte Zeilen übernommen werden.",
@@ -306,17 +595,17 @@
           "status": "Status",
           "title": "Zeilen"
         },
-        "title": "Import-Überprüfung",
-        "hold": {
-          "appendReviewRequired": "De Ziitverlauf vom Mitarbeiter mues prüeft werde, bevor neui Iiträg dezuecho chönd.",
-          "invalidInterval": "D Ziite vom Aabieter händ kei explizite Versatz, sind nöd i de richtige Reiefolg oder liged i de Zuekunft.",
-          "label": "Zur Prüefig zruggbhalte",
-          "occupancyConflict": "D Ziit überschnidet sich mit Arbet, wo für dä Mitarbeiter scho erfasst isch.",
-          "operationCollision": "Die Ziile staht im Konflikt mit ihrem früener übernoh Import.",
-          "providerDurationMismatch": "D Duur vom Aabieter weicht vo Start- und Endziit ab.",
-          "sourceCollision": "Dä Datesatz vom Aabieter isch scho importiert worde.",
-          "unlocatedBreak": "De Aabieter meldet Pause ohni d Ziite, drum isch de gschaffti Ziitruum unbekannt."
-        }
+        "status": {
+          "accepted": "Akzeptiert",
+          "blocked": "Blockiert",
+          "commitFailed": "Überträgig fählgschlage",
+          "committed": "Übertreit",
+          "committing": "Wird übertreit",
+          "needsMapping": "Bruucht Zueordnig",
+          "rejected": "Abglehnt",
+          "staged": "Bereitgstellt"
+        },
+        "title": "Import-Überprüfung"
       },
       "title": "Daten importieren"
     },
@@ -626,33 +915,33 @@
         "title": "Alli Projekt"
       },
       "members": {
-        "addManager": "Projektleitig hinzuefüege",
-        "assignEmployee": "Mitarbeiter zuewiise",
-        "assignTeam": "Team zuewiise",
+        "addManager": "Projektleiter hinzufügen",
+        "assignEmployee": "Mitarbeiter zuweisen",
+        "assignTeam": "Team zuweisen",
         "count": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
-        "employeeAssigned": "Mitarbeiter zuegwiese",
-        "employeeAssignFailed": "Mitarbeiter het nöd chöne zuegwiese werde",
-        "employeePicker": "Mitarbeiter zum Zuewiise",
+        "employeeAssigned": "Mitarbeiter zugewiesen",
+        "employeeAssignFailed": "Mitarbeiter konnte nicht zugewiesen werden",
+        "employeePicker": "Zuzuweisender Mitarbeiter",
         "employees": "Mitarbeiter",
-        "manage": "Mitglieder vo {name} verwalte",
-        "managerAdded": "Projektleitig hinzuegfüegt",
-        "managerAddFailed": "Projektleitig het nöd chöne hinzuegfüegt werde",
-        "managerPicker": "Projektleitig zum Hinzuefüege",
-        "managers": "Projektleitig",
-        "managersReadOnly": "Nur Organisationsadministratore chönd d Projektleitig ändere.",
-        "noEmployees": "Kei Mitarbeiter zuegwiese",
-        "noManagers": "Kei Projektleitig",
-        "noTeams": "Kei Teams zuegwiese",
+        "manage": "Mitglieder von {name} verwalten",
+        "managerAdded": "Projektleiter hinzugefügt",
+        "managerAddFailed": "Projektleiter konnte nicht hinzugefügt werden",
+        "managerPicker": "Hinzuzufügender Projektleiter",
+        "managers": "Projektleiter",
+        "managersReadOnly": "Nur Organisations-Admins können Projektleiter ändern.",
+        "noEmployees": "Keine Mitarbeiter zugewiesen",
+        "noManagers": "Kei Projektleiter",
+        "noTeams": "Kei Teams zuegwise",
         "remove": "{name} entferne",
         "removed": "{name} entfernt",
-        "removeFailed": "{name} het nöd chöne entfernt werde",
-        "selectEmployee": "Mitarbeiter uswähle",
-        "selectTeam": "Team uswähle",
-        "teamAssigned": "Team zuegwiese",
-        "teamAssignFailed": "Team het nöd chöne zuegwiese werde",
-        "teamPicker": "Team zum Zuewiise",
+        "removeFailed": "Fähler bim Entferne vo {name}",
+        "selectEmployee": "En Mitarbeiter uswähle",
+        "selectTeam": "Es Team uswähle",
+        "teamAssigned": "Team zuegwise",
+        "teamAssignFailed": "Team hät nöd chönne zuegwise wärde",
+        "teamPicker": "Team zum Zueordne",
         "teams": "Teams",
-        "title": "Projektmitglieder"
+        "title": "Projektmitglider"
       },
       "title": "Projekt",
       "updated": "Projekt aktualisiert",
@@ -662,20 +951,47 @@
       "description": "Passwort, Zwei-Faktor-Authentifizierig, Passkeys und aktivi Sitzige verwalte",
       "title": "Sicherheits-Iistellige",
       "twoFactor": {
+        "backupCodesCopied": "Backup-Codes i d Zwüscheablag kopiert",
+        "backupCodesRegenerated": "Backup-Codes neu generiert",
+        "cancel": "Abbräche",
         "confirmPasswordToEnable": "Bitte bestätige dises Passwort, zum d'Zwei-Faktor-Authentifizierig z'aktiviere",
         "confirmPasswordToRegenerate": "Bitte bestätige dises Passwort, zum d'Backup-Code neu z'generiere",
         "continue": "Witer",
+        "copyCodes": "Codes kopiere",
         "description": "Füeg dim Konto en zuesätzliche Sicherheitsebene dezue",
         "disable": "Deaktiviere",
+        "disable2fa": "2FA deaktiviere",
+        "disableDescription": "Das entfernt die zuesätzlichi Sicherheitsebene vo dim Konto. Bitte gib dis Passwort ii, zum bestätige.",
+        "disabledToast": "Zwei-Faktor-Authentifizierig deaktiviert",
+        "disableFailed": "2FA hät nöd chönne deaktiviert werde",
+        "disableTitle": "Zwei-Faktor-Authentifizierig deaktiviere?",
         "enable": "Zwei-Faktor-Authentifizierig aktiviere",
+        "enabledToast": "Zwei-Faktor-Authentifizierig aktiviert",
+        "enablePasswordRequiredDescription": "Bitte gib dis Passwort ii, zum 2FA z'aktiviere",
+        "enterAuthenticatorCode": "Gib de 6-stelligi Code us dinere Authenticator-App ii",
         "enterPasswordTitle": "Gib dis Passwort ii",
+        "enterSixDigitCode": "Bitte gib en 6-stellige Code ii",
+        "invalidCode": "Ungültige Code",
+        "passwordLabel": "Passwort",
+        "passwordPlaceholder": "Dis Passwort iigee...",
+        "passwordRequired": "Passwort erforderlich",
         "regenerateBackupCodes": "Backup-Code neu generiere",
         "regenerateCodes": "Code neu generiere",
+        "regenerateFailed": "Backup-Codes händ nöd chönne neu generiert werde",
+        "saveBackupCodesDescription": "Bewahr die Codes amene sichere Ort uf. Du chasch si bruuche, zum uf dis Konto zuezgriffe, wänn du de Zuegang zu dinere Authenticator-App verlürsch. Jede Code chan nur eimol bruucht werde.",
+        "saveBackupCodesTitle": "Spicher dini Backup-Codes",
+        "savedCodes": "Ich han die Codes gspicheret",
+        "scanQrCode": "Scann de QR-Code mit dinere Authenticator-App",
+        "setupFailed": "2FA hät nöd chönne iigrichtet werde",
+        "setupTitle": "Zwei-Faktor-Authentifizierig iirichte",
         "status": {
           "disabled": "Deaktiviert",
           "enabled": "Aktiviert"
         },
-        "title": "Zwei-Faktor-Authentifizierig"
+        "title": "Zwei-Faktor-Authentifizierig",
+        "unexpectedError": "Es isch en unerwartete Fehler ufträtte",
+        "verificationFailed": "Verifizierig fählgschlage",
+        "verifyAndEnable": "Verifiziere und aktiviere"
       }
     },
     "sessions": {
@@ -879,8 +1195,14 @@
       "title": "Wellness-Iistellige"
     },
     "workBalanceRecalculation": {
+      "confirm": "Neuberechnig bestätige",
+      "confirmMessage": "Bestätige, bevor die Neuberechnig i d Warteschlang gstellt wird.",
+      "description": "En vollständigi Neuberechnig vo de monatliche und jährliche Arbetszitsaldi für {employeeName} i d Warteschlang stelle. Die Wartigsufgab lauft im Hintergrund und blockiert die Siite nöd.",
+      "queued": "Neuberechnig i d Warteschlang gstellt",
+      "recalculate": "Arbetszitsaldo neuberechne",
       "requestError": "Neuberechnig vom Arbetsguthabe isch fehlgschlage",
-      "requestSuccess": "Neuberechnig vom Arbetsguthabe isch in d'Warteschlange iigreiht worde"
+      "requestSuccess": "Neuberechnig vom Arbetsguthabe isch in d'Warteschlange iigreiht worde",
+      "title": "Arbetszitsaldo-Neuberechnig"
     },
     "workerQueue": {
       "cards": {

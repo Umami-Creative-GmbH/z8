@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Vous n'avez pas accès aux données de paie pour l'organisation active.",
+      "help": "Demandez à un administrateur de l'organisation de vous attribuer l'accès à la paie si vous avez besoin de cet espace de travail.",
+      "title": "Aucun accès à la paie"
+    },
     "actions": {
       "apply": "Appliquer",
       "downloadPdf": "Télécharger le PDF",
@@ -16,14 +21,14 @@
       "openApprovals": "Approbations en attente",
       "openCalendar": "Ouvrir le calendrier",
       "openWork": "Travail sans pointage de sortie",
-      "openWorkDiagnostics": "Ouvrir le diagnostic du travail",
+      "openWorkDiagnostics": "Ouvrir les diagnostics de travail",
       "pendingAbsence": "Absence en attente",
       "pendingTimeCorrection": "Correction de temps en attente",
-      "pendingWorkApproval": "Travail en attente d'approbation",
+      "pendingWorkApproval": "Heures en attente d'approbation",
       "refreshAfterClearFailed": "Blocage levé, mais la paie n'a pas pu être actualisée",
-      "uncertainHistoricalWork": "Travail historique à vérifier",
+      "uncertainHistoricalWork": "L'historique des heures doit être vérifié",
       "unknownEmployee": "Employé inconnu",
-      "unresolvedWorkMinutes": "Minutes de travail à vérifier"
+      "unresolvedWorkMinutes": "Les minutes travaillées doivent être vérifiées"
     },
     "description": "Vérifiez les totaux de paie, l'état de préparation et les exportations pour la période sélectionnée.",
     "employeeTotals": {
@@ -48,12 +53,13 @@
       "activeOrganizationEmployeeRequired": "Le contexte de l'employé de l'organisation active est requis",
       "authenticationRequired": "Authentification requise",
       "blockerNotDismissible": "Le blocage de paie ne peut pas être ignoré",
+      "dataTemporarilyUnavailable": "Les données de paie sont temporairement indisponibles",
       "employeeIdsMustBeArray": "employeeIds doit être un tableau",
       "employeeIdsMustContainOnlyStrings": "employeeIds ne doit contenir que des chaînes de caractères",
       "endDateAfterStart": "La date de fin doit être postérieure ou égale à la date de début",
-      "exportBlockedByOffboardingClockRepair": "Export bloqué : corrigez d'abord le pointage de sortie lié au départ",
-      "exportBlockedByUncertainWork": "Export bloqué : résolvez d'abord le travail incertain du périmètre sélectionné",
-      "exportBlockedByUnresolvedWorkMinutes": "Export bloqué : résolvez d'abord les minutes de travail à vérifier",
+      "exportBlockedByOffboardingClockRepair": "Exportation bloquée : corrigez d'abord le dépointage de départ",
+      "exportBlockedByUncertainWork": "Exportation bloquée : résolvez d'abord le travail incertain dans le périmètre sélectionné",
+      "exportBlockedByUnresolvedWorkMinutes": "Exportation bloquée : traitez d'abord les minutes de travail à vérifier",
       "exportFormatNotConfigured": "Le format d'exportation de la paie n'est pas configuré",
       "invalidBlockerId": "ID de blocage de paie invalide",
       "invalidBlockerType": "Type de blocage de paie invalide",
@@ -113,6 +119,11 @@
       "ready": "Prêt",
       "workedHours": "Heures travaillées"
     },
-    "title": "Paie"
+    "title": "Paie",
+    "unavailable": {
+      "description": "Impossible de préparer les données de paie en toute sécurité.",
+      "help": "Veuillez réessayer plus tard. Si le problème persiste, contactez un administrateur de l'organisation.",
+      "title": "Paie temporairement indisponible"
+    }
   }
 }

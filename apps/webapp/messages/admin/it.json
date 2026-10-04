@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Monitora abbonamenti, entrate e stato dei pagamenti",
+      "failedToSyncSeats": "Impossibile sincronizzare le postazioni",
       "intervals": {
         "month": "Mensile",
         "year": "Annuale"
@@ -102,6 +103,7 @@
         "trialing": "In prova",
         "trialingDescription": "In periodo di prova"
       },
+      "seatsSynced": "Postazioni sincronizzate",
       "sections": {
         "recentSubscriptions": "Abbonamenti recenti",
         "revenueMetrics": "Metriche dei ricavi"
@@ -112,6 +114,7 @@
         "pastDue": "Scaduto",
         "trialing": "Prova"
       },
+      "syncSeatsFor": "Sincronizza postazioni per {organizationName}",
       "table": {
         "actions": "Azioni",
         "billing": "Fatturazione",

@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "You do not have access to payroll data for the active organization.",
+      "help": "Ask an organization administrator to assign payroll access if you need this workspace.",
+      "title": "No payroll access"
+    },
     "actions": {
       "apply": "Apply",
       "downloadPdf": "Download PDF",
@@ -48,6 +53,7 @@
       "activeOrganizationEmployeeRequired": "Active organization employee context is required",
       "authenticationRequired": "Authentication required",
       "blockerNotDismissible": "Payroll blocker cannot be dismissed",
+      "dataTemporarilyUnavailable": "Payroll data is temporarily unavailable",
       "employeeIdsMustBeArray": "employeeIds must be an array",
       "employeeIdsMustContainOnlyStrings": "employeeIds must contain only strings",
       "endDateAfterStart": "End date must be on or after start date",
@@ -113,6 +119,11 @@
       "ready": "Ready",
       "workedHours": "Worked hours"
     },
-    "title": "Payroll"
+    "title": "Payroll",
+    "unavailable": {
+      "description": "Payroll data could not be prepared safely.",
+      "help": "Please try again later. If the problem continues, contact an organization administrator.",
+      "title": "Payroll temporarily unavailable"
+    }
   }
 }

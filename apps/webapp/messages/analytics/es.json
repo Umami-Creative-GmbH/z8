@@ -191,6 +191,7 @@
         "loadData": "Error al cargar los datos de análisis de horas de trabajo"
       },
       "expectedHours": "Horas esperadas",
+      "hoursPerWeekAbbreviation": "h/sem",
       "variance": "Variación",
       "varianceTrend": {
         "description": "Variación de horas respecto a las horas de trabajo esperadas a lo largo del tiempo",

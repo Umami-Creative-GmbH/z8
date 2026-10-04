@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Övervaka prenumerationer, intäkter och betalningsstatus",
+      "failedToSyncSeats": "Kunde inte synkronisera platser",
       "intervals": {
         "month": "Månadsvis",
         "year": "Årsvis"
@@ -102,6 +103,7 @@
         "trialing": "Provperiod",
         "trialingDescription": "I provperiod"
       },
+      "seatsSynced": "Platser synkroniserade",
       "sections": {
         "recentSubscriptions": "Senaste prenumerationer",
         "revenueMetrics": "Intäktsmått"
@@ -112,6 +114,7 @@
         "pastDue": "Förfallen",
         "trialing": "Provperiod"
       },
+      "syncSeatsFor": "Synkronisera platser för {organizationName}",
       "table": {
         "actions": "Åtgärder",
         "billing": "Fakturering",

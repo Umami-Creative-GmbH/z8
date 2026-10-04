@@ -21,6 +21,22 @@
       "managerDescription": "Gérez et planifiez les quarts de travail des employés",
       "title": "Planning des quarts"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Prendre acte et publier",
+      "acknowledgmentDescription": "La publication va se poursuivre, mais ce planning comporte des avertissements de conformité qui doivent d'abord être confirmés.",
+      "button": "Publier ({count})",
+      "cancel": "Annuler",
+      "complianceAcknowledgmentRequired": "Confirmation de conformité requise",
+      "complianceWarnings": "{count, plural, one {Les vérifications de conformité ont détecté # avertissement ; vous devrez le confirmer avant de publier.} other {Les vérifications de conformité ont détecté # avertissements ; vous devrez les confirmer avant de publier.}}",
+      "coverageWarning": "Certains créneaux horaires ne respectent pas les exigences minimales d'effectif.",
+      "maxHours": "Heures max. : {count}",
+      "notifyEmployees": "{count, plural, one {Publier # créneau brouillon et avertir les employés} other {Publier # créneaux brouillons et avertir les employés}}",
+      "overtime": "Heures supplémentaires : {count}",
+      "publishing": "Publication en cours…",
+      "restTime": "Temps de repos : {count}",
+      "totalFindings": "{count, plural, one {# constat au total} other {# constats au total}}",
+      "warningsDetectedBeforePublish": "Avertissements détectés avant la publication"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} problème(s) détecté(s) avant la publication.",

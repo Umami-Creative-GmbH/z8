@@ -21,13 +21,24 @@
       },
       "description": "Eksportuj okresy pracy do systemów płacowych, takich jak DATEV lub Personio",
       "export": {
+        "allEmployees": "Wszyscy pracownicy",
+        "allProjects": "Wszystkie projekty",
+        "allTeams": "Wszystkie zespoły",
         "asyncDescription": "Twój eksport jest przetwarzany. Sprawdź postęp w zakładce historii.",
         "asyncStarted": "Eksport rozpoczęty",
         "customRange": "Niestandardowy zakres",
         "dateRange": "Zakres dat",
         "description": "Eksportuj okresy pracy i nieobecności do formatu DATEV Lohn & Gehalt",
+        "employees": "Pracownicy",
         "endDate": "Data końcowa",
         "error": "Eksport nie powiódł się",
+        "exportButtonDatev": "Eksportuj do DATEV",
+        "exportButtonLexware": "Eksportuj do Lexware",
+        "exportButtonPersonio": "Eksportuj do Personio",
+        "exportButtonSage": "Eksportuj do Sage",
+        "exportButtonSuccessFactorsApi": "Eksportuj do SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Eksportuj CSV dla SAP SuccessFactors",
+        "exportButtonWorkday": "Eksportuj do Workday",
         "exporting": "Eksportowanie…",
         "filters": "Filtry (opcjonalnie)",
         "format": "Format eksportu",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Miesiąc",
         "monthSelection": "Wybierz miesiąc",
+        "projects": "Projekty",
         "startDate": "Data początkowa",
         "success": "Eksport pobrany",
+        "teams": "Zespoły",
         "title": "Eksportuj dane płacowe",
         "unavailable": {
           "missingConfiguration": "konfiguracja",
           "missingCredentials": "poświadczenia"
         },
-        "year": "Rok",
-        "allEmployees": "Wszyscy pracownicy",
-        "allProjects": "Wszystkie projekty",
-        "allTeams": "Wszystkie zespoły",
-        "employees": "Pracownicy",
-        "employeesSelected": "Wybrano {{count}}",
-        "exportButtonDatev": "Eksport do DATEV",
-        "exportButtonLexware": "Eksport do Lexware",
-        "exportButtonPersonio": "Eksport do Personio",
-        "exportButtonSage": "Eksport do Sage",
-        "exportButtonSuccessFactorsApi": "Eksport do SAP SuccessFactors (API)",
-        "exportButtonSuccessFactorsCsv": "Eksportuj plik CSV SAP SuccessFactors",
-        "exportButtonWorkday": "Eksport do Workday",
-        "projects": "Projekty",
-        "projectsSelected": "Wybrano {{count}}",
-        "teams": "Zespoły",
-        "teamsSelected": "Wybrano {{count}}"
+        "year": "Rok"
       },
       "history": {
         "description": "Wyświetl i pobierz poprzednie eksporty DATEV",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Przejrzyj skrzynkę zatwierdzeń",
+        "payrollExport": "Otwórz ustawienia eksportu listy płac",
+        "timeTracking": "Przejrzyj ewidencję czasu pracy",
+        "travelExpenses": "Przejrzyj koszty podróży"
+      },
+      "affectedEmployees": {
+        "name": "Pracownik",
+        "noNumber": "Nie ustawiono",
+        "number": "Numer pracownika"
+      },
+      "checks": {
+        "count": "Liczba"
+      },
+      "checkStatus": {
+        "fail": "Zablokowane",
+        "pass": "Gotowe",
+        "unavailable": "Nie można zweryfikować",
+        "warning": "Ostrzeżenie"
+      },
       "description": "Sprawdź, czy okres płacowy jest gotowy przed wyeksportowaniem danych o czasie pracy, nieobecnościach i płacach.",
+      "openPayrollExport": "Otwórz eksport listy płac",
+      "status": {
+        "blocked": "Zablokowane",
+        "ready": "Gotowe do listy płac",
+        "unavailable": "Nie można zweryfikować"
+      },
+      "summary": {
+        "affectedEmployees": "Pracownicy, których to dotyczy",
+        "affectedEmployeesDescription": "Pracownicy powiązani z otwartymi elementami gotowości.",
+        "blockers": "Blokady",
+        "blockersDescription": "Wymagane kontrole obecnie blokujące eksport.",
+        "exportTargets": "Skonfigurowane miejsca docelowe eksportu",
+        "exportTargetsDescription": "Aktywne miejsca docelowe eksportu listy płac.",
+        "period": "Okres",
+        "periodDescription": "Weryfikowany okres rozliczeniowy.",
+        "status": "Status",
+        "statusDescription": "Ogólna gotowość do eksportu listy płac.",
+        "warnings": "Ostrzeżenia",
+        "warningsDescription": "Nieblokujące problemy do przejrzenia przed eksportem."
+      },
       "title": "Gotowość płacowa"
     },
     "workDiagnostics": {
+      "allEmployees": "Pokaż wszystkich pracowników",
+      "append": {
+        "continued": "Pracownicy kontynuujący od zatwierdzonego punktu odniesienia: {count}. Historia przed każdym punktem odniesienia nie jest weryfikowana.",
+        "counts": "{verified} z {total} pracowników ma zweryfikowane pochodzenie na podstawie zapisanych dowodów.",
+        "description": "Twierdzenie odrębne od kompletności: pochodzenie i ciągłość zapisanych wpisów czasu pracy. Nie decyduje o gotowości listy płac.",
+        "interruptions": "Przerwy w ciągłości",
+        "issues": "Problemy z pochodzeniem i kandydaci",
+        "limitations": "Ograniczenia",
+        "title": "Zapewnienie spójności łańcucha wpisów czasu pracy"
+      },
+      "blocking": "Blokuje kompletność",
       "description": "Znajdź brakujące lub sprzeczne wpisy czasu pracy oraz problemy z łańcuchem wpisów czasu",
+      "evidence": {
+        "entries": "Wpisy czasu pracy",
+        "timeRecords": "Zapisy czasu pracy",
+        "workPeriods": "Okresy pracy"
+      },
+      "findings": {
+        "description": "Każde ustalenie stanowi dowód tylko do odczytu. Tylko poniższa naprawa luk historycznych uzupełnia brakujące wartości na podstawie dowodów i z osobną autoryzacją; zmiana ustalonej pracy wymaga osobno autoryzowanego przeglądu.",
+        "employees": "Pracownicy",
+        "empty": "Brak brakującej, sprzecznej lub podejrzanej pracy historycznej w tym zakresie.",
+        "evidence": "Dowody",
+        "finding": "Ustalenie",
+        "provenance": "Pochodzenie",
+        "title": "Ustalenia",
+        "treatment": "Sposób postępowania"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Oczekująca praca bez wniosku o zatwierdzenie",
+        "approvalStateConflict": "Stany zatwierdzenia są niezgodne",
+        "canonicalDetailMissing": "Brak szczegółów pracy we wpisie czasu pracy",
+        "canonicalLinkMissing": "Brak powiązania z wpisem czasu pracy",
+        "canonicalLinkShared": "Kilka okresów pracy wskazuje na jeden wpis czasu pracy",
+        "canonicalLinkUnresolved": "Nie znaleziono powiązanego wpisu czasu pracy",
+        "canonicalMissing": "Brak wpisu czasu pracy",
+        "captureInferred": "Strefa czasowa wywnioskowana po zdarzeniu",
+        "deletedWorkPayable": "Usunięta praca nadal ma płatny wpis czasu pracy",
+        "durationConflict": "Zapisane czasy trwania są niezgodne",
+        "durationMissing": "Brak zapisanego czasu trwania",
+        "emptyInterval": "Godzina rozpoczęcia jest równa godzinie zakończenia",
+        "endpointConflict": "Godziny rozpoczęcia lub zakończenia są niezgodne",
+        "endpointEntryMissing": "Brak wpisu wyrejestrowania",
+        "endpointEntrySuperseded": "Okres pracy wskazuje na zastąpiony wpis rejestracji czasu",
+        "endpointEntryUnresolved": "Nie znaleziono wpisu rejestracji czasu",
+        "endpointMissing": "Brak godziny zakończenia",
+        "manualEvidenceUnreadable": "Dowód ręcznego zgłoszenia jest nieczytelny",
+        "manualHolidayCheckDatesDiffer": "Weryfikacja dni wolnych użyła innych dat niż wykonana praca",
+        "manualInterpretationAmbiguous": "Godzina wpisu ręcznego pominięta lub powtórzona ze względu na zmianę czasu",
+        "manualInterpretationMismatch": "Wpis ręczny zapisany z innymi godzinami niż przesłany",
+        "manualTrimmed": "Wpis ręczny skrócony podczas zapisywania",
+        "manualZoneUnrecorded": "Nie zarejestrowano strefy czasowej wpisu ręcznego",
+        "metadataCanonicalOnly": "Przypisanie tylko we wpisie czasu pracy",
+        "metadataConflict": "Niezgodność przypisań",
+        "metadataMissing": "Brak przypisania we wpisie czasu pracy",
+        "multipleActiveWork": "Więcej niż jeden aktywny okres pracy",
+        "negativeDuration": "Ujemny czas trwania",
+        "openStateConflict": "Niezgodność stanu otwarcia i zamknięcia",
+        "overlappingWork": "Nakładająca się praca",
+        "ownershipConflict": "Konflikt własności",
+        "relinkedCanonicalResidue": "Wpis czasu pracy osierocony po ponownym powiązaniu",
+        "reversedInterval": "Koniec przed początkiem",
+        "storedElapsedDiscrepancy": "Zapisana liczba minut różni się od upływu czasu",
+        "workOutsideOrganizationEmployees": "Praca przypisana osobie spoza pracowników organizacji"
+      },
+      "nextMonth": "Następny miesiąc",
+      "ownerUnknown": "Nie ustalono właściciela",
       "pageDescription": "Diagnostyka na poziomie rekordów dla pracy historycznej: brakujące lub sprzeczne reprezentacje, pochodzenie przyjęcia, podejrzewane błędy ręcznego wprowadzania oraz zapewnienie spójności łańcucha wpisów czasu.",
+      "previousMonth": "Poprzedni miesiąc",
       "proposals": {
         "addChange": "Dodaj zmianę",
         "after": "Nowa wartość",
@@ -370,6 +473,12 @@
         "valueRequired": "Wprowadź nową wartość.",
         "work": "Okres pracy"
       },
+      "provenance": {
+        "ambiguous": "Niejednoznaczne pochodzenie",
+        "freshBackdated": "Nowy zapis z datą wsteczną",
+        "postAdoption": "Zapis po wdrożeniu",
+        "preAdoption": "Historia sprzed wdrożenia"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Autor wpisu wyjścia",
@@ -413,7 +522,37 @@
         "title": "Naprawa luki historycznej",
         "work": "Okres pracy"
       },
-      "title": "Diagnostyka pracy"
+      "shape": {
+        "conflicting": "Sprzeczne",
+        "disclosure": "Ujawnienie",
+        "missing": "Brakujące",
+        "suspectedDefect": "Podejrzenie błędu"
+      },
+      "status": {
+        "complete": "Kompletne",
+        "completeDescription": "Brak istotnych brakujących lub sprzecznych dowodów, w tym prac oczekujących, odrzuconych i otwartych.",
+        "incomplete": "Niekompletne",
+        "incompleteDescription": "Nienaruszone dane nadają się do weryfikacji, ale ten zakres nie jest kompletny.",
+        "widenedEmployees": "Nie udało się ustalić dat, dlatego pracownicy, których to dotyczy, są niepewni dla każdego okresu.",
+        "widenedOrganization": "Nie udało się ustalić własności, dlatego status całej organizacji jest niepewny."
+      },
+      "summary": {
+        "affected": "Pracownicy, których to dotyczy",
+        "affectedDescription": "Pracownicy, których pracy w tym zakresie nie można ustalić.",
+        "blocking": "Ustalenia blokujące",
+        "blockingDescription": "Brakujące lub sprzeczne dowody, które sprawiają, że dana praca jest niepewna.",
+        "scope": "Zakres",
+        "scopeAll": "Wszyscy pracownicy. Daty obejmują dni kalendarzowe każdej strefy czasowej.",
+        "status": "Kompletność"
+      },
+      "title": "Diagnostyka pracy",
+      "treatment": {
+        "disclosed": "Ujawnione ograniczenie",
+        "historicalGap": "Luka historyczna",
+        "integrityIncident": "Incydent naruszenia integralności",
+        "investigationRequired": "Wymaga zbadania",
+        "reviewRequired": "Wymaga weryfikacji"
+      }
     }
   }
 }

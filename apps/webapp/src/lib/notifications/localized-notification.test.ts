@@ -4,12 +4,17 @@ import enCommon from "../../../messages/common/en.json";
 import { getLocalizedNotificationContent } from "./localized-notification";
 import type { NotificationWithMeta } from "./types";
 
-const t = (key: string, defaultValue: string, params?: Record<string, unknown>) => {
+const t = (
+	key: string,
+	defaultValue: string,
+	params?: Record<string, unknown>,
+) => {
 	const translations: Record<string, string> = {
 		"common:notifications.content.absenceRecorded.title": "Abwesenheit erfasst",
 		"common:notifications.content.absenceRecorded.message":
 			"{managerName} hat {absenceType} für {dateRange} in Ihrem Namen erfasst.",
-		"common:notifications.content.teamMemberAdded.title": "Zum Team hinzugefügt",
+		"common:notifications.content.teamMemberAdded.title":
+			"Zum Team hinzugefügt",
 		"common:notifications.content.teamMemberAdded.message":
 			"Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
 		"common:notifications.time.justNow": "gerade eben",
@@ -21,7 +26,9 @@ const t = (key: string, defaultValue: string, params?: Record<string, unknown>) 
 	);
 };
 
-function buildNotification(overrides: Partial<NotificationWithMeta>): NotificationWithMeta {
+function buildNotification(
+	overrides: Partial<NotificationWithMeta>,
+): NotificationWithMeta {
 	return {
 		id: "notification-1",
 		userId: "user-1",
@@ -57,11 +64,13 @@ describe("getLocalizedNotificationContent", () => {
 			},
 			teamMemberAdded: {
 				title: "Added to team",
-				message: "You have been added to the {teamName} team by {performedByName}.",
+				message:
+					"You have been added to the {teamName} team by {performedByName}.",
 			},
 			teamMemberRemoved: {
 				title: "Removed from team",
-				message: "You have been removed from the {teamName} team by {performedByName}.",
+				message:
+					"You have been removed from the {teamName} team by {performedByName}.",
 			},
 			passwordChanged: {
 				title: "Password changed",
@@ -83,30 +92,38 @@ describe("getLocalizedNotificationContent", () => {
 			},
 			teamMemberAdded: {
 				title: "Zum Team hinzugefügt",
-				message: "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
+				message:
+					"Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
 			},
 			teamMemberRemoved: {
 				title: "Aus dem Team entfernt",
-				message: "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
+				message:
+					"Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
 			},
 			passwordChanged: {
 				title: "Passwort geändert",
 				message:
-					"Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
+					"Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
 			},
 			shiftAssigned: {
 				title: "Schicht zugewiesen",
 				message:
-					"Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
+					"Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
 			},
 		});
 	});
 
 	it("localizes manager-recorded absence notification content from metadata", () => {
-		const localized = getLocalizedNotificationContent(buildNotification({}), t, "de");
+		const localized = getLocalizedNotificationContent(
+			buildNotification({}),
+			t,
+			"de",
+		);
 
 		expect(localized.title).toBe("Abwesenheit erfasst");
-		expect(localized.message).toBe("Mina Manager hat Urlaub für 18. Mai in Ihrem Namen erfasst.");
+		expect(localized.message).toBe(
+			"Mina Manager hat Urlaub für 18. Mai in Ihrem Namen erfasst.",
+		);
 		expect(localized.timeAgo).toBe("gerade eben");
 	});
 
@@ -135,7 +152,8 @@ describe("getLocalizedNotificationContent", () => {
 						titleKey: "common:notifications.content.teamMemberAdded.title",
 						titleDefault: "Added to team",
 						messageKey: "common:notifications.content.teamMemberAdded.message",
-						messageDefault: "You have been added to the {teamName} team by {performedByName}.",
+						messageDefault:
+							"You have been added to the {teamName} team by {performedByName}.",
 						params: {
 							teamName: "Operations",
 							performedByName: "Mina Manager",
@@ -148,6 +166,8 @@ describe("getLocalizedNotificationContent", () => {
 		);
 
 		expect(localized.title).toBe("Zum Team hinzugefügt");
-		expect(localized.message).toBe("Sie wurden von Mina Manager zum Team Operations hinzugefügt.");
+		expect(localized.message).toBe(
+			"Sie wurden von Mina Manager zum Team Operations hinzugefügt.",
+		);
 	});
 });

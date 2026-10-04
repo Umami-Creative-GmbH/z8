@@ -48,7 +48,8 @@
         "description": "Konfiguriere, wie d Kalender-Synchronisation für dini Organisation funktioniert.",
         "title": "Sync-Verhalte"
       },
-      "title": "Kalender-Sync"
+      "title": "Kalender-Sync",
+      "titleTemplatePlaceholder": "Abwesend – {categoryName}"
     },
     "clockinImport": {
       "credentials": {
@@ -105,6 +106,17 @@
         "description": "Gib deine Clockodo-E-Mail und deinen API-Schlüssel ein. Du findest deinen API-Schlüssel in Clockodo unter Mein Profil > API-Schlüssel. Die Zugangsdaten werden nicht gespeichert.",
         "email": "Clockodo-E-Mail",
         "title": "Clockodo-Zugangsdaten"
+      },
+      "entity": {
+        "absences": "Abweseheite",
+        "entries": "Zitiiträg",
+        "holidayQuotas": "Feriekontingänt",
+        "nonBusinessDays": "Arbetsfreii Täg",
+        "services": "Dienstleistige / Arbetskategorie",
+        "surcharges": "Zueschläg",
+        "targetHours": "Sollstunde / Arbetsrichtlinie",
+        "teams": "Teams",
+        "users": "Benutzer / Mitarbeiter"
       },
       "errors": {
         "connectionFailed": "Verbindung zu Clockodo fehlgeschlagen",
@@ -171,17 +183,6 @@
         "skippedCount": "{count} übersprunge",
         "status": "Status",
         "title": "Benutzer zueordne"
-      },
-      "entity": {
-        "absences": "Abwesenheiten",
-        "entries": "Zeiteinträge",
-        "holidayQuotas": "Urlaubskontingente",
-        "nonBusinessDays": "Feiertage / arbeitsfreie Tage",
-        "services": "Dienstleistungen / Arbeitskategorien",
-        "surcharges": "Zuschläge",
-        "targetHours": "Sollstunden / Arbeitszeitmodelle",
-        "teams": "Teams",
-        "users": "Benutzer / Mitarbeitende"
       }
     },
     "discord": {

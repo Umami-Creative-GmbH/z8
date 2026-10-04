@@ -114,6 +114,12 @@
         "none": "No hay canales de mensajería conectados.",
         "title": "Preferencias de entrega del canal"
       },
+      "conflict": {
+        "differingTimeouts": "Los canales usaban diferentes tiempos de espera; el más corto se convirtió en la ventana de respuesta.",
+        "disabledActiveSource": "Algunos canales activos tenían las escalaciones desactivadas. Siguen sin entregar mensajes de escalación.",
+        "inactiveSourceEnabled": "Algunos canales inactivos tenían las escalaciones activadas. No se contabilizaron para la política.",
+        "invalidTimeout": "Un canal tenía un tiempo de espera no válido y no se utilizó para la ventana de respuesta."
+      },
       "description": "Revise la política de escalamiento de la organización, cómo se migró desde la configuración de los canales y las condiciones que requieren un gestor de aprobaciones.",
       "dispose": {
         "confirm": "Cerrar elemento",
@@ -121,6 +127,12 @@
         "noteLabel": "Nota de resolución",
         "noteRequired": "Ingrese una nota de resolución.",
         "title": "Cerrar elemento de atención"
+      },
+      "event": {
+        "alerted": "Administradores alertados",
+        "disposed": "Descartado",
+        "raised": "Generado",
+        "resolved": "Resuelto"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "No se pudo cargar la configuración de escalamiento.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Introduzca un número entero de horas entre 1 y 720.",
         "windowLabel": "Ventana de respuesta"
       },
+      "reason": {
+        "ambiguousHistory": "Historial de escalación ambiguo",
+        "deliveryExhausted": "Reintentos de entrega agotados",
+        "deliveryUnavailable": "No hay ningún destino de entrega disponible",
+        "noEligibleBackup": "No hay ningún aprobador suplente elegible",
+        "replacementOverdue": "El aprobador de reemplazo está fuera de plazo",
+        "unsupportedRoute": "Ruta de decisión no admitida"
+      },
       "revisions": {
         "changedBy": "Modificado por",
         "migration": "Migración de configuración",
@@ -207,16 +227,26 @@
       "activePolicyTableDescription": "Las políticas se evalúan por prioridad; la primera política activa que coincida proporciona la cadena de aprobación.",
       "activeStatus": "Estado activo",
       "addPolicy": "Añadir política",
+      "addStage": "Añadir etapa",
       "approvalType": {
         "absence": "Ausencia",
         "complianceException": "Excepción de cumplimiento",
-        "manualTimeSubmission": "Envío manual de tiempo",
-        "policyClockOut": "Salida de reloj según la política",
+        "manualTimeSubmission": "Envío manual de horas",
+        "policyClockOut": "Fichaje de salida por política",
         "shiftRequest": "Solicitud de turno",
         "timeCorrection": "Corrección de tiempo",
         "travelExpense": "Gasto de viaje"
       },
       "approvalTypes": "Tipos de aprobación",
+      "approver": "Aprobador",
+      "approverEmployeeId": "ID de empleado del aprobador",
+      "approverEmployeeIdPlaceholder": "Ejemplo: employee_123…",
+      "approverType": {
+        "directManager": "Gerente directo",
+        "managerManager": "Gerente del gerente",
+        "organizationAdmin": "Administrador de la organización",
+        "specificEmployee": "Empleado específico"
+      },
       "conditionsCount": "Número de condiciones",
       "createPolicy": "Crear política de aprobación",
       "defaultStageLabel": "Revisión del gerente",
@@ -225,9 +255,25 @@
       "dialogDescription": "Defina cuándo se aplica una cadena de aprobación y qué aprobadores gestionan cada etapa secuencial.",
       "editPolicy": "Editar política",
       "empty": "Aún no hay políticas de aprobación configuradas. Cree una política para definir su primera cadena de aprobación.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Enviar la solicitud al responsable predeterminado cuando esta etapa no pueda determinar un aprobador.",
+          "label": "Responsable predeterminado"
+        },
+        "fail": {
+          "description": "Rechazar la solicitud cuando esta etapa no pueda determinar un aprobador.",
+          "label": "Rechazar solicitud"
+        },
+        "label": "Comportamiento alternativo",
+        "organizationAdmin": {
+          "description": "Enviar la solicitud a un administrador de la organización cuando esta etapa no pueda determinar un aprobador.",
+          "label": "Administrador de la organización"
+        }
+      },
       "loadFailed": "No se pudieron cargar las políticas de aprobación.",
       "loading": "Cargando políticas…",
       "namePlaceholder": "Ejemplo: Escalada de ausencias…",
+      "noStages": "Aún no se han configurado etapas de aprobación.",
       "preview": {
         "ariaLabel": "Vista previa de la cadena de aprobación",
         "badge": "Shell de vista previa",
@@ -242,7 +288,11 @@
         "title": "Resumen de la cadena de vista previa"
       },
       "priority": "Prioridad",
+      "removeStage": "Eliminar etapa",
+      "stageNumber": "Etapa {number}",
+      "stages": "Etapas de aprobación",
       "stagesCount": "Número de etapas",
+      "stagesDescription": "Las etapas se ejecutan en orden; cada solicitud avanza solo después de que el aprobador actual la acepte.",
       "status": {
         "active": "Activo",
         "inactive": "Inactivo"
@@ -255,21 +305,6 @@
       "validation": {
         "activePolicyRequiresStage": "Las políticas activas requieren al menos una etapa de aprobación.",
         "specificEmployeeRequiresId": "Las etapas para empleados específicos requieren un ID de empleado aprobador."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Envíe la solicitud al gerente predeterminado cuando esta etapa no pueda resolver un aprobador.",
-          "label": "Gerente predeterminado"
-        },
-        "fail": {
-          "description": "Rechace la solicitud cuando esta etapa no pueda resolver un aprobador.",
-          "label": "Rechazar solicitud"
-        },
-        "label": "Comportamiento alternativo",
-        "organizationAdmin": {
-          "description": "Envíe la solicitud a un administrador de la organización cuando esta etapa no pueda resolver un aprobador.",
-          "label": "Administrador de la organización"
-        }
       }
     },
     "changePolicies": {
@@ -659,6 +694,7 @@
       "createCategoriesFirst": "Cree categorías primero en la pestaña Categorías",
       "createCategory": "Crear categoría",
       "createCategoryDescription": "Cree una nueva categoría de trabajo que pueda asignarse a varios conjuntos",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Crear conjuntos de categorías con diferentes factores de tiempo para varios tipos de trabajo",
       "createFirstSet": "Crear primer conjunto",
       "createSet": "Crear conjunto",
       "createSetDescription": "Cree un nuevo conjunto de categorías y seleccione qué categorías incluir",

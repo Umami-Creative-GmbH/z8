@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Du har ikke tilgang til lønnsdata for den aktive organisasjonen.",
+      "help": "Be en organisasjonsadministrator om å tildele lønnstilgang hvis du trenger dette arbeidsområdet.",
+      "title": "Ingen lønnstilgang"
+    },
     "actions": {
       "apply": "Bruk",
       "downloadPdf": "Last ned PDF",
@@ -48,9 +53,13 @@
       "activeOrganizationEmployeeRequired": "Aktiv ansattkontekst for organisasjon er påkrevd",
       "authenticationRequired": "Autentisering påkrevd",
       "blockerNotDismissible": "Lønnsblokkering kan ikke avvises",
+      "dataTemporarilyUnavailable": "Lønnsdata er midlertidig utilgjengelig",
       "employeeIdsMustBeArray": "employeeIds må være en matrise",
       "employeeIdsMustContainOnlyStrings": "employeeIds må bare inneholde strenger",
       "endDateAfterStart": "Sluttdato må være på eller etter startdato",
+      "exportBlockedByOffboardingClockRepair": "Eksport blokkert: korriger offboarding-utstemplingen først",
+      "exportBlockedByUncertainWork": "Eksport blokkert: avklar det usikre arbeidet i det valgte omfanget først",
+      "exportBlockedByUnresolvedWorkMinutes": "Eksport blokkert: avklar arbeidsminuttene som må gjennomgås først",
       "exportFormatNotConfigured": "Eksportformat for lønn er ikke konfigurert",
       "invalidBlockerId": "Ugyldig ID for lønnsblokkering",
       "invalidBlockerType": "Ugyldig type lønnsblokkering",
@@ -110,6 +119,11 @@
       "ready": "Klar",
       "workedHours": "Arbeidstimer"
     },
-    "title": "Lønn"
+    "title": "Lønn",
+    "unavailable": {
+      "description": "Lønnsdata kunne ikke klargjøres på en trygg måte.",
+      "help": "Prøv igjen senere. Hvis problemet vedvarer, kan du kontakte en organisasjonsadministrator.",
+      "title": "Lønn midlertidig utilgjengelig"
+    }
   }
 }

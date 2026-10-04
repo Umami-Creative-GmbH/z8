@@ -8,6 +8,14 @@
         "title": "Sözleşme detayları"
       },
       "description": "GDPR Madde 28 uyarınca veri işleme sözleşmenizi indirin.",
+      "download": {
+        "button": "Veri işleme sözleşmesini PDF olarak indir",
+        "downloaded": "Veri işleme sözleşmesi indirildi",
+        "downloadFailed": "İndirme başarısız oldu",
+        "errorOccurred": "Bir hata oluştu",
+        "filename": "Dosya: {filename}",
+        "generating": "PDF oluşturuluyor…"
+      },
       "hosting": {
         "descriptionPrefix": "Tüm veriler ",
         "descriptionSuffix": " sunucularında barındırılmaktadır. Başka hiçbir alt işleyen kullanılmamaktadır.",
@@ -92,7 +100,7 @@
         "description": "Dışa aktarmak istediğiniz veri kategorilerini seçin",
         "selectAll": "Tümünü Seç",
         "selectAtLeastOne": "Lütfen en az bir kategori seçin",
-        "startExport": "Dışa Aktarmayı Başlat ({count})",
+        "startExport": "Dışa Aktarmayı Başlat (${selectedCategories.size})",
         "startingExport": "Dışa Aktarma Başlatılıyor...",
         "submitError": "Dışa aktarma başlatılamadı",
         "submitSuccess": "Dışa aktarma başarıyla başlatıldı",
@@ -115,7 +123,7 @@
         "downloadSuccess": "İndirme başlatıldı",
         "emptyDescription": "Henüz dışa aktarma yok",
         "emptyHint": "Yukarıdaki formu kullanarak ilk dışa aktarmanızı oluşturun",
-        "moreCategories": "+{count} daha",
+        "moreCategories": "+${exp.categories.length - 3} daha",
         "statusCompleted": "Tamamlandı",
         "statusFailed": "Başarısız",
         "statusPending": "Beklemede",
@@ -140,7 +148,7 @@
         "endpointDescription": "MinIO gibi S3 uyumlu hizmetler için",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Mevcut kimlik bilgilerini korumak için boş bırakın",
-        "lastVerified": "Son doğrulama: {date}",
+        "lastVerified": "Son doğrulama: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Bölge",
         "regionDescription": "Bucket'ınızın bulunduğu AWS bölgesi",
         "regionPlaceholder": "us-east-1",
@@ -179,10 +187,95 @@
         "save": "Kaydet",
         "sendTest": "Test gönder"
       },
+      "categories": {
+        "absences": "Devamsızlıklar",
+        "auth": "Hesap erişimi",
+        "billing": "Faturalandırma",
+        "exports": "Dışa Aktarmalar",
+        "security": "Güvenlik",
+        "teams": "Ekipler",
+        "timecorrections": "Zaman düzeltmeleri"
+      },
       "defaultFallback": "Varsayılan yedek",
       "defaultFallbackDescription": "Bu şablon sistem varsayılanını kullanıyorsa, Z8 sistem kopyasını ve konusunu gönderir:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Bir yöneticinin çalışan adına izin kaydettiğini çalışana bildirir.",
+          "label": "Yönetici tarafından kaydedilen izin"
+        },
+        "absence-request-approved": {
+          "description": "Çalışana izin talebinin onaylandığını bildirir.",
+          "label": "İzin talebi onaylandı"
+        },
+        "absence-request-pending-approval": {
+          "description": "Yöneticiye onay bekleyen bir izin talebi olduğunu bildirir.",
+          "label": "Onay bekleyen izin talebi"
+        },
+        "absence-request-rejected": {
+          "description": "Çalışana izin talebinin reddedildiğini bildirir.",
+          "label": "İzin talebi reddedildi"
+        },
+        "absence-request-submitted": {
+          "description": "Çalışanın bir izin talebi gönderdiğini onaylar.",
+          "label": "İzin talebi gönderildi"
+        },
+        "email-verification": {
+          "description": "Bir kullanıcının e-posta adresini doğrulaması gerektiğinde gönderilir.",
+          "label": "E-posta doğrulama"
+        },
+        "export-failed": {
+          "description": "Kullanıcıya talep edilen dışa aktarmanın oluşturulamadığını bildirir.",
+          "label": "Dışa aktarma başarısız"
+        },
+        "export-ready": {
+          "description": "Kullanıcıya talep edilen dışa aktarmanın indirilmeye hazır olduğunu bildirir.",
+          "label": "Dışa aktarma hazır"
+        },
+        "organization-invitation": {
+          "description": "Bir kullanıcı bir organizasyona katılmaya davet edildiğinde gönderilir.",
+          "label": "Organizasyon daveti"
+        },
+        "password-reset": {
+          "description": "Bir kullanıcı şifre sıfırlama bağlantısı talep ettiğinde gönderilir.",
+          "label": "Şifre sıfırlama"
+        },
+        "security-alert": {
+          "description": "Kullanıcıyı önemli bir hesap güvenliği olayı hakkında bilgilendirir.",
+          "label": "Güvenlik uyarısı"
+        },
+        "team-member-added": {
+          "description": "Bir üyeye bir ekibe eklendiğini bildirir.",
+          "label": "Ekip üyesi eklendi"
+        },
+        "team-member-removed": {
+          "description": "Bir üyeye bir ekipten çıkarıldığını bildirir.",
+          "label": "Ekip üyesi çıkarıldı"
+        },
+        "time-correction-approved": {
+          "description": "Çalışana zaman düzeltmesinin onaylandığını bildirir.",
+          "label": "Zaman düzeltmesi onaylandı"
+        },
+        "time-correction-pending-approval": {
+          "description": "Yöneticiye bir zaman düzeltmesinin onay gerektirdiğini bildirir.",
+          "label": "Zaman düzeltmesi onay bekliyor"
+        },
+        "time-correction-rejected": {
+          "description": "Çalışana zaman düzeltmesinin reddedildiğini bildirir.",
+          "label": "Zaman düzeltmesi reddedildi"
+        }
+      },
       "description": "Kuruluşunuzun gönderdiği e-postaları özelleştirin",
       "editBodyBeforeSaving": "İlk özel şablonu kaydetmeden önce e-posta gövdesini düzenleyin.",
+      "editor": {
+        "bodyDescription": "Bu sistem olayı için gönderilen zengin HTML e-postasını oluşturun.",
+        "bodyPlaceholder": "İşlemsel e-posta gövdesini yazın...",
+        "emailBody": "E-posta gövdesi",
+        "fallbackDescription": "Doğrulama için ve görsel düzenleyicinin işleyememesi durumunda güvenli bir alternatif olarak kullanılır.",
+        "htmlFallback": "HTML alternatifi",
+        "loading": "E-posta düzenleyici yükleniyor…",
+        "subject": "Konu"
+      },
+      "emailTemplates": "E-posta şablonları",
       "empty": "Bu kuruluş için kullanılabilir e-posta şablonu yok.",
       "eyebrow": "Operasyonel iletişimler",
       "reset": "E-posta şablonu sistem şablonuna sıfırlandı",
@@ -196,7 +289,141 @@
       "systemTemplates": "Sistem şablonları",
       "testFailed": "Test e-postası gönderilemedi",
       "testSent": "Test e-postası hesabınıza gönderildi",
-      "title": "E-posta Şablonları"
+      "title": "E-posta Şablonları",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Devamsızlık türü"
+        },
+        "addedByName": {
+          "label": "Ekleyen"
+        },
+        "approvalUrl": {
+          "label": "Onay URL'si"
+        },
+        "approverName": {
+          "label": "Onaylayan adı"
+        },
+        "appUrl": {
+          "label": "Uygulama URL'si"
+        },
+        "categories": {
+          "label": "Kategoriler"
+        },
+        "correctedClockIn": {
+          "label": "Düzeltilmiş giriş"
+        },
+        "correctedClockOut": {
+          "label": "Düzeltilmiş çıkış"
+        },
+        "date": {
+          "label": "Tarih"
+        },
+        "days": {
+          "label": "Günler"
+        },
+        "downloadUrl": {
+          "label": "İndirme URL'si"
+        },
+        "email": {
+          "label": "E-posta"
+        },
+        "employeeName": {
+          "label": "Çalışan adı"
+        },
+        "endDate": {
+          "label": "Bitiş tarihi"
+        },
+        "errorMessage": {
+          "label": "Hata mesajı"
+        },
+        "eventType": {
+          "label": "Etkinlik türü"
+        },
+        "expiresAt": {
+          "label": "Sona erme tarihi"
+        },
+        "fileSize": {
+          "label": "Dosya boyutu"
+        },
+        "invitationUrl": {
+          "label": "Davet URL'si"
+        },
+        "inviterName": {
+          "label": "Davet eden adı"
+        },
+        "ipAddress": {
+          "label": "IP adresi"
+        },
+        "managerName": {
+          "label": "Yönetici adı"
+        },
+        "memberName": {
+          "label": "Üye adı"
+        },
+        "notes": {
+          "label": "Notlar"
+        },
+        "organizationName": {
+          "label": "Kuruluş adı"
+        },
+        "originalClockIn": {
+          "label": "Orijinal giriş"
+        },
+        "originalClockOut": {
+          "label": "Orijinal çıkış"
+        },
+        "reason": {
+          "label": "Neden"
+        },
+        "recipientName": {
+          "label": "Alıcı adı"
+        },
+        "rejectionReason": {
+          "label": "Reddetme nedeni"
+        },
+        "removedByName": {
+          "label": "Kaldıran"
+        },
+        "resetUrl": {
+          "label": "Sıfırlama URL'si"
+        },
+        "retryUrl": {
+          "label": "Yeniden deneme URL'si"
+        },
+        "role": {
+          "label": "Rol"
+        },
+        "securitySettingsUrl": {
+          "label": "Güvenlik ayarları URL'si"
+        },
+        "startDate": {
+          "label": "Başlangıç tarihi"
+        },
+        "teamName": {
+          "label": "Ekip adı"
+        },
+        "teamUrl": {
+          "label": "Ekip URL'si"
+        },
+        "timestamp": {
+          "label": "Zaman damgası"
+        },
+        "userAgent": {
+          "label": "Kullanıcı aracısı"
+        },
+        "userName": {
+          "label": "Kullanıcı adı"
+        },
+        "verificationUrl": {
+          "label": "Doğrulama URL'si"
+        }
+      },
+      "variables": {
+        "allowedVariables": "İzin verilen değişkenler",
+        "description": "Yalnızca onaylanmış yer tutucuları ekleyin. Değerler e-posta gönderildiğinde değiştirilir.",
+        "fallbackSafe": "Geri dönüş güvenli",
+        "insert": "{label} ekle"
+      }
     },
     "error": {
       "actions": {
@@ -235,6 +462,8 @@
           "description": "{name}, çalışabilmesi için bir bordro dışa aktarma yapılandırmasına ihtiyaç duyuyor.",
           "title": "Zamanlanmış bordro dışa aktarma engellendi"
         },
+        "description": "Yönetici müdahalesi gerektirebilecek dışa aktarma sorunları.",
+        "empty": "Şu anda uyarı yok",
         "payrollFailed": {
           "description": "En son bordro dışa aktarma işlemi tamamlanamadı.",
           "title": "Bordro dışa aktarma başarısız oldu"
@@ -242,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} başarıyla tamamlanamadı.",
           "title": "Zamanlanmış dışa aktarma başarısız oldu"
-        }
+        },
+        "title": "Uyarılar"
       },
       "description": "Kuruluşunuz için bordro, denetim ve zamanlanmış dışa aktarma etkinliklerini izleyin.",
       "errors": {
@@ -251,7 +481,56 @@
         "summary": "Sayılar, yüklenebilen dışa aktarma verilerine dayanmaktadır.",
         "upcomingRuns": "Zamanlanmış dışa aktarma verileri geçici olarak kullanılamıyor."
       },
-      "title": "Dışa Aktarma İşlemleri"
+      "links": {
+        "audit": "Denetim dışa aktarma ayarlarını aç",
+        "payroll": "Bordro dışa aktarma ayarlarını aç",
+        "scheduled": "Zamanlanmış dışa aktarma ayarlarını aç"
+      },
+      "partialData": "Kısmi veri",
+      "recentActivity": {
+        "description": "En son bordro, denetim ve zamanlanmış dışa aktarma etkinlikleri.",
+        "empty": "Yakın zamanda dışa aktarma etkinliği yok",
+        "export": "Dışa aktar",
+        "link": "Ayarlar",
+        "status": "Durum",
+        "title": "Son etkinlik",
+        "when": "Oluştu"
+      },
+      "severity": {
+        "error": "Hata",
+        "warning": "Uyarı"
+      },
+      "status": {
+        "assembling": "Paket derleniyor",
+        "collecting": "Veriler toplanıyor",
+        "completed": "Tamamlandı",
+        "failed": "Başarısız oldu",
+        "hardening": "Sertleştirme uygulanıyor",
+        "lineageExpanding": "Köken genişletiliyor",
+        "pending": "Beklemede",
+        "processing": "İşleniyor",
+        "requested": "Talep edildi"
+      },
+      "summary": {
+        "activeSchedules": "Etkin zamanlamalar",
+        "activeSchedulesDescription": "Yinelenen dışa aktarma zamanlamaları etkinleştirildi.",
+        "failedRuns": "Başarısız çalıştırmalar (7 gün)",
+        "failedRunsDescription": "Son bir haftadaki başarısız bordro, denetim ve zamanlanmış çalıştırmalar.",
+        "lastAuditPack": "Son denetim paketi",
+        "lastAuditPackDescription": "En son denetim paketi oluşturma işlemi.",
+        "lastPayrollExport": "Son bordro dışa aktarımı",
+        "lastPayrollExportDescription": "En son bordro dışa aktarımının tamamlanması.",
+        "none": "Hiçbir zaman"
+      },
+      "title": "Dışa Aktarma İşlemleri",
+      "upcomingRuns": {
+        "description": "Bu kuruluş için sıraya alınmış bir sonraki zamanlanmış dışa aktarmalar.",
+        "empty": "Yaklaşan çalıştırma yok",
+        "link": "Ayarlar",
+        "name": "Ad",
+        "title": "Yaklaşan çalıştırmalar",
+        "when": "Planlanan tarih"
+      }
     },
     "group": {
       "account": "Hesap",
@@ -293,6 +572,16 @@
         "commitQueued": "{count} kabul edilen satır kayıt için sıraya alındı",
         "committing": "Kaydediliyor...",
         "description": "Hazırlanan içe aktarma satırlarını inceleyin, engelleyici sorunları çözün ve toplu işlem hazır olduğunda kabul edilen kayıtları kaydedin.",
+        "hold": {
+          "appendReviewRequired": "Yeni girişler eklenmeden önce çalışanın zaman geçmişinin incelenmesi gerekir.",
+          "invalidInterval": "Sağlayıcı saatlerinde açık bir zaman farkı bilgisi yok, saatler sıralı değil veya gelecekte yer alıyor.",
+          "label": "İnceleme için bekletiliyor",
+          "occupancyConflict": "Bu süre, söz konusu çalışan için önceden kaydedilmiş çalışmayla çakışıyor.",
+          "operationCollision": "Bu satır, daha önce işlenen içe aktarımıyla çakışıyor.",
+          "providerDurationMismatch": "Sağlayıcı süresi, başlangıç ve bitiş saatleriyle uyuşmuyor.",
+          "sourceCollision": "Bu sağlayıcı kaydı zaten içe aktarılmış.",
+          "unlocatedBreak": "Sağlayıcı, saatlerini belirtmeden molaları bildirdiği için çalışılan aralık bilinmiyor."
+        },
         "issueGroups": {
           "currentMarkers": "Mevcut satırlar {blockingRows} engelleyici ve {warningRows} uyarı işareti içeriyor.",
           "description": "Gruplandırılmış inceleme alanları, kabul edilen satırlar kaydedilmeden önce kalite kontrollerinin görünür kalmasına yardımcı olur.",
@@ -306,17 +595,17 @@
           "status": "Durum",
           "title": "Satırlar"
         },
-        "title": "İçe Aktarma İncelemesi",
-        "hold": {
-          "appendReviewRequired": "Yeni kayıtlar eklenmeden önce çalışanın zaman geçmişinin incelenmesi gerekiyor.",
-          "invalidInterval": "Sağlayıcının zamanlarında açık bir ofset yok, sıralı değil veya gelecekte.",
-          "label": "İnceleme için bekletildi",
-          "occupancyConflict": "Bu süre, bu çalışan için zaten kaydedilmiş çalışmayla çakışıyor.",
-          "operationCollision": "Bu satır, daha önce onaylanan içe aktarımıyla çakışıyor.",
-          "providerDurationMismatch": "Sağlayıcının süresi başlangıç ve bitiş zamanlarından farklı.",
-          "sourceCollision": "Bu sağlayıcı kaydı zaten içe aktarıldı.",
-          "unlocatedBreak": "Sağlayıcı molaları saatleri olmadan bildiriyor, bu nedenle çalışılan aralık bilinmiyor."
-        }
+        "status": {
+          "accepted": "Kabul edildi",
+          "blocked": "Engellendi",
+          "commitFailed": "İşleme başarısız oldu",
+          "committed": "İşlendi",
+          "committing": "İşleniyor",
+          "needsMapping": "Eşleme gerekiyor",
+          "rejected": "Reddedildi",
+          "staged": "Aşamaya alındı"
+        },
+        "title": "İçe Aktarma İncelemesi"
       },
       "title": "Veri İçe Aktar"
     },
@@ -629,7 +918,7 @@
         "addManager": "Proje yöneticisi ekle",
         "assignEmployee": "Çalışan ata",
         "assignTeam": "Ekip ata",
-        "count": "{count, plural, one {# üye} other {# üye}}",
+        "count": "{count, plural, other {# üye} }",
         "employeeAssigned": "Çalışan atandı",
         "employeeAssignFailed": "Çalışan atanamadı",
         "employeePicker": "Atanacak çalışan",
@@ -639,10 +928,10 @@
         "managerAddFailed": "Proje yöneticisi eklenemedi",
         "managerPicker": "Eklenecek proje yöneticisi",
         "managers": "Proje yöneticileri",
-        "managersReadOnly": "Proje yöneticilerini yalnızca kuruluş yöneticileri değiştirebilir.",
-        "noEmployees": "Atanmış çalışan yok",
+        "managersReadOnly": "Yalnızca kuruluş yöneticileri proje yöneticilerini değiştirebilir.",
+        "noEmployees": "Atanan çalışan yok",
         "noManagers": "Proje yöneticisi yok",
-        "noTeams": "Atanmış ekip yok",
+        "noTeams": "Atanan ekip yok",
         "remove": "{name} kaldır",
         "removed": "{name} kaldırıldı",
         "removeFailed": "{name} kaldırılamadı",
@@ -662,20 +951,47 @@
       "description": "Parolanızı, iki faktörlü kimlik doğrulamayı, geçiş anahtarlarını ve aktif oturumları yönetin",
       "title": "Güvenlik Ayarları",
       "twoFactor": {
+        "backupCodesCopied": "Yedek kodlar panoya kopyalandı",
+        "backupCodesRegenerated": "Yedek kodlar yeniden oluşturuldu",
+        "cancel": "İptal",
         "confirmPasswordToEnable": "İki faktörlü kimlik doğrulamayı etkinleştirmek için lütfen parolanızı onaylayın",
         "confirmPasswordToRegenerate": "Yedek kodları yeniden oluşturmak için lütfen parolanızı onaylayın",
         "continue": "Devam et",
+        "copyCodes": "Kodları Kopyala",
         "description": "Hesabınıza ekstra bir güvenlik katmanı ekleyin",
         "disable": "Devre dışı bırak",
+        "disable2fa": "2FA'yı Devre Dışı Bırak",
+        "disableDescription": "Bu işlem hesabınızdaki ekstra güvenlik katmanını kaldıracaktır. Onaylamak için lütfen şifrenizi girin.",
+        "disabledToast": "İki faktörlü doğrulama devre dışı bırakıldı",
+        "disableFailed": "2FA devre dışı bırakılamadı",
+        "disableTitle": "İki Faktörlü Doğrulama Devre Dışı Bırakılsın mı?",
         "enable": "İki Faktörlü Kimlik Doğrulamayı Etkinleştir",
+        "enabledToast": "İki faktörlü doğrulama etkinleştirildi",
+        "enablePasswordRequiredDescription": "2FA'yı etkinleştirmek için lütfen şifrenizi girin",
+        "enterAuthenticatorCode": "Kimlik doğrulama uygulamanızdaki 6 haneli kodu girin",
         "enterPasswordTitle": "Parolanızı Girin",
+        "enterSixDigitCode": "Lütfen 6 haneli bir kod girin",
+        "invalidCode": "Geçersiz kod",
+        "passwordLabel": "Şifre",
+        "passwordPlaceholder": "Şifrenizi girin...",
+        "passwordRequired": "Şifre gerekli",
         "regenerateBackupCodes": "Yedek Kodları Yeniden Oluştur",
         "regenerateCodes": "Kodları Yeniden Oluştur",
+        "regenerateFailed": "Yedek kodlar yeniden oluşturulamadı",
+        "saveBackupCodesDescription": "Bu kodları güvenli bir yerde saklayın. Kimlik doğrulama uygulamanıza erişiminizi kaybederseniz hesabınıza erişmek için bu kodları kullanabilirsiniz. Her kod yalnızca bir kez kullanılabilir.",
+        "saveBackupCodesTitle": "Yedek Kodlarınızı Kaydedin",
+        "savedCodes": "Bu Kodları Kaydettim",
+        "scanQrCode": "Kimlik doğrulama uygulamanızla QR kodunu tarayın",
+        "setupFailed": "2FA kurulumu başarısız oldu",
+        "setupTitle": "İki Faktörlü Doğrulamayı Ayarlayın",
         "status": {
           "disabled": "Devre dışı",
           "enabled": "Etkin"
         },
-        "title": "İki Faktörlü Kimlik Doğrulama"
+        "title": "İki Faktörlü Kimlik Doğrulama",
+        "unexpectedError": "Beklenmeyen bir hata oluştu",
+        "verificationFailed": "Doğrulama başarısız oldu",
+        "verifyAndEnable": "Doğrula ve Etkinleştir"
       }
     },
     "sessions": {
@@ -879,8 +1195,14 @@
       "title": "Sağlık Ayarları"
     },
     "workBalanceRecalculation": {
+      "confirm": "Yeniden Hesaplamayı Onayla",
+      "confirmMessage": "Bu yeniden hesaplamayı sıraya almadan önce onaylayın.",
+      "description": "{employeeName} için aylık ve yıllık çalışma bakiyesi toplamlarının tam olarak yeniden oluşturulmasını sıraya alın. Bu bakım görevi arka planda çalışır ve bu sayfayı engellemez.",
+      "queued": "Yeniden Hesaplama Sıraya Alındı",
+      "recalculate": "Çalışma Bakiyesini Yeniden Hesapla",
       "requestError": "İş dengesi yeniden hesaplama kuyruğa alınamadı",
-      "requestSuccess": "İş dengesi yeniden hesaplama kuyruğa alındı"
+      "requestSuccess": "İş dengesi yeniden hesaplama kuyruğa alındı",
+      "title": "Çalışma Bakiyesi Yeniden Hesaplama"
     },
     "workerQueue": {
       "cards": {

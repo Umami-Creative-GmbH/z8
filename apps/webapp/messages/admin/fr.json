@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Surveiller les abonnements, les revenus et le statut des paiements",
+      "failedToSyncSeats": "Échec de la synchronisation des sièges",
       "intervals": {
         "month": "Mensuel",
         "year": "Annuel"
@@ -102,6 +103,7 @@
         "trialing": "En essai",
         "trialingDescription": "En période d'essai"
       },
+      "seatsSynced": "Sièges synchronisés",
       "sections": {
         "recentSubscriptions": "Abonnements récents",
         "revenueMetrics": "Indicateurs de revenus"
@@ -112,6 +114,7 @@
         "pastDue": "En retard de paiement",
         "trialing": "Essai"
       },
+      "syncSeatsFor": "Synchroniser les sièges pour {organizationName}",
       "table": {
         "actions": "Actions",
         "billing": "Facturation",

@@ -191,13 +191,13 @@
         "loadData": "Failed to load work hours analytics data"
       },
       "expectedHours": "Expected Hours",
+      "hoursPerWeekAbbreviation": "h/wk",
       "variance": "Variance",
       "varianceTrend": {
         "description": "Hours variance from expected work hours over time",
         "empty": "No trend data available",
         "title": "Overtime & Undertime Trend"
-      },
-      "hoursPerWeekAbbreviation": "h/wk"
+      }
     }
   }
 }

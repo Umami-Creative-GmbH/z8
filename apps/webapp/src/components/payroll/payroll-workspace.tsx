@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { Temporal } from "temporal-polyfill";
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import type React from "react";
@@ -718,6 +719,7 @@ function PayrollPeriodCard({
 	summary: PayrollWorkspaceSummary;
 	t: PayrollTranslate;
 }) {
+	const locale = useLocale();
 	return (
 		<Card>
 			<CardHeader className="gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -728,7 +730,7 @@ function PayrollPeriodCard({
 					</div>
 					<div>
 						<CardTitle aria-level={2} className="text-2xl" role="heading">
-							{summary.period.label}
+							{formatDisplayedPeriod(summary.period.start, summary.period.end, dateMode, locale)}
 						</CardTitle>
 						<CardDescription>
 							{t("payroll.period.dateRange", "{start} to {end}", {
@@ -1777,4 +1779,19 @@ function formatPeriodLabel(start: DateTime, end: DateTime, mode: PayrollDateRang
 	if (mode === "week") return `${start.toFormat("LLL d")} - ${end.toFormat("LLL d, yyyy")}`;
 
 	return `${start.toISODate()} - ${end.toISODate()}`;
+}
+
+function formatDisplayedPeriod(
+	start: string,
+	end: string,
+	mode: PayrollDateRangeMode,
+	locale: string,
+) {
+	const startDate = Temporal.PlainDate.from(start);
+	const endDate = Temporal.PlainDate.from(end);
+	if (mode === "month")
+		return startDate.toLocaleString(locale, { month: "long", year: "numeric" });
+	if (mode === "week")
+		return `${startDate.toLocaleString(locale, { month: "short", day: "numeric" })} - ${endDate.toLocaleString(locale, { month: "short", day: "numeric", year: "numeric" })}`;
+	return `${startDate.toLocaleString(locale)} - ${endDate.toLocaleString(locale)}`;
 }

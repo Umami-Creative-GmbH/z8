@@ -22,6 +22,15 @@
     "continue_to_sign_in": "Przejdź do logowania",
     "creating_account": "Tworzenie konta administratora...",
     "description": "Skonfiguruj pierwsze konto administratora dla swojej platformy. To konto będzie miało pełny dostęp do systemu i jest oddzielone od kont organizacji.",
+    "error": {
+      "password_lowercase": "Hasło musi zawierać co najmniej jedną małą literę",
+      "password_max_length": "Hasło może mieć maksymalnie 128 znaków",
+      "password_min_length": "Hasło musi mieć co najmniej 12 znaków",
+      "password_number": "Hasło musi zawierać co najmniej jedną cyfrę",
+      "password_required": "Hasło jest wymagane",
+      "passwords_mismatch": "Hasła nie są zgodne",
+      "password_uppercase": "Hasło musi zawierać co najmniej jedną wielką literę"
+    },
     "field": {
       "confirm_password": "Potwierdź hasło",
       "confirm_password_placeholder": "Potwierdź swoje hasło",

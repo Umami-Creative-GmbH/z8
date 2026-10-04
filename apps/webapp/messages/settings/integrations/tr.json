@@ -48,7 +48,8 @@
         "description": "Kuruluşunuz için takvim senkronizasyonunun nasıl çalışacağını yapılandırın.",
         "title": "Senkronizasyon Davranışı"
       },
-      "title": "Takvim Senkronizasyonu"
+      "title": "Takvim Senkronizasyonu",
+      "titleTemplatePlaceholder": "Ofis Dışında - {categoryName}"
     },
     "clockinImport": {
       "credentials": {
@@ -105,6 +106,17 @@
         "description": "Clockodo e-postanızı ve API anahtarınızı girin. API anahtarınızı Clockodo'da Profilim > API Anahtarı altında bulabilirsiniz. Kimlik bilgileri saklanmaz.",
         "email": "Clockodo E-postası",
         "title": "Clockodo Kimlik Bilgileri"
+      },
+      "entity": {
+        "absences": "Devamsızlıklar",
+        "entries": "Zaman Girişleri",
+        "holidayQuotas": "Tatil Kotaları",
+        "nonBusinessDays": "İş Günü Olmayan Günler",
+        "services": "Hizmetler / İş Kategorileri",
+        "surcharges": "Ek Ücretler",
+        "targetHours": "Hedef Saatler / Çalışma Politikaları",
+        "teams": "Ekipler",
+        "users": "Kullanıcılar / Çalışanlar"
       },
       "errors": {
         "connectionFailed": "Clockodo'ya bağlanılamadı",
@@ -171,17 +183,6 @@
         "skippedCount": "{count} atlandı",
         "status": "Durum",
         "title": "Kullanıcıları Eşleştir"
-      },
-      "entity": {
-        "absences": "İzinler",
-        "entries": "Zaman Kayıtları",
-        "holidayQuotas": "İzin Kotaları",
-        "nonBusinessDays": "İş Dışı Günler",
-        "services": "Hizmetler / Çalışma Kategorileri",
-        "surcharges": "Ek Ücretler",
-        "targetHours": "Hedef Saatler / Çalışma Politikaları",
-        "teams": "Ekipler",
-        "users": "Kullanıcılar / Çalışanlar"
       }
     },
     "discord": {

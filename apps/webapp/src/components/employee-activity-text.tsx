@@ -18,16 +18,16 @@ export function EmployeeActivityText({
 		lastActivityUtcOffsetMinutes,
 		{
 			relativeMinutes: (minutes) =>
-				t("common:presence.activity.relativeMinutes", "since {minutes}min", {
+				t("presence.activity.relativeMinutes", "since {minutes}min", {
 					minutes,
 				}),
 			relativeHours: (hours) =>
-				t("common:presence.activity.relativeHours", "since {hours}h", {
+				t("presence.activity.relativeHours", "since {hours}h", {
 					hours,
 				}),
 			relativeHoursMinutes: (hours, minutes) =>
 				t(
-					"common:presence.activity.relativeHoursMinutes",
+					"presence.activity.relativeHoursMinutes",
 					"since {hours}h {minutes}min",
 					{
 						hours,
@@ -35,7 +35,7 @@ export function EmployeeActivityText({
 					},
 				),
 			lastActivity: (date) =>
-				t("common:presence.activity.lastActivity", "last activity {date}", {
+				t("presence.activity.lastActivity", "last activity {date}", {
 					date,
 				}),
 		},

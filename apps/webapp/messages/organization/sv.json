@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Endast organisationsadministratörer och ägare kan ändra dessa inställningar.",
+      "description": "Ange maximal varaktighet för oavbrutet livearbete. Anställda stämplas automatiskt ut vid denna gräns.",
+      "enabled": "Automatisk utstämpling",
+      "help": "En registrerad rast eller ny instämpling återställer tidsgränsen. Ändringar gäller för arbete som redan pågår. Kontroller körs var femte minut; utstämpling registreras vid gränsen, även om kontrollen körs senare. Anställda får alltid en avisering i inkorgen.",
+      "hours": "Timmar",
+      "invalidDuration": "Ange en giltig varaktighet: hela timmar och 0–59 minuter, totalt minst en minut.",
+      "minutes": "Minuter",
+      "save": "Spara ändringar",
+      "saved": "Inställningarna för automatisk utstämpling har sparats",
+      "saveFailed": "Det gick inte att uppdatera inställningarna för automatisk utstämpling",
+      "saving": "Sparar…",
+      "title": "Automatisk utstämpling"
+    },
     "create": "Skapa organisation",
     "createDialog": {
       "description": "Konfigurera din organisation för att komma igång",
@@ -120,7 +134,7 @@
       "expired": "Utgången",
       "expires": "Löper ut",
       "inactive": "Inaktiv",
-      "invitationActionsLabel": "Åtgärder för inbjudan till {email}",
+      "invitationActionsLabel": "Åtgärder för inbjudan till ${row.original.email}",
       "invitationCancelError": "Kunde inte avbryta inbjudan",
       "invitationCancelSuccess": "Inbjudan har avbrutits",
       "invitationResendError": "Kunde inte skicka inbjudan igen",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} inbjudan/inbjudningar väntar på att accepteras}}",
       "invitedBy": "Inbjuden av",
       "member": "Medlem",
-      "memberActionsLabel": "Åtgärder för {name}",
+      "memberActionsLabel": "Åtgärder för ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} medlem(mar) i denna organisation}}",
       "noInvitationResults": "Inga inbjudningar matchar din sökning.",
       "noInvitations": "Inga väntande inbjudningar.",
@@ -256,7 +270,7 @@
       "title": "Team"
     },
     "timezone": {
-      "balances-recalculating": "Arbetssaldon räknas om för den nya tidszonen och är dolda tills de är klara.",
+      "balances-recalculating": "Arbetssaldon räknas om för den nya tidszonen och förblir dolda tills de är klara.",
       "default": "Standardtidszon",
       "description": "Ange standardtidszon för din organisation. Detta används för frånvarohantering, rapporter och andra datumbaserade funktioner. Enskilda användare kan åsidosätta detta i sina profilinställningar.",
       "owner-only": "Endast organisationsägare kan ändra tidszonsinställningen.",

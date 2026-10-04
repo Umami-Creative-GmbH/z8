@@ -21,6 +21,22 @@
       "managerDescription": "Mitarbeiterschichte verwalte und plane",
       "title": "Schichtplan"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Bestätige und veröffentliche",
+      "acknowledgmentDescription": "D'Veröffentlichung wird fortgsetzt, aber de Plan hät Compliance-Warnige, wo zersch bestätigt wärde müend.",
+      "button": "Veröffentliche ({count})",
+      "cancel": "Abbräche",
+      "complianceAcknowledgmentRequired": "Compliance-Bestätigung erforderlich",
+      "complianceWarnings": "{count, plural, one {Bi de Compliance-Prüefig isch # Warnig gfunde worde; du muesch si vor em Veröffentliche bestätige.} other {Bi de Compliance-Prüefig sind # Warnige gfunde worde; du muesch si vor em Veröffentliche bestätige.}}",
+      "coverageWarning": "Einigi Ziitblöck erfüllid d Mindestaaforderige ans Personal nöd.",
+      "maxHours": "Max. Stunde: {count}",
+      "notifyEmployees": "{count, plural, one {# Entwurfs-Schicht veröffentliche und Mitarbeiter benachrichtige} other {# Entwurfs-Schichte veröffentliche und Mitarbeiter benachrichtige}}",
+      "overtime": "Überstunde: {count}",
+      "publishing": "Wird veröffentlicht…",
+      "restTime": "Ruehziit: {count}",
+      "totalFindings": "{count, plural, one {Insgsamt # Feschtstellig} other {Insgsamt # Feschtstellige}}",
+      "warningsDetectedBeforePublish": "Warnige vor em Veröffentliche entdeckt"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} Problem vor em Veröffentliche gfunde.",

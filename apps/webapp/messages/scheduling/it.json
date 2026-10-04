@@ -21,6 +21,22 @@
       "managerDescription": "Gestisci e pianifica i turni dei dipendenti",
       "title": "Programmazione turni"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Prendi atto e pubblica",
+      "acknowledgmentDescription": "La pubblicazione procederà, ma questa pianificazione presenta avvisi di conformità che devono prima essere confermati.",
+      "button": "Pubblica ({count})",
+      "cancel": "Annulla",
+      "complianceAcknowledgmentRequired": "Conferma di conformità richiesta",
+      "complianceWarnings": "{count, plural, one {I controlli di conformità hanno rilevato # avviso; dovrai confermarlo prima di pubblicare.} other {I controlli di conformità hanno rilevato # avvisi; dovrai confermarli prima di pubblicare.}}",
+      "coverageWarning": "Alcuni blocchi orari non soddisfano i requisiti minimi di personale.",
+      "maxHours": "Ore massime: {count}",
+      "notifyEmployees": "{count, plural, one {Pubblica # turno in bozza e notifica i dipendenti} other {Pubblica # turni in bozza e notifica i dipendenti}}",
+      "overtime": "Straordinari: {count}",
+      "publishing": "Pubblicazione…",
+      "restTime": "Tempo di riposo: {count}",
+      "totalFindings": "{count, plural, one {# risultato totale} other {# risultati totali}}",
+      "warningsDetectedBeforePublish": "Avvisi rilevati prima della pubblicazione"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} problema/i rilevato/i prima della pubblicazione.",

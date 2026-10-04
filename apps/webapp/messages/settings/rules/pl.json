@@ -114,6 +114,12 @@
         "none": "Brak połączonych kanałów obsługi wiadomości.",
         "title": "Preferencje doręczania w kanale"
       },
+      "conflict": {
+        "differingTimeouts": "Kanały miały różne limity czasu; najkrótszy stał się oknem odpowiedzi.",
+        "disabledActiveSource": "Niektóre aktywne kanały miały wyłączone eskalacje. Nadal nie dostarczają one wiadomości o eskalacji.",
+        "inactiveSourceEnabled": "Niektóre nieaktywne kanały miały włączone eskalacje. Nie zostały one uwzględnione w zasadach.",
+        "invalidTimeout": "Kanał miał nieprawidłowy limit czasu i nie został użyty jako okno odpowiedzi."
+      },
       "description": "Przejrzyj zasady eskalacji w organizacji, sposób ich migracji z ustawień kanału oraz warunki wymagające menedżera zatwierdzeń.",
       "dispose": {
         "confirm": "Zamknij element",
@@ -121,6 +127,12 @@
         "noteLabel": "Notatka o rozstrzygnięciu",
         "noteRequired": "Wprowadź notatkę o rozstrzygnięciu.",
         "title": "Zamknij element wymagający uwagi"
+      },
+      "event": {
+        "alerted": "Powiadomiono administratorów",
+        "disposed": "Odrzucono",
+        "raised": "Zgłoszono",
+        "resolved": "Rozwiązano"
       },
       "hoursValue": "{hours} godz.",
       "loadFailed": "Nie udało się załadować ustawień eskalacji.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Wpisz liczbę całkowitą godzin z zakresu od 1 do 720.",
         "windowLabel": "Okno odpowiedzi"
       },
+      "reason": {
+        "ambiguousHistory": "Niejednoznaczna historia eskalacji",
+        "deliveryExhausted": "Wyczerpano próby doręczenia",
+        "deliveryUnavailable": "Brak dostępnego miejsca docelowego doręczenia",
+        "noEligibleBackup": "Brak uprawnionej osoby zatwierdzającej jako zastępca",
+        "replacementOverdue": "Minął termin dla zastępcy osoby zatwierdzającej",
+        "unsupportedRoute": "Nieobsługiwana ścieżka decyzyjna"
+      },
       "revisions": {
         "changedBy": "Zmieniono przez",
         "migration": "Migracja ustawień",
@@ -207,16 +227,26 @@
       "activePolicyTableDescription": "Polityki są oceniane według priorytetu; pierwsza pasująca aktywna polityka określa ścieżkę zatwierdzania.",
       "activeStatus": "Status aktywny",
       "addPolicy": "Dodaj politykę",
+      "addStage": "Dodaj etap",
       "approvalType": {
         "absence": "Nieobecność",
-        "complianceException": "Wyjątek zgodności",
-        "manualTimeSubmission": "Ręczne przesłanie czasu",
-        "policyClockOut": "Wyjście zgodne z zasadą",
+        "complianceException": "Wyjątek dotyczący zgodności",
+        "manualTimeSubmission": "Ręczne przesyłanie czasu pracy",
+        "policyClockOut": "Wyrejestrowanie zgodnie z zasadami",
         "shiftRequest": "Wniosek o zmianę",
         "timeCorrection": "Korekta czasu",
-        "travelExpense": "Wydatek na podróż"
+        "travelExpense": "Wydatek podróżny"
       },
       "approvalTypes": "Typy zatwierdzeń",
+      "approver": "Osoba zatwierdzająca",
+      "approverEmployeeId": "Identyfikator pracownika zatwierdzającego",
+      "approverEmployeeIdPlaceholder": "Przykład: pracownik_123…",
+      "approverType": {
+        "directManager": "Bezpośredni przełożony",
+        "managerManager": "Przełożony przełożonego",
+        "organizationAdmin": "Administrator organizacji",
+        "specificEmployee": "Konkretny pracownik"
+      },
       "conditionsCount": "Liczba warunków",
       "createPolicy": "Utwórz politykę zatwierdzania",
       "defaultStageLabel": "Weryfikacja przez przełożonego",
@@ -225,9 +255,25 @@
       "dialogDescription": "Zdefiniuj, kiedy ma zastosowanie ścieżka zatwierdzania i którzy zatwierdzający obsługują poszczególne etapy sekwencyjne.",
       "editPolicy": "Edytuj politykę",
       "empty": "Nie skonfigurowano jeszcze żadnych polityk zatwierdzania. Utwórz politykę, aby zdefiniować swoją pierwszą ścieżkę zatwierdzania.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Wyślij wniosek do domyślnego menedżera, gdy na tym etapie nie można ustalić osoby zatwierdzającej.",
+          "label": "Domyślny menedżer"
+        },
+        "fail": {
+          "description": "Odrzuć wniosek, gdy na tym etapie nie można ustalić osoby zatwierdzającej.",
+          "label": "Odrzuć wniosek"
+        },
+        "label": "Działanie rezerwowe",
+        "organizationAdmin": {
+          "description": "Wyślij wniosek do administratora organizacji, gdy na tym etapie nie można ustalić osoby zatwierdzającej.",
+          "label": "Administrator organizacji"
+        }
+      },
       "loadFailed": "Nie udało się załadować polityk zatwierdzania.",
       "loading": "Ładowanie polityk…",
       "namePlaceholder": "Przykład: Eskalacja nieobecności…",
+      "noStages": "Nie skonfigurowano jeszcze żadnych etapów zatwierdzania.",
       "preview": {
         "ariaLabel": "Podgląd ścieżki zatwierdzania",
         "badge": "Powłoka podglądu",
@@ -242,7 +288,11 @@
         "title": "Podsumowanie ścieżki zatwierdzania"
       },
       "priority": "Priorytet",
+      "removeStage": "Usuń etap",
+      "stageNumber": "Etap {number}",
+      "stages": "Etapy zatwierdzania",
       "stagesCount": "Liczba etapów",
+      "stagesDescription": "Etapy przebiegają po kolei; każdy wniosek przechodzi dalej dopiero po zaakceptowaniu go przez bieżącą osobę zatwierdzającą.",
       "status": {
         "active": "Aktywna",
         "inactive": "Nieaktywna"
@@ -255,21 +305,6 @@
       "validation": {
         "activePolicyRequiresStage": "Aktywne zasady wymagają co najmniej jednego etapu zatwierdzania.",
         "specificEmployeeRequiresId": "Etapy dla konkretnego pracownika wymagają podania identyfikatora pracownika zatwierdzającego."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Wyślij wniosek do domyślnego przełożonego, gdy ten etap nie może wskazać osoby zatwierdzającej.",
-          "label": "Domyślny przełożony"
-        },
-        "fail": {
-          "description": "Odrzuć wniosek, gdy ten etap nie może wskazać osoby zatwierdzającej.",
-          "label": "Odrzuć wniosek"
-        },
-        "label": "Zachowanie awaryjne",
-        "organizationAdmin": {
-          "description": "Wyślij wniosek do administratora organizacji, gdy ten etap nie może wskazać osoby zatwierdzającej.",
-          "label": "Administrator organizacji"
-        }
       }
     },
     "changePolicies": {
@@ -659,6 +694,7 @@
       "createCategoriesFirst": "Najpierw utwórz kategorie w zakładce Kategorie",
       "createCategory": "Utwórz kategorię",
       "createCategoryDescription": "Utwórz nową kategorię pracy, którą można przypisać do wielu zestawów",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Twórz zestawy kategorii z różnymi współczynnikami czasu dla różnych rodzajów pracy",
       "createFirstSet": "Utwórz pierwszy zestaw",
       "createSet": "Utwórz zestaw",
       "createSetDescription": "Utwórz nowy zestaw kategorii i wybierz, które kategorie mają się w nim znaleźć",

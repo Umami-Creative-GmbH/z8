@@ -21,13 +21,24 @@
       },
       "description": "Arbeitsziite für Lohnabrechnigssystem wie DATEV oder Personio exportiere",
       "export": {
+        "allEmployees": "Alli Mitarbeiter",
+        "allProjects": "Alli Projekt",
+        "allTeams": "Alli Teams",
         "asyncDescription": "Ihr Export wird verarbeitet. Prüefed de Verlauf-Tab für de Status.",
         "asyncStarted": "Export gstartet",
         "customRange": "Benutzerdefinierte Ziitruum",
         "dateRange": "Ziitruum",
         "description": "Arbeitsziite und Absenze is DATEV Lohn & Gehalt Format exportiere",
+        "employees": "Mitarbeiter",
         "endDate": "Enddatum",
         "error": "Export fehlgschlage",
+        "exportButtonDatev": "Export zu DATEV",
+        "exportButtonLexware": "Export zu Lexware",
+        "exportButtonPersonio": "Export zu Personio",
+        "exportButtonSage": "Export zu Sage",
+        "exportButtonSuccessFactorsApi": "Export zu SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV exportiere",
+        "exportButtonWorkday": "Uf Workday exportiere",
         "exporting": "Exportiere…",
         "filters": "Filter (Optional)",
         "format": "Exportformat",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Monat",
         "monthSelection": "Monat uswähle",
+        "projects": "Projekt",
         "startDate": "Startdatum",
         "success": "Export abeglade",
+        "teams": "Teams",
         "title": "Lohndate exportiere",
         "unavailable": {
           "missingConfiguration": "Konfiguration",
           "missingCredentials": "Zugangsdate"
         },
-        "year": "Jahr",
-        "allEmployees": "Alli Mitarbeiter",
-        "allProjects": "Alli Projekt",
-        "allTeams": "Alli Teams",
-        "employees": "Mitarbeiter",
-        "employeesSelected": "{{count}} usgwählt",
-        "exportButtonDatev": "Export nach DATEV",
-        "exportButtonLexware": "Export nach Lexware",
-        "exportButtonPersonio": "Export nach Personio",
-        "exportButtonSage": "Export nach Sage",
-        "exportButtonSuccessFactorsApi": "Export nach SAP SuccessFactors (API)",
-        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV exportiere",
-        "exportButtonWorkday": "Export nach Workday",
-        "projects": "Projekt",
-        "projectsSelected": "{{count}} usgwählt",
-        "teams": "Teams",
-        "teamsSelected": "{{count}} usgwählt"
+        "year": "Jahr"
       },
       "history": {
         "description": "Früherigi DATEV-Export aaluege und abelade",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Freigaab-Iigang überprüefe",
+        "payrollExport": "Iistellige für Lohnexport öffne",
+        "timeTracking": "Ziterfassig überprüefe",
+        "travelExpenses": "Reisespäse überprüefe"
+      },
+      "affectedEmployees": {
+        "name": "Mitarbeiter",
+        "noNumber": "Nöd gsetzt",
+        "number": "Mitarbeiternummere"
+      },
+      "checks": {
+        "count": "Aazahl"
+      },
+      "checkStatus": {
+        "fail": "Blockiert",
+        "pass": "Bereit",
+        "unavailable": "Chan nöd überprüft werde",
+        "warning": "Warnig"
+      },
       "description": "Prüefe, öb en Lohnabrechnigszyklus bereit isch, bevor Ziit-, Absenz- und Lohn-Date exportiert wärded.",
+      "openPayrollExport": "Lohnexport öffne",
+      "status": {
+        "blocked": "Blockiert",
+        "ready": "Bereit für d Lohnabrechnig",
+        "unavailable": "Chan nöd überprüft werde"
+      },
+      "summary": {
+        "affectedEmployees": "Betroffeni Mitarbeiter",
+        "affectedEmployeesDescription": "Mitarbeiter, wo mit offene Bereitstelligs-Pünkt verknüpft sind.",
+        "blockers": "Blocker",
+        "blockersDescription": "Erforderlichi Prüefige, wo de Export aktuell blockiered.",
+        "exportTargets": "Konfigurierti Exportziel",
+        "exportTargetsDescription": "Aktivi Lohnexport-Ziel.",
+        "period": "Periode",
+        "periodDescription": "Lohnperiode, wo überprüeft wird.",
+        "status": "Status",
+        "statusDescription": "Gsamthafti Bereitschaft für de Lohnexport.",
+        "warnings": "Warnige",
+        "warningsDescription": "Nöd-blockierendi Problem, wo vor em Export überprüeft werde sötted."
+      },
       "title": "Lohnabrechnigs-Bereitschaft"
     },
     "workDiagnostics": {
+      "allEmployees": "Alli Mitarbeiter aazeige",
+      "append": {
+        "continued": "Mitarbeiter, wo ab emene bestätigte Anker witergfüehrt wärded: {count}. D Vorgschicht vor jedem Anker wird nöd überprüeft.",
+        "counts": "Bi {verified} vo {total} Mitarbeiter isch d Herkunft anhand vo gspeicherete Nachwiis überprüeft.",
+        "description": "En separati Aaforderig unabhängig vo de Vollständigkeit: Herkunft und Kontinuität vo gspeicherete Zitiiträg. Das entscheidet nöd über d Lohnbereitschaft.",
+        "interruptions": "Kontinuitätsunterbrüch",
+        "issues": "Herkunftsproblem und Kandidate",
+        "limitations": "Iischränkige",
+        "title": "Kettesicherig vo de Zitiiträg"
+      },
+      "blocking": "Blockiert Vollständigkeit",
       "description": "Fählendi oder widersprüchlichi Zitiiträg und Problem i de Zitiitragsketti finde",
+      "evidence": {
+        "entries": "Zitiiträg",
+        "timeRecords": "Ziterfassige",
+        "workPeriods": "Arbetsperiode"
+      },
+      "findings": {
+        "description": "Jede Befund isch en schriibgschützte Nachwiis. Nur d Behebig vo historische Luggene une füllt fählendi Wärt us Nachwiis und mit separater Autorisierig uus; Änderige a bestehender Arbet bruched en separat autorisierte Review.",
+        "employees": "Mitarbeiter",
+        "empty": "Kei fählendi, widersprüchlichi oder verdächtigi historischi Arbete i däm Bereich.",
+        "evidence": "Nachwiis",
+        "finding": "Befund",
+        "provenance": "Herkunft",
+        "title": "Feststellige",
+        "treatment": "Behandlig"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Pendanti Arbet ohni Freigaab-Aafraag",
+        "approvalStateConflict": "Freigaab-Status stimmed nöd überii",
+        "canonicalDetailMissing": "Arbetsdetail vom Zitiitrag fähled",
+        "canonicalLinkMissing": "Verchnüpfig vom Zitiitrag fählt",
+        "canonicalLinkShared": "Mehreri Arbetsperiode verchnüpffed de gliich Zitiitrag",
+        "canonicalLinkUnresolved": "Verchnüpfte Zitiitrag nöd gfunde",
+        "canonicalMissing": "Zitiitrag fählt",
+        "captureInferred": "Zitzone-Erfassig nachträglich abgleitet",
+        "deletedWorkPayable": "Glöschti Arbet hät immer no en zaalbare Zitiitrag",
+        "durationConflict": "Gspychereti Duure stimmed nöd überii",
+        "durationMissing": "Gspychereti Duur fählt",
+        "emptyInterval": "Start isch gliich wie Ändi",
+        "endpointConflict": "Start- oder Ändzite stimmed nöd überii",
+        "endpointEntryMissing": "Uusstämple-Iitrag fählt",
+        "endpointEntrySuperseded": "Arbetsperiode wiist uf en ersetzte Stämpeliitrag hi",
+        "endpointEntryUnresolved": "Stämpeliitrag nöd gfunde",
+        "endpointMissing": "Ändzit fählt",
+        "manualEvidenceUnreadable": "Naawiis vo de manuelle Iireichig nöd läsbar",
+        "manualHolidayCheckDatesDiffer": "Fiirtigsprüefig hät anderi Daate als d Arbet bruucht",
+        "manualInterpretationAmbiguous": "Zit vom manuelle Iitrag dur Zitumstellig übersprunge oder widerholt",
+        "manualInterpretationMismatch": "Manuelle Iitrag mit andere Zite gspycheret als iigreicht",
+        "manualTrimmed": "Manuelle Iitrag bim Spychere verchürzt",
+        "manualZoneUnrecorded": "Zitzone vom manuelle Iitrag nöd erfasst",
+        "metadataCanonicalOnly": "Zuweisung nur beim Zeiteintrag",
+        "metadataConflict": "Zuweisungen stimmen nicht überein",
+        "metadataMissing": "Zuweisung fehlt beim Zeiteintrag",
+        "multipleActiveWork": "Mehr als eine aktive Arbeitsperiode",
+        "negativeDuration": "Negative Dauer",
+        "openStateConflict": "Offener und geschlossener Status stimmen nicht überein",
+        "overlappingWork": "Überschneidende Arbeit",
+        "ownershipConflict": "Zuständigkeitskonflikt",
+        "relinkedCanonicalResidue": "Zeiteintrag durch Neuverknüpfung zurückgeblieben",
+        "reversedInterval": "Ende vor Beginn",
+        "storedElapsedDiscrepancy": "Gespeicherte Minuten weichen von der verstrichenen Zeit ab",
+        "workOutsideOrganizationEmployees": "Arbeit ausserhalb der Mitarbeitenden der Organisation zugewiesen"
+      },
+      "nextMonth": "Nächster Monat",
+      "ownerUnknown": "Inhaber nicht festgelegt",
       "pageDescription": "Diagnose uf Datensatzebeni für historischi Arbet: fählendi oder widersprüchlichi Darstellige, Übernahmeprovenienz, vermueteti manuelli Iigabefähler und Prüefig vo de Zitiitragsketti.",
+      "previousMonth": "Vorheriger Monat",
       "proposals": {
         "addChange": "Änderig hinzuefüege",
         "after": "Neue Wert",
@@ -370,6 +473,12 @@
         "valueRequired": "Gib de neu Wert ii.",
         "work": "Arbetsperiode"
       },
+      "provenance": {
+        "ambiguous": "Unklare Herkunft",
+        "freshBackdated": "Neuer rückdatierter Eintrag",
+        "postAdoption": "Eintrag nach Übernahme",
+        "preAdoption": "Verlauf vor Übernahme"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Ersteller vom Uusstempfligsiitrag",
@@ -413,7 +522,37 @@
         "title": "Historischi Lückereparatur",
         "work": "Arbetsperiode"
       },
-      "title": "Arbetsdiagnose"
+      "shape": {
+        "conflicting": "Widersprüchlich",
+        "disclosure": "Offenlegung",
+        "missing": "Fehlend",
+        "suspectedDefect": "Vermuteter Fehler"
+      },
+      "status": {
+        "complete": "Vollständig",
+        "completeDescription": "Keine relevanten fehlenden oder widersprüchlichen Nachweise, einschliesslich ausstehender, abgelehnter und offener Arbeiten.",
+        "incomplete": "Unvollständig",
+        "incompleteDescription": "Nicht betroffene Daten können zur Überprüfung verwendet werden, aber dieser Bereich ist nicht vollständig.",
+        "widenedEmployees": "Daten konnten nicht ermittelt werden, daher sind betroffene Mitarbeitende für jede Periode ungewiss.",
+        "widenedOrganization": "Die Zuständigkeit konnte nicht ermittelt werden, daher ist die gesamte Organisation ungewiss."
+      },
+      "summary": {
+        "affected": "Betroffene Mitarbeitende",
+        "affectedDescription": "Mitarbeitende, deren Arbeit in diesem Bereich nicht ermittelt werden kann.",
+        "blocking": "Blockierende Feststellungen",
+        "blockingDescription": "Fehlende oder widersprüchliche Nachweise, die relevante Arbeit ungewiss machen.",
+        "scope": "Bereich",
+        "scopeAll": "Alle Mitarbeitenden. Daten decken die Kalendertage jeder Zeitzone ab.",
+        "status": "Vollständigkeit"
+      },
+      "title": "Arbetsdiagnose",
+      "treatment": {
+        "disclosed": "Offengelegte Einschränkung",
+        "historicalGap": "Historische Lücke",
+        "integrityIncident": "Integritätsvorfall",
+        "investigationRequired": "Untersuchung erforderlich",
+        "reviewRequired": "Überprüfung erforderlich"
+      }
     }
   }
 }

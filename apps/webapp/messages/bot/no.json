@@ -1,12 +1,114 @@
 {
   "bot": {
     "approval": {
+      "approval": "Godkjenning",
+      "approve": "Godkjenn",
+      "approved": "Godkjent",
+      "at": "kl.",
+      "boundReviewRequired": "Dette kortet samsvarer ikke lenger med den gjeldende forespørselen eller tildelingen, eller handlingen kunne ikke bekreftes. Ingen avgjørelse ble tatt. Se gjennom forespørselen i Z8.",
+      "by": "av",
+      "card": {
+        "absenceTitle": "Forespørsel om godkjenning av fravær",
+        "afternoon": "ettermiddag",
+        "approve": "Godkjenn",
+        "boundHint": "Godkjenn eller avvis avgjør nøyaktig forespørselen som vises ovenfor. Hvis den ble endret eller tildelt på nytt, avgjøres ingenting, og du blir bedt om å se gjennom den i Z8.",
+        "breakAdjustment": "Pausejustering",
+        "breakAdjustmentMayApply": "Kan gjelde når den er godkjent; resultatet registreres separat",
+        "category": "Kategori",
+        "categoryCurrentNames": "Kategori (gjeldende navn)",
+        "claimAmount": "Kravbeløp",
+        "claimType": "Kravtype",
+        "claimTypeMileage": "Kjøregodtgjørelse",
+        "claimTypePerDiem": "Diett",
+        "claimTypeReceipt": "Kvittering",
+        "clockIn": "Stemple inn",
+        "clockOut": "Stemple ut",
+        "clockOutTitle": "Forespørsel om godkjenning av utstempling",
+        "correctionDelete": "Slett denne oppføringen",
+        "correctionEdit": "Endre tidspunkter",
+        "correctionMetadata": "Endre arbeidsdetaljer",
+        "coverage": "Dekning",
+        "currentCategoryName": "Gjeldende kategorinavn",
+        "dates": "Datoer",
+        "destination": "Destinasjon",
+        "durationBefore": "Varighet før",
+        "durationMinutes": "{hours} t {minutes} min",
+        "durationSeconds": "{hours} t {minutes} min {seconds} s",
+        "elapsedTime": "Forløpt tid",
+        "employee": "Ansatt",
+        "entry": "Oppføring",
+        "explicitTimes": "{start} – {end} (lokal tid, tidssone ikke registrert)",
+        "explicitTimesOvernight": "{start} – {end} neste dag (lokal tid, tidssone ikke registrert)",
+        "fullDay": "heldag",
+        "fullDays": "Heldager",
+        "halfDayPeriods": "Starter {start}, slutter {end}",
+        "manualTimeTitle": "Forespørsel om manuell tidsgodkjenning",
+        "morning": "morgen",
+        "noCategory": "Ingen kategori",
+        "none": "Ingen",
+        "notSet": "Ikke angitt",
+        "originalAmount": "Opprinnelig beløp",
+        "project": "Prosjekt",
+        "receiptCount": "{count} vedlagt",
+        "receipts": "Kvitteringer",
+        "reject": "Avvis",
+        "request": "Forespørsel",
+        "requestedBy": "Forespurt av",
+        "reviewOnlyHint": "Godkjenn eller avvis denne forespørselen i Z8. Den kan ikke avgjøres fra denne meldingen.",
+        "stillRunning": "kjører fortsatt",
+        "submittedAt": "Sendt inn",
+        "submittedBy": "Sendt inn av",
+        "submittedDuration": "Innsendt varighet",
+        "timeCorrectionTitle": "Forespørsel om godkjenning av tidskorrigering",
+        "travelExpenseTitle": "Forespørsel om godkjenning av reiseutgifter",
+        "tripDates": "Reisedatoer",
+        "unavailable": "Utilgjengelig",
+        "workLocation": "Arbeidssted",
+        "workLocationHome": "Hjemme",
+        "workLocationOffice": "Kontor",
+        "workLocationOther": "Annet",
+        "workLocationRemote": "Eksternt"
+      },
+      "from": "Fra",
+      "historicalApproval": "Din tidligere registrerte godkjenning ble bekreftet. Dette er et historisk resultat; ingen ny beslutning ble tatt. Se over forespørselen i Z8 for nærmere detaljer.",
+      "historicalRejection": "Ditt tidligere registrerte avslag ble bekreftet. Dette er et historisk resultat; ingen ny beslutning ble tatt. Se over forespørselen i Z8 for nærmere detaljer.",
+      "historicalTitle": "Historisk beslutning",
+      "invocationConflict": "Dette knappetrykket var allerede registrert med en annen handling. Ingen beslutning ble tatt. Se over forespørselen i Z8.",
+      "leave": "Permisjon",
+      "newRequest": "Ny godkjenningsforespørsel",
+      "outcome": {
+        "recordedTitle": "Beslutning registrert",
+        "replayed": "Dette knappetrykket var allerede registrert; dette er det opprinnelige resultatet, og det ble ikke tatt noen ny beslutning.",
+        "requestApprovedTitle": "Forespørsel godkjent",
+        "requestRejectedTitle": "Forespørsel avslått",
+        "stepApprovedTitle": "Godkjenning registrert",
+        "stepRejectedTitle": "Avvisning registrert"
+      },
       "outcomeUnknown": "Resultatet av dette trykket kunne ikke bekreftes. Sjekk forespørselen i Z8 før du trykker igjen.",
+      "period": "Periode",
+      "reason": "Årsak",
+      "reject": "Avvis",
+      "rejected": "Avvist",
       "reviewInZ8": "Gå gjennom i Z8",
       "reviewRequired": "Dette kortet kan ikke fastslå opplysningene som opprinnelig ble sendt inn til gjennomgang. Åpne godkjenningsinnboksen i Z8 for å gå gjennom forespørselen. Det ble ikke tatt noen beslutning fra dette kortet.",
-      "reviewRequiredTitle": "Gjennomgang kreves"
+      "reviewRequiredTitle": "Gjennomgang kreves",
+      "status": {
+        "currentApproved": "Gjeldende forespørselsstatus: godkjent.",
+        "currentRejected": "Gjeldende forespørselsstatus: avvist.",
+        "inactive": "Denne forespørselen krever ikke lenger din avgjørelse fra dette kortet. Ingen avgjørelse ble tatt her. Se gjeldende status i Z8.",
+        "inactiveTitle": "Krever ikke lenger handling",
+        "reassigned": "Denne godkjenningen ble tildelt en annen godkjenner. Ingen avgjørelse er nødvendig fra deg på dette kortet, og ingen ble tatt her. Se gjeldende status i Z8.",
+        "reassignedTitle": "Tildelt på nytt",
+        "withdrawn": "Denne forespørselen ble trukket tilbake. Ingen avgjørelse er nødvendig fra dette kortet.",
+        "withdrawnTitle": "Forespørsel trukket tilbake"
+      },
+      "submitted": "Sendt inn",
+      "timeCorrection": "Korrigering av timeregistrering",
+      "type": "Type",
+      "unboundCallback": "Dette kortet kan ikke fastslå opplysningene som opprinnelig ble vurdert. Ingen avgjørelse ble tatt. Se over forespørselen i Z8."
     },
     "cmd": {
+      "billingRequired": "Fakturering kreves for å fortsette å bruke timeregistrering. Be en organisasjonsadministrator om å oppdatere fakturering.",
       "clockedin": {
         "header": "{active} av {total} teammedlemmer er for øyeblikket stemplet inn:",
         "noneActive": "Ingen av dine {total} teammedlemmer er for øyeblikket stemplet inn.",
@@ -15,24 +117,28 @@
       "clockin": {
         "alreadyIn": "Du er allerede stemplet inn siden {time} ({hours}t {minutes}m).",
         "alreadyInNow": "Du er allerede stemplet inn.",
-        "appendReview": "Tidshistorikken din må gjennomgås før du kan stemple inn. Kontakt administratoren din.",
+        "appendReview": "Tidshistorikken din må gjennomgås før du kan stemple inn. Vennligst kontakt administratoren din.",
         "cannotNow": "Kan ikke stemple inn for øyeblikket.",
         "committed": "Stemplet inn.",
         "failed": "Kunne ikke stemple inn. Prøv igjen.",
+        "holidayBlocked": "Kan ikke stemple inn på en helligdag.",
         "noProfile": "Fant ikke ansattprofil.",
+        "occupied": "Dette tidsrommet overlapper med annet registrert arbeid.",
         "success": "Stemplet inn kl. {time}.",
         "unconfirmed": "Innstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen."
       },
       "clockout": {
-        "appendReview": "Tidshistorikken din må gjennomgås før du kan stemple ut. Kontakt administratoren din.",
-        "cannotNow": "Kan ikke stemple ut for øyeblikket.",
+        "appendReview": "Tidshistorikken din må gjennomgås før du kan stemple ut. Vennligst kontakt administratoren din.",
+        "beforeClockIn": "Utstempling må være etter innstempling.",
         "committed": "Stemplet ut.",
         "failed": "Kunne ikke stemple ut. Prøv igjen.",
         "noProfile": "Fant ikke ansattprofil.",
         "notClockedIn": "Du er for øyeblikket ikke stemplet inn.",
+        "projectNotAllowed": "Kan ikke tilordne til dette prosjektet.",
         "success": "Stemplet ut kl. {time}. Varighet: {hours}t {minutes}m.",
         "successAt": "Stemplet ut kl. {time}.",
-        "unconfirmed": "Utstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen."
+        "unconfirmed": "Utstemplingen din kunne ikke bekreftes. Sjekk statusen din før du prøver igjen.",
+        "workCategoryNotAllowed": "Kan ikke tilordne til denne arbeidskategorien."
       },
       "compliance": {
         "error": "Kunne ikke hente samsvarsdata. Prøv igjen senere.",
@@ -45,6 +151,9 @@
       "help": {
         "footer": "Du kan også motta godkjenningsforespørsler og daglige sammendrag direkte i {platform}.",
         "title": "Z8 Bot-kommandoer"
+      },
+      "language": {
+        "useInline": "Bruk /language i Telegram for å endre språk med inline-knapper."
       },
       "openshifts": {
         "error": "Kunne ikke hente ledige vakter. Prøv igjen senere.",
@@ -64,14 +173,35 @@
         "header": "{outCount} av {total} teammedlemmer er borte i dag:",
         "noneOut": "Alle dine {total} teammedlemmer er tilgjengelige i dag.",
         "noTeam": "Du har ingen teammedlemmer tildelt deg."
-      },
-      "billingRequired": "Fakturering kreves for å fortsette å bruke timeregistrering. Be en organisasjonsadministrator om å oppdatere fakturering."
+      }
+    },
+    "digest": {
+      "clockedIn": "Innstemplet nå:",
+      "compliance": "Samsvar:",
+      "coverageGaps": "Dekningshull:",
+      "everyoneAvailable": "Alle er tilgjengelige",
+      "none": "Ingen",
+      "noOneYet": "Ingen ennå",
+      "openDashboard": "Åpne Z8-dashbord",
+      "openShifts": "Ledige vakter:",
+      "pendingApprovals": "Ventende godkjenninger:",
+      "title": "Daglig sammendrag – {date}",
+      "whosOut": "Hvem som er borte:"
+    },
+    "escalation": {
+      "absenceRequest": "Fraværsforespørsel",
+      "originalApprover": "Opprinnelig godkjenner",
+      "reason": "Denne forespørselen har blitt eskalert til deg fordi den opprinnelige godkjenneren ikke svarte i tide.",
+      "timeCorrection": "Timekorrigering",
+      "title": "Eskalert godkjenningsforespørsel",
+      "waiting": "Venter"
     },
     "language": {
       "changed": "Språk endret til {language}.",
       "prompt": "Velg språk:"
     },
     "static": {
+      "commandError": "Beklager, noe gikk galt under utførelsen av kommandoen. Vennligst prøv igjen.",
       "errorApprovalNotFound": "Denne godkjenningsforespørselen finnes ikke lenger eller har allerede blitt behandlet.",
       "errorApprovalResolved": "Denne godkjenningen har allerede blitt godkjent eller avvist.",
       "errorDefault": "Noe gikk galt. Vennligst prøv igjen.",
@@ -99,6 +229,7 @@
       "setupTitle": "Z8-oppsett kreves",
       "typeHelp": "Skriv /help for å se tilgjengelige kommandoer.",
       "unconfigured": "Organisasjonens Z8-integrasjon settes opp. Vennligst vent mens administratoren fullfører konfigurasjonen.",
+      "unknownCommand": "Ukjent kommando: {command}nnSkriv \"help\" for å se tilgjengelige kommandoer.",
       "welcome": "Velkommen til Z8! For å koble til kontoen din, gå til Innstillinger > Integrasjoner > Telegram i Z8-dashbordet og generer en tilkoblingskode. Send deretter: /link DIN_KODE",
       "welcomeTeams": "Velkommen til Z8! Skriv \"help\" for å se tilgjengelige kommandoer."
     }

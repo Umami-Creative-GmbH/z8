@@ -136,6 +136,11 @@
       "success": "Çalışan başarıyla çıkış yaptı",
       "title": "Çalışan çıkışı yapılsın mı?"
     },
+    "contextMenu": {
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "label": "Zaman girişi işlemleri"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Zaman kayıtları engellendi",
       "category": "Kategori",
@@ -159,35 +164,72 @@
       "title": "Molaya Dönüştürülsün mü?"
     },
     "details": {
+      "automaticClockOut": "Otomatik olarak çıkış yapıldı",
+      "automaticCutoff": "Çıkış zaman sınırı",
+      "automaticLimit": "Kesintisiz çalışma sınırı",
       "baseWorked": "Temel çalışma",
       "blocksTimeEntry": "Zaman takibini engeller",
       "category": "Kategori",
       "credited": "Kredilendirildi",
       "dateRange": "Tarih Aralığı",
       "duration": "Süre",
+      "editedBy": "Düzenleyen",
       "employee": "Çalışan",
       "notes": "Notlar",
+      "pendingApproval": "Onay Bekliyor",
+      "pendingApprovalDescription": "Bu çalışma dönemi yönetici onayı bekliyor. Reddedilirse kaydedilen saatler değişebilir.",
       "project": "Proje",
       "recurring": "Yıllık yinelenen",
+      "rejected": "Reddedildi",
+      "rejectedDescription": "Bu çalışma dönemi değişikliği bir yönetici tarafından reddedildi. Orijinal saatler geri yüklendi.",
+      "source": "Kaynak",
       "status": "Durum",
       "surcharge": "Ek Ücret",
       "surchargeBreakdown": "Ek Ücret Dökümü",
+      "system": "Sistem",
       "time": "Zaman",
       "type": "Tür",
       "workLocation": "Çalışma konumu"
     },
     "edit": {
       "deleteEntry": "Girdiyi sil",
+      "locationRequired": "Bir çalışma konumu seçin.",
+      "noNotes": "Not eklenmedi",
+      "noProject": "Proje atanmadı",
       "notesSaved": "Notlar kaydedildi",
       "notesSaveFailed": "Notlar kaydedilemedi",
       "projectSaved": "Proje güncellendi",
       "projectSaveFailed": "Proje güncellenemedi",
       "split": "Böl",
-      "locationRequired": "Bir çalışma konumu seçin.",
       "time": {
+        "approvalHint": "Bu değişiklik onay için yöneticinize gönderilecek.",
+        "beyondWindow": "{days} günden daha eski kayıtlar yalnızca bir yönetici tarafından düzenlenebilir.",
+        "clockIn": "Giriş",
+        "clockInDate": "Giriş tarihi",
+        "clockInTime": "Giriş saati",
+        "clockOut": "Çıkış",
+        "clockOutDate": "Çıkış tarihi",
+        "clockOutTime": "Çıkış saati",
+        "directHint": "Bu değişiklik hemen uygulanır.",
+        "edit": "Kaydı düzenle",
+        "invalidRange": "Çıkış saati, giriş saatinden sonra olmalıdır.",
         "noChanges": "Önce tarihi, saati veya çalışma konumunu değiştirin.",
-        "edit": "Kaydı düzenle"
-      }
+        "noteLabel": "Not (isteğe bağlı)",
+        "notePlaceholder": "Bu değişiklikle ilgili bir not ekleyin…",
+        "onBehalfHint": "Bu değişiklik çalışanın onay zincirini takip eder. Onaylayan kişi sizseniz hemen uygulanır.",
+        "pendingCorrection": "Bu giriş için yapılan zaman değişikliği zaten onay bekliyor.",
+        "reasonLabel": "Gerekçe",
+        "reasonPlaceholder": "Bu düzeltmenin neden gerekli olduğunu açıklayın…",
+        "reasonRequired": "Lütfen yöneticiniz için bir gerekçe ekleyin.",
+        "saved": "Zaman girişi güncellendi",
+        "saveFailed": "Zaman girişi güncellenemedi",
+        "submitForApproval": "Onaya gönder",
+        "submitOnBehalf": "Değişikliği gönder",
+        "submitted": "Değişiklik yönetici onayına gönderildi",
+        "submittedOnBehalf": "Değişiklik çalışanın onaylayıcısına gönderildi",
+        "timezoneNote": "Saatler çalışanın saat dilimindedir ({timezone})"
+      },
+      "title": "Çalışma Dönemi"
     },
     "employeeSelector": {
       "error": "Ekip üyeleri yüklenemedi",
@@ -202,6 +244,7 @@
     },
     "eventType": {
       "absence": "Devamsızlık",
+      "break": "Mola",
       "holiday": "Tatil",
       "timeEntry": "Zaman Kaydı",
       "workPeriod": "Çalışma Dönemi"
@@ -226,12 +269,15 @@
       "workPeriod": "Çalışma Dönemi",
       "workPeriodPending": "Onay Bekliyor"
     },
+    "loadEventsError": "Takvim etkinlikleri yüklenemedi: {message}",
     "mobileControls": {
       "description": "Hangi takvim girişlerinin görüneceğini seçin.",
       "title": "Filtreler ve Gösterge"
     },
     "monthSummary": {
       "calendarWeek": "Takvim Haftası",
+      "dayEvents": "{count, plural, other {# etkinlik: {titles}} }",
+      "dayLabel": "{date}: {actual} kaydedildi, {required} gerekli, {delta} {status}.",
       "description": "Günlük, haftalık ve aylık politika saatleri",
       "emptyMonth": "Bu ayda politika saati yok",
       "monthTotal": "Ay toplamı",
@@ -239,6 +285,15 @@
       "previousMonth": "Önceki ay",
       "totalDescription": "Politika saatleri ile karşılaştırılan kaydedilmiş zaman",
       "weekSum": "Toplam"
+    },
+    "requirements": {
+      "status": {
+        "met": "gereksinim karşılandı",
+        "missing": "eksik kaydedilen süre",
+        "over": "gereksinimin üzerinde",
+        "under": "gereksinimin altında"
+      },
+      "dayLabel": "{date}: {actual} kaydedildi, {required} gerekli, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Hangi yinelemenin kullanılacağını seçin",
@@ -277,6 +332,12 @@
       "week": "Hafta",
       "year": "Yıl"
     },
+    "workLocation": {
+      "notRecorded": "Kaydedilmedi"
+    },
+    "workPeriod": {
+      "editedBy": "({name} tarafından {date} tarihinde düzenlendi)"
+    },
     "workStatus": {
       "overRequirement": "gereksinimin üzerinde",
       "requiredHoursMissing": "gerekli saatler eksik",
@@ -286,8 +347,10 @@
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
     },
-    "workLocation": {
-      "notRecorded": "Kaydedilmemiş"
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Mola – {duration}"
+      }
     }
   }
 }

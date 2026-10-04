@@ -37,6 +37,7 @@
         "teamPolicyDescription": "Välj en semesterpolicy och ett team. Detta åsidosätter företagets standard för teammedlemmar."
       },
       "carryover": "Sparade dagar",
+      "createDifferentPoliciesForVariousTeamsOrEmployeeGroups": "Skapa olika policyer för olika team eller medarbetargrupper",
       "createPolicy": "Skapa semesterpolicy",
       "createPolicyBtn": "Skapa policy",
       "current": "Aktuell",
@@ -45,6 +46,13 @@
       "description": "Hantera semesterpolicyer och tilldelningar för din organisation",
       "editPolicy": "Redigera \"{name}\"",
       "employees": {
+        "actions": {
+          "edit": "Redigera"
+        },
+        "allowancesForYear": "Semestertilldelning för {{year}}",
+        "defaultAllowanceDescription": "Standardtilldelning: {{days}} dagar per år",
+        "defaultPolicy": "Standard",
+        "description": "Konfigurera anpassad semestertilldelning för enskilda medarbetare",
         "detail": {
           "addManualAdjustment": "Lägg till manuell justering",
           "addManualAdjustmentDescription": "Skapa en ny justeringspost för särskilda omständigheter (t.ex. bonusdagar, korrigeringar). Varje justering registreras i granskningsloggen.",
@@ -91,7 +99,25 @@
         "edit": {
           "description": "Konfigurera anpassad semesterkvot för {{name}}",
           "title": "Redigera semesterkvot"
-        }
+        },
+        "employeeCount": "{{count}} medarbetare",
+        "emptyDescription": "Lägg till medarbetare i din organisation för att hantera deras semestertilldelning.",
+        "emptyTitle": "Inga medarbetare hittades",
+        "noOrgPolicyConfigured": " (Ingen organisationspolicy konfigurerad)",
+        "primaryManager": "Primär",
+        "table": {
+          "actions": "Åtgärder",
+          "adjustments": "Justeringar",
+          "carryover": "Överföring",
+          "customDays": "Anpassade dagar",
+          "defaultDays": "Standarddagar",
+          "employee": "Medarbetare",
+          "managers": "Chefer",
+          "policy": "Policy",
+          "team": "Team",
+          "totalAvailable": "Totalt tillgängligt"
+        },
+        "title": "Medarbetartilldelning"
       },
       "expires": "Går ut",
       "fallsBackToDefault": "Återgår till företagsstandard",
@@ -151,7 +177,8 @@
         "policies": "Policyer"
       },
       "title": "Semesterhantering",
-      "updatePolicy": "Uppdatera policy"
+      "updatePolicy": "Uppdatera policy",
+      "vacationPolicies": "Semesterpolicyer"
     }
   },
   "vacation": {

@@ -2,6 +2,7 @@
 
 import { IconSearch, IconX } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { getApprovalTypeLabels } from "./approval-type-labels";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,12 +29,6 @@ interface ApprovalInboxToolbarProps {
 	supportedTypes: ApprovalInboxType[];
 }
 
-const TYPE_LABELS: Record<ApprovalInboxType, string> = {
-	absence_entry: "Absence Requests",
-	time_entry: "Time Corrections",
-	travel_expense_claim: "Travel Expenses",
-};
-
 const APPROVAL_TYPES: { value: ApprovalInboxType; label: string }[] = [
 	{ value: "absence_entry", label: "Absence Requests" },
 	{ value: "time_entry", label: "Time Corrections" },
@@ -50,6 +45,7 @@ export function ApprovalInboxToolbar({
 	supportedTypes,
 }: ApprovalInboxToolbarProps) {
 	const { t } = useTranslate();
+	const typeLabels = getApprovalTypeLabels(t);
 	const [searchDraft, setSearchDraft] = useState({
 		forSearch: filters.search,
 		value: filters.search ?? "",
@@ -153,7 +149,7 @@ export function ApprovalInboxToolbar({
 								checked={selectedTypeSet.has(type.value)}
 								onCheckedChange={() => handleTypeToggle(type.value)}
 							>
-								{t(`approvals:approvals.types.${type.value}`, TYPE_LABELS[type.value])}
+								{typeLabels[type.value]}
 							</DropdownMenuCheckboxItem>
 						))}
 					</DropdownMenuContent>

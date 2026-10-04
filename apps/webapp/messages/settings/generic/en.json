@@ -8,20 +8,20 @@
         "title": "Contract details"
       },
       "description": "Download your data processing agreement in accordance with Art. 28 GDPR.",
+      "download": {
+        "button": "Download data processing agreement as PDF",
+        "downloaded": "Data processing agreement downloaded",
+        "downloadFailed": "Download failed",
+        "errorOccurred": "An error occurred",
+        "filename": "File: {filename}",
+        "generating": "Generating PDF…"
+      },
       "hosting": {
         "descriptionPrefix": "All data is hosted on servers of ",
         "descriptionSuffix": ". No further sub-processors are used.",
         "title": "Hosting & Sub-processors"
       },
-      "title": "Data Processing Agreement (DPA)",
-      "download": {
-        "downloadFailed": "Download failed",
-        "errorOccurred": "An error occurred",
-        "downloaded": "Data processing agreement downloaded",
-        "filename": "File: {filename}",
-        "generating": "Generating PDF…",
-        "button": "Download data processing agreement as PDF"
-      }
+      "title": "Data Processing Agreement (DPA)"
     },
     "billing": {
       "description": "Manage your subscription, payment methods, and invoices",
@@ -100,7 +100,7 @@
         "description": "Select the data categories you want to export",
         "selectAll": "Select All",
         "selectAtLeastOne": "Please select at least one category",
-        "startExport": "Start Export ({count})",
+        "startExport": "Start Export (${selectedCategories.size})",
         "startingExport": "Starting Export...",
         "submitError": "Failed to start export",
         "submitSuccess": "Export started successfully",
@@ -123,7 +123,7 @@
         "downloadSuccess": "Download started",
         "emptyDescription": "No exports yet",
         "emptyHint": "Create your first export using the form above",
-        "moreCategories": "+{count} more",
+        "moreCategories": "+${exp.categories.length - 3} more",
         "statusCompleted": "Completed",
         "statusFailed": "Failed",
         "statusPending": "Pending",
@@ -148,7 +148,7 @@
         "endpointDescription": "For S3-compatible services like MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Leave blank to keep existing credentials",
-        "lastVerified": "Last verified: {date}",
+        "lastVerified": "Last verified: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Region",
         "regionDescription": "AWS region where your bucket is located",
         "regionPlaceholder": "us-east-1",
@@ -187,10 +187,95 @@
         "save": "Save",
         "sendTest": "Send test"
       },
+      "categories": {
+        "absences": "Absences",
+        "auth": "Account access",
+        "billing": "Billing",
+        "exports": "Exports",
+        "security": "Security",
+        "teams": "Teams",
+        "timecorrections": "Time corrections"
+      },
       "defaultFallback": "Default fallback",
       "defaultFallbackDescription": "If this template uses the system default, Z8 sends the system copy and subject:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Notifies an employee that a manager recorded an absence on their behalf.",
+          "label": "Absence recorded by manager"
+        },
+        "absence-request-approved": {
+          "description": "Notifies an employee that their absence request was approved.",
+          "label": "Absence request approved"
+        },
+        "absence-request-pending-approval": {
+          "description": "Notifies a manager that an absence request needs approval.",
+          "label": "Absence request pending approval"
+        },
+        "absence-request-rejected": {
+          "description": "Notifies an employee that their absence request was rejected.",
+          "label": "Absence request rejected"
+        },
+        "absence-request-submitted": {
+          "description": "Confirms that an employee submitted an absence request.",
+          "label": "Absence request submitted"
+        },
+        "email-verification": {
+          "description": "Sent when a user needs to verify their email address.",
+          "label": "Email verification"
+        },
+        "export-failed": {
+          "description": "Notifies a user that a requested export could not be generated.",
+          "label": "Export failed"
+        },
+        "export-ready": {
+          "description": "Notifies a user that a requested export is ready to download.",
+          "label": "Export ready"
+        },
+        "organization-invitation": {
+          "description": "Sent when a user is invited to join an organization.",
+          "label": "Organization invitation"
+        },
+        "password-reset": {
+          "description": "Sent when a user requests a password reset link.",
+          "label": "Password reset"
+        },
+        "security-alert": {
+          "description": "Notifies a user about an important account security event.",
+          "label": "Security alert"
+        },
+        "team-member-added": {
+          "description": "Notifies a member that they were added to a team.",
+          "label": "Team member added"
+        },
+        "team-member-removed": {
+          "description": "Notifies a member that they were removed from a team.",
+          "label": "Team member removed"
+        },
+        "time-correction-approved": {
+          "description": "Notifies an employee that their time correction was approved.",
+          "label": "Time correction approved"
+        },
+        "time-correction-pending-approval": {
+          "description": "Notifies a manager that a time correction needs approval.",
+          "label": "Time correction pending approval"
+        },
+        "time-correction-rejected": {
+          "description": "Notifies an employee that their time correction was rejected.",
+          "label": "Time correction rejected"
+        }
+      },
       "description": "Customize the emails your organization sends",
       "editBodyBeforeSaving": "Edit the email body before saving a first custom template.",
+      "editor": {
+        "bodyDescription": "Compose the rich HTML email sent for this system event.",
+        "bodyPlaceholder": "Write the operational email body...",
+        "emailBody": "Email body",
+        "fallbackDescription": "Used for validation and as a safe fallback if the visual editor cannot render.",
+        "htmlFallback": "HTML fallback",
+        "loading": "Loading email editor…",
+        "subject": "Subject"
+      },
+      "emailTemplates": "Email templates",
       "empty": "No email templates are available for this organization.",
       "eyebrow": "Operational communications",
       "reset": "Email template reset to system template",
@@ -205,145 +290,12 @@
       "testFailed": "Failed to send test email",
       "testSent": "Test email sent to your account",
       "title": "Email Templates",
-      "editor": {
-        "subject": "Subject",
-        "emailBody": "Email body",
-        "loading": "Loading email editor…",
-        "bodyDescription": "Compose the rich HTML email sent for this system event.",
-        "bodyPlaceholder": "Write the operational email body...",
-        "htmlFallback": "HTML fallback",
-        "fallbackDescription": "Used for validation and as a safe fallback if the visual editor cannot render."
-      },
-      "emailTemplates": "Email templates",
-      "variables": {
-        "allowedVariables": "Allowed variables",
-        "fallbackSafe": "Fallback safe",
-        "insert": "Insert {label}",
-        "description": "Insert only approved placeholders. Values are replaced when the email is sent."
-      },
-      "categories": {
-        "auth": "Account access",
-        "absences": "Absences",
-        "billing": "Billing",
-        "timecorrections": "Time corrections",
-        "teams": "Teams",
-        "security": "Security",
-        "exports": "Exports"
-      },
-      "definitions": {
-        "email-verification": {
-          "label": "Email verification",
-          "description": "Sent when a user needs to verify their email address."
-        },
-        "password-reset": {
-          "label": "Password reset",
-          "description": "Sent when a user requests a password reset link."
-        },
-        "organization-invitation": {
-          "label": "Organization invitation",
-          "description": "Sent when a user is invited to join an organization."
-        },
-        "absence-request-submitted": {
-          "label": "Absence request submitted",
-          "description": "Confirms that an employee submitted an absence request."
-        },
-        "absence-request-pending-approval": {
-          "label": "Absence request pending approval",
-          "description": "Notifies a manager that an absence request needs approval."
-        },
-        "absence-request-approved": {
-          "label": "Absence request approved",
-          "description": "Notifies an employee that their absence request was approved."
-        },
-        "absence-recorded-by-manager": {
-          "label": "Absence recorded by manager",
-          "description": "Notifies an employee that a manager recorded an absence on their behalf."
-        },
-        "absence-request-rejected": {
-          "label": "Absence request rejected",
-          "description": "Notifies an employee that their absence request was rejected."
-        },
-        "time-correction-pending-approval": {
-          "label": "Time correction pending approval",
-          "description": "Notifies a manager that a time correction needs approval."
-        },
-        "time-correction-approved": {
-          "label": "Time correction approved",
-          "description": "Notifies an employee that their time correction was approved."
-        },
-        "time-correction-rejected": {
-          "label": "Time correction rejected",
-          "description": "Notifies an employee that their time correction was rejected."
-        },
-        "team-member-added": {
-          "label": "Team member added",
-          "description": "Notifies a member that they were added to a team."
-        },
-        "team-member-removed": {
-          "label": "Team member removed",
-          "description": "Notifies a member that they were removed from a team."
-        },
-        "security-alert": {
-          "label": "Security alert",
-          "description": "Notifies a user about an important account security event."
-        },
-        "export-ready": {
-          "label": "Export ready",
-          "description": "Notifies a user that a requested export is ready to download."
-        },
-        "export-failed": {
-          "label": "Export failed",
-          "description": "Notifies a user that a requested export could not be generated."
-        }
-      },
       "variableDefinitions": {
-        "userName": {
-          "label": "User name"
-        },
-        "verificationUrl": {
-          "label": "Verification URL"
-        },
-        "appUrl": {
-          "label": "App URL"
-        },
-        "resetUrl": {
-          "label": "Reset URL"
-        },
-        "email": {
-          "label": "Email"
-        },
-        "organizationName": {
-          "label": "Organization name"
-        },
-        "inviterName": {
-          "label": "Inviter name"
-        },
-        "role": {
-          "label": "Role"
-        },
-        "invitationUrl": {
-          "label": "Invitation URL"
-        },
-        "employeeName": {
-          "label": "Employee name"
-        },
-        "startDate": {
-          "label": "Start date"
-        },
-        "endDate": {
-          "label": "End date"
-        },
         "absenceType": {
           "label": "Absence type"
         },
-        "days": {
-          "label": "Days"
-        },
-        "managerName": {
-          "label": "Manager name"
-        },
-        "notes": {
-          "label": "Notes"
+        "addedByName": {
+          "label": "Added by"
         },
         "approvalUrl": {
           "label": "Approval URL"
@@ -351,17 +303,11 @@
         "approverName": {
           "label": "Approver name"
         },
-        "rejectionReason": {
-          "label": "Rejection reason"
+        "appUrl": {
+          "label": "App URL"
         },
-        "date": {
-          "label": "Date"
-        },
-        "originalClockIn": {
-          "label": "Original clock-in"
-        },
-        "originalClockOut": {
-          "label": "Original clock-out"
+        "categories": {
+          "label": "Categories"
         },
         "correctedClockIn": {
           "label": "Corrected clock-in"
@@ -369,60 +315,114 @@
         "correctedClockOut": {
           "label": "Corrected clock-out"
         },
-        "reason": {
-          "label": "Reason"
+        "date": {
+          "label": "Date"
         },
-        "memberName": {
-          "label": "Member name"
-        },
-        "teamName": {
-          "label": "Team name"
-        },
-        "addedByName": {
-          "label": "Added by"
-        },
-        "teamUrl": {
-          "label": "Team URL"
-        },
-        "removedByName": {
-          "label": "Removed by"
-        },
-        "eventType": {
-          "label": "Event type"
-        },
-        "timestamp": {
-          "label": "Timestamp"
-        },
-        "ipAddress": {
-          "label": "IP address"
-        },
-        "userAgent": {
-          "label": "User agent"
-        },
-        "securitySettingsUrl": {
-          "label": "Security settings URL"
-        },
-        "recipientName": {
-          "label": "Recipient name"
-        },
-        "categories": {
-          "label": "Categories"
-        },
-        "fileSize": {
-          "label": "File size"
+        "days": {
+          "label": "Days"
         },
         "downloadUrl": {
           "label": "Download URL"
         },
-        "expiresAt": {
-          "label": "Expires at"
+        "email": {
+          "label": "Email"
+        },
+        "employeeName": {
+          "label": "Employee name"
+        },
+        "endDate": {
+          "label": "End date"
         },
         "errorMessage": {
           "label": "Error message"
         },
+        "eventType": {
+          "label": "Event type"
+        },
+        "expiresAt": {
+          "label": "Expires at"
+        },
+        "fileSize": {
+          "label": "File size"
+        },
+        "invitationUrl": {
+          "label": "Invitation URL"
+        },
+        "inviterName": {
+          "label": "Inviter name"
+        },
+        "ipAddress": {
+          "label": "IP address"
+        },
+        "managerName": {
+          "label": "Manager name"
+        },
+        "memberName": {
+          "label": "Member name"
+        },
+        "notes": {
+          "label": "Notes"
+        },
+        "organizationName": {
+          "label": "Organization name"
+        },
+        "originalClockIn": {
+          "label": "Original clock-in"
+        },
+        "originalClockOut": {
+          "label": "Original clock-out"
+        },
+        "reason": {
+          "label": "Reason"
+        },
+        "recipientName": {
+          "label": "Recipient name"
+        },
+        "rejectionReason": {
+          "label": "Rejection reason"
+        },
+        "removedByName": {
+          "label": "Removed by"
+        },
+        "resetUrl": {
+          "label": "Reset URL"
+        },
         "retryUrl": {
           "label": "Retry URL"
+        },
+        "role": {
+          "label": "Role"
+        },
+        "securitySettingsUrl": {
+          "label": "Security settings URL"
+        },
+        "startDate": {
+          "label": "Start date"
+        },
+        "teamName": {
+          "label": "Team name"
+        },
+        "teamUrl": {
+          "label": "Team URL"
+        },
+        "timestamp": {
+          "label": "Timestamp"
+        },
+        "userAgent": {
+          "label": "User agent"
+        },
+        "userName": {
+          "label": "User name"
+        },
+        "verificationUrl": {
+          "label": "Verification URL"
         }
+      },
+      "variables": {
+        "allowedVariables": "Allowed variables",
+        "description": "Insert only approved placeholders. Values are replaced when the email is sent.",
+        "fallbackSafe": "Fallback safe",
+        "insert": "Insert {label}"
       }
     },
     "error": {
@@ -462,6 +462,8 @@
           "description": "{name} needs a payroll export configuration before it can run.",
           "title": "Scheduled payroll export is blocked"
         },
+        "description": "Export issues that may need administrator attention.",
+        "empty": "No alerts right now",
         "payrollFailed": {
           "description": "The latest payroll export did not complete.",
           "title": "Payroll export failed"
@@ -469,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} did not complete successfully.",
           "title": "Scheduled export failed"
-        }
+        },
+        "title": "Alerts"
       },
       "description": "Monitor payroll, audit, and scheduled export activity for your organization.",
       "errors": {
@@ -478,7 +481,56 @@
         "summary": "Counts are based on the export data that could be loaded.",
         "upcomingRuns": "Scheduled export data is temporarily unavailable."
       },
-      "title": "Export Operations"
+      "links": {
+        "audit": "Open audit export settings",
+        "payroll": "Open payroll export settings",
+        "scheduled": "Open scheduled export settings"
+      },
+      "partialData": "Partial data",
+      "recentActivity": {
+        "description": "Latest payroll, audit, and scheduled export events.",
+        "empty": "No recent export activity",
+        "export": "Export",
+        "link": "Settings",
+        "status": "Status",
+        "title": "Recent activity",
+        "when": "Occurred"
+      },
+      "severity": {
+        "error": "Error",
+        "warning": "Warning"
+      },
+      "status": {
+        "assembling": "Assembling package",
+        "collecting": "Collecting data",
+        "completed": "Completed",
+        "failed": "Failed",
+        "hardening": "Applying hardening",
+        "lineageExpanding": "Expanding lineage",
+        "pending": "Pending",
+        "processing": "Processing",
+        "requested": "Requested"
+      },
+      "summary": {
+        "activeSchedules": "Active schedules",
+        "activeSchedulesDescription": "Enabled recurring export schedules.",
+        "failedRuns": "Failed runs (7 days)",
+        "failedRunsDescription": "Failed payroll, audit, and scheduled runs in the last week.",
+        "lastAuditPack": "Last audit pack",
+        "lastAuditPackDescription": "Most recent audit package generation.",
+        "lastPayrollExport": "Last payroll export",
+        "lastPayrollExportDescription": "Most recent payroll export completion.",
+        "none": "Never"
+      },
+      "title": "Export Operations",
+      "upcomingRuns": {
+        "description": "The next scheduled exports queued for this organization.",
+        "empty": "No upcoming runs",
+        "link": "Settings",
+        "name": "Name",
+        "title": "Upcoming runs",
+        "when": "Scheduled for"
+      }
     },
     "group": {
       "account": "Account",
@@ -520,6 +572,16 @@
         "commitQueued": "Queued {count} accepted rows for commit",
         "committing": "Committing...",
         "description": "Review staged import rows, resolve blocking issues, and commit accepted records when the batch is ready.",
+        "hold": {
+          "appendReviewRequired": "The employee's time history needs review before new entries can be added.",
+          "invalidInterval": "The provider times lack an explicit offset, are not in order, or lie in the future.",
+          "label": "Held for review",
+          "occupancyConflict": "The time overlaps work already recorded for this employee.",
+          "operationCollision": "This row conflicts with its earlier committed import.",
+          "providerDurationMismatch": "The provider duration differs from the start and end times.",
+          "sourceCollision": "This provider record has already been imported.",
+          "unlocatedBreak": "The provider reports breaks without their times, so the worked interval is unknown."
+        },
         "issueGroups": {
           "currentMarkers": "Current rows include {blockingRows} blocking and {warningRows} warning issue markers.",
           "description": "Grouped review areas help keep quality checks visible before accepted rows are committed.",
@@ -533,17 +595,17 @@
           "status": "Status",
           "title": "Rows"
         },
-        "title": "Import Review",
-        "hold": {
-          "appendReviewRequired": "The employee's time history needs review before new entries can be added.",
-          "invalidInterval": "The provider times lack an explicit offset, are not in order, or lie in the future.",
-          "label": "Held for review",
-          "occupancyConflict": "The time overlaps work already recorded for this employee.",
-          "operationCollision": "This row conflicts with its earlier committed import.",
-          "providerDurationMismatch": "The provider duration differs from the start and end times.",
-          "sourceCollision": "This provider record has already been imported.",
-          "unlocatedBreak": "The provider reports breaks without their times, so the worked interval is unknown."
-        }
+        "status": {
+          "accepted": "Accepted",
+          "blocked": "Blocked",
+          "commitFailed": "Commit failed",
+          "committed": "Committed",
+          "committing": "Committing",
+          "needsMapping": "Needs mapping",
+          "rejected": "Rejected",
+          "staged": "Staged"
+        },
+        "title": "Import Review"
       },
       "title": "Import Data"
     },
@@ -889,20 +951,47 @@
       "description": "Manage your password, two-factor authentication, passkeys, and active sessions",
       "title": "Security Settings",
       "twoFactor": {
+        "backupCodesCopied": "Backup codes copied to clipboard",
+        "backupCodesRegenerated": "Backup codes regenerated",
+        "cancel": "Cancel",
         "confirmPasswordToEnable": "Please confirm your password to enable two-factor authentication",
         "confirmPasswordToRegenerate": "Please confirm your password to regenerate backup codes",
         "continue": "Continue",
+        "copyCodes": "Copy Codes",
         "description": "Add an extra layer of security to your account",
         "disable": "Disable",
+        "disable2fa": "Disable 2FA",
+        "disableDescription": "This will remove the extra layer of security from your account. Please enter your password to confirm.",
+        "disabledToast": "Two-factor authentication disabled",
+        "disableFailed": "Failed to disable 2FA",
+        "disableTitle": "Disable Two-Factor Authentication?",
         "enable": "Enable Two-Factor Authentication",
+        "enabledToast": "Two-factor authentication enabled",
+        "enablePasswordRequiredDescription": "Please enter your password to enable 2FA",
+        "enterAuthenticatorCode": "Enter the 6-digit code from your authenticator app",
         "enterPasswordTitle": "Enter Your Password",
+        "enterSixDigitCode": "Please enter a 6-digit code",
+        "invalidCode": "Invalid code",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Enter your password...",
+        "passwordRequired": "Password required",
         "regenerateBackupCodes": "Regenerate Backup Codes",
         "regenerateCodes": "Regenerate Codes",
+        "regenerateFailed": "Failed to regenerate backup codes",
+        "saveBackupCodesDescription": "Keep these codes in a safe place. You can use them to access your account if you lose access to your authenticator app. Each code can only be used once.",
+        "saveBackupCodesTitle": "Save Your Backup Codes",
+        "savedCodes": "I've Saved These Codes",
+        "scanQrCode": "Scan the QR code with your authenticator app",
+        "setupFailed": "Failed to setup 2FA",
+        "setupTitle": "Setup Two-Factor Authentication",
         "status": {
           "disabled": "Disabled",
           "enabled": "Enabled"
         },
-        "title": "Two-Factor Authentication"
+        "title": "Two-Factor Authentication",
+        "unexpectedError": "An unexpected error occurred",
+        "verificationFailed": "Verification failed",
+        "verifyAndEnable": "Verify and Enable"
       }
     },
     "sessions": {
@@ -1106,8 +1195,14 @@
       "title": "Wellness Settings"
     },
     "workBalanceRecalculation": {
+      "confirm": "Confirm Recalculation",
+      "confirmMessage": "Confirm before queueing this recalculation.",
+      "description": "Queue a full rebuild of monthly and yearly work-balance aggregates for {employeeName}. This maintenance task runs in the background and does not block this page.",
+      "queued": "Recalculation Queued",
+      "recalculate": "Recalculate Work Balance",
       "requestError": "Failed to queue work balance recalculation",
-      "requestSuccess": "Work balance recalculation queued"
+      "requestSuccess": "Work balance recalculation queued",
+      "title": "Work Balance Recalculation"
     },
     "workerQueue": {
       "cards": {

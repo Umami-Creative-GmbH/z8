@@ -63,6 +63,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"timeTracking.notesSaved",
 		"timeTracking.project",
 		"timeTracking.readyToClockIn",
+		"timeTracking.restPeriodWarning",
+		"timeTracking.restPeriodWarningMessage",
 		"timeTracking.selectCategory",
 		"timeTracking.selectProject",
 		"timeTracking.startedAt",

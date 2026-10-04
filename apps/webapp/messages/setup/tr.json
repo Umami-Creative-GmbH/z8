@@ -22,6 +22,15 @@
     "continue_to_sign_in": "Oturum Açmaya Devam Et",
     "creating_account": "Yönetici hesabınız oluşturuluyor...",
     "description": "Platformunuz için ilk yönetici hesabını kurun. Bu hesap tam sistem erişimine sahip olacak ve kuruluş hesaplarından ayrı olacaktır.",
+    "error": {
+      "password_lowercase": "Şifre en az bir küçük harf içermelidir",
+      "password_max_length": "Şifre en fazla 128 karakter olmalıdır",
+      "password_min_length": "Şifre en az 12 karakter olmalıdır",
+      "password_number": "Şifre en az bir rakam içermelidir",
+      "password_required": "Şifre zorunludur",
+      "passwords_mismatch": "Şifreler eşleşmiyor",
+      "password_uppercase": "Şifre en az bir büyük harf içermelidir"
+    },
     "field": {
       "confirm_password": "Şifreyi Onayla",
       "confirm_password_placeholder": "Şifrenizi onaylayın",

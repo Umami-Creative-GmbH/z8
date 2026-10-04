@@ -19,9 +19,6 @@
     "enabled": "Webhook etkinleştirildi",
     "events": "Olaylar",
     "form": {
-      "events-required": "En az bir olay seçilmelidir",
-      "name-required": "Ad gereklidir",
-      "url-required": "URL gereklidir",
       "create": "Webhook Oluştur",
       "create-description": "Olay bildirimlerini almak için yeni bir webhook uç noktası yapılandırın.",
       "create-title": "Webhook Oluştur",
@@ -32,11 +29,14 @@
       "edit-title": "Webhook'u Düzenle",
       "events": "Alınacak olaylar",
       "events-hint": "Seçilen olaylar: {{count}}",
+      "events-required": "En az bir olay seçilmelidir",
       "name": "Ad",
       "name-placeholder": "Webhook'um",
+      "name-required": "Ad gereklidir",
       "select-all": "Tümünü Seç",
       "url": "Uç Nokta URL'si",
-      "url-hint": "Üretim ortamında HTTPS gereklidir. Olaylar POST istekleri olarak gönderilecektir."
+      "url-hint": "Üretim ortamında HTTPS gereklidir. Olaylar POST istekleri olarak gönderilecektir.",
+      "url-required": "URL gereklidir"
     },
     "last-delivery": "Son",
     "logs": {

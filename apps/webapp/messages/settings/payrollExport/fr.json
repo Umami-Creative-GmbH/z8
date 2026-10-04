@@ -21,13 +21,24 @@
       },
       "description": "Exporter les périodes de travail vers des systèmes de paie comme DATEV ou Personio",
       "export": {
+        "allEmployees": "Tous les employés",
+        "allProjects": "Tous les projets",
+        "allTeams": "Toutes les équipes",
         "asyncDescription": "Votre export est en cours de traitement. Consultez l'onglet historique pour suivre la progression.",
         "asyncStarted": "Export démarré",
         "customRange": "Plage personnalisée",
         "dateRange": "Plage de dates",
         "description": "Exporter les périodes de travail et les absences au format DATEV Lohn & Gehalt",
+        "employees": "Employés",
         "endDate": "Date de fin",
         "error": "Échec de l'export",
+        "exportButtonDatev": "Exporter vers DATEV",
+        "exportButtonLexware": "Exporter vers Lexware",
+        "exportButtonPersonio": "Exporter vers Personio",
+        "exportButtonSage": "Exporter vers Sage",
+        "exportButtonSuccessFactorsApi": "Exporter vers SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Exporter le CSV SAP SuccessFactors",
+        "exportButtonWorkday": "Exporter vers Workday",
         "exporting": "Export en cours…",
         "filters": "Filtres (optionnel)",
         "format": "Format d'export",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Mois",
         "monthSelection": "Sélectionner le mois",
+        "projects": "Projets",
         "startDate": "Date de début",
         "success": "Exportation téléchargée",
+        "teams": "Équipes",
         "title": "Exporter les données de paie",
         "unavailable": {
           "missingConfiguration": "configuration",
           "missingCredentials": "identifiants"
         },
-        "year": "Année",
-        "allEmployees": "Tous les employés",
-        "allProjects": "Tous les projets",
-        "allTeams": "Toutes les équipes",
-        "employees": "Employés",
-        "employeesSelected": "{{count}} sélectionné(s)",
-        "exportButtonDatev": "Exporter vers DATEV",
-        "exportButtonLexware": "Exporter vers Lexware",
-        "exportButtonPersonio": "Exporter vers Personio",
-        "exportButtonSage": "Exporter vers Sage",
-        "exportButtonSuccessFactorsApi": "Exporter vers SAP SuccessFactors (API)",
-        "exportButtonSuccessFactorsCsv": "Exporter SAP SuccessFactors CSV",
-        "exportButtonWorkday": "Exporter vers Workday",
-        "projects": "Projets",
-        "projectsSelected": "{{count}} sélectionné(s)",
-        "teams": "Équipes",
-        "teamsSelected": "{{count}} sélectionné(s)"
+        "year": "Année"
       },
       "history": {
         "description": "Voir et télécharger les exportations DATEV précédentes",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Consulter la boîte de réception des approbations",
+        "payrollExport": "Ouvrir les paramètres d'exportation de la paie",
+        "timeTracking": "Vérifier le suivi du temps",
+        "travelExpenses": "Vérifier les frais de déplacement"
+      },
+      "affectedEmployees": {
+        "name": "Employé",
+        "noNumber": "Non défini",
+        "number": "Numéro d'employé"
+      },
+      "checks": {
+        "count": "Nombre"
+      },
+      "checkStatus": {
+        "fail": "Bloqué",
+        "pass": "Prêt",
+        "unavailable": "Impossible de vérifier",
+        "warning": "Avertissement"
+      },
       "description": "Vérifiez si une période de paie est prête avant d'exporter les données de temps, d'absence et de paie.",
+      "openPayrollExport": "Ouvrir l'exportation de la paie",
+      "status": {
+        "blocked": "Bloqué",
+        "ready": "Prêt pour la paie",
+        "unavailable": "Impossible de vérifier"
+      },
+      "summary": {
+        "affectedEmployees": "Employés concernés",
+        "affectedEmployeesDescription": "Employés associés à des éléments de préparation en attente.",
+        "blockers": "Éléments bloquants",
+        "blockersDescription": "Vérifications requises bloquant actuellement l'exportation.",
+        "exportTargets": "Destinations d'exportation configurées",
+        "exportTargetsDescription": "Destinations d'exportation de paie actives.",
+        "period": "Période",
+        "periodDescription": "Période de paie en cours de vérification.",
+        "status": "Statut",
+        "statusDescription": "État de préparation global de l'export de paie.",
+        "warnings": "Avertissements",
+        "warningsDescription": "Problèmes non bloquants à examiner avant l'exportation."
+      },
       "title": "Préparation de la paie"
     },
     "workDiagnostics": {
+      "allEmployees": "Afficher tous les employés",
+      "append": {
+        "continued": "Employés poursuivant à partir d'un ancrage approuvé : {count}. L'historique antérieur à chaque ancrage n'est pas vérifié.",
+        "counts": "{verified} sur {total} employés ont une traçabilité vérifiée à partir des preuves enregistrées.",
+        "description": "Une revendication distincte de la complétude : traçabilité et continuité des saisies de temps enregistrées. Elle ne détermine pas la préparation de la paie.",
+        "interruptions": "Interruptions de continuité",
+        "issues": "Problèmes de traçabilité et candidats",
+        "limitations": "Limites",
+        "title": "Assurance de la chaîne de saisie des temps"
+      },
+      "blocking": "Bloque la complétude",
       "description": "Rechercher les relevés de temps manquants ou en conflit, ainsi que les problèmes de chaîne de saisie des temps",
+      "evidence": {
+        "entries": "Saisies de temps",
+        "timeRecords": "Enregistrements de temps",
+        "workPeriods": "Périodes de travail"
+      },
+      "findings": {
+        "description": "Chaque constat constitue une preuve en lecture seule. Seule la réparation des lacunes historiques ci-dessous comble les valeurs manquantes, à partir de preuves et avec une autorisation distincte ; toute modification du travail établi nécessite un examen autorisé séparément.",
+        "employees": "Employés",
+        "empty": "Aucun travail historique manquant, en conflit ou suspect dans ce périmètre.",
+        "evidence": "Preuves",
+        "finding": "Constat",
+        "provenance": "Provenance",
+        "title": "Constats",
+        "treatment": "Traitement"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Travail en attente sans demande d'approbation",
+        "approvalStateConflict": "Les états d'approbation ne concordent pas",
+        "canonicalDetailMissing": "Détails du travail de l'enregistrement de temps manquants",
+        "canonicalLinkMissing": "Lien de l'enregistrement de temps manquant",
+        "canonicalLinkShared": "Plusieurs périodes de travail sont liées à un même enregistrement de temps",
+        "canonicalLinkUnresolved": "Enregistrement de temps lié introuvable",
+        "canonicalMissing": "Enregistrement de temps manquant",
+        "captureInferred": "Fuseau horaire déduit après l'événement",
+        "deletedWorkPayable": "Le travail supprimé comporte toujours un enregistrement de temps rémunérable",
+        "durationConflict": "Les durées enregistrées ne concordent pas",
+        "durationMissing": "Durée enregistrée manquante",
+        "emptyInterval": "L'heure de début est égale à l'heure de fin",
+        "endpointConflict": "Les heures de début ou de fin ne concordent pas",
+        "endpointEntryMissing": "Pointage de sortie manquant",
+        "endpointEntrySuperseded": "La période de travail renvoie à un pointage remplacé",
+        "endpointEntryUnresolved": "Pointage introuvable",
+        "endpointMissing": "Heure de fin manquante",
+        "manualEvidenceUnreadable": "Justificatif de soumission manuelle illisible",
+        "manualHolidayCheckDatesDiffer": "La vérification des jours fériés a utilisé des dates différentes de celles du travail",
+        "manualInterpretationAmbiguous": "Heure de saisie manuelle sautée ou répétée en raison d'un changement d'heure",
+        "manualInterpretationMismatch": "Saisie manuelle enregistrée à des heures différentes de celles soumises",
+        "manualTrimmed": "Saisie manuelle raccourcie lors de l'enregistrement",
+        "manualZoneUnrecorded": "Fuseau horaire de la saisie manuelle non enregistré",
+        "metadataCanonicalOnly": "Affectation uniquement sur l'enregistrement de temps",
+        "metadataConflict": "Discordance des affectations",
+        "metadataMissing": "Affectation manquante sur l'enregistrement de temps",
+        "multipleActiveWork": "Plus d'une période de travail active",
+        "negativeDuration": "Durée négative",
+        "openStateConflict": "Discordance entre l'état ouvert et fermé",
+        "overlappingWork": "Chevauchement de périodes de travail",
+        "ownershipConflict": "Conflit d'attribution",
+        "relinkedCanonicalResidue": "Enregistrement de temps orphelin après réassociation",
+        "reversedInterval": "Fin antérieure au début",
+        "storedElapsedDiscrepancy": "Les minutes enregistrées diffèrent du temps écoulé",
+        "workOutsideOrganizationEmployees": "Travail attribué en dehors des employés de l'organisation"
+      },
+      "nextMonth": "Mois suivant",
+      "ownerUnknown": "Propriétaire non établi",
       "pageDescription": "Diagnostics au niveau de l'enregistrement pour l'historique du travail : représentations manquantes ou en conflit, provenance de l'adoption, anomalies suspectées de saisie manuelle et assurance de la chaîne de saisie des temps.",
+      "previousMonth": "Mois précédent",
       "proposals": {
         "addChange": "Ajouter une modification",
         "after": "Nouvelle valeur",
@@ -370,6 +473,12 @@
         "valueRequired": "Saisissez la nouvelle valeur.",
         "work": "Période de travail"
       },
+      "provenance": {
+        "ambiguous": "Provenance ambiguë",
+        "freshBackdated": "Écriture rétroactive récente",
+        "postAdoption": "Écriture postérieure à l'adoption",
+        "preAdoption": "Historique antérieur à l'adoption"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Auteur du pointage de sortie",
@@ -413,7 +522,37 @@
         "title": "Correction des écarts historiques",
         "work": "Période de travail"
       },
-      "title": "Diagnostics du travail"
+      "shape": {
+        "conflicting": "En conflit",
+        "disclosure": "Divulgation",
+        "missing": "Manquant",
+        "suspectedDefect": "Anomalie suspectée"
+      },
+      "status": {
+        "complete": "Complet",
+        "completeDescription": "Aucun élément probant pertinent manquant ou en conflit, y compris les travaux en attente, rejetés et en cours.",
+        "incomplete": "Incomplet",
+        "incompleteDescription": "Les données non affectées peuvent être examinées, mais ce périmètre n'est pas complet.",
+        "widenedEmployees": "Les dates n'ont pas pu être établies, les employés concernés sont donc incertains pour chaque période.",
+        "widenedOrganization": "La propriété n'a pas pu être établie, l'ensemble de l'organisation est donc incertain."
+      },
+      "summary": {
+        "affected": "Employés concernés",
+        "affectedDescription": "Employés dont le travail dans ce périmètre ne peut pas être établi.",
+        "blocking": "Constats bloquants",
+        "blockingDescription": "Éléments probants manquants ou contradictoires rendant le travail concerné incertain.",
+        "scope": "Périmètre",
+        "scopeAll": "Tous les employés. Les dates couvrent les jours calendaires de chaque fuseau horaire.",
+        "status": "Exhaustivité"
+      },
+      "title": "Diagnostics du travail",
+      "treatment": {
+        "disclosed": "Limitation déclarée",
+        "historicalGap": "Lacune historique",
+        "integrityIncident": "Incident d'intégrité",
+        "investigationRequired": "Enquête requise",
+        "reviewRequired": "Examen requis"
+      }
     }
   }
 }

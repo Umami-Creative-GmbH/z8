@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Abonnements, Umsatz und Zahligsstatus überwache",
+      "failedToSyncSeats": "Synchronisierig vo de Plätz fählgschlage",
       "intervals": {
         "month": "Monatlich",
         "year": "Jährlich"
@@ -102,6 +103,7 @@
         "trialing": "Im Test",
         "trialingDescription": "In der Testphase"
       },
+      "seatsSynced": "Plätz synchronisiert",
       "sections": {
         "recentSubscriptions": "Neueste Abonnemente",
         "revenueMetrics": "Umsatzkennzahlen"
@@ -112,6 +114,7 @@
         "pastDue": "Überfällig",
         "trialing": "Test"
       },
+      "syncSeatsFor": "Plätz für {organizationName} synchronisiere",
       "table": {
         "actions": "Aktione",
         "billing": "Abrechnig",

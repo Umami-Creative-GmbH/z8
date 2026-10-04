@@ -21,6 +21,22 @@
       "managerDescription": "Zarządzaj i planuj zmiany pracowników",
       "title": "Harmonogram zmian"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Potwierdź i opublikuj",
+      "acknowledgmentDescription": "Publikacja zostanie kontynuowana, ale ten grafik zawiera ostrzeżenia dotyczące zgodności, które należy najpierw potwierdzić.",
+      "button": "Opublikuj ({count})",
+      "cancel": "Anuluj",
+      "complianceAcknowledgmentRequired": "Wymagane potwierdzenie zgodności",
+      "complianceWarnings": "{count, plural, one {Kontrole zgodności wykryły # ostrzeżenie; musisz je potwierdzić przed publikacją.} few {Kontrole zgodności wykryły # ostrzeżenia; musisz je potwierdzić przed publikacją.} other {Kontrole zgodności wykryły # ostrzeżeń; musisz je potwierdzić przed publikacją.} }",
+      "coverageWarning": "Niektóre bloki czasowe nie spełniają minimalnych wymagań kadrowych.",
+      "maxHours": "Maks. liczba godzin: {count}",
+      "notifyEmployees": "{count, plural, one {Opublikuj # zmianę w wersji roboczej i powiadom pracowników} few {Opublikuj # zmiany w wersji roboczej i powiadom pracowników} other {Opublikuj # zmian w wersji roboczej i powiadom pracowników} }",
+      "overtime": "Nadgodziny: {count}",
+      "publishing": "Publikowanie…",
+      "restTime": "Czas odpoczynku: {count}",
+      "totalFindings": "{count, plural, one {Łącznie # ustalenie} few {Łącznie # ustalenia} other {Łącznie # ustaleń} }",
+      "warningsDetectedBeforePublish": "Ostrzeżenia wykryte przed publikacją"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "Wykryto {count} problem(ów) przed publikacją.",

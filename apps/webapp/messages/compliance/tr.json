@@ -55,6 +55,9 @@
           "restPeriodViolations": "Dinlenme süresi ihlalleri: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Son yenileme: {time}"
+      },
       "links": {
         "inspectCompliance": "Uyumluluğu incele",
         "inspectInAuditLog": "Denetim Günlüğünde incele",
@@ -62,6 +65,11 @@
         "openAuditLog": "Denetim Günlüğünü Aç",
         "openComplianceSettings": "Uyumluluk Ayarlarını Aç",
         "reviewAuditExport": "Denetim dışa aktarımını incele"
+      },
+      "overview": "Uyumluluk genel bakışı",
+      "recentEvents": {
+        "empty": "Yakın zamanda kritik bir olay tespit edilmedi.",
+        "title": "Son Kritik Olaylar"
       },
       "sections": {
         "accessControls": {

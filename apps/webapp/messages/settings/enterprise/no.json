@@ -21,7 +21,9 @@
         "description": "Opprett din første API-nøkkel for å aktivere programmatisk tilgang til organisasjonen din.",
         "title": "Ingen API-nøkler"
       },
+      "expired": "Utløpt",
       "expires": "Utløper",
+      "expiresInDays": "Utløper om {days}d",
       "form": {
         "create": "Opprett nøkkel",
         "enabled": "Nøkkel aktivert",
@@ -47,6 +49,8 @@
       "keyCopied": "API-nøkkel kopiert til utklippstavlen",
       "lastUsed": "Sist brukt",
       "name": "Navn",
+      "neverExpires": "Utløper aldri",
+      "noPermissions": "Ingen tillatelser",
       "prefix": "Nøkkelprefiks",
       "prefixCopied": "Nøkkelprefiks kopiert",
       "scopes": "Tillatelser",
@@ -264,6 +268,9 @@
         "vaultSealedDesc": "HashiCorp Vault er forseglet. Vennligst opphev forseglingen for å lagre hemmeligheter.",
         "vaultUnavailable": "Vault utilgjengelig",
         "vaultUnavailableDesc": "HashiCorp Vault er ikke tilgjengelig. Hemmeligheter kan ikke lagres sikkert."
+      },
+      "emailConfig": {
+        "yourCompanyName": "Ditt firmanavn"
       },
       "enableProviderHelp": "Aktiver eller deaktiver denne leverandøren",
       "identity": {
@@ -564,6 +571,7 @@
           "customDomain": "Brukere som logger på via ditt tilpassede domene vil bruke din OAuth-app"
         },
         "keyId": "Nøkkel-ID",
+        "pasteYourP8PrivateKeyContents": "Lim inn innholdet i den private .p8-nøkkelen din",
         "privateKey": "Privat nøkkel (.p8)",
         "removed": "{provider}-OAuth fjernet",
         "removeDialogDescription": "Er du sikker på at du vil fjerne denne OAuth-konfigurasjonen? Brukere vil falle tilbake til de delte OAuth-påloggingsopplysningene (hvis tilgjengelig).",

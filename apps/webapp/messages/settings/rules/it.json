@@ -114,6 +114,12 @@
         "none": "Nessun canale di messaggistica collegato.",
         "title": "Preferenze di recapito del canale"
       },
+      "conflict": {
+        "differingTimeouts": "I canali utilizzavano timeout diversi; quello più breve è diventato la finestra di risposta.",
+        "disabledActiveSource": "Alcuni canali attivi avevano le escalation disattivate. Continuano a non recapitare messaggi di escalation.",
+        "inactiveSourceEnabled": "Alcuni canali inattivi avevano le escalation attivate. Non sono stati conteggiati ai fini del criterio.",
+        "invalidTimeout": "Un canale aveva un timeout non valido e non è stato utilizzato per la finestra di risposta."
+      },
       "description": "Verifica i criteri di escalation dell'organizzazione, come sono stati migrati dalle impostazioni del canale e le condizioni che richiedono un responsabile dell'approvazione.",
       "dispose": {
         "confirm": "Chiudi elemento",
@@ -121,6 +127,12 @@
         "noteLabel": "Nota sull'esito",
         "noteRequired": "Inserisci una nota sull'esito.",
         "title": "Chiudi elemento di attenzione"
+      },
+      "event": {
+        "alerted": "Amministratori avvisati",
+        "disposed": "Archiviato",
+        "raised": "Segnalato",
+        "resolved": "Risolto"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Impossibile caricare le impostazioni di escalation.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Inserisci un numero intero di ore compreso tra 1 e 720.",
         "windowLabel": "Finestra di risposta"
       },
+      "reason": {
+        "ambiguousHistory": "Cronologia delle escalation ambigua",
+        "deliveryExhausted": "Tentativi di recapito esauriti",
+        "deliveryUnavailable": "Nessuna destinazione di recapito disponibile",
+        "noEligibleBackup": "Nessun approvatore di backup idoneo",
+        "replacementOverdue": "L'approvatore sostitutivo è in ritardo",
+        "unsupportedRoute": "Percorso decisionale non supportato"
+      },
       "revisions": {
         "changedBy": "Modificato da",
         "migration": "Migrazione delle impostazioni",
@@ -207,16 +227,26 @@
       "activePolicyTableDescription": "Le policy vengono valutate per priorità; la prima policy attiva corrispondente fornisce la catena di approvazione.",
       "activeStatus": "Stato attivo",
       "addPolicy": "Aggiungi policy",
+      "addStage": "Aggiungi fase",
       "approvalType": {
         "absence": "Assenza",
         "complianceException": "Eccezione di conformità",
-        "manualTimeSubmission": "Inserimento manuale delle ore",
-        "policyClockOut": "Uscita con timbratura secondo la policy",
+        "manualTimeSubmission": "Invio manuale dell'orario",
+        "policyClockOut": "Timbratura di uscita da policy",
         "shiftRequest": "Richiesta di turno",
         "timeCorrection": "Correzione orario",
         "travelExpense": "Spesa di viaggio"
       },
       "approvalTypes": "Tipi di approvazione",
+      "approver": "Approvatore",
+      "approverEmployeeId": "ID dipendente dell'approvatore",
+      "approverEmployeeIdPlaceholder": "Esempio: employee_123…",
+      "approverType": {
+        "directManager": "Responsabile diretto",
+        "managerManager": "Responsabile del responsabile",
+        "organizationAdmin": "Amministratore dell'organizzazione",
+        "specificEmployee": "Dipendente specifico"
+      },
       "conditionsCount": "Conteggio condizioni",
       "createPolicy": "Crea politica di approvazione",
       "defaultStageLabel": "Revisione del manager",
@@ -225,9 +255,25 @@
       "dialogDescription": "Definisci quando si applica una catena di approvazione e quali approvatori gestiscono ogni fase sequenziale.",
       "editPolicy": "Modifica politica",
       "empty": "Nessuna politica di approvazione configurata. Crea una politica per definire la tua prima catena di approvazione.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Invia la richiesta al responsabile predefinito quando questa fase non riesce a determinare un approvatore.",
+          "label": "Responsabile predefinito"
+        },
+        "fail": {
+          "description": "Rifiuta la richiesta quando questa fase non riesce a determinare un approvatore.",
+          "label": "Rifiuta richiesta"
+        },
+        "label": "Comportamento di fallback",
+        "organizationAdmin": {
+          "description": "Invia la richiesta a un amministratore dell'organizzazione quando questa fase non riesce a determinare un approvatore.",
+          "label": "Amministratore dell'organizzazione"
+        }
+      },
       "loadFailed": "Impossibile caricare le politiche di approvazione.",
       "loading": "Caricamento politiche in corso…",
       "namePlaceholder": "Esempio: Escalation assenze…",
+      "noStages": "Nessuna fase di approvazione ancora configurata.",
       "preview": {
         "ariaLabel": "Anteprima catena di approvazione",
         "badge": "Shell di anteprima",
@@ -242,7 +288,11 @@
         "title": "Riepilogo anteprima catena"
       },
       "priority": "Priorità",
+      "removeStage": "Rimuovi fase",
+      "stageNumber": "Fase {number}",
+      "stages": "Fasi di approvazione",
       "stagesCount": "Conteggio fasi",
+      "stagesDescription": "Le fasi vengono eseguite in ordine; ogni richiesta avanza solo dopo che l'approvatore corrente l'ha accettata.",
       "status": {
         "active": "Attiva",
         "inactive": "Inattiva"
@@ -255,21 +305,6 @@
       "validation": {
         "activePolicyRequiresStage": "Le politiche attive richiedono almeno una fase di approvazione.",
         "specificEmployeeRequiresId": "Le fasi per dipendenti specifici richiedono un ID dipendente approvatore."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Invia la richiesta al responsabile predefinito quando questa fase non riesce a individuare un approvatore.",
-          "label": "Responsabile predefinito"
-        },
-        "fail": {
-          "description": "Rifiuta la richiesta quando questa fase non riesce a individuare un approvatore.",
-          "label": "Rifiuta richiesta"
-        },
-        "label": "Comportamento alternativo",
-        "organizationAdmin": {
-          "description": "Invia la richiesta a un amministratore dell'organizzazione quando questa fase non riesce a individuare un approvatore.",
-          "label": "Amministratore dell'organizzazione"
-        }
       }
     },
     "changePolicies": {
@@ -659,6 +694,7 @@
       "createCategoriesFirst": "Crea prima le categorie nella scheda Categorie",
       "createCategory": "Crea categoria",
       "createCategoryDescription": "Crea una nuova categoria di lavoro che può essere assegnata a più set",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Crea set di categorie con fattori temporali diversi per vari tipi di lavoro",
       "createFirstSet": "Crea primo set",
       "createSet": "Crea set",
       "createSetDescription": "Crea un nuovo set di categorie e seleziona quali categorie includere",

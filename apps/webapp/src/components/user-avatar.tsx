@@ -30,14 +30,14 @@ function getClockStatusBadge(
 ) {
 	if (clockStatus === "clocked-in") {
 		return {
-			label: t("common:presence.clockedIn", "Clocked in"),
+			label: t("presence.clockedIn", "Clocked in"),
 			className: "bg-emerald-500",
 		};
 	}
 
 	if (clockStatus === "clocked-out") {
 		return {
-			label: t("common:presence.clockedOut", "Clocked out"),
+			label: t("presence.clockedOut", "Clocked out"),
 			className: "bg-red-500",
 		};
 	}

@@ -19,6 +19,7 @@ const NAMESPACE_PREFIXES = {
 	workBalance: "common",
 	colors: "common",
 	common: "common",
+	presence: "common",
 	employeeSelect: "common",
 	generic: "common",
 	nav: "common",
@@ -132,6 +133,7 @@ const DEFAULT_NAMESPACE = "common";
 // A dotted translation key, optionally namespace-prefixed ("approvals:approvals.title").
 // Segments may contain "_" and "-" (e.g. "...employeeOffboardingReview.clock_out").
 const KEY_SOURCE = "(?:[a-zA-Z][\\w/-]*:)?[a-zA-Z][\\w-]*(?:\\.[\\w-]+)+";
+const KEY_LITERAL = new RegExp(`^${KEY_SOURCE}$`);
 
 /**
  * Infer namespace from a translation key
@@ -278,6 +280,14 @@ function toKeyResult(rawKey, defaultValue, line) {
 	return { keyName: resolved.keyName, defaultValue, namespace: resolved.namespace, line };
 }
 
+function isKnownKeyLiteral(value) {
+	return (
+		typeof value === "string" &&
+		KEY_LITERAL.test(value) &&
+		resolveKeyAndNamespace(value).hasKnownNamespace
+	);
+}
+
 /**
  * Extract `{ key: "some.key", fallback: "Default" }` entries from lookup tables of any name,
  * e.g. `const PERIOD_TEXT: Record<DayPeriod, { key: string; fallback: string }> = {...}`.
@@ -314,6 +324,9 @@ function extractKeyFallbackTuples(code) {
 
 	for (let match = pattern.exec(code); match !== null; match = pattern.exec(code)) {
 		const defaultValue = extractString(code, match.index + match[0].length)?.value;
+		// Catalog projections list paths, including whole subtrees. Treating their next
+		// path as fallback copy creates a scalar key that collides with its descendants.
+		if (isKnownKeyLiteral(defaultValue)) continue;
 		const result = toKeyResult(match[2], defaultValue, getLineNumber(code, match.index));
 		if (result) results.push(result);
 	}
@@ -344,6 +357,7 @@ function extractNamespacedKeyLiterals(code) {
 		const defaultValue = match[3]
 			? extractString(code, match.index + match[0].length)?.value
 			: undefined;
+		if (isKnownKeyLiteral(defaultValue)) continue;
 		const result = toKeyResult(match[2], defaultValue, getLineNumber(code, match.index));
 		if (result) results.push(result);
 	}

@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Overvåk abonnementer, inntekter og betalingsstatus",
+      "failedToSyncSeats": "Kunne ikke synkronisere lisenser",
       "intervals": {
         "month": "Månedlig",
         "year": "Årlig"
@@ -102,6 +103,7 @@
         "trialing": "Prøveperiode",
         "trialingDescription": "I prøveperiode"
       },
+      "seatsSynced": "Lisenser synkronisert",
       "sections": {
         "recentSubscriptions": "Nylige abonnementer",
         "revenueMetrics": "Inntektsmålinger"
@@ -112,6 +114,7 @@
         "pastDue": "Forfalt",
         "trialing": "Prøveperiode"
       },
+      "syncSeatsFor": "Synkroniser lisenser for {organizationName}",
       "table": {
         "actions": "Handlinger",
         "billing": "Fakturering",

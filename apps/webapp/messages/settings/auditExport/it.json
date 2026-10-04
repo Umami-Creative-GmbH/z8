@@ -23,9 +23,9 @@
         "jobCompleted": "Generazione del pacchetto di audit completata",
         "jobFailed": "Generazione del pacchetto di audit non riuscita",
         "lineageContinued": "Continuità da un'ancora approvata per {continued} su {total} dipendenti; la cronologia prima dell'ancora non è verificata. Consulta append-assurance.json nel pacchetto.",
-        "lineageLimited": "Garanzia di tracciabilità limitata per {limited} dipendenti su {total}. Vedi append-assurance.json nel pacchetto.",
-        "lineageNotRecorded": "Garanzia di tracciabilità non registrata",
-        "lineageVerified": "Tracciabilità verificata dalle evidenze memorizzate per {total} dipendenti. I limiti sono elencati in append-assurance.json.",
+        "lineageLimited": "Garanzia di discendenza limitata per {limited} su {total} dipendenti. Consulta append-assurance.json nel pacchetto.",
+        "lineageNotRecorded": "Garanzia di discendenza non registrata",
+        "lineageVerified": "Discendenza verificata da prove archiviate per {total} dipendenti. Le relative limitazioni sono elencate in append-assurance.json.",
         "loadingRequests": "Caricamento richieste in corso...",
         "noRequests": "Nessuna richiesta di pacchetto di audit. Crea la tua prima richiesta qui sopra.",
         "pending": "In sospeso",
@@ -145,7 +145,8 @@
         "invalid": "Verifica non riuscita",
         "valid": "Verifica superata",
         "verifiedAt": "Verificato il {time}"
-      }
+      },
+      "wORMProtected": "Protetto da WORM"
     },
     "auditLog": {
       "action": "Azione",

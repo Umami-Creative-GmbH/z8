@@ -7,6 +7,8 @@ import {
 	IconChevronRight,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
+import { Temporal } from "temporal-polyfill";
 import type {
 	WorkdayTimelineData,
 	WorkdayTimelineItemType,
@@ -59,6 +61,7 @@ interface PersonalWorkdayTimelineProps {
 
 export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const selectedDate = result.success ? result.data.selectedDate : result.selectedDate;
 
 	return (
@@ -70,7 +73,7 @@ export function PersonalWorkdayTimeline({ result }: PersonalWorkdayTimelineProps
 							{t("timeTracking.timeline.title", "Workday timeline")}
 						</h2>
 					</CardTitle>
-					<CardDescription>{selectedDate.label}</CardDescription>
+					<CardDescription>{Temporal.PlainDate.from(selectedDate.dateKey).toLocaleString(locale, { dateStyle: "long" })}</CardDescription>
 				</div>
 				<DayPicker selectedDate={selectedDate} />
 			</CardHeader>

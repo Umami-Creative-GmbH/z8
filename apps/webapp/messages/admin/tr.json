@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Abonelikleri, geliri ve ödeme durumunu izleyin",
+      "failedToSyncSeats": "Koltuklar senkronize edilemedi",
       "intervals": {
         "month": "Aylık",
         "year": "Yıllık"
@@ -102,6 +103,7 @@
         "trialing": "Deneme sürecinde",
         "trialingDescription": "Deneme süresi içinde"
       },
+      "seatsSynced": "Koltuklar senkronize edildi",
       "sections": {
         "recentSubscriptions": "Son Abonelikler",
         "revenueMetrics": "Gelir Metrikleri"
@@ -112,6 +114,7 @@
         "pastDue": "Ödeme Gecikti",
         "trialing": "Deneme"
       },
+      "syncSeatsFor": "{organizationName} için koltukları senkronize et",
       "table": {
         "actions": "Eylemler",
         "billing": "Faturalandırma",
