@@ -12,7 +12,7 @@
       "title": "Employee Groups"
     },
     "employees": {
-      "description": "Manage employee profiles, teams, and permissions",
+      "description": "Manage employees, members, and invites",
       "details": "Employee Details",
       "detailsDescription": "View and edit employee information",
       "detailsTitle": "Employee Details",
@@ -156,7 +156,7 @@
         "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Employee actions for ${target.displayName}",
+        "actionsLabel": "Employee actions for {name}",
         "deactivate": "Deactivate",
         "deactivateDescription": "This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
         "deactivateError": "Failed to deactivate employee",
@@ -178,7 +178,9 @@
         "removeSuccess": "Organization access removed",
         "removeTitle": "Remove organization access?",
         "removing": "Removing access...",
-        "removingStatus": "Removing organization access"
+        "removingStatus": "Removing organization access",
+        "finalOwnerDeactivateGuidance": "Assign and activate another approved owner before deactivating this employee.",
+        "finalOwnerRemoveGuidance": "Assign and activate another approved owner before removing this employee's access."
       },
       "offboarding": {
         "acknowledgeDuties": "Admins will resolve the {count} open approval duties.",

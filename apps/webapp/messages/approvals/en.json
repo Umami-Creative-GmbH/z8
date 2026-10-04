@@ -93,7 +93,7 @@
     "notes": "Notes",
     "noTimeCorrectionApprovals": "No pending time correction requests to review.",
     "offFrom": "off from",
-    "openDetailsFor": "Open details for ${item.summary.title}",
+    "openDetailsFor": "Open details for {title}",
     "openInbox": "Open Inbox",
     "original": "Original",
     "pendingRequests": "Pending Requests",
@@ -128,7 +128,7 @@
     "searchLabel": "Search approvals",
     "searchPlaceholder": "Search by name or email…",
     "selectAll": "Select all",
-    "selectedCount": "${selectedCount} selected",
+    "selectedCount": "{selectedCount} selected",
     "selectRow": "Select row",
     "timeComparison": "Time comparison",
     "timeCorrectionApproved": "Time correction approved",
@@ -137,7 +137,7 @@
     "timeCorrectionsDescription": "Review and approve time entry correction requests from your team members",
     "timelineActor": "{at} by {actorName}",
     "title": "Approvals",
-    "totalCount": "${totalCount} pending",
+    "totalCount": "{totalCount} pending",
     "type": "Type",
     "types": {
       "absence_entry": "Absence Requests",
@@ -152,11 +152,11 @@
   },
   "fastLanes": {
     "approve": "Approve",
-    "approveGroup": "Approve ${label}",
+    "approveGroup": "Approve {label}",
     "confirmReject": "Confirm reject",
-    "confirmRejectGroup": "Confirm reject ${label}",
+    "confirmRejectGroup": "Confirm reject {label}",
     "description": "Review similar low-friction requests in batches.",
-    "expandGroup": "Expand ${label}",
+    "expandGroup": "Expand {label}",
     "groups": {
       "lowRiskAbsence": {
         "description": "Absences with no detected conflicts.",
@@ -175,21 +175,21 @@
         "label": "Stale requests"
       }
     },
-    "notEligibleApprove": "${notApprovableCount} not eligible for bulk approve",
-    "notEligibleReject": "${notRejectableCount} not eligible for bulk reject",
+    "notEligibleApprove": "{notApprovableCount} not eligible for bulk approve",
+    "notEligibleReject": "{notRejectableCount} not eligible for bulk reject",
     "reject": "Reject",
-    "rejectGroup": "Reject ${label}",
+    "rejectGroup": "Reject {label}",
     "rejectReason": "Bulk reject reason",
     "risk": {
       "high": "High risk",
       "low": "Low risk",
       "medium": "Medium risk"
     },
-    "showGroup": "Show ${label}",
+    "showGroup": "Show {label}",
     "title": "Fast lanes"
   },
   "sprint": {
-    "age": "${item.timing.ageDays}d old",
+    "age": "{ageDays}d old",
     "approve": "Approve",
     "approveCurrentApproval": "Approve current approval",
     "capabilities": {
@@ -207,7 +207,7 @@
       "normal": "Normal priority",
       "urgent": "Urgent priority"
     },
-    "progress": "${currentIndex + 1} of ${visibleItems.length}",
+    "progress": "{current} of {total}",
     "reject": "Reject",
     "rejectCurrentApproval": "Reject current approval",
     "rejectReason": "Sprint reject reason",

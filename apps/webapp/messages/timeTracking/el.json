@@ -40,7 +40,8 @@
       "errors": {
         "invalidTimeRange": "Η ώρα αποχώρησης πρέπει να είναι μετά την ώρα έναρξης",
         "submitFailed": "Αποτυχία υποβολής διόρθωσης",
-        "updateFailed": "Αποτυχία ενημέρωσης καταχώρησης χρόνου"
+        "updateFailed": "Αποτυχία ενημέρωσης καταχώρησης χρόνου",
+        "noChanges": "Πρέπει να αλλάξει τουλάχιστον μία τιμή διόρθωσης"
       },
       "noteLabel": "Σημείωση (προαιρετικά)",
       "notePlaceholder": "Προσθέστε μια σημείωση για αυτήν την αλλαγή…",
@@ -58,7 +59,9 @@
         "submitted": "Το αίτημα διόρθωσης υποβλήθηκε για έγκριση από τον διευθυντή",
         "updated": "Η καταχώρηση χρόνου ενημερώθηκε με επιτυχία"
       },
-      "timezoneNote": "Οι ώρες είναι στην τοπική σας ζώνη ώρας ({timezone})"
+      "timezoneNote": "Οι ώρες είναι στην τοπική σας ζώνη ώρας ({timezone})",
+      "clockInTime": "Ώρα έναρξης εργασίας",
+      "clockOutTime": "Ώρα λήξης εργασίας"
     },
     "currentlyClockedIn": "Είστε αυτήν τη στιγμή σε κατάσταση εργασίας",
     "deadline": "Προθεσμία",
@@ -269,7 +272,12 @@
     "unknownCategory": "Άγνωστη κατηγορία",
     "unknownProject": "Άγνωστο έργο",
     "welcomeBack": "Καλώς ορίσατε ξανά, {name}",
-    "workCategory": "Κατηγορία εργασίας"
+    "workCategory": "Κατηγορία εργασίας",
+    "workLocation": "Τοποθεσία εργασίας",
+    "workLocationHome": "Σπίτι",
+    "workLocationOffice": "Γραφείο",
+    "workLocationOther": "Άλλο",
+    "workLocationRemote": "Εξ αποστάσεως"
   },
   "wellness": {
     "water": {

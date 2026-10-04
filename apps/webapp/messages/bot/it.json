@@ -82,7 +82,12 @@
         "requestApprovedTitle": "Richiesta approvata",
         "requestRejectedTitle": "Richiesta rifiutata",
         "stepApprovedTitle": "Approvazione registrata",
-        "stepRejectedTitle": "Rifiuto registrato"
+        "stepRejectedTitle": "Rifiuto registrato",
+        "requestApproved": "Approvata da {actor} il {time}. La richiesta è approvata.",
+        "requestRejected": "Rifiutata da {actor} il {time}. La richiesta è rifiutata.",
+        "stepApproved": "Approvata da {actor} il {time}. La richiesta attende ancora altre approvazioni.",
+        "stepRejected": "Rifiutata da {actor} il {time}. La richiesta non è ancora definitiva; controllane lo stato attuale in Z8.",
+        "recorded": "Registrata da {actor} il {time}. Controlla lo stato attuale della richiesta in Z8."
       },
       "outcomeUnknown": "Impossibile confermare il risultato di questa selezione. Controlla la richiesta in Z8 prima di premere nuovamente.",
       "period": "Periodo",

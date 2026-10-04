@@ -94,40 +94,51 @@ vi.mock("@/lib/approvals/domain-adapters/work-period-legacy-state", () => ({
 // the fixture's target. work-period-decision-transaction.test.ts and the
 // PostgreSQL suites prove the observed routing.
 const decisionRouting = vi.hoisted(() => ({
-	kind: "manual_time_submission" as "manual_time_submission" | "policy_clock_out",
+	kind: "manual_time_submission" as
+		| "manual_time_submission"
+		| "policy_clock_out",
 	ownerEmployeeId: "requester",
 }));
-vi.mock("@/lib/approvals/server/work-period-decision-transaction", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/approvals/server/work-period-decision-transaction")>();
-	const { fakeWorkTransaction } = await import("@/lib/time-tracking/work-transaction/testing");
-	return {
-		...actual,
-		withWorkPeriodDecisionTransaction: (
-			...[input, createRuntime, operation]: Parameters<
-				typeof actual.withWorkPeriodDecisionTransaction
-			>
-		) =>
-			fakeWorkTransaction({
-				recordApprovalGate: true,
-				approvalDatabase: (context) => (context as { dbService: { db: object } }).dbService.db,
-			}).run(
-				{
-					...actual.workPeriodDecisionPlan(input, createRuntime),
-					route: async () => {
-						const target = { ...decisionRouting };
-						return {
-							users: [input.actorUserId],
-							employees: [target.ownerEmployeeId],
-							writeTargets: [target.ownerEmployeeId],
-							approvalGate: target.kind,
-							snapshot: { observation: "unobserved", target },
-						};
+vi.mock(
+	"@/lib/approvals/server/work-period-decision-transaction",
+	async (importOriginal) => {
+		const actual =
+			await importOriginal<
+				typeof import("@/lib/approvals/server/work-period-decision-transaction")
+			>();
+		const { fakeWorkTransaction } = await import(
+			"@/lib/time-tracking/work-transaction/testing"
+		);
+		return {
+			...actual,
+			withWorkPeriodDecisionTransaction: (
+				...[input, createRuntime, operation]: Parameters<
+					typeof actual.withWorkPeriodDecisionTransaction
+				>
+			) =>
+				fakeWorkTransaction({
+					recordApprovalGate: true,
+					approvalDatabase: (context) =>
+						(context as { dbService: { db: object } }).dbService.db,
+				}).run(
+					{
+						...actual.workPeriodDecisionPlan(input, createRuntime),
+						route: async () => {
+							const target = { ...decisionRouting };
+							return {
+								users: [input.actorUserId],
+								employees: [target.ownerEmployeeId],
+								writeTargets: [target.ownerEmployeeId],
+								approvalGate: target.kind,
+								snapshot: { observation: "unobserved", target },
+							};
+						},
 					},
-				},
-				operation,
-			),
-	};
-});
+					operation,
+				),
+		};
+	},
+);
 vi.mock(
 	"@/lib/approvals/domain-adapters/legacy-write-coordinator",
 	async (importOriginal) => {
@@ -183,16 +194,20 @@ vi.mock("@/lib/approvals/presentation/bound-card", () => ({
 // Legacy absence cards (#384): legacy-bound-approval.integration.test.ts. The
 // fixtures here model canonical absence authority.
 vi.mock("@/lib/approvals/authority", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/approvals/authority")>();
+	const actual =
+		await importOriginal<typeof import("@/lib/approvals/authority")>();
 	return {
 		...actual,
-		readApprovalAuthoritySnapshot: async () => actual.resolveApprovalAuthority("canonical"),
+		readApprovalAuthoritySnapshot: async () =>
+			actual.resolveApprovalAuthority("canonical"),
 	};
 });
 // Legacy time cards (#432): legacy-time-bound-approval.integration.test.ts. The
 // time fixtures here have no legacy revision, so they keep the existing path.
 vi.mock("@/lib/approvals/evidence/legacy-time", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-time")>()),
+	...(await importOriginal<
+		typeof import("@/lib/approvals/evidence/legacy-time")
+	>()),
 	readTimeRequestAuthority: async () => "undetermined",
 }));
 // Historical replays here were never card decisions: no evidence names a binding.
@@ -259,27 +274,27 @@ vi.mock("@/lib/teams/conversation-manager", () => ({
 import { Effect } from "effect";
 import { db } from "@/db";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
-import { handleTelegramUpdate } from "@/lib/telegram/bot-handler";
-import { sendSlackNotification } from "@/lib/notifications/slack-channel";
-import { sendTelegramNotification } from "@/lib/notifications/telegram-channel";
-import { sendDiscordNotification } from "@/lib/notifications/discord-channel";
-import { sendTeamsNotification } from "@/lib/notifications/teams-channel";
-import {
-	handleApprovalAction as slackAction,
-	sendApprovalMessageToManager as sendSlack,
-} from "@/lib/slack/approval-handler";
-import {
-	handleApprovalCallback as telegramAction,
-	sendApprovalMessageToManager as sendTelegram,
-} from "@/lib/telegram/approval-handler";
 import {
 	handleApprovalButtonClick as discordAction,
 	sendApprovalMessageToManager as sendDiscord,
 } from "@/lib/discord/approval-handler";
+import { sendDiscordNotification } from "@/lib/notifications/discord-channel";
+import { sendSlackNotification } from "@/lib/notifications/slack-channel";
+import { sendTeamsNotification } from "@/lib/notifications/teams-channel";
+import { sendTelegramNotification } from "@/lib/notifications/telegram-channel";
 import {
-	handleApprovalAction as teamsAction,
+	sendApprovalMessageToManager as sendSlack,
+	handleApprovalAction as slackAction,
+} from "@/lib/slack/approval-handler";
+import {
 	sendApprovalCardToManager as sendTeams,
+	handleApprovalAction as teamsAction,
 } from "@/lib/teams/approval-handler";
+import {
+	sendApprovalMessageToManager as sendTelegram,
+	handleApprovalCallback as telegramAction,
+} from "@/lib/telegram/approval-handler";
+import { handleTelegramUpdate } from "@/lib/telegram/bot-handler";
 
 vi.mock("@/lib/slack", async () => ({
 	...(await import("@/lib/slack/approval-handler")),
@@ -499,7 +514,9 @@ describe.each(platformCases)(
 			const output = JSON.stringify(state.sends[platform].mock.calls);
 			expect(output).toContain("Review required");
 			// Exact item on the organization's origin, never the generic inbox.
-			expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
+			expect(output).toContain(
+				"https://org.z8.test/approvals/review/org/compatibility/approval",
+			);
 			expect(output).not.toContain("/approvals/inbox");
 			expect(output).not.toMatch(
 				/SECRET|private@example|correctedTime|Time Correction|callback_data|approval_approve|Action.Submit|Action.Http/,
@@ -543,7 +560,9 @@ describe.each(platformCases)(
 				expect(state.replies[platform]).toHaveBeenCalledOnce();
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("No decision was made");
-				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
+				expect(output).toContain(
+					"https://org.z8.test/approvals/review/org/compatibility/approval",
+				);
 				expect(output).not.toMatch(/SECRET|successfully|resolvedAt/);
 				expect(state.history).toHaveBeenCalledWith(
 					expect.anything(),
@@ -639,7 +658,9 @@ describe.each(platformCases)(
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("previously recorded");
 				expect(output).toContain("no new decision was made");
-				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
+				expect(output).toContain(
+					"https://org.z8.test/approvals/review/org/compatibility/approval",
+				);
 				expect(output).not.toMatch(/SECRET|2026|Request approved|successfully/);
 				expect(state.track).not.toHaveBeenCalled();
 			},
@@ -758,7 +779,9 @@ describe.each(platformCases)(
 						) =>
 							run({
 								dbService: { db },
-								writeGate: { acquire: async () => approvalWriteGateResult("legacy") },
+								writeGate: {
+									acquire: async () => approvalWriteGateResult("legacy"),
+								},
 								compatibilityWriter: { withWriteGate: () => ({}) },
 							}),
 					},
@@ -847,7 +870,7 @@ it("loads the new notice translations through the actual bot translator", async 
 		"Prüfung erforderlich",
 	);
 	expect(translate("bot.approval.historicalTitle", "fallback")).toBe(
-		"Frühere Entscheidung",
+		"Historische Entscheidung",
 	);
 });
 

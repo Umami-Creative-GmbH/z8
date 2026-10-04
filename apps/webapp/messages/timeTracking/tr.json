@@ -40,7 +40,8 @@
       "errors": {
         "invalidTimeRange": "İşten çıkış saati, işe giriş saatinden sonra olmalıdır",
         "submitFailed": "Düzeltme gönderilemedi",
-        "updateFailed": "Zaman kaydı güncellenemedi"
+        "updateFailed": "Zaman kaydı güncellenemedi",
+        "noChanges": "En az bir düzeltme değeri değiştirilmelidir"
       },
       "noteLabel": "Not (isteğe bağlı)",
       "notePlaceholder": "Bu değişiklik hakkında bir not ekleyin…",
@@ -58,7 +59,9 @@
         "submitted": "Düzeltme talebi yönetici onayı için gönderildi",
         "updated": "Zaman kaydı başarıyla güncellendi"
       },
-      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})"
+      "timezoneNote": "Saatler yerel saat diliminizdedir ({timezone})",
+      "clockInTime": "Giriş Saati",
+      "clockOutTime": "Çıkış Saati"
     },
     "currentlyClockedIn": "Şu anda işe giriş yapmış durumdasınız",
     "deadline": "Son teslim tarihi",
@@ -269,7 +272,12 @@
     "unknownCategory": "Bilinmeyen kategori",
     "unknownProject": "Bilinmeyen proje",
     "welcomeBack": "Tekrar hoş geldiniz, {name}",
-    "workCategory": "Çalışma Kategorisi"
+    "workCategory": "Çalışma Kategorisi",
+    "workLocation": "Çalışma yeri",
+    "workLocationHome": "Ev",
+    "workLocationOffice": "Ofis",
+    "workLocationOther": "Diğer",
+    "workLocationRemote": "Uzaktan"
   },
   "wellness": {
     "water": {

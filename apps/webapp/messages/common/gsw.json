@@ -556,6 +556,14 @@
       "teamMemberAdded": {
         "message": "Du bisch vo {performedByName} zum Team {teamName} hinzugefügt worde.",
         "title": "Zum Team hinzugefügt"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Dii {categoryName}-Aafrag für {dateRange} isch ygreicht worde und wartet uf Freigab.",
+        "title": "Abwäseheitsaafrag ygreicht"
+      },
+      "teamMemberRemoved": {
+        "message": "Du bisch vo {performedByName} us em Team {teamName} entfernt worde.",
+        "title": "Us em Team entfernt"
       }
     },
     "description": "Updates, Freigabe und System-Mäldige uf eim Blick gseh.",

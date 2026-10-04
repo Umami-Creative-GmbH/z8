@@ -82,7 +82,12 @@
         "requestApprovedTitle": "Wniosek zatwierdzony",
         "requestRejectedTitle": "Wniosek odrzucony",
         "stepApprovedTitle": "Zarejestrowano zatwierdzenie",
-        "stepRejectedTitle": "Zarejestrowano odrzucenie"
+        "stepRejectedTitle": "Zarejestrowano odrzucenie",
+        "requestApproved": "Zatwierdzone przez {actor} {time}. Wniosek jest zatwierdzony.",
+        "requestRejected": "Odrzucone przez {actor} {time}. Wniosek jest odrzucony.",
+        "stepApproved": "Zatwierdzone przez {actor} {time}. Wniosek czeka jeszcze na dalsze zatwierdzenia.",
+        "stepRejected": "Odrzucone przez {actor} {time}. Wniosek nie jest jeszcze ostateczny; sprawdź jego aktualny status w Z8.",
+        "recorded": "Zapisane przez {actor} {time}. Sprawdź aktualny status wniosku w Z8."
       },
       "outcomeUnknown": "Nie udało się potwierdzić wyniku tego naciśnięcia. Sprawdź wniosek w Z8 przed ponownym naciśnięciem.",
       "period": "Okres",

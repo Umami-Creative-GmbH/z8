@@ -82,7 +82,12 @@
         "requestApprovedTitle": "Anfrage genehmigt",
         "requestRejectedTitle": "Anfrage abgelehnt",
         "stepApprovedTitle": "Genehmigung erfasst",
-        "stepRejectedTitle": "Ablehnung erfasst"
+        "stepRejectedTitle": "Ablehnung erfasst",
+        "requestApproved": "Genehmigt von {actor} am {time}. Der Antrag ist genehmigt.",
+        "requestRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist abgelehnt.",
+        "stepApproved": "Genehmigt von {actor} am {time}. Der Antrag wartet noch auf weitere Genehmigungen.",
+        "stepRejected": "Abgelehnt von {actor} am {time}. Der Antrag ist noch nicht abgeschlossen; prüfen Sie seinen aktuellen Status in Z8.",
+        "recorded": "Erfasst von {actor} am {time}. Prüfen Sie den aktuellen Status des Antrags in Z8."
       },
       "outcomeUnknown": "Das Ergebnis dieser Betätigung konnte nicht bestätigt werden. Überprüfen Sie die Anfrage in Z8, bevor Sie die Schaltfläche erneut drücken.",
       "period": "Zeitraum",

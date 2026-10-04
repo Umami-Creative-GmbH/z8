@@ -292,7 +292,8 @@
         "missing": "brak zarejestrowanego czasu",
         "over": "powyżej wymogu",
         "under": "poniżej wymogu"
-      }
+      },
+      "dayLabel": "{date}: zarejestrowano {actual}, wymagane {required}, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Wybierz wystąpienie, którego chcesz użyć",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Przerwa – {duration}"
+      }
     }
   }
 }

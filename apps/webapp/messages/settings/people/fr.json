@@ -156,7 +156,7 @@
         "title": "Invitations"
       },
       "lifecycle": {
-        "actionsLabel": "Actions de l'employé pour ${target.displayName}",
+        "actionsLabel": "Actions de l'employé pour {name}",
         "deactivate": "Désactiver",
         "deactivateDescription": "Ceci suspend l'accès à cette organisation et met fin aux sessions en cours l'utilisant. L'historique de l'employé est conservé.",
         "deactivateError": "Échec de la désactivation de l'employé",
@@ -178,7 +178,9 @@
         "removeSuccess": "Accès à l'organisation supprimé",
         "removeTitle": "Supprimer l'accès à l'organisation ?",
         "removing": "Suppression de l'accès en cours...",
-        "removingStatus": "Suppression de l'accès à l'organisation"
+        "removingStatus": "Suppression de l'accès à l'organisation",
+        "finalOwnerDeactivateGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de désactiver cet employé.",
+        "finalOwnerRemoveGuidance": "Désignez et activez d'abord un autre propriétaire approuvé avant de retirer l'accès de cet employé."
       },
       "offboarding": {
         "acknowledgeDuties": "Les administrateurs traiteront les {count} tâches d'approbation en attente.",

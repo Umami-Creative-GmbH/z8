@@ -40,7 +40,8 @@
       "errors": {
         "invalidTimeRange": "D'Usstämplizit muess nach de Iistämplizit sii",
         "submitFailed": "Korrektur het nöd chönne übermittle wärde",
-        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde"
+        "updateFailed": "Ziiteintrag het nöd chönne aktualisiert wärde",
+        "noChanges": "Mindeschtens en Korrekturwert muess gänderet werde"
       },
       "noteLabel": "Notiz (optional)",
       "notePlaceholder": "E Notiz zu dere Änderig dezuefüege…",
@@ -54,11 +55,13 @@
       "submitRequest": "Aatrag iireiche",
       "submitting": "Am Iireiche…",
       "success": {
-        "applied": "Korrektur erfolgreich angewendet",
+        "applied": "Korrektur erfolgriich aagwendet",
         "submitted": "Korrektur-Aatrag zur Genehmigung dur de Manager iigreicht",
         "updated": "Ziiteintrag erfolgriich aktualisiert"
       },
-      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})"
+      "timezoneNote": "D'Ziite sind in dinere lokale Ziitzone ({timezone})",
+      "clockInTime": "Ziit vom Iistämpfle",
+      "clockOutTime": "Ziit vom Uusstämpfle"
     },
     "currentlyClockedIn": "Du bisch momentan iigstämplet",
     "deadline": "Frist",
@@ -269,7 +272,12 @@
     "unknownCategory": "Unbekannti Kategorie",
     "unknownProject": "Unbekannts Projekt",
     "welcomeBack": "Willkomme zrugg, {name}",
-    "workCategory": "Arbetskategorie"
+    "workCategory": "Arbetskategorie",
+    "workLocation": "Arbetsort",
+    "workLocationHome": "Dihei",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Anders",
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {
