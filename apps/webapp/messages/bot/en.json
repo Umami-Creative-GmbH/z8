@@ -82,7 +82,12 @@
         "requestApprovedTitle": "Request approved",
         "requestRejectedTitle": "Request rejected",
         "stepApprovedTitle": "Approval recorded",
-        "stepRejectedTitle": "Rejection recorded"
+        "stepRejectedTitle": "Rejection recorded",
+        "requestApproved": "Approved by {actor} on {time}. The request is approved.",
+        "requestRejected": "Rejected by {actor} on {time}. The request is rejected.",
+        "stepApproved": "Approved by {actor} on {time}. The request still awaits further approval.",
+        "stepRejected": "Rejected by {actor} on {time}. The request is not final yet; review its current status in Z8.",
+        "recorded": "Recorded by {actor} on {time}. Review the request's current status in Z8."
       },
       "outcomeUnknown": "The result of this press could not be confirmed. Check the request in Z8 before pressing again.",
       "period": "Period",

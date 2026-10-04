@@ -292,7 +292,8 @@
         "missing": "Fehlende erfasste Zeit",
         "over": "Über Vorgabe",
         "under": "Unter Vorgabe"
-      }
+      },
+      "dayLabel": "{date}: {required} Sollzeit, {actual} erfasst, {delta} Differenz, {status}"
     },
     "split": {
       "ambiguousTime": "Wählen Sie das zu verwendende Vorkommen",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pause – {duration}"
+      }
     }
   }
 }

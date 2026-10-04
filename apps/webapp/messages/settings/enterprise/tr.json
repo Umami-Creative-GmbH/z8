@@ -518,7 +518,7 @@
           "review": "Gözden Geçir ve Etkinleştir",
           "review.description": "Korumayı etkinleştir",
           "scim": "SCIM Sağlama",
-          "scim.description": "Sorun sağlama belirteci",
+          "scim.description": "SCIM sağlama bağlantınızı bağlayın ve yönetin",
           "sso": "SSO Yapılandırması",
           "sso.description": "OIDC veya SAML Kaydet",
           "ssoTest": "Test Kullanıcısı",

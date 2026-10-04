@@ -556,6 +556,14 @@
       "teamMemberAdded": {
         "message": "Vous avez été ajouté à l'équipe {teamName} par {performedByName}.",
         "title": "Ajouté à l'équipe"
+      },
+      "absenceRequestSubmitted": {
+        "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
+        "title": "Demande d'absence envoyée"
+      },
+      "teamMemberRemoved": {
+        "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
+        "title": "Retiré de l'équipe"
       }
     },
     "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",

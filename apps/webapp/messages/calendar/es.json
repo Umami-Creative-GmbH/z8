@@ -292,7 +292,8 @@
         "missing": "falta tiempo registrado",
         "over": "por encima del requisito",
         "under": "por debajo del requisito"
-      }
+      },
+      "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Elige qué ocurrencia usar",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Descanso – {duration}"
+      }
     }
   }
 }

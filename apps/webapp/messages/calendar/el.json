@@ -292,7 +292,8 @@
         "missing": "λείπει καταγεγραμμένος χρόνος",
         "over": "πάνω από την απαίτηση",
         "under": "κάτω από την απαίτηση"
-      }
+      },
+      "dayLabel": "{date}: {actual} καταγράφηκαν, {required} απαιτούνται, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Επιλέξτε ποια εμφάνιση θα χρησιμοποιήσετε",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Διάλειμμα – {duration}"
+      }
     }
   }
 }

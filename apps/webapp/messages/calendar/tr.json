@@ -292,7 +292,8 @@
         "missing": "eksik kaydedilen süre",
         "over": "gereksinimin üzerinde",
         "under": "gereksinimin altında"
-      }
+      },
+      "dayLabel": "{date}: {actual} kaydedildi, {required} gerekli, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Hangi yinelemenin kullanılacağını seçin",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Mola – {duration}"
+      }
     }
   }
 }

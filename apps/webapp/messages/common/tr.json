@@ -556,6 +556,14 @@
       "teamMemberAdded": {
         "message": "{performedByName} tarafından {teamName} ekibine eklendiniz.",
         "title": "Ekibe eklendi"
+      },
+      "absenceRequestSubmitted": {
+        "message": "{dateRange} için {categoryName} talebiniz gönderildi ve onay bekliyor.",
+        "title": "Devamsızlık talebi gönderildi"
+      },
+      "teamMemberRemoved": {
+        "message": "{performedByName} tarafından {teamName} ekibinden çıkarıldınız.",
+        "title": "Ekipten çıkarıldı"
       }
     },
     "description": "Güncellemeleri, onayları ve sistem uyarılarını tek bir zaman çizelgesinde inceleyin.",

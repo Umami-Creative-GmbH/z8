@@ -13,7 +13,15 @@
  * HTTP transport (fetch) are replaced.
  */
 
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -26,7 +34,9 @@ vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
 );
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
@@ -64,21 +74,28 @@ vi.mock("@/lib/email/email-service", async () =>
 );
 
 vi.mock("@/lib/email/render", async (importOriginal) =>
-	(await import("@/test/integration-harness")).absenceEmailRender(importOriginal),
+	(await import("@/test/integration-harness")).absenceEmailRender(
+		importOriginal,
+	),
 );
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) =>
-	(await import("@/test/integration-harness")).notificationTriggers(importOriginal, [
-		"onAbsenceRequestSubmitted",
-		"onAbsenceRequestPendingApproval",
-		"onAbsenceRequestApproved",
-		"onAbsenceRequestRejected",
-		"onApprovedAbsenceCancelledByEmployee",
-	]),
+	(await import("@/test/integration-harness")).notificationTriggers(
+		importOriginal,
+		[
+			"onAbsenceRequestSubmitted",
+			"onAbsenceRequestPendingApproval",
+			"onAbsenceRequestApproved",
+			"onAbsenceRequestRejected",
+			"onApprovedAbsenceCancelledByEmployee",
+		],
+	),
 );
 
 vi.mock("@/lib/queue", async (importOriginal) =>
-	(await import("@/test/integration-harness")).calendarSyncQueue(importOriginal),
+	(await import("@/test/integration-harness")).calendarSyncQueue(
+		importOriginal,
+	),
 );
 
 vi.mock("@/lib/work-balance/service", async (importOriginal) => ({
@@ -123,7 +140,10 @@ const ids = {
 	secondStage: "e2903000-0000-4000-8000-000000000003",
 } as const;
 
-const bot = (organizationId: string = ids.organization, botToken = BOT_TOKEN) => ({
+const bot = (
+	organizationId: string = ids.organization,
+	botToken = BOT_TOKEN,
+) => ({
 	organizationId,
 	botToken,
 	botUsername: "t290_bot",
@@ -164,12 +184,17 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 
 	/** The Telegram Bot API transport; everything above it is real. */
 	function installTelegramTransport() {
-		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+		globalThis.fetch = (async (
+			input: RequestInfo | URL,
+			init?: RequestInit,
+		) => {
 			const url = String(input);
 			const match = /^https:\/\/api\.telegram\.org\/bot[^/]+\/(\w+)$/.exec(url);
 			if (!match) throw new Error(`Unexpected fetch in test: ${url}`);
 			const method = match[1] ?? "";
-			const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+			const body = init?.body
+				? (JSON.parse(String(init.body)) as Record<string, unknown>)
+				: {};
 			calls.push({ method, body });
 			const result =
 				method === "sendMessage"
@@ -192,7 +217,12 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			[ids.organization, ids.otherOrganization],
 		]);
 		await admin.query('delete from "user" where id = any($1::text[])', [
-			[ids.requesterUser, ids.managerUser, ids.secondManagerUser, ids.finalUser],
+			[
+				ids.requesterUser,
+				ids.managerUser,
+				ids.secondManagerUser,
+				ids.finalUser,
+			],
 		]);
 	}
 
@@ -225,7 +255,8 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 				[ids.organization],
 			);
 		}
-		const presentation = options.presentation === undefined ? "actionable" : options.presentation;
+		const presentation =
+			options.presentation === undefined ? "actionable" : options.presentation;
 		if (presentation) {
 			await admin.query(
 				`insert into approval_presentation_control
@@ -239,7 +270,13 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			 ($2, 'Morgan Manager', 't290-manager@example.test', $5, $5),
 			 ($3, 'Sam Second', 't290-second@example.test', $5, $5),
 			 ($4, 'Frankie Final', 't290-final@example.test', $5, $5)`,
-			[ids.requesterUser, ids.managerUser, ids.secondManagerUser, ids.finalUser, timestamp],
+			[
+				ids.requesterUser,
+				ids.managerUser,
+				ids.secondManagerUser,
+				ids.finalUser,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into user_settings (user_id, locale, timezone, time_format, updated_at)
@@ -253,7 +290,12 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			[
 				ids.organization,
 				timestamp,
-				[ids.requesterUser, ids.managerUser, ids.secondManagerUser, ids.finalUser],
+				[
+					ids.requesterUser,
+					ids.managerUser,
+					ids.secondManagerUser,
+					ids.finalUser,
+				],
 			],
 		);
 		// The manager is also a member of another organization with its own bot.
@@ -366,7 +408,10 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			notes: "Private note that stays in authenticated review",
 		});
 		if (!result.success) throw new Error(`Submission failed: ${result.error}`);
-		const { rows } = await admin.query<{ id: string; workflow_id: string | null }>(
+		const { rows } = await admin.query<{
+			id: string;
+			workflow_id: string | null;
+		}>(
 			`select r.id, a.approval_workflow_id as workflow_id
 			 from approval_request r join absence_entry a on a.id = r.entity_id
 			 where r.organization_id = $1 and r.entity_id = $2 and r.status = 'pending'`,
@@ -384,11 +429,20 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 	/** Sends the real initial card and returns what reached Telegram. */
 	async function sendCard(requestId: string, approverId: string = ids.manager) {
 		const before = calls.length;
-		await sendApprovalMessageToManager(requestId, approverId, ids.organization, BOT_TOKEN);
-		const sent = calls.slice(before).filter((call) => call.method === "sendMessage");
+		await sendApprovalMessageToManager(
+			requestId,
+			approverId,
+			ids.organization,
+			BOT_TOKEN,
+		);
+		const sent = calls
+			.slice(before)
+			.filter((call) => call.method === "sendMessage");
 		const message = only(sent);
 		const markup = message.body.reply_markup as {
-			inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>>;
+			inline_keyboard: Array<
+				Array<{ text: string; callback_data?: string; url?: string }>
+			>;
 		};
 		const buttons = markup.inline_keyboard.flat();
 		const callbackData = buttons
@@ -432,7 +486,10 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 				message: {
 					message_id: options.messageId,
 					date: 1_790_000_000,
-					chat: { id: options.chatId ?? MANAGER_CHAT_ID, type: "private" as const },
+					chat: {
+						id: options.chatId ?? MANAGER_CHAT_ID,
+						type: "private" as const,
+					},
 				},
 				data: options.data,
 			},
@@ -485,11 +542,11 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 
 		expect(card.chatId).toBe(MANAGER_CHAT_ID);
 		// Recipient locale (de) and zone; logical dates are not shifted.
-		expect(card.text).toContain("Abwesenheitsantrag zur Genehmigung");
+		expect(card.text).toContain("Genehmigungsanfrage für Abwesenheit");
 		expect(card.text).toContain("Mitarbeiter: Avery Requester");
 		expect(card.text).toContain("Kategorie: Vacation");
-		expect(card.text).toContain("Zeitraum: 3. Aug. 2026 – 4. Aug. 2026");
-		expect(card.text).toContain("Umfang: Ganze Tage");
+		expect(card.text).toContain("Termine: 3. Aug. 2026 – 4. Aug. 2026");
+		expect(card.text).toContain("Vertretung: Ganze Tage");
 		expect(card.text).toMatch(/Eingereicht: .+ \(Europe\/Berlin\)/);
 		// Free text stays in authenticated review.
 		expect(card.text).not.toContain("Private note");
@@ -541,12 +598,19 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 
 		const fresh = await press(first);
 		const decided = await counts(workflowId);
-		expect(decided).toMatchObject({ decisions: "1", invocations: "1", status: "approved" });
+		expect(decided).toMatchObject({
+			decisions: "1",
+			invocations: "1",
+			status: "approved",
+		});
 		const { rows: absences } = await admin.query(
 			"select status, approved_by from absence_entry where id = $1",
 			[absenceId],
 		);
-		expect(only(absences)).toMatchObject({ status: "approved", approved_by: ids.manager });
+		expect(only(absences)).toMatchObject({
+			status: "approved",
+			approved_by: ids.manager,
+		});
 		const { rows: associations } = await admin.query(
 			`select i.scheme, i.receiver_scope, i.invocation_id, i.delivery_id, i.provider_actor_id,
 			        i.actor_employee_id, i.reviewed_binding_id, i.action, i.receipt_idempotency_key,
@@ -583,12 +647,16 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		expect(association.receipt_key).toBe(association.receipt_idempotency_key);
 		// The card is retired into the committed outcome; provider acknowledgment
 		// only reports that outcome.
-		expect(only(fresh.edits).body.text).toContain("Antrag genehmigt");
-		expect(only(fresh.edits).body.text).toContain("Genehmigt von Morgan Manager am");
-		expect(JSON.stringify(only(fresh.edits).body.reply_markup)).not.toContain("callback_data");
+		expect(only(fresh.edits).body.text).toContain("Anfrage genehmigt");
+		expect(only(fresh.edits).body.text).toContain(
+			"Genehmigt von Morgan Manager am",
+		);
+		expect(JSON.stringify(only(fresh.edits).body.reply_markup)).not.toContain(
+			"callback_data",
+		);
 		expect(only(fresh.answers).body).toMatchObject({
 			callback_query_id: "t290-query-1",
-			text: "Antrag genehmigt",
+			text: "Anfrage genehmigt",
 		});
 
 		// Transport redelivery (same update) and a new update carrying the same
@@ -596,14 +664,17 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		for (const update of [first, { ...first, update_id: 1002 }]) {
 			const replay = await press(update);
 			expect(await counts(workflowId)).toEqual(decided);
-			expect(only(replay.edits).body.text).toContain("Antrag genehmigt");
-			expect(only(replay.edits).body.text).toContain("ursprüngliches Ergebnis");
+			expect(only(replay.edits).body.text).toContain("Anfrage genehmigt");
+			expect(only(replay.edits).body.text).toContain("ursprüngliche Ergebnis");
 		}
 		const { rows: kept } = await admin.query(
 			"select delivery_id, decided_at from approval_invocation i join approval_decision_evidence d on d.id = i.decision_evidence_id where i.workflow_id = $1",
 			[workflowId],
 		);
-		expect(only(kept)).toMatchObject({ delivery_id: "1001", decided_at: association.decided_at });
+		expect(only(kept)).toMatchObject({
+			delivery_id: "1001",
+			decided_at: association.decided_at,
+		});
 
 		// The same query with a different command conflicts; nothing changes.
 		const conflict = await press(
@@ -615,7 +686,9 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			}),
 		);
 		expect(await counts(workflowId)).toEqual(decided);
-		expect(only(conflict.edits).body.text).toContain("bereits mit einer anderen Aktion erfasst");
+		expect(only(conflict.edits).body.text).toContain(
+			"bereits mit einer anderen Aktion erfasst",
+		);
 
 		// A fresh query gets fresh checks and never falls back to the old receipt.
 		const again = await press(
@@ -627,8 +700,12 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			}),
 		);
 		expect(await counts(workflowId)).toEqual(decided);
-		expect(only(again.edits).body.text).toContain("Es wurde keine Entscheidung getroffen");
-		expect(only(again.answers).body).toMatchObject({ text: "Prüfung erforderlich" });
+		expect(only(again.edits).body.text).toContain(
+			"Es wurde keine Entscheidung getroffen",
+		);
+		expect(only(again.answers).body).toMatchObject({
+			text: "Prüfung erforderlich",
+		});
 	});
 
 	it("rejects through the same path and records the rejection outcome", async () => {
@@ -654,7 +731,7 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			[absenceId],
 		);
 		expect(only(rows)).toMatchObject({ status: "rejected" });
-		expect(only(result.edits).body.text).toContain("Antrag abgelehnt");
+		expect(only(result.edits).body.text).toContain("Anfrage abgelehnt");
 	});
 
 	it("reports an intermediate approval as recorded, not as final approval", async () => {
@@ -679,9 +756,14 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			"select assignment_outcome, request_outcome from approval_decision_evidence where workflow_id = $1",
 			[workflowId],
 		);
-		expect(only(rows)).toEqual({ assignment_outcome: "approved", request_outcome: "pending" });
+		expect(only(rows)).toEqual({
+			assignment_outcome: "approved",
+			request_outcome: "pending",
+		});
 		expect(only(result.edits).body.text).toContain("Genehmigung erfasst");
-		expect(only(result.edits).body.text).toContain("wartet noch auf weitere Genehmigungen");
+		expect(only(result.edits).body.text).toContain(
+			"wartet noch auf weitere Genehmigungen",
+		);
 	});
 
 	it("revalidates at commit: a web decision or material change after rendering decides nothing", async () => {
@@ -690,7 +772,9 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		const racedCard = await sendCard(raced.requestId);
 		// Cross-platform decision between rendering and the click.
 		actAs(ids.managerUser);
-		const web = await approveAbsenceEffect(raced.absenceId, { approvalRequestId: raced.requestId });
+		const web = await approveAbsenceEffect(raced.absenceId, {
+			approvalRequestId: raced.requestId,
+		});
 		expect(web.success).toBe(true);
 		harness.userId = null;
 		const afterWeb = await counts(raced.workflowId);
@@ -703,15 +787,18 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			}),
 		);
 		expect(await counts(raced.workflowId)).toEqual(afterWeb);
-		expect(only(racedPress.edits).body.text).toContain("Es wurde keine Entscheidung getroffen");
+		expect(only(racedPress.edits).body.text).toContain(
+			"Es wurde keine Entscheidung getroffen",
+		);
 
 		await seed();
 		const changed = await submit();
 		const changedCard = await sendCard(changed.requestId);
 		// Material change in place after the card was rendered.
-		await admin.query("update absence_entry set end_date = '2026-08-05' where id = $1", [
-			changed.absenceId,
-		]);
+		await admin.query(
+			"update absence_entry set end_date = '2026-08-05' where id = $1",
+			[changed.absenceId],
+		);
 		const before = await counts(changed.workflowId);
 		const changedPress = await press(
 			callback({
@@ -723,7 +810,9 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		);
 		expect(await counts(changed.workflowId)).toEqual(before);
 		expect(before).toMatchObject({ status: "pending", decisions: "0" });
-		expect(only(changedPress.edits).body.text).toContain("Es wurde keine Entscheidung getroffen");
+		expect(only(changedPress.edits).body.text).toContain(
+			"Es wurde keine Entscheidung getroffen",
+		);
 		// Nothing was bound to the rejected attempt.
 		const { rows } = await admin.query(
 			"select count(*)::int as count from approval_invocation where organization_id = $1",
@@ -762,7 +851,12 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		);
 		// Missing callback-query identity and an unrecognizable bot identity.
 		await press(
-			callback({ data: approveData, queryId: "", updateId: 5003, messageId: card.messageId }),
+			callback({
+				data: approveData,
+				queryId: "",
+				updateId: 5003,
+				messageId: card.messageId,
+			}),
 		);
 		await press(
 			callback({
@@ -774,7 +868,11 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			bot(ids.organization, "not-a-telegram-token"),
 		);
 		expect(await counts(workflowId)).toEqual(before);
-		expect(before).toMatchObject({ status: "pending", decisions: "0", invocations: "0" });
+		expect(before).toMatchObject({
+			status: "pending",
+			decisions: "0",
+			invocations: "0",
+		});
 	});
 
 	it("keeps old unbound cards historical-only and review-only for absences", async () => {
@@ -791,7 +889,9 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			}),
 		);
 		expect(await counts(workflowId)).toEqual(before);
-		expect(only(legacy.edits).body.text).toContain("Es wurde keine Entscheidung getroffen");
+		expect(only(legacy.edits).body.text).toContain(
+			"Es wurde keine Entscheidung getroffen",
+		);
 	});
 
 	it("stays review-only until every gate admits the card", async () => {
@@ -851,9 +951,10 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 				}),
 			);
 			expect(await counts(workflowId)).toEqual(before);
-			const { rows } = await admin.query("select status from absence_entry where id = $1", [
-				absenceId,
-			]);
+			const { rows } = await admin.query(
+				"select status from absence_entry where id = $1",
+				[absenceId],
+			);
 			expect(only(rows)).toEqual({ status: "pending" });
 			// Outcome unknown to the adapter: no success is claimed.
 			expect(failed.edits).toEqual([]);
@@ -906,9 +1007,13 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			.filter((call) => call.method === "editMessageText")
 			.map((call) => String(call.body.text));
 		expect(texts).toHaveLength(3);
-		expect(texts.every((text) => text.includes("Antrag genehmigt"))).toBe(true);
+		expect(texts.every((text) => text.includes("Anfrage genehmigt"))).toBe(
+			true,
+		);
 		// One delivery committed; the others waited and replayed its evidence.
-		expect(texts.filter((text) => text.includes("ursprüngliches Ergebnis"))).toHaveLength(2);
+		expect(
+			texts.filter((text) => text.includes("ursprüngliche Ergebnis")),
+		).toHaveLength(2);
 	});
 
 	it("purges invocation associations with their lifecycle and cannot recreate them", async () => {
@@ -955,9 +1060,10 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			}),
 		);
 		await expect(
-			admin.query("update approval_invocation set delivery_id = 'x' where workflow_id = $1", [
-				workflowId,
-			]),
+			admin.query(
+				"update approval_invocation set delivery_id = 'x' where workflow_id = $1",
+				[workflowId],
+			),
 		).rejects.toThrow(/immutable/);
 	});
 
@@ -972,7 +1078,10 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			messageId: decidedCard.messageId,
 		});
 		await press(committed);
-		const pendingCase = await submit({ startDate: "2026-09-07", endDate: "2026-09-08" });
+		const pendingCase = await submit({
+			startDate: "2026-09-07",
+			endDate: "2026-09-08",
+		});
 		const pendingCard = await sendCard(pendingCase.requestId);
 
 		// The adoption writer pauses Telegram after both cards were sent.
@@ -991,13 +1100,19 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 			}),
 		);
 		expect(await counts(pendingCase.workflowId)).toEqual(before);
-		expect(before).toMatchObject({ status: "pending", decisions: "0", invocations: "0" });
-		expect(only(paused.edits).body.text).toContain("Es wurde keine Entscheidung getroffen");
+		expect(before).toMatchObject({
+			status: "pending",
+			decisions: "0",
+			invocations: "0",
+		});
+		expect(only(paused.edits).body.text).toContain(
+			"Es wurde keine Entscheidung getroffen",
+		);
 
 		const decidedBefore = await counts(decidedCase.workflowId);
 		const replay = await press(committed);
 		expect(await counts(decidedCase.workflowId)).toEqual(decidedBefore);
-		expect(only(replay.edits).body.text).toContain("ursprüngliches Ergebnis");
+		expect(only(replay.edits).body.text).toContain("ursprüngliche Ergebnis");
 	});
 
 	it("replays a committed press without consulting current state and conflicts on another actor", async () => {
@@ -1017,13 +1132,14 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 
 		// Current source state moves on: the absence no longer points at the
 		// workflow. The committed press still returns its original evidence.
-		await admin.query("update absence_entry set approval_workflow_id = null where id = $1", [
-			absenceId,
-		]);
+		await admin.query(
+			"update absence_entry set approval_workflow_id = null where id = $1",
+			[absenceId],
+		);
 		const replay = await press(update);
 		expect(await counts(workflowId)).toEqual(decided);
-		expect(only(replay.edits).body.text).toContain("Antrag genehmigt");
-		expect(only(replay.edits).body.text).toContain("ursprüngliches Ergebnis");
+		expect(only(replay.edits).body.text).toContain("Anfrage genehmigt");
+		expect(only(replay.edits).body.text).toContain("ursprüngliche Ergebnis");
 
 		// The same query presented by another actor is a mismatch, not a new
 		// operation and not "not found".
@@ -1053,9 +1169,10 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 
 	it("issues no binding for a card that does not fit one Telegram message", async () => {
 		await seed();
-		await admin.query("update absence_category set name = repeat('Vacation ', 600) where id = $1", [
-			ids.category,
-		]);
+		await admin.query(
+			"update absence_category set name = repeat('Vacation ', 600) where id = $1",
+			[ids.category],
+		);
 		const { requestId } = await submit();
 		const card = await sendCard(requestId);
 		expect(card.callbackData).toEqual([]);
@@ -1071,7 +1188,9 @@ describe("Telegram absence cards with reviewed bindings (PostgreSQL)", () => {
 		await seed();
 		const { requestId, workflowId } = await submit();
 		const card = await sendCard(requestId);
-		const bindingId = (JSON.parse(card.callbackData[0] ?? "{}") as { b: string }).b;
+		const bindingId = (
+			JSON.parse(card.callbackData[0] ?? "{}") as { b: string }
+		).b;
 		await admin.query(
 			"update member set status = 'pending' where organization_id = $1 and user_id = $2",
 			[ids.organization, ids.managerUser],

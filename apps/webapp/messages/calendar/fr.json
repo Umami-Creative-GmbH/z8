@@ -292,7 +292,8 @@
         "missing": "temps enregistré manquant",
         "over": "au-delà de l'exigence",
         "under": "en deçà de l'exigence"
-      }
+      },
+      "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Choisir l'occurrence à utiliser",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pause – {duration}"
+      }
     }
   }
 }

@@ -27,7 +27,7 @@ describe("German route catalogs", () => {
 				);
 				expect(
 					tolgee.t("common.timeInput.openTimePicker", "Open time picker"),
-				).toBe("Uhrzeitauswahl öffnen");
+				).toBe("Zeitauswahl öffnen");
 				expect(tolgee.t("presence.clockedOut", "Clocked out")).toBe(
 					"Ausgestempelt",
 				);
@@ -67,15 +67,11 @@ describe("German route catalogs", () => {
 			"timeTracking.table.recordedLocalTime",
 			"Erfasste Ortszeit",
 		],
-		[
-			"/time-tracking",
-			"common.timeInput.openTimePicker",
-			"Uhrzeitauswahl öffnen",
-		],
+		["/time-tracking", "common.timeInput.openTimePicker", "Zeitauswahl öffnen"],
 		[
 			"/calendar",
 			"calendar.requirements.status.missing",
-			"erfasste Zeit fehlt",
+			"Fehlende erfasste Zeit",
 		],
 	])("provides German copy for %s: %s", async (route, key, expected) => {
 		const slice = await loadCatalogSlice("de", getNamespacesForRoute(route));

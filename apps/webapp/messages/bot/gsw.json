@@ -82,7 +82,12 @@
         "requestApprovedTitle": "Ahfrag gnehmigt",
         "requestRejectedTitle": "Ahfrag abglehnt",
         "stepApprovedTitle": "Gnehmigung erfasst",
-        "stepRejectedTitle": "Ablähnig erfasst"
+        "stepRejectedTitle": "Ablähnig erfasst",
+        "requestApproved": "Genehmigt vo {actor} am {time}. De Aatrag isch genehmigt.",
+        "requestRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch abglehnt.",
+        "stepApproved": "Genehmigt vo {actor} am {time}. De Aatrag wartet no uf wiiteri Genehmigunge.",
+        "stepRejected": "Abglehnt vo {actor} am {time}. De Aatrag isch no nöd abgschlosse; prüef sin aktuelle Status in Z8.",
+        "recorded": "Erfasst vo {actor} am {time}. Prüef de aktuelle Status vom Aatrag in Z8."
       },
       "outcomeUnknown": "S Ergebnis vo däm Klick hät nöd chönne bestätigt werde. Überprüef d Aafrag in Z8, bevor d nomol drucksch.",
       "period": "Ziitruum",

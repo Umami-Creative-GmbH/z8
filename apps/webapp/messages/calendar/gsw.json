@@ -292,7 +292,8 @@
         "missing": "fählendi erfassti Ziit",
         "over": "über de Vorgab",
         "under": "unter de Vorgab"
-      }
+      },
+      "dayLabel": "{date}: {actual} erfasst, {required} nötig, {delta} {status}."
     },
     "split": {
       "ambiguousTime": "Wähle us, weles Eräignis bruucht wird",
@@ -345,6 +346,11 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Pause – {duration}"
+      }
     }
   }
 }

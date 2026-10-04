@@ -40,7 +40,8 @@
       "errors": {
         "invalidTimeRange": "Ausstempelzeit muss nach der Einstempelzeit liegen",
         "submitFailed": "Fehler beim Senden der Korrektur",
-        "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags"
+        "updateFailed": "Fehler beim Aktualisieren des Zeiteintrags",
+        "noChanges": "Mindestens ein Korrekturwert muss geändert werden"
       },
       "noteLabel": "Notiz (optional)",
       "notePlaceholder": "Notiz zu dieser Änderung hinzufügen...",
@@ -58,7 +59,9 @@
         "submitted": "Korrekturanfrage zur Genehmigung durch Manager gesendet",
         "updated": "Zeiteintrag erfolgreich aktualisiert"
       },
-      "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})"
+      "timezoneNote": "Zeiten sind in Ihrer lokalen Zeitzone ({timezone})",
+      "clockInTime": "Uhrzeit Arbeitsbeginn",
+      "clockOutTime": "Uhrzeit Arbeitsende"
     },
     "currentlyClockedIn": "Sie sind derzeit eingestempelt",
     "deadline": "Deadline",
@@ -269,7 +272,12 @@
     "unknownCategory": "Unbekannte Kategorie",
     "unknownProject": "Unbekanntes Projekt",
     "welcomeBack": "Willkommen zurück, {name}",
-    "workCategory": "Arbeitskategorie"
+    "workCategory": "Arbeitskategorie",
+    "workLocation": "Arbeitsort",
+    "workLocationHome": "Homeoffice",
+    "workLocationOffice": "Büro",
+    "workLocationOther": "Sonstiges",
+    "workLocationRemote": "Mobil"
   },
   "wellness": {
     "water": {

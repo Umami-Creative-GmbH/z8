@@ -82,7 +82,12 @@
         "requestApprovedTitle": "Solicitud aprobada",
         "requestRejectedTitle": "Solicitud rechazada",
         "stepApprovedTitle": "Aprobación registrada",
-        "stepRejectedTitle": "Rechazo registrado"
+        "stepRejectedTitle": "Rechazo registrado",
+        "requestApproved": "Aprobada por {actor} el {time}. La solicitud está aprobada.",
+        "requestRejected": "Rechazada por {actor} el {time}. La solicitud está rechazada.",
+        "stepApproved": "Aprobada por {actor} el {time}. La solicitud aún espera más aprobaciones.",
+        "stepRejected": "Rechazada por {actor} el {time}. La solicitud aún no es definitiva; revisa su estado actual en Z8.",
+        "recorded": "Registrada por {actor} el {time}. Revisa el estado actual de la solicitud en Z8."
       },
       "outcomeUnknown": "No se pudo confirmar el resultado de esta acción. Verifique la solicitud en Z8 antes de volver a presionar.",
       "period": "Período",
