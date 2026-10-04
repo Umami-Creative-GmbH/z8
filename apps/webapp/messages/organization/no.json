@@ -203,10 +203,11 @@
       "failed": "Kunne ikke gjenopprette organisasjon",
       "success": "Organisasjonen ble gjenopprettet"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Administrator",
-    "role.member": "Medlem",
-    "role.owner": "Eier",
+    "role": {
+      "admin": "Administrator",
+      "member": "Medlem",
+      "owner": "Eier"
+    },
     "slugDescription": "Brukes i nettadresser. Genereres automatisk fra navn.",
     "slugErrors": {
       "format": "Slug kan bare inneholde små bokstaver, tall og bindestreker",

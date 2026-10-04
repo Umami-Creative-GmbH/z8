@@ -139,6 +139,11 @@
     "title": "Godkännanden",
     "totalCount": "${totalCount} väntande",
     "type": "Typ",
+    "types": {
+      "absence_entry": "Frånvaroansökningar",
+      "time_entry": "Tidskorrigeringar",
+      "travel_expense_claim": "Resekostnader"
+    },
     "unifiedInboxBannerDescription": "Visa alla typer av godkännanden på ett ställe med filtrering, massåtgärder och SLA-uppföljning.",
     "unifiedInboxBannerTitle": "Prova den nya enhetliga inkorgen",
     "workCategory": "Arbetskategori",

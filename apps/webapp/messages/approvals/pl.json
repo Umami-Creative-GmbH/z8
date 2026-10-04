@@ -139,6 +139,11 @@
     "title": "Zatwierdzenia",
     "totalCount": "${totalCount} oczekujących",
     "type": "Typ",
+    "types": {
+      "absence_entry": "Wnioski o nieobecność",
+      "time_entry": "Korekty czasu pracy",
+      "travel_expense_claim": "Koszty podróży"
+    },
     "unifiedInboxBannerDescription": "Przeglądaj wszystkie typy zatwierdzeń w jednym miejscu dzięki filtrowaniu, akcjom masowym i śledzeniu SLA.",
     "unifiedInboxBannerTitle": "Wypróbuj nową ujednoliconą skrzynkę odbiorczą",
     "workCategory": "Kategoria pracy",

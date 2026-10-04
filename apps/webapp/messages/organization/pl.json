@@ -203,10 +203,11 @@
       "failed": "Nie udało się odzyskać organizacji",
       "success": "Organizacja została pomyślnie odzyskana"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Administrator",
-    "role.member": "Członek",
-    "role.owner": "Właściciel",
+    "role": {
+      "admin": "Administrator",
+      "member": "Członek",
+      "owner": "Właściciel"
+    },
     "slugDescription": "Używane w adresach URL. Generowane automatycznie z nazwy.",
     "slugErrors": {
       "format": "Slug może zawierać tylko małe litery, cyfry i myślniki",

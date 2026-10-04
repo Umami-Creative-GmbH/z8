@@ -15,14 +15,15 @@
       "today": "¡Hoy!",
       "tomorrow": "Mañana"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Utilice el icono de personalización del panel para volver a activar los widgets individuales, o restablezca el diseño para mostrar todos los widgets de nuevo.",
-    "customize.empty-title": "Todos los widgets del panel están ocultos",
-    "customize.move-down": "Mover {widget} hacia abajo",
-    "customize.move-up": "Mover {widget} hacia arriba",
-    "customize.reset": "Restablecer diseño",
-    "customize.title": "Widgets del panel",
-    "customize.trigger": "Personalizar panel",
+    "customize": {
+      "empty-description": "Utilice el icono de personalización del panel para volver a activar los widgets individuales, o restablezca el diseño para mostrar todos los widgets de nuevo.",
+      "empty-title": "Todos los widgets del panel están ocultos",
+      "move-down": "Mover {widget} hacia abajo",
+      "move-up": "Mover {widget} hacia arriba",
+      "reset": "Restablecer diseño",
+      "title": "Widgets del panel",
+      "trigger": "Personalizar panel"
+    },
     "hydration": {
       "add-glass": "Añadir {count} vaso",
       "add-glasses": "Añadir {count} vasos",

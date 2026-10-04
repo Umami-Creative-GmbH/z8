@@ -15,14 +15,15 @@
       "today": "I dag!",
       "tomorrow": "I morgen"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Bruk ikonet for tilpassing av dashbordet for å aktivere enkeltmoduler igjen, eller tilbakestill oppsettet for å vise alle moduler igjen.",
-    "customize.empty-title": "Alle dashbordmoduler er skjult",
-    "customize.move-down": "Flytt {widget} ned",
-    "customize.move-up": "Flytt {widget} opp",
-    "customize.reset": "Tilbakestill oppsett",
-    "customize.title": "Dashbordmoduler",
-    "customize.trigger": "Tilpass dashbord",
+    "customize": {
+      "empty-description": "Bruk ikonet for tilpassing av dashbordet for å aktivere enkeltmoduler igjen, eller tilbakestill oppsettet for å vise alle moduler igjen.",
+      "empty-title": "Alle dashbordmoduler er skjult",
+      "move-down": "Flytt {widget} ned",
+      "move-up": "Flytt {widget} opp",
+      "reset": "Tilbakestill oppsett",
+      "title": "Dashbordmoduler",
+      "trigger": "Tilpass dashbord"
+    },
     "hydration": {
       "add-glass": "Legg til {count} glass",
       "add-glasses": "Legg til {count} glass",

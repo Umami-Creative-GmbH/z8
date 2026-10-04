@@ -244,6 +244,7 @@
     },
     "eventType": {
       "absence": "Absence",
+      "break": "Pause",
       "holiday": "Jour férié",
       "timeEntry": "Saisie de temps",
       "workPeriod": "Période de travail"
@@ -275,6 +276,8 @@
     },
     "monthSummary": {
       "calendarWeek": "Semaine",
+      "dayEvents": "{count, plural, one {# événement : {titles}} other {# événements : {titles}}}",
+      "dayLabel": "{date} : {actual} enregistré, {required} requis, {delta} {status}.",
       "description": "Heures de politique journalières, hebdomadaires et mensuelles",
       "emptyMonth": "Aucune heure de politique ce mois-ci",
       "monthTotal": "Total du mois",

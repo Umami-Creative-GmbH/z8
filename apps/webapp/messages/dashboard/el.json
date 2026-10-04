@@ -15,14 +15,15 @@
       "today": "Σήμερα!",
       "tomorrow": "Αύριο"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Χρησιμοποιήστε το εικονίδιο προσαρμογής του πίνακα ελέγχου για να ενεργοποιήσετε ξανά μεμονωμένα widget ή επαναφέρετε τη διάταξη για να εμφανιστούν ξανά όλα τα widget.",
-    "customize.empty-title": "Όλα τα widget του πίνακα ελέγχου είναι κρυμμένα",
-    "customize.move-down": "Μετακίνηση του {widget} προς τα κάτω",
-    "customize.move-up": "Μετακίνηση του {widget} προς τα πάνω",
-    "customize.reset": "Επαναφορά διάταξης",
-    "customize.title": "Widget πίνακα ελέγχου",
-    "customize.trigger": "Προσαρμογή πίνακα ελέγχου",
+    "customize": {
+      "empty-description": "Χρησιμοποιήστε το εικονίδιο προσαρμογής του πίνακα ελέγχου για να ενεργοποιήσετε ξανά μεμονωμένα widget ή επαναφέρετε τη διάταξη για να εμφανιστούν ξανά όλα τα widget.",
+      "empty-title": "Όλα τα widget του πίνακα ελέγχου είναι κρυμμένα",
+      "move-down": "Μετακίνηση του {widget} προς τα κάτω",
+      "move-up": "Μετακίνηση του {widget} προς τα πάνω",
+      "reset": "Επαναφορά διάταξης",
+      "title": "Widget πίνακα ελέγχου",
+      "trigger": "Προσαρμογή πίνακα ελέγχου"
+    },
     "hydration": {
       "add-glass": "Προσθήκη {count} ποτηριού",
       "add-glasses": "Προσθήκη {count} ποτηριών",

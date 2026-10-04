@@ -203,10 +203,11 @@
       "failed": "Échec de la récupération de l'organisation",
       "success": "Organisation récupérée avec succès"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Admin",
-    "role.member": "Membre",
-    "role.owner": "Propriétaire",
+    "role": {
+      "admin": "Admin",
+      "member": "Membre",
+      "owner": "Propriétaire"
+    },
     "slugDescription": "Utilisé dans les URL. Généré automatiquement à partir du nom.",
     "slugErrors": {
       "format": "Le slug ne doit contenir que des lettres minuscules, des chiffres et des traits d'union",

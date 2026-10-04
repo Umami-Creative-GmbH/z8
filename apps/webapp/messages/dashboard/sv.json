@@ -15,14 +15,15 @@
       "today": "Idag!",
       "tomorrow": "Imorgon"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Använd ikonen för anpassning av instrumentpanelen för att återaktivera enskilda widgetar, eller återställ layouten för att visa alla widgetar igen.",
-    "customize.empty-title": "Alla widgetar på instrumentpanelen är dolda",
-    "customize.move-down": "Flytta {widget} nedåt",
-    "customize.move-up": "Flytta {widget} uppåt",
-    "customize.reset": "Återställ layout",
-    "customize.title": "Instrumentpanelswidgetar",
-    "customize.trigger": "Anpassa instrumentpanel",
+    "customize": {
+      "empty-description": "Använd ikonen för anpassning av instrumentpanelen för att återaktivera enskilda widgetar, eller återställ layouten för att visa alla widgetar igen.",
+      "empty-title": "Alla widgetar på instrumentpanelen är dolda",
+      "move-down": "Flytta {widget} nedåt",
+      "move-up": "Flytta {widget} uppåt",
+      "reset": "Återställ layout",
+      "title": "Instrumentpanelswidgetar",
+      "trigger": "Anpassa instrumentpanel"
+    },
     "hydration": {
       "add-glass": "Lägg till {count} glas",
       "add-glasses": "Lägg till {count} glas",

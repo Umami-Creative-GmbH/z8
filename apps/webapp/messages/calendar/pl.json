@@ -244,6 +244,7 @@
     },
     "eventType": {
       "absence": "Nieobecność",
+      "break": "Przerwa",
       "holiday": "Święto",
       "timeEntry": "Wpis czasu",
       "workPeriod": "Okres pracy"
@@ -275,6 +276,8 @@
     },
     "monthSummary": {
       "calendarWeek": "KT",
+      "dayEvents": "{count, plural, one {# wydarzenie: {titles}} many {# wydarzeń: {titles}} other {# wydarzenia: {titles}} }",
+      "dayLabel": "{date}: zarejestrowano {actual}, wymagane {required}, {delta} {status}.",
       "description": "Dzienne, tygodniowe i miesięczne godziny polityki",
       "emptyMonth": "Brak godzin polityki w tym miesiącu",
       "monthTotal": "Suma miesięczna",

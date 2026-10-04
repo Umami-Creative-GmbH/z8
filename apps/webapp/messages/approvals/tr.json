@@ -139,6 +139,11 @@
     "title": "Onaylar",
     "totalCount": "${totalCount} beklemede",
     "type": "Tür",
+    "types": {
+      "absence_entry": "İzin Talepleri",
+      "time_entry": "Zaman Düzeltmeleri",
+      "travel_expense_claim": "Seyahat Masrafları"
+    },
     "unifiedInboxBannerDescription": "Tüm onay türlerini filtreleme, toplu işlemler ve SLA takibi ile tek bir yerden görüntüleyin.",
     "unifiedInboxBannerTitle": "Yeni Birleşik Gelen Kutusunu deneyin",
     "workCategory": "İş kategorisi",

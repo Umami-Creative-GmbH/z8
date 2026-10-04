@@ -139,6 +139,11 @@
     "title": "Approbations",
     "totalCount": "${totalCount} en attente",
     "type": "Type",
+    "types": {
+      "absence_entry": "Demandes d'absence",
+      "time_entry": "Corrections d'heures",
+      "travel_expense_claim": "Frais de déplacement"
+    },
     "unifiedInboxBannerDescription": "Visualisez tous les types d'approbation au même endroit avec filtrage, actions groupées et suivi des SLA.",
     "unifiedInboxBannerTitle": "Essayez la nouvelle boîte de réception unifiée",
     "workCategory": "Catégorie de travail",
