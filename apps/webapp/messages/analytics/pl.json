@@ -191,6 +191,7 @@
         "loadData": "Nie udało się załadować analityki godzin pracy"
       },
       "expectedHours": "Oczekiwane godziny",
+      "hoursPerWeekAbbreviation": "godz./tydz.",
       "variance": "Odchylenie",
       "varianceTrend": {
         "description": "Odchylenie godzin od oczekiwanego czasu pracy w czasie",

@@ -37,6 +37,7 @@
         "teamPolicyDescription": "Wählen Sie eine Urlaubsrichtlinie und ein Team aus. Dies überschreibt den Unternehmensstandard für Teammitglieder."
       },
       "carryover": "Übertrag",
+      "createDifferentPoliciesForVariousTeamsOrEmployeeGroups": "Verschiedene Richtlinien für unterschiedliche Teams oder Mitarbeitergruppen erstellen",
       "createPolicy": "Urlaubsrichtlinie erstellen",
       "createPolicyBtn": "Richtlinie erstellen",
       "current": "Aktuell",
@@ -45,6 +46,13 @@
       "description": "Verwalten Sie Urlaubsrichtlinien und Zuweisungen für Ihr Unternehmen",
       "editPolicy": "„{name}“ bearbeiten",
       "employees": {
+        "actions": {
+          "edit": "Bearbeiten"
+        },
+        "allowancesForYear": "Ferienguthaben für {{year}}",
+        "defaultAllowanceDescription": "Standardguthaben: {{days}} Tage pro Jahr",
+        "defaultPolicy": "Standard",
+        "description": "Individuelle Ferienguthaben für einzelne Mitarbeitende konfigurieren",
         "detail": {
           "addManualAdjustment": "Manuelle Aapassig hiezuetue",
           "addManualAdjustmentDescription": "Erstelle en neue Aapassigsiitrag für bsunderi Umständ (z.B. Bonus-Täg, Korrekture). Jede Aapassig wird im Audit-Log protokolliert.",
@@ -92,31 +100,24 @@
           "description": "Individuells Ferie-Guthabe für {{name}} konfiguriere",
           "title": "Ferie-Guthabe bearbeite"
         },
-        "actions": {
-          "edit": "Bearbeiten"
-        },
-        "allowancesForYear": "Urlaubsansprüche für {{year}}",
-        "defaultAllowanceDescription": "Standardanspruch: {{days}} Tage pro Jahr",
-        "defaultPolicy": "Standard",
-        "description": "Individuelli Ferie-Guthabe für einzelni Aagstellti konfiguriere",
-        "employeeCount": "{{count}} Aagstellti",
-        "emptyDescription": "Füeg Aagstellti zu dinere Organisation zue, zum ihri Ferie-Guthabe z'verwalte.",
-        "emptyTitle": "Kei Aagstellti gfunde",
-        "noOrgPolicyConfigured": " (Kei Organisations-Richtlinie konfiguriert)",
+        "employeeCount": "{{count}} Mitarbeitende",
+        "emptyDescription": "Fügen Sie Ihrer Organisation Mitarbeitende hinzu, um deren Ferienguthaben zu verwalten.",
+        "emptyTitle": "Keine Mitarbeitenden gefunden",
+        "noOrgPolicyConfigured": " (Keine Organisationsrichtlinie konfiguriert)",
         "primaryManager": "Primär",
         "table": {
-          "actions": "Aaktione",
-          "adjustments": "Aapassige",
+          "actions": "Aktionen",
+          "adjustments": "Anpassungen",
           "carryover": "Übertrag",
           "customDays": "Benutzerdefinierte Tage",
           "defaultDays": "Standardtage",
           "employee": "Mitarbeiter",
-          "managers": "Manager",
+          "managers": "Vorgesetzte",
           "policy": "Richtlinie",
           "team": "Team",
-          "totalAvailable": "Gesamt verfügbar"
+          "totalAvailable": "Total verfügbar"
         },
-        "title": "Urlaubsansprüche der Mitarbeiter"
+        "title": "Mitarbeiterguthaben"
       },
       "expires": "Läuft ab",
       "fallsBackToDefault": "Greift auf den Unternehmensstandard zurück",
@@ -176,7 +177,8 @@
         "policies": "Regelungen"
       },
       "title": "Ferienverwaltung",
-      "updatePolicy": "Regelung aktualisieren"
+      "updatePolicy": "Regelung aktualisieren",
+      "vacationPolicies": "Ferienrichtlinien"
     }
   },
   "vacation": {

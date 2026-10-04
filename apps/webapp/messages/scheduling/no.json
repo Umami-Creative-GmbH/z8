@@ -21,6 +21,22 @@
       "managerDescription": "Administrer og planlegg ansattes vakter",
       "title": "Vaktplan"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Bekreft og publiser",
+      "acknowledgmentDescription": "Publiseringen vil fortsette, men denne vaktplanen har advarsler om regeloverholdelse som må bekreftes først.",
+      "button": "Publiser ({count})",
+      "cancel": "Avbryt",
+      "complianceAcknowledgmentRequired": "Bekreftelse på samsvar kreves",
+      "complianceWarnings": "{count, plural, one {Samsvarskontrollen fant # advarsel; du må bekrefte den før publisering.} other {Samsvarskontrollen fant # advarsler; du må bekrefte dem før publisering.}}",
+      "coverageWarning": "Noen tidsblokker oppfyller ikke kravene til minimumsbemanning.",
+      "maxHours": "Maks. timer: {count}",
+      "notifyEmployees": "{count, plural, one {Publiser # utkast til vakt og varsle ansatte} other {Publiser # utkast til vakter og varsle ansatte}}",
+      "overtime": "Overtid: {count}",
+      "publishing": "Publiserer…",
+      "restTime": "Hviletid: {count}",
+      "totalFindings": "{count, plural, other {# funn totalt} }",
+      "warningsDetectedBeforePublish": "Advarsler oppdaget før publisering"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} funn oppdaget før publisering.",

@@ -136,6 +136,11 @@
       "success": "Medarbetaren har stämplats ut",
       "title": "Stämpla ut medarbetaren?"
     },
+    "contextMenu": {
+      "delete": "Ta bort",
+      "edit": "Redigera",
+      "label": "Åtgärder för tidsregistrering"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Tidsregistreringar blockerade",
       "category": "Kategori",
@@ -159,35 +164,72 @@
       "title": "Konvertera till rast?"
     },
     "details": {
+      "automaticClockOut": "Automatiskt utstämplad",
+      "automaticCutoff": "Brytpunkt för utstämpling",
+      "automaticLimit": "Gräns för sammanhängande arbetstid",
       "baseWorked": "Arbetad bastid",
       "blocksTimeEntry": "Blockerar tidsregistrering",
       "category": "Kategori",
       "credited": "Tillgodoräknad",
       "dateRange": "Datumintervall",
       "duration": "Varaktighet",
+      "editedBy": "Redigerad av",
       "employee": "Anställd",
       "notes": "Anteckningar",
+      "pendingApproval": "Väntar på godkännande",
+      "pendingApprovalDescription": "Denna arbetsperiod väntar på godkännande från chef. De registrerade tiderna kan ändras om den avvisas.",
       "project": "Projekt",
       "recurring": "Återkommer årligen",
+      "rejected": "Avvisad",
+      "rejectedDescription": "Denna ändring av arbetsperiod avvisades av en chef. De ursprungliga tiderna har återställts.",
+      "source": "Källa",
       "status": "Status",
       "surcharge": "Tillägg",
       "surchargeBreakdown": "Uppdelning av tillägg",
+      "system": "System",
       "time": "Tid",
       "type": "Typ",
       "workLocation": "Arbetsplats"
     },
     "edit": {
       "deleteEntry": "Ta bort post",
+      "locationRequired": "Välj en arbetsplats.",
+      "noNotes": "Inga anteckningar har lagts till",
+      "noProject": "Inget projekt tilldelat",
       "notesSaved": "Anteckningar sparade",
       "notesSaveFailed": "Kunde inte spara anteckningar",
       "projectSaved": "Projekt uppdaterat",
       "projectSaveFailed": "Kunde inte uppdatera projekt",
       "split": "Dela",
-      "locationRequired": "Välj en arbetsplats.",
       "time": {
-        "noChanges": "Ändra först datum, tid eller arbetsplats.",
-        "edit": "Redigera post"
-      }
+        "approvalHint": "Denna ändring skickas till din chef för godkännande.",
+        "beyondWindow": "Poster som är äldre än {days} dagar kan endast redigeras av en administratör.",
+        "clockIn": "Stämpla in",
+        "clockInDate": "Instämplingsdatum",
+        "clockInTime": "Instämplingstid",
+        "clockOut": "Stämpla ut",
+        "clockOutDate": "Utstämplingsdatum",
+        "clockOutTime": "Utstämplingstid",
+        "directHint": "Denna ändring tillämpas omedelbart.",
+        "edit": "Redigera post",
+        "invalidRange": "Utstämpling måste ske efter instämpling.",
+        "noChanges": "Ändra datum, tid eller arbetsplats först.",
+        "noteLabel": "Anteckning (valfritt)",
+        "notePlaceholder": "Lägg till en anteckning om denna ändring…",
+        "onBehalfHint": "Denna ändring följer medarbetarens godkännandekedja. Om du är dennes godkännare tillämpas den direkt.",
+        "pendingCorrection": "En tidsändring för den här posten väntar redan på godkännande.",
+        "reasonLabel": "Anledning",
+        "reasonPlaceholder": "Förklara varför denna korrigering behövs…",
+        "reasonRequired": "Ange en anledning för din chef.",
+        "saved": "Tidspost uppdaterad",
+        "saveFailed": "Det gick inte att uppdatera tidsposten",
+        "submitForApproval": "Skicka för godkännande",
+        "submitOnBehalf": "Skicka ändring",
+        "submitted": "Ändringen har skickats för chefens godkännande",
+        "submittedOnBehalf": "Ändringen har skickats till medarbetarens godkännare",
+        "timezoneNote": "Tiderna visas i medarbetarens tidszon ({timezone})"
+      },
+      "title": "Arbetsperiod"
     },
     "employeeSelector": {
       "error": "Kunde inte läsa in teammedlemmar",
@@ -226,6 +268,7 @@
       "workPeriod": "Arbetsperiod",
       "workPeriodPending": "Väntar på godkännande"
     },
+    "loadEventsError": "Det gick inte att läsa in kalenderhändelser: {message}",
     "mobileControls": {
       "description": "Välj vilka kalenderposter som ska visas.",
       "title": "Filter & teckenförklaring"
@@ -239,6 +282,14 @@
       "previousMonth": "Föregående månad",
       "totalDescription": "Registrerad tid jämfört med policytimmar",
       "weekSum": "Summa"
+    },
+    "requirements": {
+      "status": {
+        "met": "krav uppfyllt",
+        "missing": "saknar registrerad tid",
+        "over": "över krav",
+        "under": "under krav"
+      }
     },
     "split": {
       "ambiguousTime": "Välj vilken förekomst som ska användas",
@@ -277,6 +328,12 @@
       "week": "Vecka",
       "year": "År"
     },
+    "workLocation": {
+      "notRecorded": "Inte registrerad"
+    },
+    "workPeriod": {
+      "editedBy": "(redigerad av {name} {date})"
+    },
     "workStatus": {
       "overRequirement": "över kravet",
       "requiredHoursMissing": "obligatoriska timmar saknas",
@@ -285,9 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "workLocation": {
-      "notRecorded": "Inte registrerad"
     }
   }
 }

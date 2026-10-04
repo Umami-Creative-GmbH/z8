@@ -63,9 +63,6 @@
       "titleWithIcon": "\uD83D\uDCCA Dekningsrapport",
       "variance": "Avvik",
       "viewFullSchedule": "Se fullstendig tidsplan"
-    },
-    "help": {
-      "availableCommands": "Hjelp"
     }
   },
   "common": {

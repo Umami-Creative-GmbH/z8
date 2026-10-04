@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Etkin kuruluşun bordro verilerine erişiminiz yok.",
+      "help": "Bu çalışma alanına ihtiyacınız varsa bir kuruluş yöneticisinden bordro erişimi vermesini isteyin.",
+      "title": "Bordro erişimi yok"
+    },
     "actions": {
       "apply": "Uygula",
       "downloadPdf": "PDF indir",
@@ -12,11 +17,11 @@
       "dateUnavailable": "Tarih kullanılamıyor",
       "missingClockOut": "Eksik çıkış saati",
       "needReview": "{count} bordro engelinin gözden geçirilmesi gerekiyor",
-      "offboardingClockRepair": "Ayrılışta çıkış kaydının düzeltilmesi gerekiyor",
+      "offboardingClockRepair": "İşten ayrılma çıkış kaydının düzeltilmesi gerekiyor",
       "openApprovals": "Açık onaylar",
       "openCalendar": "Takvimi aç",
       "openWork": "Çıkış kaydı olmayan çalışma",
-      "openWorkDiagnostics": "Çalışma tanılamasını aç",
+      "openWorkDiagnostics": "Çalışma tanılamalarını aç",
       "pendingAbsence": "Bekleyen izin",
       "pendingTimeCorrection": "Bekleyen zaman düzeltmesi",
       "pendingWorkApproval": "Onay bekleyen çalışma",
@@ -48,12 +53,13 @@
       "activeOrganizationEmployeeRequired": "Aktif organizasyon çalışanı bağlamı gereklidir",
       "authenticationRequired": "Kimlik doğrulama gerekli",
       "blockerNotDismissible": "Bordro engeli kaldırılamıyor",
+      "dataTemporarilyUnavailable": "Bordro verileri geçici olarak kullanılamıyor",
       "employeeIdsMustBeArray": "employeeIds bir dizi olmalıdır",
       "employeeIdsMustContainOnlyStrings": "employeeIds yalnızca dizeler içermelidir",
       "endDateAfterStart": "Bitiş tarihi, başlangıç tarihinden sonra veya aynı gün olmalıdır",
-      "exportBlockedByOffboardingClockRepair": "Dışa aktarma engellendi: önce ayrılıştaki çıkış kaydını düzeltin",
-      "exportBlockedByUncertainWork": "Dışa aktarma engellendi: önce seçilen kapsamdaki belirsiz çalışmayı çözün",
-      "exportBlockedByUnresolvedWorkMinutes": "Dışa aktarma engellendi: önce incelenmesi gereken çalışma dakikalarını çözün",
+      "exportBlockedByOffboardingClockRepair": "Dışa aktarma engellendi: önce işten ayrılış çıkış kaydını düzeltin",
+      "exportBlockedByUncertainWork": "Dışa aktarma engellendi: önce seçilen kapsamdaki belirsiz çalışmayı çözümleyin",
+      "exportBlockedByUnresolvedWorkMinutes": "Dışa aktarma engellendi: önce incelenmesi gereken çalışma dakikalarını çözümleyin",
       "exportFormatNotConfigured": "Maaş bordrosu dışa aktarma formatı yapılandırılmamış",
       "invalidBlockerId": "Geçersiz bordro engel kimliği",
       "invalidBlockerType": "Geçersiz bordro engel türü",
@@ -113,6 +119,11 @@
       "ready": "Hazır",
       "workedHours": "Çalışılan saatler"
     },
-    "title": "Bordro"
+    "title": "Bordro",
+    "unavailable": {
+      "description": "Bordro verileri güvenli bir şekilde hazırlanamadı.",
+      "help": "Lütfen daha sonra tekrar deneyin. Sorun devam ederse bir kuruluş yöneticisiyle iletişime geçin.",
+      "title": "Bordro geçici olarak kullanılamıyor"
+    }
   }
 }

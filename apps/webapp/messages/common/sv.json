@@ -19,42 +19,91 @@
     "commandPlaceholder": "Sök bland sidor, personer, team, inställningar eller åtgärder…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "post",
+          "hours": "timmar",
+          "manual": "manuell",
+          "time": "tid"
+        },
         "subtitle": "Registrera timmar för ett tidigare arbetspass eller en korrigering",
         "title": "Lägg till manuell tidsregistrering"
       },
       "createProject": {
+        "keywords": {
+          "create": "skapa",
+          "project": "projekt",
+          "settings": "inställningar"
+        },
         "subtitle": "Öppna projektinställningar för att definiera ett nytt projekt",
         "title": "Skapa projekt"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "bjud in",
+          "member": "medlem",
+          "teammate": "teammedlem"
+        },
         "subtitle": "Öppna organisationshantering för att lägga till en kollega",
         "title": "Bjud in teammedlem"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "godkännanden",
+          "inbox": "inkorg",
+          "review": "granska"
+        },
         "subtitle": "Granska väntande förfrågningar från anställda",
         "title": "Öppna inkorg för godkännanden"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "mina",
+          "requests": "förfrågningar"
+        },
         "subtitle": "Granska dina inskickade frånvaroanmälningar och utlägg",
         "title": "Öppna mina förfrågningar"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Kontrollera om tidsdata är redo för lönehantering",
-        "title": "Öppna löneberedskap"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "exportera",
+          "payroll": "lönehantering",
+          "wages": "löner"
+        },
         "subtitle": "Granska avgränsad arbetsyta för lön",
         "title": "Öppna lön"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "exportera",
+          "payroll": "lönehantering",
+          "readiness": "beredskap"
+        },
+        "subtitle": "Kontrollera om tidsdata är redo för lönehantering",
+        "title": "Öppna löneberedskap"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "preferenser",
+          "settings": "inställningar"
+        },
         "subtitle": "Hantera din profil, säkerhet och organisationsinställningar",
         "title": "Öppna inställningar"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "frånvaro",
+          "timeOff": "ledighet",
+          "vacation": "semester"
+        },
         "subtitle": "Skapa en ansökan om semester, sjukfrånvaro eller ledighet",
         "title": "Ansök om frånvaro"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "utlägg",
+          "reimbursement": "ersättning",
+          "travel": "resor"
+        },
         "subtitle": "Skapa en ersättningsansökan för resekostnader",
         "title": "Skicka in reseutlägg"
       }
@@ -70,7 +119,14 @@
     "search": "Sök",
     "searchOrRunCommand": "Sök eller kör kommando",
     "teamAbsences": {
-      "description": "Granska frånvarostatistik för anställda och registrera frånvaro"
+      "description": "Granska frånvarostatistik för anställda och registrera frånvaro",
+      "keywords": {
+        "absence": "frånvaro",
+        "manager": "chef",
+        "sick": "sjuk",
+        "team": "team",
+        "vacation": "semester"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Godkänn",
     "assign": "Tilldela",
     "back": "Tillbaka",
+    "brandLogo": "{brand}-logotyp",
+    "breadcrumb": {
+      "breadcrumb": "länkstig",
+      "more": "Mer"
+    },
     "cancel": "Avbryt",
+    "carousel": {
+      "nextSlide": "Nästa bild",
+      "previousSlide": "Föregående bild",
+      "roleDescription": "karusell",
+      "slideRoleDescription": "bild"
+    },
     "clear": "Rensa",
     "clearSearch": "Rensa sökning",
     "clearSelection": "Rensa",
@@ -117,10 +184,17 @@
     "copy": "Kopiera",
     "create": "Skapa",
     "current": "Aktuell",
+    "datePicker": {
+      "clearDate": "Rensa datum",
+      "placeholder": "Välj ett datum"
+    },
     "days": {
+      "count": "{count} dagar",
       "friday": "Fredag",
+      "half": "0,5 dag",
       "label": "dagar",
       "monday": "Måndag",
+      "one": "1 dag",
       "saturday": "Lördag",
       "sunday": "Söndag",
       "thursday": "Torsdag",
@@ -129,14 +203,24 @@
     },
     "delete": "Ta bort",
     "deleting": "Tar bort...",
+    "deployment": {
+      "skew": {
+        "description": "Ladda om sidan för att fortsätta. Din senaste åtgärd sparades inte.",
+        "title": "Z8 uppdaterades"
+      }
+    },
     "description": "Beskrivning",
     "deselectAll": "Avmarkera alla",
     "details": "Detaljer",
     "download": "Ladda ner",
+    "duplicate": "Duplicera",
+    "durationMinutes": "{count} min",
     "edit": "Redigera",
     "enabled": "Aktiverad",
     "error": "Fel",
     "error-occurred": "Ett fel uppstod",
+    "fieldPresets": "{label}-förinställningar",
+    "focusInput": "Fokusera inmatningsfält",
     "gender": {
       "female": "Kvinna",
       "male": "Man",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Gå till instrumentpanelen",
     "inactive": "Inaktiv",
+    "label": "Etikett",
     "loading": "Laddar...",
+    "loadingLabel": "Läser in",
+    "loadingRegions": {
+      "absences": "Läser in frånvaro",
+      "adminConsole": "Läser in administratörskonsol",
+      "analyticsNavigation": "Läser in analysnavigering",
+      "application": "Läser in applikationen",
+      "auditExportSettings": "Läser in inställningar för revisionsexport",
+      "authentication": "Läser in autentisering",
+      "changePolicySettings": "Läser in inställningar för ändringspolicy",
+      "coverageRuleSettings": "Läser in inställningar för täckningsregler",
+      "customerSettings": "Läser in kundinställningar",
+      "customRoleSettings": "Läser in inställningar för anpassade roller",
+      "dashboard": "Läser in instrumentpanelen",
+      "dataExportSettings": "Läser in inställningar för dataexport",
+      "demoDataSettings": "Läser in inställningar för demodata",
+      "deploymentDiagnostics": "Läser in driftsättningsdiagnostik",
+      "employeeReports": "Läser in medarbetarrapporter",
+      "employeeVacationAllowances": "Läser in medarbetarnas semesterkvoter",
+      "exportOperations": "Läser in exportoperationer",
+      "holidaySettings": "Läser in helgdagsinställningar",
+      "importReview": "Läser in importgranskning",
+      "importSettings": "Läser in importinställningar",
+      "locationSettings": "Läser in platsinställningar",
+      "onboarding": "Läser in onboarding",
+      "payrollExportSettings": "Läser in inställningar för löneexport",
+      "payrollReadiness": "Läser in löneberedskap",
+      "payrollWorkspace": "Läser in arbetsytan för lön",
+      "platformAdminOverview": "Läser in översikt för plattformsadministratör",
+      "platformAnalytics": "Läser in plattformsanalys",
+      "platformBilling": "Läser in plattformsfakturering",
+      "platformSetup": "Läser in plattformskonfiguration",
+      "projectReports": "Läser in projektrapporter",
+      "projectSettings": "Läser in projektinställningar",
+      "scheduledExports": "Läser in schemalagda exporter",
+      "shiftSchedule": "Läser in skiftschema",
+      "shiftTemplateSettings": "Läser in inställningar för skiftmallar",
+      "skillSettings": "Läser in kompetensinställningar",
+      "surchargeSettings": "Läser in tilläggsinställningar",
+      "team": "Läser in team",
+      "todaySManagerBriefing": "Läser in dagens chefsgenomgång",
+      "travelExpenses": "Läser in reseutlägg",
+      "travelExpenseSettings": "Läser in inställningar för reseutlägg",
+      "twoFactorVerification": "Läser in tvåfaktorsverifiering",
+      "vacationSettings": "Läser in semesterinställningar",
+      "wellnessSettings": "Läser in friskvårdsinställningar",
+      "workCategorySettings": "Läser in inställningar för arbetskategorier",
+      "workerQueue": "Läser in arbetarkö",
+      "workPolicySettings": "Läser in inställningar för arbetspolicyer",
+      "worksCouncilPortal": "Läser in företagsrådsportalen",
+      "yourRequests": "Läser in dina förfrågningar"
+    },
     "loadMore": "Ladda mer",
     "months": {
       "april": "April",
@@ -169,11 +305,20 @@
     "next": "Nästa",
     "notApplicable": "Ej tillämpligt",
     "not-available": "Inte tillgänglig",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Aviseringar} other {Aviseringar (# olästa)}}"
+    },
     "open": "Öppna",
     "openEnded": "Utan slutdatum",
     "openMenu": "Öppna menyn",
     "optional": "valfritt",
     "or": "Eller",
+    "pagination": {
+      "goToNextPage": "Gå till nästa sida",
+      "goToPreviousPage": "Gå till föregående sida",
+      "morePages": "Fler sidor",
+      "pagination": "sidnumrering"
+    },
     "pending": "Väntande",
     "present": "Närvarande",
     "previous": "Föregående",
@@ -194,6 +339,11 @@
     "select-language": "Välj språk",
     "set": "uppsättning",
     "sets": "uppsättningar",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Visar det mobila sidofältet.",
+      "sidebar": "Sidofält",
+      "toggleSidebar": "Växla sidofält"
+    },
     "skip": "Hoppa över",
     "start": "Start",
     "status": "Status",
@@ -205,6 +355,10 @@
         "reload": "Ladda om",
         "title": "Uppdatering tillgänglig"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Öppna tidsväljare",
+      "switchPeriod": "Växla till {period}"
     },
     "to": "till",
     "today": "Idag",
@@ -233,11 +387,34 @@
       "tue": "Tis",
       "we": "On",
       "wed": "Ons"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Ändringar som påverkar personalstyrkan, avgränsade till denna organisation och period.",
+      "changeLogEmpty": "Inga ändringar hittades för denna period.",
+      "changeReviewLog": "Granskningslogg för ändringar",
+      "complianceFindings": "Efterlevnadsfynd",
+      "description": "Integritetsfiltrerad personalgranskning för den valda perioden.",
+      "disabledDescription": "Företagsrådsläget är inte aktiverat för denna organisation.",
+      "exportReviewPack": "Exportera granskningspaket",
+      "from": "Från",
+      "identityHidden": "Identitet dold",
+      "insufficientData": "Otillräckliga data",
+      "policyChanges": "Policyändringar",
+      "scheduleChanges": "Schemaändringar",
+      "scheduleDescription": "Integritetsfiltrerade schemaposter för den valda perioden.",
+      "scheduleEmpty": "Inga schemaposter hittades för denna period.",
+      "scheduleEntry": "{identity} - {start} till {end}",
+      "scheduleReview": "Schemagranskning",
+      "title": "Företagsråd",
+      "to": "Till",
+      "unassignedTeam": "Otilldelat team",
+      "updateRange": "Uppdatera intervall"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} anställda markerade",
     "countWithMore": "{count} anställda (+{more} till)",
+    "inactive": "Inaktiv",
     "noEmployeesFound": "Inga anställda hittades",
     "removeSelected": "Ta bort {name}",
     "role": "Roll",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Kontakta administratör",
       "createOrg": "Skapa organisation",
-      "description": "Du behöver en medarbetarprofil för att {feature}. Skapa en organisation eller kontakta din administratör.",
+      "description": "Du behöver en medarbetarprofil för att ${feature}. Skapa en organisation eller kontakta din administratör.",
       "emailBody": "Hej,nnjag behöver få en medarbetarprofil konfigurerad för att få tillgång till plattformens funktioner. Skulle du kunna hjälpa mig med detta?nnTack!",
       "emailSubject": "Konfiguration av medarbetarprofil krävs",
       "helpText": "Om du bjöds in till en organisation ber du din administratör att konfigurera din medarbetarprofil.",
@@ -270,8 +447,14 @@
       "waiting": "Väntar du på en inbjudan?",
       "waitingDesc": "Din administratör skickar en inbjudan via e-post. Kontrollera din inkorg och skräppostmapp."
     },
+    "notFound": {
+      "description": "Sidan kan ha flyttats, länken kan vara inaktuell eller adressen kan vara felaktig.",
+      "title": "Sidan hittades inte"
+    },
     "unexpected": {
-      "digest": "Referens: {digest}"
+      "description": "Vi kunde inte läsa in den här sidan just nu. Försök igen eller återgå till en säker plats i appen.",
+      "digest": "Referens: {digest}",
+      "title": "Något gick fel"
     }
   },
   "generic": {
@@ -280,17 +463,36 @@
   },
   "header": {
     "clock-in": "Stämpla in",
-    "clock-out": "Stämpla ut"
+    "clock-out": "Stämpla ut",
+    "timezone": {
+      "current": "Aktuell tidszon {timezone}, {time}, {offset}",
+      "savedTimezone": "Sparad tidszon",
+      "saveTimezone": "Spara tidszon",
+      "saving": "Sparar...",
+      "updated": "Tidszonen har uppdaterats",
+      "updateError": "Ett fel uppstod när tidszonen uppdaterades",
+      "updateFailed": "Det gick inte att uppdatera tidszonen"
+    }
   },
   "info": {
     "agb": "Allmänna villkor",
     "back-to-login": "Tillbaka till inloggningen",
     "imprint": "Impressum",
+    "licenses": "Licenser för öppen källkod",
+    "openSourceLicenses": "Licenser för öppen källkod",
     "trust-center": "Förtroendecenter"
   },
   "loading": {
+    "application": "Läser in applikationen",
+    "authentication": "Läser in autentisering",
+    "calendar": "Läser in kalender",
     "chart": "Läser in diagram",
-    "settings": "Läser in inställningar"
+    "licenses": "Läser in licenser",
+    "platformAnalytics": "Läser in plattformsanalys",
+    "settings": "Läser in inställningar",
+    "setup": "Läser in konfiguration",
+    "teamAbsences": "Läser in tabell över teamfrånvaro",
+    "workerQueue": "Läser in arbetskön"
   },
   "nav": {
     "absences": "Frånvaro",
@@ -326,6 +528,23 @@
       "viewAll": "Visa alla aviseringar"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} har registrerat {absenceType} för {dateRange} å dina vägnar.",
+        "title": "Frånvaro registrerad"
+      },
+      "absenceRequestRejected": {
+        "title": "Frånvaroansökan avslogs"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Godkännandeuppgifter behöver en ersättare",
+        "clock_out": "Behöver granskas: utstämpling vid offboarding",
+        "clock_repair": "Timerreparation krävs",
+        "employment_terms": "Framtida anställningsvillkor behöver granskas",
+        "future_work": "Framtida arbete behöver granskas"
+      },
+      "newAbsenceRequest": {
+        "title": "Ny frånvaroansökan"
+      },
       "passwordChanged": {
         "message": "Ditt lösenord har ändrats. Om du inte har gjort denna ändring, kontakta supporten omedelbart.",
         "title": "Lösenordet har ändrats"
@@ -361,6 +580,7 @@
     "preferences": {
       "disabled": "Avisering inaktiverad",
       "enabled": "Avisering aktiverad",
+      "mandatoryInbox": "Levereras alltid till din inkorg",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Få aviseringar om väntande godkännandeförfrågningar",
@@ -397,6 +617,9 @@
       "selectAllAria": "Markera alla synliga aviseringar",
       "selectNamedAria": "Markera {title}",
       "visibleSelected": "{count} synliga markerade"
+    },
+    "time": {
+      "justNow": "just nu"
     },
     "timeline": {
       "earlier": "Tidigare",
@@ -469,6 +692,15 @@
     },
     "clockedIn": "Instämplad",
     "clockedOut": "Utstämplad"
+  },
+  "rateLimit": {
+    "countdownLabel": "sekunder tills du kan försöka igen",
+    "jsonMessage": "Hastighetsgränsen har överskridits. Försök igen senare.",
+    "message": "Du har gjort för många förfrågningar. Vänta innan du försöker igen.",
+    "retryButton": "Försök igen",
+    "retryingButton": "Försöker igen...",
+    "title": "För många förfrågningar",
+    "waitingButton": "Vänta..."
   },
   "roles": {
     "admin": "Admin",
@@ -552,7 +784,8 @@
     "first-name-required": "Förnamn är obligatoriskt",
     "invalid-email": "Ogiltig e-postadress",
     "last-name-required": "Efternamn är obligatoriskt",
-    "password-required": "Lösenord krävs"
+    "password-required": "Lösenord krävs",
+    "pronounsMaxLength": "Pronomen får innehålla högst 50 tecken"
   },
   "workBalance": {
     "label": "Totalsaldo",

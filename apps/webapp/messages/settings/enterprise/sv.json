@@ -21,7 +21,9 @@
         "description": "Skapa din första API-nyckel för att aktivera programmatisk åtkomst till din organisation.",
         "title": "Inga API-nycklar"
       },
+      "expired": "Utgången",
       "expires": "Går ut",
+      "expiresInDays": "Löper ut om {days}d",
       "form": {
         "create": "Skapa nyckel",
         "enabled": "Nyckel aktiverad",
@@ -47,6 +49,8 @@
       "keyCopied": "API-nyckel kopierad till urklipp",
       "lastUsed": "Senast använd",
       "name": "Namn",
+      "neverExpires": "Löper aldrig ut",
+      "noPermissions": "Inga behörigheter",
       "prefix": "Nyckelprefix",
       "prefixCopied": "Nyckelprefix kopierat",
       "scopes": "Behörigheter",
@@ -264,6 +268,9 @@
         "vaultSealedDesc": "HashiCorp Vault är förseglat. Vänligen bryt förseglingen för att lagra hemligheter.",
         "vaultUnavailable": "Vault otillgängligt",
         "vaultUnavailableDesc": "HashiCorp Vault är inte tillgängligt. Hemligheter kan inte lagras säkert."
+      },
+      "emailConfig": {
+        "yourCompanyName": "Ditt företagsnamn"
       },
       "enableProviderHelp": "Aktivera eller inaktivera denna leverantör",
       "identity": {
@@ -564,6 +571,7 @@
           "customDomain": "Användare som loggar in via din anpassade domän kommer att använda din OAuth-app"
         },
         "keyId": "Nyckel-ID",
+        "pasteYourP8PrivateKeyContents": "Klistra in innehållet i din privata .p8-nyckel",
         "privateKey": "Privat nyckel (.p8)",
         "removed": "{provider} OAuth har tagits bort",
         "removeDialogDescription": "Är du säker på att du vill ta bort den här OAuth-konfigurationen? Användare kommer att återgå till de delade OAuth-inloggningsuppgifterna (om tillgängliga).",

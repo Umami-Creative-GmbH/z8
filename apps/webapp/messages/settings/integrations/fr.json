@@ -48,7 +48,8 @@
         "description": "Configurez le fonctionnement de la synchronisation de calendrier pour votre organisation.",
         "title": "Comportement de synchronisation"
       },
-      "title": "Synchronisation de calendrier"
+      "title": "Synchronisation de calendrier",
+      "titleTemplatePlaceholder": "Absent du bureau - {categoryName}"
     },
     "clockinImport": {
       "credentials": {
@@ -105,6 +106,17 @@
         "description": "Entrez votre e-mail Clockodo et votre clé API. Vous pouvez trouver votre clé API dans Clockodo sous Mon profil > Clé API. Les identifiants ne sont pas stockés.",
         "email": "E-mail Clockodo",
         "title": "Identifiants Clockodo"
+      },
+      "entity": {
+        "absences": "Absences",
+        "entries": "Saisies de temps",
+        "holidayQuotas": "Quotas de congés",
+        "nonBusinessDays": "Jours non ouvrés",
+        "services": "Services / Catégories de travail",
+        "surcharges": "Majorations",
+        "targetHours": "Heures cibles / Politiques de travail",
+        "teams": "Équipes",
+        "users": "Utilisateurs / Employés"
       },
       "errors": {
         "connectionFailed": "Échec de la connexion à Clockodo",
@@ -171,17 +183,6 @@
         "skippedCount": "{count} ignoré(s)",
         "status": "Statut",
         "title": "Mapper les utilisateurs"
-      },
-      "entity": {
-        "absences": "Absences",
-        "entries": "Saisies de temps",
-        "holidayQuotas": "Quotas de congés",
-        "nonBusinessDays": "Jours non ouvrés",
-        "services": "Services / Catégories de travail",
-        "surcharges": "Surcharges",
-        "targetHours": "Heures cibles / Politiques de travail",
-        "teams": "Équipes",
-        "users": "Utilisateurs / Employés"
       }
     },
     "discord": {

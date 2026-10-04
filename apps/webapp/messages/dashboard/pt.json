@@ -15,15 +15,14 @@
       "today": "Hoje!",
       "tomorrow": "Amanhã"
     },
-    "customize": {
-      "empty-description": "Use o ícone de personalização do painel para reativar widgets individuais ou redefina o layout para exibir todos os widgets novamente.",
-      "empty-title": "Todos os widgets do painel estão ocultos",
-      "move-down": "Mover {widget} para baixo",
-      "move-up": "Mover {widget} para cima",
-      "reset": "Redefinir layout",
-      "title": "Widgets do painel",
-      "trigger": "Personalizar painel"
-    },
+    "customize": "errors.noOrganization.title",
+    "customize.empty-description": "Use o ícone de personalização do painel para reativar widgets individuais ou redefina o layout para exibir todos os widgets novamente.",
+    "customize.empty-title": "Todos os widgets do painel estão ocultos",
+    "customize.move-down": "Mover {widget} para baixo",
+    "customize.move-up": "Mover {widget} para cima",
+    "customize.reset": "Redefinir layout",
+    "customize.title": "Widgets do painel",
+    "customize.trigger": "Personalizar painel",
     "hydration": {
       "add-glass": "Adicionar {count} copo",
       "add-glasses": "Adicionar {count} copos",

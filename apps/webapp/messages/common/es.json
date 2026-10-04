@@ -19,42 +19,91 @@
     "commandPlaceholder": "Buscar páginas, personas, equipos, ajustes o acciones…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "entrada",
+          "hours": "horas",
+          "manual": "manual",
+          "time": "tiempo"
+        },
         "subtitle": "Registrar horas de un turno pasado o corrección",
         "title": "Añadir entrada de tiempo manual"
       },
       "createProject": {
+        "keywords": {
+          "create": "crear",
+          "project": "proyecto",
+          "settings": "configuración"
+        },
         "subtitle": "Abrir ajustes de proyecto para definir un nuevo proyecto",
         "title": "Crear proyecto"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "invitar",
+          "member": "miembro",
+          "teammate": "compañero de equipo"
+        },
         "subtitle": "Abrir gestión de la organización para añadir a un compañero",
         "title": "Invitar a un compañero de equipo"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "aprobaciones",
+          "inbox": "bandeja de entrada",
+          "review": "revisión"
+        },
         "subtitle": "Revisar solicitudes pendientes de empleados",
         "title": "Abrir bandeja de entrada de aprobaciones"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "míos",
+          "requests": "solicitudes"
+        },
         "subtitle": "Revisar sus ausencias y gastos enviados",
         "title": "Abrir mis solicitudes"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Comprobar si los datos de tiempo están listos para la nómina",
-        "title": "Abrir preparación de nómina"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "exportar",
+          "payroll": "nómina",
+          "wages": "salarios"
+        },
         "subtitle": "Revisar espacio de trabajo de nómina con alcance",
         "title": "Abrir nómina"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "exportar",
+          "payroll": "nómina",
+          "readiness": "preparación"
+        },
+        "subtitle": "Comprobar si los datos de tiempo están listos para la nómina",
+        "title": "Abrir preparación de nómina"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "preferencias",
+          "settings": "configuración"
+        },
         "subtitle": "Gestionar su perfil, seguridad y ajustes de la organización",
         "title": "Abrir ajustes"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "ausencia",
+          "timeOff": "tiempo libre",
+          "vacation": "vacaciones"
+        },
         "subtitle": "Iniciar una solicitud de vacaciones, baja por enfermedad o tiempo libre",
         "title": "Solicitar ausencia"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "gasto",
+          "reimbursement": "reembolso",
+          "travel": "viaje"
+        },
         "subtitle": "Crear una solicitud de reembolso para gastos de viaje",
         "title": "Enviar gasto de viaje"
       }
@@ -70,7 +119,14 @@
     "search": "Buscar",
     "searchOrRunCommand": "Buscar o ejecutar comando",
     "teamAbsences": {
-      "description": "Revisar métricas de ausencia de empleados y registrar ausencias"
+      "description": "Revisar métricas de ausencia de empleados y registrar ausencias",
+      "keywords": {
+        "absence": "ausencia",
+        "manager": "gerente",
+        "sick": "Enfermedad",
+        "team": "Equipo",
+        "vacation": "Vacaciones"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Aprobar",
     "assign": "Asignar",
     "back": "Atrás",
+    "brandLogo": "Logotipo de {brand}",
+    "breadcrumb": {
+      "breadcrumb": "Ruta de navegación",
+      "more": "Más"
+    },
     "cancel": "Cancelar",
+    "carousel": {
+      "nextSlide": "Siguiente diapositiva",
+      "previousSlide": "Diapositiva anterior",
+      "roleDescription": "Carrusel",
+      "slideRoleDescription": "Diapositiva"
+    },
     "clear": "Limpiar",
     "clearSearch": "Limpiar búsqueda",
     "clearSelection": "Borrar",
@@ -117,10 +184,17 @@
     "copy": "Copiar",
     "create": "Crear",
     "current": "Actual",
+    "datePicker": {
+      "clearDate": "Borrar fecha",
+      "placeholder": "Seleccionar una fecha"
+    },
     "days": {
+      "count": "{count} días",
       "friday": "Viernes",
+      "half": "0,5 días",
       "label": "días",
       "monday": "Lunes",
+      "one": "1 día",
       "saturday": "Sábado",
       "sunday": "Domingo",
       "thursday": "Jueves",
@@ -129,14 +203,24 @@
     },
     "delete": "Eliminar",
     "deleting": "Eliminando...",
+    "deployment": {
+      "skew": {
+        "description": "Recarga la página para continuar. Tu última acción no se guardó.",
+        "title": "Z8 se actualizó"
+      }
+    },
     "description": "Descripción",
     "deselectAll": "Deseleccionar todo",
     "details": "Detalles",
     "download": "Descargar",
+    "duplicate": "Duplicar",
+    "durationMinutes": "{count} min",
     "edit": "Editar",
     "enabled": "Habilitado",
     "error": "Error",
     "error-occurred": "Ocurrió un error",
+    "fieldPresets": "Ajustes predefinidos de {label}",
+    "focusInput": "Enfocar campo",
     "gender": {
       "female": "Femenino",
       "male": "Masculino",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Ir al panel de control",
     "inactive": "Inactivo",
+    "label": "Etiqueta",
     "loading": "Cargando...",
+    "loadingLabel": "Cargando",
+    "loadingRegions": {
+      "absences": "Cargando ausencias",
+      "adminConsole": "Cargando consola de administración",
+      "analyticsNavigation": "Cargando navegación de analítica",
+      "application": "Cargando aplicación",
+      "auditExportSettings": "Cargando configuración de exportación de auditoría",
+      "authentication": "Cargando autenticación",
+      "changePolicySettings": "Cargando configuración de directivas de cambios",
+      "coverageRuleSettings": "Cargando configuración de reglas de cobertura",
+      "customerSettings": "Cargando configuración de clientes",
+      "customRoleSettings": "Cargando configuración de roles personalizados",
+      "dashboard": "Cargando panel de control",
+      "dataExportSettings": "Cargando configuración de exportación de datos",
+      "demoDataSettings": "Cargando configuración de datos de demostración",
+      "deploymentDiagnostics": "Cargando diagnósticos de implementación",
+      "employeeReports": "Cargando informes de empleados",
+      "employeeVacationAllowances": "Cargando asignaciones de vacaciones de empleados",
+      "exportOperations": "Cargando operaciones de exportación",
+      "holidaySettings": "Cargando configuración de días festivos",
+      "importReview": "Cargando revisión de importación",
+      "importSettings": "Cargando configuración de importación",
+      "locationSettings": "Cargando configuración de ubicación",
+      "onboarding": "Cargando incorporación",
+      "payrollExportSettings": "Cargando configuración de exportación de nómina",
+      "payrollReadiness": "Cargando preparación de nómina",
+      "payrollWorkspace": "Cargando espacio de trabajo de nómina",
+      "platformAdminOverview": "Cargando resumen de administración de la plataforma",
+      "platformAnalytics": "Cargando analítica de la plataforma",
+      "platformBilling": "Cargando facturación de la plataforma",
+      "platformSetup": "Cargando configuración de la plataforma",
+      "projectReports": "Cargando informes del proyecto",
+      "projectSettings": "Cargando configuración del proyecto",
+      "scheduledExports": "Cargando exportaciones programadas",
+      "shiftSchedule": "Cargando horario de turnos",
+      "shiftTemplateSettings": "Cargando configuración de plantillas de turnos",
+      "skillSettings": "Cargando configuración de habilidades",
+      "surchargeSettings": "Cargando configuración de recargos",
+      "team": "Cargando equipo",
+      "todaySManagerBriefing": "Cargando informe de hoy para responsables",
+      "travelExpenses": "Cargando gastos de viaje",
+      "travelExpenseSettings": "Cargando configuración de gastos de viaje",
+      "twoFactorVerification": "Cargando verificación en dos pasos",
+      "vacationSettings": "Cargando configuración de vacaciones",
+      "wellnessSettings": "Cargando configuración de bienestar",
+      "workCategorySettings": "Cargando configuración de categorías de trabajo",
+      "workerQueue": "Cargando cola de trabajadores",
+      "workPolicySettings": "Cargando configuración de políticas laborales",
+      "worksCouncilPortal": "Cargando portal del comité de empresa",
+      "yourRequests": "Cargando tus solicitudes"
+    },
     "loadMore": "Cargar más",
     "months": {
       "april": "Abril",
@@ -169,11 +305,20 @@
     "next": "Siguiente",
     "notApplicable": "N/D",
     "not-available": "No disponible",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Notificaciones} other {Notificaciones (# sin leer)}}"
+    },
     "open": "Abrir",
     "openEnded": "Sin fecha de finalización",
     "openMenu": "Abrir menú",
     "optional": "opcional",
     "or": "O",
+    "pagination": {
+      "goToNextPage": "Ir a la página siguiente",
+      "goToPreviousPage": "Ir a la página anterior",
+      "morePages": "Más páginas",
+      "pagination": "paginación"
+    },
     "pending": "Pendiente",
     "present": "Presente",
     "previous": "Anterior",
@@ -194,6 +339,11 @@
     "select-language": "Seleccionar idioma",
     "set": "conjunto",
     "sets": "conjuntos",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Muestra la barra lateral móvil.",
+      "sidebar": "Barra lateral",
+      "toggleSidebar": "Alternar barra lateral"
+    },
     "skip": "Omitir",
     "start": "Inicio",
     "status": "Estado",
@@ -205,6 +355,10 @@
         "reload": "Recargar",
         "title": "Actualización disponible"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Abrir selector de hora",
+      "switchPeriod": "Cambiar a {period}"
     },
     "to": "a",
     "today": "Hoy",
@@ -233,11 +387,34 @@
       "tue": "Mar",
       "we": "Mi",
       "wed": "Mié"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Cambios con impacto en la plantilla delimitados a esta organización y período.",
+      "changeLogEmpty": "No se encontraron cambios para este período.",
+      "changeReviewLog": "Registro de revisión de cambios",
+      "complianceFindings": "Hallazgos de cumplimiento",
+      "description": "Revisión de la plantilla con filtro de privacidad para el período seleccionado.",
+      "disabledDescription": "El modo Comité de empresa no está habilitado para esta organización.",
+      "exportReviewPack": "Exportar paquete de revisión",
+      "from": "Desde",
+      "identityHidden": "Identidad oculta",
+      "insufficientData": "Datos insuficientes",
+      "policyChanges": "Cambios de directivas",
+      "scheduleChanges": "Cambios de horario",
+      "scheduleDescription": "Entradas de horario con filtro de privacidad para el período seleccionado.",
+      "scheduleEmpty": "No se encontraron entradas de horario para este período.",
+      "scheduleEntry": "{identity} - {start} a {end}",
+      "scheduleReview": "Revisión de horarios",
+      "title": "Comité de empresa",
+      "to": "Hasta",
+      "unassignedTeam": "Equipo sin asignar",
+      "updateRange": "Actualizar rango"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} empleados seleccionados",
     "countWithMore": "{count} empleados (+{more} más)",
+    "inactive": "Inactivo",
     "noEmployeesFound": "No se encontraron empleados",
     "removeSelected": "Eliminar {name}",
     "role": "Rol",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contactar con el administrador",
       "createOrg": "Crear organización",
-      "description": "Necesita un perfil de empleado para {feature}. Por favor cree una organización o contacte a su administrador.",
+      "description": "Necesita un perfil de empleado para ${feature}. Por favor cree una organización o contacte a su administrador.",
       "emailBody": "Hola,\n\nnecesito que se configure un perfil de empleado para acceder a las funciones de la plataforma. ¿Podría ayudarme con esto?\n\n¡Gracias!",
       "emailSubject": "Configuración del perfil de empleado requerida",
       "helpText": "Si fue invitado a una organización, pida a su administrador que configure su perfil de empleado.",
@@ -270,8 +447,14 @@
       "waiting": "¿Esperando una invitación?",
       "waitingDesc": "Su administrador le enviará un correo de invitación. Revise su bandeja de entrada y carpeta de spam."
     },
+    "notFound": {
+      "description": "Es posible que la página se haya movido, el enlace esté desactualizado o la dirección sea incorrecta.",
+      "title": "Página no encontrada"
+    },
     "unexpected": {
-      "digest": "Referencia: {digest}"
+      "description": "No pudimos cargar esta página en este momento. Inténtalo de nuevo o regresa a un lugar seguro en la aplicación.",
+      "digest": "Referencia: {digest}",
+      "title": "Algo salió mal"
     }
   },
   "generic": {
@@ -280,25 +463,36 @@
   },
   "header": {
     "clock-in": "Fichar entrada",
-    "clock-out": "Fichar salida"
+    "clock-out": "Fichar salida",
+    "timezone": {
+      "current": "Zona horaria actual {timezone}, {time}, {offset}",
+      "savedTimezone": "Zona horaria guardada",
+      "saveTimezone": "Guardar zona horaria",
+      "saving": "Guardando...",
+      "updated": "Zona horaria actualizada correctamente",
+      "updateError": "Ocurrió un error al actualizar la zona horaria",
+      "updateFailed": "Error al actualizar la zona horaria"
+    }
   },
   "info": {
     "agb": "Términos y condiciones",
     "back-to-login": "Volver al inicio de sesión",
     "imprint": "Aviso legal",
+    "licenses": "Licencias de código abierto",
+    "openSourceLicenses": "Licencias de código abierto",
     "trust-center": "Centro de confianza"
   },
   "loading": {
-    "chart": "Cargando gráfico",
-    "settings": "Cargando ajustes",
     "application": "Cargando aplicación",
     "authentication": "Cargando autenticación",
     "calendar": "Cargando calendario",
+    "chart": "Cargando gráfico",
     "licenses": "Cargando licencias",
-    "platformAnalytics": "Cargando analíticas de la plataforma",
+    "platformAnalytics": "Cargando analítica de la plataforma",
+    "settings": "Cargando configuración",
     "setup": "Cargando configuración",
-    "teamAbsences": "Cargando ausencias del equipo",
-    "workerQueue": "Cargando cola de trabajos"
+    "teamAbsences": "Cargando tabla de ausencias del equipo",
+    "workerQueue": "Cargando cola de tareas"
   },
   "nav": {
     "absences": "Ausencias",
@@ -334,6 +528,23 @@
       "viewAll": "Ver todas las notificaciones"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} registró {absenceType} para {dateRange} en tu nombre.",
+        "title": "Ausencia registrada"
+      },
+      "absenceRequestRejected": {
+        "title": "Solicitud de ausencia rechazada"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Las tareas de aprobación requieren un sustituto",
+        "clock_out": "Requiere revisión: fichaje de salida por baja",
+        "clock_repair": "Se requiere corregir el temporizador",
+        "employment_terms": "Las condiciones de empleo futuras requieren revisión",
+        "future_work": "El trabajo futuro requiere revisión"
+      },
+      "newAbsenceRequest": {
+        "title": "Nueva solicitud de ausencia"
+      },
       "passwordChanged": {
         "message": "Tu contraseña se ha cambiado correctamente. Si no has realizado este cambio, contacta con el servicio de asistencia inmediatamente.",
         "title": "Contraseña cambiada"
@@ -345,14 +556,6 @@
       "teamMemberAdded": {
         "message": "Has sido añadido al equipo {teamName} por {performedByName}.",
         "title": "Añadido al equipo"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Tu solicitud de {categoryName} para {dateRange} se ha enviado y está pendiente de aprobación.",
-        "title": "Solicitud de ausencia enviada"
-      },
-      "teamMemberRemoved": {
-        "message": "Has sido eliminado del equipo {teamName} por {performedByName}.",
-        "title": "Eliminado del equipo"
       }
     },
     "description": "Revisa actualizaciones, aprobaciones y alertas del sistema en una sola línea de tiempo.",
@@ -377,6 +580,7 @@
     "preferences": {
       "disabled": "Notificación desactivada",
       "enabled": "Notificación activada",
+      "mandatoryInbox": "Siempre entregado en tu bandeja de entrada",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Recibir alertas de solicitudes de aprobación pendientes",
@@ -413,6 +617,9 @@
       "selectAllAria": "Seleccionar todas las notificaciones visibles",
       "selectNamedAria": "Seleccionar {title}",
       "visibleSelected": "{count} visibles seleccionadas"
+    },
+    "time": {
+      "justNow": "ahora mismo"
     },
     "timeline": {
       "earlier": "Anterior",
@@ -485,6 +692,15 @@
     },
     "clockedIn": "Fichaje de entrada realizado",
     "clockedOut": "Fichaje de salida realizado"
+  },
+  "rateLimit": {
+    "countdownLabel": "segundos para poder volver a intentarlo",
+    "jsonMessage": "Se ha superado el límite de solicitudes. Inténtalo de nuevo más tarde.",
+    "message": "Has realizado demasiadas solicitudes. Espera antes de volver a intentarlo.",
+    "retryButton": "Volver a intentar",
+    "retryingButton": "Reintentando...",
+    "title": "Demasiadas solicitudes",
+    "waitingButton": "Por favor, espera..."
   },
   "roles": {
     "admin": "Administrador",
@@ -568,7 +784,8 @@
     "first-name-required": "El nombre es obligatorio",
     "invalid-email": "Dirección de correo electrónico inválida",
     "last-name-required": "El apellido es obligatorio",
-    "password-required": "La contraseña es obligatoria"
+    "password-required": "La contraseña es obligatoria",
+    "pronounsMaxLength": "Los pronombres deben tener 50 caracteres o menos"
   },
   "workBalance": {
     "label": "Saldo histórico",
@@ -577,6 +794,6 @@
     "updatedEveryThreeHours": "Actualizado cada 3 horas"
   },
   "worksCouncil": {
-    "loadingLabel": "Cargando el portal del comité de empresa"
+    "loadingLabel": "Cargando comité de empresa"
   }
 }

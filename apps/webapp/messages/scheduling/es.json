@@ -21,6 +21,22 @@
       "managerDescription": "Gestione y planifique los turnos de los empleados",
       "title": "Programación de turnos"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Aceptar y publicar",
+      "acknowledgmentDescription": "Se procederá a la publicación, pero este horario contiene avisos de cumplimiento que deben aceptarse primero.",
+      "button": "Publicar ({count})",
+      "cancel": "Cancelar",
+      "complianceAcknowledgmentRequired": "Confirmación de cumplimiento requerida",
+      "complianceWarnings": "{count, plural, one {Las comprobaciones de cumplimiento detectaron # advertencia; deberá confirmarla antes de publicar.} other {Las comprobaciones de cumplimiento detectaron # advertencias; deberá confirmarlas antes de publicar.}}",
+      "coverageWarning": "Algunos bloques de tiempo no cumplen con los requisitos mínimos de personal.",
+      "maxHours": "Horas máx.: {count}",
+      "notifyEmployees": "{count, plural, one {Publicar # turno en borrador y notificar a los empleados} other {Publicar # turnos en borrador y notificar a los empleados}}",
+      "overtime": "Horas extra: {count}",
+      "publishing": "Publicando…",
+      "restTime": "Tiempo de descanso: {count}",
+      "totalFindings": "{count, plural, one {# hallazgo en total} other {# hallazgos en total}}",
+      "warningsDetectedBeforePublish": "Advertencias detectadas antes de publicar"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} hallazgo(s) detectado(s) antes de publicar.",

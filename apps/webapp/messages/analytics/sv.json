@@ -191,6 +191,7 @@
         "loadData": "Kunde inte läsa in analysdata för arbetstimmar"
       },
       "expectedHours": "Förväntade timmar",
+      "hoursPerWeekAbbreviation": "tim/v",
       "variance": "Avvikelse",
       "varianceTrend": {
         "description": "Timmars avvikelse från förväntad arbetstid över tid",

@@ -37,6 +37,7 @@
         "teamPolicyDescription": "Bir izin politikası ve ekip seçin. Bu, ekip üyeleri için şirket varsayılanını geçersiz kılar."
       },
       "carryover": "Devreden İzin",
+      "createDifferentPoliciesForVariousTeamsOrEmployeeGroups": "Çeşitli ekipler veya çalışan grupları için farklı politikalar oluşturun",
       "createPolicy": "İzin Politikası Oluştur",
       "createPolicyBtn": "Politika Oluştur",
       "current": "Mevcut",
@@ -45,6 +46,13 @@
       "description": "Kuruluşunuz için izin politikalarını ve atamalarını yönetin",
       "editPolicy": "\"{name}\" öğesini düzenle",
       "employees": {
+        "actions": {
+          "edit": "Düzenle"
+        },
+        "allowancesForYear": "{{year}} İzin Hakları",
+        "defaultAllowanceDescription": "Varsayılan hak: Yılda {{days}} gün",
+        "defaultPolicy": "Varsayılan",
+        "description": "Bireysel çalışanlar için özel izin hakları yapılandırın",
         "detail": {
           "addManualAdjustment": "Manuel Düzeltme Ekle",
           "addManualAdjustmentDescription": "Özel durumlar (örneğin, ikramiye günleri, düzeltmeler) için yeni bir düzeltme girişi oluşturun. Her düzeltme denetim günlüğüne kaydedilir.",
@@ -92,22 +100,15 @@
           "description": "{{name}} için özel izin hakkını yapılandırın",
           "title": "İzin Hakkını Düzenle"
         },
-        "actions": {
-          "edit": "Düzenle"
-        },
-        "allowancesForYear": "{{year}} Yılı İzin Hakları",
-        "defaultAllowanceDescription": "Varsayılan izin hakkı: Yıllık {{days}} gün",
-        "defaultPolicy": "Varsayılan",
-        "description": "Bireysel çalışanlar için özel izin haklarını yapılandırın",
         "employeeCount": "{{count}} çalışan",
         "emptyDescription": "İzin haklarını yönetmek için kuruluşunuza çalışan ekleyin.",
         "emptyTitle": "Çalışan bulunamadı",
-        "noOrgPolicyConfigured": " (Kuruluş politikası yapılandırılmamış)",
+        "noOrgPolicyConfigured": " (Kuruluş politikası yapılandırılmadı)",
         "primaryManager": "Birincil",
         "table": {
-          "actions": "Eylemler",
+          "actions": "İşlemler",
           "adjustments": "Düzeltmeler",
-          "carryover": "Devreden",
+          "carryover": "Devreden İzin",
           "customDays": "Özel Günler",
           "defaultDays": "Varsayılan Günler",
           "employee": "Çalışan",
@@ -176,7 +177,8 @@
         "policies": "Politikalar"
       },
       "title": "İzin Yönetimi",
-      "updatePolicy": "Politikayı Güncelle"
+      "updatePolicy": "Politikayı Güncelle",
+      "vacationPolicies": "İzin Politikaları"
     }
   },
   "vacation": {

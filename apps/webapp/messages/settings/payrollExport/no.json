@@ -21,13 +21,24 @@
       },
       "description": "Eksporter arbeidsperioder til lønnssystemer som DATEV eller Personio",
       "export": {
+        "allEmployees": "Alle ansatte",
+        "allProjects": "Alle prosjekter",
+        "allTeams": "Alle team",
         "asyncDescription": "Eksporten din behandles. Sjekk historikkfanen for fremdrift.",
         "asyncStarted": "Eksport startet",
         "customRange": "Egendefinert periode",
         "dateRange": "Datoperiode",
         "description": "Eksporter arbeidsperioder og fravær til DATEV Lohn & Gehalt-format",
+        "employees": "Ansatte",
         "endDate": "Sluttdato",
         "error": "Eksport mislyktes",
+        "exportButtonDatev": "Eksporter til DATEV",
+        "exportButtonLexware": "Eksporter til Lexware",
+        "exportButtonPersonio": "Eksporter til Personio",
+        "exportButtonSage": "Eksporter til Sage",
+        "exportButtonSuccessFactorsApi": "Eksporter til SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Eksporter SAP SuccessFactors-CSV",
+        "exportButtonWorkday": "Eksporter til Workday",
         "exporting": "Eksporterer…",
         "filters": "Filtre (valgfritt)",
         "format": "Eksportformat",
@@ -40,8 +51,10 @@
         "format.workday": "Workday",
         "month": "Måned",
         "monthSelection": "Velg måned",
+        "projects": "Prosjekter",
         "startDate": "Startdato",
         "success": "Eksport lastet ned",
+        "teams": "Team",
         "title": "Eksporter lønnsdata",
         "unavailable": {
           "missingConfiguration": "konfigurasjon",
@@ -271,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Gjennomgå godkjenningsinnboks",
+        "payrollExport": "Åpne innstillinger for lønnseksport",
+        "timeTracking": "Gjennomgå timeføring",
+        "travelExpenses": "Gjennomgå reiseutgifter"
+      },
+      "affectedEmployees": {
+        "name": "Ansatt",
+        "noNumber": "Ikke angitt",
+        "number": "Ansattnummer"
+      },
+      "checks": {
+        "count": "Antall"
+      },
+      "checkStatus": {
+        "fail": "Blokkert",
+        "pass": "Klar",
+        "unavailable": "Kan ikke verifiseres",
+        "warning": "Advarsel"
+      },
       "description": "Sjekk om en lønnsperiode er klar før du eksporterer tids-, fraværs- og lønnsdata.",
+      "openPayrollExport": "Åpne lønnseksport",
+      "status": {
+        "blocked": "Blokkert",
+        "ready": "Klar for lønn",
+        "unavailable": "Kan ikke verifiseres"
+      },
+      "summary": {
+        "affectedEmployees": "Berørte ansatte",
+        "affectedEmployeesDescription": "Ansatte koblet til åpne klargjøringspunkter.",
+        "blockers": "Blokkeringer",
+        "blockersDescription": "Obligatoriske kontroller som for øyeblikket blokkerer eksport.",
+        "exportTargets": "Konfigurerte eksportmål",
+        "exportTargetsDescription": "Aktive destinasjoner for lønnseksport.",
+        "period": "Periode",
+        "periodDescription": "Lønnsperiode som verifiseres.",
+        "status": "Status",
+        "statusDescription": "Samlet beredskap for lønnseksport.",
+        "warnings": "Advarsler",
+        "warningsDescription": "Ikke-blokkerende problemer som bør gjennomgås før eksport."
+      },
       "title": "Lønnsklarhet"
     },
     "workDiagnostics": {
+      "allEmployees": "Vis alle ansatte",
+      "append": {
+        "continued": "Ansatte som fortsetter fra et godkjent anker: {count}. Historikk før hvert anker er ikke verifisert.",
+        "counts": "{verified} av {total} ansatte har opprinnelseslinje verifisert fra lagrede bevis.",
+        "description": "Et eget krav adskilt fra fullstendighet: opprinnelseslinje og kontinuitet for lagrede timeregistreringer. Det avgjør ikke beredskap for lønn.",
+        "interruptions": "Kontinuitetsavbrudd",
+        "issues": "Problemer med opprinnelseslinje og kandidater",
+        "limitations": "Begrensninger",
+        "title": "Sikring av timeregistreringskjede"
+      },
+      "blocking": "Blokkerer fullstendighet",
       "description": "Finn manglende eller motstridende timeregistreringer og problemer med timeregistreringskjeden",
+      "evidence": {
+        "entries": "Timeregistreringer",
+        "timeRecords": "Tidsposter",
+        "workPeriods": "Arbeidsperioder"
+      },
+      "findings": {
+        "description": "Hvert funn er skrivebeskyttet bevis. Bare reparasjonen av historiske hull nedenfor fyller ut manglende verdier, basert på bevis og med separat autorisasjon; endring av etablert arbeid krever en separat autorisert gjennomgang.",
+        "employees": "Ansatte",
+        "empty": "Ingen manglende, motstridende eller mistenkelig historisk arbeid i dette omfanget.",
+        "evidence": "Bevis",
+        "finding": "Funn",
+        "provenance": "Opprinnelse",
+        "title": "Funn",
+        "treatment": "Behandling"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Ventende arbeid uten godkjenningsforespørsel",
+        "approvalStateConflict": "Godkjenningsstatuser samsvarer ikke",
+        "canonicalDetailMissing": "Arbeidsdetaljer for timeregistrering mangler",
+        "canonicalLinkMissing": "Kobling til timeregistrering mangler",
+        "canonicalLinkShared": "Flere arbeidsperioder er koblet til én timeregistrering",
+        "canonicalLinkUnresolved": "Fant ikke tilknyttet timeregistrering",
+        "canonicalMissing": "Timeregistrering mangler",
+        "captureInferred": "Tidssone utledet i etterkant av hendelsen",
+        "deletedWorkPayable": "Slettet arbeid har fortsatt en betalbar timeregistrering",
+        "durationConflict": "Lagrede varigheter samsvarer ikke",
+        "durationMissing": "Lagret varighet mangler",
+        "emptyInterval": "Starttid er lik sluttid",
+        "endpointConflict": "Start- eller sluttider samsvarer ikke",
+        "endpointEntryMissing": "Utsjekking mangler",
+        "endpointEntrySuperseded": "Arbeidsperiode peker på en erstattet stempling",
+        "endpointEntryUnresolved": "Fant ikke stempling",
+        "endpointMissing": "Sluttid mangler",
+        "manualEvidenceUnreadable": "Dokumentasjon for manuell innsending er uleselig",
+        "manualHolidayCheckDatesDiffer": "Helligdagskontroll brukte andre datoer enn arbeidet",
+        "manualInterpretationAmbiguous": "Manuell registreringstid hoppet over eller gjentatt på grunn av klokkeendring",
+        "manualInterpretationMismatch": "Manuell registrering lagret med andre tider enn innsendt",
+        "manualTrimmed": "Manuell registrering ble forkortet ved lagring",
+        "manualZoneUnrecorded": "Tidssone for manuell registrering er ikke registrert",
+        "metadataCanonicalOnly": "Tilordning kun på timeregistrering",
+        "metadataConflict": "Tilordninger samsvarer ikke",
+        "metadataMissing": "Tilordning mangler på timeregistrering",
+        "multipleActiveWork": "Mer enn én aktiv arbeidsperiode",
+        "negativeDuration": "Negativ varighet",
+        "openStateConflict": "Åpen og lukket status samsvarer ikke",
+        "overlappingWork": "Overlappende arbeid",
+        "ownershipConflict": "Eierskapskonflikt",
+        "relinkedCanonicalResidue": "Timeregistrering etterlatt ved omkobling",
+        "reversedInterval": "Slutt før start",
+        "storedElapsedDiscrepancy": "Lagrede minutter avviker fra medgått tid",
+        "workOutsideOrganizationEmployees": "Arbeid eid utenfor organisasjonens ansatte"
+      },
+      "nextMonth": "Neste måned",
+      "ownerUnknown": "Eier ikke fastslått",
       "pageDescription": "Diagnostikk på oppføringsnivå for historisk arbeid: manglende eller motstridende representasjoner, adopsjonsopprinnelse, mistenkte manuelle registreringsfeil og kvalitetssikring av timeregistreringskjede.",
+      "previousMonth": "Forrige måned",
       "proposals": {
         "addChange": "Legg til endring",
         "after": "Ny verdi",
@@ -354,6 +473,12 @@
         "valueRequired": "Angi den nye verdien.",
         "work": "Arbeidsperiode"
       },
+      "provenance": {
+        "ambiguous": "Uklar opprinnelse",
+        "freshBackdated": "Ny tilbakedatert registrering",
+        "postAdoption": "Registrering etter innføring",
+        "preAdoption": "Historikk før innføring"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Oppretter av utstempling",
@@ -397,7 +522,37 @@
         "title": "Reparasjon av historiske hull",
         "work": "Arbeidsperiode"
       },
-      "title": "Arbeidsdiagnostikk"
+      "shape": {
+        "conflicting": "Motstridende",
+        "disclosure": "Opplysning",
+        "missing": "Mangler",
+        "suspectedDefect": "Mistenkt feil"
+      },
+      "status": {
+        "complete": "Fullført",
+        "completeDescription": "Ingen relevante manglende eller motstridende bevis, inkludert ventende, avvist og åpent arbeid.",
+        "incomplete": "Ufullstendig",
+        "incompleteDescription": "Upåvirkede data kan brukes til gjennomgang, men dette omfanget er ikke fullstendig.",
+        "widenedEmployees": "Datoer kunne ikke fastslås, så berørte ansatte er usikre for hver periode.",
+        "widenedOrganization": "Eierskap kunne ikke fastslås, så hele organisasjonen er usikker."
+      },
+      "summary": {
+        "affected": "Berørte ansatte",
+        "affectedDescription": "Ansatte hvis arbeid innenfor dette omfanget ikke kan fastslås.",
+        "blocking": "Blokkerende funn",
+        "blockingDescription": "Manglende eller motstridende dokumentasjon som gjør relevant arbeid usikkert.",
+        "scope": "Omfang",
+        "scopeAll": "Alle ansatte. Datoene dekker kalenderdagene i hver tidssone.",
+        "status": "Fullstendighet"
+      },
+      "title": "Arbeidsdiagnostikk",
+      "treatment": {
+        "disclosed": "Oppgitt begrensning",
+        "historicalGap": "Historisk hull",
+        "integrityIncident": "Integritetshendelse",
+        "investigationRequired": "Undersøkelse kreves",
+        "reviewRequired": "Gjennomgang kreves"
+      }
     }
   }
 }

@@ -136,6 +136,11 @@
       "success": "Pomyślnie zarejestrowano zakończenie pracy pracownika",
       "title": "Zakończyć pracę pracownika?"
     },
+    "contextMenu": {
+      "delete": "Usuń",
+      "edit": "Edytuj",
+      "label": "Działania dotyczące wpisu czasu pracy"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Wpisy czasu zablokowane",
       "category": "Kategoria",
@@ -159,35 +164,72 @@
       "title": "Konwertować na przerwę?"
     },
     "details": {
+      "automaticClockOut": "Automatycznie zarejestrowano wyjście",
+      "automaticCutoff": "Czas graniczny rejestracji wyjścia",
+      "automaticLimit": "Limit nieprzerwanej pracy",
       "baseWorked": "Podstawa przepracowana",
       "blocksTimeEntry": "Blokuje śledzenie czasu",
       "category": "Kategoria",
       "credited": "Zaliczone",
       "dateRange": "Zakres dat",
       "duration": "Czas trwania",
+      "editedBy": "Edytowane przez",
       "employee": "Pracownik",
       "notes": "Notatki",
+      "pendingApproval": "Oczekuje na zatwierdzenie",
+      "pendingApprovalDescription": "Ten okres pracy oczekuje na zatwierdzenie przez menedżera. Zarejestrowane godziny mogą ulec zmianie w przypadku odrzucenia.",
       "project": "Projekt",
       "recurring": "Cykliczne corocznie",
+      "rejected": "Odrzucono",
+      "rejectedDescription": "Ta zmiana okresu pracy została odrzucona przez menedżera. Przywrócono pierwotne godziny.",
+      "source": "Źródło",
       "status": "Status",
       "surcharge": "Dopłata",
       "surchargeBreakdown": "Szczegóły dopłaty",
+      "system": "System",
       "time": "Czas",
       "type": "Typ",
       "workLocation": "Miejsce pracy"
     },
     "edit": {
       "deleteEntry": "Usuń wpis",
+      "locationRequired": "Wybierz miejsce pracy.",
+      "noNotes": "Nie dodano notatek",
+      "noProject": "Brak przypisanego projektu",
       "notesSaved": "Notatki zapisano",
       "notesSaveFailed": "Nie udało się zapisać notatek",
       "projectSaved": "Projekt zaktualizowany",
       "projectSaveFailed": "Nie udało się zaktualizować projektu",
       "split": "Podziel",
-      "locationRequired": "Wybierz miejsce pracy.",
       "time": {
+        "approvalHint": "Ta zmiana zostanie przesłana do zatwierdzenia przez Twojego menedżera.",
+        "beyondWindow": "Wpisy starsze niż {days} dni mogą być edytowane tylko przez administratora.",
+        "clockIn": "Rozpoczęcie pracy",
+        "clockInDate": "Data rozpoczęcia pracy",
+        "clockInTime": "Godzina rozpoczęcia pracy",
+        "clockOut": "Zakończenie pracy",
+        "clockOutDate": "Data zakończenia pracy",
+        "clockOutTime": "Godzina zakończenia pracy",
+        "directHint": "Ta zmiana zostanie zastosowana natychmiast.",
+        "edit": "Edytuj wpis",
+        "invalidRange": "Czas zakończenia pracy musi być późniejszy niż czas rozpoczęcia pracy.",
         "noChanges": "Najpierw zmień datę, godzinę lub miejsce pracy.",
-        "edit": "Edytuj wpis"
-      }
+        "noteLabel": "Notatka (opcjonalnie)",
+        "notePlaceholder": "Dodaj notatkę dotyczącą tej zmiany…",
+        "onBehalfHint": "Ta zmiana podlega ścieżce zatwierdzania pracownika. Jeśli jesteś osobą zatwierdzającą, zostanie zastosowana natychmiast.",
+        "pendingCorrection": "Zmiana czasu dla tego wpisu oczekuje już na zatwierdzenie.",
+        "reasonLabel": "Powód",
+        "reasonPlaceholder": "Wyjaśnij, dlaczego ta korekta jest potrzebna…",
+        "reasonRequired": "Dodaj powód dla swojego przełożonego.",
+        "saved": "Zaktualizowano wpis czasu",
+        "saveFailed": "Nie udało się zaktualizować wpisu czasu",
+        "submitForApproval": "Prześlij do zatwierdzenia",
+        "submitOnBehalf": "Prześlij zmianę",
+        "submitted": "Zmiana przesłana do zatwierdzenia przez przełożonego",
+        "submittedOnBehalf": "Zmiana przesłana do osoby zatwierdzającej pracownika",
+        "timezoneNote": "Godziny podano w strefie czasowej pracownika ({timezone})"
+      },
+      "title": "Okres pracy"
     },
     "employeeSelector": {
       "error": "Nie można załadować członków zespołu",
@@ -226,6 +268,7 @@
       "workPeriod": "Okres pracy",
       "workPeriodPending": "Oczekuje na zatwierdzenie"
     },
+    "loadEventsError": "Nie udało się załadować wydarzeń z kalendarza: {message}",
     "mobileControls": {
       "description": "Wybierz, które wpisy w kalendarzu mają być widoczne.",
       "title": "Filtry i legenda"
@@ -239,6 +282,14 @@
       "previousMonth": "Poprzedni miesiąc",
       "totalDescription": "Zarejestrowany czas w porównaniu z godzinami polityki",
       "weekSum": "Suma"
+    },
+    "requirements": {
+      "status": {
+        "met": "wymóg spełniony",
+        "missing": "brak zarejestrowanego czasu",
+        "over": "powyżej wymogu",
+        "under": "poniżej wymogu"
+      }
     },
     "split": {
       "ambiguousTime": "Wybierz wystąpienie, którego chcesz użyć",
@@ -277,6 +328,12 @@
       "week": "Tydzień",
       "year": "Rok"
     },
+    "workLocation": {
+      "notRecorded": "Nie zarejestrowano"
+    },
+    "workPeriod": {
+      "editedBy": "(edytowane przez {name}, {date})"
+    },
     "workStatus": {
       "overRequirement": "powyżej wymogu",
       "requiredHoursMissing": "brak wymaganych godzin",
@@ -285,9 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "workLocation": {
-      "notRecorded": "Nie zapisano"
     }
   }
 }

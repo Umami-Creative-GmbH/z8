@@ -15,15 +15,14 @@
       "today": "Hüt!",
       "tomorrow": "Morn"
     },
-    "customize": {
-      "empty-description": "Nutze s Dashboard-Aapassigs-Icon zum einzelni Widgets wieder z'aktiviere oder s Layout z'ruckzsetze, zum alli Widgets wieder aazzeige.",
-      "empty-title": "Alli Dashboard-Widgets sind versteckt",
-      "move-down": "{widget} abe schiebe",
-      "move-up": "{widget} ufe schiebe",
-      "reset": "Layout z'rucksetze",
-      "title": "Dashboard-Widgets",
-      "trigger": "Dashboard aaspasse"
-    },
+    "customize": "errors.noOrganization.title",
+    "customize.empty-description": "Nutze s Dashboard-Aapassigs-Icon zum einzelni Widgets wieder z'aktiviere oder s Layout z'ruckzsetze, zum alli Widgets wieder aazzeige.",
+    "customize.empty-title": "Alli Dashboard-Widgets sind versteckt",
+    "customize.move-down": "{widget} abe schiebe",
+    "customize.move-up": "{widget} ufe schiebe",
+    "customize.reset": "Layout z'rucksetze",
+    "customize.title": "Dashboard-Widgets",
+    "customize.trigger": "Dashboard aaspasse",
     "hydration": {
       "add-glass": "{count} Glas dezuefüege",
       "add-glasses": "{count} Gläser dezuefüege",

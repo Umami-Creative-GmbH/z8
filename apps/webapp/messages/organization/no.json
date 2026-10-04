@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Kun organisasjonsadministratorer og eiere kan endre disse innstillingene.",
+      "description": "Angi maksimal varighet for uavbrutt sanntidsarbeid. Ansatte stemples automatisk ut ved denne grensen.",
+      "enabled": "Automatisk utstempling",
+      "help": "En registrert pause eller ny innstempling tilbakestiller kvoten. Endringer gjelder for arbeid som allerede pågår. Sjekker kjøres hvert femte minutt; utstempling registreres ved grensen, selv om sjekken kjøres senere. Ansatte mottar alltid et varsel i innboksen.",
+      "hours": "Timer",
+      "invalidDuration": "Angi en gyldig varighet: hele timer og 0–59 minutter, totalt minst ett minutt.",
+      "minutes": "Minutter",
+      "save": "Lagre endringer",
+      "saved": "Innstillinger for automatisk utstempling er lagret",
+      "saveFailed": "Kunne ikke oppdatere innstillinger for automatisk utstempling",
+      "saving": "Lagrer…",
+      "title": "Automatisk utstempling"
+    },
     "create": "Opprett organisasjon",
     "createDialog": {
       "description": "Konfigurer organisasjonen din for å komme i gang",
@@ -120,7 +134,7 @@
       "expired": "Utløpt",
       "expires": "Utløper",
       "inactive": "Inaktiv",
-      "invitationActionsLabel": "Handlinger for invitasjon til {email}",
+      "invitationActionsLabel": "Handlinger for invitasjon til ${row.original.email}",
       "invitationCancelError": "Kunne ikke avbryte invitasjonen",
       "invitationCancelSuccess": "Invitasjonen ble avbrutt",
       "invitationResendError": "Kunne ikke sende invitasjonen på nytt",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invitasjon(er) venter på å bli godtatt}}",
       "invitedBy": "Invitert av",
       "member": "Medlem",
-      "memberActionsLabel": "Handlinger for {name}",
+      "memberActionsLabel": "Handlinger for ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} medlem(mer) i denne organisasjonen}}",
       "noInvitationResults": "Ingen invitasjoner samsvarer med søket ditt.",
       "noInvitations": "Ingen ventende invitasjoner.",
@@ -189,11 +203,10 @@
       "failed": "Kunne ikke gjenopprette organisasjon",
       "success": "Organisasjonen ble gjenopprettet"
     },
-    "role": {
-      "admin": "Administrator",
-      "member": "Medlem",
-      "owner": "Eier"
-    },
+    "role": "organization.slugErrors",
+    "role.admin": "Administrator",
+    "role.member": "Medlem",
+    "role.owner": "Eier",
     "slugDescription": "Brukes i nettadresser. Genereres automatisk fra navn.",
     "slugErrors": {
       "format": "Slug kan bare inneholde små bokstaver, tall og bindestreker",
@@ -256,7 +269,7 @@
       "title": "Team"
     },
     "timezone": {
-      "balances-recalculating": "Arbeidssaldoer beregnes på nytt for den nye tidssonen og er skjult til de er klare.",
+      "balances-recalculating": "Arbeidssaldoer beregnes på nytt for den nye tidssonen og forblir skjulte til de er klare.",
       "default": "Standard tidssone",
       "description": "Angi standard tidssone for organisasjonen din. Dette brukes til fraværsregistrering, rapporter og andre datobaserte funksjoner. Enkeltbrukere kan overstyre dette i profilinnstillingene sine.",
       "owner-only": "Kun organisasjonseiere kan endre tidssoneinnstillingen.",

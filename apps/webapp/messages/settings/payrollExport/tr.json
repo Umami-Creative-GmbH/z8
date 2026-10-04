@@ -21,13 +21,24 @@
       },
       "description": "Çalışma dönemlerini DATEV veya Personio gibi bordro sistemlerine aktarın",
       "export": {
+        "allEmployees": "Tüm Çalışanlar",
+        "allProjects": "Tüm Projeler",
+        "allTeams": "Tüm Ekipler",
         "asyncDescription": "Dışa aktarma işleminiz gerçekleştiriliyor. İlerlemeyi görmek için geçmiş sekmesini kontrol edin.",
         "asyncStarted": "Dışa aktarma başlatıldı",
         "customRange": "Özel Aralık",
         "dateRange": "Tarih Aralığı",
         "description": "Çalışma dönemlerini ve devamsızlıkları DATEV Lohn & Gehalt formatında dışa aktarın",
+        "employees": "Çalışanlar",
         "endDate": "Bitiş Tarihi",
         "error": "Dışa aktarma başarısız oldu",
+        "exportButtonDatev": "DATEV'e Dışa Aktar",
+        "exportButtonLexware": "Lexware'e Dışa Aktar",
+        "exportButtonPersonio": "Personio'ya Dışa Aktar",
+        "exportButtonSage": "Sage'e Dışa Aktar",
+        "exportButtonSuccessFactorsApi": "SAP SuccessFactors'a Dışa Aktar (API)",
+        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV Dışa Aktar",
+        "exportButtonWorkday": "Workday'e Dışa Aktar",
         "exporting": "Dışa aktarılıyor…",
         "filters": "Filtreler (İsteğe bağlı)",
         "format": "Dışa Aktarma Formatı",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Ay",
         "monthSelection": "Ay Seçin",
+        "projects": "Projeler",
         "startDate": "Başlangıç Tarihi",
         "success": "Dışa aktarma indirildi",
+        "teams": "Ekipler",
         "title": "Bordro Verilerini Dışa Aktar",
         "unavailable": {
           "missingConfiguration": "yapılandırma",
           "missingCredentials": "kimlik bilgileri"
         },
-        "year": "Yıl",
-        "allEmployees": "Tüm Çalışanlar",
-        "allProjects": "Tüm Projeler",
-        "allTeams": "Tüm Ekipler",
-        "employees": "Çalışanlar",
-        "employeesSelected": "{{count}} seçildi",
-        "exportButtonDatev": "DATEV'e aktar",
-        "exportButtonLexware": "Lexware'e aktar",
-        "exportButtonPersonio": "Personio'ya aktar",
-        "exportButtonSage": "Sage'e aktar",
-        "exportButtonSuccessFactorsApi": "SAP SuccessFactors'a aktar (API)",
-        "exportButtonSuccessFactorsCsv": "SAP SuccessFactors CSV dışa aktarımı",
-        "exportButtonWorkday": "Workday'e aktar",
-        "projects": "Projeler",
-        "projectsSelected": "{{count}} seçildi",
-        "teams": "Ekipler",
-        "teamsSelected": "{{count}} seçildi"
+        "year": "Yıl"
       },
       "history": {
         "description": "Önceki DATEV dışa aktarımlarını görüntüleyin ve indirin",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Onay gelen kutusunu incele",
+        "payrollExport": "Bordro dışa aktarma ayarlarını aç",
+        "timeTracking": "Zaman takibini incele",
+        "travelExpenses": "Seyahat giderlerini incele"
+      },
+      "affectedEmployees": {
+        "name": "Çalışan",
+        "noNumber": "Ayarlanmadı",
+        "number": "Çalışan numarası"
+      },
+      "checks": {
+        "count": "Sayı"
+      },
+      "checkStatus": {
+        "fail": "Engellendi",
+        "pass": "Hazır",
+        "unavailable": "Doğrulanamadı",
+        "warning": "Uyarı"
+      },
       "description": "Zaman, izin ve bordro verilerini dışa aktarmadan önce bir bordro döneminin hazır olup olmadığını kontrol edin.",
+      "openPayrollExport": "Bordro dışa aktarmayı aç",
+      "status": {
+        "blocked": "Engellendi",
+        "ready": "Bordro için hazır",
+        "unavailable": "Doğrulanamadı"
+      },
+      "summary": {
+        "affectedEmployees": "Etkilenen çalışanlar",
+        "affectedEmployeesDescription": "Açık hazırlık ögeleriyle bağlantılı çalışanlar.",
+        "blockers": "Engelleyiciler",
+        "blockersDescription": "Şu anda dışa aktarmayı engelleyen zorunlu kontroller.",
+        "exportTargets": "Yapılandırılmış dışa aktarma hedefleri",
+        "exportTargetsDescription": "Etkin bordro dışa aktarma hedefleri.",
+        "period": "Dönem",
+        "periodDescription": "Doğrulanan bordro dönemi.",
+        "status": "Durum",
+        "statusDescription": "Genel bordro dışa aktarma hazırlığı.",
+        "warnings": "Uyarılar",
+        "warningsDescription": "Dışa aktarmadan önce incelenmesi gereken engelleyici olmayan sorunlar."
+      },
       "title": "Bordro Hazırlığı"
     },
     "workDiagnostics": {
+      "allEmployees": "Tüm çalışanları göster",
+      "append": {
+        "continued": "Onaylanmış bir referans noktasından devam eden çalışanlar: {count}. Her referans noktasından önceki geçmiş doğrulanmamıştır.",
+        "counts": "{total} çalışandan {verified} tanesinin kökeni saklanan kanıtlardan doğrulanmıştır.",
+        "description": "Eksiksizlikten ayrı bir iddia: saklanan zaman girişlerinin kökeni ve sürekliliği. Bordroya hazır olma durumunu belirlemez.",
+        "interruptions": "Süreklilik kesintileri",
+        "issues": "Köken sorunları ve adayları",
+        "limitations": "Sınırlamalar",
+        "title": "Zaman girişi zinciri güvencesi"
+      },
+      "blocking": "Eksiksizliği engeller",
       "description": "Eksik veya çakışan zaman kayıtlarını ve zaman girişi zinciri sorunlarını bulun",
+      "evidence": {
+        "entries": "Zaman girişleri",
+        "timeRecords": "Zaman kayıtları",
+        "workPeriods": "Çalışma dönemleri"
+      },
+      "findings": {
+        "description": "Her bulgu salt okunur bir kanıttır. Yalnızca aşağıdaki geçmiş boşluk onarımı, kanıtlara dayalı olarak ve ayrı bir yetkilendirmeyle eksik değerleri doldurur; kesinleşmiş çalışmayı değiştirmek ayrı olarak yetkilendirilmiş bir inceleme gerektirir.",
+        "employees": "Çalışanlar",
+        "empty": "Bu kapsamda eksik, çelişen veya şüpheli geçmiş çalışma yok.",
+        "evidence": "Kanıt",
+        "finding": "Bulgu",
+        "provenance": "Menşe",
+        "title": "Bulgular",
+        "treatment": "İşlem"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Onay talebi olmayan bekleyen çalışma",
+        "approvalStateConflict": "Onay durumları uyuşmuyor",
+        "canonicalDetailMissing": "Zaman kaydı çalışma ayrıntısı eksik",
+        "canonicalLinkMissing": "Zaman kaydı bağlantısı eksik",
+        "canonicalLinkShared": "Birden fazla çalışma dönemi tek bir zaman kaydına bağlı",
+        "canonicalLinkUnresolved": "Bağlantılı zaman kaydı bulunamadı",
+        "canonicalMissing": "Zaman kaydı eksik",
+        "captureInferred": "Saat dilimi tespiti olaydan sonra çıkarsandı",
+        "deletedWorkPayable": "Silinen çalışmanın hâlâ ödenebilir bir zaman kaydı var",
+        "durationConflict": "Kaydedilen süreler uyuşmuyor",
+        "durationMissing": "Kaydedilen süre eksik",
+        "emptyInterval": "Başlangıç ve bitiş aynı",
+        "endpointConflict": "Başlangıç veya bitiş saatleri uyuşmuyor",
+        "endpointEntryMissing": "Çıkış kaydı eksik",
+        "endpointEntrySuperseded": "Çalışma dönemi değiştirilmiş bir saat kaydına işaret ediyor",
+        "endpointEntryUnresolved": "Saat kaydı bulunamadı",
+        "endpointMissing": "Bitiş saati eksik",
+        "manualEvidenceUnreadable": "Manuel gönderim kanıtı okunamıyor",
+        "manualHolidayCheckDatesDiffer": "Tatil kontrolünde çalışmadan farklı tarihler kullanıldı",
+        "manualInterpretationAmbiguous": "Manuel giriş saati saat değişikliği nedeniyle atlandı veya tekrarlandı",
+        "manualInterpretationMismatch": "Manuel giriş gönderilenden farklı saatlerde kaydedildi",
+        "manualTrimmed": "Manuel giriş kaydedilirken kısaltıldı",
+        "manualZoneUnrecorded": "Manuel giriş saat dilimi kaydedilmedi",
+        "metadataCanonicalOnly": "Atama yalnızca zaman kaydında",
+        "metadataConflict": "Atamalar uyuşmuyor",
+        "metadataMissing": "Zaman kaydında atama eksik",
+        "multipleActiveWork": "Birden fazla etkin çalışma dönemi",
+        "negativeDuration": "Negatif süre",
+        "openStateConflict": "Açık ve kapalı durumu uyuşmuyor",
+        "overlappingWork": "Çakışan çalışma",
+        "ownershipConflict": "Sahiplik çakışması",
+        "relinkedCanonicalResidue": "Yeniden bağlama ile geride kalan zaman kaydı",
+        "reversedInterval": "Bitiş başlangıçtan önce",
+        "storedElapsedDiscrepancy": "Kaydedilen dakikalar geçen süreden farklı",
+        "workOutsideOrganizationEmployees": "Kuruluş çalışanları dışına ait çalışma"
+      },
+      "nextMonth": "Sonraki ay",
+      "ownerUnknown": "Sahip belirlenmedi",
       "pageDescription": "Geçmiş çalışmalar için kayıt düzeyinde teşhisler: eksik veya çakışan gösterimler, benimseme kaynağı, şüpheli manuel giriş kusurları ve zaman girişi zinciri güvencesi.",
+      "previousMonth": "Önceki ay",
       "proposals": {
         "addChange": "Değişiklik ekle",
         "after": "Yeni değer",
@@ -370,6 +473,12 @@
         "valueRequired": "Yeni değeri girin.",
         "work": "Çalışma dönemi"
       },
+      "provenance": {
+        "ambiguous": "Belirsiz kaynak",
+        "freshBackdated": "Yeni geçmiş tarihli kayıt",
+        "postAdoption": "Benimseme sonrası kayıt",
+        "preAdoption": "Benimseme öncesi geçmiş"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Çıkış kaydını oluşturan",
@@ -413,7 +522,37 @@
         "title": "Geçmiş boşluk onarımı",
         "work": "Çalışma dönemi"
       },
-      "title": "Çalışma Tanılamaları"
+      "shape": {
+        "conflicting": "Çelişkili",
+        "disclosure": "Açıklama",
+        "missing": "Eksik",
+        "suspectedDefect": "Şüpheli kusur"
+      },
+      "status": {
+        "complete": "Tamamlandı",
+        "completeDescription": "Bekleyen, reddedilen ve açık çalışmalar da dahil olmak üzere, ilgili eksik veya çelişkili kanıt bulunmuyor.",
+        "incomplete": "Eksik",
+        "incompleteDescription": "Etkilenmeyen veriler inceleme için kullanılabilir, ancak bu kapsam tamamlanmış değildir.",
+        "widenedEmployees": "Tarihler belirlenemedi, bu nedenle etkilenen çalışanlar her dönem için belirsiz.",
+        "widenedOrganization": "Sahiplik belirlenemedi, bu nedenle tüm kuruluş belirsiz durumda."
+      },
+      "summary": {
+        "affected": "Etkilenen çalışanlar",
+        "affectedDescription": "Bu kapsamdaki çalışmaları belirlenemeyen çalışanlar.",
+        "blocking": "Engelleyici bulgular",
+        "blockingDescription": "İlgili çalışmayı belirsiz kılan eksik veya çelişkili kanıtlar.",
+        "scope": "Kapsam",
+        "scopeAll": "Tüm çalışanlar. Tarihler her saat diliminin takvim günlerini kapsar.",
+        "status": "Eksiksizlik"
+      },
+      "title": "Çalışma Tanılamaları",
+      "treatment": {
+        "disclosed": "Açıklanan kısıtlama",
+        "historicalGap": "Geçmişe ait boşluk",
+        "integrityIncident": "Bütünlük olayı",
+        "investigationRequired": "Araştırma gerekli",
+        "reviewRequired": "İnceleme gerekli"
+      }
     }
   }
 }

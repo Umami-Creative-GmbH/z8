@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Monitore assinaturas, receita e status de pagamento",
+      "failedToSyncSeats": "Falha ao sincronizar assentos",
       "intervals": {
         "month": "Mensal",
         "year": "Anual"
@@ -102,6 +103,7 @@
         "trialing": "Em teste",
         "trialingDescription": "Em período de teste"
       },
+      "seatsSynced": "Assentos sincronizados",
       "sections": {
         "recentSubscriptions": "Assinaturas recentes",
         "revenueMetrics": "Métricas de receita"
@@ -112,6 +114,7 @@
         "pastDue": "Vencido",
         "trialing": "Teste"
       },
+      "syncSeatsFor": "Sincronizar assentos para {organizationName}",
       "table": {
         "actions": "Ações",
         "billing": "Faturamento",

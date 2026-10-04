@@ -136,6 +136,11 @@
       "success": "Saída do funcionário registrada com sucesso",
       "title": "Registrar saída do funcionário?"
     },
+    "contextMenu": {
+      "delete": "Excluir",
+      "edit": "Editar",
+      "label": "Ações de registro de ponto"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Entradas de tempo bloqueadas",
       "category": "Categoria",
@@ -159,35 +164,72 @@
       "title": "Converter para pausa?"
     },
     "details": {
+      "automaticClockOut": "Saída registrada automaticamente",
+      "automaticCutoff": "Horário limite de saída",
+      "automaticLimit": "Limite de trabalho ininterrupto",
       "baseWorked": "Base trabalhada",
       "blocksTimeEntry": "Bloqueia registo de tempo",
       "category": "Categoria",
       "credited": "Creditado",
       "dateRange": "Intervalo de datas",
       "duration": "Duração",
+      "editedBy": "Editado por",
       "employee": "Funcionário",
       "notes": "Notas",
+      "pendingApproval": "Aprovação pendente",
+      "pendingApprovalDescription": "Este período de trabalho está aguardando aprovação do gestor. Os horários registrados podem ser alterados se for rejeitado.",
       "project": "Projeto",
       "recurring": "Recorrente anualmente",
+      "rejected": "Rejeitado",
+      "rejectedDescription": "Esta alteração no período de trabalho foi rejeitada por um gestor. Os horários originais foram restaurados.",
+      "source": "Origem",
       "status": "Estado",
       "surcharge": "Sobretaxa",
       "surchargeBreakdown": "Detalhamento de sobretaxas",
+      "system": "Sistema",
       "time": "Tempo",
       "type": "Tipo",
       "workLocation": "Local de trabalho"
     },
     "edit": {
       "deleteEntry": "Excluir entrada",
+      "locationRequired": "Escolha um local de trabalho.",
+      "noNotes": "Nenhuma observação adicionada",
+      "noProject": "Nenhum projeto atribuído",
       "notesSaved": "Notas guardadas",
       "notesSaveFailed": "Falha ao guardar notas",
       "projectSaved": "Projeto atualizado",
       "projectSaveFailed": "Falha ao atualizar o projeto",
       "split": "Dividir",
-      "locationRequired": "Escolha um local de trabalho.",
       "time": {
-        "noChanges": "Altere primeiro a data, a hora ou o local de trabalho.",
-        "edit": "Editar registo"
-      }
+        "approvalHint": "Esta alteração será enviada para aprovação do seu gestor.",
+        "beyondWindow": "Registros com mais de {days} dias só podem ser editados por um administrador.",
+        "clockIn": "Registrar entrada",
+        "clockInDate": "Data de entrada",
+        "clockInTime": "Hora de entrada",
+        "clockOut": "Registrar saída",
+        "clockOutDate": "Data de saída",
+        "clockOutTime": "Hora de saída",
+        "directHint": "Esta alteração é aplicada imediatamente.",
+        "edit": "Editar registro",
+        "invalidRange": "A saída deve ser após a entrada.",
+        "noChanges": "Altere a data, o horário ou o local de trabalho primeiro.",
+        "noteLabel": "Observação (opcional)",
+        "notePlaceholder": "Adicione uma observação sobre esta alteração…",
+        "onBehalfHint": "Esta alteração segue o fluxo de aprovação do funcionário. Se você for o aprovador dele, ela será aplicada imediatamente.",
+        "pendingCorrection": "Uma alteração de horário para este registro já está aguardando aprovação.",
+        "reasonLabel": "Motivo",
+        "reasonPlaceholder": "Explique por que esta correção é necessária…",
+        "reasonRequired": "Por favor, adicione um motivo para seu gestor.",
+        "saved": "Registro de tempo atualizado",
+        "saveFailed": "Falha ao atualizar o registro de tempo",
+        "submitForApproval": "Enviar para aprovação",
+        "submitOnBehalf": "Enviar alteração",
+        "submitted": "Alteração enviada para aprovação do gestor",
+        "submittedOnBehalf": "Alteração enviada ao aprovador do funcionário",
+        "timezoneNote": "Os horários estão no fuso horário do funcionário ({timezone})"
+      },
+      "title": "Período de Trabalho"
     },
     "employeeSelector": {
       "error": "Não foi possível carregar os membros da equipe",
@@ -226,6 +268,7 @@
       "workPeriod": "Período de trabalho",
       "workPeriodPending": "Pendente de Aprovação"
     },
+    "loadEventsError": "Falha ao carregar eventos do calendário: {message}",
     "mobileControls": {
       "description": "Escolha quais entradas de calendário estão visíveis.",
       "title": "Filtros e legenda"
@@ -239,6 +282,14 @@
       "previousMonth": "Mês anterior",
       "totalDescription": "Tempo registrado comparado com as horas da política",
       "weekSum": "Soma"
+    },
+    "requirements": {
+      "status": {
+        "met": "requisito atendido",
+        "missing": "tempo registrado ausente",
+        "over": "acima do requisito",
+        "under": "abaixo do requisito"
+      }
     },
     "split": {
       "ambiguousTime": "Escolha qual ocorrência usar",
@@ -277,6 +328,12 @@
       "week": "Semana",
       "year": "Ano"
     },
+    "workLocation": {
+      "notRecorded": "Não registrado"
+    },
+    "workPeriod": {
+      "editedBy": "(editado por {name} em {date})"
+    },
     "workStatus": {
       "overRequirement": "acima do requisito",
       "requiredHoursMissing": "horas obrigatórias ausentes",
@@ -285,9 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "workLocation": {
-      "notRecorded": "Não registado"
     }
   }
 }

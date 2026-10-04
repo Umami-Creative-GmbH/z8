@@ -114,6 +114,12 @@
         "none": "Inga meddelandekanaler är anslutna.",
         "title": "Leveransinställningar för kanal"
       },
+      "conflict": {
+        "differingTimeouts": "Kanalerna använde olika tidsgränser; den kortaste blev svarsfönstret.",
+        "disabledActiveSource": "Vissa aktiva kanaler hade eskaleringar avstängda. De levererar fortfarande inte eskaleringsmeddelanden.",
+        "inactiveSourceEnabled": "Vissa inaktiva kanaler hade eskaleringar aktiverade. De räknades inte in i policyn.",
+        "invalidTimeout": "En kanal hade en ogiltig tidsgräns och användes inte för svarsfönstret."
+      },
       "description": "Granska organisationens eskaleringspolicy, hur den migrerades från kanalinställningar och villkor som kräver en godkännandeansvarig.",
       "dispose": {
         "confirm": "Stäng objekt",
@@ -121,6 +127,12 @@
         "noteLabel": "Beslutsanteckning",
         "noteRequired": "Ange en beslutsanteckning.",
         "title": "Stäng ärende som kräver åtgärd"
+      },
+      "event": {
+        "alerted": "Administratörer larmade",
+        "disposed": "Avfärdad",
+        "raised": "Utlöst",
+        "resolved": "Löst"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Det gick inte att läsa in eskaleringsinställningarna.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Ange ett heltal i timmar mellan 1 och 720.",
         "windowLabel": "Svarsfönster"
       },
+      "reason": {
+        "ambiguousHistory": "Tvetydig eskaleringshistorik",
+        "deliveryExhausted": "Leveransförsök förbrukade",
+        "deliveryUnavailable": "Ingen leveransdestination tillgänglig",
+        "noEligibleBackup": "Ingen behörig reservgodkännare",
+        "replacementOverdue": "Ersättande godkännare är försenad",
+        "unsupportedRoute": "Beslutsvägen stöds inte"
+      },
       "revisions": {
         "changedBy": "Ändrad av",
         "migration": "Migrering av inställningar",
@@ -207,6 +227,7 @@
       "activePolicyTableDescription": "Policyer utvärderas efter prioritet; den första matchande aktiva policyn tillhandahåller godkännandekedjan.",
       "activeStatus": "Aktiv status",
       "addPolicy": "Lägg till policy",
+      "addStage": "Lägg till steg",
       "approvalType": {
         "absence": "Frånvaro",
         "complianceException": "Efterlevnadsundantag",
@@ -217,6 +238,15 @@
         "travelExpense": "Reseutlägg"
       },
       "approvalTypes": "Godkännandetyper",
+      "approver": "Godkännare",
+      "approverEmployeeId": "Godkännarens anställnings-ID",
+      "approverEmployeeIdPlaceholder": "Exempel: employee_123…",
+      "approverType": {
+        "directManager": "Närmaste chef",
+        "managerManager": "Chefens chef",
+        "organizationAdmin": "Organisationsadministratör",
+        "specificEmployee": "Specifik medarbetare"
+      },
       "conditionsCount": "Antal villkor",
       "createPolicy": "Skapa godkännandepolicy",
       "defaultStageLabel": "Chefsgranskning",
@@ -225,9 +255,25 @@
       "dialogDescription": "Definiera när en godkännandekedja tillämpas och vilka godkännare som hanterar varje sekventiellt steg.",
       "editPolicy": "Redigera policy",
       "empty": "Inga godkännandepolicyer har konfigurerats ännu. Skapa en policy för att definiera din första godkännandekedja.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Skicka förfrågan till standardchefen när detta steg inte kan identifiera en godkännare.",
+          "label": "Standardchef"
+        },
+        "fail": {
+          "description": "Avslå förfrågan när detta steg inte kan identifiera en godkännare.",
+          "label": "Avslå förfrågan"
+        },
+        "label": "Reservbeteende",
+        "organizationAdmin": {
+          "description": "Skicka förfrågan till en organisationsadministratör när detta steg inte kan identifiera en godkännare.",
+          "label": "Organisationsadministratör"
+        }
+      },
       "loadFailed": "Det gick inte att läsa in godkännandepolicyer.",
       "loading": "Läser in policyer…",
       "namePlaceholder": "Exempel: Frånvaroeskalering…",
+      "noStages": "Inga godkännandesteg har konfigurerats ännu.",
       "preview": {
         "ariaLabel": "Förhandsgranskning av godkännandekedja",
         "badge": "Förhandsgranskningsskal",
@@ -242,7 +288,11 @@
         "title": "Förhandsgranskning av kedjesammanfattning"
       },
       "priority": "Prioritet",
+      "removeStage": "Ta bort steg",
+      "stageNumber": "Steg {number}",
+      "stages": "Godkännandesteg",
       "stagesCount": "Antal steg",
+      "stagesDescription": "Stegen körs i ordning; varje förfrågan går vidare först efter att den nuvarande godkännaren har godkänt den.",
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"
@@ -644,6 +694,7 @@
       "createCategoriesFirst": "Skapa kategorier under fliken Kategorier först",
       "createCategory": "Skapa kategori",
       "createCategoryDescription": "Skapa en ny arbetskategori som kan tilldelas flera uppsättningar",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Skapa kategorigrupper med olika tidsfaktorer för olika arbetstyper",
       "createFirstSet": "Skapa första uppsättningen",
       "createSet": "Skapa uppsättning",
       "createSetDescription": "Skapa en ny kategoriuppsättning och välj vilka kategorier som ska ingå",

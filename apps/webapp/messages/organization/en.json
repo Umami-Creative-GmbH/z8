@@ -1,18 +1,18 @@
 {
   "organization": {
     "autoClockOut": {
-      "title": "Automatic clock-out",
+      "adminOnly": "Only organization admins and owners can change these settings.",
       "description": "Set the maximum duration of uninterrupted live work. Employees are automatically clocked out at this limit.",
       "enabled": "Automatic clock-out",
-      "hours": "Hours",
-      "minutes": "Minutes",
       "help": "A recorded break or new clock-in resets the allowance. Changes apply to work already in progress. Checks run every five minutes; clock-out is recorded at the limit, even if the check runs later. Employees always receive an inbox notification.",
-      "adminOnly": "Only organization admins and owners can change these settings.",
+      "hours": "Hours",
       "invalidDuration": "Enter a valid duration: whole hours and 0–59 minutes, totaling at least one minute.",
+      "minutes": "Minutes",
       "save": "Save changes",
-      "saving": "Saving…",
       "saved": "Automatic clock-out settings saved",
-      "saveFailed": "Failed to update automatic clock-out settings"
+      "saveFailed": "Failed to update automatic clock-out settings",
+      "saving": "Saving…",
+      "title": "Automatic clock-out"
     },
     "create": "Create Organization",
     "createDialog": {
@@ -134,7 +134,7 @@
       "expired": "Expired",
       "expires": "Expires",
       "inactive": "Inactive",
-      "invitationActionsLabel": "Actions for invitation to {email}",
+      "invitationActionsLabel": "Actions for invitation to ${row.original.email}",
       "invitationCancelError": "Failed to cancel invitation",
       "invitationCancelSuccess": "Invitation cancelled",
       "invitationResendError": "Failed to resend invitation",
@@ -142,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invitation(s) waiting to be accepted}}",
       "invitedBy": "Invited By",
       "member": "Member",
-      "memberActionsLabel": "Actions for {name}",
+      "memberActionsLabel": "Actions for ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} member(s) in this organization}}",
       "noInvitationResults": "No invitations match your search.",
       "noInvitations": "No pending invitations.",
@@ -203,11 +203,10 @@
       "failed": "Failed to recover organization",
       "success": "Organization recovered successfully"
     },
-    "role": {
-      "admin": "Admin",
-      "member": "Member",
-      "owner": "Owner"
-    },
+    "role": "organization.slugErrors",
+    "role.admin": "Admin",
+    "role.member": "Member",
+    "role.owner": "Owner",
     "slugDescription": "Used in URLs. Auto-generated from name.",
     "slugErrors": {
       "format": "Slug must contain only lowercase letters, numbers, and hyphens",

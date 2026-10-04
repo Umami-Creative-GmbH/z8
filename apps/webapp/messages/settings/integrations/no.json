@@ -48,7 +48,8 @@
         "description": "Konfigurer hvordan kalendersynkronisering fungerer for organisasjonen din.",
         "title": "Synkroniseringsatferd"
       },
-      "title": "Kalendersynkronisering"
+      "title": "Kalendersynkronisering",
+      "titleTemplatePlaceholder": "Ikke på kontoret - {categoryName}"
     },
     "clockinImport": {
       "credentials": {
@@ -105,6 +106,17 @@
         "description": "Skriv inn e-postadresse og API-nøkkel for Clockodo. Du finner API-nøkkelen din i Clockodo under Min profil > API-nøkkel. Påloggingsinformasjonen lagres ikke.",
         "email": "Clockodo-e-post",
         "title": "Clockodo-påloggingsinformasjon"
+      },
+      "entity": {
+        "absences": "Fravær",
+        "entries": "Timeregistreringer",
+        "holidayQuotas": "Feriekvoter",
+        "nonBusinessDays": "Ikke-arbeidsdager",
+        "services": "Tjenester / arbeidskategorier",
+        "surcharges": "Tillegg",
+        "targetHours": "Måltimer / arbeidsretningslinjer",
+        "teams": "Team",
+        "users": "Brukere / ansatte"
       },
       "errors": {
         "connectionFailed": "Kunne ikke koble til Clockodo",

@@ -19,42 +19,91 @@
     "commandPlaceholder": "Seiten, Personen, Teams, Einstellungen oder Aktionen durchsuchen…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "Eintrag",
+          "hours": "Stunden",
+          "manual": "Manuell",
+          "time": "Zeit"
+        },
         "subtitle": "Stunden für eine vergangene Schicht oder Korrektur erfassen",
         "title": "Manuelle Zeiterfassung hinzufügen"
       },
       "createProject": {
+        "keywords": {
+          "create": "Erstellen",
+          "project": "Projekt",
+          "settings": "Einstellungen"
+        },
         "subtitle": "Projekteinstellungen öffnen, um ein neues Projekt zu definieren",
         "title": "Projekt erstellen"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "Einladen",
+          "member": "Mitglied",
+          "teammate": "Teammitglied"
+        },
         "subtitle": "Organisationsverwaltung öffnen, um einen Kollegen hinzuzufügen",
         "title": "Teammitglied einladen"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "Genehmigungen",
+          "inbox": "Posteingang",
+          "review": "Überprüfen"
+        },
         "subtitle": "Ausstehende Mitarbeiteranfragen überprüfen",
         "title": "Genehmigungsposteingang öffnen"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "Meine",
+          "requests": "Anfragen"
+        },
         "subtitle": "Eingereichte Abwesenheiten und Ausgaben überprüfen",
         "title": "Meine Anfragen öffnen"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
-        "title": "Lohnabrechnungsbereitschaft öffnen"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "Exportieren",
+          "payroll": "Gehaltsabrechnung",
+          "wages": "Löhne"
+        },
         "subtitle": "Bereichsbezogenen Lohnabrechnungs-Arbeitsbereich überprüfen",
         "title": "Lohnabrechnung öffnen"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "Exportieren",
+          "payroll": "Gehaltsabrechnung",
+          "readiness": "Bereitschaft"
+        },
+        "subtitle": "Prüfen, ob Zeitdaten für die Lohnabrechnung bereit sind",
+        "title": "Lohnabrechnungsbereitschaft öffnen"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "Präferenzen",
+          "settings": "Einstellungen"
+        },
         "subtitle": "Profil-, Sicherheits- und Organisationseinstellungen verwalten",
         "title": "Einstellungen öffnen"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "Abwesenheit",
+          "timeOff": "Freistellung",
+          "vacation": "Urlaub"
+        },
         "subtitle": "Urlaub, Krankmeldung oder Abwesenheitsantrag starten",
         "title": "Abwesenheit beantragen"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "Ausgabe",
+          "reimbursement": "Erstattung",
+          "travel": "Reisen"
+        },
         "subtitle": "Erstattungsantrag für Reisekosten erstellen",
         "title": "Reisekosten einreichen"
       }
@@ -70,7 +119,14 @@
     "search": "Suche",
     "searchOrRunCommand": "Suchen oder Befehl ausführen",
     "teamAbsences": {
-      "description": "Abwesenheitskennzahlen der Mitarbeiter überprüfen und Abwesenheiten erfassen"
+      "description": "Abwesenheitskennzahlen der Mitarbeiter überprüfen und Abwesenheiten erfassen",
+      "keywords": {
+        "absence": "Abwesenheit",
+        "manager": "Manager",
+        "sick": "krank",
+        "team": "Team",
+        "vacation": "Urlaub"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Genehmigen",
     "assign": "Zuweisen",
     "back": "Zurück",
+    "brandLogo": "{brand}-Logo",
+    "breadcrumb": {
+      "breadcrumb": "Breadcrumb",
+      "more": "Mehr"
+    },
     "cancel": "Abbrechen",
+    "carousel": {
+      "nextSlide": "Nächste Folie",
+      "previousSlide": "Vorherige Folie",
+      "roleDescription": "Karussell",
+      "slideRoleDescription": "Folie"
+    },
     "clear": "Leeren",
     "clearSearch": "Suche löschen",
     "clearSelection": "Löschen",
@@ -117,10 +184,17 @@
     "copy": "Kopieren",
     "create": "Erstellen",
     "current": "Aktuell",
+    "datePicker": {
+      "clearDate": "Datum löschen",
+      "placeholder": "Datum auswählen"
+    },
     "days": {
+      "count": "{count} Tage",
       "friday": "Freitag",
+      "half": "0,5 Tage",
       "label": "Tage",
       "monday": "Montag",
+      "one": "1 Tag",
       "saturday": "Samstag",
       "sunday": "Sonntag",
       "thursday": "Donnerstag",
@@ -129,14 +203,24 @@
     },
     "delete": "Löschen",
     "deleting": "Löschen...",
+    "deployment": {
+      "skew": {
+        "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
+        "title": "Z8 wurde aktualisiert"
+      }
+    },
     "description": "Beschreibung",
     "deselectAll": "Alle abwählen",
     "details": "Details",
     "download": "Herunterladen",
+    "duplicate": "Duplizieren",
+    "durationMinutes": "{count} Min.",
     "edit": "Bearbeiten",
     "enabled": "Aktiviert",
     "error": "Fehler",
     "error-occurred": "Ein Fehler ist aufgetreten",
+    "fieldPresets": "{label}-Voreinstellungen",
+    "focusInput": "Eingabefeld fokussieren",
     "gender": {
       "female": "Weiblich",
       "male": "Männlich",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Zum Dashboard",
     "inactive": "Inaktiv",
+    "label": "Bezeichnung",
     "loading": "Laden...",
+    "loadingLabel": "Wird geladen",
+    "loadingRegions": {
+      "absences": "Abwesenheiten werden geladen",
+      "adminConsole": "Admin-Konsole wird geladen",
+      "analyticsNavigation": "Analytics-Navigation wird geladen",
+      "application": "Anwendung wird geladen",
+      "auditExportSettings": "Audit-Exporteinstellungen werden geladen",
+      "authentication": "Authentifizierung wird geladen",
+      "changePolicySettings": "Einstellungen für Änderungsrichtlinien werden geladen",
+      "coverageRuleSettings": "Einstellungen für Abdeckungsregeln werden geladen",
+      "customerSettings": "Kundeneinstellungen werden geladen",
+      "customRoleSettings": "Einstellungen für benutzerdefinierte Rollen werden geladen",
+      "dashboard": "Dashboard wird geladen",
+      "dataExportSettings": "Datenexporteinstellungen werden geladen",
+      "demoDataSettings": "Demodateneinstellungen werden geladen",
+      "deploymentDiagnostics": "Bereitstellungsdiagnose wird geladen",
+      "employeeReports": "Mitarbeiterberichte werden geladen",
+      "employeeVacationAllowances": "Urlaubsansprüche der Mitarbeiter werden geladen",
+      "exportOperations": "Exportvorgänge werden geladen",
+      "holidaySettings": "Feiertagseinstellungen werden geladen",
+      "importReview": "Importprüfung wird geladen",
+      "importSettings": "Importeinstellungen werden geladen",
+      "locationSettings": "Standorteinstellungen werden geladen",
+      "onboarding": "Onboarding wird geladen",
+      "payrollExportSettings": "Lohnabrechnungs-Exporteinstellungen werden geladen",
+      "payrollReadiness": "Lohnabrechnungsbereitschaft wird geladen",
+      "payrollWorkspace": "Lohnabrechnungs-Arbeitsbereich wird geladen",
+      "platformAdminOverview": "Plattform-Admin-Übersicht wird geladen",
+      "platformAnalytics": "Plattform-Analytics wird geladen",
+      "platformBilling": "Plattform-Abrechnung wird geladen",
+      "platformSetup": "Plattform-Einrichtung wird geladen",
+      "projectReports": "Projektberichte werden geladen",
+      "projectSettings": "Projekteinstellungen werden geladen",
+      "scheduledExports": "Geplante Exporte werden geladen",
+      "shiftSchedule": "Schichtplan wird geladen",
+      "shiftTemplateSettings": "Schichtvorlagen-Einstellungen werden geladen",
+      "skillSettings": "Skill-Einstellungen werden geladen",
+      "surchargeSettings": "Zuschlagseinstellungen werden geladen",
+      "team": "Team wird geladen",
+      "todaySManagerBriefing": "Heutiges Manager-Briefing wird geladen",
+      "travelExpenses": "Reisekosten werden geladen",
+      "travelExpenseSettings": "Reisekosteneinstellungen werden geladen",
+      "twoFactorVerification": "Zwei-Faktor-Verifizierung wird geladen",
+      "vacationSettings": "Urlaubseinstellungen werden geladen",
+      "wellnessSettings": "Wellness-Einstellungen werden geladen",
+      "workCategorySettings": "Arbeitskategorie-Einstellungen werden geladen",
+      "workerQueue": "Worker-Warteschlange wird geladen",
+      "workPolicySettings": "Arbeitsrichtlinien-Einstellungen werden geladen",
+      "worksCouncilPortal": "Betriebsratsportal wird geladen",
+      "yourRequests": "Ihre Anfragen werden geladen"
+    },
     "loadMore": "Mehr laden",
     "months": {
       "april": "April",
@@ -169,11 +305,20 @@
     "next": "Weiter",
     "notApplicable": "n. v.",
     "not-available": "Nicht verfügbar",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Benachrichtigungen} other {Benachrichtigungen (# ungelesen)}}"
+    },
     "open": "Öffnen",
     "openEnded": "Unbegrenzt",
     "openMenu": "Menü öffnen",
     "optional": "optional",
     "or": "Oder",
+    "pagination": {
+      "goToNextPage": "Zur nächsten Seite",
+      "goToPreviousPage": "Zur vorherigen Seite",
+      "morePages": "Weitere Seiten",
+      "pagination": "Paginierung"
+    },
     "pending": "Ausstehend",
     "present": "Vorhanden",
     "previous": "Zurück",
@@ -194,6 +339,11 @@
     "select-language": "Sprache auswählen",
     "set": "Satz",
     "sets": "Sätze",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Zeigt die mobile Seitenleiste an.",
+      "sidebar": "Seitenleiste",
+      "toggleSidebar": "Seitenleiste umschalten"
+    },
     "skip": "Überspringen",
     "start": "Start",
     "status": "Status",
@@ -205,6 +355,10 @@
         "reload": "Neu laden",
         "title": "Update verfügbar"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Zeitauswahl öffnen",
+      "switchPeriod": "Zu {period} wechseln"
     },
     "to": "bis",
     "today": "Heute",
@@ -234,16 +388,33 @@
       "we": "Mi",
       "wed": "Mi"
     },
-    "deployment": {
-      "skew": {
-        "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
-        "title": "Z8 wurde aktualisiert"
-      }
+    "worksCouncil": {
+      "changeLogDescription": "Änderungen mit Auswirkungen auf die Belegschaft für diese Organisation und diesen Zeitraum.",
+      "changeLogEmpty": "Keine Änderungen für diesen Zeitraum gefunden.",
+      "changeReviewLog": "Änderungsüberprüfungsprotokoll",
+      "complianceFindings": "Compliance-Feststellungen",
+      "description": "Datenschutzgefilterte Belegschaftsüberprüfung für den ausgewählten Zeitraum.",
+      "disabledDescription": "Der Betriebsratsmodus ist für diese Organisation nicht aktiviert.",
+      "exportReviewPack": "Überprüfungspaket exportieren",
+      "from": "Von",
+      "identityHidden": "Identität verborgen",
+      "insufficientData": "Unzureichende Daten",
+      "policyChanges": "Richtlinienänderungen",
+      "scheduleChanges": "Dienstplanänderungen",
+      "scheduleDescription": "Datenschutzgefilterte Dienstplaneinträge für den ausgewählten Zeitraum.",
+      "scheduleEmpty": "Keine Dienstplaneinträge für diesen Zeitraum gefunden.",
+      "scheduleEntry": "{identity} - {start} bis {end}",
+      "scheduleReview": "Dienstplanüberprüfung",
+      "title": "Betriebsrat",
+      "to": "Bis",
+      "unassignedTeam": "Nicht zugewiesenes Team",
+      "updateRange": "Bereich aktualisieren"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} Mitarbeiter ausgewählt",
     "countWithMore": "{count} Mitarbeiter (+{more} weitere)",
+    "inactive": "Inaktiv",
     "noEmployeesFound": "Keine Mitarbeiter gefunden",
     "removeSelected": "{name} entfernen",
     "role": "Rolle",
@@ -263,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Administrator kontaktieren",
       "createOrg": "Organisation erstellen",
-      "description": "Sie benötigen ein Mitarbeiterprofil, um {feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
+      "description": "Sie benötigen ein Mitarbeiterprofil, um ${feature}. Bitte erstellen Sie eine Organisation oder wenden Sie sich an Ihren Administrator.",
       "emailBody": "Hallo,\n\nich benötige ein eingerichtetes Mitarbeiterprofil, um auf die Plattformfunktionen zugreifen zu können. Könnten Sie mir bitte dabei helfen?\n\nVielen Dank!",
       "emailSubject": "Einrichtung des Mitarbeiterprofils erforderlich",
       "helpText": "Wenn Sie zu einer Organisation eingeladen wurden, bitten Sie Ihren Administrator, Ihr Mitarbeiterprofil einzurichten.",
@@ -276,8 +447,14 @@
       "waiting": "Warten Sie auf eine Einladung?",
       "waitingDesc": "Ihr Administrator wird Ihnen eine Einladungs-E-Mail senden. Überprüfen Sie Ihren Posteingang und Spam-Ordner."
     },
+    "notFound": {
+      "description": "Die Seite wurde möglicherweise verschoben, der Link ist veraltet oder die Adresse ist falsch.",
+      "title": "Seite nicht gefunden"
+    },
     "unexpected": {
-      "digest": "Referenz: {digest}"
+      "description": "Diese Seite konnte gerade nicht geladen werden. Bitte versuchen Sie es erneut oder kehren Sie zu einem sicheren Bereich in der App zurück.",
+      "digest": "Referenz: {digest}",
+      "title": "Etwas ist schiefgelaufen"
     }
   },
   "generic": {
@@ -286,25 +463,36 @@
   },
   "header": {
     "clock-in": "Einstempeln",
-    "clock-out": "Ausstempeln"
+    "clock-out": "Ausstempeln",
+    "timezone": {
+      "current": "Aktuelle Zeitzone {timezone}, {time}, {offset}",
+      "savedTimezone": "Gespeicherte Zeitzone",
+      "saveTimezone": "Zeitzone speichern",
+      "saving": "Wird gespeichert...",
+      "updated": "Zeitzone erfolgreich aktualisiert",
+      "updateError": "Beim Aktualisieren der Zeitzone ist ein Fehler aufgetreten",
+      "updateFailed": "Zeitzone konnte nicht aktualisiert werden"
+    }
   },
   "info": {
     "agb": "AGB",
     "back-to-login": "Zurück zur Anmeldung",
     "imprint": "Impressum",
+    "licenses": "Open-Source-Lizenzen",
+    "openSourceLicenses": "Open-Source-Lizenzen",
     "trust-center": "Trust Center"
   },
   "loading": {
-    "chart": "Diagramm wird geladen",
-    "settings": "Einstellungen werden geladen",
     "application": "Anwendung wird geladen",
     "authentication": "Authentifizierung wird geladen",
     "calendar": "Kalender wird geladen",
+    "chart": "Diagramm wird geladen",
     "licenses": "Lizenzen werden geladen",
-    "platformAnalytics": "Plattformanalyse wird geladen",
+    "platformAnalytics": "Plattformanalysen werden geladen",
+    "settings": "Einstellungen werden geladen",
     "setup": "Einrichtung wird geladen",
-    "teamAbsences": "Team-Abwesenheiten werden geladen",
-    "workerQueue": "Auftragswarteschlange wird geladen"
+    "teamAbsences": "Tabelle der Teamabwesenheiten wird geladen",
+    "workerQueue": "Worker-Warteschlange wird geladen"
   },
   "nav": {
     "absences": "Abwesenheiten",
@@ -340,37 +528,34 @@
       "viewAll": "Alle Benachrichtigungen anzeigen"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} hat in Ihrem Namen {absenceType} für {dateRange} erfasst.",
+        "title": "Abwesenheit erfasst"
+      },
+      "absenceRequestRejected": {
+        "title": "Abwesenheitsantrag abgelehnt"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Genehmigungsaufgaben erfordern eine Vertretung",
+        "clock_out": "Prüfung erforderlich: Offboarding-Ausstempeln",
+        "clock_repair": "Timer-Reparatur erforderlich",
+        "employment_terms": "Zukünftige Anstellungsbedingungen müssen überprüft werden",
+        "future_work": "Zukünftige Arbeit muss überprüft werden"
+      },
+      "newAbsenceRequest": {
+        "title": "Neuer Abwesenheitsantrag"
+      },
       "passwordChanged": {
-        "message": "Ihr Passwort wurde erfolgreich geändert. Wenn Sie diese Änderung nicht vorgenommen haben, wenden Sie sich bitte sofort an den Support.",
+        "message": "Ihr Passwort wurde erfolgreich geändert. Falls Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie bitte umgehend den Support.",
         "title": "Passwort geändert"
       },
       "shiftAssigned": {
-        "message": "Ihnen wurde eine Schicht am {shiftDate} von {startTime} bis {endTime} von {assignedByName} zugewiesen.",
+        "message": "Ihnen wurde von {assignedByName} eine Schicht am {shiftDate} von {startTime} bis {endTime} zugewiesen.",
         "title": "Schicht zugewiesen"
       },
       "teamMemberAdded": {
-        "message": "Sie wurden von {performedByName} zum Team {teamName} hinzugefügt.",
+        "message": "Du wurdest von {performedByName} zum Team {teamName} hinzugefügt.",
         "title": "Zum Team hinzugefügt"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Ihre Anfrage für {categoryName} für {dateRange} wurde eingereicht und wartet auf Genehmigung.",
-        "title": "Abwesenheitsanfrage eingereicht"
-      },
-      "teamMemberRemoved": {
-        "message": "Sie wurden von {performedByName} aus dem Team {teamName} entfernt.",
-        "title": "Aus dem Team entfernt"
-      },
-      "employeeOffboardingReview": {
-        "title": "Offboarding benötigt eine Prüfung",
-        "clock_out": "{employeeName}: Prüfung erforderlich: Ausstempeln beim Offboarding (Austritt wirksam {cutoff}, {timezone}).",
-        "clock_repair": "{employeeName}: Zeiterfassung muss korrigiert werden (Austritt wirksam {cutoff}, {timezone}).",
-        "approval_handover": "{employeeName}: Genehmigungsaufgaben brauchen eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Zukünftige Arbeit muss geprüft werden (Austritt wirksam {cutoff}, {timezone}).",
-        "employment_terms": "{employeeName}: Zukünftige Vertragsbedingungen müssen geprüft werden (Austritt wirksam {cutoff}, {timezone})."
-      },
-      "automaticClockOut": {
-        "title": "Automatisch ausgestempelt",
-        "message": "Du wurdest nach {duration} Minuten ununterbrochener Arbeit am {cutoff} ({timezone}) automatisch ausgestempelt, weil das Zeitlimit deiner Organisation erreicht wurde."
       }
     },
     "description": "Überprüfen Sie Updates, Genehmigungen und Systemmeldungen in einer Zeitleiste.",
@@ -395,6 +580,7 @@
     "preferences": {
       "disabled": "Benachrichtigung deaktiviert",
       "enabled": "Benachrichtigung aktiviert",
+      "mandatoryInbox": "Wird immer an Ihren Posteingang zugestellt",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Benachrichtigungen für ausstehende Genehmigungsanfragen erhalten",
@@ -420,11 +606,7 @@
         "errorToast": "Fehler bei Push-Benachrichtigung"
       },
       "toggleAria": "{channel}-Benachrichtigungen für {type}",
-      "updateFailed": "Einstellung konnte nicht aktualisiert werden",
-      "mandatoryInbox": "Wird immer in deinem Posteingang zugestellt",
-      "types": {
-        "automatic_clock_out": "Automatisches Ausstempeln"
-      }
+      "updateFailed": "Einstellung konnte nicht aktualisiert werden"
     },
     "search": {
       "ariaLabel": "Benachrichtigungen durchsuchen",
@@ -435,6 +617,9 @@
       "selectAllAria": "Alle sichtbaren Benachrichtigungen auswählen",
       "selectNamedAria": "{title} auswählen",
       "visibleSelected": "{count} sichtbar ausgewählt"
+    },
+    "time": {
+      "justNow": "gerade eben"
     },
     "timeline": {
       "earlier": "Früher",
@@ -456,17 +641,17 @@
       "archived": "Archivierte Stempelnachweise auf diesem Gerät aufbewahrt",
       "offline": "Sie sind offline",
       "offlineSaved": "Offline – {count} Datensatz/Datensätze lokal zur Überprüfung gespeichert",
-      "offlineWaiting": "Offline — {count} Stempelung(en) werden gesendet, sobald Sie wieder online sind",
+      "offlineWaiting": "Offline — {count} Stempelaktion(en) werden gesendet, sobald Sie wieder online sind",
       "refresh": "Status aktualisieren",
       "refreshing": "{count} gespeicherte(r) Datensatz/Datensätze wird/werden überprüft…",
       "reviewRequired": "{count} Datensatz/Datensätze lokal gespeichert – Überprüfung erforderlich",
       "unverified": "Stempelnachweis auf diesem Gerät gespeichert. Stellen Sie eine Verbindung her, um alle gespeicherten Datensätze zu überprüfen.",
-      "waiting": "{count} Stempelung(en) auf diesem Gerät gespeichert, noch nicht gesendet"
+      "waiting": "{count} Stempelaktion(en) auf diesem Gerät gespeichert, noch nicht gesendet"
     },
     "capture": {
       "description": "Ereignis zur Überprüfung auf diesem Gerät speichern. Der Serverstatus der Zeiterfassung ändert sich nicht.",
       "end": "Ausstempeln zur Überprüfung speichern",
-      "queueDescription": "Sie sind offline. Stempelungen werden auf diesem Gerät gespeichert und automatisch gesendet, sobald Sie wieder online sind.",
+      "queueDescription": "Sie sind offline. Stempelaktionen werden auf diesem Gerät gespeichert und automatisch gesendet, sobald Sie wieder online sind.",
       "queueEnd": "Ausstempeln speichern",
       "queueStart": "Einstempeln speichern",
       "start": "Einstempeln zur Überprüfung speichern"
@@ -475,18 +660,18 @@
       "archive": "Nachweise archivieren und aufbewahren",
       "archived": "Archiviert – Nachweis aufbewahrt",
       "command": {
-        "blockedPredecessor": "Pausiert — eine frühere Stempelung auf diesem Gerät muss geprüft werden",
+        "blockedPredecessor": "Pausiert — eine frühere Stempelaktion auf diesem Gerät muss überprüft werden",
         "committed": "Auf dem Server gespeichert",
         "exhausted": "Senden nach wiederholten Fehlern gestoppt — auf dem Server nicht bestätigt",
-        "pausedAccess": "Pausiert — melden Sie sich erneut mit Zugriff auf das Stempeln in dieser Organisation an",
-        "pausedContext": "Pausiert — melden Sie sich mit dem Konto und der Organisation an, für die gespeichert wurde",
-        "pausedServer": "Pausiert — der Server nimmt diese Stempelung noch nicht an",
-        "pending": "Wartet auf Senden — auf dem Server nicht bestätigt",
+        "pausedAccess": "Pausiert — melden Sie sich erneut mit Berechtigung zum Stempeln in dieser Organisation an",
+        "pausedContext": "Pausiert — melden Sie sich bei dem Konto und der Organisation an, für die dies gespeichert wurde",
+        "pausedServer": "Pausiert — der Server akzeptiert diese Stempelaktion noch nicht",
+        "pending": "Wartet auf das Senden — auf dem Server nicht bestätigt",
         "rejected": "Nicht gespeichert — vom Server abgelehnt ({code})",
-        "review": "Prüfung nötig — vom Server nicht angenommen ({code})",
-        "waitingPredecessor": "Wartet auf eine frühere Stempelung auf diesem Gerät"
+        "review": "Überprüfung erforderlich — vom Server nicht akzeptiert ({code})",
+        "waitingPredecessor": "Wartet auf eine frühere Stempelaktion auf diesem Gerät"
       },
-      "descriptionOutcomes": "Diese Einträge sind auf diesem Gerät gespeichert. Sofern ein Eintrag nicht als auf dem Server gespeichert angezeigt wird, ist sein Ergebnis auf dem Server nicht bestätigt. Prüfen Sie vorhandene Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzeinträge erfassen. Archivieren behält die Nachweise und storniert keine Arbeit auf dem Server.",
+      "descriptionOutcomes": "Diese Datensätze sind auf diesem Gerät gespeichert. Sofern bei einem Datensatz nicht angegeben ist, dass er auf dem Server gespeichert wurde, ist das serverseitige Ergebnis nicht bestätigt. Überprüfen Sie bestehende Zeiteinträge mit Ihrer Führungskraft, bevor Sie Ersatzarbeitszeiten übermitteln. Durch das Archivieren bleibt der Nachweis erhalten und die Arbeit auf dem Server wird nicht storniert.",
       "empty": "Keine zugänglichen Datensätze. Ältere Datensätze ohne Kontonachweis erfordern eine Überprüfung auf Organisationsebene; Datensätze ohne Organisationsnachweis erfordern eine separat autorisierte Wiederherstellung.",
       "evidence": "Ursprünglicher Nachweis und Wiederherstellungsstatus",
       "export": "Zugängliche Nachweise exportieren",
@@ -507,6 +692,15 @@
     },
     "clockedIn": "Eingestempelt",
     "clockedOut": "Ausgestempelt"
+  },
+  "rateLimit": {
+    "countdownLabel": "Sekunden bis zum erneuten Versuch",
+    "jsonMessage": "Anfragelimit überschritten. Bitte versuchen Sie es später erneut.",
+    "message": "Sie haben zu viele Anfragen gestellt. Bitte warten Sie, bevor Sie es erneut versuchen.",
+    "retryButton": "Erneut versuchen",
+    "retryingButton": "Wird wiederholt...",
+    "title": "Zu viele Anfragen",
+    "waitingButton": "Bitte warten..."
   },
   "roles": {
     "admin": "Administrator",
@@ -590,7 +784,8 @@
     "first-name-required": "Vorname ist erforderlich",
     "invalid-email": "Ungültige E-Mail-Adresse",
     "last-name-required": "Nachname ist erforderlich",
-    "password-required": "Passwort ist erforderlich"
+    "password-required": "Passwort ist erforderlich",
+    "pronounsMaxLength": "Pronomen dürfen maximal 50 Zeichen lang sein"
   },
   "workBalance": {
     "label": "Gesamtbilanz",
@@ -599,6 +794,6 @@
     "updatedEveryThreeHours": "Wird alle 3 Stunden aktualisiert"
   },
   "worksCouncil": {
-    "loadingLabel": "Betriebsratsportal wird geladen"
+    "loadingLabel": "Betriebsrat wird geladen"
   }
 }

@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Solo gli amministratori e i proprietari dell'organizzazione possono modificare queste impostazioni.",
+      "description": "Imposta la durata massima del lavoro continuativo in tempo reale. Al raggiungimento di questo limite, per i dipendenti viene registrata automaticamente l'uscita.",
+      "enabled": "Timbratura di uscita automatica",
+      "help": "Una pausa registrata o una nuova timbratura di entrata reimposta la tolleranza. Le modifiche si applicano all'attività già in corso. I controlli vengono eseguiti ogni cinque minuti; l'uscita viene registrata al raggiungimento del limite, anche se il controllo viene eseguito in seguito. I dipendenti ricevono sempre una notifica nella cartella dei messaggi in arrivo.",
+      "hours": "Ore",
+      "invalidDuration": "Inserisci una durata valida: ore intere e 0–59 minuti, per un totale di almeno un minuto.",
+      "minutes": "Minuti",
+      "save": "Salva modifiche",
+      "saved": "Impostazioni di uscita automatica salvate",
+      "saveFailed": "Impossibile aggiornare le impostazioni di uscita automatica",
+      "saving": "Salvataggio in corso…",
+      "title": "Timbratura di uscita automatica"
+    },
     "create": "Crea organizzazione",
     "createDialog": {
       "description": "Configura la tua organizzazione per iniziare",
@@ -120,7 +134,7 @@
       "expired": "Scaduto",
       "expires": "Scade",
       "inactive": "Inattivo",
-      "invitationActionsLabel": "Azioni per l'invito a {email}",
+      "invitationActionsLabel": "Azioni per l'invito a ${row.original.email}",
       "invitationCancelError": "Impossibile annullare l'invito",
       "invitationCancelSuccess": "Invito annullato",
       "invitationResendError": "Impossibile reinviare l'invito",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invito/i in attesa di essere accettato/i}}",
       "invitedBy": "Invitato da",
       "member": "Membro",
-      "memberActionsLabel": "Azioni per {name}",
+      "memberActionsLabel": "Azioni per ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} membro/i in questa organizzazione}}",
       "noInvitationResults": "Nessun invito corrisponde alla ricerca.",
       "noInvitations": "Nessun invito in sospeso.",
@@ -189,11 +203,10 @@
       "failed": "Impossibile ripristinare l'organizzazione",
       "success": "Organizzazione ripristinata con successo"
     },
-    "role": {
-      "admin": "Admin",
-      "member": "Membro",
-      "owner": "Proprietario"
-    },
+    "role": "organization.slugErrors",
+    "role.admin": "Admin",
+    "role.member": "Membro",
+    "role.owner": "Proprietario",
     "slugDescription": "Utilizzato negli URL. Generato automaticamente dal nome.",
     "slugErrors": {
       "format": "Lo slug può contenere solo lettere minuscole, numeri e trattini",
@@ -256,7 +269,7 @@
       "title": "Team"
     },
     "timezone": {
-      "balances-recalculating": "I saldi di lavoro vengono ricalcolati per il nuovo fuso orario e restano nascosti finché non sono pronti.",
+      "balances-recalculating": "I bilanci delle ore lavorate sono in fase di ricalcolo per il nuovo fuso orario e rimarranno nascosti finché non saranno pronti.",
       "default": "Fuso orario predefinito",
       "description": "Imposta il fuso orario predefinito per la tua organizzazione. Viene utilizzato per il monitoraggio delle assenze, i report e altre funzionalità basate sulla data. I singoli utenti possono sovrascriverlo nelle impostazioni del loro profilo.",
       "owner-only": "Solo i proprietari dell'organizzazione possono modificare l'impostazione del fuso orario.",

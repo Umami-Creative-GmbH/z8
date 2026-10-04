@@ -55,6 +55,9 @@
           "restPeriodViolations": "Infracciones de periodo de descanso: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Última actualización: {time}"
+      },
       "links": {
         "inspectCompliance": "Inspeccionar cumplimiento",
         "inspectInAuditLog": "Inspeccionar en el registro de auditoría",
@@ -62,6 +65,11 @@
         "openAuditLog": "Abrir registro de auditoría",
         "openComplianceSettings": "Abrir configuración de cumplimiento",
         "reviewAuditExport": "Revisar exportación de auditoría"
+      },
+      "overview": "Resumen de cumplimiento",
+      "recentEvents": {
+        "empty": "No se detectaron eventos críticos recientes.",
+        "title": "Eventos críticos recientes"
       },
       "sections": {
         "accessControls": {

@@ -55,6 +55,9 @@
           "restPeriodViolations": "Brudd på hviletid: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Sist oppdatert: {time}"
+      },
       "links": {
         "inspectCompliance": "Inspiser samsvar",
         "inspectInAuditLog": "Inspiser i revisjonslogg",
@@ -62,6 +65,11 @@
         "openAuditLog": "Åpne revisjonslogg",
         "openComplianceSettings": "Åpne samsvarsinnstillinger",
         "reviewAuditExport": "Gjennomgå revisjonseksport"
+      },
+      "overview": "Samsvarsoversikt",
+      "recentEvents": {
+        "empty": "Ingen nylige kritiske hendelser ble oppdaget.",
+        "title": "Nylige kritiske hendelser"
       },
       "sections": {
         "accessControls": {

@@ -55,6 +55,9 @@
           "restPeriodViolations": "Παραβιάσεις περιόδου ανάπαυσης: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Τελευταία ανανέωση: {time}"
+      },
       "links": {
         "inspectCompliance": "Επιθεώρηση συμμόρφωσης",
         "inspectInAuditLog": "Επιθεώρηση στο Αρχείο Καταγραφής Ελέγχου",
@@ -62,6 +65,11 @@
         "openAuditLog": "Άνοιγμα αρχείου καταγραφής ελέγχου",
         "openComplianceSettings": "Άνοιγμα ρυθμίσεων συμμόρφωσης",
         "reviewAuditExport": "Επανεξέταση εξαγωγής ελέγχου"
+      },
+      "overview": "Επισκόπηση συμμόρφωσης",
+      "recentEvents": {
+        "empty": "Δεν εντοπίστηκαν πρόσφατα κρίσιμα συμβάντα.",
+        "title": "Πρόσφατα κρίσιμα συμβάντα"
       },
       "sections": {
         "accessControls": {

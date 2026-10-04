@@ -191,6 +191,7 @@
         "loadData": "Impossibile caricare i dati analitici sulle ore di lavoro"
       },
       "expectedHours": "Ore previste",
+      "hoursPerWeekAbbreviation": "h/sett.",
       "variance": "Varianza",
       "varianceTrend": {
         "description": "Varianza delle ore rispetto alle ore di lavoro previste nel tempo",

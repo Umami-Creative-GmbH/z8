@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Du häsch kein Zuegang zu de Lohndate vo de aktive Organisation.",
+      "help": "Bitte en Administrator vo de Organisation, dir Zuegang zu de Lohndate z'geh, wenn du de Arbetsbereich bruuchsch.",
+      "title": "Kein Zuegang zu de Lohndate"
+    },
     "actions": {
       "apply": "Aawände",
       "downloadPdf": "PDF abelade",
@@ -12,18 +17,18 @@
       "dateUnavailable": "Datum nid verfügbar",
       "missingClockOut": "Stämpelig bim Usgoh fählt",
       "needReview": "{count} Lohnabrächnigshindernis bruched e Prüefig",
-      "offboardingClockRepair": "Usstämple bim Ustritt muess korrigiert wärde",
+      "offboardingClockRepair": "Offboarding-Usstämple mues repariert werde",
       "openApprovals": "Offeni Freigabe",
       "openCalendar": "Kaländer öffne",
       "openWork": "Arbet ohni Usstämple",
       "openWorkDiagnostics": "Arbetsdiagnose öffne",
       "pendingAbsence": "Pendendi Abweseheit",
       "pendingTimeCorrection": "Hängigi Ziitkorrektur",
-      "pendingWorkApproval": "Arbet wartet uf Freigab",
+      "pendingWorkApproval": "Arbeit wartet auf Freigabe",
       "refreshAfterClearFailed": "Blocker isch ufghobe, aber d Lohnabrächnig het nid chönne aktualisiert wärde",
-      "uncertainHistoricalWork": "Historischi Arbet muess prüeft wärde",
+      "uncertainHistoricalWork": "Vergangene Arbeit muss überprüft werden",
       "unknownEmployee": "Unbekannte Mitarbeiter",
-      "unresolvedWorkMinutes": "Arbetsminute müend prüeft wärde"
+      "unresolvedWorkMinutes": "Arbeitsminuten müssen überprüft werden"
     },
     "description": "Prüef d Lohnsumme, d Bereitschaft und d Export für die gwählti Periode.",
     "employeeTotals": {
@@ -48,12 +53,13 @@
       "activeOrganizationEmployeeRequired": "Es isch en aktive Organisations-Mitarbeiter-Kontext erforderlech",
       "authenticationRequired": "Authentifizierig erforderlich",
       "blockerNotDismissible": "Lohnabrächnigs-Blocker cha nid entfernt wärde",
+      "dataTemporarilyUnavailable": "Lohndate sind vorübergehend nöd verfügbar",
       "employeeIdsMustBeArray": "employeeIds mues es Array si",
       "employeeIdsMustContainOnlyStrings": "employeeIds dörfe nume Strings enthaute",
       "endDateAfterStart": "S'Änddatum mues glich oder nach em Startdatum si",
-      "exportBlockedByOffboardingClockRepair": "Export blockiert: Korrigier zerscht s Usstämple bim Ustritt",
-      "exportBlockedByUncertainWork": "Export blockiert: Zersch di unsicheri Arbet im gwählte Umfang kläre",
-      "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Zersch d Arbetsminute kläre, wo prüeft wärde müend",
+      "exportBlockedByOffboardingClockRepair": "Export blockiert: Zersch s'Offboarding-Usstämpfle korrigiere",
+      "exportBlockedByUncertainWork": "Export blockiert: Zersch die unklari Arbet im uswählte Bereich kläre",
+      "exportBlockedByUnresolvedWorkMinutes": "Export blockiert: Zersch d'Arbetsminute kläre, wo no überprüeft wärde müend",
       "exportFormatNotConfigured": "S'Format für de Lohnabrechnungs-Export isch nid konfiguriert",
       "invalidBlockerId": "Ungültigi Lohnabrächnigs-Blocker-ID",
       "invalidBlockerType": "Ungültige Lohnabrächnigs-Blocker-Typ",
@@ -113,6 +119,11 @@
       "ready": "Bereit",
       "workedHours": "Gleischteti Stunde"
     },
-    "title": "Lohnabrechnig"
+    "title": "Lohnabrechnig",
+    "unavailable": {
+      "description": "Lohndate händ nöd sicher chönne vorbereitet wärde.",
+      "help": "Bitte probier's spöter nomal. Wenn s'Problem wyterhin bestaht, wänd di an en Administrator vo de Organisation.",
+      "title": "Lohndate vorübergehend nöd verfügbar"
+    }
   }
 }

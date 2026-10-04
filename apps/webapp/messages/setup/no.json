@@ -22,6 +22,15 @@
     "continue_to_sign_in": "Fortsett til innlogging",
     "creating_account": "Oppretter administratorkontoen din...",
     "description": "Konfigurer den første administratorkontoen for plattformen din. Denne kontoen vil ha full systemtilgang og er atskilt fra organisasjonskontoer.",
+    "error": {
+      "password_lowercase": "Passordet må inneholde minst én liten bokstav",
+      "password_max_length": "Passordet må være på maksimalt 128 tegn",
+      "password_min_length": "Passordet må være på minst 12 tegn",
+      "password_number": "Passordet må inneholde minst ett tall",
+      "password_required": "Passord er påkrevd",
+      "passwords_mismatch": "Passordene samsvarer ikke",
+      "password_uppercase": "Passordet må inneholde minst én stor bokstav"
+    },
     "field": {
       "confirm_password": "Bekreft passord",
       "confirm_password_placeholder": "Bekreft passordet ditt",

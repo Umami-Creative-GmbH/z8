@@ -15,15 +15,14 @@
       "today": "Heute!",
       "tomorrow": "Morgen"
     },
-    "customize": {
-      "empty-description": "Verwenden Sie das Symbol zur Dashboard-Anpassung, um einzelne Widgets wieder zu aktivieren oder das Layout zurückzusetzen, damit alle Widgets wieder angezeigt werden.",
-      "empty-title": "Alle Dashboard-Widgets sind ausgeblendet",
-      "move-down": "{widget} nach unten verschieben",
-      "move-up": "{widget} nach oben verschieben",
-      "reset": "Layout zurücksetzen",
-      "title": "Dashboard-Widgets",
-      "trigger": "Dashboard anpassen"
-    },
+    "customize": "errors.noOrganization.title",
+    "customize.empty-description": "Verwenden Sie das Symbol zur Dashboard-Anpassung, um einzelne Widgets wieder zu aktivieren oder das Layout zurückzusetzen, damit alle Widgets wieder angezeigt werden.",
+    "customize.empty-title": "Alle Dashboard-Widgets sind ausgeblendet",
+    "customize.move-down": "{widget} nach unten verschieben",
+    "customize.move-up": "{widget} nach oben verschieben",
+    "customize.reset": "Layout zurücksetzen",
+    "customize.title": "Dashboard-Widgets",
+    "customize.trigger": "Dashboard anpassen",
     "hydration": {
       "add-glass": "{count} Glas hinzufügen",
       "add-glasses": "{count} Gläser hinzufügen",

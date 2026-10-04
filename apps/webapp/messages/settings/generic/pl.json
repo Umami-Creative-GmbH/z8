@@ -8,6 +8,14 @@
         "title": "Szczegóły umowy"
       },
       "description": "Pobierz umowę powierzenia przetwarzania danych zgodnie z art. 28 RODO.",
+      "download": {
+        "button": "Pobierz umowę powierzenia przetwarzania danych w formacie PDF",
+        "downloaded": "Pobrano umowę powierzenia przetwarzania danych",
+        "downloadFailed": "Pobieranie nie powiodło się",
+        "errorOccurred": "Wystąpił błąd",
+        "filename": "Plik: {filename}",
+        "generating": "Generowanie pliku PDF…"
+      },
       "hosting": {
         "descriptionPrefix": "Wszystkie dane są hostowane na serwerach ",
         "descriptionSuffix": ". Nie korzystamy z dalszych podwykonawców.",
@@ -92,7 +100,7 @@
         "description": "Wybierz kategorie danych, które chcesz wyeksportować",
         "selectAll": "Zaznacz wszystko",
         "selectAtLeastOne": "Wybierz co najmniej jedną kategorię",
-        "startExport": "Rozpocznij eksport ({count})",
+        "startExport": "Rozpocznij eksport (${selectedCategories.size})",
         "startingExport": "Rozpoczynanie eksportu...",
         "submitError": "Nie udało się rozpocząć eksportu",
         "submitSuccess": "Eksport rozpoczęty pomyślnie",
@@ -115,7 +123,7 @@
         "downloadSuccess": "Pobieranie rozpoczęte",
         "emptyDescription": "Brak eksportów",
         "emptyHint": "Utwórz swój pierwszy eksport, korzystając z powyższego formularza",
-        "moreCategories": "+{count} więcej",
+        "moreCategories": "+${exp.categories.length - 3} więcej",
         "statusCompleted": "Ukończono",
         "statusFailed": "Niepowodzenie",
         "statusPending": "Oczekujące",
@@ -140,7 +148,7 @@
         "endpointDescription": "Dla usług zgodnych z S3, takich jak MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Pozostaw puste, aby zachować istniejące dane uwierzytelniające",
-        "lastVerified": "Ostatnia weryfikacja: {date}",
+        "lastVerified": "Ostatnia weryfikacja: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Region",
         "regionDescription": "Region AWS, w którym znajduje się Twój zasobnik (bucket)",
         "regionPlaceholder": "us-east-1",
@@ -179,10 +187,95 @@
         "save": "Zapisz",
         "sendTest": "Wyślij test"
       },
+      "categories": {
+        "absences": "Nieobecności",
+        "auth": "Dostęp do konta",
+        "billing": "Płatności",
+        "exports": "Eksporty",
+        "security": "Bezpieczeństwo",
+        "teams": "Zespoły",
+        "timecorrections": "Korekty czasu"
+      },
       "defaultFallback": "Domyślny mechanizm zastępczy",
       "defaultFallbackDescription": "Jeśli ten szablon korzysta z ustawień domyślnych systemu, Z8 wyśle kopię systemową oraz temat:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Powiadamia pracownika, że menedżer zarejestrował nieobecność w jego imieniu.",
+          "label": "Nieobecność zarejestrowana przez menedżera"
+        },
+        "absence-request-approved": {
+          "description": "Powiadamia pracownika o zatwierdzeniu wniosku o nieobecność.",
+          "label": "Wniosek o nieobecność zatwierdzony"
+        },
+        "absence-request-pending-approval": {
+          "description": "Powiadamia menedżera, że wniosek o nieobecność wymaga zatwierdzenia.",
+          "label": "Wniosek o nieobecność oczekujący na zatwierdzenie"
+        },
+        "absence-request-rejected": {
+          "description": "Powiadamia pracownika o odrzuceniu wniosku o nieobecność.",
+          "label": "Wniosek o nieobecność odrzucony"
+        },
+        "absence-request-submitted": {
+          "description": "Potwierdza złożenie wniosku o nieobecność przez pracownika.",
+          "label": "Wniosek o nieobecność złożony"
+        },
+        "email-verification": {
+          "description": "Wysyłane, gdy użytkownik musi zweryfikować swój adres e-mail.",
+          "label": "Weryfikacja adresu e-mail"
+        },
+        "export-failed": {
+          "description": "Powiadamia użytkownika o niepowodzeniu wygenerowania żądanego eksportu.",
+          "label": "Eksport nie powiódł się"
+        },
+        "export-ready": {
+          "description": "Powiadamia użytkownika, że żądany eksport jest gotowy do pobrania.",
+          "label": "Eksport gotowy"
+        },
+        "organization-invitation": {
+          "description": "Wysyłane, gdy użytkownik zostanie zaproszony do dołączenia do organizacji.",
+          "label": "Zaproszenie do organizacji"
+        },
+        "password-reset": {
+          "description": "Wysyłane, gdy użytkownik poprosi o link do zresetowania hasła.",
+          "label": "Resetowanie hasła"
+        },
+        "security-alert": {
+          "description": "Powiadamia użytkownika o ważnym zdarzeniu dotyczącym bezpieczeństwa konta.",
+          "label": "Alert bezpieczeństwa"
+        },
+        "team-member-added": {
+          "description": "Powiadamia członka o dodaniu go do zespołu.",
+          "label": "Dodano członka zespołu"
+        },
+        "team-member-removed": {
+          "description": "Powiadamia członka o usunięciu go z zespołu.",
+          "label": "Usunięto członka zespołu"
+        },
+        "time-correction-approved": {
+          "description": "Powiadamia pracownika o zatwierdzeniu korekty czasu pracy.",
+          "label": "Zatwierdzono korektę czasu pracy"
+        },
+        "time-correction-pending-approval": {
+          "description": "Powiadamia menedżera, że korekta czasu pracy wymaga zatwierdzenia.",
+          "label": "Korekta czasu pracy oczekuje na zatwierdzenie"
+        },
+        "time-correction-rejected": {
+          "description": "Powiadamia pracownika o odrzuceniu korekty czasu pracy.",
+          "label": "Odrzucono korektę czasu pracy"
+        }
+      },
       "description": "Dostosuj wiadomości e-mail wysyłane przez Twoją organizację",
       "editBodyBeforeSaving": "Edytuj treść wiadomości e-mail przed zapisaniem pierwszego niestandardowego szablonu.",
+      "editor": {
+        "bodyDescription": "Zredaguj sformatowaną wiadomość e-mail HTML wysyłaną w przypadku tego zdarzenia systemowego.",
+        "bodyPlaceholder": "Wpisz treść wiadomości e-mail...",
+        "emailBody": "Treść wiadomości e-mail",
+        "fallbackDescription": "Używane do walidacji oraz jako bezpieczna wersja zapasowa, jeśli edytor wizualny nie może wyrenderować treści.",
+        "htmlFallback": "Zapasowy kod HTML",
+        "loading": "Ładowanie edytora e-mail…",
+        "subject": "Temat"
+      },
+      "emailTemplates": "Szablony e-mail",
       "empty": "Dla tej organizacji nie są dostępne żadne szablony wiadomości e-mail.",
       "eyebrow": "Komunikacja operacyjna",
       "reset": "Szablon wiadomości e-mail przywrócony do szablonu systemowego",
@@ -196,7 +289,141 @@
       "systemTemplates": "Szablony systemowe",
       "testFailed": "Nie udało się wysłać wiadomości testowej",
       "testSent": "Wiadomość testowa została wysłana na Twoje konto",
-      "title": "Szablony wiadomości e-mail"
+      "title": "Szablony wiadomości e-mail",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Typ nieobecności"
+        },
+        "addedByName": {
+          "label": "Dodane przez"
+        },
+        "approvalUrl": {
+          "label": "Adres URL zatwierdzenia"
+        },
+        "approverName": {
+          "label": "Imię i nazwisko osoby zatwierdzającej"
+        },
+        "appUrl": {
+          "label": "Adres URL aplikacji"
+        },
+        "categories": {
+          "label": "Kategorie"
+        },
+        "correctedClockIn": {
+          "label": "Skorygowane rozpoczęcie pracy"
+        },
+        "correctedClockOut": {
+          "label": "Skorygowane zakończenie pracy"
+        },
+        "date": {
+          "label": "Data"
+        },
+        "days": {
+          "label": "Dni"
+        },
+        "downloadUrl": {
+          "label": "Adres URL pobierania"
+        },
+        "email": {
+          "label": "Adres e-mail"
+        },
+        "employeeName": {
+          "label": "Imię i nazwisko pracownika"
+        },
+        "endDate": {
+          "label": "Data zakończenia"
+        },
+        "errorMessage": {
+          "label": "Komunikat o błędzie"
+        },
+        "eventType": {
+          "label": "Typ zdarzenia"
+        },
+        "expiresAt": {
+          "label": "Wygasa"
+        },
+        "fileSize": {
+          "label": "Rozmiar pliku"
+        },
+        "invitationUrl": {
+          "label": "Adres URL zaproszenia"
+        },
+        "inviterName": {
+          "label": "Imię i nazwisko zapraszającego"
+        },
+        "ipAddress": {
+          "label": "Adres IP"
+        },
+        "managerName": {
+          "label": "Imię i nazwisko menedżera"
+        },
+        "memberName": {
+          "label": "Imię i nazwisko członka"
+        },
+        "notes": {
+          "label": "Notatki"
+        },
+        "organizationName": {
+          "label": "Nazwa organizacji"
+        },
+        "originalClockIn": {
+          "label": "Pierwotne rozpoczęcie pracy"
+        },
+        "originalClockOut": {
+          "label": "Pierwotne zakończenie pracy"
+        },
+        "reason": {
+          "label": "Powód"
+        },
+        "recipientName": {
+          "label": "Imię i nazwisko odbiorcy"
+        },
+        "rejectionReason": {
+          "label": "Powód odrzucenia"
+        },
+        "removedByName": {
+          "label": "Usunięto przez"
+        },
+        "resetUrl": {
+          "label": "Adres URL resetowania"
+        },
+        "retryUrl": {
+          "label": "Adres URL ponowienia próby"
+        },
+        "role": {
+          "label": "Rola"
+        },
+        "securitySettingsUrl": {
+          "label": "Adres URL ustawień zabezpieczeń"
+        },
+        "startDate": {
+          "label": "Data rozpoczęcia"
+        },
+        "teamName": {
+          "label": "Nazwa zespołu"
+        },
+        "teamUrl": {
+          "label": "Adres URL zespołu"
+        },
+        "timestamp": {
+          "label": "Znacznik czasu"
+        },
+        "userAgent": {
+          "label": "Agent użytkownika"
+        },
+        "userName": {
+          "label": "Nazwa użytkownika"
+        },
+        "verificationUrl": {
+          "label": "Adres URL weryfikacji"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Dozwolone zmienne",
+        "description": "Wstawiaj tylko zatwierdzone symbole zastępcze. Wartości są zastępowane w momencie wysyłania wiadomości e-mail.",
+        "fallbackSafe": "Bezpieczna wartość zapasowa",
+        "insert": "Wstaw {label}"
+      }
     },
     "error": {
       "actions": {
@@ -235,6 +462,8 @@
           "description": "{name} wymaga konfiguracji eksportu płac, zanim będzie można go uruchomić.",
           "title": "Zaplanowany eksport płac jest zablokowany"
         },
+        "description": "Problemy z eksportem, które mogą wymagać uwagi administratora.",
+        "empty": "Brak alertów w tej chwili",
         "payrollFailed": {
           "description": "Ostatni eksport płac nie został ukończony.",
           "title": "Eksport płac nie powiódł się"
@@ -242,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} nie zakończył się pomyślnie.",
           "title": "Zaplanowany eksport nie powiódł się"
-        }
+        },
+        "title": "Alerty"
       },
       "description": "Monitoruj aktywność płac, audytów i zaplanowanych eksportów dla swojej organizacji.",
       "errors": {
@@ -251,7 +481,56 @@
         "summary": "Liczby opierają się na danych eksportu, które udało się załadować.",
         "upcomingRuns": "Dane zaplanowanego eksportu są tymczasowo niedostępne."
       },
-      "title": "Operacje eksportu"
+      "links": {
+        "audit": "Otwórz ustawienia eksportu audytu",
+        "payroll": "Otwórz ustawienia eksportu listy płac",
+        "scheduled": "Otwórz ustawienia zaplanowanego eksportu"
+      },
+      "partialData": "Częściowe dane",
+      "recentActivity": {
+        "description": "Ostatnie zdarzenia eksportu listy płac, audytu i zaplanowanego eksportu.",
+        "empty": "Brak niedawnej aktywności eksportu",
+        "export": "Eksport",
+        "link": "Ustawienia",
+        "status": "Status",
+        "title": "Ostatnia aktywność",
+        "when": "Wystąpiło"
+      },
+      "severity": {
+        "error": "Błąd",
+        "warning": "Ostrzeżenie"
+      },
+      "status": {
+        "assembling": "Kompletowanie pakietu",
+        "collecting": "Zbieranie danych",
+        "completed": "Zakończono",
+        "failed": "Nie powiodło się",
+        "hardening": "Stosowanie utwardzania",
+        "lineageExpanding": "Rozwijanie pochodzenia",
+        "pending": "Oczekujące",
+        "processing": "Przetwarzanie",
+        "requested": "Zlecono"
+      },
+      "summary": {
+        "activeSchedules": "Aktywne harmonogramy",
+        "activeSchedulesDescription": "Włączone harmonogramy cyklicznego eksportu.",
+        "failedRuns": "Nieudane uruchomienia (7 dni)",
+        "failedRunsDescription": "Nieudane uruchomienia płacowe, audytowe i zaplanowane w ostatnim tygodniu.",
+        "lastAuditPack": "Ostatni pakiet audytowy",
+        "lastAuditPackDescription": "Ostatnie wygenerowanie pakietu audytowego.",
+        "lastPayrollExport": "Ostatni eksport płacowy",
+        "lastPayrollExportDescription": "Ostatnie ukończenie eksportu płacowego.",
+        "none": "Nigdy"
+      },
+      "title": "Operacje eksportu",
+      "upcomingRuns": {
+        "description": "Kolejne zaplanowane eksporty w kolejce dla tej organizacji.",
+        "empty": "Brak nadchodzących uruchomień",
+        "link": "Ustawienia",
+        "name": "Nazwa",
+        "title": "Nadchodzące uruchomienia",
+        "when": "Zaplanowano na"
+      }
     },
     "group": {
       "account": "Konto",
@@ -293,6 +572,16 @@
         "commitQueued": "Dodano {count} zaakceptowanych wierszy do kolejki zatwierdzania",
         "committing": "Zatwierdzanie...",
         "description": "Przejrzyj przygotowane wiersze importu, rozwiąż blokujące problemy i zatwierdź zaakceptowane rekordy, gdy partia będzie gotowa.",
+        "hold": {
+          "appendReviewRequired": "Historia czasu pracy pracownika wymaga weryfikacji przed dodaniem nowych wpisów.",
+          "invalidInterval": "Godziny dostawcy nie zawierają wyraźnego przesunięcia, nie są uporządkowane lub przypadają w przyszłości.",
+          "label": "Wstrzymano do weryfikacji",
+          "occupancyConflict": "Czas nakłada się na pracę już zarejestrowaną dla tego pracownika.",
+          "operationCollision": "Ten wiersz jest w konflikcie z jego wcześniej zatwierdzonym importem.",
+          "providerDurationMismatch": "Czas trwania u dostawcy różni się od godzin rozpoczęcia i zakończenia.",
+          "sourceCollision": "Ten rekord dostawcy został już zaimportowany.",
+          "unlocatedBreak": "Dostawca zgłasza przerwy bez podania ich godzin, przez co przepracowany przedział czasu jest nieznany."
+        },
         "issueGroups": {
           "currentMarkers": "Bieżące wiersze zawierają {blockingRows} blokujących i {warningRows} ostrzegawczych znaczników problemów.",
           "description": "Pogrupowane obszary przeglądu pomagają zachować widoczność kontroli jakości przed zatwierdzeniem wierszy.",
@@ -306,17 +595,17 @@
           "status": "Status",
           "title": "Wiersze"
         },
-        "title": "Przegląd importu",
-        "hold": {
-          "appendReviewRequired": "Historia czasu pracownika wymaga przeglądu, zanim będzie można dodać nowe wpisy.",
-          "invalidInterval": "Czasy dostawcy nie mają jawnego przesunięcia, nie są uporządkowane lub leżą w przyszłości.",
-          "label": "Wstrzymano do przeglądu",
-          "occupancyConflict": "Czas pokrywa się z pracą już zarejestrowaną dla tego pracownika.",
-          "operationCollision": "Ten wiersz koliduje z jego wcześniej zatwierdzonym importem.",
-          "providerDurationMismatch": "Czas trwania podany przez dostawcę różni się od godzin rozpoczęcia i zakończenia.",
-          "sourceCollision": "Ten rekord dostawcy został już zaimportowany.",
-          "unlocatedBreak": "Dostawca zgłasza przerwy bez ich godzin, więc przepracowany przedział jest nieznany."
-        }
+        "status": {
+          "accepted": "Zaakceptowano",
+          "blocked": "Zablokowano",
+          "commitFailed": "Zatwierdzanie nie powiodło się",
+          "committed": "Zatwierdzono",
+          "committing": "Zatwierdzanie",
+          "needsMapping": "Wymaga mapowania",
+          "rejected": "Odrzucono",
+          "staged": "Przygotowano"
+        },
+        "title": "Przegląd importu"
       },
       "title": "Importuj dane"
     },
@@ -629,26 +918,26 @@
         "addManager": "Dodaj kierownika projektu",
         "assignEmployee": "Przypisz pracownika",
         "assignTeam": "Przypisz zespół",
-        "count": "{count, plural, one {# członek} few {# członków} many {# członków} other {# członka}}",
-        "employeeAssigned": "Pracownik przypisany",
+        "count": "{count, plural, one {# członek} other {# członków}}",
+        "employeeAssigned": "Przypisano pracownika",
         "employeeAssignFailed": "Nie udało się przypisać pracownika",
         "employeePicker": "Pracownik do przypisania",
         "employees": "Pracownicy",
-        "manage": "Zarządzaj członkami projektu {name}",
-        "managerAdded": "Kierownik projektu dodany",
+        "manage": "Zarządzaj członkami: {name}",
+        "managerAdded": "Dodano kierownika projektu",
         "managerAddFailed": "Nie udało się dodać kierownika projektu",
         "managerPicker": "Kierownik projektu do dodania",
-        "managers": "Kierownicy projektu",
-        "managersReadOnly": "Tylko administratorzy organizacji mogą zmieniać kierowników projektu.",
+        "managers": "Kierownicy projektów",
+        "managersReadOnly": "Tylko administratorzy organizacji mogą zmieniać kierowników projektów.",
         "noEmployees": "Brak przypisanych pracowników",
         "noManagers": "Brak kierowników projektu",
         "noTeams": "Brak przypisanych zespołów",
         "remove": "Usuń {name}",
-        "removed": "Usunięto: {name}",
-        "removeFailed": "Nie udało się usunąć: {name}",
+        "removed": "Usunięto {name}",
+        "removeFailed": "Nie udało się usunąć {name}",
         "selectEmployee": "Wybierz pracownika",
         "selectTeam": "Wybierz zespół",
-        "teamAssigned": "Zespół przypisany",
+        "teamAssigned": "Przypisano zespół",
         "teamAssignFailed": "Nie udało się przypisać zespołu",
         "teamPicker": "Zespół do przypisania",
         "teams": "Zespoły",
@@ -662,20 +951,47 @@
       "description": "Zarządzaj hasłem, uwierzytelnianiem dwuskładnikowym, kluczami dostępu i aktywnymi sesjami",
       "title": "Ustawienia bezpieczeństwa",
       "twoFactor": {
+        "backupCodesCopied": "Kody zapasowe skopiowano do schowka",
+        "backupCodesRegenerated": "Kody zapasowe zostały wygenerowane ponownie",
+        "cancel": "Anuluj",
         "confirmPasswordToEnable": "Potwierdź swoje hasło, aby włączyć uwierzytelnianie dwuskładnikowe",
         "confirmPasswordToRegenerate": "Potwierdź swoje hasło, aby wygenerować kody zapasowe",
         "continue": "Kontynuuj",
+        "copyCodes": "Kopiuj kody",
         "description": "Dodaj dodatkową warstwę zabezpieczeń do swojego konta",
         "disable": "Wyłącz",
+        "disable2fa": "Wyłącz 2FA",
+        "disableDescription": "Spowoduje to usunięcie dodatkowej warstwy ochrony Twojego konta. Wprowadź hasło, aby potwierdzić.",
+        "disabledToast": "Uwierzytelnianie dwuskładnikowe zostało wyłączone",
+        "disableFailed": "Nie udało się wyłączyć 2FA",
+        "disableTitle": "Wyłączyć uwierzytelnianie dwuskładnikowe?",
         "enable": "Włącz uwierzytelnianie dwuskładnikowe",
+        "enabledToast": "Uwierzytelnianie dwuskładnikowe zostało włączone",
+        "enablePasswordRequiredDescription": "Wprowadź hasło, aby włączyć 2FA",
+        "enterAuthenticatorCode": "Wprowadź 6-cyfrowy kod z aplikacji uwierzytelniającej",
         "enterPasswordTitle": "Wprowadź swoje hasło",
+        "enterSixDigitCode": "Wprowadź 6-cyfrowy kod",
+        "invalidCode": "Nieprawidłowy kod",
+        "passwordLabel": "Hasło",
+        "passwordPlaceholder": "Wprowadź hasło...",
+        "passwordRequired": "Hasło jest wymagane",
         "regenerateBackupCodes": "Wygeneruj ponownie kody zapasowe",
         "regenerateCodes": "Wygeneruj ponownie kody",
+        "regenerateFailed": "Nie udało się wygenerować nowych kodów zapasowych",
+        "saveBackupCodesDescription": "Przechowuj te kody w bezpiecznym miejscu. Możesz ich użyć, aby uzyskać dostęp do konta, jeśli utracisz dostęp do aplikacji uwierzytelniającej. Każdego kodu można użyć tylko raz.",
+        "saveBackupCodesTitle": "Zapisz kody zapasowe",
+        "savedCodes": "Kody zostały zapisane",
+        "scanQrCode": "Zeskanuj kod QR za pomocą aplikacji uwierzytelniającej",
+        "setupFailed": "Nie udało się skonfigurować 2FA",
+        "setupTitle": "Skonfiguruj uwierzytelnianie dwuskładnikowe",
         "status": {
           "disabled": "Wyłączone",
           "enabled": "Włączone"
         },
-        "title": "Uwierzytelnianie dwuskładnikowe"
+        "title": "Uwierzytelnianie dwuskładnikowe",
+        "unexpectedError": "Wystąpił nieoczekiwany błąd",
+        "verificationFailed": "Weryfikacja nie powiodła się",
+        "verifyAndEnable": "Zweryfikuj i włącz"
       }
     },
     "sessions": {
@@ -879,8 +1195,14 @@
       "title": "Ustawienia kondycji"
     },
     "workBalanceRecalculation": {
+      "confirm": "Potwierdź ponowne przeliczenie",
+      "confirmMessage": "Potwierdź przed dodaniem tego przeliczenia do kolejki.",
+      "description": "Dodaj do kolejki pełne przebudowanie miesięcznych i rocznych agregatów bilansu czasu pracy dla {employeeName}. To zadanie konserwacyjne działa w tle i nie blokuje tej strony.",
+      "queued": "Przeliczenie dodane do kolejki",
+      "recalculate": "Przelicz bilans czasu pracy",
       "requestError": "Nie udało się dodać do kolejki przeliczenia bilansu pracy",
-      "requestSuccess": "Przeliczenie bilansu pracy dodane do kolejki"
+      "requestSuccess": "Przeliczenie bilansu pracy dodane do kolejki",
+      "title": "Przeliczenie bilansu czasu pracy"
     },
     "workerQueue": {
       "cards": {

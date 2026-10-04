@@ -15,15 +15,14 @@
       "today": "Dzisiaj!",
       "tomorrow": "Jutro"
     },
-    "customize": {
-      "empty-description": "Użyj ikony dostosowywania pulpitu, aby ponownie włączyć poszczególne widżety lub zresetuj układ, aby ponownie wyświetlić wszystkie widżety.",
-      "empty-title": "Wszystkie widżety pulpitu są ukryte",
-      "move-down": "Przesuń {widget} w dół",
-      "move-up": "Przesuń {widget} w górę",
-      "reset": "Resetuj układ",
-      "title": "Widżety pulpitu",
-      "trigger": "Dostosuj pulpit"
-    },
+    "customize": "Brak organizacji",
+    "customize.empty-description": "Użyj ikony dostosowywania pulpitu, aby ponownie włączyć poszczególne widżety lub zresetuj układ, aby ponownie wyświetlić wszystkie widżety.",
+    "customize.empty-title": "Wszystkie widżety pulpitu są ukryte",
+    "customize.move-down": "Przesuń {widget} w dół",
+    "customize.move-up": "Przesuń {widget} w górę",
+    "customize.reset": "Resetuj układ",
+    "customize.title": "Widżety pulpitu",
+    "customize.trigger": "Dostosuj pulpit",
     "hydration": {
       "add-glass": "Dodaj {count} szklankę",
       "add-glasses": "Dodaj {count} szklanek",

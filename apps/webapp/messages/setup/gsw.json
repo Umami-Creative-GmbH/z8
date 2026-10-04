@@ -22,6 +22,15 @@
     "continue_to_sign_in": "Wiiter zum Aamälde",
     "creating_account": "Diin Admin-Account wird erstellt...",
     "description": "Richt de erschti Administrator-Account für diini Plattform ii. Dieser Account hät volle Systemzuegriff und isch vo de Organisations-Accounts trännt.",
+    "error": {
+      "password_lowercase": "Passwort mues mindestens ein Chliibuechstabe enthalte",
+      "password_max_length": "Passwort dörf maximal 128 Zeiche haa",
+      "password_min_length": "Passwort mues mindestens 12 Zeiche lang sii",
+      "password_number": "Passwort mues mindestens e Zahl enthalte",
+      "password_required": "Passwort isch erforderlich",
+      "passwords_mismatch": "Passwörter stimmed nöd überii",
+      "password_uppercase": "Passwort mues mindestens ein Grossbuechstabe enthalte"
+    },
     "field": {
       "confirm_password": "Passwort bestätige",
       "confirm_password_placeholder": "Passwort bestätige",

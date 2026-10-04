@@ -21,6 +21,22 @@
       "managerDescription": "Hantera och planera medarbetares arbetspass",
       "title": "Arbetsschema"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Bekräfta och publicera",
+      "acknowledgmentDescription": "Publiceringen fortsätter, men det här schemat har efterlevnadsvarningar som måste bekräftas först.",
+      "button": "Publicera ({count})",
+      "cancel": "Avbryt",
+      "complianceAcknowledgmentRequired": "Bekräftelse av regelefterlevnad krävs",
+      "complianceWarnings": "{count, plural, one {Efterlevnadskontroller hittade # varning; du måste bekräfta den innan du publicerar.} other {Efterlevnadskontroller hittade # varningar; du måste bekräfta dem innan du publicerar.}}",
+      "coverageWarning": "Vissa tidsblock uppfyller inte minimikraven för bemanning.",
+      "maxHours": "Max timmar: {count}",
+      "notifyEmployees": "{count, plural, other {Publicera # utkast till arbetspass och meddela anställda} }",
+      "overtime": "Övertid: {count}",
+      "publishing": "Publicerar…",
+      "restTime": "Vilotid: {count}",
+      "totalFindings": "{count, plural, other {# fynd totalt} }",
+      "warningsDetectedBeforePublish": "Varningar upptäcktes före publicering"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} avvikelse(r) upptäcktes innan publicering.",

@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Παρακολούθηση συνδρομών, εσόδων και κατάστασης πληρωμής",
+      "failedToSyncSeats": "Αποτυχία συγχρονισμού θέσεων",
       "intervals": {
         "month": "Μηνιαίως",
         "year": "Ετησίως"
@@ -102,6 +103,7 @@
         "trialing": "Σε δοκιμαστική περίοδο",
         "trialingDescription": "Σε δοκιμαστική περίοδο"
       },
+      "seatsSynced": "Οι θέσεις συγχρονίστηκαν",
       "sections": {
         "recentSubscriptions": "Πρόσφατες συνδρομές",
         "revenueMetrics": "Μετρήσεις εσόδων"
@@ -112,6 +114,7 @@
         "pastDue": "Ληξιπρόθεσμη",
         "trialing": "Δοκιμαστική"
       },
+      "syncSeatsFor": "Συγχρονισμός θέσεων για {organizationName}",
       "table": {
         "actions": "Ενέργειες",
         "billing": "Χρέωση",

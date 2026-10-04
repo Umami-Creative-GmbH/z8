@@ -8,6 +8,14 @@
         "title": "Avtalsuppgifter"
       },
       "description": "Ladda ner ditt personuppgiftsbiträdesavtal i enlighet med art. 28 GDPR.",
+      "download": {
+        "button": "Ladda ned personuppgiftsbiträdesavtal som PDF",
+        "downloaded": "Personuppgiftsbiträdesavtalet har laddats ned",
+        "downloadFailed": "Nedladdningen misslyckades",
+        "errorOccurred": "Ett fel uppstod",
+        "filename": "Fil: {filename}",
+        "generating": "Genererar PDF…"
+      },
       "hosting": {
         "descriptionPrefix": "All data lagras på servrar hos ",
         "descriptionSuffix": ". Inga ytterligare underbiträden används.",
@@ -92,7 +100,7 @@
         "description": "Välj de datakategorier du vill exportera",
         "selectAll": "Markera alla",
         "selectAtLeastOne": "Välj minst en kategori",
-        "startExport": "Starta export ({count})",
+        "startExport": "Starta export (${selectedCategories.size})",
         "startingExport": "Startar export...",
         "submitError": "Kunde inte starta exporten",
         "submitSuccess": "Exporten har startats",
@@ -115,7 +123,7 @@
         "downloadSuccess": "Nedladdningen har startat",
         "emptyDescription": "Inga exporter ännu",
         "emptyHint": "Skapa din första export med formuläret ovan",
-        "moreCategories": "+{count} fler",
+        "moreCategories": "+${exp.categories.length - 3} fler",
         "statusCompleted": "Slutförd",
         "statusFailed": "Misslyckades",
         "statusPending": "Väntar",
@@ -140,7 +148,7 @@
         "endpointDescription": "För S3-kompatibla tjänster som MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "Lämna tomt för att behålla befintliga autentiseringsuppgifter",
-        "lastVerified": "Senast verifierad: {date}",
+        "lastVerified": "Senast verifierad: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Region",
         "regionDescription": "AWS-region där din bucket finns",
         "regionPlaceholder": "us-east-1",
@@ -179,10 +187,95 @@
         "save": "Spara",
         "sendTest": "Skicka test"
       },
+      "categories": {
+        "absences": "Frånvaro",
+        "auth": "Kontoåtkomst",
+        "billing": "Fakturering",
+        "exports": "Exporter",
+        "security": "Säkerhet",
+        "teams": "Team",
+        "timecorrections": "Tidskorrigeringar"
+      },
       "defaultFallback": "Standardreserv",
       "defaultFallbackDescription": "Om den här mallen använder systemstandarden skickar Z8 systemets text och ämne:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Meddelar en medarbetare om att en chef har registrerat frånvaro åt denne.",
+          "label": "Frånvaro registrerad av chef"
+        },
+        "absence-request-approved": {
+          "description": "Meddelar en medarbetare om att deras frånvaroansökan har godkänts.",
+          "label": "Frånvaroansökan godkänd"
+        },
+        "absence-request-pending-approval": {
+          "description": "Meddelar en chef om att en frånvaroansökan behöver godkännas.",
+          "label": "Frånvaroansökan väntar på godkännande"
+        },
+        "absence-request-rejected": {
+          "description": "Meddelar en medarbetare om att deras frånvaroansökan har avslagits.",
+          "label": "Frånvaroansökan avslagen"
+        },
+        "absence-request-submitted": {
+          "description": "Bekräftar att en medarbetare har skickat in en frånvaroansökan.",
+          "label": "Frånvaroansökan inskickad"
+        },
+        "email-verification": {
+          "description": "Skickas när en användare behöver verifiera sin e-postadress.",
+          "label": "E-postverifiering"
+        },
+        "export-failed": {
+          "description": "Meddelar en användare om att en begärd export inte kunde genereras.",
+          "label": "Export misslyckades"
+        },
+        "export-ready": {
+          "description": "Meddelar en användare om att en begärd export är redo att laddas ned.",
+          "label": "Export klar"
+        },
+        "organization-invitation": {
+          "description": "Skickas när en användare bjuds in till en organisation.",
+          "label": "Organisationsinbjudan"
+        },
+        "password-reset": {
+          "description": "Skickas när en användare begär en länk för lösenordsåterställning.",
+          "label": "Lösenordsåterställning"
+        },
+        "security-alert": {
+          "description": "Meddelar en användare om en viktig säkerhetshändelse för kontot.",
+          "label": "Säkerhetsvarning"
+        },
+        "team-member-added": {
+          "description": "Meddelar en medlem om att de har lagts till i ett team.",
+          "label": "Teammedlem tillagd"
+        },
+        "team-member-removed": {
+          "description": "Meddelar en medlem om att de har tagits bort från ett team.",
+          "label": "Teammedlem borttagen"
+        },
+        "time-correction-approved": {
+          "description": "Meddelar en medarbetare om att deras tidskorrigering har godkänts.",
+          "label": "Tidskorrigering godkänd"
+        },
+        "time-correction-pending-approval": {
+          "description": "Meddelar en chef om att en tidskorrigering behöver godkännas.",
+          "label": "Tidskorrigering väntar på godkännande"
+        },
+        "time-correction-rejected": {
+          "description": "Meddelar en medarbetare om att deras tidskorrigering har avslagits.",
+          "label": "Tidskorrigering avslagen"
+        }
+      },
       "description": "Anpassa e-postmeddelandena som din organisation skickar",
       "editBodyBeforeSaving": "Redigera e-postens brödtext innan du sparar en första anpassad mall.",
+      "editor": {
+        "bodyDescription": "Skapa det formaterade HTML-e-postmeddelandet som skickas för denna systemhändelse.",
+        "bodyPlaceholder": "Skriv det operativa e-postmeddelandets brödtext...",
+        "emailBody": "Brödtext för e-post",
+        "fallbackDescription": "Används för validering och som en säker reserv om den visuella redigeraren inte kan rendera.",
+        "htmlFallback": "HTML-reserv",
+        "loading": "Läser in e-postredigerare…",
+        "subject": "Ämne"
+      },
+      "emailTemplates": "E-postmallar",
       "empty": "Inga e-postmallar är tillgängliga för den här organisationen.",
       "eyebrow": "Operativ kommunikation",
       "reset": "E-postmallen har återställts till systemmallen",
@@ -196,7 +289,141 @@
       "systemTemplates": "Systemmallar",
       "testFailed": "Det gick inte att skicka test-e-postmeddelandet",
       "testSent": "Ett testmeddelande har skickats till ditt konto",
-      "title": "E-postmallar"
+      "title": "E-postmallar",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Frånvarotyp"
+        },
+        "addedByName": {
+          "label": "Tillagd av"
+        },
+        "approvalUrl": {
+          "label": "Godkännande-URL"
+        },
+        "approverName": {
+          "label": "Godkännarens namn"
+        },
+        "appUrl": {
+          "label": "App-URL"
+        },
+        "categories": {
+          "label": "Kategorier"
+        },
+        "correctedClockIn": {
+          "label": "Korrigerad instämpling"
+        },
+        "correctedClockOut": {
+          "label": "Korrigerad utstämpling"
+        },
+        "date": {
+          "label": "Datum"
+        },
+        "days": {
+          "label": "Dagar"
+        },
+        "downloadUrl": {
+          "label": "Nedladdnings-URL"
+        },
+        "email": {
+          "label": "E-post"
+        },
+        "employeeName": {
+          "label": "Medarbetarens namn"
+        },
+        "endDate": {
+          "label": "Slutdatum"
+        },
+        "errorMessage": {
+          "label": "Felmeddelande"
+        },
+        "eventType": {
+          "label": "Händelsetyp"
+        },
+        "expiresAt": {
+          "label": "Går ut"
+        },
+        "fileSize": {
+          "label": "Filstorlek"
+        },
+        "invitationUrl": {
+          "label": "Inbjudnings-URL"
+        },
+        "inviterName": {
+          "label": "Inbjudarens namn"
+        },
+        "ipAddress": {
+          "label": "IP-adress"
+        },
+        "managerName": {
+          "label": "Chefens namn"
+        },
+        "memberName": {
+          "label": "Medlemmens namn"
+        },
+        "notes": {
+          "label": "Anteckningar"
+        },
+        "organizationName": {
+          "label": "Organisationsnamn"
+        },
+        "originalClockIn": {
+          "label": "Ursprunglig instämpling"
+        },
+        "originalClockOut": {
+          "label": "Ursprunglig utstämpling"
+        },
+        "reason": {
+          "label": "Anledning"
+        },
+        "recipientName": {
+          "label": "Mottagarens namn"
+        },
+        "rejectionReason": {
+          "label": "Avslagsorsak"
+        },
+        "removedByName": {
+          "label": "Borttagen av"
+        },
+        "resetUrl": {
+          "label": "URL för återställning"
+        },
+        "retryUrl": {
+          "label": "URL för nytt försök"
+        },
+        "role": {
+          "label": "Roll"
+        },
+        "securitySettingsUrl": {
+          "label": "URL för säkerhetsinställningar"
+        },
+        "startDate": {
+          "label": "Startdatum"
+        },
+        "teamName": {
+          "label": "Teamnamn"
+        },
+        "teamUrl": {
+          "label": "Teamets URL"
+        },
+        "timestamp": {
+          "label": "Tidsstämpel"
+        },
+        "userAgent": {
+          "label": "Användaragent"
+        },
+        "userName": {
+          "label": "Användarnamn"
+        },
+        "verificationUrl": {
+          "label": "URL för verifiering"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Tillåtna variabler",
+        "description": "Infoga endast godkända platshållare. Värdena ersätts när e-postmeddelandet skickas.",
+        "fallbackSafe": "Reservsäker",
+        "insert": "Infoga {label}"
+      }
     },
     "error": {
       "actions": {
@@ -235,6 +462,8 @@
           "description": "{name} behöver en konfiguration för löneexport innan den kan köras.",
           "title": "Schemalagd löneexport är blockerad"
         },
+        "description": "Exportera problem som kan kräva administratörens uppmärksamhet.",
+        "empty": "Inga varningar just nu",
         "payrollFailed": {
           "description": "Den senaste löneexporten slutfördes inte.",
           "title": "Löneexporten misslyckades"
@@ -242,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} slutfördes inte.",
           "title": "Schemalagd export misslyckades"
-        }
+        },
+        "title": "Varningar"
       },
       "description": "Övervaka löne-, gransknings- och schemalagd exportaktivitet för din organisation.",
       "errors": {
@@ -251,7 +481,56 @@
         "summary": "Antalen baseras på den exportdata som kunde läsas in.",
         "upcomingRuns": "Data för schemalagd export är tillfälligt otillgänglig."
       },
-      "title": "Exportåtgärder"
+      "links": {
+        "audit": "Öppna inställningar för granskningsrapportexport",
+        "payroll": "Öppna inställningar för löneexport",
+        "scheduled": "Öppna inställningar för schemalagd export"
+      },
+      "partialData": "Ofullständiga data",
+      "recentActivity": {
+        "description": "De senaste händelserna för löne-, gransknings- och schemalagd export.",
+        "empty": "Ingen nylig exportaktivitet",
+        "export": "Exportera",
+        "link": "Inställningar",
+        "status": "Status",
+        "title": "Senaste aktivitet",
+        "when": "Inträffade"
+      },
+      "severity": {
+        "error": "Fel",
+        "warning": "Varning"
+      },
+      "status": {
+        "assembling": "Sätter ihop paket",
+        "collecting": "Samlar in data",
+        "completed": "Slutförd",
+        "failed": "Misslyckades",
+        "hardening": "Tillämpar härdning",
+        "lineageExpanding": "Expanderar härkomst",
+        "pending": "Väntar",
+        "processing": "Bearbetar",
+        "requested": "Begärd"
+      },
+      "summary": {
+        "activeSchedules": "Aktiva scheman",
+        "activeSchedulesDescription": "Aktiverade återkommande exportscheman.",
+        "failedRuns": "Misslyckade körningar (7 dagar)",
+        "failedRunsDescription": "Misslyckade löne-, revisions- och schemalagda körningar under den senaste veckan.",
+        "lastAuditPack": "Senaste revisionspaketet",
+        "lastAuditPackDescription": "Senaste genereringen av revisionspaket.",
+        "lastPayrollExport": "Senaste löneexporten",
+        "lastPayrollExportDescription": "Senaste slutförda löneexport.",
+        "none": "Aldrig"
+      },
+      "title": "Exportåtgärder",
+      "upcomingRuns": {
+        "description": "Nästa schemalagda exporter i kö för den här organisationen.",
+        "empty": "Inga kommande körningar",
+        "link": "Inställningar",
+        "name": "Namn",
+        "title": "Kommande körningar",
+        "when": "Schemalagd till"
+      }
     },
     "group": {
       "account": "Konto",
@@ -293,6 +572,16 @@
         "commitQueued": "Köade {count} godkända rader för verkställande",
         "committing": "Verkställer...",
         "description": "Granska mellanlagrade importrader, åtgärda blockerande problem och verkställ godkända poster när batchen är klar.",
+        "hold": {
+          "appendReviewRequired": "Den anställdes tidshistorik måste granskas innan nya poster kan läggas till.",
+          "invalidInterval": "Leverantörens tider saknar en explicit tidsförskjutning, är inte i ordning eller ligger i framtiden.",
+          "label": "Kvarhållen för granskning",
+          "occupancyConflict": "Tiden överlappar arbete som redan har registrerats för den här anställde.",
+          "operationCollision": "Den här raden är i konflikt med en tidigare verkställd import.",
+          "providerDurationMismatch": "Leverantörens varaktighet skiljer sig från start- och sluttiderna.",
+          "sourceCollision": "Den här leverantörsposten har redan importerats.",
+          "unlocatedBreak": "Leverantören rapporterar pauser utan tidsangivelser, så det arbetade intervallet är okänt."
+        },
         "issueGroups": {
           "currentMarkers": "Aktuella rader innehåller {blockingRows} blockerande markeringar och {warningRows} varningsmarkeringar.",
           "description": "Grupperade granskningsområden hjälper till att hålla kvalitetskontroller synliga innan godkända rader verkställs.",
@@ -306,17 +595,17 @@
           "status": "Status",
           "title": "Rader"
         },
-        "title": "Importgranskning",
-        "hold": {
-          "appendReviewRequired": "Medarbetarens tidshistorik måste granskas innan nya poster kan läggas till.",
-          "invalidInterval": "Leverantörens tider saknar en explicit förskjutning, är inte i ordning eller ligger i framtiden.",
-          "label": "Hålls kvar för granskning",
-          "occupancyConflict": "Tiden överlappar arbete som redan registrerats för den här medarbetaren.",
-          "operationCollision": "Den här raden står i konflikt med sin tidigare bekräftade import.",
-          "providerDurationMismatch": "Leverantörens varaktighet skiljer sig från start- och sluttiden.",
-          "sourceCollision": "Den här leverantörsposten har redan importerats.",
-          "unlocatedBreak": "Leverantören rapporterar raster utan deras tider, så det arbetade intervallet är okänt."
-        }
+        "status": {
+          "accepted": "Godkänd",
+          "blocked": "Blockerad",
+          "commitFailed": "Verkställandet misslyckades",
+          "committed": "Verkställd",
+          "committing": "Verkställer",
+          "needsMapping": "Kräver mappning",
+          "rejected": "Avvisad",
+          "staged": "Mellanlagrad"
+        },
+        "title": "Importgranskning"
       },
       "title": "Importera data"
     },
@@ -631,12 +920,12 @@
         "assignTeam": "Tilldela team",
         "count": "{count, plural, one {# medlem} other {# medlemmar}}",
         "employeeAssigned": "Anställd tilldelad",
-        "employeeAssignFailed": "Det gick inte att tilldela den anställda",
+        "employeeAssignFailed": "Det gick inte att tilldela anställd",
         "employeePicker": "Anställd att tilldela",
         "employees": "Anställda",
         "manage": "Hantera medlemmar i {name}",
         "managerAdded": "Projektledare tillagd",
-        "managerAddFailed": "Det gick inte att lägga till projektledaren",
+        "managerAddFailed": "Det gick inte att lägga till projektledare",
         "managerPicker": "Projektledare att lägga till",
         "managers": "Projektledare",
         "managersReadOnly": "Endast organisationsadministratörer kan ändra projektledare.",
@@ -644,12 +933,12 @@
         "noManagers": "Inga projektledare",
         "noTeams": "Inga team tilldelade",
         "remove": "Ta bort {name}",
-        "removed": "{name} borttagen",
-        "removeFailed": "Det gick inte att ta bort {name}",
+        "removed": "{name} togs bort",
+        "removeFailed": "Kunde inte ta bort {name}",
         "selectEmployee": "Välj en anställd",
         "selectTeam": "Välj ett team",
         "teamAssigned": "Team tilldelat",
-        "teamAssignFailed": "Det gick inte att tilldela teamet",
+        "teamAssignFailed": "Kunde inte tilldela team",
         "teamPicker": "Team att tilldela",
         "teams": "Team",
         "title": "Projektmedlemmar"
@@ -662,20 +951,47 @@
       "description": "Hantera ditt lösenord, tvåfaktorsautentisering, lösenordsnycklar och aktiva sessioner",
       "title": "Säkerhetsinställningar",
       "twoFactor": {
+        "backupCodesCopied": "Reservkoder har kopierats till urklipp",
+        "backupCodesRegenerated": "Reservkoder har genererats på nytt",
+        "cancel": "Avbryt",
         "confirmPasswordToEnable": "Bekräfta ditt lösenord för att aktivera tvåfaktorsautentisering",
         "confirmPasswordToRegenerate": "Bekräfta ditt lösenord för att generera nya reservkoder",
         "continue": "Fortsätt",
+        "copyCodes": "Kopiera koder",
         "description": "Lägg till ett extra säkerhetslager på ditt konto",
         "disable": "Inaktivera",
+        "disable2fa": "Inaktivera 2FA",
+        "disableDescription": "Detta tar bort det extra säkerhetslagret från ditt konto. Ange ditt lösenord för att bekräfta.",
+        "disabledToast": "Tvåfaktorsautentisering har inaktiverats",
+        "disableFailed": "Det gick inte att inaktivera 2FA",
+        "disableTitle": "Inaktivera tvåfaktorsautentisering?",
         "enable": "Aktivera tvåfaktorsautentisering",
+        "enabledToast": "Tvåfaktorsautentisering har aktiverats",
+        "enablePasswordRequiredDescription": "Ange ditt lösenord för att aktivera 2FA",
+        "enterAuthenticatorCode": "Ange den 6-siffriga koden från din autentiseringsapp",
         "enterPasswordTitle": "Ange ditt lösenord",
+        "enterSixDigitCode": "Ange en 6-siffrig kod",
+        "invalidCode": "Ogiltig kod",
+        "passwordLabel": "Lösenord",
+        "passwordPlaceholder": "Ange ditt lösenord...",
+        "passwordRequired": "Lösenord krävs",
         "regenerateBackupCodes": "Generera nya reservkoder",
         "regenerateCodes": "Generera nya koder",
+        "regenerateFailed": "Det gick inte att generera nya reservkoder",
+        "saveBackupCodesDescription": "Förvara dessa koder på en säker plats. Du kan använda dem för att komma åt ditt konto om du förlorar åtkomsten till din autentiseringsapp. Varje kod kan endast användas en gång.",
+        "saveBackupCodesTitle": "Spara dina reservkoder",
+        "savedCodes": "Jag har sparat dessa koder",
+        "scanQrCode": "Skanna QR-koden med din autentiseringsapp",
+        "setupFailed": "Det gick inte att konfigurera 2FA",
+        "setupTitle": "Konfigurera tvåfaktorsautentisering",
         "status": {
           "disabled": "Inaktiverad",
           "enabled": "Aktiverad"
         },
-        "title": "Tvåfaktorsautentisering"
+        "title": "Tvåfaktorsautentisering",
+        "unexpectedError": "Ett oväntat fel uppstod",
+        "verificationFailed": "Verifieringen misslyckades",
+        "verifyAndEnable": "Verifiera och aktivera"
       }
     },
     "sessions": {
@@ -879,8 +1195,14 @@
       "title": "Hälsoinställningar"
     },
     "workBalanceRecalculation": {
+      "confirm": "Bekräfta omberäkning",
+      "confirmMessage": "Bekräfta innan denna omräkning läggs i kö.",
+      "description": "Köa en fullständig återuppbyggnad av månatliga och årliga arbetstidssaldon för {employeeName}. Denna underhållsuppgift körs i bakgrunden och blockerar inte den här sidan.",
+      "queued": "Omräkning köad",
+      "recalculate": "Räkna om arbetstidssaldo",
       "requestError": "Det gick inte att köa omräkning av arbetssaldo",
-      "requestSuccess": "Omräkning av arbetssaldo har lagts i kö"
+      "requestSuccess": "Omräkning av arbetssaldo har lagts i kö",
+      "title": "Omräkning av arbetstidssaldo"
     },
     "workerQueue": {
       "cards": {

@@ -114,6 +114,12 @@
         "none": "Es sind keni Nochrichte-Kanäl verbunde.",
         "title": "Zuestelligs-Iistellige für Kanäl"
       },
+      "conflict": {
+        "differingTimeouts": "D Kanäl händ underschidlichi Timeouts bruucht; s chürzischte isch s Antwortfänschter worde.",
+        "disabledActiveSource": "Einigi aktivi Kanäl händ Eskalatione usgschaltet gha. Si liefere immer no keini Eskalationsnochrichte.",
+        "inactiveSourceEnabled": "Einigi inaktivi Kanäl händ Eskalatione igschaltet gha. Si händ nöd zur Richtlinie zellt.",
+        "invalidTimeout": "En Kanal hät es ungültigs Timeout gha und isch nöd fürs Antwortfänschter bruucht worde."
+      },
       "description": "Überprüef d Eskalationsrichtlinie vo de Organisation, wie si us de Kanal-Iistellige migriert worde isch, und Bedingige, wo en Gnähmigungs-Manager bruuche.",
       "dispose": {
         "confirm": "Iitrag schlüsse",
@@ -121,6 +127,12 @@
         "noteLabel": "Entscheidigsnotiz",
         "noteRequired": "Gib en Entscheidigsnotiz ii.",
         "title": "Ufmerksamkeits-Iitrag schlüsse"
+      },
+      "event": {
+        "alerted": "Admins alarmiert",
+        "disposed": "Verworfe",
+        "raised": "Usglöst",
+        "resolved": "Glöst"
       },
       "hoursValue": "{hours} h",
       "loadFailed": "Eskalations-Iistellige händ nöd chönne glade werde.",
@@ -166,6 +178,14 @@
         "windowInvalid": "Gib e ganzi Zahl a Schtunde zwüschet 1 und 720 ii.",
         "windowLabel": "Antwortzytfänschter"
       },
+      "reason": {
+        "ambiguousHistory": "Unklare Eskalationsverlauf",
+        "deliveryExhausted": "Zuestelligsversüech ufbruucht",
+        "deliveryUnavailable": "Keis Zuestelligsziel verfüegbar",
+        "noEligibleBackup": "Kei berechtigte Ersatz-Freigäber",
+        "replacementOverdue": "Ersatz-Freigäber isch überfällig",
+        "unsupportedRoute": "Nöd unterstützte Entscheidigspfad"
+      },
       "revisions": {
         "changedBy": "Gänderet vo",
         "migration": "Istellige-Migration",
@@ -207,16 +227,26 @@
       "activePolicyTableDescription": "Richtlinie wärded nach Priorität bewärtet; die erschti passendi aktivi Richtlinie bestimmt d'Freigabeketti.",
       "activeStatus": "Aktive Status",
       "addPolicy": "Richtlinie hinzufüege",
+      "addStage": "Stuefe hinzuefüege",
       "approvalType": {
-        "absence": "Abweseheit",
-        "complianceException": "Compliance-Uusnahm",
-        "manualTimeSubmission": "Manuelli Ziiterfassig",
-        "policyClockOut": "Uusstemple gemäss Richtlinie",
-        "shiftRequest": "Schichtaafrag",
-        "timeCorrection": "Ziitkorrektur",
-        "travelExpense": "Reisespese"
+        "absence": "Abwesenheit",
+        "complianceException": "Compliance-Ausnahme",
+        "manualTimeSubmission": "Manuelle Zeiteinreichung",
+        "policyClockOut": "Richtlinien-Ausstempeln",
+        "shiftRequest": "Schichtanfrage",
+        "timeCorrection": "Zeitkorrektur",
+        "travelExpense": "Reisespesen"
       },
       "approvalTypes": "Freigabetype",
+      "approver": "Freigäber",
+      "approverEmployeeId": "Mitarbeiter-ID vom Freigäber",
+      "approverEmployeeIdPlaceholder": "Byschpil: employee_123…",
+      "approverType": {
+        "directManager": "Direkti Füehrigschraft",
+        "managerManager": "Vorgsetzte vom Vorgsetzte",
+        "organizationAdmin": "Organisations-Admin",
+        "specificEmployee": "Bestimmte Mitarbeiter"
+      },
       "conditionsCount": "Aazahl Bedingige",
       "createPolicy": "Freigaberichtlinie erstelle",
       "defaultStageLabel": "Prüfig dur Vorgesetzte",
@@ -225,9 +255,25 @@
       "dialogDescription": "Definiere, wenn e Freigabeketti gilt und weli Persone die einzelni Stufe bearbeitid.",
       "editPolicy": "Richtlinie bearbeite",
       "empty": "Es sind no kei Freigaberichtlinie konfiguriert. Erstelle e Richtlinie, zum dini erschti Freigabeketti z'definiere.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Anfrage an den Standard-Manager senden, wenn auf dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Standard-Manager"
+        },
+        "fail": {
+          "description": "Anfrage ablehnen, wenn auf dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Anfrage ablehnen"
+        },
+        "label": "Fallback-Verhalten",
+        "organizationAdmin": {
+          "description": "Anfrage an einen Organisations-Admin senden, wenn auf dieser Stufe kein Genehmiger ermittelt werden kann.",
+          "label": "Organisations-Admin"
+        }
+      },
       "loadFailed": "Freigaberichtlinie händ nid chönne glade wärde.",
       "loading": "Richtlinie wärded glade…",
       "namePlaceholder": "Byspil: Abweseheits-Eskalation…",
+      "noStages": "Noch keine Genehmigungsstufen konfiguriert.",
       "preview": {
         "ariaLabel": "Vorschau vo de Freigabeketti",
         "badge": "Vorschau-Shell",
@@ -242,7 +288,11 @@
         "title": "Zämefassig vo de Vorschau-Chetti"
       },
       "priority": "Priorität",
+      "removeStage": "Stufe entfernen",
+      "stageNumber": "Stufe {number}",
+      "stages": "Genehmigungsstufen",
       "stagesCount": "Azahl Stufe",
+      "stagesDescription": "Stufen laufen nacheinander ab; jede Anfrage wird erst weitergeleitet, wenn der aktuelle Genehmiger sie akzeptiert.",
       "status": {
         "active": "Aktiv",
         "inactive": "Inaktiv"
@@ -255,21 +305,6 @@
       "validation": {
         "activePolicyRequiresStage": "Aktivi Richtlinie bruched mindestens eini Freigabestufe.",
         "specificEmployeeRequiresId": "Für spezifischi Mitarbeiter-Stufe isch en Mitarbeiter-ID vom Freigabeberechtigte nötig."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Schick de Aatrag a de Standard-Vorgesetzte, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
-          "label": "Standard-Vorgesetzte"
-        },
-        "fail": {
-          "description": "Wiis de Aatrag ab, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
-          "label": "Aatrag abwiise"
-        },
-        "label": "Ersatzverhalte",
-        "organizationAdmin": {
-          "description": "Schick de Aatrag an en Organisations-Admin, wenn i dere Stufe kei Freigabeberechtigti Person ermittelt werde cha.",
-          "label": "Organisations-Admin"
-        }
       }
     },
     "changePolicies": {
@@ -659,6 +694,7 @@
       "createCategoriesFirst": "Erstellen Sie zuerst Kategorien im Tab „Kategorien“",
       "createCategory": "Kategorie erstellen",
       "createCategoryDescription": "Erstellen Sie eine neue Arbeitskategorie, die mehreren Sets zugewiesen werden kann",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Kategoriesets mit unterschiedlichen Zeitfaktoren für verschiedene Arbeitsarten erstellen",
       "createFirstSet": "Erstes Set erstellen",
       "createSet": "Set erstellen",
       "createSetDescription": "Erstellen Sie ein neues Kategorienset und wählen Sie die Kategorien aus, die enthalten sein sollen",

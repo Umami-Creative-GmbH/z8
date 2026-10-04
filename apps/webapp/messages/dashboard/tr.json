@@ -15,15 +15,14 @@
       "today": "Bugün!",
       "tomorrow": "Yarın"
     },
-    "customize": {
-      "empty-description": "Bireysel araçları yeniden etkinleştirmek için kontrol paneli özelleştirme simgesini kullanın veya her aracı tekrar göstermek için düzeni sıfırlayın.",
-      "empty-title": "Tüm kontrol paneli araçları gizli",
-      "move-down": "{widget} öğesini aşağı taşı",
-      "move-up": "{widget} öğesini yukarı taşı",
-      "reset": "Düzeni sıfırla",
-      "title": "Kontrol paneli araçları",
-      "trigger": "Paneli özelleştir"
-    },
+    "customize": "errors.noOrganization.title",
+    "customize.empty-description": "Bireysel araçları yeniden etkinleştirmek için kontrol paneli özelleştirme simgesini kullanın veya her aracı tekrar göstermek için düzeni sıfırlayın.",
+    "customize.empty-title": "Tüm kontrol paneli araçları gizli",
+    "customize.move-down": "{widget} öğesini aşağı taşı",
+    "customize.move-up": "{widget} öğesini yukarı taşı",
+    "customize.reset": "Düzeni sıfırla",
+    "customize.title": "Kontrol paneli araçları",
+    "customize.trigger": "Paneli özelleştir",
     "hydration": {
       "add-glass": "{count} bardak ekle",
       "add-glasses": "{count} bardak ekle",

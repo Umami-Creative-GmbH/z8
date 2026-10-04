@@ -19,42 +19,91 @@
     "commandPlaceholder": "Rechercher des pages, des personnes, des équipes, des paramètres ou des actions…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "saisie",
+          "hours": "heures",
+          "manual": "manuel",
+          "time": "temps"
+        },
         "subtitle": "Enregistrer les heures d'un poste passé ou d'une correction",
         "title": "Ajouter une saisie manuelle de temps"
       },
       "createProject": {
+        "keywords": {
+          "create": "créer",
+          "project": "projet",
+          "settings": "paramètres"
+        },
         "subtitle": "Ouvrir les paramètres du projet pour définir un nouveau projet",
         "title": "Créer un projet"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "inviter",
+          "member": "membre",
+          "teammate": "coéquipier"
+        },
         "subtitle": "Ouvrir la gestion de l'organisation pour ajouter un collègue",
         "title": "Inviter un coéquipier"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "approbations",
+          "inbox": "boîte de réception",
+          "review": "examiner"
+        },
         "subtitle": "Examiner les demandes en attente des employés",
         "title": "Ouvrir la boîte de réception des approbations"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "les miens",
+          "requests": "demandes"
+        },
         "subtitle": "Examiner vos absences et dépenses soumises",
         "title": "Ouvrir mes demandes"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Vérifier si les données de temps sont prêtes pour la paie",
-        "title": "Ouvrir la préparation de la paie"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "exporter",
+          "payroll": "paie",
+          "wages": "salaires"
+        },
         "subtitle": "Revoir l'espace de travail de paie délimité",
         "title": "Ouvrir la paie"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "exporter",
+          "payroll": "paie",
+          "readiness": "état de préparation"
+        },
+        "subtitle": "Vérifier si les données de temps sont prêtes pour la paie",
+        "title": "Ouvrir la préparation de la paie"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "préférences",
+          "settings": "paramètres"
+        },
         "subtitle": "Gérer votre profil, la sécurité et les paramètres de l'organisation",
         "title": "Ouvrir les paramètres"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "absence",
+          "timeOff": "congés",
+          "vacation": "vacances"
+        },
         "subtitle": "Démarrer une demande de vacances, de congé maladie ou de congé",
         "title": "Demander une absence"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "dépense",
+          "reimbursement": "remboursement",
+          "travel": "voyage"
+        },
         "subtitle": "Créer une demande de remboursement pour des frais de voyage",
         "title": "Soumettre une note de frais de voyage"
       }
@@ -70,7 +119,14 @@
     "search": "Rechercher",
     "searchOrRunCommand": "Rechercher ou exécuter une commande",
     "teamAbsences": {
-      "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences"
+      "description": "Examiner les indicateurs d'absence des employés et enregistrer les absences",
+      "keywords": {
+        "absence": "absence",
+        "manager": "responsable",
+        "sick": "maladie",
+        "team": "équipe",
+        "vacation": "congés"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Approuver",
     "assign": "Attribuer",
     "back": "Retour",
+    "brandLogo": "Logo {brand}",
+    "breadcrumb": {
+      "breadcrumb": "fil d'Ariane",
+      "more": "Plus"
+    },
     "cancel": "Annuler",
+    "carousel": {
+      "nextSlide": "Diapositive suivante",
+      "previousSlide": "Diapositive précédente",
+      "roleDescription": "carrousel",
+      "slideRoleDescription": "diapositive"
+    },
     "clear": "Effacer",
     "clearSearch": "Effacer la recherche",
     "clearSelection": "Effacer",
@@ -117,10 +184,17 @@
     "copy": "Copier",
     "create": "Créer",
     "current": "Actuel",
+    "datePicker": {
+      "clearDate": "Effacer la date",
+      "placeholder": "Choisir une date"
+    },
     "days": {
+      "count": "{count} jours",
       "friday": "Vendredi",
+      "half": "0,5 jour",
       "label": "jours",
       "monday": "Lundi",
+      "one": "1 jour",
       "saturday": "Samedi",
       "sunday": "Dimanche",
       "thursday": "Jeudi",
@@ -129,14 +203,24 @@
     },
     "delete": "Supprimer",
     "deleting": "Suppression...",
+    "deployment": {
+      "skew": {
+        "description": "Rechargez la page pour continuer. Votre dernière action n'a pas été enregistrée.",
+        "title": "Z8 a été mis à jour"
+      }
+    },
     "description": "Description",
     "deselectAll": "Tout désélectionner",
     "details": "Détails",
     "download": "Télécharger",
+    "duplicate": "Dupliquer",
+    "durationMinutes": "{count} min",
     "edit": "Modifier",
     "enabled": "Activé",
     "error": "Erreur",
     "error-occurred": "Une erreur s'est produite",
+    "fieldPresets": "Préréglages {label}",
+    "focusInput": "Cibler le champ",
     "gender": {
       "female": "Féminin",
       "male": "Masculin",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Aller au tableau de bord",
     "inactive": "Inactif",
+    "label": "Libellé",
     "loading": "Chargement...",
+    "loadingLabel": "Chargement",
+    "loadingRegions": {
+      "absences": "Chargement des absences",
+      "adminConsole": "Chargement de la console d'administration",
+      "analyticsNavigation": "Chargement de la navigation des analyses",
+      "application": "Chargement de l'application",
+      "auditExportSettings": "Chargement des paramètres d'exportation d'audit",
+      "authentication": "Chargement de l'authentification",
+      "changePolicySettings": "Chargement des paramètres de politique de modification",
+      "coverageRuleSettings": "Chargement des paramètres des règles de couverture",
+      "customerSettings": "Chargement des paramètres client",
+      "customRoleSettings": "Chargement des paramètres des rôles personnalisés",
+      "dashboard": "Chargement du tableau de bord",
+      "dataExportSettings": "Chargement des paramètres d'exportation de données",
+      "demoDataSettings": "Chargement des paramètres des données de démonstration",
+      "deploymentDiagnostics": "Chargement des diagnostics de déploiement",
+      "employeeReports": "Chargement des rapports des employés",
+      "employeeVacationAllowances": "Chargement des droits aux congés des employés",
+      "exportOperations": "Chargement des opérations d'exportation",
+      "holidaySettings": "Chargement des paramètres des jours fériés",
+      "importReview": "Chargement de la vérification de l'importation",
+      "importSettings": "Chargement des paramètres d'importation",
+      "locationSettings": "Chargement des paramètres d'emplacement",
+      "onboarding": "Chargement de l'intégration",
+      "payrollExportSettings": "Chargement des paramètres d'exportation de la paie",
+      "payrollReadiness": "Chargement de la préparation de la paie",
+      "payrollWorkspace": "Chargement de l'espace de travail de paie",
+      "platformAdminOverview": "Chargement de la vue d'ensemble de l'administration de la plateforme",
+      "platformAnalytics": "Chargement des analyses de la plateforme",
+      "platformBilling": "Chargement de la facturation de la plateforme",
+      "platformSetup": "Chargement de la configuration de la plateforme",
+      "projectReports": "Chargement des rapports de projet",
+      "projectSettings": "Chargement des paramètres du projet",
+      "scheduledExports": "Chargement des exportations programmées",
+      "shiftSchedule": "Chargement du planning des quarts",
+      "shiftTemplateSettings": "Chargement des paramètres des modèles de quarts",
+      "skillSettings": "Chargement des paramètres de compétences",
+      "surchargeSettings": "Chargement des paramètres de majoration",
+      "team": "Chargement de l'équipe",
+      "todaySManagerBriefing": "Chargement du briefing manager du jour",
+      "travelExpenses": "Chargement des frais de déplacement",
+      "travelExpenseSettings": "Chargement des paramètres des frais de déplacement",
+      "twoFactorVerification": "Chargement de la vérification à deux facteurs",
+      "vacationSettings": "Chargement des paramètres de congés",
+      "wellnessSettings": "Chargement des paramètres de bien-être",
+      "workCategorySettings": "Chargement des paramètres des catégories de travail",
+      "workerQueue": "Chargement de la file d'attente des workers",
+      "workPolicySettings": "Chargement des paramètres de la politique de travail",
+      "worksCouncilPortal": "Chargement du portail du comité d'entreprise",
+      "yourRequests": "Chargement de vos demandes"
+    },
     "loadMore": "Charger plus",
     "months": {
       "april": "Avril",
@@ -169,11 +305,20 @@
     "next": "Suivant",
     "notApplicable": "N/A",
     "not-available": "Non disponible",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# non lues)}}"
+    },
     "open": "Ouvrir",
     "openEnded": "Sans fin",
     "openMenu": "Ouvrir le menu",
     "optional": "facultatif",
     "or": "Ou",
+    "pagination": {
+      "goToNextPage": "Aller à la page suivante",
+      "goToPreviousPage": "Aller à la page précédente",
+      "morePages": "Plus de pages",
+      "pagination": "Pagination"
+    },
     "pending": "En attente",
     "present": "Présent",
     "previous": "Précédent",
@@ -194,6 +339,11 @@
     "select-language": "Choisir la langue",
     "set": "ensemble",
     "sets": "ensembles",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Affiche la barre latérale mobile.",
+      "sidebar": "Barre latérale",
+      "toggleSidebar": "Basculer la barre latérale"
+    },
     "skip": "Passer",
     "start": "Démarrer",
     "status": "Statut",
@@ -205,6 +355,10 @@
         "reload": "Recharger",
         "title": "Mise à jour disponible"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Ouvrir le sélecteur d'heure",
+      "switchPeriod": "Passer à {period}"
     },
     "to": "à",
     "today": "Aujourd'hui",
@@ -233,11 +387,34 @@
       "tue": "Mar",
       "we": "Me",
       "wed": "Mer"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Modifications ayant un impact sur les effectifs limitées à cette organisation et cette période.",
+      "changeLogEmpty": "Aucune modification trouvée pour cette période.",
+      "changeReviewLog": "Journal d'examen des modifications",
+      "complianceFindings": "Constats de conformité",
+      "description": "Examen des effectifs filtré par confidentialité pour la période sélectionnée.",
+      "disabledDescription": "Le mode Comité d'entreprise n'est pas activé pour cette organisation.",
+      "exportReviewPack": "Exporter le dossier d'examen",
+      "from": "De",
+      "identityHidden": "Identité masquée",
+      "insufficientData": "Données insuffisantes",
+      "policyChanges": "Modifications des politiques",
+      "scheduleChanges": "Modifications du planning",
+      "scheduleDescription": "Entrées de planning filtrées par confidentialité pour la période sélectionnée.",
+      "scheduleEmpty": "Aucune entrée de planning trouvée pour cette période.",
+      "scheduleEntry": "{identity} - {start} à {end}",
+      "scheduleReview": "Examen du planning",
+      "title": "Comité d'entreprise",
+      "to": "À",
+      "unassignedTeam": "Équipe non assignée",
+      "updateRange": "Mettre à jour la plage"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} employés sélectionnés",
     "countWithMore": "{count} employés (+{more} autres)",
+    "inactive": "Inactif",
     "noEmployeesFound": "Aucun employé trouvé",
     "removeSelected": "Supprimer {name}",
     "role": "Rôle",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contacter l'administrateur",
       "createOrg": "Créer une organisation",
-      "description": "Vous avez besoin d'un profil d'employé pour {feature}. Veuillez créer une organisation ou contacter votre administrateur.",
+      "description": "Vous avez besoin d'un profil d'employé pour ${feature}. Veuillez créer une organisation ou contacter votre administrateur.",
       "emailBody": "Bonjour,\n\nj'ai besoin qu'un profil d'employé soit configuré pour accéder aux fonctionnalités de la plateforme. Pourriez-vous m'aider avec cela ?\n\nMerci !",
       "emailSubject": "Configuration du profil d'employé requise",
       "helpText": "Si vous avez été invité dans une organisation, demandez à votre administrateur de configurer votre profil d'employé.",
@@ -270,8 +447,14 @@
       "waiting": "En attente d'une invitation ?",
       "waitingDesc": "Votre administrateur vous enverra un e-mail d'invitation. Vérifiez votre boîte de réception et votre dossier spam."
     },
+    "notFound": {
+      "description": "La page a peut-être été déplacée, le lien est peut-être obsolète ou l'adresse est incorrecte.",
+      "title": "Page introuvable"
+    },
     "unexpected": {
-      "digest": "Référence : {digest}"
+      "description": "Impossible de charger cette page pour le moment. Veuillez réessayer ou revenir à un emplacement sûr dans l'application.",
+      "digest": "Référence : {digest}",
+      "title": "Une erreur s'est produite"
     }
   },
   "generic": {
@@ -280,25 +463,36 @@
   },
   "header": {
     "clock-in": "Pointer l'entrée",
-    "clock-out": "Pointer la sortie"
+    "clock-out": "Pointer la sortie",
+    "timezone": {
+      "current": "Fuseau horaire actuel {timezone}, {time}, {offset}",
+      "savedTimezone": "Fuseau horaire enregistré",
+      "saveTimezone": "Enregistrer le fuseau horaire",
+      "saving": "Enregistrement...",
+      "updated": "Fuseau horaire mis à jour avec succès",
+      "updateError": "Une erreur s'est produite lors de la mise à jour du fuseau horaire",
+      "updateFailed": "Échec de la mise à jour du fuseau horaire"
+    }
   },
   "info": {
     "agb": "CGV",
     "back-to-login": "Retour à la connexion",
     "imprint": "Mentions légales",
+    "licenses": "Licences open source",
+    "openSourceLicenses": "Licences open source",
     "trust-center": "Centre de confiance"
   },
   "loading": {
-    "chart": "Chargement du graphique",
-    "settings": "Chargement des paramètres",
-    "application": "Chargement de l’application",
-    "authentication": "Chargement de l’authentification",
+    "application": "Chargement de l'application",
+    "authentication": "Chargement de l'authentification",
     "calendar": "Chargement du calendrier",
+    "chart": "Chargement du graphique",
     "licenses": "Chargement des licences",
     "platformAnalytics": "Chargement des analyses de la plateforme",
+    "settings": "Chargement des paramètres",
     "setup": "Chargement de la configuration",
-    "teamAbsences": "Chargement des absences de l’équipe",
-    "workerQueue": "Chargement de la file d’attente des tâches"
+    "teamAbsences": "Chargement du tableau des absences de l'équipe",
+    "workerQueue": "Chargement de la file d'attente des workers"
   },
   "nav": {
     "absences": "Absences",
@@ -334,6 +528,23 @@
       "viewAll": "Voir toutes les notifications"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} a enregistré {absenceType} pour {dateRange} en votre nom.",
+        "title": "Absence enregistrée"
+      },
+      "absenceRequestRejected": {
+        "title": "Demande d'absence refusée"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Les tâches d'approbation nécessitent un remplaçant",
+        "clock_out": "À vérifier : pointage de sortie (départ de l'employé)",
+        "clock_repair": "Correction du minuteur requise",
+        "employment_terms": "Les futures conditions d'emploi doivent être vérifiées",
+        "future_work": "Le travail futur doit être vérifié"
+      },
+      "newAbsenceRequest": {
+        "title": "Nouvelle demande d'absence"
+      },
       "passwordChanged": {
         "message": "Votre mot de passe a été modifié avec succès. Si vous n'êtes pas à l'origine de ce changement, veuillez contacter immédiatement le support.",
         "title": "Mot de passe modifié"
@@ -345,14 +556,6 @@
       "teamMemberAdded": {
         "message": "Vous avez été ajouté à l'équipe {teamName} par {performedByName}.",
         "title": "Ajouté à l'équipe"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Votre demande {categoryName} pour {dateRange} a été envoyée et est en attente d'approbation.",
-        "title": "Demande d'absence envoyée"
-      },
-      "teamMemberRemoved": {
-        "message": "Vous avez été retiré de l'équipe {teamName} par {performedByName}.",
-        "title": "Retiré de l'équipe"
       }
     },
     "description": "Consultez les mises à jour, les approbations et les alertes système dans une seule chronologie.",
@@ -377,6 +580,7 @@
     "preferences": {
       "disabled": "Notification désactivée",
       "enabled": "Notification activée",
+      "mandatoryInbox": "Toujours livré dans votre boîte de réception",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Recevoir des alertes pour les demandes d'approbation en attente",
@@ -413,6 +617,9 @@
       "selectAllAria": "Sélectionner toutes les notifications visibles",
       "selectNamedAria": "Sélectionner {title}",
       "visibleSelected": "{count} éléments visibles sélectionnés"
+    },
+    "time": {
+      "justNow": "à l'instant"
     },
     "timeline": {
       "earlier": "Plus tôt",
@@ -485,6 +692,15 @@
     },
     "clockedIn": "Pointage effectué (entrée)",
     "clockedOut": "Pointage effectué (sortie)"
+  },
+  "rateLimit": {
+    "countdownLabel": "secondes avant de pouvoir réessayer",
+    "jsonMessage": "Limite de requêtes dépassée. Veuillez réessayer plus tard.",
+    "message": "Vous avez effectué trop de requêtes. Veuillez patienter avant de réessayer.",
+    "retryButton": "Réessayer",
+    "retryingButton": "Nouvelle tentative en cours...",
+    "title": "Trop de requêtes",
+    "waitingButton": "Veuillez patienter..."
   },
   "roles": {
     "admin": "Administrateur",
@@ -568,7 +784,8 @@
     "first-name-required": "Le prénom est requis",
     "invalid-email": "Adresse e-mail invalide",
     "last-name-required": "Le nom de famille est requis",
-    "password-required": "Le mot de passe est requis"
+    "password-required": "Le mot de passe est requis",
+    "pronounsMaxLength": "Les pronoms doivent comporter 50 caractères ou moins"
   },
   "workBalance": {
     "label": "Solde total",
@@ -577,6 +794,6 @@
     "updatedEveryThreeHours": "Mis à jour toutes les 3 heures"
   },
   "worksCouncil": {
-    "loadingLabel": "Chargement du portail du comité d’entreprise"
+    "loadingLabel": "Chargement du comité d'entreprise"
   }
 }

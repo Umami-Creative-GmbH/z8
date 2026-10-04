@@ -136,6 +136,11 @@
       "success": "Uscita del dipendente registrata correttamente",
       "title": "Registrare l'uscita del dipendente?"
     },
+    "contextMenu": {
+      "delete": "Elimina",
+      "edit": "Modifica",
+      "label": "Azioni registrazione orario"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Inserimento orari bloccato",
       "category": "Categoria",
@@ -159,35 +164,72 @@
       "title": "Converti in pausa?"
     },
     "details": {
+      "automaticClockOut": "Uscita registrata automaticamente",
+      "automaticCutoff": "Limite per la timbratura di uscita",
+      "automaticLimit": "Limite di lavoro ininterrotto",
       "baseWorked": "Base lavorata",
       "blocksTimeEntry": "Blocca tracciamento tempo",
       "category": "Categoria",
       "credited": "Accreditato",
       "dateRange": "Intervallo date",
       "duration": "Durata",
+      "editedBy": "Modificato da",
       "employee": "Dipendente",
       "notes": "Note",
+      "pendingApproval": "In attesa di approvazione",
+      "pendingApprovalDescription": "Questo periodo di lavoro è in attesa dell'approvazione del responsabile. Gli orari registrati potrebbero cambiare in caso di rifiuto.",
       "project": "Progetto",
       "recurring": "Ricorrente annualmente",
+      "rejected": "Rifiutato",
+      "rejectedDescription": "Questa modifica al periodo di lavoro è stata rifiutata da un responsabile. Gli orari originali sono stati ripristinati.",
+      "source": "Origine",
       "status": "Stato",
       "surcharge": "Supplemento",
       "surchargeBreakdown": "Dettaglio supplementi",
+      "system": "Sistema",
       "time": "Tempo",
       "type": "Tipo",
       "workLocation": "Luogo di lavoro"
     },
     "edit": {
       "deleteEntry": "Elimina voce",
+      "locationRequired": "Scegli un luogo di lavoro.",
+      "noNotes": "Nessuna nota aggiunta",
+      "noProject": "Nessun progetto assegnato",
       "notesSaved": "Note salvate",
       "notesSaveFailed": "Impossibile salvare le note",
       "projectSaved": "Progetto aggiornato",
       "projectSaveFailed": "Impossibile aggiornare il progetto",
       "split": "Dividi",
-      "locationRequired": "Seleziona un luogo di lavoro.",
       "time": {
-        "noChanges": "Modifica prima la data, l’ora o il luogo di lavoro.",
-        "edit": "Modifica voce"
-      }
+        "approvalHint": "Questa modifica verrà inviata al tuo responsabile per l'approvazione.",
+        "beyondWindow": "Le voci antecedenti a {days} giorni possono essere modificate solo da un amministratore.",
+        "clockIn": "Timbratura di entrata",
+        "clockInDate": "Data di entrata",
+        "clockInTime": "Ora di entrata",
+        "clockOut": "Timbratura di uscita",
+        "clockOutDate": "Data di uscita",
+        "clockOutTime": "Ora di uscita",
+        "directHint": "Questa modifica ha effetto immediato.",
+        "edit": "Modifica voce",
+        "invalidRange": "L'uscita deve essere successiva all'entrata.",
+        "noChanges": "Modifica prima la data, l'ora o il luogo di lavoro.",
+        "noteLabel": "Nota (facoltativa)",
+        "notePlaceholder": "Aggiungi una nota su questa modifica…",
+        "onBehalfHint": "Questa modifica segue la catena di approvazione del dipendente. Se sei il suo approvatore, viene applicata immediatamente.",
+        "pendingCorrection": "Una modifica dell'orario per questa voce è già in attesa di approvazione.",
+        "reasonLabel": "Motivo",
+        "reasonPlaceholder": "Spiega perché è necessaria questa correzione…",
+        "reasonRequired": "Aggiungi un motivo per il responsabile.",
+        "saved": "Voce oraria aggiornata",
+        "saveFailed": "Impossibile aggiornare la voce oraria",
+        "submitForApproval": "Invia per l'approvazione",
+        "submitOnBehalf": "Invia modifica",
+        "submitted": "Modifica inviata per l'approvazione del responsabile",
+        "submittedOnBehalf": "Modifica inviata all'approvatore del dipendente",
+        "timezoneNote": "Gli orari sono nel fuso orario del dipendente ({timezone})"
+      },
+      "title": "Periodo lavorativo"
     },
     "employeeSelector": {
       "error": "Impossibile caricare i membri del team",
@@ -226,6 +268,7 @@
       "workPeriod": "Periodo di lavoro",
       "workPeriodPending": "In attesa di approvazione"
     },
+    "loadEventsError": "Impossibile caricare gli eventi del calendario: {message}",
     "mobileControls": {
       "description": "Scegli quali voci del calendario rendere visibili.",
       "title": "Filtri e legenda"
@@ -239,6 +282,14 @@
       "previousMonth": "Mese precedente",
       "totalDescription": "Tempo registrato rispetto alle ore di politica",
       "weekSum": "Somma"
+    },
+    "requirements": {
+      "status": {
+        "met": "requisito soddisfatto",
+        "missing": "tempo registrato mancante",
+        "over": "superiore al requisito",
+        "under": "inferiore al requisito"
+      }
     },
     "split": {
       "ambiguousTime": "Scegli quale occorrenza utilizzare",
@@ -277,6 +328,12 @@
       "week": "Settimana",
       "year": "Anno"
     },
+    "workLocation": {
+      "notRecorded": "Non registrato"
+    },
+    "workPeriod": {
+      "editedBy": "(modificato da {name} il {date})"
+    },
     "workStatus": {
       "overRequirement": "sopra il requisito",
       "requiredHoursMissing": "ore richieste mancanti",
@@ -285,9 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "workLocation": {
-      "notRecorded": "Non registrato"
     }
   }
 }

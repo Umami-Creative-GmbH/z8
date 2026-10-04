@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Bu ayarları yalnızca kuruluş yöneticileri ve sahipleri değiştirebilir.",
+      "description": "Kesintisiz canlı çalışmanın maksimum süresini belirleyin. Çalışanların çıkışı bu sınırda otomatik olarak yapılır.",
+      "enabled": "Otomatik çıkış",
+      "help": "Kaydedilen bir mola veya yeni bir giriş, süreyi sıfırlar. Değişiklikler hâlihazırda devam eden çalışmalara uygulanır. Kontroller her beş dakikada bir çalışır; kontrol daha sonra çalışsa bile çıkış işlemi sınırda kaydedilir. Çalışanlar her zaman bir gelen kutusu bildirimi alır.",
+      "hours": "Saat",
+      "invalidDuration": "Geçerli bir süre girin: tam saat ve toplamda en az bir dakika olacak şekilde 0–59 dakika.",
+      "minutes": "Dakika",
+      "save": "Değişiklikleri kaydet",
+      "saved": "Otomatik çıkış ayarları kaydedildi",
+      "saveFailed": "Otomatik çıkış ayarları güncellenemedi",
+      "saving": "Kaydediliyor…",
+      "title": "Otomatik çıkış"
+    },
     "create": "Kuruluş Oluştur",
     "createDialog": {
       "description": "Başlamak için kuruluşunuzu ayarlayın",
@@ -120,7 +134,7 @@
       "expired": "Süresi dolmuş",
       "expires": "Son kullanma tarihi",
       "inactive": "Etkin değil",
-      "invitationActionsLabel": "{email} adresine yapılan davet için işlemler",
+      "invitationActionsLabel": "${row.original.email} adresine yapılan davet için işlemler",
       "invitationCancelError": "Davetiye iptal edilemedi",
       "invitationCancelSuccess": "Davetiye iptal edildi",
       "invitationResendError": "Davetiye tekrar gönderilemedi",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} davetiye kabul edilmeyi bekliyor}}",
       "invitedBy": "Davet Eden",
       "member": "Üye",
-      "memberActionsLabel": "{name} için işlemler",
+      "memberActionsLabel": "${row.original.user.name} için işlemler",
       "memberCount": "{count, plural, other {bu organizasyonda {count} üye var}}",
       "noInvitationResults": "Aramanızla eşleşen davetiye bulunamadı.",
       "noInvitations": "Bekleyen davetiye yok.",
@@ -189,11 +203,10 @@
       "failed": "Kuruluş kurtarılamadı",
       "success": "Kuruluş başarıyla kurtarıldı"
     },
-    "role": {
-      "admin": "Yönetici",
-      "member": "Üye",
-      "owner": "Sahip"
-    },
+    "role": "organization.slugErrors",
+    "role.admin": "Yönetici",
+    "role.member": "Üye",
+    "role.owner": "Sahip",
     "slugDescription": "URL'lerde kullanılır. İsimden otomatik oluşturulur.",
     "slugErrors": {
       "format": "Slug yalnızca küçük harf, rakam ve kısa çizgi içermelidir",
@@ -256,7 +269,7 @@
       "title": "Ekipler"
     },
     "timezone": {
-      "balances-recalculating": "Çalışma bakiyeleri yeni saat dilimi için yeniden hesaplanıyor ve hazır olana kadar gizli kalır.",
+      "balances-recalculating": "Çalışma bakiyeleri yeni saat dilimi için yeniden hesaplanıyor ve hazır olana kadar gizli tutuluyor.",
       "default": "Varsayılan Saat Dilimi",
       "description": "Kuruluşunuz için varsayılan saat dilimini ayarlayın. Bu, izin takibi, raporlar ve diğer tarih tabanlı özellikler için kullanılır. Bireysel kullanıcılar bunu profil ayarlarından geçersiz kılabilir.",
       "owner-only": "Yalnızca kuruluş sahipleri saat dilimi ayarını değiştirebilir.",

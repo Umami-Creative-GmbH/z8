@@ -19,42 +19,91 @@
     "commandPlaceholder": "Cerca pagine, persone, team, impostazioni o azioni…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "voce",
+          "hours": "ore",
+          "manual": "manuale",
+          "time": "tempo"
+        },
         "subtitle": "Registra le ore per un turno passato o una correzione",
         "title": "Aggiungi inserimento manuale del tempo"
       },
       "createProject": {
+        "keywords": {
+          "create": "crea",
+          "project": "progetto",
+          "settings": "impostazioni"
+        },
         "subtitle": "Apri le impostazioni del progetto per definire un nuovo progetto",
         "title": "Crea progetto"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "invita",
+          "member": "membro",
+          "teammate": "collega"
+        },
         "subtitle": "Apri la gestione dell'organizzazione per aggiungere un collega",
         "title": "Invita un membro del team"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "approvazioni",
+          "inbox": "posta in arrivo",
+          "review": "revisione"
+        },
         "subtitle": "Esamina le richieste in sospeso dei dipendenti",
         "title": "Apri la posta in arrivo delle approvazioni"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "i miei",
+          "requests": "richieste"
+        },
         "subtitle": "Esamina le tue assenze e spese inviate",
         "title": "Apri le mie richieste"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Verifica se i dati temporali sono pronti per le buste paga",
-        "title": "Apri la preparazione buste paga"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "esporta",
+          "payroll": "buste paga",
+          "wages": "retribuzioni"
+        },
         "subtitle": "Revisiona area di lavoro paghe con ambito",
         "title": "Apri paghe"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "esporta",
+          "payroll": "buste paga",
+          "readiness": "prontezza"
+        },
+        "subtitle": "Verifica se i dati temporali sono pronti per le buste paga",
+        "title": "Apri la preparazione buste paga"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "preferenze",
+          "settings": "impostazioni"
+        },
         "subtitle": "Gestisci il tuo profilo, la sicurezza e le impostazioni dell'organizzazione",
         "title": "Apri impostazioni"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "assenza",
+          "timeOff": "ferie e permessi",
+          "vacation": "ferie"
+        },
         "subtitle": "Avvia una richiesta di ferie, malattia o permesso",
         "title": "Richiedi assenza"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "spesa",
+          "reimbursement": "rimborso",
+          "travel": "viaggi"
+        },
         "subtitle": "Crea una richiesta di rimborso per spese di viaggio",
         "title": "Invia nota spese di viaggio"
       }
@@ -70,7 +119,14 @@
     "search": "Cerca",
     "searchOrRunCommand": "Cerca o esegui comando",
     "teamAbsences": {
-      "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze"
+      "description": "Esamina le metriche di assenza dei dipendenti e registra le assenze",
+      "keywords": {
+        "absence": "assenza",
+        "manager": "responsabile",
+        "sick": "malattia",
+        "team": "team",
+        "vacation": "ferie"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Approva",
     "assign": "Assegna",
     "back": "Indietro",
+    "brandLogo": "Logo {brand}",
+    "breadcrumb": {
+      "breadcrumb": "breadcrumb",
+      "more": "Altro"
+    },
     "cancel": "Annulla",
+    "carousel": {
+      "nextSlide": "Diapositiva successiva",
+      "previousSlide": "Diapositiva precedente",
+      "roleDescription": "carosello",
+      "slideRoleDescription": "diapositiva"
+    },
     "clear": "Cancella",
     "clearSearch": "Cancella ricerca",
     "clearSelection": "Pulisci",
@@ -117,10 +184,17 @@
     "copy": "Copia",
     "create": "Crea",
     "current": "Attuale",
+    "datePicker": {
+      "clearDate": "Cancella data",
+      "placeholder": "Scegli una data"
+    },
     "days": {
+      "count": "{count} giorni",
       "friday": "Venerdì",
+      "half": "0,5 giorni",
       "label": "giorni",
       "monday": "Lunedì",
+      "one": "1 giorno",
       "saturday": "Sabato",
       "sunday": "Domenica",
       "thursday": "Giovedì",
@@ -129,14 +203,24 @@
     },
     "delete": "Elimina",
     "deleting": "Eliminazione...",
+    "deployment": {
+      "skew": {
+        "description": "Ricarica la pagina per continuare. L'ultima azione non è stata salvata.",
+        "title": "Z8 è stato aggiornato"
+      }
+    },
     "description": "Descrizione",
     "deselectAll": "Deseleziona tutto",
     "details": "Dettagli",
     "download": "Scarica",
+    "duplicate": "Duplica",
+    "durationMinutes": "{count} min",
     "edit": "Modifica",
     "enabled": "Abilitato",
     "error": "Errore",
     "error-occurred": "Si è verificato un errore",
+    "fieldPresets": "Preimpostazioni {label}",
+    "focusInput": "Metti a fuoco l'input",
     "gender": {
       "female": "Femmina",
       "male": "Maschio",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Vai alla Dashboard",
     "inactive": "Inattivo",
+    "label": "Etichetta",
     "loading": "Caricamento...",
+    "loadingLabel": "Caricamento in corso",
+    "loadingRegions": {
+      "absences": "Caricamento assenze in corso",
+      "adminConsole": "Caricamento console di amministrazione in corso",
+      "analyticsNavigation": "Caricamento della navigazione delle analisi",
+      "application": "Caricamento dell'applicazione",
+      "auditExportSettings": "Caricamento delle impostazioni di esportazione audit",
+      "authentication": "Caricamento dell'autenticazione",
+      "changePolicySettings": "Caricamento delle impostazioni dei criteri di modifica",
+      "coverageRuleSettings": "Caricamento delle impostazioni delle regole di copertura",
+      "customerSettings": "Caricamento delle impostazioni del cliente",
+      "customRoleSettings": "Caricamento delle impostazioni dei ruoli personalizzati",
+      "dashboard": "Caricamento della dashboard",
+      "dataExportSettings": "Caricamento delle impostazioni di esportazione dati",
+      "demoDataSettings": "Caricamento delle impostazioni dei dati demo",
+      "deploymentDiagnostics": "Caricamento della diagnostica di distribuzione",
+      "employeeReports": "Caricamento dei report dei dipendenti",
+      "employeeVacationAllowances": "Caricamento delle ferie spettanti ai dipendenti",
+      "exportOperations": "Caricamento delle operazioni di esportazione",
+      "holidaySettings": "Caricamento delle impostazioni delle festività",
+      "importReview": "Caricamento della revisione dell'importazione",
+      "importSettings": "Caricamento delle impostazioni di importazione",
+      "locationSettings": "Caricamento delle impostazioni della sede",
+      "onboarding": "Caricamento dell'onboarding",
+      "payrollExportSettings": "Caricamento delle impostazioni di esportazione delle buste paga",
+      "payrollReadiness": "Caricamento dello stato di preparazione delle buste paga",
+      "payrollWorkspace": "Caricamento dell'area di lavoro buste paga",
+      "platformAdminOverview": "Caricamento della panoramica dell'amministratore della piattaforma",
+      "platformAnalytics": "Caricamento delle analisi della piattaforma",
+      "platformBilling": "Caricamento fatturazione della piattaforma",
+      "platformSetup": "Caricamento configurazione della piattaforma",
+      "projectReports": "Caricamento report dei progetti",
+      "projectSettings": "Caricamento impostazioni del progetto",
+      "scheduledExports": "Caricamento esportazioni programmate",
+      "shiftSchedule": "Caricamento pianificazione turni",
+      "shiftTemplateSettings": "Caricamento impostazioni modelli di turno",
+      "skillSettings": "Caricamento impostazioni competenze",
+      "surchargeSettings": "Caricamento impostazioni maggiorazioni",
+      "team": "Caricamento team",
+      "todaySManagerBriefing": "Caricamento briefing del responsabile di oggi",
+      "travelExpenses": "Caricamento spese di trasferta",
+      "travelExpenseSettings": "Caricamento impostazioni spese di trasferta",
+      "twoFactorVerification": "Caricamento verifica a due fattori",
+      "vacationSettings": "Caricamento impostazioni ferie",
+      "wellnessSettings": "Caricamento impostazioni benessere",
+      "workCategorySettings": "Caricamento impostazioni categorie di lavoro",
+      "workerQueue": "Caricamento coda lavoratori",
+      "workPolicySettings": "Caricamento impostazioni policy di lavoro",
+      "worksCouncilPortal": "Caricamento portale del comitato aziendale",
+      "yourRequests": "Caricamento delle tue richieste"
+    },
     "loadMore": "Carica altro",
     "months": {
       "april": "Aprile",
@@ -169,11 +305,20 @@
     "next": "Avanti",
     "notApplicable": "N/D",
     "not-available": "Non disponibile",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Notifiche} other {Notifiche (# non lette)}}"
+    },
     "open": "Apri",
     "openEnded": "Senza scadenza",
     "openMenu": "Apri menu",
     "optional": "opzionale",
     "or": "O",
+    "pagination": {
+      "goToNextPage": "Vai alla pagina successiva",
+      "goToPreviousPage": "Vai alla pagina precedente",
+      "morePages": "Altre pagine",
+      "pagination": "paginazione"
+    },
     "pending": "In sospeso",
     "present": "Presente",
     "previous": "Precedente",
@@ -194,6 +339,11 @@
     "select-language": "Seleziona lingua",
     "set": "set",
     "sets": "set",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Mostra la barra laterale mobile.",
+      "sidebar": "Barra laterale",
+      "toggleSidebar": "Mostra/Nascondi barra laterale"
+    },
     "skip": "Salta",
     "start": "Inizio",
     "status": "Stato",
@@ -205,6 +355,10 @@
         "reload": "Ricarica",
         "title": "Aggiornamento disponibile"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Apri selettore orario",
+      "switchPeriod": "Passa a {period}"
     },
     "to": "a",
     "today": "Oggi",
@@ -233,11 +387,34 @@
       "tue": "Mar",
       "we": "Me",
       "wed": "Mer"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Modifiche con impatto sulla forza lavoro relative a questa organizzazione e a questo periodo.",
+      "changeLogEmpty": "Nessuna modifica trovata per questo periodo.",
+      "changeReviewLog": "Registro di revisione delle modifiche",
+      "complianceFindings": "Rilievi di conformità",
+      "description": "Revisione della forza lavoro filtrata per la privacy per il periodo selezionato.",
+      "disabledDescription": "La modalità Comitato aziendale non è abilitata per questa organizzazione.",
+      "exportReviewPack": "Esporta pacchetto di revisione",
+      "from": "Da",
+      "identityHidden": "Identità nascosta",
+      "insufficientData": "Dati insufficienti",
+      "policyChanges": "Modifiche ai criteri",
+      "scheduleChanges": "Modifiche alla pianificazione",
+      "scheduleDescription": "Voci di pianificazione filtrate per la privacy per il periodo selezionato.",
+      "scheduleEmpty": "Nessuna voce di pianificazione trovata per questo periodo.",
+      "scheduleEntry": "{identity} - da {start} a {end}",
+      "scheduleReview": "Revisione pianificazione",
+      "title": "Comitato aziendale",
+      "to": "A",
+      "unassignedTeam": "Team non assegnato",
+      "updateRange": "Aggiorna intervallo"
     }
   },
   "employeeSelect": {
     "countSelected": "{count} dipendenti selezionati",
     "countWithMore": "{count} dipendenti (+altri {more})",
+    "inactive": "Inattivo",
     "noEmployeesFound": "Nessun dipendente trovato",
     "removeSelected": "Rimuovi {name}",
     "role": "Ruolo",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Contatta amministratore",
       "createOrg": "Crea organizzazione",
-      "description": "Hai bisogno di un profilo dipendente per {feature}. Crea un'organizzazione o contatta il tuo amministratore.",
+      "description": "Hai bisogno di un profilo dipendente per ${feature}. Crea un'organizzazione o contatta il tuo amministratore.",
       "emailBody": "Ciao,\n\nho bisogno di configurare un profilo dipendente per accedere alle funzionalità della piattaforma. Potresti aiutarmi con questo?\n\nGrazie!",
       "emailSubject": "Configurazione profilo dipendente richiesta",
       "helpText": "Se sei stato invitato in un'organizzazione, chiedi al tuo amministratore di configurare il tuo profilo dipendente.",
@@ -270,8 +447,14 @@
       "waiting": "In attesa di un invito?",
       "waitingDesc": "Il tuo amministratore ti invierà un'email di invito. Controlla la tua casella di posta e la cartella spam."
     },
+    "notFound": {
+      "description": "La pagina potrebbe essere stata spostata, il link potrebbe essere scaduto o l'indirizzo potrebbe non essere corretto.",
+      "title": "Pagina non trovata"
+    },
     "unexpected": {
-      "digest": "Riferimento: {digest}"
+      "description": "Non è stato possibile caricare questa pagina al momento. Riprova o torna a una sezione sicura dell'app.",
+      "digest": "Riferimento: {digest}",
+      "title": "Si è verificato un errore"
     }
   },
   "generic": {
@@ -280,25 +463,36 @@
   },
   "header": {
     "clock-in": "Timbra ingresso",
-    "clock-out": "Timbra uscita"
+    "clock-out": "Timbra uscita",
+    "timezone": {
+      "current": "Fuso orario attuale {timezone}, {time}, {offset}",
+      "savedTimezone": "Fuso orario salvato",
+      "saveTimezone": "Salva fuso orario",
+      "saving": "Salvataggio...",
+      "updated": "Fuso orario aggiornato con successo",
+      "updateError": "Si è verificato un errore durante l'aggiornamento del fuso orario",
+      "updateFailed": "Impossibile aggiornare il fuso orario"
+    }
   },
   "info": {
     "agb": "Termini e condizioni",
     "back-to-login": "Torna al login",
     "imprint": "Note legali",
+    "licenses": "Licenze Open Source",
+    "openSourceLicenses": "Licenze Open Source",
     "trust-center": "Centro di fiducia"
   },
   "loading": {
-    "chart": "Caricamento del grafico",
-    "settings": "Caricamento delle impostazioni",
-    "application": "Caricamento dell’applicazione",
-    "authentication": "Caricamento dell’autenticazione",
-    "calendar": "Caricamento del calendario",
-    "licenses": "Caricamento delle licenze",
-    "platformAnalytics": "Caricamento delle analisi della piattaforma",
-    "setup": "Caricamento della configurazione",
-    "teamAbsences": "Caricamento delle assenze del team",
-    "workerQueue": "Caricamento della coda di lavoro"
+    "application": "Caricamento applicazione",
+    "authentication": "Caricamento autenticazione",
+    "calendar": "Caricamento calendario",
+    "chart": "Caricamento grafico",
+    "licenses": "Caricamento licenze",
+    "platformAnalytics": "Caricamento analisi della piattaforma",
+    "settings": "Caricamento impostazioni",
+    "setup": "Caricamento configurazione",
+    "teamAbsences": "Caricamento tabella delle assenze del team",
+    "workerQueue": "Caricamento coda worker"
   },
   "nav": {
     "absences": "Assenze",
@@ -334,6 +528,23 @@
       "viewAll": "Visualizza tutte le notifiche"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} ha registrato {absenceType} per {dateRange} per tuo conto.",
+        "title": "Assenza registrata"
+      },
+      "absenceRequestRejected": {
+        "title": "Richiesta di assenza rifiutata"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Le mansioni di approvazione richiedono un sostituto",
+        "clock_out": "Da verificare: timbratura di uscita per offboarding",
+        "clock_repair": "Riparazione del timer richiesta",
+        "employment_terms": "Le condizioni contrattuali future richiedono una revisione",
+        "future_work": "Il lavoro futuro richiede una revisione"
+      },
+      "newAbsenceRequest": {
+        "title": "Nuova richiesta di assenza"
+      },
       "passwordChanged": {
         "message": "La tua password è stata modificata correttamente. Se non hai effettuato questa modifica, contatta immediatamente l'assistenza.",
         "title": "Password modificata"
@@ -345,14 +556,6 @@
       "teamMemberAdded": {
         "message": "Sei stato aggiunto al team {teamName} da {performedByName}.",
         "title": "Aggiunto al team"
-      },
-      "absenceRequestSubmitted": {
-        "message": "La tua richiesta {categoryName} per {dateRange} è stata inviata ed è in attesa di approvazione.",
-        "title": "Richiesta di assenza inviata"
-      },
-      "teamMemberRemoved": {
-        "message": "Sei stato rimosso dal team {teamName} da {performedByName}.",
-        "title": "Rimosso dal team"
       }
     },
     "description": "Controlla aggiornamenti, approvazioni e avvisi di sistema in un'unica timeline.",
@@ -377,6 +580,7 @@
     "preferences": {
       "disabled": "Notifica disabilitata",
       "enabled": "Notifica abilitata",
+      "mandatoryInbox": "Sempre recapitato nella tua casella di posta",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Ricevi avvisi per le richieste di approvazione in sospeso",
@@ -413,6 +617,9 @@
       "selectAllAria": "Seleziona tutte le notifiche visibili",
       "selectNamedAria": "Seleziona {title}",
       "visibleSelected": "{count} elementi visibili selezionati"
+    },
+    "time": {
+      "justNow": "proprio ora"
     },
     "timeline": {
       "earlier": "Più recente",
@@ -485,6 +692,15 @@
     },
     "clockedIn": "Entrata effettuata",
     "clockedOut": "Uscita effettuata"
+  },
+  "rateLimit": {
+    "countdownLabel": "secondi prima di poter riprovare",
+    "jsonMessage": "Limite di frequenza superato. Riprova più tardi.",
+    "message": "Hai effettuato troppe richieste. Attendi prima di riprovare.",
+    "retryButton": "Riprova",
+    "retryingButton": "Nuovo tentativo in corso...",
+    "title": "Troppe richieste",
+    "waitingButton": "Attendere..."
   },
   "roles": {
     "admin": "Amministratore",
@@ -568,7 +784,8 @@
     "first-name-required": "Il nome è obbligatorio",
     "invalid-email": "Indirizzo email non valido",
     "last-name-required": "Il cognome è obbligatorio",
-    "password-required": "La password è obbligatoria"
+    "password-required": "La password è obbligatoria",
+    "pronounsMaxLength": "I pronomi devono contenere al massimo 50 caratteri"
   },
   "workBalance": {
     "label": "Saldo totale",
@@ -577,6 +794,6 @@
     "updatedEveryThreeHours": "Aggiornato ogni 3 ore"
   },
   "worksCouncil": {
-    "loadingLabel": "Caricamento del portale del consiglio di fabbrica"
+    "loadingLabel": "Caricamento comitato aziendale"
   }
 }

@@ -48,7 +48,8 @@
         "description": "Skonfiguruj sposób działania synchronizacji kalendarza w Twojej organizacji.",
         "title": "Zachowanie synchronizacji"
       },
-      "title": "Synchronizacja kalendarza"
+      "title": "Synchronizacja kalendarza",
+      "titleTemplatePlaceholder": "Poza biurem – {categoryName}"
     },
     "clockinImport": {
       "credentials": {
@@ -105,6 +106,17 @@
         "description": "Wprowadź swój adres e-mail Clockodo i klucz API. Klucz API znajdziesz w Clockodo w sekcji Mój profil > Klucz API. Dane logowania nie są zapisywane.",
         "email": "Adres e-mail Clockodo",
         "title": "Dane logowania Clockodo"
+      },
+      "entity": {
+        "absences": "Nieobecności",
+        "entries": "Wpisy czasu pracy",
+        "holidayQuotas": "Pule urlopowe",
+        "nonBusinessDays": "Dni wolne od pracy",
+        "services": "Usługi / Kategorie pracy",
+        "surcharges": "Dodatki",
+        "targetHours": "Godziny docelowe / Zasady pracy",
+        "teams": "Zespoły",
+        "users": "Użytkownicy / Pracownicy"
       },
       "errors": {
         "connectionFailed": "Nie udało się połączyć z Clockodo",
@@ -171,17 +183,6 @@
         "skippedCount": "{count, plural, one {# pominięty} few {# pominięte} other {# pominiętych}}",
         "status": "Status",
         "title": "Mapuj użytkowników"
-      },
-      "entity": {
-        "absences": "Nieobecności",
-        "entries": "Wpisy czasu pracy",
-        "holidayQuotas": "Limity urlopowe",
-        "nonBusinessDays": "Dni wolne od pracy",
-        "services": "Usługi / Kategorie pracy",
-        "surcharges": "Dopłaty",
-        "targetHours": "Docelowe godziny pracy / Polityki pracy",
-        "teams": "Zespoły",
-        "users": "Użytkownicy / Pracownicy"
       }
     },
     "discord": {

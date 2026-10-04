@@ -114,6 +114,12 @@
         "none": "Hiçbir mesajlaşma kanalı bağlı değil.",
         "title": "Kanal teslimat tercihleri"
       },
+      "conflict": {
+        "differingTimeouts": "Kanallar farklı zaman aşımı süreleri kullandı; en kısa olanı yanıt aralığı oldu.",
+        "disabledActiveSource": "Bazı etkin kanallarda eskalasyonlar kapalıydı. Bunlar hâlâ eskalasyon mesajlarını iletmiyor.",
+        "inactiveSourceEnabled": "Bazı etkin olmayan kanallarda eskalasyonlar açıktı. Bunlar politikaya dahil edilmedi.",
+        "invalidTimeout": "Bir kanal geçersiz bir zaman aşımına sahipti ve yanıt aralığı için kullanılmadı."
+      },
       "description": "Kuruluş eskalasyon politikasını, bunun kanal ayarlarından nasıl aktarıldığını ve bir onay yöneticisi gerektiren koşulları gözden geçirin.",
       "dispose": {
         "confirm": "Öğeyi kapat",
@@ -121,6 +127,12 @@
         "noteLabel": "Sonuçlandırma notu",
         "noteRequired": "Bir sonuçlandırma notu girin.",
         "title": "Dikkat gerektiren öğeyi kapat"
+      },
+      "event": {
+        "alerted": "Yöneticiler uyarıldı",
+        "disposed": "Sonuçlandırıldı",
+        "raised": "Oluşturuldu",
+        "resolved": "Çözüldü"
       },
       "hoursValue": "{hours} sa.",
       "loadFailed": "Eskalasyon ayarları yüklenemedi.",
@@ -166,6 +178,14 @@
         "windowInvalid": "1 ile 720 arasında bir tam saat girin.",
         "windowLabel": "Yanıt penceresi"
       },
+      "reason": {
+        "ambiguousHistory": "Belirsiz eskalasyon geçmişi",
+        "deliveryExhausted": "İletim denemeleri tükendi",
+        "deliveryUnavailable": "Kullanılabilir iletim hedefi yok",
+        "noEligibleBackup": "Uygun yedek onaylayan yok",
+        "replacementOverdue": "Yedek onaylayanın süresi geçti",
+        "unsupportedRoute": "Desteklenmeyen karar yolu"
+      },
       "revisions": {
         "changedBy": "Değiştiren",
         "migration": "Ayar taşıma",
@@ -207,16 +227,26 @@
       "activePolicyTableDescription": "Politikalar önceliğe göre değerlendirilir; eşleşen ilk aktif politika onay zincirini sağlar.",
       "activeStatus": "Aktif durum",
       "addPolicy": "Politika Ekle",
+      "addStage": "Aşama ekle",
       "approvalType": {
         "absence": "Devamsızlık",
         "complianceException": "Uyumluluk istisnası",
-        "manualTimeSubmission": "Manuel süre gönderimi",
-        "policyClockOut": "Politikaya göre çıkış kaydı",
+        "manualTimeSubmission": "Manuel zaman bildirimi",
+        "policyClockOut": "Politika çıkış kaydı",
         "shiftRequest": "Vardiya talebi",
-        "timeCorrection": "Süre düzeltmesi",
-        "travelExpense": "Seyahat gideri"
+        "timeCorrection": "Zaman düzeltmesi",
+        "travelExpense": "Seyahat masrafı"
       },
       "approvalTypes": "Onay türleri",
+      "approver": "Onaylayan",
+      "approverEmployeeId": "Onaylayan Çalışan Kimliği",
+      "approverEmployeeIdPlaceholder": "Örnek: employee_123…",
+      "approverType": {
+        "directManager": "Doğrudan yönetici",
+        "managerManager": "Yöneticinin yöneticisi",
+        "organizationAdmin": "Kuruluş yöneticisi",
+        "specificEmployee": "Belirli bir çalışan"
+      },
       "conditionsCount": "Koşul sayısı",
       "createPolicy": "Onay Politikası Oluştur",
       "defaultStageLabel": "Yönetici incelemesi",
@@ -225,9 +255,25 @@
       "dialogDescription": "Bir onay zincirinin ne zaman uygulanacağını ve her bir sıralı aşamayı hangi onaylayanların yöneteceğini tanımlayın.",
       "editPolicy": "Politikayı düzenle",
       "empty": "Henüz yapılandırılmış onay politikası yok. İlk onay zincirinizi tanımlamak için bir politika oluşturun.",
+      "fallbackBehavior": {
+        "defaultManager": {
+          "description": "Bu aşamada bir onaylayıcı belirlenemediğinde isteği varsayılan yöneticiye gönderin.",
+          "label": "Varsayılan yönetici"
+        },
+        "fail": {
+          "description": "Bu aşamada bir onaylayıcı belirlenemediğinde isteği reddedin.",
+          "label": "İsteği reddet"
+        },
+        "label": "Yedek davranış",
+        "organizationAdmin": {
+          "description": "Bu aşamada bir onaylayıcı belirlenemediğinde isteği bir kuruluş yöneticisine gönderin.",
+          "label": "Kuruluş yöneticisi"
+        }
+      },
       "loadFailed": "Onay politikaları yüklenemedi.",
       "loading": "Politikalar yükleniyor…",
       "namePlaceholder": "Örnek: İzin yükseltme…",
+      "noStages": "Henüz yapılandırılmış onay aşaması yok.",
       "preview": {
         "ariaLabel": "Onay zinciri önizlemesi",
         "badge": "Önizleme kabuğu",
@@ -242,7 +288,11 @@
         "title": "Onay zinciri özeti"
       },
       "priority": "Öncelik",
+      "removeStage": "Aşamayı kaldır",
+      "stageNumber": "Aşama {number}",
+      "stages": "Onay aşamaları",
       "stagesCount": "Aşama sayısı",
+      "stagesDescription": "Aşamalar sırayla yürütülür; her istek yalnızca geçerli onaylayıcı kabul ettikten sonra ilerler.",
       "status": {
         "active": "Aktif",
         "inactive": "Pasif"
@@ -255,21 +305,6 @@
       "validation": {
         "activePolicyRequiresStage": "Aktif politikalar en az bir onay aşaması gerektirir.",
         "specificEmployeeRequiresId": "Belirli çalışan aşamaları, onaylayan bir çalışan kimliği gerektirir."
-      },
-      "fallbackBehavior": {
-        "defaultManager": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi varsayılan yöneticiye gönderin.",
-          "label": "Varsayılan yönetici"
-        },
-        "fail": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi reddedin.",
-          "label": "Talebi reddet"
-        },
-        "label": "Alternatif davranış",
-        "organizationAdmin": {
-          "description": "Bu aşama bir onaylayanı belirleyemediğinde talebi bir kuruluş yöneticisine gönderin.",
-          "label": "Kuruluş yöneticisi"
-        }
       }
     },
     "changePolicies": {
@@ -659,6 +694,7 @@
       "createCategoriesFirst": "Önce Kategoriler sekmesinde kategoriler oluşturun",
       "createCategory": "Kategori Oluştur",
       "createCategoryDescription": "Birden fazla sete atanabilecek yeni bir iş kategorisi oluşturun",
+      "createCategorySetsWithDifferentTimeFactorsForVariousWorkTypes": "Çeşitli çalışma türleri için farklı zaman faktörlerine sahip kategori kümeleri oluşturun",
       "createFirstSet": "İlk Seti Oluştur",
       "createSet": "Set Oluştur",
       "createSetDescription": "Yeni bir kategori seti oluşturun ve hangi kategorilerin dahil edileceğini seçin",

@@ -191,6 +191,7 @@
         "loadData": "Kunne ikke laste analysedata for arbeidstimer"
       },
       "expectedHours": "Forventede timer",
+      "hoursPerWeekAbbreviation": "t/uke",
       "variance": "Avvik",
       "varianceTrend": {
         "description": "Timeavvik fra forventet arbeidstid over tid",

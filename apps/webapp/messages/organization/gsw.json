@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Nur Organisationsadministratoren und -inhaber können diese Einstellungen ändern.",
+      "description": "Legen Sie die maximale Dauer ununterbrochener Live-Arbeit fest. Mitarbeitende werden bei dieser Begrenzung automatisch ausgestempelt.",
+      "enabled": "Automatischs Usstämpfle",
+      "help": "En erfassti Pause oder es neus Iistämpfle setzt s Guethabe zrugg. Änderige gälted für Arbet, wo scho im Gang isch. Überprüefige laufed alli fünf Minute; s Usstämpfle wird bim Limit erfasst, au wenn d Überprüefig spöter lauft. Mitarbeitendi überchömed immer e Benachrichtigung im Poschtigang.",
+      "hours": "Stunde",
+      "invalidDuration": "Gib e gültigi Duur ii: ganzi Stunde und 0–59 Minute, insgesamt mindischtens ei Minute.",
+      "minutes": "Minute",
+      "save": "Änderige spychere",
+      "saved": "Iistellige fürs automatisch Usstämpfle gspycheret",
+      "saveFailed": "Iistellige fürs automatisch Usstämpfle händ nöd chönne aktualisiert wärde",
+      "saving": "Am Spychere…",
+      "title": "Automatischs Usstämpfle"
+    },
     "create": "Organisation erstelle",
     "createDialog": {
       "description": "Richte dini Organisation ii, zum aafange",
@@ -120,7 +134,7 @@
       "expired": "Abglaufe",
       "expires": "Läuft ab",
       "inactive": "Inaktiv",
-      "invitationActionsLabel": "Aktionä für d Iiladig a {email}",
+      "invitationActionsLabel": "Aktionä für d Iiladig a ${row.original.email}",
       "invitationCancelError": "Fehler bim Abbräche vo de Iiladig",
       "invitationCancelSuccess": "Iiladig abbroche",
       "invitationResendError": "Fehler bim erneute Versende vo de Iiladig",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} Iiladig(e) wartet/warte uf d'Aanahm}}",
       "invitedBy": "Iiglade vo",
       "member": "Mitgliid",
-      "memberActionsLabel": "Aktionä für {name}",
+      "memberActionsLabel": "Aktionä für ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} Mitgliid(er) in dere Organisation}}",
       "noInvitationResults": "Kei Iiladige gfunde, wo uf dini Suech passe.",
       "noInvitations": "Kei usstehende Iiladige.",
@@ -189,11 +203,10 @@
       "failed": "Organisation konnte nöd wiederherstellt werde",
       "success": "Organisation erfolgriich wiederherstellt"
     },
-    "role": {
-      "admin": "Admin",
-      "member": "Mitgliid",
-      "owner": "Inhaber"
-    },
+    "role": "organization.slugErrors",
+    "role.admin": "Admin",
+    "role.member": "Mitgliid",
+    "role.owner": "Inhaber",
     "slugDescription": "Wird für URLs verwendet. Automatisch aus dem Namen generiert.",
     "slugErrors": {
       "format": "Der Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
@@ -256,7 +269,7 @@
       "title": "Teams"
     },
     "timezone": {
-      "balances-recalculating": "D Arbeitszytsalde wärde für di nöii Zytzone nöi berächnet und bis dänn usbländet.",
+      "balances-recalculating": "Arbetssaldi werded für die neui Zytzone neu berächnet und blybed usblendet, bis si parat sind.",
       "default": "Standard-Zytzone",
       "description": "Leg de Standard-Zytzone für dini Organisation fescht. Die wird für d'Absenzverfolgig, Berichte und anderi datumsbasierte Funktione brucht. Einzelni Benutzer chönd das in ihrne Profileistellige überschriibe.",
       "owner-only": "Nur Inhaber vo de Organisation chönd d'Zytzone-Iistellig ändere.",

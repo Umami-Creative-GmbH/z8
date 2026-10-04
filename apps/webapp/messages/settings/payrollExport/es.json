@@ -21,13 +21,24 @@
       },
       "description": "Exporta periodos de trabajo a sistemas de nómina como DATEV o Personio",
       "export": {
+        "allEmployees": "Todos los empleados",
+        "allProjects": "Todos los proyectos",
+        "allTeams": "Todos los equipos",
         "asyncDescription": "Tu exportación se está procesando. Consulta la pestaña de historial para ver el progreso.",
         "asyncStarted": "Exportación iniciada",
         "customRange": "Rango personalizado",
         "dateRange": "Rango de fechas",
         "description": "Exportar periodos de trabajo y ausencias al formato DATEV Lohn & Gehalt",
+        "employees": "Empleados",
         "endDate": "Fecha de fin",
         "error": "Error en la exportación",
+        "exportButtonDatev": "Exportar a DATEV",
+        "exportButtonLexware": "Exportar a Lexware",
+        "exportButtonPersonio": "Exportar a Personio",
+        "exportButtonSage": "Exportar a Sage",
+        "exportButtonSuccessFactorsApi": "Exportar a SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Exportar CSV de SAP SuccessFactors",
+        "exportButtonWorkday": "Exportar a Workday",
         "exporting": "Exportando…",
         "filters": "Filtros (opcional)",
         "format": "Formato de exportación",
@@ -40,30 +51,16 @@
         "format.workday": "Workday",
         "month": "Mes",
         "monthSelection": "Seleccionar mes",
+        "projects": "Proyectos",
         "startDate": "Fecha de inicio",
         "success": "Exportación descargada",
+        "teams": "Equipos",
         "title": "Exportar datos de nómina",
         "unavailable": {
           "missingConfiguration": "configuración",
           "missingCredentials": "credenciales"
         },
-        "year": "Año",
-        "allEmployees": "Todos los empleados",
-        "allProjects": "Todos los proyectos",
-        "allTeams": "Todos los equipos",
-        "employees": "Empleados",
-        "employeesSelected": "{{count}} seleccionado",
-        "exportButtonDatev": "Exportar a DATEV",
-        "exportButtonLexware": "Exportar a Lexware",
-        "exportButtonPersonio": "Exportar a Personio",
-        "exportButtonSage": "Exportar a Sage",
-        "exportButtonSuccessFactorsApi": "Exportar a SAP SuccessFactors (API)",
-        "exportButtonSuccessFactorsCsv": "Exportar CSV de SAP SuccessFactors",
-        "exportButtonWorkday": "Exportar a Workday",
-        "projects": "Proyectos",
-        "projectsSelected": "{{count}} seleccionado",
-        "teams": "Equipos",
-        "teamsSelected": "{{count}} seleccionado"
+        "year": "Año"
       },
       "history": {
         "description": "Ver y descargar exportaciones de DATEV anteriores",
@@ -287,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Revisar bandeja de aprobaciones",
+        "payrollExport": "Abrir configuración de exportación de nómina",
+        "timeTracking": "Revisar registro de horas",
+        "travelExpenses": "Revisar gastos de viaje"
+      },
+      "affectedEmployees": {
+        "name": "Empleado",
+        "noNumber": "No establecido",
+        "number": "Número de empleado"
+      },
+      "checks": {
+        "count": "Cantidad"
+      },
+      "checkStatus": {
+        "fail": "Bloqueado",
+        "pass": "Listo",
+        "unavailable": "No se puede verificar",
+        "warning": "Advertencia"
+      },
       "description": "Compruebe si un periodo de nómina está listo antes de exportar datos de tiempo, ausencias y nómina.",
+      "openPayrollExport": "Abrir exportación de nómina",
+      "status": {
+        "blocked": "Bloqueado",
+        "ready": "Listo para la nómina",
+        "unavailable": "No se puede verificar"
+      },
+      "summary": {
+        "affectedEmployees": "Empleados afectados",
+        "affectedEmployeesDescription": "Empleados vinculados a elementos de preparación pendientes.",
+        "blockers": "Elementos bloqueantes",
+        "blockersDescription": "Comprobaciones obligatorias que actualmente bloquean la exportación.",
+        "exportTargets": "Destinos de exportación configurados",
+        "exportTargetsDescription": "Destinos activos de exportación de nómina.",
+        "period": "Período",
+        "periodDescription": "Período de nómina que se está verificando.",
+        "status": "Estado",
+        "statusDescription": "Preparación general para la exportación de nómina.",
+        "warnings": "Advertencias",
+        "warningsDescription": "Problemas no bloqueantes para revisar antes de la exportación."
+      },
       "title": "Disponibilidad de nómina"
     },
     "workDiagnostics": {
+      "allEmployees": "Mostrar todos los empleados",
+      "append": {
+        "continued": "Empleados que continúan desde un anclaje aprobado: {count}. El historial anterior a cada anclaje no está verificado.",
+        "counts": "{verified} de {total} empleados tienen linaje verificado a partir de evidencias almacenadas.",
+        "description": "Una afirmación independiente de la completitud: linaje y continuidad de las entradas de tiempo almacenadas. No determina la preparación de la nómina.",
+        "interruptions": "Interrupciones de continuidad",
+        "issues": "Problemas de linaje y candidatos",
+        "limitations": "Limitaciones",
+        "title": "Aseguramiento de la cadena de entradas de tiempo"
+      },
+      "blocking": "Bloquea la completitud",
       "description": "Encuentra registros de tiempo faltantes o en conflicto y problemas en la cadena de entradas de tiempo",
+      "evidence": {
+        "entries": "Entradas de tiempo",
+        "timeRecords": "Registros de tiempo",
+        "workPeriods": "Períodos de trabajo"
+      },
+      "findings": {
+        "description": "Cada hallazgo es evidencia de solo lectura. Solo la reparación de brechas históricas a continuación completa los valores faltantes, a partir de evidencias y con autorización independiente; modificar el trabajo establecido requiere una revisión autorizada por separado.",
+        "employees": "Empleados",
+        "empty": "No hay trabajo histórico faltante, en conflicto ni sospechoso en este alcance.",
+        "evidence": "Evidencia",
+        "finding": "Hallazgo",
+        "provenance": "Procedencia",
+        "title": "Hallazgos",
+        "treatment": "Tratamiento"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Trabajo pendiente sin solicitud de aprobación",
+        "approvalStateConflict": "Los estados de aprobación no coinciden",
+        "canonicalDetailMissing": "Falta el detalle de trabajo del registro de horas",
+        "canonicalLinkMissing": "Falta el enlace al registro de horas",
+        "canonicalLinkShared": "Varios periodos de trabajo vinculan un mismo registro de horas",
+        "canonicalLinkUnresolved": "No se encontró el registro de horas vinculado",
+        "canonicalMissing": "Falta el registro de horas",
+        "captureInferred": "Captura de zona horaria inferida tras el evento",
+        "deletedWorkPayable": "El trabajo eliminado aún tiene un registro de horas remunerable",
+        "durationConflict": "Las duraciones guardadas no coinciden",
+        "durationMissing": "Falta la duración guardada",
+        "emptyInterval": "La hora de inicio es igual a la de fin",
+        "endpointConflict": "Las horas de inicio o de fin no coinciden",
+        "endpointEntryMissing": "Falta el registro de salida",
+        "endpointEntrySuperseded": "El periodo de trabajo apunta a un registro de fichaje sustituido",
+        "endpointEntryUnresolved": "Registro de fichaje no encontrado",
+        "endpointMissing": "Falta la hora de fin",
+        "manualEvidenceUnreadable": "Comprobante de envío manual ilegible",
+        "manualHolidayCheckDatesDiffer": "La verificación de festivos utilizó fechas distintas a las del trabajo",
+        "manualInterpretationAmbiguous": "Hora de entrada manual omitida o repetida por un cambio de hora",
+        "manualInterpretationMismatch": "Entrada manual guardada con horas distintas a las enviadas",
+        "manualTrimmed": "Entrada manual acortada al guardar",
+        "manualZoneUnrecorded": "Zona horaria de la entrada manual no registrada",
+        "metadataCanonicalOnly": "Asignación solo en el registro de tiempo",
+        "metadataConflict": "Las asignaciones no coinciden",
+        "metadataMissing": "Falta la asignación en el registro de tiempo",
+        "multipleActiveWork": "Más de un período de trabajo activo",
+        "negativeDuration": "Duración negativa",
+        "openStateConflict": "Los estados abierto y cerrado no coinciden",
+        "overlappingWork": "Trabajo superpuesto",
+        "ownershipConflict": "Conflicto de propiedad",
+        "relinkedCanonicalResidue": "Registro de tiempo abandonado por revinculación",
+        "reversedInterval": "Fin anterior al inicio",
+        "storedElapsedDiscrepancy": "Los minutos guardados difieren del tiempo transcurrido",
+        "workOutsideOrganizationEmployees": "Trabajo asignado fuera de los empleados de la organización"
+      },
+      "nextMonth": "Mes siguiente",
+      "ownerUnknown": "Propietario no establecido",
       "pageDescription": "Diagnósticos a nivel de registro para el trabajo histórico: representaciones faltantes o en conflicto, procedencia de adopción, sospechas de defectos de entrada manual y garantía de la cadena de entradas de tiempo.",
+      "previousMonth": "Mes anterior",
       "proposals": {
         "addChange": "Añadir cambio",
         "after": "Nuevo valor",
@@ -370,6 +473,12 @@
         "valueRequired": "Introduce el nuevo valor.",
         "work": "Período de trabajo"
       },
+      "provenance": {
+        "ambiguous": "Procedencia ambigua",
+        "freshBackdated": "Escritura retroactiva reciente",
+        "postAdoption": "Escritura posterior a la adopción",
+        "preAdoption": "Historial anterior a la adopción"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Autor del registro de salida",
@@ -413,7 +522,37 @@
         "title": "Reparación de intervalos históricos",
         "work": "Período de trabajo"
       },
-      "title": "Diagnóstico del trabajo"
+      "shape": {
+        "conflicting": "En conflicto",
+        "disclosure": "Divulgación",
+        "missing": "Faltante",
+        "suspectedDefect": "Posible defecto"
+      },
+      "status": {
+        "complete": "Completo",
+        "completeDescription": "No hay evidencia relevante faltante ni en conflicto, incluido el trabajo pendiente, rechazado y abierto.",
+        "incomplete": "Incompleto",
+        "incompleteDescription": "Los datos no afectados se pueden utilizar para revisión, pero este alcance no está completo.",
+        "widenedEmployees": "No se pudieron establecer las fechas, por lo que los empleados afectados son inciertos para cada período.",
+        "widenedOrganization": "No se pudo establecer la propiedad, por lo que toda la organización es incierta."
+      },
+      "summary": {
+        "affected": "Empleados afectados",
+        "affectedDescription": "Empleados cuyo trabajo en este alcance no se puede establecer.",
+        "blocking": "Hallazgos bloqueantes",
+        "blockingDescription": "Evidencia faltante o contradictoria que hace que el trabajo relevante sea incierto.",
+        "scope": "Alcance",
+        "scopeAll": "Todos los empleados. Las fechas cubren los días del calendario de cada zona horaria.",
+        "status": "Completitud"
+      },
+      "title": "Diagnóstico del trabajo",
+      "treatment": {
+        "disclosed": "Limitación divulgada",
+        "historicalGap": "Brecha histórica",
+        "integrityIncident": "Incidente de integridad",
+        "investigationRequired": "Investigación requerida",
+        "reviewRequired": "Revisión requerida"
+      }
     }
   }
 }

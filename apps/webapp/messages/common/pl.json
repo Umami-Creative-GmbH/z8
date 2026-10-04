@@ -19,42 +19,91 @@
     "commandPlaceholder": "Przeszukuj strony, osoby, zespoły, ustawienia lub akcje…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "wpis",
+          "hours": "godziny",
+          "manual": "ręczny",
+          "time": "czas"
+        },
         "subtitle": "Zarejestruj godziny dla poprzedniej zmiany lub korekty",
         "title": "Dodaj ręczny wpis czasu"
       },
       "createProject": {
+        "keywords": {
+          "create": "utwórz",
+          "project": "projekt",
+          "settings": "ustawienia"
+        },
         "subtitle": "Otwórz ustawienia projektu, aby zdefiniować nowy projekt",
         "title": "Utwórz projekt"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "zaproś",
+          "member": "członek",
+          "teammate": "członek zespołu"
+        },
         "subtitle": "Otwórz zarządzanie organizacją, aby dodać współpracownika",
         "title": "Zaproś członka zespołu"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "zatwierdzenia",
+          "inbox": "skrzynka odbiorcza",
+          "review": "przegląd"
+        },
         "subtitle": "Przejrzyj oczekujące wnioski pracowników",
         "title": "Otwórz skrzynkę odbiorczą zatwierdzeń"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "moje",
+          "requests": "wnioski"
+        },
         "subtitle": "Przejrzyj swoje przesłane nieobecności i wydatki",
         "title": "Otwórz moje wnioski"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Sprawdź, czy dane o czasie pracy są gotowe do listy płac",
-        "title": "Otwórz gotowość listy płac"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "eksport",
+          "payroll": "lista płac",
+          "wages": "wynagrodzenia"
+        },
         "subtitle": "Przejrzyj obszar roboczy płac o ograniczonym zakresie",
         "title": "Otwórz płace"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "eksport",
+          "payroll": "lista płac",
+          "readiness": "gotowość"
+        },
+        "subtitle": "Sprawdź, czy dane o czasie pracy są gotowe do listy płac",
+        "title": "Otwórz gotowość listy płac"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "preferencje",
+          "settings": "ustawienia"
+        },
         "subtitle": "Zarządzaj swoim profilem, bezpieczeństwem i ustawieniami organizacji",
         "title": "Otwórz ustawienia"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "nieobecność",
+          "timeOff": "dni wolne",
+          "vacation": "urlop"
+        },
         "subtitle": "Rozpocznij wniosek o urlop, zwolnienie lekarskie lub czas wolny",
         "title": "Zawnioskuj o nieobecność"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "wydatek",
+          "reimbursement": "zwrot kosztów",
+          "travel": "podróż"
+        },
         "subtitle": "Utwórz wniosek o zwrot kosztów podróży",
         "title": "Prześlij wydatek podróżny"
       }
@@ -70,7 +119,14 @@
     "search": "Szukaj",
     "searchOrRunCommand": "Szukaj lub wykonaj polecenie",
     "teamAbsences": {
-      "description": "Przejrzyj metryki nieobecności pracowników i rejestruj nieobecności"
+      "description": "Przejrzyj metryki nieobecności pracowników i rejestruj nieobecności",
+      "keywords": {
+        "absence": "nieobecność",
+        "manager": "menedżer",
+        "sick": "chorobowe",
+        "team": "zespół",
+        "vacation": "urlop"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Zatwierdź",
     "assign": "Przypisz",
     "back": "Wstecz",
+    "brandLogo": "Logo {brand}",
+    "breadcrumb": {
+      "breadcrumb": "ścieżka nawigacyjna",
+      "more": "Więcej"
+    },
     "cancel": "Anuluj",
+    "carousel": {
+      "nextSlide": "Następny slajd",
+      "previousSlide": "Poprzedni slajd",
+      "roleDescription": "karuzela",
+      "slideRoleDescription": "slajd"
+    },
     "clear": "Wyczyść",
     "clearSearch": "Wyczyść wyszukiwanie",
     "clearSelection": "Wyczyść",
@@ -117,10 +184,17 @@
     "copy": "Kopiuj",
     "create": "Utwórz",
     "current": "Bieżący",
+    "datePicker": {
+      "clearDate": "Wyczyść datę",
+      "placeholder": "Wybierz datę"
+    },
     "days": {
+      "count": "{count} dni",
       "friday": "Piątek",
+      "half": "0,5 dnia",
       "label": "dni",
       "monday": "Poniedziałek",
+      "one": "1 dzień",
       "saturday": "Sobota",
       "sunday": "Niedziela",
       "thursday": "Czwartek",
@@ -129,14 +203,24 @@
     },
     "delete": "Usuń",
     "deleting": "Usuwanie...",
+    "deployment": {
+      "skew": {
+        "description": "Odśwież stronę, aby kontynuować. Twoja ostatnia czynność nie została zapisana.",
+        "title": "Zaktualizowano Z8"
+      }
+    },
     "description": "Opis",
     "deselectAll": "Odznacz wszystko",
     "details": "Szczegóły",
     "download": "Pobierz",
+    "duplicate": "Duplikuj",
+    "durationMinutes": "{count} min",
     "edit": "Edytuj",
     "enabled": "Włączone",
     "error": "Błąd",
     "error-occurred": "Wystąpił błąd",
+    "fieldPresets": "Ustawienia wstępne {label}",
+    "focusInput": "Aktywuj pole",
     "gender": {
       "female": "Kobieta",
       "male": "Mężczyzna",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Przejdź do pulpitu",
     "inactive": "Nieaktywne",
+    "label": "Etykieta",
     "loading": "Ładowanie...",
+    "loadingLabel": "Wczytywanie",
+    "loadingRegions": {
+      "absences": "Wczytywanie nieobecności",
+      "adminConsole": "Wczytywanie konsoli administratora",
+      "analyticsNavigation": "Ładowanie nawigacji analityki",
+      "application": "Ładowanie aplikacji",
+      "auditExportSettings": "Ładowanie ustawień eksportu audytu",
+      "authentication": "Ładowanie uwierzytelniania",
+      "changePolicySettings": "Ładowanie ustawień zasad zmian",
+      "coverageRuleSettings": "Ładowanie ustawień reguł pokrycia",
+      "customerSettings": "Ładowanie ustawień klienta",
+      "customRoleSettings": "Ładowanie ustawień ról niestandardowych",
+      "dashboard": "Ładowanie pulpitu",
+      "dataExportSettings": "Ładowanie ustawień eksportu danych",
+      "demoDataSettings": "Ładowanie ustawień danych demonstracyjnych",
+      "deploymentDiagnostics": "Ładowanie diagnostyki wdrożenia",
+      "employeeReports": "Ładowanie raportów pracowników",
+      "employeeVacationAllowances": "Ładowanie limitów urlopowych pracowników",
+      "exportOperations": "Ładowanie operacji eksportu",
+      "holidaySettings": "Ładowanie ustawień dni wolnych",
+      "importReview": "Ładowanie przeglądu importu",
+      "importSettings": "Ładowanie ustawień importu",
+      "locationSettings": "Ładowanie ustawień lokalizacji",
+      "onboarding": "Ładowanie onboardingu",
+      "payrollExportSettings": "Ładowanie ustawień eksportu listy płac",
+      "payrollReadiness": "Ładowanie gotowości listy płac",
+      "payrollWorkspace": "Ładowanie obszaru roboczego listy płac",
+      "platformAdminOverview": "Ładowanie przeglądu administratora platformy",
+      "platformAnalytics": "Ładowanie analityki platformy",
+      "platformBilling": "Wczytywanie rozliczeń platformy",
+      "platformSetup": "Wczytywanie konfiguracji platformy",
+      "projectReports": "Wczytywanie raportów projektu",
+      "projectSettings": "Wczytywanie ustawień projektu",
+      "scheduledExports": "Wczytywanie zaplanowanych eksportów",
+      "shiftSchedule": "Wczytywanie harmonogramu zmian",
+      "shiftTemplateSettings": "Wczytywanie ustawień szablonów zmian",
+      "skillSettings": "Wczytywanie ustawień umiejętności",
+      "surchargeSettings": "Wczytywanie ustawień dopłat",
+      "team": "Wczytywanie zespołu",
+      "todaySManagerBriefing": "Wczytywanie dzisiejszego briefingu menedżera",
+      "travelExpenses": "Wczytywanie kosztów podróży",
+      "travelExpenseSettings": "Wczytywanie ustawień kosztów podróży",
+      "twoFactorVerification": "Wczytywanie weryfikacji dwuskładnikowej",
+      "vacationSettings": "Wczytywanie ustawień urlopów",
+      "wellnessSettings": "Wczytywanie ustawień wellness",
+      "workCategorySettings": "Wczytywanie ustawień kategorii pracy",
+      "workerQueue": "Wczytywanie kolejki pracowników",
+      "workPolicySettings": "Wczytywanie ustawień zasad pracy",
+      "worksCouncilPortal": "Wczytywanie portalu Rady Zakładowej",
+      "yourRequests": "Wczytywanie Twoich wniosków"
+    },
     "loadMore": "Załaduj więcej",
     "months": {
       "april": "Kwiecień",
@@ -169,11 +305,20 @@
     "next": "Dalej",
     "notApplicable": "N/D",
     "not-available": "Niedostępne",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Powiadomienia} other {Powiadomienia (# nieprzeczytanych)}}"
+    },
     "open": "Otwórz",
     "openEnded": "Bezterminowo",
     "openMenu": "Otwórz menu",
     "optional": "opcjonalne",
     "or": "Lub",
+    "pagination": {
+      "goToNextPage": "Przejdź do następnej strony",
+      "goToPreviousPage": "Przejdź do poprzedniej strony",
+      "morePages": "Więcej stron",
+      "pagination": "Paginacja"
+    },
     "pending": "Oczekujące",
     "present": "Obecny",
     "previous": "Poprzedni",
@@ -194,6 +339,11 @@
     "select-language": "Wybierz język",
     "set": "zestaw",
     "sets": "zestawy",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Wyświetla mobilny pasek boczny.",
+      "sidebar": "Pasek boczny",
+      "toggleSidebar": "Przełącz pasek boczny"
+    },
     "skip": "Pomiń",
     "start": "Start",
     "status": "Status",
@@ -205,6 +355,10 @@
         "reload": "Odśwież",
         "title": "Dostępna aktualizacja"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Otwórz selektor czasu",
+      "switchPeriod": "Przełącz na: {period}"
     },
     "to": "do",
     "today": "Dzisiaj",
@@ -233,11 +387,34 @@
       "tue": "Wto",
       "we": "Śr",
       "wed": "Śro"
+    },
+    "worksCouncil": {
+      "changeLogDescription": "Zmiany wpływające na pracowników w ramach tej organizacji i okresu.",
+      "changeLogEmpty": "Nie znaleziono zmian dla tego okresu.",
+      "changeReviewLog": "Dziennik przeglądu zmian",
+      "complianceFindings": "Ustalenia dotyczące zgodności",
+      "description": "Przegląd pracowników z filtrem prywatności dla wybranego okresu.",
+      "disabledDescription": "Tryb rady zakładowej nie jest włączony dla tej organizacji.",
+      "exportReviewPack": "Eksportuj pakiet przeglądu",
+      "from": "Od",
+      "identityHidden": "Tożsamość ukryta",
+      "insufficientData": "Niewystarczająca ilość danych",
+      "policyChanges": "Zmiany w zasadach",
+      "scheduleChanges": "Zmiany w harmonogramie",
+      "scheduleDescription": "Wpisy w harmonogramie z filtrem prywatności dla wybranego okresu.",
+      "scheduleEmpty": "Nie znaleziono wpisów w harmonogramie dla tego okresu.",
+      "scheduleEntry": "{identity} - od {start} do {end}",
+      "scheduleReview": "Przegląd harmonogramu",
+      "title": "Rada zakładowa",
+      "to": "Do",
+      "unassignedTeam": "Nieprzypisany zespół",
+      "updateRange": "Zaktualizuj zakres"
     }
   },
   "employeeSelect": {
     "countSelected": "Wybrano {count} pracowników",
     "countWithMore": "{count} pracowników (+{more} więcej)",
+    "inactive": "Nieaktywny",
     "noEmployeesFound": "Nie znaleziono pracowników",
     "removeSelected": "Usuń {name}",
     "role": "Rola",
@@ -257,7 +434,7 @@
     "noEmployee": {
       "contactAdmin": "Skontaktuj się z administratorem",
       "createOrg": "Utwórz organizację",
-      "description": "Potrzebujesz profilu pracownika, aby {feature}. Utwórz organizację lub skontaktuj się z administratorem.",
+      "description": "Potrzebujesz profilu pracownika, aby ${feature}. Utwórz organizację lub skontaktuj się z administratorem.",
       "emailBody": "Cześć,\n\nPotrzebuję skonfigurowanego profilu pracownika, aby uzyskać dostęp do funkcji platformy. Czy mógłbyś mi w tym pomóc?\n\nDziękuję!",
       "emailSubject": "Wymagana konfiguracja profilu pracownika",
       "helpText": "Jeśli otrzymałeś zaproszenie do organizacji, poproś administratora o skonfigurowanie Twojego profilu pracownika.",
@@ -270,8 +447,14 @@
       "waiting": "Czekasz na zaproszenie?",
       "waitingDesc": "Twój administrator wyśle Ci wiadomość e-mail z zaproszeniem. Sprawdź swoją skrzynkę odbiorczą oraz folder spam."
     },
+    "notFound": {
+      "description": "Strona mogła zostać przeniesiona, link może być nieaktualny lub adres może być nieprawidłowy.",
+      "title": "Nie znaleziono strony"
+    },
     "unexpected": {
-      "digest": "Odniesienie: {digest}"
+      "description": "Nie udało się teraz załadować tej strony. Spróbuj ponownie lub wróć do bezpiecznego miejsca w aplikacji.",
+      "digest": "Odniesienie: {digest}",
+      "title": "Coś poszło nie tak"
     }
   },
   "generic": {
@@ -280,25 +463,36 @@
   },
   "header": {
     "clock-in": "Rozpocznij pracę",
-    "clock-out": "Zakończ pracę"
+    "clock-out": "Zakończ pracę",
+    "timezone": {
+      "current": "Aktualna strefa czasowa {timezone}, {time}, {offset}",
+      "savedTimezone": "Zapisana strefa czasowa",
+      "saveTimezone": "Zapisz strefę czasową",
+      "saving": "Zapisywanie...",
+      "updated": "Strefa czasowa została pomyślnie zaktualizowana",
+      "updateError": "Wystąpił błąd podczas aktualizacji strefy czasowej",
+      "updateFailed": "Nie udało się zaktualizować strefy czasowej"
+    }
   },
   "info": {
     "agb": "Regulamin",
     "back-to-login": "Powrót do logowania",
     "imprint": "Nota prawna",
+    "licenses": "Licencje open source",
+    "openSourceLicenses": "Licencje open source",
     "trust-center": "Centrum zaufania"
   },
   "loading": {
-    "chart": "Ładowanie wykresu",
-    "settings": "Ładowanie ustawień",
     "application": "Ładowanie aplikacji",
     "authentication": "Ładowanie uwierzytelniania",
     "calendar": "Ładowanie kalendarza",
+    "chart": "Wczytywanie wykresu",
     "licenses": "Ładowanie licencji",
     "platformAnalytics": "Ładowanie analityki platformy",
+    "settings": "Wczytywanie ustawień",
     "setup": "Ładowanie konfiguracji",
-    "teamAbsences": "Ładowanie nieobecności zespołu",
-    "workerQueue": "Ładowanie kolejki zadań"
+    "teamAbsences": "Ładowanie tabeli nieobecności zespołu",
+    "workerQueue": "Ładowanie kolejki procesów roboczych"
   },
   "nav": {
     "absences": "Nieobecności",
@@ -334,6 +528,23 @@
       "viewAll": "Wyświetl wszystkie powiadomienia"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} zarejestrował(a) {absenceType} dla {dateRange} w Twoim imieniu.",
+        "title": "Zarejestrowano nieobecność"
+      },
+      "absenceRequestRejected": {
+        "title": "Wniosek o nieobecność odrzucony"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Obowiązki zatwierdzania wymagają zastępstwa",
+        "clock_out": "Wymaga weryfikacji: rejestracja wyjścia (offboarding)",
+        "clock_repair": "Wymagana naprawa licznika czasu",
+        "employment_terms": "Przyszłe warunki zatrudnienia wymagają weryfikacji",
+        "future_work": "Przyszła praca wymaga weryfikacji"
+      },
+      "newAbsenceRequest": {
+        "title": "Nowy wniosek o nieobecność"
+      },
       "passwordChanged": {
         "message": "Twoje hasło zostało pomyślnie zmienione. Jeśli nie dokonałeś tej zmiany, skontaktuj się natychmiast z działem wsparcia.",
         "title": "Hasło zmienione"
@@ -345,14 +556,6 @@
       "teamMemberAdded": {
         "message": "Zostałeś dodany do zespołu {teamName} przez {performedByName}.",
         "title": "Dodano do zespołu"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Twój wniosek {categoryName} na {dateRange} został wysłany i oczekuje na zatwierdzenie.",
-        "title": "Wniosek o nieobecność wysłany"
-      },
-      "teamMemberRemoved": {
-        "message": "Zostałeś usunięty z zespołu {teamName} przez {performedByName}.",
-        "title": "Usunięto z zespołu"
       }
     },
     "description": "Przeglądaj aktualizacje, zatwierdzenia i alerty systemowe na jednej osi czasu.",
@@ -377,6 +580,7 @@
     "preferences": {
       "disabled": "Powiadomienia wyłączone",
       "enabled": "Powiadomienia włączone",
+      "mandatoryInbox": "Zawsze dostarczane do Twojej skrzynki odbiorczej",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Otrzymuj powiadomienia o oczekujących wnioskach do zatwierdzenia",
@@ -413,6 +617,9 @@
       "selectAllAria": "Zaznacz wszystkie widoczne powiadomienia",
       "selectNamedAria": "Zaznacz {title}",
       "visibleSelected": "Zaznaczono {count} widocznych"
+    },
+    "time": {
+      "justNow": "przed chwilą"
     },
     "timeline": {
       "earlier": "Wcześniejsze",
@@ -485,6 +692,15 @@
     },
     "clockedIn": "Rozpoczęto pracę",
     "clockedOut": "Zakończono pracę"
+  },
+  "rateLimit": {
+    "countdownLabel": "sekund do ponowienia próby",
+    "jsonMessage": "Przekroczono limit żądań. Spróbuj ponownie później.",
+    "message": "Wysłano zbyt wiele żądań. Odczekaj chwilę przed ponowną próbą.",
+    "retryButton": "Spróbuj ponownie",
+    "retryingButton": "Ponawianie...",
+    "title": "Zbyt wiele żądań",
+    "waitingButton": "Proszę czekać..."
   },
   "roles": {
     "admin": "Administrator",
@@ -568,7 +784,8 @@
     "first-name-required": "Imię jest wymagane",
     "invalid-email": "Nieprawidłowy adres e-mail",
     "last-name-required": "Nazwisko jest wymagane",
-    "password-required": "Hasło jest wymagane"
+    "password-required": "Hasło jest wymagane",
+    "pronounsMaxLength": "Zaimki mogą mieć maksymalnie 50 znaków"
   },
   "workBalance": {
     "label": "Bilans całkowity",
@@ -577,6 +794,6 @@
     "updatedEveryThreeHours": "Aktualizowane co 3 godziny"
   },
   "worksCouncil": {
-    "loadingLabel": "Ładowanie portalu rady zakładowej"
+    "loadingLabel": "Wczytywanie rady zakładowej"
   }
 }

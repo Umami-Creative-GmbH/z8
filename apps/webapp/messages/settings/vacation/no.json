@@ -37,6 +37,7 @@
         "teamPolicyDescription": "Velg en feriepolicy og et team. Dette overstyrer selskapets standard for teammedlemmer."
       },
       "carryover": "Overføring",
+      "createDifferentPoliciesForVariousTeamsOrEmployeeGroups": "Opprett ulike retningslinjer for forskjellige team eller ansattgrupper",
       "createPolicy": "Opprett feriepolicy",
       "createPolicyBtn": "Opprett policy",
       "current": "Gjeldende",
@@ -45,6 +46,13 @@
       "description": "Administrer feriepolicyer og tildelinger for organisasjonen din",
       "editPolicy": "Rediger \"{name}\"",
       "employees": {
+        "actions": {
+          "edit": "Rediger"
+        },
+        "allowancesForYear": "Feriekvoter for {{year}}",
+        "defaultAllowanceDescription": "Standardkvote: {{days}} dager per år",
+        "defaultPolicy": "Standard",
+        "description": "Konfigurer egendefinerte feriekvoter for individuelle ansatte",
         "detail": {
           "addManualAdjustment": "Legg til manuell justering",
           "addManualAdjustmentDescription": "Opprett en ny justeringsoppføring for spesielle omstendigheter (f.eks. bonusdager, korrigeringer). Hver justering registreres i revisjonsloggen.",
@@ -91,7 +99,25 @@
         "edit": {
           "description": "Konfigurer egendefinert feriekvote for {{name}}",
           "title": "Rediger feriekvote"
-        }
+        },
+        "employeeCount": "{{count}} ansatte",
+        "emptyDescription": "Legg til ansatte i organisasjonen for å administrere feriekvotene deres.",
+        "emptyTitle": "Ingen ansatte funnet",
+        "noOrgPolicyConfigured": " (Ingen organisasjonsretningslinje konfigurert)",
+        "primaryManager": "Primær",
+        "table": {
+          "actions": "Handlinger",
+          "adjustments": "Justeringer",
+          "carryover": "Overføring",
+          "customDays": "Egendefinerte dager",
+          "defaultDays": "Standarddager",
+          "employee": "Ansatt",
+          "managers": "Ledere",
+          "policy": "Retningslinje",
+          "team": "Team",
+          "totalAvailable": "Totalt tilgjengelig"
+        },
+        "title": "Ansattes kvoter"
       },
       "expires": "Utløper",
       "fallsBackToDefault": "Faller tilbake til bedriftsstandard",
@@ -151,7 +177,8 @@
         "policies": "Retningslinjer"
       },
       "title": "Ferieadministrasjon",
-      "updatePolicy": "Oppdater retningslinje"
+      "updatePolicy": "Oppdater retningslinje",
+      "vacationPolicies": "Ferieretningslinjer"
     }
   },
   "vacation": {

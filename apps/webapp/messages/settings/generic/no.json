@@ -8,6 +8,14 @@
         "title": "Kontraktsdetaljer"
       },
       "description": "Last ned din databehandleravtale i henhold til art. 28 i GDPR.",
+      "download": {
+        "button": "Last ned databehandleravtale som PDF",
+        "downloaded": "Databehandleravtale lastet ned",
+        "downloadFailed": "Nedlasting mislyktes",
+        "errorOccurred": "Det oppsto en feil",
+        "filename": "Fil: {filename}",
+        "generating": "Genererer PDF…"
+      },
       "hosting": {
         "descriptionPrefix": "Alle data driftes på servere hos ",
         "descriptionSuffix": ". Ingen ytterligere underdatabehandlere benyttes.",
@@ -92,7 +100,7 @@
         "description": "Velg datakategoriene du vil eksportere",
         "selectAll": "Velg alle",
         "selectAtLeastOne": "Vennligst velg minst én kategori",
-        "startExport": "Start eksport ({count})",
+        "startExport": "Start eksport (${selectedCategories.size})",
         "startingExport": "Starter eksport...",
         "submitError": "Kunne ikke starte eksport",
         "submitSuccess": "Eksporten er startet",
@@ -115,7 +123,7 @@
         "downloadSuccess": "Nedlasting startet",
         "emptyDescription": "Ingen eksporter ennå",
         "emptyHint": "Opprett din første eksport ved å bruke skjemaet ovenfor",
-        "moreCategories": "+{count} flere",
+        "moreCategories": "+${exp.categories.length - 3} flere",
         "statusCompleted": "Fullført",
         "statusFailed": "Mislyktes",
         "statusPending": "Venter",
@@ -140,7 +148,7 @@
         "endpointDescription": "For S3-kompatible tjenester som MinIO",
         "endpointPlaceholder": "https://s3.example.com",
         "keepExistingCredentials": "La stå tomt for å beholde eksisterende påloggingsinformasjon",
-        "lastVerified": "Sist verifisert: {date}",
+        "lastVerified": "Sist verifisert: ${new Date(config.lastVerifiedAt).toLocaleString()}",
         "region": "Region",
         "regionDescription": "AWS-region der din bucket er plassert",
         "regionPlaceholder": "us-east-1",
@@ -179,10 +187,95 @@
         "save": "Lagre",
         "sendTest": "Send test"
       },
+      "categories": {
+        "absences": "Fravær",
+        "auth": "Kontotilgang",
+        "billing": "Fakturering",
+        "exports": "Eksporter",
+        "security": "Sikkerhet",
+        "teams": "Team",
+        "timecorrections": "Tidskorrigeringer"
+      },
       "defaultFallback": "Standard reserve",
       "defaultFallbackDescription": "Hvis denne malen bruker systemstandarden, sender Z8 systemets tekst og emne:",
+      "definitions": {
+        "absence-recorded-by-manager": {
+          "description": "Varsler en ansatt om at en leder har registrert fravær på deres vegne.",
+          "label": "Fravær registrert av leder"
+        },
+        "absence-request-approved": {
+          "description": "Varsler en ansatt om at fraværsforespørselen deres ble godkjent.",
+          "label": "Fraværsforespørsel godkjent"
+        },
+        "absence-request-pending-approval": {
+          "description": "Varsler en leder om at en fraværsforespørsel må godkjennes.",
+          "label": "Fraværsforespørsel venter på godkjenning"
+        },
+        "absence-request-rejected": {
+          "description": "Varsler en ansatt om at fraværsforespørselen deres ble avslått.",
+          "label": "Fraværsforespørsel avslått"
+        },
+        "absence-request-submitted": {
+          "description": "Bekrefter at en ansatt har sendt inn en fraværsforespørsel.",
+          "label": "Fraværsforespørsel sendt inn"
+        },
+        "email-verification": {
+          "description": "Sendes når en bruker må bekrefte e-postadressen sin.",
+          "label": "E-postbekreftelse"
+        },
+        "export-failed": {
+          "description": "Varsler en bruker om at en forespurt eksport ikke kunne genereres.",
+          "label": "Eksport mislyktes"
+        },
+        "export-ready": {
+          "description": "Varsler en bruker om at en forespurt eksport er klar til nedlasting.",
+          "label": "Eksport klar"
+        },
+        "organization-invitation": {
+          "description": "Sendes når en bruker blir invitert til å bli med i en organisasjon.",
+          "label": "Organisasjonsinvitasjon"
+        },
+        "password-reset": {
+          "description": "Sendes når en bruker ber om en lenke for tilbakestilling av passord.",
+          "label": "Tilbakestilling av passord"
+        },
+        "security-alert": {
+          "description": "Varsler en bruker om en viktig sikkerhetshendelse på kontoen.",
+          "label": "Sikkerhetsvarsel"
+        },
+        "team-member-added": {
+          "description": "Varsler et medlem om at de er lagt til i et team.",
+          "label": "Teammedlem lagt til"
+        },
+        "team-member-removed": {
+          "description": "Varsler et medlem om at de er fjernet fra et team.",
+          "label": "Teammedlem fjernet"
+        },
+        "time-correction-approved": {
+          "description": "Varsler en ansatt om at timekorrigeringen er godkjent.",
+          "label": "Timekorrigering godkjent"
+        },
+        "time-correction-pending-approval": {
+          "description": "Varsler en leder om at en timekorrigering må godkjennes.",
+          "label": "Timekorrigering venter på godkjenning"
+        },
+        "time-correction-rejected": {
+          "description": "Varsler en ansatt om at timekorrigeringen ble avvist.",
+          "label": "Timekorrigering avvist"
+        }
+      },
       "description": "Tilpass e-postene organisasjonen din sender",
       "editBodyBeforeSaving": "Rediger e-postteksten før du lagrer en første tilpasset mal.",
+      "editor": {
+        "bodyDescription": "Skriv den formaterte HTML-e-posten som sendes for denne systemhendelsen.",
+        "bodyPlaceholder": "Skriv innholdet i drift-e-posten...",
+        "emailBody": "E-postinnhold",
+        "fallbackDescription": "Brukes til validering og som en sikker reserveløsning hvis det visuelle redigeringsprogrammet ikke kan gjengis.",
+        "htmlFallback": "HTML-reserve",
+        "loading": "Laster inn e-postredigering…",
+        "subject": "Emne"
+      },
+      "emailTemplates": "E-postmaler",
       "empty": "Ingen e-postmaler er tilgjengelige for denne organisasjonen.",
       "eyebrow": "Driftskommunikasjon",
       "reset": "E-postmal tilbakestilt til systemmal",
@@ -196,7 +289,141 @@
       "systemTemplates": "Systemmaler",
       "testFailed": "Kunne ikke sende test-e-post",
       "testSent": "Test-e-post sendt til kontoen din",
-      "title": "E-postmaler"
+      "title": "E-postmaler",
+      "variableDefinitions": {
+        "absenceType": {
+          "label": "Fraværstype"
+        },
+        "addedByName": {
+          "label": "Lagt til av"
+        },
+        "approvalUrl": {
+          "label": "Godkjennings-URL"
+        },
+        "approverName": {
+          "label": "Godkjennerens navn"
+        },
+        "appUrl": {
+          "label": "App-URL"
+        },
+        "categories": {
+          "label": "Kategorier"
+        },
+        "correctedClockIn": {
+          "label": "Korrigert innstempling"
+        },
+        "correctedClockOut": {
+          "label": "Korrigert utstempling"
+        },
+        "date": {
+          "label": "Dato"
+        },
+        "days": {
+          "label": "Dager"
+        },
+        "downloadUrl": {
+          "label": "Nedlastings-URL"
+        },
+        "email": {
+          "label": "E-post"
+        },
+        "employeeName": {
+          "label": "Ansattnavn"
+        },
+        "endDate": {
+          "label": "Sluttdato"
+        },
+        "errorMessage": {
+          "label": "Feilmelding"
+        },
+        "eventType": {
+          "label": "Hendelsestype"
+        },
+        "expiresAt": {
+          "label": "Utløper"
+        },
+        "fileSize": {
+          "label": "Filstørrelse"
+        },
+        "invitationUrl": {
+          "label": "Invitasjons-URL"
+        },
+        "inviterName": {
+          "label": "Innbyders navn"
+        },
+        "ipAddress": {
+          "label": "IP-adresse"
+        },
+        "managerName": {
+          "label": "Leders navn"
+        },
+        "memberName": {
+          "label": "Medlemsnavn"
+        },
+        "notes": {
+          "label": "Notater"
+        },
+        "organizationName": {
+          "label": "Organisasjonsnavn"
+        },
+        "originalClockIn": {
+          "label": "Opprinnelig innstempling"
+        },
+        "originalClockOut": {
+          "label": "Opprinnelig utstempling"
+        },
+        "reason": {
+          "label": "Årsak"
+        },
+        "recipientName": {
+          "label": "Mottakernavn"
+        },
+        "rejectionReason": {
+          "label": "Avvisningsårsak"
+        },
+        "removedByName": {
+          "label": "Fjernet av"
+        },
+        "resetUrl": {
+          "label": "URL for tilbakestilling"
+        },
+        "retryUrl": {
+          "label": "URL for nytt forsøk"
+        },
+        "role": {
+          "label": "Rolle"
+        },
+        "securitySettingsUrl": {
+          "label": "URL for sikkerhetsinnstillinger"
+        },
+        "startDate": {
+          "label": "Startdato"
+        },
+        "teamName": {
+          "label": "Teamnavn"
+        },
+        "teamUrl": {
+          "label": "Team-URL"
+        },
+        "timestamp": {
+          "label": "Tidsstempel"
+        },
+        "userAgent": {
+          "label": "Brukeragent"
+        },
+        "userName": {
+          "label": "Brukernavn"
+        },
+        "verificationUrl": {
+          "label": "Verifiserings-URL"
+        }
+      },
+      "variables": {
+        "allowedVariables": "Tillatte variabler",
+        "description": "Sett bare inn godkjente plassholdere. Verdier erstattes når e-posten sendes.",
+        "fallbackSafe": "Sikker reserve",
+        "insert": "Sett inn {label}"
+      }
     },
     "error": {
       "actions": {
@@ -235,6 +462,8 @@
           "description": "{name} trenger en konfigurasjon for lønnseksport før den kan kjøres.",
           "title": "Planlagt lønnseksport er blokkert"
         },
+        "description": "Eksportproblemer som kan kreve oppmerksomhet fra administrator.",
+        "empty": "Ingen varsler akkurat nå",
         "payrollFailed": {
           "description": "Den siste lønnseksporten ble ikke fullført.",
           "title": "Lønnseksport mislyktes"
@@ -242,7 +471,8 @@
         "scheduledFailed": {
           "description": "{name} ble ikke fullført.",
           "title": "Planlagt eksport mislyktes"
-        }
+        },
+        "title": "Varsler"
       },
       "description": "Overvåk lønns-, revisjons- og planlagt eksportaktivitet for organisasjonen din.",
       "errors": {
@@ -251,7 +481,56 @@
         "summary": "Antall er basert på eksportdataene som kunne lastes inn.",
         "upcomingRuns": "Data for planlagt eksport er midlertidig utilgjengelig."
       },
-      "title": "Eksportoperasjoner"
+      "links": {
+        "audit": "Åpne innstillinger for revisjonseksport",
+        "payroll": "Åpne innstillinger for lønnseksport",
+        "scheduled": "Åpne innstillinger for planlagt eksport"
+      },
+      "partialData": "Delvise data",
+      "recentActivity": {
+        "description": "Siste hendelser for lønns-, revisjons- og planlagt eksport.",
+        "empty": "Ingen nylig eksportaktivitet",
+        "export": "Eksport",
+        "link": "Innstillinger",
+        "status": "Status",
+        "title": "Nylig aktivitet",
+        "when": "Inntraff"
+      },
+      "severity": {
+        "error": "Feil",
+        "warning": "Advarsel"
+      },
+      "status": {
+        "assembling": "Setter sammen pakke",
+        "collecting": "Samler inn data",
+        "completed": "Fullført",
+        "failed": "Mislyktes",
+        "hardening": "Bruker herding",
+        "lineageExpanding": "Utvider opprinnelse",
+        "pending": "Venter",
+        "processing": "Behandler",
+        "requested": "Forespurt"
+      },
+      "summary": {
+        "activeSchedules": "Aktive tidsplaner",
+        "activeSchedulesDescription": "Aktiverte gjentakende eksportplaner.",
+        "failedRuns": "Mislykkede kjøringer (7 dager)",
+        "failedRunsDescription": "Mislykkede lønns-, revisjons- og planlagte kjøringer den siste uken.",
+        "lastAuditPack": "Siste revisjonspakke",
+        "lastAuditPackDescription": "Nyeste generering av revisjonspakke.",
+        "lastPayrollExport": "Siste lønnseksport",
+        "lastPayrollExportDescription": "Nyeste fullførte lønnseksport.",
+        "none": "Aldri"
+      },
+      "title": "Eksportoperasjoner",
+      "upcomingRuns": {
+        "description": "De neste planlagte eksporteringene i kø for denne organisasjonen.",
+        "empty": "Ingen kommende kjøringer",
+        "link": "Innstillinger",
+        "name": "Navn",
+        "title": "Kommende kjøringer",
+        "when": "Planlagt til"
+      }
     },
     "group": {
       "account": "Konto",
@@ -293,6 +572,16 @@
         "commitQueued": "Satte {count} godtatte rader i kø for bekreftelse",
         "committing": "Fullfører...",
         "description": "Gå gjennom klargjorte importrader, løs blokkerende problemer, og overfør godkjente poster når bunken er klar.",
+        "hold": {
+          "appendReviewRequired": "Den ansattes timehistorikk må gjennomgås før nye oppføringer kan legges til.",
+          "invalidInterval": "Tidspunktene fra leverandøren mangler en eksplisitt forskyvning, er ikke i rekkefølge eller ligger i fremtiden.",
+          "label": "Holdt tilbake for gjennomgang",
+          "occupancyConflict": "Tiden overlapper med arbeid som allerede er registrert for denne ansatte.",
+          "operationCollision": "Denne raden er i konflikt med den tidligere overførte importen.",
+          "providerDurationMismatch": "Varigheten fra leverandøren avviker fra start- og sluttidene.",
+          "sourceCollision": "Denne leverandøroppføringen er allerede importert.",
+          "unlocatedBreak": "Leverandøren rapporterer pauser uten klokkeslett, så det arbeidede intervallet er ukjent."
+        },
         "issueGroups": {
           "currentMarkers": "Gjeldende rader inneholder {blockingRows} blokkerende markører og {warningRows} advarselsmarkører.",
           "description": "Grupperte gjennomgangsområder bidrar til å holde kvalitetskontroller synlige før godkjente rader overføres.",
@@ -306,17 +595,17 @@
           "status": "Status",
           "title": "Rader"
         },
-        "title": "Importgjennomgang",
-        "hold": {
-          "appendReviewRequired": "Den ansattes tidshistorikk må gjennomgås før nye oppføringer kan legges til.",
-          "invalidInterval": "Leverandørens tider mangler en eksplisitt forskyvning, er ikke i rekkefølge eller ligger i fremtiden.",
-          "label": "Holdt tilbake for gjennomgang",
-          "occupancyConflict": "Tiden overlapper arbeid som allerede er registrert for denne ansatte.",
-          "operationCollision": "Denne raden er i konflikt med den tidligere bekreftede importen.",
-          "providerDurationMismatch": "Leverandørens varighet avviker fra start- og sluttidspunktet.",
-          "sourceCollision": "Denne leverandørposten er allerede importert.",
-          "unlocatedBreak": "Leverandøren rapporterer pauser uten tidspunktene, så det arbeidede intervallet er ukjent."
-        }
+        "status": {
+          "accepted": "Godtatt",
+          "blocked": "Blokkert",
+          "commitFailed": "Overføring mislyktes",
+          "committed": "Overført",
+          "committing": "Overfører",
+          "needsMapping": "Må tilordnes",
+          "rejected": "Avvist",
+          "staged": "Klargjort"
+        },
+        "title": "Importgjennomgang"
       },
       "title": "Importer data"
     },
@@ -639,7 +928,7 @@
         "managerAddFailed": "Kunne ikke legge til prosjektleder",
         "managerPicker": "Prosjektleder som skal legges til",
         "managers": "Prosjektledere",
-        "managersReadOnly": "Bare organisasjonsadministratorer kan endre prosjektledere.",
+        "managersReadOnly": "Kun organisasjonsadministratorer kan endre prosjektledere.",
         "noEmployees": "Ingen ansatte tildelt",
         "noManagers": "Ingen prosjektledere",
         "noTeams": "Ingen team tildelt",
@@ -662,20 +951,47 @@
       "description": "Administrer passord, totrinnsbekreftelse, passnøkler og aktive økter",
       "title": "Sikkerhetsinnstillinger",
       "twoFactor": {
+        "backupCodesCopied": "Reservekoder kopiert til utklippstavlen",
+        "backupCodesRegenerated": "Reservekoder regenerert",
+        "cancel": "Avbryt",
         "confirmPasswordToEnable": "Bekreft passordet ditt for å aktivere totrinnsbekreftelse",
         "confirmPasswordToRegenerate": "Bekreft passordet ditt for å generere nye reservekoder",
         "continue": "Fortsett",
+        "copyCodes": "Kopier koder",
         "description": "Legg til et ekstra lag med sikkerhet på kontoen din",
         "disable": "Deaktiver",
+        "disable2fa": "Deaktiver 2FA",
+        "disableDescription": "Dette vil fjerne det ekstra sikkerhetslaget fra kontoen din. Skriv inn passordet ditt for å bekrefte.",
+        "disabledToast": "Totrinnsbekreftelse er deaktivert",
+        "disableFailed": "Kunne ikke deaktivere 2FA",
+        "disableTitle": "Deaktivere totrinnsbekreftelse?",
         "enable": "Aktiver totrinnsbekreftelse",
+        "enabledToast": "Totrinnsbekreftelse er aktivert",
+        "enablePasswordRequiredDescription": "Vennligst skriv inn passordet ditt for å aktivere 2FA",
+        "enterAuthenticatorCode": "Skriv inn den 6-sifrede koden fra autentiseringsappen din",
         "enterPasswordTitle": "Skriv inn passordet ditt",
+        "enterSixDigitCode": "Vennligst skriv inn en 6-sifret kode",
+        "invalidCode": "Ugyldig kode",
+        "passwordLabel": "Passord",
+        "passwordPlaceholder": "Skriv inn passordet ditt...",
+        "passwordRequired": "Passord er påkrevd",
         "regenerateBackupCodes": "Generer nye reservekoder",
         "regenerateCodes": "Generer nye koder",
+        "regenerateFailed": "Kunne ikke generere nye reservekoder",
+        "saveBackupCodesDescription": "Oppbevar disse kodene på et trygt sted. Du kan bruke dem til å få tilgang til kontoen din hvis du mister tilgangen til autentiseringsappen din. Hver kode kan bare brukes én gang.",
+        "saveBackupCodesTitle": "Lagre reservekodene dine",
+        "savedCodes": "Jeg har lagret disse kodene",
+        "scanQrCode": "Skann QR-koden med autentiseringsappen din",
+        "setupFailed": "Kunne ikke konfigurere 2FA",
+        "setupTitle": "Konfigurer totrinnsbekreftelse",
         "status": {
           "disabled": "Deaktivert",
           "enabled": "Aktivert"
         },
-        "title": "Tofaktorautentisering"
+        "title": "Tofaktorautentisering",
+        "unexpectedError": "Det oppsto en uventet feil",
+        "verificationFailed": "Verifisering mislyktes",
+        "verifyAndEnable": "Verifiser og aktiver"
       }
     },
     "sessions": {
@@ -879,8 +1195,14 @@
       "title": "Velværeinnstillinger"
     },
     "workBalanceRecalculation": {
+      "confirm": "Bekreft omberegning",
+      "confirmMessage": "Bekreft før denne omberegningen settes i kø.",
+      "description": "Sett en fullstendig gjenoppbygging av månedlige og årlige arbeidstidsbalanse-aggregater for {employeeName} i kø. Denne vedlikeholdsoppgaven kjører i bakgrunnen og blokkerer ikke denne siden.",
+      "queued": "Omberegning satt i kø",
+      "recalculate": "Beregn arbeidstidsbalanse på nytt",
       "requestError": "Kunne ikke sette omberegning av arbeidssaldo i kø",
-      "requestSuccess": "Omberegning av arbeidssaldo er lagt i kø"
+      "requestSuccess": "Omberegning av arbeidssaldo er lagt i kø",
+      "title": "Omberegning av arbeidstidsbalanse"
     },
     "workerQueue": {
       "cards": {

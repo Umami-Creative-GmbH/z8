@@ -191,6 +191,7 @@
         "loadData": "Çalışma saatleri analitik verileri yüklenemedi"
       },
       "expectedHours": "Beklenen Saatler",
+      "hoursPerWeekAbbreviation": "sa/hf",
       "variance": "Sapma",
       "varianceTrend": {
         "description": "Zaman içinde beklenen çalışma saatlerinden sapma",

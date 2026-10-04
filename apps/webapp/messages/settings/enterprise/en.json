@@ -21,7 +21,9 @@
         "description": "Create your first API key to enable programmatic access to your organization.",
         "title": "No API Keys"
       },
+      "expired": "Expired",
       "expires": "Expires",
+      "expiresInDays": "Expires in {days}d",
       "form": {
         "create": "Create Key",
         "enabled": "Key Enabled",
@@ -47,6 +49,8 @@
       "keyCopied": "API key copied to clipboard",
       "lastUsed": "Last Used",
       "name": "Name",
+      "neverExpires": "Never expires",
+      "noPermissions": "No permissions",
       "prefix": "Key Prefix",
       "prefixCopied": "Key prefix copied",
       "scopes": "Permissions",
@@ -70,11 +74,7 @@
       "status": "Status",
       "title": "API Keys",
       "updated": "API key updated",
-      "usage": "{count} of {max} keys used",
-      "noPermissions": "No permissions",
-      "neverExpires": "Never expires",
-      "expired": "Expired",
-      "expiresInDays": "Expires in {days}d"
+      "usage": "{count} of {max} keys used"
     },
     "branding": {
       "appName": {
@@ -269,6 +269,9 @@
         "vaultUnavailable": "Vault Unavailable",
         "vaultUnavailableDesc": "HashiCorp Vault is not available. Secrets cannot be stored securely."
       },
+      "emailConfig": {
+        "yourCompanyName": "Your Company Name"
+      },
       "enableProviderHelp": "Enable or disable this provider",
       "identity": {
         "accessPolicy": {
@@ -398,13 +401,13 @@
             "lastUsedAria": "Last used: {value} UTC",
             "revoke": "Revoke",
             "status": {
-              "active": "Active",
-              "revoked": "Revoked"
+              "active": "active",
+              "revoked": "revoked"
             },
             "title": "Credentials",
             "unused": "Not yet used"
           },
-          "description": "Connect your identity provider to provision and manage workforce access.",
+          "description": "SCIM verification updates after your identity provider sends a test user or group change.",
           "dialog": {
             "cancel": "Cancel",
             "decommission": {
@@ -515,7 +518,7 @@
           "review": "Review & Activate",
           "review.description": "Guard activation",
           "scim": "SCIM Provisioning",
-          "scim.description": "Connect and manage your SCIM provisioning connection",
+          "scim.description": "Issue provisioning token",
           "sso": "SSO Configuration",
           "sso.description": "Register OIDC or SAML",
           "ssoTest": "Test User",
@@ -568,6 +571,7 @@
           "customDomain": "Users signing in via your custom domain will use your OAuth app"
         },
         "keyId": "Key ID",
+        "pasteYourP8PrivateKeyContents": "Paste your .p8 private key contents",
         "privateKey": "Private Key (.p8)",
         "removed": "{provider} OAuth removed",
         "removeDialogDescription": "Are you sure you want to remove this OAuth configuration? Users will fall back to the shared OAuth credentials (if available).",
@@ -576,8 +580,7 @@
         "title": "Social Login Providers",
         "unverified": "Unverified",
         "updateConfigError": "Failed to update config",
-        "updated": "{provider} OAuth updated successfully",
-        "pasteYourP8PrivateKeyContents": "Paste your .p8 private key contents"
+        "updated": "{provider} OAuth updated successfully"
       },
       "sso": {
         "addDescription": "Configure an OIDC identity provider for enterprise single sign-on.",
@@ -627,9 +630,6 @@
         "domains": "Custom Domain",
         "social-oauth": "Social Login",
         "sso": "SSO Providers"
-      },
-      "emailConfig": {
-        "yourCompanyName": "Your Company Name"
       }
     },
     "enterpriseIdentitySetup": {

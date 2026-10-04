@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Du har inte tillgång till lönedata för den aktiva organisationen.",
+      "help": "Be en organisationsadministratör att tilldela lönebehörighet om du behöver den här arbetsytan.",
+      "title": "Ingen lönebehörighet"
+    },
     "actions": {
       "apply": "Tillämpa",
       "downloadPdf": "Ladda ner PDF",
@@ -48,9 +53,13 @@
       "activeOrganizationEmployeeRequired": "Kontext för aktiv organisationsanställd krävs",
       "authenticationRequired": "Autentisering krävs",
       "blockerNotDismissible": "Löneblockering kan inte avfärdas",
+      "dataTemporarilyUnavailable": "Lönedata är tillfälligt otillgänglig",
       "employeeIdsMustBeArray": "employeeIds måste vara en array",
       "employeeIdsMustContainOnlyStrings": "employeeIds får endast innehålla strängar",
       "endDateAfterStart": "Slutdatum måste vara samma som eller efter startdatum",
+      "exportBlockedByOffboardingClockRepair": "Export blockerad: åtgärda utstämplingen för offboarding först",
+      "exportBlockedByUncertainWork": "Export blockerad: åtgärda det osäkra arbetet i det valda omfånget först",
+      "exportBlockedByUnresolvedWorkMinutes": "Export blockerad: åtgärda arbetsminuterna som behöver granskas först",
       "exportFormatNotConfigured": "Exportformat för lön är inte konfigurerat",
       "invalidBlockerId": "Ogiltigt ID för löneblockering",
       "invalidBlockerType": "Ogiltig typ av löneblockering",
@@ -110,6 +119,11 @@
       "ready": "Klar",
       "workedHours": "Arbetade timmar"
     },
-    "title": "Lön"
+    "title": "Lön",
+    "unavailable": {
+      "description": "Lönedata kunde inte förberedas på ett säkert sätt.",
+      "help": "Försök igen senare. Om problemet kvarstår, kontakta en organisationsadministratör.",
+      "title": "Lön är tillfälligt otillgänglig"
+    }
   }
 }

@@ -37,6 +37,7 @@
         "teamPolicyDescription": "Sélectionnez une politique de congés et une équipe. Cela remplace la valeur par défaut de l'entreprise pour les membres de l'équipe."
       },
       "carryover": "Report",
+      "createDifferentPoliciesForVariousTeamsOrEmployeeGroups": "Créer différentes politiques pour diverses équipes ou groupes d'employés",
       "createPolicy": "Créer une politique de congés",
       "createPolicyBtn": "Créer une politique",
       "current": "Actuel",
@@ -45,6 +46,13 @@
       "description": "Gérer les politiques de congés et les attributions pour votre organisation",
       "editPolicy": "Modifier « {name} »",
       "employees": {
+        "actions": {
+          "edit": "Modifier"
+        },
+        "allowancesForYear": "Droits aux congés pour {{year}}",
+        "defaultAllowanceDescription": "Droit par défaut : {{days}} jours par an",
+        "defaultPolicy": "Par défaut",
+        "description": "Configurer des droits aux congés personnalisés pour chaque employé",
         "detail": {
           "addManualAdjustment": "Ajouter un ajustement manuel",
           "addManualAdjustmentDescription": "Créer une nouvelle entrée d'ajustement pour des circonstances particulières (par ex. jours de bonus, corrections). Chaque ajustement est enregistré dans le journal d'audit.",
@@ -92,15 +100,8 @@
           "description": "Configurer l'allocation de congés personnalisée pour {{name}}",
           "title": "Modifier l'allocation de congés"
         },
-        "actions": {
-          "edit": "Modifier"
-        },
-        "allowancesForYear": "Allocations de congés pour {{year}}",
-        "defaultAllowanceDescription": "Allocation par défaut : {{days}} jours par an",
-        "defaultPolicy": "Par défaut",
-        "description": "Configurer des allocations de congés personnalisées pour chaque employé",
         "employeeCount": "{{count}} employés",
-        "emptyDescription": "Ajoutez des employés à votre organisation pour gérer leurs allocations de congés.",
+        "emptyDescription": "Ajoutez des employés à votre organisation pour gérer leurs droits aux congés.",
         "emptyTitle": "Aucun employé trouvé",
         "noOrgPolicyConfigured": " (Aucune politique d'organisation configurée)",
         "primaryManager": "Principal",
@@ -111,12 +112,12 @@
           "customDays": "Jours personnalisés",
           "defaultDays": "Jours par défaut",
           "employee": "Employé",
-          "managers": "Managers",
+          "managers": "Responsables",
           "policy": "Politique",
           "team": "Équipe",
           "totalAvailable": "Total disponible"
         },
-        "title": "Allocations des employés"
+        "title": "Droits des employés"
       },
       "expires": "Expire",
       "fallsBackToDefault": "Revient à la valeur par défaut de l'entreprise",
@@ -176,7 +177,8 @@
         "policies": "Politiques"
       },
       "title": "Gestion des vacances",
-      "updatePolicy": "Mettre à jour la politique"
+      "updatePolicy": "Mettre à jour la politique",
+      "vacationPolicies": "Politiques de congés"
     }
   },
   "vacation": {

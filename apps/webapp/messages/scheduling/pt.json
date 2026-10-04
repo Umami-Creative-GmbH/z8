@@ -21,6 +21,22 @@
       "managerDescription": "Gerencie e planeje os turnos dos funcionários",
       "title": "Escala de Turnos"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Confirmar e publicar",
+      "acknowledgmentDescription": "A publicação prosseguirá, mas esta escala tem avisos de conformidade que devem ser confirmados primeiro.",
+      "button": "Publicar ({count})",
+      "cancel": "Cancelar",
+      "complianceAcknowledgmentRequired": "Confirmação de conformidade obrigatória",
+      "complianceWarnings": "{count, plural, one {As verificações de conformidade encontraram # aviso; você precisará confirmá-lo antes de publicar.} other {As verificações de conformidade encontraram # avisos; você precisará confirmá-los antes de publicar.}}",
+      "coverageWarning": "Alguns blocos de tempo não atendem aos requisitos mínimos de equipe.",
+      "maxHours": "Máximo de horas: {count}",
+      "notifyEmployees": "{count, plural, one {Publicar # turno em rascunho e notificar funcionários} other {Publicar # turnos em rascunho e notificar funcionários}}",
+      "overtime": "Horas extras: {count}",
+      "publishing": "Publicando…",
+      "restTime": "Tempo de descanso: {count}",
+      "totalFindings": "{count, plural, one {# ocorrência no total} other {# ocorrências no total}}",
+      "warningsDetectedBeforePublish": "Avisos detectados antes da publicação"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} ocorrência(s) detectada(s) antes da publicação.",

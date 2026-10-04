@@ -19,42 +19,91 @@
     "commandPlaceholder": "Search pages, people, teams, settings, or actions…",
     "commands": {
       "addManualTimeEntry": {
+        "keywords": {
+          "entry": "entry",
+          "hours": "hours",
+          "manual": "manual",
+          "time": "time"
+        },
         "subtitle": "Record hours for a past shift or correction",
         "title": "Add manual time entry"
       },
       "createProject": {
+        "keywords": {
+          "create": "create",
+          "project": "project",
+          "settings": "settings"
+        },
         "subtitle": "Open project settings to define a new project",
         "title": "Create project"
       },
       "inviteTeammate": {
+        "keywords": {
+          "invite": "invite",
+          "member": "member",
+          "teammate": "teammate"
+        },
         "subtitle": "Open organization management to add a colleague",
         "title": "Invite teammate"
       },
       "openApprovalsInbox": {
+        "keywords": {
+          "approvals": "approvals",
+          "inbox": "inbox",
+          "review": "review"
+        },
         "subtitle": "Review pending employee requests",
         "title": "Open approvals inbox"
       },
       "openMyRequests": {
+        "keywords": {
+          "mine": "mine",
+          "requests": "requests"
+        },
         "subtitle": "Review your submitted absences and expenses",
         "title": "Open my requests"
       },
-      "openPayrollReadiness": {
-        "subtitle": "Check whether time data is ready for payroll",
-        "title": "Open payroll readiness"
-      },
       "openPayroll": {
+        "keywords": {
+          "export": "export",
+          "payroll": "payroll",
+          "wages": "wages"
+        },
         "subtitle": "Review scoped payroll workspace",
         "title": "Open payroll"
       },
+      "openPayrollReadiness": {
+        "keywords": {
+          "export": "export",
+          "payroll": "payroll",
+          "readiness": "readiness"
+        },
+        "subtitle": "Check whether time data is ready for payroll",
+        "title": "Open payroll readiness"
+      },
       "openSettings": {
+        "keywords": {
+          "preferences": "preferences",
+          "settings": "settings"
+        },
         "subtitle": "Manage your profile, security, and organization settings",
         "title": "Open settings"
       },
       "requestAbsence": {
+        "keywords": {
+          "absence": "absence",
+          "timeOff": "time off",
+          "vacation": "vacation"
+        },
         "subtitle": "Start a vacation, sick leave, or time off request",
         "title": "Request absence"
       },
       "submitTravelExpense": {
+        "keywords": {
+          "expense": "expense",
+          "reimbursement": "reimbursement",
+          "travel": "travel"
+        },
         "subtitle": "Create a reimbursement request for travel costs",
         "title": "Submit travel expense"
       }
@@ -70,7 +119,14 @@
     "search": "Search",
     "searchOrRunCommand": "Search or run command",
     "teamAbsences": {
-      "description": "Review employee absence metrics and record absences"
+      "description": "Review employee absence metrics and record absences",
+      "keywords": {
+        "absence": "absence",
+        "manager": "manager",
+        "sick": "sick",
+        "team": "team",
+        "vacation": "vacation"
+      }
     }
   },
   "billing": {
@@ -107,7 +163,18 @@
     "approve": "Approve",
     "assign": "Assign",
     "back": "Back",
+    "brandLogo": "{brand} logo",
+    "breadcrumb": {
+      "breadcrumb": "breadcrumb",
+      "more": "More"
+    },
     "cancel": "Cancel",
+    "carousel": {
+      "nextSlide": "Next slide",
+      "previousSlide": "Previous slide",
+      "roleDescription": "carousel",
+      "slideRoleDescription": "slide"
+    },
     "clear": "Clear",
     "clearSearch": "Clear search",
     "clearSelection": "Clear",
@@ -117,10 +184,17 @@
     "copy": "Copy",
     "create": "Create",
     "current": "Current",
+    "datePicker": {
+      "clearDate": "Clear date",
+      "placeholder": "Pick a date"
+    },
     "days": {
+      "count": "{count} days",
       "friday": "Friday",
+      "half": "0.5 day",
       "label": "days",
       "monday": "Monday",
+      "one": "1 day",
       "saturday": "Saturday",
       "sunday": "Sunday",
       "thursday": "Thursday",
@@ -129,14 +203,24 @@
     },
     "delete": "Delete",
     "deleting": "Deleting...",
+    "deployment": {
+      "skew": {
+        "description": "Reload the page to continue. Your last action was not saved.",
+        "title": "Z8 was updated"
+      }
+    },
     "description": "Description",
     "deselectAll": "Deselect All",
     "details": "Details",
     "download": "Download",
+    "duplicate": "Duplicate",
+    "durationMinutes": "{count} min",
     "edit": "Edit",
     "enabled": "Enabled",
     "error": "Error",
     "error-occurred": "An error occurred",
+    "fieldPresets": "{label} presets",
+    "focusInput": "Focus input",
     "gender": {
       "female": "Female",
       "male": "Male",
@@ -144,7 +228,59 @@
     },
     "goToDashboard": "Go to Dashboard",
     "inactive": "Inactive",
+    "label": "Label",
     "loading": "Loading...",
+    "loadingLabel": "Loading",
+    "loadingRegions": {
+      "absences": "Loading absences",
+      "adminConsole": "Loading admin console",
+      "analyticsNavigation": "Loading analytics navigation",
+      "application": "Loading application",
+      "auditExportSettings": "Loading audit export settings",
+      "authentication": "Loading authentication",
+      "changePolicySettings": "Loading change policy settings",
+      "coverageRuleSettings": "Loading coverage rule settings",
+      "customerSettings": "Loading customer settings",
+      "customRoleSettings": "Loading custom role settings",
+      "dashboard": "Loading dashboard",
+      "dataExportSettings": "Loading data export settings",
+      "demoDataSettings": "Loading demo data settings",
+      "deploymentDiagnostics": "Loading deployment diagnostics",
+      "employeeReports": "Loading employee reports",
+      "employeeVacationAllowances": "Loading employee vacation allowances",
+      "exportOperations": "Loading export operations",
+      "holidaySettings": "Loading holiday settings",
+      "importReview": "Loading import review",
+      "importSettings": "Loading import settings",
+      "locationSettings": "Loading location settings",
+      "onboarding": "Loading onboarding",
+      "payrollExportSettings": "Loading payroll export settings",
+      "payrollReadiness": "Loading payroll readiness",
+      "payrollWorkspace": "Loading payroll workspace",
+      "platformAdminOverview": "Loading platform admin overview",
+      "platformAnalytics": "Loading platform analytics",
+      "platformBilling": "Loading platform billing",
+      "platformSetup": "Loading platform setup",
+      "projectReports": "Loading project reports",
+      "projectSettings": "Loading project settings",
+      "scheduledExports": "Loading scheduled exports",
+      "shiftSchedule": "Loading shift schedule",
+      "shiftTemplateSettings": "Loading shift template settings",
+      "skillSettings": "Loading skill settings",
+      "surchargeSettings": "Loading surcharge settings",
+      "team": "Loading team",
+      "todaySManagerBriefing": "Loading today's manager briefing",
+      "travelExpenses": "Loading travel expenses",
+      "travelExpenseSettings": "Loading travel expense settings",
+      "twoFactorVerification": "Loading two-factor verification",
+      "vacationSettings": "Loading vacation settings",
+      "wellnessSettings": "Loading wellness settings",
+      "workCategorySettings": "Loading work category settings",
+      "workerQueue": "Loading worker queue",
+      "workPolicySettings": "Loading work policy settings",
+      "worksCouncilPortal": "Loading Works Council portal",
+      "yourRequests": "Loading your requests"
+    },
     "loadMore": "Load More",
     "months": {
       "april": "April",
@@ -169,11 +305,20 @@
     "next": "Next",
     "notApplicable": "N/A",
     "not-available": "Not available",
+    "notifications": {
+      "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# unread)}}"
+    },
     "open": "Open",
     "openEnded": "Open ended",
     "openMenu": "Open menu",
     "optional": "optional",
     "or": "Or",
+    "pagination": {
+      "goToNextPage": "Go to next page",
+      "goToPreviousPage": "Go to previous page",
+      "morePages": "More pages",
+      "pagination": "pagination"
+    },
     "pending": "Pending",
     "present": "Present",
     "previous": "Previous",
@@ -194,6 +339,11 @@
     "select-language": "Select language",
     "set": "set",
     "sets": "sets",
+    "sidebar": {
+      "displaysTheMobileSidebar": "Displays the mobile sidebar.",
+      "sidebar": "Sidebar",
+      "toggleSidebar": "Toggle Sidebar"
+    },
     "skip": "Skip",
     "start": "Start",
     "status": "Status",
@@ -205,6 +355,10 @@
         "reload": "Reload",
         "title": "Update available"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Open time picker",
+      "switchPeriod": "Switch to {period}"
     },
     "to": "to",
     "today": "Today",
@@ -234,125 +388,33 @@
       "we": "We",
       "wed": "Wed"
     },
-    "deployment": {
-      "skew": {
-        "description": "Reload the page to continue. Your last action was not saved.",
-        "title": "Z8 was updated"
-      }
-    },
-    "breadcrumb": {
-      "breadcrumb": "breadcrumb",
-      "more": "More"
-    },
-    "carousel": {
-      "previousSlide": "Previous slide",
-      "nextSlide": "Next slide",
-      "roleDescription": "carousel",
-      "slideRoleDescription": "slide"
-    },
-    "sidebar": {
-      "sidebar": "Sidebar",
-      "displaysTheMobileSidebar": "Displays the mobile sidebar.",
-      "toggleSidebar": "Toggle Sidebar"
-    },
-    "focusInput": "Focus input",
-    "pagination": {
-      "pagination": "pagination",
-      "goToPreviousPage": "Go to previous page",
-      "goToNextPage": "Go to next page",
-      "morePages": "More pages"
-    },
-    "loadingLabel": "Loading",
-    "timeInput": {
-      "openTimePicker": "Open time picker",
-      "switchPeriod": "Switch to {period}"
-    },
-    "datePicker": {
-      "clearDate": "Clear date",
-      "placeholder": "Pick a date"
-    },
     "worksCouncil": {
-      "insufficientData": "Insufficient data",
-      "exportReviewPack": "Export review pack",
-      "from": "From",
-      "to": "To",
-      "updateRange": "Update Range",
-      "policyChanges": "Policy changes",
-      "scheduleChanges": "Schedule changes",
-      "complianceFindings": "Compliance findings",
-      "changeReviewLog": "Change review log",
-      "scheduleReview": "Schedule review",
-      "identityHidden": "Identity hidden",
-      "unassignedTeam": "Unassigned team",
-      "scheduleEntry": "{identity} - {start} to {end}",
-      "title": "Works Council",
-      "disabledDescription": "Works Council Mode is not enabled for this organization.",
-      "description": "Privacy-filtered workforce review for the selected period.",
       "changeLogDescription": "Workforce-impacting changes scoped to this organization and period.",
       "changeLogEmpty": "No changes found for this period.",
+      "changeReviewLog": "Change review log",
+      "complianceFindings": "Compliance findings",
+      "description": "Privacy-filtered workforce review for the selected period.",
+      "disabledDescription": "Works Council Mode is not enabled for this organization.",
+      "exportReviewPack": "Export review pack",
+      "from": "From",
+      "identityHidden": "Identity hidden",
+      "insufficientData": "Insufficient data",
+      "policyChanges": "Policy changes",
+      "scheduleChanges": "Schedule changes",
       "scheduleDescription": "Privacy-filtered schedule entries for the selected period.",
-      "scheduleEmpty": "No schedule entries found for this period."
-    },
-    "loadingRegions": {
-      "adminConsole": "Loading admin console",
-      "platformAnalytics": "Loading platform analytics",
-      "platformBilling": "Loading platform billing",
-      "deploymentDiagnostics": "Loading deployment diagnostics",
-      "platformAdminOverview": "Loading platform admin overview",
-      "workerQueue": "Loading worker queue",
-      "absences": "Loading absences",
-      "analyticsNavigation": "Loading analytics navigation",
-      "application": "Loading application",
-      "yourRequests": "Loading your requests",
-      "dashboard": "Loading dashboard",
-      "payrollWorkspace": "Loading payroll workspace",
-      "employeeReports": "Loading employee reports",
-      "projectReports": "Loading project reports",
-      "shiftSchedule": "Loading shift schedule",
-      "auditExportSettings": "Loading audit export settings",
-      "changePolicySettings": "Loading change policy settings",
-      "coverageRuleSettings": "Loading coverage rule settings",
-      "customerSettings": "Loading customer settings",
-      "demoDataSettings": "Loading demo data settings",
-      "dataExportSettings": "Loading data export settings",
-      "exportOperations": "Loading export operations",
-      "holidaySettings": "Loading holiday settings",
-      "importSettings": "Loading import settings",
-      "importReview": "Loading import review",
-      "locationSettings": "Loading location settings",
-      "payrollExportSettings": "Loading payroll export settings",
-      "payrollReadiness": "Loading payroll readiness",
-      "projectSettings": "Loading project settings",
-      "customRoleSettings": "Loading custom role settings",
-      "scheduledExports": "Loading scheduled exports",
-      "shiftTemplateSettings": "Loading shift template settings",
-      "skillSettings": "Loading skill settings",
-      "surchargeSettings": "Loading surcharge settings",
-      "team": "Loading team",
-      "travelExpenseSettings": "Loading travel expense settings",
-      "employeeVacationAllowances": "Loading employee vacation allowances",
-      "vacationSettings": "Loading vacation settings",
-      "wellnessSettings": "Loading wellness settings",
-      "workCategorySettings": "Loading work category settings",
-      "workPolicySettings": "Loading work policy settings",
-      "todaySManagerBriefing": "Loading today's manager briefing",
-      "travelExpenses": "Loading travel expenses",
-      "worksCouncilPortal": "Loading Works Council portal",
-      "authentication": "Loading authentication",
-      "twoFactorVerification": "Loading two-factor verification",
-      "platformSetup": "Loading platform setup",
-      "onboarding": "Loading onboarding"
-    },
-    "brandLogo": "{brand} logo",
-    "durationMinutes": "{count} min",
-    "notifications": {
-      "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# unread)}}"
-    },
-    "fieldPresets": "{label} presets"
+      "scheduleEmpty": "No schedule entries found for this period.",
+      "scheduleEntry": "{identity} - {start} to {end}",
+      "scheduleReview": "Schedule review",
+      "title": "Works Council",
+      "to": "To",
+      "unassignedTeam": "Unassigned team",
+      "updateRange": "Update Range"
+    }
   },
   "employeeSelect": {
     "countSelected": "{count} employees selected",
     "countWithMore": "{count} employees (+{more} more)",
+    "inactive": "Inactive",
     "noEmployeesFound": "No employees found",
     "removeSelected": "Remove {name}",
     "role": "Role",
@@ -365,15 +427,14 @@
     "status": "Status",
     "team": "Team",
     "totalEmployees": "{count} employees",
-    "tryDifferentSearch": "Try adjusting your search or filters",
-    "inactive": "Inactive"
+    "tryDifferentSearch": "Try adjusting your search or filters"
   },
   "errors": {
     "failedToLoad": "Failed to load data",
     "noEmployee": {
       "contactAdmin": "Contact Administrator",
       "createOrg": "Create Organization",
-      "description": "You need an employee profile to {feature}. Please create an organization or contact your administrator.",
+      "description": "You need an employee profile to ${feature}. Please create an organization or contact your administrator.",
       "emailBody": "Hi,nnI need an employee profile set up to access the platform features. Could you please assist me with this?nnThank you!",
       "emailSubject": "Employee Profile Setup Required",
       "helpText": "If you were invited to an organization, ask your administrator to set up your employee profile.",
@@ -386,8 +447,14 @@
       "waiting": "Waiting for an invitation?",
       "waitingDesc": "Your administrator will send you an invitation email. Check your inbox and spam folder."
     },
+    "notFound": {
+      "description": "The page may have moved, the link may be outdated, or the address may be incorrect.",
+      "title": "Page not found"
+    },
     "unexpected": {
-      "digest": "Reference: {digest}"
+      "description": "We couldn't load this page right now. Please try again or return to a safe place in the app.",
+      "digest": "Reference: {digest}",
+      "title": "Something went wrong"
     }
   },
   "generic": {
@@ -398,12 +465,12 @@
     "clock-in": "Clock In",
     "clock-out": "Clock Out",
     "timezone": {
-      "savedTimezone": "Saved timezone",
-      "saving": "Saving...",
-      "saveTimezone": "Save timezone",
       "current": "Current timezone {timezone}, {time}, {offset}",
-      "updateError": "An error occurred while updating timezone",
+      "savedTimezone": "Saved timezone",
+      "saveTimezone": "Save timezone",
+      "saving": "Saving...",
       "updated": "Timezone updated successfully",
+      "updateError": "An error occurred while updating timezone",
       "updateFailed": "Failed to update timezone"
     }
   },
@@ -411,17 +478,18 @@
     "agb": "T&Cs",
     "back-to-login": "Back to login",
     "imprint": "Imprint",
-    "trust-center": "Trust Center",
-    "openSourceLicenses": "Open Source Licenses"
+    "licenses": "Open Source Licenses",
+    "openSourceLicenses": "Open Source Licenses",
+    "trust-center": "Trust Center"
   },
   "loading": {
-    "chart": "Loading chart",
-    "settings": "Loading settings",
     "application": "Loading application",
     "authentication": "Loading authentication",
     "calendar": "Loading calendar",
+    "chart": "Loading chart",
     "licenses": "Loading licenses",
     "platformAnalytics": "Loading platform analytics",
+    "settings": "Loading settings",
     "setup": "Loading setup",
     "teamAbsences": "Loading team absences table",
     "workerQueue": "Loading worker queue"
@@ -460,6 +528,23 @@
       "viewAll": "View all notifications"
     },
     "content": {
+      "absenceRecorded": {
+        "message": "{managerName} recorded {absenceType} for {dateRange} on your behalf.",
+        "title": "Absence recorded"
+      },
+      "absenceRequestRejected": {
+        "title": "Absence request rejected"
+      },
+      "employeeOffboardingReview": {
+        "approval_handover": "Approval duties need a replacement",
+        "clock_out": "Needs review: offboarding clock-out",
+        "clock_repair": "Timer repair required",
+        "employment_terms": "Future employment terms need review",
+        "future_work": "Future work needs review"
+      },
+      "newAbsenceRequest": {
+        "title": "New absence request"
+      },
       "passwordChanged": {
         "message": "Your password was successfully changed. If you didn't make this change, please contact support immediately.",
         "title": "Password changed"
@@ -471,26 +556,6 @@
       "teamMemberAdded": {
         "message": "You have been added to the {teamName} team by {performedByName}.",
         "title": "Added to team"
-      },
-      "absenceRequestSubmitted": {
-        "message": "Your {categoryName} request for {dateRange} has been submitted and is pending approval.",
-        "title": "Absence request submitted"
-      },
-      "teamMemberRemoved": {
-        "message": "You have been removed from the {teamName} team by {performedByName}.",
-        "title": "Removed from team"
-      },
-      "employeeOffboardingReview": {
-        "title": "Employee offboarding needs review",
-        "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
-        "clock_repair": "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
-        "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
-        "future_work": "{employeeName}: Future work needs review (departure effective {cutoff}, {timezone}).",
-        "employment_terms": "{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone})."
-      },
-      "automaticClockOut": {
-        "title": "Automatically clocked out",
-        "message": "You were automatically clocked out after {duration} minutes of uninterrupted work at {cutoff} ({timezone}) because your organization's time limit was reached."
       }
     },
     "description": "Review updates, approvals, and system alerts in one timeline.",
@@ -515,6 +580,7 @@
     "preferences": {
       "disabled": "Notification disabled",
       "enabled": "Notification enabled",
+      "mandatoryInbox": "Always delivered to your inbox",
       "permissionModal": {
         "benefits": {
           "pendingApprovals": "Receive alerts for pending approval requests",
@@ -540,11 +606,7 @@
         "errorToast": "Push notification error"
       },
       "toggleAria": "{channel} notifications for {type}",
-      "updateFailed": "Failed to update preference",
-      "mandatoryInbox": "Always delivered to your inbox",
-      "types": {
-        "automatic_clock_out": "Automatic clock-out"
-      }
+      "updateFailed": "Failed to update preference"
     },
     "search": {
       "ariaLabel": "Search notifications",
@@ -555,6 +617,9 @@
       "selectAllAria": "Select all visible notifications",
       "selectNamedAria": "Select {title}",
       "visibleSelected": "{count} visible selected"
+    },
+    "time": {
+      "justNow": "just now"
     },
     "timeline": {
       "earlier": "Earlier",
@@ -627,6 +692,15 @@
     },
     "clockedIn": "Clocked in",
     "clockedOut": "Clocked out"
+  },
+  "rateLimit": {
+    "countdownLabel": "seconds until you can retry",
+    "jsonMessage": "Rate limit exceeded. Please try again later.",
+    "message": "You've made too many requests. Please wait before trying again.",
+    "retryButton": "Try Again",
+    "retryingButton": "Retrying...",
+    "title": "Too Many Requests",
+    "waitingButton": "Please wait..."
   },
   "roles": {
     "admin": "Admin",

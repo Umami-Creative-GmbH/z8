@@ -21,6 +21,22 @@
       "managerDescription": "Mitarbeiterschichten verwalten und planen",
       "title": "Schichtplan"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Bestätigen und veröffentlichen",
+      "acknowledgmentDescription": "Die Veröffentlichung wird fortgesetzt, dieser Dienstplan enthält jedoch Compliance-Warnungen, die zuerst bestätigt werden müssen.",
+      "button": "Veröffentlichen ({count})",
+      "cancel": "Abbrechen",
+      "complianceAcknowledgmentRequired": "Compliance-Bestätigung erforderlich",
+      "complianceWarnings": "{count, plural, one {Bei den Compliance-Prüfungen wurde # Warnung gefunden; Sie müssen diese vor der Veröffentlichung bestätigen.} other {Bei den Compliance-Prüfungen wurden # Warnungen gefunden; Sie müssen diese vor der Veröffentlichung bestätigen.}}",
+      "coverageWarning": "Einige Zeitblöcke erfüllen die Mindestbesetzungsanforderungen nicht.",
+      "maxHours": "Max. Stunden: {count}",
+      "notifyEmployees": "{count, plural, one {# Schichtentwurf veröffentlichen und Mitarbeitende benachrichtigen} other {# Schichtentwürfe veröffentlichen und Mitarbeitende benachrichtigen}}",
+      "overtime": "Überstunden: {count}",
+      "publishing": "Wird veröffentlicht…",
+      "restTime": "Ruhezeit: {count}",
+      "totalFindings": "{count, plural, one {# Feststellung insgesamt} other {# Feststellungen insgesamt}}",
+      "warningsDetectedBeforePublish": "Vor der Veröffentlichung erkannte Warnungen"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "{count} Hinweis(e) vor Veröffentlichung erkannt.",
@@ -30,8 +46,8 @@
         "title": "Compliance-Warnungen in diesem Datumsbereich"
       },
       "focus": {
-        "anonymous": "Schichten einer Person werden angezeigt",
-        "employee": "Schichten von {name} werden angezeigt",
+        "anonymous": "Schichten eines Mitarbeiters werden angezeigt",
+        "employee": "Schichten für {name} werden angezeigt",
         "showAll": "Alle Schichten anzeigen"
       },
       "loading": "Schichtplan wird geladen...",

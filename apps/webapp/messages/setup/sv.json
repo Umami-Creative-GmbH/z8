@@ -22,6 +22,15 @@
     "continue_to_sign_in": "Fortsätt till inloggning",
     "creating_account": "Skapar ditt administratörskonto...",
     "description": "Konfigurera det första administratörskontot för din plattform. Detta konto kommer att ha fullständig systemåtkomst och är skilt från organisationskonton.",
+    "error": {
+      "password_lowercase": "Lösenordet måste innehålla minst en liten bokstav",
+      "password_max_length": "Lösenordet får vara högst 128 tecken",
+      "password_min_length": "Lösenordet måste vara minst 12 tecken",
+      "password_number": "Lösenordet måste innehålla minst en siffra",
+      "password_required": "Lösenord krävs",
+      "passwords_mismatch": "Lösenorden matchar inte",
+      "password_uppercase": "Lösenordet måste innehålla minst en stor bokstav"
+    },
     "field": {
       "confirm_password": "Bekräfta lösenord",
       "confirm_password_placeholder": "Bekräfta ditt lösenord",

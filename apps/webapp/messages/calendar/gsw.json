@@ -136,6 +136,11 @@
       "success": "Mitarbeiter erfolgriich usgstemplet",
       "title": "Mitarbeiter usstemplä?"
     },
+    "contextMenu": {
+      "delete": "Lösche",
+      "edit": "Bearbeite",
+      "label": "Ziterfassigsaktione"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Ziiterfassig blockiert",
       "category": "Kategori",
@@ -159,35 +164,72 @@
       "title": "In Pause umwandle?"
     },
     "details": {
+      "automaticClockOut": "Automatisch usgstämpelt",
+      "automaticCutoff": "Usstämpel-Gränze",
+      "automaticLimit": "Limite für ununterbrochni Arbet",
       "baseWorked": "Basis gschaffet",
       "blocksTimeEntry": "Blockiert d Ziiterfassig",
       "category": "Kategori",
       "credited": "Gueretschiert",
       "dateRange": "Datumsberiich",
       "duration": "Duur",
+      "editedBy": "Bearbeitet vo",
       "employee": "Aagstellte",
       "notes": "Notize",
+      "pendingApproval": "Gnähmigung usstehend",
+      "pendingApprovalDescription": "Die Arbetsziit wartet uf d Gnähmigung dur d Fuehrigskraft. Di erfasste Ziite chönd sich ändere, wänn si abglehnt wird.",
       "project": "Projekt",
       "recurring": "Jöhrlich widerchärend",
+      "rejected": "Abglehnt",
+      "rejectedDescription": "Die Änderig vo de Arbetsziit isch vonere Fuehrigskraft abglehnt worde. Di ursprüngliche Ziite sind widerhergstellt worde.",
+      "source": "Quelle",
       "status": "Status",
       "surcharge": "Zueschlag",
       "surchargeBreakdown": "Zueschlagsufschlüsslig",
+      "system": "System",
       "time": "Ziit",
       "type": "Typ",
-      "workLocation": "Arbeitsort"
+      "workLocation": "Arbetsort"
     },
     "edit": {
       "deleteEntry": "Iitrag lösche",
+      "locationRequired": "Wähl en Arbetsort us.",
+      "noNotes": "Kei Notize hinzuegfüegt",
+      "noProject": "Keis Projekt zuegwise",
       "notesSaved": "Notize gspicheret",
       "notesSaveFailed": "Notize chönd nöd gspicheret werde",
       "projectSaved": "Projekt aktualisiert",
       "projectSaveFailed": "Projekt cha nöd aktualisiert werde",
       "split": "Teile",
-      "locationRequired": "Wähl en Arbeitsort.",
       "time": {
-        "noChanges": "Ändere zerscht Datum, Ziit oder Arbeitsort.",
-        "edit": "Iitrag bearbeite"
-      }
+        "approvalHint": "Die Änderig wird dinere Fuehrigskraft zur Gnähmigung gschickt.",
+        "beyondWindow": "Iiträg, wo älter als {days} Täg sind, chönd nur vomene Admin bearbeitet werde.",
+        "clockIn": "Iistämple",
+        "clockInDate": "Datum bim Iistämple",
+        "clockInTime": "Ziit bim Iistämple",
+        "clockOut": "Usstämple",
+        "clockOutDate": "Datum bim Usstämple",
+        "clockOutTime": "Ziit bim Usstämple",
+        "directHint": "Die Änderig gilt sofort.",
+        "edit": "Iitrag bearbeite",
+        "invalidRange": "Usstämple muess nach em Iistämple si.",
+        "noChanges": "Ändere zerscht s Datum, d Ziit oder de Arbetsort.",
+        "noteLabel": "Notiz (optional)",
+        "notePlaceholder": "En Notiz zu dere Änderig hinzuefüege…",
+        "onBehalfHint": "Die Änderig folgt de Gnähmigungskette vom Mitarbeiter. Wänn du d Gnähmigungsperson bisch, gilt si sofort.",
+        "pendingCorrection": "E Ziitänderig für dä Iitrag wartet scho uf d Freigaab.",
+        "reasonLabel": "Grund",
+        "reasonPlaceholder": "Erklär, werum die Korrektur nötig isch…",
+        "reasonRequired": "Bitte gib en Grund für din Vorgesetzte aa.",
+        "saved": "Ziitiitrag aktualisiert",
+        "saveFailed": "Ziitiitrag hät nöd chönne aktualisiert werde",
+        "submitForApproval": "Zur Freigaab iireiche",
+        "submitOnBehalf": "Änderig iireiche",
+        "submitted": "Änderig zur Freigaab dur de Vorgesetzt iigreicht",
+        "submittedOnBehalf": "Änderig a d Freigaabeperson vom Mitarbeiter iigreicht",
+        "timezoneNote": "Ziite sind i de Ziitzone vom Mitarbeiter ({timezone})"
+      },
+      "title": "Arbetsperiode"
     },
     "employeeSelector": {
       "error": "Teammitglieder chönd nöd glade werde",
@@ -226,6 +268,7 @@
       "workPeriod": "Arbetsperiode",
       "workPeriodPending": "Wartet uf Bestätigung"
     },
+    "loadEventsError": "Kaländerereignis händ nöd chönne glade werde: {message}",
     "mobileControls": {
       "description": "Wähl us, weli Kalender-Iiträg sichtbar sind.",
       "title": "Filter & Legände"
@@ -239,6 +282,14 @@
       "previousMonth": "Vorheriger Monat",
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
       "weekSum": "Summe"
+    },
+    "requirements": {
+      "status": {
+        "met": "Vorgab erfüllt",
+        "missing": "fählendi erfassti Ziit",
+        "over": "über de Vorgab",
+        "under": "unter de Vorgab"
+      }
     },
     "split": {
       "ambiguousTime": "Wähle us, weles Eräignis bruucht wird",
@@ -277,6 +328,12 @@
       "week": "Wuche",
       "year": "Jahr"
     },
+    "workLocation": {
+      "notRecorded": "Nöd erfasst"
+    },
+    "workPeriod": {
+      "editedBy": "(bearbeitet vo {name} am {date})"
+    },
     "workStatus": {
       "overRequirement": "über Anforderung",
       "requiredHoursMissing": "erforderliche Stunden fehlen",
@@ -285,9 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "workLocation": {
-      "notRecorded": "Nöd erfasst"
     }
   }
 }

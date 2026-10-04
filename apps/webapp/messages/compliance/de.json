@@ -55,6 +55,9 @@
           "restPeriodViolations": "Ruhezeitverstöße: {count}"
         }
       },
+      "footer": {
+        "lastRefreshed": "Zuletzt aktualisiert: {time}"
+      },
       "links": {
         "inspectCompliance": "Compliance prüfen",
         "inspectInAuditLog": "Im Audit-Protokoll prüfen",
@@ -62,6 +65,11 @@
         "openAuditLog": "Audit-Protokoll öffnen",
         "openComplianceSettings": "Compliance-Einstellungen öffnen",
         "reviewAuditExport": "Audit-Export überprüfen"
+      },
+      "overview": "Compliance-Übersicht",
+      "recentEvents": {
+        "empty": "Es wurden kürzlich keine kritischen Ereignisse erkannt.",
+        "title": "Kürzliche kritische Ereignisse"
       },
       "sections": {
         "accessControls": {

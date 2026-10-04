@@ -1,5 +1,19 @@
 {
   "organization": {
+    "autoClockOut": {
+      "adminOnly": "Seuls les administrateurs et les propriétaires de l'organisation peuvent modifier ces paramètres.",
+      "description": "Définissez la durée maximale de travail continu en direct. Les employés sont automatiquement dépointés lorsque cette limite est atteinte.",
+      "enabled": "Dépointage automatique",
+      "help": "Une pause enregistrée ou un nouveau pointage d'arrivée réinitialise la limite autorisée. Les modifications s'appliquent au travail déjà en cours. Les vérifications s'exécutent toutes les cinq minutes ; le dépointage est enregistré à l'heure limite, même si la vérification a lieu plus tard. Les employés reçoivent systématiquement une notification dans leur boîte de réception.",
+      "hours": "Heures",
+      "invalidDuration": "Saisissez une durée valide : heures entières et 0 à 59 minutes, pour un total d'au moins une minute.",
+      "minutes": "Minutes",
+      "save": "Enregistrer les modifications",
+      "saved": "Paramètres de dépointage automatique enregistrés",
+      "saveFailed": "Échec de la mise à jour des paramètres de dépointage automatique",
+      "saving": "Enregistrement…",
+      "title": "Dépointage automatique"
+    },
     "create": "Créer une organisation",
     "createDialog": {
       "description": "Configurez votre organisation pour commencer",
@@ -120,7 +134,7 @@
       "expired": "Expiré",
       "expires": "Expire le",
       "inactive": "Inactif",
-      "invitationActionsLabel": "Actions pour l'invitation à {email}",
+      "invitationActionsLabel": "Actions pour l'invitation à ${row.original.email}",
       "invitationCancelError": "Échec de l'annulation de l'invitation",
       "invitationCancelSuccess": "Invitation annulée",
       "invitationResendError": "Échec du renvoi de l'invitation",
@@ -128,7 +142,7 @@
       "invitationsWaiting": "{count, plural, other {{count} invitation(s) en attente d'acceptation}}",
       "invitedBy": "Invité par",
       "member": "Membre",
-      "memberActionsLabel": "Actions pour {name}",
+      "memberActionsLabel": "Actions pour ${row.original.user.name}",
       "memberCount": "{count, plural, other {{count} membre(s) dans cette organisation}}",
       "noInvitationResults": "Aucune invitation ne correspond à votre recherche.",
       "noInvitations": "Aucune invitation en attente.",
@@ -189,11 +203,10 @@
       "failed": "Échec de la récupération de l'organisation",
       "success": "Organisation récupérée avec succès"
     },
-    "role": {
-      "admin": "Admin",
-      "member": "Membre",
-      "owner": "Propriétaire"
-    },
+    "role": "organization.slugErrors",
+    "role.admin": "Admin",
+    "role.member": "Membre",
+    "role.owner": "Propriétaire",
     "slugDescription": "Utilisé dans les URL. Généré automatiquement à partir du nom.",
     "slugErrors": {
       "format": "Le slug ne doit contenir que des lettres minuscules, des chiffres et des traits d'union",
@@ -256,7 +269,7 @@
       "title": "Équipes"
     },
     "timezone": {
-      "balances-recalculating": "Les soldes de travail sont recalculés pour le nouveau fuseau horaire et restent masqués jusqu'à ce qu'ils soient prêts.",
+      "balances-recalculating": "Les soldes d'heures sont en cours de recalcul pour le nouveau fuseau horaire et restent masqués jusqu'à ce qu'ils soient prêts.",
       "default": "Fuseau horaire par défaut",
       "description": "Définissez le fuseau horaire par défaut de votre organisation. Il est utilisé pour le suivi des absences, les rapports et d'autres fonctionnalités basées sur la date. Les utilisateurs individuels peuvent le remplacer dans les paramètres de leur profil.",
       "owner-only": "Seuls les propriétaires de l'organisation peuvent modifier le paramètre de fuseau horaire.",

@@ -189,7 +189,7 @@
         "presetName": "Preset Name",
         "presetNameHint": "This name will be used to identify the preset when assigning to teams or employees",
         "presetNamePlaceholder": "e.g., Germany - Bavaria",
-        "presetSuccess": "Created preset \"{name}\" with {count} holidays",
+        "presetSuccess": "Created preset \"{name}\" with ${holidaysToImport.length} holidays",
         "region": "Region",
         "searchCountry": "Search countries...",
         "searchRegion": "Search regions...",
@@ -250,6 +250,7 @@
         "importFirst": "Import Your First Preset",
         "loadError": "Failed to load presets",
         "name": "Name",
+        "namePlaceholder": "e.g., Germany - Bavaria",
         "noHolidays": "No holidays in this preset",
         "removeHoliday": "Remove holiday \"{holiday}\" from preset",
         "title": "Holiday Presets",
@@ -257,8 +258,7 @@
         "updated": "Preset updated successfully",
         "updateFailed": "Failed to update preset",
         "year": "Year",
-        "yearValue": "Year {year}",
-        "namePlaceholder": "e.g., Germany - Bavaria"
+        "yearValue": "Year {year}"
       },
       "recurrence": {
         "none": "One-time",

@@ -1,5 +1,10 @@
 {
   "payroll": {
+    "accessDenied": {
+      "description": "Você não tem acesso aos dados da folha de pagamento da organização ativa.",
+      "help": "Solicite a um administrador da organização a concessão de acesso à folha de pagamento se precisar deste espaço de trabalho.",
+      "title": "Sem acesso à folha de pagamento"
+    },
     "actions": {
       "apply": "Aplicar",
       "downloadPdf": "Baixar PDF",
@@ -12,16 +17,16 @@
       "dateUnavailable": "Data indisponível",
       "missingClockOut": "Saída não registrada",
       "needReview": "{count} bloqueios de folha de pagamento precisam de revisão",
-      "offboardingClockRepair": "O registo de saída na desvinculação precisa de correção",
+      "offboardingClockRepair": "O registro de saída de desligamento precisa de reparo",
       "openApprovals": "Aprovações pendentes",
       "openCalendar": "Abrir calendário",
-      "openWork": "Trabalho sem registo de saída",
-      "openWorkDiagnostics": "Abrir diagnóstico de trabalho",
+      "openWork": "Trabalho sem registro de saída",
+      "openWorkDiagnostics": "Abrir diagnósticos de trabalho",
       "pendingAbsence": "Ausência pendente",
       "pendingTimeCorrection": "Correção de tempo pendente",
-      "pendingWorkApproval": "Trabalho a aguardar aprovação",
+      "pendingWorkApproval": "Trabalho aguardando aprovação",
       "refreshAfterClearFailed": "Bloqueio removido, mas a folha de pagamento não pôde ser atualizada",
-      "uncertainHistoricalWork": "O trabalho histórico precisa de revisão",
+      "uncertainHistoricalWork": "Trabalho histórico precisa de revisão",
       "unknownEmployee": "Funcionário desconhecido",
       "unresolvedWorkMinutes": "Minutos de trabalho precisam de revisão"
     },
@@ -48,11 +53,12 @@
       "activeOrganizationEmployeeRequired": "O contexto do funcionário da organização ativa é obrigatório",
       "authenticationRequired": "Autenticação necessária",
       "blockerNotDismissible": "O bloqueio da folha de pagamento não pode ser dispensado",
+      "dataTemporarilyUnavailable": "Os dados da folha de pagamento estão temporariamente indisponíveis",
       "employeeIdsMustBeArray": "employeeIds deve ser uma matriz",
       "employeeIdsMustContainOnlyStrings": "employeeIds deve conter apenas strings",
       "endDateAfterStart": "A data de término deve ser igual ou posterior à data de início",
-      "exportBlockedByOffboardingClockRepair": "Exportação bloqueada: corrija primeiro o registo de saída na desvinculação",
-      "exportBlockedByUncertainWork": "Exportação bloqueada: resolva primeiro o trabalho incerto no âmbito selecionado",
+      "exportBlockedByOffboardingClockRepair": "Exportação bloqueada: corrija primeiro o registro de saída do desligamento",
+      "exportBlockedByUncertainWork": "Exportação bloqueada: resolva primeiro o trabalho incerto no escopo selecionado",
       "exportBlockedByUnresolvedWorkMinutes": "Exportação bloqueada: resolva primeiro os minutos de trabalho que precisam de revisão",
       "exportFormatNotConfigured": "O formato de exportação da folha de pagamento não está configurado",
       "invalidBlockerId": "ID de bloqueio da folha de pagamento inválido",
@@ -113,6 +119,11 @@
       "ready": "Pronto",
       "workedHours": "Horas trabalhadas"
     },
-    "title": "Folha de pagamento"
+    "title": "Folha de pagamento",
+    "unavailable": {
+      "description": "Não foi possível preparar os dados da folha de pagamento com segurança.",
+      "help": "Tente novamente mais tarde. Se o problema persistir, entre em contato com um administrador da organização.",
+      "title": "Folha de pagamento temporariamente indisponível"
+    }
   }
 }

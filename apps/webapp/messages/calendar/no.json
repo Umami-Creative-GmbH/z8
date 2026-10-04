@@ -136,6 +136,11 @@
       "success": "Ansatt ble stemplet ut",
       "title": "Stemple ut ansatt?"
     },
+    "contextMenu": {
+      "delete": "Slett",
+      "edit": "Rediger",
+      "label": "Handlinger for timeregistrering"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Timeføringer blokkert",
       "category": "Kategori",
@@ -159,35 +164,72 @@
       "title": "Konverter til pause?"
     },
     "details": {
+      "automaticClockOut": "Automatisk stemplet ut",
+      "automaticCutoff": "Tidsgrense for utstempling",
+      "automaticLimit": "Grense for uavbrutt arbeid",
       "baseWorked": "Basistid arbeidet",
       "blocksTimeEntry": "Blokkerer tidsregistrering",
       "category": "Kategori",
       "credited": "Godskrevet",
       "dateRange": "Datoperiode",
       "duration": "Varighet",
+      "editedBy": "Redigert av",
       "employee": "Ansatt",
       "notes": "Notater",
+      "pendingApproval": "Venter på godkjenning",
+      "pendingApprovalDescription": "Denne arbeidsperioden venter på godkjenning fra leder. De registrerte tidene kan endres hvis den avvises.",
       "project": "Prosjekt",
       "recurring": "Gjentakende årlig",
+      "rejected": "Avvist",
+      "rejectedDescription": "Denne endringen i arbeidsperioden ble avvist av en leder. De opprinnelige tidene er gjenopprettet.",
+      "source": "Kilde",
       "status": "Status",
       "surcharge": "Tillegg",
       "surchargeBreakdown": "Fordeling av tillegg",
+      "system": "System",
       "time": "Tid",
       "type": "Type",
       "workLocation": "Arbeidssted"
     },
     "edit": {
       "deleteEntry": "Slett oppføring",
+      "locationRequired": "Velg et arbeidssted.",
+      "noNotes": "Ingen notater lagt til",
+      "noProject": "Ingen prosjekter tilordnet",
       "notesSaved": "Notater lagret",
       "notesSaveFailed": "Kunne ikke lagre notater",
       "projectSaved": "Prosjekt oppdatert",
       "projectSaveFailed": "Kunne ikke oppdatere prosjekt",
       "split": "Del opp",
-      "locationRequired": "Velg et arbeidssted.",
       "time": {
-        "noChanges": "Endre først dato, klokkeslett eller arbeidssted.",
-        "edit": "Rediger oppføring"
-      }
+        "approvalHint": "Denne endringen blir sendt til lederen din for godkjenning.",
+        "beyondWindow": "Oppføringer som er eldre enn {days} dager, kan bare redigeres av en administrator.",
+        "clockIn": "Stemple inn",
+        "clockInDate": "Innstemplingsdato",
+        "clockInTime": "Innstemplingstidspunkt",
+        "clockOut": "Stemple ut",
+        "clockOutDate": "Utstemplingsdato",
+        "clockOutTime": "Utstemplingstidspunkt",
+        "directHint": "Denne endringen trer i kraft umiddelbart.",
+        "edit": "Rediger oppføring",
+        "invalidRange": "Utstempling må være etter innstempling.",
+        "noChanges": "Endre dato, klokkeslett eller arbeidssted først.",
+        "noteLabel": "Notat (valgfritt)",
+        "notePlaceholder": "Legg til et notat om denne endringen…",
+        "onBehalfHint": "Denne endringen følger den ansattes godkjenningskjede. Hvis du er godkjenneren deres, trer den i kraft umiddelbart.",
+        "pendingCorrection": "En tidsendring for denne oppføringen venter allerede på godkjenning.",
+        "reasonLabel": "Begrunnelse",
+        "reasonPlaceholder": "Forklar hvorfor denne korrigeringen er nødvendig…",
+        "reasonRequired": "Vennligst oppgi en begrunnelse til lederen din.",
+        "saved": "Timeregistrering oppdatert",
+        "saveFailed": "Kunne ikke oppdatere timeregistrering",
+        "submitForApproval": "Send til godkjenning",
+        "submitOnBehalf": "Send inn endring",
+        "submitted": "Endring sendt til leder for godkjenning",
+        "submittedOnBehalf": "Endring sendt til den ansattes godkjenner",
+        "timezoneNote": "Tidspunktene er i den ansattes tidssone ({timezone})"
+      },
+      "title": "Arbeidsperiode"
     },
     "employeeSelector": {
       "error": "Kunne ikke laste inn teammedlemmer",
@@ -226,6 +268,7 @@
       "workPeriod": "Arbeidsperiode",
       "workPeriodPending": "Venter på godkjenning"
     },
+    "loadEventsError": "Kunne ikke laste inn kalenderhendelser: {message}",
     "mobileControls": {
       "description": "Velg hvilke kalenderoppføringer som er synlige.",
       "title": "Filtre og tegnforklaring"
@@ -239,6 +282,14 @@
       "previousMonth": "Forrige måned",
       "totalDescription": "Registrert tid sammenlignet med retningslinjetimer",
       "weekSum": "Sum"
+    },
+    "requirements": {
+      "status": {
+        "met": "krav oppfylt",
+        "missing": "mangler registrert tid",
+        "over": "over krav",
+        "under": "under krav"
+      }
     },
     "split": {
       "ambiguousTime": "Velg hvilken forekomst som skal brukes",
@@ -277,6 +328,12 @@
       "week": "Uke",
       "year": "År"
     },
+    "workLocation": {
+      "notRecorded": "Ikke registrert"
+    },
+    "workPeriod": {
+      "editedBy": "(redigert av {name} {date})"
+    },
     "workStatus": {
       "overRequirement": "over kravet",
       "requiredHoursMissing": "påkrevde timer mangler",
@@ -285,9 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "workLocation": {
-      "notRecorded": "Ikke registrert"
     }
   }
 }

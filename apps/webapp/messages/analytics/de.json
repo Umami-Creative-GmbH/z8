@@ -191,6 +191,7 @@
         "loadData": "Laden der Arbeitsstunden-Analysedaten fehlgeschlagen"
       },
       "expectedHours": "Erwartete Stunden",
+      "hoursPerWeekAbbreviation": "Std./Wo.",
       "variance": "Abweichung",
       "varianceTrend": {
         "description": "Abweichung der Arbeitsstunden von den erwarteten Stunden im Zeitverlauf",

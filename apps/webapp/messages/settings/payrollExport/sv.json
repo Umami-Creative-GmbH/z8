@@ -21,13 +21,24 @@
       },
       "description": "Exportera arbetsperioder till lönesystem som DATEV eller Personio",
       "export": {
+        "allEmployees": "Alla anställda",
+        "allProjects": "Alla projekt",
+        "allTeams": "Alla team",
         "asyncDescription": "Din export bearbetas. Kontrollera historikfliken för förlopp.",
         "asyncStarted": "Export startad",
         "customRange": "Anpassat intervall",
         "dateRange": "Datumintervall",
         "description": "Exportera arbetsperioder och frånvaro till DATEV Lohn & Gehalt-format",
+        "employees": "Anställda",
         "endDate": "Slutdatum",
         "error": "Exporten misslyckades",
+        "exportButtonDatev": "Exportera till DATEV",
+        "exportButtonLexware": "Exportera till Lexware",
+        "exportButtonPersonio": "Exportera till Personio",
+        "exportButtonSage": "Exportera till Sage",
+        "exportButtonSuccessFactorsApi": "Exportera till SAP SuccessFactors (API)",
+        "exportButtonSuccessFactorsCsv": "Exportera SAP SuccessFactors-CSV",
+        "exportButtonWorkday": "Exportera till Workday",
         "exporting": "Exporterar…",
         "filters": "Filter (valfritt)",
         "format": "Exportformat",
@@ -40,8 +51,10 @@
         "format.workday": "Workday",
         "month": "Månad",
         "monthSelection": "Välj månad",
+        "projects": "Projekt",
         "startDate": "Startdatum",
         "success": "Export nedladdad",
+        "teams": "Team",
         "title": "Exportera löneuppgifter",
         "unavailable": {
           "missingConfiguration": "konfiguration",
@@ -271,12 +284,118 @@
       }
     },
     "payrollReadiness": {
+      "actions": {
+        "approvals": "Granska inkorg för godkännande",
+        "payrollExport": "Öppna inställningar för löneexport",
+        "timeTracking": "Granska tidrapportering",
+        "travelExpenses": "Granska reseutlägg"
+      },
+      "affectedEmployees": {
+        "name": "Anställd",
+        "noNumber": "Ej angivet",
+        "number": "Anställningsnummer"
+      },
+      "checks": {
+        "count": "Antal"
+      },
+      "checkStatus": {
+        "fail": "Blockerad",
+        "pass": "Redo",
+        "unavailable": "Kan inte verifieras",
+        "warning": "Varning"
+      },
       "description": "Kontrollera om en löneperiod är redo innan du exporterar tids-, frånvaro- och lönedata.",
+      "openPayrollExport": "Öppna löneexport",
+      "status": {
+        "blocked": "Blockerad",
+        "ready": "Redo för lönekörning",
+        "unavailable": "Kan inte verifieras"
+      },
+      "summary": {
+        "affectedEmployees": "Berörda anställda",
+        "affectedEmployeesDescription": "Anställda kopplade till öppna beredskapspunkter.",
+        "blockers": "Blockerare",
+        "blockersDescription": "Obligatoriska kontroller som för närvarande blockerar exporten.",
+        "exportTargets": "Konfigurerade exportmål",
+        "exportTargetsDescription": "Aktiva destinationer för löneexport.",
+        "period": "Period",
+        "periodDescription": "Löneperiod som verifieras.",
+        "status": "Status",
+        "statusDescription": "Övergripande beredskap för löneexport.",
+        "warnings": "Varningar",
+        "warningsDescription": "Icke-blockerande problem att granska före export."
+      },
       "title": "Löneberedskap"
     },
     "workDiagnostics": {
+      "allEmployees": "Visa alla anställda",
+      "append": {
+        "continued": "Anställda som fortsätter från en godkänd ankarpunkt: {count}. Historik före varje ankarpunkt är inte verifierad.",
+        "counts": "{verified} av {total} anställda har härkomst verifierad från lagrade bevis.",
+        "description": "Ett separat påstående från fullständighet: härkomst och kontinuitet för lagrade tidsregistreringar. Det avgör inte beredskap för löneexport.",
+        "interruptions": "Kontinuitetsavbrott",
+        "issues": "Härkomstproblem och kandidater",
+        "limitations": "Begränsningar",
+        "title": "Säkring av tidsregistreringskedja"
+      },
+      "blocking": "Blockerar fullständighet",
       "description": "Hitta saknade eller motstridiga tidsposter och problem med tidsregistreringskedjan",
+      "evidence": {
+        "entries": "Tidsregistreringar",
+        "timeRecords": "Tidsposter",
+        "workPeriods": "Arbetsperioder"
+      },
+      "findings": {
+        "description": "Varje fynd är skrivskyddat bevis. Endast reparationen av historiska luckor nedan fyller i saknade värden, från bevis och med separat auktorisering; att ändra fastställt arbete kräver en separat auktoriserad granskning.",
+        "employees": "Anställda",
+        "empty": "Inget saknat, motstridigt eller misstänkt historiskt arbete inom detta omfång.",
+        "evidence": "Bevis",
+        "finding": "Fynd",
+        "provenance": "Ursprung",
+        "title": "Observationer",
+        "treatment": "Hantering"
+      },
+      "kind": {
+        "approvalRelationshipMissing": "Väntande arbete utan godkännandebegäran",
+        "approvalStateConflict": "Godkännandestatusar stämmer inte överens",
+        "canonicalDetailMissing": "Arbetsinformation saknas för tidsregistrering",
+        "canonicalLinkMissing": "Länk till tidsregistrering saknas",
+        "canonicalLinkShared": "Flera arbetsperioder länkar till samma tidsregistrering",
+        "canonicalLinkUnresolved": "Länkad tidsregistrering hittades inte",
+        "canonicalMissing": "Tidsregistrering saknas",
+        "captureInferred": "Tidszonsregistrering härleddes i efterhand",
+        "deletedWorkPayable": "Borttaget arbete har fortfarande en lönegrundande tidsregistrering",
+        "durationConflict": "Sparade varaktigheter stämmer inte överens",
+        "durationMissing": "Sparad varaktighet saknas",
+        "emptyInterval": "Starttid är samma som sluttid",
+        "endpointConflict": "Start- eller sluttider stämmer inte överens",
+        "endpointEntryMissing": "Utstämpling saknas",
+        "endpointEntrySuperseded": "Arbetsperiod pekar på en ersatt stämplingspost",
+        "endpointEntryUnresolved": "Stämplingspost hittades inte",
+        "endpointMissing": "Sluttid saknas",
+        "manualEvidenceUnreadable": "Underlag för manuell inlämning är oläsligt",
+        "manualHolidayCheckDatesDiffer": "Helgdagsvalidering använde andra datum än arbetet",
+        "manualInterpretationAmbiguous": "Tid för manuell registrering hoppades över eller upprepades vid tidsomställning",
+        "manualInterpretationMismatch": "Manuell registrering sparades med andra tider än vad som skickades in",
+        "manualTrimmed": "Manuell registrering förkortades när den sparades",
+        "manualZoneUnrecorded": "Tidszon för manuell registrering har inte registrerats",
+        "metadataCanonicalOnly": "Tilldelning endast på tidsregistrering",
+        "metadataConflict": "Tilldelningar stämmer inte överens",
+        "metadataMissing": "Tilldelning saknas på tidsregistrering",
+        "multipleActiveWork": "Fler än en aktiv arbetsperiod",
+        "negativeDuration": "Negativ varaktighet",
+        "openStateConflict": "Öppen och stängd status stämmer inte överens",
+        "overlappingWork": "Överlappande arbete",
+        "ownershipConflict": "Ägandekonflikt",
+        "relinkedCanonicalResidue": "Tidsregistrering kvarlämnad efter omlänkning",
+        "reversedInterval": "Slut före start",
+        "storedElapsedDiscrepancy": "Lagrade minuter skiljer sig från förfluten tid",
+        "workOutsideOrganizationEmployees": "Arbete ägs utanför organisationens anställda"
+      },
+      "nextMonth": "Nästa månad",
+      "ownerUnknown": "Ägare ej fastställd",
       "pageDescription": "Diagnostik på postnivå för historiskt arbete: saknade eller motstridiga representationer, ursprung för införande, misstänkta fel vid manuell registrering och säkerställande av tidsregistreringskedjan.",
+      "previousMonth": "Föregående månad",
       "proposals": {
         "addChange": "Lägg till ändring",
         "after": "Nytt värde",
@@ -354,6 +473,12 @@
         "valueRequired": "Ange det nya värdet.",
         "work": "Arbetsperiod"
       },
+      "provenance": {
+        "ambiguous": "Tvetydigt ursprung",
+        "freshBackdated": "Ny bakåtdaterad skrivning",
+        "postAdoption": "Skrivning efter införande",
+        "preAdoption": "Historik före införande"
+      },
       "repair": {
         "actor": {
           "completingEntry": "Upphovsperson för utstämplingen",
@@ -397,7 +522,37 @@
         "title": "Reparation av historiska luckor",
         "work": "Arbetsperiod"
       },
-      "title": "Arbetsdiagnostik"
+      "shape": {
+        "conflicting": "Motstridig",
+        "disclosure": "Upplysning",
+        "missing": "Saknas",
+        "suspectedDefect": "Misstänkt fel"
+      },
+      "status": {
+        "complete": "Fullständig",
+        "completeDescription": "Inget relevant saknat eller motstridigt underlag, inklusive väntande, avvisat och öppet arbete.",
+        "incomplete": "Ofullständig",
+        "incompleteDescription": "Opåverkade data kan användas för granskning, men detta omfång är inte fullständigt.",
+        "widenedEmployees": "Datum kunde inte fastställas, så berörda medarbetare är osäkra för varje period.",
+        "widenedOrganization": "Ägarskap kunde inte fastställas, så hela organisationen är osäker."
+      },
+      "summary": {
+        "affected": "Berörda medarbetare",
+        "affectedDescription": "Medarbetare vars arbete inom detta omfång inte kan fastställas.",
+        "blocking": "Blockerande upptäckter",
+        "blockingDescription": "Underlag saknas eller är motstridigt, vilket gör relevant arbete osäkert.",
+        "scope": "Omfång",
+        "scopeAll": "Alla medarbetare. Datumen omfattar kalenderdagar i alla tidszoner.",
+        "status": "Fullständighet"
+      },
+      "title": "Arbetsdiagnostik",
+      "treatment": {
+        "disclosed": "Redovisad begränsning",
+        "historicalGap": "Historisk lucka",
+        "integrityIncident": "Integritetsincident",
+        "investigationRequired": "Utredning krävs",
+        "reviewRequired": "Granskning krävs"
+      }
     }
   }
 }

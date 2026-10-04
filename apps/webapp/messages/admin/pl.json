@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Monitoruj subskrypcje, przychody i status płatności",
+      "failedToSyncSeats": "Nie udało się zsynchronizować miejsc",
       "intervals": {
         "month": "Miesięcznie",
         "year": "Rocznie"
@@ -102,6 +103,7 @@
         "trialing": "W okresie próbnym",
         "trialingDescription": "W okresie próbnym"
       },
+      "seatsSynced": "Zsynchronizowano miejsca",
       "sections": {
         "recentSubscriptions": "Ostatnie subskrypcje",
         "revenueMetrics": "Metryki przychodów"
@@ -112,6 +114,7 @@
         "pastDue": "Zaległa",
         "trialing": "Okres próbny"
       },
+      "syncSeatsFor": "Synchronizuj miejsca dla {organizationName}",
       "table": {
         "actions": "Akcje",
         "billing": "Rozliczenia",

@@ -84,6 +84,7 @@
     },
     "billing": {
       "description": "Monitorear suscripciones, ingresos y estado de pago",
+      "failedToSyncSeats": "Error al sincronizar las plazas",
       "intervals": {
         "month": "Mensual",
         "year": "Anual"
@@ -102,6 +103,7 @@
         "trialing": "En prueba",
         "trialingDescription": "En periodo de prueba"
       },
+      "seatsSynced": "Plazas sincronizadas",
       "sections": {
         "recentSubscriptions": "Suscripciones recientes",
         "revenueMetrics": "Métricas de ingresos"
@@ -112,6 +114,7 @@
         "pastDue": "Vencido",
         "trialing": "Prueba"
       },
+      "syncSeatsFor": "Sincronizar plazas para {organizationName}",
       "table": {
         "actions": "Acciones",
         "billing": "Facturación",

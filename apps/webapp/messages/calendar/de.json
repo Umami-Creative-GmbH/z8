@@ -136,6 +136,11 @@
       "success": "Mitarbeiter erfolgreich ausgestempelt",
       "title": "Mitarbeiter ausstempeln?"
     },
+    "contextMenu": {
+      "delete": "Löschen",
+      "edit": "Bearbeiten",
+      "label": "Aktionen für Zeiteinträge"
+    },
     "dayDetails": {
       "blocksTimeEntry": "Zeiteinträge blockiert",
       "category": "Kategorie",
@@ -160,64 +165,71 @@
     },
     "details": {
       "automaticClockOut": "Automatisch ausgestempelt",
+      "automaticCutoff": "Ausstempelfrist",
       "automaticLimit": "Limit für ununterbrochene Arbeit",
-      "automaticCutoff": "Ausgestempelt zum Zeitlimit",
-      "source": "Quelle",
-      "system": "System",
-      "editedBy": "Bearbeitet von",
       "baseWorked": "Basis Arbeitszeit",
       "blocksTimeEntry": "Blockiert Zeiterfassung",
       "category": "Kategorie",
       "credited": "Angerechnet",
       "dateRange": "Datumsbereich",
       "duration": "Dauer",
+      "editedBy": "Bearbeitet von",
       "employee": "Mitarbeiter",
       "notes": "Notizen",
+      "pendingApproval": "Genehmigung ausstehend",
+      "pendingApprovalDescription": "Dieser Arbeitszeitraum wartet auf die Genehmigung durch eine Führungskraft. Die erfassten Zeiten können sich ändern, falls er abgelehnt wird.",
       "project": "Projekt",
       "recurring": "Jährlich wiederkehrend",
+      "rejected": "Abgelehnt",
+      "rejectedDescription": "Diese Änderung des Arbeitszeitraums wurde von einer Führungskraft abgelehnt. Die ursprünglichen Zeiten wurden wiederhergestellt.",
+      "source": "Quelle",
       "status": "Status",
       "surcharge": "Zuschlag",
       "surchargeBreakdown": "Aufschlüsselung der Zuschläge",
+      "system": "System",
       "time": "Zeit",
       "type": "Typ",
       "workLocation": "Arbeitsort"
     },
     "edit": {
       "deleteEntry": "Eintrag löschen",
+      "locationRequired": "Wählen Sie einen Arbeitsort aus.",
+      "noNotes": "Keine Notizen hinzugefügt",
+      "noProject": "Kein Projekt zugewiesen",
       "notesSaved": "Notizen gespeichert",
       "notesSaveFailed": "Speichern der Notizen fehlgeschlagen",
       "projectSaved": "Projekt aktualisiert",
       "projectSaveFailed": "Aktualisieren des Projekts fehlgeschlagen",
       "split": "Teilen",
       "time": {
-        "approvalHint": "Diese Änderung wird Ihrer Führungskraft zur Genehmigung gesendet.",
-        "beyondWindow": "Einträge, die älter als {days} Tage sind, können nur von einem Admin bearbeitet werden.",
+        "approvalHint": "Diese Änderung wird Ihrer Führungskraft zur Genehmigung vorgelegt.",
+        "beyondWindow": "Einträge, die älter als {days} Tage sind, können nur von einem Administrator bearbeitet werden.",
         "clockIn": "Einstempeln",
-        "clockInDate": "Datum Arbeitsbeginn",
-        "clockInTime": "Uhrzeit Arbeitsbeginn",
+        "clockInDate": "Einstempeldatum",
+        "clockInTime": "Einstempelzeit",
         "clockOut": "Ausstempeln",
-        "clockOutDate": "Datum Arbeitsende",
-        "clockOutTime": "Uhrzeit Arbeitsende",
-        "directHint": "Diese Änderung wird sofort übernommen.",
+        "clockOutDate": "Ausstempeldatum",
+        "clockOutTime": "Ausstempelzeit",
+        "directHint": "Diese Änderung wird sofort wirksam.",
         "edit": "Eintrag bearbeiten",
-        "invalidRange": "Ausstempeln muss nach dem Einstempeln liegen.",
-        "noChanges": "Ändern Sie zuerst Datum, Uhrzeit oder Arbeitsort.",
+        "invalidRange": "Das Ausstempeln muss nach dem Einstempeln liegen.",
+        "noChanges": "Ändern Sie zuerst das Datum, die Uhrzeit oder den Arbeitsort.",
         "noteLabel": "Notiz (optional)",
         "notePlaceholder": "Notiz zu dieser Änderung hinzufügen…",
-        "pendingCorrection": "Für diesen Eintrag wartet bereits eine Zeitänderung auf Genehmigung.",
-        "reasonLabel": "Begründung",
-        "reasonPlaceholder": "Erklären Sie, warum diese Korrektur nötig ist…",
+        "onBehalfHint": "Diese Änderung folgt der Genehmigungskette des Mitarbeiters. Wenn Sie die genehmigende Person sind, wird sie sofort wirksam.",
+        "pendingCorrection": "Eine Zeitänderung für diesen Eintrag wartet bereits auf Genehmigung.",
+        "reasonLabel": "Grund",
+        "reasonPlaceholder": "Erklären Sie, warum diese Korrektur erforderlich ist…",
         "reasonRequired": "Bitte geben Sie eine Begründung für Ihre Führungskraft an.",
         "saved": "Zeiteintrag aktualisiert",
-        "saveFailed": "Aktualisieren des Zeiteintrags fehlgeschlagen",
+        "saveFailed": "Zeiteintrag konnte nicht aktualisiert werden",
         "submitForApproval": "Zur Genehmigung einreichen",
-        "submitted": "Änderung zur Genehmigung eingereicht",
-        "timezoneNote": "Zeiten in der Zeitzone des Mitarbeitenden ({timezone})",
-        "onBehalfHint": "Diese Änderung durchläuft die Genehmigungskette der Person. Wenn Sie die genehmigende Person sind, wird sie sofort übernommen.",
         "submitOnBehalf": "Änderung einreichen",
-        "submittedOnBehalf": "Änderung an die genehmigende Person übermittelt"
+        "submitted": "Änderung zur Genehmigung durch die Führungskraft eingereicht",
+        "submittedOnBehalf": "Änderung an die genehmigende Person des Mitarbeiters übermittelt",
+        "timezoneNote": "Zeiten beziehen sich auf die Zeitzone des Mitarbeiters ({timezone})"
       },
-      "locationRequired": "Wählen Sie einen Arbeitsort."
+      "title": "Arbeitszeitraum"
     },
     "employeeSelector": {
       "error": "Teammitglieder konnten nicht geladen werden",
@@ -256,6 +268,7 @@
       "workPeriod": "Arbeitszeitraum",
       "workPeriodPending": "Ausstehende Genehmigung"
     },
+    "loadEventsError": "Kalenderereignisse konnten nicht geladen werden: {message}",
     "mobileControls": {
       "description": "Wählen Sie aus, welche Kalendereinträge sichtbar sind.",
       "title": "Filter & Legende"
@@ -269,6 +282,14 @@
       "previousMonth": "Vorheriger Monat",
       "totalDescription": "Erfasste Zeit im Vergleich zu den Richtlinienstunden",
       "weekSum": "Summe"
+    },
+    "requirements": {
+      "status": {
+        "met": "Vorgabe erfüllt",
+        "missing": "Fehlende erfasste Zeit",
+        "over": "Über Vorgabe",
+        "under": "Unter Vorgabe"
+      }
     },
     "split": {
       "ambiguousTime": "Wählen Sie das zu verwendende Vorkommen",
@@ -307,6 +328,12 @@
       "week": "Woche",
       "year": "Jahr"
     },
+    "workLocation": {
+      "notRecorded": "Nicht erfasst"
+    },
+    "workPeriod": {
+      "editedBy": "(bearbeitet von {name} am {date})"
+    },
     "workStatus": {
       "overRequirement": "über der Anforderung",
       "requiredHoursMissing": "erforderliche Stunden fehlen",
@@ -315,17 +342,6 @@
     },
     "year": {
       "dayWithWorkStatus": "{date}, {status}"
-    },
-    "contextMenu": {
-      "delete": "Löschen",
-      "edit": "Bearbeiten",
-      "label": "Aktionen für den Zeiteintrag"
-    },
-    "workPeriod": {
-      "editedBy": "(bearbeitet von {name} am {date})"
-    },
-    "workLocation": {
-      "notRecorded": "Nicht erfasst"
     }
   }
 }

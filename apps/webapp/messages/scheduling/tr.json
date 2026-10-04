@@ -21,6 +21,22 @@
       "managerDescription": "Çalışan vardiyalarını yönetin ve planlayın",
       "title": "Vardiya Çizelgesi"
     },
+    "publish": {
+      "acknowledgeAndPublish": "Onayla ve Yayınla",
+      "acknowledgmentDescription": "Yayınlama işlemine devam edilecek, ancak bu çizelgede önce onaylanması gereken uyumluluk uyarıları bulunuyor.",
+      "button": "Yayınla ({count})",
+      "cancel": "İptal",
+      "complianceAcknowledgmentRequired": "Uyumluluk Onayı Gerekiyor",
+      "complianceWarnings": "{count, plural, one {Uyumluluk kontrollerinde # uyarı bulundu; yayınlamadan önce bunu onaylamanız gerekir.} other {Uyumluluk kontrollerinde # uyarı bulundu; yayınlamadan önce bunları onaylamanız gerekir.}}",
+      "coverageWarning": "Bazı zaman blokları minimum personel gereksinimlerini karşılamıyor.",
+      "maxHours": "Maksimum saat: {count}",
+      "notifyEmployees": "{count, plural, other {# taslak vardiyayı yayınla ve çalışanları bilgilendir} }",
+      "overtime": "Fazla mesai: {count}",
+      "publishing": "Yayınlanıyor…",
+      "restTime": "Dinlenme süresi: {count}",
+      "totalFindings": "{count, plural, other {Toplam # bulgu} }",
+      "warningsDetectedBeforePublish": "Yayınlama öncesinde uyarılar tespit edildi"
+    },
     "scheduler": {
       "complianceBanner": {
         "findingsDetected": "Yayınlamadan önce {count} bulgu tespit edildi.",
