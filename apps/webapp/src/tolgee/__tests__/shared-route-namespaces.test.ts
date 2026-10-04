@@ -109,6 +109,10 @@ describe("route namespaces", () => {
 
 		await tolgee.run();
 
-		expect(tolgee.t("teamsBot:commands.help.availableCommands", "Help")).not.toBe("Help");
+		// Help commands now use the shared bot namespace. Exercise a key still used
+		// by Teams approval cards so sync --remove-unused can remove obsolete keys.
+		expect(tolgee.t("teamsBot:approval.absenceRequest", "Absence Request")).not.toBe(
+			"Absence Request",
+		);
 	});
 });
