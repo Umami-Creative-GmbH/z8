@@ -55,6 +55,7 @@ const hasPostHogSourcemapConfig =
 
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
+	allowedDevOrigins: ["z8.localhost", "*.z8.localhost"],
 	logging: { incomingRequests: { ignore: [SETUP_REQUEST_PATH] } },
 	async rewrites() {
 		return [

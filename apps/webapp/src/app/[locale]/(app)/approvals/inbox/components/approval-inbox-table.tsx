@@ -7,6 +7,7 @@ import {
 	IconReceipt,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { getApprovalTypeLabels } from "./approval-type-labels";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
@@ -26,12 +27,6 @@ const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: st
 	absence_entry: IconCalendarOff,
 	time_entry: IconClockEdit,
 	travel_expense_claim: IconReceipt,
-};
-
-const TYPE_LABELS: Record<ApprovalInboxType, string> = {
-	absence_entry: "Absence Requests",
-	time_entry: "Time Corrections",
-	travel_expense_claim: "Travel Expenses",
 };
 
 const RISK_BADGE_VARIANTS: Record<
@@ -61,6 +56,7 @@ export function ApprovalInboxTable({
 	isFetching,
 }: ApprovalInboxTableProps) {
 	const { t } = useTranslate();
+	const typeLabels = getApprovalTypeLabels(t);
 	const ariaLabel = t("approvals:approvals.selectRow", "Select row");
 	const presence = useEmployeeClockStatuses(
 		items.map((item) => item.requester.id),
@@ -136,7 +132,7 @@ export function ApprovalInboxTable({
 										<div className="flex flex-wrap items-center gap-2">
 											<span className="inline-flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-muted-foreground text-xs">
 												<TypeIcon className="size-3.5" aria-hidden="true" />
-												{t(`approvals:approvals.types.${item.type}`, TYPE_LABELS[item.type])}
+												{typeLabels[item.type]}
 											</span>
 											<Badge variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}>
 												{isHighRisk && (

@@ -9,7 +9,11 @@
       "toast": {
         "description": "Eine {breakMinutes}-minütige Pause wurde hinzugefügt, um den Zeitvorschriften zu entsprechen.",
         "title": "Pause automatisch hinzugefügt für Compliance"
-      }
+      },
+      "indicator": "Automatisch an Zeitvorschriften angepasst",
+      "title": "Automatisch an Zeitvorschriften angepasst",
+      "description": "Eine Pause von {breakMinutes} Minuten wurde automatisch hinzugefügt, um {regulationName} einzuhalten.",
+      "originalDuration": "Ursprünglich: {duration}"
     },
     "budget": "Budget",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
@@ -243,7 +247,15 @@
       "recordedLocalTime": "Erfasste Ortszeit",
       "rowActions": "Aktionen für Zeiteinträge",
       "title": "Zeiteinträge",
-      "viewCalendar": "Kalender anzeigen"
+      "viewCalendar": "Kalender anzeigen",
+      "date": "Datum",
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "recordedLocalTime": "Erfasste Ortszeit",
+      "corrected": "Korrigiert",
+      "active": "Aktiv",
+      "duration": "Dauer",
+      "description": "Beschreibung"
     },
     "timeline": {
       "dayPicker": "Zeitstrahl-Tagesauswahl",

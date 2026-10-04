@@ -381,6 +381,8 @@ function DetailValue({ label, value }: { label: string; value: string }) {
 
 function getEventTypeLabel(event: CalendarEvent, t: Translate) {
 	switch (event.type) {
+		case "break":
+			return t("calendar.eventType.break", "Break");
 		case "holiday":
 			return t("calendar.eventType.holiday", "Holiday");
 		case "absence":

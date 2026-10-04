@@ -4,6 +4,10 @@ Deutsch | [English](README.en.md)
 
 # Z8 - Modern Workforce Management
 
+Lokale Entwicklung: `pnpm dev:webapp` startet die Webapp mit Portless unter
+**https://z8.localhost**. Voraussetzungen und Details stehen im
+[englischen Entwicklungsabschnitt](README.en.md#local-development).
+
 Z8 ist eine Workforce-Management-Plattform für Organisationen, die zuverlässige Zeiterfassung, prüfungssichere Unterlagen und klare operative Kontrolle im Rahmen des deutschen Arbeitsrechts und der GoBD-Compliance (*Grundsätze zur ordnungsmäßigen Führung und Aufbewahrung von Büchern*) benötigen.
 
 Über Web, Mobile und Desktop hinweg gibt Z8 Teams ein verlässliches operatives System für Zeiterfassung, Abwesenheiten, Reisekosten und das tägliche Workforce Management.

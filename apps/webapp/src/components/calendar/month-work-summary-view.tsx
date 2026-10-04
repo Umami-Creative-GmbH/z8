@@ -119,24 +119,31 @@ function getDailyStatusClassName(status: DailyWorkHoursStatus): string {
 }
 
 function getDayLabel(day: MonthWorkDay, locale: string, t: Translate): string {
-	const dateLabel = day.date.setLocale(locale).toLocaleString(DateTime.DATE_HUGE);
+	const dateLabel = day.date
+		.setLocale(locale)
+		.toLocaleString(DateTime.DATE_HUGE);
 	const summary = day.isActiveMonth ? day.workHoursSummary : null;
 	const eventTitles = day.events.map((event) => event.title).join(", ");
 	const eventText =
 		day.events.length === 0
 			? ""
-			: ` ${day.events.length} ${day.events.length === 1 ? "event" : "events"}: ${eventTitles}`;
+			: ` ${t("calendar.monthSummary.dayEvents", "{count, plural, one {# event} other {# events}}: {titles}", { count: day.events.length, titles: eventTitles })}`;
 
 	if (!summary) {
 		return eventText ? `${dateLabel}.${eventText}` : dateLabel;
 	}
 
-	return `${dateLabel}: ${formatHoursWithoutSuffix(summary.actualMinutes)} recorded, ${formatHoursWithoutSuffix(
-		summary.requiredMinutes,
-	)} required, ${formatSignedMinutesWithoutSuffix(summary.deltaMinutes)} ${getWorkStatusLabel(
-		summary.status,
-		t,
-	)}.${eventText}`;
+	return `${t(
+		"calendar.monthSummary.dayLabel",
+		"{date}: {actual} recorded, {required} required, {delta} {status}.",
+		{
+			date: dateLabel,
+			actual: formatHoursWithoutSuffix(summary.actualMinutes),
+			required: formatHoursWithoutSuffix(summary.requiredMinutes),
+			delta: formatSignedMinutesWithoutSuffix(summary.deltaMinutes),
+			status: getWorkStatusLabel(summary.status, t),
+		},
+	)}${eventText}`;
 }
 
 function MonthTotalCard({ total, t }: { total: WorkPeriodTotal | null; t: Translate }) {

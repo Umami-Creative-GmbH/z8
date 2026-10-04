@@ -837,7 +837,19 @@ export const CATALOG_SOURCE_METADATA: Readonly<
 			},
 		},
 	},
-	de: sourceShape0,
+	de: {
+		...sourceShape0,
+		sources: {
+			...sourceShape0.sources,
+			common: {
+				...sourceShape0.sources.common,
+				common: {
+					...(sourceShape0.sources.common.common as CatalogSourceMask),
+					timeInput: 1,
+				},
+			},
+		},
+	},
 	fr: sourceShape1,
 	es: sourceShape1,
 	it: sourceShape1,

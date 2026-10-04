@@ -9,7 +9,11 @@
       "toast": {
         "description": "A {breakMinutes}-minute break was added to comply with time regulations.",
         "title": "Break auto-added for compliance"
-      }
+      },
+      "indicator": "Auto-adjusted for compliance",
+      "title": "Auto-adjusted for compliance",
+      "description": "A {breakMinutes}-minute break was automatically added to comply with {regulationName}.",
+      "originalDuration": "Original: {duration}"
     },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
@@ -243,7 +247,15 @@
       "recordedLocalTime": "Recorded local time",
       "rowActions": "Time entry actions",
       "title": "Time Entries",
-      "viewCalendar": "View Calendar"
+      "viewCalendar": "View Calendar",
+      "date": "Date",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "recordedLocalTime": "Recorded local time",
+      "corrected": "Corrected",
+      "active": "Active",
+      "duration": "Duration",
+      "description": "Description"
     },
     "timeline": {
       "dayPicker": "Timeline day picker",
