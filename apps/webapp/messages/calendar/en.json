@@ -180,7 +180,11 @@
       "surchargeBreakdown": "Surcharge Breakdown",
       "time": "Time",
       "type": "Type",
-      "workLocation": "Work location"
+      "workLocation": "Work location",
+      "pendingApproval": "Pending Approval",
+      "pendingApprovalDescription": "This work period is awaiting manager approval. The recorded times may change if rejected.",
+      "rejected": "Rejected",
+      "rejectedDescription": "This work period change was rejected by a manager. The original times have been restored."
     },
     "edit": {
       "deleteEntry": "Delete entry",
@@ -217,7 +221,10 @@
         "submitOnBehalf": "Submit change",
         "submittedOnBehalf": "Change submitted to the employee's approver"
       },
-      "locationRequired": "Choose a work location."
+      "locationRequired": "Choose a work location.",
+      "title": "Work Period",
+      "noProject": "No project assigned",
+      "noNotes": "No notes added"
     },
     "employeeSelector": {
       "error": "Unable to load team members",
@@ -234,7 +241,8 @@
       "absence": "Absence",
       "holiday": "Holiday",
       "timeEntry": "Time Entry",
-      "workPeriod": "Work Period"
+      "workPeriod": "Work Period",
+      "break": "Break"
     },
     "filter": {
       "absences": "Absences",
@@ -268,7 +276,9 @@
       "nextMonth": "Next month",
       "previousMonth": "Previous month",
       "totalDescription": "Recorded time compared with policy hours",
-      "weekSum": "Sum"
+      "weekSum": "Sum",
+      "dayLabel": "{date}: {actual} recorded, {required} required, {delta} {status}.",
+      "dayEvents": "{count, plural, one {# event} other {# events}}: {titles}"
     },
     "split": {
       "ambiguousTime": "Choose which occurrence to use",
@@ -327,6 +337,21 @@
     "loadEventsError": "Failed to load calendar events: {message}",
     "workLocation": {
       "notRecorded": "Not recorded"
+    },
+    "requirements": {
+      "status": {
+        "under": "under requirement",
+        "missing": "missing recorded time",
+        "over": "over requirement",
+        "met": "requirement met"
+      },
+      "dayLabel": "{date}: {required} required, {actual} recorded, {delta} delta, {status}"
+    },
+    "calendar": {
+      "break": {
+        "titleWithDuration": "Break - {duration}",
+        "description": "Break between work periods"
+      }
     }
   }
 }

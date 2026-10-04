@@ -413,7 +413,109 @@
         "title": "Historical gap repair",
         "work": "Work period"
       },
-      "title": "Work Diagnostics"
+      "title": "Work Diagnostics",
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "allEmployees": "Show all employees",
+      "summary": {
+        "status": "Completeness",
+        "scope": "Scope",
+        "scopeAll": "All employees. Dates cover every time zone's calendar days.",
+        "blocking": "Blocking findings",
+        "blockingDescription": "Missing or conflicting evidence that makes relevant work uncertain.",
+        "affected": "Affected employees",
+        "affectedDescription": "Employees whose work in this scope cannot be established."
+      },
+      "status": {
+        "complete": "Complete",
+        "incomplete": "Incomplete",
+        "completeDescription": "No relevant missing or conflicting evidence, including pending, rejected and open work.",
+        "widenedOrganization": "Ownership could not be established, so the whole organization is uncertain.",
+        "widenedEmployees": "Dates could not be established, so affected employees are uncertain for every period.",
+        "incompleteDescription": "Unaffected data is usable for review, but this scope is not complete."
+      },
+      "findings": {
+        "title": "Findings",
+        "description": "Every finding is read-only evidence. Only the historical gap repair below fills missing values, from evidence and with separate authorization; changing established work needs a separately authorized review.",
+        "empty": "No missing, conflicting or suspected historical work in this scope.",
+        "finding": "Finding",
+        "treatment": "Treatment",
+        "provenance": "Provenance",
+        "employees": "Employees",
+        "evidence": "Evidence"
+      },
+      "append": {
+        "title": "Time entry chain assurance",
+        "description": "A separate claim from completeness: lineage and continuity of stored time entries. It does not decide payroll readiness.",
+        "counts": "{verified} of {total} employees have lineage verified from stored evidence.",
+        "continued": "Employees continuing from an approved anchor: {count}. History before each anchor is not verified.",
+        "issues": "Lineage issues and candidates",
+        "interruptions": "Continuity interruptions",
+        "limitations": "Limitations"
+      },
+      "blocking": "Blocks completeness",
+      "ownerUnknown": "Owner not established",
+      "evidence": {
+        "workPeriods": "Work periods",
+        "timeRecords": "Time records",
+        "entries": "Time entries"
+      },
+      "provenance": {
+        "preAdoption": "Pre-adoption history",
+        "freshBackdated": "Fresh backdated write",
+        "postAdoption": "Post-adoption write",
+        "ambiguous": "Ambiguous provenance"
+      },
+      "shape": {
+        "missing": "Missing",
+        "conflicting": "Conflicting",
+        "suspectedDefect": "Suspected defect",
+        "disclosure": "Disclosure"
+      },
+      "treatment": {
+        "historicalGap": "Historical gap",
+        "reviewRequired": "Review required",
+        "integrityIncident": "Integrity incident",
+        "investigationRequired": "Investigation required",
+        "disclosed": "Disclosed limitation"
+      },
+      "kind": {
+        "ownershipConflict": "Ownership conflict",
+        "workOutsideOrganizationEmployees": "Work owned outside the organization's employees",
+        "canonicalMissing": "Time record missing",
+        "canonicalLinkMissing": "Time record link missing",
+        "canonicalLinkUnresolved": "Linked time record not found",
+        "canonicalLinkShared": "Several work periods link one time record",
+        "canonicalDetailMissing": "Time record work detail missing",
+        "relinkedCanonicalResidue": "Time record left behind by relinking",
+        "endpointMissing": "End time missing",
+        "endpointConflict": "Start or end times disagree",
+        "openStateConflict": "Open and closed state disagree",
+        "multipleActiveWork": "More than one active work period",
+        "endpointEntryUnresolved": "Clock entry not found",
+        "endpointEntrySuperseded": "Work period points to a replaced clock entry",
+        "endpointEntryMissing": "Clock-out entry missing",
+        "captureInferred": "Time zone capture inferred after the event",
+        "durationMissing": "Stored duration missing",
+        "durationConflict": "Stored durations disagree",
+        "negativeDuration": "Negative duration",
+        "reversedInterval": "End before start",
+        "emptyInterval": "Start equals end",
+        "storedElapsedDiscrepancy": "Stored minutes differ from elapsed time",
+        "deletedWorkPayable": "Deleted work still has a payable time record",
+        "metadataMissing": "Assignment missing on time record",
+        "metadataConflict": "Assignments disagree",
+        "metadataCanonicalOnly": "Assignment only on time record",
+        "approvalStateConflict": "Approval states disagree",
+        "approvalRelationshipMissing": "Pending work without an approval request",
+        "overlappingWork": "Overlapping work",
+        "manualEvidenceUnreadable": "Manual submission evidence unreadable",
+        "manualZoneUnrecorded": "Manual entry time zone not recorded",
+        "manualInterpretationAmbiguous": "Manual entry time skipped or repeated by a clock change",
+        "manualInterpretationMismatch": "Manual entry saved at different times than submitted",
+        "manualTrimmed": "Manual entry shortened on save",
+        "manualHolidayCheckDatesDiffer": "Holiday check used different dates than the work"
+      }
     }
   }
 }

@@ -137,6 +137,11 @@
       "durationBefore": "Duration before",
       "entryDeleted": "Deleted",
       "resultingDuration": "Resulting duration"
+    },
+    "types": {
+      "absence_entry": "Absence Requests",
+      "time_entry": "Time Corrections",
+      "travel_expense_claim": "Travel Expenses"
     }
   },
   "fastLanes": {

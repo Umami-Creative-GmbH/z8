@@ -17,7 +17,7 @@ vi.mock("@tolgee/react", () => ({
 			params?: Record<string, number | string>,
 		) => {
 			const translations: Record<string, string> = {
-				"common:presence.activity.relativeMinutes": "seit {minutes}min",
+				"presence.activity.relativeMinutes": "seit {minutes}min",
 			};
 			return (translations[key] ?? defaultValue).replace(
 				/\{(\w+)\}/g,

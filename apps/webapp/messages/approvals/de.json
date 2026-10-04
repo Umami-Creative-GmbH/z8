@@ -103,6 +103,11 @@
       "category": "Kategorie",
       "currentCategoryName": "Aktueller Kategoriename",
       "submittedTitle": "Eingereichter Antrag"
+    },
+    "types": {
+      "absence_entry": "Abwesenheitsanträge",
+      "time_entry": "Zeitkorrekturen",
+      "travel_expense_claim": "Reisekosten"
     }
   },
   "fastLanes": {

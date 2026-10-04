@@ -239,6 +239,10 @@
         "description": "Laden Sie die Seite neu, um fortzufahren. Ihre letzte Aktion wurde nicht gespeichert.",
         "title": "Z8 wurde aktualisiert"
       }
+    },
+    "timeInput": {
+      "openTimePicker": "Uhrzeitauswahl öffnen",
+      "switchPeriod": "Zu {period} wechseln"
     }
   },
   "employeeSelect": {
