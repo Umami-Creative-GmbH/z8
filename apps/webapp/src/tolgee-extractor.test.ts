@@ -1,7 +1,81 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import extractor from "../tolgee-extractor.mjs";
 
 describe("tolgee extractor", () => {
+	it("does not mistake catalog path arrays for key/fallback tuples", () => {
+		const result = extractor(
+			`keys("timeTracking", ["timeTracking.errors", "timeTracking.quickBreak"]);`,
+			"shell-catalog.ts",
+		);
+
+		expect(result.keys).toEqual([]);
+	});
+
+	it("does not use a namespaced translation key as a tuple fallback", () => {
+		const result = extractor(
+			`const paths = ["approvals:approvals.types", "approvals:approvals.title"];`,
+			"catalog.ts",
+		);
+
+		expect(result.keys).not.toContainEqual(
+			expect.objectContaining({ keyName: "approvals.types" }),
+		);
+		expect(result.keys.every((key) => key.defaultValue === undefined)).toBe(
+			true,
+		);
+	});
+
+	it("keeps dotted fallback text that is not a translation key", () => {
+		const result = extractor(
+			`const messages = { invalid: ["auth.invalid-file", "file.name"] };`,
+			"messages.ts",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				keyName: "auth.invalid-file",
+				defaultValue: "file.name",
+			}),
+		]);
+	});
+
+	it("retains explicitly declared lists of translation keys without invented defaults", () => {
+		const result = extractor(
+			`const LABEL_KEYS = ["approvals:approvals.title", "approvals:approvals.pending"];`,
+			"labels.ts",
+		);
+
+		expect(result.keys).toEqual([
+			expect.objectContaining({
+				keyName: "approvals.title",
+				defaultValue: undefined,
+			}),
+			expect.objectContaining({
+				keyName: "approvals.pending",
+				defaultValue: undefined,
+			}),
+		]);
+	});
+
+	it("does not create shell catalog subtree translations", () => {
+		const source = readFileSync(
+			new URL("./tolgee/shell-catalog.ts", import.meta.url),
+			"utf8",
+		);
+		const result = extractor(source, "src/tolgee/shell-catalog.ts");
+
+		for (const keyName of [
+			"timeTracking.errors",
+			"dashboard.customize",
+			"organization.role",
+		]) {
+			expect(result.keys).not.toContainEqual(
+				expect.objectContaining({ keyName }),
+			);
+		}
+	});
+
 	it("uses adjacent fallback values for data-driven key properties", () => {
 		const result = extractor(
 			`

@@ -203,10 +203,11 @@
       "failed": "Organisation konnte nicht wiederhergestellt werden",
       "success": "Organisation erfolgreich wiederhergestellt"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Admin",
-    "role.member": "Mitglied",
-    "role.owner": "Inhaber",
+    "role": {
+      "admin": "Admin",
+      "member": "Mitglied",
+      "owner": "Inhaber"
+    },
     "slugDescription": "Wird in URLs verwendet. Automatisch aus dem Namen generiert.",
     "slugErrors": {
       "format": "Slug darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",

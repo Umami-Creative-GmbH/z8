@@ -139,6 +139,11 @@
     "title": "Godkjenninger",
     "totalCount": "${totalCount} venter",
     "type": "Type",
+    "types": {
+      "absence_entry": "Fraværsforespørsler",
+      "time_entry": "Tidskorrigeringer",
+      "travel_expense_claim": "Reiseutgifter"
+    },
     "unifiedInboxBannerDescription": "Se alle godkjenningstyper på ett sted med filtrering, massehandlinger og SLA-sporing.",
     "unifiedInboxBannerTitle": "Prøv den nye samlede innboksen",
     "workCategory": "Arbeidskategori",

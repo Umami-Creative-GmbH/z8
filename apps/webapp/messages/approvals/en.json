@@ -139,6 +139,11 @@
     "title": "Approvals",
     "totalCount": "${totalCount} pending",
     "type": "Type",
+    "types": {
+      "absence_entry": "Absence Requests",
+      "time_entry": "Time Corrections",
+      "travel_expense_claim": "Travel Expenses"
+    },
     "unifiedInboxBannerDescription": "View all approval types in one place with filtering, bulk actions, and SLA tracking.",
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
     "workCategory": "Work category",

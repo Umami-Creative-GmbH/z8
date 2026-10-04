@@ -244,6 +244,7 @@
     },
     "eventType": {
       "absence": "Ausencia",
+      "break": "Descanso",
       "holiday": "Festivo",
       "timeEntry": "Entrada de tiempo",
       "workPeriod": "Período de trabajo"
@@ -275,6 +276,8 @@
     },
     "monthSummary": {
       "calendarWeek": "SC",
+      "dayEvents": "{count, plural, one {# evento: {titles}} other {# eventos: {titles}}}",
+      "dayLabel": "{date}: {actual} registrado, {required} requerido, {delta} {status}.",
       "description": "Horas de política diarias, semanales y mensuales",
       "emptyMonth": "No hay horas de política en este mes",
       "monthTotal": "Total del mes",

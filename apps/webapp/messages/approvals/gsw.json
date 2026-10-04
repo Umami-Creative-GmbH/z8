@@ -139,6 +139,11 @@
     "title": "Genehmigunge",
     "totalCount": "${totalCount} usstehend",
     "type": "Typ",
+    "types": {
+      "absence_entry": "Abwäseheitsaaträg",
+      "time_entry": "Ziitkorrekture",
+      "travel_expense_claim": "Reisespäse"
+    },
     "unifiedInboxBannerDescription": "Gseh alli Genehmigungsarte uf eim Blick mit Filter, Sammelaktione und SLA-Tracking.",
     "unifiedInboxBannerTitle": "Probier de neu zentrali Postig us",
     "workCategory": "Arbeitskategorie",

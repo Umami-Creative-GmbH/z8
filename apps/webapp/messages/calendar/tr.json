@@ -244,6 +244,7 @@
     },
     "eventType": {
       "absence": "Devamsızlık",
+      "break": "Mola",
       "holiday": "Tatil",
       "timeEntry": "Zaman Kaydı",
       "workPeriod": "Çalışma Dönemi"
@@ -275,6 +276,8 @@
     },
     "monthSummary": {
       "calendarWeek": "Takvim Haftası",
+      "dayEvents": "{count, plural, other {# etkinlik: {titles}} }",
+      "dayLabel": "{date}: {actual} kaydedildi, {required} gerekli, {delta} {status}.",
       "description": "Günlük, haftalık ve aylık politika saatleri",
       "emptyMonth": "Bu ayda politika saati yok",
       "monthTotal": "Ay toplamı",

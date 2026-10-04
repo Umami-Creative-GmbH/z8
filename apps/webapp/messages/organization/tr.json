@@ -203,10 +203,11 @@
       "failed": "Kuruluş kurtarılamadı",
       "success": "Kuruluş başarıyla kurtarıldı"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Yönetici",
-    "role.member": "Üye",
-    "role.owner": "Sahip",
+    "role": {
+      "admin": "Yönetici",
+      "member": "Üye",
+      "owner": "Sahip"
+    },
     "slugDescription": "URL'lerde kullanılır. İsimden otomatik oluşturulur.",
     "slugErrors": {
       "format": "Slug yalnızca küçük harf, rakam ve kısa çizgi içermelidir",

@@ -139,6 +139,11 @@
     "title": "Aprovações",
     "totalCount": "${totalCount} pendente(s)",
     "type": "Tipo",
+    "types": {
+      "absence_entry": "Solicitações de ausência",
+      "time_entry": "Correções de ponto",
+      "travel_expense_claim": "Despesas de viagem"
+    },
     "unifiedInboxBannerDescription": "Visualize todos os tipos de aprovação em um só lugar com filtragem, ações em massa e rastreamento de SLA.",
     "unifiedInboxBannerTitle": "Experimente a nova Caixa de Entrada Unificada",
     "workCategory": "Categoria de trabalho",

@@ -139,6 +139,11 @@
     "title": "Approvazioni",
     "totalCount": "${totalCount} in sospeso",
     "type": "Tipo",
+    "types": {
+      "absence_entry": "Richieste di assenza",
+      "time_entry": "Correzioni orario",
+      "travel_expense_claim": "Spese di viaggio"
+    },
     "unifiedInboxBannerDescription": "Visualizza tutti i tipi di approvazione in un unico posto con filtri, azioni collettive e monitoraggio SLA.",
     "unifiedInboxBannerTitle": "Prova la nuova Posta in arrivo unificata",
     "workCategory": "Categoria di lavoro",

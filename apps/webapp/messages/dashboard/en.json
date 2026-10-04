@@ -15,14 +15,15 @@
       "today": "Today!",
       "tomorrow": "Tomorrow"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Use the dashboard customization icon to re-enable individual widgets, or reset the layout to show every widget again.",
-    "customize.empty-title": "All dashboard widgets are hidden",
-    "customize.move-down": "Move {widget} down",
-    "customize.move-up": "Move {widget} up",
-    "customize.reset": "Reset layout",
-    "customize.title": "Dashboard widgets",
-    "customize.trigger": "Customize dashboard",
+    "customize": {
+      "empty-description": "Use the dashboard customization icon to re-enable individual widgets, or reset the layout to show every widget again.",
+      "empty-title": "All dashboard widgets are hidden",
+      "move-down": "Move {widget} down",
+      "move-up": "Move {widget} up",
+      "reset": "Reset layout",
+      "title": "Dashboard widgets",
+      "trigger": "Customize dashboard"
+    },
     "hydration": {
       "add-glass": "Add {count} glass",
       "add-glasses": "Add {count} glasses",

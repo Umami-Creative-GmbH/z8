@@ -139,6 +139,11 @@
     "title": "Εγκρίσεις",
     "totalCount": "${totalCount} σε εκκρεμότητα",
     "type": "Τύπος",
+    "types": {
+      "absence_entry": "Αιτήματα απουσίας",
+      "time_entry": "Διορθώσεις χρόνου",
+      "travel_expense_claim": "Έξοδα ταξιδιού"
+    },
     "unifiedInboxBannerDescription": "Δείτε όλους τους τύπους εγκρίσεων σε ένα μέρος με φιλτράρισμα, μαζικές ενέργειες και παρακολούθηση SLA.",
     "unifiedInboxBannerTitle": "Δοκιμάστε τα νέα Ενοποιημένα Εισερχόμενα",
     "workCategory": "Κατηγορία εργασίας",

@@ -203,10 +203,11 @@
       "failed": "Det gick inte att återställa organisationen",
       "success": "Organisationen har återställts"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Administratör",
-    "role.member": "Medlem",
-    "role.owner": "Ägare",
+    "role": {
+      "admin": "Administratör",
+      "member": "Medlem",
+      "owner": "Ägare"
+    },
     "slugDescription": "Används i URL:er. Genereras automatiskt från namnet.",
     "slugErrors": {
       "format": "Sluggen får endast innehålla små bokstäver, siffror och bindestreck",

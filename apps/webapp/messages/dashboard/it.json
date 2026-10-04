@@ -15,14 +15,15 @@
       "today": "Oggi!",
       "tomorrow": "Domani"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Usa l'icona di personalizzazione della dashboard per riabilitare i singoli widget o ripristina il layout per mostrare di nuovo tutti i widget.",
-    "customize.empty-title": "Tutti i widget della dashboard sono nascosti",
-    "customize.move-down": "Sposta {widget} in basso",
-    "customize.move-up": "Sposta {widget} in alto",
-    "customize.reset": "Ripristina layout",
-    "customize.title": "Widget dashboard",
-    "customize.trigger": "Personalizza dashboard",
+    "customize": {
+      "empty-description": "Usa l'icona di personalizzazione della dashboard per riabilitare i singoli widget o ripristina il layout per mostrare di nuovo tutti i widget.",
+      "empty-title": "Tutti i widget della dashboard sono nascosti",
+      "move-down": "Sposta {widget} in basso",
+      "move-up": "Sposta {widget} in alto",
+      "reset": "Ripristina layout",
+      "title": "Widget dashboard",
+      "trigger": "Personalizza dashboard"
+    },
     "hydration": {
       "add-glass": "Aggiungi {count} bicchiere",
       "add-glasses": "Aggiungi {count} bicchieri",

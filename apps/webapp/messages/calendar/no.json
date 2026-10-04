@@ -244,6 +244,7 @@
     },
     "eventType": {
       "absence": "Fravær",
+      "break": "Pause",
       "holiday": "Helligdag",
       "timeEntry": "Timeregistrering",
       "workPeriod": "Arbeidsperiode"
@@ -275,6 +276,8 @@
     },
     "monthSummary": {
       "calendarWeek": "Uke",
+      "dayEvents": "{count, plural, one {# hendelse: {titles}} other {# hendelser: {titles}}}",
+      "dayLabel": "{date}: {actual} registrert, {required} påkrevd, {delta} {status}.",
       "description": "Daglige, ukentlige og månedlige policy-timer",
       "emptyMonth": "Ingen policy-timer denne måneden",
       "monthTotal": "Månedstotal",

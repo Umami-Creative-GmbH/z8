@@ -15,14 +15,15 @@
       "today": "Aujourd'hui !",
       "tomorrow": "Demain"
     },
-    "customize": "errors.noOrganization.title",
-    "customize.empty-description": "Utilisez l'icône de personnalisation du tableau de bord pour réactiver des widgets individuels, ou réinitialisez la mise en page pour afficher à nouveau tous les widgets.",
-    "customize.empty-title": "Tous les widgets du tableau de bord sont masqués",
-    "customize.move-down": "Déplacer {widget} vers le bas",
-    "customize.move-up": "Déplacer {widget} vers le haut",
-    "customize.reset": "Réinitialiser la mise en page",
-    "customize.title": "Widgets du tableau de bord",
-    "customize.trigger": "Personnaliser le tableau de bord",
+    "customize": {
+      "empty-description": "Utilisez l'icône de personnalisation du tableau de bord pour réactiver des widgets individuels, ou réinitialisez la mise en page pour afficher à nouveau tous les widgets.",
+      "empty-title": "Tous les widgets du tableau de bord sont masqués",
+      "move-down": "Déplacer {widget} vers le bas",
+      "move-up": "Déplacer {widget} vers le haut",
+      "reset": "Réinitialiser la mise en page",
+      "title": "Widgets du tableau de bord",
+      "trigger": "Personnaliser le tableau de bord"
+    },
     "hydration": {
       "add-glass": "Ajouter {count} verre",
       "add-glasses": "Ajouter {count} verres",

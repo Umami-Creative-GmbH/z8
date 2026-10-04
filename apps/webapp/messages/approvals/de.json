@@ -139,6 +139,11 @@
     "title": "Genehmigungen",
     "totalCount": "${totalCount} ausstehend",
     "type": "Typ",
+    "types": {
+      "absence_entry": "Abwesenheitsanträge",
+      "time_entry": "Zeitkorrekturen",
+      "travel_expense_claim": "Reisekosten"
+    },
     "unifiedInboxBannerDescription": "Sehen Sie alle Genehmigungsarten an einem Ort mit Filtern, Massenaktionen und SLA-Nachverfolgung.",
     "unifiedInboxBannerTitle": "Probieren Sie den neuen einheitlichen Posteingang aus",
     "workCategory": "Arbeitskategorie",

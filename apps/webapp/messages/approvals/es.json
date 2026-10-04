@@ -139,6 +139,11 @@
     "title": "Aprobaciones",
     "totalCount": "${totalCount} pendientes",
     "type": "Tipo",
+    "types": {
+      "absence_entry": "Solicitudes de ausencia",
+      "time_entry": "Correcciones de tiempo",
+      "travel_expense_claim": "Gastos de viaje"
+    },
     "unifiedInboxBannerDescription": "Vea todos los tipos de aprobación en un solo lugar con filtrado, acciones masivas y seguimiento de SLA.",
     "unifiedInboxBannerTitle": "Pruebe la nueva bandeja de entrada unificada",
     "workCategory": "Categoría de trabajo",

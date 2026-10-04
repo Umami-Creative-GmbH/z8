@@ -203,10 +203,11 @@
       "failed": "Failed to recover organization",
       "success": "Organization recovered successfully"
     },
-    "role": "organization.slugErrors",
-    "role.admin": "Admin",
-    "role.member": "Member",
-    "role.owner": "Owner",
+    "role": {
+      "admin": "Admin",
+      "member": "Member",
+      "owner": "Owner"
+    },
     "slugDescription": "Used in URLs. Auto-generated from name.",
     "slugErrors": {
       "format": "Slug must contain only lowercase letters, numbers, and hyphens",

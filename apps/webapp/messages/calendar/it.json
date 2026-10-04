@@ -244,6 +244,7 @@
     },
     "eventType": {
       "absence": "Assenza",
+      "break": "Pausa",
       "holiday": "Festivo",
       "timeEntry": "Voce di tempo",
       "workPeriod": "Periodo di lavoro"
@@ -275,6 +276,8 @@
     },
     "monthSummary": {
       "calendarWeek": "KW",
+      "dayEvents": "{count, plural, one {# evento: {titles}} other {# eventi: {titles}}}",
+      "dayLabel": "{date}: {actual} registrato, {required} richiesto, {delta} {status}.",
       "description": "Ore di politica giornaliere, settimanali e mensili",
       "emptyMonth": "Nessuna ora di politica in questo mese",
       "monthTotal": "Totale mese",
