@@ -786,14 +786,16 @@ function ApprovalInboxPanels({
 	);
 }
 
-function ApprovalInboxContent() {
+function ApprovalInboxContent({
+	initialFilters,
+}: {
+	initialFilters: ApprovalInboxFilters;
+}) {
 	const { t } = useTranslate();
-	const searchParams = useSearchParams();
 	const [uiState, dispatch] = useReducer(
 		approvalInboxUiReducer,
-		searchParams,
-		(params) =>
-			createApprovalInboxUiState(getInitialApprovalInboxFilters(params)),
+		initialFilters,
+		createApprovalInboxUiState,
 	);
 	const hasHydrated = useSyncExternalStore(
 		subscribeHydrationSnapshot,
@@ -1077,10 +1079,22 @@ function ApprovalInboxContent() {
 	);
 }
 
+function ApprovalInboxNavigation() {
+	const searchParams = useSearchParams();
+	// A changed URL filter starts a fresh inbox, including back/forward and
+	// unfiltered arrivals. Local edits survive renders at the same URL filter.
+	return (
+		<ApprovalInboxContent
+			key={searchParams?.get("types") ?? ""}
+			initialFilters={getInitialApprovalInboxFilters(searchParams)}
+		/>
+	);
+}
+
 export default function ApprovalInboxPage() {
 	return (
 		<Suspense fallback={<ApprovalInboxLoadingState />}>
-			<ApprovalInboxContent />
+			<ApprovalInboxNavigation />
 		</Suspense>
 	);
 }
