@@ -5,7 +5,11 @@
       "toast": {
         "description": "Eine {breakMinutes}-minütige Pause wurde hinzugefügt, um den Zeitvorschriften zu entsprechen.",
         "title": "Pause automatisch hinzugefügt für Compliance"
-      }
+      },
+      "indicator": "Automatisch an Zeitvorschriften angepasst",
+      "title": "Automatisch an Zeitvorschriften angepasst",
+      "description": "Eine Pause von {breakMinutes} Minuten wurde automatisch hinzugefügt, um {regulationName} einzuhalten.",
+      "originalDuration": "Ursprünglich: {duration}"
     },
     "budget": "Budget",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
@@ -212,7 +216,15 @@
       "emptyState": "Keine Zeiteinträge für diese Woche gefunden.",
       "rowActions": "Aktionen für Zeiteinträge",
       "title": "Zeiteinträge",
-      "viewCalendar": "Kalender anzeigen"
+      "viewCalendar": "Kalender anzeigen",
+      "date": "Datum",
+      "clockIn": "Einstempeln",
+      "clockOut": "Ausstempeln",
+      "recordedLocalTime": "Erfasste Ortszeit",
+      "corrected": "Korrigiert",
+      "active": "Aktiv",
+      "duration": "Dauer",
+      "description": "Beschreibung"
     },
     "timeline": {
       "dayPicker": "Zeitstrahl-Tagesauswahl",
@@ -238,7 +250,31 @@
     "clockInSavedForSending": "Einstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
     "clockOutSavedForSending": "Ausstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
     "clockInSavedHeld": "Einstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge.",
-    "clockOutSavedHeld": "Ausstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge."
+    "clockOutSavedHeld": "Ausstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Prüfen Sie die gespeicherten Einträge.",
+    "title": "Zeiterfassung",
+    "welcomeBack": "Willkommen zurück, {name}",
+    "restPeriodWarning": "Hinweis zur Ruhezeit",
+    "restPeriodWarningMessage": "Die vorgeschriebene Ruhezeit ist noch nicht erfüllt. Wenn Sie jetzt einstempeln, wird dies als Verstoß protokolliert.",
+    "quickBreak": {
+      "addBreak": "Pause hinzufügen",
+      "title": "Pause hinzufügen",
+      "errors": {
+        "durationTooShort": "Geben Sie eine Pausendauer von mindestens einer Minute ein.",
+        "addFailed": "Die Pause konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut."
+      },
+      "helper": "Erfassen Sie eine jetzt endende Pause und bleiben Sie eingestempelt.",
+      "durationLabel": "Pausendauer in Minuten",
+      "applying": "Wird angewendet…",
+      "apply": "Anwenden"
+    },
+    "timezoneMismatch": {
+      "title": "Zeitzone für diesen Eintrag bestätigen",
+      "description": "Die Zeitzone Ihres Geräts ist {browserTimezone}, Ihre gespeicherte Zeitzone ist jedoch {savedTimezone}.",
+      "help": "Wählen Sie, ob Sie die Gerätezeitzone nur für diese Aktion verwenden oder Ihre gespeicherte Zeitzone vor dem Fortfahren aktualisieren möchten.",
+      "cancel": "Abbrechen",
+      "continueOnce": "Einmalig fortfahren",
+      "updateTimezoneAndContinue": "Zeitzone aktualisieren und fortfahren"
+    }
   },
   "wellness": {
     "water": {

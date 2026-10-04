@@ -19,6 +19,7 @@ const NAMESPACE_PREFIXES = {
 	workBalance: "common",
 	colors: "common",
 	common: "common",
+	presence: "common",
 	employeeSelect: "common",
 	generic: "common",
 	nav: "common",

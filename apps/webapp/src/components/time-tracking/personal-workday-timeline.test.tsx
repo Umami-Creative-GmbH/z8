@@ -12,6 +12,8 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
 		<a href={href} {...props}>

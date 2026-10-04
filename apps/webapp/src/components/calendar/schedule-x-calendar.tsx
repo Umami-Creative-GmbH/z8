@@ -20,6 +20,7 @@ import "@schedule-x/theme-default/dist/index.css";
 import "./schedule-x-calendar.css";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
+import { formatTimeHours } from "@/lib/calendar/work-hours-summary";
 
 import type { RefObject } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -164,7 +165,7 @@ export function ScheduleXCalendarWrapper({
 	// Generate break events only for day/week view
 	const scheduleXEvents = (() => {
 		if (viewMode === "day" || viewMode === "week") {
-			const breakEvents = generateBreakEvents(baseScheduleXEvents, timeZone);
+			const breakEvents = getLocalizedBreakEvents(baseScheduleXEvents, timeZone, t);
 			return [...baseScheduleXEvents, ...breakEvents];
 		}
 		return baseScheduleXEvents;
@@ -490,4 +491,21 @@ function ScheduleXCalendarBody({
 			</div>
 		</div>
 	);
+}
+
+function getLocalizedBreakEvents(
+	events: Parameters<typeof generateBreakEvents>[0],
+	timeZone: string,
+	t: ReturnType<typeof useTranslate>["t"],
+) {
+	return generateBreakEvents(events, timeZone).map((event) => {
+		const minutes = event._eventData.metadata?.durationMinutes;
+		if (typeof minutes !== "number") return event;
+		return {
+			...event,
+			title: t("calendar.calendar.break.titleWithDuration", "Break - {duration}", {
+				duration: formatTimeHours(minutes),
+			}),
+		};
+	});
 }

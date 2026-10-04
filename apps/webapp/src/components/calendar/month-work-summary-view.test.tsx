@@ -8,10 +8,11 @@ import { MonthWorkSummaryView } from "./month-work-summary-view";
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 	useTranslate: () => ({
-		t: (_key: string, fallback: string, params?: Record<string, string>) => {
+		t: (key: string, fallback: string, params?: Record<string, string | number>) => {
 			if (!params) return fallback;
+			if (key === "calendar.monthSummary.dayEvents") return `${params.count} ${params.count === 1 ? "event" : "events"}: ${params.titles}`;
 			return Object.entries(params).reduce(
-				(text, [key, value]) => text.replaceAll(`{${key}}`, value),
+				(text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
 				fallback,
 			);
 		},

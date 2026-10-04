@@ -5,7 +5,11 @@
       "toast": {
         "description": "A {breakMinutes}-minute break was added to comply with time regulations.",
         "title": "Break auto-added for compliance"
-      }
+      },
+      "indicator": "Auto-adjusted for compliance",
+      "title": "Auto-adjusted for compliance",
+      "description": "A {breakMinutes}-minute break was automatically added to comply with {regulationName}.",
+      "originalDuration": "Original: {duration}"
     },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
@@ -212,7 +216,15 @@
       "emptyState": "No time entries found for this week.",
       "rowActions": "Time entry actions",
       "title": "Time Entries",
-      "viewCalendar": "View Calendar"
+      "viewCalendar": "View Calendar",
+      "date": "Date",
+      "clockIn": "Clock In",
+      "clockOut": "Clock Out",
+      "recordedLocalTime": "Recorded local time",
+      "corrected": "Corrected",
+      "active": "Active",
+      "duration": "Duration",
+      "description": "Description"
     },
     "timeline": {
       "dayPicker": "Timeline day picker",
@@ -246,6 +258,22 @@
       "description": "Your device timezone is {browserTimezone}, but your saved timezone is {savedTimezone}.",
       "title": "Confirm Timezone for This Entry",
       "help": "Choose whether to use your device timezone only for this action or update your saved timezone before continuing."
+    },
+    "title": "Time Tracking",
+    "welcomeBack": "Welcome back, {name}",
+    "restPeriodWarning": "Rest Period Warning",
+    "restPeriodWarningMessage": "You have not completed the required rest period. Clocking in now will be logged as a violation.",
+    "quickBreak": {
+      "addBreak": "Add break",
+      "title": "Add break",
+      "errors": {
+        "durationTooShort": "Enter a break duration of at least 1 minute.",
+        "addFailed": "Failed to add break. Please try again."
+      },
+      "helper": "Record a break ending now and stay clocked in.",
+      "durationLabel": "Break duration in minutes",
+      "applying": "Applying…",
+      "apply": "Apply"
     }
   },
   "wellness": {

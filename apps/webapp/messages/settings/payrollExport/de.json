@@ -413,7 +413,109 @@
         "title": "Reparatur historischer Lücken",
         "work": "Arbeitszeitraum"
       },
-      "title": "Arbeitsdiagnose"
+      "title": "Arbeitsdiagnose",
+      "previousMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat",
+      "allEmployees": "Alle Mitarbeiter anzeigen",
+      "summary": {
+        "status": "Vollständigkeit",
+        "scope": "Prüfumfang",
+        "scopeAll": "Alle Mitarbeiter. Die Daten umfassen die Kalendertage aller Zeitzonen.",
+        "blocking": "Blockierende Feststellungen",
+        "blockingDescription": "Fehlende oder widersprüchliche Nachweise, durch die relevante Arbeit ungewiss bleibt.",
+        "affected": "Betroffene Mitarbeiter",
+        "affectedDescription": "Mitarbeiter, deren Arbeit in diesem Prüfumfang nicht festgestellt werden kann."
+      },
+      "status": {
+        "complete": "Vollständig",
+        "incomplete": "Unvollständig",
+        "completeDescription": "Keine relevanten fehlenden oder widersprüchlichen Nachweise, einschließlich ausstehender, abgelehnter und offener Arbeit.",
+        "widenedOrganization": "Die Zuordnung konnte nicht festgestellt werden. Daher besteht Ungewissheit für die gesamte Organisation.",
+        "widenedEmployees": "Die Daten konnten nicht festgestellt werden. Daher besteht für betroffene Mitarbeiter in jedem Zeitraum Ungewissheit.",
+        "incompleteDescription": "Nicht betroffene Daten können geprüft werden, aber dieser Prüfumfang ist unvollständig."
+      },
+      "findings": {
+        "title": "Feststellungen",
+        "description": "Jede Feststellung ist ein schreibgeschützter Nachweis. Nur die untenstehende Reparatur historischer Lücken ergänzt fehlende Werte anhand von Nachweisen und mit separater Autorisierung. Änderungen an belegter Arbeit erfordern eine gesondert autorisierte Prüfung.",
+        "empty": "Keine fehlende, widersprüchliche oder mutmaßlich fehlerhafte historische Arbeit in diesem Prüfumfang.",
+        "finding": "Feststellung",
+        "treatment": "Behandlung",
+        "provenance": "Herkunft",
+        "employees": "Mitarbeiter",
+        "evidence": "Nachweise"
+      },
+      "append": {
+        "title": "Absicherung der Stempelzeitkette",
+        "description": "Eine von der Vollständigkeit getrennte Aussage: Herkunft und Kontinuität gespeicherter Stempelzeiten. Sie entscheidet nicht über die Abrechnungsbereitschaft.",
+        "counts": "Bei {verified} von {total} Mitarbeitern ist die Herkunft anhand gespeicherter Nachweise verifiziert.",
+        "continued": "Mitarbeiter mit Fortsetzung ab einem genehmigten Anker: {count}. Der Verlauf vor dem jeweiligen Anker ist nicht verifiziert.",
+        "issues": "Herkunftsprobleme und Kandidaten",
+        "interruptions": "Unterbrechungen der Kontinuität",
+        "limitations": "Einschränkungen"
+      },
+      "blocking": "Verhindert Vollständigkeit",
+      "ownerUnknown": "Zuordnung nicht festgestellt",
+      "evidence": {
+        "workPeriods": "Arbeitszeiträume",
+        "timeRecords": "Zeiteinträge",
+        "entries": "Stempelzeiten"
+      },
+      "provenance": {
+        "preAdoption": "Verlauf vor der Umstellung",
+        "freshBackdated": "Neuer rückdatierter Eintrag",
+        "postAdoption": "Eintrag nach der Umstellung",
+        "ambiguous": "Unklare Herkunft"
+      },
+      "shape": {
+        "missing": "Fehlend",
+        "conflicting": "Widersprüchlich",
+        "suspectedDefect": "Vermuteter Fehler",
+        "disclosure": "Offenlegung"
+      },
+      "treatment": {
+        "historicalGap": "Historische Lücke",
+        "reviewRequired": "Prüfung erforderlich",
+        "integrityIncident": "Integritätsvorfall",
+        "investigationRequired": "Untersuchung erforderlich",
+        "disclosed": "Offengelegte Einschränkung"
+      },
+      "kind": {
+        "ownershipConflict": "Widersprüchliche Zuordnung",
+        "workOutsideOrganizationEmployees": "Arbeit ist keinem Mitarbeiter der Organisation zugeordnet",
+        "canonicalMissing": "Zeiteintrag fehlt",
+        "canonicalLinkMissing": "Verknüpfung zum Zeiteintrag fehlt",
+        "canonicalLinkUnresolved": "Verknüpfter Zeiteintrag nicht gefunden",
+        "canonicalLinkShared": "Mehrere Arbeitszeiträume verweisen auf denselben Zeiteintrag",
+        "canonicalDetailMissing": "Arbeitsdetails des Zeiteintrags fehlen",
+        "relinkedCanonicalResidue": "Zeiteintrag nach Neuverknüpfung zurückgeblieben",
+        "endpointMissing": "Endzeit fehlt",
+        "endpointConflict": "Start- oder Endzeiten widersprechen sich",
+        "openStateConflict": "Offener und abgeschlossener Status widersprechen sich",
+        "multipleActiveWork": "Mehr als ein aktiver Arbeitszeitraum",
+        "endpointEntryUnresolved": "Stempelzeit nicht gefunden",
+        "endpointEntrySuperseded": "Arbeitszeitraum verweist auf eine ersetzte Stempelzeit",
+        "endpointEntryMissing": "Ausstempelzeit fehlt",
+        "captureInferred": "Zeitzone nachträglich hergeleitet",
+        "durationMissing": "Gespeicherte Dauer fehlt",
+        "durationConflict": "Gespeicherte Zeitdauern widersprechen sich",
+        "negativeDuration": "Negative Dauer",
+        "reversedInterval": "Ende vor Beginn",
+        "emptyInterval": "Beginn und Ende sind gleich",
+        "storedElapsedDiscrepancy": "Gespeicherte Minuten weichen von der verstrichenen Zeit ab",
+        "deletedWorkPayable": "Gelöschte Arbeit hat weiterhin einen abrechenbaren Zeiteintrag",
+        "metadataMissing": "Zuordnung im Zeiteintrag fehlt",
+        "metadataConflict": "Zuordnungen widersprechen sich",
+        "metadataCanonicalOnly": "Zuordnung nur im Zeiteintrag",
+        "approvalStateConflict": "Genehmigungsstatus widersprechen sich",
+        "approvalRelationshipMissing": "Ausstehende Arbeit ohne Genehmigungsanfrage",
+        "overlappingWork": "Überlappende Arbeit",
+        "manualEvidenceUnreadable": "Nachweise der manuellen Erfassung nicht lesbar",
+        "manualZoneUnrecorded": "Zeitzone der manuellen Erfassung nicht gespeichert",
+        "manualInterpretationAmbiguous": "Manuell erfasste Uhrzeit wird durch eine Zeitumstellung übersprungen oder wiederholt",
+        "manualInterpretationMismatch": "Manuelle Erfassung mit abweichenden Uhrzeiten gespeichert",
+        "manualTrimmed": "Manuelle Erfassung beim Speichern gekürzt",
+        "manualHolidayCheckDatesDiffer": "Feiertagsprüfung verwendete andere Daten als die Arbeit"
+      }
     }
   }
 }
