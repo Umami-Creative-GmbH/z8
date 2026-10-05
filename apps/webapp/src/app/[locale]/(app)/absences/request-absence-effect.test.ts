@@ -21,11 +21,13 @@ const callerMocks = vi.hoisted(() => ({
 	absenceEntryFindMany: vi.fn(),
 	createAbsenceApprovalWorkflow: vi.fn(),
 	employeeFindFirst: vi.fn(),
+	notificationPreferenceFindMany: vi.fn(),
+	notificationInsert: vi.fn(),
+	userFindFirst: vi.fn(),
 	getPrimaryEligibleManagerIdForRequester: vi.fn(),
 	onAbsenceRequestPendingApproval: vi.fn(),
 	onAbsenceRequestSubmitted: vi.fn(),
 	renderAbsenceRequestPendingApproval: vi.fn(),
-	renderAbsenceRequestSubmitted: vi.fn(),
 	runAutoCompletedAbsenceMaintenance: vi.fn(),
 	sendEmail: vi.fn(),
 	syncCanonicalAbsenceApprovalState: vi.fn(),
@@ -38,7 +40,12 @@ vi.mock("@/db", () => ({
 			absenceCategory: { findFirst: callerMocks.absenceCategoryFindFirst },
 			absenceEntry: { findMany: callerMocks.absenceEntryFindMany },
 			employee: { findFirst: callerMocks.employeeFindFirst },
+			notificationPreference: {
+				findMany: callerMocks.notificationPreferenceFindMany,
+			},
+			user: { findFirst: callerMocks.userFindFirst },
 		},
+		insert: callerMocks.notificationInsert,
 		transaction: callerMocks.transaction,
 		update: vi.fn(() => ({
 			set: vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) })),
@@ -48,7 +55,9 @@ vi.mock("@/db", () => ({
 
 // Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
 vi.mock("@/lib/approvals/delivery/intents", async (importOriginal) => ({
-	...(await importOriginal<typeof import("@/lib/approvals/delivery/intents")>()),
+	...(await importOriginal<
+		typeof import("@/lib/approvals/delivery/intents")
+	>()),
 	recordLegacyDeliveryIntent: async () => false,
 }));
 vi.mock("@/lib/approvals/policies/manager-eligibility-db", () => ({
@@ -73,12 +82,39 @@ vi.mock("@/lib/email/email-service", () => ({
 vi.mock("@/lib/email/render", () => ({
 	renderAbsenceRequestPendingApproval:
 		callerMocks.renderAbsenceRequestPendingApproval,
-	renderAbsenceRequestSubmitted: callerMocks.renderAbsenceRequestSubmitted,
 }));
 
 vi.mock("@/lib/notifications/triggers", () => ({
 	onAbsenceRequestPendingApproval: callerMocks.onAbsenceRequestPendingApproval,
 	onAbsenceRequestSubmitted: callerMocks.onAbsenceRequestSubmitted,
+}));
+
+// Exercise real submission notification fan-out, mocking only external transports.
+vi.mock("@/lib/events", () => ({ publishEventAsync: vi.fn() }));
+vi.mock("@/lib/notifications/push-service", () => ({
+	isPushAvailable: () => false,
+}));
+vi.mock("@/lib/notifications/teams-channel", () => ({
+	isTeamsAvailable: async () => false,
+}));
+vi.mock("@/lib/notifications/telegram-channel", () => ({
+	isTelegramAvailable: async () => false,
+}));
+vi.mock("@/lib/notifications/discord-channel", () => ({
+	isDiscordAvailable: async () => false,
+}));
+vi.mock("@/lib/notifications/slack-channel", () => ({
+	isSlackAvailable: async () => false,
+}));
+vi.mock("@/lib/notifications/outbound-localization", () => ({
+	localizeOutboundNotification: async (params: unknown) => params,
+}));
+vi.mock("@/lib/email/template-renderer", () => ({
+	renderOrganizationEmailTemplate: async () => ({
+		subject: "Absence request submitted",
+		html: "employee notification email",
+		usedOverride: false,
+	}),
 }));
 
 vi.mock("./actions.canonical", async (importOriginal) => {
@@ -99,11 +135,14 @@ vi.mock("@/lib/logger", () => ({
 		error: loggerErrorMock,
 		info: vi.fn(),
 		warn: vi.fn(),
+		debug: vi.fn(),
 	})),
 }));
 
 // The post-commit delivery fast path is best effort and outside these submissions.
-vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
+vi.mock("@/lib/approvals/delivery/kick", () => ({
+	kickApprovalDelivery: vi.fn(),
+}));
 
 import {
 	createRequestedAbsenceRecordsInTransaction,
@@ -168,7 +207,9 @@ function createLegacyApprovalLifecycle(
 				operation({
 					dbService: { db: tx },
 					writeGate: {
-						acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")),
+						acquire: vi
+							.fn()
+							.mockResolvedValue(approvalWriteGateResult("legacy")),
 					},
 					compatibilityWriter: createCompatibilityWriterFixture(),
 				} as unknown as ApprovalWorkflowTransactionContext),
@@ -207,6 +248,16 @@ beforeEach(() => {
 		requiresApproval: true,
 	});
 	callerMocks.absenceEntryFindMany.mockResolvedValue([]);
+	callerMocks.notificationPreferenceFindMany.mockResolvedValue([]);
+	callerMocks.userFindFirst.mockResolvedValue({
+		name: "Avery Employee",
+		email: "avery@example.com",
+	});
+	callerMocks.notificationInsert.mockReturnValue({
+		values: vi.fn(() => ({
+			returning: vi.fn().mockResolvedValue([{ id: "notification-1" }]),
+		})),
+	});
 	callerMocks.getPrimaryEligibleManagerIdForRequester.mockResolvedValue(
 		"manager-1",
 	);
@@ -217,7 +268,6 @@ beforeEach(() => {
 	callerMocks.renderAbsenceRequestPendingApproval.mockResolvedValue(
 		"manager email",
 	);
-	callerMocks.renderAbsenceRequestSubmitted.mockResolvedValue("employee email");
 	callerMocks.runAutoCompletedAbsenceMaintenance.mockResolvedValue(undefined);
 	callerMocks.syncCanonicalAbsenceApprovalState.mockResolvedValue(undefined);
 	callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
@@ -311,42 +361,74 @@ describe("requestAbsenceForEmployeeEffect approval presentation", () => {
 		).toHaveBeenCalledOnce();
 	});
 
-	it("sends the existing pending notifications for a human approval", async () => {
-		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
-			Effect.succeed({
-				kind: "default_created",
-				approvalRequestId: "approval-1",
-			}),
-		);
-		callerMocks.employeeFindFirst
-			.mockResolvedValueOnce({
-				id: "manager-1",
-				userId: "manager-user-1",
-				organizationId: "org-1",
-				user: { name: "Morgan Manager", email: "manager@example.com" },
-			})
-			.mockResolvedValueOnce({
-				id: "employee-1",
-				userId: "user-1",
-				organizationId: "org-1",
-				user: { name: "Avery Employee", email: "avery@example.com" },
+	it.each([true, false])(
+		"sends one employee confirmation only when email is enabled (%s)",
+		async (emailEnabled) => {
+			const approvalLifecycle = configureAbsenceCallerTransaction();
+			callerMocks.notificationPreferenceFindMany.mockResolvedValue([
+				{ channel: "email", enabled: emailEnabled },
+			]);
+			const triggers = await vi.importActual<
+				typeof import("@/lib/notifications/triggers")
+			>("@/lib/notifications/triggers");
+			callerMocks.onAbsenceRequestSubmitted.mockImplementationOnce(
+				triggers.onAbsenceRequestSubmitted,
+			);
+			callerMocks.createAbsenceApprovalWorkflow.mockReturnValue(
+				Effect.succeed({
+					kind: "default_created",
+					approvalRequestId: "approval-1",
+				}),
+			);
+			callerMocks.employeeFindFirst
+				.mockResolvedValueOnce({
+					id: "manager-1",
+					userId: "manager-user-1",
+					organizationId: "org-1",
+					user: { name: "Morgan Manager", email: "manager@example.com" },
+				})
+				.mockResolvedValueOnce({
+					id: "employee-1",
+					userId: "user-1",
+					organizationId: "org-1",
+					user: { name: "Avery Employee", email: "avery@example.com" },
+				});
+
+			const result = await requestAbsenceForEmployeeEffect(
+				absenceRequest,
+				{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
+				"user-1",
+				approvalLifecycle as never,
+			);
+
+			expect(result).toEqual({
+				success: true,
+				data: { absenceId: "absence-1" },
 			});
-
-		const result = await requestAbsenceForEmployeeEffect(
-			absenceRequest,
-			{ id: "employee-1", organizationId: "org-1", teamId: "team-1" },
-			"user-1",
-			approvalLifecycle as never,
-		);
-
-		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
-		expect(callerMocks.sendEmail).toHaveBeenCalledTimes(2);
-		expect(callerMocks.onAbsenceRequestPendingApproval).toHaveBeenCalledOnce();
-		expect(
-			callerMocks.runAutoCompletedAbsenceMaintenance,
-		).not.toHaveBeenCalled();
-	});
+			await vi.waitFor(() => {
+				expect(
+					callerMocks.sendEmail.mock.calls.filter(
+						([params]) => params.to === "avery@example.com",
+					),
+				).toHaveLength(emailEnabled ? 1 : 0);
+			});
+			expect(
+				callerMocks.sendEmail.mock.calls.filter(
+					([params]) => params.to === "manager@example.com",
+				),
+			).toHaveLength(1);
+			expect(callerMocks.notificationInsert).toHaveBeenCalledOnce();
+			expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledWith(
+				expect.objectContaining({ managerName: "Morgan Manager", days: 2 }),
+			);
+			expect(
+				callerMocks.onAbsenceRequestPendingApproval,
+			).toHaveBeenCalledOnce();
+			expect(
+				callerMocks.runAutoCompletedAbsenceMaintenance,
+			).not.toHaveBeenCalled();
+		},
+	);
 });
 
 describe("validateAbsenceSickDetail", () => {
@@ -1407,7 +1489,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 
 		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
 		expect(callerMocks.sendEmail).toHaveBeenCalledTimes(
-			expectsLegacyDelivery ? 2 : 0,
+			expectsLegacyDelivery ? 1 : 0,
 		);
 		expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledTimes(
 			expectsLegacyDelivery ? 1 : 0,
@@ -1467,6 +1549,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		expect(committed.timeRecords).toHaveLength(1);
 		expect(committed.absenceDetails).toHaveLength(1);
 		expect(harness.calls.filter((call) => call === "source")).toHaveLength(1);
+		if (failure !== "notification") {
+			expect(callerMocks.onAbsenceRequestSubmitted).toHaveBeenCalledOnce();
+		}
 		expect(loggerErrorMock).toHaveBeenCalledWith(
 			expect.objectContaining({
 				absenceId: "absence-1",
