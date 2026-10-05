@@ -324,15 +324,17 @@ export interface DraftReportSummary {
 	currency: string | null;
 	receiptCount: number;
 	/** Null for standalone reports. */
-	trip: {
-		purpose: string | null;
-		startDate: string | null;
-		endDate: string | null;
-		itemCount: number;
-		/** Employee-paid total of the countable expenses. */
-		reimbursable: string;
-		currency: string;
-	} | null;
+	trip: DraftTripSummary | null;
+}
+
+export interface DraftTripSummary {
+	purpose: string | null;
+	startDate: string | null;
+	endDate: string | null;
+	itemCount: number;
+	/** Employee-paid total of the countable expenses. */
+	reimbursable: string;
+	currency: string;
 }
 
 /** The owner's draft reports, most recently edited first, for resuming them. */
@@ -381,17 +383,6 @@ export async function listOwnDraftReports(
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
 		const item = reportItems[0];
-		const totals =
-			report.kind === "trip"
-				? receiptReportTotals(
-						reportItems.map((row) => ({
-							amount: row.originalAmount,
-							currency: row.originalCurrency,
-							paidBy: row.paidBy,
-						})),
-						report.reimbursementCurrency,
-					)
-				: null;
 		return {
 			id: report.id,
 			kind: report.kind,
@@ -401,16 +392,28 @@ export async function listOwnDraftReports(
 			amount: item?.originalAmount ?? null,
 			currency: item?.originalCurrency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
-			trip: totals && {
-				purpose: report.tripPurpose,
-				startDate: report.tripStartDate,
-				endDate: report.tripEndDate,
-				itemCount: reportItems.length,
-				reimbursable: totals.reimbursable,
-				currency: totals.currency,
-			},
+			trip: report.kind === "trip" ? tripDraftSummary(report, reportItems) : null,
 		};
 	});
+}
+
+function tripDraftSummary(report: ReportRow, items: ItemRow[]): DraftTripSummary {
+	const totals = receiptReportTotals(
+		items.map((row) => ({
+			amount: row.originalAmount,
+			currency: row.originalCurrency,
+			paidBy: row.paidBy,
+		})),
+		report.reimbursementCurrency,
+	);
+	return {
+		purpose: report.tripPurpose,
+		startDate: report.tripStartDate,
+		endDate: report.tripEndDate,
+		itemCount: items.length,
+		reimbursable: totals.reimbursable,
+		currency: totals.currency,
+	};
 }
 
 export type SaveReceiptItemResult =

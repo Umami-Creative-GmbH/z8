@@ -33,8 +33,8 @@ export function ReportTotals({ id, totals }: { id: string; totals: ReceiptReport
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"travelExpenses.report.totals.excluded",
-						"{count, plural, one {# expense is} other {# expenses are}} not counted until amount, currency and payer are complete.",
-						{ count: totals.excludedItemCount },
+						"{count, plural, one {# expense is} other {# expenses are}} not counted yet. Totals include expenses in {currency} whose amount and payer are entered.",
+						{ count: totals.excludedItemCount, currency: totals.currency },
 					)}
 				</p>
 			)}

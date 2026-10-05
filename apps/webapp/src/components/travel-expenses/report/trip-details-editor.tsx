@@ -35,6 +35,7 @@ import {
 	TRIP_COUNTRY_CODES,
 	type TripDetailsDraft,
 	type TripDetailsDraftInput,
+	type TripDetailsFieldError,
 } from "@/lib/travel-expenses/trip-report";
 import { DraftSaveStatus } from "./draft-save-status";
 import { formatCountry, formatPlainDateRange } from "./format";
@@ -83,13 +84,13 @@ function toDraftInput(values: FormValues): TripDetailsDraftInput {
 /** Replaces malformed fields with their last saved values. */
 function withSavedValues(
 	values: TripDetailsDraftInput,
-	errors: Partial<Record<FieldName, unknown>>,
+	errors: Partial<Record<FieldName, TripDetailsFieldError>>,
 	saved: TripDetailsDraftInput,
 ): TripDetailsDraftInput {
 	const merged = { ...values };
 	for (const field of Object.keys(errors) as FieldName[]) {
-		// A return date before departure is restored together with its departure.
-		if (field === "endDate") merged.startDate = saved.startDate;
+		// A return before departure is restored together with its departure.
+		if (errors[field] === "end_before_start") merged.startDate = saved.startDate;
 		Object.assign(merged, { [field]: saved[field] });
 	}
 	return merged;

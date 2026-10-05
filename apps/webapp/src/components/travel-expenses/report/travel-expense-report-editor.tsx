@@ -21,7 +21,11 @@ import {
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
-import type { ReportItemView, ReportView } from "@/lib/travel-expenses/report-store";
+import type {
+	ReportItemView,
+	ReportView,
+	TripDetailsView,
+} from "@/lib/travel-expenses/report-store";
 import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
@@ -164,7 +168,7 @@ function TripReportBody({
 	maxReceiptBytes,
 }: {
 	report: ReportView;
-	trip: TripDetailsDraft & { version: number };
+	trip: TripDetailsView;
 	maxReceiptBytes: number;
 }) {
 	const { t } = useTranslate();
