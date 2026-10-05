@@ -11,8 +11,13 @@ import {
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
 } from "@/db/schema";
+import {
+	listLegacyDecisionEvidence,
+	loadLegacyTravelExpenseSubmittedRevision,
+} from "@/lib/approvals/evidence/store";
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 
 /** Reads share the inbox's existing review scope; reading never creates a binding or changes authority. */
 export async function loadAuthorizedTravelExpenseClaim(claimId: string) {
@@ -60,7 +65,7 @@ export async function loadAuthorizedTravelExpenseClaim(claimId: string) {
 export async function loadTravelExpenseClaimDetail(
 	claim: typeof travelExpenseClaim.$inferSelect,
 ) {
-	const [attachments, decisions] = await Promise.all([
+	const [attachments, decisions, revision] = await Promise.all([
 		db.query.travelExpenseAttachment.findMany({
 			where: and(
 				eq(travelExpenseAttachment.organizationId, claim.organizationId),
@@ -111,6 +116,28 @@ export async function loadTravelExpenseClaimDetail(
 				asc(travelExpenseDecisionLog.createdAt),
 				asc(travelExpenseDecisionLog.id),
 			),
+		loadLegacyTravelExpenseSubmittedRevision(db, {
+			organizationId: claim.organizationId,
+			claimId: claim.id,
+		}),
 	]);
-	return { claim, attachments, decisions };
+	const evidence = revision
+		? await listLegacyDecisionEvidence(db, {
+				organizationId: claim.organizationId,
+				submittedRevisionId: revision.id,
+			})
+		: [];
+	// Terminal decisions already have legacy log rows; only intermediate chain
+	// decisions need supplementing from their original evidence.
+	const intermediateDecisions = evidence
+		.filter((decision) => decision.requestOutcome === "pending")
+		.map((decision) => ({
+			id: decision.id,
+			action: "approval_recorded" as const,
+			createdAt: instantToCanonicalString(decision.decidedAt),
+			actorName: decision.labels.actorName,
+			reason: null,
+			comment: null,
+		}));
+	return { claim, attachments, decisions, intermediateDecisions };
 }

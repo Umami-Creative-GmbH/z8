@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import { Temporal } from "temporal-polyfill";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { parseInstant } from "@/lib/datetime/temporal-core";
@@ -9,6 +10,117 @@ import { queryKeys } from "@/lib/query/keys";
 import type { TravelExpenseClaimDetailData } from "@/lib/travel-expenses/claim-detail-types";
 import { TravelExpenseDateRange } from "./travel-expense-date-range";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
+
+function formatAmount(locale: string, amount: string, currency: string) {
+	try {
+		return new Intl.NumberFormat(locale, {
+			style: "currency",
+			currency,
+		}).format(Number(amount));
+	} catch {
+		return `${amount} ${currency}`;
+	}
+}
+
+function TravelExpenseDecisionHistory({
+	data,
+}: {
+	data: TravelExpenseClaimDetailData;
+}) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const { claim } = data;
+	const history = [
+		...(data?.decisions ?? []),
+		...(data?.intermediateDecisions ?? []),
+	].sort((left, right) =>
+		Temporal.Instant.compare(
+			parseInstant(left.createdAt),
+			parseInstant(right.createdAt),
+		),
+	);
+	const eventTime = (at: string) =>
+		`${parseInstant(at).toZonedDateTimeISO("UTC").toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
+	return (
+		<Card>
+			<CardContent className="space-y-3 pt-6">
+				<h2 className="text-lg font-semibold">
+					{t("travelExpenses.detail.history", "Decision history")}
+				</h2>
+				<ol className="space-y-3">
+					<li>
+						<p>{t("travelExpenses.detail.created", "Created")}</p>
+						<time
+							className="text-sm text-muted-foreground"
+							dateTime={claim.createdAt}
+						>
+							{eventTime(claim.createdAt)}
+						</time>
+					</li>
+					{claim.submittedAt && (
+						<li>
+							<p>{t("travelExpenses.detail.submitted", "Submitted")}</p>
+							<time
+								className="text-sm text-muted-foreground"
+								dateTime={claim.submittedAt}
+							>
+								{eventTime(claim.submittedAt)}
+							</time>
+						</li>
+					)}
+					{claim.decidedAt && history.length === 0 && (
+						<li>
+							<p>
+								{t(
+									"travelExpenses.detail.decisionRecorded",
+									"Decision recorded",
+								)}
+							</p>
+							<time
+								className="text-sm text-muted-foreground"
+								dateTime={claim.decidedAt}
+							>
+								{eventTime(claim.decidedAt)}
+							</time>
+						</li>
+					)}
+					{history.map((decision) => (
+						<li key={decision.id} className="border-l-2 pl-3">
+							<p>
+								{decision.action === "approval_recorded"
+									? t(
+											"travelExpenses.detail.intermediateApproval",
+											"Approval recorded — awaiting further approval",
+										)
+									: t(
+											`travelExpenses.status.${decision.action}`,
+											decision.action,
+										)}
+								{decision.actorName ? ` · ${decision.actorName}` : ""}
+							</p>
+							<time
+								className="text-sm text-muted-foreground"
+								dateTime={decision.createdAt}
+							>
+								{eventTime(decision.createdAt)}
+							</time>
+							{decision.reason && (
+								<p className="whitespace-pre-wrap break-words text-sm">
+									{decision.reason}
+								</p>
+							)}
+							{decision.comment && (
+								<p className="whitespace-pre-wrap break-words text-sm">
+									{decision.comment}
+								</p>
+							)}
+						</li>
+					))}
+				</ol>
+			</CardContent>
+		</Card>
+	);
+}
 
 export function TravelExpenseClaimDetail({
 	claimId,
@@ -37,8 +149,7 @@ export function TravelExpenseClaimDetail({
 		},
 	});
 	const claim = data?.claim;
-	const eventTime = (at: string) =>
-		`${parseInstant(at).toZonedDateTimeISO("UTC").toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" })} UTC`;
+
 	return (
 		<div className="space-y-4">
 			{isError && (
@@ -99,7 +210,11 @@ export function TravelExpenseClaimDetail({
 										{t("travelExpenses.list.amount", "Amount")}
 									</dt>
 									<dd>
-										{claim.calculatedAmount} {claim.calculatedCurrency}
+										{formatAmount(
+											locale,
+											claim.calculatedAmount,
+											claim.calculatedCurrency,
+										)}
 									</dd>
 								</div>
 								<div>
@@ -110,7 +225,11 @@ export function TravelExpenseClaimDetail({
 										)}
 									</dt>
 									<dd>
-										{claim.originalAmount} {claim.originalCurrency}
+										{formatAmount(
+											locale,
+											claim.originalAmount,
+											claim.originalCurrency,
+										)}
 									</dd>
 								</div>
 								<div>
@@ -195,62 +314,7 @@ export function TravelExpenseClaimDetail({
 							</ul>
 						</CardContent>
 					</Card>
-					<Card>
-						<CardContent className="space-y-3 pt-6">
-							<h2 className="text-lg font-semibold">
-								{t("travelExpenses.detail.history", "Decision history")}
-							</h2>
-							<ol className="space-y-3">
-								<li>
-									<p>{t("travelExpenses.detail.created", "Created")}</p>
-									<time
-										className="text-sm text-muted-foreground"
-										dateTime={claim.createdAt}
-									>
-										{eventTime(claim.createdAt)}
-									</time>
-								</li>
-								{claim.submittedAt && (
-									<li>
-										<p>{t("travelExpenses.detail.submitted", "Submitted")}</p>
-										<time
-											className="text-sm text-muted-foreground"
-											dateTime={claim.submittedAt}
-										>
-											{eventTime(claim.submittedAt)}
-										</time>
-									</li>
-								)}
-								{data.decisions.map((decision) => (
-									<li key={decision.id} className="border-l-2 pl-3">
-										<p>
-											{t(
-												`travelExpenses.status.${decision.action}`,
-												decision.action,
-											)}
-											{decision.actorName ? ` · ${decision.actorName}` : ""}
-										</p>
-										<time
-											className="text-sm text-muted-foreground"
-											dateTime={decision.createdAt}
-										>
-											{eventTime(decision.createdAt)}
-										</time>
-										{decision.reason && (
-											<p className="whitespace-pre-wrap break-words text-sm">
-												{decision.reason}
-											</p>
-										)}
-										{decision.comment && (
-											<p className="whitespace-pre-wrap break-words text-sm">
-												{decision.comment}
-											</p>
-										)}
-									</li>
-								))}
-							</ol>
-						</CardContent>
-					</Card>
+					<TravelExpenseDecisionHistory data={data} />
 				</>
 			)}
 		</div>

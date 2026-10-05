@@ -33,6 +33,14 @@ export interface TravelExpenseClaimDetailData {
 		| "checksumSha256"
 		| "storageVersionId"
 	>[];
+	intermediateDecisions: {
+		id: string;
+		action: "approval_recorded";
+		createdAt: string;
+		actorName: string | null;
+		reason: null;
+		comment: null;
+	}[];
 	decisions: (Omit<Decision, "createdAt"> & {
 		createdAt: string;
 		actorName: string | null;

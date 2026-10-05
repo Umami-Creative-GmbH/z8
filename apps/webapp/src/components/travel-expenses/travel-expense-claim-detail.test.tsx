@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
-vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+vi.mock("next-intl", () => ({ useLocale: () => "de-DE" }));
 
 import { TravelExpenseClaimDetail } from "./travel-expense-claim-detail";
 
@@ -67,6 +67,61 @@ function mount() {
 	return client;
 }
 describe("stored travel claim detail", () => {
+	it("shows an intermediate approval alongside the original final decision", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				Response.json({
+					...storedDetail,
+					intermediateDecisions: [
+						{
+							id: "step-one",
+							action: "approval_recorded",
+							actorName: "First reviewer",
+							createdAt: "2026-03-30T10:00:00Z",
+							reason: null,
+							comment: null,
+						},
+					],
+				}),
+			),
+		);
+		const client = mount();
+		expect(
+			await screen.findByText(/Approval recorded — awaiting further approval/),
+		).toBeTruthy();
+		expect(screen.getByText(/First reviewer/)).toBeTruthy();
+		expect(screen.getByText("Original approval note")).toBeTruthy();
+		client.clear();
+	});
+	it("formats persisted currency amounts for the active locale", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => Response.json(storedDetail)),
+		);
+		const client = mount();
+		expect(await screen.findAllByText(/120,50\s*€/)).toHaveLength(2);
+		client.clear();
+	});
+	it("shows the stored decision timestamp when a legacy claim has no decision log", async () => {
+		const decidedAt = "2026-04-01T10:00:00Z";
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				Response.json({
+					...storedDetail,
+					claim: { ...storedDetail.claim, decidedAt },
+					decisions: [],
+				}),
+			),
+		);
+		const client = mount();
+		const event = await screen.findByText("Decision recorded");
+		expect(
+			event.parentElement?.querySelector("time")?.getAttribute("datetime"),
+		).toBe(decidedAt);
+		client.clear();
+	});
 	it("opens an existing claim with unknown legacy dates, original notes, receipts and decision history", async () => {
 		vi.stubGlobal(
 			"fetch",
