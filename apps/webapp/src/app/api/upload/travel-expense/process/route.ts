@@ -1,15 +1,15 @@
-import { createHash, randomUUID } from "node:crypto";
-import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { fileTypeFromBuffer } from "file-type";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { travelExpenseClaim } from "@/db/schema";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { deletePrivateObject, uploadPrivateObject } from "@/lib/storage/export-s3-client";
-import { S3_PUBLIC_BUCKET, s3Client } from "@/lib/storage/s3-client";
-import { isAllowedTravelExpenseMime } from "@/lib/travel-expenses/attachment-validation";
+import {
+	deleteTusUpload,
+	readUploadedReceipt,
+} from "@/lib/travel-expenses/receipt-processing";
 import {
 	finalizeTravelExpenseReceiptUpload,
 	markTravelExpenseReceiptUploadFailed,
@@ -22,40 +22,10 @@ import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
 const MAX_FILE_SIZE_BYTES = Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES);
 
-function formatFileSize(bytes: number): string {
-	const units = ["bytes", "KB", "MB", "GB"];
-	let size = bytes;
-	let unitIndex = 0;
-
-	while (size >= 1024 && size % 1024 === 0 && unitIndex < units.length - 1) {
-		size /= 1024;
-		unitIndex++;
-	}
-
-	return unitIndex === 0
-		? `${size} ${size === 1 ? "byte" : "bytes"}`
-		: `${size}${units[unitIndex]}`;
-}
-
 interface ProcessTravelExpenseUploadRequest {
 	tusFileKey: string;
 	claimId: string;
 	fileName?: string;
-}
-
-function sanitizeFileName(fileName: string): string {
-	const baseName = fileName.split(/[/\\]/).pop() ?? "attachment";
-	const normalized = baseName
-		.replace(/\s+/g, "-")
-		.replace(/[^a-zA-Z0-9._-]/g, "")
-		.replace(/-+/g, "-")
-		.replace(/^[-_.]+|[-_.]+$/g, "");
-
-	if (!normalized) {
-		return "attachment";
-	}
-
-	return normalized.slice(0, 120);
 }
 
 export async function POST(request: NextRequest) {
@@ -102,58 +72,15 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const getResponse = await s3Client.send(
-			new GetObjectCommand({
-				Bucket: S3_PUBLIC_BUCKET,
-				Key: safeTusFileKey,
-			}),
-		);
-
-		if (
-			getResponse.ContentLength &&
-			getResponse.ContentLength > MAX_FILE_SIZE_BYTES
-		) {
-			return NextResponse.json(
-				{
-					error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE_BYTES)}`,
-				},
-				{ status: 413 },
-			);
+		const upload = await readUploadedReceipt({
+			tusFileKey: safeTusFileKey,
+			fileName,
+			maxBytes: MAX_FILE_SIZE_BYTES,
+		});
+		if (!upload.ok) {
+			return NextResponse.json({ error: upload.error }, { status: upload.status });
 		}
-
-		const byteArray = await getResponse.Body?.transformToByteArray();
-		if (!byteArray) {
-			return NextResponse.json(
-				{ error: "Failed to read uploaded file" },
-				{ status: 500 },
-			);
-		}
-
-		const buffer = Buffer.from(byteArray);
-		if (buffer.length > MAX_FILE_SIZE_BYTES) {
-			return NextResponse.json(
-				{
-					error: `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE_BYTES)}`,
-				},
-				{ status: 413 },
-			);
-		}
-
-		const detectedType = await fileTypeFromBuffer(buffer);
-		if (!detectedType || !isAllowedTravelExpenseMime(detectedType.mime)) {
-			return NextResponse.json(
-				{ error: "Unsupported file type" },
-				{ status: 400 },
-			);
-		}
-
-		const providedName = fileName?.trim() || `attachment.${detectedType.ext}`;
-		const safeName = sanitizeFileName(providedName);
-		const finalName = safeName.includes(".")
-			? safeName
-			: `${safeName}.${detectedType.ext}`;
-		// The server computes the content identity over the exact bytes it stores.
-		const checksumSha256 = createHash("sha256").update(buffer).digest("hex");
+		const { buffer, checksumSha256, fileName: finalName, mimeType } = upload;
 		const attachmentId = randomUUID();
 		const staged = {
 			attachmentId,
@@ -178,7 +105,7 @@ export async function POST(request: NextRequest) {
 				claim.organizationId,
 				staged.storageKey,
 				buffer,
-				detectedType.mime,
+				mimeType,
 				{
 					"uploaded-by": authContext.employee.id,
 					"original-key": safeTusFileKey,
@@ -190,7 +117,7 @@ export async function POST(request: NextRequest) {
 				...staged,
 				stored,
 				fileName: finalName,
-				mimeType: detectedType.mime,
+				mimeType,
 				sizeBytes: buffer.length,
 				checksumSha256,
 			});
@@ -205,16 +132,7 @@ export async function POST(request: NextRequest) {
 			throw error;
 		}
 
-		await s3Client
-			.send(
-				new DeleteObjectCommand({
-					Bucket: S3_PUBLIC_BUCKET,
-					Key: safeTusFileKey,
-				}),
-			)
-			.catch((error) =>
-				console.error("Failed to delete processed travel expense upload", error),
-			);
+		await deleteTusUpload(safeTusFileKey);
 
 		if (finalized.kind === "claim_not_draft") {
 			// The claim was submitted while this file was uploading. The stored
@@ -243,7 +161,7 @@ export async function POST(request: NextRequest) {
 			attachment: {
 				id: createdAttachment.id,
 				fileName: createdAttachment.fileName,
-				mimeType: createdAttachment.mimeType ?? detectedType.mime,
+				mimeType: createdAttachment.mimeType ?? mimeType,
 				sizeBytes: createdAttachment.sizeBytes ?? buffer.length,
 				storageKey: createdAttachment.storageKey,
 			},
