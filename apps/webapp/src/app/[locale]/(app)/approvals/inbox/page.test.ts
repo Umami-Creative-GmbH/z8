@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { type ComponentProps, createElement } from "react";
+import { describe, expect, it, vi } from "vitest";
 import { getInitialApprovalInboxFilters } from "./page";
+
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: ComponentProps<"a">) =>
+		createElement("a", { href, ...props }, children),
+}));
 
 describe("getInitialApprovalInboxFilters", () => {
 	it("hydrates the types filter from URL search params", () => {

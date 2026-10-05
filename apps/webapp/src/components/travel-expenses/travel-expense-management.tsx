@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/query";
 import { TravelExpenseClaimDialog } from "./travel-expense-claim-dialog";
 import { TravelExpenseList } from "./travel-expense-list";
+import { TravelExpenseLoadError } from "./travel-expense-load-error";
 
 interface TravelExpenseManagementProps {
 	organizationId: string;
@@ -23,16 +24,22 @@ export function TravelExpenseManagement({
 	const queryClient = useQueryClient();
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-	const queryKey = queryKeys.travelExpenses.list({ organizationId, employeeId });
+	const queryKey = queryKeys.travelExpenses.list({
+		organizationId,
+		employeeId,
+	});
 
-	const { data, isLoading, isFetching } = useQuery({
+	const { data, isLoading, isFetching, isError, refetch } = useQuery({
 		queryKey,
 		queryFn: async () => {
 			const result = await getMyTravelExpenseClaims();
 			if (!result.success) {
 				throw new Error(
 					result.error ||
-						t("travelExpenses.errors.loadClaims", "Failed to load travel expense claims"),
+						t(
+							"travelExpenses.errors.loadClaims",
+							"Failed to load travel expense claims",
+						),
 				);
 			}
 			return result.data;
@@ -42,7 +49,9 @@ export function TravelExpenseManagement({
 	const claims = data || [];
 
 	const handleCreated = async () => {
-		await queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.list() });
+		await queryClient.invalidateQueries({
+			queryKey: queryKeys.travelExpenses.list(),
+		});
 		setIsDialogOpen(false);
 	};
 
@@ -54,7 +63,10 @@ export function TravelExpenseManagement({
 						{t("travelExpenses.title", "Travel Expenses")}
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("travelExpenses.description", "Create and track your travel expense claims")}
+						{t(
+							"travelExpenses.description",
+							"Create and track your travel expense claims",
+						)}
 					</p>
 				</div>
 				<Button onClick={() => setIsDialogOpen(true)}>
@@ -63,8 +75,27 @@ export function TravelExpenseManagement({
 				</Button>
 			</div>
 
-			<div className="px-4 lg:px-6">
-				<TravelExpenseList claims={claims} isLoading={isLoading || isFetching} />
+			<div className="space-y-3 px-4 lg:px-6">
+				{isError && (
+					<TravelExpenseLoadError
+						message={t(
+							"travelExpenses.errors.loadClaimsRetry",
+							"Unable to load claims. Please retry.",
+						)}
+						retry={() => {
+							void refetch();
+						}}
+						isRetrying={isFetching}
+					/>
+				)}
+				{isFetching && data !== undefined && (
+					<p role="status" className="text-sm text-muted-foreground">
+						{t("travelExpenses.list.refreshing", "Refreshing claims…")}
+					</p>
+				)}
+				{(!isError || data !== undefined) && (
+					<TravelExpenseList claims={claims} isLoading={isLoading} />
+				)}
 			</div>
 
 			<TravelExpenseClaimDialog
