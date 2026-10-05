@@ -200,4 +200,20 @@ describe("createDraftSaver", () => {
 		await vi.runAllTimersAsync();
 		expect(calls).toHaveLength(0);
 	});
+
+	it("drops unsaved edits of a removed draft without saving or reporting them as lost", async () => {
+		const { saver, calls, pending } = setup();
+		saver.change({ description: "Hotel" });
+		await vi.advanceTimersByTimeAsync(500);
+		saver.change({ description: "Hotel 2" });
+		saver.discard();
+		expect(saver.getState().status).toBe("saved");
+
+		// The save already running finishes without reviving the discarded edits.
+		pending[0]!.resolve({ status: "failed", error: "Expense report not found" });
+		await vi.runAllTimersAsync();
+		await saver.flush();
+		expect(calls).toHaveLength(1);
+		expect(saver.getState().status).toBe("saved");
+	});
 });

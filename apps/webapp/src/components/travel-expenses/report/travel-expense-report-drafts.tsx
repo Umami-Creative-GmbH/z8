@@ -1,6 +1,11 @@
 "use client";
 
-import { IconChevronRight, IconPaperclip } from "@tabler/icons-react";
+import {
+	IconChevronRight,
+	IconPaperclip,
+	IconPlaneDeparture,
+	IconReceipt,
+} from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
@@ -10,9 +15,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
-import { formatMoney, formatPlainDate } from "./format";
+import { formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 
-/** The employee's unfinished expense reports, so a saved draft can be resumed. */
+/** The employee's unfinished trips and receipts, so a saved draft can be resumed. */
 export function TravelExpenseReportDrafts() {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -55,35 +60,79 @@ export function TravelExpenseReportDrafts() {
 									href={`/travel-expenses/reports/${draft.id}`}
 									className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 focus-visible:outline-2"
 								>
-									<div className="min-w-0 flex-1">
-										<p className="truncate font-medium">
-											{draft.description ??
-												t("travelExpenses.report.drafts.untitled", "Untitled receipt")}
-										</p>
-										<p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
-											<span>
-												{draft.expenseDate
-													? formatPlainDate(locale, draft.expenseDate)
-													: t("travelExpenses.report.drafts.noDate", "No date yet")}
+									{draft.trip ? (
+										<>
+											<IconPlaneDeparture
+												aria-hidden="true"
+												className="size-4 shrink-0 text-muted-foreground"
+											/>
+											<div className="min-w-0 flex-1">
+												<p className="truncate font-medium">
+													{draft.trip.purpose ??
+														t("travelExpenses.report.drafts.untitledTrip", "Untitled trip")}
+												</p>
+												<p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
+													<span>
+														{formatPlainDateRange(
+															locale,
+															draft.trip.startDate,
+															draft.trip.endDate,
+														) ??
+															t(
+																"travelExpenses.report.drafts.noTravelDates",
+																"No travel dates yet",
+															)}
+													</span>
+													<span>
+														{t(
+															"travelExpenses.report.drafts.expenses",
+															"{count, plural, one {# expense} other {# expenses}}",
+															{ count: draft.trip.itemCount },
+														)}
+													</span>
+												</p>
+											</div>
+											<span className="tabular-nums">
+												{formatMoney(locale, draft.trip.reimbursable, draft.trip.currency)}
 											</span>
-											{draft.receiptCount > 0 && (
-												<span className="flex items-center gap-1">
-													<IconPaperclip aria-hidden="true" className="size-3.5" />
-													{t(
-														"travelExpenses.report.drafts.receipts",
-														"{count, plural, one {# receipt} other {# receipts}}",
-														{
-															count: draft.receiptCount,
-														},
+										</>
+									) : (
+										<>
+											<IconReceipt
+												aria-hidden="true"
+												className="size-4 shrink-0 text-muted-foreground"
+											/>
+											<div className="min-w-0 flex-1">
+												<p className="truncate font-medium">
+													{draft.description ??
+														t("travelExpenses.report.drafts.untitled", "Untitled receipt")}
+												</p>
+												<p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
+													<span>
+														{draft.expenseDate
+															? formatPlainDate(locale, draft.expenseDate)
+															: t("travelExpenses.report.drafts.noDate", "No date yet")}
+													</span>
+													{draft.receiptCount > 0 && (
+														<span className="flex items-center gap-1">
+															<IconPaperclip aria-hidden="true" className="size-3.5" />
+															{t(
+																"travelExpenses.report.drafts.receipts",
+																"{count, plural, one {# receipt} other {# receipts}}",
+																{
+																	count: draft.receiptCount,
+																},
+															)}
+														</span>
 													)}
+												</p>
+											</div>
+											{draft.amount && draft.currency && (
+												<span className="tabular-nums">
+													{formatMoney(locale, draft.amount, draft.currency)}
 												</span>
 											)}
-										</p>
-									</div>
-									{draft.amount && draft.currency && (
-										<span className="tabular-nums">
-											{formatMoney(locale, draft.amount, draft.currency)}
-										</span>
+										</>
 									)}
 									<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
 									<IconChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />

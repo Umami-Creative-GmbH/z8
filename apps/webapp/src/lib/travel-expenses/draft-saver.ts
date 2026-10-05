@@ -47,6 +47,11 @@ export interface DraftSaver<Values, Item> {
 	retry(): void;
 	/** Settles a conflict: adopt the newer saved version, or save the local edits over it. */
 	resolveConflict(choice: "use_theirs" | "keep_mine"): void;
+	/**
+	 * Drops unsaved edits for good, e.g. after the draft was removed: nothing
+	 * more is saved and the state reads as saved, so nothing is reported lost.
+	 */
+	discard(): void;
 	dispose(): void;
 }
 
@@ -164,11 +169,20 @@ export function createDraftSaver<Values, Item>(options: {
 			dirty = true;
 			schedule(0);
 		},
-		dispose() {
-			disposed = true;
-			if (timer) clearTimeout(timer);
-			timer = null;
-			listeners.clear();
+		discard() {
+			if (disposed) return;
+			dirty = false;
+			latest = undefined;
+			setState({ status: "saved", version: state.version });
+			dispose();
 		},
+		dispose,
 	};
+
+	function dispose() {
+		disposed = true;
+		if (timer) clearTimeout(timer);
+		timer = null;
+		listeners.clear();
+	}
 }

@@ -4,12 +4,18 @@ import {
 	type TravelExpenseReportItemType,
 	type TravelExpenseReportKind,
 	type TravelExpenseReportStatus,
+	travelExpenseReceiptUpload,
 	travelExpenseReport,
 	travelExpenseReportItem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import { DEFAULT_REIMBURSEMENT_CURRENCY, type ReceiptItemDraft } from "./receipt-report";
+import {
+	DEFAULT_REIMBURSEMENT_CURRENCY,
+	type ReceiptItemDraft,
+	receiptReportTotals,
+} from "./receipt-report";
+import type { TripDetailsDraft } from "./trip-report";
 
 /**
  * Draft travel expense reports (#600). Every read and write is scoped to the
@@ -62,6 +68,11 @@ export interface ReportItemView extends ReceiptItemDraft {
 	receipts: ReportReceiptView[];
 }
 
+/** Shared travel details of a trip report and the version they were saved at. */
+export interface TripDetailsView extends TripDetailsDraft {
+	version: number;
+}
+
 export interface ReportView {
 	id: string;
 	kind: TravelExpenseReportKind;
@@ -69,7 +80,23 @@ export interface ReportView {
 	reimbursementCurrency: string;
 	createdAt: string;
 	updatedAt: string;
+	/** Null for standalone reports, which have no trip. */
+	trip: TripDetailsView | null;
 	items: ReportItemView[];
+}
+
+type ReportRow = typeof travelExpenseReport.$inferSelect;
+
+function toTripDetailsView(row: ReportRow): TripDetailsView | null {
+	if (row.kind !== "trip" || !row.tripTimeZone) return null;
+	return {
+		version: row.detailsVersion,
+		purpose: row.tripPurpose,
+		startDate: row.tripStartDate,
+		endDate: row.tripEndDate,
+		timeZone: row.tripTimeZone,
+		destinations: row.tripDestinations,
+	};
 }
 
 export async function createStandaloneReceiptReport(
@@ -113,6 +140,36 @@ export async function createStandaloneReceiptReport(
 	});
 }
 
+/**
+ * Creates an empty trip report. Its travel dates are calendar days in
+ * `timeZone`, the employee's effective zone unless they change it.
+ */
+export async function createTripReport(
+	database: Database,
+	owner: ReportOwner,
+	input: { timeZone: string },
+	now: Instant = systemClock.nowInstant(),
+): Promise<{ reportId: string }> {
+	const at = dateFromInstant(now);
+	const [report] = await database
+		.insert(travelExpenseReport)
+		.values({
+			organizationId: owner.organizationId,
+			employeeId: owner.employeeId,
+			kind: "trip",
+			status: "draft",
+			reimbursementCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+			tripTimeZone: input.timeZone,
+			createdAt: at,
+			createdBy: owner.userId,
+			updatedAt: at,
+			updatedBy: owner.userId,
+		})
+		.returning({ id: travelExpenseReport.id });
+	if (!report) throw new Error("Failed to create travel expense report");
+	return { reportId: report.id };
+}
+
 type ReportScope = Pick<ReportOwner, "organizationId" | "employeeId">;
 
 /** Bumps the report's last-edited time, e.g. for the drafts list. */
@@ -136,14 +193,31 @@ export async function lockOwnDraftReport(
 	tx: Transaction,
 	owner: ReportScope,
 	reportId: string,
-): Promise<{ status: "draft" } | { status: "not_found" } | { status: "not_draft" }> {
+): Promise<
+	| { status: "draft"; kind: TravelExpenseReportKind }
+	| { status: "not_found" }
+	| { status: "not_draft" }
+> {
 	const [report] = await tx
-		.select({ status: travelExpenseReport.status })
+		.select({ status: travelExpenseReport.status, kind: travelExpenseReport.kind })
 		.from(travelExpenseReport)
 		.where(ownedReport(owner, reportId))
 		.for("update");
 	if (!report) return { status: "not_found" };
-	return report.status === "draft" ? { status: "draft" } : { status: "not_draft" };
+	return report.status === "draft"
+		? { status: "draft", kind: report.kind }
+		: { status: "not_draft" };
+}
+
+/** Locks the owner's draft trip report; standalone reports have no trip to edit. */
+async function lockOwnDraftTrip(
+	tx: Transaction,
+	owner: ReportScope,
+	reportId: string,
+): Promise<{ kind: "draft" } | { kind: "not_found" } | { kind: "not_draft" }> {
+	const report = await lockOwnDraftReport(tx, owner, reportId);
+	if (report.status !== "draft") return { kind: report.status };
+	return report.kind === "trip" ? { kind: "draft" } : { kind: "not_found" };
 }
 
 /** Unlocked pre-check: whether the item belongs to the owner's draft report. */
@@ -232,6 +306,7 @@ export async function loadOwnReport(
 		reimbursementCurrency: report.reimbursementCurrency,
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
+		trip: toTripDetailsView(report),
 		items: items.map((item) =>
 			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
 		),
@@ -242,11 +317,22 @@ export interface DraftReportSummary {
 	id: string;
 	kind: TravelExpenseReportKind;
 	updatedAt: string;
+	/** The (first) expense's facts; a trip's first expense is not its title. */
 	expenseDate: string | null;
 	description: string | null;
 	amount: string | null;
 	currency: string | null;
 	receiptCount: number;
+	/** Null for standalone reports. */
+	trip: {
+		purpose: string | null;
+		startDate: string | null;
+		endDate: string | null;
+		itemCount: number;
+		/** Employee-paid total of the countable expenses. */
+		reimbursable: string;
+		currency: string;
+	} | null;
 }
 
 /** The owner's draft reports, most recently edited first, for resuming them. */
@@ -255,11 +341,7 @@ export async function listOwnDraftReports(
 	owner: ReportOwner,
 ): Promise<DraftReportSummary[]> {
 	const reports = await database
-		.select({
-			id: travelExpenseReport.id,
-			kind: travelExpenseReport.kind,
-			updatedAt: travelExpenseReport.updatedAt,
-		})
+		.select()
 		.from(travelExpenseReport)
 		.where(
 			and(
@@ -279,9 +361,9 @@ export async function listOwnDraftReports(
 				and(
 					eq(travelExpenseReportItem.organizationId, owner.organizationId),
 					inArray(travelExpenseReportItem.reportId, reportIds),
-					eq(travelExpenseReportItem.position, 0),
 				),
-			),
+			)
+			.orderBy(asc(travelExpenseReportItem.position)),
 		database
 			.select({
 				reportId: travelExpenseReportReceipt.reportId,
@@ -297,7 +379,19 @@ export async function listOwnDraftReports(
 			.groupBy(travelExpenseReportReceipt.reportId),
 	]);
 	return reports.map((report) => {
-		const item = items.find((candidate) => candidate.reportId === report.id);
+		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
+		const item = reportItems[0];
+		const totals =
+			report.kind === "trip"
+				? receiptReportTotals(
+						reportItems.map((row) => ({
+							amount: row.originalAmount,
+							currency: row.originalCurrency,
+							paidBy: row.paidBy,
+						})),
+						report.reimbursementCurrency,
+					)
+				: null;
 		return {
 			id: report.id,
 			kind: report.kind,
@@ -307,6 +401,14 @@ export async function listOwnDraftReports(
 			amount: item?.originalAmount ?? null,
 			currency: item?.originalCurrency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
+			trip: totals && {
+				purpose: report.tripPurpose,
+				startDate: report.tripStartDate,
+				endDate: report.tripEndDate,
+				itemCount: reportItems.length,
+				reimbursable: totals.reimbursable,
+				currency: totals.currency,
+			},
 		};
 	});
 }
@@ -368,6 +470,162 @@ export async function saveReceiptItemDraft(
 		return current
 			? { kind: "conflict", item: toItemView(current, receipts) }
 			: { kind: "not_found" };
+	});
+}
+
+export type SaveTripDetailsResult =
+	| { kind: "saved"; details: TripDetailsView }
+	/** The details changed since `expectedVersion`; nothing was written. */
+	| { kind: "conflict"; details: TripDetailsView }
+	| { kind: "not_found" }
+	| { kind: "not_draft" };
+
+/**
+ * Saves the complete shared travel details of a draft trip, but only on top
+ * of the version the editor last saw, like an item save.
+ */
+export async function saveTripDetailsDraft(
+	database: Database,
+	owner: ReportOwner,
+	input: { reportId: string; expectedVersion: number; details: TripDetailsDraft },
+	now: Instant = systemClock.nowInstant(),
+): Promise<SaveTripDetailsResult> {
+	const at = dateFromInstant(now);
+	return database.transaction(async (tx) => {
+		const trip = await lockOwnDraftTrip(tx, owner, input.reportId);
+		if (trip.kind !== "draft") return trip;
+		const [saved] = await tx
+			.update(travelExpenseReport)
+			.set({
+				tripPurpose: input.details.purpose,
+				tripStartDate: input.details.startDate,
+				tripEndDate: input.details.endDate,
+				tripTimeZone: input.details.timeZone,
+				tripDestinations: input.details.destinations,
+				detailsVersion: sql`${travelExpenseReport.detailsVersion} + 1`,
+				updatedAt: at,
+				updatedBy: owner.userId,
+			})
+			.where(
+				and(
+					ownedReport(owner, input.reportId),
+					eq(travelExpenseReport.detailsVersion, input.expectedVersion),
+				),
+			)
+			.returning();
+		const details = saved
+			? toTripDetailsView(saved)
+			: await tx
+					.select()
+					.from(travelExpenseReport)
+					.where(ownedReport(owner, input.reportId))
+					.then(([current]) => (current ? toTripDetailsView(current) : null));
+		if (!details) return { kind: "not_found" };
+		return { kind: saved ? "saved" : "conflict", details };
+	});
+}
+
+export type AddTripReportItemResult =
+	| { kind: "added"; item: ReportItemView }
+	| { kind: "not_found" }
+	| { kind: "not_draft" };
+
+/** Appends an empty receipt expense to a draft trip, after its last expense. */
+export async function addTripReportItem(
+	database: Database,
+	owner: ReportOwner,
+	input: { reportId: string },
+	now: Instant = systemClock.nowInstant(),
+): Promise<AddTripReportItemResult> {
+	const at = dateFromInstant(now);
+	return database.transaction(async (tx) => {
+		const trip = await lockOwnDraftTrip(tx, owner, input.reportId);
+		if (trip.kind !== "draft") return trip;
+		// The report lock serializes adds, so the next position is free.
+		const [last] = await tx
+			.select({ position: sql<number | null>`max(${travelExpenseReportItem.position})` })
+			.from(travelExpenseReportItem)
+			.where(
+				and(
+					eq(travelExpenseReportItem.reportId, input.reportId),
+					eq(travelExpenseReportItem.organizationId, owner.organizationId),
+				),
+			);
+		const [item] = await tx
+			.insert(travelExpenseReportItem)
+			.values({
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+				type: "receipt",
+				position: (last?.position ?? -1) + 1,
+				originalCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				createdAt: at,
+				updatedAt: at,
+				updatedBy: owner.userId,
+			})
+			.returning();
+		if (!item) throw new Error("Failed to create travel expense report item");
+		await touchReport(tx, owner, input.reportId, at);
+		return { kind: "added", item: toItemView(item, []) };
+	});
+}
+
+export type RemoveTripReportItemResult =
+	| { kind: "removed"; itemId: string; receiptIds: string[] }
+	/** The expense changed since `expectedVersion`; it was kept. */
+	| { kind: "conflict"; item: ReportItemView }
+	/** The trip exists, but the expense is not (or no longer) part of it. */
+	| { kind: "item_not_found" }
+	| { kind: "not_found" }
+	| { kind: "not_draft" };
+
+/**
+ * Removes an expense from a draft trip unless it changed since the version the
+ * editor saw. Its receipts cascade; the receipt deletion trigger (migration
+ * 0113) hands their stored objects to the cleanup worker in this transaction.
+ */
+export async function removeTripReportItem(
+	database: Database,
+	owner: ReportOwner,
+	input: { reportId: string; itemId: string; expectedVersion: number },
+	now: Instant = systemClock.nowInstant(),
+): Promise<RemoveTripReportItemResult> {
+	const at = dateFromInstant(now);
+	return database.transaction(async (tx) => {
+		const trip = await lockOwnDraftTrip(tx, owner, input.reportId);
+		if (trip.kind !== "draft") return trip;
+		const item = and(
+			eq(travelExpenseReportItem.id, input.itemId),
+			eq(travelExpenseReportItem.reportId, input.reportId),
+			eq(travelExpenseReportItem.organizationId, owner.organizationId),
+		);
+		const receipts = await itemReceipts(tx, owner, input.itemId);
+		const [removed] = await tx
+			.delete(travelExpenseReportItem)
+			.where(and(item, eq(travelExpenseReportItem.version, input.expectedVersion)))
+			.returning({ id: travelExpenseReportItem.id });
+		if (!removed) {
+			const [current] = await tx.select().from(travelExpenseReportItem).where(item);
+			return current
+				? { kind: "conflict", item: toItemView(current, receipts) }
+				: { kind: "item_not_found" };
+		}
+		const receiptIds = receipts.map((receipt) => receipt.id);
+		if (receiptIds.length > 0) {
+			// The trigger stamps database time; align it with the clock the worker uses.
+			await tx
+				.update(travelExpenseReceiptUpload)
+				.set({ nextAttemptAt: at, createdAt: at, updatedAt: at })
+				.where(
+					and(
+						inArray(travelExpenseReceiptUpload.id, receiptIds),
+						eq(travelExpenseReceiptUpload.organizationId, owner.organizationId),
+						eq(travelExpenseReceiptUpload.status, "cleanup_required"),
+					),
+				);
+		}
+		await touchReport(tx, owner, input.reportId, at);
+		return { kind: "removed", itemId: removed.id, receiptIds };
 	});
 }
 
