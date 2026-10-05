@@ -194,7 +194,12 @@ export type AdoptionProvenance =
 			state: "pre_adoption";
 			basis: "organization_not_adopted" | "written_before_admission" | "legacy_admission_receipt";
 	  }
-	| { state: "fresh_backdated"; operationId: string; writer: string; admittedAt: string }
+	| {
+			state: "fresh_backdated";
+			operationId: string;
+			writer: string;
+			admittedAt: string;
+	  }
 	| { state: "post_adoption"; operationId: string; writer: string }
 	| {
 			state: "ambiguous";
@@ -215,6 +220,13 @@ export type FindingRelevance =
 
 export type FindingDetails = Record<string, string | number | boolean | null | string[]>;
 
+export interface FindingEvidenceInterval {
+	kind: "work_period" | "time_record";
+	id: string;
+	start: string;
+	end: string | null;
+}
+
 export interface WorkFinding {
 	/** Stable across reads of the same evidence. */
 	id: string;
@@ -232,13 +244,18 @@ export interface WorkFinding {
 	/** Whether the relevance intersects the requested scope. */
 	relevant: boolean;
 	details: FindingDetails;
+	/** Actual endpoints of each represented record; never the combined relevance interval. */
+	evidenceIntervals?: FindingEvidenceInterval[];
 }
 
 export type CompletenessWidening = "requested" | "employees" | "organization";
 
 export interface HistoricalWorkDiagnostics {
 	organizationId: string;
-	scope: { employeeIds: string[]; range: { start: string; endExclusive: string } };
+	scope: {
+		employeeIds: string[];
+		range: { start: string; endExclusive: string };
+	};
 	completeness: {
 		/** `incomplete`: diagnostic reads may show unaffected data with this marker. */
 		status: "complete" | "incomplete";
@@ -393,7 +410,11 @@ export function assessHistoricalWork(
 		const intervals = [periodInterval(period), ...(record ? [recordInterval(record)] : [])];
 		const relevance = intervalRelevance(intervals);
 
-		if (period.canonicalRecordId === null && !record) {
+		if (
+			period.canonicalRecordId === null &&
+			!record &&
+			!(period.isActive && period.endTime === null)
+		) {
 			push({ kind: "canonical_missing", shape: "missing", relevance });
 		} else if (period.canonicalRecordId !== null && !record) {
 			push({
@@ -779,7 +800,60 @@ export function assessHistoricalWork(
 		});
 	}
 
-	return composeReport(evidence.organizationId, scope, drafts);
+	// Every represented owner participates in authorization, including secondary
+	// findings on a period that references another employee's canonical work.
+	for (const draft of drafts) {
+		draft.employeeIds = sortedUnique([
+			...(draft.employeeIds ?? []),
+			...(draft.workPeriodIds ?? []).flatMap((id) => {
+				const period = periodsById.get(id);
+				return period ? [period.employeeId] : [];
+			}),
+			...(draft.timeRecordIds ?? []).flatMap((id) => {
+				const record = recordsById.get(id);
+				return record ? [record.employeeId] : [];
+			}),
+			...(draft.entryIds ?? []).flatMap((id) => {
+				const entry = entriesById.get(id);
+				return entry ? [entry.employeeId] : [];
+			}),
+		]);
+	}
+	const report = composeReport(evidence.organizationId, scope, drafts);
+	return {
+		...report,
+		findings: report.findings.map((finding) => ({
+			...finding,
+			evidenceIntervals: [
+				...finding.workPeriodIds.flatMap((id): FindingEvidenceInterval[] => {
+					const period = periodsById.get(id);
+					return period
+						? [
+								{
+									kind: "work_period",
+									id,
+									start: instantToCanonicalString(period.startTime),
+									end: period.endTime ? instantToCanonicalString(period.endTime) : null,
+								},
+							]
+						: [];
+				}),
+				...finding.timeRecordIds.flatMap((id): FindingEvidenceInterval[] => {
+					const record = recordsById.get(id);
+					return record
+						? [
+								{
+									kind: "time_record",
+									id,
+									start: instantToCanonicalString(record.startAt),
+									end: record.endAt ? instantToCanonicalString(record.endAt) : null,
+								},
+							]
+						: [];
+				}),
+			],
+		})),
+	};
 }
 
 function composeReport(
@@ -1282,7 +1356,9 @@ export interface RedactedWorkFinding {
 
 export interface ProjectedHistoricalWorkDiagnostics
 	extends Omit<HistoricalWorkDiagnostics, "findings" | "completeness"> {
-	completeness: HistoricalWorkDiagnostics["completeness"] & { redactedEmployeeCount: number };
+	completeness: HistoricalWorkDiagnostics["completeness"] & {
+		redactedEmployeeCount: number;
+	};
 	findings: (WorkFinding | RedactedWorkFinding)[];
 }
 

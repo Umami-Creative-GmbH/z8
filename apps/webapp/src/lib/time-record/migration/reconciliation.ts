@@ -30,7 +30,7 @@ export async function reconcileLegacyToCanonical(
 	organizationId: string,
 ): Promise<LegacyCanonicalReconciliation> {
 	const [
-		legacyWork,
+		allLegacyWork,
 		legacyAbsence,
 		canonicalWork,
 		canonicalAbsence,
@@ -46,6 +46,8 @@ export async function reconcileLegacyToCanonical(
 			columns: {
 				id: true,
 				canonicalRecordId: true,
+				isActive: true,
+				endTime: true,
 				projectId: true,
 				durationMinutes: true,
 				approvalStatus: true,
@@ -116,12 +118,10 @@ export async function reconcileLegacyToCanonical(
 		}),
 	]);
 
-	const expectedWorkCanonicalIds = new Set(
-		legacyWork.map(resolveExpectedCanonicalId),
-	);
-	const expectedAbsenceCanonicalIds = new Set(
-		legacyAbsence.map(resolveExpectedCanonicalId),
-	);
+	// Live work receives its completed canonical representation at clock-out.
+	const legacyWork = allLegacyWork.filter((row) => !(row.isActive && row.endTime === null));
+	const expectedWorkCanonicalIds = new Set(legacyWork.map(resolveExpectedCanonicalId));
+	const expectedAbsenceCanonicalIds = new Set(legacyAbsence.map(resolveExpectedCanonicalId));
 	const canonicalWorkIds = new Set(canonicalWork.map((row) => row.id));
 	const canonicalAbsenceIds = new Set(canonicalAbsence.map((row) => row.id));
 	const canonicalWorkDetailIds = new Set(

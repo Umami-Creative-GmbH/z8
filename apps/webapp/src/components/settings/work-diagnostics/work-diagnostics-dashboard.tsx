@@ -9,6 +9,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { AppendAssuranceReport } from "@/lib/time-tracking/append-assurance";
 import type {
 	AdoptionProvenance,
@@ -253,6 +254,7 @@ function FindingRow({
 						))}
 			</TableCell>
 			<TableCell className="align-top">
+				<FindingIntervals t={t} intervals={finding.evidenceIntervals ?? []} />
 				<EvidenceList
 					items={[
 						[
@@ -273,6 +275,43 @@ function FindingRow({
 			</TableCell>
 		</TableRow>
 	);
+}
+
+function FindingIntervals({
+	t,
+	intervals,
+}: {
+	t: TranslateFn;
+	intervals: NonNullable<WorkFinding["evidenceIntervals"]>;
+}) {
+	if (intervals.length === 0) return null;
+	return (
+		<dl className="mb-3 space-y-2 text-xs">
+			{intervals.map((interval) => (
+				<div key={`${interval.kind}:${interval.id}`}>
+					<dt className="break-all font-medium">
+						{interval.kind === "work_period"
+							? t("settings.workDiagnostics.proposals.target.workPeriod", "Work period")
+							: t("settings.workDiagnostics.proposals.target.timeRecord", "Time record")}
+						{` · ${interval.id}`}
+					</dt>
+					<dd className="mt-1 flex flex-wrap gap-x-1 font-mono tabular-nums">
+						<time dateTime={interval.start}>{utcEvidenceTime(interval.start)}</time>
+						<span aria-hidden="true">→</span>
+						{interval.end === null ? (
+							<span>{t("common.unknown", "Unknown")}</span>
+						) : (
+							<time dateTime={interval.end}>{utcEvidenceTime(interval.end)}</time>
+						)}
+					</dd>
+				</div>
+			))}
+		</dl>
+	);
+}
+
+function utcEvidenceTime(instant: string): string {
+	return `${parseInstant(instant).toZonedDateTimeISO("UTC").toPlainDateTime().toString().replace("T", " ")} UTC`;
 }
 
 function AppendAssuranceDetail({

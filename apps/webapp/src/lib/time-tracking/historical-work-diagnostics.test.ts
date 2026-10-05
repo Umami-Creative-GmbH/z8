@@ -138,6 +138,72 @@ function only(findings: readonly WorkFinding[], kind: WorkFinding["kind"]) {
 }
 
 describe("assessHistoricalWork shape matrix", () => {
+	it("accepts a healthy running timer before its canonical record is created at clock-out", () => {
+		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			period: {
+				isActive: true,
+				endTime: null,
+				clockOutId: null,
+				durationMinutes: null,
+				canonicalRecordId: null,
+			},
+		});
+		const report = assessHistoricalWork(
+			evidence([fixture], { records: [], entries: [fixture.entries[0]] }),
+			july,
+		);
+		expect(report.findings).toEqual([]);
+		expect(report.completeness.status).toBe("complete");
+	});
+
+	it("reports both actual intervals when a canonical copy has no end", () => {
+		const fixture = work("2026-07-02T08:00:00.123Z", "2026-07-02T16:00:00.123Z", {
+			record: { endAt: null, durationMinutes: null },
+		});
+		const finding = only(
+			assessHistoricalWork(evidence([fixture]), july).findings,
+			"endpoint_missing",
+		);
+		expect(finding.evidenceIntervals).toEqual([
+			{
+				kind: "work_period",
+				id: fixture.period.id,
+				start: "2026-07-02T08:00:00.123Z",
+				end: "2026-07-02T16:00:00.123Z",
+			},
+			{
+				kind: "time_record",
+				id: fixture.record.id,
+				start: "2026-07-02T08:00:00.123Z",
+				end: null,
+			},
+		]);
+	});
+
+	it("reports each overlapping record's interval instead of the combined relevance interval", () => {
+		const first = work("2026-07-02T08:00:00Z", "2026-07-02T12:00:00Z");
+		const second = work("2026-07-02T11:00:00Z", "2026-07-02T16:00:00Z");
+		const finding = only(
+			assessHistoricalWork(evidence([first, second]), july).findings,
+			"overlapping_work",
+		);
+		expect(finding.evidenceIntervals).toEqual(
+			expect.arrayContaining([
+				{
+					kind: "work_period",
+					id: first.period.id,
+					start: "2026-07-02T08:00:00Z",
+					end: "2026-07-02T12:00:00Z",
+				},
+				{
+					kind: "work_period",
+					id: second.period.id,
+					start: "2026-07-02T11:00:00Z",
+					end: "2026-07-02T16:00:00Z",
+				},
+			]),
+		);
+	});
 	it("reports consistent linked work as complete with no findings", () => {
 		const report = assessHistoricalWork(
 			evidence([work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z")]),
@@ -978,6 +1044,21 @@ describe("assessHistoricalWork scoped completeness", () => {
 });
 
 describe("diagnostic read authorization", () => {
+	it("redacts every finding that represents work owned by an unauthorized employee", () => {
+		const fixture = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			record: { employeeId: peer, startAt: at("2026-07-02T09:17:00Z"), detail: null },
+		});
+		const report = assessHistoricalWork(evidence([fixture]), july);
+		const projected = projectHistoricalWorkForViewer(report, {
+			organizationWide: false, canDiagnose: (id) => id === worker,
+		});
+		expect(projected.diagnostics).toBe("record_level");
+		if (projected.diagnostics !== "record_level") throw new Error("unreachable");
+		const endpoint = projected.report.findings.find((finding) => finding.kind === "endpoint_conflict");
+		expect(endpoint).toMatchObject({ redacted: true });
+		expect(projected.report.findings.find((finding) => finding.kind === "canonical_detail_missing")).toMatchObject({ redacted: true });
+		expect(JSON.stringify(projected)).not.toContain("2026-07-02T09:17:00Z");
+	});
 	function reportWithPeerConflict() {
 		const own = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
 			period: { durationMinutes: null },
