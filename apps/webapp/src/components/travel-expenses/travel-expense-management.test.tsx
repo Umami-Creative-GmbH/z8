@@ -15,6 +15,12 @@ const actions = vi.hoisted(() => ({
 	createTravelExpenseDraft: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/actions", () => actions);
+const reportActions = vi.hoisted(() => ({
+	getMyDraftTravelExpenseReports: vi.fn(async () => ({ success: true, data: [] as unknown[] })),
+	createStandaloneReceiptReportAction: vi.fn(),
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
+const router = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
@@ -49,6 +55,45 @@ function mount() {
 	);
 	return client;
 }
+describe("standalone receipt reports", () => {
+	it("lists saved drafts so they can be resumed", async () => {
+		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
+		reportActions.getMyDraftTravelExpenseReports.mockResolvedValueOnce({
+			success: true,
+			data: [
+				{
+					id: "report-1",
+					kind: "standalone",
+					updatedAt: "2026-10-05T10:00:00.000Z",
+					expenseDate: "2026-09-14",
+					description: "Hotel Hamburg",
+					amount: "129.90",
+					currency: "EUR",
+					receiptCount: 1,
+				},
+			],
+		});
+		const client = mount();
+		const link = await screen.findByRole("link", { name: /Hotel Hamburg/ });
+		expect(link.getAttribute("href")).toBe("/travel-expenses/reports/report-1");
+		client.clear();
+	});
+
+	it("creates a standalone receipt report and opens its editor", async () => {
+		actions.getMyTravelExpenseClaims.mockResolvedValue({ success: true, data: [] });
+		reportActions.createStandaloneReceiptReportAction.mockResolvedValueOnce({
+			success: true,
+			data: { reportId: "report-2" },
+		});
+		const client = mount();
+		fireEvent.click(screen.getByRole("button", { name: "New receipt" }));
+		await vi.waitFor(() =>
+			expect(router.push).toHaveBeenCalledWith("/travel-expenses/reports/report-2"),
+		);
+		client.clear();
+	});
+});
+
 describe("travel history recovery", () => {
 	it("preserves loaded claims during a background refresh", async () => {
 		actions.getMyTravelExpenseClaims
@@ -93,4 +138,5 @@ vi.mock("@/navigation", () => ({
 	Link: ({ children, ...props }: React.ComponentProps<"a">) => (
 		<a {...props}>{children}</a>
 	),
+	useRouter: () => router,
 }));

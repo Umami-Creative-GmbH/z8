@@ -7,6 +7,8 @@ import { useState } from "react";
 import { getMyTravelExpenseClaims } from "@/app/[locale]/(app)/travel-expenses/actions";
 import { Button } from "@/components/ui/button";
 import { queryKeys } from "@/lib/query";
+import { NewReceiptExpenseButton } from "./report/new-receipt-expense-button";
+import { TravelExpenseReportDrafts } from "./report/travel-expense-report-drafts";
 import { TravelExpenseClaimDialog } from "./travel-expense-claim-dialog";
 import { TravelExpenseList } from "./travel-expense-list";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
@@ -69,10 +71,17 @@ export function TravelExpenseManagement({
 						)}
 					</p>
 				</div>
-				<Button onClick={() => setIsDialogOpen(true)}>
-					<IconPlus className="mr-2 size-4" aria-hidden="true" />
-					{t("travelExpenses.actions.newClaim", "New Claim")}
-				</Button>
+				<div className="flex flex-wrap justify-end gap-2">
+					<Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+						<IconPlus className="mr-2 size-4" aria-hidden="true" />
+						{t("travelExpenses.actions.newClaim", "New Claim")}
+					</Button>
+					<NewReceiptExpenseButton />
+				</div>
+			</div>
+
+			<div className="space-y-3 px-4 lg:px-6">
+				<TravelExpenseReportDrafts />
 			</div>
 
 			<div className="space-y-3 px-4 lg:px-6">

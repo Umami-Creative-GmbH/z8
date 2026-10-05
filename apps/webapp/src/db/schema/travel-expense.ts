@@ -13,6 +13,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { ExpensePayer, ReceiptExpenseCategory } from "@/lib/travel-expenses/receipt-report";
 import { currentTimestamp } from "./timestamp";
 
 import { organization, user } from "../auth-schema";
@@ -126,29 +127,166 @@ export const travelExpenseAttachment = pgTable(
 	],
 );
 
+export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone"] as const;
+export type TravelExpenseReportKind = (typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
+export const TRAVEL_EXPENSE_REPORT_STATUSES = ["draft"] as const;
+export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
+
+// Travel expense report (#600): groups expense items beside the legacy claim
+// model, which keeps its submitted and decided claims untouched.
+export const travelExpenseReport = pgTable(
+	"travel_expense_report",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		kind: text("kind").$type<TravelExpenseReportKind>().notNull(),
+		status: text("status").$type<TravelExpenseReportStatus>().default("draft").notNull(),
+		reimbursementCurrency: text("reimbursement_currency").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		uniqueIndex("travelExpenseReport_id_org_idx").on(table.id, table.organizationId),
+		index("travelExpenseReport_org_employee_status_idx").on(
+			table.organizationId,
+			table.employeeId,
+			table.status,
+		),
+		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone')`),
+		check("travel_expense_report_status_check", sql`${table.status} IN ('draft')`),
+	],
+);
+
+export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt"] as const;
+export type TravelExpenseReportItemType = (typeof TRAVEL_EXPENSE_REPORT_ITEM_TYPES)[number];
+
+// One expense of a report. Draft facts may be missing but are never malformed.
+// `version` advances on every saved edit; a save based on an older version is
+// refused, so a stale or concurrent save cannot overwrite a newer edit.
+export const travelExpenseReportItem = pgTable(
+	"travel_expense_report_item",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id").notNull(),
+		reportId: uuid("report_id").notNull(),
+		type: text("type").$type<TravelExpenseReportItemType>().notNull(),
+		position: integer("position").notNull(),
+		expenseDate: date("expense_date"),
+		category: text("category").$type<ReceiptExpenseCategory>(),
+		description: text("description"),
+		originalAmount: decimal("original_amount", { precision: 12, scale: 2 }),
+		originalCurrency: text("original_currency"),
+		paidBy: text("paid_by").$type<ExpensePayer>(),
+		accountingReference: text("accounting_reference"),
+		version: integer("version").default(1).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+		updatedBy: text("updated_by").references(() => user.id),
+	},
+	(table) => [
+		foreignKey({
+			name: "travel_expense_report_item_report_fk",
+			columns: [table.reportId, table.organizationId],
+			foreignColumns: [travelExpenseReport.id, travelExpenseReport.organizationId],
+		}).onDelete("cascade"),
+		uniqueIndex("travelExpenseReportItem_id_org_idx").on(table.id, table.organizationId),
+		uniqueIndex("travelExpenseReportItem_report_position_idx").on(table.reportId, table.position),
+		check("travel_expense_report_item_type_check", sql`${table.type} IN ('receipt')`),
+		check(
+			"travel_expense_report_item_category_check",
+			sql`${table.category} IS NULL OR ${table.category} IN ('transport', 'accommodation', 'meals', 'parking', 'other')`,
+		),
+		check(
+			"travel_expense_report_item_paid_by_check",
+			sql`${table.paidBy} IS NULL OR ${table.paidBy} IN ('employee', 'company')`,
+		),
+		check(
+			"travel_expense_report_item_amount_check",
+			sql`${table.originalAmount} IS NULL OR ${table.originalAmount} > 0`,
+		),
+	],
+);
+
+// A private receipt file of a report item. Written only by upload finalization
+// under the report row lock while the report is a draft.
+export const travelExpenseReportReceipt = pgTable(
+	"travel_expense_report_receipt",
+	{
+		id: uuid("id").primaryKey(),
+		organizationId: text("organization_id").notNull(),
+		reportId: uuid("report_id").notNull(),
+		itemId: uuid("item_id").notNull(),
+		storageProvider: text("storage_provider").notNull(),
+		storageBucket: text("storage_bucket"),
+		storageKey: text("storage_key").notNull(),
+		storageVersionId: text("storage_version_id"),
+		fileName: text("file_name").notNull(),
+		mimeType: text("mime_type").notNull(),
+		sizeBytes: integer("size_bytes").notNull(),
+		checksumSha256: text("checksum_sha256").notNull(),
+		uploadedBy: uuid("uploaded_by")
+			.notNull()
+			.references(() => employee.id, { onDelete: "cascade" }),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "travel_expense_report_receipt_report_fk",
+			columns: [table.reportId, table.organizationId],
+			foreignColumns: [travelExpenseReport.id, travelExpenseReport.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "travel_expense_report_receipt_item_fk",
+			columns: [table.itemId, table.organizationId],
+			foreignColumns: [travelExpenseReportItem.id, travelExpenseReportItem.organizationId],
+		}).onDelete("cascade"),
+		index("travelExpenseReportReceipt_item_idx").on(table.itemId),
+		index("travelExpenseReportReceipt_report_idx").on(table.reportId),
+		uniqueIndex("travelExpenseReportReceipt_org_storageKey_idx").on(
+			table.organizationId,
+			table.storageKey,
+		),
+	],
+);
+
 export const TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES = ["pending", "cleanup_required"] as const;
 export type TravelExpenseReceiptUploadStatus =
 	(typeof TRAVEL_EXPENSE_RECEIPT_UPLOAD_STATUSES)[number];
 
 export const TRAVEL_EXPENSE_RECEIPT_CLEANUP_REASONS = [
 	"claim_not_draft",
+	"report_not_draft",
 	"finalization_failed",
 	"abandoned",
+	"removed",
 ] as const;
 export type TravelExpenseReceiptCleanupReason =
 	(typeof TRAVEL_EXPENSE_RECEIPT_CLEANUP_REASONS)[number];
 
 // Durable staging claim for one private receipt object. It is written before
 // the object is stored and removed in the transaction that attaches it, so an
-// upload that is rejected (claim no longer a draft), fails or is abandoned
-// always leaves recoverable storage cleanup work. Organization and claim are
-// kept by value: cleanup must outlive claim and tenant deletion.
+// upload that is rejected (claim or report no longer a draft), fails or is
+// abandoned always leaves recoverable storage cleanup work; a receipt removed
+// from a draft report returns here for deletion. Organization and owner are
+// kept by value: cleanup must outlive owner and tenant deletion. The owner is
+// either a legacy claim or a report item.
 export const travelExpenseReceiptUpload = pgTable(
 	"travel_expense_receipt_upload",
 	{
 		id: uuid("id").primaryKey(),
 		organizationId: text("organization_id").notNull(),
-		claimId: uuid("claim_id").notNull(),
+		claimId: uuid("claim_id"),
+		reportId: uuid("report_id"),
+		itemId: uuid("item_id"),
 		uploadedBy: uuid("uploaded_by").notNull(),
 		storageKey: text("storage_key").notNull(),
 		storageBucket: text("storage_bucket"),
@@ -181,7 +319,12 @@ export const travelExpenseReceiptUpload = pgTable(
 			"travel_expense_receipt_upload_reason_check",
 			sql`(${table.status} = 'pending' AND ${table.reason} IS NULL)
 			OR (${table.status} = 'cleanup_required'
-				AND ${table.reason} IN ('claim_not_draft', 'finalization_failed', 'abandoned'))`,
+				AND ${table.reason} IN ('claim_not_draft', 'report_not_draft', 'finalization_failed', 'abandoned', 'removed'))`,
+		),
+		check(
+			"travel_expense_receipt_upload_owner_check",
+			sql`(${table.claimId} IS NOT NULL AND ${table.reportId} IS NULL AND ${table.itemId} IS NULL)
+			OR (${table.claimId} IS NULL AND ${table.reportId} IS NOT NULL AND ${table.itemId} IS NOT NULL)`,
 		),
 	],
 );

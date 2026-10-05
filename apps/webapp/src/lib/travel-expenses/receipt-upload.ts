@@ -5,6 +5,7 @@ import {
 	travelExpenseAttachment,
 	travelExpenseClaim,
 	travelExpenseReceiptUpload,
+	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
@@ -333,6 +334,17 @@ async function cleanupOne(
 				eq(travelExpenseAttachment.organizationId, row.organizationId),
 				eq(travelExpenseAttachment.storageKey, row.storageKey),
 			),
+		)
+		.unionAll(
+			database
+				.select({ id: travelExpenseReportReceipt.id })
+				.from(travelExpenseReportReceipt)
+				.where(
+					and(
+						eq(travelExpenseReportReceipt.organizationId, row.organizationId),
+						eq(travelExpenseReportReceipt.storageKey, row.storageKey),
+					),
+				),
 		)
 		.limit(1);
 	if (attached.length === 0) {
