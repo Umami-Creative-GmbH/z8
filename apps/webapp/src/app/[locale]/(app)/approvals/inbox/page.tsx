@@ -39,6 +39,7 @@ import type {
 	ApprovalInboxType,
 	ApprovalInboxWarning,
 } from "@/lib/approvals/inbox/types";
+import { SUPPORTED_APPROVAL_INBOX_TYPES } from "@/lib/approvals/inbox/types";
 import {
 	type ApprovalInboxFilters,
 	useApprovalInbox,
@@ -195,7 +196,7 @@ export function getInitialApprovalInboxFilters(
 		?.split(",")
 		.map((value) => value.trim())
 		.filter((value): value is ApprovalInboxType =>
-			["absence_entry", "time_entry", "travel_expense_claim"].includes(value),
+			(SUPPORTED_APPROVAL_INBOX_TYPES as readonly string[]).includes(value),
 		);
 
 	return {

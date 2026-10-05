@@ -89,7 +89,7 @@ function withSavedValues(
 	return merged;
 }
 
-function categoryLabel(t: Translate, category: string) {
+export function categoryLabel(t: Translate, category: string) {
 	const labels: Record<string, string> = {
 		transport: t("travelExpenses.report.categories.transport", "Transport"),
 		accommodation: t("travelExpenses.report.categories.accommodation", "Accommodation"),

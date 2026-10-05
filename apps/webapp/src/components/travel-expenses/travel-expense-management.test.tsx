@@ -11,6 +11,7 @@ const actions = vi.hoisted(() => ({
 vi.mock("@/app/[locale]/(app)/travel-expenses/actions", () => actions);
 const reportActions = vi.hoisted(() => ({
 	getMyDraftTravelExpenseReports: vi.fn(async () => ({ success: true, data: [] as unknown[] })),
+	getMySubmittedTravelExpenseReports: vi.fn(async () => ({ success: true, data: [] as unknown[] })),
 	createStandaloneReceiptReportAction: vi.fn(),
 	createTripReportAction: vi.fn(),
 }));

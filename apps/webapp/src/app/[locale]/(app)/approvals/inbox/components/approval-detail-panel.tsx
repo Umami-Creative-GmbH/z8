@@ -193,14 +193,20 @@ function renderDetailSection(
 
 function TravelExpenseClaimLink({ item }: { item: ApprovalInboxItem }) {
 	const { t } = useTranslate();
-	if (item.type !== "travel_expense_claim") return null;
+	if (item.type !== "travel_expense_claim" && item.type !== "travel_expense_report") return null;
 
 	return (
 		<Link
 			className="inline-block rounded-sm text-sm text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2"
-			href={`/travel-expenses/${item.entityId}`}
+			href={
+				item.type === "travel_expense_report"
+					? `/travel-expenses/reports/${item.entityId}`
+					: `/travel-expenses/${item.entityId}`
+			}
 		>
-			{t("approvals:approvals.viewExpenseClaim", "View claim and receipts")}
+			{item.type === "travel_expense_report"
+				? t("approvals:approvals.viewExpenseReport", "View submitted report and receipts")
+				: t("approvals:approvals.viewExpenseClaim", "View claim and receipts")}
 		</Link>
 	);
 }

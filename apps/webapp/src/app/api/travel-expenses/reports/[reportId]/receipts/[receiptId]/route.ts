@@ -3,14 +3,17 @@ import { and, eq } from "drizzle-orm";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { travelExpenseReport, travelExpenseReportReceipt } from "@/db/schema";
-import { getAuthContext } from "@/lib/auth-helpers";
+import { travelExpenseReportReceipt } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { readPrivateObject } from "@/lib/storage/export-s3-client";
 import {
 	isAllowedTravelExpenseMime,
 	TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 } from "@/lib/travel-expenses/attachment-validation";
+import {
+	loadAuthorizedTravelExpenseReport,
+	loadSubmittedReportReceipt,
+} from "@/lib/travel-expenses/report-read";
 
 const logger = createLogger("TravelExpenseReportReceipt");
 const privateHeaders = {
@@ -25,67 +28,92 @@ function notFound() {
 	);
 }
 
-/** Streams a private report receipt to the report owner after verifying its recorded identity. */
+interface StoredReceipt {
+	provider: string;
+	bucket: string | null;
+	key: string;
+	versionId: string | null;
+	fileName: string;
+	mimeType: string;
+	sizeBytes: number;
+	checksumSha256: string;
+}
+
+/**
+ * Streams a private report receipt after verifying its recorded identity: to
+ * the report owner, or to a reviewer the Approvals inbox authorizes (#602), who
+ * receives only the exact object frozen in the current submission.
+ */
 export async function GET(
 	request: NextRequest,
 	{ params }: { params: Promise<{ reportId: string; receiptId: string }> },
 ) {
 	await connection();
 	try {
-		const actor = await getAuthContext();
-		if (!actor?.employee) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: privateHeaders });
-		}
 		const { reportId, receiptId } = await params;
 		if (!z.uuid().safeParse(reportId).success || !z.uuid().safeParse(receiptId).success) {
 			return notFound();
 		}
-		const organizationId = actor.employee.organizationId;
-		const [receipt] = await db
-			.select({ receipt: travelExpenseReportReceipt })
-			.from(travelExpenseReportReceipt)
-			.innerJoin(
-				travelExpenseReport,
-				and(
-					eq(travelExpenseReport.id, travelExpenseReportReceipt.reportId),
-					eq(travelExpenseReport.organizationId, travelExpenseReportReceipt.organizationId),
-				),
-			)
-			.where(
-				and(
-					eq(travelExpenseReportReceipt.id, receiptId),
-					eq(travelExpenseReportReceipt.reportId, reportId),
-					eq(travelExpenseReportReceipt.organizationId, organizationId),
-					eq(travelExpenseReport.employeeId, actor.employee.id),
-				),
-			)
-			.limit(1);
-		if (!receipt) return notFound();
-		const attachment = receipt.receipt;
-		if (attachment.storageProvider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER) {
+		const authorized = await loadAuthorizedTravelExpenseReport(reportId);
+		if (authorized.status === "unauthorized") {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: privateHeaders });
+		}
+		if (authorized.status !== "found") return notFound();
+		const { report } = authorized;
+		let stored: StoredReceipt | null = null;
+		if (authorized.access === "reviewer") {
+			const frozen = await loadSubmittedReportReceipt(report, receiptId);
+			stored = frozen && { ...frozen.object, ...frozen };
+		} else {
+			const [receipt] = await db
+				.select()
+				.from(travelExpenseReportReceipt)
+				.where(
+					and(
+						eq(travelExpenseReportReceipt.id, receiptId),
+						eq(travelExpenseReportReceipt.reportId, report.id),
+						eq(travelExpenseReportReceipt.organizationId, report.organizationId),
+					),
+				)
+				.limit(1);
+			stored = receipt
+				? {
+						provider: receipt.storageProvider,
+						bucket: receipt.storageBucket,
+						key: receipt.storageKey,
+						versionId: receipt.storageVersionId,
+						fileName: receipt.fileName,
+						mimeType: receipt.mimeType,
+						sizeBytes: receipt.sizeBytes,
+						checksumSha256: receipt.checksumSha256,
+					}
+				: null;
+		}
+		if (!stored) return notFound();
+		if (stored.provider !== TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER) {
 			throw new Error("Unsupported recorded receipt storage provider");
 		}
 		const bytes = await readPrivateObject({
-			organizationId,
-			key: attachment.storageKey,
-			bucket: attachment.storageBucket,
-			versionId: attachment.storageVersionId,
+			organizationId: report.organizationId,
+			key: stored.key,
+			bucket: stored.bucket,
+			versionId: stored.versionId,
 		});
 		if (
-			bytes.byteLength !== attachment.sizeBytes ||
-			createHash("sha256").update(bytes).digest("hex") !== attachment.checksumSha256
+			bytes.byteLength !== stored.sizeBytes ||
+			createHash("sha256").update(bytes).digest("hex") !== stored.checksumSha256
 		) {
 			throw new Error("Stored receipt content does not match its recorded identity");
 		}
-		const mimeType = isAllowedTravelExpenseMime(attachment.mimeType)
-			? attachment.mimeType
+		const mimeType = isAllowedTravelExpenseMime(stored.mimeType)
+			? stored.mimeType
 			: "application/octet-stream";
 		const disposition =
 			new URL(request.url).searchParams.get("download") === "1" ||
 			mimeType === "application/octet-stream"
 				? "attachment"
 				: "inline";
-		const encodedName = encodeURIComponent(attachment.fileName).replace(
+		const encodedName = encodeURIComponent(stored.fileName).replace(
 			/['()*]/g,
 			(char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
 		);

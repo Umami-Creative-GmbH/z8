@@ -32,12 +32,9 @@ import {
 } from "@/lib/travel-expenses/trip-report";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ReceiptItemEditor } from "./receipt-item-editor";
-import {
-	DraftNotice,
-	type IncompleteExpense,
-	ReportTotals,
-	TripRequirements,
-} from "./report-summary";
+import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
+import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
+import { SubmittedTravelExpenseReport } from "./submitted-report";
 import { TripDetailsEditor } from "./trip-details-editor";
 
 /** Live entered values per expense; null while an expense has malformed fields. */
@@ -45,6 +42,51 @@ type LiveDrafts = Record<string, ReceiptItemDraft | null>;
 
 function liveDraft(item: ReportItemView, drafts: LiveDrafts): ReceiptItemDraft | null {
 	return item.id in drafts ? (drafts[item.id] ?? null) : item;
+}
+
+const ITEM_FIELDS = [
+	"expenseDate",
+	"category",
+	"description",
+	"amount",
+	"currency",
+	"paidBy",
+	"accountingReference",
+] as const satisfies readonly (keyof ReceiptItemDraft)[];
+
+/** Whether everything on screen equals the saved report, so reviewing it reviews this. */
+function liveMatchesSaved(
+	saved: ReportView,
+	drafts: LiveDrafts,
+	details: TripDetailsDraft | null,
+): boolean {
+	const itemsMatch = saved.items.every((item) => {
+		const live = liveDraft(item, drafts);
+		return live !== null && ITEM_FIELDS.every((field) => live[field] === item[field]);
+	});
+	if (!itemsMatch || saved.status !== "draft") return false;
+	if (saved.kind !== "trip") return true;
+	const trip = saved.trip;
+	return (
+		details !== null &&
+		trip !== null &&
+		details.purpose === trip.purpose &&
+		details.startDate === trip.startDate &&
+		details.endDate === trip.endDate &&
+		details.timeZone === trip.timeZone &&
+		JSON.stringify(details.destinations) === JSON.stringify(trip.destinations)
+	);
+}
+
+/** Reloads the saved report; null while the entries on screen are not all saved. */
+function useSavedReportLoader(reportId: string) {
+	const queryClient = useQueryClient();
+	return async (drafts: LiveDrafts, details: TripDetailsDraft | null) => {
+		const queryKey = queryKeys.travelExpenses.report(reportId);
+		await queryClient.refetchQueries({ queryKey, exact: true });
+		const saved = queryClient.getQueryData<ReportView>(queryKey);
+		return saved && liveMatchesSaved(saved, drafts, details) ? saved : null;
+	};
 }
 
 /** Totals of the entered values; malformed expenses are not counted. */
@@ -100,7 +142,10 @@ export function TravelExpenseReportEditor({
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</div>
 			)}
-			{data?.kind === "trip" && data.trip ? (
+			{data && data.status !== "draft" ? (
+				// Submitted reports are frozen; only their submission is shown.
+				<SubmittedTravelExpenseReport reportId={reportId} />
+			) : data?.kind === "trip" && data.trip ? (
 				<TripReportBody report={data} trip={data.trip} maxReceiptBytes={maxReceiptBytes} />
 			) : (
 				data && <StandaloneReportBody report={data} maxReceiptBytes={maxReceiptBytes} />
@@ -115,7 +160,10 @@ function useReportInvalidation(reportId: string) {
 		refreshReport: () =>
 			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) }),
 		refreshDrafts: () =>
-			queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.draftReports() }),
+			Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.draftReports() }),
+				queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.submittedReports() }),
+			]),
 	};
 }
 
@@ -128,9 +176,19 @@ function StandaloneReportBody({
 }) {
 	const { t } = useTranslate();
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
+	const loadSavedReport = useSavedReportLoader(report.id);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const item = report.items[0];
 	if (!item) return null;
+	const live = liveDraft(item, drafts);
+	const blocker: SubmitBlocker = !live
+		? "unsaved"
+		: receiptItemMissingRequirements(live, {
+					receiptCount: item.receipts.length,
+					reimbursementCurrency: report.reimbursementCurrency,
+				}).length > 0
+			? "incomplete"
+			: null;
 
 	return (
 		<Card>
@@ -156,7 +214,12 @@ function StandaloneReportBody({
 					id={report.id}
 					totals={liveTotals(report.items, drafts, report.reimbursementCurrency)}
 				/>
-				<DraftNotice />
+				<SubmitReportPanel
+					reportId={report.id}
+					blocker={blocker}
+					loadSavedReport={() => loadSavedReport(drafts, null)}
+					onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
+				/>
 			</CardContent>
 		</Card>
 	);
@@ -173,6 +236,7 @@ function TripReportBody({
 }) {
 	const { t } = useTranslate();
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
+	const loadSavedReport = useSavedReportLoader(report.id);
 	const [details, setDetails] = useState<TripDetailsDraft | null>(trip);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const [adding, setAdding] = useState(false);
@@ -389,7 +453,18 @@ function TripReportBody({
 					incompleteExpenses={incompleteExpenses}
 				/>
 			</div>
-			<DraftNotice />
+			<SubmitReportPanel
+				reportId={report.id}
+				blocker={
+					!details || items.some((item) => liveDraft(item, drafts) === null)
+						? "unsaved"
+						: (requirements?.trip.length ?? 0) > 0 || incompleteExpenses.length > 0
+							? "incomplete"
+							: null
+				}
+				loadSavedReport={() => loadSavedReport(drafts, details)}
+				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
+			/>
 		</div>
 	);
 }

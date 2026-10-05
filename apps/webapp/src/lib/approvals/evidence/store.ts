@@ -36,6 +36,10 @@ import {
 	type TravelExpenseSubmittedFacts,
 	type TravelExpenseSubmittedLabels,
 } from "./travel-expense-facts";
+import type {
+	TravelExpenseReportSubmittedFacts,
+	TravelExpenseReportSubmittedLabels,
+} from "./travel-expense-report-facts";
 import {
 	fingerprintTimeCorrectionFacts,
 	TIME_CORRECTION_EVIDENCE_SCHEMA_VERSION,
@@ -1361,6 +1365,62 @@ export async function captureLegacyTravelExpenseSubmittedRevision(
 		});
 	}
 	return revision;
+}
+
+/**
+ * Travel expense reports (#602): the immutable revision row of one submission
+ * cycle, written by the report submission owner in its transaction. Parsing
+ * and reads live in `travel-expense-report-store.ts`. A second capture of the
+ * same cycle violates the unique cycle index and rolls the submission back.
+ */
+export async function insertTravelExpenseReportSubmittedRevision(
+	database: ApprovalDatabase,
+	input: {
+		organizationId: string;
+		requestCycleKey: string;
+		materialFingerprint: string;
+		submittedAt: Instant;
+		facts: TravelExpenseReportSubmittedFacts;
+		labels: TravelExpenseReportSubmittedLabels;
+		submitter: { employeeId: string; userId: string };
+		legacy: LegacyLifecycleReference;
+	},
+): Promise<SubmittedRevisionRow> {
+	if (input.facts.organizationId !== input.organizationId) {
+		throw new ApprovalEvidenceError("invariant", { field: "organization" });
+	}
+	const inserted = await database
+		.insert(approvalSubmittedRevision)
+		.values({
+			organizationId: input.organizationId,
+			authority: "legacy",
+			workflowId: null,
+			legacyApprovalRequestId: input.legacy.approvalRequestId,
+			legacyChainInstanceId: input.legacy.chainInstanceId,
+			observedWorkflowId: input.legacy.observedWorkflowId,
+			workflowType: "travel_expense",
+			sourceType: "travel_expense_report",
+			sourceId: input.facts.reportId,
+			requestCycleKey: input.requestCycleKey,
+			revision: 1,
+			subjectEmployeeId: input.facts.subjectEmployeeId,
+			requesterEmployeeId: input.facts.requesterEmployeeId,
+			submitterActorKind: "employee",
+			submitterEmployeeId: input.submitter.employeeId,
+			submitterUserId: input.submitter.userId,
+			schemaVersion: input.facts.schemaVersion,
+			materialFingerprint: input.materialFingerprint,
+			facts: input.facts as unknown as JsonObject,
+			labels: input.labels as unknown as JsonObject,
+			provenance: "captured_at_submission",
+			submittedAt: dateFromInstant(input.submittedAt),
+		})
+		.returning();
+	const row = inserted[0];
+	if (inserted.length !== 1 || !row) {
+		throw new ApprovalEvidenceError("invariant", { field: "report_submitted_revision" });
+	}
+	return row;
 }
 
 // ---------------------------------------------------------------------------

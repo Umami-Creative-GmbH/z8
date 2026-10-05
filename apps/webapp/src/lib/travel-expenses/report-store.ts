@@ -316,6 +316,7 @@ export async function loadOwnReport(
 export interface DraftReportSummary {
 	id: string;
 	kind: TravelExpenseReportKind;
+	status: TravelExpenseReportStatus;
 	updatedAt: string;
 	/** The (first) expense's facts; a trip's first expense is not its title. */
 	expenseDate: string | null;
@@ -338,9 +339,25 @@ export interface DraftTripSummary {
 }
 
 /** The owner's draft reports, most recently edited first, for resuming them. */
-export async function listOwnDraftReports(
+export function listOwnDraftReports(
 	database: Database,
 	owner: ReportOwner,
+): Promise<DraftReportSummary[]> {
+	return listOwnReports(database, owner, ["draft"]);
+}
+
+/** The owner's submitted and decided reports (#602), most recently changed first. */
+export function listOwnSubmittedReports(
+	database: Database,
+	owner: ReportOwner,
+): Promise<DraftReportSummary[]> {
+	return listOwnReports(database, owner, ["submitted", "approved", "rejected"]);
+}
+
+async function listOwnReports(
+	database: Database,
+	owner: ReportOwner,
+	statuses: TravelExpenseReportStatus[],
 ): Promise<DraftReportSummary[]> {
 	const reports = await database
 		.select()
@@ -349,7 +366,7 @@ export async function listOwnDraftReports(
 			and(
 				eq(travelExpenseReport.organizationId, owner.organizationId),
 				eq(travelExpenseReport.employeeId, owner.employeeId),
-				eq(travelExpenseReport.status, "draft"),
+				inArray(travelExpenseReport.status, statuses),
 			),
 		)
 		.orderBy(desc(travelExpenseReport.updatedAt), desc(travelExpenseReport.id));
@@ -386,6 +403,7 @@ export async function listOwnDraftReports(
 		return {
 			id: report.id,
 			kind: report.kind,
+			status: report.status,
 			updatedAt: report.updatedAt.toISOString(),
 			expenseDate: item?.expenseDate ?? null,
 			description: item?.description ?? null,

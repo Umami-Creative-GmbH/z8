@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,7 +8,14 @@ import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 async function TravelExpenseSettingsPageContent() {
 	const { organizationId } = await requireOrgAdminSettingsAccess();
 
-	return <TravelExpensePolicyManagement organizationId={organizationId} />;
+	return (
+		<div className="flex flex-1 flex-col">
+			<div className="px-4 pt-4">
+				<TravelExpenseApproverSettingsCard />
+			</div>
+			<TravelExpensePolicyManagement organizationId={organizationId} />
+		</div>
+	);
 }
 
 function TravelExpenseSettingsPageLoading() {

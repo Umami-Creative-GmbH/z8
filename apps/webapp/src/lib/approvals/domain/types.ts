@@ -112,7 +112,8 @@ export type ApprovalType =
 	| "absence_entry"
 	| "time_entry"
 	| "shift_request"
-	| "travel_expense_claim";
+	| "travel_expense_claim"
+	| "travel_expense_report";
 
 export type ApprovalDecisionAction = "approve" | "reject";
 

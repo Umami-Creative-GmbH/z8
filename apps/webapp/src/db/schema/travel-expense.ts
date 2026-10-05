@@ -130,7 +130,7 @@ export const travelExpenseAttachment = pgTable(
 
 export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone", "trip"] as const;
 export type TravelExpenseReportKind = (typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
-export const TRAVEL_EXPENSE_REPORT_STATUSES = ["draft"] as const;
+export const TRAVEL_EXPENSE_REPORT_STATUSES = ["draft", "submitted", "approved", "rejected"] as const;
 export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
 
 // Travel expense report (#600): groups expense items beside the legacy claim
@@ -139,6 +139,9 @@ export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[
 // standalone report never has any. Trip dates are calendar days in the
 // explicit `trip_time_zone`, never in a viewer's zone. `details_version`
 // advances on every saved edit of those details, like an item's `version`.
+// Submission (#602) freezes the whole report as an approval submitted
+// revision; `submission_count` numbers its submission cycles, and only a
+// draft is ever edited.
 export const travelExpenseReport = pgTable(
 	"travel_expense_report",
 	{
@@ -161,6 +164,9 @@ export const travelExpenseReport = pgTable(
 			.default(sql`'[]'::jsonb`)
 			.notNull(),
 		detailsVersion: integer("details_version").default(1).notNull(),
+		submissionCount: integer("submission_count").default(0).notNull(),
+		submittedAt: timestamp("submitted_at", { withTimezone: true }),
+		decidedAt: timestamp("decided_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by")
 			.notNull()
@@ -176,7 +182,19 @@ export const travelExpenseReport = pgTable(
 			table.status,
 		),
 		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone', 'trip')`),
-		check("travel_expense_report_status_check", sql`${table.status} IN ('draft')`),
+		check(
+			"travel_expense_report_status_check",
+			sql`${table.status} IN ('draft', 'submitted', 'approved', 'rejected')`,
+		),
+		check(
+			"travel_expense_report_submission_check",
+			sql`${table.submissionCount} >= 0
+			AND (${table.status} = 'draft' AND ${table.decidedAt} IS NULL
+				OR ${table.status} = 'submitted' AND ${table.submissionCount} >= 1
+					AND ${table.submittedAt} IS NOT NULL AND ${table.decidedAt} IS NULL
+				OR ${table.status} IN ('approved', 'rejected') AND ${table.submissionCount} >= 1
+					AND ${table.submittedAt} IS NOT NULL AND ${table.decidedAt} IS NOT NULL)`,
+		),
 		check(
 			"travel_expense_report_trip_details_check",
 			sql`(${table.kind} = 'standalone' AND ${table.tripPurpose} IS NULL
@@ -382,6 +400,20 @@ export const travelExpensePolicy = pgTable(
 			.where(sql`is_active = true`),
 	],
 );
+
+// Organization travel expense settings (#602). The expense approver reviews a
+// submitted report when neither a direct nor a team manager other than the
+// requester is eligible; routing checks they are active in this organization.
+export const travelExpenseSettings = pgTable("travel_expense_settings", {
+	organizationId: text("organization_id")
+		.primaryKey()
+		.references(() => organization.id, { onDelete: "cascade" }),
+	expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
+		onDelete: "set null",
+	}),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+});
 
 export const travelExpenseDecisionLog = pgTable(
 	"travel_expense_decision_log",
