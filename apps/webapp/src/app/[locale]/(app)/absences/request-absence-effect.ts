@@ -78,10 +78,7 @@ import { AppLayer } from "@/lib/effect/runtime";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { EmailService } from "@/lib/effect/services/email.service";
-import {
-	renderAbsenceRequestPendingApproval,
-	renderAbsenceRequestSubmitted,
-} from "@/lib/email/render";
+import { renderAbsenceRequestPendingApproval } from "@/lib/email/render";
 import {
 	legacyDeliveryCycleId,
 	recordLegacyDeliveryIntent,
@@ -880,12 +877,16 @@ function getManagerAndEmployeeDetails(
 	dbService: typeof DatabaseService.Service,
 	managerId: string,
 	currentEmployeeId: string,
+	organizationId: string,
 ) {
 	return Effect.all([
 		dbService
 			.query("getManagerWithUser", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, managerId),
+					where: and(
+						eq(employee.id, managerId),
+						eq(employee.organizationId, organizationId),
+					),
 					with: { user: true },
 				});
 			})
@@ -905,7 +906,10 @@ function getManagerAndEmployeeDetails(
 		dbService
 			.query("getEmployeeWithUser", async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, currentEmployeeId),
+					where: and(
+						eq(employee.id, currentEmployeeId),
+						eq(employee.organizationId, organizationId),
+					),
 					with: { user: true },
 				});
 			})
@@ -930,86 +934,33 @@ function formatDisplayDate(dateStr: string) {
 	return dt.toLocaleString({ month: "short", day: "numeric", year: "numeric" });
 }
 
-function renderApprovalEmails(params: {
+function renderManagerApprovalEmail(params: {
 	organizationId: string;
-	manager: { user: { name: string; email: string }; userId: string };
-	employeeRecord: {
-		user: { name: string; email: string };
-		userId: string;
-		organizationId: string;
-	};
+	manager: { user: { name: string } };
+	employeeRecord: { user: { name: string } };
 	data: AbsenceRequest;
 	categoryName: string;
 	businessDays: number;
 }) {
-	const {
-		organizationId,
-		manager,
-		employeeRecord,
-		data,
-		categoryName,
-		businessDays,
-	} = params;
-
 	return Effect.gen(function* (_) {
 		const appUrl = yield* _(
-			Effect.promise(() => getOrganizationBaseUrl(organizationId)),
+			Effect.promise(() => getOrganizationBaseUrl(params.organizationId)),
 		);
-
-		const [employeeHtml, managerHtml] = yield* _(
-			Effect.all([
-				Effect.promise(() =>
-					renderAbsenceRequestSubmitted({
-						employeeName: employeeRecord.user.name,
-						startDate: formatDisplayDate(data.startDate),
-						endDate: formatDisplayDate(data.endDate),
-						absenceType: categoryName,
-						days: businessDays,
-						managerName: manager.user.name,
-						appUrl,
-					}),
-				),
-				Effect.promise(() =>
-					renderAbsenceRequestPendingApproval({
-						managerName: manager.user.name,
-						employeeName: employeeRecord.user.name,
-						startDate: formatDisplayDate(data.startDate),
-						endDate: formatDisplayDate(data.endDate),
-						absenceType: categoryName,
-						days: businessDays,
-						notes: data.notes || undefined,
-						approvalUrl: `${appUrl}/approvals/inbox`,
-					}),
-				),
-			]),
+		return yield* _(
+			Effect.promise(() =>
+				renderAbsenceRequestPendingApproval({
+					managerName: params.manager.user.name,
+					employeeName: params.employeeRecord.user.name,
+					startDate: formatDisplayDate(params.data.startDate),
+					endDate: formatDisplayDate(params.data.endDate),
+					absenceType: params.categoryName,
+					days: params.businessDays,
+					notes: params.data.notes || undefined,
+					approvalUrl: `${appUrl}/approvals/inbox`,
+				}),
+			),
 		);
-
-		return { employeeHtml, managerHtml };
 	});
-}
-
-function sendApprovalEmails(
-	emailService: typeof EmailService.Service,
-	manager: { user: { name: string; email: string } },
-	employeeRecord: { user: { name: string; email: string } },
-	employeeHtml: string,
-	managerHtml: string,
-) {
-	return Effect.all(
-		[
-			emailService.send({
-				to: employeeRecord.user.email,
-				subject: "Absence Request Submitted",
-				html: employeeHtml,
-			}),
-			emailService.send({
-				to: manager.user.email,
-				subject: `Absence Request from ${employeeRecord.user.name}`,
-				html: managerHtml,
-			}),
-		],
-		{ concurrency: 2 },
-	);
 }
 
 async function deliverPendingAbsenceSubmissionBestEffort(params: {
@@ -1028,10 +979,24 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 				params.dbService,
 				params.defaultApproverId,
 				params.currentEmployee.id,
+				params.currentEmployee.organizationId,
 			),
 		);
-		const { employeeHtml, managerHtml } = await Effect.runPromise(
-			renderApprovalEmails({
+		// Notification fan-out owns the employee email and honors their preferences.
+		// Create it before manager delivery so a manager email failure cannot suppress it.
+		await onAbsenceRequestSubmitted({
+			absenceId: params.absenceId,
+			employeeUserId: employeeRecord.userId,
+			employeeName: employeeRecord.user.name,
+			organizationId: params.currentEmployee.organizationId,
+			categoryName: params.categoryName,
+			startDate: params.data.startDate,
+			endDate: params.data.endDate,
+			managerName: manager.user.name,
+			days: params.businessDays,
+		});
+		const managerHtml = await Effect.runPromise(
+			renderManagerApprovalEmail({
 				organizationId: params.currentEmployee.organizationId,
 				manager,
 				employeeRecord,
@@ -1041,36 +1006,23 @@ async function deliverPendingAbsenceSubmissionBestEffort(params: {
 			}),
 		);
 		await Effect.runPromise(
-			sendApprovalEmails(
-				params.emailService,
-				manager,
-				employeeRecord,
-				employeeHtml,
-				managerHtml,
-			),
+			params.emailService.send({
+				to: manager.user.email,
+				subject: `Absence Request from ${employeeRecord.user.name}`,
+				html: managerHtml,
+			}),
 		);
-		await Promise.all([
-			onAbsenceRequestSubmitted({
-				absenceId: params.absenceId,
-				employeeUserId: employeeRecord.userId,
-				employeeName: employeeRecord.user.name,
-				organizationId: employeeRecord.organizationId,
-				categoryName: params.categoryName,
-				startDate: params.data.startDate,
-				endDate: params.data.endDate,
-			}),
-			onAbsenceRequestPendingApproval({
-				absenceId: params.absenceId,
-				employeeUserId: employeeRecord.userId,
-				employeeName: employeeRecord.user.name,
-				organizationId: employeeRecord.organizationId,
-				categoryName: params.categoryName,
-				startDate: params.data.startDate,
-				endDate: params.data.endDate,
-				managerUserId: manager.userId,
-				managerName: manager.user.name,
-			}),
-		]);
+		await onAbsenceRequestPendingApproval({
+			absenceId: params.absenceId,
+			employeeUserId: employeeRecord.userId,
+			employeeName: employeeRecord.user.name,
+			organizationId: params.currentEmployee.organizationId,
+			categoryName: params.categoryName,
+			startDate: params.data.startDate,
+			endDate: params.data.endDate,
+			managerUserId: manager.userId,
+			managerName: manager.user.name,
+		});
 		logger.info(
 			{
 				absenceId: params.absenceId,
@@ -1298,7 +1250,9 @@ function requestAbsenceWithResolverEffect(
 						if (newAbsence.legacyDeliveryIntent) {
 							// The legacy cycle's intent committed with the submission;
 							// this only runs the delivery owner sooner (#384).
-							kickApprovalDelivery({ organizationId: currentEmployee.organizationId });
+							kickApprovalDelivery({
+								organizationId: currentEmployee.organizationId,
+							});
 						}
 					} else if (newAbsence.approvalWorkflowResult?.kind === "canonical") {
 						// The initial card's intent committed with the workflow; the
