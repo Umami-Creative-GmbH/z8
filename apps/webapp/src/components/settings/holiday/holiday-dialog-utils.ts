@@ -11,9 +11,7 @@ export function parseHolidayDatePickerValue(value: string) {
 	return date.isValid ? date.toJSDate() : null;
 }
 
-export function createYearlyHolidayRecurrenceRule(value: Date) {
-	return JSON.stringify({ month: value.getUTCMonth() + 1, day: value.getUTCDate() });
-}
+export { createYearlyHolidayRecurrenceRule } from "@/lib/holidays/recurrence";
 
 export function getEndDateAfterStartDateChange({
 	isEditing,
