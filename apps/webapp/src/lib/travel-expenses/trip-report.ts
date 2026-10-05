@@ -6,6 +6,7 @@ import {
 	type ReceiptItemRequirement,
 	receiptItemMissingRequirements,
 } from "./receipt-report";
+import type { TripDestination } from "./trip-destination";
 
 /**
  * Shared travel details of a trip report (#601). Travel dates are calendar
@@ -31,11 +32,7 @@ export function isTripCountryCode(code: string): boolean {
 	return tripCountryCodes.has(code);
 }
 
-export interface TripDestination {
-	/** City or place, e.g. "Hamburg". */
-	place: string | null;
-	countryCode: string | null;
-}
+export type { TripDestination };
 
 export interface TripDetailsDraft {
 	purpose: string | null;
