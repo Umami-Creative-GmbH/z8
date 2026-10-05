@@ -5,7 +5,8 @@
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
- * The real draft/upload/submit server actions freeze the claim (#295). The
+ * Legacy claims are seeded through the historical submission writers, which
+ * freeze the claim (#295); receipts go through the real upload route. The
  * real inbox detail, expense decision actions and inbox handler, the real
  * delivery owner, Telegram card preparation and webhook, and privileged
  * maintenance run against that database. Only the session, e-mail/
@@ -147,12 +148,11 @@ vi.mock("@/lib/approvals/delivery/kick", async () =>
 const BOT_TOKEN = "296296296:AAT296-expense_cards_test";
 const RECEIVER_SCOPE = "telegram-bot:296296296";
 
-const {
-	approveTravelExpenseClaim,
-	createTravelExpenseDraft,
-	rejectTravelExpenseClaim,
-	submitTravelExpenseClaim,
-} = await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { approveTravelExpenseClaim, rejectTravelExpenseClaim } = await import(
+	"@/app/[locale]/(app)/travel-expenses/actions"
+);
+const { insertLegacyTravelExpenseDraft, submitLegacyTravelExpenseClaim } =
+	await import("./__tests__/legacy-claim");
 const { POST: processUpload } = await import(
 	"@/app/api/upload/travel-expense/process/route"
 );
@@ -454,26 +454,21 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		);
 	}
 
-	/** Draft, one receipt upload and submission through the real actions. */
+	/** A legacy draft, one receipt upload through the real route and the historical submission. */
 	async function submitClaim(): Promise<{
 		claimId: string;
 		requestId: string;
 	}> {
-		actAs(ids.requesterUser);
-		const draft = await createTravelExpenseDraft({
-			type: "receipt",
-			tripStart: "2026-03-29",
-			tripEnd: "2026-03-31",
-			destinationCity: "Hamburg",
-			destinationCountry: "DE",
-			originalCurrency: "EUR",
-			originalAmount: "120.50",
-			calculatedCurrency: "EUR",
-			calculatedAmount: "120.50",
+		const requester = {
+			organizationId: ids.organization,
+			employeeId: ids.requester,
+			userId: ids.requesterUser,
+		};
+		const claimId = await insertLegacyTravelExpenseDraft(db, {
+			...requester,
 			notes: "Private note that stays in authenticated review",
 		});
-		if (!draft.success) throw new Error(`Draft failed: ${draft.error}`);
-		const claimId = draft.data.id;
+		actAs(ids.requesterUser);
 		const tusFileKey = createOwnedTusFileKey(ids.requesterUser);
 		harness.publicObjects.set(tusFileKey, new Uint8Array(PDF_BYTES));
 		const uploaded = await processUpload({
@@ -485,10 +480,8 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		} as never);
 		if (uploaded.status !== 200)
 			throw new Error(`Upload failed: ${uploaded.status}`);
-		const submitted = await submitTravelExpenseClaim({ claimId });
-		if (!submitted.success)
-			throw new Error(`Submission failed: ${submitted.error}`);
 		actAs(null);
+		await submitLegacyTravelExpenseClaim(db, { ...requester, claimId });
 		const { rows } = await admin.query<{ id: string }>(
 			`select id from approval_request
 			 where organization_id = $1 and entity_type = 'travel_expense_claim'
