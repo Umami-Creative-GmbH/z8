@@ -54,6 +54,24 @@ vi.mock("@/db", () => ({
 import { reconcileLegacyToCanonical } from "@/lib/time-record/migration/reconciliation";
 
 describe("reconcileLegacyToCanonical", () => {
+	it("does not require a completed canonical record for healthy live work", async () => {
+		mockState.legacyWorkCount.mockResolvedValue([
+			{
+				id: "live-work",
+				canonicalRecordId: null,
+				isActive: true,
+				endTime: null,
+				projectId: "project-1",
+				durationMinutes: null,
+				approvalStatus: "approved",
+			},
+		]);
+		mockState.employeeFindMany.mockResolvedValue([]);
+		mockState.absenceEntryFindMany.mockResolvedValue([]);
+		mockState.canonicalTimeRecordCount.mockResolvedValue([]);
+		const result = await reconcileLegacyToCanonical("org-1");
+		expect(Object.values(result).every((count) => count === 0)).toBe(true);
+	});
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.canonicalTimeRecordAbsenceFindMany.mockResolvedValue([]);

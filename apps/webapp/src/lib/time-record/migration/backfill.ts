@@ -1,4 +1,4 @@
-import { eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
 
 import {
@@ -28,6 +28,8 @@ export type LegacyWorkPeriod = {
 	employeeId: string;
 	startTime: Date;
 	endTime: Date | null;
+	isActive: boolean;
+	canonicalRecordId: string | null;
 	durationMinutes: number | null;
 	approvalStatus: LegacyApprovalStatus;
 	projectId: string | null;
@@ -137,7 +139,11 @@ export type CanonicalBackfillPayload = {
 	}>;
 	legacyLinks: {
 		workPeriod: Array<{ id: string; canonicalRecordId: string }>;
-		absenceEntry: Array<{ id: string; canonicalRecordId: string; organizationId: string }>;
+		absenceEntry: Array<{
+			id: string;
+			canonicalRecordId: string;
+			organizationId: string;
+		}>;
 		approvalRequest: Array<{ id: string; canonicalRecordId: string }>;
 	};
 };
@@ -150,7 +156,11 @@ export function buildCanonicalBackfillPayload(
 	);
 
 	const workPeriods = input.legacy.workPeriods.filter(
-		(workPeriod) => workPeriod.organizationId === input.organizationId,
+		(workPeriod) =>
+			workPeriod.organizationId === input.organizationId &&
+			!workPeriod.isActive &&
+			workPeriod.endTime !== null &&
+			workPeriod.canonicalRecordId === null,
 	);
 	const absences = input.legacy.absenceEntries.filter(
 		(absenceEntry) => absenceEntry.organizationId === input.organizationId,
@@ -314,6 +324,7 @@ export async function runCanonicalBackfill(
 		? { organizationId: input.organizationId, actorId: input.actorId, legacy: input.legacy }
 		: await loadCanonicalBackfillInput(input);
 	const payload = buildCanonicalBackfillPayload(resolvedInput);
+	const sourceWork = new Map(resolvedInput.legacy.workPeriods.map((period) => [period.id, period]));
 
 	await db.transaction(async (tx) => {
 		await upsertCanonicalTimeRecords(tx, payload.timeRecords);
@@ -341,10 +352,26 @@ export async function runCanonicalBackfill(
 		}
 
 		for (const link of payload.legacyLinks.workPeriod) {
-			await tx
+			const source = sourceWork.get(link.id);
+			if (!source || source.endTime === null) throw new Error("Invalid work backfill source");
+			// A clock-out or correction may have established work since the read.
+			// Reject the stale snapshot and roll back every representation written here.
+			const linked = await tx
 				.update(workPeriod)
 				.set({ canonicalRecordId: link.canonicalRecordId })
-				.where(eq(workPeriod.id, link.id));
+				.where(
+					and(
+						eq(workPeriod.id, link.id),
+						eq(workPeriod.organizationId, input.organizationId),
+						isNull(workPeriod.canonicalRecordId),
+						eq(workPeriod.isActive, false),
+						eq(workPeriod.startTime, source.startTime),
+						eq(workPeriod.endTime, source.endTime),
+						eq(workPeriod.updatedAt, source.updatedAt),
+					),
+				)
+				.returning({ id: workPeriod.id });
+			if (linked.length !== 1) throw new Error("Work changed during canonical backfill");
 		}
 
 		for (const link of payload.legacyLinks.absenceEntry) {
@@ -438,13 +465,24 @@ async function upsertCanonicalTimeRecords(
 	tx: Transaction,
 	values: CanonicalBackfillPayload["timeRecords"],
 ) {
-	if (values.length === 0) {
-		return;
+	const work = values.filter((record) => record.recordKind === "work");
+	if (work.length > 0) {
+		const inserted = await tx
+			.insert(timeRecord)
+			.values(work)
+			.onConflictDoNothing({
+				target: [timeRecord.id, timeRecord.organizationId],
+			})
+			.returning({ id: timeRecord.id });
+		// An existing same-ID copy needs evidence-based repair, not an automatic rewrite.
+		if (inserted.length !== work.length) throw new Error("Canonical work backfill conflict");
 	}
 
+	const absences = values.filter((record) => record.recordKind === "absence");
+	if (absences.length === 0) return;
 	await tx
 		.insert(timeRecord)
-		.values(values)
+		.values(absences)
 		.onConflictDoUpdate({
 			target: [timeRecord.id, timeRecord.organizationId],
 			set: {

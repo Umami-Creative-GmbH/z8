@@ -346,7 +346,7 @@ describe("planHistoricalGapRepair holds everything else", () => {
 		]);
 	});
 
-	it("holds missing records of active work and without established minutes", () => {
+	it("excludes healthy live work from repair and holds work without established minutes", () => {
 		const active = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
 			record: null,
 			period: { endTime: null, clockOutId: null, durationMinutes: null, isActive: true },
@@ -358,10 +358,18 @@ describe("planHistoricalGapRepair holds everything else", () => {
 		const result = plan(evidence([active, unmeasured]));
 		expect(result.employees).toEqual([]);
 		expect(heldReasons(result)).toEqual([
-			["canonical_missing", "active_work"],
 			["canonical_missing", "original_rule_unknown"],
 			["duration_missing", "original_rule_unknown"],
 		]);
+	});
+
+	it("holds missing records when active work already has an end", () => {
+		const active = work("2026-07-02T08:00:00Z", "2026-07-02T16:00:00Z", {
+			record: null, period: { isActive: true },
+		});
+		const result = plan(evidence([active]));
+		expect(result.employees).toEqual([]);
+		expect(result.held).toMatchObject([{ kind: "canonical_missing", reason: "conflicting_evidence" }]);
 	});
 
 	it("holds all gaps of work with any conflicting finding", () => {

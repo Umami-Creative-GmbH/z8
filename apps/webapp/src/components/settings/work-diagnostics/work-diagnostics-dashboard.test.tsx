@@ -69,6 +69,62 @@ function view(overrides: Partial<WorkDiagnosticsView> = {}): WorkDiagnosticsView
 }
 
 describe("WorkDiagnosticsDashboard", () => {
+	it("shows actual intervals with explicit UTC precision and an unknown end", () => {
+		render(
+			<WorkDiagnosticsDashboard
+				t={t}
+				data={view({
+					report: report({
+						findings: [
+							{
+								id: "endpoint_missing:p1:c1",
+								kind: "endpoint_missing",
+								shape: "missing",
+								treatment: "historical_gap",
+								blocking: true,
+								employeeIds: [worker],
+								workPeriodIds: ["p1"],
+								timeRecordIds: ["c1"],
+								entryIds: [],
+								provenance: {
+									state: "pre_adoption",
+									basis: "organization_not_adopted",
+								},
+								relevance: {
+									level: "interval",
+									start: "2026-07-02T08:00:00.123Z",
+									end: null,
+								},
+								relevant: true,
+								details: {},
+								evidenceIntervals: [
+									{
+										kind: "work_period",
+										id: "p1",
+										start: "2026-07-02T08:00:00.123Z",
+										end: "2026-07-02T16:00:00.456Z",
+									},
+									{
+										kind: "time_record",
+										id: "c1",
+										start: "2026-07-02T08:00:00.123Z",
+										end: null,
+									},
+								],
+							},
+						],
+					}),
+				})}
+			/>,
+		);
+		expect(screen.getAllByText("2026-07-02 08:00:00.123 UTC")).toHaveLength(2);
+		expect(screen.getByText("2026-07-02 16:00:00.456 UTC").getAttribute("datetime")).toBe(
+			"2026-07-02T16:00:00.456Z",
+		);
+		expect(screen.getByText("Unknown")).toBeTruthy();
+		expect(screen.getByText("Work period · p1")).toBeTruthy();
+		expect(screen.getByText("Time record · c1")).toBeTruthy();
+	});
 	it("shows a complete scope and verified lineage", () => {
 		render(<WorkDiagnosticsDashboard t={t} data={view()} />);
 
