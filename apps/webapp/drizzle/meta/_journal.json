@@ -785,6 +785,13 @@
       "when": 1793894400000,
       "tag": "0111_automatic_clock_out",
       "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1793980800000,
+      "tag": "0112_yearly_holiday_recovery",
+      "breakpoints": true
     }
   ]
 }

@@ -87,7 +87,7 @@ export function HolidayDialog({
 
 			// Generate recurrence rule for yearly holidays
 			let recurrenceRule = value.recurrenceRule;
-			if (value.recurrenceType === "yearly" && !recurrenceRule) {
+			if (value.recurrenceType === "yearly") {
 				recurrenceRule = createYearlyHolidayRecurrenceRule(value.startDate);
 			}
 

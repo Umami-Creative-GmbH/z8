@@ -6,6 +6,7 @@ import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { createYearlyHolidayRecurrenceRule } from "@/lib/holidays/recurrence";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 /**
@@ -115,6 +116,18 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
 		}
 
+		const parsedStart = new Date(startDate);
+		const parsedEnd = new Date(endDate);
+		const parsedRecurrenceEnd = recurrenceEndDate ? new Date(recurrenceEndDate) : null;
+		if (
+			!Number.isFinite(parsedStart.getTime()) ||
+			!Number.isFinite(parsedEnd.getTime()) ||
+			parsedEnd < parsedStart ||
+			(parsedRecurrenceEnd && !Number.isFinite(parsedRecurrenceEnd.getTime()))
+		) {
+			return NextResponse.json({ error: "Invalid holiday dates" }, { status: 400 });
+		}
+
 		// Manual submissions read organization holidays under the configuration guard.
 		const newHoliday = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
 			const [existingCategory] = await tx
@@ -133,11 +146,14 @@ export async function POST(request: NextRequest) {
 					name,
 					description: description || null,
 					categoryId,
-					startDate: new Date(startDate),
-					endDate: new Date(endDate),
+					startDate: parsedStart,
+					endDate: parsedEnd,
 					recurrenceType,
-					recurrenceRule: recurrenceRule || null,
-					recurrenceEndDate: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+					recurrenceRule:
+						recurrenceType === "yearly"
+							? createYearlyHolidayRecurrenceRule(parsedStart)
+							: recurrenceRule || null,
+					recurrenceEndDate: parsedRecurrenceEnd,
 					isActive: isActive ?? true,
 					createdBy: session.user.id,
 				})

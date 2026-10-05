@@ -159,3 +159,34 @@ describe("calculateVacationBalance calendar year ranges", () => {
 		expect(balance.remainingDays).toBe(29.5);
 	});
 });
+
+describe("vacation balance with assigned holidays", () => {
+	it.each(["approved", "pending"] as const)(
+		"recalculates an existing %s request and restores the holiday day",
+		(status) => {
+			const balance = calculateVacationBalance({
+				organizationAllowance: {
+					defaultAnnualDays: "30",
+					allowCarryover: false,
+					maxCarryoverDays: null,
+					carryoverExpiryMonths: null,
+				},
+				absences: [vacationAbsence("existing-request", "2026-12-28", status, "2026-12-31")],
+				holidays: [
+					{
+						id: "silvester",
+						name: "Silvester",
+						categoryId: "company-holiday",
+						startDate: new Date("2026-12-31T00:00:00Z"),
+						endDate: new Date("2026-12-31T00:00:00Z"),
+					},
+				],
+				currentDate: new Date("2026-10-05T00:00:00Z"),
+				year: 2026,
+			});
+			expect(balance.usedDays).toBe(status === "approved" ? 3 : 0);
+			expect(balance.pendingDays).toBe(status === "pending" ? 3 : 0);
+			expect(balance.remainingDays).toBe(27);
+		},
+	);
+});

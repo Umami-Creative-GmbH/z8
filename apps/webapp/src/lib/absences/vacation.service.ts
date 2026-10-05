@@ -97,7 +97,7 @@ export async function getEnhancedVacationBalance(input: {
 	const [empAllowance, adjustmentTotal, absencesResult] = await Promise.all([
 		getEmployeeVacationAllowance(employeeId, year),
 		getAdjustmentTotal(employeeId, year),
-		getVacationTakenInYear(employeeId, year),
+		getVacationTakenInYear(employeeId, year, { includePending: true }),
 	]);
 
 	// Build absences array for calculator (simplified)
@@ -139,6 +139,7 @@ export async function getEnhancedVacationBalance(input: {
 				}
 			: null,
 		absences,
+		holidays: absencesResult.holidays,
 		currentDate,
 		year,
 		adjustmentTotal,
@@ -401,8 +402,14 @@ export async function expireCarryoverDays(
 				};
 			}),
 		)
-	).filter((detail): detail is { employeeId: string; employeeName: string; daysExpired: number } =>
-		detail !== null,
+	).filter(
+		(
+			detail,
+		): detail is {
+			employeeId: string;
+			employeeName: string;
+			daysExpired: number;
+		} => detail !== null,
 	);
 
 	const result: ExpiryResult = {

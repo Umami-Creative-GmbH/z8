@@ -55,9 +55,21 @@ describe("assigned holiday requirement adjustments", () => {
 	it("zeros every overlapping required date for a multi-day holiday", () => {
 		const adjusted = applyAssignedHolidayAdjustmentsToRequirements(
 			{
-				"2026-05-04": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard Hours" },
-				"2026-05-05": { requiredMinutes: 360, policyId: "policy-1", policyName: "Standard Hours" },
-				"2026-05-06": { requiredMinutes: 480, policyId: "policy-1", policyName: "Standard Hours" },
+				"2026-05-04": {
+					requiredMinutes: 480,
+					policyId: "policy-1",
+					policyName: "Standard Hours",
+				},
+				"2026-05-05": {
+					requiredMinutes: 360,
+					policyId: "policy-1",
+					policyName: "Standard Hours",
+				},
+				"2026-05-06": {
+					requiredMinutes: 480,
+					policyId: "policy-1",
+					policyName: "Standard Hours",
+				},
 			},
 			[
 				{
@@ -285,4 +297,26 @@ describe("assigned holiday requirement adjustments", () => {
 			),
 		).toBe(false);
 	});
+});
+
+describe("legacy yearly holiday recovery", () => {
+	it.each([JSON.stringify({ month: 2, day: 24 }), null, "invalid json"])(
+		"uses the saved December 24 date when the rule is %s",
+		(recurrenceRule) => {
+			const holidays = expandCustomAssignedHoliday(
+				{
+					...christmasHoliday,
+					name: "Weihnachten",
+					startDate: new Date("2026-12-24T00:00:00Z"),
+					endDate: new Date("2026-12-24T00:00:00Z"),
+					recurrenceRule,
+				},
+				{
+					startDate: new Date("2026-12-01T00:00:00Z"),
+					endDate: new Date("2027-12-31T23:59:59Z"),
+				},
+			);
+			expect([...getAssignedHolidayDateKeys(holidays)]).toEqual(["2026-12-24", "2027-12-24"]);
+		},
+	);
 });

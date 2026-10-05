@@ -19,7 +19,8 @@ import {
 	calculateBusinessDaysWithHalfDays,
 	calculateCarryoverExpiryDate,
 } from "@/lib/absences/date-utils";
-import type { DayPeriod } from "@/lib/absences/types";
+import type { DayPeriod, Holiday } from "@/lib/absences/types";
+import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 
 export interface VacationAllowanceRecord {
 	id: string;
@@ -51,6 +52,7 @@ export interface EmployeeVacationAllowanceRecord {
 }
 
 export interface VacationTakenResult {
+	holidays: Holiday[];
 	totalDays: number;
 	entries: Array<{
 		id: string;
@@ -332,31 +334,49 @@ export async function upsertEmployeeVacationAllowance(input: {
 export async function getVacationTakenInYear(
 	employeeId: string,
 	year: number,
+	options: { includePending?: boolean } = {},
 ): Promise<VacationTakenResult> {
 	const startOfYear = `${year}-01-01`;
 	const endOfYear = `${year}-12-31`;
 
-	const entries = await db
-		.select({
-			id: absenceEntry.id,
-			startDate: absenceEntry.startDate,
-			startPeriod: absenceEntry.startPeriod,
-			endDate: absenceEntry.endDate,
-			endPeriod: absenceEntry.endPeriod,
-			status: absenceEntry.status,
-			countsAgainstVacation: absenceCategory.countsAgainstVacation,
-		})
-		.from(absenceEntry)
-		.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
-		.where(
-			and(
-				eq(absenceEntry.employeeId, employeeId),
-				eq(absenceEntry.status, "approved"),
-				eq(absenceCategory.countsAgainstVacation, true),
-				lte(absenceEntry.startDate, endOfYear),
-				gte(absenceEntry.endDate, startOfYear),
+	const emp = await db.query.employee.findFirst({ where: eq(employee.id, employeeId) });
+	if (!emp) return { totalDays: 0, entries: [], holidays: [] };
+	const [entries, holidays] = await Promise.all([
+		db
+			.select({
+				id: absenceEntry.id,
+				startDate: absenceEntry.startDate,
+				startPeriod: absenceEntry.startPeriod,
+				endDate: absenceEntry.endDate,
+				endPeriod: absenceEntry.endPeriod,
+				status: absenceEntry.status,
+				countsAgainstVacation: absenceCategory.countsAgainstVacation,
+			})
+			.from(absenceEntry)
+			.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+			.where(
+				and(
+					eq(absenceEntry.employeeId, employeeId),
+					or(
+						isNull(absenceEntry.organizationId),
+						eq(absenceEntry.organizationId, emp.organizationId),
+					),
+					eq(absenceCategory.organizationId, emp.organizationId),
+					options.includePending
+						? or(eq(absenceEntry.status, "approved"), eq(absenceEntry.status, "pending"))
+						: eq(absenceEntry.status, "approved"),
+					eq(absenceCategory.countsAgainstVacation, true),
+					lte(absenceEntry.startDate, endOfYear),
+					gte(absenceEntry.endDate, startOfYear),
+				),
 			),
-		);
+		getVacationHolidays({
+			organizationId: emp.organizationId,
+			employeeId,
+			startDate: startOfYear,
+			endDate: endOfYear,
+		}),
+	]);
 
 	const result = entries.map((entry) => {
 		const clippedStartDate = entry.startDate < startOfYear ? startOfYear : entry.startDate;
@@ -367,7 +387,7 @@ export async function getVacationTakenInYear(
 			clippedStartDate === entry.startDate ? entry.startPeriod : "full_day",
 			clippedEndDate,
 			clippedEndDate === entry.endDate ? entry.endPeriod : "full_day",
-			[], // holidays handled upstream
+			holidays,
 		);
 		return {
 			id: entry.id,
@@ -381,6 +401,7 @@ export async function getVacationTakenInYear(
 	});
 
 	return {
+		holidays,
 		totalDays: result.reduce((sum, e) => sum + e.days, 0),
 		entries: result,
 	};
@@ -465,24 +486,32 @@ export async function getPendingVacationRequests(
 		)
 		.orderBy(absenceEntry.startDate);
 
-	return results.map((r) => ({
-		id: r.id,
-		employeeId: r.employeeId,
-		employeeName: [r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
-		startDate: r.startDate,
-		startPeriod: r.startPeriod,
-		endDate: r.endDate,
-		endPeriod: r.endPeriod,
-		days: calculateBusinessDaysWithHalfDays(
-			r.startDate,
-			r.startPeriod,
-			r.endDate,
-			r.endPeriod,
-			[], // holidays handled upstream
-		),
-		notes: r.notes,
-		createdAt: r.createdAt,
-	}));
+	return Promise.all(
+		results.map(async (r) => ({
+			id: r.id,
+			employeeId: r.employeeId,
+			employeeName:
+				[r.employeeFirstName, r.employeeLastName].filter(Boolean).join(" ") || "Unknown",
+			startDate: r.startDate,
+			startPeriod: r.startPeriod,
+			endDate: r.endDate,
+			endPeriod: r.endPeriod,
+			days: calculateBusinessDaysWithHalfDays(
+				r.startDate,
+				r.startPeriod,
+				r.endDate,
+				r.endPeriod,
+				await getVacationHolidays({
+					organizationId,
+					employeeId: r.employeeId,
+					startDate: r.startDate,
+					endDate: r.endDate,
+				}),
+			),
+			notes: r.notes,
+			createdAt: r.createdAt,
+		})),
+	);
 }
 
 /**
