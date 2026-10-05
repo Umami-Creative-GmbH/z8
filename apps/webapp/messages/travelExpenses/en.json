@@ -1,7 +1,12 @@
 {
   "travelExpenses": {
     "actions": {
-      "newClaim": "New Claim"
+      "newClaim": "New Claim",
+      "backToClaims": "Back to claims",
+      "download": "Download",
+      "preview": "Preview",
+      "retry": "Retry",
+      "viewClaim": "View claim"
     },
     "approvals": {
       "description": "Open the unified approvals inbox filtered to travel expenses.",
@@ -35,7 +40,9 @@
     },
     "description": "Create and track your travel expense claims",
     "errors": {
-      "loadClaims": "Failed to load travel expense claims"
+      "loadClaims": "Failed to load travel expense claims",
+      "loadClaimsRetry": "Unable to load claims. Please retry.",
+      "loadDetailRetry": "Unable to load this claim. Please retry."
     },
     "feature": "manage travel expenses",
     "form": {
@@ -73,8 +80,27 @@
       "emptyDescription": "Create your first claim to start the approval process.",
       "emptyTitle": "No travel expense claims yet",
       "status": "Status",
-      "type": "Type"
+      "type": "Type",
+      "actions": "Actions",
+      "refreshing": "Refreshing claims…"
     },
-    "title": "Travel Expenses"
+    "title": "Travel Expenses",
+    "detail": {
+      "created": "Created",
+      "decisionRecorded": "Decision recorded",
+      "destination": "Destination",
+      "history": "Decision history",
+      "intermediateApproval": "Approval recorded — awaiting further approval",
+      "legacyReceiptIdentity": "Legacy receipt: content checksum was not recorded.",
+      "loading": "Loading claim…",
+      "noReceipts": "No receipts recorded",
+      "notRecorded": "Not recorded",
+      "originalAmount": "Original amount",
+      "receipts": "Receipts",
+      "refreshing": "Refreshing claim…",
+      "submitted": "Submitted",
+      "title": "Travel expense claim",
+      "unknownDates": "Trip date context not recorded (legacy claim)"
+    }
   }
 }

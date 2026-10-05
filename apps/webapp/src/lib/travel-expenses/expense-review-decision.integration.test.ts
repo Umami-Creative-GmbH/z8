@@ -17,7 +17,15 @@
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { Temporal } from "temporal-polyfill";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import type { ApprovalInboxDetailResult } from "@/lib/approvals/inbox/types";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -31,7 +39,9 @@ const harness = vi.hoisted(() => ({
 	versionCounter: 0,
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -65,7 +75,8 @@ vi.mock("@/lib/app-url", async (importOriginal) => ({
 }));
 
 vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
-	const original = await importOriginal<typeof import("@/lib/notifications/triggers")>();
+	const original =
+		await importOriginal<typeof import("@/lib/notifications/triggers")>();
 	return {
 		...original,
 		onTravelExpenseApproved: async () => {
@@ -80,7 +91,10 @@ vi.mock("@/lib/notifications/triggers", async (importOriginal) => {
 vi.mock("@/lib/storage/s3-client", () => ({
 	S3_PUBLIC_BUCKET: "t296-public",
 	s3Client: {
-		send: async (command: { constructor: { name: string }; input: { Key: string } }) => {
+		send: async (command: {
+			constructor: { name: string };
+			input: { Key: string };
+		}) => {
 			const key = command.input.Key;
 			if (command.constructor.name === "GetObjectCommand") {
 				const bytes = harness.publicObjects.get(key);
@@ -94,13 +108,19 @@ vi.mock("@/lib/storage/s3-client", () => ({
 				harness.publicObjects.delete(key);
 				return {};
 			}
-			throw new Error(`Unexpected public storage command ${command.constructor.name}`);
+			throw new Error(
+				`Unexpected public storage command ${command.constructor.name}`,
+			);
 		},
 	},
 }));
 
 vi.mock("@/lib/storage/export-s3-client", () => ({
-	uploadPrivateObject: async (_organizationId: string, key: string, data: Buffer) => {
+	uploadPrivateObject: async (
+		_organizationId: string,
+		key: string,
+		data: Buffer,
+	) => {
 		harness.versionCounter += 1;
 		const versionId = `v${harness.versionCounter}`;
 		harness.privateObjects.set(key, { bytes: Buffer.from(data), versionId });
@@ -112,7 +132,10 @@ vi.mock("@/lib/storage/export-s3-client", () => ({
 }));
 
 vi.mock("@/lib/vault", async (importOriginal) =>
-	(await import("@/test/integration-harness")).vault(importOriginal, async () => "296296296:AAT296-expense_cards_test"),
+	(await import("@/test/integration-harness")).vault(
+		importOriginal,
+		async () => "296296296:AAT296-expense_cards_test",
+	),
 );
 
 // The best-effort fast path only runs the owner sooner; recording the calls
@@ -130,9 +153,16 @@ const {
 	rejectTravelExpenseClaim,
 	submitTravelExpenseClaim,
 } = await import("@/app/[locale]/(app)/travel-expenses/actions");
-const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
+const { POST: processUpload } = await import(
+	"@/app/api/upload/travel-expense/process/route"
+);
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
-const { GET: getApprovalDetail } = await import("@/app/api/approvals/inbox/[id]/route");
+const { GET: getClaimDetail } = await import(
+	"@/app/api/travel-expenses/[claimId]/route"
+);
+const { GET: getApprovalDetail } = await import(
+	"@/app/api/approvals/inbox/[id]/route"
+);
 const { resolveApprovalReviewArrival } = await import(
 	"@/lib/approvals/presentation/review-arrival"
 );
@@ -142,10 +172,16 @@ const { parseApprovalReviewTarget } = await import(
 const { TravelExpenseClaimHandler } = await import(
 	"@/lib/approvals/handlers/travel-expense-claim.handler"
 );
-const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-const { processApprovalDeliveries } = await import("@/lib/approvals/delivery/owner");
+const { DatabaseServiceLive } = await import(
+	"@/lib/effect/services/database.service"
+);
+const { processApprovalDeliveries } = await import(
+	"@/lib/approvals/delivery/owner"
+);
 const { handleTelegramUpdate } = await import("@/lib/telegram/bot-handler");
-const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-decision");
+const { attemptBoundBotApproval } = await import(
+	"@/lib/bot-platform/approval-decision"
+);
 const { deleteApproval } = await import("@/lib/approvals/maintenance");
 const { db } = await import("@/db");
 
@@ -175,7 +211,10 @@ const ids = {
 const BACKUP_TELEGRAM_ID = 29_602;
 const BACKUP_CHAT_ID = 296_556;
 
-const PDF_BYTES = Buffer.from("%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n", "utf8");
+const PDF_BYTES = Buffer.from(
+	"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n",
+	"utf8",
+);
 
 interface TelegramCall {
 	method: string;
@@ -196,19 +235,27 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 	let nextMessageId = 9600;
 	const originalFetch = globalThis.fetch;
 
-	function actAs(userId: string | null, organizationId: string = ids.organization) {
+	function actAs(
+		userId: string | null,
+		organizationId: string = ids.organization,
+	) {
 		harness.userId = userId;
 		harness.organizationId = userId ? organizationId : null;
 	}
 
 	/** The Telegram Bot API transport; everything above it is real. */
 	function installTelegramTransport() {
-		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+		globalThis.fetch = (async (
+			input: RequestInfo | URL,
+			init?: RequestInit,
+		) => {
 			const url = String(input);
 			const match = /^https:\/\/api\.telegram\.org\/bot[^/]+\/(\w+)$/.exec(url);
 			if (!match) throw new Error(`Unexpected fetch in test: ${url}`);
 			const method = match[1] ?? "";
-			const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
+			const body = init?.body
+				? (JSON.parse(String(init.body)) as Record<string, unknown>)
+				: {};
 			calls.push({ method, body });
 			const result =
 				method === "sendMessage"
@@ -260,7 +307,13 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			 ($2, 'Morgan Manager', 't296-manager@example.test', $5, $5),
 			 ($3, 'Olive Other', 't296-other@example.test', $5, $5),
 			 ($4, 'Blake Backup', 't296-backup@example.test', $5, $5)`,
-			[ids.requesterUser, ids.managerUser, ids.otherUser, ids.backupUser, timestamp],
+			[
+				ids.requesterUser,
+				ids.managerUser,
+				ids.otherUser,
+				ids.backupUser,
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into user_settings (user_id, locale, timezone, time_format, updated_at)
@@ -271,7 +324,11 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			`insert into member (id, organization_id, user_id, role, status, created_at)
 			 select 't296-member-' || user_id, $1, user_id, 'member', 'approved', $2
 			 from unnest($3::text[]) as user_id`,
-			[ids.organization, timestamp, [ids.requesterUser, ids.managerUser, ids.backupUser]],
+			[
+				ids.organization,
+				timestamp,
+				[ids.requesterUser, ids.managerUser, ids.backupUser],
+			],
 		);
 		await admin.query(
 			`insert into member (id, organization_id, user_id, role, status, created_at)
@@ -328,7 +385,12 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			`insert into telegram_user_mapping
 			 (user_id, organization_id, telegram_user_id, is_active, updated_at)
 			 values ($1, $2, $3, true, $4)`,
-			[ids.managerUser, ids.organization, String(MANAGER_TELEGRAM_ID), timestamp],
+			[
+				ids.managerUser,
+				ids.organization,
+				String(MANAGER_TELEGRAM_ID),
+				timestamp,
+			],
 		);
 		await admin.query(
 			`insert into telegram_conversation
@@ -367,7 +429,12 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 				`insert into telegram_user_mapping
 				 (user_id, organization_id, telegram_user_id, is_active, updated_at)
 				 values ($1, $2, $3, true, $4)`,
-				[ids.backupUser, ids.organization, String(BACKUP_TELEGRAM_ID), timestamp],
+				[
+					ids.backupUser,
+					ids.organization,
+					String(BACKUP_TELEGRAM_ID),
+					timestamp,
+				],
 			);
 			await admin.query(
 				`insert into telegram_conversation
@@ -388,7 +455,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 	}
 
 	/** Draft, one receipt upload and submission through the real actions. */
-	async function submitClaim(): Promise<{ claimId: string; requestId: string }> {
+	async function submitClaim(): Promise<{
+		claimId: string;
+		requestId: string;
+	}> {
 		actAs(ids.requesterUser);
 		const draft = await createTravelExpenseDraft({
 			type: "receipt",
@@ -407,11 +477,17 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const tusFileKey = createOwnedTusFileKey(ids.requesterUser);
 		harness.publicObjects.set(tusFileKey, new Uint8Array(PDF_BYTES));
 		const uploaded = await processUpload({
-			json: async () => ({ tusFileKey, claimId, fileName: "hotel-invoice.pdf" }),
+			json: async () => ({
+				tusFileKey,
+				claimId,
+				fileName: "hotel-invoice.pdf",
+			}),
 		} as never);
-		if (uploaded.status !== 200) throw new Error(`Upload failed: ${uploaded.status}`);
+		if (uploaded.status !== 200)
+			throw new Error(`Upload failed: ${uploaded.status}`);
 		const submitted = await submitTravelExpenseClaim({ claimId });
-		if (!submitted.success) throw new Error(`Submission failed: ${submitted.error}`);
+		if (!submitted.success)
+			throw new Error(`Submission failed: ${submitted.error}`);
 		actAs(null);
 		const { rows } = await admin.query<{ id: string }>(
 			`select id from approval_request
@@ -451,7 +527,11 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 				update_id: updateCounter,
 				callback_query: {
 					id: queryId,
-					from: { id: MANAGER_TELEGRAM_ID, is_bot: false, first_name: "Morgan" },
+					from: {
+						id: MANAGER_TELEGRAM_ID,
+						is_bot: false,
+						first_name: "Morgan",
+					},
 					message: {
 						message_id: messageId,
 						date: 1_790_000_000,
@@ -492,7 +572,8 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 
 	const sends = () => calls.filter((call) => call.method === "sendMessage");
 	const edits = () => calls.filter((call) => call.method === "editMessageText");
-	const answers = () => calls.filter((call) => call.method === "answerCallbackQuery");
+	const answers = () =>
+		calls.filter((call) => call.method === "answerCallbackQuery");
 	const buttonsOf = (call: TelegramCall) =>
 		(
 			call.body.reply_markup as {
@@ -500,7 +581,8 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			}
 		).inline_keyboard.flat();
 	const approveData = (card: TelegramCall) =>
-		buttonsOf(card).find((button) => button.callback_data?.includes('"ba"'))?.callback_data ?? "";
+		buttonsOf(card).find((button) => button.callback_data?.includes('"ba"'))
+			?.callback_data ?? "";
 
 	async function claimStatus(claimId: string): Promise<string> {
 		const { rows } = await admin.query<{ status: string }>(
@@ -561,7 +643,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 	 * then the review panel loads the inbox detail API.
 	 */
 	async function detail(requestId: string): Promise<ApprovalInboxDetailResult> {
-		const previous = { userId: harness.userId, organizationId: harness.organizationId };
+		const previous = {
+			userId: harness.userId,
+			organizationId: harness.organizationId,
+		};
 		actAs(ids.managerUser);
 		try {
 			const arrival = await resolveApprovalReviewArrival({
@@ -653,9 +738,15 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		await changeReceiptContent(claimId);
 		const changed = await detail(requestId);
 		expect(changed.sections).toContainEqual(
-			expect.objectContaining({ type: "callout", title: "Claim changed after submission" }),
+			expect.objectContaining({
+				type: "callout",
+				title: "Claim changed after submission",
+			}),
 		);
-		expect(changed.actions).toMatchObject({ canApprove: false, canReject: false });
+		expect(changed.actions).toMatchObject({
+			canApprove: false,
+			canReject: false,
+		});
 		actAs(ids.managerUser);
 		const held = await approveTravelExpenseClaim({ claimId });
 		expect(held.success).toBe(false);
@@ -670,11 +761,16 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const unevidenced = await detail(legacy.requestId);
 		expect(submittedRows(unevidenced)).toBeNull();
 		expect(unevidenced.sections).toContainEqual(
-			expect.objectContaining({ type: "callout", title: "Submitted facts unavailable" }),
+			expect.objectContaining({
+				type: "callout",
+				title: "Submitted facts unavailable",
+			}),
 		);
 		expect(unevidenced.actions.canApprove).toBe(false);
 		actAs(ids.managerUser);
-		const required = await approveTravelExpenseClaim({ claimId: legacy.claimId });
+		const required = await approveTravelExpenseClaim({
+			claimId: legacy.claimId,
+		});
 		expect(required).toMatchObject({ success: false });
 		expect(await claimStatus(legacy.claimId)).toBe("submitted");
 	});
@@ -712,9 +808,13 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 				actorAuthority: "assigned_approver",
 			},
 		});
-		expect(decision.decided_at.toISOString()).toBe(only(requestRows).approved_at.toISOString());
+		expect(decision.decided_at.toISOString()).toBe(
+			only(requestRows).approved_at.toISOString(),
+		);
 		expect(decision.receipt_idempotency_key).toMatch(
-			new RegExp(`^travel_expense_claim:${claimId}:${requestId}:approve:[0-9a-f]{64}$`),
+			new RegExp(
+				`^travel_expense_claim:${claimId}:${requestId}:approve:[0-9a-f]{64}$`,
+			),
 		);
 
 		// The exact authenticated retry (inbox handler, same request) replays:
@@ -746,12 +846,13 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const history = await detail(requestId);
 		expect(submittedRows(history)?.["Claim amount"]).toBe("120.50 EUR");
 		const timeline = history.sections.find(
-			(section) => section.type === "timeline" && section.title === "Evidence history",
+			(section) =>
+				section.type === "timeline" && section.title === "Evidence history",
 		);
-		expect(timeline?.type === "timeline" && timeline.events.map((event) => event.label)).toEqual([
-			"Submitted",
-			"Claim approved",
-		]);
+		expect(
+			timeline?.type === "timeline" &&
+				timeline.events.map((event) => event.label),
+		).toEqual(["Submitted", "Claim approved"]);
 	});
 
 	it("records a rejection at its persisted time and never stores the reason", async () => {
@@ -772,9 +873,14 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			action: "reject",
 			assignment_outcome: "rejected",
 			request_outcome: "rejected",
-			result: { decidedAtSource: "approval_request.updated_at", claimStatus: "rejected" },
+			result: {
+				decidedAtSource: "approval_request.updated_at",
+				claimStatus: "rejected",
+			},
 		});
-		expect(decision.decided_at.toISOString()).toBe(only(rows).updated_at.toISOString());
+		expect(decision.decided_at.toISOString()).toBe(
+			only(rows).updated_at.toISOString(),
+		);
 		expect(JSON.stringify(decision)).not.toContain("Hotel exceeds");
 	});
 
@@ -796,7 +902,9 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const reviewOnly = await submitClaim();
 		await deliver();
 		const notice = only(sends());
-		expect(buttonsOf(notice).some((button) => button.callback_data)).toBe(false);
+		expect(buttonsOf(notice).some((button) => button.callback_data)).toBe(
+			false,
+		);
 		expect(String(notice.body.text)).toContain("Review required");
 		expect(String(notice.body.text)).not.toContain("120.50");
 		expect(only(await messages(reviewOnly.claimId))).toMatchObject({
@@ -811,7 +919,9 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		calls.length = 0;
 		await submitClaim();
 		await deliver();
-		expect(buttonsOf(only(sends())).some((button) => button.callback_data)).toBe(false);
+		expect(
+			buttonsOf(only(sends())).some((button) => button.callback_data),
+		).toBe(false);
 		expect(await bindings()).toHaveLength(0);
 	});
 
@@ -894,7 +1004,11 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const card = only(sends());
 		const message = only(await messages(claimId));
 
-		await press(Number(message.remote_message_id), approveData(card), "t296-q-1");
+		await press(
+			Number(message.remote_message_id),
+			approveData(card),
+			"t296-q-1",
+		);
 		expect(await claimStatus(claimId)).toBe("approved");
 		expect(harness.notifications).toEqual(["approved"]);
 		expect(only(answers()).body.text).toBe("Request approved");
@@ -928,7 +1042,11 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		expect(invocation.delivery_id).toMatch(/^\d+$/);
 
 		// The same query again (a redelivery) replays the original result.
-		await press(Number(message.remote_message_id), approveData(card), "t296-q-1");
+		await press(
+			Number(message.remote_message_id),
+			approveData(card),
+			"t296-q-1",
+		);
 		expect(answers()[1]?.body.text).toBe("Request approved");
 		expect(await decisions(claimId)).toHaveLength(1);
 		expect(await invocations()).toHaveLength(1);
@@ -942,7 +1060,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			action: "reject",
 		});
 		expect(conflict).toEqual({ status: "conflict" });
-		const fresh = await attempt({ bindingId: message.binding_id, queryId: "t296-q-2" });
+		const fresh = await attempt({
+			bindingId: message.binding_id,
+			queryId: "t296-q-2",
+		});
 		expect(fresh).toEqual({ status: "review_required" });
 		expect(await decisions(claimId)).toHaveLength(1);
 
@@ -964,7 +1085,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			"update travel_expense_claim set calculated_amount = '999.99' where id = $1",
 			[claimId],
 		);
-		const replay = await attempt({ bindingId: message.binding_id, queryId: "t296-q-1" });
+		const replay = await attempt({
+			bindingId: message.binding_id,
+			queryId: "t296-q-1",
+		});
 		expect(replay).toMatchObject({ status: "decided", replayed: true });
 		expect(replay.status === "decided" && replay.evidence.id).toBe(decision.id);
 	});
@@ -977,7 +1101,11 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const firstMessage = only(await messages(claimId));
 
 		// Stage one decides from Telegram: recorded, not final.
-		await press(Number(firstMessage.remote_message_id), approveData(firstCard), "t296-q-stage-1");
+		await press(
+			Number(firstMessage.remote_message_id),
+			approveData(firstCard),
+			"t296-q-stage-1",
+		);
 		expect(await claimStatus(claimId)).toBe("submitted");
 		expect(only(answers()).body.text).toBe("Approval recorded");
 		expect(harness.notifications).toEqual([]);
@@ -993,10 +1121,35 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		});
 		expect(stageOne.legacy_chain_stage_id).toBeTruthy();
 
+		// Employees see the recorded intermediate decision through the claim detail API.
+		actAs(ids.requesterUser);
+		const claimDetail = () =>
+			getClaimDetail(
+				new Request(
+					`http://localhost/api/travel-expenses/${claimId}`,
+				) as NextRequest,
+				{ params: Promise.resolve({ claimId }) },
+			);
+		const pendingDetail = await claimDetail();
+		expect(pendingDetail.status).toBe(200);
+		expect(await pendingDetail.json()).toMatchObject({
+			claim: { id: claimId, status: "submitted" },
+			decisions: [],
+			intermediateDecisions: [
+				{
+					id: stageOne.id,
+					action: "approval_recorded",
+					actorName: "Morgan Manager",
+				},
+			],
+		});
+
 		// The owner sends stage two its own bound card (recipient locale) and
 		// brings stage one's card to its committed step outcome.
 		await deliver(T0.add({ minutes: 1 }));
-		const secondCard = only(sends().filter((call) => call.body.chat_id === String(BACKUP_CHAT_ID)));
+		const secondCard = only(
+			sends().filter((call) => call.body.chat_id === String(BACKUP_CHAT_ID)),
+		);
 		expect(String(secondCard.body.text)).toContain("120,50 EUR");
 		const { rows: stageTwoRows } = await admin.query<{ id: string }>(
 			`select id from approval_request
@@ -1007,10 +1160,15 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const stageTwoMessage = (await messages(claimId)).find(
 			(message) => message.legacy_approval_request_id === stageTwoRequest,
 		);
-		expect(stageTwoMessage).toMatchObject({ controls: "actionable", status_version: 2 });
+		expect(stageTwoMessage).toMatchObject({
+			controls: "actionable",
+			status_version: 2,
+		});
 		const firstEdit = only(edits());
 		expect(String(firstEdit.body.text)).toContain("Approval recorded");
-		expect(String(firstEdit.body.text)).toContain("still awaits further approval");
+		expect(String(firstEdit.body.text)).toContain(
+			"still awaits further approval",
+		);
 
 		// Stage two decides on the web: the claim is approved.
 		actAs(ids.backupUser);
@@ -1024,6 +1182,13 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			request_outcome: "approved",
 		});
 
+		actAs(ids.requesterUser);
+		const completedDetail = await (await claimDetail()).json();
+		expect(completedDetail.claim.status).toBe("approved");
+		expect(completedDetail.intermediateDecisions).toHaveLength(1);
+		expect(completedDetail.decisions).toHaveLength(1);
+		actAs(ids.backupUser);
+
 		// Both cards reach the final status; stage one keeps its own outcome.
 		await deliver(T0.add({ minutes: 2 }));
 		const finalEdits = edits().slice(1);
@@ -1032,20 +1197,31 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			(edit) => edit.body.message_id === Number(firstMessage.remote_message_id),
 		);
 		expect(String(stageOneFinal?.body.text)).toContain("Approval recorded");
-		expect(String(stageOneFinal?.body.text)).toContain("Current request status: approved.");
+		expect(String(stageOneFinal?.body.text)).toContain(
+			"Current request status: approved.",
+		);
 		const stageTwoFinal = finalEdits.find(
-			(edit) => edit.body.message_id === Number(stageTwoMessage?.remote_message_id),
+			(edit) =>
+				edit.body.message_id === Number(stageTwoMessage?.remote_message_id),
 		);
 		if (!stageTwoFinal) throw new Error("stage two card was not refreshed");
-		expect(buttonsOf(stageTwoFinal).every((button) => !button.callback_data)).toBe(true);
-		expect((await messages(claimId)).map((message) => message.status_version)).toEqual([3, 3]);
+		expect(
+			buttonsOf(stageTwoFinal).every((button) => !button.callback_data),
+		).toBe(true);
+		expect(
+			(await messages(claimId)).map((message) => message.status_version),
+		).toEqual([3, 3]);
 
 		// The review history separates the step from the claim outcome.
 		const history = await detail(requestId);
 		const timeline = history.sections.find(
-			(section) => section.type === "timeline" && section.title === "Evidence history",
+			(section) =>
+				section.type === "timeline" && section.title === "Evidence history",
 		);
-		expect(timeline?.type === "timeline" && timeline.events.map((event) => event.label)).toEqual([
+		expect(
+			timeline?.type === "timeline" &&
+				timeline.events.map((event) => event.label),
+		).toEqual([
 			"Submitted",
 			"Approval recorded — awaiting further approval",
 			"Claim approved",
@@ -1058,7 +1234,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		await deliver();
 		const message = only(await messages(claimId));
 		actAs(ids.managerUser);
-		const rejected = await rejectTravelExpenseClaim({ claimId, reason: "Duplicate" });
+		const rejected = await rejectTravelExpenseClaim({
+			claimId,
+			reason: "Duplicate",
+		});
 		expect(rejected.success).toBe(true);
 		expect(harness.kicks).toContainEqual({ organizationId: ids.organization });
 		await deliver(T0.add({ minutes: 1 }));
@@ -1079,12 +1258,18 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		// Receipt set changed after the card was rendered: nothing decided, and the
 		// still-pending card becomes a review notice without controls.
 		await changeReceiptContent(first.claimId);
-		await press(Number(firstMessage.remote_message_id), approveData(firstCard), "t296-q-changed");
+		await press(
+			Number(firstMessage.remote_message_id),
+			approveData(firstCard),
+			"t296-q-changed",
+		);
 		expect(await claimStatus(first.claimId)).toBe("submitted");
 		expect(await decisions(first.claimId)).toHaveLength(0);
 		expect(only(answers()).body.text).toBe("Review required");
 		expect(String(only(edits()).body.text)).toContain("No decision was made");
-		expect(only(await messages(first.claimId))).toMatchObject({ controls: "none" });
+		expect(only(await messages(first.claimId))).toMatchObject({
+			controls: "none",
+		});
 
 		// Paused admission: a fresh press on a sent card decides nothing.
 		const second = await submitClaim();
@@ -1096,7 +1281,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 			[ids.organization],
 		);
 		expect(
-			await attempt({ bindingId: secondMessage.binding_id, queryId: "t296-q-paused" }),
+			await attempt({
+				bindingId: secondMessage.binding_id,
+				queryId: "t296-q-paused",
+			}),
 		).toEqual({ status: "review_required" });
 		await admin.query(
 			`update approval_presentation_control set mode = 'actionable'
@@ -1105,17 +1293,20 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		);
 
 		// The request moved to another approver: the former holder's card is stale.
-		await admin.query("update approval_request set approver_id = $2 where id = $1", [
-			second.requestId,
-			ids.backupManager,
-		]);
-		expect(await attempt({ bindingId: secondMessage.binding_id, queryId: "t296-q-moved" })).toEqual(
-			{ status: "review_required" },
+		await admin.query(
+			"update approval_request set approver_id = $2 where id = $1",
+			[second.requestId, ids.backupManager],
 		);
-		await admin.query("update approval_request set approver_id = $2 where id = $1", [
-			second.requestId,
-			ids.manager,
-		]);
+		expect(
+			await attempt({
+				bindingId: secondMessage.binding_id,
+				queryId: "t296-q-moved",
+			}),
+		).toEqual({ status: "review_required" });
+		await admin.query(
+			"update approval_request set approver_id = $2 where id = $1",
+			[second.requestId, ids.manager],
+		);
 
 		// Another tenant's context and another member never reach the binding.
 		expect(
@@ -1171,7 +1362,9 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 				attempt({ bindingId: message.binding_id, queryId: "t296-q-rollback" }),
 			).rejects.toThrow();
 		} finally {
-			await admin.query("drop trigger if exists t296_fail_invocation on approval_invocation");
+			await admin.query(
+				"drop trigger if exists t296_fail_invocation on approval_invocation",
+			);
 			await admin.query("drop function if exists t296_fail_invocation()");
 		}
 		expect(await claimStatus(claimId)).toBe("submitted");
@@ -1184,7 +1377,10 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		expect(harness.notifications).toEqual([]);
 
 		expect(
-			await attempt({ bindingId: message.binding_id, queryId: "t296-q-rollback" }),
+			await attempt({
+				bindingId: message.binding_id,
+				queryId: "t296-q-rollback",
+			}),
 		).toMatchObject({ status: "decided", replayed: false });
 		expect(await claimStatus(claimId)).toBe("approved");
 	});
@@ -1195,11 +1391,15 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		await deliver();
 		const message = only(await messages(claimId));
 		const results = await Promise.all(
-			[1, 2, 3].map(() => attempt({ bindingId: message.binding_id, queryId: "t296-q-race" })),
+			[1, 2, 3].map(() =>
+				attempt({ bindingId: message.binding_id, queryId: "t296-q-race" }),
+			),
 		);
 		expect(results.every((result) => result.status === "decided")).toBe(true);
 		expect(
-			results.filter((result) => result.status === "decided" && !result.replayed),
+			results.filter(
+				(result) => result.status === "decided" && !result.replayed,
+			),
 		).toHaveLength(1);
 		expect(await decisions(claimId)).toHaveLength(1);
 		expect(await invocations()).toHaveLength(1);
@@ -1245,10 +1445,14 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 
 		// The other claim's lifecycle is untouched.
 		expect(await revisionId(kept.claimId)).toBeTruthy();
-		expect(only(await messages(kept.claimId))).toMatchObject({ controls: "actionable" });
+		expect(only(await messages(kept.claimId))).toMatchObject({
+			controls: "actionable",
+		});
 
 		// A late redelivery of the purged press finds nothing and recreates nothing.
-		expect(await attempt({ bindingId: message.binding_id, queryId: "t296-q-purge" })).toEqual({
+		expect(
+			await attempt({ bindingId: message.binding_id, queryId: "t296-q-purge" }),
+		).toEqual({
 			status: "not_found",
 		});
 		expect(await invocations()).toHaveLength(0);
