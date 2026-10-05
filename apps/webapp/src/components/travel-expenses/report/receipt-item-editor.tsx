@@ -1,13 +1,24 @@
 "use client";
 
-import { IconInfoCircle } from "@tabler/icons-react";
+import { IconLoader2, IconTrash } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
-import { useLocale } from "next-intl";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { saveReceiptItemDraftAction } from "@/app/[locale]/(app)/travel-expenses/report-actions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,11 +48,9 @@ import {
 	type ReceiptItemDraftInput,
 	type ReceiptItemRequirement,
 	receiptItemMissingRequirements,
-	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { DraftSaveStatus } from "./draft-save-status";
-import { formatMoney } from "./format";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { useDraftSaver } from "./use-draft-saver";
 
@@ -145,6 +154,8 @@ export function ReceiptItemEditor({
 	reimbursementCurrency,
 	onReceiptsChanged,
 	onSaved,
+	onDraftChange,
+	removal,
 	maxReceiptBytes,
 }: {
 	reportId: string;
@@ -154,12 +165,16 @@ export function ReceiptItemEditor({
 	reimbursementCurrency: string;
 	onReceiptsChanged: () => void | Promise<void>;
 	onSaved?: (item: ReportItemView) => void;
+	/** The entered values as they change; null while any of them is malformed. */
+	onDraftChange?: (draft: ReceiptItemDraft | null) => void;
+	/** Lets the employee remove this expense; resolves true once it is removed. */
+	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
 	/** The server's receipt size limit, so the uploader refuses larger files up front. */
 	maxReceiptBytes: number;
 }) {
 	const { t } = useTranslate();
-	const locale = useLocale();
 	const [uploading, setUploading] = useState(false);
+	const [removing, setRemoving] = useState(false);
 
 	// The last values the server confirmed; malformed fields fall back to them.
 	const lastSaved = useRef<ReceiptItemDraftInput>(toDraftInput(toFormValues(item)));
@@ -212,9 +227,26 @@ export function ReceiptItemEditor({
 	const form = useForm({
 		defaultValues,
 		listeners: {
-			onChange: ({ formApi }) => saver.change(toDraftInput(formApi.state.values)),
+			onChange: ({ formApi }) => {
+				const values = toDraftInput(formApi.state.values);
+				saver.change(values);
+				const parsed = parseReceiptItemDraft(values);
+				onDraftChange?.(parsed.ok ? parsed.draft : null);
+			},
 		},
 	});
+
+	async function remove() {
+		if (!removal) return;
+		setRemoving(true);
+		try {
+			// Removes on top of the latest saved version, including pending edits.
+			await saver.flush();
+			if (await removal.remove(saver.getState().version)) saver.discard();
+		} finally {
+			setRemoving(false);
+		}
+	}
 
 	const fieldError = (field: FieldName) =>
 		state.status === "invalid"
@@ -223,22 +255,34 @@ export function ReceiptItemEditor({
 
 	return (
 		<div className="space-y-6">
-			<DraftSaveStatus
-				state={state}
-				onRetry={() => saver.retry()}
-				onKeepMine={() => saver.resolveConflict("keep_mine")}
-				onUseTheirs={() => {
-					const theirs = state.conflict?.item;
-					saver.resolveConflict("use_theirs");
-					if (theirs) {
-						lastSaved.current = toDraftInput(toFormValues(theirs));
-						// Keeps the mount defaults so the next render does not undo the reset.
-						form.reset(toFormValues(theirs), { keepDefaultValues: true });
-					}
-					// The newer version may also have different receipts.
-					void onReceiptsChanged();
-				}}
-			/>
+			<div className="flex flex-wrap items-start justify-between gap-2">
+				<div className="min-w-0 flex-1">
+					<DraftSaveStatus
+						state={state}
+						onRetry={() => saver.retry()}
+						onKeepMine={() => saver.resolveConflict("keep_mine")}
+						onUseTheirs={() => {
+							const theirs = state.conflict?.item;
+							saver.resolveConflict("use_theirs");
+							if (theirs) {
+								lastSaved.current = toDraftInput(toFormValues(theirs));
+								// Keeps the mount defaults so the next render does not undo the reset.
+								form.reset(toFormValues(theirs), { keepDefaultValues: true });
+								onDraftChange?.(theirs);
+							}
+							// The newer version may also have different receipts.
+							void onReceiptsChanged();
+						}}
+					/>
+				</div>
+				{removal && (
+					<RemoveExpenseButton
+						label={removal.label}
+						busy={removing || uploading}
+						onConfirm={() => void remove()}
+					/>
+				)}
+			</div>
 
 			<form
 				noValidate
@@ -456,75 +500,90 @@ export function ReceiptItemEditor({
 								reimbursementCurrency,
 							})
 						: null;
-					const totals = receiptReportTotals(draft ? [draft] : [], reimbursementCurrency);
 					return (
-						<div className="grid gap-4 sm:grid-cols-2">
-							<section
-								aria-labelledby={`${item.id}-totals`}
-								className="space-y-2 rounded-lg border p-4"
-							>
-								<h3 id={`${item.id}-totals`} className="text-base font-semibold">
-									{t("travelExpenses.report.totals.title", "Totals")}
-								</h3>
-								<dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-sm">
-									<dt>{t("travelExpenses.report.totals.reimbursable", "Reimbursed to you")}</dt>
-									<dd className="text-right font-medium tabular-nums">
-										{formatMoney(locale, totals.reimbursable, totals.currency)}
-									</dd>
-									<dt className="text-muted-foreground">
-										{t("travelExpenses.report.totals.companyPaid", "Paid by the company")}
-									</dt>
-									<dd className="text-right tabular-nums text-muted-foreground">
-										{formatMoney(locale, totals.companyPaid, totals.currency)}
-									</dd>
-								</dl>
-							</section>
-							<section
-								aria-labelledby={`${item.id}-requirements`}
-								className="space-y-2 rounded-lg border p-4"
-							>
-								<h3 id={`${item.id}-requirements`} className="text-base font-semibold">
-									{t("travelExpenses.report.requirements.title", "Still needed")}
-								</h3>
-								{missing === null ? (
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"travelExpenses.report.requirements.fixFields",
-											"Correct the highlighted fields first.",
-										)}
-									</p>
-								) : missing.length === 0 ? (
-									<p className="text-sm text-muted-foreground">
-										{t(
-											"travelExpenses.report.requirements.complete",
-											"Everything for this expense is entered.",
-										)}
-									</p>
-								) : (
-									<ul className="list-disc space-y-1 pl-5 text-sm">
-										{missing.map((requirement) => (
-											<li key={requirement}>
-												{requirementLabel(t, requirement, reimbursementCurrency)}
-											</li>
-										))}
-									</ul>
-								)}
-							</section>
-						</div>
+						<section
+							aria-labelledby={`${item.id}-requirements`}
+							className="space-y-2 rounded-lg border p-4"
+						>
+							<h3 id={`${item.id}-requirements`} className="text-base font-semibold">
+								{t("travelExpenses.report.requirements.title", "Still needed")}
+							</h3>
+							{missing === null ? (
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"travelExpenses.report.requirements.fixFields",
+										"Correct the highlighted fields first.",
+									)}
+								</p>
+							) : missing.length === 0 ? (
+								<p className="text-sm text-muted-foreground">
+									{t(
+										"travelExpenses.report.requirements.complete",
+										"Everything for this expense is entered.",
+									)}
+								</p>
+							) : (
+								<ul className="list-disc space-y-1 pl-5 text-sm">
+									{missing.map((requirement) => (
+										<li key={requirement}>
+											{requirementLabel(t, requirement, reimbursementCurrency)}
+										</li>
+									))}
+								</ul>
+							)}
+						</section>
 					);
 				}}
 			</form.Subscribe>
-
-			<Alert>
-				<IconInfoCircle aria-hidden="true" className="size-4" />
-				<AlertTitle>{t("travelExpenses.report.draftNotice.title", "Saved as a draft")}</AlertTitle>
-				<AlertDescription>
-					{t(
-						"travelExpenses.report.draftNotice.description",
-						"Your entries are saved automatically and you can continue later from Travel Expenses. Submitting expense reports for approval is not available yet.",
-					)}
-				</AlertDescription>
-			</Alert>
 		</div>
+	);
+}
+
+/** Removes an expense, and its receipts, after an explicit confirmation. */
+function RemoveExpenseButton({
+	label,
+	busy,
+	onConfirm,
+}: {
+	label: string;
+	busy: boolean;
+	onConfirm: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<AlertDialog>
+			<AlertDialogTrigger asChild>
+				<Button type="button" variant="outline" size="sm" disabled={busy} aria-label={label}>
+					{busy ? (
+						<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+					) : (
+						<IconTrash aria-hidden="true" className="mr-2 size-4" />
+					)}
+					{t("travelExpenses.report.items.remove", "Remove")}
+				</Button>
+			</AlertDialogTrigger>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t("travelExpenses.report.items.removeTitle", "Remove this expense?")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{t(
+							"travelExpenses.report.items.removeDescription",
+							"The expense and its attached receipts are deleted from this trip. This cannot be undone.",
+						)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+					<AlertDialogAction
+						className={buttonVariants({ variant: "destructive" })}
+						onClick={onConfirm}
+					>
+						{t("travelExpenses.report.items.removeConfirm", "Remove expense")}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

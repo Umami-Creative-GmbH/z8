@@ -17,3 +17,20 @@ export function formatPlainDate(locale: string, value: string) {
 		return value;
 	}
 }
+
+/** Formats first and last travel day as entered; either may still be missing. */
+export function formatPlainDateRange(locale: string, start: string | null, end: string | null) {
+	if (start && end) return `${formatPlainDate(locale, start)} – ${formatPlainDate(locale, end)}`;
+	if (start) return formatPlainDate(locale, start);
+	if (end) return formatPlainDate(locale, end);
+	return null;
+}
+
+/** Localized country name of an ISO 3166 code, falling back to the code. */
+export function formatCountry(locale: string, code: string) {
+	try {
+		return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
+	} catch {
+		return code;
+	}
+}

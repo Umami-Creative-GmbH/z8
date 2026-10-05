@@ -7,6 +7,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -14,8 +15,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import type { ExpensePayer, ReceiptExpenseCategory } from "@/lib/travel-expenses/receipt-report";
-import { currentTimestamp } from "./timestamp";
-
+import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { organization, user } from "../auth-schema";
 import { approvalWorkflow } from "./approval-workflow";
 import {
@@ -25,6 +25,7 @@ import {
 } from "./enums";
 import { employee } from "./organization";
 import { project } from "./project";
+import { currentTimestamp } from "./timestamp";
 
 export const travelExpenseClaim = pgTable(
 	"travel_expense_claim",
@@ -127,13 +128,17 @@ export const travelExpenseAttachment = pgTable(
 	],
 );
 
-export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone"] as const;
+export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone", "trip"] as const;
 export type TravelExpenseReportKind = (typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
 export const TRAVEL_EXPENSE_REPORT_STATUSES = ["draft"] as const;
 export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
 
 // Travel expense report (#600): groups expense items beside the legacy claim
-// model, which keeps its submitted and decided claims untouched.
+// model, which keeps its submitted and decided claims untouched. A trip report
+// (#601) also holds the shared travel details its items have in common; a
+// standalone report never has any. Trip dates are calendar days in the
+// explicit `trip_time_zone`, never in a viewer's zone. `details_version`
+// advances on every saved edit of those details, like an item's `version`.
 export const travelExpenseReport = pgTable(
 	"travel_expense_report",
 	{
@@ -147,6 +152,15 @@ export const travelExpenseReport = pgTable(
 		kind: text("kind").$type<TravelExpenseReportKind>().notNull(),
 		status: text("status").$type<TravelExpenseReportStatus>().default("draft").notNull(),
 		reimbursementCurrency: text("reimbursement_currency").notNull(),
+		tripPurpose: text("trip_purpose"),
+		tripStartDate: date("trip_start_date"),
+		tripEndDate: date("trip_end_date"),
+		tripTimeZone: text("trip_time_zone"),
+		tripDestinations: jsonb("trip_destinations")
+			.$type<TripDestination[]>()
+			.default(sql`'[]'::jsonb`)
+			.notNull(),
+		detailsVersion: integer("details_version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		createdBy: text("created_by")
 			.notNull()
@@ -161,8 +175,18 @@ export const travelExpenseReport = pgTable(
 			table.employeeId,
 			table.status,
 		),
-		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone')`),
+		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone', 'trip')`),
 		check("travel_expense_report_status_check", sql`${table.status} IN ('draft')`),
+		check(
+			"travel_expense_report_trip_details_check",
+			sql`(${table.kind} = 'standalone' AND ${table.tripPurpose} IS NULL
+				AND ${table.tripStartDate} IS NULL AND ${table.tripEndDate} IS NULL
+				AND ${table.tripTimeZone} IS NULL AND ${table.tripDestinations} = '[]'::jsonb)
+			OR (${table.kind} = 'trip' AND ${table.tripTimeZone} IS NOT NULL
+				AND jsonb_typeof(${table.tripDestinations}) = 'array'
+				AND (${table.tripStartDate} IS NULL OR ${table.tripEndDate} IS NULL
+					OR ${table.tripEndDate} >= ${table.tripStartDate}))`,
+		),
 	],
 );
 
@@ -291,10 +315,7 @@ export const travelExpenseReceiptUpload = pgTable(
 		storageKey: text("storage_key").notNull(),
 		storageBucket: text("storage_bucket"),
 		storageVersionId: text("storage_version_id"),
-		status: text("status")
-			.$type<TravelExpenseReceiptUploadStatus>()
-			.default("pending")
-			.notNull(),
+		status: text("status").$type<TravelExpenseReceiptUploadStatus>().default("pending").notNull(),
 		reason: text("reason").$type<TravelExpenseReceiptCleanupReason>(),
 		attempts: integer("attempts").default(0).notNull(),
 		lastError: text("last_error"),
