@@ -148,7 +148,8 @@
     "unifiedInboxBannerTitle": "Try the new Unified Inbox",
     "workCategory": "Work category",
     "workCategoryUnavailable": "Unknown category (unavailable)",
-    "workLocation": "Work location"
+    "workLocation": "Work location",
+    "viewExpenseClaim": "View claim and receipts"
   },
   "fastLanes": {
     "approve": "Approve",
