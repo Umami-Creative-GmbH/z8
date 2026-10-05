@@ -70,6 +70,9 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/approvals", async (importOri
 	sendManualEntryApprovedNotification: async () => undefined,
 }));
 
+const { db } = await import("@/db");
+const { runCanonicalBackfill } = await import("@/lib/time-record/migration/backfill");
+const { reconcileLegacyToCanonical } = await import("@/lib/time-record/migration/reconciliation");
 const { POST } = await import("@/app/api/time-entries/diagnostics/route");
 const { createManualTimeEntry } = await import("@/app/[locale]/(app)/time-tracking/actions");
 const { clockIn, clockOut } = await import("@/app/[locale]/(app)/time-tracking/actions/clocking");
@@ -100,7 +103,12 @@ type Finding = {
 	employeeIds: string[];
 	workPeriodIds: string[];
 	timeRecordIds: string[];
-	provenance: { state: string; basis?: string; reason?: string; writer?: string };
+	provenance: {
+		state: string;
+		basis?: string;
+		reason?: string;
+		writer?: string;
+	};
 	details: Record<string, unknown>;
 	redacted?: true;
 };
@@ -248,6 +256,155 @@ describe("historical work diagnostics on PostgreSQL", () => {
 
 	afterAll(async () => {
 		await cleanup();
+	});
+
+	it("keeps live work healthy through backfill and preserves the clock-out link on repeat runs", async () => {
+		actAs(ids.workerUser);
+		await expect(
+			clockIn("office", {
+				instant: parseInstant("2026-07-02T06:00:00Z"),
+				browserTimezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ success: true });
+		const running = await snapshot();
+		const { body } = await diagnose(ids.ownerUser, {
+			employeeId: ids.worker,
+			...july,
+		});
+		expect(body.work.completeness.status).toBe("complete");
+		expect(body.work.findings).toEqual([]);
+		expect(
+			Object.values(await reconcileLegacyToCanonical(ids.organization)).every(
+				(count) => count === 0,
+			),
+		).toBe(true);
+		await runCanonicalBackfill({
+			organizationId: ids.organization,
+			actorId: ids.ownerUser,
+		});
+		expect(await snapshot()).toEqual(running);
+
+		actAs(ids.workerUser);
+		await expect(
+			clockOut(undefined, undefined, {
+				submissionId: randomUUID(),
+				instant: parseInstant("2026-07-02T14:00:00Z"),
+				browserTimezone: "Europe/Berlin",
+			}),
+		).resolves.toMatchObject({ success: true });
+		const closed = await snapshot();
+		expect(closed.periods[0].canonical_record_id).not.toBe(closed.periods[0].id);
+		await runCanonicalBackfill({
+			organizationId: ids.organization,
+			actorId: ids.ownerUser,
+		});
+		await runCanonicalBackfill({
+			organizationId: ids.organization,
+			actorId: ids.ownerUser,
+		});
+		expect(await snapshot()).toEqual(closed);
+	});
+
+	it("backfills completed unlinked legacy work once and keeps that representation unchanged", async () => {
+		const periodId = await legacyManual({
+			date: "2026-07-02",
+			clockInTime: "08:00",
+			clockOutTime: "16:00",
+		});
+		const {
+			rows: [period],
+		} = await admin.query<{ canonical_record_id: string }>(
+			"select canonical_record_id from work_period where id = $1",
+			[periodId],
+		);
+		await admin.query("update work_period set canonical_record_id = null where id = $1", [
+			periodId,
+		]);
+		await admin.query("delete from time_record where id = $1", [period.canonical_record_id]);
+		await runCanonicalBackfill({
+			organizationId: ids.organization,
+			actorId: ids.ownerUser,
+		});
+		const completed = await snapshot();
+		expect(completed.periods[0].canonical_record_id).toBe(periodId);
+		expect(completed.records[0]).toMatchObject({
+			id: periodId,
+			duration_minutes: 480,
+			end_at: "2026-07-02T14:00:00",
+		});
+		await runCanonicalBackfill({
+			organizationId: ids.organization,
+			actorId: ids.ownerUser,
+		});
+		expect(await snapshot()).toEqual(completed);
+	});
+
+	it("rolls back new work inserts if another unlinked period already has a same-ID canonical copy", async () => {
+		const first = await legacyManual({
+			date: "2026-07-02",
+			clockInTime: "08:00",
+			clockOutTime: "12:00",
+		});
+		const second = await legacyManual({
+			date: "2026-07-03",
+			clockInTime: "08:00",
+			clockOutTime: "12:00",
+		});
+		await admin.query(
+			"update work_period set canonical_record_id = null where id = any($1::uuid[])",
+			[[first, second]],
+		);
+		await admin.query(
+			`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at, duration_minutes, approval_state, origin, created_by, updated_by, updated_at)
+			select id, organization_id, employee_id, 'work', start_time, null, null, 'approved', 'system', $2, $2, updated_at from work_period where id = $1`,
+			[second, ids.ownerUser],
+		);
+		const before = await snapshot();
+		await expect(
+			runCanonicalBackfill({
+				organizationId: ids.organization,
+				actorId: ids.ownerUser,
+			}),
+		).rejects.toThrow("Canonical work backfill conflict");
+		expect(await snapshot()).toEqual(before);
+	});
+
+	it("rolls back a stale backfill snapshot when a concurrent writer establishes a different link", async () => {
+		const periodId = await legacyManual({
+			date: "2026-07-02",
+			clockInTime: "08:00",
+			clockOutTime: "12:00",
+		});
+		const {
+			rows: [established],
+		} = await admin.query<{ canonical_record_id: string }>(
+			"select canonical_record_id from work_period where id = $1",
+			[periodId],
+		);
+		await admin.query("update work_period set canonical_record_id = null where id = $1", [
+			periodId,
+		]);
+		const source = await db.query.workPeriod.findMany({
+			where: (period, { eq }) => eq(period.id, periodId),
+		});
+		await admin.query("update work_period set canonical_record_id = $2 where id = $1", [
+			periodId,
+			established.canonical_record_id,
+		]);
+		const before = await snapshot();
+		await expect(
+			runCanonicalBackfill({
+				organizationId: ids.organization,
+				actorId: ids.ownerUser,
+				legacy: {
+					workPeriods: source,
+					absenceEntries: [],
+					approvalRequests: [],
+					absenceCategories: [],
+				},
+			}),
+		).rejects.toThrow("Work changed during canonical backfill");
+		expect(await snapshot()).toEqual(before);
 	});
 
 	it("reports consistent legacy manual work as complete and writes nothing", async () => {

@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -6,6 +5,8 @@ const mockState = vi.hoisted(() => ({
 		id: "time-record-id",
 		organizationId: "time-record-organization-id",
 	},
+	workInsertReturning: vi.fn(),
+	updateReturning: vi.fn(),
 	timeRecordInsertValues: vi.fn(),
 	detailInsertValues: vi.fn(),
 	timeRecordOnConflictDoNothing: vi.fn(),
@@ -68,6 +69,11 @@ vi.mock("@/db", () => ({
 	workPeriod: {
 		id: "work-period-id",
 		organizationId: "work-period-organization-id",
+		canonicalRecordId: "work-period-canonical-id",
+		isActive: "work-period-active",
+		startTime: "work-period-start",
+		endTime: "work-period-end",
+		updatedAt: "work-period-updated-at",
 	},
 }));
 
@@ -77,10 +83,108 @@ import {
 } from "@/lib/time-record/migration/backfill";
 
 describe("canonical backfill period normalization", () => {
+	const closedWork = {
+		id: "work-1",
+		organizationId: "org-1",
+		employeeId: "employee-1",
+		startTime: new Date("2026-01-15T08:00:00Z"),
+		endTime: new Date("2026-01-15T16:00:00Z"),
+		isActive: false,
+		canonicalRecordId: null,
+		durationMinutes: 480,
+		approvalStatus: "approved" as const,
+		projectId: "project-1",
+		workCategoryId: null,
+		workLocationType: "office" as const,
+		createdAt: new Date("2026-01-15T16:00:00Z"),
+		updatedAt: new Date("2026-01-15T16:00:00Z"),
+	};
+
+	it.each([
+		{ isActive: true, endTime: null },
+		{ isActive: false, endTime: null },
+		{ isActive: true, endTime: closedWork.endTime },
+	])("does not create canonical work from unfinished or active periods: %j", (state) => {
+		const payload = buildCanonicalBackfillPayload({
+			organizationId: "org-1",
+			actorId: "actor-1",
+			legacy: {
+				workPeriods: [{ ...closedWork, ...state }],
+				absenceEntries: [],
+				approvalRequests: [],
+				absenceCategories: [],
+			},
+		});
+		expect(payload.timeRecords).toEqual([]);
+		expect(payload.timeRecordWork).toEqual([]);
+		expect(payload.timeRecordAllocation).toEqual([]);
+		expect(payload.legacyLinks.workPeriod).toEqual([]);
+	});
+
+	it.each(["clock-out-record", "work-1"])(
+		"leaves established canonical link %s untouched on repeat backfill",
+		async (canonicalRecordId) => {
+			const payload = await runCanonicalBackfill({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				legacy: {
+					workPeriods: [{ ...closedWork, canonicalRecordId }],
+					absenceEntries: [],
+					approvalRequests: [],
+					absenceCategories: [],
+				},
+			});
+			expect(payload.timeRecords).toEqual([]);
+			expect(payload.timeRecordWork).toEqual([]);
+			expect(payload.timeRecordAllocation).toEqual([]);
+			expect(payload.legacyLinks.workPeriod).toEqual([]);
+			expect(mockState.dbInsert).not.toHaveBeenCalled();
+			expect(mockState.dbUpdate).not.toHaveBeenCalled();
+			expect(mockState.dbDelete).not.toHaveBeenCalled();
+		},
+	);
+	it("rejects an existing same-ID work record without rewriting its fields or details", async () => {
+		mockState.workInsertReturning.mockResolvedValue([]);
+		await expect(
+			runCanonicalBackfill({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				legacy: {
+					workPeriods: [closedWork],
+					absenceEntries: [],
+					approvalRequests: [],
+					absenceCategories: [],
+				},
+			}),
+		).rejects.toThrow("Canonical work backfill conflict");
+		expect(mockState.onConflictDoUpdate).not.toHaveBeenCalled();
+		expect(mockState.detailInsertValues).not.toHaveBeenCalled();
+		expect(mockState.dbUpdate).not.toHaveBeenCalled();
+	});
+
+	it("aborts the transaction if the source work changes or is linked after it was read", async () => {
+		mockState.updateReturning.mockResolvedValue([]);
+		await expect(
+			runCanonicalBackfill({
+				organizationId: "org-1",
+				actorId: "actor-1",
+				legacy: {
+					workPeriods: [closedWork],
+					absenceEntries: [],
+					approvalRequests: [],
+					absenceCategories: [],
+				},
+			}),
+		).rejects.toThrow("Work changed during canonical backfill");
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 
-		mockState.timeRecordOnConflictDoNothing.mockResolvedValue(undefined);
+		mockState.workInsertReturning.mockResolvedValue([{ id: "work-1" }]);
+		mockState.timeRecordOnConflictDoNothing.mockReturnValue({
+			returning: mockState.workInsertReturning,
+		});
 		mockState.onConflictDoNothing.mockResolvedValue(undefined);
 		mockState.onConflictDoUpdate.mockResolvedValue(undefined);
 		mockState.timeRecordInsertValues.mockReturnValue({
@@ -97,7 +201,10 @@ describe("canonical backfill period normalization", () => {
 					: mockState.detailInsertValues,
 		}));
 
-		mockState.updateWhere.mockResolvedValue(undefined);
+		mockState.updateReturning.mockResolvedValue([{ id: "work-1" }]);
+		mockState.updateWhere.mockReturnValue({
+			returning: mockState.updateReturning,
+		});
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
 		mockState.dbUpdate.mockReturnValue({ set: mockState.updateSet });
 
@@ -199,6 +306,8 @@ describe("canonical backfill period normalization", () => {
 				workPeriods: [
 					{
 						id: "work-1",
+						isActive: false,
+						canonicalRecordId: null,
 						organizationId: "org-1",
 						employeeId: "employee-1",
 						startTime: new Date("2026-01-15T08:00:00.000Z"),
@@ -268,6 +377,8 @@ describe("canonical backfill period normalization", () => {
 				workPeriods: [
 					{
 						id: "work-1",
+						isActive: false,
+						canonicalRecordId: null,
 						organizationId: "org-1",
 						employeeId: "employee-1",
 						startTime: new Date("2026-01-15T08:00:00.000Z"),
@@ -302,7 +413,7 @@ describe("canonical backfill period normalization", () => {
 		});
 
 		expect(mockState.transaction).toHaveBeenCalledTimes(1);
-		expect(mockState.dbInsert).toHaveBeenCalledTimes(4);
+		expect(mockState.dbInsert).toHaveBeenCalledTimes(5);
 		expect(mockState.dbUpdate).toHaveBeenCalledTimes(2);
 		expect(mockState.dbDelete).toHaveBeenCalledTimes(1);
 		expect(mockState.updateSet).toHaveBeenNthCalledWith(
@@ -313,7 +424,7 @@ describe("canonical backfill period normalization", () => {
 		expect(mockState.onConflictDoUpdate).toHaveBeenCalledTimes(1);
 	});
 
-	it("upserts canonical time records by id and organization with reconciled fields only", async () => {
+	it("inserts new canonical work without overwriting existing work", async () => {
 		await runCanonicalBackfill({
 			organizationId: "org-1",
 			actorId: "actor-1",
@@ -321,6 +432,8 @@ describe("canonical backfill period normalization", () => {
 				workPeriods: [
 					{
 						id: "work-1",
+						isActive: false,
+						canonicalRecordId: null,
 						organizationId: "org-1",
 						employeeId: "employee-1",
 						startTime: new Date("2026-01-15T08:00:00.000Z"),
@@ -340,13 +453,9 @@ describe("canonical backfill period normalization", () => {
 			},
 		});
 
-		expect(mockState.onConflictDoUpdate).toHaveBeenCalledTimes(1);
-		expect(mockState.onConflictDoUpdate).toHaveBeenCalledWith({
+		expect(mockState.onConflictDoUpdate).not.toHaveBeenCalled();
+		expect(mockState.timeRecordOnConflictDoNothing).toHaveBeenCalledWith({
 			target: ["time-record-id", "time-record-organization-id"],
-			set: {
-				durationMinutes: sql.raw("excluded.duration_minutes"),
-				approvalState: sql.raw("excluded.approval_state"),
-			},
 		});
 	});
 

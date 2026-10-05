@@ -122,7 +122,7 @@ interface ApprovedAbsenceCancelledByEmployeeParams {
  * Notify employee that their absence request was submitted
  */
 export async function onAbsenceRequestSubmitted(
-	params: AbsenceRequestParams,
+	params: AbsenceRequestParams & { managerName?: string; days?: number },
 ): Promise<void> {
 	try {
 		const dateRange = `${formatDateStr(params.startDate)} - ${formatDateStr(params.endDate)}`;
@@ -139,13 +139,20 @@ export async function onAbsenceRequestSubmitted(
 			entityType: "absence_entry",
 			entityId: params.absenceId,
 			actionUrl: "/absences",
-			metadata: i18nMetadata(
-				copy.titleKey,
-				copy.titleDefault,
-				copy.messageKey,
-				copy.messageDefault,
-				{ categoryName: params.categoryName, dateRange },
-			),
+			metadata: {
+				startDate: params.startDate,
+				endDate: params.endDate,
+				absenceType: params.categoryName,
+				managerName: params.managerName,
+				days: params.days,
+				...i18nMetadata(
+					copy.titleKey,
+					copy.titleDefault,
+					copy.messageKey,
+					copy.messageDefault,
+					{ categoryName: params.categoryName, dateRange },
+				),
+			},
 		});
 	} catch (error) {
 		logger.error(

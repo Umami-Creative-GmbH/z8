@@ -11,6 +11,7 @@ vi.mock("./notification-service", () => ({
 import {
 	onAbsenceRecordedByManager,
 	onAbsenceRequestPendingApproval,
+	onAbsenceRequestSubmitted,
 	onApprovedAbsenceCancelledByEmployee,
 	onClockOutPendingApproval,
 	onClockOutPendingApprovalToManager,
@@ -29,6 +30,38 @@ describe("approval notification triggers", () => {
 		createNotification.mockResolvedValue({ id: "notification-1" });
 	});
 
+	it("includes request details for the employee confirmation template", async () => {
+		await onAbsenceRequestSubmitted({
+			absenceId: "absence-1",
+			employeeUserId: "user-requester",
+			employeeName: "Avery Employee",
+			organizationId: "org-1",
+			categoryName: "Vacation",
+			startDate: "2026-12-28",
+			endDate: "2026-12-31",
+			managerName: "Morgan Manager",
+			days: 4,
+		});
+
+		expect(createNotification).toHaveBeenCalledOnce();
+		expect(createNotification).toHaveBeenCalledWith(
+			expect.objectContaining({
+				userId: "user-requester",
+				organizationId: "org-1",
+				type: "absence_request_submitted",
+				metadata: expect.objectContaining({
+					startDate: "2026-12-28",
+					endDate: "2026-12-31",
+					absenceType: "Vacation",
+					managerName: "Morgan Manager",
+					days: 4,
+					i18n: expect.objectContaining({
+						params: { categoryName: "Vacation", dateRange: "Dec 28 - Dec 31" },
+					}),
+				}),
+			}),
+		);
+	});
 	it("links manager absence approval notifications to the unified inbox", async () => {
 		await onAbsenceRequestPendingApproval({
 			absenceId: "absence-1",
