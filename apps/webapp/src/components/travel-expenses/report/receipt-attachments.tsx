@@ -9,7 +9,7 @@ import {
 	IconTrash,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { removeReportReceiptAction } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -51,13 +51,16 @@ export function ReceiptAttachments({
 	receipts,
 	onChanged,
 	onBusyChange,
+	maxFileSize,
 }: {
 	reportId: string;
 	itemId: string;
 	receipts: ReportReceiptView[];
 	/** Called after a receipt was attached or removed, to reload the item. */
 	onChanged: () => void | Promise<void>;
+	/** Reports whether a receipt is uploading, e.g. to warn before leaving. */
 	onBusyChange?: (busy: boolean) => void;
+	maxFileSize?: number;
 }) {
 	const { t } = useTranslate();
 	const cameraInput = useRef<HTMLInputElement>(null);
@@ -68,15 +71,17 @@ export function ReceiptAttachments({
 	const upload = useTravelExpenseFileUpload({
 		process: ({ tusFileKey, fileName }) =>
 			processReportReceipt({ reportId, itemId, tusFileKey, fileName }),
+		maxFileSize,
 		onSuccess: () => {
-			onBusyChange?.(false);
 			void onChanged();
 		},
 		onError: (uploadError) => {
-			onBusyChange?.(false);
 			setError(uploadError.message);
 		},
 	});
+	useEffect(() => {
+		onBusyChange?.(upload.isUploading);
+	}, [onBusyChange, upload.isUploading]);
 
 	function chooseFile(event: React.ChangeEvent<HTMLInputElement>) {
 		const file = event.target.files?.[0];
@@ -84,7 +89,6 @@ export function ReceiptAttachments({
 		event.target.value = "";
 		if (!file) return;
 		setError(null);
-		onBusyChange?.(true);
 		upload.addFile(file);
 	}
 
@@ -207,7 +211,13 @@ export function ReceiptAttachments({
 									target="_blank"
 									rel="noopener noreferrer"
 									className="shrink-0 rounded-md focus-visible:outline-2"
-									aria-label={`${t("travelExpenses.actions.preview", "Preview")} ${receipt.fileName}`}
+									aria-label={t(
+										"travelExpenses.report.receipts.previewNamed",
+										"Preview {fileName}",
+										{
+											fileName: receipt.fileName,
+										},
+									)}
 								>
 									{isImage ? (
 										// biome-ignore lint/performance/noImgElement: private, authenticated receipt preview
@@ -231,7 +241,13 @@ export function ReceiptAttachments({
 											href={receiptHref(reportId, receipt.id, true)}
 											target="_blank"
 											rel="noopener noreferrer"
-											aria-label={`${t("travelExpenses.actions.download", "Download")} ${receipt.fileName}`}
+											aria-label={t(
+												"travelExpenses.report.receipts.downloadNamed",
+												"Download {fileName}",
+												{
+													fileName: receipt.fileName,
+												},
+											)}
 										>
 											{t("travelExpenses.actions.download", "Download")}
 										</a>
@@ -242,7 +258,13 @@ export function ReceiptAttachments({
 											className="h-auto p-0 text-destructive"
 											disabled={removingId !== null || busy}
 											onClick={() => void remove(receipt)}
-											aria-label={`${t("travelExpenses.report.receipts.remove", "Remove")} ${receipt.fileName}`}
+											aria-label={t(
+												"travelExpenses.report.receipts.removeNamed",
+												"Remove {fileName}",
+												{
+													fileName: receipt.fileName,
+												},
+											)}
 										>
 											{removingId === receipt.id ? (
 												<IconLoader2 aria-hidden="true" className="mr-1 size-4 animate-spin" />

@@ -1,17 +1,15 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import {
+	type TravelExpenseReportItemType,
+	type TravelExpenseReportKind,
+	type TravelExpenseReportStatus,
 	travelExpenseReport,
 	travelExpenseReportItem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import {
-	DEFAULT_REIMBURSEMENT_CURRENCY,
-	type ExpensePayer,
-	type ReceiptExpenseCategory,
-	type ReceiptItemDraft,
-} from "./receipt-report";
+import { DEFAULT_REIMBURSEMENT_CURRENCY, type ReceiptItemDraft } from "./receipt-report";
 
 /**
  * Draft travel expense reports (#600). Every read and write is scoped to the
@@ -37,9 +35,28 @@ export interface ReportReceiptView {
 	createdAt: string;
 }
 
+/** Columns of a receipt's view; select them and map rows with `toReceiptView`. */
+export const receiptViewColumns = {
+	id: travelExpenseReportReceipt.id,
+	fileName: travelExpenseReportReceipt.fileName,
+	mimeType: travelExpenseReportReceipt.mimeType,
+	sizeBytes: travelExpenseReportReceipt.sizeBytes,
+	createdAt: travelExpenseReportReceipt.createdAt,
+};
+
+export function toReceiptView(row: Omit<ReportReceiptView, "createdAt"> & { createdAt: Date }) {
+	return {
+		id: row.id,
+		fileName: row.fileName,
+		mimeType: row.mimeType,
+		sizeBytes: row.sizeBytes,
+		createdAt: row.createdAt.toISOString(),
+	} satisfies ReportReceiptView;
+}
+
 export interface ReportItemView extends ReceiptItemDraft {
 	id: string;
-	type: "receipt";
+	type: TravelExpenseReportItemType;
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
@@ -47,8 +64,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 
 export interface ReportView {
 	id: string;
-	kind: "standalone";
-	status: "draft";
+	kind: TravelExpenseReportKind;
+	status: TravelExpenseReportStatus;
 	reimbursementCurrency: string;
 	createdAt: string;
 	updatedAt: string;
@@ -165,11 +182,11 @@ function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView
 		version: row.version,
 		updatedAt: row.updatedAt.toISOString(),
 		expenseDate: row.expenseDate,
-		category: row.category as ReceiptExpenseCategory | null,
+		category: row.category,
 		description: row.description,
 		amount: row.originalAmount,
 		currency: row.originalCurrency,
-		paidBy: row.paidBy as ExpensePayer | null,
+		paidBy: row.paidBy,
 		accountingReference: row.accountingReference,
 		receipts,
 	};
@@ -198,14 +215,7 @@ export async function loadOwnReport(
 			)
 			.orderBy(asc(travelExpenseReportItem.position)),
 		database
-			.select({
-				id: travelExpenseReportReceipt.id,
-				itemId: travelExpenseReportReceipt.itemId,
-				fileName: travelExpenseReportReceipt.fileName,
-				mimeType: travelExpenseReportReceipt.mimeType,
-				sizeBytes: travelExpenseReportReceipt.sizeBytes,
-				createdAt: travelExpenseReportReceipt.createdAt,
-			})
+			.select({ ...receiptViewColumns, itemId: travelExpenseReportReceipt.itemId })
 			.from(travelExpenseReportReceipt)
 			.where(
 				and(
@@ -223,22 +233,14 @@ export async function loadOwnReport(
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
 		items: items.map((item) =>
-			toItemView(
-				item,
-				receipts
-					.filter((receipt) => receipt.itemId === item.id)
-					.map(({ itemId: _itemId, createdAt, ...receipt }) => ({
-						...receipt,
-						createdAt: createdAt.toISOString(),
-					})),
-			),
+			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
 		),
 	};
 }
 
 export interface DraftReportSummary {
 	id: string;
-	kind: "standalone";
+	kind: TravelExpenseReportKind;
 	updatedAt: string;
 	expenseDate: string | null;
 	description: string | null;
@@ -375,13 +377,7 @@ async function itemReceipts(
 	itemId: string,
 ): Promise<ReportReceiptView[]> {
 	const rows = await tx
-		.select({
-			id: travelExpenseReportReceipt.id,
-			fileName: travelExpenseReportReceipt.fileName,
-			mimeType: travelExpenseReportReceipt.mimeType,
-			sizeBytes: travelExpenseReportReceipt.sizeBytes,
-			createdAt: travelExpenseReportReceipt.createdAt,
-		})
+		.select(receiptViewColumns)
 		.from(travelExpenseReportReceipt)
 		.where(
 			and(
@@ -390,5 +386,5 @@ async function itemReceipts(
 			),
 		)
 		.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id));
-	return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
+	return rows.map(toReceiptView);
 }

@@ -18,9 +18,13 @@ const upload = vi.hoisted(() => ({
 		onError?: (error: Error) => void;
 	},
 	addFile: vi.fn(),
+	maxFileSize: undefined as number | undefined,
 }));
 vi.mock("@/hooks/use-travel-expense-file-upload", () => ({
-	useTravelExpenseFileUpload: (options: typeof upload.options) => {
+	useTravelExpenseFileUpload: (
+		options: NonNullable<typeof upload.options> & { maxFileSize?: number },
+	) => {
+		upload.maxFileSize = options.maxFileSize;
 		upload.options = options;
 		return {
 			addFile: upload.addFile,
@@ -81,7 +85,7 @@ function mount() {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	render(
 		<QueryClientProvider client={client}>
-			<TravelExpenseReportEditor reportId={reportId} />
+			<TravelExpenseReportEditor reportId={reportId} maxReceiptBytes={1024} />
 		</QueryClientProvider>,
 	);
 	return client;
@@ -184,9 +188,13 @@ describe("TravelExpenseReportEditor", () => {
 		expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1);
 	});
 
-	it("flags a malformed amount without sending it", async () => {
+	it("flags a malformed amount but still saves the valid edits", async () => {
+		reportActions.saveReceiptItemDraftAction.mockResolvedValueOnce({
+			success: true,
+			data: { status: "saved", item: item({ version: 4, description: "Hotel Kiel" }) },
+		});
 		mount();
-		await description();
+		fireEvent.change(await description(), { target: { value: "Hotel Kiel" } });
 		fireEvent.change(screen.getByRole("textbox", { name: "Amount on the receipt" }), {
 			target: { value: "12.345" },
 		});
@@ -198,9 +206,19 @@ describe("TravelExpenseReportEditor", () => {
 			),
 		).toBeTruthy();
 		expect(screen.getByRole("status").textContent).toBe(
-			"Not saved: correct the highlighted fields",
+			"Correct the highlighted fields to save them",
 		);
-		expect(reportActions.saveReceiptItemDraftAction).not.toHaveBeenCalled();
+		// The malformed amount keeps its last saved value; the description is saved.
+		expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+			expect.objectContaining({
+				expectedVersion: 3,
+				values: expect.objectContaining({ description: "Hotel Kiel", amount: "129.90" }),
+			}),
+		);
+		expect(screen.getByRole("textbox", { name: "Amount on the receipt" })).toHaveProperty(
+			"value",
+			"12.345",
+		);
 	});
 
 	it("separates company-paid costs from the reimbursement total", async () => {
@@ -224,6 +242,8 @@ describe("TravelExpenseReportEditor", () => {
 			target: { files: [new File(["%PDF"], "hotel.pdf", { type: "application/pdf" })] },
 		});
 		expect(upload.addFile).toHaveBeenCalledWith(expect.objectContaining({ name: "hotel.pdf" }));
+		// The uploader refuses files above the server limit before uploading.
+		expect(upload.maxFileSize).toBe(1024);
 
 		act(() => upload.options?.onError?.(new Error("Unsupported file type")));
 		expect(screen.getByText(/The receipt was not attached\. Unsupported file type/)).toBeTruthy();

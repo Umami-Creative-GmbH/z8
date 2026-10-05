@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { createLogger } from "@/lib/logger";
 import { deletePrivateObject, uploadPrivateObject } from "@/lib/storage/export-s3-client";
 import { deleteTusUpload, readUploadedReceipt } from "@/lib/travel-expenses/receipt-processing";
 import {
@@ -19,6 +20,7 @@ import {
 import { isOwnDraftReportItem } from "@/lib/travel-expenses/report-store";
 import { sanitizeTusFileKey } from "@/lib/upload/tus-ownership";
 
+const logger = createLogger("TravelExpenseReportReceiptUpload");
 const MAX_FILE_SIZE_BYTES = Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES);
 
 const requestSchema = z.object({
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
 				stored,
 				reason: "finalization_failed",
 			}).catch((markError) =>
-				console.error("Failed to record report receipt upload cleanup", markError),
+				logger.error({ error: markError }, "Failed to record report receipt upload cleanup"),
 			);
 			throw error;
 		}
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
 			await runTravelExpenseReceiptCleanup(db, {
 				deleteObject: deletePrivateObject,
 				only: { attachmentId: receiptId, organizationId: owner.organizationId },
-			}).catch((error) => console.error("Deferred report receipt upload cleanup", error));
+			}).catch((error) => logger.error({ error }, "Deferred report receipt upload cleanup"));
 			return NextResponse.json(
 				{ error: "This expense can no longer be edited, so the file was not attached." },
 				{ status: 409 },
@@ -137,7 +139,7 @@ export async function POST(request: NextRequest) {
 
 		return NextResponse.json({ success: true, receipt: finalized.receipt });
 	} catch (error) {
-		console.error("Report receipt upload processing failed", error);
+		logger.error({ error }, "Report receipt upload processing failed");
 		return NextResponse.json({ error: "Processing failed" }, { status: 500 });
 	}
 }

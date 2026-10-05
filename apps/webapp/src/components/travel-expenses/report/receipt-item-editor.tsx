@@ -4,7 +4,8 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { saveReceiptItemDraftAction } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -40,6 +41,7 @@ import {
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { DraftSaveStatus } from "./draft-save-status";
+import { formatMoney } from "./format";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { useDraftSaver } from "./use-draft-saver";
 
@@ -65,6 +67,17 @@ function toDraftInput(values: FormValues): ReceiptItemDraftInput {
 		input[key] = values[key].trim() === "" ? null : values[key];
 	}
 	return input;
+}
+
+/** Replaces malformed fields with their last saved values. */
+function withSavedValues(
+	values: ReceiptItemDraftInput,
+	errors: Partial<Record<FieldName, unknown>>,
+	saved: ReceiptItemDraftInput,
+): ReceiptItemDraftInput {
+	const merged = { ...values };
+	for (const field of Object.keys(errors) as FieldName[]) merged[field] = saved[field];
+	return merged;
 }
 
 function categoryLabel(t: Translate, category: string) {
@@ -124,14 +137,6 @@ function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, cur
 	}
 }
 
-function formatMoney(locale: string, amount: string, currency: string) {
-	try {
-		return new Intl.NumberFormat(locale, { style: "currency", currency }).format(Number(amount));
-	} catch {
-		return `${amount} ${currency}`;
-	}
-}
-
 /** Autosaving editor of one receipt expense and its receipt files. */
 export function ReceiptItemEditor({
 	reportId,
@@ -140,6 +145,7 @@ export function ReceiptItemEditor({
 	reimbursementCurrency,
 	onReceiptsChanged,
 	onSaved,
+	maxReceiptBytes,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -148,29 +154,47 @@ export function ReceiptItemEditor({
 	reimbursementCurrency: string;
 	onReceiptsChanged: () => void | Promise<void>;
 	onSaved?: (item: ReportItemView) => void;
+	/** The server's receipt size limit, so the uploader refuses larger files up front. */
+	maxReceiptBytes: number;
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const [uploading, setUploading] = useState(false);
 
+	// The last values the server confirmed; malformed fields fall back to them.
+	const lastSaved = useRef<ReceiptItemDraftInput>(toDraftInput(toFormValues(item)));
+
 	const { saver, state } = useDraftSaver<ReceiptItemDraftInput, ReportItemView>({
 		version: item.version,
 		isBusy: uploading,
+		onUnsavedAfterClose: () =>
+			toast.error(
+				t(
+					"travelExpenses.report.save.unsavedAfterClose",
+					"Your latest changes to an expense could not be saved. Open it again to check it.",
+				),
+			),
 		save: async (values, expectedVersion): Promise<DraftSaveOutcome<ReportItemView>> => {
-			// Malformed values are reported right away instead of round-tripping.
+			// Malformed values are flagged right away; the well-formed rest is
+			// still saved so no valid edit is lost while a field is being fixed.
 			const parsed = parseReceiptItemDraft(values);
-			if (!parsed.ok) return { status: "invalid", errors: parsed.errors };
+			const errors = parsed.ok ? null : parsed.errors;
+			const saveable = errors ? withSavedValues(values, errors, lastSaved.current) : values;
+			if (errors && !parseReceiptItemDraft(saveable).ok) return { status: "invalid", errors };
 			const result = await saveReceiptItemDraftAction({
 				reportId,
 				itemId: item.id,
 				expectedVersion,
-				values,
+				values: saveable,
 			});
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
+					lastSaved.current = toDraftInput(toFormValues(result.data.item));
 					onSaved?.(result.data.item);
-					return { status: "saved", version: result.data.item.version };
+					return errors
+						? { status: "invalid", errors, version: result.data.item.version }
+						: { status: "saved", version: result.data.item.version };
 				case "conflict":
 					return {
 						status: "conflict",
@@ -206,8 +230,13 @@ export function ReceiptItemEditor({
 				onUseTheirs={() => {
 					const theirs = state.conflict?.item;
 					saver.resolveConflict("use_theirs");
-					// Keeps the mount defaults so the next render does not undo the reset.
-					if (theirs) form.reset(toFormValues(theirs), { keepDefaultValues: true });
+					if (theirs) {
+						lastSaved.current = toDraftInput(toFormValues(theirs));
+						// Keeps the mount defaults so the next render does not undo the reset.
+						form.reset(toFormValues(theirs), { keepDefaultValues: true });
+					}
+					// The newer version may also have different receipts.
+					void onReceiptsChanged();
 				}}
 			/>
 
@@ -414,6 +443,7 @@ export function ReceiptItemEditor({
 				receipts={receipts}
 				onChanged={onReceiptsChanged}
 				onBusyChange={setUploading}
+				maxFileSize={maxReceiptBytes}
 			/>
 
 			<form.Subscribe selector={(formState) => formState.values}>

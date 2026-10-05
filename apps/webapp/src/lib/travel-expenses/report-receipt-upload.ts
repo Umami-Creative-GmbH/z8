@@ -9,7 +9,14 @@ import {
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "./attachment-validation";
 import type { StoredReceiptObject } from "./receipt-upload";
-import { lockOwnDraftReport, type ReportReceiptView, touchReport } from "./report-store";
+import {
+	lockOwnDraftReport,
+	type ReportOwner,
+	type ReportReceiptView,
+	receiptViewColumns,
+	toReceiptView,
+	touchReport,
+} from "./report-store";
 
 /**
  * Receipt files of report items (#600), coordinated exactly like legacy claim
@@ -157,19 +164,10 @@ export async function finalizeReportReceiptUpload(
 				uploadedBy: input.uploadedBy,
 				createdAt: at,
 			})
-			.returning({
-				id: travelExpenseReportReceipt.id,
-				fileName: travelExpenseReportReceipt.fileName,
-				mimeType: travelExpenseReportReceipt.mimeType,
-				sizeBytes: travelExpenseReportReceipt.sizeBytes,
-				createdAt: travelExpenseReportReceipt.createdAt,
-			});
+			.returning(receiptViewColumns);
 		if (!receipt) throw new Error("Failed to create report receipt record");
 		await touchReport(tx, { ...owner, userId: input.userId }, input.reportId, at);
-		return {
-			kind: "attached",
-			receipt: { ...receipt, createdAt: receipt.createdAt.toISOString() },
-		};
+		return { kind: "attached", receipt: toReceiptView(receipt) };
 	});
 }
 
@@ -229,13 +227,14 @@ export type RemoveReportReceiptResult =
 	| { kind: "not_draft" };
 
 /**
- * Detaches a receipt from a draft item. The stored object is handed to the
- * cleanup worker in the same transaction, so it is deleted durably even when
- * the immediate deletion attempt fails.
+ * Detaches a receipt from a draft item. The deletion trigger of
+ * `travel_expense_report_receipt` (migration 0113) hands the stored object to
+ * the cleanup worker in the same transaction, as it does for every cascade,
+ * so it is deleted durably even when the immediate deletion attempt fails.
  */
 export async function removeReportReceipt(
 	database: Database,
-	owner: { organizationId: string; employeeId: string; userId: string },
+	owner: ReportOwner,
 	input: { reportId: string; itemId: string; receiptId: string },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<RemoveReportReceiptResult> {
@@ -253,23 +252,19 @@ export async function removeReportReceipt(
 					eq(travelExpenseReportReceipt.organizationId, owner.organizationId),
 				),
 			)
-			.returning();
+			.returning({ id: travelExpenseReportReceipt.id });
 		if (!removed) return { kind: "not_found" };
-		await tx.insert(travelExpenseReceiptUpload).values({
-			id: removed.id,
-			organizationId: removed.organizationId,
-			reportId: removed.reportId,
-			itemId: removed.itemId,
-			uploadedBy: removed.uploadedBy,
-			storageKey: removed.storageKey,
-			storageBucket: removed.storageBucket,
-			storageVersionId: removed.storageVersionId,
-			status: "cleanup_required",
-			reason: "removed",
-			nextAttemptAt: at,
-			createdAt: at,
-			updatedAt: at,
-		});
+		// The trigger stamps database time; align it with the clock the worker uses.
+		await tx
+			.update(travelExpenseReceiptUpload)
+			.set({ nextAttemptAt: at, createdAt: at, updatedAt: at })
+			.where(
+				and(
+					eq(travelExpenseReceiptUpload.id, removed.id),
+					eq(travelExpenseReceiptUpload.organizationId, owner.organizationId),
+					eq(travelExpenseReceiptUpload.status, "cleanup_required"),
+				),
+			);
 		await touchReport(tx, owner, input.reportId, at);
 		return { kind: "removed", receiptId: removed.id };
 	});

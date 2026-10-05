@@ -77,4 +77,23 @@ ALTER TABLE "travel_expense_receipt_upload" ADD CONSTRAINT "travel_expense_recei
 			OR ("travel_expense_receipt_upload"."status" = 'cleanup_required'
 				AND "travel_expense_receipt_upload"."reason" IN ('claim_not_draft', 'report_not_draft', 'finalization_failed', 'abandoned', 'removed')));--> statement-breakpoint
 ALTER TABLE "travel_expense_receipt_upload" ADD CONSTRAINT "travel_expense_receipt_upload_owner_check" CHECK (("travel_expense_receipt_upload"."claim_id" IS NOT NULL AND "travel_expense_receipt_upload"."report_id" IS NULL AND "travel_expense_receipt_upload"."item_id" IS NULL)
-			OR ("travel_expense_receipt_upload"."claim_id" IS NULL AND "travel_expense_receipt_upload"."report_id" IS NOT NULL AND "travel_expense_receipt_upload"."item_id" IS NOT NULL));
+			OR ("travel_expense_receipt_upload"."claim_id" IS NULL AND "travel_expense_receipt_upload"."report_id" IS NOT NULL AND "travel_expense_receipt_upload"."item_id" IS NOT NULL));--> statement-breakpoint
+-- Every deleted report receipt (removal, or a cascade from its item, report,
+-- employee or organization) hands its stored object to the receipt cleanup
+-- worker. The staging row is kept by value, so it outlives the deleted owner.
+CREATE OR REPLACE FUNCTION "travel_expense_report_receipt_enqueue_cleanup"() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+	INSERT INTO "travel_expense_receipt_upload" (
+		"id", "organization_id", "report_id", "item_id", "uploaded_by", "storage_key",
+		"storage_bucket", "storage_version_id", "status", "reason", "next_attempt_at",
+		"created_at", "updated_at"
+	) VALUES (
+		OLD."id", OLD."organization_id", OLD."report_id", OLD."item_id", OLD."uploaded_by",
+		OLD."storage_key", OLD."storage_bucket", OLD."storage_version_id", 'cleanup_required',
+		'removed', now(), now(), now()
+	)
+	ON CONFLICT DO NOTHING;
+	RETURN OLD;
+END;
+$$;--> statement-breakpoint
+CREATE TRIGGER "travel_expense_report_receipt_cleanup" AFTER DELETE ON "travel_expense_report_receipt" FOR EACH ROW EXECUTE FUNCTION "travel_expense_report_receipt_enqueue_cleanup"();

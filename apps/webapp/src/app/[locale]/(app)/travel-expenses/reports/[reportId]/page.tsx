@@ -3,6 +3,7 @@ import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { TravelExpenseReportEditor } from "@/components/travel-expenses/report/travel-expense-report-editor";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
+import { env } from "@/env";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
@@ -22,7 +23,10 @@ async function ReportContent({ params }: { params: Promise<{ reportId: string }>
 			<h1 className="text-2xl font-semibold tracking-tight">
 				{t("travelExpenses.report.title", "Expense")}
 			</h1>
-			<TravelExpenseReportEditor reportId={reportId} />
+			<TravelExpenseReportEditor
+				reportId={reportId}
+				maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+			/>
 		</div>
 	);
 }

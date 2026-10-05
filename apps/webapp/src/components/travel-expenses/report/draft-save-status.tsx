@@ -91,7 +91,7 @@ export function DraftSaveStatus<Item>({
 		},
 		invalid: {
 			icon: <IconAlertTriangle aria-hidden="true" className="size-4 text-destructive" />,
-			label: t("travelExpenses.report.save.invalid", "Not saved: correct the highlighted fields"),
+			label: t("travelExpenses.report.save.invalid", "Correct the highlighted fields to save them"),
 		},
 	}[state.status];
 

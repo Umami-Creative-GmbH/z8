@@ -8,25 +8,9 @@ import { getMyDraftTravelExpenseReports } from "@/app/[locale]/(app)/travel-expe
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
-
-function formatPlainDate(locale: string, value: string) {
-	try {
-		return parsePlainDate(value).toLocaleString(locale, { dateStyle: "medium" });
-	} catch {
-		return value;
-	}
-}
-
-function formatMoney(locale: string, amount: string, currency: string) {
-	try {
-		return new Intl.NumberFormat(locale, { style: "currency", currency }).format(Number(amount));
-	} catch {
-		return `${amount} ${currency}`;
-	}
-}
+import { formatMoney, formatPlainDate } from "./format";
 
 /** The employee's unfinished expense reports, so a saved draft can be resumed. */
 export function TravelExpenseReportDrafts() {

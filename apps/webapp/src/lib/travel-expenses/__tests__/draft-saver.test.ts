@@ -160,6 +160,19 @@ describe("createDraftSaver", () => {
 		expect(calls).toHaveLength(2);
 	});
 
+	it("bases the next save on the version a partial save of the valid fields produced", async () => {
+		const { saver, calls, pending } = setup();
+		saver.change({ description: "x" });
+		await vi.advanceTimersByTimeAsync(500);
+		pending[0]!.resolve({ status: "invalid", errors: { amount: "invalid_amount" }, version: 2 });
+		await vi.advanceTimersByTimeAsync(0);
+		expect(saver.getState()).toMatchObject({ status: "invalid", version: 2 });
+
+		saver.change({ description: "y" });
+		await vi.advanceTimersByTimeAsync(500);
+		expect(calls[1]).toEqual({ values: { description: "y" }, version: 2 });
+	});
+
 	it("saves pending edits immediately on flush", async () => {
 		const { saver, calls } = setup();
 		saver.change({ description: "Leaving" });

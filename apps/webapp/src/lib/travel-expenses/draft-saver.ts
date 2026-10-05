@@ -10,7 +10,11 @@ export type DraftSaveOutcome<Item> =
 	| { status: "saved"; version: number }
 	/** The draft changed elsewhere; `item` is the newer saved state. */
 	| { status: "conflict"; version: number; item: Item }
-	| { status: "invalid"; errors: Record<string, string> }
+	/**
+	 * Some values are malformed. When the well-formed rest was still saved,
+	 * `version` is the version that save produced.
+	 */
+	| { status: "invalid"; errors: Record<string, string>; version?: number }
 	| { status: "failed"; error: string };
 
 export type DraftSaverStatus =
@@ -106,7 +110,11 @@ export function createDraftSaver<Values, Item>(options: {
 					});
 					return;
 				case "invalid":
-					setState({ status: "invalid", version, fieldErrors: outcome.errors });
+					setState({
+						status: "invalid",
+						version: outcome.version ?? version,
+						fieldErrors: outcome.errors,
+					});
 					if (dirty) schedule(options.delayMs);
 					return;
 				case "failed":

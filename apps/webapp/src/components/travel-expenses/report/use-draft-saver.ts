@@ -19,10 +19,14 @@ export function useDraftSaver<Values, Item>(options: {
 	save: (values: Values, expectedVersion: number) => Promise<DraftSaveOutcome<Item>>;
 	/** Extra work that must finish before leaving, e.g. a receipt upload. */
 	isBusy?: boolean;
+	/** Reports edits that could not be saved after the editor was closed. */
+	onUnsavedAfterClose: () => void;
 }) {
 	const save = useRef(options.save);
+	const onLostAfterUnmount = useRef(options.onUnsavedAfterClose);
 	useLayoutEffect(() => {
 		save.current = options.save;
+		onLostAfterUnmount.current = options.onUnsavedAfterClose;
 	});
 	const [saver] = useState<DraftSaver<Values, Item>>(() =>
 		createDraftSaver<Values, Item>({
@@ -40,8 +44,12 @@ export function useDraftSaver<Values, Item>(options: {
 		document.addEventListener("visibilitychange", flushWhenHidden);
 		return () => {
 			document.removeEventListener("visibilitychange", flushWhenHidden);
-			// Starts any pending save before the editor goes away.
-			void saver.flush();
+			// Starts any pending save before the editor goes away. With no editor
+			// left to show its outcome, a failure is reported as a notice.
+			void saver.flush().then(() => {
+				const { status } = saver.getState();
+				if (status === "failed" || status === "conflict") onLostAfterUnmount.current();
+			});
 		};
 	}, [saver]);
 

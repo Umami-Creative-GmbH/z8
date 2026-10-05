@@ -91,6 +91,7 @@ const { finalizeReportReceiptUpload, stageReportReceiptUpload } = await import(
 );
 const { runTravelExpenseReceiptCleanup } = await import("./receipt-upload");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
+const { systemClock } = await import("@/lib/datetime/temporal-core");
 
 const ids = {
 	requester: "e6000000-0000-4000-8000-000000000001",
@@ -101,10 +102,11 @@ const admin = integrationAdminPool();
 const pdfBytes = Buffer.from("%PDF-1.4\n% hotel receipt\n%%EOF");
 
 async function cleanup() {
+	// Organization first: its cascades record receipt cleanup work, removed next.
+	await admin.query("delete from organization where id in ('t600-org', 't600-foreign')");
 	await admin.query(
 		"delete from travel_expense_receipt_upload where organization_id like 't600-%'",
 	);
-	await admin.query("delete from organization where id in ('t600-org', 't600-foreign')");
 	await admin.query('delete from "user" where id like $1', ["t600-%"]);
 }
 
@@ -486,6 +488,34 @@ describe("standalone receipt report drafts (#600)", () => {
 			[receiptId],
 		);
 		expect(rows[0]).toEqual({ status: "cleanup_required", reason: "report_not_draft" });
+	});
+
+	it("records cleanup work for receipts deleted by an owner cascade", async () => {
+		const report = await createReport();
+		const body = await (await upload(report)).json();
+		const { rows } = await admin.query(
+			"select storage_key from travel_expense_report_receipt where id = $1",
+			[body.receipt.id],
+		);
+		// Deleting the report cascades through its item and receipt rows.
+		await admin.query("delete from travel_expense_report where id = $1", [report.id]);
+
+		const staged = await admin.query(
+			"select status, reason, storage_key from travel_expense_receipt_upload where id = $1",
+			[body.receipt.id],
+		);
+		expect(staged.rows).toEqual([
+			{ status: "cleanup_required", reason: "removed", storage_key: rows[0].storage_key },
+		]);
+		const result = await runTravelExpenseReceiptCleanup(db, {
+			// The trigger stamps database time, which may run slightly ahead.
+			now: systemClock.nowInstant().add({ minutes: 5 }),
+			deleteObject: async (input) => {
+				harness.deleted.push(input.key);
+			},
+		});
+		expect(result).toMatchObject({ claimed: 1, deleted: 1 });
+		expect(harness.deleted).toEqual([rows[0].storage_key]);
 	});
 
 	it("never deletes a stored object that a report receipt references", async () => {

@@ -16,7 +16,13 @@ import { ReceiptItemEditor } from "./receipt-item-editor";
  * once from the first load; later loads (receipt changes, refetches) only
  * refresh receipts, so they never discard what the employee is typing.
  */
-export function TravelExpenseReportEditor({ reportId }: { reportId: string }) {
+export function TravelExpenseReportEditor({
+	reportId,
+	maxReceiptBytes,
+}: {
+	reportId: string;
+	maxReceiptBytes: number;
+}) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const queryKey = queryKeys.travelExpenses.report(reportId);
@@ -67,6 +73,7 @@ export function TravelExpenseReportEditor({ reportId }: { reportId: string }) {
 							item={item}
 							receipts={item.receipts}
 							reimbursementCurrency={data.reimbursementCurrency}
+							maxReceiptBytes={maxReceiptBytes}
 							onReceiptsChanged={() => queryClient.invalidateQueries({ queryKey })}
 							onSaved={() => {
 								void queryClient.invalidateQueries({

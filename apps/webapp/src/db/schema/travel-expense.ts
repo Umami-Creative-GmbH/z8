@@ -13,6 +13,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { ExpensePayer, ReceiptExpenseCategory } from "@/lib/travel-expenses/receipt-report";
 import { currentTimestamp } from "./timestamp";
 
 import { organization, user } from "../auth-schema";
@@ -180,11 +181,11 @@ export const travelExpenseReportItem = pgTable(
 		type: text("type").$type<TravelExpenseReportItemType>().notNull(),
 		position: integer("position").notNull(),
 		expenseDate: date("expense_date"),
-		category: text("category"),
+		category: text("category").$type<ReceiptExpenseCategory>(),
 		description: text("description"),
 		originalAmount: decimal("original_amount", { precision: 12, scale: 2 }),
 		originalCurrency: text("original_currency"),
-		paidBy: text("paid_by"),
+		paidBy: text("paid_by").$type<ExpensePayer>(),
 		accountingReference: text("accounting_reference"),
 		version: integer("version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
