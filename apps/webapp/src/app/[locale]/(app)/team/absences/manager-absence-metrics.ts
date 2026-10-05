@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { calculateBusinessDaysWithHalfDays, getYearRange } from "@/lib/absences/date-utils";
-import type { AbsenceWithCategory, DayPeriod } from "@/lib/absences/types";
+import type { AbsenceWithCategory, DayPeriod, Holiday } from "@/lib/absences/types";
 import { calculateVacationBalance } from "@/lib/absences/vacation-calculator";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 
@@ -29,6 +29,7 @@ export function calculateManagerAbsenceMetrics(input: {
 	allowance: VacationAllowanceData | null;
 	employeeAllowance: EmployeeAllowanceData | null;
 	absences: AbsenceWithCategory[];
+	holidays?: Holiday[];
 }): ManagerAbsenceMetrics {
 	const { start, end } = getYearRange(input.year);
 	const sickDays = input.absences.reduce((total, absence) => {
@@ -36,7 +37,7 @@ export function calculateManagerAbsenceMetrics(input: {
 			return total;
 		}
 
-		return total + calculateSelectedYearAbsenceDays(absence, start, end);
+		return total + calculateSelectedYearAbsenceDays(absence, start, end, input.holidays ?? []);
 	}, 0);
 
 	if (!input.allowance) {
@@ -61,14 +62,14 @@ export function calculateManagerAbsenceMetrics(input: {
 			return total;
 		}
 
-		return total + calculateSelectedYearAbsenceDays(absence, start, end);
+		return total + calculateSelectedYearAbsenceDays(absence, start, end, input.holidays ?? []);
 	}, 0);
 	const pendingVacationDays = input.absences.reduce((total, absence) => {
 		if (absence.status !== "pending" || !absence.category.countsAgainstVacation) {
 			return total;
 		}
 
-		return total + calculateSelectedYearAbsenceDays(absence, start, end);
+		return total + calculateSelectedYearAbsenceDays(absence, start, end, input.holidays ?? []);
 	}, 0);
 
 	return {
@@ -84,8 +85,11 @@ function calculateSelectedYearAbsenceDays(
 	absence: AbsenceWithCategory,
 	yearStart: DateTime,
 	yearEnd: DateTime,
+	holidays: Holiday[],
 ): number {
-	const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
+	const absenceStart = DateTime.fromISO(absence.startDate, {
+		zone: "utc",
+	}).startOf("day");
 	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
 
 	if (absenceEnd < yearStart || absenceStart > yearEnd) {
@@ -104,5 +108,5 @@ function calculateSelectedYearAbsenceDays(
 	const startPeriod: DayPeriod = absenceStart < yearStart ? "am" : absence.startPeriod;
 	const endPeriod: DayPeriod = absenceEnd > yearEnd ? "pm" : absence.endPeriod;
 
-	return calculateBusinessDaysWithHalfDays(startDate, startPeriod, endDate, endPeriod, []);
+	return calculateBusinessDaysWithHalfDays(startDate, startPeriod, endDate, endPeriod, holidays);
 }

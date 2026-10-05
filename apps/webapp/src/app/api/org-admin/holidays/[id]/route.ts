@@ -6,16 +6,14 @@ import { holiday, holidayCategory } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { createYearlyHolidayRecurrenceRule } from "@/lib/holidays/recurrence";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 
 /**
  * PATCH /api/org-admin/holidays/[id]
  * Update a holiday
  */
-export async function PATCH(
-	request: NextRequest,
-	{ params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 	await connection();
 	try {
 		const { id } = await params;
@@ -28,10 +26,7 @@ export async function PATCH(
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		// Check CASL permissions
@@ -79,20 +74,43 @@ export async function PATCH(
 				if (!existingCategory) return "invalid_category" as const;
 			}
 
+			const effectiveStart =
+				startDate !== undefined ? new Date(startDate) : existingHoliday.startDate;
+			const effectiveEnd = endDate !== undefined ? new Date(endDate) : existingHoliday.endDate;
+			const effectiveRecurrenceEnd =
+				recurrenceEndDate !== undefined
+					? recurrenceEndDate
+						? new Date(recurrenceEndDate)
+						: null
+					: existingHoliday.recurrenceEndDate;
+			if (
+				!Number.isFinite(effectiveStart?.getTime()) ||
+				!Number.isFinite(effectiveEnd?.getTime()) ||
+				effectiveEnd < effectiveStart ||
+				(effectiveRecurrenceEnd && !Number.isFinite(effectiveRecurrenceEnd.getTime()))
+			) {
+				return "invalid_dates" as const;
+			}
+			const effectiveType = recurrenceType ?? existingHoliday.recurrenceType;
+			const normalizedRule =
+				effectiveType === "yearly"
+					? createYearlyHolidayRecurrenceRule(effectiveStart)
+					: effectiveType === "none"
+						? null
+						: (recurrenceRule ?? existingHoliday.recurrenceRule);
+
 			const [updated] = await tx
 				.update(holiday)
 				.set({
 					...(name && { name }),
 					...(description !== undefined && { description }),
 					...(categoryId && { categoryId }),
-					...(startDate && { startDate: new Date(startDate) }),
-					...(endDate && { endDate: new Date(endDate) }),
+					...(startDate !== undefined && { startDate: effectiveStart }),
+					...(endDate !== undefined && { endDate: effectiveEnd }),
 					...(recurrenceType && { recurrenceType }),
-					...(recurrenceRule !== undefined && { recurrenceRule }),
+					recurrenceRule: normalizedRule,
 					...(recurrenceEndDate !== undefined && {
-						recurrenceEndDate: recurrenceEndDate
-							? new Date(recurrenceEndDate)
-							: null,
+						recurrenceEndDate: effectiveRecurrenceEnd,
 					}),
 					...(isActive !== undefined && { isActive }),
 					updatedBy: session.user.id,
@@ -105,20 +123,17 @@ export async function PATCH(
 		if (result === "holiday_not_found") {
 			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
 		}
+		if (result === "invalid_dates") {
+			return NextResponse.json({ error: "Invalid holiday dates" }, { status: 400 });
+		}
 		if (result === "invalid_category") {
-			return NextResponse.json(
-				{ error: "Invalid holiday category" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Invalid holiday category" }, { status: 400 });
 		}
 
 		return NextResponse.json({ holiday: result.holiday });
 	} catch (error) {
 		console.error("Error updating holiday:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -142,10 +157,7 @@ export async function DELETE(
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json(
-				{ error: "No active organization" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "No active organization" }, { status: 400 });
 		}
 
 		// Check CASL permissions
@@ -158,14 +170,18 @@ export async function DELETE(
 
 		// Soft delete by setting isActive to false, under the configuration guard
 		// that manual submissions read organization holidays under.
-		const deletedHoliday = await withOrganizationConfigurationMutation(db, activeOrgId, async (tx) => {
-			const [deleted] = await tx
-				.update(holiday)
-				.set({ isActive: false, updatedBy: session.user.id })
-				.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
-				.returning({ id: holiday.id });
-			return deleted;
-		});
+		const deletedHoliday = await withOrganizationConfigurationMutation(
+			db,
+			activeOrgId,
+			async (tx) => {
+				const [deleted] = await tx
+					.update(holiday)
+					.set({ isActive: false, updatedBy: session.user.id })
+					.where(and(eq(holiday.id, id), eq(holiday.organizationId, activeOrgId)))
+					.returning({ id: holiday.id });
+				return deleted;
+			},
+		);
 		if (!deletedHoliday) {
 			return NextResponse.json({ error: "Holiday not found" }, { status: 404 });
 		}
@@ -173,9 +189,6 @@ export async function DELETE(
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting holiday:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

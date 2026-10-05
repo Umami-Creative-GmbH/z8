@@ -24,6 +24,7 @@ import {
 	getBlockingOverlapMessage,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
+import { getVacationHolidays } from "@/lib/absences/vacation-holidays";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
@@ -173,7 +174,11 @@ export async function getManagerAbsenceEmployees(
 		};
 	} catch (error) {
 		logger.error({ error }, "Failed to list manager absence employees");
-		return { success: false, error: "Failed to load employees", code: "UNKNOWN_ERROR" };
+		return {
+			success: false,
+			error: "Failed to load employees",
+			code: "UNKNOWN_ERROR",
+		};
 	}
 }
 
@@ -277,7 +282,11 @@ export async function getManagerAbsenceCalendar(params: {
 		};
 	} catch (error) {
 		logger.error({ error }, "Failed to load manager absence calendar");
-		return { success: false, error: "Failed to load absence calendar", code: "UNKNOWN_ERROR" };
+		return {
+			success: false,
+			error: "Failed to load absence calendar",
+			code: "UNKNOWN_ERROR",
+		};
 	}
 }
 
@@ -317,7 +326,11 @@ export async function recordAbsenceForEmployee(
 		});
 
 		if (!category) {
-			return { success: false, error: "Invalid absence category", code: "NotFoundError" };
+			return {
+				success: false,
+				error: "Invalid absence category",
+				code: "NotFoundError",
+			};
 		}
 
 		const sickDetailError = validateManagerAbsenceSickDetail({
@@ -325,7 +338,11 @@ export async function recordAbsenceForEmployee(
 			sickDetail: input.sickDetail,
 		});
 		if (sickDetailError) {
-			return { success: false, error: sickDetailError, code: "ValidationError" };
+			return {
+				success: false,
+				error: sickDetailError,
+				code: "ValidationError",
+			};
 		}
 
 		const transactionResult = await db.transaction(async (tx) => {
@@ -381,7 +398,11 @@ export async function recordAbsenceForEmployee(
 							sickEndDate: normalizedInput.endDate,
 							updatedBy: actor.userId,
 						})
-					: { updatedAbsenceIds: [], createdAbsenceIds: [], deletedAbsenceIds: [] };
+					: {
+							updatedAbsenceIds: [],
+							createdAbsenceIds: [],
+							deletedAbsenceIds: [],
+						};
 
 			const entryDuration = toAbsenceEntryDurationFields(normalizedInput);
 			const [absence] = await tx
@@ -437,11 +458,19 @@ export async function recordAbsenceForEmployee(
 					),
 				);
 
-			return { success: true as const, absenceId: absence.id, vacationOverrideSummary };
+			return {
+				success: true as const,
+				absenceId: absence.id,
+				vacationOverrideSummary,
+			};
 		});
 
 		if (!transactionResult.success) {
-			return { success: false, error: transactionResult.error, code: "ConflictError" };
+			return {
+				success: false,
+				error: transactionResult.error,
+				code: "ConflictError",
+			};
 		}
 
 		void addCalendarSyncJob({
@@ -500,7 +529,11 @@ export async function recordAbsenceForEmployee(
 		return { success: true, data: { absenceId: transactionResult.absenceId } };
 	} catch (error) {
 		logger.error({ error }, "Failed to record absence for employee");
-		return { success: false, error: "Failed to record absence", code: "UNKNOWN_ERROR" };
+		return {
+			success: false,
+			error: "Failed to record absence",
+			code: "UNKNOWN_ERROR",
+		};
 	}
 }
 
@@ -510,7 +543,11 @@ async function resolveActor(): Promise<ServerActionResult<ManagerAbsenceActor>> 
 	const activeOrganizationId = session?.session.activeOrganizationId;
 
 	if (!session?.user || !activeOrganizationId) {
-		return { success: false, error: "Authentication required", code: "AuthenticationError" };
+		return {
+			success: false,
+			error: "Authentication required",
+			code: "AuthenticationError",
+		};
 	}
 
 	const actor = (await db.query.employee.findFirst({
@@ -523,11 +560,19 @@ async function resolveActor(): Promise<ServerActionResult<ManagerAbsenceActor>> 
 	})) as ActorEmployee | undefined;
 
 	if (!actor) {
-		return { success: false, error: "Employee profile not found", code: "NotFoundError" };
+		return {
+			success: false,
+			error: "Employee profile not found",
+			code: "NotFoundError",
+		};
 	}
 
 	if (!canUseManagerAbsencePage(actor.role)) {
-		return { success: false, error: "Not authorized", code: "AuthorizationError" };
+		return {
+			success: false,
+			error: "Not authorized",
+			code: "AuthorizationError",
+		};
 	}
 
 	return {
@@ -697,7 +742,7 @@ async function addMetricsToRows(
 	const employeeIds = rows.map((row) => row.id);
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
-	const [allowance, employeeAllowances, absences] = await Promise.all([
+	const [allowance, employeeAllowances, absences, employeeHolidays] = await Promise.all([
 		db.query.vacationAllowance.findFirst({
 			where: and(
 				eq(vacationAllowance.organizationId, organizationId),
@@ -721,8 +766,23 @@ async function addMetricsToRows(
 			),
 			with: { category: true },
 		}),
+		Promise.all(
+			employeeIds.map(
+				async (employeeId) =>
+					[
+						employeeId,
+						await getVacationHolidays({
+							organizationId,
+							employeeId,
+							startDate: yearStart,
+							endDate: yearEnd,
+						}),
+					] as const,
+			),
+		),
 	]);
 
+	const holidaysByEmployeeId = new Map(employeeHolidays);
 	const allowancesByEmployeeId = new Map(
 		employeeAllowances.map((employeeAllowance) => [
 			employeeAllowance.employeeId,
@@ -749,6 +809,7 @@ async function addMetricsToRows(
 				: null,
 			employeeAllowance: allowancesByEmployeeId.get(row.id) ?? null,
 			absences: absencesByEmployeeId.get(row.id) ?? [],
+			holidays: holidaysByEmployeeId.get(row.id) ?? [],
 		});
 
 		return {
@@ -854,12 +915,18 @@ async function notifyEmployeeOfManagerRecordedAbsence(params: {
 }) {
 	try {
 		const { onAbsenceRecordedByManager } = await import("@/lib/notifications/triggers");
+		const holidays = await getVacationHolidays({
+			organizationId: params.actor.organizationId,
+			employeeId: params.target.id,
+			startDate: params.input.startDate,
+			endDate: params.input.endDate,
+		});
 		const days = calculateBusinessDaysWithHalfDays(
 			params.input.startDate,
 			params.input.startPeriod,
 			params.input.endDate,
 			params.input.endPeriod,
-			[],
+			holidays,
 		);
 
 		await onAbsenceRecordedByManager({

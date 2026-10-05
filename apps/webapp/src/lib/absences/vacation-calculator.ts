@@ -5,7 +5,7 @@ import {
 	calculateCarryoverExpiryDate,
 	getYearRange,
 } from "./date-utils";
-import type { AbsenceWithCategory, VacationBalance } from "./types";
+import type { AbsenceWithCategory, Holiday, VacationBalance } from "./types";
 
 interface VacationAllowanceData {
 	defaultAnnualDays: string; // decimal from DB
@@ -32,6 +32,7 @@ export function calculateVacationBalance({
 	organizationAllowance,
 	employeeAllowance,
 	absences,
+	holidays = [],
 	currentDate,
 	year,
 	adjustmentTotal = 0,
@@ -40,6 +41,7 @@ export function calculateVacationBalance({
 	organizationAllowance: VacationAllowanceData;
 	employeeAllowance?: EmployeeAllowanceData | null;
 	absences: AbsenceWithCategory[];
+	holidays?: Holiday[];
 	currentDate: Date | DateTime;
 	year: number;
 	adjustmentTotal?: number; // Sum of all vacation adjustment events
@@ -105,7 +107,7 @@ export function calculateVacationBalance({
 				clippedAbsence.startPeriod,
 				clippedAbsence.endDate,
 				clippedAbsence.endPeriod,
-				[], // holidays not applied at this level - they're handled upstream
+				holidays,
 			);
 			return sum + days;
 		}, 0);
@@ -129,7 +131,7 @@ export function calculateVacationBalance({
 				clippedAbsence.startPeriod,
 				clippedAbsence.endDate,
 				clippedAbsence.endPeriod,
-				[], // holidays not applied at this level - they're handled upstream
+				holidays,
 			);
 			return sum + days;
 		}, 0);
@@ -153,7 +155,9 @@ function absenceOverlapsRange(
 	rangeStart: DateTime,
 	rangeEnd: DateTime,
 ) {
-	const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
+	const absenceStart = DateTime.fromISO(absence.startDate, {
+		zone: "utc",
+	}).startOf("day");
 	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
 
 	return absenceStart <= rangeEnd && absenceEnd >= rangeStart;
@@ -164,7 +168,9 @@ function clipAbsenceToRange(
 	rangeStart: DateTime,
 	rangeEnd: DateTime,
 ): Pick<AbsenceWithCategory, "startDate" | "startPeriod" | "endDate" | "endPeriod"> | null {
-	const absenceStart = DateTime.fromISO(absence.startDate, { zone: "utc" }).startOf("day");
+	const absenceStart = DateTime.fromISO(absence.startDate, {
+		zone: "utc",
+	}).startOf("day");
 	const absenceEnd = DateTime.fromISO(absence.endDate, { zone: "utc" }).endOf("day");
 	const clippedStart = absenceStart < rangeStart ? rangeStart : absenceStart;
 	const clippedEnd = absenceEnd > rangeEnd ? rangeEnd : absenceEnd;

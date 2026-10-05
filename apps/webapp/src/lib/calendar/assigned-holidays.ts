@@ -1,5 +1,6 @@
 import { and, eq, gte, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
+import type { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import {
 	employee,
@@ -11,6 +12,7 @@ import {
 	holidayPresetAssignment,
 	type holidayPresetHoliday,
 } from "@/db/schema";
+import { holidayCalendarDate } from "@/lib/holidays/recurrence";
 import type { DailyWorkRequirements, HolidayEvent } from "./types";
 
 export interface AssignedHolidayRange {
@@ -220,20 +222,6 @@ function toAssignedHolidayRange(
 	};
 }
 
-function parseYearlyRecurrenceRule(rule: string | null): { month: number; day: number } | null {
-	if (!rule) return null;
-
-	try {
-		const parsed = JSON.parse(rule) as { month?: unknown; day?: unknown };
-		const { month, day } = parsed;
-		if (typeof month !== "number" || typeof day !== "number") return null;
-		if (!Number.isInteger(month) || !Number.isInteger(day)) return null;
-		return { month, day };
-	} catch {
-		return null;
-	}
-}
-
 export function expandCustomAssignedHoliday(
 	holiday: CustomAssignedHoliday,
 	requestedRange: RequestedDateRange,
@@ -267,10 +255,10 @@ export function expandCustomAssignedHoliday(
 
 	if (holiday.recurrenceType !== "yearly") return [];
 
-	const rule = parseYearlyRecurrenceRule(holiday.recurrenceRule);
-	if (!rule) return [];
+	// The saved start date is authoritative, including for legacy malformed rules.
+	const originalDate = holidayCalendarDate(holiday.startDate);
 
-	const durationDays = Math.floor(originalEnd.diff(originalStart, "days").days) + 1;
+	const durationDays = originalDate.until(holidayCalendarDate(holiday.endDate)).days + 1;
 	const recurrenceEnd = holiday.recurrenceEndDate
 		? toUtcDay(holiday.recurrenceEndDate).endOf("day")
 		: null;
@@ -278,14 +266,22 @@ export function expandCustomAssignedHoliday(
 	const firstExpansionYear = Math.max(requestedStart.year - 1, originalStart.year);
 
 	for (let year = firstExpansionYear; year <= requestedEnd.year; year++) {
-		const start = DateTime.utc(year, rule.month, rule.day).startOf("day");
-		if (!start.isValid) continue;
-		if (recurrenceEnd && start > recurrenceEnd) continue;
-
-		const end = start.plus({ days: durationDays - 1 }).endOf("day");
+		let occurrence: Temporal.PlainDate;
+		try {
+			occurrence = originalDate.with({ year }, { overflow: "reject" });
+		} catch {
+			continue; // February 29 has no occurrence in a non-leap year.
+		}
+		const start = occurrence.toZonedDateTime("UTC").toInstant();
+		if (recurrenceEnd && start.epochMilliseconds > recurrenceEnd.toMillis()) continue;
+		const end = occurrence
+			.add({ days: durationDays })
+			.toZonedDateTime("UTC")
+			.toInstant()
+			.subtract({ milliseconds: 1 });
 		const assignedHoliday = toAssignedHolidayRange(holiday, {
-			startDate: start.toJSDate(),
-			endDate: end.toJSDate(),
+			startDate: new Date(start.epochMilliseconds),
+			endDate: new Date(end.epochMilliseconds),
 		});
 		if (overlapsRange(assignedHoliday, requestedRange.startDate, requestedRange.endDate)) {
 			expanded.push(assignedHoliday);
@@ -454,7 +450,13 @@ export async function getAssignedHolidaysForEmployee(params: {
 		),
 		with: {
 			preset: {
-				columns: { id: true, name: true, organizationId: true, color: true, isActive: true },
+				columns: {
+					id: true,
+					name: true,
+					organizationId: true,
+					color: true,
+					isActive: true,
+				},
 				with: {
 					holidays: {
 						columns: {

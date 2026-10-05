@@ -93,7 +93,10 @@ vi.mock("@/lib/authorization", () => ({
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
-	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+		strings,
+		values,
+	}),
 }));
 
 const { PATCH } = await import("./route");
@@ -119,6 +122,34 @@ function expectAndPredicateIncludes(
 }
 
 describe("PATCH /api/org-admin/holidays/[id]", () => {
+	it.each([
+		{ name: "Weihnachten" },
+		{
+			startDate: "2026-12-24T00:00:00Z",
+			recurrenceRule: JSON.stringify({ month: 2, day: 24 }),
+		},
+	])("repairs the yearly rule when saving an existing holiday: %s", async (body) => {
+		mockState.limit.mockResolvedValueOnce([
+			{
+				id: "holiday-1",
+				organizationId: "org-1",
+				startDate: new Date("2026-12-24T00:00:00Z"),
+				endDate: new Date("2026-12-24T00:00:00Z"),
+				recurrenceType: "yearly",
+				recurrenceRule: JSON.stringify({ month: 2, day: 24 }),
+			},
+		]);
+		const response = await PATCH(createPatchRequest(body), {
+			params: Promise.resolve({ id: "holiday-1" }),
+		});
+		expect(response.status).toBe(200);
+		expect(mockState.set).toHaveBeenCalledWith(
+			expect.objectContaining({
+				recurrenceRule: JSON.stringify({ month: 12, day: 24 }),
+			}),
+		);
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.getAbility.mockResolvedValue({
@@ -142,7 +173,9 @@ describe("PATCH /api/org-admin/holidays/[id]", () => {
 		});
 
 		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({ error: "Invalid holiday category" });
+		expect(await response.json()).toEqual({
+			error: "Invalid holiday category",
+		});
 		expectAndPredicateIncludes(mockState.where.mock.calls[1]?.[0], [
 			{ column: "holidayCategory.id", value: "category-foreign" },
 			{ column: "holidayCategory.organizationId", value: "org-1" },

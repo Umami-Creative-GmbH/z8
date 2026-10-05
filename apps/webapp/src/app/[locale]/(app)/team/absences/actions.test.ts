@@ -841,3 +841,56 @@ describe("manager absence metrics", () => {
 		});
 	});
 });
+
+describe("manager vacation holiday recovery", () => {
+	it.each(["approved", "pending"] as const)(
+		"excludes Silvester from existing %s requests",
+		(status) => {
+			const metrics = calculateManagerAbsenceMetrics({
+				year: 2026,
+				allowance: {
+					defaultAnnualDays: "30",
+					allowCarryover: false,
+					maxCarryoverDays: null,
+					carryoverExpiryMonths: null,
+				},
+				employeeAllowance: null,
+				absences: [
+					{
+						id: "existing",
+						employeeId: "employee-1",
+						startDate: "2026-12-28",
+						startPeriod: "full_day",
+						endDate: "2026-12-31",
+						endPeriod: "full_day",
+						status,
+						notes: null,
+						sickDetail: null,
+						approvedBy: null,
+						approvedAt: null,
+						rejectionReason: null,
+						createdAt: new Date("2026-10-05T00:00:00Z"),
+						category: {
+							id: "vacation",
+							name: "Vacation",
+							type: "vacation",
+							color: null,
+							countsAgainstVacation: true,
+						},
+					},
+				],
+				holidays: [
+					{
+						id: "silvester",
+						name: "Silvester",
+						categoryId: "company",
+						startDate: new Date("2026-12-31T00:00:00Z"),
+						endDate: new Date("2026-12-31T00:00:00Z"),
+					},
+				],
+			});
+			expect(metrics.remainingVacationDays).toBe(27);
+			expect(metrics.usedVacationDays + metrics.pendingVacationDays).toBe(3);
+		},
+	);
+});

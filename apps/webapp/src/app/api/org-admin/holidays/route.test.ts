@@ -98,7 +98,10 @@ vi.mock("@/lib/authorization", () => ({
 vi.mock("drizzle-orm", () => ({
 	and: (...conditions: unknown[]) => ({ conditions, type: "and" }),
 	eq: (column: unknown, value: unknown) => ({ column, type: "eq", value }),
-	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+	sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
+		strings,
+		values,
+	}),
 }));
 
 const { GET, POST } = await import("./route");
@@ -124,6 +127,38 @@ function expectAndPredicateIncludes(
 }
 
 describe("POST /api/org-admin/holidays", () => {
+	it("derives the yearly rule from the submitted UTC date instead of a stale client rule", async () => {
+		const response = await POST(
+			createPostRequest({
+				name: "Weihnachten",
+				categoryId: "category-1",
+				startDate: "2026-12-24T00:00:00Z",
+				endDate: "2026-12-24T00:00:00Z",
+				recurrenceType: "yearly",
+				recurrenceRule: JSON.stringify({ month: 2, day: 24 }),
+			}),
+		);
+		expect(response.status).toBe(201);
+		expect(mockState.values).toHaveBeenCalledWith(
+			expect.objectContaining({
+				recurrenceRule: JSON.stringify({ month: 12, day: 24 }),
+			}),
+		);
+	});
+	it("rejects invalid holiday dates before writing", async () => {
+		const response = await POST(
+			createPostRequest({
+				name: "Invalid",
+				categoryId: "category-1",
+				startDate: "invalid",
+				endDate: "2026-12-24",
+				recurrenceType: "yearly",
+			}),
+		);
+		expect(response.status).toBe(400);
+		expect(mockState.insert).not.toHaveBeenCalled();
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.getAbility.mockResolvedValue({
@@ -151,7 +186,9 @@ describe("POST /api/org-admin/holidays", () => {
 		);
 
 		expect(response.status).toBe(400);
-		expect(await response.json()).toEqual({ error: "Invalid holiday category" });
+		expect(await response.json()).toEqual({
+			error: "Invalid holiday category",
+		});
 		expectAndPredicateIncludes(mockState.where.mock.calls[0]?.[0], [
 			{ column: "holidayCategory.id", value: "category-foreign" },
 			{ column: "holidayCategory.organizationId", value: "org-1" },

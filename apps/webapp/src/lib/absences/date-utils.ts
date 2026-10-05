@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
-import { eachDayOfInterval, fromJSDate, toDateKey } from "@/lib/datetime/luxon-utils";
+import { fromJSDate } from "@/lib/datetime/luxon-utils";
+import { countBusinessDays, utcHolidayDate } from "./business-days";
 import type { DayPeriod, Holiday } from "./types";
 
 /**
@@ -16,44 +17,11 @@ export function calculateBusinessDays(
 	endDate: Date | DateTime,
 	holidays: Holiday[] = [],
 ): number {
-	// Convert to DateTime if needed
-	const start = startDate instanceof Date ? fromJSDate(startDate, "utc") : startDate;
-	const end = endDate instanceof Date ? fromJSDate(endDate, "utc") : endDate;
-
-	if (start > end) {
-		throw new Error("Start date must be before or equal to end date");
-	}
-
-	// Create a set of holiday dates for fast lookup (YYYY-MM-DD format)
-	const holidayDates = new Set(
-		holidays.flatMap((h) => {
-			const hStart =
-				h.startDate instanceof Date
-					? fromJSDate(h.startDate, "utc")
-					: (h.startDate as unknown as DateTime);
-			const hEnd =
-				h.endDate instanceof Date
-					? fromJSDate(h.endDate, "utc")
-					: (h.endDate as unknown as DateTime);
-			return eachDayOfInterval(hStart, hEnd).map((dt) => toDateKey(dt));
-		}),
-	);
-
-	let businessDays = 0;
-	const days = eachDayOfInterval(start, end);
-
-	for (const day of days) {
-		const dayOfWeek = day.weekday; // Luxon: 1 = Monday, 7 = Sunday
-		const dateStr = toDateKey(day);
-
-		// Check if it's not a weekend (6 = Saturday, 7 = Sunday)
-		// and not a holiday
-		if (dayOfWeek !== 6 && dayOfWeek !== 7 && !holidayDates.has(dateStr)) {
-			businessDays++;
-		}
-	}
-
-	return businessDays;
+	const start =
+		startDate instanceof Date ? utcHolidayDate(startDate).toString() : startDate.toISODate();
+	const end = endDate instanceof Date ? utcHolidayDate(endDate).toString() : endDate.toISODate();
+	if (!start || !end) throw new Error("Invalid date");
+	return countBusinessDays(start, "full_day", end, "full_day", holidays);
 }
 
 /**
@@ -74,97 +42,7 @@ export function calculateBusinessDaysWithHalfDays(
 	endPeriod: DayPeriod,
 	holidays: Holiday[] = [],
 ): number {
-	const start = DateTime.fromISO(startDate);
-	const end = DateTime.fromISO(endDate);
-
-	if (!start.isValid || !end.isValid) {
-		throw new Error("Invalid date format. Expected YYYY-MM-DD");
-	}
-
-	if (start > end) {
-		throw new Error("Start date must be before or equal to end date");
-	}
-
-	// Create a set of holiday dates for fast lookup (YYYY-MM-DD format)
-	const holidayDates = new Set(
-		holidays.flatMap((h) => {
-			const hStart =
-				h.startDate instanceof Date
-					? fromJSDate(h.startDate, "utc")
-					: DateTime.fromISO(h.startDate as unknown as string);
-			const hEnd =
-				h.endDate instanceof Date
-					? fromJSDate(h.endDate, "utc")
-					: DateTime.fromISO(h.endDate as unknown as string);
-			return eachDayOfInterval(hStart, hEnd).map((dt) => toDateKey(dt));
-		}),
-	);
-
-	// Helper to check if a day is a business day
-	const isBusinessDay = (day: DateTime): boolean => {
-		const dayOfWeek = day.weekday; // Luxon: 1 = Monday, 7 = Sunday
-		const dateStr = toDateKey(day);
-		return dayOfWeek !== 6 && dayOfWeek !== 7 && !holidayDates.has(dateStr);
-	};
-
-	// Single day case
-	if (start.hasSame(end, "day")) {
-		if (!isBusinessDay(start)) {
-			return 0;
-		}
-
-		// If both are full_day, return 1
-		if (startPeriod === "full_day" || endPeriod === "full_day") {
-			return 1;
-		}
-
-		// If same period (both am or both pm), return 0.5
-		if (startPeriod === endPeriod) {
-			return 0.5;
-		}
-
-		// AM + PM = full day
-		return 1;
-	}
-
-	// Multi-day case
-	let total = 0;
-	let current = start;
-
-	while (current <= end) {
-		if (isBusinessDay(current)) {
-			if (current.hasSame(start, "day")) {
-				// First day - use startPeriod
-				if (startPeriod === "full_day") {
-					total += 1;
-				} else if (startPeriod === "pm") {
-					// Starting in PM means only afternoon counts
-					total += 0.5;
-				} else {
-					// Starting in AM means whole day counts (AM + PM)
-					total += 1;
-				}
-			} else if (current.hasSame(end, "day")) {
-				// Last day - use endPeriod
-				if (endPeriod === "full_day") {
-					total += 1;
-				} else if (endPeriod === "am") {
-					// Ending in AM means only morning counts
-					total += 0.5;
-				} else {
-					// Ending in PM means whole day counts (AM + PM)
-					total += 1;
-				}
-			} else {
-				// Middle days - always full day
-				total += 1;
-			}
-		}
-
-		current = current.plus({ days: 1 });
-	}
-
-	return total;
+	return countBusinessDays(startDate, startPeriod, endDate, endPeriod, holidays);
 }
 
 /**
