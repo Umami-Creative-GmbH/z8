@@ -48,7 +48,9 @@ function receipt(id: string, itemId: string, overrides: Partial<ReceiptRow> = {}
 	};
 }
 
-function input(overrides: Partial<TravelExpenseReportFactsInput> = {}): TravelExpenseReportFactsInput {
+function input(
+	overrides: Partial<TravelExpenseReportFactsInput> = {},
+): TravelExpenseReportFactsInput {
 	return {
 		report: {
 			id: "report-1",
@@ -245,7 +247,9 @@ describe("compareLiveTravelExpenseReportWithRevision", () => {
 	it("holds a report whose amount or receipts changed after submission", () => {
 		const amount = compareLiveTravelExpenseReportWithRevision(
 			submitted,
-			input({ items: [item("train", 0, { originalAmount: "99.90" }), input().items[0] as ItemRow] }),
+			input({
+				items: [item("train", 0, { originalAmount: "99.90" }), input().items[0] as ItemRow],
+			}),
 		);
 		const receipts = compareLiveTravelExpenseReportWithRevision(
 			submitted,
@@ -258,8 +262,9 @@ describe("compareLiveTravelExpenseReportWithRevision", () => {
 	});
 
 	it("holds a report whose live rows can no longer be frozen", () => {
-		expect(
-			compareLiveTravelExpenseReportWithRevision(submitted, input({ receipts: [] })),
-		).toEqual({ kind: "material_change", changedFields: ["unverifiable:items"] });
+		expect(compareLiveTravelExpenseReportWithRevision(submitted, input({ receipts: [] }))).toEqual({
+			kind: "material_change",
+			changedFields: ["unverifiable:items"],
+		});
 	});
 });

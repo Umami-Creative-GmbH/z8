@@ -51,7 +51,10 @@ function outcomeMessage(
 			};
 		case "no_reviewer":
 			return {
-				title: t("travelExpenses.report.submit.noReviewerTitle", "No one can review this report yet"),
+				title: t(
+					"travelExpenses.report.submit.noReviewerTitle",
+					"No one can review this report yet",
+				),
 				body:
 					outcome.reason === "requester_inactive"
 						? t(
@@ -65,7 +68,10 @@ function outcomeMessage(
 			};
 		case "self_approval_route":
 			return {
-				title: t("travelExpenses.report.submit.noReviewerTitle", "No one can review this report yet"),
+				title: t(
+					"travelExpenses.report.submit.noReviewerTitle",
+					"No one can review this report yet",
+				),
 				body: t(
 					"travelExpenses.report.submit.selfApproval",
 					"Your organization's approval rules would let you approve your own report. Ask an administrator to adjust them. Your report stays saved as a draft.",
@@ -271,7 +277,9 @@ export function SubmitReportPanel({
 							{t("travelExpenses.report.submit.cancel", "Keep editing")}
 						</Button>
 						<Button type="button" disabled={submitting} onClick={() => void submit()}>
-							{submitting && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
+							{submitting && (
+								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+							)}
 							{t("travelExpenses.report.submit.confirm", "Submit for approval")}
 						</Button>
 					</DialogFooter>

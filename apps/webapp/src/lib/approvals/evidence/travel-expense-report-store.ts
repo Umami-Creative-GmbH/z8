@@ -78,7 +78,8 @@ function parseRevision(
 		facts.organizationId !== row.organizationId ||
 		facts.reportId !== row.sourceId ||
 		typeof facts.submissionCycle !== "number" ||
-		row.requestCycleKey !== travelExpenseReportRequestCycleKey(row.sourceId, facts.submissionCycle) ||
+		row.requestCycleKey !==
+			travelExpenseReportRequestCycleKey(row.sourceId, facts.submissionCycle) ||
 		facts.subjectEmployeeId !== row.subjectEmployeeId ||
 		facts.requesterEmployeeId !== row.requesterEmployeeId ||
 		!Array.isArray(facts.items) ||

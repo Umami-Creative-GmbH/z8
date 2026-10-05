@@ -107,7 +107,12 @@ async function loadReportEntities(
 function getDisplayMetadata(entity: TravelExpenseReportApprovalEntity): ApprovalDisplayMetadata {
 	const facts = entity.submitted;
 	if (!facts) {
-		return { title: "Expense report", subtitle: "Submitted facts unavailable", summary: "", icon: "receipt" };
+		return {
+			title: "Expense report",
+			subtitle: "Submitted facts unavailable",
+			summary: "",
+			icon: "receipt",
+		};
 	}
 	const { trip, totals, items } = facts;
 	const dates = trip
@@ -115,7 +120,9 @@ function getDisplayMetadata(entity: TravelExpenseReportApprovalEntity): Approval
 			? trip.startDate
 			: `${trip.startDate} – ${trip.endDate}`
 		: (items[0]?.expenseDate ?? "");
-	const subtitle = trip ? `${trip.purpose} · ${dates}` : `${items[0]?.description ?? ""} · ${dates}`;
+	const subtitle = trip
+		? `${trip.purpose} · ${dates}`
+		: `${items[0]?.description ?? ""} · ${dates}`;
 	const companyPaid =
 		totals.companyPaid === "0.00" ? "" : ` · company-paid ${totals.currency} ${totals.companyPaid}`;
 	return {
@@ -181,7 +188,9 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 				createdAt: request.createdAt,
 				resolvedAt: request.approvedAt,
 				priority: TravelExpenseReportHandler.calculatePriority(entity, request.createdAt),
-				sla: buildSLAInfo(TravelExpenseReportHandler.calculateSLADeadline(entity, request.createdAt)),
+				sla: buildSLAInfo(
+					TravelExpenseReportHandler.calculateSLADeadline(entity, request.createdAt),
+				),
 				display: getDisplayMetadata(entity),
 			}),
 		}),

@@ -208,9 +208,7 @@ describe("report submission", () => {
 	});
 
 	it("shows a submitted report read-only instead of its draft forms", async () => {
-		reportActions.getMyTravelExpenseReport.mockResolvedValue(
-			tripReport({ status: "submitted" }),
-		);
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(tripReport({ status: "submitted" }));
 		reportActions.getTravelExpenseReportSubmission.mockResolvedValue({
 			success: true,
 			data: {
@@ -257,8 +255,6 @@ describe("report submission", () => {
 		expect(screen.getByText("Morgan Manager", { exact: false })).toBeTruthy();
 		expect(screen.queryByRole("textbox", { name: "Purpose of the trip" })).toBeNull();
 		const link = screen.getByRole("link", { name: /ticket\.pdf/ });
-		expect(link.getAttribute("href")).toBe(
-			`/api/travel-expenses/reports/${reportId}/receipts/r-1`,
-		);
+		expect(link.getAttribute("href")).toBe(`/api/travel-expenses/reports/${reportId}/receipts/r-1`);
 	});
 });

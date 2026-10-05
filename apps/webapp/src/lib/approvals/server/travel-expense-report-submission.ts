@@ -297,9 +297,7 @@ export async function submitTravelExpenseReport(
 				.returning({ submissionCount: travelExpenseReport.submissionCount });
 			if (submitted?.submissionCount !== submissionCycle) refuse({ kind: "not_draft" });
 
-			const requester = directory.employees.find(
-				(candidate) => candidate.id === owner.employeeId,
-			);
+			const requester = directory.employees.find((candidate) => candidate.id === owner.employeeId);
 			const routingExit = await Effect.runPromiseExit(
 				resolvePolicyAndCreateApproval(dbService, {
 					context: policyContext({

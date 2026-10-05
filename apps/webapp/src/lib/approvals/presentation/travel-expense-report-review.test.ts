@@ -135,9 +135,7 @@ describe("buildTravelExpenseReportReviewSections", () => {
 			decisions: [],
 		});
 		expect(decisionsBlocked).toBe(true);
-		expect(sections).toContainEqual(
-			expect.objectContaining({ type: "callout", tone: "danger" }),
-		);
+		expect(sections).toContainEqual(expect.objectContaining({ type: "callout", tone: "danger" }));
 	});
 
 	it("blocks decisions when no frozen submission exists", () => {

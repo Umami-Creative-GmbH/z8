@@ -39,10 +39,7 @@ import {
 	type TravelExpenseReportSubmittedRevisionRecord,
 } from "../evidence/travel-expense-report-store";
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
-import {
-	ApprovalAuditLogger,
-	createApprovalAuditLogger,
-} from "../infrastructure/audit-logger";
+import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
 import type { ApprovalAction, ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";

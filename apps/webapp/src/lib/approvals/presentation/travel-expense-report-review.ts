@@ -75,7 +75,8 @@ const CATEGORIES: Record<string, ApprovalInboxLocalizedText> = {
 function decisionLabel(decision: LegacyDecisionEvidenceRecord): string {
 	if (decision.requestOutcome === "approved") return "Report approved";
 	if (decision.requestOutcome === "rejected") return "Report rejected";
-	if (decision.assignmentOutcome === "approved") return "Approval recorded — awaiting further approval";
+	if (decision.assignmentOutcome === "approved")
+		return "Approval recorded — awaiting further approval";
 	return "Decision recorded";
 }
 

@@ -306,7 +306,9 @@ const MATERIAL_FIELDS = [
 ] as const satisfies readonly (keyof TravelExpenseReportSubmittedFacts)[];
 
 /** Versioned identity of the reviewed report, including receipt content identity. */
-export function fingerprintTravelExpenseReportFacts(facts: TravelExpenseReportSubmittedFacts): string {
+export function fingerprintTravelExpenseReportFacts(
+	facts: TravelExpenseReportSubmittedFacts,
+): string {
 	const material = Object.fromEntries([
 		["schemaVersion", facts.schemaVersion],
 		["kind", facts.kind],

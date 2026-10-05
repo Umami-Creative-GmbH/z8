@@ -97,7 +97,9 @@ function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings })
 			<form.Subscribe selector={(state) => state.isSubmitting}>
 				{(isSubmitting) => (
 					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting && <IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />}
+						{isSubmitting && (
+							<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+						)}
 						{t("settings.travelExpenses.approver.save", "Save approver")}
 					</Button>
 				)}

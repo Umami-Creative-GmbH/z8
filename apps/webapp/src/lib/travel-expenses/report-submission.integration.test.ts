@@ -131,7 +131,9 @@ const pdfBytes = Buffer.from("%PDF-1.4\n% receipt\n%%EOF");
 
 async function cleanup() {
 	await admin.query("delete from organization where id in ('t602-org', 't602-foreign')");
-	await admin.query("delete from travel_expense_receipt_upload where organization_id like 't602-%'");
+	await admin.query(
+		"delete from travel_expense_receipt_upload where organization_id like 't602-%'",
+	);
 	await admin.query('delete from "user" where id like $1', ["t602-%"]);
 }
 
@@ -284,7 +286,12 @@ async function reportState(reportId: string) {
 	const { rows } = await admin.query<{
 		status: string;
 		submission_count: number;
-		requests: Array<{ id: string; status: string; approver_id: string; rejection_reason: string | null }>;
+		requests: Array<{
+			id: string;
+			status: string;
+			approver_id: string;
+			rejection_reason: string | null;
+		}>;
 		revisions: number;
 		decisions: number;
 	}>(
@@ -399,9 +406,9 @@ describe("report submission through approval authority (#602)", () => {
 		const frozenReceipts = revision.facts.items.flatMap(
 			(item: { receipts: Array<{ receiptId: string; checksumSha256: string }> }) => item.receipts,
 		);
-		expect(frozenReceipts.map((receipt: { receiptId: string }) => receipt.receiptId).sort()).toEqual(
-			report.items.flatMap((item) => item.receipts.map((receipt) => receipt.id)).sort(),
-		);
+		expect(
+			frozenReceipts.map((receipt: { receiptId: string }) => receipt.receiptId).sort(),
+		).toEqual(report.items.flatMap((item) => item.receipts.map((receipt) => receipt.id)).sort());
 		expect(frozenReceipts[0]?.checksumSha256).toBe(
 			createHash("sha256").update(pdfBytes).digest("hex"),
 		);
@@ -490,7 +497,14 @@ describe("report submission through approval authority (#602)", () => {
 					items: [
 						{
 							id: added.data.item.id,
-							missing: ["expense_date", "category", "description", "amount", "payment_ownership", "receipt"],
+							missing: [
+								"expense_date",
+								"category",
+								"description",
+								"amount",
+								"payment_ownership",
+								"receipt",
+							],
 						},
 					],
 				},
@@ -654,7 +668,9 @@ describe("report submission through approval authority (#602)", () => {
 		expect(submittedView.data.access).toBe("reviewer");
 		const receiptId = submittedView.data.facts.items[0]?.receipts[0]?.receiptId ?? "";
 		const receipt = await getReceipt(
-			new Request(`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}`) as unknown as NextRequest,
+			new Request(
+				`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}`,
+			) as unknown as NextRequest,
 			{ params: Promise.resolve({ reportId, receiptId }) },
 		);
 		expect(receipt.status).toBe(200);
@@ -772,8 +788,7 @@ describe("report submission through approval authority (#602)", () => {
 		const reportId = await completeTrip();
 		expect((await submit(reportId)).success).toBe(true);
 		const requestId = await pendingRequestId(reportId);
-		const receiptId =
-			(await load(reportId)).items[0]?.receipts[0]?.id ?? "missing-receipt-id";
+		const receiptId = (await load(reportId)).items[0]?.receipts[0]?.id ?? "missing-receipt-id";
 
 		// Even an organization admin never decides their own report.
 		await admin.query("update employee set role = 'admin' where id = $1", [ids.requester]);
@@ -810,16 +825,19 @@ describe("report submission through approval authority (#602)", () => {
 		["ready", "submitted"],
 		["canonical", "authority_unsupported"],
 		["complete", "authority_unsupported"],
-	] as const)("submits under %s lifecycle mode only while legacy authority decides", async (mode, expected) => {
-		const reportId = await completeTrip();
-		await admin.query(
-			`insert into approval_workflow_rollout
+	] as const)(
+		"submits under %s lifecycle mode only while legacy authority decides",
+		async (mode, expected) => {
+			const reportId = await completeTrip();
+			await admin.query(
+				`insert into approval_workflow_rollout
 			 (organization_id, workflow_type, lifecycle_mode, side_effect_mode, created_at, updated_at)
 			 values ('t602-org', 'travel_expense', $1, $2, now(), now())`,
-			[mode, mode === "canonical" || mode === "complete" ? "canonical" : "legacy"],
-		);
-		expect(await submit(reportId)).toEqual({ success: true, data: { status: expected } });
-	});
+				[mode, mode === "canonical" || mode === "complete" ? "canonical" : "legacy"],
+			);
+			expect(await submit(reportId)).toEqual({ success: true, data: { status: expected } });
+		},
+	);
 
 	it("refuses a decision once the organization moved to canonical authority", async () => {
 		const reportId = await completeTrip();

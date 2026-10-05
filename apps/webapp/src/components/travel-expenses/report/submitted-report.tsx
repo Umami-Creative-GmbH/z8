@@ -32,7 +32,9 @@ function StatusBadge({ status }: { status: SubmittedReportView["status"] }) {
 			return <Badge>{t("travelExpenses.report.status.approved", "Approved")}</Badge>;
 		case "rejected":
 			return (
-				<Badge variant="destructive">{t("travelExpenses.report.status.rejected", "Rejected")}</Badge>
+				<Badge variant="destructive">
+					{t("travelExpenses.report.status.rejected", "Rejected")}
+				</Badge>
 			);
 		default:
 			return (
@@ -163,7 +165,10 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 					}))}
 				/>
 			</section>
-			<ReportTotals id={`${reportId}-submitted`} totals={{ ...facts.totals, excludedItemCount: 0 }} />
+			<ReportTotals
+				id={`${reportId}-submitted`}
+				totals={{ ...facts.totals, excludedItemCount: 0 }}
+			/>
 			<section aria-labelledby={`${reportId}-history`} className="space-y-2">
 				<h2 id={`${reportId}-history`} className="text-lg font-semibold">
 					{t("travelExpenses.report.history.title", "History")}
