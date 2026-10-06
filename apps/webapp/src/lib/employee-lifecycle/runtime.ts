@@ -4,7 +4,7 @@
  * (`src/worker-preload.mjs`). Free of Next.js request APIs at call time.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { type DepartureTaskKind, employeeDeparture } from "@/db/schema/employee-lifecycle";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
@@ -14,7 +14,7 @@ import {
 	SeatSyncServiceLive,
 	StripeServiceLive,
 	SubscriptionServiceLive,
-} from "@/lib/effect-v3/services/billing";
+} from "@/lib/effect/services/billing";
 import {
 	deliverNotificationToChannel,
 	insertInAppNotification,

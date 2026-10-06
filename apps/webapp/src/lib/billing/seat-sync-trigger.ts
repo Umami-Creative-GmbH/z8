@@ -6,8 +6,8 @@ const BILLING_ENABLED = env.BILLING_ENABLED === "true";
 
 async function getSeatSyncRuntime() {
 	const [{ Effect, Layer }, billingServices] = await Promise.all([
-		import("effect-v3"),
-		import("@/lib/effect-v3/services/billing"),
+		import("effect"),
+		import("@/lib/effect/services/billing"),
 	]);
 	const {
 		SeatSyncService,

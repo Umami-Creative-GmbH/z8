@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { billingSeatAudit } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
@@ -22,7 +22,7 @@ function countBillableMembers(organizationId: string): Promise<number> {
  * SeatSyncService - Real-time seat counting and Stripe usage reporting
  * Called from auth hooks when members are added/removed
  */
-export class SeatSyncService extends Context.Tag("SeatSyncService")<
+export class SeatSyncService extends Context.Service<
 	SeatSyncService,
 	{
 		/**
@@ -56,7 +56,7 @@ export class SeatSyncService extends Context.Tag("SeatSyncService")<
 		 */
 		readonly getCurrentSeatCount: (organizationId: string) => Effect.Effect<number, DatabaseError>;
 	}
->() {}
+>()("SeatSyncService") {}
 
 export const SeatSyncServiceLive = Layer.effect(
 	SeatSyncService,

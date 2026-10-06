@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SeatSyncService, SeatSyncServiceLive } from "./seat-sync.service";
 import { StripeService } from "./stripe.service";

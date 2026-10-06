@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { Settings } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { subscription } from "@/db/schema";

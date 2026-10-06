@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import type Stripe from "stripe";
 import { db } from "@/db";
@@ -58,7 +58,7 @@ const getCustomerEmailFromObject = (
  * BillingEventsService - Processes Stripe webhook events
  * Handles idempotency and state synchronization
  */
-export class BillingEventsService extends Context.Tag("BillingEventsService")<
+export class BillingEventsService extends Context.Service<
 	BillingEventsService,
 	{
 		/**
@@ -82,7 +82,7 @@ export class BillingEventsService extends Context.Tag("BillingEventsService")<
 			error?: string,
 		) => Effect.Effect<void, DatabaseError>;
 	}
->() {}
+>()("BillingEventsService") {}
 
 export const BillingEventsServiceLive = Layer.effect(
 	BillingEventsService,
