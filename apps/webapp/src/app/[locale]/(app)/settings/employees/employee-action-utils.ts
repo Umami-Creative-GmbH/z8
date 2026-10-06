@@ -1,6 +1,6 @@
 import { type Attributes, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { revalidateTag } from "next/cache";
 import type { ZodType } from "zod";
 import { member, user } from "@/db/auth-schema";
@@ -12,11 +12,11 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
-import { ManagerService } from "@/lib/effect-v3/services/manager.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { ManagerService } from "@/lib/effect/services/manager.service";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
@@ -31,23 +31,21 @@ const employeeNotFoundError = () =>
 	});
 
 export function getEmployeeContext(options?: { organizationId?: string; queryName?: string }) {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession(options?.organizationId));
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession(options?.organizationId);
+		const dbService = yield* DatabaseService;
 		const organizationId =
 			options?.organizationId ?? session.session.activeOrganizationId;
 
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "No active organization selected",
-						userId: session.user.id,
-						resource: "employee_profile",
-						action: "update",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "No active organization selected",
+					userId: session.user.id,
+					resource: "employee_profile",
+					action: "update",
+				}),
 			);
 		}
 
@@ -57,14 +55,11 @@ export function getEmployeeContext(options?: { organizationId?: string; queryNam
 			eq(employee.isActive, true),
 		);
 
-		const currentEmployee = yield* _(
-			dbService.query(options?.queryName ?? "getCurrentEmployee", async () => {
+		const currentEmployee = yield* dbService.query(options?.queryName ?? "getCurrentEmployee", async () => {
 				return await dbService.db.query.employee.findFirst({ where });
-			}),
-			Effect.flatMap((value) =>
+			}).pipe(Effect.flatMap((value) =>
 				value ? Effect.succeed(value) : Effect.fail(employeeNotFoundError()),
-			),
-		);
+			));
 
 		return { session, dbService, currentEmployee: currentEmployee as typeof employee.$inferSelect };
 	});
@@ -74,77 +69,69 @@ export function getEmployeeSettingsActorContext(options?: {
 	organizationId?: string;
 	queryName?: string;
 }) {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession(options?.organizationId));
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession(options?.organizationId);
+		const dbService = yield* DatabaseService;
 		const organizationId = options?.organizationId ?? session.session.activeOrganizationId;
 
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "No active organization selected",
-						userId: session.user.id,
-						resource: "employee_settings",
-						action: "access",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "No active organization selected",
+					userId: session.user.id,
+					resource: "employee_settings",
+					action: "access",
+				}),
 			);
 		}
 
-		const [membershipRecord, employeeRecord] = yield* _(
-			Effect.all([
-				dbService.query(
-					`${options?.queryName ?? "getEmployeeSettingsActor"}:membership`,
-					async () => {
-						return await dbService.db.query.member.findFirst({
-							where: and(
-								eq(member.userId, session.user.id),
-								eq(member.organizationId, organizationId),
-								eq(member.status, "approved"),
-							),
-							columns: { role: true },
-						});
-					},
-				),
-				dbService.query(
-					`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`,
-					async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.userId, session.user.id),
-								eq(employee.organizationId, organizationId),
-							),
-						});
-					},
-				),
-			]),
-		);
+		const [membershipRecord, employeeRecord] = yield* Effect.all([
+			dbService.query(
+				`${options?.queryName ?? "getEmployeeSettingsActor"}:membership`,
+				async () => {
+					return await dbService.db.query.member.findFirst({
+						where: and(
+							eq(member.userId, session.user.id),
+							eq(member.organizationId, organizationId),
+							eq(member.status, "approved"),
+						),
+						columns: { role: true },
+					});
+				},
+			),
+			dbService.query(
+				`${options?.queryName ?? "getEmployeeSettingsActor"}:employee`,
+				async () => {
+					return await dbService.db.query.employee.findFirst({
+						where: and(
+							eq(employee.userId, session.user.id),
+							eq(employee.organizationId, organizationId),
+						),
+					});
+				},
+			),
+		]);
 
 		if (!membershipRecord) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "You do not have access to employee settings",
-						userId: session.user.id,
-						resource: "employee_settings",
-						action: "access",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "You do not have access to employee settings",
+					userId: session.user.id,
+					resource: "employee_settings",
+					action: "access",
+				}),
 			);
 		}
 
 		if (employeeRecord?.isActive === false) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Organization access is inactive",
-						userId: session.user.id,
-						resource: "employee_settings",
-						action: "access",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Organization access is inactive",
+					userId: session.user.id,
+					resource: "employee_settings",
+					action: "access",
+				}),
 			);
 		}
 
@@ -157,15 +144,13 @@ export function getEmployeeSettingsActorContext(options?: {
 		});
 
 		if (accessTier === "member") {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "You do not have access to employee settings",
-						userId: session.user.id,
-						resource: "employee_settings",
-						action: "access",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "You do not have access to employee settings",
+					userId: session.user.id,
+					resource: "employee_settings",
+					action: "access",
+				}),
 			);
 		}
 
@@ -210,32 +195,26 @@ export function ensureCanAccessEmployeeSettingsTarget(
 		action: string;
 	},
 ) {
-	return Effect.gen(function* (_) {
-		yield* _(
-			ensureSameOrganization(currentEmployee, targetEmployee, options.resource, options.action),
-		);
+	return Effect.gen(function* () {
+		yield* ensureSameOrganization(currentEmployee, targetEmployee, options.resource, options.action);
 
 		if (currentEmployee.role === "admin") {
 			return;
 		}
 
 		if (currentEmployee.role !== "manager") {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: options.message,
-						userId: currentEmployee.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: options.message,
+					userId: currentEmployee.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 
-		const managerService = yield* _(ManagerService);
-		const isManagedEmployee = yield* _(
-			managerService.isManagerOf(currentEmployee.id, targetEmployee.id),
-		);
+		const managerService = yield* ManagerService;
+		const isManagedEmployee = yield* managerService.isManagerOf(currentEmployee.id, targetEmployee.id);
 
 		if (
 			!canAccessManagedEmployeeSettingsTarget({
@@ -243,15 +222,13 @@ export function ensureCanAccessEmployeeSettingsTarget(
 				isManagedEmployee,
 			})
 		) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: options.message,
-						userId: currentEmployee.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: options.message,
+					userId: currentEmployee.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 	});
@@ -297,17 +274,15 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 		action: string;
 	},
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (actor.organizationId !== targetEmployee.organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Cannot access employee from different organization",
-						userId: actor.session.user.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Cannot access employee from different organization",
+					userId: actor.session.user.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 
@@ -316,22 +291,18 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 		}
 
 		if (actor.currentEmployee?.role !== "manager") {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: options.message,
-						userId: actor.session.user.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: options.message,
+					userId: actor.session.user.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 
-		const managerService = yield* _(ManagerService);
-		const isManagedEmployee = yield* _(
-			managerService.isManagerOf(actor.currentEmployee.id, targetEmployee.id),
-		);
+		const managerService = yield* ManagerService;
+		const isManagedEmployee = yield* managerService.isManagerOf(actor.currentEmployee.id, targetEmployee.id);
 
 		if (
 			!canAccessManagedEmployeeSettingsTarget({
@@ -339,15 +310,13 @@ export function ensureSettingsActorCanAccessEmployeeTarget(
 				isManagedEmployee,
 			})
 		) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: options.message,
-						userId: actor.session.user.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: options.message,
+					userId: actor.session.user.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 	});
@@ -453,7 +422,7 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 	accessTier: SettingsAccessTier;
 	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
 }) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (actor.accessTier === "orgAdmin") {
 			return null as Set<string> | null;
 		}
@@ -462,8 +431,8 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 			return new Set<string>();
 		}
 
-		const managerService = yield* _(ManagerService);
-		const managedEmployees = yield* _(managerService.getManagedEmployees(actor.currentEmployee.id));
+		const managerService = yield* ManagerService;
+		const managedEmployees = yield* managerService.getManagedEmployees(actor.currentEmployee.id);
 
 		return new Set(managedEmployees.map((managedEmployee) => managedEmployee.id));
 	});
@@ -525,11 +494,10 @@ export function validateInput<T>(schema: ZodType<T>, data: unknown, fallbackFiel
 }
 
 export function getTargetEmployee(employeeId: string, queryName = "getTargetEmployee") {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		return yield* _(
-			dbService.query(queryName, async () => {
+		return yield* dbService.query(queryName, async () => {
 				return await dbService.db.query.employee.findFirst({
 					where: eq(employee.id, employeeId),
 					with: {
@@ -542,8 +510,7 @@ export function getTargetEmployee(employeeId: string, queryName = "getTargetEmpl
 						},
 					},
 				});
-			}),
-			Effect.flatMap((value) =>
+			}).pipe(Effect.flatMap((value) =>
 				value
 					? Effect.succeed(value)
 					: Effect.fail(
@@ -553,8 +520,7 @@ export function getTargetEmployee(employeeId: string, queryName = "getTargetEmpl
 								entityId: employeeId,
 							}),
 						),
-			),
-		);
+			));
 	});
 }
 
@@ -563,16 +529,14 @@ export function getOrganizationTeam(
 	organizationId: string,
 	queryName = "getOrganizationTeam",
 ) {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		return yield* _(
-			dbService.query(queryName, async () => {
+		return yield* dbService.query(queryName, async () => {
 				return await dbService.db.query.team.findFirst({
 					where: and(eq(team.id, teamId), eq(team.organizationId, organizationId)),
 				});
-			}),
-			Effect.flatMap((value) =>
+			}).pipe(Effect.flatMap((value) =>
 				value
 					? Effect.succeed(value)
 					: Effect.fail(
@@ -582,22 +546,19 @@ export function getOrganizationTeam(
 								entityId: teamId,
 							}),
 						),
-			),
-		);
+			));
 	});
 }
 
 export function getTargetUser(userId: string, queryName = "getTargetUser") {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		return yield* _(
-			dbService.query(queryName, async () => {
+		return yield* dbService.query(queryName, async () => {
 				return await dbService.db.query.user.findFirst({
 					where: eq(user.id, userId),
 				});
-			}),
-			Effect.flatMap((value) =>
+			}).pipe(Effect.flatMap((value) =>
 				value
 					? Effect.succeed(value)
 					: Effect.fail(
@@ -607,8 +568,7 @@ export function getTargetUser(userId: string, queryName = "getTargetUser") {
 								entityId: userId,
 							}),
 						),
-			),
-		);
+			));
 	});
 }
 
@@ -654,15 +614,15 @@ export function runTracedEmployeeAction<T>(options: {
 					span.setStatus({ code: SpanStatusCode.OK });
 				}),
 			),
-			Effect.catchAll((error) =>
-				Effect.gen(function* (_) {
+			Effect.catch((error) =>
+				Effect.gen(function* () {
 					span.recordException(error as Error);
 					span.setStatus({
 						code: SpanStatusCode.ERROR,
 						message: String(error),
 					});
 					options.logError(error);
-					return yield* _(Effect.fail(error as AnyAppError));
+					return yield* Effect.fail(error as AnyAppError);
 				}),
 			),
 			Effect.onExit(() => Effect.sync(() => span.end())),

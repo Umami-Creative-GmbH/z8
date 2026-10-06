@@ -1,13 +1,13 @@
 import { desc, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { type employee, location } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { findCurrentEmployeeByUserId } from "./current-employee-scope";
 
@@ -34,32 +34,28 @@ export function runSchedulingAction<A, E extends AnyAppError, R>(
 }
 
 export function requireCurrentEmployee(queryName = "getCurrentEmployee") {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const dbService = yield* _(DatabaseService);
-		const session = yield* _(authService.getSession());
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const dbService = yield* DatabaseService;
+		const session = yield* authService.getSession();
 
-		yield* _(Effect.annotateCurrentSpan("user.id", session.user.id));
+		yield* Effect.annotateCurrentSpan("user.id", session.user.id);
 
-		const currentEmployee = yield* _(
-			dbService.query(queryName, async () => {
-				return await findCurrentEmployeeByUserId(
-					db,
-					session.user.id,
-					session.session.activeOrganizationId,
-				);
-			}),
-		);
+		const currentEmployee = yield* dbService.query(queryName, async () => {
+			return await findCurrentEmployeeByUserId(
+				db,
+				session.user.id,
+				session.session.activeOrganizationId,
+			);
+		});
 
 		if (!currentEmployee) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-						entityId: session.user.id,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+					entityId: session.user.id,
+				}),
 			);
 		}
 
@@ -94,44 +90,40 @@ export function requireManagerEmployee(input: {
 	queryName?: string;
 	resource: string;
 }) {
-	return Effect.gen(function* (_) {
-		const { currentEmployee, session } = yield* _(requireCurrentEmployee(input.queryName));
+	return Effect.gen(function* () {
+		const { currentEmployee, session } = yield* requireCurrentEmployee(input.queryName);
 
-		yield* _(
-			ensureManagerAccess({
-				currentEmployee,
-				userId: session.user.id,
-				resource: input.resource,
-				action: input.action,
-				message: input.message,
-			}),
-		);
+		yield* ensureManagerAccess({
+			currentEmployee,
+			userId: session.user.id,
+			resource: input.resource,
+			action: input.action,
+			message: input.message,
+		});
 
 		return { currentEmployee, session };
 	});
 }
 
 export function getLocationsWithSubareasForOrganization(organizationId: string) {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		const locations = yield* _(
-			dbService.query("getLocationsWithSubareas", async () => {
-				return await db.query.location.findMany({
-					where: eq(location.organizationId, organizationId),
-					with: {
-						subareas: {
-							columns: {
-								id: true,
-								name: true,
-								isActive: true,
-							},
+		const locations = yield* dbService.query("getLocationsWithSubareas", async () => {
+			return await db.query.location.findMany({
+				where: eq(location.organizationId, organizationId),
+				with: {
+					subareas: {
+						columns: {
+							id: true,
+							name: true,
+							isActive: true,
 						},
 					},
-					orderBy: [desc(location.createdAt)],
-				});
-			}),
-		);
+				},
+				orderBy: [desc(location.createdAt)],
+			});
+		});
 
 		return locations.map((currentLocation) => ({
 			id: currentLocation.id,

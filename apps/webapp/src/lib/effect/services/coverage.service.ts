@@ -6,7 +6,7 @@
  */
 
 import { and, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -144,7 +144,7 @@ export interface CoverageSettingsData {
 // SERVICE INTERFACE
 // ============================================
 
-export class CoverageService extends Context.Tag("CoverageService")<
+export class CoverageService extends Context.Service<
 	CoverageService,
 	{
 		/**
@@ -232,7 +232,7 @@ export class CoverageService extends Context.Tag("CoverageService")<
 			settings: { allowPublishWithGaps: boolean; updatedBy: string },
 		) => Effect.Effect<CoverageSettingsData, DatabaseError>;
 	}
->() {}
+>()("CoverageService") {}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -316,8 +316,8 @@ function coverageDateToDate(date: PlainDate, timezone: string): Date {
 
 export const CoverageServiceLive = Layer.effect(
 	CoverageService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		/**
 		 * Get managed employee IDs for filtering (if manager ID provided)
@@ -372,7 +372,7 @@ export const CoverageServiceLive = Layer.effect(
 
 		return CoverageService.of({
 			getCoverageForDate: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { organizationId, date, timezone, managerId } = params;
 					const dt = DateTime.fromJSDate(date).setZone(timezone);
 					const dateStr = dt.toISODate();
@@ -380,7 +380,7 @@ export const CoverageServiceLive = Layer.effect(
 					// Get managed employee IDs if manager filter provided
 					let managedEmployeeIds: string[] | undefined;
 					if (managerId) {
-						managedEmployeeIds = yield* _(getManagedEmployeeIds(managerId, organizationId));
+						managedEmployeeIds = yield* getManagedEmployeeIds(managerId, organizationId);
 						if (managedEmployeeIds.length === 0) {
 							return {
 								date,
@@ -394,64 +394,60 @@ export const CoverageServiceLive = Layer.effect(
 					}
 
 					// Get all subareas
-					const subareas = yield* _(getSubareas(organizationId));
+					const subareas = yield* getSubareas(organizationId);
 
 					// Get scheduled shifts for the date
-					const scheduledShifts = yield* _(
-						dbService.query("getScheduledShifts", async () => {
-							const conditions = [
-								eq(shift.organizationId, organizationId),
-								eq(shift.status, "published"),
-								sql`DATE(${shift.date}) = ${dateStr}`,
-							];
+					const scheduledShifts = yield* dbService.query("getScheduledShifts", async () => {
+						const conditions = [
+							eq(shift.organizationId, organizationId),
+							eq(shift.status, "published"),
+							sql`DATE(${shift.date}) = ${dateStr}`,
+						];
 
-							if (managedEmployeeIds && managedEmployeeIds.length > 0) {
-								conditions.push(inArray(shift.employeeId, managedEmployeeIds));
-							}
+						if (managedEmployeeIds && managedEmployeeIds.length > 0) {
+							conditions.push(inArray(shift.employeeId, managedEmployeeIds));
+						}
 
-							return await dbService.db.query.shift.findMany({
-								where: and(...conditions),
-								with: {
-									employee: {
-										columns: { id: true },
-										with: {
-											user: { columns: { name: true } },
-										},
+						return await dbService.db.query.shift.findMany({
+							where: and(...conditions),
+							with: {
+								employee: {
+									columns: { id: true },
+									with: {
+										user: { columns: { name: true } },
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					// Get clocked-in employees for the date
-					const clockedInPeriods = yield* _(
-						dbService.query("getClockedInPeriods", async () => {
-							const dayStart = dt.startOf("day").toJSDate();
-							const dayEnd = dt.endOf("day").toJSDate();
+					const clockedInPeriods = yield* dbService.query("getClockedInPeriods", async () => {
+						const dayStart = dt.startOf("day").toJSDate();
+						const dayEnd = dt.endOf("day").toJSDate();
 
-							const conditions = [
-								eq(workPeriod.organizationId, organizationId),
-								gte(workPeriod.startTime, dayStart),
-								lte(workPeriod.startTime, dayEnd),
-							];
+						const conditions = [
+							eq(workPeriod.organizationId, organizationId),
+							gte(workPeriod.startTime, dayStart),
+							lte(workPeriod.startTime, dayEnd),
+						];
 
-							if (managedEmployeeIds) {
-								conditions.push(inArray(workPeriod.employeeId, managedEmployeeIds));
-							}
+						if (managedEmployeeIds) {
+							conditions.push(inArray(workPeriod.employeeId, managedEmployeeIds));
+						}
 
-							return await dbService.db.query.workPeriod.findMany({
-								where: and(...conditions),
-								with: {
-									employee: {
-										columns: { id: true },
-										with: {
-											user: { columns: { name: true } },
-										},
+						return await dbService.db.query.workPeriod.findMany({
+							where: and(...conditions),
+							with: {
+								employee: {
+									columns: { id: true },
+									with: {
+										user: { columns: { name: true } },
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					// Build coverage snapshots by subarea
 					const snapshots: CoverageSnapshot[] = [];
@@ -564,61 +560,57 @@ export const CoverageServiceLive = Layer.effect(
 				}),
 
 			getCoverageGaps: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { organizationId, startDate, endDate, timezone, threshold = 1, managerId } = params;
 
 					// Get managed employee IDs if manager filter provided
 					let managedEmployeeIds: string[] | undefined;
 					if (managerId) {
-						managedEmployeeIds = yield* _(getManagedEmployeeIds(managerId, organizationId));
+						managedEmployeeIds = yield* getManagedEmployeeIds(managerId, organizationId);
 						if (managedEmployeeIds.length === 0) {
 							return [];
 						}
 					}
 
 					// Get subareas
-					const subareas = yield* _(getSubareas(organizationId));
+					const subareas = yield* getSubareas(organizationId);
 					const subareaMap = new Map(subareas.map((s) => [s.id, s]));
 
 					// Get scheduled shifts in range
-					const scheduledShifts = yield* _(
-						dbService.query("getScheduledShiftsRange", async () => {
-							const conditions = [
-								eq(shift.organizationId, organizationId),
-								eq(shift.status, "published"),
-								gte(shift.date, startDate),
-								lte(shift.date, endDate),
-								sql`${shift.employeeId} IS NOT NULL`,
-							];
+					const scheduledShifts = yield* dbService.query("getScheduledShiftsRange", async () => {
+						const conditions = [
+							eq(shift.organizationId, organizationId),
+							eq(shift.status, "published"),
+							gte(shift.date, startDate),
+							lte(shift.date, endDate),
+							sql`${shift.employeeId} IS NOT NULL`,
+						];
 
-							if (managedEmployeeIds) {
-								conditions.push(inArray(shift.employeeId, managedEmployeeIds));
-							}
+						if (managedEmployeeIds) {
+							conditions.push(inArray(shift.employeeId, managedEmployeeIds));
+						}
 
-							return await dbService.db.query.shift.findMany({
-								where: and(...conditions),
-							});
-						}),
-					);
+						return await dbService.db.query.shift.findMany({
+							where: and(...conditions),
+						});
+					});
 
 					// Get clocked-in periods in range
-					const clockedInPeriods = yield* _(
-						dbService.query("getClockedInPeriodsRange", async () => {
-							const conditions = [
-								eq(workPeriod.organizationId, organizationId),
-								gte(workPeriod.startTime, startDate),
-								lte(workPeriod.startTime, endDate),
-							];
+					const clockedInPeriods = yield* dbService.query("getClockedInPeriodsRange", async () => {
+						const conditions = [
+							eq(workPeriod.organizationId, organizationId),
+							gte(workPeriod.startTime, startDate),
+							lte(workPeriod.startTime, endDate),
+						];
 
-							if (managedEmployeeIds) {
-								conditions.push(inArray(workPeriod.employeeId, managedEmployeeIds));
-							}
+						if (managedEmployeeIds) {
+							conditions.push(inArray(workPeriod.employeeId, managedEmployeeIds));
+						}
 
-							return await dbService.db.query.workPeriod.findMany({
-								where: and(...conditions),
-							});
-						}),
-					);
+						return await dbService.db.query.workPeriod.findMany({
+							where: and(...conditions),
+						});
+					});
 
 					// Group by date and subarea
 					const gaps: CoverageGap[] = [];
@@ -690,157 +682,143 @@ export const CoverageServiceLive = Layer.effect(
 			// ============================================
 
 			createCoverageRule: (input) =>
-				Effect.gen(function* (_) {
-					const created = yield* _(
-						dbService.query("createCoverageRule", async () => {
-							const [newRule] = await dbService.db
-								.insert(coverageRule)
-								.values({
-									organizationId: input.organizationId,
-									subareaId: input.subareaId,
-									dayOfWeek: input.dayOfWeek,
-									startTime: input.startTime,
-									endTime: input.endTime,
-									minimumStaffCount: input.minimumStaffCount,
-									priority: input.priority ?? 0,
-									createdBy: input.createdBy,
-									updatedAt: new Date(),
-								})
-								.returning();
-							return newRule;
-						}),
-					);
+				Effect.gen(function* () {
+					const created = yield* dbService.query("createCoverageRule", async () => {
+						const [newRule] = await dbService.db
+							.insert(coverageRule)
+							.values({
+								organizationId: input.organizationId,
+								subareaId: input.subareaId,
+								dayOfWeek: input.dayOfWeek,
+								startTime: input.startTime,
+								endTime: input.endTime,
+								minimumStaffCount: input.minimumStaffCount,
+								priority: input.priority ?? 0,
+								createdBy: input.createdBy,
+								updatedAt: new Date(),
+							})
+							.returning();
+						return newRule;
+					});
 
 					// Fetch with relations
-					const result = yield* _(
-						dbService.query("getCoverageRuleWithRelations", async () => {
-							return await dbService.db.query.coverageRule.findFirst({
-								where: eq(coverageRule.id, created.id),
-								with: {
-									subarea: {
-										columns: { id: true, name: true },
-										with: {
-											location: {
-												columns: { id: true, name: true },
-											},
+					const result = yield* dbService.query("getCoverageRuleWithRelations", async () => {
+						return await dbService.db.query.coverageRule.findFirst({
+							where: eq(coverageRule.id, created.id),
+							with: {
+								subarea: {
+									columns: { id: true, name: true },
+									with: {
+										location: {
+											columns: { id: true, name: true },
 										},
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					return result as CoverageRuleWithRelations;
 				}),
 
 			updateCoverageRule: (id, input) =>
-				Effect.gen(function* (_) {
-					yield* _(
-						dbService.query("updateCoverageRule", async () => {
-							await dbService.db
-								.update(coverageRule)
-								.set({
-									...(input.subareaId && { subareaId: input.subareaId }),
-									...(input.dayOfWeek && { dayOfWeek: input.dayOfWeek }),
-									...(input.startTime && { startTime: input.startTime }),
-									...(input.endTime && { endTime: input.endTime }),
-									...(input.minimumStaffCount !== undefined && {
-										minimumStaffCount: input.minimumStaffCount,
-									}),
-									...(input.priority !== undefined && {
-										priority: input.priority,
-									}),
-									updatedBy: input.updatedBy,
-									updatedAt: new Date(),
-								})
-								.where(eq(coverageRule.id, id));
-						}),
-					);
+				Effect.gen(function* () {
+					yield* dbService.query("updateCoverageRule", async () => {
+						await dbService.db
+							.update(coverageRule)
+							.set({
+								...(input.subareaId && { subareaId: input.subareaId }),
+								...(input.dayOfWeek && { dayOfWeek: input.dayOfWeek }),
+								...(input.startTime && { startTime: input.startTime }),
+								...(input.endTime && { endTime: input.endTime }),
+								...(input.minimumStaffCount !== undefined && {
+									minimumStaffCount: input.minimumStaffCount,
+								}),
+								...(input.priority !== undefined && {
+									priority: input.priority,
+								}),
+								updatedBy: input.updatedBy,
+								updatedAt: new Date(),
+							})
+							.where(eq(coverageRule.id, id));
+					});
 
-					const result = yield* _(
-						dbService.query("getCoverageRuleWithRelations", async () => {
-							return await dbService.db.query.coverageRule.findFirst({
-								where: eq(coverageRule.id, id),
-								with: {
-									subarea: {
-										columns: { id: true, name: true },
-										with: {
-											location: {
-												columns: { id: true, name: true },
-											},
+					const result = yield* dbService.query("getCoverageRuleWithRelations", async () => {
+						return await dbService.db.query.coverageRule.findFirst({
+							where: eq(coverageRule.id, id),
+							with: {
+								subarea: {
+									columns: { id: true, name: true },
+									with: {
+										location: {
+											columns: { id: true, name: true },
 										},
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					return result as CoverageRuleWithRelations;
 				}),
 
 			deleteCoverageRule: (id) =>
-				Effect.gen(function* (_) {
-					yield* _(
-						dbService.query("deleteCoverageRule", async () => {
-							await dbService.db.delete(coverageRule).where(eq(coverageRule.id, id));
-						}),
-					);
+				Effect.gen(function* () {
+					yield* dbService.query("deleteCoverageRule", async () => {
+						await dbService.db.delete(coverageRule).where(eq(coverageRule.id, id));
+					});
 				}),
 
 			getCoverageRules: (organizationId, subareaId) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const conditions = [eq(coverageRule.organizationId, organizationId)];
 					if (subareaId) {
 						conditions.push(eq(coverageRule.subareaId, subareaId));
 					}
 
-					const results = yield* _(
-						dbService.query("getCoverageRules", async () => {
-							return await dbService.db.query.coverageRule.findMany({
-								where: and(...conditions),
-								with: {
-									subarea: {
-										columns: { id: true, name: true },
-										with: {
-											location: {
-												columns: { id: true, name: true },
-											},
+					const results = yield* dbService.query("getCoverageRules", async () => {
+						return await dbService.db.query.coverageRule.findMany({
+							where: and(...conditions),
+							with: {
+								subarea: {
+									columns: { id: true, name: true },
+									with: {
+										location: {
+											columns: { id: true, name: true },
 										},
 									},
 								},
-								orderBy: (rule, { asc }) => [asc(rule.dayOfWeek), asc(rule.startTime)],
-							});
-						}),
-					);
+							},
+							orderBy: (rule, { asc }) => [asc(rule.dayOfWeek), asc(rule.startTime)],
+						});
+					});
 
 					return results as CoverageRuleWithRelations[];
 				}),
 
 			getCoverageRuleById: (id) =>
-				Effect.gen(function* (_) {
-					const result = yield* _(
-						dbService.query("getCoverageRuleById", async () => {
-							return await dbService.db.query.coverageRule.findFirst({
-								where: eq(coverageRule.id, id),
-								with: {
-									subarea: {
-										columns: { id: true, name: true },
-										with: {
-											location: {
-												columns: { id: true, name: true },
-											},
+				Effect.gen(function* () {
+					const result = yield* dbService.query("getCoverageRuleById", async () => {
+						return await dbService.db.query.coverageRule.findFirst({
+							where: eq(coverageRule.id, id),
+							with: {
+								subarea: {
+									columns: { id: true, name: true },
+									with: {
+										location: {
+											columns: { id: true, name: true },
 										},
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					return result as CoverageRuleWithRelations | null;
 				}),
 
 			getTargetHeatmapData: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { organizationId, startDate, endDate, timezone, subareaIds } = params;
 
 					// Fetch rules
@@ -849,21 +827,19 @@ export const CoverageServiceLive = Layer.effect(
 						rulesConditions.push(inArray(coverageRule.subareaId, subareaIds));
 					}
 
-					const rules = yield* _(
-						dbService.query("getCoverageRulesForHeatmap", async () => {
-							return await dbService.db.query.coverageRule.findMany({
-								where: and(...rulesConditions),
-								with: {
-									subarea: {
-										columns: { id: true, name: true },
-										with: {
-											location: { columns: { id: true, name: true } },
-										},
+					const rules = yield* dbService.query("getCoverageRulesForHeatmap", async () => {
+						return await dbService.db.query.coverageRule.findMany({
+							where: and(...rulesConditions),
+							with: {
+								subarea: {
+									columns: { id: true, name: true },
+									with: {
+										location: { columns: { id: true, name: true } },
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					// Fetch published shifts
 					const shiftConditions = [
@@ -876,21 +852,19 @@ export const CoverageServiceLive = Layer.effect(
 						shiftConditions.push(inArray(shift.subareaId, subareaIds));
 					}
 
-					const shifts = yield* _(
-						dbService.query("getShiftsForHeatmap", async () => {
-							return await dbService.db.query.shift.findMany({
-								where: and(...shiftConditions),
-								columns: {
-									id: true,
-									subareaId: true,
-									employeeId: true,
-									date: true,
-									startTime: true,
-									endTime: true,
-								},
-							});
-						}),
-					);
+					const shifts = yield* dbService.query("getShiftsForHeatmap", async () => {
+						return await dbService.db.query.shift.findMany({
+							where: and(...shiftConditions),
+							columns: {
+								id: true,
+								subareaId: true,
+								employeeId: true,
+								date: true,
+								startTime: true,
+								endTime: true,
+							},
+						});
+					});
 
 					// Get unique subareas from rules
 					const subareaMap = new Map<string, { id: string; name: string; locationName?: string }>();
@@ -962,51 +936,48 @@ export const CoverageServiceLive = Layer.effect(
 				}),
 
 			validateScheduleCanPublish: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { organizationId, startDate, endDate, timezone } = params;
 
 					// Fetch all rules
-					const rules = yield* _(
-						dbService.query("getCoverageRulesForValidation", async () => {
-							return await dbService.db.query.coverageRule.findMany({
-								where: eq(coverageRule.organizationId, organizationId),
-								with: {
-									subarea: {
-										columns: { id: true, name: true },
-										with: {
-											location: { columns: { id: true, name: true } },
-										},
+					const rules = yield* dbService.query("getCoverageRulesForValidation", async () => {
+						return await dbService.db.query.coverageRule.findMany({
+							where: eq(coverageRule.organizationId, organizationId),
+							with: {
+								subarea: {
+									columns: { id: true, name: true },
+									with: {
+										location: { columns: { id: true, name: true } },
 									},
 								},
-							});
-						}),
-					);
+							},
+						});
+					});
 
 					// Fetch all draft shifts in range (that would be published)
-					const draftShifts = yield* _(
-						dbService.query("getDraftShiftsForValidation", async () => {
-							return await dbService.db.query.shift.findMany({
-								where: and(
-									eq(shift.organizationId, organizationId),
-									eq(shift.status, "draft"),
-									gte(shift.date, startDate),
-									lt(shift.date, endDate),
-								),
-								columns: {
-									id: true,
-									subareaId: true,
-									employeeId: true,
-									date: true,
-									startTime: true,
-									endTime: true,
-								},
-							});
-						}),
-					);
+					const draftShifts = yield* dbService.query("getDraftShiftsForValidation", async () => {
+						return await dbService.db.query.shift.findMany({
+							where: and(
+								eq(shift.organizationId, organizationId),
+								eq(shift.status, "draft"),
+								gte(shift.date, startDate),
+								lt(shift.date, endDate),
+							),
+							columns: {
+								id: true,
+								subareaId: true,
+								employeeId: true,
+								date: true,
+								startTime: true,
+								endTime: true,
+							},
+						});
+					});
 
 					// Also fetch published shifts (they'll remain)
-					const publishedShifts = yield* _(
-						dbService.query("getPublishedShiftsForValidation", async () => {
+					const publishedShifts = yield* dbService.query(
+						"getPublishedShiftsForValidation",
+						async () => {
 							return await dbService.db.query.shift.findMany({
 								where: and(
 									eq(shift.organizationId, organizationId),
@@ -1023,7 +994,7 @@ export const CoverageServiceLive = Layer.effect(
 									endTime: true,
 								},
 							});
-						}),
+						},
 					);
 
 					// Combine all shifts (draft + published)
@@ -1119,14 +1090,12 @@ export const CoverageServiceLive = Layer.effect(
 			// ============================================
 
 			getCoverageSettings: (organizationId) =>
-				Effect.gen(function* (_) {
-					const settings = yield* _(
-						dbService.query("getCoverageSettings", async () => {
-							return await dbService.db.query.coverageSettings.findFirst({
-								where: eq(coverageSettings.organizationId, organizationId),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const settings = yield* dbService.query("getCoverageSettings", async () => {
+						return await dbService.db.query.coverageSettings.findFirst({
+							where: eq(coverageSettings.organizationId, organizationId),
+						});
+					});
 
 					// Return defaults if no settings exist
 					if (!settings) {
@@ -1149,30 +1118,26 @@ export const CoverageServiceLive = Layer.effect(
 				}),
 
 			updateCoverageSettings: (organizationId, input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Try to find existing settings
-					const existing = yield* _(
-						dbService.query("getCoverageSettingsForUpdate", async () => {
-							return await dbService.db.query.coverageSettings.findFirst({
-								where: eq(coverageSettings.organizationId, organizationId),
-							});
-						}),
-					);
+					const existing = yield* dbService.query("getCoverageSettingsForUpdate", async () => {
+						return await dbService.db.query.coverageSettings.findFirst({
+							where: eq(coverageSettings.organizationId, organizationId),
+						});
+					});
 
 					if (existing) {
 						// Update existing
-						const [updated] = yield* _(
-							dbService.query("updateCoverageSettings", async () => {
-								return await dbService.db
-									.update(coverageSettings)
-									.set({
-										allowPublishWithGaps: input.allowPublishWithGaps,
-										updatedBy: input.updatedBy,
-									})
-									.where(eq(coverageSettings.id, existing.id))
-									.returning();
-							}),
-						);
+						const [updated] = yield* dbService.query("updateCoverageSettings", async () => {
+							return await dbService.db
+								.update(coverageSettings)
+								.set({
+									allowPublishWithGaps: input.allowPublishWithGaps,
+									updatedBy: input.updatedBy,
+								})
+								.where(eq(coverageSettings.id, existing.id))
+								.returning();
+						});
 						return {
 							id: updated.id,
 							organizationId: updated.organizationId,
@@ -1182,18 +1147,16 @@ export const CoverageServiceLive = Layer.effect(
 						};
 					} else {
 						// Create new
-						const [created] = yield* _(
-							dbService.query("insertCoverageSettings", async () => {
-								return await dbService.db
-									.insert(coverageSettings)
-									.values({
-										organizationId,
-										allowPublishWithGaps: input.allowPublishWithGaps,
-										updatedBy: input.updatedBy,
-									})
-									.returning();
-							}),
-						);
+						const [created] = yield* dbService.query("insertCoverageSettings", async () => {
+							return await dbService.db
+								.insert(coverageSettings)
+								.values({
+									organizationId,
+									allowPublishWithGaps: input.allowPublishWithGaps,
+									updatedBy: input.updatedBy,
+								})
+								.returning();
+						});
 						return {
 							id: created.id,
 							organizationId: created.organizationId,

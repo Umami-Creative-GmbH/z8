@@ -46,7 +46,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { CoverageRuleWithRelations } from "@/lib/effect-v3/services/coverage.service";
+import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
 import { queryKeys } from "@/lib/query/keys";
 import { CoverageRuleDialog } from "./coverage-rule-dialog";
 

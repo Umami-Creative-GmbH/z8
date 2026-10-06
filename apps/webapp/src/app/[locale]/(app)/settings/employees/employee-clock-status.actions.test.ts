@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -86,14 +86,14 @@ vi.mock("./employee-action-utils", () => ({
 		mocks.getManagedEmployeeIdsForSettingsActor,
 }));
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Layer } = await import("effect-v3");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Layer } = await import("effect");
 
 	return { AppLayer: Layer.empty };
 });
 
-vi.mock("@/lib/effect-v3/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect-v3");
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T>(
@@ -103,8 +103,8 @@ vi.mock("@/lib/effect-v3/result", async () => {
 
 			return Exit.match(exit, {
 				onFailure: (cause) => {
-					const defect = [...Cause.defects(cause)][0] ?? null;
-					const failure = Option.getOrNull(Cause.failureOption(cause));
+					const defect = Result.getOrNull(Cause.findDefect(cause));
+					const failure = Option.getOrNull(Cause.findErrorOption(cause));
 					const error = defect ?? failure ?? cause;
 
 					return {

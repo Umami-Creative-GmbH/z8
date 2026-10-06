@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "@/db/auth-schema";
 import {
@@ -8,8 +8,8 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect-v3/result";
-import { ManagerService } from "@/lib/effect-v3/services/manager.service";
+import { toServerActionResult } from "@/lib/effect/result";
+import { ManagerService } from "@/lib/effect/services/manager.service";
 
 const mocks = vi.hoisted(() => ({
 	ensureSettingsActorCanAccessEmployeeTarget: vi.fn(),

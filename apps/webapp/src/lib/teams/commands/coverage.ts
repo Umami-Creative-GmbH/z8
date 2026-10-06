@@ -6,13 +6,13 @@
  * Manager/admin only command.
  */
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import { CoverageService, CoverageServiceFullLive } from "@/lib/effect-v3/services/coverage.service";
+import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
 import { createLogger } from "@/lib/logger";
 import { buildCoverageCard } from "../cards/coverage-card";
 import { getCommandTemporalContext } from "./command-temporal";
@@ -71,16 +71,14 @@ async function coverageHandler(ctx: BotCommandContext): Promise<BotCommandRespon
 		);
 
 		// Fetch coverage data using Effect-TS service
-		const program = Effect.gen(function* (_) {
-			const coverageService = yield* _(CoverageService);
-			return yield* _(
-				coverageService.getCoverageForDate({
-					organizationId: ctx.organizationId,
-					date: dateFromInstant(date.toZonedDateTime(timezone).toInstant()),
-					timezone,
-					managerId: ctx.employeeId,
-				}),
-			);
+		const program = Effect.gen(function* () {
+			const coverageService = yield* CoverageService;
+			return yield* coverageService.getCoverageForDate({
+				organizationId: ctx.organizationId,
+				date: dateFromInstant(date.toZonedDateTime(timezone).toInstant()),
+				timezone,
+				managerId: ctx.employeeId,
+			});
 		});
 
 		const summary = await Effect.runPromise(program.pipe(Effect.provide(CoverageServiceFullLive)));

@@ -3,7 +3,7 @@ import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions } from "@/db/schema";
 import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
-import type { PermissionFlags } from "@/lib/effect-v3/services/permissions.service";
+import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { Action, CustomRoleInfo, PrincipalContext, Subject, TeamPermissions } from "./types";
 

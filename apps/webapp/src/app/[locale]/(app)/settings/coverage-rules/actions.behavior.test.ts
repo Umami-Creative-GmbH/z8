@@ -34,13 +34,13 @@ vi.mock("@/lib/settings-scheduling-access", () => ({
 	getSchedulingSettingsAccessContext: vi.fn(async () => mockState.accessContext),
 }));
 
-vi.mock("@/lib/effect-v3/runtime", () => ({
+vi.mock("@/lib/effect/runtime", () => ({
 	safeAction: vi.fn(async () => ({ success: true, data: [] })),
 }));
 
-vi.mock("@/lib/effect-v3/services/coverage.service", async () => {
-	const { Context } = await import("effect-v3");
-	const CoverageService = Context.GenericTag<any>("CoverageService");
+vi.mock("@/lib/effect/services/coverage.service", async () => {
+	const { Context } = await import("effect");
+	const CoverageService = Context.Service<any>("CoverageService");
 	return { CoverageService };
 });
 

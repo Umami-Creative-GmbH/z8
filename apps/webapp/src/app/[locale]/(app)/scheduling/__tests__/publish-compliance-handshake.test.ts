@@ -3,14 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("@/db/schema", () => ({ employee: {}, location: {} }));
 vi.mock("@/lib/auth", () => ({ auth: {} }));
-vi.mock("@/lib/effect-v3/runtime", () => ({ AppLayer: {} }));
-vi.mock("@/lib/effect-v3/result", () => ({ runServerActionSafe: vi.fn() }));
-vi.mock("@/lib/effect-v3/services/auth.service", () => ({ AuthService: {} }));
-vi.mock("@/lib/effect-v3/services/database.service", () => ({ DatabaseService: {} }));
-vi.mock("@/lib/effect-v3/services/shift.service", () => ({ ShiftService: {} }));
-vi.mock("@/lib/effect-v3/services/shift-request.service", () => ({ ShiftRequestService: {} }));
-vi.mock("@/lib/effect-v3/services/coverage.service", () => ({ CoverageService: {} }));
-vi.mock("@/lib/effect-v3/services/schedule-compliance.service", () => ({
+vi.mock("@/lib/effect/runtime", () => ({ AppLayer: {} }));
+vi.mock("@/lib/effect/result", () => ({ runServerActionSafe: vi.fn() }));
+vi.mock("@/lib/effect/services/auth.service", () => ({ AuthService: {} }));
+vi.mock("@/lib/effect/services/database.service", () => ({ DatabaseService: {} }));
+vi.mock("@/lib/effect/services/shift.service", () => ({ ShiftService: {} }));
+vi.mock("@/lib/effect/services/shift-request.service", () => ({ ShiftRequestService: {} }));
+vi.mock("@/lib/effect/services/coverage.service", () => ({ CoverageService: {} }));
+vi.mock("@/lib/effect/services/schedule-compliance.service", () => ({
 	ScheduleComplianceService: {},
 	ScheduleComplianceServiceLive: {},
 }));

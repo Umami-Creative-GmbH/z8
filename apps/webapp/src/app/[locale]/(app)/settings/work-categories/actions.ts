@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
 import {
@@ -24,10 +24,10 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type Transaction,
 	withOrganizationConfigurationMutation,
@@ -246,34 +246,30 @@ function ensureScopedCategoryIds(
 	categoryIds: string[],
 	queryName: string,
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (categoryIds.length === 0) {
 			return;
 		}
 
-		const rows = yield* _(
-			dbService.query(queryName, async () => {
-				return await dbService.db
-					.select({ id: workCategory.id })
-					.from(workCategory)
-					.where(
-						and(
-							eq(workCategory.organizationId, organizationId),
-							inArray(workCategory.id, categoryIds),
-						),
-					);
-			}),
-		);
+		const rows = yield* dbService.query(queryName, async () => {
+			return await dbService.db
+				.select({ id: workCategory.id })
+				.from(workCategory)
+				.where(
+					and(
+						eq(workCategory.organizationId, organizationId),
+						inArray(workCategory.id, categoryIds),
+					),
+				);
+		});
 
 		if (rows.length !== new Set(categoryIds).size) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "One or more work categories were not found in this organization",
-						entityType: "work_category",
-						entityId: categoryIds.join(","),
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "One or more work categories were not found in this organization",
+					entityType: "work_category",
+					entityId: categoryIds.join(","),
+				}),
 			);
 		}
 	});
@@ -303,8 +299,8 @@ function runWorkCategoryEligibilityMutation<T>(
 }
 
 function getScopedWorkCategoryAccessContext(organizationId: string | undefined, queryName: string) {
-	return Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext({ organizationId, queryName }));
+	return Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ organizationId, queryName });
 		const scopedOrganizationId = actor.organizationId;
 
 		if (actor.accessTier === "orgAdmin") {
@@ -318,44 +314,42 @@ function getScopedWorkCategoryAccessContext(organizationId: string | undefined, 
 			} satisfies WorkCategoryAccessContext;
 		}
 
-		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
+		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
 		const [
 			teamPermissionRows,
 			managedProjects,
 			managerLocationAssignments,
 			managerSubareaAssignments,
 		] = actor.currentEmployee
-			? yield* _(
-					Effect.all([
-						actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-							return await actor.dbService.db.query.teamPermissions.findMany({
-								where: and(
-									eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
-									eq(teamPermissions.organizationId, scopedOrganizationId),
-								),
-								columns: { teamId: true, canManageTeamSettings: true },
-							});
-						}),
-						actor.dbService.query(`${queryName}:managedProjects`, async () => {
-							return await actor.dbService.db.query.projectManager.findMany({
-								where: eq(projectManager.employeeId, actor.currentEmployee?.id ?? ""),
-								columns: { projectId: true },
-							});
-						}),
-						actor.dbService.query(`${queryName}:locationAssignments`, async () => {
-							return await actor.dbService.db.query.locationEmployee.findMany({
-								where: eq(locationEmployee.employeeId, actor.currentEmployee?.id ?? ""),
-								columns: { locationId: true },
-							});
-						}),
-						actor.dbService.query(`${queryName}:subareaAssignments`, async () => {
-							return await actor.dbService.db.query.subareaEmployee.findMany({
-								where: eq(subareaEmployee.employeeId, actor.currentEmployee?.id ?? ""),
-								columns: { subareaId: true },
-							});
-						}),
-					]),
-				)
+			? yield* Effect.all([
+					actor.dbService.query(`${queryName}:teamPermissions`, async () => {
+						return await actor.dbService.db.query.teamPermissions.findMany({
+							where: and(
+								eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
+								eq(teamPermissions.organizationId, scopedOrganizationId),
+							),
+							columns: { teamId: true, canManageTeamSettings: true },
+						});
+					}),
+					actor.dbService.query(`${queryName}:managedProjects`, async () => {
+						return await actor.dbService.db.query.projectManager.findMany({
+							where: eq(projectManager.employeeId, actor.currentEmployee?.id ?? ""),
+							columns: { projectId: true },
+						});
+					}),
+					actor.dbService.query(`${queryName}:locationAssignments`, async () => {
+						return await actor.dbService.db.query.locationEmployee.findMany({
+							where: eq(locationEmployee.employeeId, actor.currentEmployee?.id ?? ""),
+							columns: { locationId: true },
+						});
+					}),
+					actor.dbService.query(`${queryName}:subareaAssignments`, async () => {
+						return await actor.dbService.db.query.subareaEmployee.findMany({
+							where: eq(subareaEmployee.employeeId, actor.currentEmployee?.id ?? ""),
+							columns: { subareaId: true },
+						});
+					}),
+				])
 			: [[], [], [], []];
 
 		const manageableLocationIds = new Set(
@@ -385,7 +379,7 @@ function getScopedWorkCategoryAccessContext(organizationId: string | undefined, 
 }
 
 function getScopedEmployeeIds(accessContext: WorkCategoryAccessContext, queryName: string) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (accessContext.actor.accessTier === "orgAdmin") {
 			return null as Set<string> | null;
 		}
@@ -398,37 +392,35 @@ function getScopedEmployeeIds(accessContext: WorkCategoryAccessContext, queryNam
 			? [...accessContext.manageableSubareaIds]
 			: [];
 
-		const [teamEmployees, locationAreaEmployees, subareaAreaEmployees] = yield* _(
-			Effect.all([
-				teamIds.length > 0
-					? accessContext.actor.dbService.query(`${queryName}:teamEmployees`, async () => {
-							return await accessContext.actor.dbService.db.query.employee.findMany({
-								where: and(
-									eq(employee.organizationId, accessContext.actor.organizationId),
-									inArray(employee.teamId, teamIds),
-								),
-								columns: { id: true },
-							});
-						})
-					: Effect.succeed([] as Array<{ id: string }>),
-				locationIds.length > 0
-					? accessContext.actor.dbService.query(`${queryName}:locationAreaEmployees`, async () => {
-							return await accessContext.actor.dbService.db.query.locationEmployee.findMany({
-								where: inArray(locationEmployee.locationId, locationIds),
-								columns: { employeeId: true },
-							});
-						})
-					: Effect.succeed([] as Array<{ employeeId: string }>),
-				subareaIds.length > 0
-					? accessContext.actor.dbService.query(`${queryName}:subareaAreaEmployees`, async () => {
-							return await accessContext.actor.dbService.db.query.subareaEmployee.findMany({
-								where: inArray(subareaEmployee.subareaId, subareaIds),
-								columns: { employeeId: true },
-							});
-						})
-					: Effect.succeed([] as Array<{ employeeId: string }>),
-			]),
-		);
+		const [teamEmployees, locationAreaEmployees, subareaAreaEmployees] = yield* Effect.all([
+			teamIds.length > 0
+				? accessContext.actor.dbService.query(`${queryName}:teamEmployees`, async () => {
+						return await accessContext.actor.dbService.db.query.employee.findMany({
+							where: and(
+								eq(employee.organizationId, accessContext.actor.organizationId),
+								inArray(employee.teamId, teamIds),
+							),
+							columns: { id: true },
+						});
+					})
+				: Effect.succeed([] as Array<{ id: string }>),
+			locationIds.length > 0
+				? accessContext.actor.dbService.query(`${queryName}:locationAreaEmployees`, async () => {
+						return await accessContext.actor.dbService.db.query.locationEmployee.findMany({
+							where: inArray(locationEmployee.locationId, locationIds),
+							columns: { employeeId: true },
+						});
+					})
+				: Effect.succeed([] as Array<{ employeeId: string }>),
+			subareaIds.length > 0
+				? accessContext.actor.dbService.query(`${queryName}:subareaAreaEmployees`, async () => {
+						return await accessContext.actor.dbService.db.query.subareaEmployee.findMany({
+							where: inArray(subareaEmployee.subareaId, subareaIds),
+							columns: { employeeId: true },
+						});
+					})
+				: Effect.succeed([] as Array<{ employeeId: string }>),
+		]);
 
 		return new Set([
 			...(accessContext.managedEmployeeIds ? [...accessContext.managedEmployeeIds] : []),
@@ -440,47 +432,43 @@ function getScopedEmployeeIds(accessContext: WorkCategoryAccessContext, queryNam
 }
 
 function getVisibleCategoryIds(accessContext: WorkCategoryAccessContext, queryName: string) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (accessContext.actor.accessTier === "orgAdmin") {
 			return null as Set<string> | null;
 		}
 
-		const scopedEmployeeIds = yield* _(
-			getScopedEmployeeIds(accessContext, `${queryName}:employees`),
-		);
+		const scopedEmployeeIds = yield* getScopedEmployeeIds(accessContext, `${queryName}:employees`);
 		const employeeIds = scopedEmployeeIds ? [...scopedEmployeeIds] : [];
 		const projectIds = accessContext.managedProjectIds ? [...accessContext.managedProjectIds] : [];
 
-		const [employeeCategoryRows, projectCategoryRows] = yield* _(
-			Effect.all([
-				employeeIds.length > 0
-					? accessContext.actor.dbService.query(`${queryName}:employeeCategoryIds`, async () => {
-							return await accessContext.actor.dbService.db
-								.select({ workCategoryId: workPeriod.workCategoryId })
-								.from(workPeriod)
-								.where(
-									and(
-										eq(workPeriod.organizationId, accessContext.actor.organizationId),
-										inArray(workPeriod.employeeId, employeeIds),
-									),
-								);
-						})
-					: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
-				projectIds.length > 0
-					? accessContext.actor.dbService.query(`${queryName}:projectCategoryIds`, async () => {
-							return await accessContext.actor.dbService.db
-								.select({ workCategoryId: workPeriod.workCategoryId })
-								.from(workPeriod)
-								.where(
-									and(
-										eq(workPeriod.organizationId, accessContext.actor.organizationId),
-										inArray(workPeriod.projectId, projectIds),
-									),
-								);
-						})
-					: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
-			]),
-		);
+		const [employeeCategoryRows, projectCategoryRows] = yield* Effect.all([
+			employeeIds.length > 0
+				? accessContext.actor.dbService.query(`${queryName}:employeeCategoryIds`, async () => {
+						return await accessContext.actor.dbService.db
+							.select({ workCategoryId: workPeriod.workCategoryId })
+							.from(workPeriod)
+							.where(
+								and(
+									eq(workPeriod.organizationId, accessContext.actor.organizationId),
+									inArray(workPeriod.employeeId, employeeIds),
+								),
+							);
+					})
+				: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
+			projectIds.length > 0
+				? accessContext.actor.dbService.query(`${queryName}:projectCategoryIds`, async () => {
+						return await accessContext.actor.dbService.db
+							.select({ workCategoryId: workPeriod.workCategoryId })
+							.from(workPeriod)
+							.where(
+								and(
+									eq(workPeriod.organizationId, accessContext.actor.organizationId),
+									inArray(workPeriod.projectId, projectIds),
+								),
+							);
+					})
+				: Effect.succeed([] as Array<{ workCategoryId: string | null }>),
+		]);
 
 		return new Set(
 			[...employeeCategoryRows, ...projectCategoryRows]
@@ -491,31 +479,27 @@ function getVisibleCategoryIds(accessContext: WorkCategoryAccessContext, queryNa
 }
 
 function getVisibleSetIds(accessContext: WorkCategoryAccessContext, queryName: string) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (accessContext.actor.accessTier === "orgAdmin") {
 			return null as Set<string> | null;
 		}
 
-		const visibleCategoryIds = yield* _(
-			getVisibleCategoryIds(accessContext, `${queryName}:categories`),
-		);
+		const visibleCategoryIds = yield* getVisibleCategoryIds(accessContext, `${queryName}:categories`);
 		const categoryIds = visibleCategoryIds ? [...visibleCategoryIds] : [];
 
 		if (categoryIds.length === 0) {
 			return new Set<string>();
 		}
 
-		const setLinks = yield* _(
-			accessContext.actor.dbService.query(`${queryName}:setLinks`, async () => {
-				return await accessContext.actor.dbService.db
-					.select({
-						setId: workCategorySetCategory.setId,
-						categoryId: workCategorySetCategory.categoryId,
-					})
-					.from(workCategorySetCategory)
-					.where(inArray(workCategorySetCategory.categoryId, categoryIds));
-			}),
-		);
+		const setLinks = yield* accessContext.actor.dbService.query(`${queryName}:setLinks`, async () => {
+			return await accessContext.actor.dbService.db
+				.select({
+					setId: workCategorySetCategory.setId,
+					categoryId: workCategorySetCategory.categoryId,
+				})
+				.from(workCategorySetCategory)
+				.where(inArray(workCategorySetCategory.categoryId, categoryIds));
+		});
 
 		return new Set(setLinks.map((link) => link.setId));
 	});
@@ -551,14 +535,11 @@ function filterAssignmentsByManagerScope(
 export async function getOrganizationCategories(
 	organizationId: string,
 ): Promise<ServerActionResult<OrganizationCategoryItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const accessContext = yield* _(
-			getScopedWorkCategoryAccessContext(organizationId, "getOrganizationCategories:actor"),
-		);
+	const effect = Effect.gen(function* () {
+		const accessContext = yield* getScopedWorkCategoryAccessContext(organizationId, "getOrganizationCategories:actor");
 		const dbService = accessContext.actor.dbService;
 
-		const categories = yield* _(
-			dbService.query("getOrganizationCategories", async () => {
+		const categories = yield* dbService.query("getOrganizationCategories", async () => {
 				const results = await dbService.db
 					.select({
 						id: workCategory.id,
@@ -592,24 +573,20 @@ export async function getOrganizationCategories(
 				);
 
 				return categoriesWithUsage;
-			}),
-			Effect.mapError(
+			}).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch organization categories",
 						operation: "select",
 						table: "work_category",
 					}),
-			),
-		);
+			));
 
 		if (accessContext.actor.accessTier === "orgAdmin") {
 			return categories;
 		}
 
-		const visibleCategoryIds = yield* _(
-			getVisibleCategoryIds(accessContext, "getOrganizationCategories:visible"),
-		);
+		const visibleCategoryIds = yield* getVisibleCategoryIds(accessContext, "getOrganizationCategories:visible");
 
 		return categories.filter((category) => visibleCategoryIds?.has(category.id));
 	});
@@ -627,88 +604,76 @@ export async function getOrganizationCategories(
 export async function createOrganizationCategory(
 	input: CreateOrganizationCategoryInput,
 ): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId: input.organizationId,
-				queryName: "createOrganizationCategory:actor",
-			}),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to create work categories",
-				resource: "work_category",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId: input.organizationId,
+			queryName: "createOrganizationCategory:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to create work categories",
+			resource: "work_category",
+			action: "create",
+		});
 		const dbService = actor.dbService;
 
 		// Validate factor is within range
 		const factor = parseFloat(input.factor);
 		if (Number.isNaN(factor) || factor < 0 || factor > 2) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Factor must be between 0 and 2",
-						conflictType: "invalid_factor",
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: "Factor must be between 0 and 2",
+					conflictType: "invalid_factor",
+				}),
 			);
 		}
 
 		// Check for existing category with same name
-		const [existing] = yield* _(
-			dbService.query("checkExistingCategory", async () =>
-				dbService.db
-					.select({ id: workCategory.id })
-					.from(workCategory)
-					.where(
-						and(
-							eq(workCategory.organizationId, input.organizationId),
-							eq(workCategory.name, input.name),
-							eq(workCategory.isActive, true),
-						),
-					)
-					.limit(1),
-			),
+		const [existing] = yield* dbService.query("checkExistingCategory", async () =>
+			dbService.db
+				.select({ id: workCategory.id })
+				.from(workCategory)
+				.where(
+					and(
+						eq(workCategory.organizationId, input.organizationId),
+						eq(workCategory.name, input.name),
+						eq(workCategory.isActive, true),
+					),
+				)
+				.limit(1),
 		);
 
 		if (existing) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: `A category named "${input.name}" already exists`,
-						conflictType: "duplicate_name",
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: `A category named "${input.name}" already exists`,
+					conflictType: "duplicate_name",
+				}),
 			);
 		}
 
 		// Create the category
-		const [created] = yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
-						.insert(workCategory)
-						.values({
-							organizationId: input.organizationId,
-							name: input.name,
-							description: input.description ?? null,
-							factor: input.factor,
-							color: input.color ?? null,
-							createdBy: actor.session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning(),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to create work category",
-						operation: "insert",
-						table: "work_category",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
+		const [created] = yield* Effect.tryPromise({
+			try: async () =>
+				dbService.db
+					.insert(workCategory)
+					.values({
+						organizationId: input.organizationId,
+						name: input.name,
+						description: input.description ?? null,
+						factor: input.factor,
+						color: input.color ?? null,
+						createdBy: actor.session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning(),
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to create work category",
+					operation: "insert",
+					table: "work_category",
+					cause: error instanceof Error ? error : undefined,
+				}),
+		});
 
 		revalidatePath("/settings/work-categories");
 
@@ -724,36 +689,28 @@ export async function createOrganizationCategory(
 export async function updateOrganizationCategory(
 	input: UpdateOrganizationCategoryInput,
 ): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "updateOrganizationCategory:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to update work categories",
-				resource: "work_category",
-				action: "update",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateOrganizationCategory:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to update work categories",
+			resource: "work_category",
+			action: "update",
+		});
 		const dbService = actor.dbService;
-		const scopedCategory = yield* _(
-			getScopedOrganizationWorkCategory(
-				dbService,
-				actor.organizationId,
-				input.categoryId,
-				"updateOrganizationCategory:scopedCategory",
-			),
+		const scopedCategory = yield* getScopedOrganizationWorkCategory(
+			dbService,
+			actor.organizationId,
+			input.categoryId,
+			"updateOrganizationCategory:scopedCategory",
 		);
 
 		if (!scopedCategory) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category not found",
-						entityType: "work_category",
-						entityId: input.categoryId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category not found",
+					entityType: "work_category",
+					entityId: input.categoryId,
+				}),
 			);
 		}
 
@@ -761,56 +718,50 @@ export async function updateOrganizationCategory(
 		if (input.factor !== undefined) {
 			const factor = parseFloat(input.factor);
 			if (Number.isNaN(factor) || factor < 0 || factor > 2) {
-				yield* _(
-					Effect.fail(
-						new ConflictError({
-							message: "Factor must be between 0 and 2",
-							conflictType: "invalid_factor",
-						}),
-					),
+				yield* Effect.fail(
+					new ConflictError({
+						message: "Factor must be between 0 and 2",
+						conflictType: "invalid_factor",
+					}),
 				);
 			}
 		}
 
 		// Update the category
-		const [updated] = yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
-						.update(workCategory)
-						.set({
-							...(input.name !== undefined && { name: input.name }),
-							...(input.description !== undefined && { description: input.description }),
-							...(input.factor !== undefined && { factor: input.factor }),
-							...(input.color !== undefined && { color: input.color }),
-							updatedBy: actor.session.user.id,
-						})
-						.where(
-							and(
-								eq(workCategory.id, input.categoryId),
-								eq(workCategory.organizationId, actor.organizationId),
-							),
-						)
-						.returning(),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to update work category",
-						operation: "update",
-						table: "work_category",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
+		const [updated] = yield* Effect.tryPromise({
+			try: async () =>
+				dbService.db
+					.update(workCategory)
+					.set({
+						...(input.name !== undefined && { name: input.name }),
+						...(input.description !== undefined && { description: input.description }),
+						...(input.factor !== undefined && { factor: input.factor }),
+						...(input.color !== undefined && { color: input.color }),
+						updatedBy: actor.session.user.id,
+					})
+					.where(
+						and(
+							eq(workCategory.id, input.categoryId),
+							eq(workCategory.organizationId, actor.organizationId),
+						),
+					)
+					.returning(),
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to update work category",
+					operation: "update",
+					table: "work_category",
+					cause: error instanceof Error ? error : undefined,
+				}),
+		});
 
 		if (!updated) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category not found",
-						entityType: "work_category",
-						entityId: input.categoryId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category not found",
+					entityType: "work_category",
+					entityId: input.categoryId,
+				}),
 			);
 		}
 
@@ -828,69 +779,59 @@ export async function updateOrganizationCategory(
 export async function deleteOrganizationCategory(
 	categoryId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deleteOrganizationCategory:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to delete work categories",
-				resource: "work_category",
-				action: "delete",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteOrganizationCategory:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to delete work categories",
+			resource: "work_category",
+			action: "delete",
+		});
 		const dbService = actor.dbService;
-		const scopedCategory = yield* _(
-			getScopedOrganizationWorkCategory(
-				dbService,
-				actor.organizationId,
-				categoryId,
-				"deleteOrganizationCategory:scopedCategory",
-			),
+		const scopedCategory = yield* getScopedOrganizationWorkCategory(
+			dbService,
+			actor.organizationId,
+			categoryId,
+			"deleteOrganizationCategory:scopedCategory",
 		);
 
 		if (!scopedCategory) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category not found",
-						entityType: "work_category",
-						entityId: categoryId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category not found",
+					entityType: "work_category",
+					entityId: categoryId,
+				}),
 			);
 		}
 
 		// Soft delete the category and remove it from every set, together.
-		yield* _(
-			runWorkCategoryEligibilityMutation(
-				dbService,
-				actor.organizationId,
-				async (tx) => {
-					const deactivated = await tx
-						.update(workCategory)
-						.set({ isActive: false, updatedBy: actor.session.user.id })
-						.where(
-							and(
-								eq(workCategory.id, categoryId),
-								eq(workCategory.organizationId, actor.organizationId),
-								eq(workCategory.isActive, true),
-							),
-						)
-						.returning({ id: workCategory.id });
-					if (deactivated.length === 0) {
-						throw new NotFoundError({
-							message: "Work category not found",
-							entityType: "work_category",
-							entityId: categoryId,
-						});
-					}
-					await tx
-						.delete(workCategorySetCategory)
-						.where(eq(workCategorySetCategory.categoryId, categoryId));
-				},
-				{ message: "Failed to delete work category", operation: "update", table: "work_category" },
-			),
+		yield* runWorkCategoryEligibilityMutation(
+			dbService,
+			actor.organizationId,
+			async (tx) => {
+				const deactivated = await tx
+					.update(workCategory)
+					.set({ isActive: false, updatedBy: actor.session.user.id })
+					.where(
+						and(
+							eq(workCategory.id, categoryId),
+							eq(workCategory.organizationId, actor.organizationId),
+							eq(workCategory.isActive, true),
+						),
+					)
+					.returning({ id: workCategory.id });
+				if (deactivated.length === 0) {
+					throw new NotFoundError({
+						message: "Work category not found",
+						entityType: "work_category",
+						entityId: categoryId,
+					});
+				}
+				await tx
+					.delete(workCategorySetCategory)
+					.where(eq(workCategorySetCategory.categoryId, categoryId));
+			},
+			{ message: "Failed to delete work category", operation: "update", table: "work_category" },
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -911,14 +852,11 @@ export async function deleteOrganizationCategory(
 export async function getWorkCategorySets(
 	organizationId: string,
 ): Promise<ServerActionResult<WorkCategorySetListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const accessContext = yield* _(
-			getScopedWorkCategoryAccessContext(organizationId, "getWorkCategorySets:actor"),
-		);
+	const effect = Effect.gen(function* () {
+		const accessContext = yield* getScopedWorkCategoryAccessContext(organizationId, "getWorkCategorySets:actor");
 		const dbService = accessContext.actor.dbService;
 
-		const sets = yield* _(
-			dbService.query("getWorkCategorySets", async () => {
+		const sets = yield* dbService.query("getWorkCategorySets", async () => {
 				const results = await dbService.db
 					.select({
 						id: workCategorySet.id,
@@ -972,24 +910,20 @@ export async function getWorkCategorySets(
 				);
 
 				return setsWithCounts;
-			}),
-			Effect.mapError(
+			}).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch work category sets",
 						operation: "select",
 						table: "work_category_set",
 					}),
-			),
-		);
+			));
 
 		if (accessContext.actor.accessTier === "orgAdmin") {
 			return sets;
 		}
 
-		const visibleSetIds = yield* _(
-			getVisibleSetIds(accessContext, "getWorkCategorySets:visibleSets"),
-		);
+		const visibleSetIds = yield* getVisibleSetIds(accessContext, "getWorkCategorySets:visibleSets");
 
 		return sets.filter((set) => visibleSetIds?.has(set.id));
 	});
@@ -1003,41 +937,32 @@ export async function getWorkCategorySets(
 export async function getWorkCategorySetDetail(
 	setId: string,
 ): Promise<ServerActionResult<WorkCategorySetDetail>> {
-	const effect = Effect.gen(function* (_) {
-		const accessContext = yield* _(
-			getScopedWorkCategoryAccessContext(undefined, "getWorkCategorySetDetail:actor"),
-		);
+	const effect = Effect.gen(function* () {
+		const accessContext = yield* getScopedWorkCategoryAccessContext(undefined, "getWorkCategorySetDetail:actor");
 		const dbService = accessContext.actor.dbService;
 		const visibleCategoryIds =
 			accessContext.actor.accessTier === "orgAdmin"
 				? null
-				: yield* _(
-						getVisibleCategoryIds(accessContext, "getWorkCategorySetDetail:visibleCategories"),
-					);
+				: yield* getVisibleCategoryIds(accessContext, "getWorkCategorySetDetail:visibleCategories");
 
-		const [set] = yield* _(
-			dbService.query("getWorkCategorySet", async () =>
+		const [set] = yield* dbService.query("getWorkCategorySet", async () =>
 				dbService.db.select().from(workCategorySet).where(eq(workCategorySet.id, setId)).limit(1),
-			),
-			Effect.mapError(
+			).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch work category set",
 						operation: "select",
 						table: "work_category_set",
 					}),
-			),
-		);
+			));
 
 		if (!set) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: setId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set not found",
+					entityType: "work_category_set",
+					entityId: setId,
+				}),
 			);
 			// TypeScript doesn't know yield* Effect.fail never returns
 			throw new Error("unreachable");
@@ -1045,51 +970,44 @@ export async function getWorkCategorySetDetail(
 
 		if (accessContext.actor.accessTier !== "orgAdmin") {
 			if (set.organizationId !== accessContext.actor.organizationId) {
-				yield* _(
-					Effect.fail(
-						new AuthorizationError({
-							message: "Cannot access work category set from different organization",
-							userId: accessContext.actor.session.user.id,
-							resource: "work_category_set",
-							action: "read",
-						}),
-					),
+				yield* Effect.fail(
+					new AuthorizationError({
+						message: "Cannot access work category set from different organization",
+						userId: accessContext.actor.session.user.id,
+						resource: "work_category_set",
+						action: "read",
+					}),
 				);
 			}
 
 			const visibleSetIds = visibleCategoryIds
 				? new Set(
-						(yield* _(
-							accessContext.actor.dbService.query(
-								"getWorkCategorySetDetail:visibleSetLinks",
-								async () => {
-									return await accessContext.actor.dbService.db
-										.select({ setId: workCategorySetCategory.setId })
-										.from(workCategorySetCategory)
-										.where(inArray(workCategorySetCategory.categoryId, [...visibleCategoryIds]));
-								},
-							),
+						(yield* accessContext.actor.dbService.query(
+							"getWorkCategorySetDetail:visibleSetLinks",
+							async () => {
+								return await accessContext.actor.dbService.db
+									.select({ setId: workCategorySetCategory.setId })
+									.from(workCategorySetCategory)
+									.where(inArray(workCategorySetCategory.categoryId, [...visibleCategoryIds]));
+							},
 						)).map((link) => link.setId),
 					)
 				: new Set<string>();
 
 			if (!visibleSetIds?.has(setId)) {
-				yield* _(
-					Effect.fail(
-						new AuthorizationError({
-							message: "You do not have access to this work category set",
-							userId: accessContext.actor.session.user.id,
-							resource: "work_category_set",
-							action: "read",
-						}),
-					),
+				yield* Effect.fail(
+					new AuthorizationError({
+						message: "You do not have access to this work category set",
+						userId: accessContext.actor.session.user.id,
+						resource: "work_category_set",
+						action: "read",
+					}),
 				);
 			}
 		}
 
 		// Get categories through junction table
-		const categories = yield* _(
-			dbService.query("getSetCategories", async () =>
+		const categories = yield* dbService.query("getSetCategories", async () =>
 				dbService.db
 					.select({
 						id: workCategory.id,
@@ -1104,16 +1022,14 @@ export async function getWorkCategorySetDetail(
 					.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
 					.where(and(eq(workCategorySetCategory.setId, setId), eq(workCategory.isActive, true)))
 					.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
-			),
-			Effect.mapError(
+			).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch set categories",
 						operation: "select",
 						table: "work_category_set_category",
 					}),
-			),
-		);
+			));
 
 		if (accessContext.actor.accessTier !== "orgAdmin") {
 			return {
@@ -1138,103 +1054,89 @@ export async function getWorkCategorySetDetail(
 export async function createWorkCategorySet(
 	input: CreateWorkCategorySetInput,
 ): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId: input.organizationId,
-				queryName: "createWorkCategorySet:actor",
-			}),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to create work category sets",
-				resource: "work_category_set",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId: input.organizationId,
+			queryName: "createWorkCategorySet:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to create work category sets",
+			resource: "work_category_set",
+			action: "create",
+		});
 		const dbService = actor.dbService;
-		yield* _(
-			ensureScopedCategoryIds(
-				dbService,
-				input.organizationId,
-				input.categoryIds ?? [],
-				"createWorkCategorySet:scopedCategoryIds",
-			),
+		yield* ensureScopedCategoryIds(
+			dbService,
+			input.organizationId,
+			input.categoryIds ?? [],
+			"createWorkCategorySet:scopedCategoryIds",
 		);
 
 		// Check for existing set with same name
-		const [existing] = yield* _(
-			dbService.query("checkExistingSet", async () =>
-				dbService.db
-					.select({ id: workCategorySet.id })
-					.from(workCategorySet)
-					.where(
-						and(
-							eq(workCategorySet.organizationId, input.organizationId),
-							eq(workCategorySet.name, input.name),
-							eq(workCategorySet.isActive, true),
-						),
-					)
-					.limit(1),
-			),
+		const [existing] = yield* dbService.query("checkExistingSet", async () =>
+			dbService.db
+				.select({ id: workCategorySet.id })
+				.from(workCategorySet)
+				.where(
+					and(
+						eq(workCategorySet.organizationId, input.organizationId),
+						eq(workCategorySet.name, input.name),
+						eq(workCategorySet.isActive, true),
+					),
+				)
+				.limit(1),
 		);
 
 		if (existing) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: `A work category set named "${input.name}" already exists`,
-						conflictType: "duplicate_name",
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: `A work category set named "${input.name}" already exists`,
+					conflictType: "duplicate_name",
+				}),
 			);
 		}
 
 		// Create the set
-		const [created] = yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
-						.insert(workCategorySet)
-						.values({
-							organizationId: input.organizationId,
-							name: input.name,
-							description: input.description ?? null,
-							createdBy: actor.session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning(),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to create work category set",
-						operation: "insert",
-						table: "work_category_set",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
+		const [created] = yield* Effect.tryPromise({
+			try: async () =>
+				dbService.db
+					.insert(workCategorySet)
+					.values({
+						organizationId: input.organizationId,
+						name: input.name,
+						description: input.description ?? null,
+						createdBy: actor.session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning(),
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to create work category set",
+					operation: "insert",
+					table: "work_category_set",
+					cause: error instanceof Error ? error : undefined,
+				}),
+		});
 
 		// If initial category IDs provided, add them to the set
 		if (input.categoryIds && input.categoryIds.length > 0) {
-			yield* _(
-				Effect.tryPromise({
-					try: async () => {
-						const junctionEntries = input.categoryIds!.map((categoryId, index) => ({
-							setId: created.id,
-							categoryId,
-							sortOrder: index,
-						}));
-						return dbService.db.insert(workCategorySetCategory).values(junctionEntries);
-					},
-					catch: (error) =>
-						new DatabaseError({
-							message: "Failed to add categories to set",
-							operation: "insert",
-							table: "work_category_set_category",
-							cause: error instanceof Error ? error : undefined,
-						}),
-				}),
-			);
+			yield* Effect.tryPromise({
+				try: async () => {
+					const junctionEntries = input.categoryIds!.map((categoryId, index) => ({
+						setId: created.id,
+						categoryId,
+						sortOrder: index,
+					}));
+					return dbService.db.insert(workCategorySetCategory).values(junctionEntries);
+				},
+				catch: (error) =>
+					new DatabaseError({
+						message: "Failed to add categories to set",
+						operation: "insert",
+						table: "work_category_set_category",
+						cause: error instanceof Error ? error : undefined,
+					}),
+			});
 		}
 
 		revalidatePath("/settings/work-categories");
@@ -1251,76 +1153,64 @@ export async function createWorkCategorySet(
 export async function updateWorkCategorySet(
 	input: UpdateWorkCategorySetInput,
 ): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "updateWorkCategorySet:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to update work category sets",
-				resource: "work_category_set",
-				action: "update",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateWorkCategorySet:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to update work category sets",
+			resource: "work_category_set",
+			action: "update",
+		});
 		const dbService = actor.dbService;
-		const scopedSet = yield* _(
-			getScopedOrganizationWorkCategorySet(
-				dbService,
-				actor.organizationId,
-				input.setId,
-				"updateWorkCategorySet:scopedSet",
-			),
+		const scopedSet = yield* getScopedOrganizationWorkCategorySet(
+			dbService,
+			actor.organizationId,
+			input.setId,
+			"updateWorkCategorySet:scopedSet",
 		);
 
 		if (!scopedSet) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: input.setId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set not found",
+					entityType: "work_category_set",
+					entityId: input.setId,
+				}),
 			);
 		}
 
 		// Update the set
-		const [updated] = yield* _(
-			Effect.tryPromise({
-				try: async () =>
-					dbService.db
-						.update(workCategorySet)
-						.set({
-							name: input.name,
-							description: input.description,
-							updatedBy: actor.session.user.id,
-						})
-						.where(
-							and(
-								eq(workCategorySet.id, input.setId),
-								eq(workCategorySet.organizationId, actor.organizationId),
-							),
-						)
-						.returning(),
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to update work category set",
-						operation: "update",
-						table: "work_category_set",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
+		const [updated] = yield* Effect.tryPromise({
+			try: async () =>
+				dbService.db
+					.update(workCategorySet)
+					.set({
+						name: input.name,
+						description: input.description,
+						updatedBy: actor.session.user.id,
+					})
+					.where(
+						and(
+							eq(workCategorySet.id, input.setId),
+							eq(workCategorySet.organizationId, actor.organizationId),
+						),
+					)
+					.returning(),
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to update work category set",
+					operation: "update",
+					table: "work_category_set",
+					cause: error instanceof Error ? error : undefined,
+				}),
+		});
 
 		if (!updated) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: input.setId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set not found",
+					entityType: "work_category_set",
+					entityId: input.setId,
+				}),
 			);
 		}
 
@@ -1338,80 +1228,70 @@ export async function updateWorkCategorySet(
 export async function deleteWorkCategorySet(
 	setId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deleteWorkCategorySet:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to delete work category sets",
-				resource: "work_category_set",
-				action: "delete",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteWorkCategorySet:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to delete work category sets",
+			resource: "work_category_set",
+			action: "delete",
+		});
 		const dbService = actor.dbService;
-		const scopedSet = yield* _(
-			getScopedOrganizationWorkCategorySet(
-				dbService,
-				actor.organizationId,
-				setId,
-				"deleteWorkCategorySet:scopedSet",
-			),
+		const scopedSet = yield* getScopedOrganizationWorkCategorySet(
+			dbService,
+			actor.organizationId,
+			setId,
+			"deleteWorkCategorySet:scopedSet",
 		);
 
 		if (!scopedSet) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: setId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set not found",
+					entityType: "work_category_set",
+					entityId: setId,
+				}),
 			);
 		}
 
 		// Soft delete the set and its assignments, and remove its contents, together.
-		yield* _(
-			runWorkCategoryEligibilityMutation(
-				dbService,
-				actor.organizationId,
-				async (tx) => {
-					const deactivated = await tx
-						.update(workCategorySet)
-						.set({ isActive: false, updatedBy: actor.session.user.id })
-						.where(
-							and(
-								eq(workCategorySet.id, setId),
-								eq(workCategorySet.organizationId, actor.organizationId),
-								eq(workCategorySet.isActive, true),
-							),
-						)
-						.returning({ id: workCategorySet.id });
-					if (deactivated.length === 0) {
-						throw new NotFoundError({
-							message: "Work category set not found",
-							entityType: "work_category_set",
-							entityId: setId,
-						});
-					}
-					await tx
-						.update(workCategorySetAssignment)
-						.set({ isActive: false })
-						.where(
-							and(
-								eq(workCategorySetAssignment.setId, setId),
-								eq(workCategorySetAssignment.organizationId, actor.organizationId),
-							),
-						);
-					await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
-				},
-				{
-					message: "Failed to delete work category set",
-					operation: "update",
-					table: "work_category_set",
-				},
-			),
+		yield* runWorkCategoryEligibilityMutation(
+			dbService,
+			actor.organizationId,
+			async (tx) => {
+				const deactivated = await tx
+					.update(workCategorySet)
+					.set({ isActive: false, updatedBy: actor.session.user.id })
+					.where(
+						and(
+							eq(workCategorySet.id, setId),
+							eq(workCategorySet.organizationId, actor.organizationId),
+							eq(workCategorySet.isActive, true),
+						),
+					)
+					.returning({ id: workCategorySet.id });
+				if (deactivated.length === 0) {
+					throw new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: setId,
+					});
+				}
+				await tx
+					.update(workCategorySetAssignment)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(workCategorySetAssignment.setId, setId),
+							eq(workCategorySetAssignment.organizationId, actor.organizationId),
+						),
+					);
+				await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
+			},
+			{
+				message: "Failed to delete work category set",
+				operation: "update",
+				table: "work_category_set",
+			},
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1429,79 +1309,73 @@ export async function updateSetCategories(
 	setId: string,
 	categoryIds: string[],
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "updateSetCategories:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to update set categories",
-				resource: "work_category_set_category",
-				action: "update",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateSetCategories:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to update set categories",
+			resource: "work_category_set_category",
+			action: "update",
+		});
 		const dbService = actor.dbService;
 
 		// Validate and replace the set's contents in one protected transaction.
-		yield* _(
-			runWorkCategoryEligibilityMutation(
-				dbService,
-				actor.organizationId,
-				async (tx) => {
-					const [activeSet] = await tx
-						.select({ id: workCategorySet.id })
-						.from(workCategorySet)
+		yield* runWorkCategoryEligibilityMutation(
+			dbService,
+			actor.organizationId,
+			async (tx) => {
+				const [activeSet] = await tx
+					.select({ id: workCategorySet.id })
+					.from(workCategorySet)
+					.where(
+						and(
+							eq(workCategorySet.id, setId),
+							eq(workCategorySet.organizationId, actor.organizationId),
+							eq(workCategorySet.isActive, true),
+						),
+					)
+					.limit(1);
+				if (!activeSet) {
+					throw new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: setId,
+					});
+				}
+				const requestedIds = [...new Set(categoryIds)];
+				if (requestedIds.length > 0) {
+					const scopedCategories = await tx
+						.select({ id: workCategory.id })
+						.from(workCategory)
 						.where(
 							and(
-								eq(workCategorySet.id, setId),
-								eq(workCategorySet.organizationId, actor.organizationId),
-								eq(workCategorySet.isActive, true),
+								eq(workCategory.organizationId, actor.organizationId),
+								inArray(workCategory.id, requestedIds),
 							),
-						)
-						.limit(1);
-					if (!activeSet) {
+						);
+					if (scopedCategories.length !== requestedIds.length) {
 						throw new NotFoundError({
-							message: "Work category set not found",
-							entityType: "work_category_set",
-							entityId: setId,
+							message: "One or more work categories were not found in this organization",
+							entityType: "work_category",
+							entityId: requestedIds.join(","),
 						});
 					}
-					const requestedIds = [...new Set(categoryIds)];
-					if (requestedIds.length > 0) {
-						const scopedCategories = await tx
-							.select({ id: workCategory.id })
-							.from(workCategory)
-							.where(
-								and(
-									eq(workCategory.organizationId, actor.organizationId),
-									inArray(workCategory.id, requestedIds),
-								),
-							);
-						if (scopedCategories.length !== requestedIds.length) {
-							throw new NotFoundError({
-								message: "One or more work categories were not found in this organization",
-								entityType: "work_category",
-								entityId: requestedIds.join(","),
-							});
-						}
-					}
-					await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
-					if (categoryIds.length > 0) {
-						await tx.insert(workCategorySetCategory).values(
-							categoryIds.map((categoryId, index) => ({
-								setId,
-								categoryId,
-								sortOrder: index,
-							})),
-						);
-					}
-				},
-				{
-					message: "Failed to update set categories",
-					operation: "update",
-					table: "work_category_set_category",
-				},
-			),
+				}
+				await tx.delete(workCategorySetCategory).where(eq(workCategorySetCategory.setId, setId));
+				if (categoryIds.length > 0) {
+					await tx.insert(workCategorySetCategory).values(
+						categoryIds.map((categoryId, index) => ({
+							setId,
+							categoryId,
+							sortOrder: index,
+						})),
+					);
+				}
+			},
+			{
+				message: "Failed to update set categories",
+				operation: "update",
+				table: "work_category_set_category",
+			},
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1519,74 +1393,62 @@ export async function reorderSetCategories(
 	setId: string,
 	categoryIds: string[],
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "reorderSetCategories:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to reorder categories",
-				resource: "work_category_set_category",
-				action: "update",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "reorderSetCategories:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to reorder categories",
+			resource: "work_category_set_category",
+			action: "update",
+		});
 		const dbService = actor.dbService;
-		const scopedSet = yield* _(
-			getScopedOrganizationWorkCategorySet(
-				dbService,
-				actor.organizationId,
-				setId,
-				"reorderSetCategories:scopedSet",
-			),
+		const scopedSet = yield* getScopedOrganizationWorkCategorySet(
+			dbService,
+			actor.organizationId,
+			setId,
+			"reorderSetCategories:scopedSet",
 		);
 
 		if (!scopedSet) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: setId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set not found",
+					entityType: "work_category_set",
+					entityId: setId,
+				}),
 			);
 		}
-		yield* _(
-			ensureScopedCategoryIds(
-				dbService,
-				actor.organizationId,
-				categoryIds,
-				"reorderSetCategories:scopedCategoryIds",
-			),
+		yield* ensureScopedCategoryIds(
+			dbService,
+			actor.organizationId,
+			categoryIds,
+			"reorderSetCategories:scopedCategoryIds",
 		);
 
 		// Update sort order for each category in the junction table
-		yield* _(
-			Effect.tryPromise({
-				try: async () => {
-					await Promise.all(
-						categoryIds.map((categoryId, sortOrder) =>
-							dbService.db
-							.update(workCategorySetCategory)
-							.set({ sortOrder })
-							.where(
-								and(
-									eq(workCategorySetCategory.setId, setId),
-									eq(workCategorySetCategory.categoryId, categoryId),
-								),
+		yield* Effect.tryPromise({
+			try: async () => {
+				await Promise.all(
+					categoryIds.map((categoryId, sortOrder) =>
+						dbService.db
+						.update(workCategorySetCategory)
+						.set({ sortOrder })
+						.where(
+							and(
+								eq(workCategorySetCategory.setId, setId),
+								eq(workCategorySetCategory.categoryId, categoryId),
 							),
 						),
-					);
-				},
-				catch: (error) =>
-					new DatabaseError({
-						message: "Failed to reorder categories",
-						operation: "update",
-						table: "work_category_set_category",
-						cause: error instanceof Error ? error : undefined,
-					}),
-			}),
-		);
+					),
+				);
+			},
+			catch: (error) =>
+				new DatabaseError({
+					message: "Failed to reorder categories",
+					operation: "update",
+					table: "work_category_set_category",
+					cause: error instanceof Error ? error : undefined,
+				}),
+		});
 
 		revalidatePath("/settings/work-categories");
 
@@ -1606,14 +1468,11 @@ export async function reorderSetCategories(
 export async function getWorkCategorySetAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<SetAssignmentListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const accessContext = yield* _(
-			getScopedWorkCategoryAccessContext(organizationId, "getWorkCategorySetAssignments:actor"),
-		);
+	const effect = Effect.gen(function* () {
+		const accessContext = yield* getScopedWorkCategoryAccessContext(organizationId, "getWorkCategorySetAssignments:actor");
 		const dbService = accessContext.actor.dbService;
 
-		const assignments = yield* _(
-			dbService.query("getSetAssignments", async () => {
+		const assignments = yield* dbService.query("getSetAssignments", async () => {
 				const results = await dbService.db.query.workCategorySetAssignment.findMany({
 					where: and(
 						eq(workCategorySetAssignment.organizationId, organizationId),
@@ -1665,27 +1524,21 @@ export async function getWorkCategorySetAssignments(
 							}
 						: null,
 				}));
-			}),
-			Effect.mapError(
+			}).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch set assignments",
 						operation: "select",
 						table: "work_category_set_assignment",
 					}),
-			),
-		);
+			));
 
 		if (accessContext.actor.accessTier === "orgAdmin") {
 			return assignments;
 		}
 
-		const visibleSetIds = yield* _(
-			getVisibleSetIds(accessContext, "getWorkCategorySetAssignments:visibleSets"),
-		);
-		const scopedEmployeeIds = yield* _(
-			getScopedEmployeeIds(accessContext, "getWorkCategorySetAssignments:scopedEmployees"),
-		);
+		const visibleSetIds = yield* getVisibleSetIds(accessContext, "getWorkCategorySetAssignments:visibleSets");
+		const scopedEmployeeIds = yield* getScopedEmployeeIds(accessContext, "getWorkCategorySetAssignments:scopedEmployees");
 
 		return filterAssignmentsByManagerScope(
 			assignments.filter((assignment) => visibleSetIds?.has(assignment.setId)),
@@ -1703,39 +1556,31 @@ export async function getWorkCategorySetAssignments(
 export async function createSetAssignment(
 	input: CreateSetAssignmentInput,
 ): Promise<ServerActionResult<{ id: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId: input.organizationId,
-				queryName: "createSetAssignment:actor",
-			}),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to create set assignments",
-				resource: "work_category_set_assignment",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId: input.organizationId,
+			queryName: "createSetAssignment:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to create set assignments",
+			resource: "work_category_set_assignment",
+			action: "create",
+		});
 		const dbService = actor.dbService;
-		const scopedSet = yield* _(
-			getScopedOrganizationWorkCategorySet(
-				dbService,
-				input.organizationId,
-				input.setId,
-				"createSetAssignment:scopedSet",
-			),
+		const scopedSet = yield* getScopedOrganizationWorkCategorySet(
+			dbService,
+			input.organizationId,
+			input.setId,
+			"createSetAssignment:scopedSet",
 		);
 
 		if (!scopedSet) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set not found",
-						entityType: "work_category_set",
-						entityId: input.setId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set not found",
+					entityType: "work_category_set",
+					entityId: input.setId,
+				}),
 			);
 		}
 
@@ -1754,95 +1599,91 @@ export async function createSetAssignment(
 					? teamId !== null && employeeId === null
 					: employeeId !== null && teamId === null;
 		if (!levelMatchesTarget) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "The assignment target does not match its level",
-						field: input.assignmentType === "team" ? "teamId" : "employeeId",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "The assignment target does not match its level",
+					field: input.assignmentType === "team" ? "teamId" : "employeeId",
+				}),
 			);
 		}
 
 		// Target validation and the insert serialize with manual preparation.
-		const created = yield* _(
-			runWorkCategoryEligibilityMutation(
-				dbService,
-				input.organizationId,
-				async (tx) => {
-					const [activeSet] = await tx
-						.select({ id: workCategorySet.id })
-						.from(workCategorySet)
+		const created = yield* runWorkCategoryEligibilityMutation(
+			dbService,
+			input.organizationId,
+			async (tx) => {
+				const [activeSet] = await tx
+					.select({ id: workCategorySet.id })
+					.from(workCategorySet)
+					.where(
+						and(
+							eq(workCategorySet.id, input.setId),
+							eq(workCategorySet.organizationId, input.organizationId),
+							eq(workCategorySet.isActive, true),
+						),
+					)
+					.limit(1);
+				if (!activeSet) {
+					throw new NotFoundError({
+						message: "Work category set not found",
+						entityType: "work_category_set",
+						entityId: input.setId,
+					});
+				}
+				if (teamId !== null) {
+					const [scopedTeam] = await tx
+						.select({ id: team.id })
+						.from(team)
+						.where(and(eq(team.id, teamId), eq(team.organizationId, input.organizationId)))
+						.limit(1);
+					if (!scopedTeam) {
+						throw new ValidationError({
+							message: "Team not found in this organization",
+							field: "teamId",
+						});
+					}
+				}
+				if (employeeId !== null) {
+					const [scopedEmployee] = await tx
+						.select({ id: employee.id })
+						.from(employee)
 						.where(
 							and(
-								eq(workCategorySet.id, input.setId),
-								eq(workCategorySet.organizationId, input.organizationId),
-								eq(workCategorySet.isActive, true),
+								eq(employee.id, employeeId),
+								eq(employee.organizationId, input.organizationId),
 							),
 						)
 						.limit(1);
-					if (!activeSet) {
-						throw new NotFoundError({
-							message: "Work category set not found",
-							entityType: "work_category_set",
-							entityId: input.setId,
+					if (!scopedEmployee) {
+						throw new ValidationError({
+							message: "Employee not found in this organization",
+							field: "employeeId",
 						});
 					}
-					if (teamId !== null) {
-						const [scopedTeam] = await tx
-							.select({ id: team.id })
-							.from(team)
-							.where(and(eq(team.id, teamId), eq(team.organizationId, input.organizationId)))
-							.limit(1);
-						if (!scopedTeam) {
-							throw new ValidationError({
-								message: "Team not found in this organization",
-								field: "teamId",
-							});
-						}
-					}
-					if (employeeId !== null) {
-						const [scopedEmployee] = await tx
-							.select({ id: employee.id })
-							.from(employee)
-							.where(
-								and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, input.organizationId),
-								),
-							)
-							.limit(1);
-						if (!scopedEmployee) {
-							throw new ValidationError({
-								message: "Employee not found in this organization",
-								field: "employeeId",
-							});
-						}
-					}
+				}
 
-					const [inserted] = await tx
-						.insert(workCategorySetAssignment)
-						.values({
-							setId: input.setId,
-							organizationId: input.organizationId,
-							assignmentType: input.assignmentType,
-							teamId,
-							employeeId,
-							priority,
-							effectiveFrom: input.effectiveFrom ?? null,
-							effectiveUntil: input.effectiveUntil ?? null,
-							createdBy: actor.session.user.id,
-							updatedAt: new Date(),
-						})
-						.returning({ id: workCategorySetAssignment.id });
-					return inserted;
-				},
-				{
-					message: "Failed to create set assignment",
-					operation: "insert",
-					table: "work_category_set_assignment",
-				},
-			),
+				const [inserted] = await tx
+					.insert(workCategorySetAssignment)
+					.values({
+						setId: input.setId,
+						organizationId: input.organizationId,
+						assignmentType: input.assignmentType,
+						teamId,
+						employeeId,
+						priority,
+						effectiveFrom: input.effectiveFrom ?? null,
+						effectiveUntil: input.effectiveUntil ?? null,
+						createdBy: actor.session.user.id,
+						updatedAt: new Date(),
+					})
+					.returning({ id: workCategorySetAssignment.id });
+				return inserted;
+			},
+			{
+				message: "Failed to create set assignment",
+				operation: "insert",
+				table: "work_category_set_assignment",
+			},
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1859,70 +1700,60 @@ export async function createSetAssignment(
 export async function deleteSetAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<{ success: boolean }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deleteSetAssignment:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Admin access required to delete set assignments",
-				resource: "work_category_set_assignment",
-				action: "delete",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "deleteSetAssignment:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Admin access required to delete set assignments",
+			resource: "work_category_set_assignment",
+			action: "delete",
+		});
 		const dbService = actor.dbService;
-		const scopedAssignment = yield* _(
-			getScopedOrganizationSetAssignment(
-				dbService,
-				actor.organizationId,
-				assignmentId,
-				"deleteSetAssignment:scopedAssignment",
-			),
+		const scopedAssignment = yield* getScopedOrganizationSetAssignment(
+			dbService,
+			actor.organizationId,
+			assignmentId,
+			"deleteSetAssignment:scopedAssignment",
 		);
 
 		if (!scopedAssignment) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Work category set assignment not found",
-						entityType: "work_category_set_assignment",
-						entityId: assignmentId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Work category set assignment not found",
+					entityType: "work_category_set_assignment",
+					entityId: assignmentId,
+				}),
 			);
 		}
 
 		// Soft delete the assignment
-		yield* _(
-			runWorkCategoryEligibilityMutation(
-				dbService,
-				actor.organizationId,
-				async (tx) => {
-					const deactivated = await tx
-						.update(workCategorySetAssignment)
-						.set({ isActive: false })
-						.where(
-							and(
-								eq(workCategorySetAssignment.id, assignmentId),
-								eq(workCategorySetAssignment.organizationId, actor.organizationId),
-								eq(workCategorySetAssignment.isActive, true),
-							),
-						)
-						.returning({ id: workCategorySetAssignment.id });
-					if (deactivated.length === 0) {
-						throw new NotFoundError({
-							message: "Work category set assignment not found",
-							entityType: "work_category_set_assignment",
-							entityId: assignmentId,
-						});
-					}
-				},
-				{
-					message: "Failed to delete set assignment",
-					operation: "update",
-					table: "work_category_set_assignment",
-				},
-			),
+		yield* runWorkCategoryEligibilityMutation(
+			dbService,
+			actor.organizationId,
+			async (tx) => {
+				const deactivated = await tx
+					.update(workCategorySetAssignment)
+					.set({ isActive: false })
+					.where(
+						and(
+							eq(workCategorySetAssignment.id, assignmentId),
+							eq(workCategorySetAssignment.organizationId, actor.organizationId),
+							eq(workCategorySetAssignment.isActive, true),
+						),
+					)
+					.returning({ id: workCategorySetAssignment.id });
+				if (deactivated.length === 0) {
+					throw new NotFoundError({
+						message: "Work category set assignment not found",
+						entityType: "work_category_set_assignment",
+						entityId: assignmentId,
+					});
+				}
+			},
+			{
+				message: "Failed to delete set assignment",
+				operation: "update",
+				table: "work_category_set_assignment",
+			},
 		);
 
 		revalidatePath("/settings/work-categories");
@@ -1943,14 +1774,13 @@ export async function deleteSetAssignment(
 export async function getTeamsForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<TeamListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		yield* authService.getSession();
 
-		const dbService = yield* _(DatabaseService);
+		const dbService = yield* DatabaseService;
 
-		const teams = yield* _(
-			dbService.query("getTeams", async () =>
+		const teams = yield* dbService.query("getTeams", async () =>
 				dbService.db
 					.select({
 						id: team.id,
@@ -1959,16 +1789,14 @@ export async function getTeamsForAssignment(
 					.from(team)
 					.where(eq(team.organizationId, organizationId))
 					.orderBy(asc(team.name)),
-			),
-			Effect.mapError(
+			).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch teams",
 						operation: "select",
 						table: "team",
 					}),
-			),
-		);
+			));
 
 		return teams;
 	});
@@ -1982,14 +1810,13 @@ export async function getTeamsForAssignment(
 export async function getEmployeesForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<EmployeeListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		yield* authService.getSession();
 
-		const dbService = yield* _(DatabaseService);
+		const dbService = yield* DatabaseService;
 
-		const employees = yield* _(
-			dbService.query("getEmployees", async () =>
+		const employees = yield* dbService.query("getEmployees", async () =>
 				dbService.db
 					.select({
 						id: employee.id,
@@ -2001,16 +1828,14 @@ export async function getEmployeesForAssignment(
 					.innerJoin(user, eq(employee.userId, user.id))
 					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
 					.orderBy(asc(user.firstName), asc(user.lastName)),
-			),
-			Effect.mapError(
+			).pipe(Effect.mapError(
 				() =>
 					new DatabaseError({
 						message: "Failed to fetch employees",
 						operation: "select",
 						table: "employee",
 					}),
-			),
-		);
+			));
 
 		return employees;
 	});
@@ -2025,25 +1850,23 @@ export async function getEmployeesForAssignment(
 export async function getAvailableCategoriesForEmployee(
 	employeeId: string,
 ): Promise<ServerActionResult<SetCategoryItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		yield* authService.getSession();
 
-		const dbService = yield* _(DatabaseService);
+		const dbService = yield* DatabaseService;
 
 		// Get employee with team info
-		const [employeeRecord] = yield* _(
-			dbService.query("getEmployee", async () =>
-				dbService.db
-					.select({
-						id: employee.id,
-						organizationId: employee.organizationId,
-						teamId: employee.teamId,
-					})
-					.from(employee)
-					.where(eq(employee.id, employeeId))
-					.limit(1),
-			),
+		const [employeeRecord] = yield* dbService.query("getEmployee", async () =>
+			dbService.db
+				.select({
+					id: employee.id,
+					organizationId: employee.organizationId,
+					teamId: employee.teamId,
+				})
+				.from(employee)
+				.where(eq(employee.id, employeeId))
+				.limit(1),
 		);
 
 		if (!employeeRecord) {
@@ -2056,112 +1879,61 @@ export async function getAvailableCategoriesForEmployee(
 		// 3. Organization default
 
 		// Check employee assignment
-		const [empAssignment] = yield* _(
-			dbService.query("checkEmployeeAssignment", async () =>
-				dbService.db.query.workCategorySetAssignment.findMany({
-					where: and(
-						eq(workCategorySetAssignment.employeeId, employeeId),
-						eq(workCategorySetAssignment.assignmentType, "employee"),
-						eq(workCategorySetAssignment.isActive, true),
-					),
-					with: { set: true },
-					limit: 1,
-				}),
-			),
+		const [empAssignment] = yield* dbService.query("checkEmployeeAssignment", async () =>
+			dbService.db.query.workCategorySetAssignment.findMany({
+				where: and(
+					eq(workCategorySetAssignment.employeeId, employeeId),
+					eq(workCategorySetAssignment.assignmentType, "employee"),
+					eq(workCategorySetAssignment.isActive, true),
+				),
+				with: { set: true },
+				limit: 1,
+			}),
 		);
 		const typedEmpAssignment = empAssignment as EffectiveWorkCategorySetAssignment | undefined;
 
 		if (typedEmpAssignment?.set?.isActive) {
-			const categories = yield* _(
-				dbService.query("getCategoriesFromEmpSet", async () =>
-					dbService.db
-						.select({
-							id: workCategory.id,
-							name: workCategory.name,
-							description: workCategory.description,
-							factor: workCategory.factor,
-							color: workCategory.color,
-							isActive: workCategory.isActive,
-							sortOrder: workCategorySetCategory.sortOrder,
-						})
-						.from(workCategorySetCategory)
-						.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
-						.where(
-							and(
-								eq(workCategorySetCategory.setId, typedEmpAssignment.setId),
-								eq(workCategory.isActive, true),
-							),
-						)
-						.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
-				),
+			const categories = yield* dbService.query("getCategoriesFromEmpSet", async () =>
+				dbService.db
+					.select({
+						id: workCategory.id,
+						name: workCategory.name,
+						description: workCategory.description,
+						factor: workCategory.factor,
+						color: workCategory.color,
+						isActive: workCategory.isActive,
+						sortOrder: workCategorySetCategory.sortOrder,
+					})
+					.from(workCategorySetCategory)
+					.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
+					.where(
+						and(
+							eq(workCategorySetCategory.setId, typedEmpAssignment.setId),
+							eq(workCategory.isActive, true),
+						),
+					)
+					.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
 			);
 			return categories;
 		}
 
 		// Check team assignment if employee has a team
 		if (employeeRecord.teamId) {
-			const [teamAssignment] = yield* _(
-				dbService.query("checkTeamAssignment", async () =>
-					dbService.db.query.workCategorySetAssignment.findMany({
-						where: and(
-							eq(workCategorySetAssignment.teamId, employeeRecord.teamId!),
-							eq(workCategorySetAssignment.assignmentType, "team"),
-							eq(workCategorySetAssignment.isActive, true),
-						),
-						with: { set: true },
-						limit: 1,
-					}),
-				),
-			);
-			const typedTeamAssignment = teamAssignment as EffectiveWorkCategorySetAssignment | undefined;
-
-			if (typedTeamAssignment?.set?.isActive) {
-				const categories = yield* _(
-					dbService.query("getCategoriesFromTeamSet", async () =>
-						dbService.db
-							.select({
-								id: workCategory.id,
-								name: workCategory.name,
-								description: workCategory.description,
-								factor: workCategory.factor,
-								color: workCategory.color,
-								isActive: workCategory.isActive,
-								sortOrder: workCategorySetCategory.sortOrder,
-							})
-							.from(workCategorySetCategory)
-							.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
-							.where(
-								and(
-									eq(workCategorySetCategory.setId, typedTeamAssignment.setId),
-									eq(workCategory.isActive, true),
-								),
-							)
-							.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
-					),
-				);
-				return categories;
-			}
-		}
-
-		// Check org assignment
-		const [orgAssignment] = yield* _(
-			dbService.query("checkOrgAssignment", async () =>
+			const [teamAssignment] = yield* dbService.query("checkTeamAssignment", async () =>
 				dbService.db.query.workCategorySetAssignment.findMany({
 					where: and(
-						eq(workCategorySetAssignment.organizationId, employeeRecord.organizationId),
-						eq(workCategorySetAssignment.assignmentType, "organization"),
+						eq(workCategorySetAssignment.teamId, employeeRecord.teamId!),
+						eq(workCategorySetAssignment.assignmentType, "team"),
 						eq(workCategorySetAssignment.isActive, true),
 					),
 					with: { set: true },
 					limit: 1,
 				}),
-			),
-		);
-		const typedOrgAssignment = orgAssignment as EffectiveWorkCategorySetAssignment | undefined;
+			);
+			const typedTeamAssignment = teamAssignment as EffectiveWorkCategorySetAssignment | undefined;
 
-		if (typedOrgAssignment?.set?.isActive) {
-			const categories = yield* _(
-				dbService.query("getCategoriesFromOrgSet", async () =>
+			if (typedTeamAssignment?.set?.isActive) {
+				const categories = yield* dbService.query("getCategoriesFromTeamSet", async () =>
 					dbService.db
 						.select({
 							id: workCategory.id,
@@ -2176,12 +1948,51 @@ export async function getAvailableCategoriesForEmployee(
 						.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
 						.where(
 							and(
-								eq(workCategorySetCategory.setId, typedOrgAssignment.setId),
+								eq(workCategorySetCategory.setId, typedTeamAssignment.setId),
 								eq(workCategory.isActive, true),
 							),
 						)
 						.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
+				);
+				return categories;
+			}
+		}
+
+		// Check org assignment
+		const [orgAssignment] = yield* dbService.query("checkOrgAssignment", async () =>
+			dbService.db.query.workCategorySetAssignment.findMany({
+				where: and(
+					eq(workCategorySetAssignment.organizationId, employeeRecord.organizationId),
+					eq(workCategorySetAssignment.assignmentType, "organization"),
+					eq(workCategorySetAssignment.isActive, true),
 				),
+				with: { set: true },
+				limit: 1,
+			}),
+		);
+		const typedOrgAssignment = orgAssignment as EffectiveWorkCategorySetAssignment | undefined;
+
+		if (typedOrgAssignment?.set?.isActive) {
+			const categories = yield* dbService.query("getCategoriesFromOrgSet", async () =>
+				dbService.db
+					.select({
+						id: workCategory.id,
+						name: workCategory.name,
+						description: workCategory.description,
+						factor: workCategory.factor,
+						color: workCategory.color,
+						isActive: workCategory.isActive,
+						sortOrder: workCategorySetCategory.sortOrder,
+					})
+					.from(workCategorySetCategory)
+					.innerJoin(workCategory, eq(workCategorySetCategory.categoryId, workCategory.id))
+					.where(
+						and(
+							eq(workCategorySetCategory.setId, typedOrgAssignment.setId),
+							eq(workCategory.isActive, true),
+						),
+					)
+					.orderBy(asc(workCategorySetCategory.sortOrder), asc(workCategory.name)),
 			);
 			return categories;
 		}

@@ -22,8 +22,8 @@ const mockState = vi.hoisted(() => ({
 	getTemplates: vi.fn(async () => []),
 }));
 
-vi.mock("effect-v3", async () => {
-	const actual = await vi.importActual<typeof import("effect-v3")>("effect-v3");
+vi.mock("effect", async () => {
+	const actual = await vi.importActual<typeof import("effect")>("effect");
 	return actual;
 });
 
@@ -49,9 +49,9 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", () => ({
 	runSchedulingAction: vi.fn(async () => mockState.runSchedulingActionResult),
 }));
 
-vi.mock("@/lib/effect-v3/services/shift.service", async () => {
-	const { Context } = await import("effect-v3");
-	const ShiftService = Context.GenericTag<any>("ShiftService");
+vi.mock("@/lib/effect/services/shift.service", async () => {
+	const { Context } = await import("effect");
+	const ShiftService = Context.Service<any>("ShiftService");
 	return { ShiftService };
 });
 

@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { employee, employeeManagers } from "@/db/schema";
 import { DatabaseService } from "./database.service";

@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import type { db } from "@/db";
 import {
 	auditLog,
@@ -214,7 +214,7 @@ export interface ShiftRequestWithRelations extends ShiftRequest {
 
 type MutationError = ShiftRequestDomainError | DatabaseError;
 
-export class ShiftRequestService extends Context.Tag("ShiftRequestService")<
+export class ShiftRequestService extends Context.Service<
 	ShiftRequestService,
 	{
 		readonly requestSwap: (
@@ -260,7 +260,7 @@ export class ShiftRequestService extends Context.Tag("ShiftRequestService")<
 			requestId: string,
 		) => Effect.Effect<ShiftRequestWithRelations | null, DatabaseError>;
 	}
->() {}
+>()("ShiftRequestService") {}
 
 export const ShiftRequestServiceLive = Layer.effect(
 	ShiftRequestService,

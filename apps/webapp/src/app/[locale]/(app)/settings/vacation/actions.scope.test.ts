@@ -167,7 +167,7 @@ vi.mock("@/lib/audit-logger", () => ({
 }));
 
 vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect-v3");
+	const { Effect } = await import("effect");
 	const { AuthorizationError, NotFoundError, ValidationError } = await import(
 		"@/lib/effect/errors"
 	);
@@ -291,15 +291,15 @@ vi.mock("../employees/employee-action-utils", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/services/database.service", async () => {
-	const { Context } = await import("effect-v3");
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const { Context } = await import("effect");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 	return { DatabaseService };
 });
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Effect, Layer } = await import("effect-v3");
-	const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect, Layer } = await import("effect");
+	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 
 	const db = {
 		query: {
@@ -359,8 +359,8 @@ vi.mock("@/lib/effect-v3/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect-v3");
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T>(effect: any) => {
@@ -368,8 +368,8 @@ vi.mock("@/lib/effect-v3/result", async () => {
 			return Exit.match(exit, {
 				onSuccess: (data) => ({ success: true as const, data: data as T }),
 				onFailure: (cause) => {
-					const defect = [...Cause.defects(cause)][0] ?? null;
-					const failure = Option.getOrNull(Cause.failureOption(cause));
+					const defect = Result.getOrNull(Cause.findDefect(cause));
+					const failure = Option.getOrNull(Cause.findErrorOption(cause));
 					const error = defect ?? failure ?? cause;
 
 					if (error && typeof error === "object" && "_tag" in error) {

@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invitation } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft } from "@/db/schema";
 import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect-v3/result";
+import { toServerActionResult } from "@/lib/effect/result";
 
 const mocks = vi.hoisted(() => ({
 	getEmployeeSettingsActorContext: vi.fn(),
