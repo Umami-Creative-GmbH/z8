@@ -62,6 +62,8 @@ export enum AuditAction {
 	APPROVAL_REJECTED = "approval.rejected",
 	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
 	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
+	TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED = "travel_expense.policy_version_activated",
+	TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN = "travel_expense.policy_version_withdrawn",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
@@ -190,7 +192,8 @@ export interface AuditLogEntry {
 		| "user"
 		| "audit_pack_request"
 		| "works_council_settings"
-		| "works_council_export";
+		| "works_council_export"
+		| "travel_expense_policy_version";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
