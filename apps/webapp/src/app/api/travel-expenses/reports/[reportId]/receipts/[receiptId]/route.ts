@@ -67,9 +67,8 @@ export async function GET(
 		if (cycle !== undefined && (!Number.isInteger(cycle) || cycle < 1)) return notFound();
 		let stored: StoredReceipt | null = null;
 		// Finance (#612) is authorized for the approved current submission only.
-		if (authorized.access === "finance" && cycle !== undefined && cycle !== report.submissionCount) {
-			return notFound();
-		}
+		const otherCycle = cycle !== undefined && cycle !== report.submissionCount;
+		if (authorized.access === "finance" && otherCycle) return notFound();
 		if (authorized.access !== "owner" || cycle !== undefined) {
 			// Reviewers and finance only ever receive the frozen evidence.
 			const frozen = await loadSubmittedReportReceipt(report, receiptId, cycle);
