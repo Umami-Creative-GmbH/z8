@@ -6,9 +6,9 @@
  * Local contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
- * Real callers run against that database: the draft/upload/submit expense
- * actions, `processDueEscalations`, the escalation settings actions, the
- * inbox approve route with the real CASL abilities, the expense page
+ * Real callers run against that database: the expense receipt upload route
+ * with the historical submission writers (#621), `processDueEscalations`, the
+ * escalation settings actions, the inbox approve route with the real CASL abilities, the expense page
  * decision action, the approval delivery owner and Telegram webhook, and
  * approval maintenance. Only the session, e-mail/notification fan-out, object
  * storage (an in-memory bucket), the vault, the post-commit fast path and the
@@ -114,8 +114,10 @@ vi.mock("@/lib/approvals/delivery/kick", async () =>
 
 const BOT_TOKEN = "326326327:AAT326-escalated_expenses";
 
-const { approveTravelExpenseClaim, createTravelExpenseDraft, submitTravelExpenseClaim } =
-	await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { approveTravelExpenseClaim } = await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { insertLegacyTravelExpenseDraft, submitLegacyTravelExpenseClaim } = await import(
+	"@/lib/travel-expenses/__tests__/legacy-claim"
+);
 const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 await import("@/lib/approvals/init");
@@ -356,32 +358,23 @@ describe("escalated legacy travel expenses (PostgreSQL)", () => {
 		}
 	}
 
-	/** Draft, one receipt upload and submission through the real actions. */
+	/** A legacy draft, one receipt upload through the real route and the historical submission. */
 	async function submitClaim(): Promise<{ claimId: string; requestId: string; createdAt: Date }> {
+		const requester = {
+			organizationId: ids.organization,
+			employeeId: ids.requester,
+			userId: ids.requesterUser,
+		};
+		const claimId = await insertLegacyTravelExpenseDraft(db, { ...requester, notes: "T326" });
 		actAs(ids.requesterUser);
-		const draft = await createTravelExpenseDraft({
-			type: "receipt",
-			tripStart: "2026-03-29",
-			tripEnd: "2026-03-31",
-			destinationCity: "Hamburg",
-			destinationCountry: "DE",
-			originalCurrency: "EUR",
-			originalAmount: "120.50",
-			calculatedCurrency: "EUR",
-			calculatedAmount: "120.50",
-			notes: "T326",
-		});
-		if (!draft.success) throw new Error(`Draft failed: ${draft.error}`);
-		const claimId = draft.data.id;
 		const tusFileKey = createOwnedTusFileKey(ids.requesterUser);
 		harness.publicObjects.set(tusFileKey, new Uint8Array(PDF_BYTES));
 		const uploaded = await processUpload({
 			json: async () => ({ tusFileKey, claimId, fileName: "hotel-invoice.pdf" }),
 		} as never);
 		if (uploaded.status !== 200) throw new Error(`Upload failed: ${uploaded.status}`);
-		const submitted = await submitTravelExpenseClaim({ claimId });
-		if (!submitted.success) throw new Error(`Submission failed: ${submitted.error}`);
 		actAs(null);
+		await submitLegacyTravelExpenseClaim(db, { ...requester, claimId });
 		const { rows } = await admin.query<{ id: string; created_at: Date }>(
 			// Legacy timestamps are UTC wall time without a zone.
 			`select id, created_at at time zone 'UTC' as created_at from approval_request

@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const actions = vi.hoisted(() => ({
 	getMyTravelExpenseClaims: vi.fn(),
-	createTravelExpenseDraft: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/actions", () => actions);
 const reportActions = vi.hoisted(() => ({

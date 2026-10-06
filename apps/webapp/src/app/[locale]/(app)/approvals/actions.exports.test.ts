@@ -88,4 +88,16 @@ describe("approvals actions module structure", () => {
 			),
 		).toBe(false);
 	});
+
+	it("exposes no server action that creates or submits a legacy travel expense claim", () => {
+		const travelExpenseActionsSource = readFileSync(
+			join(approvalsDir, "../travel-expenses/actions.ts"),
+			"utf8",
+		);
+
+		// New expenses are reports; legacy drafts are converted, never submitted (#621).
+		expect(travelExpenseActionsSource).not.toContain("createTravelExpenseDraft");
+		expect(travelExpenseActionsSource).not.toContain("submitTravelExpenseClaim");
+		expect(travelExpenseActionsSource).not.toContain(".insert(");
+	});
 });

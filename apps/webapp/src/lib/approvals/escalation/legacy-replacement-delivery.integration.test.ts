@@ -8,8 +8,9 @@
  * The runner creates, migrates, verifies, and removes a label-owned PostgreSQL 16 database.
  *
  * Real callers run against that database: legacy absence submission
- * (`requestAbsenceEffect`) and the travel expense draft/upload/submit actions,
- * the delivery owner (`processApprovalDeliveries`), scheduled escalation
+ * (`requestAbsenceEffect`), the travel expense receipt upload route with the
+ * historical expense submission writers (#621), the delivery owner
+ * (`processApprovalDeliveries`), scheduled escalation
  * (`processDueEscalations`), the management transfer action, escalation's
  * replacement pass (`processEscalationReplacementDeliveries`), the Telegram
  * webhook (`handleTelegramUpdate`), the absence and expense decision owners,
@@ -138,8 +139,10 @@ const { requestAbsenceEffect } = await import(
 );
 const { cancelAbsenceRequest } = await import("@/app/[locale]/(app)/absences/mutations");
 const { approveAbsenceEffect } = await import("@/lib/approvals/server/absence-approvals");
-const { createTravelExpenseDraft, submitTravelExpenseClaim, approveTravelExpenseClaim } =
-	await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { approveTravelExpenseClaim } = await import("@/app/[locale]/(app)/travel-expenses/actions");
+const { insertLegacyTravelExpenseDraft, submitLegacyTravelExpenseClaim } = await import(
+	"@/lib/travel-expenses/__tests__/legacy-claim"
+);
 const { POST: processUpload } = await import("@/app/api/upload/travel-expense/process/route");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 const { transferApprovalEscalationAssignment } = await import(
@@ -482,32 +485,23 @@ describe("legacy escalation replacement delivery (PostgreSQL)", () => {
 		return { subject: "absence", sourceId, requestId: await pendingRequest(sourceId) };
 	}
 
-	/** Draft, one receipt upload and submission through the real actions. */
+	/** A legacy draft, one receipt upload through the real route and the historical submission. */
 	async function submitClaim(): Promise<Submitted> {
+		const requester = {
+			organizationId: ids.organization,
+			employeeId: ids.requester,
+			userId: ids.requesterUser,
+		};
+		const claimId = await insertLegacyTravelExpenseDraft(db, { ...requester, notes: "T408" });
 		actAs(ids.requesterUser);
-		const draft = await createTravelExpenseDraft({
-			type: "receipt",
-			tripStart: "2026-03-29",
-			tripEnd: "2026-03-31",
-			destinationCity: "Hamburg",
-			destinationCountry: "DE",
-			originalCurrency: "EUR",
-			originalAmount: "120.50",
-			calculatedCurrency: "EUR",
-			calculatedAmount: "120.50",
-			notes: "T408",
-		});
-		if (!draft.success) throw new Error(`Draft failed: ${draft.error}`);
-		const claimId = draft.data.id;
 		const tusFileKey = createOwnedTusFileKey(ids.requesterUser);
 		harness.publicObjects.set(tusFileKey, new Uint8Array(PDF_BYTES));
 		const uploaded = await processUpload({
 			json: async () => ({ tusFileKey, claimId, fileName: "hotel-invoice.pdf" }),
 		} as never);
 		if (uploaded.status !== 200) throw new Error(`Upload failed: ${uploaded.status}`);
-		const submitted = await submitTravelExpenseClaim({ claimId });
 		actAs(null);
-		if (!submitted.success) throw new Error(`Submission failed: ${submitted.error}`);
+		await submitLegacyTravelExpenseClaim(db, { ...requester, claimId });
 		return {
 			subject: "travel_expense",
 			sourceId: claimId,

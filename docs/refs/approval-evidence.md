@@ -342,11 +342,17 @@ upload coordination and cleanup in `lib/travel-expenses/receipt-upload.ts`.
 
 ### What is captured, and by whom
 
+No server action creates or submits a legacy claim any more (#621). New
+expenses are reports, and legacy drafts are converted rather than submitted
+(#616). The draft and submission writers below describe how existing claims
+were recorded. Pending claims still finish through the decision owner, and
+their evidence stays readable.
+
 | Evidence | Written by | When |
 | --- | --- | --- |
-| Entered logical trip dates and interpretation zone (`travel_expense_claim.trip_start_date`, `trip_end_date`, `trip_date_time_zone`) | `createTravelExpenseDraft` | Always, with the draft. The zone is the effective zone that also derived the compatibility `trip_start`/`trip_end` bounds |
+| Entered logical trip dates and interpretation zone (`travel_expense_claim.trip_start_date`, `trip_end_date`, `trip_date_time_zone`) | The retired `createTravelExpenseDraft` | Always, with the draft. The zone is the effective zone that also derived the compatibility `trip_start`/`trip_end` bounds |
 | Server content checksum and provider object version (`travel_expense_attachment.checksum_sha256`, `storage_version_id`) | Upload route via `finalizeTravelExpenseReceiptUpload` | Always, over the exact bytes stored. Keys are write-once (`…/<attachmentId>-<name>`) |
-| Submitted revision (`approval_submitted_revision`, `authority = 'legacy'`, `workflow_type = 'travel_expense'`) | `submitTravelExpenseClaim` via `captureTravelExpenseSubmissionEvidence` | Same transaction that locks, submits and routes the claim; only while capture is active |
+| Submitted revision (`approval_submitted_revision`, `authority = 'legacy'`, `workflow_type = 'travel_expense'`) | The retired `submitTravelExpenseClaim` via `captureTravelExpenseSubmissionEvidence` | Same transaction that locks, submits and routes the claim; only while capture is active |
 | Submission activation outcome | Same | When routing auto-approves (requester is approver): `system` actor at the persisted `travel_expense_claim.decided_at` |
 
 Submitted facts: claim, subject/requester employee (the claim owner) and the
@@ -456,21 +462,20 @@ creates). Only revision capture and the decision-time material-change check
 ### Verification (#295)
 
 PostgreSQL 16 (`lib/travel-expenses/expense-submission.integration.test.ts`,
-part of `test:approval-workflow-repository:integration`), driving the real
-`createTravelExpenseDraft`, upload route, `submitTravelExpenseClaim`,
-`approveTravelExpenseClaim`, cleanup worker and maintenance, 13/13 passing:
-capture inactive versus active; full revision contents and the checksum over the
-stored bytes; organization-scoped loading and the update trigger; a late upload
-rejected with its object deleted; a failed immediate cleanup recovered by the
-worker after backoff; upload/submission races in **both arrival orders** behind
-a held claim lock; an injected revision insert failure rolling back the
-submission; historical date and checksum gaps held; missing receipts, a
-foreign-organization attachment row refusing submission, and an empty mileage
-manifest; a receipt-set change holding approval until reverted; self-approval
-activation evidence; privileged cleanup of one lifecycle; abandoned staging
-cleanup that never deletes an attached object; a slow upload re-recorded with
-its version after its row was swept. Unit seams: `travel-expense-facts.test.ts`,
-the upload route and submission action tests.
+part of `pnpm test:integration`). Since #621 it seeds claims with
+`lib/travel-expenses/__tests__/legacy-claim.ts`, which inserts the draft row and
+runs the historical submission through the real approval workflow, evidence
+capture and delivery-intent writers. It then drives the real upload route,
+`approveTravelExpenseClaim`, cleanup worker and maintenance. It covers the full
+revision contents and the checksum over the stored bytes; organization-scoped
+loading and the update trigger; a late upload rejected with its object deleted;
+a failed immediate cleanup recovered by the worker after backoff;
+upload/submission races in **both arrival orders** behind a held claim lock; a
+receipt-set change holding approval until reverted; self-approval activation
+evidence; privileged cleanup of one lifecycle; abandoned staging cleanup that
+never deletes an attached object; and a slow upload re-recorded with its version
+after its row was swept. Unit seams: `travel-expense-facts.test.ts` and the
+upload route tests.
 
 ## Expense review, decisions and cards (#296 / T32)
 
@@ -481,7 +486,7 @@ authority. Everything is **inactive for every organization**: migration
 `0092`.
 
 ```text
-submitTravelExpenseClaim (tx)                    #295 capture, then
+submitTravelExpenseClaim (tx, retired in #621)   #295 capture, then
   recordLegacyDeliveryIntent("submitted")         only while a delivery control exists
 after commit: kickApprovalDelivery
 
