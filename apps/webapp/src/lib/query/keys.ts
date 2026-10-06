@@ -92,6 +92,7 @@ export const queryKeys = {
 		settlement: (sourceType: string, sourceId: string) =>
 			["travel-expenses", "settlement", sourceType, sourceId] as const,
 		mySettlements: () => ["travel-expenses", "settlement", "mine"] as const,
+		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,
 	},
 
 	// Employees

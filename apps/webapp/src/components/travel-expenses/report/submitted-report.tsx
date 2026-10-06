@@ -199,6 +199,7 @@ export function SubmittedTravelExpenseReport({
 							fileName: receipt.fileName,
 							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
 						})),
+						receiptException: item.receiptException ?? null,
 					}))}
 				/>
 			</section>

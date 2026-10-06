@@ -30,6 +30,7 @@ import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
+import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ReceiptItemEditor } from "./receipt-item-editor";
 import { ReportReviewFeedback } from "./report-review-cycle";
@@ -191,6 +192,7 @@ function StandaloneReportBody({
 		: receiptItemMissingRequirements(live, {
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
+					receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
 				}).length > 0
 			? "incomplete"
 			: null;
@@ -211,6 +213,7 @@ function StandaloneReportBody({
 					receipts={item.receipts}
 					reimbursementCurrency={report.reimbursementCurrency}
 					maxReceiptBytes={maxReceiptBytes}
+					receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 					onReceiptsChanged={refreshReport}
 					onSaved={() => void refreshDrafts()}
 					onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
@@ -337,7 +340,16 @@ function TripReportBody({
 				details,
 				items: items.flatMap((item) => {
 					const draft = liveDraft(item, drafts);
-					return draft ? [{ id: item.id, draft, receiptCount: item.receipts.length }] : [];
+					return draft
+						? [
+								{
+									id: item.id,
+									draft,
+									receiptCount: item.receipts.length,
+									receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+								},
+							]
+						: [];
 				}),
 				reimbursementCurrency: report.reimbursementCurrency,
 			})
@@ -348,6 +360,7 @@ function TripReportBody({
 			? receiptItemMissingRequirements(draft, {
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
+					receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
 				}).length > 0
 			: true;
 		return incomplete
@@ -410,6 +423,7 @@ function TripReportBody({
 										receipts={item.receipts}
 										reimbursementCurrency={report.reimbursementCurrency}
 										maxReceiptBytes={maxReceiptBytes}
+										receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 										onReceiptsChanged={refreshReport}
 										onSaved={() => void refreshDrafts()}
 										onDraftChange={(draft) =>

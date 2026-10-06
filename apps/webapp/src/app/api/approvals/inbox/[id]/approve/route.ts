@@ -19,6 +19,7 @@ import {
 	loadApprovalInboxDecisionTarget,
 	type PersistedApprovalRequestForDecision,
 } from "@/lib/approvals/inbox/decision-service";
+import { readReceiptExceptionAcceptanceBody } from "@/lib/approvals/inbox/receipt-exception-acceptance-body";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
 import { isEligibleManagerForApprovalRequest } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
@@ -62,7 +63,7 @@ function toApprovalErrorResponse(error: unknown) {
 }
 
 export async function POST(
-	_request: NextRequest,
+	httpRequest: NextRequest,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
 	let approvalId: string | null = null;
@@ -174,11 +175,20 @@ export async function POST(
 			);
 		}
 
+		// Expense reports: the missing-receipt exceptions the approver accepts (#604).
+		const acceptance = await readReceiptExceptionAcceptanceBody(httpRequest);
+		if (!acceptance.ok) {
+			return NextResponse.json({ error: "Invalid approval request" }, { status: 400 });
+		}
+
 		decisionStage = "decision";
 		const result = await approveApprovalInboxItem({
 			approvalId: id,
 			actorEmployeeId: currentEmployee.id,
 			organizationId: currentEmployee.organizationId,
+			...(acceptance.acceptedReceiptExceptionItemIds
+				? { acceptedReceiptExceptionItemIds: acceptance.acceptedReceiptExceptionItemIds }
+				: {}),
 			includeAllApprovers: canManageApprovals || undefined,
 			eligibleApprovalScopes:
 				!canManageApprovals && isEligibleManager

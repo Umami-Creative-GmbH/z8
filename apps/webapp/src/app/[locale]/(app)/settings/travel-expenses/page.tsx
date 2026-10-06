@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
+import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings/travel-expense/travel-expense-receipt-exception-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -12,6 +13,9 @@ async function TravelExpenseSettingsPageContent() {
 		<div className="flex flex-1 flex-col">
 			<div className="px-4 pt-4">
 				<TravelExpenseApproverSettingsCard />
+			</div>
+			<div className="px-4 pt-4">
+				<TravelExpenseReceiptExceptionSettingsCard />
 			</div>
 			<TravelExpensePolicyManagement organizationId={organizationId} />
 		</div>
