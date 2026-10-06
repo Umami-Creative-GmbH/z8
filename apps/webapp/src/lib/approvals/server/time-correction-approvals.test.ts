@@ -11517,6 +11517,38 @@ describe("time correction approval policy resolution", () => {
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
+	it("rejects the legacy correction decision with the owner's failure, else its defect", async () => {
+		vi.resetModules();
+		const { AuthorizationError } = await import("@/lib/effect/errors");
+		const { CompletedWorkCollisionError } = await import(
+			"@/lib/time-tracking/close-active-work"
+		);
+		const refusal = new AuthorizationError({ message: "Not the approver" });
+		const defect = new CompletedWorkCollisionError();
+		const processApprovalWithCurrentEmployee = vi
+			.fn()
+			.mockReturnValueOnce(Effect.fail(refusal))
+			.mockReturnValueOnce(Effect.die(defect));
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApprovalWithCurrentEmployee,
+			processApproval: vi.fn(),
+		}));
+		const { createLegacyTimeCorrectionDecisionProcessor } = await import(
+			"@/lib/approvals/server/time-correction-approvals"
+		);
+		const processLegacy = createLegacyTimeCorrectionDecisionProcessor({
+			approvalRequestId: "approval-1",
+			action: "approve",
+			reason: undefined,
+		});
+		const decide = () =>
+			processLegacy({} as ApprovalDbService, {} as never, "existing", "period-1");
+
+		await expect(decide()).rejects.toBe(refusal);
+		await expect(decide()).rejects.toBe(defect);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("creates time correction approvals through the shared policy resolver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 

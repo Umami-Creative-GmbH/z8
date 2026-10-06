@@ -18,7 +18,6 @@ import { SkillServiceLive } from "./services/skill.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
 import { WorkPolicyServiceLive } from "./services/work-policy.service";
 
-// Services move here from lib/effect-v3/runtime.ts as their slices port them to v4 (#625).
 export const AppLayer = Layer.mergeAll(
 	DatabaseServiceLive,
 	AuthServiceLive,

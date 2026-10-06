@@ -183,12 +183,10 @@ describe("runActiveOrganizationActionActorCheck", () => {
 	it("rejects with the AuthorizationError itself, keeping the guard's message", async () => {
 		liveDatabase.memberFindFirst.mockResolvedValueOnce(null);
 
-		const rejection = await runActiveOrganizationActionActorCheck(input).catch(
-			(error: unknown) => error,
-		);
+		const check = runActiveOrganizationActionActorCheck(input);
 
-		expect(rejection).toBeInstanceOf(AuthorizationError);
-		expect(rejection).toMatchObject({
+		await expect(check).rejects.toBeInstanceOf(AuthorizationError);
+		await expect(check).rejects.toMatchObject({
 			_tag: "AuthorizationError",
 			message: "Organization action denied",
 		});

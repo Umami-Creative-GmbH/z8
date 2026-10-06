@@ -1,4 +1,3 @@
-import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/env", () => ({
@@ -27,17 +26,12 @@ vi.mock("../evidence/invocation", async (importOriginal) => ({
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { decideBoundLegacyTimeInvocation } from "./time-bound-decision";
 
-describe("bound legacy time decisions under Effect v4", () => {
+describe("bound legacy time decisions", () => {
 	it.each([
 		["AuthorizationError", () => new AuthorizationError({ message: "Not the approver" })],
 		["ValidationError", () => new ValidationError({ message: "No longer a time request" })],
-	])("reads a %s that Effect.runPromise rejected with as a stale card", async (_name, refusal) => {
-		// Effect v4 runPromise rejects with the owner's refusal itself.
-		const rejection = await Effect.runPromise(Effect.fail(refusal())).then(
-			() => null,
-			(error: unknown) => error,
-		);
-		findCommittedInvocationDecision.mockRejectedValueOnce(rejection);
+	])("reads a %s refusal as a stale card", async (_name, refusal) => {
+		findCommittedInvocationDecision.mockRejectedValueOnce(refusal());
 
 		const result = await decideBoundLegacyTimeInvocation({
 			database: {} as never,

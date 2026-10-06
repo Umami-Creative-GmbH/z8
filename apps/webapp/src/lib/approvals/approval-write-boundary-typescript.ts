@@ -347,11 +347,9 @@ function isDatabaseServiceModule(
 	);
 }
 
-// Effect v3 and v4 coexist until #633 removes the `effect-v3` alias and `lib/effect-v3`.
-const EFFECT_MODULES = new Set(["effect", "effect-v3"]);
+const EFFECT_MODULES = new Set(["effect"]);
 const DATABASE_SERVICE_MODULES = new Set([
 	"@/lib/effect/services/database.service",
-	"@/lib/effect-v3/services/database.service",
 ]);
 
 export function isApprovalWriteDatabaseServiceModuleSpecifier(

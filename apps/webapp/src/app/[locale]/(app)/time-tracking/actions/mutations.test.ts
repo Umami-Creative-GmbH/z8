@@ -7,6 +7,7 @@ const mockState = vi.hoisted(() => ({
 	findMember: vi.fn(),
 	findApprovalRequests: vi.fn(),
 	decideStableTarget: vi.fn(),
+	decideStableTargetDefect: undefined as unknown,
 	selectWhere: vi.fn(),
 	selectLimit: vi.fn(),
 	updateSet: vi.fn(),
@@ -72,14 +73,17 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 }));
 
 // A rejected stub becomes the Effect's typed failure, as the owner's decision fails.
+// A set decideStableTargetDefect makes the decision die with it instead.
 vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
 	const { Effect } = await import("effect");
 	return {
 		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) =>
-			Effect.tryPromise({
-				try: () => mockState.decideStableTarget(...args),
-				catch: (error) => error,
-			}),
+			mockState.decideStableTargetDefect === undefined
+				? Effect.tryPromise({
+						try: () => mockState.decideStableTarget(...args),
+						catch: (error) => error,
+					})
+				: Effect.die(mockState.decideStableTargetDefect),
 	};
 });
 
@@ -124,6 +128,7 @@ describe("approveWorkPeriod", () => {
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
 		mockState.updateWhere.mockResolvedValue(undefined);
 		mockState.decideStableTarget.mockResolvedValue(undefined);
+		mockState.decideStableTargetDefect = undefined;
 		mockState.findApprovalRequests.mockResolvedValue([
 			{
 				id: "approval-1",
@@ -212,6 +217,24 @@ describe("approveWorkPeriod", () => {
 			expect.anything(),
 		);
 		expect(mockState.updateSet).not.toHaveBeenCalled();
+	});
+
+	it("redacts a conflict the decision dies with instead of failing with", async () => {
+		mockState.findMember.mockResolvedValue({ role: "admin" });
+		mockState.decideStableTargetDefect = new ConflictError({
+			message: "private conflict defect",
+			conflictType: "approval_decision",
+		});
+
+		const result = await approveWorkPeriod({
+			workPeriodId: "period-1",
+			approvalRequestId: "approval-1",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error: "Failed to approve work period. Please try again.",
+		});
 	});
 
 	it("redacts non-domain failures", async () => {
