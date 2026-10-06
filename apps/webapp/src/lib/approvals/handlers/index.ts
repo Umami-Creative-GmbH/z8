@@ -15,3 +15,4 @@ export {
 } from "./base-handler";
 export { TimeCorrectionHandler } from "./time-correction.handler";
 export { TravelExpenseClaimHandler } from "./travel-expense-claim.handler";
+export { TravelExpenseReportHandler } from "./travel-expense-report.handler";

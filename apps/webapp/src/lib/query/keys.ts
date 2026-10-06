@@ -83,7 +83,11 @@ export const queryKeys = {
 		list: <T extends object>(params?: T) => ["travel-expenses", "list", params] as const,
 		detail: (claimId: string) => ["travel-expenses", "detail", claimId] as const,
 		draftReports: () => ["travel-expenses", "draft-reports"] as const,
+		submittedReports: () => ["travel-expenses", "submitted-reports"] as const,
 		report: (reportId: string) => ["travel-expenses", "reports", reportId] as const,
+		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
+		reportSubmission: (reportId: string) =>
+			["travel-expenses", "reports", reportId, "submission"] as const,
 	},
 
 	// Employees

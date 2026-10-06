@@ -23,6 +23,7 @@ import {
 	createTripReport,
 	type DraftReportSummary,
 	listOwnDraftReports,
+	listOwnSubmittedReports,
 	loadOwnReport,
 	type ReportItemView,
 	type ReportOwner,
@@ -33,11 +34,21 @@ import {
 	type TripDetailsView,
 } from "@/lib/travel-expenses/report-store";
 import {
+	loadAuthorizedTravelExpenseReport,
+	loadSubmittedReportView,
+	type SubmittedReportView,
+} from "@/lib/travel-expenses/report-read";
+import type { ReviewedReportVersions } from "@/lib/travel-expenses/report-submission";
+import {
 	parseTripDetailsDraft,
 	type TripDetailsDraft,
 	type TripDetailsDraftInput,
 	type TripDetailsFieldError,
 } from "@/lib/travel-expenses/trip-report";
+import {
+	type SubmitTravelExpenseReportResult,
+	submitTravelExpenseReport,
+} from "@/lib/approvals/server/travel-expense-report-submission";
 
 async function currentOwner(): Promise<ReportOwner | null> {
 	const authContext = await getAuthContext();
@@ -111,6 +122,19 @@ export async function getMyDraftTravelExpenseReports(): Promise<
 	} catch (error) {
 		logger.error({ error }, "Failed to list draft expense reports");
 		return { success: false, error: "Failed to load draft expense reports" };
+	}
+}
+
+export async function getMySubmittedTravelExpenseReports(): Promise<
+	ServerActionResult<DraftReportSummary[]>
+> {
+	try {
+		const owner = await currentOwner();
+		if (!owner) return { success: false, error: "Unauthorized" };
+		return { success: true, data: await listOwnSubmittedReports(db, owner) };
+	} catch (error) {
+		logger.error({ error }, "Failed to list submitted expense reports");
+		return { success: false, error: "Failed to load submitted expense reports" };
 	}
 }
 
@@ -310,6 +334,125 @@ export async function removeTripReportItemAction(input: {
 	} catch (error) {
 		logger.error({ error }, "Failed to remove expense");
 		return { success: false, error: "Failed to remove expense" };
+	}
+}
+
+type SubmitRefusal = Exclude<
+	SubmitTravelExpenseReportResult,
+	{ kind: "submitted" | "not_found" | "not_draft" }
+>;
+
+/**
+ * What the employee is told: submitted, or the submission owner's refusal
+ * (e.g. changed since review, incomplete, no reviewer) with its guidance data.
+ * Server-side routing messages stay in the logs.
+ */
+export type SubmitTravelExpenseReportOutcome =
+	| { status: "submitted" }
+	| {
+			[K in SubmitRefusal["kind"]]: { status: K } & Omit<
+				Extract<SubmitRefusal, { kind: K }>,
+				"kind" | "message"
+			>;
+	  }[SubmitRefusal["kind"]];
+
+const submitSchema = z.object({
+	reportId: z.uuid(),
+	reviewed: z.object({
+		detailsVersion: z.number().int().positive().nullable(),
+		items: z
+			.array(
+				z.object({
+					id: z.uuid(),
+					version: z.number().int().positive(),
+					receiptIds: z.array(z.uuid()).max(100),
+				}),
+			)
+			.max(200),
+	}),
+});
+
+/**
+ * Submits the saved report exactly as the employee reviewed it (#602). The
+ * server checks completeness, calculates the totals and freezes the revision.
+ */
+export async function submitTravelExpenseReportAction(input: {
+	reportId: string;
+	reviewed: ReviewedReportVersions;
+}): Promise<ServerActionResult<SubmitTravelExpenseReportOutcome>> {
+	try {
+		const owner = await currentOwner();
+		if (!owner) return { success: false, error: "Unauthorized" };
+		const parsed = submitSchema.safeParse(input);
+		if (!parsed.success) return { success: false, error: "Expense report not found" };
+		const result = await submitTravelExpenseReport(db, {
+			owner,
+			reportId: parsed.data.reportId,
+			reviewed: parsed.data.reviewed,
+		});
+		switch (result.kind) {
+			case "not_found":
+				return { success: false, error: "Expense report not found" };
+			case "not_draft":
+				return { success: false, error: "This expense report was already submitted" };
+			case "submitted":
+				break;
+			case "routing_failed":
+				logger.warn(
+					{ reportId: parsed.data.reportId, message: result.message },
+					"Expense report routing failed",
+				);
+				return { success: true, data: { status: "routing_failed" } };
+			case "incomplete":
+				return { success: true, data: { status: result.kind, missing: result.missing } };
+			case "no_reviewer":
+				return { success: true, data: { status: result.kind, reason: result.reason } };
+			case "threshold_currency_unsupported":
+				return { success: true, data: { status: result.kind, currency: result.currency } };
+			case "changed_since_review":
+			case "self_approval_route":
+			case "authority_unsupported":
+				return { success: true, data: { status: result.kind } };
+		}
+		logAudit({
+			action: AuditAction.TRAVEL_EXPENSE_SUBMITTED,
+			actorId: owner.userId,
+			employeeId: owner.employeeId,
+			targetId: parsed.data.reportId,
+			targetType: "approval",
+			organizationId: owner.organizationId,
+			metadata: {
+				model: "report",
+				approverId: result.reviewerEmployeeId,
+				submissionCycle: result.submissionCycle,
+				submittedRevisionId: result.submittedRevisionId,
+			},
+			timestamp: new Date(),
+		}).catch((error) => logger.error({ error }, "Failed to log expense report submission"));
+		revalidatePath("/travel-expenses");
+		return { success: true, data: { status: "submitted" } };
+	} catch (error) {
+		logger.error({ error }, "Failed to submit expense report");
+		return { success: false, error: "Failed to submit expense report" };
+	}
+}
+
+/** The latest frozen submission, for the report's owner or an authorized reviewer. */
+export async function getTravelExpenseReportSubmission(
+	reportId: string,
+): Promise<ServerActionResult<SubmittedReportView>> {
+	try {
+		const authorized = await loadAuthorizedTravelExpenseReport(reportId);
+		if (authorized.status === "unauthorized") return { success: false, error: "Unauthorized" };
+		const view =
+			authorized.status === "found"
+				? await loadSubmittedReportView(authorized.report, authorized.access)
+				: null;
+		if (!view) return { success: false, error: "Expense report not found" };
+		return { success: true, data: view };
+	} catch (error) {
+		logger.error({ error }, "Failed to load submitted expense report");
+		return { success: false, error: "Failed to load expense report" };
 	}
 }
 

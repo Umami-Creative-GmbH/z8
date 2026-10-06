@@ -5,6 +5,7 @@ export const SUPPORTED_APPROVAL_INBOX_TYPES = [
 	"absence_entry",
 	"time_entry",
 	"travel_expense_claim",
+	"travel_expense_report",
 ] as const;
 
 export type ApprovalInboxType = (typeof SUPPORTED_APPROVAL_INBOX_TYPES)[number];

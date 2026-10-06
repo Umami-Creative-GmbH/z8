@@ -82,7 +82,8 @@ export interface ApprovalWithTimeCorrection {
 export type ApprovalEntityType =
 	| "absence_entry"
 	| "time_entry"
-	| "travel_expense_claim";
+	| "travel_expense_claim"
+	| "travel_expense_report";
 export type ApprovalAction = "approve" | "reject";
 
 export interface CurrentApprover {

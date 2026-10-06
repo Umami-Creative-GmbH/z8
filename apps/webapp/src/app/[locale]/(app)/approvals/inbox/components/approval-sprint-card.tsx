@@ -224,5 +224,7 @@ function getTypeLabel(t: ReturnType<typeof useTranslate>["t"], type: ApprovalInb
 			return t("approvals:sprint.types.timeEntry", "Time entry");
 		case "travel_expense_claim":
 			return t("approvals:sprint.types.travelExpenseClaim", "Travel expense claim");
+		case "travel_expense_report":
+			return t("approvals:sprint.types.travelExpenseReport", "Expense report");
 	}
 }

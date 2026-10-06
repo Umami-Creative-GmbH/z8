@@ -292,6 +292,7 @@ describe("ApprovalQueryService", () => {
 			time_entry: 1,
 			shift_request: 0,
 			travel_expense_claim: 0,
+			travel_expense_report: 0,
 		});
 	});
 

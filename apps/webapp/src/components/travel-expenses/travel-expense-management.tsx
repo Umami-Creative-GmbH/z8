@@ -58,8 +58,9 @@ export function TravelExpenseManagement({
 				</div>
 			</div>
 
-			<div className="space-y-3 px-4 lg:px-6">
+			<div className="space-y-6 px-4 lg:px-6">
 				<TravelExpenseReportDrafts />
+				<TravelExpenseReportDrafts scope="submitted" />
 			</div>
 
 			<div className="space-y-3 px-4 lg:px-6">

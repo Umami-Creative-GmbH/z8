@@ -22,6 +22,10 @@ import {
 	buildTravelExpenseReviewSections,
 	prepareTravelExpenseReviewEvidence,
 } from "../presentation/travel-expense-review";
+import {
+	buildTravelExpenseReportReviewSections,
+	prepareTravelExpenseReportReviewEvidence,
+} from "../presentation/travel-expense-report-review";
 import type { TimeCorrectionMetadataChanges } from "../server/time-correction-review-metadata";
 import { isTimeApprovalWorkflowType } from "../time-approval-kinds";
 import { ApprovalInboxBadRequestError } from "./current-actor";
@@ -88,6 +92,10 @@ interface GetApprovalInboxDetailFromRequestInput {
 		organizationId: string;
 		claimId: string;
 	}) => ReturnType<typeof prepareTravelExpenseReviewEvidence>;
+	loadTravelExpenseReportReviewEvidence?: (input: {
+		organizationId: string;
+		reportId: string;
+	}) => ReturnType<typeof prepareTravelExpenseReportReviewEvidence>;
 	loadTimeReviewEvidence?: (
 		input: Parameters<typeof prepareTimeReviewEvidence>[0],
 	) => ReturnType<typeof prepareTimeReviewEvidence>;
@@ -291,6 +299,8 @@ export async function getApprovalInboxDetailFromRequest({
 	handler,
 	loadAbsenceReviewEvidence = prepareAbsenceReviewEvidence,
 	loadTravelExpenseReviewEvidence = prepareTravelExpenseReviewEvidence,
+	loadTravelExpenseReportReviewEvidence = (input) =>
+		prepareTravelExpenseReportReviewEvidence(input),
 	loadTimeReviewEvidence = prepareTimeReviewEvidence,
 }: GetApprovalInboxDetailFromRequestInput): Promise<ApprovalInboxDetailResult> {
 	if (!isSupportedInboxType(request.entityType)) {
@@ -350,6 +360,14 @@ export async function getApprovalInboxDetailFromRequest({
 			await loadTravelExpenseReviewEvidence({
 				organizationId: request.organizationId,
 				claimId: request.entityId,
+			}),
+		);
+	} else if (request.entityType === "travel_expense_report") {
+		// The whole report's frozen submission (#602); never the live draft rows.
+		review = buildTravelExpenseReportReviewSections(
+			await loadTravelExpenseReportReviewEvidence({
+				organizationId: request.organizationId,
+				reportId: request.entityId,
 			}),
 		);
 	} else if (timeEvidence) {

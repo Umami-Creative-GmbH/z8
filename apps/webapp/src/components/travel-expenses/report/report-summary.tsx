@@ -1,9 +1,7 @@
 "use client";
 
-import { IconInfoCircle } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import type { ReceiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { TripRequirement } from "@/lib/travel-expenses/trip-report";
 import { formatMoney } from "./format";
@@ -133,21 +131,5 @@ export function TripRequirements({
 				</ul>
 			)}
 		</section>
-	);
-}
-
-export function DraftNotice() {
-	const { t } = useTranslate();
-	return (
-		<Alert>
-			<IconInfoCircle aria-hidden="true" className="size-4" />
-			<AlertTitle>{t("travelExpenses.report.draftNotice.title", "Saved as a draft")}</AlertTitle>
-			<AlertDescription>
-				{t(
-					"travelExpenses.report.draftNotice.description",
-					"Your entries are saved automatically and you can continue later from Travel Expenses. Submitting expense reports for approval is not available yet.",
-				)}
-			</AlertDescription>
-		</Alert>
 	);
 }

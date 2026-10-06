@@ -9,22 +9,37 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { getMyDraftTravelExpenseReports } from "@/app/[locale]/(app)/travel-expenses/report-actions";
-import { Badge } from "@/components/ui/badge";
+import {
+	getMyDraftTravelExpenseReports,
+	getMySubmittedTravelExpenseReports,
+} from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
+import { ReportStatusBadge } from "./report-status";
 
-/** The employee's unfinished trips and receipts, so a saved draft can be resumed. */
-export function TravelExpenseReportDrafts() {
+/**
+ * The employee's unfinished trips and receipts, so a saved draft can be
+ * resumed, or their submitted reports with each review status (#602).
+ */
+export function TravelExpenseReportDrafts({
+	scope = "drafts",
+}: {
+	scope?: "drafts" | "submitted";
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	const submitted = scope === "submitted";
 	const { data, isError, isFetching, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.draftReports(),
+		queryKey: submitted
+			? queryKeys.travelExpenses.submittedReports()
+			: queryKeys.travelExpenses.draftReports(),
 		queryFn: async () => {
-			const result = await getMyDraftTravelExpenseReports();
+			const result = submitted
+				? await getMySubmittedTravelExpenseReports()
+				: await getMyDraftTravelExpenseReports();
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -33,10 +48,17 @@ export function TravelExpenseReportDrafts() {
 	if (isError && !data) {
 		return (
 			<TravelExpenseLoadError
-				message={t(
-					"travelExpenses.report.errors.loadDrafts",
-					"Unable to load your draft expenses. Please retry.",
-				)}
+				message={
+					submitted
+						? t(
+								"travelExpenses.report.errors.loadSubmitted",
+								"Unable to load your submitted expense reports. Please retry.",
+							)
+						: t(
+								"travelExpenses.report.errors.loadDrafts",
+								"Unable to load your draft expenses. Please retry.",
+							)
+				}
 				retry={() => {
 					void refetch();
 				}}
@@ -47,9 +69,11 @@ export function TravelExpenseReportDrafts() {
 	if (!data || data.length === 0) return null;
 
 	return (
-		<section aria-labelledby="travel-expense-drafts" className="space-y-2">
-			<h2 id="travel-expense-drafts" className="text-lg font-semibold">
-				{t("travelExpenses.report.drafts.title", "Drafts in progress")}
+		<section aria-labelledby={`travel-expense-${scope}`} className="space-y-2">
+			<h2 id={`travel-expense-${scope}`} className="text-lg font-semibold">
+				{submitted
+					? t("travelExpenses.report.submitted.title", "Submitted reports")
+					: t("travelExpenses.report.drafts.title", "Drafts in progress")}
 			</h2>
 			<Card>
 				<CardContent className="p-0">
@@ -134,7 +158,7 @@ export function TravelExpenseReportDrafts() {
 											)}
 										</>
 									)}
-									<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+									<ReportStatusBadge status={draft.status} />
 									<IconChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
 								</Link>
 							</li>

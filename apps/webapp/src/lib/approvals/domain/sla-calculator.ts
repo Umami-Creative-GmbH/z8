@@ -80,6 +80,32 @@ const DEFAULT_SLA_RULES: SLARule[] = [
 		escalationEnabled: false,
 	},
 
+	// Travel expense reports (#602): escalation does not discover them yet.
+	{
+		approvalType: "travel_expense_report",
+		priority: "urgent",
+		deadlineHours: 8,
+		escalationEnabled: false,
+	},
+	{
+		approvalType: "travel_expense_report",
+		priority: "high",
+		deadlineHours: 24,
+		escalationEnabled: false,
+	},
+	{
+		approvalType: "travel_expense_report",
+		priority: "normal",
+		deadlineHours: 48,
+		escalationEnabled: false,
+	},
+	{
+		approvalType: "travel_expense_report",
+		priority: "low",
+		deadlineHours: 72,
+		escalationEnabled: false,
+	},
+
 	// Shift requests
 	{
 		approvalType: "shift_request",
