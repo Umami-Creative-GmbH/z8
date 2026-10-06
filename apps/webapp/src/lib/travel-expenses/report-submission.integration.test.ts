@@ -7,7 +7,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -109,7 +109,7 @@ const { POST: rejectRoute } = await import("@/app/api/approvals/inbox/[id]/rejec
 const { TravelExpenseReportHandler } = await import(
 	"@/lib/approvals/handlers/travel-expense-report.handler"
 );
-const { DatabaseServiceLive } = await import("@/lib/effect-v3/services/database.service");
+const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 
 const ids = {
@@ -726,9 +726,9 @@ describe("report submission through approval authority (#602)", () => {
 		const replay = await Effect.runPromise(
 			TravelExpenseReportHandler.approve(reportId, ids.manager, {
 				approvalRequestId: requestId,
-			}).pipe(Effect.provide(DatabaseServiceLive), Effect.either),
+			}).pipe(Effect.provide(DatabaseServiceLive), Effect.result),
 		);
-		expect(replay._tag).toBe("Right");
+		expect(replay._tag).toBe("Success");
 		expect(await reportState(reportId)).toMatchObject({ status: "approved", decisions: 1 });
 		expect(harness.notifications).toHaveLength(1);
 
@@ -859,9 +859,9 @@ describe("report submission through approval authority (#602)", () => {
 			TravelExpenseReportHandler.approve(reportId, ids.requester, {
 				approvalRequestId: requestId,
 				allowOrganizationWideApprover: true,
-			}).pipe(Effect.provide(DatabaseServiceLive), Effect.either),
+			}).pipe(Effect.provide(DatabaseServiceLive), Effect.result),
 		);
-		expect(self._tag).toBe("Left");
+		expect(self._tag).toBe("Failure");
 		expect((await reportState(reportId)).status).toBe("submitted");
 
 		for (const outsider of ["colleague", "foreigner"] as const) {

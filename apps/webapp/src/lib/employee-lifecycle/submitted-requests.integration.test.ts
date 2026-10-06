@@ -6,7 +6,7 @@
  * after departure are covered in their own approval integration suites.
  */
 import { randomUUID } from "node:crypto";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	ApprovalAuditLogger,
