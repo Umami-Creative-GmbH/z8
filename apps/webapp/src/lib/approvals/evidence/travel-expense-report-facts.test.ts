@@ -102,7 +102,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(input());
 
 		expect(facts).toEqual({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			kind: "travel_expense_report",
 			organizationId: "org-1",
 			reportId: "report-1",
@@ -159,7 +159,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00" },
 		});
 		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(
-			/^travel_expense_report:v1:[0-9a-f]{64}$/,
+			/^travel_expense_report:v2:[0-9a-f]{64}$/,
 		);
 	});
 
@@ -245,9 +245,13 @@ describe("schema version 1 revisions", () => {
 		"travel_expense_report:v1:92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
 
 	it("still freezes a v1 report byte for byte", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		// Later versions only add optional facts: without them the facts equal v1's.
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 1 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toEqual({
+			kind: "current",
+		});
 	});
 
 	it("fingerprints facts under the version they were frozen with", () => {
@@ -312,5 +316,114 @@ describe("compareLiveTravelExpenseReportWithRevision", () => {
 				}),
 			),
 		).toEqual({ kind: "material_change", changedFields: ["unverifiable:receipt_scope"] });
+	});
+});
+
+describe("project attribution (schema version 2)", () => {
+	const projectP1 = {
+		projectId: "p1",
+		name: "Hamburg rollout",
+		customerId: "c1",
+		customerName: "Hanse AG",
+		inheritedFromTrip: true,
+		basis: "employee_assignment",
+	} as const;
+	const projectP2 = {
+		projectId: "p2",
+		name: "Legacy migration",
+		customerId: null,
+		customerName: null,
+		inheritedFromTrip: false,
+		basis: "exception",
+		exception: {
+			exceptionId: "x1",
+			validFrom: "2026-09-01",
+			validTo: "2026-09-30",
+			reason: "Staffed before assignments were recorded",
+			evidence: "Staffing plan Q3, signed by the project lead",
+			authorizedByEmployeeId: "admin-1",
+			authorizedAt: "2026-10-01T09:00:00Z",
+		},
+	} as const;
+
+	function attributed(overrides: Partial<TravelExpenseReportFactsInput> = {}) {
+		return input({
+			report: { ...input().report, projectId: "p1" },
+			items: [
+				item("hotel", 1, {
+					category: "accommodation",
+					description: "Hotel, two nights",
+					originalAmount: "240.00",
+					paidBy: "company",
+					projectId: "p2",
+					projectInherits: false,
+				}),
+				item("train", 0, { projectId: null, projectInherits: true }),
+			],
+			projectAttribution: { train: projectP1, hotel: projectP2 },
+			...overrides,
+		});
+	}
+
+	it("freezes each expense's effective project with how its use was proven", () => {
+		const facts = buildTravelExpenseReportSubmittedFacts(attributed());
+		expect(facts.items.map((frozen) => [frozen.itemId, frozen.project])).toEqual([
+			["train", projectP1],
+			["hotel", projectP2],
+		]);
+	});
+
+	it("omits the project of an expense without one", () => {
+		const facts = buildTravelExpenseReportSubmittedFacts(
+			attributed({
+				report: { ...input().report, projectId: null },
+				projectAttribution: { hotel: projectP2 },
+			}),
+		);
+		expect(facts.items[0]).not.toHaveProperty("project");
+		expect(facts.items[1]?.project).toEqual(projectP2);
+	});
+
+	it("refuses an attributed expense whose eligibility was not resolved", () => {
+		expectEvidenceError(
+			() => buildTravelExpenseReportSubmittedFacts(attributed({ projectAttribution: { train: projectP1 } })),
+			"evidence_incomplete",
+			"project_attribution",
+		);
+		expectEvidenceError(
+			() =>
+				buildTravelExpenseReportSubmittedFacts(
+					attributed({
+						projectAttribution: { train: projectP1, hotel: { ...projectP2, projectId: "p3" } },
+					}),
+				),
+			"evidence_incomplete",
+			"project_attribution",
+		);
+	});
+
+	it("keeps the frozen names when only the project's live name changed", () => {
+		const submitted = buildTravelExpenseReportSubmittedFacts(attributed());
+		// Live rows carry project ids only; renames never reach the comparison.
+		expect(
+			compareLiveTravelExpenseReportWithRevision(
+				submitted,
+				attributed({ projectAttribution: undefined }),
+			),
+		).toEqual({ kind: "current" });
+	});
+
+	it("holds a report whose live project attribution changed after submission", () => {
+		const submitted = buildTravelExpenseReportSubmittedFacts(attributed());
+		const changed = (overrides: Partial<TravelExpenseReportFactsInput>) =>
+			compareLiveTravelExpenseReportWithRevision(submitted, attributed(overrides));
+		expect(changed({ report: { ...input().report, projectId: "p9" } })).toEqual({
+			kind: "material_change",
+			changedFields: ["items"],
+		});
+		expect(changed({ report: { ...input().report, projectId: null } })).toEqual({
+			kind: "material_change",
+			changedFields: ["items"],
+		});
 	});
 });
