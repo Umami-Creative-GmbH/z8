@@ -32,9 +32,7 @@ describe("AllowanceOverrideNotice (#610)", () => {
 		expect(screen.getByText("BMF 2026, France: Paris")).toBeTruthy();
 		expect(screen.getByText("2 × 39.00 + 58.00 − 23.20")).toBeTruthy();
 		expect(screen.getByText(/Ada Admin/)).toBeTruthy();
-		expect(
-			screen.getByText("Not covered by the supported calculation rules"),
-		).toBeTruthy();
+		expect(screen.getByText("Not covered by the supported calculation rules")).toBeTruthy();
 		expect(screen.getByText("No ordinary calculation exists for these facts.")).toBeTruthy();
 	});
 

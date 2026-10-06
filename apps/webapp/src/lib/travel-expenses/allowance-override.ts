@@ -284,7 +284,9 @@ export function overriddenMileageView(
 	return {
 		...view,
 		override: overrideView,
-		...(overrideView.applies ? { amount: overrideView.amount, currency: overrideView.currency } : {}),
+		...(overrideView.applies
+			? { amount: overrideView.amount, currency: overrideView.currency }
+			: {}),
 	};
 }
 
@@ -304,7 +306,9 @@ export function overriddenPerDiemView(
 	return {
 		...view,
 		override: overrideView,
-		...(overrideView.applies ? { amount: overrideView.amount, currency: overrideView.currency } : {}),
+		...(overrideView.applies
+			? { amount: overrideView.amount, currency: overrideView.currency }
+			: {}),
 	};
 }
 

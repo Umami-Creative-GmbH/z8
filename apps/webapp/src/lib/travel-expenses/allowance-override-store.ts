@@ -145,7 +145,8 @@ async function lockItem(
 		)
 		.limit(1);
 	if (!item) return { kind: "not_found" };
-	if (item.version !== input.expectedVersion) return { kind: "conflict", itemVersion: item.version };
+	if (item.version !== input.expectedVersion)
+		return { kind: "conflict", itemVersion: item.version };
 	return { kind: "ok", report, item };
 }
 
@@ -289,7 +290,9 @@ export async function authorizeAllowanceOverride(
 		).get(item.id);
 		const replaces = input.replacesOverrideId ?? null;
 		if (active && replaces !== active.id) {
-			return replaces ? { kind: "stale_replacement" } : { kind: "already_overridden", overrideId: active.id };
+			return replaces
+				? { kind: "stale_replacement" }
+				: { kind: "already_overridden", overrideId: active.id };
 		}
 		if (!active && replaces) return { kind: "stale_replacement" };
 		if (active) {

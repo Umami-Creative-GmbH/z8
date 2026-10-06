@@ -103,7 +103,9 @@ function factsLine(locale: string, item: AllowanceExceptionItem): string {
 	const at = (date: string | null, time: string | null, zone: string | null) =>
 		[date && formatPlainDate(locale, date), time, zone && `(${zone})`].filter(Boolean).join(" ");
 	return [
-		trip ? `${at(trip.startDate, trip.startTime, trip.startTimeZone)} – ${at(trip.endDate, trip.endTime, trip.endTimeZone)}` : null,
+		trip
+			? `${at(trip.startDate, trip.startTime, trip.startTimeZone)} – ${at(trip.endDate, trip.endTime, trip.endTimeZone)}`
+			: null,
 		item.destinations
 			.map((destination) => destination.place)
 			.filter(Boolean)
@@ -182,7 +184,10 @@ function OverrideDialog({ item, onClose }: { item: AllowanceExceptionItem; onClo
 			<DialogContent className="sm:max-w-lg">
 				<DialogHeader>
 					<DialogTitle>
-						{t("settings.travelExpenses.allowanceOverrides.dialogTitle", "Set the allowance manually")}
+						{t(
+							"settings.travelExpenses.allowanceOverrides.dialogTitle",
+							"Set the allowance manually",
+						)}
 					</DialogTitle>
 					<DialogDescription>
 						{t(
@@ -324,7 +329,13 @@ function reasonsLine(t: Translate, item: AllowanceExceptionItem): string | null 
 		.join(" ");
 }
 
-function ExceptionRow({ item, onAuthorize }: { item: AllowanceExceptionItem; onAuthorize: () => void }) {
+function ExceptionRow({
+	item,
+	onAuthorize,
+}: {
+	item: AllowanceExceptionItem;
+	onAuthorize: () => void;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const queryClient = useQueryClient();

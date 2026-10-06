@@ -468,7 +468,7 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 
 		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
 		const frozen = await revisionFacts(reportId);
-		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v8:[0-9a-f]{64}$/);
+		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v9:[0-9a-f]{64}$/);
 		// 14 + (14 - (5.60 - 2.00))
 		expect(frozen.facts.totals).toEqual({
 			currency: "EUR",

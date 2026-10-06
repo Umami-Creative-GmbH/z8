@@ -25,7 +25,10 @@ const SITUATIONS: Record<string, ApprovalInboxLocalizedText> = {
 		"allowanceSituationUnsupported",
 		"Not covered by the supported calculation rules",
 	),
-	official_fallback: text("allowanceSituationFallback", "Calculated with an official fallback rate"),
+	official_fallback: text(
+		"allowanceSituationFallback",
+		"Calculated with an official fallback rate",
+	),
 };
 
 type Override = NonNullable<TravelExpenseReportSubmittedItem["allowanceOverride"]>;
@@ -51,7 +54,9 @@ function factsLine(override: Override): string {
 		.join(", ");
 }
 
-function ordinaryResult(item: TravelExpenseReportSubmittedItem): string | ApprovalInboxLocalizedText {
+function ordinaryResult(
+	item: TravelExpenseReportSubmittedItem,
+): string | ApprovalInboxLocalizedText {
 	const ordinary = item.mileage ?? item.perDiem;
 	return ordinary
 		? `${ordinary.amount} ${ordinary.currency}`
@@ -78,7 +83,10 @@ export function allowanceOverrideReviewRows(item: TravelExpenseReportSubmittedIt
 			value: override.calculationBasis,
 		},
 		{ label: text("allowanceOverrideFacts", "Entered facts"), value: factsLine(override) },
-		{ label: text("allowanceOrdinaryResult", "Ordinary policy result"), value: ordinaryResult(item) },
+		{
+			label: text("allowanceOrdinaryResult", "Ordinary policy result"),
+			value: ordinaryResult(item),
+		},
 		{
 			label: text("allowanceOverrideAuthorizedBy", "Authorized by"),
 			value: `${override.authorizedBy.name}, ${override.authorizedAt}`,

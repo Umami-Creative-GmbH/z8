@@ -129,7 +129,10 @@ describe("parseAllowanceOverrideDraft", () => {
 			},
 		});
 		expect(
-			parseAllowanceOverrideDraft({ ...valid, amount: "18,45" }, { kind: "mileage", currency: "EUR" }),
+			parseAllowanceOverrideDraft(
+				{ ...valid, amount: "18,45" },
+				{ kind: "mileage", currency: "EUR" },
+			),
 		).toMatchObject({ ok: true, draft: { amount: "18.45" } });
 	});
 
@@ -152,7 +155,10 @@ describe("parseAllowanceOverrideDraft", () => {
 			).toEqual({ ok: false, errors: ["amount"] });
 		}
 		expect(
-			parseAllowanceOverrideDraft({ ...valid, amount: "10.50" }, { kind: "per_diem", currency: "JPY" }),
+			parseAllowanceOverrideDraft(
+				{ ...valid, amount: "10.50" },
+				{ kind: "per_diem", currency: "JPY" },
+			),
 		).toEqual({ ok: false, errors: ["amount"] });
 	});
 });

@@ -4,7 +4,10 @@ import { IconAlertTriangle, IconShieldCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { AllowanceOverride, AllowanceSituation } from "@/lib/travel-expenses/allowance-override";
+import type {
+	AllowanceOverride,
+	AllowanceSituation,
+} from "@/lib/travel-expenses/allowance-override";
 import { formatMoney } from "./format";
 import { formatRecordedInstant } from "./report-status";
 

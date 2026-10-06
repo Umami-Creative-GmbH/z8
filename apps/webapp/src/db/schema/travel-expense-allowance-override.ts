@@ -76,7 +76,10 @@ export const travelExpenseAllowanceOverride = pgTable(
 			"travel_expense_allowance_override_amount_check",
 			sql`${table.amount} >= 0 AND ${table.amount} <= 1000000 AND (${table.kind} <> 'mileage' OR ${table.amount} > 0)`,
 		),
-		check("travel_expense_allowance_override_currency_check", sql`${table.currency} ~ '^[A-Z]{3}$'`),
+		check(
+			"travel_expense_allowance_override_currency_check",
+			sql`${table.currency} ~ '^[A-Z]{3}$'`,
+		),
 		check(
 			"travel_expense_allowance_override_text_check",
 			sql`char_length(btrim(${table.reason})) BETWEEN 1 AND 1000
