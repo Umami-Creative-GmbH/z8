@@ -6,7 +6,7 @@
  */
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import {

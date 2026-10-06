@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { teamPermissions } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import {

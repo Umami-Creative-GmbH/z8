@@ -9,7 +9,7 @@
  * - Employee: employee.role ("admin" | "manager" | "employee") - Workforce permissions
  */
 
-import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
+import type { PermissionFlags } from "@/lib/effect-v3/services/permissions.service";
 
 // ============================================
 // ACTIONS

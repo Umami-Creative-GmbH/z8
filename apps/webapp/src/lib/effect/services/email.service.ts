@@ -6,7 +6,7 @@ import { EmailError } from "../errors";
 
 const logger = createLogger("EmailService");
 
-export class EmailService extends Context.Tag("EmailService")<
+export class EmailService extends Context.Service<
 	EmailService,
 	{
 		readonly send: (params: {
@@ -15,11 +15,10 @@ export class EmailService extends Context.Tag("EmailService")<
 			html: string;
 		}) => Effect.Effect<{ messageId: string }, EmailError>;
 	}
->() {}
+>()("EmailService") {}
 
 // Retry policy: exponential backoff with max 3 retries
-const retryPolicy = Schedule.exponential("100 millis").pipe(
-	Schedule.compose(Schedule.recurs(3)),
+const retryPolicy = Schedule.max([Schedule.exponential("100 millis"), Schedule.recurs(3)]).pipe(
 	Schedule.jittered,
 );
 
@@ -27,50 +26,49 @@ export const EmailServiceLive = Layer.succeed(
 	EmailService,
 	EmailService.of({
 		send: (params) =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				const tracer = trace.getTracer("email");
 
-				return yield* _(
-					Effect.tryPromise({
-						try: () =>
-							tracer.startActiveSpan(
-								"email.send",
-								{
-									attributes: {
-										"email.recipient": params.to,
-										"email.subject": params.subject,
-									},
+				return yield* Effect.tryPromise({
+					try: () =>
+						tracer.startActiveSpan(
+							"email.send",
+							{
+								attributes: {
+									"email.recipient": params.to,
+									"email.subject": params.subject,
 								},
-								async (span) => {
-									try {
-										logger.info({ to: params.to }, "Sending email");
+							},
+							async (span) => {
+								try {
+									logger.info({ to: params.to }, "Sending email");
 
-										const result = await sendEmailResend(params);
+									const result = await sendEmailResend(params);
 
-										if (!result.success) {
-											throw new Error(result.error || "Unknown email error");
-										}
-
-										span.setStatus({ code: 1 });
-										span.setAttribute("email.message_id", result.messageId || "");
-
-										return { messageId: result.messageId || "" };
-									} catch (error) {
-										span.recordException(error as Error);
-										span.setStatus({ code: 2, message: String(error) });
-										throw error;
-									} finally {
-										span.end();
+									if (!result.success) {
+										throw new Error(result.error || "Unknown email error");
 									}
-								},
-							),
-						catch: (error) =>
-							new EmailError({
-								message: "Failed to send email",
-								recipient: params.to,
-								cause: error,
-							}),
-					}),
+
+									span.setStatus({ code: 1 });
+									span.setAttribute("email.message_id", result.messageId || "");
+
+									return { messageId: result.messageId || "" };
+								} catch (error) {
+									span.recordException(error as Error);
+									span.setStatus({ code: 2, message: String(error) });
+									throw error;
+								} finally {
+									span.end();
+								}
+							},
+						),
+					catch: (error) =>
+						new EmailError({
+							message: "Failed to send email",
+							recipient: params.to,
+							cause: error,
+						}),
+				}).pipe(
 					Effect.retry(retryPolicy),
 					Effect.tapError((error) =>
 						Effect.sync(() => logger.error({ error, to: params.to }, "Email failed after retries")),

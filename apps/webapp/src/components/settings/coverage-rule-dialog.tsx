@@ -29,7 +29,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { TimeInput } from "@/components/ui/time-input";
-import type { CoverageRuleWithRelations } from "@/lib/effect/services/coverage.service";
+import type { CoverageRuleWithRelations } from "@/lib/effect-v3/services/coverage.service";
 import type { DayOfWeek } from "@/lib/validations/coverage";
 
 interface CoverageRuleDialogProps {

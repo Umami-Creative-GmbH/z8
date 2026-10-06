@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { PlatformOrganization } from "@/lib/effect/services/platform-admin.service";
+import type { PlatformOrganization } from "@/lib/effect-v3/services/platform-admin.service";
 import { Link, useRouter } from "@/navigation";
 import {
 	deleteOrganizationAction,

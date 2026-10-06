@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -101,7 +101,7 @@ import {
 	EmailError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { EmailService } from "@/lib/effect/services/email.service";
+import { EmailService } from "@/lib/effect-v3/services/email.service";
 
 beforeEach(() => {
 	addCalendarSyncJob.mockClear();

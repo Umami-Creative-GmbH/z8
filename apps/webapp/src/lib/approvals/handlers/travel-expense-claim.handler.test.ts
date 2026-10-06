@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalRequest } from "@/db/schema";
 
@@ -75,8 +75,8 @@ const testState = vi.hoisted(() => ({
 	onTravelExpenseRejected: vi.fn(),
 }));
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context, Layer } = await import("effect-v3");
 	const DatabaseService = Context.GenericTag<any>("DatabaseService");
 	return {
 		DatabaseService,
@@ -85,7 +85,7 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 });
 
 vi.mock("../infrastructure/audit-logger", async () => {
-	const { Context, Layer, Effect } = await import("effect");
+	const { Context, Layer, Effect } = await import("effect-v3");
 	const ApprovalAuditLogger = Context.GenericTag<any>("ApprovalAuditLogger");
 	const createApprovalAuditLogger = vi.fn(() =>
 		ApprovalAuditLogger.of({
@@ -112,7 +112,7 @@ vi.mock("@/lib/notifications/triggers", () => ({
 	onTravelExpenseRejected: testState.onTravelExpenseRejected,
 }));
 
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { getApprovalHandler } from "../domain/registry";
 import { ApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { initializeApprovalCenter } from "../init";

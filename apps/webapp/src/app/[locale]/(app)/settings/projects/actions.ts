@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import {
@@ -19,8 +19,8 @@ import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { AuthServiceLive } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import { logger } from "@/lib/logger";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
 import {

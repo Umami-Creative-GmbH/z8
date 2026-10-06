@@ -1,12 +1,12 @@
 import "server-only";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
-} from "@/lib/effect/services/change-policy.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/change-policy.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 
 export async function getEditCapabilityForPeriod(params: {
 	employeeId: string;

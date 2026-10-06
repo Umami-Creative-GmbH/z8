@@ -18,7 +18,7 @@ import { betterAuth } from "better-auth/minimal";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { eq } from "drizzle-orm";
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
@@ -81,10 +81,10 @@ const { createCoordinatedOrganizationHooks, handleCoordinatedAuthRequest } = awa
 	"@/lib/auth/auth-mutation-coordination"
 );
 const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
-const { AuthService } = await import("@/lib/effect/services/auth.service");
-const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
+const { DatabaseServiceLive } = await import("@/lib/effect-v3/services/database.service");
 const { OnboardingService, OnboardingServiceLive } = await import(
-	"@/lib/effect/services/onboarding.service"
+	"@/lib/effect-v3/services/onboarding.service"
 );
 
 const origin = "http://localhost:3000";

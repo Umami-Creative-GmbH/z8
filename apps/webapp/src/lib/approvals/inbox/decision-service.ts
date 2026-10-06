@@ -1,5 +1,5 @@
 import { and, eq, inArray, or } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -17,7 +17,7 @@ import {
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
 import { NotFoundError } from "@/lib/effect/errors";
-import { runtime } from "@/lib/effect/runtime";
+import { runtime } from "@/lib/effect-v3/runtime";
 import { createLogger } from "@/lib/logger";
 import { loadOrdinaryCanonicalApprovals } from "./ordinary-canonical-read";
 import {

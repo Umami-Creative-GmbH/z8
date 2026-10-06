@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, type SQL, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { user } from "@/db/auth-schema";
 import {
 	employee,
@@ -12,8 +12,8 @@ import {
 	team,
 } from "@/db/schema";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import type {
 	HolidayPresetAssignmentFormValues,
 	HolidayPresetFormValues,

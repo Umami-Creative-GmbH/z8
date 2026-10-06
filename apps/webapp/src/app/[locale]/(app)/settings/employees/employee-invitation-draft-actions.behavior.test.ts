@@ -1,10 +1,10 @@
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invitation } from "@/db/auth-schema";
 import { employeeInvitationDraft } from "@/db/schema";
 import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect/result";
+import { toServerActionResult } from "@/lib/effect-v3/result";
 import {
 	type InvitationDraftEligibilityModel,
 	predicateMatchesInvitationDraftModel,
@@ -23,9 +23,9 @@ vi.mock("@/lib/auth/organization-member-provisioning", () => ({
 	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
 }));
 
-vi.mock("@/lib/effect/runtime", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/effect/runtime")>();
-	const { Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/runtime", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/effect-v3/runtime")>();
+	const { Layer } = await import("effect-v3");
 	return { ...actual, AppLayer: Layer.empty };
 });
 

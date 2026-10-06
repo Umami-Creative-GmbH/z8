@@ -8,7 +8,7 @@
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { fmtFullDate } from "@/lib/bot-platform/i18n";
-import type { CoverageSummary } from "@/lib/effect/services/coverage.service";
+import type { CoverageSummary } from "@/lib/effect-v3/services/coverage.service";
 
 // ============================================
 // TYPES

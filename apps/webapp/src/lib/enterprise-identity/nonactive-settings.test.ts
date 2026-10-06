@@ -1,12 +1,12 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import {
 	getEmployeeContext,
 	getEmployeeSettingsActorContext,
 } from "@/app/[locale]/(app)/settings/employees/employee-action-utils";
 import { getProjectSettingsActorContext } from "@/app/[locale]/(app)/settings/projects/project-scope";
-import { AuthServiceLive } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { AuthServiceLive } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 
 const mocks = vi.hoisted(() => ({
 	query: vi.fn(),

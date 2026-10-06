@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { getEmployeeContext, getEmployeeSettingsActorContext } from "./employee-action-utils";
 import {
 	canAccessManagedEmployeeSettingsTarget,

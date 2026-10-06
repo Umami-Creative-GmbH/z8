@@ -2,14 +2,14 @@
 
 import { and, asc, count, eq, ilike, inArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team, teamMembership } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { buildScopedOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
 	EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,

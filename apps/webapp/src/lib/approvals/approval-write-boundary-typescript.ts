@@ -339,14 +339,20 @@ function isDatabaseServiceModule(
 	moduleName: string,
 	fileName: string,
 ): boolean {
-	if (moduleName === "@/lib/effect/services/database.service") return true;
-	return (
-		moduleName.startsWith(".") &&
-		relativeModulePath(fileName, moduleName).endsWith(
-			"/apps/webapp/src/lib/effect/services/database.service",
-		)
+	if (DATABASE_SERVICE_MODULES.has(moduleName)) return true;
+	if (!moduleName.startsWith(".")) return false;
+	const resolved = relativeModulePath(fileName, moduleName);
+	return [...DATABASE_SERVICE_MODULES].some((module) =>
+		resolved.endsWith(`/apps/webapp/src/${module.slice(2)}`),
 	);
 }
+
+// Effect v3 and v4 coexist until #633 removes the `effect-v3` alias and `lib/effect-v3`.
+const EFFECT_MODULES = new Set(["effect", "effect-v3"]);
+const DATABASE_SERVICE_MODULES = new Set([
+	"@/lib/effect/services/database.service",
+	"@/lib/effect-v3/services/database.service",
+]);
 
 export function isApprovalWriteDatabaseServiceModuleSpecifier(
 	moduleName: string,
@@ -1041,7 +1047,7 @@ function analyzeApprovalWriteMutationsInContext(
 			const moduleName = node.moduleSpecifier.text;
 			const bindings = node.importClause.namedBindings;
 			if (bindings && ts.isNamespaceImport(bindings)) {
-				if (moduleName === "effect") addRoot(bindings.name, "effect_namespace");
+				if (EFFECT_MODULES.has(moduleName)) addRoot(bindings.name, "effect_namespace");
 				else if (moduleName === "drizzle-orm")
 					addRoot(bindings.name, "drizzle_namespace");
 				else if (moduleName === "drizzle-orm/node-postgres") {
@@ -1061,7 +1067,7 @@ function analyzeApprovalWriteMutationsInContext(
 					)
 						? TABLE_EXPORTS[importedName]
 						: undefined;
-					if (moduleName === "effect" && importedName === "Effect") {
+					if (EFFECT_MODULES.has(moduleName) && importedName === "Effect") {
 						addRoot(element.name, "effect_namespace");
 					} else if (table) addRoot(element.name, `table:${table}`);
 					else if (moduleName === "drizzle-orm" && importedName === "sql") {

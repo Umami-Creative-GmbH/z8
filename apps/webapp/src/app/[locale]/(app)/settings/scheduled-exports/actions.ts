@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, desc, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import {
@@ -19,9 +19,9 @@ import type {
 } from "@/db/schema/scheduled-export";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import {
 	calculateNextExecution,
 	getNextExecutions,

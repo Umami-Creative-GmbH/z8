@@ -22,7 +22,7 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { formatDistance } from "@/lib/datetime/format";
-import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
+import type { ExceptionWithDetails } from "@/lib/effect-v3/services/compliance-guardrail.service";
 import { queryKeys } from "@/lib/query";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";

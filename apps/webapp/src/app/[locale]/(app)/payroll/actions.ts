@@ -1,14 +1,14 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { db, payrollExportConfig, payrollExportFormat } from "@/db";
 import { payrollBlockerDismissal } from "@/db/schema";
 import { type AuthContext, getAbility, getAuthContext } from "@/lib/auth-helpers";
 import { AuthenticationError, AuthorizationError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
 import { resolvePayrollAccessibleEmployeeIds } from "@/lib/payroll-access/permissions";
 import {
 	createExportJob,

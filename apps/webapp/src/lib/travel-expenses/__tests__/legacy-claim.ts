@@ -10,7 +10,7 @@
  * against the label-owned disposable database.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { db } from "@/db";
 import { employee, travelExpenseClaim } from "@/db/schema";
 import { acquireApprovalWriteLock } from "@/lib/approvals/authority";

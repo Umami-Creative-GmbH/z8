@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
 	runEmployeePolicyLookup: vi.fn(),
 }));
 
-vi.mock("@/lib/effect/work-policy-runtime", () => ({
+vi.mock("@/lib/effect-v3/work-policy-runtime", () => ({
 	runEmployeePolicyLookup: mocks.runEmployeePolicyLookup,
 }));
 

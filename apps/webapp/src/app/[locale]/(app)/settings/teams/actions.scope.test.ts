@@ -121,14 +121,14 @@ vi.mock("@/lib/notifications/triggers", () => ({
 	onTeamMemberRemoved: mockState.onTeamMemberRemoved,
 }));
 
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/auth.service", async () => {
+	const { Context } = await import("effect-v3");
 	const AuthService = Context.GenericTag<{ readonly getSession: () => unknown }>("AuthService");
 	return { AuthService };
 });
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context } = await import("effect-v3");
 	const DatabaseService = Context.GenericTag<{
 		readonly db: {
 			query: {
@@ -163,19 +163,19 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 	return { DatabaseService };
 });
 
-vi.mock("@/lib/effect/services/permissions.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/permissions.service", async () => {
+	const { Context } = await import("effect-v3");
 	const PermissionsService = Context.GenericTag<{
 		readonly hasTeamPermission: (...args: unknown[]) => unknown;
 	}>("PermissionsService");
 	return { PermissionsService };
 });
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
-	const { PermissionsService } = await import("@/lib/effect/services/permissions.service");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Effect, Layer } = await import("effect-v3");
+	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
+	const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
+	const { PermissionsService } = await import("@/lib/effect-v3/services/permissions.service");
 
 	const authLayer = Layer.succeed(AuthService, {
 		getSession: () => Effect.succeed(mockState.session),
@@ -227,8 +227,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 
 	const toServerActionResult = (exit: unknown) =>
 		Exit.match(exit as never, {

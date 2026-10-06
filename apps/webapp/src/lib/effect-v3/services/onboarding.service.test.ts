@@ -1,0 +1,719 @@
+import { Effect, Layer } from "effect-v3";
+import { headers } from "next/headers";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { auth } from "@/lib/auth";
+import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
+import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
+import { AuthService } from "./auth.service";
+import { DatabaseService } from "./database.service";
+import { OnboardingService, OnboardingServiceLive } from "./onboarding.service";
+
+const creationPolicyState = vi.hoisted(() => ({
+	disabled: false,
+}));
+
+const authMutation = vi.hoisted(() => ({ active: false, calls: 0 }));
+
+vi.mock("next/headers", () => ({
+	headers: vi.fn(),
+}));
+
+vi.mock("@/lib/auth", () => ({
+	auth: {
+		api: {
+			createOrganization: vi.fn(),
+			getSession: vi.fn(),
+			updateUser: vi.fn(),
+		},
+	},
+	runAuthMutation: async (mutation: () => Promise<unknown>) => {
+		authMutation.calls += 1;
+		authMutation.active = true;
+		try {
+			return await mutation();
+		} finally {
+			authMutation.active = false;
+		}
+	},
+}));
+
+// Settings rows are written through the protected writer (#312).
+vi.mock("@/lib/user-preferences/user-settings-mutation", () => ({
+	writeUserSettings: vi.fn(async () => undefined),
+}));
+
+vi.mock("@/lib/organization/creation-policy", () => ({
+	isOrganizationCreationDisabled: () => creationPolicyState.disabled,
+	normalizeOrganizationCreationFlag: (flag: string | undefined) =>
+		flag === "true" ? "true" : "false",
+}));
+
+/** Runs onboarding's guarded employee transaction (#318) on the same mock client. */
+function withTransaction<T extends object>(mockDb: T) {
+	return Object.assign(mockDb, {
+		execute: vi.fn(async () => ({ rows: [] })),
+		transaction: vi.fn(async (run: (transaction: T) => Promise<unknown>) => run(mockDb)),
+	});
+}
+
+beforeEach(() => {
+	creationPolicyState.disabled = false;
+	authMutation.calls = 0;
+	vi.clearAllMocks();
+});
+
+function onboardingLayer(mockDb: object) {
+	const authLayer = Layer.succeed(
+		AuthService,
+		AuthService.of({
+			getSession: () =>
+				Effect.succeed({
+					user: { id: "user-1" },
+					session: { activeOrganizationId: null },
+				} as never),
+		}),
+	);
+	const dbLayer = Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			db: withTransaction(mockDb) as never,
+			query: (_name, query) => Effect.promise(query) as never,
+		}),
+	);
+	return OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+}
+
+function userUpdates() {
+	const where = vi.fn(async () => undefined);
+	const set = vi.fn(() => ({ where }));
+	return { update: vi.fn(() => ({ set })), set };
+}
+
+describe("OnboardingService.createOrganization", () => {
+	it("rejects organization creation before enabling temporary creation permission when disabled", async () => {
+		creationPolicyState.disabled = true;
+		const mockDb = {
+			update: vi.fn(),
+			insert: vi.fn(),
+		};
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+
+					return yield* service.createOrganization({
+						name: "Acme Inc.",
+						slug: "acme",
+					});
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(ValidationError),
+		});
+		expect(result).toMatchObject({
+			left: {
+				message: "Organization creation is disabled for this deployment.",
+				field: "organization",
+			},
+		});
+		expect(mockDb.update).not.toHaveBeenCalled();
+		expect(mockDb.insert).not.toHaveBeenCalled();
+		expect(auth.api.createOrganization).not.toHaveBeenCalled();
+	});
+
+	it("creates the organization in one coordinated auth transaction", async () => {
+		const mockDb = userUpdates();
+		const requestHeaders = new Headers({ cookie: "session=1" });
+		vi.mocked(headers).mockResolvedValue(requestHeaders as never);
+		let coordinated = false;
+		vi.mocked(auth.api.createOrganization).mockImplementation((async () => {
+			coordinated = authMutation.active;
+			return { id: "org-1" };
+		}) as never);
+
+		const result = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* OnboardingService;
+				return yield* service.createOrganization({ name: "Acme Inc.", slug: "acme" });
+			}).pipe(Effect.provide(onboardingLayer(mockDb))),
+		);
+
+		expect(result).toEqual({ organizationId: "org-1" });
+		expect(authMutation.calls).toBe(1);
+		expect(coordinated).toBe(true);
+		expect(auth.api.createOrganization).toHaveBeenCalledExactlyOnceWith({
+			headers: requestHeaders,
+			body: { name: "Acme Inc.", slug: "acme" },
+		});
+	});
+
+	it("reports a failed coordinated creation and withdraws the temporary permission", async () => {
+		const mockDb = userUpdates();
+		vi.mocked(headers).mockResolvedValue(new Headers() as never);
+		vi.mocked(auth.api.createOrganization).mockRejectedValue(new Error("rolled back"));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					return yield* service.createOrganization({ name: "Acme Inc.", slug: "acme" });
+				}).pipe(Effect.provide(onboardingLayer(mockDb))),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: { message: "rolled back", field: "slug" },
+		});
+		expect(authMutation.calls).toBe(1);
+		expect(mockDb.set.mock.calls).toEqual([
+			[{ canCreateOrganizations: true }],
+			[{ canCreateOrganizations: false }],
+		]);
+	});
+});
+
+describe("OnboardingService.updateProfile", () => {
+	it("updates Better Auth structured names and keeps employee updates to employee-owned fields", async () => {
+		const employeeSet = vi.fn();
+		const mockHeaders = new Headers();
+		vi.mocked(headers).mockResolvedValue(mockHeaders);
+		vi.mocked(auth.api.updateUser).mockResolvedValue({} as never);
+
+		const mockDb = {
+			query: {
+				employee: {
+					findFirst: vi.fn(async () => ({ id: "emp-1" })),
+				},
+				member: {
+					findFirst: vi.fn(async () => ({ role: "member" })),
+				},
+			},
+			update: vi.fn(() => ({
+				set: (values: unknown) => {
+					employeeSet(values);
+
+					return { where: vi.fn(async () => undefined) };
+				},
+			})),
+			insert: vi.fn(() => ({
+				values: () => ({ onConflictDoUpdate: vi.fn(async () => undefined) }),
+			})),
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1", name: "Existing Name" },
+						session: { activeOrganizationId: "org-1" },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* OnboardingService;
+
+				return yield* service.updateProfile({
+					firstName: " Ada ",
+					lastName: " Lovelace ",
+					gender: "female",
+					birthday: "1815-12-10",
+					weekStartDay: "monday",
+					timeFormat: "12h",
+					helpImproveProduct: true,
+				});
+			}).pipe(Effect.provide(layer)),
+		);
+
+		expect(auth.api.updateUser).toHaveBeenCalledWith({
+			body: { firstName: "Ada", lastName: "Lovelace", name: "Ada Lovelace" },
+			headers: mockHeaders,
+		});
+		expect(employeeSet).toHaveBeenCalledWith({
+			gender: "female",
+			birthday: "1815-12-10",
+		});
+		expect(employeeSet).toHaveBeenCalledWith(
+			expect.not.objectContaining({ firstName: expect.anything() }),
+		);
+		expect(employeeSet).toHaveBeenCalledWith(
+			expect.not.objectContaining({ lastName: expect.anything() }),
+		);
+	});
+
+	it("creates an active organization employee instead of updating a fallback employee", async () => {
+		const insertedValues = vi.fn();
+		const employeeSet = vi.fn();
+		vi.mocked(headers).mockResolvedValue(new Headers());
+		vi.mocked(auth.api.updateUser).mockResolvedValue({} as never);
+		const findEmployee = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({
+			id: "emp-fallback",
+			organizationId: "org-other",
+		});
+
+		const mockDb = {
+			query: {
+				employee: {
+					findFirst: findEmployee,
+				},
+				member: {
+					findFirst: vi.fn(async () => ({ role: "member" })),
+				},
+			},
+			update: vi.fn(() => ({
+				set: (values: unknown) => {
+					employeeSet(values);
+
+					return { where: vi.fn(async () => undefined) };
+				},
+			})),
+			insert: vi.fn(() => ({
+				values: (values: unknown) => {
+					insertedValues(values);
+
+					return { onConflictDoUpdate: vi.fn(async () => undefined) };
+				},
+			})),
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1", name: "Existing Name" },
+						session: { activeOrganizationId: "org-active" },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* OnboardingService;
+
+				return yield* service.updateProfile({
+					firstName: "Ada",
+					lastName: "Lovelace",
+					gender: "female",
+					birthday: "1815-12-10",
+					weekStartDay: "monday",
+					timeFormat: "12h",
+					helpImproveProduct: true,
+				});
+			}).pipe(Effect.provide(layer)),
+		);
+
+		expect(insertedValues).toHaveBeenCalledWith({
+			userId: "user-1",
+			organizationId: "org-active",
+			gender: "female",
+			birthday: "1815-12-10",
+		});
+		expect(insertedValues).toHaveBeenCalledWith(
+			expect.not.objectContaining({ firstName: expect.anything() }),
+		);
+		expect(insertedValues).toHaveBeenCalledWith(
+			expect.not.objectContaining({ lastName: expect.anything() }),
+		);
+		expect(employeeSet).not.toHaveBeenCalled();
+	});
+
+	it("persists selected profile preferences in user settings", async () => {
+		const insertedValues = vi.fn();
+		const conflictUpdate = vi.fn();
+		const mockDb = {
+			query: {
+				employee: {
+					findFirst: vi.fn(async () => null),
+				},
+			},
+			insert: vi.fn(() => ({
+				values: (values: unknown) => {
+					insertedValues(values);
+
+					return {
+						onConflictDoUpdate: async (config: unknown) => {
+							conflictUpdate(config);
+						},
+					};
+				},
+			})),
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* OnboardingService;
+
+				return yield* service.updateProfile({
+					firstName: "Ada",
+					lastName: "Lovelace",
+					weekStartDay: "monday",
+					timeFormat: "12h",
+					helpImproveProduct: false,
+				});
+			}).pipe(Effect.provide(layer)),
+		);
+
+		expect(writeUserSettings).toHaveBeenCalledWith(
+			mockDb,
+			"user-1",
+			expect.objectContaining({
+				weekStartDay: "monday",
+				timeFormat: "12h",
+				helpImproveProduct: false,
+			}),
+		);
+		expect(insertedValues).not.toHaveBeenCalled();
+		expect(conflictUpdate).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid week start day values before writing", async () => {
+		const mockDb = {
+			query: {
+				employee: {
+					findFirst: vi.fn(async () => null),
+				},
+			},
+			insert: vi.fn(),
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+
+					return yield* service.updateProfile({
+						firstName: "Ada",
+						lastName: "Lovelace",
+						weekStartDay: "friday",
+					} as never);
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(ValidationError),
+		});
+		expect(result).toMatchObject({
+			left: {
+				message: "Week start day must be Sunday or Monday",
+				field: "weekStartDay",
+			},
+		});
+		expect(mockDb.insert).not.toHaveBeenCalled();
+	});
+
+	it("rejects invalid time format values before writing", async () => {
+		const mockDb = {
+			query: {
+				employee: {
+					findFirst: vi.fn(async () => null),
+				},
+			},
+			insert: vi.fn(),
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		const result = await Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+
+					return yield* service.updateProfile({
+						firstName: "Ada",
+						lastName: "Lovelace",
+						weekStartDay: "sunday",
+						timeFormat: "locale",
+					} as never);
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+
+		expect(result).toMatchObject({
+			_tag: "Left",
+			left: expect.any(ValidationError),
+		});
+		expect(result).toMatchObject({
+			left: {
+				message: "Time format must be 12h or 24h",
+				field: "timeFormat",
+			},
+		});
+		expect(mockDb.insert).not.toHaveBeenCalled();
+	});
+});
+
+describe("OnboardingService.getOnboardingSummary", () => {
+	it("marks profile complete from Better Auth structured names instead of employee names", async () => {
+		const mockDb = {
+			query: {
+				user: {
+					findFirst: vi.fn(async () => ({ invitedVia: null })),
+				},
+				member: {
+					findFirst: vi.fn(async () => null),
+				},
+				employee: {
+					findFirst: vi.fn(async () => null),
+				},
+				notificationPreference: {
+					findFirst: vi.fn(async () => null),
+				},
+				userSettings: {
+					findFirst: vi.fn(async () => null),
+				},
+			},
+		};
+
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: {
+							id: "user-1",
+							firstName: "Ada",
+							lastName: "Lovelace",
+						},
+						session: { activeOrganizationId: null },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
+
+		const summary = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* OnboardingService;
+
+				return yield* service.getOnboardingSummary();
+			}).pipe(Effect.provide(layer)),
+		);
+
+		expect(summary.profileCompleted).toBe(true);
+	});
+});
+
+describe("OnboardingService work-template authorization", () => {
+	function makeLayer({
+		activeOrganizationId = "org-active",
+		role,
+	}: {
+		activeOrganizationId?: string | null;
+		role?: "owner" | "admin" | "member";
+	}) {
+		const insert = vi.fn(() => ({
+			values: vi.fn(() => ({
+				onConflictDoUpdate: vi.fn(async () => undefined),
+				returning: vi.fn(async () => [{ id: "created-id" }]),
+			})),
+		}));
+		const findMembership = vi.fn(async () => (role ? { role } : null));
+		const mockDb = {
+			insert,
+			query: { member: { findFirst: findMembership } },
+		};
+		const authLayer = Layer.succeed(
+			AuthService,
+			AuthService.of({
+				getSession: () =>
+					Effect.succeed({
+						user: { id: "user-1" },
+						session: { activeOrganizationId },
+					} as never),
+			}),
+		);
+		const dbLayer = Layer.succeed(
+			DatabaseService,
+			DatabaseService.of({
+				db: withTransaction(mockDb) as never,
+				query: (_name, query) => Effect.promise(query) as never,
+			}),
+		);
+
+		return {
+			findMembership,
+			insert,
+			layer: OnboardingServiceLive.pipe(
+				Layer.provide(authLayer),
+				Layer.provide(dbLayer),
+			),
+		};
+	}
+
+	async function runMutation(
+		layer: ReturnType<typeof makeLayer>["layer"],
+		mutation: "create" | "skip",
+	) {
+		return Effect.runPromise(
+			Effect.either(
+				Effect.gen(function* () {
+					const service = yield* OnboardingService;
+					if (mutation === "skip") {
+						return yield* service.skipWorkTemplateSetup();
+					}
+
+					return yield* service.createWorkTemplate({
+						hoursPerWeek: 40,
+						name: "Standard",
+						setAsDefault: true,
+						workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+					});
+				}).pipe(Effect.provide(layer)),
+			),
+		);
+	}
+
+	it.each(["create", "skip"] as const)(
+		"rejects a member before the %s work-template mutation writes",
+		async (mutation) => {
+			const { insert, layer } = makeLayer({ role: "member" });
+
+			const result = await runMutation(layer, mutation);
+
+			expect(result).toMatchObject({
+				_tag: "Left",
+				left: expect.any(AuthorizationError),
+			});
+			expect(insert).not.toHaveBeenCalled();
+			expect(writeUserSettings).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["create", "skip"] as const)(
+		"rejects a missing active organization before the %s work-template mutation writes",
+		async (mutation) => {
+			const { findMembership, insert, layer } = makeLayer({
+				activeOrganizationId: null,
+				role: "owner",
+			});
+
+			const result = await runMutation(layer, mutation);
+
+			expect(result).toMatchObject({
+				_tag: "Left",
+				left: expect.any(AuthorizationError),
+			});
+			expect(findMembership).not.toHaveBeenCalled();
+			expect(insert).not.toHaveBeenCalled();
+			expect(writeUserSettings).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["owner", "admin"] as const)(
+		"allows an active-organization %s to skip work-template setup",
+		async (role) => {
+			const { insert, layer } = makeLayer({ role });
+
+			const result = await runMutation(layer, "skip");
+
+			expect(result).toMatchObject({ _tag: "Right" });
+			expect(writeUserSettings).toHaveBeenCalledOnce();
+			expect(insert).not.toHaveBeenCalled();
+		},
+	);
+});

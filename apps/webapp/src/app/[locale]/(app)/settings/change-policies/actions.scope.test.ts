@@ -208,7 +208,7 @@ vi.mock("@/db/schema", () => ({
 }));
 
 vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	const { AuthorizationError } = await import("@/lib/effect/errors");
 
 	return {
@@ -279,21 +279,21 @@ vi.mock("../employees/employee-action-utils", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/auth.service", async () => {
+	const { Context } = await import("effect-v3");
 	const AuthService = Context.GenericTag<any>("AuthService");
 	return { AuthService };
 });
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context } = await import("effect-v3");
 	const DatabaseService = Context.GenericTag<any>("DatabaseService");
 	return { DatabaseService };
 });
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Effect, Layer } = await import("effect-v3");
+	const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
 
 	const db = {
 		query: {
@@ -338,8 +338,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 
 	return {
 		runServerActionSafe: async <T>(effect: any) => {

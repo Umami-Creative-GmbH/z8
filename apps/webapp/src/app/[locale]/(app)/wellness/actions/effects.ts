@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidateTag } from "next/cache";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import type { LogWaterIntakeFormValues } from "@/lib/validations/wellness";

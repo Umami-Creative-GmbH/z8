@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import * as z from "zod";
 import { db } from "@/db";
@@ -32,23 +32,23 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
-} from "@/lib/effect/services/change-policy.service";
+} from "@/lib/effect-v3/services/change-policy.service";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
-import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
+} from "@/lib/effect-v3/services/database.service";
+import type { ComplianceWarning } from "@/lib/effect-v3/services/work-policy.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
+} from "@/lib/effect-v3/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";

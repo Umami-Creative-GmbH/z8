@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import type {
 	ComplianceAlert,
@@ -16,15 +16,15 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { requireAbility, requireAuth } from "@/lib/auth-helpers";
 import { asAppSubject } from "@/lib/authorization";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
 	type ExceptionWithDetails,
-} from "@/lib/effect/services/compliance-guardrail.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
+} from "@/lib/effect-v3/services/compliance-guardrail.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { WorkPolicyServiceLive } from "@/lib/effect-v3/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import {
 	onComplianceExceptionApproved,
@@ -57,7 +57,7 @@ const ComplianceLayer = ComplianceGuardrailServiceLive.pipe(
 );
 
 // Import Layer from effect
-import { Layer } from "effect";
+import { Layer } from "effect-v3";
 
 // =============================================================================
 // Helper: Get current employee

@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -13,7 +13,7 @@ import {
 	StripeServiceLive,
 	SubscriptionService,
 	SubscriptionServiceLive,
-} from "@/lib/effect/services/billing";
+} from "@/lib/effect-v3/services/billing";
 import { countBillableSeats } from "@/lib/effect/services/billing/billable-seat-count";
 import { getDaysRemaining } from "@/lib/effect/services/billing/billing-access";
 import { createLogger } from "@/lib/logger";

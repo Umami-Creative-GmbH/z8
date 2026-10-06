@@ -1,6 +1,6 @@
 import { type Attributes, type Span, SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidateTag } from "next/cache";
 import type { ZodType } from "zod";
 import { member, user } from "@/db/auth-schema";
@@ -12,11 +12,11 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ManagerService } from "@/lib/effect/services/manager.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { ManagerService } from "@/lib/effect-v3/services/manager.service";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,

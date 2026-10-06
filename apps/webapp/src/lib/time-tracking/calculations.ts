@@ -11,8 +11,8 @@ import {
 	startOfDay,
 	toDateKey,
 } from "@/lib/datetime/luxon-utils";
-import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
-import { runEmployeePolicyLookup } from "@/lib/effect/work-policy-runtime";
+import type { EffectiveWorkPolicy } from "@/lib/effect-v3/services/work-policy.service";
+import { runEmployeePolicyLookup } from "@/lib/effect-v3/work-policy-runtime";
 
 export interface WorkHoursSummary {
 	totalMinutes: number;

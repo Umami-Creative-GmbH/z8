@@ -22,11 +22,11 @@ vi.mock("../read-queries", () => ({
 vi.mock("@/db", () => ({ db: {} }));
 vi.mock("./entry-helpers", () => ({ getAssignedProjectsWithHours: vi.fn() }));
 vi.mock("./shared", () => ({ logger: { error: vi.fn() } }));
-vi.mock("@/lib/effect/services/change-policy.service", () => ({
+vi.mock("@/lib/effect-v3/services/change-policy.service", () => ({
 	ChangePolicyService: {},
 	ChangePolicyServiceLive: {},
 }));
-vi.mock("@/lib/effect/services/database.service", () => ({
+vi.mock("@/lib/effect-v3/services/database.service", () => ({
 	DatabaseServiceLive: {},
 }));
 

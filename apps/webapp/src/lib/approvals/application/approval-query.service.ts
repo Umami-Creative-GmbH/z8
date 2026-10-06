@@ -5,9 +5,9 @@
  * sorting, and cursor-based pagination.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect-v3";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {

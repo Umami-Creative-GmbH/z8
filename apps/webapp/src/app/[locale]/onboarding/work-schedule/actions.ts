@@ -1,8 +1,8 @@
 "use server";
 
-import { Effect } from "effect";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { OnboardingService } from "@/lib/effect/services/onboarding.service";
+import { Effect } from "effect-v3";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { OnboardingService } from "@/lib/effect-v3/services/onboarding.service";
 import type { OnboardingWorkScheduleFormValues } from "@/lib/validations/onboarding";
 
 export async function setWorkScheduleOnboarding(

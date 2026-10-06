@@ -47,11 +47,11 @@ vi.mock("./actions/shared", () => ({
 	DEFAULT_TIMEZONE: "UTC",
 	logger: { error: vi.fn() },
 }));
-vi.mock("@/lib/effect/services/change-policy.service", () => ({
+vi.mock("@/lib/effect-v3/services/change-policy.service", () => ({
 	ChangePolicyService: {},
 	ChangePolicyServiceLive: {},
 }));
-vi.mock("@/lib/effect/services/database.service", () => ({
+vi.mock("@/lib/effect-v3/services/database.service", () => ({
 	DatabaseServiceLive: {},
 }));
 

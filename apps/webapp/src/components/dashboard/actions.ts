@@ -1,7 +1,7 @@
 "use server";
 
 import { and, desc, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { unstable_cache } from "next/cache";
 import { organization, user } from "@/db/auth-schema";
@@ -24,15 +24,15 @@ import { getEnhancedVacationBalance } from "@/lib/absences/vacation.service";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ManagerService } from "@/lib/effect/services/manager.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { ManagerService } from "@/lib/effect-v3/services/manager.service";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
-} from "@/lib/effect/services/work-policy.service";
+} from "@/lib/effect-v3/services/work-policy.service";
 import { getManagerDailyBriefing } from "@/lib/manager-daily-briefing/get-manager-daily-briefing";
 import { getVacationAllowance } from "@/lib/query/vacation.queries";
 import { getWeekBounds } from "@/lib/user-preferences/week-start";

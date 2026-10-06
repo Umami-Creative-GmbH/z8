@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -16,8 +16,8 @@ import {
 	UnsupportedAuthorizationConditionError,
 } from "@/lib/authorization";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { runtime } from "@/lib/effect/runtime";
-import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { runtime } from "@/lib/effect-v3/runtime";
+import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
 import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
 import { createLogger } from "@/lib/logger";
 import type { AttributionIntent } from "@/lib/time-tracking/close-active-work";

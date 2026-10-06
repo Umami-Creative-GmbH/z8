@@ -8,7 +8,7 @@
  * in Effect pipelines without repeating boilerplate.
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { type AppAbility, defineAbilityFor } from "./ability";
 import type { Action, PrincipalContext, Subject } from "./types";

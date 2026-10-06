@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
@@ -8,7 +8,7 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	AbsenceRequestHandler,
 	redactNonSickAbsenceSickDetail,

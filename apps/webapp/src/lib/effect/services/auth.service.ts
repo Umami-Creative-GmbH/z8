@@ -17,14 +17,12 @@ export interface Session {
 	};
 }
 
-export class AuthService extends Context.Tag("AuthService")<
+export class AuthService extends Context.Service<
 	AuthService,
 	{
-		readonly getSession: (
-			organizationId?: string,
-		) => Effect.Effect<Session, AuthenticationError>;
+		readonly getSession: (organizationId?: string) => Effect.Effect<Session, AuthenticationError>;
 	}
->() {}
+>()("AuthService") {}
 
 export const AuthServiceLive = Layer.effect(
 	AuthService,
@@ -35,27 +33,20 @@ export const AuthServiceLive = Layer.effect(
 					try: async () => {
 						const session = await getRequestSession();
 
-						if (
-							!session?.user ||
-							("ssoRequired" in session && session.ssoRequired === true)
-						) {
+						if (!session?.user || ("ssoRequired" in session && session.ssoRequired === true)) {
 							throw new Error("No session found");
 						}
 
 						if (
 							organizationId &&
-							!(await canAccessOrganizationWithSso(
-								session.session,
-								organizationId,
-							))
+							!(await canAccessOrganizationWithSso(session.session, organizationId))
 						)
 							throw new Error("SSO authentication required");
 						return {
 							...session,
 							session: {
 								...session.session,
-								activeOrganizationId:
-									session.session.activeOrganizationId ?? null,
+								activeOrganizationId: session.session.activeOrganizationId ?? null,
 							},
 						} as Session;
 					},

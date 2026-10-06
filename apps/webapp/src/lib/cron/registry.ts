@@ -355,7 +355,7 @@ export const CRON_JOBS = {
 			"Recover committed automatic break adjustments (any date) and check today's legacy work periods",
 		processor: async ({ manualParams }) => {
 			const { runBreakEnforcementCheck } = await import(
-				"@/lib/effect/services/break-enforcement.service"
+				"@/lib/effect-v3/services/break-enforcement.service"
 			);
 			const params = manualParams as
 				| { organizationId?: string; date?: string }

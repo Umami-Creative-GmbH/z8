@@ -11,7 +11,7 @@ vi.mock("@/lib/effect/errors", () => ({
 	NotFoundError: class NotFoundError extends Error {},
 }));
 
-vi.mock("@/lib/effect/result", () => ({}));
+vi.mock("@/lib/effect-v3/result", () => ({}));
 
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({

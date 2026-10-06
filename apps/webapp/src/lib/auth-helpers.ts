@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
@@ -19,8 +19,8 @@ import {
 	type PrincipalContext,
 } from "@/lib/authorization";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { ManagerService, ManagerServiceLive } from "@/lib/effect/services/manager.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { ManagerService, ManagerServiceLive } from "@/lib/effect-v3/services/manager.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import {

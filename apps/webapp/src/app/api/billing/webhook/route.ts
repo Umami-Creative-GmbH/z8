@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { env } from "@/env";
 import {
@@ -8,7 +8,7 @@ import {
 	StripeService,
 	StripeServiceLive,
 	SubscriptionServiceLive,
-} from "@/lib/effect/services/billing";
+} from "@/lib/effect-v3/services/billing";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("StripeWebhook");

@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
@@ -17,7 +17,7 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	return {
 		requireCurrentEmployee: vi.fn(() =>
 			Effect.succeed({
@@ -48,8 +48,8 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/services/shift-request.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/shift-request.service", async () => {
+	const { Context } = await import("effect-v3");
 	return {
 		ShiftRequestService: Context.GenericTag<Record<string, unknown>>(
 			"ShiftRequestService",
@@ -58,7 +58,7 @@ vi.mock("@/lib/effect/services/shift-request.service", async () => {
 });
 
 const { ShiftRequestService } = await import(
-	"@/lib/effect/services/shift-request.service"
+	"@/lib/effect-v3/services/shift-request.service"
 );
 const {
 	approveShiftRequest,

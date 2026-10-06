@@ -1,11 +1,11 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { type customer, employee, project, projectManager } from "@/db/schema";
 import { AuthorizationError, type DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,

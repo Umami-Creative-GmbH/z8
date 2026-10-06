@@ -1,7 +1,7 @@
 "use server";
 
 import { and, count, eq, gte, inArray, lt } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { member, session } from "@/db/auth-schema";
@@ -14,9 +14,9 @@ import {
 	timeEntry,
 } from "@/db/schema";
 import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,

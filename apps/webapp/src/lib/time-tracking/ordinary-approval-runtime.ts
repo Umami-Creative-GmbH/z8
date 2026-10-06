@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";

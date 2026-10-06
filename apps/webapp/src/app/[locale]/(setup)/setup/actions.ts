@@ -1,16 +1,16 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { cookies } from "next/headers";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import {
 	type PlatformAdminResult,
 	SetupService,
-} from "@/lib/effect/services/setup.service";
+} from "@/lib/effect-v3/services/setup.service";
 import { setupBootstrap } from "@/lib/setup/bootstrap.server";
 import { SETUP_COOKIE_NAME, setupCookieOptions } from "@/lib/setup/http";
 

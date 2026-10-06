@@ -1,10 +1,10 @@
 "use server";
 
-import { Effect } from "effect";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import type { DatabaseService } from "@/lib/effect/services/database.service";
+import { Effect } from "effect-v3";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import type { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import type {
 	HydrationStats,
 	LogWaterIntakeFormValues,

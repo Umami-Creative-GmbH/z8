@@ -275,12 +275,12 @@ vi.mock("next/cache", () => ({
 	revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/effect/runtime", () => ({
+vi.mock("@/lib/effect-v3/runtime", () => ({
 	AppLayer: {},
 }));
 
 vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	const { AuthorizationError } = await import("@/lib/effect/errors");
 
 	return {

@@ -14,7 +14,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import type { PoolClient } from "pg";
 import type Stripe from "stripe";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -98,15 +98,15 @@ vi.mock("./shared", async (importOriginal) => {
 const { env } = await import("@/env");
 const { createManualTimeEntry } = await import("../actions");
 const { BillingEventsService, BillingEventsServiceLive } = await import(
-	"@/lib/effect/services/billing/billing-events.service"
+	"@/lib/effect-v3/services/billing/billing-events.service"
 );
 const { SubscriptionServiceLive } = await import(
-	"@/lib/effect/services/billing/subscription.service"
+	"@/lib/effect-v3/services/billing/subscription.service"
 );
-const { SubscriptionService } = await import("@/lib/effect/services/billing/subscription.service");
+const { SubscriptionService } = await import("@/lib/effect-v3/services/billing/subscription.service");
 const { requireBillingForMutation } = await import("@/lib/billing/guard");
-const { StripeService } = await import("@/lib/effect/services/billing/stripe.service");
-const { SeatSyncService } = await import("@/lib/effect/services/billing/seat-sync.service");
+const { StripeService } = await import("@/lib/effect-v3/services/billing/stripe.service");
+const { SeatSyncService } = await import("@/lib/effect-v3/services/billing/seat-sync.service");
 
 const ids = {
 	organization: "t317-billing-org",

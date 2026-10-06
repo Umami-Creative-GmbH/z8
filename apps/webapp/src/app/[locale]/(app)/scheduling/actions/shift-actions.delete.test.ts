@@ -8,7 +8,7 @@ const mockState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	return {
 		logger: { info: vi.fn() },
 		requireCurrentEmployee: mockState.requireCurrentEmployee,
@@ -19,8 +19,8 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/services/shift.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/shift.service", async () => {
+	const { Context } = await import("effect-v3");
 	return {
 		ShiftService: Context.GenericTag<{
 			deleteShift: typeof mockState.deleteShift;
@@ -28,8 +28,8 @@ vi.mock("@/lib/effect/services/shift.service", async () => {
 	};
 });
 
-const { ShiftService } = await import("@/lib/effect/services/shift.service");
-const { Effect, Layer } = await import("effect");
+const { ShiftService } = await import("@/lib/effect-v3/services/shift.service");
+const { Effect, Layer } = await import("effect-v3");
 const { deleteShift } = await import("./shift-actions");
 
 describe("deleteShift active organization scope", () => {

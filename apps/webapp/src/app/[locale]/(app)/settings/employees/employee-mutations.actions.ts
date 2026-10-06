@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { invitation, user } from "@/db/auth-schema";
@@ -22,7 +22,7 @@ import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { ManagerService } from "@/lib/effect/services/manager.service";
+import { ManagerService } from "@/lib/effect-v3/services/manager.service";
 import { createLogger } from "@/lib/logger";
 import {
 	type AssignManagers,

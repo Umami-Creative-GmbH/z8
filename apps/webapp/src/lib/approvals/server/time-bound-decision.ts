@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect";
+import { Cause, Effect, Runtime } from "effect-v3";
 import { member } from "@/db/auth-schema";
 import { approvalWorkflow, employee } from "@/db/schema";
 import { systemClock } from "@/lib/datetime/temporal-core";

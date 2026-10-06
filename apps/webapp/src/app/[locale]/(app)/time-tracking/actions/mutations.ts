@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Option, Runtime } from "effect";
+import { Cause, Effect, Option, Runtime } from "effect-v3";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";

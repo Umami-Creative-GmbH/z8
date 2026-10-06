@@ -24,8 +24,8 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/effect/services/platform-admin.service", async () => {
-	const { Context, Effect, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/services/platform-admin.service", async () => {
+	const { Context, Effect, Layer } = await import("effect-v3");
 
 	class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 		PlatformAdminService,
@@ -51,8 +51,8 @@ vi.mock("@/lib/effect/services/platform-admin.service", async () => {
 	return { PlatformAdminService, PlatformAdminServiceLive };
 });
 
-vi.mock("@/lib/effect/services/billing", async () => {
-	const { Context, Effect, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/services/billing", async () => {
+	const { Context, Effect, Layer } = await import("effect-v3");
 
 	class SeatSyncService extends Context.Tag("SeatSyncService")<
 		SeatSyncService,

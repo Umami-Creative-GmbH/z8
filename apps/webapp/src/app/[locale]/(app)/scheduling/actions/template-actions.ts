@@ -1,7 +1,7 @@
 "use server";
 
-import { Effect } from "effect";
-import { ShiftService } from "@/lib/effect/services/shift.service";
+import { Effect } from "effect-v3";
+import { ShiftService } from "@/lib/effect-v3/services/shift.service";
 import {
 	canManageScopedSchedulingSubarea,
 	filterItemsToManageableSubareas,

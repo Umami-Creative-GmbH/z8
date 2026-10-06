@@ -16,7 +16,7 @@ import type {
 	OvertimeStats,
 	RestPeriodCheckResult,
 } from "@/db/schema";
-import type { ExceptionWithDetails } from "@/lib/effect/services/compliance-guardrail.service";
+import type { ExceptionWithDetails } from "@/lib/effect-v3/services/compliance-guardrail.service";
 import { queryKeys } from "@/lib/query/keys";
 
 export interface UseComplianceStatusOptions {

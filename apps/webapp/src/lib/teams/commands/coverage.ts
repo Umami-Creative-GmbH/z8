@@ -6,13 +6,13 @@
  * Manager/admin only command.
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import { CoverageService, CoverageServiceFullLive } from "@/lib/effect/services/coverage.service";
+import { CoverageService, CoverageServiceFullLive } from "@/lib/effect-v3/services/coverage.service";
 import { createLogger } from "@/lib/logger";
 import { buildCoverageCard } from "../cards/coverage-card";
 import { getCommandTemporalContext } from "./command-temporal";

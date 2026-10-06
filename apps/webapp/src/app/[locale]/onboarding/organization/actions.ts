@@ -1,11 +1,11 @@
 "use server";
 
-import { Effect } from "effect";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { Effect } from "effect-v3";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
 import {
 	OnboardingService,
 	type OnboardingSummary,
-} from "@/lib/effect/services/onboarding.service";
+} from "@/lib/effect-v3/services/onboarding.service";
 import type { OrganizationFormValues } from "@/lib/validations/organization";
 
 export async function createOrganizationOnboarding(

@@ -42,7 +42,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
+import type { CustomRoleWithPermissions } from "@/lib/effect-v3/services/custom-role.service";
 import { RoleEditor } from "./role-editor";
 
 const TIER_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {

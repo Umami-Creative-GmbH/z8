@@ -85,8 +85,8 @@ vi.mock("@/tolgee/server", () => ({
 	getTranslate: vi.fn(async () => (_key: string, fallback: string) => fallback),
 }));
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 
 	return {
 		runServerActionSafe: async <T>(

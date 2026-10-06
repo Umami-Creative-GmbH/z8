@@ -1,6 +1,6 @@
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { OnboardingService } from "@/lib/effect/services/onboarding.service";
+import { OnboardingService } from "@/lib/effect-v3/services/onboarding.service";
 import type { OnboardingProfileFormValues } from "@/lib/validations/onboarding";
 
 const { updateProfileMock } = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: vi.fn() } },
 }));
 
-vi.mock("@/lib/effect/result", () => ({
+vi.mock("@/lib/effect-v3/result", () => ({
 	runServerActionSafe: async (effect: Effect.Effect<unknown, unknown, OnboardingService>) => {
 		const exit = await Effect.runPromiseExit(
 			effect.pipe(

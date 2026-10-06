@@ -1,4 +1,4 @@
-import type { EmployeePermissions } from "@/lib/effect/services/permissions.service";
+import type { EmployeePermissions } from "@/lib/effect-v3/services/permissions.service";
 import type { SelectableEmployee } from "../employees/actions";
 
 export type TeamItem = { id: string; name: string };

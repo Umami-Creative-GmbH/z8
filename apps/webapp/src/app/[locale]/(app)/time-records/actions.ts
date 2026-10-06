@@ -1,14 +1,14 @@
 "use server";
 
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { DateTime } from "luxon";
 import { getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { type DatabaseService, DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import {
 	TimeRecordService,
 	TimeRecordServiceLive,
-} from "@/lib/effect/services/time-record.service";
+} from "@/lib/effect-v3/services/time-record.service";
 import type { ListTimeRecordsFilters, TimeRecord } from "./types";
 
 const hasElevatedRecordScope = (role: string) => role === "manager" || role === "admin";

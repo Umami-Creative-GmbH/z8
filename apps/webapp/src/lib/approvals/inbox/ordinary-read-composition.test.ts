@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { Effect, Exit } from "effect";
+import { Effect, Exit } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import { createOrdinaryWorkPeriodApprovalAdapter } from "@/lib/approvals/domain-adapters/work-period.adapter";
 import type { OrdinaryWorkPeriodApprovalKind } from "@/lib/approvals/domain-adapters/work-period-contract";

@@ -1,16 +1,16 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,

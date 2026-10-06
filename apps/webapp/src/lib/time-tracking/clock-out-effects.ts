@@ -5,7 +5,7 @@ import "server-only";
 // API and worker closures run them like web ones. Callers authorize the employee.
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { project } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
@@ -13,14 +13,14 @@ import {
 	type BreakEnforcementResult,
 	BreakEnforcementService,
 	BreakEnforcementServiceLive,
-} from "@/lib/effect/services/break-enforcement.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
-import { SurchargeService, SurchargeServiceLive } from "@/lib/effect/services/surcharge.service";
+} from "@/lib/effect-v3/services/break-enforcement.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { SurchargeService, SurchargeServiceLive } from "@/lib/effect-v3/services/surcharge.service";
 import {
 	type ComplianceWarning,
 	WorkPolicyService,
 	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
+} from "@/lib/effect-v3/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import {
 	checkProjectBudgetWarnings,

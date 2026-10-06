@@ -4,7 +4,7 @@
  * Handles bulk approval operations with transaction support.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect-v3";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -15,7 +15,7 @@ import {
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/database.service";
 import { getApprovalHandler } from "../domain/registry";
 import type {
 	ApprovalDecisionAction,

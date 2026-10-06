@@ -1,9 +1,9 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { employee, hydrationStats, userSettings, waterIntakeLog } from "@/db/schema";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import type { WorkdayRequirementByDate } from "@/lib/wellness/streak-calculator";
 import { createDefaultHydrationStats, getTodayRange } from "./shared";
 

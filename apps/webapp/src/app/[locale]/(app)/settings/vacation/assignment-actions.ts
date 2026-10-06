@@ -1,13 +1,13 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { user } from "@/db/auth-schema";
 import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	filterItemsToManagedEmployees,

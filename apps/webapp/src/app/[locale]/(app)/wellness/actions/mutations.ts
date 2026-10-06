@@ -1,8 +1,8 @@
 import { eq, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { hydrationStats, type userSettings, waterIntakeLog } from "@/db/schema";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { createDefaultHydrationStats, toDateOnlyString } from "./shared";
 

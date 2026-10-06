@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
@@ -7,7 +7,7 @@ import { AuthorizationError } from "@/lib/effect/errors";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/database.service";
 import { canAccessOrganizationWithSso } from "@/lib/enterprise-identity/session-sso-store";
 import { hasOrganizationRole } from "./organization-role";
 

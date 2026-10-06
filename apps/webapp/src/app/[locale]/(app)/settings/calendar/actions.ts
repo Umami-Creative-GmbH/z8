@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { z } from "zod";
 import * as authSchema from "@/db/auth-schema";
 import {
@@ -18,10 +18,10 @@ import {
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getSupportedProviders, isProviderSupported } from "@/lib/calendar-sync/providers";
 import { AuthorizationError, type DatabaseError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,

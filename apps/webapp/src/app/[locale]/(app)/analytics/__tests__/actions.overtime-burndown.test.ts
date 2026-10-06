@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/effect/runtime", () => ({
+vi.mock("@/lib/effect-v3/runtime", () => ({
 	AppLayer: {},
 }));
 
-vi.mock("@/lib/effect/services/auth.service", () => ({
+vi.mock("@/lib/effect-v3/services/auth.service", () => ({
 	AuthService: Symbol.for("AuthService"),
 }));
 

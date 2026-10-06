@@ -7,7 +7,7 @@
  * @see https://developers.google.com/calendar/api/v3/reference
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { env } from "@/env";
 import {
 	type CalendarEventToCreate,

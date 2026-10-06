@@ -1,4 +1,4 @@
-import { Effect, Exit } from "effect";
+import { Effect, Exit } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	AuthorizationError,

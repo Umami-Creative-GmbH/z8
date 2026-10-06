@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError } from "@/lib/effect/errors";
 
@@ -73,7 +73,7 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 }));
 
 vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	return {
 		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) => {
 			return mockState.decideStableTarget(...args) ?? Effect.void;
@@ -82,7 +82,7 @@ vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
 });
 
 vi.mock("@/lib/approvals/server/time-correction-approvals", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	return { decideTimeCorrectionWithStableTargetEffect: () => Effect.void };
 });
 

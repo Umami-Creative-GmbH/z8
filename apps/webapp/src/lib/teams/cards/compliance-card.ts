@@ -8,7 +8,7 @@
 import { DateTime } from "luxon";
 import type { BotTranslateFn } from "@/lib/bot-platform/i18n";
 import { fmtShortDate } from "@/lib/bot-platform/i18n";
-import type { ComplianceSummary } from "@/lib/effect/services/teams-compliance.service";
+import type { ComplianceSummary } from "@/lib/effect-v3/services/teams-compliance.service";
 
 // ============================================
 // TYPES

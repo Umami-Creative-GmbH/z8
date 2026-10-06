@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { approvalRequest, workPeriod } from "@/db/schema";
 import {
 	instantFromDate,

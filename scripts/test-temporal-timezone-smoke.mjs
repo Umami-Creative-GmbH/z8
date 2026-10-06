@@ -10,7 +10,7 @@ const testFiles = [
 	"src/app/[locale]/(app)/scheduling/actions/shift-actions.timezone.test.ts",
 	"src/app/[locale]/(app)/approvals/actions.canonical.test.ts",
 	"src/lib/reports/report-date-range.test.ts",
-	"src/lib/effect/services/coverage.service.timezone.test.ts",
+	"src/lib/effect-v3/services/coverage.service.timezone.test.ts",
 ];
 
 for (const timeZone of ["UTC", "America/Los_Angeles", "Pacific/Kiritimati"]) {

@@ -1,10 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { employee, subareaEmployee, teamPermissions } from "@/db/schema";
 import { getSettingsAccessTierForUser } from "@/lib/auth-helpers";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 
 interface LocationSettingsActorContext {

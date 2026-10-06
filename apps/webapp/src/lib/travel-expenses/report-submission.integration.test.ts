@@ -7,7 +7,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -109,7 +109,7 @@ const { POST: rejectRoute } = await import("@/app/api/approvals/inbox/[id]/rejec
 const { TravelExpenseReportHandler } = await import(
 	"@/lib/approvals/handlers/travel-expense-report.handler"
 );
-const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
+const { DatabaseServiceLive } = await import("@/lib/effect-v3/services/database.service");
 const { createOwnedTusFileKey } = await import("@/lib/upload/tus-ownership");
 
 const ids = {

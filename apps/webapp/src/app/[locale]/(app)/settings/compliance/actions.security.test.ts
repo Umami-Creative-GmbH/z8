@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const actionsSource = readFileSync(fileURLToPath(new URL("./actions.ts", import.meta.url)), "utf8");
 const serviceSource = readFileSync(
 	fileURLToPath(
-		new URL("../../../../../lib/effect/services/compliance-guardrail.service.ts", import.meta.url),
+		new URL("../../../../../lib/effect-v3/services/compliance-guardrail.service.ts", import.meta.url),
 	),
 	"utf8",
 );

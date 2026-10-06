@@ -1,6 +1,6 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { toServerActionResult } from "@/lib/effect/result";
+import { toServerActionResult } from "@/lib/effect-v3/result";
 
 const mocks = vi.hoisted(() => ({
 	gate: { released: false },

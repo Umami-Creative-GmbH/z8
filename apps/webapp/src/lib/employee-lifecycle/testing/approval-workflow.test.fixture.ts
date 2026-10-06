@@ -3,7 +3,7 @@
  * integration tests. Only used against the label-owned disposable database.
  */
 import { randomUUID } from "node:crypto";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { finalizeAbsenceTerminalInTransaction } from "@/lib/approvals/server/absence-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";

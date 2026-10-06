@@ -2,15 +2,15 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidateTag } from "next/cache";
 import { employee } from "@/db/schema";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	type AssignSkillInput,
 	type CreateSkillInput,
@@ -19,7 +19,7 @@ import {
 	type SkillValidationResult,
 	type SkillWithRelations,
 	type UpdateSkillInput,
-} from "@/lib/effect/services/skill.service";
+} from "@/lib/effect-v3/services/skill.service";
 import { createLogger } from "@/lib/logger";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,

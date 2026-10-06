@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { buildAvailableJobNames, isVisibleCronJobName, mapCronExecution } from "./actions-helpers";
@@ -35,9 +35,9 @@ vi.mock("@/lib/cron/reconciliation", () => ({
 	reconcileCronJobSchedule: mocks.reconcileCronJobSchedule,
 }));
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Layer } = await import("effect");
-	const { PlatformAdminService } = await import("@/lib/effect/services/platform-admin.service");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Layer } = await import("effect-v3");
+	const { PlatformAdminService } = await import("@/lib/effect-v3/services/platform-admin.service");
 
 	return {
 		AppLayer: Layer.succeed(PlatformAdminService, {
@@ -47,8 +47,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 
 	return {
 		runServerActionSafe: async <T, E, R>(effect: Effect.Effect<T, E, R>) => {

@@ -7,13 +7,13 @@
 
 import type { TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { employee, employeeManagers, shift } from "@/db/schema";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
-} from "@/lib/effect/services/open-shifts.service";
+} from "@/lib/effect-v3/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { ResolvedTenant } from "./types";

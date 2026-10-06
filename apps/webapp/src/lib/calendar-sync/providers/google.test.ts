@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CalendarEventToCreate, CalendarProviderCredentials } from "../types";
 import { GoogleCalendarProvider } from "./google";
