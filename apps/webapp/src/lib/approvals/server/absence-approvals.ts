@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
@@ -1683,8 +1683,8 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 		transactionDbService,
 		transactionEmployee,
 		transactionBehavior,
-	) =>
-		await Effect.runPromise(
+	) => {
+		const exit = await Effect.runPromiseExit(
 			processApprovalWithCurrentEmployee(
 				transactionDbService,
 				transactionEmployee,
@@ -1712,6 +1712,11 @@ export function createLegacyAbsenceDecisionProcessor(input: {
 				),
 			) as Effect.Effect<unknown, AnyAppError, never>,
 		);
+		if (Exit.isSuccess(exit)) return exit.value;
+		// The owner's refusals are its typed failures; a defect passes as itself.
+		const failure = Cause.findErrorOption(exit.cause);
+		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+	};
 }
 
 function authenticatedAbsenceDecisionEffect(
@@ -2203,18 +2208,17 @@ export async function decideBoundLegacyAbsenceInvocation(input: {
 function classifyBoundLegacyAbsenceError(
 	error: unknown,
 ): Exclude<BoundAbsenceInvocationResult, { status: "decided" }> {
-	// The legacy owner's own refusals arrive as Effect failures; Effect v4
-	// runPromise rejects with the failure itself.
-	const failure = error;
+	// The legacy owner's own refusals arrive as its typed failures, which the
+	// legacy decision processor throws as themselves.
 	// No longer the approver, already decided, or deleted by cancellation.
 	if (
-		failure instanceof AuthorizationError ||
-		failure instanceof NotFoundError ||
-		failure instanceof ConflictError
+		error instanceof AuthorizationError ||
+		error instanceof NotFoundError ||
+		error instanceof ConflictError
 	) {
 		return { status: "review_required", reason: "stale" };
 	}
-	const classified = classifyBoundAbsenceError(failure);
+	const classified = classifyBoundAbsenceError(error);
 	if (classified.status === "decided") {
 		throw new ApprovalEvidenceError("invariant", { field: "invocation_decision" });
 	}

@@ -1452,6 +1452,35 @@ describe("absence approval policy resolution", () => {
 		vi.doUnmock("@/lib/approvals/server/shared");
 	});
 
+	it("rejects the legacy absence decision with the owner's failure, else its defect", async () => {
+		vi.resetModules();
+		const refusal = new ConflictError({
+			message: "Already decided",
+			conflictType: "approval_decision",
+		});
+		const defect = new Error("legacy absence defect");
+		const processApprovalWithCurrentEmployee = vi
+			.fn()
+			.mockReturnValueOnce(Effect.fail(refusal))
+			.mockReturnValueOnce(Effect.die(defect));
+		vi.doMock("@/lib/approvals/server/shared", () => ({
+			processApprovalWithCurrentEmployee,
+			processApproval: vi.fn(),
+		}));
+		const { createLegacyAbsenceDecisionProcessor } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const processLegacy = createLegacyAbsenceDecisionProcessor({
+			absenceId: "absence-1",
+			action: "approve",
+		});
+		const decide = () => processLegacy({} as ApprovalDbService, {} as never, "existing");
+
+		await expect(decide()).rejects.toBe(refusal);
+		await expect(decide()).rejects.toBe(defect);
+		vi.doUnmock("@/lib/approvals/server/shared");
+	});
+
 	it("creates absence approvals through the shared policy resolver", async () => {
 		const { dbService, inserts } = createPolicyResolutionDbService([]);
 
@@ -2998,19 +3027,14 @@ describe("canonical absence fallback-manager authorization", () => {
 	});
 });
 
-describe("bound legacy absence decisions under Effect v4", () => {
+describe("bound legacy absence decisions", () => {
 	it.each([
 		["AuthorizationError", () => new AuthorizationError({ message: "Not the approver" })],
 		["ConflictError", () => new ConflictError({ message: "Already decided", conflictType: "approval_decision" })],
 	])(
-		"reads a %s that Effect.runPromise rejected with as a stale card",
+		"reads a %s refusal as a stale card",
 		async (_name, refusal) => {
-			// Effect v4 runPromise rejects with the owner's refusal itself.
-			const rejection = await Effect.runPromise(Effect.fail(refusal())).then(
-				() => null,
-				(error: unknown) => error,
-			);
-			findCommittedInvocationDecision.mockRejectedValueOnce(rejection);
+			findCommittedInvocationDecision.mockRejectedValueOnce(refusal());
 
 			const result = await decideBoundLegacyAbsenceInvocation({
 				organizationId: "org-1",
@@ -3029,17 +3053,11 @@ describe("bound legacy absence decisions under Effect v4", () => {
 		},
 	);
 });
-describe("authenticated absence decisions under Effect v4", () => {
+describe("authenticated absence decisions", () => {
 	it("rejects with the typed authentication failure itself", async () => {
-		const rejection = await executeAuthenticatedAbsenceDecision(
-			"absence-1",
-			"approve",
-		).then(
-			() => null,
-			(error: unknown) => error,
-		);
+		const decision = executeAuthenticatedAbsenceDecision("absence-1", "approve");
 
-		expect(rejection).toBeInstanceOf(AuthenticationError);
-		expect(rejection).toMatchObject({ message: "Not authenticated" });
+		await expect(decision).rejects.toBeInstanceOf(AuthenticationError);
+		await expect(decision).rejects.toMatchObject({ message: "Not authenticated" });
 	});
 });

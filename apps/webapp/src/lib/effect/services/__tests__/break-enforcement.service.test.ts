@@ -661,8 +661,8 @@ describe("Break Enforcement Service", () => {
 });
 
 describe("legacy break enforcement failures", () => {
-	// Effect v4 rejects with the typed failure itself, so the owner's catch now keeps a
-	// NotFoundError the legacy plan failed with; Effect v3 wrapped it as a DatabaseError.
+	// The owner's catch keeps the NotFoundError the legacy plan failed with instead of
+	// wrapping it as a DatabaseError.
 	test("fails with the legacy plan's NotFoundError when the work period is gone", async () => {
 		const { Layer } = await import("effect");
 		const { NotFoundError } = await import("@/lib/effect/errors");

@@ -500,15 +500,14 @@ function legacyOutcome(result: ClassifiedBoundTimeResult): BoundLegacyTimeInvoca
 }
 
 function classifyBoundLegacyTimeError(error: unknown): ClassifiedBoundTimeResult {
-	// The legacy owners' own refusals arrive as Effect failures; Effect v4
-	// runPromise rejects with the failure itself.
-	const failure = error;
+	// The legacy owners' own refusals arrive as their typed failures, which the
+	// legacy decision runs throw as themselves.
 	// No longer the approver, already decided or withdrawn, or no longer a
 	// classifiable time request: nothing is decided.
-	if (failure instanceof AuthorizationError || failure instanceof ValidationError) {
+	if (error instanceof AuthorizationError || error instanceof ValidationError) {
 		return { status: "review_required", reason: "stale" };
 	}
-	return classifyBoundTimeError(failure);
+	return classifyBoundTimeError(error);
 }
 
 function classifyBoundTimeError(error: unknown): ClassifiedBoundTimeResult {

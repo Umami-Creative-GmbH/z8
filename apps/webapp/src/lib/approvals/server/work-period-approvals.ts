@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -1012,7 +1012,7 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 				});
 			},
 			mutate: async () => {
-				mutationResult = await Effect.runPromise(
+				const exit = await Effect.runPromiseExit(
 					decideWorkPeriodWithCurrentApproverInTransaction(
 						{
 							db: database,
@@ -1043,6 +1043,13 @@ async function executeOrdinaryWorkPeriodDecisionAttempt(
 						never
 					>,
 				);
+				if (Exit.isFailure(exit)) {
+					// The owner's typed failure, else its defect: what
+					// unresolvedWorkPeriodReviewFrom reads.
+					const failure = Cause.findErrorOption(exit.cause);
+					throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+				}
+				mutationResult = exit.value;
 				return mutationResult;
 			},
 			afterMirror: async (observed) => {

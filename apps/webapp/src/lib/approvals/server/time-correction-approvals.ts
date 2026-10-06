@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Cause, Effect, Exit, Option } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import {
@@ -5453,8 +5453,8 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 	options?: ApprovalActionOptions;
 }): ExecuteTimeCorrectionDecisionInput["processLegacy"] {
 	const { action, reason } = input;
-	return async (transactionDbService, actor, _transactionBehavior, workPeriodId) =>
-		await Effect.runPromise(
+	return async (transactionDbService, actor, _transactionBehavior, workPeriodId) => {
+		const exit = await Effect.runPromiseExit(
 			processApprovalWithCurrentEmployee(
 				transactionDbService,
 				actor,
@@ -5477,6 +5477,11 @@ export function createLegacyTimeCorrectionDecisionProcessor(input: {
 				),
 			) as Effect.Effect<unknown, AnyAppError, never>,
 		);
+		if (Exit.isSuccess(exit)) return exit.value;
+		// The owner's typed failure, else its defect: what translateCorrectionWorkError reads.
+		const failure = Cause.findErrorOption(exit.cause);
+		throw Option.isSome(failure) ? failure.value : Cause.squash(exit.cause);
+	};
 }
 
 export function decideTimeCorrectionWithStableTargetEffect(

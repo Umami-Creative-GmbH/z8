@@ -1600,22 +1600,20 @@ describe("stable ordinary work-period decisions", () => {
 			transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
 		} as never;
 
-		// The legacy decision runs under Effect.runPromise inside the transaction.
-		const rejection = await executeOrdinaryWorkPeriodDecisionInTransaction({
-			dbService,
-			createRuntime: () => runtime,
-			organizationId: "org-1",
-			approvalRequestId: "approval-1",
-			workPeriodId: "period-1",
-			actor: currentApprover,
-			decision: { kind: "approve" as const, reason: null },
-		}).then(
-			() => null,
-			(error: unknown) => error,
-		);
+		// The legacy decision runs as an Effect inside the transaction.
+		await expect(
+			executeOrdinaryWorkPeriodDecisionInTransaction({
+				dbService,
+				createRuntime: () => runtime,
+				organizationId: "org-1",
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				actor: currentApprover,
+				decision: { kind: "approve" as const, reason: null },
+			}),
+		).rejects.toBe(unresolvedReview);
 
 		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
-		expect(rejection).toBe(unresolvedReview);
 	});
 });
 
@@ -1792,8 +1790,8 @@ const currentApprover: CurrentApprover = {
 	},
 };
 
-describe("ordinary work-period decision under Effect v4", () => {
-	it("rejects runPromise with the typed conflict itself", async () => {
+describe("ordinary work-period decision", () => {
+	it("refuses a decision without an organization as a conflict", async () => {
 		const dbService = {
 			db: {},
 			query: <T>(_name: string, operation: () => Promise<T>) =>
@@ -1801,7 +1799,7 @@ describe("ordinary work-period decision under Effect v4", () => {
 		} as unknown as ApprovalDbService;
 
 		// An empty organization is refused before any read.
-		const rejection = await Effect.runPromise(
+		const decision = Effect.runPromise(
 			workPeriodApprovals.decideOrdinaryWorkPeriodWithStableTargetEffect(
 				dbService,
 				{ ...currentApprover, organizationId: "" },
@@ -1811,14 +1809,11 @@ describe("ordinary work-period decision under Effect v4", () => {
 					decision: { kind: "approve", reason: null },
 				},
 			),
-		).then(
-			() => null,
-			(error: unknown) => error,
 		);
 
 		const { ConflictError } = await import("@/lib/effect/errors");
-		expect(rejection).toBeInstanceOf(ConflictError);
-		expect(rejection).toMatchObject({
+		await expect(decision).rejects.toBeInstanceOf(ConflictError);
+		await expect(decision).rejects.toMatchObject({
 			message: "Ordinary work-period decision failed",
 			conflictType: "approval_decision",
 		});
