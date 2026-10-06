@@ -35,6 +35,14 @@ import {
 	type TravelExpenseReportAdjustmentLink,
 	type TravelExpenseReportSubmittedAdjustment,
 } from "./travel-expense-report-adjustment";
+import {
+	applyingMileageOverride,
+	applyingPerDiemOverride,
+	assertAllowanceOverrideScope,
+	submittedAllowanceOverride,
+	type TravelExpenseReportAllowanceOverrideRow,
+	type TravelExpenseReportSubmittedAllowanceOverride,
+} from "./travel-expense-report-allowance-override";
 import type { TravelExpenseMoney } from "./travel-expense-facts";
 import {
 	assertPerDiemScope,
@@ -66,7 +74,7 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 8;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 9;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
@@ -79,6 +87,7 @@ const MILEAGE_FACTS_SCHEMA_VERSION = 5;
 /* Version 6 (#608) admits the `reference_rate` conversion basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
 /* Version 7 (#609) adds `perDiem` to per diem items (`PER_DIEM_FACTS_SCHEMA_VERSION`). */
 /* Version 8 (#615) adds the root `adjustment` of an adjustment report (`ADJUSTMENT_FACTS_SCHEMA_VERSION`). */
+/* Version 9 (#610) adds an item's `allowanceOverride` (`ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION`). */
 
 /**
  * The accounting attribution of one expense as it was submitted (#605): the
@@ -152,6 +161,13 @@ export interface TravelExpenseReportSubmittedItem {
 	 * "0.00") as `original`.
 	 */
 	perDiem?: TravelExpenseReportSubmittedPerDiem;
+	/**
+	 * Since v9 (#610), mileage and per diem items only: the expense
+	 * administrator's manual allowance, which `original` then holds. `mileage`
+	 * or `perDiem` beside it is the ordinary result, present only when the
+	 * stamped policy could price the facts.
+	 */
+	allowanceOverride?: TravelExpenseReportSubmittedAllowanceOverride;
 }
 
 export interface TravelExpenseReportSubmittedMileage {
@@ -263,6 +279,8 @@ export interface TravelExpenseReportFactsInput {
 	conversions?: ReadonlyArray<TravelExpenseReportConversionRow>;
 	/** Per diem itineraries of per diem items (#609). */
 	perDiems?: ReadonlyArray<TravelExpenseReportPerDiemRow>;
+	/** Active administrator overrides of allowance items (#610). */
+	allowanceOverrides?: ReadonlyArray<TravelExpenseReportAllowanceOverrideRow>;
 	/** The report it corrects when this is an adjustment report (#615). */
 	adjustment?: TravelExpenseReportAdjustmentLink | null;
 	/** Submitting an adjustment: the baseline resolved under the original's lock. */
@@ -412,6 +430,7 @@ function mileageItemFacts(
 	reimbursementCurrency: string,
 	mode: SnapshotMode,
 	schemaVersion: number,
+	allowanceOverrides?: ReadonlyArray<TravelExpenseReportAllowanceOverrideRow>,
 ): TravelExpenseReportSubmittedItem {
 	const route = row.mileageRoute ?? null;
 	const distanceKm = row.mileageDistanceKm ?? null;
@@ -432,11 +451,54 @@ function mileageItemFacts(
 				)
 			: null;
 	const calculated = calculation?.status === "calculated" ? calculation : null;
+	// An administrator's override (#610) prices the item instead; the facts stay required.
+	const override = applyingMileageOverride(
+		allowanceOverrides,
+		row,
+		reimbursementCurrency,
+		schemaVersion,
+	);
 	if (
 		mode === "submit" &&
-		(!calculated || !expenseDate || !route || row.paidBy !== "employee")
+		((!calculated && !override) || !expenseDate || !route || row.paidBy !== "employee")
 	) {
 		incomplete("mileage");
+	}
+	if (override) {
+		return {
+			itemId: row.id,
+			position: row.position,
+			type: row.type,
+			expenseDate,
+			category: "transport",
+			description: route,
+			original: { amount: override.amount, currency: override.currency },
+			paidBy: row.paidBy,
+			accountingReference: row.accountingReference,
+			receipts,
+			// The ordinary result beside the override, only when the stamped policy priced it.
+			...(calculated
+				? {
+						mileage: {
+							route,
+							distanceKm: calculated.distanceKm,
+							vehicle,
+							ratePerKm: calculated.ratePerKm,
+							currency: calculated.currency,
+							exactAmount: calculated.exactAmount,
+							amount: calculated.amount,
+							rounding: calculated.rounding,
+							policy: {
+								policyId: calculated.policy.policyId,
+								versionId: calculated.policy.versionId,
+								effectiveFrom: calculated.policy.effectiveFrom,
+								source: { ...calculated.policy.source },
+							},
+						},
+					}
+				: {}),
+			allowanceOverride: submittedAllowanceOverride(override),
+		} as TravelExpenseReportSubmittedItem;
 	}
 	const mileage = calculated
 		? {
@@ -490,15 +552,39 @@ function perDiemItemFacts(
 	const { report } = input;
 	const perDiemRow = input.perDiems?.find((candidate) => candidate.itemId === row.id);
 	const perDiem = submittedPerDiemFacts(perDiemRow, report);
+	// An administrator's override (#610) prices the per diem; the itinerary must still match the trip.
+	const override = applyingPerDiemOverride(
+		input.allowanceOverrides,
+		perDiemRow,
+		report,
+		schemaVersion,
+	);
 	if (
 		mode === "submit" &&
-		(!perDiem ||
+		((!perDiem && !override) ||
 			row.paidBy !== "employee" ||
 			report.kind !== "trip" ||
-			perDiem.start.date !== report.tripStartDate ||
-			perDiem.end.date !== report.tripEndDate)
+			(perDiem?.start.date ?? perDiemRow?.startDate) !== report.tripStartDate ||
+			(perDiem?.end.date ?? perDiemRow?.endDate) !== report.tripEndDate)
 	) {
 		incomplete("per_diem");
+	}
+	if (override) {
+		return {
+			itemId: row.id,
+			position: row.position,
+			type: row.type,
+			expenseDate: perDiemRow?.startDate ?? row.expenseDate,
+			category: "meals",
+			description: PER_DIEM_FACTS_DESCRIPTION,
+			original: { amount: override.amount, currency: override.currency },
+			paidBy: row.paidBy,
+			accountingReference: row.accountingReference,
+			receipts,
+			// The ordinary daily breakdown beside the override, only when the stamp priced it.
+			...(perDiem ? { perDiem } : {}),
+			allowanceOverride: submittedAllowanceOverride(override),
+		} as TravelExpenseReportSubmittedItem;
 	}
 	return {
 		itemId: row.id,
@@ -560,6 +646,7 @@ function snapshotReport(
 	const conversions = input.conversions ?? [];
 	assertConversionScope(conversions, report, itemIds);
 	assertPerDiemScope(input.perDiems ?? [], report, input.items);
+	assertAllowanceOverrideScope(input.allowanceOverrides ?? [], report, input.items);
 	const conversionOf = (itemId: string) =>
 		conversions.find((row) => row.itemId === itemId)?.conversion ?? null;
 	if (enforce && !CURRENCY.test(report.reimbursementCurrency)) incomplete("currency");
@@ -579,7 +666,14 @@ function snapshotReport(
 			}
 			if (row.type === "mileage") {
 				return {
-					...mileageItemFacts(row, receipts, report.reimbursementCurrency, mode, schemaVersion),
+					...mileageItemFacts(
+						row,
+						receipts,
+						report.reimbursementCurrency,
+						mode,
+						schemaVersion,
+						input.allowanceOverrides,
+					),
 					// A mileage expense is attributed like any other (#605).
 					...projectFacts(input, row, mode, schemaVersion, frozen),
 				};

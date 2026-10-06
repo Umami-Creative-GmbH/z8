@@ -15,7 +15,13 @@ import {
 import { itemReimbursementAmount } from "../item-amount";
 import { reportItemMissingRequirements } from "../item-requirements";
 import type { MileageItemView } from "../mileage";
-import { emptyPerDiemItinerary, type PerDiemItinerary, perDiemItemView } from "../per-diem";
+import {
+	emptyPerDiemItinerary,
+	type PerDiemItinerary,
+	perDiemItemView,
+	perDiemMissingRequirements,
+	tripDays,
+} from "../per-diem";
 
 const DRAFT = {
 	expenseDate: null,
@@ -34,6 +40,12 @@ const itinerary: PerDiemItinerary = {
 	endDate: "2026-09-16",
 	endTime: "19:00",
 	overnight: "away",
+	meals: tripDays("2026-09-14", "2026-09-16").map((date) => ({
+		date,
+		breakfast: { provided: true, employeePayment: null },
+		lunch: { provided: false, employeePayment: null },
+		dinner: { provided: false, employeePayment: null },
+	})),
 };
 const destinations = [{ place: "Paris", countryCode: "FR" }];
 
@@ -234,6 +246,16 @@ describe("override applicability", () => {
 				},
 			),
 		).toEqual(["per_diem_trip_dates"]);
+	});
+
+	it("still asks for the daily meals of an exceptional itinerary", () => {
+		expect(
+			perDiemMissingRequirements(
+				{ ...itinerary, meals: [] },
+				{ status: "exceptional", reasons: ["international"], overlappingDays: [] },
+				{ startDate: "2026-09-14", endDate: "2026-09-16" },
+			),
+		).toEqual(["per_diem_meals", "per_diem_exceptional"]);
 	});
 
 	it("leaves a stale override visible but uncounted", () => {

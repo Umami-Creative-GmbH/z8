@@ -76,7 +76,7 @@ describe("adjustment report facts (v8, #615)", () => {
 	it("freezes the corrected report, its reason, baseline and signed delta", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(adjustmentInput);
 
-		expect(facts.schemaVersion).toBe(8);
+		expect(facts.schemaVersion).toBe(9);
 		expect(facts.totals).toEqual({ currency: "EUR", reimbursable: "450.00", companyPaid: "0.00" });
 		expect(facts.adjustment).toEqual({
 			originalReportId: "original-1",
@@ -84,7 +84,7 @@ describe("adjustment report facts (v8, #615)", () => {
 			baseline,
 			delta: { amount: "-50.00", currency: "EUR" },
 		});
-		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(/^travel_expense_report:v8:/);
+		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(/^travel_expense_report:v9:/);
 	});
 
 	it("is material: the reviewed delta and baseline are part of the fingerprint", () => {

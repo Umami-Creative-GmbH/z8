@@ -14,7 +14,7 @@ import { ApprovalEvidenceError } from "./errors";
 import type { TravelExpenseReportPerDiemRow } from "./travel-expense-report-per-diem";
 
 /**
- * Frozen allowance overrides (#610, schema version 8). A mileage or per diem
+ * Frozen allowance overrides (#610, schema version 9). A mileage or per diem
  * item whose allowance an expense administrator set manually freezes the
  * override beside its facts: amount, reason, evidence, calculation basis, the
  * exact facts it was authorized for, the situation it resolved and the
@@ -23,7 +23,7 @@ import type { TravelExpenseReportPerDiemRow } from "./travel-expense-report-per-
  * them, so reviewers see the ordinary result next to the override.
  */
 
-export const ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION = 8;
+export const ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION = 9;
 
 /** An active override row of one report item, already mapped from the database. */
 export interface TravelExpenseReportAllowanceOverrideRow {
@@ -75,7 +75,7 @@ export function assertAllowanceOverrideScope(
 /**
  * The override applying to a mileage item's live facts, or null when there
  * is none, it was authorized for other facts, or the facts are built below
- * version 8 (an older revision never had one).
+ * version 9 (an older revision never had one).
  */
 export function applyingMileageOverride(
 	rows: readonly TravelExpenseReportAllowanceOverrideRow[] | undefined,

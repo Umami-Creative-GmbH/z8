@@ -13,7 +13,7 @@ import {
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
 
-/** #610: frozen allowance overrides (schema version 8). */
+/** #610: frozen allowance overrides (schema version 9). */
 
 const paris = [{ place: "Paris", countryCode: "FR" }];
 
@@ -172,7 +172,7 @@ describe("allowance override facts", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(
 			perDiemInput([overrideRow("pd", perDiemOverride())]),
 		);
-		expect(facts.schemaVersion).toBe(8);
+		expect(facts.schemaVersion).toBe(9);
 		const [item] = facts.items;
 		expect(item).toMatchObject({
 			type: "per_diem",
@@ -289,8 +289,8 @@ describe("allowance override facts", () => {
 
 	it("ignores overrides when snapshotting an older revision version", () => {
 		const live = perDiemInput([overrideRow("pd", perDiemOverride())]);
-		const v7 = { ...buildTravelExpenseReportSubmittedFacts(live), schemaVersion: 7 };
-		// A v7 revision never had an override, so the live override cannot match it.
-		expect(compareLiveTravelExpenseReportWithRevision(v7, live).kind).toBe("material_change");
+		const v8 = { ...buildTravelExpenseReportSubmittedFacts(live), schemaVersion: 8 };
+		// A v8 revision never had an override, so the live override cannot match it.
+		expect(compareLiveTravelExpenseReportWithRevision(v8, live).kind).toBe("material_change");
 	});
 });

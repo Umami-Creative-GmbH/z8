@@ -23,7 +23,7 @@ const SHA = "a".repeat(64);
 /** Project (v4), conversion (v3, v6), mileage (v5) and per diem (v7) columns, empty for a v1 receipt. */
 const EMPTY_LATER_FACTS = Object.fromEntries(
 	TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.filter((column) =>
-		/^(project|conversion|mileage|per_diem)_/.test(column),
+		/^(project|conversion|mileage|per_diem|allowance_override)_/.test(column),
 	).map((column) => [column, ""]),
 );
 
@@ -371,6 +371,57 @@ function perDiemRevision(): TravelExpenseExportManifestRevision {
 			},
 		],
 		{ reimbursable: "22.40", companyPaid: "0.00" },
+	);
+}
+
+/** v9 (#610): an international per diem an expense administrator calculated manually. */
+function perDiemOverrideRevision(): TravelExpenseExportManifestRevision {
+	const itinerary = {
+		startDate: "2026-09-14",
+		startTime: "07:00",
+		startTimeZone: "Europe/Paris",
+		endDate: "2026-09-16",
+		endTime: "18:00",
+		endTimeZone: "Europe/Paris",
+		overnight: "away" as const,
+		prolongedWorkplace: false,
+		meals: [],
+	};
+	return soloRevision(
+		"report-pd-override",
+		9,
+		[
+			{
+				itemId: "item-pd",
+				position: 1,
+				type: "per_diem",
+				expenseDate: "2026-09-14",
+				category: "meals",
+				description: "Per diem",
+				original: { amount: "112.80", currency: "EUR" },
+				paidBy: "employee",
+				accountingReference: null,
+				receipts: [],
+				allowanceOverride: {
+					overrideId: "override-pd",
+					kind: "per_diem",
+					amount: "112.80",
+					currency: "EUR",
+					reason: "=International trip",
+					evidence: "BMF 2026, France: Paris",
+					calculationBasis: "2 × 39.00 + 58.00 − 23.20",
+					situation: { kind: "unsupported_case", reasons: ["international", "foreign_time_zone"] },
+					scope: {
+						kind: "per_diem",
+						itinerary,
+						destinations: [{ place: "Paris", countryCode: "FR" }],
+					},
+					authorizedBy: { employeeId: "admin-1", name: "Ada Admin" },
+					authorizedAt: "2026-09-20T08:00:00Z",
+				},
+			},
+		],
+		{ reimbursable: "112.80", companyPaid: "0.00" },
 	);
 }
 
@@ -919,9 +970,92 @@ describe("travel expense export files", () => {
 		);
 	});
 
+	it("exports a v9 per diem override with its evidence, facts and authorizer (#610)", () => {
+		const revision = perDiemOverrideRevision();
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			facts_schema_version: "9",
+			item_type: "per_diem",
+			original_amount: "112.80",
+			reimbursement_amount: "112.80",
+			calculation_basis: "allowance_override",
+			allowance_override_id: "override-pd",
+			allowance_override_situation: "unsupported_case",
+			allowance_override_reasons: "international; foreign_time_zone",
+			allowance_override_amount: "112.80",
+			allowance_override_currency: "EUR",
+			allowance_override_reason: "'=International trip",
+			allowance_override_evidence: "BMF 2026, France: Paris",
+			allowance_override_calculation_basis: "2 × 39.00 + 58.00 − 23.20",
+			allowance_override_authorized_by_employee_id: "admin-1",
+			allowance_override_authorized_by_name: "Ada Admin",
+			allowance_override_authorized_at: "2026-09-20T08:00:00Z",
+			allowance_override_start: "2026-09-14 07:00 Europe/Paris",
+			allowance_override_end: "2026-09-16 18:00 Europe/Paris",
+			allowance_override_route: "",
+			// No ordinary result exists for an unsupported itinerary.
+			per_diem_amount: "",
+		});
+		expect(records(file("reports.csv", manifest([revision])))[0]).toMatchObject({
+			reimbursable_total: "112.80",
+		});
+	});
+
+	it("exports a mileage override next to the ordinary policy result", () => {
+		const revision = mileageRevision();
+		revision.facts.schemaVersion = 9;
+		const [item] = revision.facts.items;
+		if (!item) throw new Error("no item");
+		item.original.amount = "40.00";
+		item.allowanceOverride = {
+			overrideId: "override-km",
+			kind: "mileage",
+			amount: "40.00",
+			currency: "EUR",
+			reason: "Detour ordered by the customer",
+			evidence: "Customer e-mail",
+			calculationBasis: "133.33 km × 0.30",
+			situation: { kind: "missing_coverage", reasons: ["policy_missing"] },
+			scope: {
+				kind: "mileage",
+				expenseDate: "2026-09-14",
+				route: "-Berlin to Potsdam",
+				distanceKm: "123.40",
+				vehicle: "car",
+			},
+			authorizedBy: { employeeId: "admin-1", name: "Ada Admin" },
+			authorizedAt: "2026-09-20T08:00:00Z",
+		};
+		revision.facts.totals.reimbursable = "40.00";
+		expect(records(file("expenses.csv", manifest([revision])))[0]).toMatchObject({
+			reimbursement_amount: "40.00",
+			calculation_basis: "allowance_override",
+			mileage_rate_per_km: "0.3000",
+			mileage_exact_amount: "37.020000",
+			allowance_override_route: "'-Berlin to Potsdam",
+			allowance_override_distance_km: "123.40",
+			allowance_override_vehicle: "car",
+		});
+	});
+
+	it("refuses an override that does not match the frozen amount or version", () => {
+		const mismatch = perDiemOverrideRevision();
+		const [item] = mismatch.facts.items;
+		if (!item?.allowanceOverride) throw new Error("no override");
+		item.allowanceOverride.amount = "100.00";
+		expect(() => buildTravelExpenseExportFiles(manifest([mismatch]))).toThrow(
+			expect.objectContaining({ code: "totals_mismatch" }),
+		);
+		const old = perDiemOverrideRevision();
+		old.facts.schemaVersion = 8;
+		expect(() => buildTravelExpenseExportFiles(manifest([old]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+	});
+
 	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
 		// A new version must be mapped by the export contract before it is exported.
-		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(8);
+		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(9);
 		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
@@ -929,7 +1063,7 @@ describe("travel expense export files", () => {
 				expect.objectContaining({ facts_schema_version: String(version) }),
 			]);
 		}
-		for (const version of [0, 9]) {
+		for (const version of [0, 10]) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
 			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(

@@ -30,6 +30,7 @@ import {
 	loadAdjustmentBaseline,
 	loadAdjustmentLink,
 } from "./adjustment-read";
+import { copyAllowanceOverrides } from "./allowance-override-copy";
 import { loadTravelExpenseReportExportState } from "./export-store";
 import type { ReportOwner } from "./report-store";
 import { hasRecordedSettlement } from "./settlement-store";
@@ -215,6 +216,13 @@ async function copyApprovedReport(
 			updatedAt: at,
 		});
 	}
+	// Authorized allowance overrides (#610) are copied like manual rates.
+	await copyAllowanceOverrides(tx, {
+		organizationId: owner.organizationId,
+		sourceReportId: source.id,
+		targetReportId: report.id,
+		itemIds,
+	});
 	return report.id;
 }
 

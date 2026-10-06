@@ -14,6 +14,12 @@ import {
 	adjustmentReportCells,
 } from "./export-adjustment";
 import {
+	ALLOWANCE_OVERRIDE_COLUMNS,
+	allowanceOverrideCells,
+	allowanceOverrideManifestProblem,
+	allowanceOverrideMatchesItem,
+} from "./export-allowance-override";
+import {
 	bundleReceiptPath,
 	type TravelExpenseExportManifest,
 	type TravelExpenseExportManifestRevision,
@@ -33,7 +39,8 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  * Revisions of every frozen facts version 1..current are exported; facts a
  * version did not have (receipt exception v2, conversion v3, project v4,
  * mileage v5, reference-rate conversion v6, per diem v7, adjustment v8) leave their
- * columns empty (`record_type` reads `original`; `export-adjustment.ts`). Items
+ * columns empty (`record_type` reads `original`; `export-adjustment.ts`); an
+ * allowance override (v9, `export-allowance-override.ts`) prices its item. Items
  * are priced from their frozen pricing inputs and must add up to the frozen
  * totals.
  *
@@ -163,6 +170,18 @@ function reimbursementInput(
 	item: TravelExpenseReportSubmittedItem,
 	reimbursementCurrency: string,
 ): ReimbursementItemInput {
+	// An administrator's override (#610, v9+) is what the allowance counts.
+	const override = item.allowanceOverride;
+	if (override) {
+		const money = { amount: override.amount, currency: override.currency };
+		return {
+			amount: null,
+			currency: null,
+			paidBy: item.paidBy,
+			type: override.kind,
+			...(override.kind === "mileage" ? { mileage: money } : { perDiem: money }),
+		};
+	}
 	return {
 		amount: item.original.amount,
 		currency: item.original.currency,
@@ -187,6 +206,7 @@ function reimbursementInput(
 
 /** What the item's frozen pricing facts say it counts with, if it has any. */
 function frozenPricedAmount(item: TravelExpenseReportSubmittedItem): string | null {
+	if (item.allowanceOverride) return item.allowanceOverride.amount;
 	if (item.mileage) return item.mileage.amount;
 	if (item.perDiem) return item.perDiem.amount;
 	if (item.conversion) return item.conversion.reimbursement.amount;
@@ -198,6 +218,7 @@ function frozenPricedAmount(item: TravelExpenseReportSubmittedItem): string | nu
  * a frozen conversion (#607) or a frozen mileage calculation (#606).
  */
 function itemCalculationBasis(item: TravelExpenseReportSubmittedItem): string {
+	if (item.allowanceOverride) return "allowance_override";
 	if (item.mileage) return "mileage_rate";
 	if (item.perDiem) return "per_diem_calculation";
 	if (item.conversion) return "converted_amount";
@@ -236,7 +257,8 @@ function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 			(item.perDiem &&
 				(item.original.amount !== amount.amount || !perDiemDaysReconcile(item.perDiem))) ||
 			(item.conversion && item.conversion.reimbursement.currency !== currency) ||
-			!referenceRateMatchesItem(item)
+			!referenceRateMatchesItem(item) ||
+			!allowanceOverrideMatchesItem(item, currency)
 		) {
 			throw new TravelExpenseExportContentError(
 				"totals_mismatch",
@@ -577,6 +599,7 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	"receipt_count",
 	"receipt_files",
 	...ADJUSTMENT_EXPENSE_COLUMNS,
+	...ALLOWANCE_OVERRIDE_COLUMNS,
 ] as const;
 
 const REPORT_COLUMNS = [
@@ -689,6 +712,10 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 		if (adjustmentProblem) {
 			throw new TravelExpenseExportContentError("manifest_invalid", adjustmentProblem);
 		}
+		const overrideProblem = allowanceOverrideManifestProblem(facts);
+		if (overrideProblem) {
+			throw new TravelExpenseExportContentError("manifest_invalid", overrideProblem);
+		}
 	}
 }
 
@@ -738,6 +765,11 @@ export function buildTravelExpenseExportFiles(
 				csvInteger(item.receipts.length),
 				csvText(paths.join("; ")),
 				...adjustmentExpenseCells(facts, { text: csvText, decimal: csvDecimal }),
+				...allowanceOverrideCells(item, {
+					text: csvText,
+					decimal: csvDecimal,
+					plainDecimal: csvPlainDecimal,
+				}),
 			]);
 			item.receipts.forEach((receipt, index) => {
 				receiptRows.push([

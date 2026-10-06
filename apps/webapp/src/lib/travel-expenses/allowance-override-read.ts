@@ -53,12 +53,14 @@ export async function loadActiveAllowanceOverrides(
 	return overrides;
 }
 
-/** Active override rows of one report, for the frozen facts (read by report alone). */
-export function loadReportAllowanceOverrideRows(
+/** Active overrides of one report, for the frozen facts (read by report alone). */
+export async function loadReportAllowanceOverrideRows(
 	database: Reader,
 	reportId: string,
-): Promise<AllowanceOverrideRow[]> {
-	return database
+): Promise<
+	{ organizationId: string; reportId: string; itemId: string; override: AllowanceOverride }[]
+> {
+	const rows = await database
 		.select()
 		.from(travelExpenseAllowanceOverride)
 		.where(
@@ -67,4 +69,10 @@ export function loadReportAllowanceOverrideRows(
 				isNull(travelExpenseAllowanceOverride.revokedAt),
 			),
 		);
+	return rows.map((row) => ({
+		organizationId: row.organizationId,
+		reportId: row.reportId,
+		itemId: row.itemId,
+		override: allowanceOverrideFromRow(row),
+	}));
 }
