@@ -8,6 +8,7 @@ import {
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { loadReportConversionRows } from "@/lib/travel-expenses/conversion-read";
+import { loadReportPerDiemRows } from "@/lib/travel-expenses/per-diem-pricing";
 import type { ResolvePolicyAndCreateApprovalResult } from "../policies/chain-service";
 import type { ApprovalDatabase } from "../server/types";
 import { ApprovalEvidenceError } from "./errors";
@@ -36,7 +37,7 @@ export async function loadTravelExpenseReportFactsInput(
 	  })
 	| null
 > {
-	const [reports, items, receipts, conversions] = await Promise.all([
+	const [reports, items, receipts, conversions, perDiems] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReport)
@@ -56,6 +57,7 @@ export async function loadTravelExpenseReportFactsInput(
 			.from(travelExpenseReportReceipt)
 			.where(eq(travelExpenseReportReceipt.reportId, scope.reportId)),
 		loadReportConversionRows(database, scope.reportId),
+		loadReportPerDiemRows(database, scope.reportId),
 	]);
 	const report = reports[0];
 	if (reports.length !== 1 || !report) return null;
@@ -77,6 +79,7 @@ export async function loadTravelExpenseReportFactsInput(
 		items,
 		receipts,
 		conversions,
+		perDiems,
 		fileNames: Object.fromEntries(receipts.map((receipt) => [receipt.id, receipt.fileName])),
 	};
 }

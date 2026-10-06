@@ -27,6 +27,8 @@ export interface ReimbursementItemInput {
 	type?: string;
 	/** Mileage (#606): the server-calculated amount; entered amounts never count. */
 	mileage?: { amount: string | null; currency: string | null } | null;
+	/** Per diem (#609): the server-calculated allowance; zero after meal deductions counts. */
+	perDiem?: { amount: string | null; currency: string | null } | null;
 }
 
 /** Why an item is not counted (yet). */
@@ -45,7 +47,7 @@ export type ItemReimbursementAmount =
 			paidBy: ExpensePayer;
 			/** Always the report's reimbursement currency. */
 			currency: string;
-			/** Units at `STORED_AMOUNT_SCALE`; always positive. */
+			/** Units at `STORED_AMOUNT_SCALE`; positive, or zero for a per diem (#609). */
 			units: bigint;
 			/** The same amount as a stored-scale decimal string. */
 			amount: string;
@@ -58,7 +60,14 @@ const MAX_AMOUNT_UNITS = BigInt(99_999_999_999);
 function reimbursementSource(
 	item: ReimbursementItemInput,
 	reimbursementCurrency: string,
-): { amount: string } | { reason: ItemNotCountedReason } {
+): { amount: string; zeroAllowed?: true } | { reason: ItemNotCountedReason } {
+	if (item.type === "per_diem") {
+		// Calculated from the itinerary and meals (`per-diem.ts`); a zero allowance is legitimate.
+		const { amount = null, currency = null } = item.perDiem ?? {};
+		if (!amount || !currency) return { reason: "amount" };
+		if (currency !== reimbursementCurrency) return { reason: "currency" };
+		return { amount, zeroAllowed: true };
+	}
 	if (item.type === "mileage") {
 		// Priced by the organization's dated mileage policy (`mileage.ts`), never converted.
 		const { amount = null, currency = null } = item.mileage ?? {};
@@ -85,7 +94,8 @@ export function itemReimbursementAmount(
 	const source = reimbursementSource(item, reimbursementCurrency);
 	if ("reason" in source) return { counted: false, reason: source.reason };
 	const units = parseUnits(source.amount, STORED_AMOUNT_SCALE);
-	if (units === null || units <= BigInt(0) || units > MAX_AMOUNT_UNITS) {
+	const minimum = source.zeroAllowed ? BigInt(0) : BigInt(1);
+	if (units === null || units < minimum || units > MAX_AMOUNT_UNITS) {
 		return { counted: false, reason: "amount" };
 	}
 	if (!item.paidBy) return { counted: false, reason: "payer" };

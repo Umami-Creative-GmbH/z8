@@ -3,6 +3,7 @@ import type { ItemConversion } from "./currency-conversion";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { reportItemMissingRequirements } from "./item-requirements";
 import type { MileageItemView } from "./mileage";
+import type { PerDiemItemView } from "./per-diem";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import type { ReceiptExceptionContext } from "./receipt-exception";
 import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
@@ -37,6 +38,8 @@ export interface SubmissionReportFacts {
 		type?: TravelExpenseReportItemType;
 		/** A mileage item's facts, calculated by the server under the report lock (#606). */
 		mileage?: MileageItemView | null;
+		/** A per diem item's itinerary and calculation, by the server under the report lock (#609). */
+		perDiem?: PerDiemItemView | null;
 		/** Missing-receipt exception of the expense (#604); absent means none. */
 		receiptException?: ReceiptExceptionContext;
 		/** Version of the expense's exception; 0 when it never had one. */
@@ -77,7 +80,13 @@ export function reviewedItemAmount(
 }
 
 function totalsInput(item: SubmissionReportFacts["items"][number]): ReimbursementItemInput {
-	return { ...item.draft, type: item.type, mileage: item.mileage, conversion: item.conversion };
+	return {
+		...item.draft,
+		type: item.type,
+		mileage: item.mileage,
+		perDiem: item.perDiem,
+		conversion: item.conversion,
+	};
 }
 
 function sameIds(left: readonly string[], right: readonly string[]): boolean {
@@ -140,6 +149,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 				draft: item.draft,
 				receiptCount: item.receiptIds.length,
 				mileage: item.mileage,
+				perDiem: item.perDiem,
 				receiptException: item.receiptException,
 				conversion: item.conversion,
 			})),
@@ -156,6 +166,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 					draft: item.draft,
 					receiptCount: item.receiptIds.length,
 					mileage: item.mileage,
+					perDiem: item.perDiem,
 					receiptException: item.receiptException,
 					conversion: item.conversion,
 				},

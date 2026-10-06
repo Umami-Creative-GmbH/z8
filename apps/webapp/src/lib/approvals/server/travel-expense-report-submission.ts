@@ -15,6 +15,7 @@ import {
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
+import { stampPerDiemPolicies } from "@/lib/travel-expenses/per-diem-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
@@ -274,6 +275,8 @@ export async function submitTravelExpenseReport(
 				reimbursementCurrency: report.reimbursementCurrency,
 				items: live.items,
 			});
+			// Calculates the trip's per diem and stamps its rule edition and versions (#609).
+			const perDiem = await stampPerDiemPolicies(tx, { report, items: live.items });
 			// Read under a shared lock: a concurrent change of the setting waits (#604).
 			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(tx, owner.organizationId, {
 				lock: "share",
@@ -300,6 +303,7 @@ export async function submitTravelExpenseReport(
 							version: item.version,
 							type: item.type,
 							mileage: mileage.get(item.id) ?? null,
+							perDiem: perDiem.get(item.id) ?? null,
 							receiptIds: live.receipts
 								.filter((receipt) => receipt.itemId === item.id)
 								.map((receipt) => receipt.id),

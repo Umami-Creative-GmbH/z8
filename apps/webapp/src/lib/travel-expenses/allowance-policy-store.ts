@@ -6,7 +6,7 @@ import {
 	travelExpenseMileageRate,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import type { AllowancePolicyKind } from "./allowance-policy";
+import type { AllowancePolicyKind, AllowancePolicySourceKind } from "./allowance-policy";
 import type { MileagePolicyVersion, MileageVehicle } from "./mileage";
 import type { MileagePolicyVersionInput } from "./mileage-policy-input";
 
@@ -152,9 +152,55 @@ export async function activateMileagePolicyVersion(
 	input: MileagePolicyVersionInput,
 	now: Instant = systemClock.nowInstant(),
 ): Promise<ActivateMileagePolicyResult> {
+	return activateAllowancePolicyVersion(
+		database,
+		actor,
+		"mileage",
+		input,
+		async (tx, versionId) => {
+			await tx.insert(travelExpenseMileageRate).values(
+				Object.entries(input.ratesPerKm).map(([vehicle, ratePerKm]) => ({
+					versionId,
+					organizationId: actor.organizationId,
+					vehicle: vehicle as MileageVehicle,
+					ratePerKm,
+				})),
+			);
+		},
+		now,
+	);
+}
+
+/** The shared fields of a version of any allowance kind. */
+export interface AllowancePolicyVersionInput {
+	effectiveFrom: string;
+	currency: string;
+	source: {
+		kind: AllowancePolicySourceKind;
+		reference: string | null;
+		version: string | null;
+		defaultKey: string | null;
+	};
+	note: string | null;
+	replacesVersionId: string | null;
+}
+
+/**
+ * Activates a version of the organization's `kind` policy (#606; per diem
+ * #609 shares it) and writes its kind-specific rates with `writeRates` in the
+ * same transaction, holding the policy row lock.
+ */
+export async function activateAllowancePolicyVersion(
+	database: Database,
+	actor: PolicyActor,
+	kind: AllowancePolicyKind,
+	input: AllowancePolicyVersionInput,
+	writeRates: (tx: Transaction, versionId: string) => Promise<void>,
+	now: Instant = systemClock.nowInstant(),
+): Promise<ActivateMileagePolicyResult> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
-		const policyId = await lockPolicy(tx, actor, "mileage", at);
+		const policyId = await lockPolicy(tx, actor, kind, at);
 		const [sameStart] = await tx
 			.select({ id: travelExpenseAllowancePolicyVersion.id })
 			.from(travelExpenseAllowancePolicyVersion)
@@ -200,15 +246,8 @@ export async function activateMileagePolicyVersion(
 				createdBy: actor.userId,
 			})
 			.returning({ id: travelExpenseAllowancePolicyVersion.id });
-		if (!version) throw new Error("Failed to create the mileage policy version");
-		await tx.insert(travelExpenseMileageRate).values(
-			Object.entries(input.ratesPerKm).map(([vehicle, ratePerKm]) => ({
-				versionId: version.id,
-				organizationId: actor.organizationId,
-				vehicle: vehicle as MileageVehicle,
-				ratePerKm,
-			})),
-		);
+		if (!version) throw new Error(`Failed to create the ${kind} policy version`);
+		await writeRates(tx, version.id);
 		return { kind: "activated", versionId: version.id };
 	});
 }
@@ -225,9 +264,20 @@ export async function withdrawMileagePolicyVersion(
 	input: { versionId: string },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<WithdrawPolicyVersionResult> {
+	return withdrawAllowancePolicyVersion(database, actor, "mileage", input, now);
+}
+
+/** Withdraws an active version of the organization's `kind` policy under the policy lock. */
+export async function withdrawAllowancePolicyVersion(
+	database: Database,
+	actor: PolicyActor,
+	kind: AllowancePolicyKind,
+	input: { versionId: string },
+	now: Instant = systemClock.nowInstant(),
+): Promise<WithdrawPolicyVersionResult> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
-		const policyId = await lockPolicy(tx, actor, "mileage", at);
+		const policyId = await lockPolicy(tx, actor, kind, at);
 		const withdrawn = await tx
 			.update(travelExpenseAllowancePolicyVersion)
 			.set({ withdrawnAt: at, withdrawnBy: actor.userId })

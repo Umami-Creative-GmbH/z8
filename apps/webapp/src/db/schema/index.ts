@@ -95,6 +95,7 @@ export * from "./time-tracking";
 export * from "./travel-expense";
 export * from "./travel-expense-allowance-policy";
 export * from "./travel-expense-conversion";
+export * from "./travel-expense-per-diem";
 export * from "./travel-expense-project";
 export * from "./travel-expense-reference-rate";
 export * from "./travel-expense-review";
