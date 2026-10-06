@@ -37,6 +37,8 @@ export interface ExportableRevisionRow {
 	reimbursable: string | null;
 	companyPaid: string | null;
 	settlement: SettlementSummary["state"];
+	/** Set on an adjustment (#615): the report it corrects; `reimbursable` is then its signed delta. */
+	adjustmentOf?: string | null;
 }
 
 export interface TravelExpenseExportsView {
@@ -99,7 +101,10 @@ export async function getTravelExpenseExports(): Promise<
 					currency: account.currency,
 					// The approved revision's own entitlement (what the export contains).
 					reimbursable:
-						account.entitlement.find((part) => part.kind === "approved_submission")?.amount ?? null,
+						account.entitlement.find((part) => part.kind === "approved_submission")?.amount ??
+						account.adjustmentDelta,
+					// An adjustment (#615) exports its signed delta for the report it corrects.
+					adjustmentOf: account.adjustmentOf,
 					companyPaid: account.basis?.companyPaid ?? null,
 					settlement: account.summary.state,
 				})),

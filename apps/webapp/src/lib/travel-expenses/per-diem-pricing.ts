@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, lte, ne } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, ne, notInArray } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import {
 	travelExpenseClaim,
@@ -20,6 +20,7 @@ import {
 	type StampedPerDiemPolicy,
 	tripDays,
 } from "./per-diem";
+import { loadAdjustmentFamilyIds } from "./adjustment-link";
 import { loadPerDiemPolicyVersions } from "./per-diem-policy-store";
 import type { TripDestination } from "./trip-destination";
 
@@ -78,6 +79,8 @@ export async function loadPerDiemOverlaps(
 		endDate: string;
 	},
 ): Promise<string[]> {
+	// #615: an adjustment and the report it corrects describe the same days.
+	const family = await loadAdjustmentFamilyIds(database, input);
 	const [reports, claims] = await Promise.all([
 		database
 			.select({
@@ -97,6 +100,7 @@ export async function loadPerDiemOverlaps(
 					eq(travelExpenseReportPerDiem.organizationId, input.organizationId),
 					eq(travelExpenseReport.employeeId, input.employeeId),
 					ne(travelExpenseReport.id, input.reportId),
+					...(family.length > 0 ? [notInArray(travelExpenseReport.id, family)] : []),
 					ne(travelExpenseReport.status, "rejected"),
 					isNotNull(travelExpenseReportPerDiem.startDate),
 					isNotNull(travelExpenseReportPerDiem.endDate),

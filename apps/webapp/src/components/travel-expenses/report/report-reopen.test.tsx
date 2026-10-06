@@ -18,6 +18,11 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/navigation", () => ({ Link: () => null, useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
+	createTravelExpenseAdjustmentAction: vi.fn(),
+	getTravelExpenseReportAdjustments: vi.fn(),
+}));
 
 import { ReopenedNotice, ReopenReportPanel } from "./report-reopen";
 

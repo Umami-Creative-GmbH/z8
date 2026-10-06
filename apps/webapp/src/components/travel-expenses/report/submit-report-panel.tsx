@@ -25,6 +25,7 @@ import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { pendingReceiptException } from "./receipt-exception-notice";
+import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -113,6 +114,14 @@ function outcomeMessage(
 				body: t(
 					"travelExpenses.report.submit.unavailable",
 					"Your organization is changing how expense approvals work, so reports cannot be submitted right now. Your report stays saved as a draft.",
+				),
+			};
+		case "adjustment_unavailable":
+			return {
+				title: t("travelExpenses.report.submit.adjustmentTitle", "This adjustment cannot be submitted"),
+				body: t(
+					"travelExpenses.report.submit.adjustment",
+					"The report this adjustment corrects is no longer approved in this currency, so no signed difference can be calculated. Your adjustment stays saved as a draft.",
 				),
 			};
 	}
@@ -300,6 +309,12 @@ export function SubmitReportPanel({
 							}))}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}
+					{totals && (
+						<AdjustmentDeltaPreview
+							reportId={reportId}
+							corrected={{ amount: totals.reimbursable, currency: totals.currency }}
+						/>
+					)}
 						{problem && (
 							<Alert variant="destructive" role="alert">
 								<IconAlertTriangle aria-hidden="true" className="size-4" />

@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { resolveSubmittedAdjustmentBaseline } from "@/lib/travel-expenses/adjustment-store";
 import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
 import { stampPerDiemPolicies } from "@/lib/travel-expenses/per-diem-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
@@ -85,7 +86,9 @@ export type SubmitTravelExpenseReportResult =
 	/** Amount-threshold policies exist, but the report is not in their currency. */
 	| { kind: "threshold_currency_unsupported"; currency: string }
 	/** The organization moved `travel_expense` to canonical authority, which has no report adapter. */
-	| { kind: "authority_unsupported" };
+	| { kind: "authority_unsupported" }
+	/** An adjustment (#615) whose original report is no longer approved, or in another currency. */
+	| { kind: "adjustment_unavailable"; reason: "original_not_approved" | "currency_mismatch" };
 
 type Refusal = Exclude<SubmitTravelExpenseReportResult, { kind: "submitted" }>;
 
@@ -335,6 +338,15 @@ export async function submitTravelExpenseReport(
 			}
 			const projects = await resolveReportProjectAttribution(tx, owner, live);
 			if (!projects.ok) refuse({ kind: "project_ineligible", itemIds: projects.itemIds });
+			// An adjustment report (#615) freezes its delta against the baseline in force now.
+			const adjustment = await resolveSubmittedAdjustmentBaseline(tx, {
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+				reimbursementCurrency: report.reimbursementCurrency,
+			});
+			if (adjustment.status === "refused") {
+				refuse({ kind: "adjustment_unavailable", reason: adjustment.reason });
+			}
 
 			const directory = await loadRoutingDirectory(tx, {
 				organizationId: owner.organizationId,
@@ -441,6 +453,7 @@ export async function submitTravelExpenseReport(
 				...frozen,
 				receiptExceptionsAllowed,
 				projectAttribution: projects.attribution,
+				...(adjustment.status === "ok" ? { adjustmentBaseline: adjustment.baseline } : {}),
 			});
 			const [subject, submitter] = await Promise.all([
 				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),

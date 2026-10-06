@@ -118,7 +118,8 @@ describe("per diem facts", () => {
 	it("freezes the itinerary, stamped policy and daily breakdown with totals", () => {
 		const trip = itinerary();
 		const facts = buildTravelExpenseReportSubmittedFacts(input(row(trip, stampFor(trip))));
-		expect(facts.schemaVersion).toBe(7);
+		// Built at the current version (v8 since #615).
+		expect(facts.schemaVersion).toBe(8);
 		const [item] = facts.items;
 		expect(item).toMatchObject({
 			type: "per_diem",

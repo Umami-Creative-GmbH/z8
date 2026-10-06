@@ -361,7 +361,13 @@ export const travelExpenseReportReceipt = pgTable(
 		}).onDelete("cascade"),
 		index("travelExpenseReportReceipt_item_idx").on(table.itemId),
 		index("travelExpenseReportReceipt_report_idx").on(table.reportId),
-		uniqueIndex("travelExpenseReportReceipt_org_storageKey_idx").on(
+		// Unique per report (#615): an adjustment's copied receipt names the same stored object.
+		uniqueIndex("travelExpenseReportReceipt_org_report_storageKey_idx").on(
+			table.organizationId,
+			table.reportId,
+			table.storageKey,
+		),
+		index("travelExpenseReportReceipt_org_storageKey_idx").on(
 			table.organizationId,
 			table.storageKey,
 		),

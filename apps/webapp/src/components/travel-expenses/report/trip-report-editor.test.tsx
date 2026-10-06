@@ -42,6 +42,11 @@ vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 	withdrawTravelExpenseReportAction: vi.fn(),
 }));
+// #615: the adjustment notices find no adjustment for these reports.
+vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
+	createTravelExpenseAdjustmentAction: vi.fn(),
+	getTravelExpenseReportAdjustments: async () => ({ success: false, error: "Expense report not found" }),
+}));
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
 		<a href={href} {...props}>

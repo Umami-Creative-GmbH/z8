@@ -414,6 +414,8 @@ export async function submitTravelExpenseReportAction(input: {
 				return { success: true, data: { status: result.kind, reason: result.reason } };
 			case "threshold_currency_unsupported":
 				return { success: true, data: { status: result.kind, currency: result.currency } };
+			case "adjustment_unavailable":
+				return { success: true, data: { status: result.kind, reason: result.reason } };
 			case "changed_since_review":
 			case "self_approval_route":
 			case "authority_unsupported":

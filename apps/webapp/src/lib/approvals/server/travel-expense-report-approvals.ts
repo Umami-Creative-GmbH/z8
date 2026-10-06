@@ -44,6 +44,7 @@ import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/tra
 import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
+import { assertAdjustmentBaselineCurrent } from "./travel-expense-report-adjustment-guard";
 import {
 	acceptedReceiptExceptionsForCommand,
 	receiptExceptionAcceptanceResult,
@@ -607,6 +608,8 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		// The card showed another cycle's (or a superseded) frozen revision.
 		throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
 	}
+	// #615: an adjustment is approved only against the baseline it froze.
+	await assertAdjustmentBaselineCurrent(database, revision, action);
 	const reason = action === "reject" ? input.reason?.trim() : undefined;
 	const accepted = input.acceptedReceiptExceptionItemIds;
 	const exit = await Effect.runPromiseExit(

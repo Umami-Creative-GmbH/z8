@@ -9,6 +9,7 @@ import {
 	type RecordReimbursementResult,
 	recordTravelExpenseReimbursementAction,
 } from "@/app/[locale]/(app)/travel-expenses/finance-actions";
+import { recordTravelExpenseRecoveryAction } from "@/app/[locale]/(app)/travel-expenses/finance-recovery-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -29,6 +30,7 @@ import {
 	SETTLEMENT_NOTE_MAX_LENGTH,
 	SETTLEMENT_REFERENCE_MAX_LENGTH,
 	type SettlementCommandFieldError,
+	type SettlementEntryKind,
 	type SettlementPlanRefusal,
 } from "@/lib/travel-expenses/settlement";
 import type { SettlementAccount, SettlementSource } from "@/lib/travel-expenses/settlement-store";
@@ -91,6 +93,16 @@ function refusalMessage(t: Translate, reason: SettlementPlanRefusal): string {
 				"travelExpenses.settlement.errors.nothingOutstanding",
 				"Nothing is outstanding for this expense.",
 			);
+		case "exceeds_overpayment":
+			return t(
+				"travelExpenses.settlement.errors.exceedsOverpayment",
+				"The amount is more than was overpaid.",
+			);
+		case "no_overpayment":
+			return t(
+				"travelExpenses.settlement.errors.noOverpayment",
+				"Nothing was overpaid for this expense.",
+			);
 		default:
 			return t(
 				"travelExpenses.settlement.errors.refused",
@@ -133,21 +145,28 @@ export function RecordReimbursementForm({
 	source,
 	line,
 	onSettled,
+	kind = "reimbursement",
 }: {
 	source: SettlementSource;
-	/** The outstanding currency line the payment settles. */
+	/** The outstanding (or, for a recovery, overpaid) currency line the entry settles. */
 	line: CurrencySettlement;
 	/** Called with the fresh account after any server answer that changes what is shown. */
 	onSettled: (account: SettlementAccount | null) => void;
+	/** `recovery` (#615): money the employee returned against an overpayment. */
+	kind?: SettlementEntryKind;
 }) {
 	const { t } = useTranslate();
+	const recovery = kind === "recovery";
+	const record = recovery ? recordTravelExpenseRecoveryAction : recordTravelExpenseReimbursementAction;
+	// The overpayment is the negative balance; a recovery is entered as a positive amount.
+	const suggested = recovery ? line.balance.replace(/^-/, "") : line.balance;
 	const attempt = useRef<{ values: string; key: string } | null>(null);
 	const [errors, setErrors] = useState<SettlementCommandFieldError[]>([]);
 	const [problem, setProblem] = useState<string | null>(null);
 
 	const form = useForm({
 		defaultValues: {
-			amount: line.balance,
+			amount: suggested,
 			occurredOn: "",
 			reference: "",
 			note: "",
@@ -155,7 +174,7 @@ export function RecordReimbursementForm({
 		onSubmit: async ({ value, formApi }) => {
 			setProblem(null);
 			const parsed = parseSettlementCommand(
-				{ kind: "reimbursement", currency: line.currency, ...value },
+				{ kind, currency: line.currency, ...value },
 				{ latestDate: latestCalendarDate(systemClock.nowInstant()) },
 			);
 			if (!parsed.ok) {
@@ -167,7 +186,7 @@ export function RecordReimbursementForm({
 			if (attempt.current?.values !== values) {
 				attempt.current = { values, key: crypto.randomUUID() };
 			}
-			const result = await recordTravelExpenseReimbursementAction({
+			const result = await record({
 				source,
 				idempotencyKey: attempt.current.key,
 				amount: parsed.command.amount,
@@ -196,7 +215,9 @@ export function RecordReimbursementForm({
 				toast.success(
 					outcome.replayed
 						? t("travelExpenses.settlement.recordedAlready", "This payment was already recorded.")
-						: t("travelExpenses.settlement.recorded", "Reimbursement recorded."),
+						: recovery
+							? t("travelExpenses.settlement.recoveryRecorded", "Recovery recorded.")
+							: t("travelExpenses.settlement.recorded", "Reimbursement recorded."),
 				);
 				formApi.reset();
 				onSettled(outcome.account);
@@ -220,22 +241,35 @@ export function RecordReimbursementForm({
 				void form.handleSubmit();
 			}}
 			className="grid gap-4"
-			aria-label={t("travelExpenses.settlement.form.label", "Record a reimbursement")}
+			aria-label={
+				recovery
+					? t("travelExpenses.settlement.recoveryForm.label", "Record a recovery")
+					: t("travelExpenses.settlement.form.label", "Record a reimbursement")
+			}
 		>
 			<p className="text-sm text-muted-foreground">
-				{t(
-					"travelExpenses.settlement.form.notice",
-					"Record money already paid to the employee. Z8 does not transfer any money.",
-				)}
+				{recovery
+					? t(
+							"travelExpenses.settlement.recoveryForm.notice",
+							"The employee was paid more than is now approved. Record money they already returned to settle the overpayment; the original reimbursement stays as recorded and nothing is offset against other reports. Z8 does not transfer any money.",
+						)
+					: t(
+							"travelExpenses.settlement.form.notice",
+							"Record money already paid to the employee. Z8 does not transfer any money.",
+						)}
 			</p>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<form.Field name="amount">
 					{(field) => (
 						<TFormItem>
 							<TFormLabel hasError={!!errorFor("amount")}>
-								{t("travelExpenses.settlement.form.amount", "Amount paid ({currency})", {
-									currency: line.currency,
-								})}
+								{recovery
+									? t("travelExpenses.settlement.recoveryForm.amount", "Amount recovered ({currency})", {
+											currency: line.currency,
+										})
+									: t("travelExpenses.settlement.form.amount", "Amount paid ({currency})", {
+											currency: line.currency,
+										})}
 							</TFormLabel>
 							<TFormControl hasError={!!errorFor("amount")}>
 								<Input
@@ -255,7 +289,9 @@ export function RecordReimbursementForm({
 					{(field) => (
 						<TFormItem>
 							<TFormLabel hasError={!!errorFor("occurredOn")}>
-								{t("travelExpenses.settlement.form.date", "Payment date")}
+								{recovery
+									? t("travelExpenses.settlement.recoveryForm.date", "Recovery date")
+									: t("travelExpenses.settlement.form.date", "Payment date")}
 							</TFormLabel>
 							<TFormControl hasError={!!errorFor("occurredOn")}>
 								<DatePicker
@@ -325,7 +361,9 @@ export function RecordReimbursementForm({
 				{(isSubmitting) => (
 					<Button type="submit" disabled={isSubmitting} className="justify-self-start">
 						{isSubmitting && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
-						{t("travelExpenses.settlement.form.submit", "Record reimbursement")}
+						{recovery
+							? t("travelExpenses.settlement.recoveryForm.submit", "Record recovery")
+							: t("travelExpenses.settlement.form.submit", "Record reimbursement")}
 					</Button>
 				)}
 			</form.Subscribe>

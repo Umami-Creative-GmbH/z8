@@ -50,6 +50,7 @@ import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
 import { PerDiemItemEditor, perDiemDraftMatches, perDiemDraftOf } from "./per-diem-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
+import { AdjustmentNotice } from "./report-adjustments";
 import { ReportReviewFeedback } from "./report-review-cycle";
 import { ReportStatusBadge } from "./report-status";
 import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
@@ -264,6 +265,7 @@ export function TravelExpenseReportEditor({
 			{data && isEditableReportStatus(data.status) && (
 				<ReportReviewFeedback reportId={data.id} submissionCount={data.submissionCount} />
 			)}
+			{data && isEditableReportStatus(data.status) && <AdjustmentNotice reportId={data.id} />}
 			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
 				<SubmittedTravelExpenseReport reportId={reportId} />

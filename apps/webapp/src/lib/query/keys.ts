@@ -104,6 +104,8 @@ export const queryKeys = {
 		financeExports: () => ["travel-expenses", "finance", "exports"] as const,
 		reportReopen: (reportId: string) => ["travel-expenses", "reports", reportId, "reopen"] as const,
 		referenceRateSettings: () => ["travel-expenses", "settings", "reference-rates"] as const,
+		reportAdjustments: (reportId: string) =>
+			["travel-expenses", "reports", reportId, "adjustments"] as const,
 	},
 
 	// Employees
