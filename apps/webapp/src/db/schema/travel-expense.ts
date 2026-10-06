@@ -70,6 +70,7 @@ export const travelExpenseClaim = pgTable(
 	},
 	(table) => [
 		index("travelExpenseClaim_organizationId_idx").on(table.organizationId),
+		uniqueIndex("travelExpenseClaim_id_org_idx").on(table.id, table.organizationId),
 		index("travelExpenseClaim_employeeId_idx").on(table.employeeId),
 		index("travelExpenseClaim_approverId_idx").on(table.approverId),
 		index("travelExpenseClaim_projectId_idx").on(table.projectId),
@@ -131,7 +132,14 @@ export const travelExpenseAttachment = pgTable(
 
 export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone", "trip"] as const;
 export type TravelExpenseReportKind = (typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
-export const TRAVEL_EXPENSE_REPORT_STATUSES = ["draft", "submitted", "approved", "rejected"] as const;
+// `returned` (#603): a reviewer sent the submission back; it is editable again.
+export const TRAVEL_EXPENSE_REPORT_STATUSES = [
+	"draft",
+	"submitted",
+	"approved",
+	"rejected",
+	"returned",
+] as const;
 export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
 
 // Travel expense report (#600): groups expense items beside the legacy claim
@@ -142,7 +150,7 @@ export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[
 // advances on every saved edit of those details, like an item's `version`.
 // Submission (#602) freezes the whole report as an approval submitted
 // revision; `submission_count` numbers its submission cycles, and only a
-// draft is ever edited.
+// draft (or a returned report, #603) is ever edited.
 export const travelExpenseReport = pgTable(
 	"travel_expense_report",
 	{
@@ -185,7 +193,7 @@ export const travelExpenseReport = pgTable(
 		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone', 'trip')`),
 		check(
 			"travel_expense_report_status_check",
-			sql`${table.status} IN ('draft', 'submitted', 'approved', 'rejected')`,
+			sql`${table.status} IN ('draft', 'submitted', 'approved', 'rejected', 'returned')`,
 		),
 		check(
 			"travel_expense_report_submission_check",
@@ -193,7 +201,7 @@ export const travelExpenseReport = pgTable(
 			AND (${table.status} = 'draft' AND ${table.decidedAt} IS NULL
 				OR ${table.status} = 'submitted' AND ${table.submissionCount} >= 1
 					AND ${table.submittedAt} IS NOT NULL AND ${table.decidedAt} IS NULL
-				OR ${table.status} IN ('approved', 'rejected') AND ${table.submissionCount} >= 1
+				OR ${table.status} IN ('approved', 'rejected', 'returned') AND ${table.submissionCount} >= 1
 					AND ${table.submittedAt} IS NOT NULL AND ${table.decidedAt} IS NOT NULL)`,
 		),
 		check(
@@ -236,6 +244,10 @@ export const travelExpenseReportItem = pgTable(
 		mileageDistanceKm: decimal("mileage_distance_km", { precision: 8, scale: 2 }),
 		mileageVehicle: text("mileage_vehicle").$type<MileageVehicle>(),
 		mileagePolicy: jsonb("mileage_policy").$type<StampedMileagePolicy>(),
+		// Missing-receipt exception (#604): the employee's explanation; null when none is requested.
+		// It is never a receipt row, and has its own version so it saves independently.
+		receiptExceptionReason: text("receipt_exception_reason"),
+		receiptExceptionVersion: integer("receipt_exception_version").default(0).notNull(),
 		version: integer("version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -271,6 +283,11 @@ export const travelExpenseReportItem = pgTable(
 		check(
 			"travel_expense_report_item_amount_check",
 			sql`${table.originalAmount} IS NULL OR ${table.originalAmount} > 0`,
+		),
+		check(
+			"travel_expense_report_item_receipt_exception_check",
+			sql`${table.receiptExceptionVersion} >= 0 AND (${table.receiptExceptionReason} IS NULL
+				OR char_length(btrim(${table.receiptExceptionReason})) BETWEEN 1 AND 1000)`,
 		),
 	],
 );
@@ -428,6 +445,10 @@ export const travelExpenseSettings = pgTable("travel_expense_settings", {
 	expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
 		onDelete: "set null",
 	}),
+	// Whether employees may submit an explained missing-receipt exception (#604).
+	missingReceiptExceptionsAllowed: boolean("missing_receipt_exceptions_allowed")
+		.default(false)
+		.notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 });

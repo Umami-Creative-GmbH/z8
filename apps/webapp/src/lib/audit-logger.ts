@@ -64,6 +64,9 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
 	TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED = "travel_expense.policy_version_activated",
 	TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN = "travel_expense.policy_version_withdrawn",
+	TRAVEL_EXPENSE_RETURNED = "travel_expense.returned",
+	TRAVEL_EXPENSE_WITHDRAWN = "travel_expense.withdrawn",
+	TRAVEL_EXPENSE_REIMBURSEMENT_RECORDED = "travel_expense.reimbursement_recorded",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",

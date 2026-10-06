@@ -22,7 +22,7 @@ import {
 	decideBoundAbsenceInvocation,
 	decideBoundLegacyAbsenceInvocation,
 } from "@/lib/approvals/server/absence-approvals";
-import { decideBoundTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-approvals";
+import { decideBoundLegacyTravelExpenseInvocation } from "@/lib/approvals/server/travel-expense-report-bound-decision";
 import type { ApprovalAction } from "@/lib/approvals/server/types";
 import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import {
@@ -225,7 +225,8 @@ export async function attemptBoundBotApproval(
 				? await decideBoundLegacyAbsenceInvocation(decision)
 				: isTimeApprovalWorkflowType(workflowType)
 					? await decideBoundLegacyTimeInvocation(decision)
-					: await decideBoundTravelExpenseInvocation(decision)
+					: // Claims (#296) and reports (#623) share the kind; the revision names the subject.
+						await decideBoundLegacyTravelExpenseInvocation(decision)
 			: isTimeApprovalWorkflowType(workflowType)
 				? await decideBoundTimeInvocation(decision)
 				: await decideBoundAbsenceInvocation(decision);

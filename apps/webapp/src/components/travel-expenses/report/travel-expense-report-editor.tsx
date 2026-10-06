@@ -12,18 +12,21 @@ import {
 } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { addTripMileageItemAction } from "@/app/[locale]/(app)/travel-expenses/mileage-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
-import { reportItemMissingRequirements } from "@/lib/travel-expenses/item-requirements";
+import {
+	type RequirementItem,
+	reportItemMissingRequirements,
+} from "@/lib/travel-expenses/item-requirements";
 import type { MileageItemDraft } from "@/lib/travel-expenses/mileage";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
+import { isEditableReportStatus } from "@/lib/travel-expenses/report-return";
 import type {
 	ReportItemView,
 	ReportView,
@@ -33,9 +36,12 @@ import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
+import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
+import { ReportReviewFeedback } from "./report-review-cycle";
+import { ReportStatusBadge } from "./report-status";
 import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
 import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
@@ -76,8 +82,9 @@ function itemIncomplete(
 	item: ReportItemView,
 	drafts: LiveDrafts,
 	mileageDrafts: MileageDrafts,
-	reimbursementCurrency: string,
+	report: Pick<ReportView, "reimbursementCurrency" | "receiptExceptionsAllowed">,
 ): boolean {
+	const { reimbursementCurrency } = report;
 	if (item.type === "mileage") {
 		return (
 			!mileageSaved(item, mileageDrafts) ||
@@ -92,6 +99,7 @@ function itemIncomplete(
 		? receiptItemMissingRequirements(draft, {
 				receiptCount: item.receipts.length,
 				reimbursementCurrency,
+				receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
 			}).length > 0
 		: true;
 }
@@ -108,7 +116,7 @@ function liveMatchesSaved(
 		const live = liveDraft(item, drafts);
 		return live !== null && ITEM_FIELDS.every((field) => live[field] === item[field]);
 	});
-	if (!itemsMatch || saved.status !== "draft") return false;
+	if (!itemsMatch || !isEditableReportStatus(saved.status)) return false;
 	if (saved.kind !== "trip") return true;
 	const trip = saved.trip;
 	return (
@@ -204,7 +212,10 @@ export function TravelExpenseReportEditor({
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</div>
 			)}
-			{data && data.status !== "draft" ? (
+			{data && isEditableReportStatus(data.status) && (
+				<ReportReviewFeedback reportId={data.id} submissionCount={data.submissionCount} />
+			)}
+			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
 				<SubmittedTravelExpenseReport reportId={reportId} />
 			) : data?.kind === "trip" && data.trip ? (
@@ -247,7 +258,7 @@ function StandaloneReportBody({
 	const unsaved = isMileage ? !mileageSaved(item, mileageDrafts) : !liveDraft(item, drafts);
 	const blocker: SubmitBlocker = unsaved
 		? "unsaved"
-		: itemIncomplete(item, drafts, mileageDrafts, report.reimbursementCurrency)
+		: itemIncomplete(item, drafts, mileageDrafts, report)
 			? "incomplete"
 			: null;
 
@@ -260,7 +271,7 @@ function StandaloneReportBody({
 							? t("travelExpenses.report.mileage.standaloneTitle", "Mileage")
 							: t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
 					</h2>
-					<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+					<ReportStatusBadge status={report.status} />
 				</div>
 				{isMileage ? (
 					<MileageItemEditor
@@ -279,6 +290,7 @@ function StandaloneReportBody({
 						receipts={item.receipts}
 						reimbursementCurrency={report.reimbursementCurrency}
 						maxReceiptBytes={maxReceiptBytes}
+						receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 						onReceiptsChanged={refreshReport}
 						onSaved={() => void refreshDrafts()}
 						onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
@@ -407,7 +419,7 @@ function TripReportBody({
 	const requirements = details
 		? tripReportMissingRequirements({
 				details,
-				items: items.flatMap((item) => {
+				items: items.flatMap((item): ({ id: string } & RequirementItem)[] => {
 					if (item.type === "mileage") {
 						return [
 							{
@@ -420,13 +432,22 @@ function TripReportBody({
 						];
 					}
 					const draft = liveDraft(item, drafts);
-					return draft ? [{ id: item.id, draft, receiptCount: item.receipts.length }] : [];
+					return draft
+						? [
+								{
+									id: item.id,
+									draft,
+									receiptCount: item.receipts.length,
+									receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+								},
+							]
+						: [];
 				}),
 				reimbursementCurrency: report.reimbursementCurrency,
 			})
 		: null;
 	const incompleteExpenses: IncompleteExpense[] = items.flatMap((item, index) => {
-		if (!itemIncomplete(item, drafts, mileageDrafts, report.reimbursementCurrency)) return [];
+		if (!itemIncomplete(item, drafts, mileageDrafts, report)) return [];
 		const description =
 			item.type === "mileage"
 				? (liveMileage(item, mileageDrafts)?.route ?? item.mileage?.route ?? null)
@@ -437,7 +458,7 @@ function TripReportBody({
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+				<ReportStatusBadge status={report.status} />
 			</div>
 
 			<Card>
@@ -506,6 +527,7 @@ function TripReportBody({
 											receipts={item.receipts}
 											reimbursementCurrency={report.reimbursementCurrency}
 											maxReceiptBytes={maxReceiptBytes}
+											receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 											onReceiptsChanged={refreshReport}
 											onSaved={() => void refreshDrafts()}
 											onDraftChange={(draft) =>

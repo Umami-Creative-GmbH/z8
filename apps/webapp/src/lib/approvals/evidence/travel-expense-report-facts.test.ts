@@ -246,8 +246,9 @@ describe("schema version 1 revisions", () => {
 		"travel_expense_report:v1:92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
 
 	it("still freezes a v1 report byte for byte", () => {
-		// Later versions add facts only to items that need them (mileage, #606):
-		// a receipt-only report differs from v1 in its version number alone.
+		// Later versions only add optional facts this report does not have
+		// (receipt exceptions, #604; mileage, #606), so its facts as of version 1
+		// are today's facts at version 1.
 		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 1 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);

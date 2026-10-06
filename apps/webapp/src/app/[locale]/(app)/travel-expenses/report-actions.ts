@@ -366,6 +366,7 @@ const submitSchema = z.object({
 					id: z.uuid(),
 					version: z.number().int().positive(),
 					receiptIds: z.array(z.uuid()).max(100),
+					receiptExceptionVersion: z.number().int().nonnegative().optional(),
 					amount: z.string().max(20).nullable().optional(),
 				}),
 			)
@@ -438,16 +439,20 @@ export async function submitTravelExpenseReportAction(input: {
 	}
 }
 
-/** The latest frozen submission, for the report's owner or an authorized reviewer. */
+/**
+ * A frozen submission, for the report's owner or an authorized reviewer: the
+ * latest, or the earlier cycle `cycle` names (#603).
+ */
 export async function getTravelExpenseReportSubmission(
 	reportId: string,
+	cycle?: number,
 ): Promise<ServerActionResult<SubmittedReportView>> {
 	try {
 		const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 		if (authorized.status === "unauthorized") return { success: false, error: "Unauthorized" };
 		const view =
 			authorized.status === "found"
-				? await loadSubmittedReportView(authorized.report, authorized.access)
+				? await loadSubmittedReportView(authorized.report, authorized.access, cycle)
 				: null;
 		if (!view) return { success: false, error: "Expense report not found" };
 		return { success: true, data: view };

@@ -14,6 +14,10 @@ import {
 } from "@/lib/travel-expenses/mileage";
 import type { RoundingMode } from "@/lib/travel-expenses/money";
 import {
+	frozenReceiptException,
+	receiptExceptionContext,
+} from "@/lib/travel-expenses/receipt-exception";
+import {
 	type ExpensePayer,
 	type ReceiptExpenseCategory,
 	type ReceiptItemDraft,
@@ -41,10 +45,12 @@ import type { TravelExpenseMoney } from "./travel-expense-facts";
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 2;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 3;
 
-/** Version 2 (#606) adds `mileage` to mileage items. */
-const MILEAGE_FACTS_SCHEMA_VERSION = 2;
+/** Version 2 (#604) adds the optional `receiptException` of an item. */
+const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
+/** Version 3 (#606) adds `mileage` to mileage items. */
+const MILEAGE_FACTS_SCHEMA_VERSION = 3;
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;
@@ -68,7 +74,13 @@ export interface TravelExpenseReportSubmittedItem {
 	accountingReference: string | null;
 	receipts: TravelExpenseReportReceiptManifestItem[];
 	/**
-	 * Mileage items only (v2+, #606): the entered trip and the policy version
+	 * Since v2 (#604): the employee's explanation of a missing receipt. Present
+	 * only for an expense frozen without receipts while the organization allowed
+	 * exceptions; approval must accept it explicitly.
+	 */
+	receiptException?: { reason: string };
+	/**
+	 * Mileage items only (v3+, #606): the entered trip and the policy version
 	 * that priced it. Such an item also freezes `category: "transport"`, its
 	 * route as `description` and the calculated amount as `original`, so every
 	 * reader of item amounts keeps working.
@@ -152,7 +164,11 @@ export interface TravelExpenseReportFactsInput {
 		mileageVehicle?: MileageVehicle | null;
 		/** The policy stamped under the report lock at submission. */
 		mileagePolicy?: StampedMileagePolicy | null;
+		/** Missing-receipt explanation (#604); null or absent when none was requested. */
+		receiptExceptionReason?: string | null;
 	}>;
+	/** Whether the organization allowed missing-receipt exceptions when submitting (#604). */
+	receiptExceptionsAllowed?: boolean;
 	receipts: ReadonlyArray<{
 		id: string;
 		organizationId: string;
@@ -398,7 +414,16 @@ function snapshotReport(
 			const missing = receiptItemMissingRequirements(draft, {
 				receiptCount: receipts.length,
 				reimbursementCurrency: report.reimbursementCurrency,
+				receiptException: receiptExceptionContext(
+					row.receiptExceptionReason ?? null,
+					input.receiptExceptionsAllowed === true,
+				),
 			});
+			const exception = frozenReceiptException(row.receiptExceptionReason, receipts.length);
+			const exceptionFact =
+				schemaVersion >= RECEIPT_EXCEPTION_SCHEMA_VERSION && exception
+					? { receiptException: exception }
+					: {};
 			const { expenseDate, category, description, amount, currency, paidBy } = draft;
 			if (!enforce) {
 				return {
@@ -412,6 +437,7 @@ function snapshotReport(
 					paidBy,
 					accountingReference: row.accountingReference,
 					receipts,
+					...exceptionFact,
 				} as TravelExpenseReportSubmittedItem;
 			}
 			if (
@@ -437,6 +463,7 @@ function snapshotReport(
 				paidBy,
 				accountingReference: row.accountingReference,
 				receipts,
+				...exceptionFact,
 			};
 		});
 	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);

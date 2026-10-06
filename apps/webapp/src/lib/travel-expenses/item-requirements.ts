@@ -4,6 +4,7 @@ import {
 	type MileageItemView,
 	mileageItemMissingRequirements,
 } from "./mileage";
+import type { ReceiptExceptionContext } from "./receipt-exception";
 import {
 	type ReceiptItemDraft,
 	type ReceiptItemRequirement,
@@ -27,6 +28,8 @@ export interface RequirementItem {
 	receiptCount: number;
 	/** Mileage facts and the server calculation of a mileage item. */
 	mileage?: MileageItemView | null;
+	/** Missing-receipt exception of a receipt item (#604); absent means none. */
+	receiptException?: ReceiptExceptionContext;
 }
 
 export function reportItemMissingRequirements(
@@ -49,5 +52,6 @@ export function reportItemMissingRequirements(
 	return receiptItemMissingRequirements(item.draft, {
 		receiptCount: item.receiptCount,
 		reimbursementCurrency: context.reimbursementCurrency,
+		receiptException: item.receiptException,
 	});
 }

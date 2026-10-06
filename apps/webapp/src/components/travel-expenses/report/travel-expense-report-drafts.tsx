@@ -16,6 +16,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
 import { Link } from "@/navigation";
+import { OwnSettlementTag } from "../finance/own-settlement-tag";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { ReportStatusBadge } from "./report-status";
@@ -157,6 +158,9 @@ export function TravelExpenseReportDrafts({
 												</span>
 											)}
 										</>
+									)}
+									{draft.status === "approved" && (
+										<OwnSettlementTag source={{ type: "report", id: draft.id }} />
 									)}
 									<ReportStatusBadge status={draft.status} />
 									<IconChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />

@@ -13,6 +13,7 @@ import {
 	approvalWorkflow,
 	approvalWorkflowStage,
 	travelExpenseClaim,
+	travelExpenseReport,
 	workPeriod,
 } from "@/db/schema";
 import { parseApprovalLifecycleMode, resolveApprovalAuthority } from "../authority";
@@ -31,6 +32,10 @@ import {
 	prepareTravelExpenseReviewEvidence,
 	type TravelExpenseReviewEvidence,
 } from "../presentation/travel-expense-review";
+import {
+	prepareTravelExpenseReportReviewEvidence,
+	type TravelExpenseReportReviewEvidence,
+} from "../presentation/travel-expense-report-review";
 import { classifyPersistedTimeApprovalRequest } from "../server/time-approval-classification";
 import type { ApprovalDatabase } from "../server/types";
 import {
@@ -373,10 +378,46 @@ async function countCanonicalInFlight(
 
 /**
  * Legacy-authoritative counterpart (#296): submitted expense claims without a
- * lifecycle intent at or after activation. The owner plans a legacy lifecycle
- * only from such intents, so these claims stay web-inbox-only.
+ * lifecycle intent at or after activation, plus pending expense report cycles
+ * (#623, keyed like legacy absence cycles) without an intent of that cycle.
+ * The owner plans a legacy lifecycle only from such intents, so these stay
+ * web-inbox-only.
  */
 async function countLegacyExpenseInFlight(
+	database: ApprovalDatabase,
+	input: PilotScope,
+): Promise<number> {
+	const [reports] = rows(
+		await database.execute(sql`
+			select count(distinct coalesce(s.chain_instance_id, r.id))::int as count
+			from approval_request r
+			join travel_expense_report report
+				on report.id = r.entity_id and report.organization_id = r.organization_id
+			left join approval_chain_stage_instance s
+				on s.organization_id = r.organization_id and s.approval_request_id = r.id
+			where r.organization_id = ${input.organizationId}
+				and r.entity_type = 'travel_expense_report'
+				and r.status = 'pending'
+				and report.status = 'submitted'
+				and not exists (
+					select 1 from approval_delivery_intent i
+					join approval_delivery_control c
+						on c.organization_id = i.organization_id
+						and c.workflow_type = i.workflow_type
+						and c.provider = ${input.provider}
+					where i.organization_id = r.organization_id
+						and i.workflow_type = 'travel_expense'
+						and i.source_type = 'travel_expense_report'
+						and i.source_id = report.id
+						and i.legacy_cycle_id = coalesce(s.chain_instance_id, r.id)
+						and c.activated_at <= i.created_at
+				)
+		`),
+	);
+	return Number(reports?.count ?? 0) + (await countLegacyClaimInFlight(database, input));
+}
+
+async function countLegacyClaimInFlight(
 	database: ApprovalDatabase,
 	input: PilotScope,
 ): Promise<number> {
@@ -592,12 +633,13 @@ const LEGACY_CARD_TABLES: Record<ApprovalDeliveryProvider, SQL> = {
 	discord: sql.raw("discord_approval_message"),
 };
 
-const LEGACY_ENTITY_TYPES: Record<PilotWorkflowType, string> = {
-	absence: "absence_entry",
-	travel_expense: "travel_expense_claim",
-	manual_time_submission: "time_entry",
-	policy_clock_out: "time_entry",
-	time_correction: "time_entry",
+const LEGACY_ENTITY_TYPES: Record<PilotWorkflowType, readonly string[]> = {
+	absence: ["absence_entry"],
+	// Claims and expense reports (#623) share the kind.
+	travel_expense: ["travel_expense_claim", "travel_expense_report"],
+	manual_time_submission: ["time_entry"],
+	policy_clock_out: ["time_entry"],
+	time_correction: ["time_entry"],
 };
 
 /**
@@ -640,7 +682,7 @@ async function countLegacyCards(database: ApprovalDatabase, input: PilotScope): 
 			where card.organization_id = ${input.organizationId}
 				and card.status = 'sent'
 				and r.status = 'pending'
-				and r.entity_type = ${LEGACY_ENTITY_TYPES[input.workflowType]}
+				and r.entity_type = any(${sql.param([...LEGACY_ENTITY_TYPES[input.workflowType]])}::text[])
 				${timeKind}
 		`),
 	);
@@ -664,7 +706,9 @@ function classifyAbsence(
 	return evidence.comparison.kind === "material_change" ? "materialChange" : "current";
 }
 
-function classifyTravelExpense(evidence: TravelExpenseReviewEvidence): EvidenceClass {
+function classifyTravelExpense(
+	evidence: TravelExpenseReviewEvidence | TravelExpenseReportReviewEvidence,
+): EvidenceClass {
 	if (evidence.status === "not_captured") return "notCaptured";
 	return evidence.comparison.kind === "material_change" ? "materialChange" : "current";
 }
@@ -847,6 +891,27 @@ async function classifyPendingEvidence(
 			classes.push(
 				classifyTravelExpense(
 					await prepareTravelExpenseReviewEvidence({ organizationId, claimId: claim.id }, database),
+				),
+			);
+		}
+		// Expense reports (#623): the current cycle's frozen revision, as the
+		// report card and decision owner read it.
+		const reports = await database
+			.select({ id: travelExpenseReport.id })
+			.from(travelExpenseReport)
+			.where(
+				and(
+					eq(travelExpenseReport.organizationId, organizationId),
+					eq(travelExpenseReport.status, "submitted"),
+				),
+			);
+		for (const report of reports) {
+			classes.push(
+				classifyTravelExpense(
+					await prepareTravelExpenseReportReviewEvidence(
+						{ organizationId, reportId: report.id },
+						database,
+					),
 				),
 			);
 		}

@@ -251,6 +251,8 @@ export interface ApprovalActionOptions {
 	allowOrganizationWideApprover?: boolean;
 	/** Opaque reviewed-view handle; a supporting decision owner revalidates it. */
 	reviewedBindingId?: string;
+	/** Expense reports (#604): missing-receipt exceptions the approver explicitly accepts. */
+	acceptedReceiptExceptionItemIds?: readonly string[];
 }
 
 /**

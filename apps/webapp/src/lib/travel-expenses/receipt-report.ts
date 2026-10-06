@@ -1,6 +1,7 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import { missingReceiptRequirements, type ReceiptExceptionContext } from "./receipt-exception";
 
 /**
  * Receipt expense items of a travel expense report (#600). A draft item may be
@@ -164,13 +165,21 @@ export type ReceiptItemRequirement =
 	| "amount"
 	| "payment_ownership"
 	| "receipt"
+	/** A missing-receipt exception was requested without an explanation (#604). */
+	| "receipt_exception_reason"
+	/** A missing-receipt exception was requested, but the organization does not allow them (#604). */
+	| "receipt_exception_not_allowed"
 	/** Conversion of foreign receipts is not supported yet; nothing is guessed. */
 	| "same_currency";
 
 /** What still keeps a receipt item from being submittable, in form order. */
 export function receiptItemMissingRequirements(
 	draft: ReceiptItemDraft,
-	context: { receiptCount: number; reimbursementCurrency: string },
+	context: {
+		receiptCount: number;
+		reimbursementCurrency: string;
+		receiptException?: ReceiptExceptionContext;
+	},
 ): ReceiptItemRequirement[] {
 	const missing: ReceiptItemRequirement[] = [];
 	if (!draft.expenseDate) missing.push("expense_date");
@@ -179,7 +188,7 @@ export function receiptItemMissingRequirements(
 	if (!draft.amount || !draft.currency) missing.push("amount");
 	else if (draft.currency !== context.reimbursementCurrency) missing.push("same_currency");
 	if (!draft.paidBy) missing.push("payment_ownership");
-	if (context.receiptCount < 1) missing.push("receipt");
+	if (context.receiptCount < 1) missing.push(...missingReceiptRequirements(context.receiptException));
 	return missing;
 }
 

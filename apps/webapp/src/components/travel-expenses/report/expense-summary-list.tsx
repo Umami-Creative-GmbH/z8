@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
+import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 import { categoryLabel } from "./receipt-item-editor";
 
 export interface ExpenseSummary {
@@ -18,6 +19,8 @@ export interface ExpenseSummary {
 	receipts: { id: string; fileName: string; href?: string }[];
 	/** A mileage expense's calculation (#606). */
 	mileage?: MileageBreakdownFacts | null;
+	/** Missing-receipt exception submitted instead of a receipt (#604). */
+	receiptException?: { reason: string } | null;
 }
 
 export interface TripSummary {
@@ -123,6 +126,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							))}
 						</ul>
 					)}
+					{item.receiptException && <ReceiptExceptionNotice exception={item.receiptException} />}
 				</li>
 			))}
 		</ol>

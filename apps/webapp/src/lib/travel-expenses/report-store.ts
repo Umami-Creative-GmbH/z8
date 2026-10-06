@@ -17,6 +17,12 @@ import {
 	type ReceiptItemDraft,
 	receiptReportTotals,
 } from "./receipt-report";
+import {
+	loadReceiptExceptionsAllowed,
+	type ReceiptExceptionView,
+	receiptExceptionItemView,
+} from "./receipt-exception-read";
+import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import type { TripDetailsDraft } from "./trip-report";
 
 /**
@@ -70,6 +76,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 	receipts: ReportReceiptView[];
 	/** Mileage items only (#606): entered facts and the server's calculation. */
 	mileage: MileageItemView | null;
+	/** Missing-receipt exception (#604), saved separately from the other fields. */
+	receiptException: ReceiptExceptionView;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -81,12 +89,16 @@ export interface ReportView {
 	id: string;
 	kind: TravelExpenseReportKind;
 	status: TravelExpenseReportStatus;
+	/** Submission cycles so far; a withdrawn or returned report has history (#603). */
+	submissionCount: number;
 	reimbursementCurrency: string;
 	createdAt: string;
 	updatedAt: string;
 	/** Null for standalone reports, which have no trip. */
 	trip: TripDetailsView | null;
 	items: ReportItemView[];
+	/** Whether the organization allows missing-receipt exceptions (#604). */
+	receiptExceptionsAllowed: boolean;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -208,7 +220,8 @@ export async function lockOwnDraftReport(
 		.where(ownedReport(owner, reportId))
 		.for("update");
 	if (!report) return { status: "not_found" };
-	return report.status === "draft"
+	// A returned report (#603) is edited like a draft; the result keeps its tag.
+	return isEditableReportStatus(report.status)
 		? { status: "draft", kind: report.kind }
 		: { status: "not_draft" };
 }
@@ -243,7 +256,7 @@ export async function isOwnDraftReportItem(
 		.where(
 			and(
 				ownedReport(owner, input.reportId),
-				eq(travelExpenseReport.status, "draft"),
+				inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 				eq(travelExpenseReportItem.id, input.itemId),
 			),
 		)
@@ -272,6 +285,7 @@ export function toItemView(
 		paidBy: row.paidBy,
 		accountingReference: row.accountingReference,
 		receipts,
+		...receiptExceptionItemView(row),
 	};
 }
 
@@ -286,7 +300,7 @@ export async function loadOwnReport(
 		.where(ownedReport(owner, reportId))
 		.limit(1);
 	if (!report) return null;
-	const [items, receipts] = await Promise.all([
+	const [items, receipts, receiptExceptionsAllowed] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -307,16 +321,19 @@ export async function loadOwnReport(
 				),
 			)
 			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
+		loadReceiptExceptionsAllowed(database, owner.organizationId),
 	]);
 	const price = await loadMileagePricer(database, owner.organizationId, items);
 	const pricing = {
 		reimbursementCurrency: report.reimbursementCurrency,
-		useStamp: report.status !== "draft",
+		// Editable reports are priced afresh; submitted ones keep their stamp.
+		useStamp: !isEditableReportStatus(report.status),
 	};
 	return {
 		id: report.id,
 		kind: report.kind,
 		status: report.status,
+		submissionCount: report.submissionCount,
 		reimbursementCurrency: report.reimbursementCurrency,
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
@@ -328,6 +345,7 @@ export async function loadOwnReport(
 				item.type === "mileage" ? price(item, pricing) : null,
 			),
 		),
+		receiptExceptionsAllowed,
 	};
 }
 
@@ -369,7 +387,7 @@ export function listOwnSubmittedReports(
 	database: Database,
 	owner: ReportOwner,
 ): Promise<DraftReportSummary[]> {
-	return listOwnReports(database, owner, ["submitted", "approved", "rejected"]);
+	return listOwnReports(database, owner, ["submitted", "approved", "rejected", "returned"]);
 }
 
 async function listOwnReports(
@@ -426,7 +444,7 @@ async function listOwnReports(
 							row,
 							price(row, {
 								reimbursementCurrency: report.reimbursementCurrency,
-								useStamp: report.status !== "draft",
+								useStamp: !isEditableReportStatus(report.status),
 							}),
 						)
 					: null,

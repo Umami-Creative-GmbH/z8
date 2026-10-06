@@ -20,7 +20,8 @@ export type PermissionCategory =
 	| "organization"
 	| "projects"
 	| "scheduling"
-	| "works_council";
+	| "works_council"
+	| "finance";
 
 export interface PermissionDefinition {
 	action: Action;
@@ -254,6 +255,30 @@ const PERMISSION_DEFINITIONS: Record<string, PermissionDefinitionInput> = {
 		description: "Enable Works Council Mode and configure privacy settings",
 	},
 
+	// ---- Finance (#612) ----
+	// Separate from approval authority: approving expenses never grants these.
+	"read:TravelExpenseFinance": {
+		action: "read",
+		subject: "TravelExpenseFinance",
+		category: "finance",
+		label: "View Travel Expense Finance",
+		description: "See approved travel expenses, their receipts and settlement balances",
+	},
+	"export:TravelExpenseFinance": {
+		action: "export",
+		subject: "TravelExpenseFinance",
+		category: "finance",
+		label: "Export Travel Expenses",
+		description: "Create and download travel expense export batches",
+	},
+	"settle:TravelExpenseFinance": {
+		action: "settle",
+		subject: "TravelExpenseFinance",
+		category: "finance",
+		label: "Record Travel Expense Reimbursements",
+		description: "Record reimbursements paid to employees outside Z8",
+	},
+
 	// ---- Organization ----
 	"read:Organization": {
 		action: "read",
@@ -387,6 +412,7 @@ const CATEGORY_LABELS: Record<PermissionCategory, string> = {
 	projects: "Projects",
 	scheduling: "Scheduling",
 	works_council: "Works Council",
+	finance: "Finance",
 };
 
 const CATEGORY_LABEL_KEYS: Record<PermissionCategory, string> = {
@@ -398,6 +424,7 @@ const CATEGORY_LABEL_KEYS: Record<PermissionCategory, string> = {
 	projects: "settings.roles.permissionCategories.projects",
 	scheduling: "settings.roles.permissionCategories.scheduling",
 	works_council: "settings.roles.permissionCategories.works_council",
+	finance: "settings.roles.permissionCategories.finance",
 };
 
 /**

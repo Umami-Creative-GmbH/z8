@@ -10,8 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
+import { SettlementPanel } from "../finance/settlement-panel";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { ReturnedNotice, SubmissionCycleLinks, WithdrawReportButton } from "./report-review-cycle";
 import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
 import { ReportTotals } from "./report-summary";
 
@@ -28,6 +30,10 @@ function historyText(
 		submitted: t("travelExpenses.report.history.submitted", "Submitted by {name}", { name }),
 		approved: t("travelExpenses.report.history.approved", "Approved by {name}", { name }),
 		rejected: t("travelExpenses.report.history.rejected", "Rejected by {name}", { name }),
+		returned: t("travelExpenses.report.history.returned", "Returned for changes by {name}", {
+			name,
+		}),
+		withdrawn: t("travelExpenses.report.history.withdrawn", "Withdrawn by {name}", { name }),
 		approval_recorded: t(
 			"travelExpenses.report.history.approvalRecorded",
 			"Approval recorded by {name}; awaiting further approval",
@@ -42,13 +48,20 @@ function historyText(
  * (#602). It shows exactly what was submitted; later edits, policies or
  * currency changes never alter it. Reviewers decide in the Approvals inbox.
  */
-export function SubmittedTravelExpenseReport({ reportId }: { reportId: string }) {
+export function SubmittedTravelExpenseReport({
+	reportId,
+	cycle,
+}: {
+	reportId: string;
+	/** An earlier submission cycle to show (#603); the latest when omitted. */
+	cycle?: number;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const { data, isLoading, isFetching, isError, refetch } = useQuery({
-		queryKey: queryKeys.travelExpenses.reportSubmission(reportId),
+		queryKey: queryKeys.travelExpenses.reportSubmission(reportId, cycle),
 		queryFn: async (): Promise<SubmittedReportView> => {
-			const result = await getTravelExpenseReportSubmission(reportId);
+			const result = await getTravelExpenseReportSubmission(reportId, cycle);
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -78,17 +91,49 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 	}
 
 	const { facts, decision } = data;
+	const latest = data.submissionCycle === data.latestCycle;
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<ReportStatusBadge status={data.status} />
+				{latest && <ReportStatusBadge status={data.status} />}
 				<p className="text-sm text-muted-foreground">
-					{t("travelExpenses.report.submittedAt", "Submitted {date}", {
-						date: formatInstant(locale, data.submittedAt),
-					})}
+					{data.latestCycle > 1
+						? t(
+								"travelExpenses.report.submissionNumberAt",
+								"Submission {number}, submitted {date}",
+								{
+									number: data.submissionCycle,
+									date: formatInstant(locale, data.submittedAt),
+								},
+							)
+						: t("travelExpenses.report.submittedAt", "Submitted {date}", {
+								date: formatInstant(locale, data.submittedAt),
+							})}
 				</p>
+				{data.access === "owner" && latest && data.status === "submitted" && (
+					<div className="ml-auto">
+						<WithdrawReportButton reportId={reportId} submissionCycle={data.submissionCycle} />
+					</div>
+				)}
 			</div>
-			{data.status === "submitted" && (
+			{!latest && (
+				<p className="text-sm">
+					{t(
+						"travelExpenses.report.earlierSubmission",
+						"This is an earlier submission of the report, kept exactly as it was submitted.",
+					)}
+				</p>
+			)}
+			{data.returned && <ReturnedNotice returned={data.returned} />}
+			{data.cycleOutcome === "withdrawn" && (
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"travelExpenses.report.withdrawnSubmission",
+						"This submission was withdrawn before a decision.",
+					)}
+				</p>
+			)}
+			{latest && data.status === "submitted" && (
 				<p className="text-sm">
 					{data.reviewerName
 						? t("travelExpenses.report.awaitingReviewer", "Waiting for review by {name}.", {
@@ -98,7 +143,7 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 					{data.access === "reviewer"
 						? t(
 								"travelExpenses.report.decideInInbox",
-								"Approve or reject the whole report in the Approvals inbox.",
+								"Approve, return or reject the whole report in the Approvals inbox.",
 							)
 						: t(
 								"travelExpenses.report.frozenNotice",
@@ -152,9 +197,10 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 						receipts: item.receipts.map((receipt) => ({
 							id: receipt.receiptId,
 							fileName: receipt.fileName,
-							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}`,
+							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
 						})),
 						mileage: item.mileage ?? null,
+						receiptException: item.receiptException ?? null,
 					}))}
 				/>
 			</section>
@@ -162,6 +208,9 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 				id={`${reportId}-submitted`}
 				totals={{ ...facts.totals, excludedItemCount: 0 }}
 			/>
+			{latest && data.status === "approved" && data.access !== "reviewer" && (
+				<SettlementPanel source={{ type: "report", id: reportId }} />
+			)}
 			<section aria-labelledby={`${reportId}-history`} className="space-y-2">
 				<h2 id={`${reportId}-history`} className="text-lg font-semibold">
 					{t("travelExpenses.report.history.title", "History")}
@@ -170,11 +219,22 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 					{data.history.map((event) => (
 						<li key={event.id}>
 							<span className="text-muted-foreground">{formatInstant(locale, event.at)}</span>{" "}
+							{data.latestCycle > 1 &&
+								`${t("travelExpenses.report.history.cycle", "Submission {number}:", {
+									number: event.cycle,
+								})} `}
 							{historyText(t, event.label, event.actorName ?? "—")}
 						</li>
 					))}
 				</ol>
 			</section>
+			{data.cycles.length > 1 && (
+				<SubmissionCycleLinks
+					reportId={reportId}
+					cycles={data.cycles}
+					current={data.submissionCycle}
+				/>
+			)}
 		</div>
 	);
 }

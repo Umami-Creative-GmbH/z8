@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
+import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +33,11 @@ import {
 } from "@/lib/query/use-approval-inbox";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import {
+	allReceiptExceptionsAccepted,
+	findReceiptExceptionAcceptance,
+	ReceiptExceptionAcceptance,
+} from "./receipt-exception-acceptance";
 
 interface ApprovalDetailPanelProps {
 	approval: ApprovalInboxItem | null;
@@ -220,6 +226,10 @@ export function ApprovalDetailPanel({
 	const { t } = useTranslate();
 	const [isRejecting, setIsRejecting] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
+	const [acceptedExceptions, setAcceptedExceptions] = useState<{
+		approvalId: string | null;
+		itemIds: string[];
+	}>({ approvalId: null, itemIds: [] });
 
 	const { data: detail } = useApprovalDetail(approval?.id ?? null);
 	const approveMutation = useApproveApproval();
@@ -234,11 +244,20 @@ export function ApprovalDetailPanel({
 	const actions = detail?.actions ?? item?.capabilities;
 	const sections = detail?.sections ?? [];
 	const isPending = approveMutation.isPending || rejectMutation.isPending;
+	// Expense report missing-receipt exceptions to accept before approving (#604).
+	const receiptExceptions = findReceiptExceptionAcceptance(sections);
+	const acceptedExceptionIds =
+		acceptedExceptions.approvalId === approval?.id ? acceptedExceptions.itemIds : [];
+	const exceptionsAccepted = allReceiptExceptionsAccepted(receiptExceptions, acceptedExceptionIds);
 
 	const handleApprove = async () => {
-		if (!approval || !actions?.canApprove || isPending) return;
+		if (!approval || !actions?.canApprove || isPending || !exceptionsAccepted) return;
 
-		const result = await approveMutation.mutateAsync(approval.id);
+		const result = await approveMutation.mutateAsync(
+			receiptExceptions
+				? { approvalId: approval.id, acceptedReceiptExceptionItemIds: acceptedExceptionIds }
+				: approval.id,
+		);
 		if (result.success) {
 			toast.success(t("approvals:approvals.approved", "Request approved"));
 			onOpenChange(false);
@@ -349,7 +368,21 @@ export function ApprovalDetailPanel({
 					<TravelExpenseClaimLink item={panelItem} />
 					{sections.length > 0 && <Separator />}
 
-					{sections.map((section) => renderDetailSection(t, section))}
+					{sections.map((section) =>
+						section.type === "receipt_exception_acceptance" ? (
+							<ReceiptExceptionAcceptance
+								key="receipt-exception-acceptance"
+								section={section}
+								accepted={acceptedExceptionIds}
+								onChange={(itemIds) =>
+									setAcceptedExceptions({ approvalId: approval.id, itemIds })
+								}
+								disabled={!panelActions.canApprove}
+							/>
+						) : (
+							renderDetailSection(t, section)
+						),
+					)}
 				</div>
 
 				<SheetFooter className="border-t bg-muted/95 px-5 py-4 sm:px-6">
@@ -408,6 +441,17 @@ export function ApprovalDetailPanel({
 						</div>
 					) : (
 						<div className="flex w-full gap-2">
+							{panelItem.type === "travel_expense_report" && (
+								<TravelExpenseReportReturnButton
+									approvalId={approval.id}
+									reportId={panelItem.entityId}
+									disabled={!panelActions.canReject || isPending}
+									onReturned={() => {
+										onOpenChange(false);
+										onActioned();
+									}}
+								/>
+							)}
 							<Button
 								variant="outline"
 								className="flex-1"
@@ -420,7 +464,7 @@ export function ApprovalDetailPanel({
 							<Button
 								className="flex-1"
 								onClick={handleApprove}
-								disabled={!panelActions.canApprove || isPending}
+								disabled={!panelActions.canApprove || isPending || !exceptionsAccepted}
 							>
 								{approveMutation.isPending && (
 									<IconLoader2

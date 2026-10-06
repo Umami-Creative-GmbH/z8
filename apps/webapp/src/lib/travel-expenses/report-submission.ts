@@ -3,6 +3,7 @@ import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amo
 import { reportItemMissingRequirements } from "./item-requirements";
 import type { MileageItemView } from "./mileage";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import type { ReceiptExceptionContext } from "./receipt-exception";
 import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
 import {
 	type TripDetailsDraft,
@@ -34,6 +35,10 @@ export interface SubmissionReportFacts {
 		type?: TravelExpenseReportItemType;
 		/** A mileage item's facts, calculated by the server under the report lock (#606). */
 		mileage?: MileageItemView | null;
+		/** Missing-receipt exception of the expense (#604); absent means none. */
+		receiptException?: ReceiptExceptionContext;
+		/** Version of the expense's exception; 0 when it never had one. */
+		receiptExceptionVersion?: number;
 	}[];
 }
 
@@ -45,6 +50,8 @@ export interface ReviewedReportVersions {
 		id: string;
 		version: number;
 		receiptIds: readonly string[];
+		/** The missing-receipt exception version reviewed (#604); absent means 0. */
+		receiptExceptionVersion?: number;
 		/**
 		 * The item's counted amount as reviewed (`reviewedItemAmount`). A
 		 * calculated amount (mileage) can change without an edit, when the
@@ -109,6 +116,7 @@ function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVe
 			seen?.id === item.id &&
 			seen.version === item.version &&
 			sameIds(seen.receiptIds, item.receiptIds) &&
+			(seen.receiptExceptionVersion ?? 0) === (item.receiptExceptionVersion ?? 0) &&
 			(seen.amount === undefined ||
 				seen.amount === reviewedItemAmount(totalsInput(item), report.reimbursementCurrency))
 		);
@@ -125,6 +133,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 				draft: item.draft,
 				receiptCount: item.receiptIds.length,
 				mileage: item.mileage,
+				receiptException: item.receiptException,
 			})),
 			reimbursementCurrency: report.reimbursementCurrency,
 		});
@@ -139,6 +148,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 					draft: item.draft,
 					receiptCount: item.receiptIds.length,
 					mileage: item.mileage,
+					receiptException: item.receiptException,
 				},
 				{ reimbursementCurrency: report.reimbursementCurrency },
 			),

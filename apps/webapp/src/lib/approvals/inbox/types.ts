@@ -129,6 +129,12 @@ export type ApprovalInboxDetailSection =
 			title: string;
 			body: string;
 			tone: "info" | "warning" | "danger";
+	  }
+	/** Expense report missing-receipt exceptions an approval must accept (#604). */
+	| {
+			type: "receipt_exception_acceptance";
+			title: string | ApprovalInboxLocalizedText;
+			items: Array<{ itemId: string; label: string; reason: string }>;
 	  };
 
 export interface ApprovalInboxDetailResult {

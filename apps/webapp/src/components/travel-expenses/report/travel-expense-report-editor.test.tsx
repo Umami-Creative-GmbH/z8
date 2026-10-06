@@ -42,6 +42,16 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
+	withdrawTravelExpenseReportAction: vi.fn(),
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
@@ -61,6 +71,7 @@ function item(overrides: Record<string, unknown> = {}) {
 		currency: "EUR",
 		paidBy: "employee",
 		accountingReference: null,
+		receiptException: { reason: null, version: 0 },
 		receipts: [] as unknown[],
 		...overrides,
 	};
