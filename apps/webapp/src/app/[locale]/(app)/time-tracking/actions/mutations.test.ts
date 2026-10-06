@@ -1,4 +1,3 @@
-import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConflictError } from "@/lib/effect/errors";
 
@@ -72,19 +71,11 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntryRange: vi.fn(),
 }));
 
-vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
-	const { Effect } = await import("effect-v3");
-	return {
-		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) => {
-			return mockState.decideStableTarget(...args) ?? Effect.void;
-		},
-	};
-});
-
-vi.mock("@/lib/approvals/server/time-correction-approvals", async () => {
-	const { Effect } = await import("effect-v3");
-	return { decideTimeCorrectionWithStableTargetEffect: () => Effect.void };
-});
+// The decision is an Effect v3 program until #632; it reaches this action as a Promise.
+vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
+	decideOrdinaryWorkPeriodWithStableTarget: (...args: unknown[]) =>
+		mockState.decideStableTarget(...args),
+}));
 
 vi.mock("./auth", () => ({
 	getCurrentSession: mockState.getCurrentSession,
@@ -126,7 +117,7 @@ describe("approveWorkPeriod", () => {
 		]);
 		mockState.updateSet.mockReturnValue({ where: mockState.updateWhere });
 		mockState.updateWhere.mockResolvedValue(undefined);
-		mockState.decideStableTarget.mockReturnValue(Effect.void);
+		mockState.decideStableTarget.mockResolvedValue(undefined);
 		mockState.findApprovalRequests.mockResolvedValue([
 			{
 				id: "approval-1",
@@ -191,13 +182,11 @@ describe("approveWorkPeriod", () => {
 
 	it("preserves the typed conflict when no pending ordinary target is valid", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.decideStableTarget.mockReturnValue(
-			Effect.fail(
-				new ConflictError({
-					message: "Ordinary work-period decision failed",
-					conflictType: "approval_decision",
-				}),
-			),
+		mockState.decideStableTarget.mockRejectedValue(
+			new ConflictError({
+				message: "Ordinary work-period decision failed",
+				conflictType: "approval_decision",
+			}),
 		);
 
 		const result = await approveWorkPeriod({
@@ -221,8 +210,8 @@ describe("approveWorkPeriod", () => {
 
 	it("redacts non-domain failures", async () => {
 		mockState.findMember.mockResolvedValue({ role: "admin" });
-		mockState.decideStableTarget.mockReturnValue(
-			Effect.fail(new Error("private target mismatch")),
+		mockState.decideStableTarget.mockRejectedValue(
+			new Error("private target mismatch"),
 		);
 
 		const result = await approveWorkPeriod({

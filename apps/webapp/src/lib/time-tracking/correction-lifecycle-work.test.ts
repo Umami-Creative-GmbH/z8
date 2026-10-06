@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ConflictError } from "@/lib/effect/errors";
@@ -123,5 +124,17 @@ describe("adopted correction outcomes", () => {
 	it("passes other errors through", () => {
 		const error = new Error("unexpected");
 		expect(translateCorrectionWorkError(error)).toBe(error);
+	});
+
+	// Effect v4 rejects with the original error, so there is no FiberFailure to unwrap.
+	it("answers a collision an Effect v4 program rejected with", async () => {
+		const rejection = await Effect.runPromise(Effect.die(new CompletedWorkCollisionError())).catch(
+			(error: unknown) => error,
+		);
+
+		expect(translateCorrectionWorkError(rejection)).toMatchObject({
+			_tag: "ConflictError",
+			conflictType: "completed_work_collision",
+		});
 	});
 });

@@ -53,6 +53,7 @@ import {
 	runAutoCompletedTimeCorrectionMaintenance,
 	type TimeCorrectionPostCommitEffects,
 } from "@/lib/approvals/server/time-correction-approvals";
+import { translateLegacyCorrectionWorkError } from "@/lib/approvals/server/v3-boundary";
 import {
 	authorizeTimeCorrectionCategoryChange,
 	lockTrustedTimeCorrectionEmployeeTeamId,
@@ -123,7 +124,6 @@ import {
 	sameCorrectionCommand,
 	type SubmitTimeCorrectionResult,
 	type TimeCorrectionLifecycleReference,
-	translateCorrectionWorkError,
 } from "@/lib/time-tracking/correction-lifecycle-work";
 import { CompletedWorkCollisionError } from "@/lib/time-tracking/close-active-work";
 import type { TimeEntryAppend } from "@/lib/time-tracking/time-entry-append";
@@ -1743,7 +1743,7 @@ export async function submitCorrection(input: {
 		return await submitCorrectionInTransaction(input, requestMetadata);
 	} catch (error) {
 		// Evidence holds and adopted work outcomes answer as typed 409 conflicts.
-		throw translateCorrectionWorkError(translateWorkPeriodEvidenceError(error));
+		throw translateLegacyCorrectionWorkError(translateWorkPeriodEvidenceError(error));
 	}
 }
 

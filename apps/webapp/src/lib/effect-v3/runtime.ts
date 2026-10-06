@@ -4,7 +4,6 @@ import { type Effect, Exit, Layer, ManagedRuntime } from "effect-v3";
 import type { ActionState } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
 import { AuthServiceLive } from "./services/auth.service";
-import { ChangePolicyServiceLive } from "./services/change-policy.service";
 import { CoverageServiceLive } from "./services/coverage.service";
 import { DatabaseServiceLive } from "./services/database.service";
 import { EmailServiceLive } from "./services/email.service";
@@ -33,9 +32,6 @@ const ShiftLayer = ShiftServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 // Layer for ShiftRequestService (depends on DatabaseService)
 const ShiftRequestLayer = ShiftRequestServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
-// Layer for ChangePolicyService (depends on DatabaseService)
-const ChangePolicyLayer = ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
-
 // Layer for WorkPolicyService (depends on DatabaseService)
 const WorkPolicyLayer = WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive));
 
@@ -54,7 +50,6 @@ export const AppLayer = Layer.mergeAll(
 	ManagerLayer,
 	ShiftLayer,
 	ShiftRequestLayer,
-	ChangePolicyLayer,
 	WorkPolicyLayer,
 	SkillLayer,
 	CoverageLayer,

@@ -1,5 +1,5 @@
 import { and, desc, eq, isNull, lte, or } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
 	type changePolicyAssignment as ChangePolicyAssignmentTable,
@@ -54,7 +54,7 @@ export interface ManagerInfo {
 	isPrimary: boolean;
 }
 
-export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
+export class ChangePolicyService extends Context.Service<
 	ChangePolicyService,
 	{
 		/**
@@ -108,12 +108,12 @@ export class ChangePolicyService extends Context.Tag("ChangePolicyService")<
 			DatabaseError
 		>;
 	}
->() {}
+>()("ChangePolicyService") {}
 
 export const ChangePolicyServiceLive = Layer.effect(
 	ChangePolicyService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		/**
 		 * Calculate the age of a work period in days, accounting for timezone
@@ -137,20 +137,18 @@ export const ChangePolicyServiceLive = Layer.effect(
 			employeeId: string,
 			timestamp: Date = new Date(),
 		): Effect.Effect<ResolvedChangePolicy | null, DatabaseError> =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				// Get employee with team info
-				const emp = yield* _(
-					dbService.query("getEmployeeForPolicy", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: eq(employee.id, employeeId),
-							columns: {
-								id: true,
-								teamId: true,
-								organizationId: true,
-							},
-						});
-					}),
-				);
+				const emp = yield* dbService.query("getEmployeeForPolicy", async () => {
+					return await dbService.db.query.employee.findFirst({
+						where: eq(employee.id, employeeId),
+						columns: {
+							id: true,
+							teamId: true,
+							organizationId: true,
+						},
+					});
+				});
 
 				if (!emp) {
 					return null;
@@ -168,8 +166,9 @@ export const ChangePolicyServiceLive = Layer.effect(
 				);
 
 				// 1. Check for employee-specific assignment (priority 2)
-				const employeeAssignment = yield* _(
-					dbService.query("getEmployeePolicyAssignment", async () => {
+				const employeeAssignment = yield* dbService.query(
+					"getEmployeePolicyAssignment",
+					async () => {
 						return await dbService.db.query.changePolicyAssignment.findFirst({
 							where: and(
 								eq(changePolicyAssignment.employeeId, employeeId),
@@ -180,7 +179,7 @@ export const ChangePolicyServiceLive = Layer.effect(
 								policy: true,
 							},
 						});
-					}),
+					},
 				);
 
 				if (employeeAssignment?.policy?.isActive) {
@@ -199,20 +198,18 @@ export const ChangePolicyServiceLive = Layer.effect(
 				// 2. Check for team assignment (priority 1)
 				const teamId = emp.teamId;
 				if (teamId) {
-					const teamAssignment = yield* _(
-						dbService.query("getTeamPolicyAssignment", async () => {
-							return await dbService.db.query.changePolicyAssignment.findFirst({
-								where: and(
-									eq(changePolicyAssignment.teamId, teamId),
-									eq(changePolicyAssignment.assignmentType, "team"),
-									temporalConditions,
-								),
-								with: {
-									policy: true,
-								},
-							});
-						}),
-					);
+					const teamAssignment = yield* dbService.query("getTeamPolicyAssignment", async () => {
+						return await dbService.db.query.changePolicyAssignment.findFirst({
+							where: and(
+								eq(changePolicyAssignment.teamId, teamId),
+								eq(changePolicyAssignment.assignmentType, "team"),
+								temporalConditions,
+							),
+							with: {
+								policy: true,
+							},
+						});
+					});
 
 					if (teamAssignment?.policy?.isActive) {
 						return {
@@ -229,20 +226,18 @@ export const ChangePolicyServiceLive = Layer.effect(
 				}
 
 				// 3. Check for organization assignment (priority 0)
-				const orgAssignment = yield* _(
-					dbService.query("getOrgPolicyAssignment", async () => {
-						return await dbService.db.query.changePolicyAssignment.findFirst({
-							where: and(
-								eq(changePolicyAssignment.organizationId, emp.organizationId),
-								eq(changePolicyAssignment.assignmentType, "organization"),
-								temporalConditions,
-							),
-							with: {
-								policy: true,
-							},
-						});
-					}),
-				);
+				const orgAssignment = yield* dbService.query("getOrgPolicyAssignment", async () => {
+					return await dbService.db.query.changePolicyAssignment.findFirst({
+						where: and(
+							eq(changePolicyAssignment.organizationId, emp.organizationId),
+							eq(changePolicyAssignment.assignmentType, "organization"),
+							temporalConditions,
+						),
+						with: {
+							policy: true,
+						},
+					});
+				});
 
 				if (orgAssignment?.policy?.isActive) {
 					return {
@@ -265,9 +260,9 @@ export const ChangePolicyServiceLive = Layer.effect(
 			resolvePolicy: resolvePolicyImpl,
 
 			getEditCapability: ({ employeeId, workPeriodEndTime, timezone, currentTime }) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Use the helper function directly instead of ChangePolicyService.pipe()
-					const policy = yield* _(resolvePolicyImpl(employeeId, currentTime));
+					const policy = yield* resolvePolicyImpl(employeeId, currentTime);
 
 					// No policy = no restrictions, allow direct edit
 					if (!policy) {
@@ -311,12 +306,60 @@ export const ChangePolicyServiceLive = Layer.effect(
 				}),
 
 			getManagersForApproval: (employeeId, notifyAll) =>
-				Effect.gen(function* (_) {
-					const managers = yield* _(
-						dbService.query("getManagersForApproval", async () => {
-							if (notifyAll) {
-								// Get all managers
-								const result = await dbService.db.query.employeeManagers.findMany({
+				Effect.gen(function* () {
+					const managers = yield* dbService.query("getManagersForApproval", async () => {
+						if (notifyAll) {
+							// Get all managers
+							const result = await dbService.db.query.employeeManagers.findMany({
+								where: eq(employeeManagers.employeeId, employeeId),
+								with: {
+									manager: {
+										columns: {
+											id: true,
+											userId: true,
+											firstName: true,
+											lastName: true,
+										},
+									},
+								},
+							});
+
+							return result.flatMap((r) =>
+								r.manager
+									? [
+											{
+												managerId: r.manager.id,
+												userId: r.manager.userId,
+												name:
+													[r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") ||
+													"Manager",
+												isPrimary: r.isPrimary,
+											},
+										]
+									: [],
+							);
+						} else {
+							// Get only primary manager
+							const result = await dbService.db.query.employeeManagers.findFirst({
+								where: and(
+									eq(employeeManagers.employeeId, employeeId),
+									eq(employeeManagers.isPrimary, true),
+								),
+								with: {
+									manager: {
+										columns: {
+											id: true,
+											userId: true,
+											firstName: true,
+											lastName: true,
+										},
+									},
+								},
+							});
+
+							if (!result?.manager) {
+								// Fallback: get any manager
+								const fallback = await dbService.db.query.employeeManagers.findFirst({
 									where: eq(employeeManagers.employeeId, employeeId),
 									with: {
 										manager: {
@@ -330,151 +373,94 @@ export const ChangePolicyServiceLive = Layer.effect(
 									},
 								});
 
-								return result.flatMap((r) =>
-									r.manager
-										? [
-												{
-													managerId: r.manager.id,
-													userId: r.manager.userId,
-													name:
-														[r.manager.firstName, r.manager.lastName].filter(Boolean).join(" ") ||
-														"Manager",
-													isPrimary: r.isPrimary,
-												},
-											]
-										: [],
-								);
-							} else {
-								// Get only primary manager
-								const result = await dbService.db.query.employeeManagers.findFirst({
-									where: and(
-										eq(employeeManagers.employeeId, employeeId),
-										eq(employeeManagers.isPrimary, true),
-									),
-									with: {
-										manager: {
-											columns: {
-												id: true,
-												userId: true,
-												firstName: true,
-												lastName: true,
-											},
-										},
-									},
-								});
-
-								if (!result?.manager) {
-									// Fallback: get any manager
-									const fallback = await dbService.db.query.employeeManagers.findFirst({
-										where: eq(employeeManagers.employeeId, employeeId),
-										with: {
-											manager: {
-												columns: {
-													id: true,
-													userId: true,
-													firstName: true,
-													lastName: true,
-												},
-											},
-										},
-									});
-
-									if (!fallback?.manager) return [];
-
-									return [
-										{
-											managerId: fallback.manager.id,
-											userId: fallback.manager.userId,
-											name:
-												[fallback.manager.firstName, fallback.manager.lastName]
-													.filter(Boolean)
-													.join(" ") || "Manager",
-											isPrimary: fallback.isPrimary,
-										},
-									];
-								}
+								if (!fallback?.manager) return [];
 
 								return [
 									{
-										managerId: result.manager.id,
-										userId: result.manager.userId,
+										managerId: fallback.manager.id,
+										userId: fallback.manager.userId,
 										name:
-											[result.manager.firstName, result.manager.lastName]
+											[fallback.manager.firstName, fallback.manager.lastName]
 												.filter(Boolean)
 												.join(" ") || "Manager",
-										isPrimary: result.isPrimary,
+										isPrimary: fallback.isPrimary,
 									},
 								];
 							}
-						}),
-					);
+
+							return [
+								{
+									managerId: result.manager.id,
+									userId: result.manager.userId,
+									name:
+										[result.manager.firstName, result.manager.lastName].filter(Boolean).join(" ") ||
+										"Manager",
+									isPrimary: result.isPrimary,
+								},
+							];
+						}
+					});
 
 					return managers;
 				}),
 
 			// Reads for configuration screens
 			getPolicies: (organizationId) =>
-				Effect.gen(function* (_) {
-					const policies = yield* _(
-						dbService.query("getChangePolicies", async () => {
-							return await dbService.db.query.changePolicy.findMany({
-								where: and(
-									eq(changePolicy.organizationId, organizationId),
-									eq(changePolicy.isActive, true),
-								),
-								orderBy: [desc(changePolicy.createdAt)],
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const policies = yield* dbService.query("getChangePolicies", async () => {
+						return await dbService.db.query.changePolicy.findMany({
+							where: and(
+								eq(changePolicy.organizationId, organizationId),
+								eq(changePolicy.isActive, true),
+							),
+							orderBy: [desc(changePolicy.createdAt)],
+						});
+					});
 
 					return policies;
 				}),
 
 			getPolicyById: (id) =>
-				Effect.gen(function* (_) {
-					const policy = yield* _(
-						dbService.query("getChangePolicyById", async () => {
-							return await dbService.db.query.changePolicy.findFirst({
-								where: eq(changePolicy.id, id),
-							});
-						}),
-					);
+				Effect.gen(function* () {
+					const policy = yield* dbService.query("getChangePolicyById", async () => {
+						return await dbService.db.query.changePolicy.findFirst({
+							where: eq(changePolicy.id, id),
+						});
+					});
 
 					return policy ?? null;
 				}),
 
 			getAssignments: (organizationId) =>
-				Effect.gen(function* (_) {
-					const assignments = yield* _(
-						dbService.query("getChangePolicyAssignments", async () => {
-							return await dbService.db.query.changePolicyAssignment.findMany({
-								where: and(
-									eq(changePolicyAssignment.organizationId, organizationId),
-									eq(changePolicyAssignment.isActive, true),
-								),
-								with: {
-									policy: true,
-									team: {
-										columns: {
-											id: true,
-											name: true,
-										},
-									},
-									employee: {
-										columns: {
-											id: true,
-											firstName: true,
-											lastName: true,
-										},
+				Effect.gen(function* () {
+					const assignments = yield* dbService.query("getChangePolicyAssignments", async () => {
+						return await dbService.db.query.changePolicyAssignment.findMany({
+							where: and(
+								eq(changePolicyAssignment.organizationId, organizationId),
+								eq(changePolicyAssignment.isActive, true),
+							),
+							with: {
+								policy: true,
+								team: {
+									columns: {
+										id: true,
+										name: true,
 									},
 								},
-								orderBy: [
-									desc(changePolicyAssignment.priority),
-									desc(changePolicyAssignment.createdAt),
-								],
-							});
-						}),
-					);
+								employee: {
+									columns: {
+										id: true,
+										firstName: true,
+										lastName: true,
+									},
+								},
+							},
+							orderBy: [
+								desc(changePolicyAssignment.priority),
+								desc(changePolicyAssignment.createdAt),
+							],
+						});
+					});
 
 					return assignments;
 				}),

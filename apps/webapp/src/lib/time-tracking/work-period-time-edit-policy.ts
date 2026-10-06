@@ -1,4 +1,4 @@
-import type { EditCapability } from "@/lib/effect-v3/services/change-policy.service";
+import type { EditCapability } from "@/lib/effect/services/change-policy.service";
 import type { WorkLocationType } from "./work-location";
 
 /**

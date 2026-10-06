@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { DatabaseService } from "../database.service";
 import {
@@ -82,16 +82,14 @@ describe("ScheduleComplianceService", () => {
 		);
 
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(ScheduleComplianceService);
-				return yield* _(
-					service.evaluateScheduleWindow({
-						organizationId: "org_1",
-						startDate: new Date("2026-02-17T00:00:00.000Z"),
-						endDate: new Date("2026-02-23T23:59:59.999Z"),
-						timezone: "Europe/Berlin",
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ScheduleComplianceService;
+				return yield* service.evaluateScheduleWindow({
+					organizationId: "org_1",
+					startDate: new Date("2026-02-17T00:00:00.000Z"),
+					endDate: new Date("2026-02-23T23:59:59.999Z"),
+					timezone: "Europe/Berlin",
+				});
 			}).pipe(Effect.provide(layer)),
 		);
 
@@ -130,19 +128,17 @@ describe("ScheduleComplianceService", () => {
 		);
 
 		await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(ScheduleComplianceService);
-				return yield* _(
-					service.recordPublishAcknowledgment({
-						organizationId: "org_1",
-						actorEmployeeId: "emp_1",
-						publishedRangeStart: new Date("2026-02-17T00:00:00.000Z"),
-						publishedRangeEnd: new Date("2026-02-23T23:59:59.999Z"),
-						warningCountTotal: 2,
-						warningCountsByType: { maxHours: 1, restTime: 1 },
-						evaluationFingerprint: "fp-123",
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* ScheduleComplianceService;
+				return yield* service.recordPublishAcknowledgment({
+					organizationId: "org_1",
+					actorEmployeeId: "emp_1",
+					publishedRangeStart: new Date("2026-02-17T00:00:00.000Z"),
+					publishedRangeEnd: new Date("2026-02-23T23:59:59.999Z"),
+					warningCountTotal: 2,
+					warningCountsByType: { maxHours: 1, restTime: 1 },
+					evaluationFingerprint: "fp-123",
+				});
 			}).pipe(Effect.provide(layer)),
 		);
 

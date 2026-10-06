@@ -1719,6 +1719,39 @@ const currentApprover: CurrentApprover = {
 	},
 };
 
+describe("ordinary work-period decision for Effect v4 callers", () => {
+	it("rejects with the typed conflict itself, the way Effect v4 runPromise does", async () => {
+		const decide = (workPeriodApprovals as Record<string, unknown>)
+			.decideOrdinaryWorkPeriodWithStableTarget as (
+			database: unknown,
+			currentEmployee: CurrentApprover,
+			input: unknown,
+			options?: unknown,
+		) => Promise<void>;
+
+		// An empty organization is refused before any read.
+		const rejection = await decide(
+			{},
+			{ ...currentApprover, organizationId: "" },
+			{
+				approvalRequestId: "approval-1",
+				workPeriodId: "period-1",
+				decision: { kind: "approve", reason: null },
+			},
+		).then(
+			() => null,
+			(error: unknown) => error,
+		);
+
+		const { ConflictError } = await import("@/lib/effect/errors");
+		expect(rejection).toBeInstanceOf(ConflictError);
+		expect(rejection).toMatchObject({
+			message: "Ordinary work-period decision failed",
+			conflictType: "approval_decision",
+		});
+	});
+});
+
 const approval = {
 	id: "approval-1",
 	organizationId: "org-1",

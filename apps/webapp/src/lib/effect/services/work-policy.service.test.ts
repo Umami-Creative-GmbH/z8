@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import * as schema from "@/db/schema";
 import { parseInstant } from "@/lib/datetime/temporal-core";
@@ -304,12 +304,12 @@ describe("WorkPolicyService.checkCompliance", () => {
 					totalWeeklyMinutes: 481,
 					breaksTakenMinutes: 0,
 				});
-			}).pipe(Effect.either, Effect.provide(context.layer)),
+			}).pipe(Effect.result, Effect.provide(context.layer)),
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: { _tag: "NotFoundError", entityId: "employee-1" },
+			_tag: "Failure",
+			failure: { _tag: "NotFoundError", entityId: "employee-1" },
 		});
 		expect(context.employeeQueries[0].params).toEqual(
 			expect.arrayContaining(["employee-1", "organization-1"]),

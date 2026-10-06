@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import type { EffectiveWorkPolicy } from "@/lib/effect-v3/services/work-policy.service";
+import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import {
 	applyApprovedAbsencesToDailyRequirements,
 	buildDailyWorkRequirements,

@@ -58,7 +58,6 @@ import {
 	type TimeCorrectionLifecycleReference,
 	type TimeCorrectionSegment,
 	timeCorrectionLifecycleKey,
-	translateCorrectionWorkError,
 } from "@/lib/time-tracking/correction-lifecycle-work";
 import {
 	calculateTimeCorrectionPeriod,
@@ -167,6 +166,7 @@ import type {
 	PendingApprovalRequest,
 } from "./types";
 import { classifyPersistedTimeApprovalRequest } from "./time-approval-classification";
+import { translateLegacyCorrectionWorkError } from "./v3-boundary";
 import {
 	canManageOrganizationTimeApproval,
 	executeOrdinaryWorkPeriodDecisionInTransaction,
@@ -5432,7 +5432,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 		) {
 			throw error;
 		}
-		throw translateCorrectionWorkError(
+		throw translateLegacyCorrectionWorkError(
 			translateWorkPeriodEvidenceError(
 				translateTimeCorrectionDecisionError(error),
 			),

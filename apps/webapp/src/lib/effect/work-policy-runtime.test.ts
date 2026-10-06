@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { DatabaseError } from "@/lib/effect/errors";
 import { DatabaseService } from "./services/database.service";
@@ -75,18 +75,18 @@ describe("getEmployeePolicyEffect", () => {
 		const context = createLayer(cause);
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				getEmployeePolicyEffect("employee-1", "organization-1").pipe(
 					Effect.provide(context.layer),
 				),
 			),
 		);
 
-		expect(result._tag).toBe("Left");
-		if (result._tag === "Left") {
-			expect(result.left).toBeInstanceOf(DatabaseError);
-			expect(result.left.operation).toBe("getEmployeeForPolicy");
-			expect(result.left.cause).toBe(cause);
+		expect(result._tag).toBe("Failure");
+		if (result._tag === "Failure") {
+			expect(result.failure).toBeInstanceOf(DatabaseError);
+			expect(result.failure.operation).toBe("getEmployeeForPolicy");
+			expect(result.failure.cause).toBe(cause);
 		}
 	});
 });

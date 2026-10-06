@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -9,8 +9,8 @@ import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
-} from "@/lib/effect-v3/services/change-policy.service";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+} from "@/lib/effect/services/change-policy.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import {
@@ -203,18 +203,14 @@ export async function getWorkPeriodEditCapability(
 
 	try {
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const policyService = yield* _(ChangePolicyService);
-				const policy = yield* _(
-					policyService.resolvePolicy(currentEmployee.id),
-				);
-				const capability = yield* _(
-					policyService.getEditCapability({
-						employeeId: currentEmployee.id,
-						workPeriodEndTime: selectedWorkPeriod.endTime!,
-						timezone,
-					}),
-				);
+			Effect.gen(function* () {
+				const policyService = yield* ChangePolicyService;
+				const policy = yield* policyService.resolvePolicy(currentEmployee.id);
+				const capability = yield* policyService.getEditCapability({
+					employeeId: currentEmployee.id,
+					workPeriodEndTime: selectedWorkPeriod.endTime!,
+					timezone,
+				});
 
 				return {
 					capability,

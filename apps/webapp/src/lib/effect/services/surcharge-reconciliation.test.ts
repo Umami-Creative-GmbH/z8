@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";

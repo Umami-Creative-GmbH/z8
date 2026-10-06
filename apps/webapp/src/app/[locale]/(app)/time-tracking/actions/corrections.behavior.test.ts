@@ -1,3 +1,4 @@
+// Stubs the approvals module's Effect v3 decisions; it moves to `effect` with them in #632.
 import { Effect } from "effect-v3";
 import { Temporal } from "temporal-polyfill";
 import { beforeEach, describe, expect, it, vi } from "vitest";

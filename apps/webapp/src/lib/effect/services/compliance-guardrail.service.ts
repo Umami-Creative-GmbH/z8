@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
 	type ComplianceAlert,
@@ -70,7 +70,7 @@ export interface ProactiveAlertsInput {
 // SERVICE INTERFACE
 // ============================================
 
-export class ComplianceGuardrailService extends Context.Tag("ComplianceGuardrailService")<
+export class ComplianceGuardrailService extends Context.Service<
 	ComplianceGuardrailService,
 	{
 		/**
@@ -175,7 +175,7 @@ export class ComplianceGuardrailService extends Context.Tag("ComplianceGuardrail
 			includeExpired?: boolean;
 		}) => Effect.Effect<ExceptionWithDetails[], DatabaseError>;
 	}
->() {}
+>()("ComplianceGuardrailService") {}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -205,9 +205,9 @@ function calculateAlertSeverity(
 
 export const ComplianceGuardrailServiceLive = Layer.effect(
 	ComplianceGuardrailService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const workPolicyService = yield* _(WorkPolicyService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const workPolicyService = yield* WorkPolicyService;
 
 		/**
 		 * Get last clock-out time for an employee
@@ -259,8 +259,8 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			employeeId: string;
 			timezone: string;
 		}): Effect.Effect<OvertimeStats, NotFoundError | DatabaseError> =>
-			Effect.gen(function* (_) {
-				const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
+			Effect.gen(function* () {
+				const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
 
 				const now = DateTime.now().setZone(params.timezone);
 				const startOfDay = now.startOf("day").toJSDate();
@@ -271,13 +271,11 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 				const endOfMonth = now.endOf("month").toJSDate();
 
 				// Get worked minutes for each period
-				const [dailyMinutes, weeklyMinutes, monthlyMinutes] = yield* _(
-					Effect.all([
-						getWorkedMinutes(params.employeeId, startOfDay, endOfDay),
-						getWorkedMinutes(params.employeeId, startOfWeek, endOfWeek),
-						getWorkedMinutes(params.employeeId, startOfMonth, endOfMonth),
-					]),
-				);
+				const [dailyMinutes, weeklyMinutes, monthlyMinutes] = yield* Effect.all([
+					getWorkedMinutes(params.employeeId, startOfDay, endOfDay),
+					getWorkedMinutes(params.employeeId, startOfWeek, endOfWeek),
+					getWorkedMinutes(params.employeeId, startOfMonth, endOfMonth),
+				]);
 
 				const regulation = policy?.regulation;
 
@@ -323,9 +321,9 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 		return ComplianceGuardrailService.of({
 			checkRestPeriod: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get effective policy for this employee
-					const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
+					const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
 
 					// If no policy or no rest period requirement, allow clock-in
 					if (!policy?.regulation?.minRestPeriodMinutes) {
@@ -341,7 +339,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					const enforcement = policy.regulation.restPeriodEnforcement ?? "warn";
 
 					// Get last clock-out time
-					const lastClockOutTime = yield* _(getLastClockOut(params.employeeId));
+					const lastClockOutTime = yield* getLastClockOut(params.employeeId);
 
 					// If never clocked out before, allow clock-in
 					if (!lastClockOutTime) {
@@ -369,26 +367,24 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					}
 
 					// Check for valid exception
-					const exceptionResult = yield* _(
-						dbService.query("checkValidException", async () => {
-							const [exception] = await dbService.db
-								.select({ id: complianceException.id })
-								.from(complianceException)
-								.where(
-									and(
-										eq(complianceException.employeeId, params.employeeId),
-										eq(complianceException.exceptionType, "rest_period"),
-										eq(complianceException.status, "approved"),
-										lte(complianceException.validFrom, now.toJSDate()),
-										gte(complianceException.validUntil, now.toJSDate()),
-										eq(complianceException.wasUsed, false),
-									),
-								)
-								.limit(1);
+					const exceptionResult = yield* dbService.query("checkValidException", async () => {
+						const [exception] = await dbService.db
+							.select({ id: complianceException.id })
+							.from(complianceException)
+							.where(
+								and(
+									eq(complianceException.employeeId, params.employeeId),
+									eq(complianceException.exceptionType, "rest_period"),
+									eq(complianceException.status, "approved"),
+									lte(complianceException.validFrom, now.toJSDate()),
+									gte(complianceException.validUntil, now.toJSDate()),
+									eq(complianceException.wasUsed, false),
+								),
+							)
+							.limit(1);
 
-							return exception;
-						}),
-					);
+						return exception;
+					});
 
 					const shortfallMinutes = minRestMinutes - restPeriodMinutes;
 
@@ -431,8 +427,8 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 				}),
 
 			getProactiveAlerts: (input) =>
-				Effect.gen(function* (_) {
-					const policy = yield* _(workPolicyService.getEffectivePolicy(input.employeeId));
+				Effect.gen(function* () {
+					const policy = yield* workPolicyService.getEffectivePolicy(input.employeeId);
 
 					if (!policy?.regulation) {
 						return [];
@@ -443,12 +439,10 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					const alerts: ComplianceAlert[] = [];
 
 					// Get overtime stats
-					const stats = yield* _(
-						calculateOvertimeStatsInternal({
-							employeeId: input.employeeId,
-							timezone: input.timezone,
-						}),
-					);
+					const stats = yield* calculateOvertimeStatsInternal({
+						employeeId: input.employeeId,
+						timezone: input.timezone,
+					});
 
 					// Add current session to daily total for accurate real-time alerts
 					const totalDailyWithSession = stats.daily.workedMinutes + input.currentSessionMinutes;
@@ -552,19 +546,17 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 				}),
 
 			getComplianceStatus: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					// Get policy for alerts
-					const policy = yield* _(workPolicyService.getEffectivePolicy(params.employeeId));
+					const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
 
 					const alerts: ComplianceAlert[] = [];
 
 					// Get overtime stats
-					const stats = yield* _(
-						calculateOvertimeStatsInternal({
-							employeeId: params.employeeId,
-							timezone: params.timezone,
-						}),
-					);
+					const stats = yield* calculateOvertimeStatsInternal({
+						employeeId: params.employeeId,
+						timezone: params.timezone,
+					});
 
 					// Calculate alerts if we have a regulation
 					if (policy?.regulation) {
@@ -596,25 +588,24 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 					}
 
 					// Get pending exceptions count
-					const pendingCount = yield* _(
-						dbService.query("getPendingExceptionsCount", async () => {
-							const result = await dbService.db
-								.select({ count: sql<number>`COUNT(*)` })
-								.from(complianceException)
-								.where(
-									and(
-										eq(complianceException.employeeId, params.employeeId),
-										eq(complianceException.status, "pending"),
-									),
-								);
+					const pendingCount = yield* dbService.query("getPendingExceptionsCount", async () => {
+						const result = await dbService.db
+							.select({ count: sql<number>`COUNT(*)` })
+							.from(complianceException)
+							.where(
+								and(
+									eq(complianceException.employeeId, params.employeeId),
+									eq(complianceException.status, "pending"),
+								),
+							);
 
-							return Number(result[0]?.count) || 0;
-						}),
-					);
+						return Number(result[0]?.count) || 0;
+					});
 
 					// Get unacknowledged violations count
-					const violationsCount = yield* _(
-						dbService.query("getUnacknowledgedViolationsCount", async () => {
+					const violationsCount = yield* dbService.query(
+						"getUnacknowledgedViolationsCount",
+						async () => {
 							const emp = await dbService.db.query.employee.findFirst({
 								where: eq(employee.id, params.employeeId),
 								columns: { organizationId: true },
@@ -634,7 +625,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 								);
 
 							return Number(result[0]?.count) || 0;
-						}),
+						},
 					);
 
 					const hasViolation = alerts.some((a) => a.severity === "violation");
@@ -651,29 +642,27 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			getOvertimeStats: (params) => calculateOvertimeStatsInternal(params),
 
 			requestException: (input) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const now = DateTime.now();
 					const validFrom = now.toJSDate();
 					const validUntil = now.plus({ hours: 24 }).toJSDate();
 
-					const [newException] = yield* _(
-						dbService.query("createException", async () => {
-							return await dbService.db
-								.insert(complianceException)
-								.values({
-									organizationId: input.organizationId,
-									employeeId: input.employeeId,
-									exceptionType: input.exceptionType,
-									status: "pending",
-									reason: input.reason,
-									plannedDurationMinutes: input.plannedDurationMinutes,
-									validFrom,
-									validUntil,
-									createdBy: input.createdBy,
-								})
-								.returning({ id: complianceException.id });
-						}),
-					);
+					const [newException] = yield* dbService.query("createException", async () => {
+						return await dbService.db
+							.insert(complianceException)
+							.values({
+								organizationId: input.organizationId,
+								employeeId: input.employeeId,
+								exceptionType: input.exceptionType,
+								status: "pending",
+								reason: input.reason,
+								plannedDurationMinutes: input.plannedDurationMinutes,
+								validFrom,
+								validUntil,
+								createdBy: input.createdBy,
+							})
+							.returning({ id: complianceException.id });
+					});
 
 					return newException.id;
 				}),
@@ -711,110 +700,98 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 				}),
 
 			markExceptionAsUsed: (params) =>
-				Effect.gen(function* (_) {
-					const updated = yield* _(
-						dbService.query("markExceptionUsed", async () => {
-							const result = await dbService.db
-								.update(complianceException)
-								.set({
-									wasUsed: true,
-									usedAt: new Date(),
-									workPeriodId: params.workPeriodId,
-									actualDurationMinutes: params.actualDurationMinutes,
-								})
-								.where(eq(complianceException.id, params.exceptionId))
-								.returning({ id: complianceException.id });
+				Effect.gen(function* () {
+					const updated = yield* dbService.query("markExceptionUsed", async () => {
+						const result = await dbService.db
+							.update(complianceException)
+							.set({
+								wasUsed: true,
+								usedAt: new Date(),
+								workPeriodId: params.workPeriodId,
+								actualDurationMinutes: params.actualDurationMinutes,
+							})
+							.where(eq(complianceException.id, params.exceptionId))
+							.returning({ id: complianceException.id });
 
-							return result.length > 0;
-						}),
-					);
+						return result.length > 0;
+					});
 
 					if (!updated) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Exception not found",
-									entityType: "complianceException",
-									entityId: params.exceptionId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Exception not found",
+								entityType: "complianceException",
+								entityId: params.exceptionId,
+							}),
 						);
 					}
 				}),
 
 			approveException: (params) =>
-				Effect.gen(function* (_) {
-					const updated = yield* _(
-						dbService.query("approveException", async () => {
-							const result = await dbService.db
-								.update(complianceException)
-								.set({
-									status: "approved",
-									approverId: params.approverId,
-									approvedAt: new Date(),
-								})
-								.where(
-									and(
-										eq(complianceException.id, params.exceptionId),
-										eq(complianceException.organizationId, params.organizationId),
-										ne(complianceException.employeeId, params.approverId),
-										eq(complianceException.status, "pending"),
-									),
-								)
-								.returning({ id: complianceException.id });
+				Effect.gen(function* () {
+					const updated = yield* dbService.query("approveException", async () => {
+						const result = await dbService.db
+							.update(complianceException)
+							.set({
+								status: "approved",
+								approverId: params.approverId,
+								approvedAt: new Date(),
+							})
+							.where(
+								and(
+									eq(complianceException.id, params.exceptionId),
+									eq(complianceException.organizationId, params.organizationId),
+									ne(complianceException.employeeId, params.approverId),
+									eq(complianceException.status, "pending"),
+								),
+							)
+							.returning({ id: complianceException.id });
 
-							return result.length > 0;
-						}),
-					);
+						return result.length > 0;
+					});
 
 					if (!updated) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Exception not found or already processed",
-									entityType: "complianceException",
-									entityId: params.exceptionId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Exception not found or already processed",
+								entityType: "complianceException",
+								entityId: params.exceptionId,
+							}),
 						);
 					}
 				}),
 
 			rejectException: (params) =>
-				Effect.gen(function* (_) {
-					const updated = yield* _(
-						dbService.query("rejectException", async () => {
-							const result = await dbService.db
-								.update(complianceException)
-								.set({
-									status: "rejected",
-									approverId: params.approverId,
-									rejectedAt: new Date(),
-									rejectionReason: params.reason,
-								})
-								.where(
-									and(
-										eq(complianceException.id, params.exceptionId),
-										eq(complianceException.organizationId, params.organizationId),
-										ne(complianceException.employeeId, params.approverId),
-										eq(complianceException.status, "pending"),
-									),
-								)
-								.returning({ id: complianceException.id });
+				Effect.gen(function* () {
+					const updated = yield* dbService.query("rejectException", async () => {
+						const result = await dbService.db
+							.update(complianceException)
+							.set({
+								status: "rejected",
+								approverId: params.approverId,
+								rejectedAt: new Date(),
+								rejectionReason: params.reason,
+							})
+							.where(
+								and(
+									eq(complianceException.id, params.exceptionId),
+									eq(complianceException.organizationId, params.organizationId),
+									ne(complianceException.employeeId, params.approverId),
+									eq(complianceException.status, "pending"),
+								),
+							)
+							.returning({ id: complianceException.id });
 
-							return result.length > 0;
-						}),
-					);
+						return result.length > 0;
+					});
 
 					if (!updated) {
-						yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Exception not found or already processed",
-									entityType: "complianceException",
-									entityId: params.exceptionId,
-								}),
-							),
+						yield* Effect.fail(
+							new NotFoundError({
+								message: "Exception not found or already processed",
+								entityType: "complianceException",
+								entityId: params.exceptionId,
+							}),
 						);
 					}
 				}),
