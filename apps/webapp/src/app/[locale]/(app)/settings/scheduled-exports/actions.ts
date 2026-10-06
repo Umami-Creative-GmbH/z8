@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, desc, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import {
@@ -19,9 +19,9 @@ import type {
 } from "@/db/schema/scheduled-export";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	calculateNextExecution,
 	getNextExecutions,
@@ -120,22 +120,20 @@ export interface ExecutionHistoryItem {
 export async function createScheduledExportAction(
 	input: CreateScheduledExportInput,
 ): Promise<ServerActionResult<ScheduledExportSummary>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "create",
+				}),
 			);
 		}
 
@@ -173,36 +171,34 @@ export async function createScheduledExportAction(
 		const nextExecutionAt = calculateNextExecution(scheduleConfig, DateTime.utc());
 
 		// Create schedule
-		const schedule = yield* _(
-			Effect.promise(async () => {
-				const [created] = await db
-					.insert(scheduledExport)
-					.values({
-						organizationId: input.organizationId,
-						name: input.name,
-						description: input.description,
-						scheduleType: input.scheduleType,
-						cronExpression: input.cronExpression,
-						timezone: input.timezone || "UTC",
-						reportType: input.reportType,
-						reportConfig: input.reportConfig,
-						payrollConfigId: input.payrollConfigId,
-						filters: input.filters,
-						dateRangeStrategy: input.dateRangeStrategy,
-						customOffset: input.customOffset,
-						deliveryMethod: input.deliveryMethod,
-						emailRecipients: input.emailRecipients,
-						emailSubjectTemplate: input.emailSubjectTemplate,
-						useOrgS3Config: input.useOrgS3Config ?? true,
-						customS3Prefix: input.customS3Prefix,
-						nextExecutionAt: nextExecutionAt.toJSDate(),
-						createdBy: session.user.id,
-					})
-					.returning();
+		const schedule = yield* Effect.promise(async () => {
+			const [created] = await db
+				.insert(scheduledExport)
+				.values({
+					organizationId: input.organizationId,
+					name: input.name,
+					description: input.description,
+					scheduleType: input.scheduleType,
+					cronExpression: input.cronExpression,
+					timezone: input.timezone || "UTC",
+					reportType: input.reportType,
+					reportConfig: input.reportConfig,
+					payrollConfigId: input.payrollConfigId,
+					filters: input.filters,
+					dateRangeStrategy: input.dateRangeStrategy,
+					customOffset: input.customOffset,
+					deliveryMethod: input.deliveryMethod,
+					emailRecipients: input.emailRecipients,
+					emailSubjectTemplate: input.emailSubjectTemplate,
+					useOrgS3Config: input.useOrgS3Config ?? true,
+					customS3Prefix: input.customS3Prefix,
+					nextExecutionAt: nextExecutionAt.toJSDate(),
+					createdBy: session.user.id,
+				})
+				.returning();
 
-				return created;
-			}),
-		);
+			return created;
+		});
 
 		revalidatePath("/settings/scheduled-exports");
 
@@ -233,33 +229,29 @@ export async function createScheduledExportAction(
 export async function getScheduledExportsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<ScheduledExportSummary[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "read",
+				}),
 			);
 		}
 
-		const schedules = yield* _(
-			Effect.promise(async () => {
-				return db.query.scheduledExport.findMany({
-					where: eq(scheduledExport.organizationId, organizationId),
-					orderBy: [desc(scheduledExport.createdAt)],
-				});
-			}),
-		);
+		const schedules = yield* Effect.promise(async () => {
+			return db.query.scheduledExport.findMany({
+				where: eq(scheduledExport.organizationId, organizationId),
+				orderBy: [desc(scheduledExport.createdAt)],
+			});
+		});
 
 		return schedules.map((s) => ({
 			id: s.id,
@@ -285,35 +277,31 @@ export async function getScheduledExportAction(
 	organizationId: string,
 	scheduleId: string,
 ): Promise<ServerActionResult<ScheduledExport | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "read",
+				}),
 			);
 		}
 
-		const schedule = yield* _(
-			Effect.promise(async () => {
-				return db.query.scheduledExport.findFirst({
-					where: and(
-						eq(scheduledExport.id, scheduleId),
-						eq(scheduledExport.organizationId, organizationId),
-					),
-				});
-			}),
-		);
+		const schedule = yield* Effect.promise(async () => {
+			return db.query.scheduledExport.findFirst({
+				where: and(
+					eq(scheduledExport.id, scheduleId),
+					eq(scheduledExport.organizationId, organizationId),
+				),
+			});
+		});
 
 		return schedule || null;
 	});
@@ -328,22 +316,20 @@ export async function getScheduledExportAction(
 export async function updateScheduledExportAction(
 	input: UpdateScheduledExportInput,
 ): Promise<ServerActionResult<ScheduledExportSummary>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "update",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "update",
+				}),
 			);
 		}
 
@@ -384,12 +370,10 @@ export async function updateScheduledExportAction(
 			input.cronExpression !== undefined ||
 			input.timezone !== undefined
 		) {
-			const existing = yield* _(
-				Effect.promise(() =>
-					db.query.scheduledExport.findFirst({
-						where: eq(scheduledExport.id, input.id),
-					}),
-				),
+			const existing = yield* Effect.promise(() =>
+				db.query.scheduledExport.findFirst({
+					where: eq(scheduledExport.id, input.id),
+				}),
 			);
 
 			if (existing) {
@@ -403,22 +387,20 @@ export async function updateScheduledExportAction(
 			}
 		}
 
-		const schedule = yield* _(
-			Effect.promise(async () => {
-				const [updated] = await db
-					.update(scheduledExport)
-					.set(updates)
-					.where(
-						and(
-							eq(scheduledExport.id, input.id),
-							eq(scheduledExport.organizationId, input.organizationId),
-						),
-					)
-					.returning();
+		const schedule = yield* Effect.promise(async () => {
+			const [updated] = await db
+				.update(scheduledExport)
+				.set(updates)
+				.where(
+					and(
+						eq(scheduledExport.id, input.id),
+						eq(scheduledExport.organizationId, input.organizationId),
+					),
+				)
+				.returning();
 
-				return updated;
-			}),
-		);
+			return updated;
+		});
 
 		if (!schedule) {
 			throw new Error("Scheduled export not found");
@@ -454,37 +436,33 @@ export async function deleteScheduledExportAction(
 	organizationId: string,
 	scheduleId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "delete",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "delete",
+				}),
 			);
 		}
 
-		yield* _(
-			Effect.promise(async () => {
-				await db
-					.delete(scheduledExport)
-					.where(
-						and(
-							eq(scheduledExport.id, scheduleId),
-							eq(scheduledExport.organizationId, organizationId),
-						),
-					);
-			}),
-		);
+		yield* Effect.promise(async () => {
+			await db
+				.delete(scheduledExport)
+				.where(
+					and(
+						eq(scheduledExport.id, scheduleId),
+						eq(scheduledExport.organizationId, organizationId),
+					),
+				);
+		});
 
 		revalidatePath("/settings/scheduled-exports");
 	});
@@ -517,37 +495,33 @@ export async function getExecutionHistoryAction(
 	scheduleId: string,
 	limit = 50,
 ): Promise<ServerActionResult<ExecutionHistoryItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export_execution",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export_execution",
+					action: "read",
+				}),
 			);
 		}
 
-		const executions = yield* _(
-			Effect.promise(async () => {
-				return db.query.scheduledExportExecution.findMany({
-					where: and(
-						eq(scheduledExportExecution.scheduledExportId, scheduleId),
-						eq(scheduledExportExecution.organizationId, organizationId),
-					),
-					orderBy: [desc(scheduledExportExecution.triggeredAt)],
-					limit,
-				});
-			}),
-		);
+		const executions = yield* Effect.promise(async () => {
+			return db.query.scheduledExportExecution.findMany({
+				where: and(
+					eq(scheduledExportExecution.scheduledExportId, scheduleId),
+					eq(scheduledExportExecution.organizationId, organizationId),
+				),
+				orderBy: [desc(scheduledExportExecution.triggeredAt)],
+				limit,
+			});
+		});
 
 		return executions.map((e) => ({
 			id: e.id,
@@ -577,7 +551,7 @@ export async function previewNextExecutionsAction(
 	timezone: string,
 	count = 5,
 ): Promise<ServerActionResult<string[]>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Validate cron expression if provided
 		if (scheduleType === "cron" && cronExpression) {
 			try {
@@ -610,48 +584,44 @@ export async function runScheduledExportNowAction(
 	organizationId: string,
 	scheduleId: string,
 ): Promise<ServerActionResult<{ executionId: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "execute",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "execute",
+				}),
 			);
 		}
 
 		// Get the schedule
-		const schedule = yield* _(
-			Effect.promise(async () => {
-				return db.query.scheduledExport.findFirst({
-					where: and(
-						eq(scheduledExport.id, scheduleId),
-						eq(scheduledExport.organizationId, organizationId),
-					),
-				});
-			}),
-		);
+		const schedule = yield* Effect.promise(async () => {
+			return db.query.scheduledExport.findFirst({
+				where: and(
+					eq(scheduledExport.id, scheduleId),
+					eq(scheduledExport.organizationId, organizationId),
+				),
+			});
+		});
 
 		if (!schedule) {
 			throw new Error("Scheduled export not found");
 		}
 
 		// Import and run the orchestrator
-		const { ScheduledExportOrchestrator } = yield* _(
-			Effect.promise(() => import("@/lib/scheduled-exports/application/orchestrator")),
+		const { ScheduledExportOrchestrator } = yield* Effect.promise(
+			() => import("@/lib/scheduled-exports/application/orchestrator"),
 		);
 
 		const orchestrator = new ScheduledExportOrchestrator();
-		yield* _(Effect.promise(() => orchestrator.executeSchedule(schedule, DateTime.utc())));
+		yield* Effect.promise(() => orchestrator.executeSchedule(schedule, DateTime.utc()));
 
 		// Return a placeholder execution ID (the orchestrator creates one internally)
 		return { executionId: "started" };
@@ -678,72 +648,64 @@ export interface FilterOptions {
 export async function getFilterOptionsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<FilterOptions>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "read",
+				}),
 			);
 		}
 
 		// Import employee, team, project tables
-		const { employee, team, project, user } = yield* _(Effect.promise(() => import("@/db")));
+		const { employee, team, project, user } = yield* Effect.promise(() => import("@/db"));
 
 		// Fetch employees
-		const employees = yield* _(
-			Effect.promise(async () => {
-				return db
-					.select({
-						id: employee.id,
-						firstName: user.firstName,
-						lastName: user.lastName,
-						employeeNumber: employee.employeeNumber,
-					})
-					.from(employee)
-					.innerJoin(user, eq(employee.userId, user.id))
-					.where(eq(employee.organizationId, organizationId))
-					.orderBy(asc(user.lastName), asc(user.firstName));
-			}),
-		);
+		const employees = yield* Effect.promise(async () => {
+			return db
+				.select({
+					id: employee.id,
+					firstName: user.firstName,
+					lastName: user.lastName,
+					employeeNumber: employee.employeeNumber,
+				})
+				.from(employee)
+				.innerJoin(user, eq(employee.userId, user.id))
+				.where(eq(employee.organizationId, organizationId))
+				.orderBy(asc(user.lastName), asc(user.firstName));
+		});
 
 		// Fetch teams
-		const teams = yield* _(
-			Effect.promise(async () => {
-				return db.query.team.findMany({
-					where: eq(team.organizationId, organizationId),
-					columns: {
-						id: true,
-						name: true,
-					},
-					orderBy: (t, { asc }) => [asc(t.name)],
-				});
-			}),
-		);
+		const teams = yield* Effect.promise(async () => {
+			return db.query.team.findMany({
+				where: eq(team.organizationId, organizationId),
+				columns: {
+					id: true,
+					name: true,
+				},
+				orderBy: (t, { asc }) => [asc(t.name)],
+			});
+		});
 
 		// Fetch projects
-		const projects = yield* _(
-			Effect.promise(async () => {
-				return db.query.project.findMany({
-					where: eq(project.organizationId, organizationId),
-					columns: {
-						id: true,
-						name: true,
-					},
-					orderBy: (p, { asc }) => [asc(p.name)],
-				});
-			}),
-		);
+		const projects = yield* Effect.promise(async () => {
+			return db.query.project.findMany({
+				where: eq(project.organizationId, organizationId),
+				columns: {
+					id: true,
+					name: true,
+				},
+				orderBy: (p, { asc }) => [asc(p.name)],
+			});
+		});
 
 		return {
 			employees: employees.map((employeeRow) => ({
@@ -779,38 +741,34 @@ export interface PayrollConfigSummary {
 export async function getPayrollConfigsAction(
 	organizationId: string,
 ): Promise<ServerActionResult<PayrollConfigSummary[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "scheduled_export",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "scheduled_export",
+					action: "read",
+				}),
 			);
 		}
 
-		const configs = yield* _(
-			Effect.promise(async () => {
-				return db.query.payrollExportConfig.findMany({
-					where: and(
-						eq(payrollExportConfig.organizationId, organizationId),
-						eq(payrollExportConfig.isActive, true),
-					),
-					with: {
-						format: true,
-					},
-				});
-			}),
-		);
+		const configs = yield* Effect.promise(async () => {
+			return db.query.payrollExportConfig.findMany({
+				where: and(
+					eq(payrollExportConfig.organizationId, organizationId),
+					eq(payrollExportConfig.isActive, true),
+				),
+				with: {
+					format: true,
+				},
+			});
+		});
 
 		const typedConfigs = configs as unknown as PayrollExportConfigWithFormat[];
 

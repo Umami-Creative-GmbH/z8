@@ -1,17 +1,17 @@
 "use server";
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
-import { safeAction } from "@/lib/effect-v3/runtime";
+import { safeAction } from "@/lib/effect/runtime";
 import {
 	type CoverageRuleWithRelations,
 	CoverageService,
 	type CoverageSettingsData,
 	type TargetCoverageGap,
-} from "@/lib/effect-v3/services/coverage.service";
+} from "@/lib/effect/services/coverage.service";
 import { resolveScheduleDateRange } from "@/lib/scheduling/schedule-local-input";
 import {
 	canManageScopedSchedulingSubarea,
@@ -58,9 +58,9 @@ export async function getCoverageRules(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(coverageService.getCoverageRules(accessContext.organizationId, subareaId));
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.getCoverageRules(accessContext.organizationId, subareaId);
 	});
 
 	const result = await safeAction(effect);
@@ -85,9 +85,9 @@ export async function getCoverageRule(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(coverageService.getCoverageRuleById(ruleId));
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.getCoverageRuleById(ruleId);
 	});
 
 	const result = await safeAction(effect);
@@ -135,20 +135,18 @@ export async function createCoverageRule(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(
-			coverageService.createCoverageRule({
-				organizationId: accessContext.organizationId,
-				subareaId: validated.data.subareaId,
-				dayOfWeek: validated.data.dayOfWeek,
-				startTime: validated.data.startTime,
-				endTime: validated.data.endTime,
-				minimumStaffCount: validated.data.minimumStaffCount,
-				priority: validated.data.priority ?? 0,
-				createdBy: accessContext.authContext.user.id,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.createCoverageRule({
+			organizationId: accessContext.organizationId,
+			subareaId: validated.data.subareaId,
+			dayOfWeek: validated.data.dayOfWeek,
+			startTime: validated.data.startTime,
+			endTime: validated.data.endTime,
+			minimumStaffCount: validated.data.minimumStaffCount,
+			priority: validated.data.priority ?? 0,
+			createdBy: accessContext.authContext.user.id,
+		});
 	});
 
 	const result = await safeAction(effect);
@@ -196,14 +194,12 @@ export async function updateCoverageRule(
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(
-			coverageService.updateCoverageRule(ruleId, {
-				...validated.data,
-				updatedBy: accessContext.authContext.user.id,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.updateCoverageRule(ruleId, {
+			...validated.data,
+			updatedBy: accessContext.authContext.user.id,
+		});
 	});
 
 	const result = await safeAction(effect);
@@ -241,9 +237,9 @@ export async function deleteCoverageRule(ruleId: string): Promise<ServerActionRe
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(coverageService.deleteCoverageRule(ruleId));
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.deleteCoverageRule(ruleId);
 	});
 
 	const result = await safeAction(effect);
@@ -284,17 +280,15 @@ export async function getTargetHeatmapData(params: {
 			) ?? [...accessContext.manageableSubareaIds])
 		: params.subareaIds;
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(
-			coverageService.getTargetHeatmapData({
-				organizationId: accessContext.organizationId,
-				startDate: dateFromInstant(range.start),
-				endDate: dateFromInstant(range.endExclusive),
-				timezone: currentOrganization?.timezone ?? "UTC",
-				subareaIds: scopedSubareaIds,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.getTargetHeatmapData({
+			organizationId: accessContext.organizationId,
+			startDate: dateFromInstant(range.start),
+			endDate: dateFromInstant(range.endExclusive),
+			timezone: currentOrganization?.timezone ?? "UTC",
+			subareaIds: scopedSubareaIds,
+		});
 	});
 
 	return safeAction(effect);
@@ -316,16 +310,14 @@ export async function validateScheduleForPublish(params: {
 		columns: { timezone: true },
 	});
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(
-			coverageService.validateScheduleCanPublish({
-				organizationId: accessContext.organizationId,
-				startDate: params.startDate,
-				endDate: params.endDate,
-				timezone: currentOrganization?.timezone ?? "UTC",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.validateScheduleCanPublish({
+			organizationId: accessContext.organizationId,
+			startDate: params.startDate,
+			endDate: params.endDate,
+			timezone: currentOrganization?.timezone ?? "UTC",
+		});
 	});
 
 	return safeAction(effect);
@@ -344,9 +336,9 @@ export async function getCoverageSettings(): Promise<ServerActionResult<Coverage
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(coverageService.getCoverageSettings(accessContext.organizationId));
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.getCoverageSettings(accessContext.organizationId);
 	});
 
 	return safeAction(effect);
@@ -363,14 +355,12 @@ export async function updateCoverageSettings(settings: {
 		return { success: false, error: "Unauthorized" };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const coverageService = yield* _(CoverageService);
-		return yield* _(
-			coverageService.updateCoverageSettings(accessContext.organizationId, {
-				allowPublishWithGaps: settings.allowPublishWithGaps,
-				updatedBy: accessContext.authContext.user.id,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const coverageService = yield* CoverageService;
+		return yield* coverageService.updateCoverageSettings(accessContext.organizationId, {
+			allowPublishWithGaps: settings.allowPublishWithGaps,
+			updatedBy: accessContext.authContext.user.id,
+		});
 	});
 
 	const result = await safeAction(effect);

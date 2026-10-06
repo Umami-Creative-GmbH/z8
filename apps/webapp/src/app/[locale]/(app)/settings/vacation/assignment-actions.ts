@@ -1,13 +1,13 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, team, vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	filterItemsToManagedEmployees,
@@ -30,34 +30,33 @@ import {
 export async function getVacationPolicies(
 	organizationId: string,
 ): Promise<ServerActionResult<any[]>> {
-	const effect = Effect.gen(function* (_) {
-		yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "getVacationPoliciesForAssignment:actor",
-			}),
-		);
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getVacationPoliciesForAssignment:actor",
+		});
+		const dbService = yield* DatabaseService;
 
 		// Step 3: Get policies from database
-		const policies = yield* _(
-			dbService.query("getVacationPolicies", async () => {
+		const policies = yield* dbService
+			.query("getVacationPolicies", async () => {
 				return await dbService.db
 					.select()
 					.from(vacationAllowance)
 					.where(eq(vacationAllowance.organizationId, organizationId))
 					.orderBy(vacationAllowance.startDate);
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch vacation policies",
-						operation: "select",
-						table: "vacation_allowance",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to fetch vacation policies",
+							operation: "select",
+							table: "vacation_allowance",
+							cause: error,
+						}),
+				),
+			);
 
 		return policies;
 	}).pipe(Effect.provide(AppLayer));
@@ -71,19 +70,17 @@ export async function getVacationPolicies(
 export async function getVacationPolicyAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<any[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "getVacationPolicyAssignments:actor",
-			}),
-		);
-		const dbService = yield* _(DatabaseService);
-		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getVacationPolicyAssignments:actor",
+		});
+		const dbService = yield* DatabaseService;
+		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
 
 		// Step 3: Get assignments from database with policy, team, and employee info
-		const assignments = yield* _(
-			dbService.query("getVacationPolicyAssignments", async () => {
+		const assignments = yield* dbService
+			.query("getVacationPolicyAssignments", async () => {
 				return await dbService.db
 					.select({
 						id: vacationPolicyAssignment.id,
@@ -130,17 +127,18 @@ export async function getVacationPolicyAssignments(
 						),
 					)
 					.orderBy(vacationAllowance.startDate);
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch vacation policy assignments",
-						operation: "select",
-						table: "vacation_policy_assignment",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to fetch vacation policy assignments",
+							operation: "select",
+							table: "vacation_policy_assignment",
+							cause: error,
+						}),
+				),
+			);
 		const normalizedAssignments = assignments.map((assignment) => {
 			const assignmentEmployee = assignment.employee?.id
 				? { ...assignment.employee, id: assignment.employee.id }
@@ -174,10 +172,10 @@ export async function createVacationPolicyAssignment(data: {
 	teamId?: string;
 	employeeId?: string;
 }): Promise<ServerActionResult<any>> {
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const policy = yield* _(
-			dbService.query("verifyPolicy", async () => {
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const policy = yield* dbService
+			.query("verifyPolicy", async () => {
 				const [p] = await dbService.db
 					.select()
 					.from(vacationAllowance)
@@ -189,61 +187,53 @@ export async function createVacationPolicyAssignment(data: {
 				}
 
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Vacation policy not found",
-						entityType: "vacation_policy",
-						entityId: data.policyId,
-					}),
-			),
-		);
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId: policy.organizationId,
-				queryName: "createVacationPolicyAssignment:actor",
-			}),
-		);
-		yield* _(
-			requireSettingsActorEmployeeAssignmentAccess(actor, data.assignmentType, {
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Vacation policy not found",
+							entityType: "vacation_policy",
+							entityId: data.policyId,
+						}),
+				),
+			);
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId: policy.organizationId,
+			queryName: "createVacationPolicyAssignment:actor",
+		});
+		yield* requireSettingsActorEmployeeAssignmentAccess(actor, data.assignmentType, {
+			message: "Insufficient permissions",
+			resource: "vacation_policy_assignment",
+			action: "create",
+		});
+		yield* validateAssignmentTargetFields(data.assignmentType, data);
+
+		if (data.assignmentType !== "employee") {
+			yield* requireOrgAdminEmployeeSettingsAccess(actor, {
 				message: "Insufficient permissions",
 				resource: "vacation_policy_assignment",
 				action: "create",
-			}),
-		);
-		yield* _(validateAssignmentTargetFields(data.assignmentType, data));
-
-		if (data.assignmentType !== "employee") {
-			yield* _(
-				requireOrgAdminEmployeeSettingsAccess(actor, {
-					message: "Insufficient permissions",
-					resource: "vacation_policy_assignment",
-					action: "create",
-				}),
-			);
+			});
 		}
 
 		if (data.employeeId) {
-			const targetEmployee = yield* _(
-				getTargetEmployee(data.employeeId, "createVacationPolicyAssignment:getTargetEmployee"),
+			const targetEmployee = yield* getTargetEmployee(
+				data.employeeId,
+				"createVacationPolicyAssignment:getTargetEmployee",
 			);
-			yield* _(
-				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-					message: "Insufficient permissions",
-					resource: "vacation_policy_assignment",
-					action: "create",
-				}),
-			);
+			yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				message: "Insufficient permissions",
+				resource: "vacation_policy_assignment",
+				action: "create",
+			});
 		}
 
 		if (data.assignmentType === "team" && data.teamId) {
-			yield* _(
-				getOrganizationTeam(
-					data.teamId,
-					actor.organizationId,
-					"createVacationPolicyAssignment:getOrganizationTeam",
-				),
+			yield* getOrganizationTeam(
+				data.teamId,
+				actor.organizationId,
+				"createVacationPolicyAssignment:getOrganizationTeam",
 			);
 		}
 
@@ -252,8 +242,8 @@ export async function createVacationPolicyAssignment(data: {
 			data.assignmentType === "organization" ? 0 : data.assignmentType === "team" ? 1 : 2;
 
 		// Step 7: Create the assignment
-		const newAssignment = yield* _(
-			dbService.query("createVacationPolicyAssignment", async () => {
+		const newAssignment = yield* dbService
+			.query("createVacationPolicyAssignment", async () => {
 				const [assignment] = await dbService.db
 					.insert(vacationPolicyAssignment)
 					.values({
@@ -268,17 +258,18 @@ export async function createVacationPolicyAssignment(data: {
 					.returning();
 
 				return assignment;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to create vacation policy assignment",
-						operation: "insert",
-						table: "vacation_policy_assignment",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to create vacation policy assignment",
+							operation: "insert",
+							table: "vacation_policy_assignment",
+							cause: error,
+						}),
+				),
+			);
 
 		return newAssignment;
 	}).pipe(Effect.provide(AppLayer));
@@ -292,50 +283,47 @@ export async function createVacationPolicyAssignment(data: {
 export async function getEmployeePolicyAssignment(
 	employeeId: string,
 ): Promise<ServerActionResult<any | null>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "getEmployeePolicyAssignment:actor" }),
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "getEmployeePolicyAssignment:actor",
+		});
+		const targetEmployee = yield* getTargetEmployee(
+			employeeId,
+			"getEmployeePolicyAssignment:getTargetEmployee",
 		);
-		const targetEmployee = yield* _(
-			getTargetEmployee(employeeId, "getEmployeePolicyAssignment:getTargetEmployee"),
-		);
-		yield* _(
-			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-				message: "Insufficient permissions",
-				resource: "vacation_policy_assignment",
-				action: "read",
-			}),
-		);
-		const dbService = yield* _(DatabaseService);
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+			message: "Insufficient permissions",
+			resource: "vacation_policy_assignment",
+			action: "read",
+		});
+		const dbService = yield* DatabaseService;
 
-		const assignment = yield* _(
-			dbService.query("getEmployeePolicyAssignment", async () => {
-				const [result] = await dbService.db
-					.select({
-						id: vacationPolicyAssignment.id,
-						policyId: vacationPolicyAssignment.policyId,
-						policy: {
-							id: vacationAllowance.id,
-							name: vacationAllowance.name,
-							startDate: vacationAllowance.startDate,
-							validUntil: vacationAllowance.validUntil,
-							defaultAnnualDays: vacationAllowance.defaultAnnualDays,
-						},
-					})
-					.from(vacationPolicyAssignment)
-					.innerJoin(vacationAllowance, eq(vacationPolicyAssignment.policyId, vacationAllowance.id))
-					.where(
-						and(
-							eq(vacationPolicyAssignment.employeeId, employeeId),
-							eq(vacationPolicyAssignment.assignmentType, "employee"),
-							eq(vacationPolicyAssignment.isActive, true),
-						),
-					)
-					.limit(1);
+		const assignment = yield* dbService.query("getEmployeePolicyAssignment", async () => {
+			const [result] = await dbService.db
+				.select({
+					id: vacationPolicyAssignment.id,
+					policyId: vacationPolicyAssignment.policyId,
+					policy: {
+						id: vacationAllowance.id,
+						name: vacationAllowance.name,
+						startDate: vacationAllowance.startDate,
+						validUntil: vacationAllowance.validUntil,
+						defaultAnnualDays: vacationAllowance.defaultAnnualDays,
+					},
+				})
+				.from(vacationPolicyAssignment)
+				.innerJoin(vacationAllowance, eq(vacationPolicyAssignment.policyId, vacationAllowance.id))
+				.where(
+					and(
+						eq(vacationPolicyAssignment.employeeId, employeeId),
+						eq(vacationPolicyAssignment.assignmentType, "employee"),
+						eq(vacationPolicyAssignment.isActive, true),
+					),
+				)
+				.limit(1);
 
-				return result || null;
-			}),
-		);
+			return result || null;
+		});
 
 		return assignment;
 	}).pipe(Effect.provide(AppLayer));
@@ -350,43 +338,40 @@ export async function setEmployeePolicyAssignment(
 	employeeId: string,
 	policyId: string | null,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "setEmployeePolicyAssignment:actor" }),
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "setEmployeePolicyAssignment:actor",
+		});
+		const targetEmployee = yield* getTargetEmployee(
+			employeeId,
+			"setEmployeePolicyAssignment:getTargetEmployee",
 		);
-		const targetEmployee = yield* _(
-			getTargetEmployee(employeeId, "setEmployeePolicyAssignment:getTargetEmployee"),
-		);
-		yield* _(
-			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-				message: "Insufficient permissions",
-				resource: "vacation_policy_assignment",
-				action: "update",
-			}),
-		);
-		const dbService = yield* _(DatabaseService);
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+			message: "Insufficient permissions",
+			resource: "vacation_policy_assignment",
+			action: "update",
+		});
+		const dbService = yield* DatabaseService;
 
 		// First, deactivate any existing employee assignment
-		yield* _(
-			dbService.query("deactivateExisting", async () => {
-				await dbService.db
-					.update(vacationPolicyAssignment)
-					.set({ isActive: false })
-					.where(
-						and(
-							eq(vacationPolicyAssignment.employeeId, employeeId),
-							eq(vacationPolicyAssignment.assignmentType, "employee"),
-							eq(vacationPolicyAssignment.isActive, true),
-						),
-					);
-			}),
-		);
+		yield* dbService.query("deactivateExisting", async () => {
+			await dbService.db
+				.update(vacationPolicyAssignment)
+				.set({ isActive: false })
+				.where(
+					and(
+						eq(vacationPolicyAssignment.employeeId, employeeId),
+						eq(vacationPolicyAssignment.assignmentType, "employee"),
+						eq(vacationPolicyAssignment.isActive, true),
+					),
+				);
+		});
 
 		// If policyId provided, create new assignment
 		if (policyId) {
 			// Verify policy exists and belongs to same org
-			const _existingPolicy = yield* _(
-				dbService.query("verifyPolicy", async () => {
+			const _existingPolicy = yield* dbService
+				.query("verifyPolicy", async () => {
 					const [p] = await dbService.db
 						.select()
 						.from(vacationAllowance)
@@ -403,20 +388,21 @@ export async function setEmployeePolicyAssignment(
 					}
 
 					return p;
-				}),
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Vacation policy not found",
-							entityType: "vacation_policy",
-							entityId: policyId,
-						}),
-				),
-			);
+				})
+				.pipe(
+					Effect.mapError(
+						() =>
+							new NotFoundError({
+								message: "Vacation policy not found",
+								entityType: "vacation_policy",
+								entityId: policyId,
+							}),
+					),
+				);
 
 			// Create new assignment
-			yield* _(
-				dbService.query("createAssignment", async () => {
+			yield* dbService
+				.query("createAssignment", async () => {
 					await dbService.db.insert(vacationPolicyAssignment).values({
 						policyId,
 						organizationId: actor.organizationId,
@@ -425,17 +411,18 @@ export async function setEmployeePolicyAssignment(
 						priority: 2, // Employee level = highest priority
 						createdBy: actor.session.user.id,
 					});
-				}),
-				Effect.mapError(
-					(error) =>
-						new DatabaseError({
-							message: "Failed to create policy assignment",
-							operation: "insert",
-							table: "vacation_policy_assignment",
-							cause: error,
-						}),
-				),
-			);
+				})
+				.pipe(
+					Effect.mapError(
+						(error) =>
+							new DatabaseError({
+								message: "Failed to create policy assignment",
+								operation: "insert",
+								table: "vacation_policy_assignment",
+								cause: error,
+							}),
+					),
+				);
 		}
 	}).pipe(Effect.provide(AppLayer));
 
@@ -448,15 +435,15 @@ export async function setEmployeePolicyAssignment(
 export async function deleteVacationPolicyAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deleteVacationPolicyAssignment:actor" }),
-		);
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "deleteVacationPolicyAssignment:actor",
+		});
+		const dbService = yield* DatabaseService;
 
 		// Step 5: Verify assignment belongs to the same organization
-		const existingAssignment = yield* _(
-			dbService.query("verifyAssignment", async () => {
+		const existingAssignment = yield* dbService
+			.query("verifyAssignment", async () => {
 				const [a] = await dbService.db
 					.select()
 					.from(vacationPolicyAssignment)
@@ -473,59 +460,55 @@ export async function deleteVacationPolicyAssignment(
 				}
 
 				return a;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Vacation policy assignment not found",
-						entityType: "vacation_policy_assignment",
-						entityId: assignmentId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Vacation policy assignment not found",
+							entityType: "vacation_policy_assignment",
+							entityId: assignmentId,
+						}),
+				),
+			);
 
-		yield* _(
-			requireSettingsActorEmployeeAssignmentAccess(actor, existingAssignment.assignmentType, {
+		yield* requireSettingsActorEmployeeAssignmentAccess(actor, existingAssignment.assignmentType, {
+			message: "Insufficient permissions",
+			resource: "vacation_policy_assignment",
+			action: "delete",
+		});
+
+		if (existingAssignment.employeeId) {
+			const targetEmployee = yield* getTargetEmployee(
+				existingAssignment.employeeId,
+				"deleteVacationPolicyAssignment:getTargetEmployee",
+			);
+			yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
 				message: "Insufficient permissions",
 				resource: "vacation_policy_assignment",
 				action: "delete",
-			}),
-		);
-
-		if (existingAssignment.employeeId) {
-			const targetEmployee = yield* _(
-				getTargetEmployee(
-					existingAssignment.employeeId,
-					"deleteVacationPolicyAssignment:getTargetEmployee",
-				),
-			);
-			yield* _(
-				ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-					message: "Insufficient permissions",
-					resource: "vacation_policy_assignment",
-					action: "delete",
-				}),
-			);
+			});
 		}
 
 		// Step 6: Soft delete
-		yield* _(
-			dbService.query("deleteVacationPolicyAssignment", async () => {
+		yield* dbService
+			.query("deleteVacationPolicyAssignment", async () => {
 				await dbService.db
 					.update(vacationPolicyAssignment)
 					.set({ isActive: false })
 					.where(eq(vacationPolicyAssignment.id, assignmentId));
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete vacation policy assignment",
-						operation: "update",
-						table: "vacation_policy_assignment",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to delete vacation policy assignment",
+							operation: "update",
+							table: "vacation_policy_assignment",
+							cause: error,
+						}),
+				),
+			);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -541,44 +524,40 @@ export async function getCompanyDefaultPolicies(organizationId: string): Promise
 		next: any | null;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "getCompanyDefaultPolicies:actor",
-			}),
-		);
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getCompanyDefaultPolicies:actor",
+		});
+		const dbService = yield* DatabaseService;
 
 		const today = new Date().toISOString().split("T")[0];
 
 		// Get all company default policies
-		const policies = yield* _(
-			dbService.query("getCompanyDefaultPolicies", async () => {
-				return await dbService.db
-					.select({
-						id: vacationAllowance.id,
-						name: vacationAllowance.name,
-						startDate: vacationAllowance.startDate,
-						validUntil: vacationAllowance.validUntil,
-						isCompanyDefault: vacationAllowance.isCompanyDefault,
-						isActive: vacationAllowance.isActive,
-						defaultAnnualDays: vacationAllowance.defaultAnnualDays,
-						accrualType: vacationAllowance.accrualType,
-						allowCarryover: vacationAllowance.allowCarryover,
-						maxCarryoverDays: vacationAllowance.maxCarryoverDays,
-					})
-					.from(vacationAllowance)
-					.where(
-						and(
-							eq(vacationAllowance.organizationId, organizationId),
-							eq(vacationAllowance.isCompanyDefault, true),
-							eq(vacationAllowance.isActive, true),
-						),
-					)
-					.orderBy(vacationAllowance.startDate);
-			}),
-		);
+		const policies = yield* dbService.query("getCompanyDefaultPolicies", async () => {
+			return await dbService.db
+				.select({
+					id: vacationAllowance.id,
+					name: vacationAllowance.name,
+					startDate: vacationAllowance.startDate,
+					validUntil: vacationAllowance.validUntil,
+					isCompanyDefault: vacationAllowance.isCompanyDefault,
+					isActive: vacationAllowance.isActive,
+					defaultAnnualDays: vacationAllowance.defaultAnnualDays,
+					accrualType: vacationAllowance.accrualType,
+					allowCarryover: vacationAllowance.allowCarryover,
+					maxCarryoverDays: vacationAllowance.maxCarryoverDays,
+				})
+				.from(vacationAllowance)
+				.where(
+					and(
+						eq(vacationAllowance.organizationId, organizationId),
+						eq(vacationAllowance.isCompanyDefault, true),
+						eq(vacationAllowance.isActive, true),
+					),
+				)
+				.orderBy(vacationAllowance.startDate);
+		});
 
 		// Find current policy (startDate <= today AND (validUntil IS NULL OR validUntil >= today))
 		const currentPolicy = policies.find((p) => {

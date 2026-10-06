@@ -18,7 +18,7 @@ import type {
 	EmployeeSkillWithDetails,
 	SkillValidationResult,
 	SkillWithRelations,
-} from "@/lib/effect-v3/services/skill.service";
+} from "@/lib/effect/services/skill.service";
 import { queryKeys } from "./keys";
 
 // =============================================================================

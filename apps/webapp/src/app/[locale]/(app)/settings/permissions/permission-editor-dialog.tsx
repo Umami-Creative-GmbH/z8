@@ -9,7 +9,7 @@ import {
 	ActionPanelHeader,
 	ActionPanelTitle,
 } from "@/components/ui/action-panel";
-import type { EmployeePermissions } from "@/lib/effect-v3/services/permissions.service";
+import type { EmployeePermissions } from "@/lib/effect/services/permissions.service";
 import type { SelectableEmployee } from "../employees/actions";
 import type { TeamItem } from "./page-utils";
 

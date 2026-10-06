@@ -1,16 +1,16 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { unstable_cache } from "next/cache";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,
@@ -91,65 +91,53 @@ function getCachedCalendarManagedEmployeeRecords(organizationId: string, manager
 export async function getCalendarManagedEmployees(): Promise<
 	ServerActionResult<ManagedEmployee[]>
 > {
-	const effect = Effect.gen(function* (_) {
-		const session = yield* _(
-			Effect.promise(() => getRequestSession()),
-		);
+	const effect = Effect.gen(function* () {
+		const session = yield* Effect.promise(() => getRequestSession());
 		if (!session?.user) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+				}),
 			);
 		}
 
 		const activeOrgId = session.session?.activeOrganizationId;
 		const currentEmp = activeOrgId
-			? yield* _(
-					Effect.promise(async () => {
-						return await db.query.employee.findFirst({
-							where: (e, { and, eq }) =>
-								and(
-									eq(e.userId, session.user.id),
-									eq(e.organizationId, activeOrgId),
-									eq(e.isActive, true),
-								),
-							with: { user: true, team: true },
-						});
-					}),
-				)
+			? yield* Effect.promise(async () => {
+					return await db.query.employee.findFirst({
+						where: (e, { and, eq }) =>
+							and(
+								eq(e.userId, session.user.id),
+								eq(e.organizationId, activeOrgId),
+								eq(e.isActive, true),
+							),
+						with: { user: true, team: true },
+					});
+				})
 			: null;
 
 		if (!currentEmp) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+				}),
 			);
 		}
 
 		if (!canUseTeamPage(currentEmp.role)) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Not authorized",
-						resource: "calendar_employees",
-						action: "read",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Not authorized",
+					resource: "calendar_employees",
+					action: "read",
+				}),
 			);
 		}
 
-		const records = yield* _(
-			Effect.promise(() =>
-				getCachedCalendarManagedEmployeeRecords(currentEmp.organizationId, currentEmp.id),
-			),
+		const records = yield* Effect.promise(() =>
+			getCachedCalendarManagedEmployeeRecords(currentEmp.organizationId, currentEmp.id),
 		);
 		const typedRecords = records as unknown as ManagedEmployeeRecord[];
 		const byId = new Map<string, ManagedEmployee>();
@@ -198,12 +186,11 @@ export async function getCalendarManagedEmployees(): Promise<
  * Uses the employeeManagers junction table to find direct reports
  */
 export async function getManagedEmployees(): Promise<ServerActionResult<ManagedEmployee[]>> {
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		// Get current employee
-		const currentEmp = yield* _(
-			Effect.promise(async () => {
+		const currentEmp = yield* Effect.promise(async () => {
 				const session = await getRequestSession();
 				if (!session?.user) return null;
 
@@ -221,8 +208,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 				}
 
 				return null;
-			}),
-			Effect.flatMap((emp) =>
+			}).pipe(Effect.flatMap((emp) =>
 				emp
 					? Effect.succeed(emp)
 					: Effect.fail(
@@ -231,45 +217,40 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 								entityType: "employee",
 							}),
 						),
-			),
-		);
+			));
 		if (!canUseTeamPage(currentEmp.role)) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Not authorized",
-						resource: "team",
-						action: "read",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Not authorized",
+					resource: "team",
+					action: "read",
+				}),
 			);
 		}
 
 		// Get all employees where current user is their manager
-		const managedEmployeeRecords = yield* _(
-			dbService.query("getManagedEmployees", async () => {
-				return await dbService.db.query.employeeManagers.findMany({
-					where: and(
-						eq(employeeManagers.managerId, currentEmp.id),
-						inArray(
-							employeeManagers.employeeId,
-							dbService.db
-								.select({ id: employee.id })
-								.from(employee)
-								.where(eq(employee.organizationId, currentEmp.organizationId)),
-						),
+		const managedEmployeeRecords = yield* dbService.query("getManagedEmployees", async () => {
+			return await dbService.db.query.employeeManagers.findMany({
+				where: and(
+					eq(employeeManagers.managerId, currentEmp.id),
+					inArray(
+						employeeManagers.employeeId,
+						dbService.db
+							.select({ id: employee.id })
+							.from(employee)
+							.where(eq(employee.organizationId, currentEmp.organizationId)),
 					),
-					with: {
-						employee: {
-							with: {
-								user: true,
-								team: true,
-							},
+				),
+				with: {
+					employee: {
+						with: {
+							user: true,
+							team: true,
 						},
 					},
-				});
-			}),
-		);
+				},
+			});
+		});
 
 		const typedManagedEmployeeRecords =
 			managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
@@ -281,13 +262,11 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 				),
 			]),
 		];
-		const balances = yield* _(
-			Effect.promise(() =>
-				getEmployeeWorkBalances({
-					employeeIds: visibleEmployeeIds,
-					organizationId: currentEmp.organizationId,
-				}),
-			),
+		const balances = yield* Effect.promise(() =>
+			getEmployeeWorkBalances({
+				employeeIds: visibleEmployeeIds,
+				organizationId: currentEmp.organizationId,
+			}),
 		);
 
 		return buildVisibleManagedEmployees({

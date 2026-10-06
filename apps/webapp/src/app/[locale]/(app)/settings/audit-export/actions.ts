@@ -1,7 +1,7 @@
 "use server";
 
 import { desc, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { auditExportPackage, db } from "@/db";
 import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
@@ -16,9 +16,9 @@ import { addAuditPackJob } from "@/lib/audit-pack/application/audit-pack-service
 import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization
@@ -33,26 +33,24 @@ import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 export async function getAuditConfigAction(
 	organizationId: string,
 ): Promise<ServerActionResult<AuditExportConfigData | null>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_export_config",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_export_config",
+					action: "read",
+				}),
 			);
 		}
 
-		const config = yield* _(Effect.promise(() => configurationService.getConfig(organizationId)));
+		const config = yield* Effect.promise(() => configurationService.getConfig(organizationId));
 
 		return config;
 	});
@@ -70,27 +68,25 @@ export async function initializeAuditExportAction(organizationId: string): Promi
 		signingKeyFingerprint: string;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_export_config",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_export_config",
+					action: "create",
+				}),
 			);
 		}
 
-		const result = yield* _(
-			Effect.promise(() => configurationService.initialize(organizationId, session.user.id)),
+		const result = yield* Effect.promise(() =>
+			configurationService.initialize(organizationId, session.user.id),
 		);
 
 		return result;
@@ -113,36 +109,32 @@ export interface UpdateAuditConfigInput {
 export async function updateAuditConfigAction(
 	input: UpdateAuditConfigInput,
 ): Promise<ServerActionResult<AuditExportConfigData>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_export_config",
-						action: "update",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_export_config",
+					action: "update",
+				}),
 			);
 		}
 
-		const config = yield* _(
-			Effect.promise(() =>
-				configurationService.updateConfig({
-					organizationId: input.organizationId,
-					updatedBy: session.user.id,
-					retentionYears: input.retentionYears,
-					retentionMode: input.retentionMode,
-					autoEnableDataExports: input.autoEnableDataExports,
-					autoEnablePayrollExports: input.autoEnablePayrollExports,
-				}),
-			),
+		const config = yield* Effect.promise(() =>
+			configurationService.updateConfig({
+				organizationId: input.organizationId,
+				updatedBy: session.user.id,
+				retentionYears: input.retentionYears,
+				retentionMode: input.retentionMode,
+				autoEnableDataExports: input.autoEnableDataExports,
+				autoEnablePayrollExports: input.autoEnablePayrollExports,
+			}),
 		);
 
 		return config;
@@ -161,27 +153,25 @@ export async function updateAuditConfigAction(
 export async function rotateSigningKeyAction(
 	organizationId: string,
 ): Promise<ServerActionResult<{ fingerprint: string; version: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_signing_key",
-						action: "rotate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_signing_key",
+					action: "rotate",
+				}),
 			);
 		}
 
-		const result = yield* _(
-			Effect.promise(() => configurationService.rotateSigningKey(organizationId)),
+		const result = yield* Effect.promise(() =>
+			configurationService.rotateSigningKey(organizationId),
 		);
 
 		return result;
@@ -204,27 +194,25 @@ export async function getSigningKeyHistoryAction(organizationId: string): Promis
 		}>
 	>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_signing_key",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_signing_key",
+					action: "read",
+				}),
 			);
 		}
 
-		const history = yield* _(
-			Effect.promise(() => configurationService.getSigningKeyHistory(organizationId)),
+		const history = yield* Effect.promise(() =>
+			configurationService.getSigningKeyHistory(organizationId),
 		);
 
 		return history;
@@ -244,27 +232,25 @@ export async function exportPublicKeyAction(organizationId: string): Promise<
 		version: number;
 	} | null>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_signing_key",
-						action: "export",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_signing_key",
+					action: "export",
+				}),
 			);
 		}
 
-		const publicKey = yield* _(
-			Effect.promise(() => configurationService.exportPublicKey(organizationId)),
+		const publicKey = yield* Effect.promise(() =>
+			configurationService.exportPublicKey(organizationId),
 		);
 
 		return publicKey;
@@ -300,50 +286,46 @@ export async function getAuditPackagesAction(
 	organizationId: string,
 	limit = 50,
 ): Promise<ServerActionResult<AuditPackageInfo[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_export_package",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_export_package",
+					action: "read",
+				}),
 			);
 		}
 
-		const packages = yield* _(
-			Effect.promise(async () => {
-				const results = await db.query.auditExportPackage.findMany({
-					where: eq(auditExportPackage.organizationId, organizationId),
-					orderBy: [desc(auditExportPackage.createdAt)],
-					limit,
-				});
+		const packages = yield* Effect.promise(async () => {
+			const results = await db.query.auditExportPackage.findMany({
+				where: eq(auditExportPackage.organizationId, organizationId),
+				orderBy: [desc(auditExportPackage.createdAt)],
+				limit,
+			});
 
-				return results.map((pkg) => ({
-					id: pkg.id,
-					exportType: pkg.exportType as "data" | "payroll" | "audit_pack",
-					status: pkg.status,
-					fileCount: pkg.fileCount,
-					fileSizeBytes: pkg.fileSizeBytes,
-					merkleRoot: pkg.merkleRoot,
-					objectLockEnabled: pkg.objectLockEnabled ?? false,
-					retentionYears: pkg.retentionYears ?? 10,
-					retentionUntil: pkg.retentionUntil,
-					signedAt: pkg.signedAt,
-					timestampedAt: pkg.timestampedAt,
-					completedAt: pkg.completedAt,
-					createdAt: pkg.createdAt,
-				}));
-			}),
-		);
+			return results.map((pkg) => ({
+				id: pkg.id,
+				exportType: pkg.exportType as "data" | "payroll" | "audit_pack",
+				status: pkg.status,
+				fileCount: pkg.fileCount,
+				fileSizeBytes: pkg.fileSizeBytes,
+				merkleRoot: pkg.merkleRoot,
+				objectLockEnabled: pkg.objectLockEnabled ?? false,
+				retentionYears: pkg.retentionYears ?? 10,
+				retentionUntil: pkg.retentionUntil,
+				signedAt: pkg.signedAt,
+				timestampedAt: pkg.timestampedAt,
+				completedAt: pkg.completedAt,
+				createdAt: pkg.createdAt,
+			}));
+		});
 
 		return packages;
 	});
@@ -396,22 +378,20 @@ export interface AuditPackRequestInfo {
 export async function createAuditPackAction(
 	input: CreateAuditPackInput,
 ): Promise<ServerActionResult<CreateAuditPackResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_pack_request",
-						action: "create",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_pack_request",
+					action: "create",
+				}),
 			);
 		}
 
@@ -419,65 +399,55 @@ export async function createAuditPackAction(
 		const endDate = DateTime.fromISO(input.endDateIso, { zone: "utc" }).endOf("day");
 
 		if (!startDate.isValid || !endDate.isValid || startDate > endDate) {
-			yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Invalid audit pack date range",
-					}),
-				),
+			yield* Effect.fail(
+				new ValidationError({
+					message: "Invalid audit pack date range",
+				}),
 			);
 		}
 
-		const request = yield* _(
-			Effect.promise(() =>
-				auditPackRequestRepository.createRequest({
-					organizationId: input.organizationId,
-					requestedById: session.user.id,
-					startDate: startDate.toJSDate(),
-					endDate: endDate.toJSDate(),
-				}),
-			),
+		const request = yield* Effect.promise(() =>
+			auditPackRequestRepository.createRequest({
+				organizationId: input.organizationId,
+				requestedById: session.user.id,
+				startDate: startDate.toJSDate(),
+				endDate: endDate.toJSDate(),
+			}),
 		);
 
-		const job = yield* _(
-			Effect.promise(() =>
-				addAuditPackJob({
-					requestId: request.id,
-					organizationId: input.organizationId,
-				}),
-			),
+		const job = yield* Effect.promise(() =>
+			addAuditPackJob({
+				requestId: request.id,
+				organizationId: input.organizationId,
+			}),
 		);
 
 		const jobId = typeof job.id === "string" ? job.id : String(job.id ?? "");
 		if (!jobId) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Audit pack job could not be queued",
-						entityType: "audit_pack_job",
-						entityId: request.id,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Audit pack job could not be queued",
+					entityType: "audit_pack_job",
+					entityId: request.id,
+				}),
 			);
 		}
 
-		yield* _(
-			Effect.promise(() =>
-				logAudit({
-					action: AuditAction.AUDIT_PACK_CREATED,
-					actorId: session.user.id,
-					actorEmail: session.user.email,
-					targetId: request.id,
-					targetType: "audit_pack_request",
-					organizationId: input.organizationId,
-					metadata: {
-						startDateIso: startDate.toISODate(),
-						endDateIso: endDate.toISODate(),
-						jobId,
-					},
-					timestamp: new Date(),
-				}),
-			),
+		yield* Effect.promise(() =>
+			logAudit({
+				action: AuditAction.AUDIT_PACK_CREATED,
+				actorId: session.user.id,
+				actorEmail: session.user.email,
+				targetId: request.id,
+				targetType: "audit_pack_request",
+				organizationId: input.organizationId,
+				metadata: {
+					startDateIso: startDate.toISODate(),
+					endDateIso: endDate.toISODate(),
+					jobId,
+				},
+				timestamp: new Date(),
+			}),
 		);
 
 		return {
@@ -493,33 +463,29 @@ export async function getAuditPackRequestsAction(
 	organizationId: string,
 	limit = 20,
 ): Promise<ServerActionResult<AuditPackRequestInfo[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_pack_request",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_pack_request",
+					action: "read",
+				}),
 			);
 		}
 
 		const sanitizedLimit = Math.max(1, Math.min(limit, 100));
-		const requests = yield* _(
-			Effect.promise(() =>
-				auditPackRequestRepository.listRequests({
-					organizationId,
-					limit: sanitizedLimit,
-				}),
-			),
+		const requests = yield* Effect.promise(() =>
+			auditPackRequestRepository.listRequests({
+				organizationId,
+				limit: sanitizedLimit,
+			}),
 		);
 
 		return requests.map((request) => ({
@@ -555,65 +521,57 @@ export async function getAuditPackDownloadUrlAction(
 	requestId: string,
 	organizationId: string,
 ): Promise<ServerActionResult<{ url: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_pack_request",
-						action: "download",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_pack_request",
+					action: "download",
+				}),
 			);
 		}
 
-		const request = yield* _(
-			Effect.promise(() =>
-				auditPackRequestRepository.getRequest({
-					requestId,
-					organizationId,
-				}),
-			),
+		const request = yield* Effect.promise(() =>
+			auditPackRequestRepository.getRequest({
+				requestId,
+				organizationId,
+			}),
 		);
 
 		const artifact = request?.artifact;
 		if (request?.status !== "completed" || !artifact?.s3Key) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Completed audit pack artifact not found",
-						entityType: "audit_pack_artifact",
-						entityId: requestId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Completed audit pack artifact not found",
+					entityType: "audit_pack_artifact",
+					entityId: requestId,
+				}),
 			);
 		}
 
-		const url = yield* _(Effect.promise(() => getPresignedUrl(organizationId, artifact!.s3Key!)));
+		const url = yield* Effect.promise(() => getPresignedUrl(organizationId, artifact!.s3Key!));
 
-		yield* _(
-			Effect.promise(() =>
-				logAudit({
-					action: AuditAction.AUDIT_PACK_DOWNLOADED,
-					actorId: session.user.id,
-					actorEmail: session.user.email,
-					targetId: requestId,
-					targetType: "audit_pack_request",
-					organizationId,
-					metadata: {
-						auditExportPackageId: artifact!.auditExportPackageId,
-						s3Key: artifact!.s3Key,
-					},
-					timestamp: new Date(),
-				}),
-			),
+		yield* Effect.promise(() =>
+			logAudit({
+				action: AuditAction.AUDIT_PACK_DOWNLOADED,
+				actorId: session.user.id,
+				actorEmail: session.user.email,
+				targetId: requestId,
+				targetType: "audit_pack_request",
+				organizationId,
+				metadata: {
+					auditExportPackageId: artifact!.auditExportPackageId,
+					s3Key: artifact!.s3Key,
+				},
+				timestamp: new Date(),
+			}),
 		);
 
 		return { url };
@@ -633,34 +591,30 @@ export async function verifyAuditPackageAction(
 	packageId: string,
 	organizationId: string,
 ): Promise<ServerActionResult<VerificationResult>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_export_package",
-						action: "verify",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_export_package",
+					action: "verify",
+				}),
 			);
 		}
 
-		const result = yield* _(
-			Effect.promise(() =>
-				verificationService.verifyPackage({
-					packageId,
-					organizationId,
-					verifiedById: session.user.id,
-					verificationSource: "ui",
-				}),
-			),
+		const result = yield* Effect.promise(() =>
+			verificationService.verifyPackage({
+				packageId,
+				organizationId,
+				verifiedById: session.user.id,
+				verificationSource: "ui",
+			}),
 		);
 
 		return result;
@@ -685,27 +639,25 @@ export async function getVerificationHistoryAction(
 	packageId: string,
 	organizationId: string,
 ): Promise<ServerActionResult<VerificationHistoryEntry[]>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => isOrgAdminCasl(organizationId)));
+		const hasPermission = yield* Effect.promise(() => isOrgAdminCasl(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "audit_verification_log",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "audit_verification_log",
+					action: "read",
+				}),
 			);
 		}
 
-		const history = yield* _(
-			Effect.promise(() => verificationService.getVerificationHistory(packageId, organizationId)),
+		const history = yield* Effect.promise(() =>
+			verificationService.getVerificationHistory(packageId, organizationId),
 		);
 
 		return history;

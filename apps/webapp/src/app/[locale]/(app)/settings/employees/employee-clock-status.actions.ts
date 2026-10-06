@@ -1,15 +1,15 @@
 "use server";
 
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { type AnyAppError, DatabaseError } from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
+} from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,
@@ -66,42 +66,37 @@ export async function getEmployeeClockStatuses(
 ): Promise<ServerActionResult<EmployeeClockPresenceMap>> {
 	const normalizedEmployeeIds = normalizeEmployeeIds(employeeIds);
 
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		if (normalizedEmployeeIds.length === 0) {
 			return {} satisfies EmployeeClockPresenceMap;
 		}
 
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				queryName: "getEmployeeClockStatuses",
-			}),
-		);
-		const organizationEmployeeRows = yield* _(
-			resolveQueryEffect(
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "getEmployeeClockStatuses",
+		});
+		const organizationEmployeeRows = yield* resolveQueryEffect(
+			"getEmployeeClockStatuses:organizationEmployees",
+			actor.dbService.query(
 				"getEmployeeClockStatuses:organizationEmployees",
-				actor.dbService.query(
-					"getEmployeeClockStatuses:organizationEmployees",
-					async () => {
-						return await actor.dbService.db
-							.select({ id: employee.id })
-							.from(employee)
-							.where(
-								and(
-									eq(employee.organizationId, actor.organizationId),
-									eq(employee.isActive, true),
-									inArray(employee.id, normalizedEmployeeIds),
-								),
-							);
-					},
-				),
+				async () => {
+					return await actor.dbService.db
+						.select({ id: employee.id })
+						.from(employee)
+						.where(
+							and(
+								eq(employee.organizationId, actor.organizationId),
+								eq(employee.isActive, true),
+								inArray(employee.id, normalizedEmployeeIds),
+							),
+						);
+				},
 			),
 		);
 		const organizationEmployeeIds = new Set(
 			organizationEmployeeRows.map((row) => row.id),
 		);
-		const managedEmployeeIds = yield* _(
-			getManagedEmployeeIdsForSettingsActor(actor),
-		);
+		const managedEmployeeIds =
+			yield* getManagedEmployeeIdsForSettingsActor(actor);
 		const accessibleEmployeeIds =
 			managedEmployeeIds === null
 				? normalizedEmployeeIds.filter((employeeId) =>
@@ -117,54 +112,50 @@ export async function getEmployeeClockStatuses(
 			return {} satisfies EmployeeClockPresenceMap;
 		}
 
-		const activeRows = yield* _(
-			resolveQueryEffect(
+		const activeRows = yield* resolveQueryEffect(
+			"getEmployeeClockStatuses:activeWorkPeriods",
+			actor.dbService.query(
 				"getEmployeeClockStatuses:activeWorkPeriods",
-				actor.dbService.query(
-					"getEmployeeClockStatuses:activeWorkPeriods",
-					async () => {
-						return await actor.dbService.db
-							.select({ employeeId: workPeriod.employeeId })
-							.from(workPeriod)
-							.where(
-								and(
-									eq(workPeriod.organizationId, actor.organizationId),
-									inArray(workPeriod.employeeId, accessibleEmployeeIds),
-									eq(workPeriod.isActive, true),
-									isNull(workPeriod.clockOutId),
-									isNull(workPeriod.endTime),
-								),
-							);
-					},
-				),
-			),
-		);
-		const activityRows = yield* _(
-			resolveQueryEffect(
-				"getEmployeeClockStatuses:activity",
-				actor.dbService.query("getEmployeeClockStatuses:activity", async () => {
+				async () => {
 					return await actor.dbService.db
-						.selectDistinctOn([timeEntry.employeeId], {
-							employeeId: timeEntry.employeeId,
-							timestamp: timeEntry.timestamp,
-							utcOffsetMinutes: timeEntry.utcOffsetMinutes,
-						})
-						.from(timeEntry)
+						.select({ employeeId: workPeriod.employeeId })
+						.from(workPeriod)
 						.where(
 							and(
-								eq(timeEntry.organizationId, actor.organizationId),
-								inArray(timeEntry.employeeId, accessibleEmployeeIds),
-								inArray(timeEntry.type, ["clock_in", "clock_out"]),
-								eq(timeEntry.isSuperseded, false),
+								eq(workPeriod.organizationId, actor.organizationId),
+								inArray(workPeriod.employeeId, accessibleEmployeeIds),
+								eq(workPeriod.isActive, true),
+								isNull(workPeriod.clockOutId),
+								isNull(workPeriod.endTime),
 							),
-						)
-						.orderBy(
-							timeEntry.employeeId,
-							desc(timeEntry.timestamp),
-							desc(timeEntry.id),
 						);
-				}),
+				},
 			),
+		);
+		const activityRows = yield* resolveQueryEffect(
+			"getEmployeeClockStatuses:activity",
+			actor.dbService.query("getEmployeeClockStatuses:activity", async () => {
+				return await actor.dbService.db
+					.selectDistinctOn([timeEntry.employeeId], {
+						employeeId: timeEntry.employeeId,
+						timestamp: timeEntry.timestamp,
+						utcOffsetMinutes: timeEntry.utcOffsetMinutes,
+					})
+					.from(timeEntry)
+					.where(
+						and(
+							eq(timeEntry.organizationId, actor.organizationId),
+							inArray(timeEntry.employeeId, accessibleEmployeeIds),
+							inArray(timeEntry.type, ["clock_in", "clock_out"]),
+							eq(timeEntry.isSuperseded, false),
+						),
+					)
+					.orderBy(
+						timeEntry.employeeId,
+						desc(timeEntry.timestamp),
+						desc(timeEntry.id),
+					);
+			}),
 		);
 
 		const accessibleEmployeeIdSet = new Set(accessibleEmployeeIds);

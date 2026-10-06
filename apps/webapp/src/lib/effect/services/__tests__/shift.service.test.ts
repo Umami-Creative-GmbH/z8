@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "../database.service";
@@ -63,10 +63,10 @@ function createDeleteShiftTestContext({
 		returning,
 		runDeleteShift: (shiftId: string, actorScope: DeleteShiftActorScope) =>
 			Effect.runPromise(
-				Effect.either(
-					Effect.gen(function* (_) {
-						const service = yield* _(ShiftService);
-						return yield* _(service.deleteShift(shiftId, actorScope));
+				Effect.result(
+					Effect.gen(function* () {
+						const service = yield* ShiftService;
+						return yield* service.deleteShift(shiftId, actorScope);
 					}).pipe(Effect.provide(layer)),
 				),
 			),
@@ -93,8 +93,8 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-1",
 			}),
 		).toMatchObject({
-			_tag: "Left",
-			left: expect.any(AuthorizationError),
+			_tag: "Failure",
+			failure: expect.any(AuthorizationError),
 		});
 		expect(deleteWhere).not.toHaveBeenCalled();
 	});
@@ -118,8 +118,8 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-2",
 			}),
 		).toMatchObject({
-			_tag: "Left",
-			left: expect.any(NotFoundError),
+			_tag: "Failure",
+			failure: expect.any(NotFoundError),
 		});
 		expect(deleteWhere).not.toHaveBeenCalled();
 	});
@@ -143,8 +143,8 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-3",
 			}),
 		).toMatchObject({
-			_tag: "Right",
-			right: undefined,
+			_tag: "Success",
+			success: undefined,
 		});
 		expect(deleteWhere).toHaveBeenCalledTimes(1);
 	});
@@ -172,8 +172,8 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-4",
 			}),
 		).toMatchObject({
-			_tag: "Left",
-			left: expect.any(AuthorizationError),
+			_tag: "Failure",
+			failure: expect.any(AuthorizationError),
 		});
 		expect(deleteWhere).not.toHaveBeenCalled();
 	});
@@ -202,8 +202,8 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-5",
 			}),
 		).toMatchObject({
-			_tag: "Left",
-			left: expect.any(AuthorizationError),
+			_tag: "Failure",
+			failure: expect.any(AuthorizationError),
 		});
 		expect(mockDb.query.employee.findFirst).toHaveBeenCalledTimes(1);
 		expect(deleteWhere).not.toHaveBeenCalled();
@@ -232,7 +232,7 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-multi-org",
 			}),
 		).toMatchObject({
-			_tag: "Left",
+			_tag: "Failure",
 		});
 		expect(deleteWhere).not.toHaveBeenCalled();
 	});
@@ -262,8 +262,8 @@ describe("ShiftService.deleteShift", () => {
 				userId: "user-1",
 			}),
 		).toMatchObject({
-			_tag: "Left",
-			left: expect.any(NotFoundError),
+			_tag: "Failure",
+			failure: expect.any(NotFoundError),
 		});
 		expect(deleteWhere).toHaveBeenCalledOnce();
 		expect(returning).toHaveBeenCalledOnce();

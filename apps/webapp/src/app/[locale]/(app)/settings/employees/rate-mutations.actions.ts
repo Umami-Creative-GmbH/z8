@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { employee, employeeRateHistory } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";
@@ -39,96 +39,88 @@ export async function createRateHistoryEntryAction(
 			);
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { session, dbService } = actor;
 
-				const validatedData = yield* _(
-					validateInput(createRateHistorySchema, data),
+				const validatedData = yield* validateInput(
+					createRateHistorySchema,
+					data,
 				);
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+				yield* ensureSettingsActorCanAccessEmployeeTarget(
+					actor,
+					targetEmployee,
+					{
 						message: "You do not have access to this employee's rates",
 						resource: "rate_history",
 						action: "create",
-					}),
+					},
 				);
 
 				if (targetEmployee.contractType !== "hourly") {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									"Rate history can only be created for hourly employees",
-								field: "contractType",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Rate history can only be created for hourly employees",
+							field: "contractType",
+						}),
 					);
 				}
 
 				const newRate = parseHourlyRate(validatedData.hourlyRate);
 				if (newRate === null) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Invalid hourly rate",
-								field: "hourlyRate",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Invalid hourly rate",
+							field: "hourlyRate",
+						}),
 					);
 				}
 
-				yield* _(
-					dbService.query("closeActiveRateHistory", async () => {
-						await dbService.db
-							.update(employeeRateHistory)
-							.set({ effectiveTo: validatedData.effectiveFrom })
-							.where(
-								and(
-									eq(employeeRateHistory.employeeId, employeeId),
-									eq(
-										employeeRateHistory.organizationId,
-										targetEmployee.organizationId,
-									),
-									isNull(employeeRateHistory.effectiveTo),
+				yield* dbService.query("closeActiveRateHistory", async () => {
+					await dbService.db
+						.update(employeeRateHistory)
+						.set({ effectiveTo: validatedData.effectiveFrom })
+						.where(
+							and(
+								eq(employeeRateHistory.employeeId, employeeId),
+								eq(
+									employeeRateHistory.organizationId,
+									targetEmployee.organizationId,
 								),
-							);
-					}),
-				);
+								isNull(employeeRateHistory.effectiveTo),
+							),
+						);
+				});
 
-				yield* _(
-					dbService.query("createRateHistoryEntry", async () => {
-						await dbService.db.insert(employeeRateHistory).values({
-							employeeId,
-							organizationId: targetEmployee.organizationId,
-							hourlyRate: newRate.toString(),
-							currency: validatedData.currency || "EUR",
-							effectiveFrom: validatedData.effectiveFrom,
-							effectiveTo: null,
-							reason: validatedData.reason || null,
-							createdBy: session.user.id,
-						});
-					}),
-				);
+				yield* dbService.query("createRateHistoryEntry", async () => {
+					await dbService.db.insert(employeeRateHistory).values({
+						employeeId,
+						organizationId: targetEmployee.organizationId,
+						hourlyRate: newRate.toString(),
+						currency: validatedData.currency || "EUR",
+						effectiveFrom: validatedData.effectiveFrom,
+						effectiveTo: null,
+						reason: validatedData.reason || null,
+						createdBy: session.user.id,
+					});
+				});
 
-				yield* _(
-					dbService.query("updateEmployeeRate", async () => {
-						await dbService.db
-							.update(employee)
-							.set({
-								currentHourlyRate: newRate.toString(),
-								updatedAt: currentTimestamp(),
-							})
-							.where(
-								and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, targetEmployee.organizationId),
-								),
-							);
-					}),
-				);
+				yield* dbService.query("updateEmployeeRate", async () => {
+					await dbService.db
+						.update(employee)
+						.set({
+							currentHourlyRate: newRate.toString(),
+							updatedAt: currentTimestamp(),
+						})
+						.where(
+							and(
+								eq(employee.id, employeeId),
+								eq(employee.organizationId, targetEmployee.organizationId),
+							),
+						);
+				});
 
 				logger.info(
 					{

@@ -19,7 +19,7 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
-	const { Effect } = await import("effect-v3");
+	const { Effect } = await import("effect");
 	return {
 		logger: { info: vi.fn() },
 		requireManagerEmployee: vi.fn(() =>
@@ -34,21 +34,21 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions/shared", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/services/coverage.service", async () => {
-	const { Context, Effect } = await import("effect-v3");
-	const CoverageService = Context.GenericTag<any>("CoverageService");
+vi.mock("@/lib/effect/services/coverage.service", async () => {
+	const { Context, Effect } = await import("effect");
+	const CoverageService = Context.Service<any>("CoverageService");
 	return { CoverageService, Effect };
 });
 
-vi.mock("@/lib/effect-v3/services/shift.service", async () => {
-	const { Context } = await import("effect-v3");
-	const ShiftService = Context.GenericTag<any>("ShiftService");
+vi.mock("@/lib/effect/services/shift.service", async () => {
+	const { Context } = await import("effect");
+	const ShiftService = Context.Service<any>("ShiftService");
 	return { ShiftService };
 });
 
-vi.mock("@/lib/effect-v3/services/schedule-compliance.service", async () => {
-	const { Context, Effect, Layer } = await import("effect-v3");
-	const ScheduleComplianceService = Context.GenericTag<any>("ScheduleComplianceService");
+vi.mock("@/lib/effect/services/schedule-compliance.service", async () => {
+	const { Context, Effect, Layer } = await import("effect");
+	const ScheduleComplianceService = Context.Service<any>("ScheduleComplianceService");
 	return {
 		ScheduleComplianceService,
 		ScheduleComplianceServiceLive: Layer.succeed(
@@ -66,10 +66,10 @@ vi.mock("@/lib/effect-v3/services/schedule-compliance.service", async () => {
 	};
 });
 
-const { CoverageService } = await import("@/lib/effect-v3/services/coverage.service");
-const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
-const { ShiftService } = await import("@/lib/effect-v3/services/shift.service");
-const { Effect, Layer } = await import("effect-v3");
+const { CoverageService } = await import("@/lib/effect/services/coverage.service");
+const { DatabaseService } = await import("@/lib/effect/services/database.service");
+const { ShiftService } = await import("@/lib/effect/services/shift.service");
+const { Effect, Layer } = await import("effect");
 const { publishShifts } = await import("./shift-actions");
 
 describe("publishShifts organization timezone boundary", () => {

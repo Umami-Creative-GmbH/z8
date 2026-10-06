@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { teamPermissions } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
 import {
@@ -38,10 +38,11 @@ export type ScopedHolidayAccessContext = {
 };
 
 export function getScopedHolidayAccessContext(organizationId: string, queryName: string) {
-	return Effect.gen(function* (_) {
-		const actor = (yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName }),
-		)) as ScopedHolidaySettingsActor;
+	return Effect.gen(function* () {
+		const actor = (yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName,
+		})) as ScopedHolidaySettingsActor;
 
 		if (actor.accessTier === "orgAdmin") {
 			return {
@@ -51,19 +52,17 @@ export function getScopedHolidayAccessContext(organizationId: string, queryName:
 			} satisfies ScopedHolidayAccessContext;
 		}
 
-		const managedEmployeeIds = yield* _(getManagedEmployeeIdsForSettingsActor(actor));
+		const managedEmployeeIds = yield* getManagedEmployeeIdsForSettingsActor(actor);
 		const teamPermissionRows = actor.currentEmployee
-			? ((yield* _(
-					actor.dbService.query(`${queryName}:teamPermissions`, async () => {
-						return await actor.dbService.db.query.teamPermissions.findMany({
-							where: and(
-								eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
-								eq(teamPermissions.organizationId, organizationId),
-							),
-							columns: { teamId: true, canManageTeamSettings: true },
-						});
-					}),
-				)) as TeamPermissionRow[])
+			? ((yield* actor.dbService.query(`${queryName}:teamPermissions`, async () => {
+					return await actor.dbService.db.query.teamPermissions.findMany({
+						where: and(
+							eq(teamPermissions.employeeId, actor.currentEmployee?.id ?? ""),
+							eq(teamPermissions.organizationId, organizationId),
+						),
+						columns: { teamId: true, canManageTeamSettings: true },
+					});
+				})) as TeamPermissionRow[])
 			: [];
 
 		const manageableTeamIds = new Set(

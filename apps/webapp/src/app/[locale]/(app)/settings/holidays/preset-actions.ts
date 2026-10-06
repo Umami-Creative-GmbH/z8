@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, type SQL, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import {
 	employee,
@@ -12,8 +12,8 @@ import {
 	team,
 } from "@/db/schema";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import type {
 	HolidayPresetAssignmentFormValues,
 	HolidayPresetFormValues,
@@ -125,16 +125,14 @@ function filterPresetAssignmentsForScope(
 export async function getHolidayPresets(
 	organizationId: string,
 ): Promise<ServerActionResult<HolidayPresetListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "getHolidayPresets:actor",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getHolidayPresets:actor",
+		});
 
-		const presets = yield* _(
-			actor.dbService.query("getHolidayPresets", async () => {
+		const presets = yield* actor.dbService
+			.query("getHolidayPresets", async () => {
 				const results = await actor.dbService.db
 					.select({
 						id: holidayPreset.id,
@@ -181,17 +179,18 @@ export async function getHolidayPresets(
 				);
 
 				return presetsWithCounts;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch holiday presets",
-						operation: "select",
-						table: "holiday_preset",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to fetch holiday presets",
+							operation: "select",
+							table: "holiday_preset",
+							cause: error,
+						}),
+				),
+			);
 
 		return presets;
 	}).pipe(Effect.provide(AppLayer));
@@ -205,14 +204,12 @@ export async function getHolidayPresets(
 export async function getHolidayPreset(
 	presetId: string,
 ): Promise<ServerActionResult<HolidayPresetDetail>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "getHolidayPreset:actor" }),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "getHolidayPreset:actor" });
 
 		// Fetch the preset
-		const preset = yield* _(
-			actor.dbService.query("getPreset", async () => {
+		const preset = yield* actor.dbService
+			.query("getPreset", async () => {
 				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
@@ -226,24 +223,27 @@ export async function getHolidayPreset(
 
 				if (!p) throw new Error("Preset not found");
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: presetId,
-					}),
-			),
-		);
-
-		if (actor.accessTier === "manager") {
-			const { manageableTeamIds, managedEmployeeIds } = yield* _(
-				getScopedHolidayAccessContext(actor.organizationId, "getHolidayPreset:scope"),
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: presetId,
+						}),
+				),
 			);
 
-			const presetAssignments = yield* _(
-				actor.dbService.query("getPresetAssignmentsForScope", async () => {
+		if (actor.accessTier === "manager") {
+			const { manageableTeamIds, managedEmployeeIds } = yield* getScopedHolidayAccessContext(
+				actor.organizationId,
+				"getHolidayPreset:scope",
+			);
+
+			const presetAssignments = yield* actor.dbService.query(
+				"getPresetAssignmentsForScope",
+				async () => {
 					return await actor.dbService.db
 						.select({
 							id: holidayPresetAssignment.id,
@@ -287,7 +287,7 @@ export async function getHolidayPreset(
 							),
 						)
 						.orderBy(holidayPresetAssignment.createdAt);
-				}),
+				},
 			);
 
 			const visibleAssignments = filterPresetAssignmentsForScope(
@@ -297,46 +297,42 @@ export async function getHolidayPreset(
 			);
 
 			if (visibleAssignments.length === 0) {
-				yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Preset not found",
-							entityType: "holiday_preset",
-							entityId: presetId,
-						}),
-					),
+				yield* Effect.fail(
+					new NotFoundError({
+						message: "Preset not found",
+						entityType: "holiday_preset",
+						entityId: presetId,
+					}),
 				);
 			}
 		}
 
 		// Fetch holidays
-		const holidays = yield* _(
-			actor.dbService.query("getPresetHolidays", async () => {
-				return await actor.dbService.db
-					.select({
-						id: holidayPresetHoliday.id,
-						name: holidayPresetHoliday.name,
-						description: holidayPresetHoliday.description,
-						month: holidayPresetHoliday.month,
-						day: holidayPresetHoliday.day,
-						durationDays: holidayPresetHoliday.durationDays,
-						holidayType: holidayPresetHoliday.holidayType,
-						isFloating: holidayPresetHoliday.isFloating,
-						floatingRule: holidayPresetHoliday.floatingRule,
-						categoryId: holidayPresetHoliday.categoryId,
-						isActive: holidayPresetHoliday.isActive,
-						category: {
-							id: holidayCategory.id,
-							name: holidayCategory.name,
-							color: holidayCategory.color,
-						},
-					})
-					.from(holidayPresetHoliday)
-					.leftJoin(holidayCategory, eq(holidayPresetHoliday.categoryId, holidayCategory.id))
-					.where(eq(holidayPresetHoliday.presetId, presetId))
-					.orderBy(holidayPresetHoliday.month, holidayPresetHoliday.day);
-			}),
-		);
+		const holidays = yield* actor.dbService.query("getPresetHolidays", async () => {
+			return await actor.dbService.db
+				.select({
+					id: holidayPresetHoliday.id,
+					name: holidayPresetHoliday.name,
+					description: holidayPresetHoliday.description,
+					month: holidayPresetHoliday.month,
+					day: holidayPresetHoliday.day,
+					durationDays: holidayPresetHoliday.durationDays,
+					holidayType: holidayPresetHoliday.holidayType,
+					isFloating: holidayPresetHoliday.isFloating,
+					floatingRule: holidayPresetHoliday.floatingRule,
+					categoryId: holidayPresetHoliday.categoryId,
+					isActive: holidayPresetHoliday.isActive,
+					category: {
+						id: holidayCategory.id,
+						name: holidayCategory.name,
+						color: holidayCategory.color,
+					},
+				})
+				.from(holidayPresetHoliday)
+				.leftJoin(holidayCategory, eq(holidayPresetHoliday.categoryId, holidayCategory.id))
+				.where(eq(holidayPresetHoliday.presetId, presetId))
+				.orderBy(holidayPresetHoliday.month, holidayPresetHoliday.day);
+		});
 
 		return { preset, holidays };
 	}).pipe(Effect.provide(AppLayer));
@@ -355,48 +351,43 @@ export async function createHolidayPreset(
 	organizationId: string,
 	data: HolidayPresetFormValues,
 ): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ organizationId, queryName: "createHolidayPreset:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can create holiday presets",
-				resource: "holiday_preset",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "createHolidayPreset:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can create holiday presets",
+			resource: "holiday_preset",
+			action: "create",
+		});
 
 		const existingConditions = buildPresetLocationConflictConditions(organizationId, data);
 
-		const existing = yield* _(
-			actor.dbService.query("checkExisting", async () => {
-				const [p] = await actor.dbService.db
-					.select()
-					.from(holidayPreset)
-					.where(and(...existingConditions))
-					.limit(1);
-				return p;
-			}),
-		);
+		const existing = yield* actor.dbService.query("checkExisting", async () => {
+			const [p] = await actor.dbService.db
+				.select()
+				.from(holidayPreset)
+				.where(and(...existingConditions))
+				.limit(1);
+			return p;
+		});
 
 		if (existing) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: data.year
-							? "A preset for this location and year already exists"
-							: "A preset for this location already exists",
-						conflictType: "duplicate_location",
-						details: { existingId: existing.id, year: data.year ?? null },
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: data.year
+						? "A preset for this location and year already exists"
+						: "A preset for this location already exists",
+					conflictType: "duplicate_location",
+					details: { existingId: existing.id, year: data.year ?? null },
+				}),
 			);
 		}
 
 		// Create preset
-		const newPreset = yield* _(
-			actor.dbService.query("createPreset", async () => {
+		const newPreset = yield* actor.dbService
+			.query("createPreset", async () => {
 				const [p] = await actor.dbService.db
 					.insert(holidayPreset)
 					.values({
@@ -413,17 +404,18 @@ export async function createHolidayPreset(
 					})
 					.returning();
 				return p;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to create holiday preset",
-						operation: "insert",
-						table: "holiday_preset",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to create holiday preset",
+							operation: "insert",
+							table: "holiday_preset",
+							cause: error,
+						}),
+				),
+			);
 
 		return newPreset;
 	}).pipe(Effect.provide(AppLayer));
@@ -438,21 +430,19 @@ export async function updateHolidayPreset(
 	presetId: string,
 	data: HolidayPresetFormValues,
 ): Promise<ServerActionResult<typeof holidayPreset.$inferSelect>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "updateHolidayPreset:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can update holiday presets",
-				resource: "holiday_preset",
-				action: "update",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "updateHolidayPreset:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can update holiday presets",
+			resource: "holiday_preset",
+			action: "update",
+		});
 
 		// Verify preset exists and belongs to organization
-		yield* _(
-			actor.dbService.query("verifyPreset", async () => {
+		yield* actor.dbService
+			.query("verifyPreset", async () => {
 				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
@@ -466,49 +456,46 @@ export async function updateHolidayPreset(
 
 				if (!p) throw new Error("Preset not found");
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: presetId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: presetId,
+						}),
+				),
+			);
 
 		const existingConditions = buildPresetLocationConflictConditions(actor.organizationId, data, {
 			excludePresetId: presetId,
 		});
 
-		const existing = yield* _(
-			actor.dbService.query("checkExistingUpdate", async () => {
-				const [p] = await actor.dbService.db
-					.select()
-					.from(holidayPreset)
-					.where(and(...existingConditions))
-					.limit(1);
-				return p;
-			}),
-		);
+		const existing = yield* actor.dbService.query("checkExistingUpdate", async () => {
+			const [p] = await actor.dbService.db
+				.select()
+				.from(holidayPreset)
+				.where(and(...existingConditions))
+				.limit(1);
+			return p;
+		});
 
 		if (existing) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: data.year
-							? "A preset for this location and year already exists"
-							: "A preset for this location already exists",
-						conflictType: "duplicate_location",
-						details: { existingId: existing.id, year: data.year ?? null },
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: data.year
+						? "A preset for this location and year already exists"
+						: "A preset for this location already exists",
+					conflictType: "duplicate_location",
+					details: { existingId: existing.id, year: data.year ?? null },
+				}),
 			);
 		}
 
 		// Update preset
-		const updatedPreset = yield* _(
-			actor.dbService.query("updatePreset", async () => {
+		const updatedPreset = yield* actor.dbService
+			.query("updatePreset", async () => {
 				const [p] = await actor.dbService.db
 					.update(holidayPreset)
 					.set({
@@ -525,17 +512,18 @@ export async function updateHolidayPreset(
 					.where(eq(holidayPreset.id, presetId))
 					.returning();
 				return p;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to update holiday preset",
-						operation: "update",
-						table: "holiday_preset",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to update holiday preset",
+							operation: "update",
+							table: "holiday_preset",
+							cause: error,
+						}),
+				),
+			);
 
 		return updatedPreset;
 	}).pipe(Effect.provide(AppLayer));
@@ -547,21 +535,19 @@ export async function updateHolidayPreset(
  * Delete a holiday preset (soft delete)
  */
 export async function deleteHolidayPreset(presetId: string): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deleteHolidayPreset:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can delete holiday presets",
-				resource: "holiday_preset",
-				action: "delete",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "deleteHolidayPreset:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can delete holiday presets",
+			resource: "holiday_preset",
+			action: "delete",
+		});
 
 		// Verify preset exists
-		yield* _(
-			actor.dbService.query("verifyPreset", async () => {
+		yield* actor.dbService
+			.query("verifyPreset", async () => {
 				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
@@ -575,19 +561,20 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 
 				if (!p) throw new Error("Preset not found");
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: presetId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: presetId,
+						}),
+				),
+			);
 
-		const deletedRows = yield* _(
-			actor.dbService.query("deletePreset", async () => {
+		const deletedRows = yield* actor.dbService
+			.query("deletePreset", async () => {
 				return await actor.dbService.db
 					.delete(holidayPreset)
 					.where(
@@ -602,27 +589,26 @@ export async function deleteHolidayPreset(presetId: string): Promise<ServerActio
 						),
 					)
 					.returning({ id: holidayPreset.id });
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete holiday preset",
-						operation: "delete",
-						table: "holiday_preset",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to delete holiday preset",
+							operation: "delete",
+							table: "holiday_preset",
+							cause: error,
+						}),
+				),
+			);
 
 		if (deletedRows.length === 0) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Cannot delete preset with active assignments",
-						conflictType: "preset_has_assignments",
-						details: { presetId },
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: "Cannot delete preset with active assignments",
+					conflictType: "preset_has_assignments",
+					details: { presetId },
+				}),
 			);
 		}
 	}).pipe(Effect.provide(AppLayer));
@@ -641,21 +627,17 @@ export async function addHolidayToPreset(
 	presetId: string,
 	data: HolidayPresetHolidayFormValues,
 ): Promise<ServerActionResult<typeof holidayPresetHoliday.$inferSelect>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "addHolidayToPreset:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can add preset holidays",
-				resource: "holiday_preset_holiday",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "addHolidayToPreset:actor" });
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can add preset holidays",
+			resource: "holiday_preset_holiday",
+			action: "create",
+		});
 
 		// Verify preset exists and belongs to organization
-		yield* _(
-			actor.dbService.query("verifyPreset", async () => {
+		yield* actor.dbService
+			.query("verifyPreset", async () => {
 				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
@@ -669,51 +651,48 @@ export async function addHolidayToPreset(
 
 				if (!p) throw new Error("Preset not found");
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: presetId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: presetId,
+						}),
+				),
+			);
 
 		if (data.categoryId) {
 			const categoryId = data.categoryId;
-			const category = yield* _(
-				actor.dbService.query("verifyHolidayCategory", async () => {
-					const [row] = await actor.dbService.db
-						.select({ id: holidayCategory.id })
-						.from(holidayCategory)
-						.where(
-							and(
-								eq(holidayCategory.id, categoryId),
-								eq(holidayCategory.organizationId, actor.organizationId),
-							),
-						)
-						.limit(1);
-					return row;
-				}),
-			);
+			const category = yield* actor.dbService.query("verifyHolidayCategory", async () => {
+				const [row] = await actor.dbService.db
+					.select({ id: holidayCategory.id })
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.id, categoryId),
+							eq(holidayCategory.organizationId, actor.organizationId),
+						),
+					)
+					.limit(1);
+				return row;
+			});
 
 			if (!category) {
-				yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Holiday category not found",
-							entityType: "holiday_category",
-							entityId: categoryId,
-						}),
-					),
+				yield* Effect.fail(
+					new NotFoundError({
+						message: "Holiday category not found",
+						entityType: "holiday_category",
+						entityId: categoryId,
+					}),
 				);
 			}
 		}
 
 		// Create holiday
-		const newHoliday = yield* _(
-			actor.dbService.query("createHoliday", async () => {
+		const newHoliday = yield* actor.dbService
+			.query("createHoliday", async () => {
 				const [h] = await actor.dbService.db
 					.insert(holidayPresetHoliday)
 					.values({
@@ -731,17 +710,18 @@ export async function addHolidayToPreset(
 					})
 					.returning();
 				return h;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to add holiday to preset",
-						operation: "insert",
-						table: "holiday_preset_holiday",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to add holiday to preset",
+							operation: "insert",
+							table: "holiday_preset_holiday",
+							cause: error,
+						}),
+				),
+			);
 
 		return newHoliday;
 	}).pipe(Effect.provide(AppLayer));
@@ -757,21 +737,19 @@ export async function bulkAddHolidaysToPreset(
 	holidays: Omit<HolidayPresetHolidayFormValues, "categoryId">[],
 	categoryId?: string,
 ): Promise<ServerActionResult<{ added: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "bulkAddHolidaysToPreset:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can add preset holidays",
-				resource: "holiday_preset_holiday",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "bulkAddHolidaysToPreset:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can add preset holidays",
+			resource: "holiday_preset_holiday",
+			action: "create",
+		});
 
 		// Verify preset exists
-		yield* _(
-			actor.dbService.query("verifyPreset", async () => {
+		yield* actor.dbService
+			.query("verifyPreset", async () => {
 				const [p] = await actor.dbService.db
 					.select()
 					.from(holidayPreset)
@@ -785,51 +763,48 @@ export async function bulkAddHolidaysToPreset(
 
 				if (!p) throw new Error("Preset not found");
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: presetId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: presetId,
+						}),
+				),
+			);
 
 		if (categoryId) {
 			const holidayCategoryId = categoryId;
-			const category = yield* _(
-				actor.dbService.query("verifyHolidayCategory", async () => {
-					const [row] = await actor.dbService.db
-						.select({ id: holidayCategory.id })
-						.from(holidayCategory)
-						.where(
-							and(
-								eq(holidayCategory.id, holidayCategoryId),
-								eq(holidayCategory.organizationId, actor.organizationId),
-							),
-						)
-						.limit(1);
-					return row;
-				}),
-			);
+			const category = yield* actor.dbService.query("verifyHolidayCategory", async () => {
+				const [row] = await actor.dbService.db
+					.select({ id: holidayCategory.id })
+					.from(holidayCategory)
+					.where(
+						and(
+							eq(holidayCategory.id, holidayCategoryId),
+							eq(holidayCategory.organizationId, actor.organizationId),
+						),
+					)
+					.limit(1);
+				return row;
+			});
 
 			if (!category) {
-				yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Holiday category not found",
-							entityType: "holiday_category",
-							entityId: holidayCategoryId,
-						}),
-					),
+				yield* Effect.fail(
+					new NotFoundError({
+						message: "Holiday category not found",
+						entityType: "holiday_category",
+						entityId: holidayCategoryId,
+					}),
 				);
 			}
 		}
 
 		// Bulk insert holidays
-		const result = yield* _(
-			actor.dbService.query("bulkInsert", async () => {
+		const result = yield* actor.dbService
+			.query("bulkInsert", async () => {
 				const values = holidays.map((h) => ({
 					presetId,
 					name: h.name,
@@ -846,17 +821,18 @@ export async function bulkAddHolidaysToPreset(
 
 				await actor.dbService.db.insert(holidayPresetHoliday).values(values);
 				return { added: values.length };
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to bulk add holidays to preset",
-						operation: "insert",
-						table: "holiday_preset_holiday",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to bulk add holidays to preset",
+							operation: "insert",
+							table: "holiday_preset_holiday",
+							cause: error,
+						}),
+				),
+			);
 
 		return result;
 	}).pipe(Effect.provide(AppLayer));
@@ -870,20 +846,18 @@ export async function bulkAddHolidaysToPreset(
 export async function deleteHolidayFromPreset(
 	holidayId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deleteHolidayFromPreset:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can delete preset holidays",
-				resource: "holiday_preset_holiday",
-				action: "delete",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "deleteHolidayFromPreset:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can delete preset holidays",
+			resource: "holiday_preset_holiday",
+			action: "delete",
+		});
 
-		const presetHoliday = yield* _(
-			actor.dbService.query("verifyPresetHoliday", async () => {
+		const presetHoliday = yield* actor.dbService
+			.query("verifyPresetHoliday", async () => {
 				const [row] = await actor.dbService.db
 					.select({ id: holidayPresetHoliday.id })
 					.from(holidayPresetHoliday)
@@ -896,46 +870,46 @@ export async function deleteHolidayFromPreset(
 					)
 					.limit(1);
 				return row;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset holiday not found",
-						entityType: "holiday_preset_holiday",
-						entityId: holidayId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset holiday not found",
+							entityType: "holiday_preset_holiday",
+							entityId: holidayId,
+						}),
+				),
+			);
 
 		if (!presetHoliday) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Preset holiday not found",
-						entityType: "holiday_preset_holiday",
-						entityId: holidayId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Preset holiday not found",
+					entityType: "holiday_preset_holiday",
+					entityId: holidayId,
+				}),
 			);
 		}
 
 		// Delete (hard delete since it's a preset holiday)
-		yield* _(
-			actor.dbService.query("deleteHoliday", async () => {
+		yield* actor.dbService
+			.query("deleteHoliday", async () => {
 				await actor.dbService.db
 					.delete(holidayPresetHoliday)
 					.where(eq(holidayPresetHoliday.id, holidayId));
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete holiday from preset",
-						operation: "delete",
-						table: "holiday_preset_holiday",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to delete holiday from preset",
+							operation: "delete",
+							table: "holiday_preset_holiday",
+							cause: error,
+						}),
+				),
+			);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runPresetServerAction(effect);
@@ -951,13 +925,14 @@ export async function deleteHolidayFromPreset(
 export async function getPresetAssignments(
 	organizationId: string,
 ): Promise<ServerActionResult<PresetAssignmentListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const { actor, managedEmployeeIds, manageableTeamIds } = yield* _(
-			getScopedHolidayAccessContext(organizationId, "getPresetAssignments:actor"),
+	const effect = Effect.gen(function* () {
+		const { actor, managedEmployeeIds, manageableTeamIds } = yield* getScopedHolidayAccessContext(
+			organizationId,
+			"getPresetAssignments:actor",
 		);
 
-		const assignments = yield* _(
-			actor.dbService.query("getAssignments", async () => {
+		const assignments = yield* actor.dbService
+			.query("getAssignments", async () => {
 				return await actor.dbService.db
 					.select({
 						id: holidayPresetAssignment.id,
@@ -1000,17 +975,18 @@ export async function getPresetAssignments(
 						),
 					)
 					.orderBy(holidayPresetAssignment.assignmentType, holidayPresetAssignment.createdAt);
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to fetch preset assignments",
-						operation: "select",
-						table: "holiday_preset_assignment",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to fetch preset assignments",
+							operation: "select",
+							table: "holiday_preset_assignment",
+							cause: error,
+						}),
+				),
+			);
 
 		return filterPresetAssignmentsForScope(
 			assignments as PresetAssignmentListItem[],
@@ -1033,23 +1009,19 @@ export async function createPresetAssignment(
 	organizationId: string,
 	data: HolidayPresetAssignmentFormValues,
 ): Promise<ServerActionResult<typeof holidayPresetAssignment.$inferSelect>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "createPresetAssignment:actor",
-			}),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can create preset assignments",
-				resource: "holiday_preset_assignment",
-				action: "create",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "createPresetAssignment:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can create preset assignments",
+			resource: "holiday_preset_assignment",
+			action: "create",
+		});
 
-		const preset = yield* _(
-			actor.dbService.query("verifyAssignmentPreset", async () => {
+		const preset = yield* actor.dbService
+			.query("verifyAssignmentPreset", async () => {
 				const [p] = await actor.dbService.db
 					.select({ id: holidayPreset.id })
 					.from(holidayPreset)
@@ -1061,32 +1033,31 @@ export async function createPresetAssignment(
 					)
 					.limit(1);
 				return p;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: data.presetId,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Preset not found",
+							entityType: "holiday_preset",
+							entityId: data.presetId,
+						}),
+				),
+			);
 
 		if (!preset) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Preset not found",
-						entityType: "holiday_preset",
-						entityId: data.presetId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Preset not found",
+					entityType: "holiday_preset",
+					entityId: data.presetId,
+				}),
 			);
 		}
 
 		if (data.assignmentType === "team") {
-			const targetTeam = yield* _(
-				actor.dbService.query("verifyAssignmentTeam", async () => {
+			const targetTeam = yield* actor.dbService
+				.query("verifyAssignmentTeam", async () => {
 					const [row] = await actor.dbService.db
 						.select({ id: team.id })
 						.from(team)
@@ -1095,33 +1066,32 @@ export async function createPresetAssignment(
 						)
 						.limit(1);
 					return row;
-				}),
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Team not found",
-							entityType: "team",
-							entityId: data.teamId ?? "",
-						}),
-				),
-			);
+				})
+				.pipe(
+					Effect.mapError(
+						() =>
+							new NotFoundError({
+								message: "Team not found",
+								entityType: "team",
+								entityId: data.teamId ?? "",
+							}),
+					),
+				);
 
 			if (!targetTeam) {
-				yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Team not found",
-							entityType: "team",
-							entityId: data.teamId ?? "",
-						}),
-					),
+				yield* Effect.fail(
+					new NotFoundError({
+						message: "Team not found",
+						entityType: "team",
+						entityId: data.teamId ?? "",
+					}),
 				);
 			}
 		}
 
 		if (data.assignmentType === "employee") {
-			const targetEmployee = yield* _(
-				actor.dbService.query("verifyAssignmentEmployee", async () => {
+			const targetEmployee = yield* actor.dbService
+				.query("verifyAssignmentEmployee", async () => {
 					const [row] = await actor.dbService.db
 						.select({ id: employee.id })
 						.from(employee)
@@ -1133,26 +1103,25 @@ export async function createPresetAssignment(
 						)
 						.limit(1);
 					return row;
-				}),
-				Effect.mapError(
-					() =>
-						new NotFoundError({
-							message: "Employee not found",
-							entityType: "employee",
-							entityId: data.employeeId ?? "",
-						}),
-				),
-			);
+				})
+				.pipe(
+					Effect.mapError(
+						() =>
+							new NotFoundError({
+								message: "Employee not found",
+								entityType: "employee",
+								entityId: data.employeeId ?? "",
+							}),
+					),
+				);
 
 			if (!targetEmployee) {
-				yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Employee not found",
-							entityType: "employee",
-							entityId: data.employeeId ?? "",
-						}),
-					),
+				yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: data.employeeId ?? "",
+					}),
 				);
 			}
 		}
@@ -1173,14 +1142,12 @@ export async function createPresetAssignment(
 			targetConditions.push(eq(holidayPresetAssignment.employeeId, data.employeeId));
 		}
 
-		const existingAssignments = yield* _(
-			actor.dbService.query("checkExistingRange", async () => {
-				return await actor.dbService.db
-					.select()
-					.from(holidayPresetAssignment)
-					.where(and(...targetConditions));
-			}),
-		);
+		const existingAssignments = yield* actor.dbService.query("checkExistingRange", async () => {
+			return await actor.dbService.db
+				.select()
+				.from(holidayPresetAssignment)
+				.where(and(...targetConditions));
+		});
 
 		const overlappingAssignment = existingAssignments.find((assignment) =>
 			assignmentRangesOverlap(
@@ -1192,20 +1159,18 @@ export async function createPresetAssignment(
 		);
 
 		if (overlappingAssignment) {
-			yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "An assignment already exists for this target in the selected date range",
-						conflictType: "duplicate_assignment_range",
-						details: { existingId: overlappingAssignment.id },
-					}),
-				),
+			yield* Effect.fail(
+				new ConflictError({
+					message: "An assignment already exists for this target in the selected date range",
+					conflictType: "duplicate_assignment_range",
+					details: { existingId: overlappingAssignment.id },
+				}),
 			);
 		}
 
 		// Create assignment
-		const newAssignment = yield* _(
-			actor.dbService.query("createAssignment", async () => {
+		const newAssignment = yield* actor.dbService
+			.query("createAssignment", async () => {
 				const [a] = await actor.dbService.db
 					.insert(holidayPresetAssignment)
 					.values({
@@ -1222,17 +1187,18 @@ export async function createPresetAssignment(
 					})
 					.returning();
 				return a;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to create preset assignment",
-						operation: "insert",
-						table: "holiday_preset_assignment",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to create preset assignment",
+							operation: "insert",
+							table: "holiday_preset_assignment",
+							cause: error,
+						}),
+				),
+			);
 
 		return newAssignment;
 	}).pipe(Effect.provide(AppLayer));
@@ -1246,21 +1212,19 @@ export async function createPresetAssignment(
 export async function deletePresetAssignment(
 	assignmentId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({ queryName: "deletePresetAssignment:actor" }),
-		);
-		yield* _(
-			requireOrgAdminEmployeeSettingsAccess(actor, {
-				message: "Only org admins can delete preset assignments",
-				resource: "holiday_preset_assignment",
-				action: "delete",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			queryName: "deletePresetAssignment:actor",
+		});
+		yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+			message: "Only org admins can delete preset assignments",
+			resource: "holiday_preset_assignment",
+			action: "delete",
+		});
 
 		// Soft delete
-		const deletedAssignment = yield* _(
-			actor.dbService.query("deleteAssignment", async () => {
+		const deletedAssignment = yield* actor.dbService
+			.query("deleteAssignment", async () => {
 				const [assignment] = await actor.dbService.db
 					.update(holidayPresetAssignment)
 					.set({ isActive: false })
@@ -1272,27 +1236,26 @@ export async function deletePresetAssignment(
 					)
 					.returning({ id: holidayPresetAssignment.id });
 				return assignment;
-			}),
-			Effect.mapError(
-				(error) =>
-					new DatabaseError({
-						message: "Failed to delete preset assignment",
-						operation: "update",
-						table: "holiday_preset_assignment",
-						cause: error,
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					(error) =>
+						new DatabaseError({
+							message: "Failed to delete preset assignment",
+							operation: "update",
+							table: "holiday_preset_assignment",
+							cause: error,
+						}),
+				),
+			);
 
 		if (!deletedAssignment) {
-			yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Preset assignment not found",
-						entityType: "holiday_preset_assignment",
-						entityId: assignmentId,
-					}),
-				),
+			yield* Effect.fail(
+				new NotFoundError({
+					message: "Preset assignment not found",
+					entityType: "holiday_preset_assignment",
+					entityId: assignmentId,
+				}),
 			);
 		}
 	}).pipe(Effect.provide(AppLayer));
@@ -1310,26 +1273,22 @@ export async function deletePresetAssignment(
 export async function getTeamsForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<TeamListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "getTeamsForAssignment:actor",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getTeamsForAssignment:actor",
+		});
 
-		const teams = yield* _(
-			actor.dbService.query("getTeams", async () => {
-				return await actor.dbService.db
-					.select({
-						id: team.id,
-						name: team.name,
-					})
-					.from(team)
-					.where(eq(team.organizationId, actor.organizationId))
-					.orderBy(team.name);
-			}),
-		);
+		const teams = yield* actor.dbService.query("getTeams", async () => {
+			return await actor.dbService.db
+				.select({
+					id: team.id,
+					name: team.name,
+				})
+				.from(team)
+				.where(eq(team.organizationId, actor.organizationId))
+				.orderBy(team.name);
+		});
 
 		return teams;
 	}).pipe(Effect.provide(AppLayer));
@@ -1343,31 +1302,25 @@ export async function getTeamsForAssignment(
 export async function getEmployeesForAssignment(
 	organizationId: string,
 ): Promise<ServerActionResult<EmployeeListItem[]>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(
-			getEmployeeSettingsActorContext({
-				organizationId,
-				queryName: "getEmployeesForAssignment:actor",
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({
+			organizationId,
+			queryName: "getEmployeesForAssignment:actor",
+		});
 
-		const employees = yield* _(
-			actor.dbService.query("getEmployees", async () => {
-				return await actor.dbService.db
-					.select({
-						id: employee.id,
-						firstName: user.firstName,
-						lastName: user.lastName,
-						position: employee.position,
-					})
-					.from(employee)
-					.innerJoin(user, eq(employee.userId, user.id))
-					.where(
-						and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)),
-					)
-					.orderBy(user.firstName, user.lastName);
-			}),
-		);
+		const employees = yield* actor.dbService.query("getEmployees", async () => {
+			return await actor.dbService.db
+				.select({
+					id: employee.id,
+					firstName: user.firstName,
+					lastName: user.lastName,
+					position: employee.position,
+				})
+				.from(employee)
+				.innerJoin(user, eq(employee.userId, user.id))
+				.where(and(eq(employee.organizationId, actor.organizationId), eq(employee.isActive, true)))
+				.orderBy(user.firstName, user.lastName);
+		});
 
 		return employees;
 	}).pipe(Effect.provide(AppLayer));

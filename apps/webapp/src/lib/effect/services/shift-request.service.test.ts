@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Layer, Option } from "effect-v3";
+import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { auditLog, shift, shiftRequest } from "@/db/schema";
 import { DatabaseError } from "@/lib/effect/errors";
@@ -561,7 +561,7 @@ function failureTag(
 	exit: Awaited<ReturnType<ReturnType<typeof createHarness>["runExit"]>>,
 ) {
 	if (Exit.isSuccess(exit)) return undefined;
-	const failure = Cause.failureOption(exit.cause);
+	const failure = Cause.findErrorOption(exit.cause);
 	return Option.isSome(failure)
 		? (failure.value as { _tag?: string })._tag
 		: undefined;

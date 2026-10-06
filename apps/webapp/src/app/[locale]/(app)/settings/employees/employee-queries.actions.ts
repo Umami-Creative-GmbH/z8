@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, count, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { invitation, member, user } from "@/db/auth-schema";
 import {
 	employee,
@@ -13,8 +13,8 @@ import {
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import type {
 	EmployeeDetailRecord,
 	EmployeeDirectoryRow,
@@ -239,8 +239,8 @@ function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmploye
 }
 
 function loadEmployeePage(params: EmployeeListParams) {
-	return Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
+	return Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
 		const { dbService } = actor;
 		const approvedMembership = dbService.db
 			.select({ id: member.id, role: member.role, status: member.status })
@@ -255,11 +255,9 @@ function loadEmployeePage(params: EmployeeListParams) {
 			.orderBy(desc(member.createdAt), desc(member.id))
 			.limit(1)
 			.as("approved_employee_membership");
-		yield* _(
-			dbService.query("reconcileOrganizationEmployeeProfiles", async () => {
-				await ensureEmployeeProfilesForOrganizationMembers(dbService.db, actor.organizationId);
-			}),
-		);
+		yield* dbService.query("reconcileOrganizationEmployeeProfiles", async () => {
+			await ensureEmployeeProfilesForOrganizationMembers(dbService.db, actor.organizationId);
+		});
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
 		const where = buildEmployeeFilters(actor.organizationId, {
@@ -272,51 +270,14 @@ function loadEmployeePage(params: EmployeeListParams) {
 
 		const includeInvitationDrafts = actor.accessTier === "orgAdmin";
 		if (!includeInvitationDrafts) {
-			const [totalResult, rows] = yield* _(
-				Effect.all([
-					dbService.query("countEmployees", async () => {
-						return await dbService.db
-							.select({ total: count() })
-							.from(employee)
-							.innerJoin(user, eq(employee.userId, user.id))
-							.where(where);
-					}),
-					dbService.query("listEmployees", async () => {
-						return await dbService.db
-							.select({
-								employee,
-								user,
-								team,
-								membership: {
-									id: approvedMembership.id,
-									role: approvedMembership.role,
-									status: approvedMembership.status,
-								},
-							})
-							.from(employee)
-							.innerJoin(user, eq(employee.userId, user.id))
-							.leftJoin(team, eq(employee.teamId, team.id))
-							.leftJoinLateral(approvedMembership, sql`true`)
-							.where(where)
-							.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
-							.limit(limit)
-							.offset(offset);
-					}),
-				]),
-			);
-
-			const total = totalResult[0]?.total ?? 0;
-			return {
-				employees: rows.map(mapEmployeeRow),
-				total,
-				hasMore: offset + rows.length < total,
-			};
-		}
-
-		const now = dateFromInstant(systemClock.nowInstant());
-		const draftWhere = buildInvitationDraftFilters(actor.organizationId, now, params);
-		const [employeeRows, draftRows] = yield* _(
-			Effect.all([
+			const [totalResult, rows] = yield* Effect.all([
+				dbService.query("countEmployees", async () => {
+					return await dbService.db
+						.select({ total: count() })
+						.from(employee)
+						.innerJoin(user, eq(employee.userId, user.id))
+						.where(where);
+				}),
 				dbService.query("listEmployees", async () => {
 					return await dbService.db
 						.select({
@@ -334,24 +295,57 @@ function loadEmployeePage(params: EmployeeListParams) {
 						.leftJoin(team, eq(employee.teamId, team.id))
 						.leftJoinLateral(approvedMembership, sql`true`)
 						.where(where)
-						.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
+						.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
+						.limit(limit)
+						.offset(offset);
 				}),
-				draftWhere
-					? dbService.query("listEmployeeInvitationDrafts", async () => {
-							return await dbService.db
-								.select({
-									draft: employeeInvitationDraft,
-									invitation,
-									team,
-								})
-								.from(employeeInvitationDraft)
-								.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
-								.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
-								.where(draftWhere);
-						})
-					: Effect.succeed([]),
-			]),
-		);
+			]);
+
+			const total = totalResult[0]?.total ?? 0;
+			return {
+				employees: rows.map(mapEmployeeRow),
+				total,
+				hasMore: offset + rows.length < total,
+			};
+		}
+
+		const now = dateFromInstant(systemClock.nowInstant());
+		const draftWhere = buildInvitationDraftFilters(actor.organizationId, now, params);
+		const [employeeRows, draftRows] = yield* Effect.all([
+			dbService.query("listEmployees", async () => {
+				return await dbService.db
+					.select({
+						employee,
+						user,
+						team,
+						membership: {
+							id: approvedMembership.id,
+							role: approvedMembership.role,
+							status: approvedMembership.status,
+						},
+					})
+					.from(employee)
+					.innerJoin(user, eq(employee.userId, user.id))
+					.leftJoin(team, eq(employee.teamId, team.id))
+					.leftJoinLateral(approvedMembership, sql`true`)
+					.where(where)
+					.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
+			}),
+			draftWhere
+				? dbService.query("listEmployeeInvitationDrafts", async () => {
+						return await dbService.db
+							.select({
+								draft: employeeInvitationDraft,
+								invitation,
+								team,
+							})
+							.from(employeeInvitationDraft)
+							.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
+							.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
+							.where(draftWhere);
+					})
+				: Effect.succeed([]),
+		]);
 
 		const employees = sortEmployeeDirectoryRows([
 			...employeeRows.map(mapEmployeeRow),
@@ -368,8 +362,8 @@ function loadEmployeePage(params: EmployeeListParams) {
 }
 
 function loadSelectableEmployeePage(params: EmployeeSelectParams) {
-	return Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
+	return Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
 		const { dbService } = actor;
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
@@ -381,50 +375,48 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 					: undefined,
 		});
 
-		const [totalResult, rows] = yield* _(
-			Effect.all([
-				dbService.query("countSelectableEmployees", async () => {
-					return await dbService.db
-						.select({ total: count() })
-						.from(employee)
-						.innerJoin(user, eq(employee.userId, user.id))
-						.where(where);
-				}),
-				dbService.query("listEmployeesForSelect", async () => {
-					return await dbService.db
-						.select({
-							employee: {
-								id: employee.id,
-								userId: employee.userId,
-								pronouns: employee.pronouns,
-								position: employee.position,
-								role: employee.role,
-								isActive: employee.isActive,
-								teamId: employee.teamId,
-							},
-							user: {
-								id: user.id,
-								firstName: user.firstName,
-								lastName: user.lastName,
-								name: user.name,
-								email: user.email,
-								image: user.image,
-							},
-							team: {
-								id: team.id,
-								name: team.name,
-							},
-						})
-						.from(employee)
-						.innerJoin(user, eq(employee.userId, user.id))
-						.leftJoin(team, eq(employee.teamId, team.id))
-						.where(where)
-						.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
-						.limit(limit)
-						.offset(offset);
-				}),
-			]),
-		);
+		const [totalResult, rows] = yield* Effect.all([
+			dbService.query("countSelectableEmployees", async () => {
+				return await dbService.db
+					.select({ total: count() })
+					.from(employee)
+					.innerJoin(user, eq(employee.userId, user.id))
+					.where(where);
+			}),
+			dbService.query("listEmployeesForSelect", async () => {
+				return await dbService.db
+					.select({
+						employee: {
+							id: employee.id,
+							userId: employee.userId,
+							pronouns: employee.pronouns,
+							position: employee.position,
+							role: employee.role,
+							isActive: employee.isActive,
+							teamId: employee.teamId,
+						},
+						user: {
+							id: user.id,
+							firstName: user.firstName,
+							lastName: user.lastName,
+							name: user.name,
+							email: user.email,
+							image: user.image,
+						},
+						team: {
+							id: team.id,
+							name: team.name,
+						},
+					})
+					.from(employee)
+					.innerJoin(user, eq(employee.userId, user.id))
+					.leftJoin(team, eq(employee.teamId, team.id))
+					.where(where)
+					.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id))
+					.limit(limit)
+					.offset(offset);
+			}),
+		]);
 
 		const total = totalResult[0]?.total ?? 0;
 		const typedRows = rows as unknown as SelectableEmployeeRow[];
@@ -439,57 +431,51 @@ function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 export async function getEmployeeAction(
 	employeeId: string,
 ): Promise<ServerActionResult<EmployeeDetailRecord>> {
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
 		const { dbService } = actor;
 		const draftId = decodeEmployeeInvitationDraftId(employeeId);
 
 		if (draftId) {
 			if (actor.accessTier !== "orgAdmin") {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Employee not found",
-							entityType: "employee",
-							entityId: employeeId,
-						}),
-					),
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
 				);
 			}
 			const now = dateFromInstant(systemClock.nowInstant());
 
-			const draftRows = yield* _(
-				dbService.query("getEmployeeInvitationDraft", async () => {
-					return await dbService.db
-						.select({
-							draft: employeeInvitationDraft,
-							invitation,
-							team,
-						})
-						.from(employeeInvitationDraft)
-						.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
-						.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
-						.where(
-							buildEligibleInvitationDraftPredicate({
-								organizationId: actor.organizationId,
-								now,
-								draftId,
-							}),
-						)
-						.limit(1);
-				}),
-			);
+			const draftRows = yield* dbService.query("getEmployeeInvitationDraft", async () => {
+				return await dbService.db
+					.select({
+						draft: employeeInvitationDraft,
+						invitation,
+						team,
+					})
+					.from(employeeInvitationDraft)
+					.innerJoin(invitation, eq(employeeInvitationDraft.invitationId, invitation.id))
+					.leftJoin(team, eq(employeeInvitationDraft.teamId, team.id))
+					.where(
+						buildEligibleInvitationDraftPredicate({
+							organizationId: actor.organizationId,
+							now,
+							draftId,
+						}),
+					)
+					.limit(1);
+			});
 
 			const draftRow = draftRows[0];
 			if (!draftRow) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Employee not found",
-							entityType: "employee",
-							entityId: employeeId,
-						}),
-					),
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Employee not found",
+						entityType: "employee",
+						entityId: employeeId,
+					}),
 				);
 			}
 
@@ -510,99 +496,89 @@ export async function getEmployeeAction(
 			.limit(1)
 			.as("approved_employee_membership");
 
-		const rows = yield* _(
-			dbService.query("getTargetEmployee", async () => {
-				return await dbService.db
-					.select({
-						employee,
-						user,
-						team,
-						membership: {
-							id: approvedMembership.id,
-							role: approvedMembership.role,
-							status: approvedMembership.status,
-						},
-					})
-					.from(employee)
-					.innerJoin(user, eq(employee.userId, user.id))
-					.leftJoin(team, eq(employee.teamId, team.id))
-					.leftJoinLateral(approvedMembership, sql`true`)
-					.where(
-						and(
-							eq(employee.id, employeeId),
-							eq(employee.organizationId, actor.organizationId),
-						),
-					)
-					.limit(1);
-			}),
-		);
+		const rows = yield* dbService.query("getTargetEmployee", async () => {
+			return await dbService.db
+				.select({
+					employee,
+					user,
+					team,
+					membership: {
+						id: approvedMembership.id,
+						role: approvedMembership.role,
+						status: approvedMembership.status,
+					},
+				})
+				.from(employee)
+				.innerJoin(user, eq(employee.userId, user.id))
+				.leftJoin(team, eq(employee.teamId, team.id))
+				.leftJoinLateral(approvedMembership, sql`true`)
+				.where(
+					and(
+						eq(employee.id, employeeId),
+						eq(employee.organizationId, actor.organizationId),
+					),
+				)
+				.limit(1);
+		});
 
 		const targetEmployee = rows[0];
 		if (!targetEmployee) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee not found",
+					entityType: "employee",
+					entityId: employeeId,
+				}),
 			);
 		}
 
-		yield* _(
-			ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee.employee, {
-				message: "You do not have access to this employee",
-				resource: "employee",
-				action: "read",
-			}),
-		);
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee.employee, {
+			message: "You do not have access to this employee",
+			resource: "employee",
+			action: "read",
+		});
 
-		const detail = yield* _(
-			dbService.query("getEmployeeRelations", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(eq(employee.id, employeeId), eq(employee.organizationId, actor.organizationId)),
-					with: {
-						user: true,
-						team: true,
-						managers: {
-							with: {
-								manager: {
-									with: {
-										user: true,
-									},
+		const detail = yield* dbService.query("getEmployeeRelations", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(eq(employee.id, employeeId), eq(employee.organizationId, actor.organizationId)),
+				with: {
+					user: true,
+					team: true,
+					managers: {
+						with: {
+							manager: {
+								with: {
+									user: true,
 								},
 							},
 						},
-						workPolicyAssignments: {
-							with: {
-								policy: {
-									with: {
-										schedule: {
-											with: {
-												days: true,
-											},
+					},
+					workPolicyAssignments: {
+						with: {
+							policy: {
+								with: {
+									schedule: {
+										with: {
+											days: true,
 										},
 									},
 								},
 							},
-							orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-							limit: 1,
 						},
+						orderBy: [desc(workPolicyAssignment.effectiveFrom)],
+						limit: 1,
 					},
-				});
-			}),
-		);
+				},
+			});
+		});
 
 		if (!detail) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee not found",
+					entityType: "employee",
+					entityId: employeeId,
+				}),
 			);
 		}
 
@@ -639,56 +615,54 @@ export async function getEmployeesByIdsAction(
 		return { success: true, data: [] };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const actor = yield* _(getEmployeeSettingsActorContext());
+	const effect = Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext();
 		const { dbService } = actor;
 
-		const rows = yield* _(
-			dbService.query("getEmployeesByIds", async () => {
-				const scopeWhere = buildEmployeeFilters(actor.organizationId, {
-					excludeIds: [],
-					roles: undefined,
-					role: undefined,
-					search: undefined,
-					status: undefined,
-					teamId: undefined,
-					managerId:
-						actor.accessTier === "manager" && actor.currentEmployee
-							? actor.currentEmployee.id
-							: undefined,
-				});
+		const rows = yield* dbService.query("getEmployeesByIds", async () => {
+			const scopeWhere = buildEmployeeFilters(actor.organizationId, {
+				excludeIds: [],
+				roles: undefined,
+				role: undefined,
+				search: undefined,
+				status: undefined,
+				teamId: undefined,
+				managerId:
+					actor.accessTier === "manager" && actor.currentEmployee
+						? actor.currentEmployee.id
+						: undefined,
+			});
 
-				return await dbService.db
-					.select({
-						employee: {
-							id: employee.id,
-							userId: employee.userId,
-							pronouns: employee.pronouns,
-							position: employee.position,
-							role: employee.role,
-							isActive: employee.isActive,
-							teamId: employee.teamId,
-						},
-						user: {
-							id: user.id,
-							firstName: user.firstName,
-							lastName: user.lastName,
-							name: user.name,
-							email: user.email,
-							image: user.image,
-						},
-						team: {
-							id: team.id,
-							name: team.name,
-						},
-					})
-					.from(employee)
-					.innerJoin(user, eq(employee.userId, user.id))
-					.leftJoin(team, eq(employee.teamId, team.id))
-					.where(and(scopeWhere, inArray(employee.id, employeeIds)))
-					.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
-			}),
-		);
+			return await dbService.db
+				.select({
+					employee: {
+						id: employee.id,
+						userId: employee.userId,
+						pronouns: employee.pronouns,
+						position: employee.position,
+						role: employee.role,
+						isActive: employee.isActive,
+						teamId: employee.teamId,
+					},
+					user: {
+						id: user.id,
+						firstName: user.firstName,
+						lastName: user.lastName,
+						name: user.name,
+						email: user.email,
+						image: user.image,
+					},
+					team: {
+						id: team.id,
+						name: team.name,
+					},
+				})
+				.from(employee)
+				.innerJoin(user, eq(employee.userId, user.id))
+				.leftJoin(team, eq(employee.teamId, team.id))
+				.where(and(scopeWhere, inArray(employee.id, employeeIds)))
+				.orderBy(asc(employeeSortName), asc(user.email), asc(employee.id));
+		});
 
 		const typedRows = rows as unknown as SelectableEmployeeRow[];
 		return typedRows.map(mapSelectableEmployeeRow);

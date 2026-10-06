@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
 	type EmployeeEmploymentHistory,
@@ -251,49 +251,43 @@ export async function listEmployeeEmploymentHistoryAction(
 			logger.error({ error, employeeId }, "Failed to list employment history");
 		},
 		execute: (span) =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService } = actor;
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
-						resource: "employment_history",
-						action: "read",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's employment history",
+					resource: "employment_history",
+					action: "read",
+				});
 
-				const history = yield* _(
-					dbService.query("listEmployeeEmploymentHistory", async () => {
-						return await dbService.db.query.employeeEmploymentHistory.findMany({
-							where: and(
-								eq(employeeEmploymentHistory.employeeId, employeeId),
-								eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+				const history = yield* dbService.query("listEmployeeEmploymentHistory", async () => {
+					return await dbService.db.query.employeeEmploymentHistory.findMany({
+						where: and(
+							eq(employeeEmploymentHistory.employeeId, employeeId),
+							eq(employeeEmploymentHistory.organizationId, actor.organizationId),
+						),
+						orderBy: [desc(employeeEmploymentHistory.validFrom)],
+					});
+				});
+
+				const periods = yield* dbService.query("listEmployeeEmploymentPeriods", async () => {
+					return await dbService.db
+						.select({
+							id: employeeEmploymentPeriod.id,
+							status: employeeEmploymentPeriod.status,
+							startedAt: employeeEmploymentPeriod.startedAt,
+							endedAt: employeeEmploymentPeriod.endedAt,
+						})
+						.from(employeeEmploymentPeriod)
+						.where(
+							and(
+								eq(employeeEmploymentPeriod.employeeId, employeeId),
+								eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
 							),
-							orderBy: [desc(employeeEmploymentHistory.validFrom)],
-						});
-					}),
-				);
-
-				const periods = yield* _(
-					dbService.query("listEmployeeEmploymentPeriods", async () => {
-						return await dbService.db
-							.select({
-								id: employeeEmploymentPeriod.id,
-								status: employeeEmploymentPeriod.status,
-								startedAt: employeeEmploymentPeriod.startedAt,
-								endedAt: employeeEmploymentPeriod.endedAt,
-							})
-							.from(employeeEmploymentPeriod)
-							.where(
-								and(
-									eq(employeeEmploymentPeriod.employeeId, employeeId),
-									eq(employeeEmploymentPeriod.organizationId, actor.organizationId),
-								),
-							);
-					}),
-				);
+						);
+				});
 				const periodById = new Map(periods.map((period) => [period.id, period]));
 
 				span.setAttribute("history.count", history.length);
@@ -322,56 +316,49 @@ export async function createEmployeeEmploymentHistoryAction(
 			logger.error({ error, employeeId }, "Failed to create employment history");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService, session } = actor;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can create employment history",
-						resource: "employment_history",
-						action: "create",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can create employment history",
+					resource: "employment_history",
+					action: "create",
+				});
 
-				const validatedData = yield* _(validateInput(upsertEmploymentHistorySchema, data));
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const validatedData = yield* validateInput(upsertEmploymentHistorySchema, data);
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
-						resource: "employment_history",
-						action: "create",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's employment history",
+					resource: "employment_history",
+					action: "create",
+				});
 
 				if (validatedData.workPolicyId) {
-					const policy = yield* _(
-						dbService.query("getEmploymentHistoryWorkPolicy", async () => {
-							return await dbService.db.query.workPolicy.findFirst({
-								where: and(
-									eq(workPolicy.id, validatedData.workPolicyId!),
-									eq(workPolicy.organizationId, actor.organizationId),
-								),
-							});
-						}),
-					);
+					const policy = yield* dbService.query("getEmploymentHistoryWorkPolicy", async () => {
+						return await dbService.db.query.workPolicy.findFirst({
+							where: and(
+								eq(workPolicy.id, validatedData.workPolicyId!),
+								eq(workPolicy.organizationId, actor.organizationId),
+							),
+						});
+					});
 
 					if (!policy) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Work policy not found",
-									entityType: "work_policy",
-									entityId: validatedData.workPolicyId,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Work policy not found",
+								entityType: "work_policy",
+								entityId: validatedData.workPolicyId,
+							}),
 						);
 					}
 				}
 
-				const createdHistory = yield* _(
-					dbService.query("createEmployeeEmploymentHistory", async () => {
+				const createdHistory = yield* dbService.query(
+					"createEmployeeEmploymentHistory",
+					async () => {
 						return await dbService.db.transaction(async (tx) => {
 							await tx.execute(sql`
 								select ${employee.id}
@@ -465,18 +452,16 @@ export async function createEmployeeEmploymentHistoryAction(
 
 							return inserted;
 						});
-					}),
+					},
 				);
 
 				if (createdHistory.reviewState === "confirmed") {
-					yield* _(
-						Effect.promise(() =>
-							markContractWorkBalanceDirty({
-								employeeId,
-								organizationId: actor.organizationId,
-								fromDate: createdHistory.validFrom,
-							}),
-						),
+					yield* Effect.promise(() =>
+						markContractWorkBalanceDirty({
+							employeeId,
+							organizationId: actor.organizationId,
+							fromDate: createdHistory.validFrom,
+						}),
 					);
 				}
 
@@ -503,30 +488,27 @@ export async function confirmEmployeeEmploymentHistoryAction(
 			logger.error({ error, employeeId, historyId }, "Failed to confirm employment history");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService, session } = actor;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can confirm employment history",
-						resource: "employment_history",
-						action: "confirm",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can confirm employment history",
+					resource: "employment_history",
+					action: "confirm",
+				});
 
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
-						resource: "employment_history",
-						action: "confirm",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's employment history",
+					resource: "employment_history",
+					action: "confirm",
+				});
 
-				const confirmedHistory = yield* _(
-					dbService.query("confirmEmployeeEmploymentHistory", async () => {
+				const confirmedHistory = yield* dbService.query(
+					"confirmEmployeeEmploymentHistory",
+					async () => {
 						return await dbService.db.transaction(async (tx) => {
 							await tx.execute(sql`
 								select ${employee.id}
@@ -639,17 +621,15 @@ export async function confirmEmployeeEmploymentHistoryAction(
 
 							return updated;
 						});
-					}),
+					},
 				);
 
-				yield* _(
-					Effect.promise(() =>
-						markContractWorkBalanceDirty({
-							employeeId,
-							organizationId: actor.organizationId,
-							fromDate: confirmedHistory.validFrom,
-						}),
-					),
+				yield* Effect.promise(() =>
+					markContractWorkBalanceDirty({
+						employeeId,
+						organizationId: actor.organizationId,
+						fromDate: confirmedHistory.validFrom,
+					}),
 				);
 
 				revalidateEmployeesCache(actor.organizationId);
@@ -675,30 +655,27 @@ export async function cancelEmployeeEmploymentHistoryAction(
 			logger.error({ error, employeeId, historyId }, "Failed to cancel employment history");
 		},
 		execute: () =>
-			Effect.gen(function* (_) {
-				const actor = yield* _(getEmployeeSettingsActorContext());
+			Effect.gen(function* () {
+				const actor = yield* getEmployeeSettingsActorContext();
 				const { dbService, session } = actor;
 
-				yield* _(
-					requireOrgAdminEmployeeSettingsAccess(actor, {
-						message: "Only organization admins can cancel employment history",
-						resource: "employment_history",
-						action: "cancel",
-					}),
-				);
+				yield* requireOrgAdminEmployeeSettingsAccess(actor, {
+					message: "Only organization admins can cancel employment history",
+					resource: "employment_history",
+					action: "cancel",
+				});
 
-				const targetEmployee = yield* _(getTargetEmployee(employeeId));
+				const targetEmployee = yield* getTargetEmployee(employeeId);
 
-				yield* _(
-					ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-						message: "You do not have access to this employee's employment history",
-						resource: "employment_history",
-						action: "cancel",
-					}),
-				);
+				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+					message: "You do not have access to this employee's employment history",
+					resource: "employment_history",
+					action: "cancel",
+				});
 
-				const canceledHistory = yield* _(
-					dbService.query("cancelEmployeeEmploymentHistory", async () => {
+				const canceledHistory = yield* dbService.query(
+					"cancelEmployeeEmploymentHistory",
+					async () => {
 						return await dbService.db.transaction(async (tx) => {
 							await tx.execute(sql`
 								select ${employee.id}
@@ -780,18 +757,16 @@ export async function cancelEmployeeEmploymentHistoryAction(
 
 							return targetHistory;
 						});
-					}),
+					},
 				);
 
 				if (canceledHistory.reviewState === "confirmed") {
-					yield* _(
-						Effect.promise(() =>
-							markContractWorkBalanceDirty({
-								employeeId,
-								organizationId: actor.organizationId,
-								fromDate: canceledHistory.validFrom,
-							}),
-						),
+					yield* Effect.promise(() =>
+						markContractWorkBalanceDirty({
+							employeeId,
+							organizationId: actor.organizationId,
+							fromDate: canceledHistory.validFrom,
+						}),
 					);
 				}
 
