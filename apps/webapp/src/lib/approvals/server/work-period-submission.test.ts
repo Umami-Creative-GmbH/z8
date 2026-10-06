@@ -1,6 +1,6 @@
 import { getTableName } from "drizzle-orm";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { parseInstant } from "@/lib/datetime/temporal-core";

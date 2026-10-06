@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -36,28 +36,25 @@ vi.mock("@/lib/approvals/server/travel-expense-approvals", () => ({
 	loadTravelExpenseApprover: mockState.loadApprover,
 }));
 
-vi.mock("@/lib/effect-v3/services/database.service", async () => {
-	const { Context } = await import("effect-v3");
-	return { DatabaseService: Context.GenericTag<unknown>("DatabaseService") };
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const { Context } = await import("effect");
+	return { DatabaseService: Context.Service<unknown>("DatabaseService") };
 });
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Context, Layer } = await import("effect-v3");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Context, Layer } = await import("effect");
 	return {
-		AppLayer: Layer.succeed(
-			Context.GenericTag<unknown>("DatabaseService"),
-			mockState.databaseService,
-		),
+		AppLayer: Layer.succeed(Context.Service<unknown>("DatabaseService"), mockState.databaseService),
 	};
 });
 
-vi.mock("@/lib/effect-v3/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect-v3");
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect");
 	return {
 		runServerActionSafe: async (effect: Effect.Effect<unknown, unknown, never>) => {
 			const exit = await Effect.runPromiseExit(effect);
 			if (Exit.isSuccess(exit)) return { success: true, data: exit.value };
-			const failure = Option.getOrNull(Cause.failureOption(exit.cause)) as {
+			const failure = Option.getOrNull(Cause.findErrorOption(exit.cause)) as {
 				message: string;
 				_tag: string;
 			};

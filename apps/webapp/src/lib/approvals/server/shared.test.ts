@@ -1,4 +1,4 @@
-import { Cause, Context, Effect, Exit, Option } from "effect-v3";
+import { Cause, Context, Effect, Exit, Option, Result } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalActionOptions } from "@/lib/approvals/domain/types";
 import {
@@ -66,7 +66,7 @@ import {
 	getApprovalStatusUpdate,
 	processApprovalWithCurrentEmployee,
 } from "@/lib/approvals/server/shared";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 beforeEach(() => {
 	loggerError.mockClear();
@@ -588,7 +588,7 @@ describe("getApprovalStatusUpdate", () => {
 		);
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
-			expect(Option.getOrNull(Cause.failureOption(exit.cause))).toBeInstanceOf(
+			expect(Option.getOrNull(Cause.findErrorOption(exit.cause))).toBeInstanceOf(
 				ConflictError,
 			);
 		}
@@ -623,7 +623,7 @@ describe("getApprovalStatusUpdate", () => {
 		const exit = await runExit();
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
-			expect(Option.getOrNull(Cause.failureOption(exit.cause))).toBeInstanceOf(
+			expect(Option.getOrNull(Cause.findErrorOption(exit.cause))).toBeInstanceOf(
 				ConflictError,
 			);
 		}
@@ -693,8 +693,8 @@ describe("getApprovalStatusUpdate", () => {
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
 			const error =
-				Option.getOrNull(Cause.failureOption(exit.cause)) ??
-				([...(Cause.defects(exit.cause) as Iterable<unknown>)][0] as unknown);
+				Option.getOrNull(Cause.findErrorOption(exit.cause)) ??
+				Result.getOrNull(Cause.findDefect(exit.cause));
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).toMatchObject({
 				message: "Approval request is no longer pending",
@@ -770,8 +770,8 @@ describe("getApprovalStatusUpdate", () => {
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
 			const error =
-				Option.getOrNull(Cause.failureOption(exit.cause)) ??
-				([...(Cause.defects(exit.cause) as Iterable<unknown>)][0] as unknown);
+				Option.getOrNull(Cause.findErrorOption(exit.cause)) ??
+				Result.getOrNull(Cause.findDefect(exit.cause));
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).not.toBeInstanceOf(DatabaseError);
 			expect(error).toMatchObject({
@@ -859,12 +859,10 @@ describe("getApprovalStatusUpdate", () => {
 	});
 
 	it("preserves caller-provided services inside transactional approval side effects", async () => {
-		class TestApprovalSideEffectService extends Context.Tag(
-			"TestApprovalSideEffectService",
-		)<
+		class TestApprovalSideEffectService extends Context.Service<
 			TestApprovalSideEffectService,
 			{ readonly run: () => Effect.Effect<void> }
-		>() {}
+		>()("TestApprovalSideEffectService") {}
 
 		const approvalFindFirst = vi.fn().mockResolvedValue({
 			id: "approval-1",
@@ -935,9 +933,9 @@ describe("getApprovalStatusUpdate", () => {
 				"approve",
 				undefined,
 				() =>
-					Effect.gen(function* (_) {
-						const service = yield* _(TestApprovalSideEffectService);
-						yield* _(service.run());
+					Effect.gen(function* () {
+						const service = yield* TestApprovalSideEffectService;
+						yield* service.run();
 					}),
 				undefined,
 				{ transactional: true },
@@ -1253,18 +1251,16 @@ function createOrdinaryPostCommitContext(
 		}),
 	);
 	const afterCommit = vi.fn(() =>
-		Effect.gen(function* (_) {
+		Effect.gen(function* () {
 			expect(transactionOpen).toBe(false);
 			notification();
 			if (options?.afterCommitFails) {
-				yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "notification failed",
-							entityType,
-							entityId: "entity-1",
-						}),
-					),
+				yield* Effect.fail(
+					new NotFoundError({
+						message: "notification failed",
+						entityType,
+						entityId: "entity-1",
+					}),
 				);
 			}
 		}),

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import {
 	approvalChainStageInstance,
 	approvalRequest,
@@ -201,67 +201,57 @@ function preflightReportDecision(
 	action: ApprovalAction,
 	reason: string | undefined,
 ) {
-	return Effect.gen(function* (_) {
-		const report = yield* _(
-			dbService.query("getTravelExpenseReportForDecision", async () => {
-				const rows = await dbService.db
-					.select({
-						employeeId: travelExpenseReport.employeeId,
-						status: travelExpenseReport.status,
-					})
-					.from(travelExpenseReport)
-					.where(
-						and(
-							eq(travelExpenseReport.id, reportId),
-							eq(travelExpenseReport.organizationId, actor.organizationId),
-						),
-					)
-					.limit(1);
-				return rows[0];
-			}),
-		);
+	return Effect.gen(function* () {
+		const report = yield* dbService.query("getTravelExpenseReportForDecision", async () => {
+			const rows = await dbService.db
+				.select({
+					employeeId: travelExpenseReport.employeeId,
+					status: travelExpenseReport.status,
+				})
+				.from(travelExpenseReport)
+				.where(
+					and(
+						eq(travelExpenseReport.id, reportId),
+						eq(travelExpenseReport.organizationId, actor.organizationId),
+					),
+				)
+				.limit(1);
+			return rows[0];
+		});
 		if (!report) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Expense report not found",
-						entityType: ENTITY_TYPE,
-						entityId: reportId,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Expense report not found",
+					entityType: ENTITY_TYPE,
+					entityId: reportId,
+				}),
 			);
 		}
 		// No management or eligibility path lets a requester decide their own report.
 		if (report.employeeId === actor.id) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "You cannot decide your own expense report",
-						userId: actor.id,
-						resource: ENTITY_TYPE,
-						action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "You cannot decide your own expense report",
+					userId: actor.id,
+					resource: ENTITY_TYPE,
+					action,
+				}),
 			);
 		}
 		if (report.status !== "submitted") {
-			return yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Only submitted expense reports can be decided",
-						conflictType: "travel_expense_report_status",
-					}),
-				),
+			return yield* Effect.fail(
+				new ConflictError({
+					message: "Only submitted expense reports can be decided",
+					conflictType: "travel_expense_report_status",
+				}),
 			);
 		}
 		if (action === "reject" && !reason?.trim()) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "A reason is required to reject an expense report",
-						field: "reason",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "A reason is required to reject an expense report",
+					field: "reason",
+				}),
 			);
 		}
 		return report;
@@ -452,8 +442,8 @@ async function recordReportDecisionEvidence(
 
 function failureOf(cause: Cause.Cause<unknown>): unknown {
 	return (
-		Option.getOrNull(Cause.failureOption(cause)) ??
-		[...Cause.defects(cause)][0] ??
+		Option.getOrNull(Cause.findErrorOption(cause)) ??
+		Result.getOrNull(Cause.findDefect(cause)) ??
 		new Error("An error has occurred")
 	);
 }

@@ -15,7 +15,7 @@
  * Telegram HTTP transport (fetch) are replaced.
  */
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -173,7 +173,7 @@ const { TravelExpenseClaimHandler } = await import(
 	"@/lib/approvals/handlers/travel-expense-claim.handler"
 );
 const { DatabaseServiceLive } = await import(
-	"@/lib/effect-v3/services/database.service"
+	"@/lib/effect/services/database.service"
 );
 const { processApprovalDeliveries } = await import(
 	"@/lib/approvals/delivery/owner"
@@ -815,9 +815,9 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const replay = await Effect.runPromise(
 			TravelExpenseClaimHandler.approve(claimId, ids.manager, {
 				approvalRequestId: requestId,
-			}).pipe(Effect.provide(DatabaseServiceLive), Effect.either),
+			}).pipe(Effect.provide(DatabaseServiceLive), Effect.result),
 		);
-		expect(replay._tag).toBe("Right");
+		expect(replay._tag).toBe("Success");
 		expect(await decisions(claimId)).toHaveLength(1);
 		expect(harness.notifications).toEqual(["approved"]);
 
@@ -825,9 +825,9 @@ describe("expense review, decisions and cards (PostgreSQL)", () => {
 		const different = await Effect.runPromise(
 			TravelExpenseClaimHandler.reject(claimId, ids.manager, "Too late", {
 				approvalRequestId: requestId,
-			}).pipe(Effect.provide(DatabaseServiceLive), Effect.either),
+			}).pipe(Effect.provide(DatabaseServiceLive), Effect.result),
 		);
-		expect(different._tag).toBe("Left");
+		expect(different._tag).toBe("Failure");
 		expect(await decisions(claimId)).toHaveLength(1);
 		expect(await claimStatus(claimId)).toBe("approved");
 

@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option } from "effect";
 import { approvalRequest, workPeriod } from "@/db/schema";
 import {
 	instantFromDate,
@@ -1850,7 +1850,7 @@ async function executeOrdinaryWorkPeriodSubmission(
 					}),
 				);
 				if (Exit.isFailure(resolved)) {
-					const failure = Option.getOrNull(Cause.failureOption(resolved.cause));
+					const failure = Option.getOrNull(Cause.findErrorOption(resolved.cause));
 					if (
 						failure instanceof ValidationError &&
 						failure._tag === "ValidationError" &&

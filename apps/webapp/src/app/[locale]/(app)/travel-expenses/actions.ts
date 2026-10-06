@@ -1,7 +1,7 @@
 "use server";
 
 import { and, desc, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { travelExpenseClaim } from "@/db/schema";
@@ -10,9 +10,9 @@ import {
 	loadTravelExpenseApprover,
 } from "@/lib/approvals/server/travel-expense-approvals";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 
 type TravelExpenseClaimListItem = typeof travelExpenseClaim.$inferSelect;
@@ -59,10 +59,10 @@ function decideAsEmployee(
 	},
 ): Promise<ServerActionResult<void>> {
 	return runServerActionSafe(
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const approver = yield* _(loadTravelExpenseApprover(dbService, employeeId));
-			yield* _(decideTravelExpenseClaimEffect(dbService, approver, input));
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const approver = yield* loadTravelExpenseApprover(dbService, employeeId);
+			yield* decideTravelExpenseClaimEffect(dbService, approver, input);
 		}).pipe(Effect.provide(AppLayer)),
 	);
 }

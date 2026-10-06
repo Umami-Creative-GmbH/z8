@@ -1,5 +1,5 @@
 import { and, eq, inArray, or } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { db } from "@/db";
 import {
 	approvalRequest,
@@ -17,7 +17,7 @@ import {
 	type TimeApprovalKind,
 } from "@/lib/approvals/time-request-kind";
 import { NotFoundError } from "@/lib/effect/errors";
-import { runtime } from "@/lib/effect-v3/runtime";
+import { runtime } from "@/lib/effect/runtime";
 import { createLogger } from "@/lib/logger";
 import { loadOrdinaryCanonicalApprovals } from "./ordinary-canonical-read";
 import {
@@ -785,8 +785,8 @@ function canDecideRequest({
 
 function extractEffectError(cause: Cause.Cause<unknown>): unknown {
 	return (
-		Option.getOrNull(Cause.failureOption(cause)) ??
-		[...Cause.defects(cause)][0] ??
+		Option.getOrNull(Cause.findErrorOption(cause)) ??
+		Result.getOrNull(Cause.findDefect(cause)) ??
 		cause
 	);
 }

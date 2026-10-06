@@ -4,10 +4,10 @@
  * Logs all approval state transitions to the audit log table.
  */
 
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { auditLog } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import type { ApprovalStatus, ApprovalType } from "../domain/types";
 import type { ApprovalDbService } from "../server/types";
 
@@ -58,7 +58,7 @@ export interface ApprovalPolicyAuditEvent {
 // SERVICE DEFINITION
 // ============================================
 
-export class ApprovalAuditLogger extends Context.Tag("ApprovalAuditLogger")<
+export class ApprovalAuditLogger extends Context.Service<
 	ApprovalAuditLogger,
 	{
 		/**
@@ -71,7 +71,7 @@ export class ApprovalAuditLogger extends Context.Tag("ApprovalAuditLogger")<
 		 */
 		readonly logBatch: (entries: ApprovalAuditEntry[]) => Effect.Effect<void, AnyAppError, never>;
 	}
->() {}
+>()("ApprovalAuditLogger") {}
 
 function normalizeEntry(entry: ApprovalAuditEntry) {
 	const bulkOperation = entry.action === "bulk_approve" || entry.action === "bulk_reject";
@@ -155,14 +155,12 @@ export function createApprovalAuditLogger(dbService: ApprovalDbService) {
 		log: (entry) => logSingle(entry),
 
 		logBatch: (entries) =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				if (entries.length === 0) return;
 
-				yield* _(
-					dbService.query("logApprovalAuditBatch", async () => {
-						await dbService.db.insert(auditLog).values(entries.map(normalizeEntry));
-					}),
-				);
+				yield* dbService.query("logApprovalAuditBatch", async () => {
+					await dbService.db.insert(auditLog).values(entries.map(normalizeEntry));
+				});
 			}),
 	});
 }
@@ -173,8 +171,8 @@ export function createApprovalAuditLogger(dbService: ApprovalDbService) {
 
 export const ApprovalAuditLoggerLive = Layer.effect(
 	ApprovalAuditLogger,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		return createApprovalAuditLogger(dbService);
 	}),

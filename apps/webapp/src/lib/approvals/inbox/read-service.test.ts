@@ -1,10 +1,10 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
 import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
 	return {
@@ -309,17 +309,17 @@ describe("getApprovalInboxListFromSources", () => {
 				displayName: "Absence Request",
 				supportsBulkApprove: true,
 				getApprovals: vi.fn(() =>
-					Effect.gen(function* (_) {
-						const dbService = yield* _(DatabaseService);
-						return yield* _(
-							dbService.query("getApprovals", async () => [approval]),
-						);
+					Effect.gen(function* () {
+						const dbService = yield* DatabaseService;
+						return yield* dbService.query("getApprovals", async () => [
+							approval,
+						]);
 					}),
 				),
 				getCount: vi.fn(() =>
-					Effect.gen(function* (_) {
-						const dbService = yield* _(DatabaseService);
-						return yield* _(dbService.query("getApprovalCount", async () => 1));
+					Effect.gen(function* () {
+						const dbService = yield* DatabaseService;
+						return yield* dbService.query("getApprovalCount", async () => 1);
 					}),
 				),
 			} as never,

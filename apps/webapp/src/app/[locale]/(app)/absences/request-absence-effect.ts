@@ -2,7 +2,7 @@ import "server-only";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
 	absenceCategory,
@@ -73,11 +73,11 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
-import { EmailService } from "@/lib/effect-v3/services/email.service";
+} from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { EmailService } from "@/lib/effect/services/email.service";
 import { renderAbsenceRequestPendingApproval } from "@/lib/email/render";
 import {
 	legacyDeliveryCycleId,
@@ -227,9 +227,10 @@ function checkForOverlappingAbsences(
 	category: { type: string; requiresApproval: boolean },
 	hasManagerApprovalWorkflow: boolean,
 ) {
-	return Effect.gen(function* (_) {
-		const overlappingAbsences = yield* _(
-			dbService.query("checkAbsenceOverlaps", async () => {
+	return Effect.gen(function* () {
+		const overlappingAbsences = yield* dbService.query(
+			"checkAbsenceOverlaps",
+			async () => {
 				return await dbService.db.query.absenceEntry.findMany({
 					where: and(
 						eq(absenceEntry.employeeId, currentEmployee.id),
@@ -241,7 +242,7 @@ function checkForOverlappingAbsences(
 					),
 					with: { category: true },
 				});
-			}),
+			},
 		);
 
 		for (const existing of overlappingAbsences) {
@@ -269,19 +270,17 @@ function checkForOverlappingAbsences(
 			});
 
 			if (message) {
-				yield* _(
-					Effect.fail(
-						new ConflictError({
-							message,
-							conflictType: "absence_overlap",
-							details: {
-								existingAbsenceId: existing.id,
-								existingStart: existing.startDate,
-								existingEnd: existing.endDate,
-								existingStatus: existing.status,
-							},
-						}),
-					),
+				yield* Effect.fail(
+					new ConflictError({
+						message,
+						conflictType: "absence_overlap",
+						details: {
+							existingAbsenceId: existing.id,
+							existingStart: existing.startDate,
+							existingEnd: existing.endDate,
+							existingStatus: existing.status,
+						},
+					}),
 				);
 			}
 		}
@@ -582,7 +581,7 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 							mutate:
 								async (): Promise<RequestedAbsenceApprovalWorkflowResult> => {
 									const result = await Effect.runPromise(
-										Effect.either(
+										Effect.result(
 											create(
 												transactionalDbService,
 												currentEmployee,
@@ -592,8 +591,8 @@ export function createRequestedAbsenceRecordsInTransaction(params: {
 											),
 										),
 									);
-									if (result._tag === "Left") throw result.left;
-									return result.right as RequestedAbsenceApprovalWorkflowResult;
+									if (result._tag === "Failure") throw result.failure;
+									return result.success as RequestedAbsenceApprovalWorkflowResult;
 								},
 							afterMirror: async (observed) => {
 								if (
@@ -942,23 +941,21 @@ function renderManagerApprovalEmail(params: {
 	categoryName: string;
 	businessDays: number;
 }) {
-	return Effect.gen(function* (_) {
-		const appUrl = yield* _(
-			Effect.promise(() => getOrganizationBaseUrl(params.organizationId)),
+	return Effect.gen(function* () {
+		const appUrl = yield* Effect.promise(() =>
+			getOrganizationBaseUrl(params.organizationId),
 		);
-		return yield* _(
-			Effect.promise(() =>
-				renderAbsenceRequestPendingApproval({
-					managerName: params.manager.user.name,
-					employeeName: params.employeeRecord.user.name,
-					startDate: formatDisplayDate(params.data.startDate),
-					endDate: formatDisplayDate(params.data.endDate),
-					absenceType: params.categoryName,
-					days: params.businessDays,
-					notes: params.data.notes || undefined,
-					approvalUrl: `${appUrl}/approvals/inbox`,
-				}),
-			),
+		return yield* Effect.promise(() =>
+			renderAbsenceRequestPendingApproval({
+				managerName: params.manager.user.name,
+				employeeName: params.employeeRecord.user.name,
+				startDate: formatDisplayDate(params.data.startDate),
+				endDate: formatDisplayDate(params.data.endDate),
+				absenceType: params.categoryName,
+				days: params.businessDays,
+				notes: params.data.notes || undefined,
+				approvalUrl: `${appUrl}/approvals/inbox`,
+			}),
 		);
 	});
 }
@@ -1051,16 +1048,14 @@ export async function requestAbsenceEffect(
 ): Promise<ServerActionResult<{ absenceId: string }>> {
 	return requestAbsenceWithResolverEffect(
 		data,
-		Effect.gen(function* (_) {
-			const authService = yield* _(AuthService);
-			const session = yield* _(authService.getSession());
-			const dbService = yield* _(DatabaseService);
-			const currentEmployee = yield* _(
-				getRequestingEmployee(
-					dbService,
-					session.user.id,
-					session.session.activeOrganizationId,
-				),
+		Effect.gen(function* () {
+			const authService = yield* AuthService;
+			const session = yield* authService.getSession();
+			const dbService = yield* DatabaseService;
+			const currentEmployee = yield* getRequestingEmployee(
+				dbService,
+				session.user.id,
+				session.session.activeOrganizationId,
 			);
 
 			return {
@@ -1112,12 +1107,12 @@ function requestAbsenceWithResolverEffect(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const { currentEmployee, userId } = yield* _(resolveRequester);
+			return Effect.gen(function* () {
+				const { currentEmployee, userId } = yield* resolveRequester;
 
 				span.setAttribute("user.id", userId);
 
-				const dbService = yield* _(DatabaseService);
+				const dbService = yield* DatabaseService;
 
 				span.setAttribute("employee.id", currentEmployee.id);
 				span.setAttribute("organization.id", currentEmployee.organizationId);
@@ -1131,13 +1126,11 @@ function requestAbsenceWithResolverEffect(
 					"Processing absence request",
 				);
 
-				yield* _(validateRequestDates(requestData));
-				const category = yield* _(
-					getAbsenceCategory(
-						dbService,
-						requestData.categoryId,
-						currentEmployee.organizationId,
-					),
+				yield* validateRequestDates(requestData);
+				const category = yield* getAbsenceCategory(
+					dbService,
+					requestData.categoryId,
+					currentEmployee.organizationId,
 				);
 
 				const sickDetailError = validateAbsenceSickDetail({
@@ -1145,22 +1138,18 @@ function requestAbsenceWithResolverEffect(
 					sickDetail: data.sickDetail,
 				});
 				if (sickDetailError) {
-					yield* _(
-						Effect.fail(createSickDetailValidationError(sickDetailError)),
-					);
+					yield* Effect.fail(createSickDetailValidationError(sickDetailError));
 				}
 
 				const defaultApproverId = category.requiresApproval
-					? yield* _(getAbsenceDefaultApproverId(dbService, currentEmployee))
+					? yield* getAbsenceDefaultApproverId(dbService, currentEmployee)
 					: null;
-				yield* _(
-					checkForOverlappingAbsences(
-						dbService,
-						currentEmployee,
-						requestData,
-						category,
-						Boolean(defaultApproverId),
-					),
+				yield* checkForOverlappingAbsences(
+					dbService,
+					currentEmployee,
+					requestData,
+					category,
+					Boolean(defaultApproverId),
 				);
 
 				span.setAttribute("absence.category_name", category.name);
@@ -1188,24 +1177,22 @@ function requestAbsenceWithResolverEffect(
 					"Absence request validated",
 				);
 
-				const newAbsence = yield* _(
-					createRequestedAbsenceRecordsInTransaction({
-						dbService,
-						currentEmployee,
-						data: requestData,
-						category,
-						createdBy: userId,
-						submittedInput: data,
-						hasManagerApprovalWorkflow: category.requiresApproval,
-						approvalWorkflow: category.requiresApproval
-							? {
-									categoryId: requestData.categoryId,
-									approverId: defaultApproverId,
-								}
-							: undefined,
-						approvalLifecycle,
-					}),
-				);
+				const newAbsence = yield* createRequestedAbsenceRecordsInTransaction({
+					dbService,
+					currentEmployee,
+					data: requestData,
+					category,
+					createdBy: userId,
+					submittedInput: data,
+					hasManagerApprovalWorkflow: category.requiresApproval,
+					approvalWorkflow: category.requiresApproval
+						? {
+								categoryId: requestData.categoryId,
+								approverId: defaultApproverId,
+							}
+						: undefined,
+					approvalLifecycle,
+				});
 
 				span.setAttribute("absence.id", newAbsence.id);
 				span.setAttribute("absence.status", newAbsence.status);
@@ -1219,10 +1206,8 @@ function requestAbsenceWithResolverEffect(
 				logger.info({ absenceId: newAbsence.id }, "Absence entry created");
 				const autoCompletion = newAbsence.autoCompletion;
 				if (autoCompletion) {
-					yield* _(
-						Effect.promise(() =>
-							runAutoCompletedAbsenceMaintenance(autoCompletion),
-						),
+					yield* Effect.promise(() =>
+						runAutoCompletedAbsenceMaintenance(autoCompletion),
 					);
 					span.setAttribute("absence.auto_approved", true);
 				} else if (category.requiresApproval) {
@@ -1232,20 +1217,18 @@ function requestAbsenceWithResolverEffect(
 					) {
 						span.setAttribute("absence.has_approval_request", true);
 						span.setAttribute("absence.approver_id", defaultApproverId);
-						const emailService = yield* _(EmailService);
-						yield* _(
-							Effect.promise(() =>
-								deliverPendingAbsenceSubmissionBestEffort({
-									dbService,
-									emailService,
-									currentEmployee,
-									defaultApproverId,
-									absenceId: newAbsence.id,
-									data: requestData,
-									categoryName: category.name,
-									businessDays,
-								}),
-							),
+						const emailService = yield* EmailService;
+						yield* Effect.promise(() =>
+							deliverPendingAbsenceSubmissionBestEffort({
+								dbService,
+								emailService,
+								currentEmployee,
+								defaultApproverId,
+								absenceId: newAbsence.id,
+								data: requestData,
+								categoryName: category.name,
+								businessDays,
+							}),
 						);
 						if (newAbsence.legacyDeliveryIntent) {
 							// The legacy cycle's intent committed with the submission;
@@ -1263,33 +1246,27 @@ function requestAbsenceWithResolverEffect(
 						});
 					}
 				} else if (!category.requiresApproval) {
-					yield* _(
-						updateAutoApprovedAbsence(
-							dbService,
-							newAbsence.id,
-							"autoApproveAbsence",
-						),
+					yield* updateAutoApprovedAbsence(
+						dbService,
+						newAbsence.id,
+						"autoApproveAbsence",
 					);
-					yield* _(
-						Effect.promise(() =>
-							markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
-								employeeId: currentEmployee.id,
-								organizationId: currentEmployee.organizationId,
-								absenceId: newAbsence.id,
-								startDate: requestData.startDate,
-							}),
-						),
+					yield* Effect.promise(() =>
+						markAutoApprovedAbsenceWorkBalanceDirtyBestEffort({
+							employeeId: currentEmployee.id,
+							organizationId: currentEmployee.organizationId,
+							absenceId: newAbsence.id,
+							startDate: requestData.startDate,
+						}),
 					);
 
-					yield* _(
-						Effect.promise(() =>
-							syncCanonicalAbsenceApprovalState({
-								organizationId: currentEmployee.organizationId,
-								canonicalRecordId,
-								approvalState: "approved",
-								updatedBy: userId,
-							}),
-						),
+					yield* Effect.promise(() =>
+						syncCanonicalAbsenceApprovalState({
+							organizationId: currentEmployee.organizationId,
+							canonicalRecordId,
+							approvalState: "approved",
+							updatedBy: userId,
+						}),
 					);
 
 					span.setAttribute("absence.auto_approved", true);
@@ -1312,7 +1289,7 @@ function requestAbsenceWithResolverEffect(
 
 				return { absenceId: newAbsence.id };
 			}).pipe(
-				Effect.catchAll((error) => {
+				Effect.catch((error) => {
 					span.recordException(error as Error);
 					span.setStatus({
 						code: SpanStatusCode.ERROR,

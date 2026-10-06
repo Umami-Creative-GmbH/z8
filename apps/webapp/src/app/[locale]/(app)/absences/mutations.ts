@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, isNull, or, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
 import {

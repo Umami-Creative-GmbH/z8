@@ -1,5 +1,5 @@
 import { and, asc, eq, gt } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import {
 	approvalChainInstance,
 	approvalChainStageInstance,
@@ -528,16 +528,17 @@ export function progressApprovalChainIfLinked(
 	dbService: ApprovalDbService,
 	input: ChainProgressionInput,
 ): Effect.Effect<ChainProgressionResult, AnyAppError, never> {
-	return Effect.gen(function* (_) {
-		const linkedStage = yield* _(
-			dbService.query("getApprovalChainStageForRequest", async () => {
+	return Effect.gen(function* () {
+		const linkedStage = yield* dbService.query(
+			"getApprovalChainStageForRequest",
+			async () => {
 				return await dbService.db.query.approvalChainStageInstance.findFirst({
 					where: eq(
 						approvalChainStageInstance.approvalRequestId,
 						input.approvalRequestId,
 					),
 				});
-			}),
+			},
 		);
 
 		if (!linkedStage) {
@@ -546,122 +547,43 @@ export function progressApprovalChainIfLinked(
 
 		const stage = linkedStage as ChainStageInstanceRecord;
 		if (stage.status !== "pending") {
-			return yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Approval chain stage is no longer pending",
-						conflictType: "approval_chain_stage_status",
-					}),
-				),
+			return yield* Effect.fail(
+				new ConflictError({
+					message: "Approval chain stage is no longer pending",
+					conflictType: "approval_chain_stage_status",
+				}),
 			);
 		}
 
-		const chain = yield* _(
-			dbService.query("getApprovalChainInstance", async () => {
+		const chain = yield* dbService.query(
+			"getApprovalChainInstance",
+			async () => {
 				return await dbService.db.query.approvalChainInstance.findFirst({
 					where: and(
 						eq(approvalChainInstance.id, stage.chainInstanceId),
 						eq(approvalChainInstance.organizationId, stage.organizationId),
 					),
 				});
-			}),
+			},
 		);
 
 		if (!chain) {
-			return yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Approval chain instance not found",
-						conflictType: "approval_chain_missing",
-					}),
-				),
+			return yield* Effect.fail(
+				new ConflictError({
+					message: "Approval chain instance not found",
+					conflictType: "approval_chain_missing",
+				}),
 			);
 		}
 
 		const chainRecord = chain as ChainInstanceRecord;
 		if (input.action === "reject") {
-			yield* _(
-				dbService.query("rejectApprovalChainStage", () =>
-					updateRows(
-						dbService,
-						approvalChainStageInstance,
-						{
-							status: "rejected",
-							decidedBy: input.actorEmployeeId,
-							decidedAt: currentTimestamp(),
-							updatedAt: currentTimestamp(),
-						},
-						and(
-							eq(approvalChainStageInstance.id, stage.id),
-							eq(
-								approvalChainStageInstance.organizationId,
-								stage.organizationId,
-							),
-							eq(approvalChainStageInstance.status, "pending"),
-						),
-					),
-				),
-			);
-			yield* _(
-				logApprovalPolicyEvent(dbService, {
-					organizationId: stage.organizationId,
-					eventName: "approval_chain.stage_rejected",
-					chainId: stage.chainInstanceId,
-					stageId: stage.id,
-					entityType: chainRecord.entityType,
-					entityId: chainRecord.entityId,
-					actorUserId: input.actorUserId,
-					actorEmployeeId: input.actorEmployeeId,
-					previousStatus: "pending",
-					newStatus: "rejected",
-					createdAt: new Date(),
-				}),
-			);
-			yield* _(
-				dbService.query("rejectApprovalChain", () =>
-					updateRows(
-						dbService,
-						approvalChainInstance,
-						{
-							status: "rejected",
-							completedAt: currentTimestamp(),
-							updatedAt: currentTimestamp(),
-						},
-						and(
-							eq(approvalChainInstance.id, chainRecord.id),
-							eq(
-								approvalChainInstance.organizationId,
-								chainRecord.organizationId,
-							),
-						),
-					),
-				),
-			);
-			yield* _(
-				logApprovalPolicyEvent(dbService, {
-					organizationId: chainRecord.organizationId,
-					eventName: "approval_chain.rejected",
-					chainId: chainRecord.id,
-					entityType: chainRecord.entityType,
-					entityId: chainRecord.entityId,
-					actorUserId: input.actorUserId,
-					actorEmployeeId: input.actorEmployeeId,
-					previousStatus: "pending",
-					newStatus: "rejected",
-					createdAt: new Date(),
-				}),
-			);
-
-			return { kind: "chain_rejected", rejected: true } as const;
-		}
-
-		yield* _(
-			dbService.query("approveApprovalChainStage", () =>
+			yield* dbService.query("rejectApprovalChainStage", () =>
 				updateRows(
 					dbService,
 					approvalChainStageInstance,
 					{
-						status: "approved",
+						status: "rejected",
 						decidedBy: input.actorEmployeeId,
 						decidedAt: currentTimestamp(),
 						updatedAt: currentTimestamp(),
@@ -672,12 +594,10 @@ export function progressApprovalChainIfLinked(
 						eq(approvalChainStageInstance.status, "pending"),
 					),
 				),
-			),
-		);
-		yield* _(
-			logApprovalPolicyEvent(dbService, {
+			);
+			yield* logApprovalPolicyEvent(dbService, {
 				organizationId: stage.organizationId,
-				eventName: "approval_chain.stage_approved",
+				eventName: "approval_chain.stage_rejected",
 				chainId: stage.chainInstanceId,
 				stageId: stage.id,
 				entityType: chainRecord.entityType,
@@ -685,20 +605,84 @@ export function progressApprovalChainIfLinked(
 				actorUserId: input.actorUserId,
 				actorEmployeeId: input.actorEmployeeId,
 				previousStatus: "pending",
-				newStatus: "approved",
+				newStatus: "rejected",
 				createdAt: new Date(),
-			}),
-		);
+			});
+			yield* dbService.query("rejectApprovalChain", () =>
+				updateRows(
+					dbService,
+					approvalChainInstance,
+					{
+						status: "rejected",
+						completedAt: currentTimestamp(),
+						updatedAt: currentTimestamp(),
+					},
+					and(
+						eq(approvalChainInstance.id, chainRecord.id),
+						eq(
+							approvalChainInstance.organizationId,
+							chainRecord.organizationId,
+						),
+					),
+				),
+			);
+			yield* logApprovalPolicyEvent(dbService, {
+				organizationId: chainRecord.organizationId,
+				eventName: "approval_chain.rejected",
+				chainId: chainRecord.id,
+				entityType: chainRecord.entityType,
+				entityId: chainRecord.entityId,
+				actorUserId: input.actorUserId,
+				actorEmployeeId: input.actorEmployeeId,
+				previousStatus: "pending",
+				newStatus: "rejected",
+				createdAt: new Date(),
+			});
 
-		const currentApproval = yield* _(
-			dbService.query("getCurrentApprovalRequest", async () => {
+			return { kind: "chain_rejected", rejected: true } as const;
+		}
+
+		yield* dbService.query("approveApprovalChainStage", () =>
+			updateRows(
+				dbService,
+				approvalChainStageInstance,
+				{
+					status: "approved",
+					decidedBy: input.actorEmployeeId,
+					decidedAt: currentTimestamp(),
+					updatedAt: currentTimestamp(),
+				},
+				and(
+					eq(approvalChainStageInstance.id, stage.id),
+					eq(approvalChainStageInstance.organizationId, stage.organizationId),
+					eq(approvalChainStageInstance.status, "pending"),
+				),
+			),
+		);
+		yield* logApprovalPolicyEvent(dbService, {
+			organizationId: stage.organizationId,
+			eventName: "approval_chain.stage_approved",
+			chainId: stage.chainInstanceId,
+			stageId: stage.id,
+			entityType: chainRecord.entityType,
+			entityId: chainRecord.entityId,
+			actorUserId: input.actorUserId,
+			actorEmployeeId: input.actorEmployeeId,
+			previousStatus: "pending",
+			newStatus: "approved",
+			createdAt: new Date(),
+		});
+
+		const currentApproval = yield* dbService.query(
+			"getCurrentApprovalRequest",
+			async () => {
 				return await dbService.db.query.approvalRequest.findFirst({
 					where: and(
 						eq(approvalRequest.id, input.approvalRequestId),
 						eq(approvalRequest.organizationId, chainRecord.organizationId),
 					),
 				});
-			}),
+			},
 		);
 		const approvalMetadata = (
 			currentApproval as { metadata?: Record<string, unknown> } | null
@@ -710,8 +694,9 @@ export function progressApprovalChainIfLinked(
 		let drainedRequesterStage = false;
 
 		while (true) {
-			const nextStage = yield* _(
-				dbService.query("getNextApprovalChainStage", async () => {
+			const nextStage = yield* dbService.query(
+				"getNextApprovalChainStage",
+				async () => {
 					return await dbService.db.query.approvalChainStageInstance.findFirst({
 						where: and(
 							eq(
@@ -726,45 +711,41 @@ export function progressApprovalChainIfLinked(
 						),
 						orderBy: [asc(approvalChainStageInstance.stepOrder)],
 					});
-				}),
+				},
 			);
 
 			if (!nextStage) {
-				yield* _(
-					dbService.query("completeApprovalChain", () =>
-						updateRows(
-							dbService,
-							approvalChainInstance,
-							{
-								status: "approved",
-								currentStageOrder: cursor.stepOrder,
-								completedAt: currentTimestamp(),
-								updatedAt: currentTimestamp(),
-							},
-							and(
-								eq(approvalChainInstance.id, chainRecord.id),
-								eq(
-									approvalChainInstance.organizationId,
-									chainRecord.organizationId,
-								),
+				yield* dbService.query("completeApprovalChain", () =>
+					updateRows(
+						dbService,
+						approvalChainInstance,
+						{
+							status: "approved",
+							currentStageOrder: cursor.stepOrder,
+							completedAt: currentTimestamp(),
+							updatedAt: currentTimestamp(),
+						},
+						and(
+							eq(approvalChainInstance.id, chainRecord.id),
+							eq(
+								approvalChainInstance.organizationId,
+								chainRecord.organizationId,
 							),
 						),
 					),
 				);
-				yield* _(
-					logApprovalPolicyEvent(dbService, {
-						organizationId: chainRecord.organizationId,
-						eventName: "approval_chain.approved",
-						chainId: chainRecord.id,
-						entityType: chainRecord.entityType,
-						entityId: chainRecord.entityId,
-						actorUserId: completionActorUserId,
-						actorEmployeeId: completionActorEmployeeId,
-						previousStatus: "pending",
-						newStatus: "approved",
-						createdAt: new Date(),
-					}),
-				);
+				yield* logApprovalPolicyEvent(dbService, {
+					organizationId: chainRecord.organizationId,
+					eventName: "approval_chain.approved",
+					chainId: chainRecord.id,
+					entityType: chainRecord.entityType,
+					entityId: chainRecord.entityId,
+					actorUserId: completionActorUserId,
+					actorEmployeeId: completionActorEmployeeId,
+					previousStatus: "pending",
+					newStatus: "approved",
+					createdAt: new Date(),
+				});
 
 				return drainedRequesterStage
 					? ({ kind: "chain_auto_completed", completed: true } as const)
@@ -779,8 +760,9 @@ export function progressApprovalChainIfLinked(
 
 			if (disposition.kind === "auto_approve") {
 				if (!requesterUserId) {
-					const requester = yield* _(
-						dbService.query("getApprovalChainRequester", async () => {
+					const requester = yield* dbService.query(
+						"getApprovalChainRequester",
+						async () => {
 							return await dbService.db.query.employee.findFirst({
 								where: and(
 									eq(employee.id, chainRecord.requesterEmployeeId),
@@ -788,94 +770,38 @@ export function progressApprovalChainIfLinked(
 								),
 								columns: { userId: true },
 							});
-						}),
+						},
 					);
 					requesterUserId = (requester as { userId?: string } | null)?.userId;
 					if (!requesterUserId) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message:
-										"Requester has no user account in this organization.",
-									field: "approvalChain.requesterEmployeeId",
-									value: chainRecord.requesterEmployeeId,
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "Requester has no user account in this organization.",
+								field: "approvalChain.requesterEmployeeId",
+								value: chainRecord.requesterEmployeeId,
+							}),
 						);
 					}
 				}
-				const autoApprovalRequestId = yield* _(
-					dbService.query("createAutoApprovedApprovalRequest", () =>
+				const autoApprovalRequestId = yield* dbService.query(
+					"createAutoApprovedApprovalRequest",
+					() =>
 						insertApprovalRequest(
 							dbService,
 							approvalInputForChain(chainRecord, approvalMetadata),
 							next.resolvedApproverEmployeeId,
 							disposition,
 						),
-					),
 				);
-				yield* _(
-					dbService.query("autoApproveApprovalChainStage", () =>
-						updateRows(
-							dbService,
-							approvalChainStageInstance,
-							{
-								status: "approved",
-								approvalRequestId: autoApprovalRequestId,
-								decidedBy: chainRecord.requesterEmployeeId,
-								decidedAt: currentTimestamp(),
-								updatedAt: currentTimestamp(),
-							},
-							and(
-								eq(approvalChainStageInstance.id, next.id),
-								eq(
-									approvalChainStageInstance.organizationId,
-									next.organizationId,
-								),
-							),
-						),
-					),
-				);
-				yield* _(
-					logApprovalPolicyEvent(dbService, {
-						organizationId: next.organizationId,
-						eventName: "approval_chain.stage_auto_approved",
-						chainId: next.chainInstanceId,
-						stageId: next.id,
-						entityType: chainRecord.entityType,
-						entityId: chainRecord.entityId,
-						actorUserId: requesterUserId,
-						actorEmployeeId: chainRecord.requesterEmployeeId,
-						previousStatus: "cancelled",
-						newStatus: "approved",
-						reason: disposition.reason,
-						createdAt: new Date(),
-					}),
-				);
-				cursor = next;
-				drainedRequesterStage = true;
-				completionActorUserId = requesterUserId;
-				completionActorEmployeeId = chainRecord.requesterEmployeeId;
-				continue;
-			}
-
-			const nextApprovalRequestId = yield* _(
-				dbService.query("createNextApprovalRequest", () =>
-					insertApprovalRequest(
-						dbService,
-						approvalInputForChain(chainRecord, approvalMetadata),
-						next.resolvedApproverEmployeeId,
-					),
-				),
-			);
-			yield* _(
-				dbService.query("activateNextApprovalChainStage", () =>
+				yield* dbService.query("autoApproveApprovalChainStage", () =>
 					updateRows(
 						dbService,
 						approvalChainStageInstance,
 						{
-							status: "pending",
-							approvalRequestId: nextApprovalRequestId,
+							status: "approved",
+							approvalRequestId: autoApprovalRequestId,
+							decidedBy: chainRecord.requesterEmployeeId,
+							decidedAt: currentTimestamp(),
 							updatedAt: currentTimestamp(),
 						},
 						and(
@@ -886,38 +812,78 @@ export function progressApprovalChainIfLinked(
 							),
 						),
 					),
-				),
-			);
-			yield* _(
-				logApprovalPolicyEvent(dbService, {
+				);
+				yield* logApprovalPolicyEvent(dbService, {
 					organizationId: next.organizationId,
-					eventName: "approval_chain.stage_request_created",
+					eventName: "approval_chain.stage_auto_approved",
 					chainId: next.chainInstanceId,
 					stageId: next.id,
 					entityType: chainRecord.entityType,
 					entityId: chainRecord.entityId,
-					actorUserId: input.actorUserId,
-					actorEmployeeId: input.actorEmployeeId,
+					actorUserId: requesterUserId,
+					actorEmployeeId: chainRecord.requesterEmployeeId,
 					previousStatus: "cancelled",
-					newStatus: "pending",
+					newStatus: "approved",
+					reason: disposition.reason,
 					createdAt: new Date(),
-				}),
-			);
-			yield* _(
-				dbService.query("advanceApprovalChain", () =>
-					updateRows(
+				});
+				cursor = next;
+				drainedRequesterStage = true;
+				completionActorUserId = requesterUserId;
+				completionActorEmployeeId = chainRecord.requesterEmployeeId;
+				continue;
+			}
+
+			const nextApprovalRequestId = yield* dbService.query(
+				"createNextApprovalRequest",
+				() =>
+					insertApprovalRequest(
 						dbService,
-						approvalChainInstance,
-						{
-							currentStageOrder: next.stepOrder,
-							updatedAt: currentTimestamp(),
-						},
-						and(
-							eq(approvalChainInstance.id, chainRecord.id),
-							eq(
-								approvalChainInstance.organizationId,
-								chainRecord.organizationId,
-							),
+						approvalInputForChain(chainRecord, approvalMetadata),
+						next.resolvedApproverEmployeeId,
+					),
+			);
+			yield* dbService.query("activateNextApprovalChainStage", () =>
+				updateRows(
+					dbService,
+					approvalChainStageInstance,
+					{
+						status: "pending",
+						approvalRequestId: nextApprovalRequestId,
+						updatedAt: currentTimestamp(),
+					},
+					and(
+						eq(approvalChainStageInstance.id, next.id),
+						eq(approvalChainStageInstance.organizationId, next.organizationId),
+					),
+				),
+			);
+			yield* logApprovalPolicyEvent(dbService, {
+				organizationId: next.organizationId,
+				eventName: "approval_chain.stage_request_created",
+				chainId: next.chainInstanceId,
+				stageId: next.id,
+				entityType: chainRecord.entityType,
+				entityId: chainRecord.entityId,
+				actorUserId: input.actorUserId,
+				actorEmployeeId: input.actorEmployeeId,
+				previousStatus: "cancelled",
+				newStatus: "pending",
+				createdAt: new Date(),
+			});
+			yield* dbService.query("advanceApprovalChain", () =>
+				updateRows(
+					dbService,
+					approvalChainInstance,
+					{
+						currentStageOrder: next.stepOrder,
+						updatedAt: currentTimestamp(),
+					},
+					and(
+						eq(approvalChainInstance.id, chainRecord.id),
+						eq(
+							approvalChainInstance.organizationId,
+							chainRecord.organizationId,
 						),
 					),
 				),
@@ -932,11 +898,9 @@ export function resolvePolicyAndCreateApproval(
 	dbService: ApprovalDbService,
 	input: ResolvePolicyAndCreateApprovalInput,
 ): Effect.Effect<ResolvePolicyAndCreateApprovalResult, AnyAppError, never> {
-	return Effect.gen(function* (_) {
-		const loaded = yield* _(
-			dbService.query("loadApprovalPolicyContext", () =>
-				loadPolicyContext(dbService, input.context),
-			),
+	return Effect.gen(function* () {
+		const loaded = yield* dbService.query("loadApprovalPolicyContext", () =>
+			loadPolicyContext(dbService, input.context),
 		);
 		const matchedPolicy = findMatchingPolicy(loaded.context, loaded.policies);
 		const requesterUserId = userIdForEmployee(
@@ -947,13 +911,11 @@ export function resolvePolicyAndCreateApproval(
 		if (!matchedPolicy) {
 			const defaultApproverId = input.defaultApproverId;
 			if (!defaultApproverId) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: "No manager assigned to approve time changes",
-							field: "managerId",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "No manager assigned to approve time changes",
+						field: "managerId",
+					}),
 				);
 			}
 			const disposition = classifyLegacyStage({
@@ -968,8 +930,9 @@ export function resolvePolicyAndCreateApproval(
 				input.context.organizationId,
 				defaultApproverId,
 			);
-			const approvalRequestId = yield* _(
-				dbService.query("createDefaultApprovalRequest", () =>
+			const approvalRequestId = yield* dbService.query(
+				"createDefaultApprovalRequest",
+				() =>
 					insertApprovalRequest(
 						dbService,
 						{
@@ -981,21 +944,17 @@ export function resolvePolicyAndCreateApproval(
 						defaultApproverId,
 						disposition,
 					),
-				),
 			);
-			yield* _(
-				logApprovalPolicyEvent(dbService, {
-					organizationId: loaded.context.organizationId,
-					eventName: "approval_policy.no_match_fallback",
-					entityType: loaded.context.entityType,
-					entityId: loaded.context.entityId,
-					actorUserId: requesterUserId,
-					actorEmployeeId: loaded.context.requesterEmployeeId,
-					newStatus:
-						disposition.kind === "auto_approve" ? "approved" : "pending",
-					createdAt: new Date(),
-				}),
-			);
+			yield* logApprovalPolicyEvent(dbService, {
+				organizationId: loaded.context.organizationId,
+				eventName: "approval_policy.no_match_fallback",
+				entityType: loaded.context.entityType,
+				entityId: loaded.context.entityId,
+				actorUserId: requesterUserId,
+				actorEmployeeId: loaded.context.requesterEmployeeId,
+				newStatus: disposition.kind === "auto_approve" ? "approved" : "pending",
+				createdAt: new Date(),
+			});
 
 			if (disposition.kind === "auto_approve") {
 				return {
@@ -1033,14 +992,12 @@ export function resolvePolicyAndCreateApproval(
 			});
 
 			if (!resolved.ok) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: resolved.reason,
-							field: "approvalPolicyStage.approverType",
-							value: stage.approverType,
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: resolved.reason,
+						field: "approvalPolicyStage.approverType",
+						value: stage.approverType,
+					}),
 				);
 			}
 
@@ -1060,14 +1017,12 @@ export function resolvePolicyAndCreateApproval(
 
 		const firstStage = resolvedStages[0];
 		if (!firstStage) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Matched approval policy has no stages.",
-						field: "approvalPolicy.stages",
-						value: matchedPolicy.id,
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Matched approval policy has no stages.",
+					field: "approvalPolicy.stages",
+					value: matchedPolicy.id,
+				}),
 			);
 		}
 
@@ -1239,27 +1194,25 @@ export function resolvePolicyAndCreateApproval(
 			return { chainInstanceId, approvalRequestId };
 		};
 
-		const result = yield* _(
-			dbService.query("createApprovalChain", async () => {
-				if (
-					(input.transactionBehavior ?? "open") === "open" &&
-					supportsTransactions(dbService)
-				) {
-					return await dbService.db.transaction(async (tx) => {
-						const transactionalDb = Object.assign(Object.create(tx as object), {
-							query: dbService.db.query,
-						}) as ApprovalDbService["db"];
+		const result = yield* dbService.query("createApprovalChain", async () => {
+			if (
+				(input.transactionBehavior ?? "open") === "open" &&
+				supportsTransactions(dbService)
+			) {
+				return await dbService.db.transaction(async (tx) => {
+					const transactionalDb = Object.assign(Object.create(tx as object), {
+						query: dbService.db.query,
+					}) as ApprovalDbService["db"];
 
-						return await createChainRows({
-							db: transactionalDb,
-							query: dbService.query,
-						});
+					return await createChainRows({
+						db: transactionalDb,
+						query: dbService.query,
 					});
-				}
+				});
+			}
 
-				return await createChainRows(dbService);
-			}),
-		);
+			return await createChainRows(dbService);
+		});
 
 		return chainAutoCompleted
 			? ({

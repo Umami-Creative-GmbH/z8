@@ -13,7 +13,7 @@ import {
 	isNull,
 	notInArray,
 } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";

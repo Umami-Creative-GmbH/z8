@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
@@ -28,7 +28,7 @@ import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect-v3/services/database.service";
+} from "@/lib/effect/services/database.service";
 import type { BotPlatform } from "./types";
 
 const platformNames: Record<BotPlatform, string> = {
@@ -114,10 +114,10 @@ export async function attemptBotApproval(
 									reason: `Rejected via ${platformNames[input.platform]}`,
 								},
 				},
-			).pipe(Effect.either);
+			).pipe(Effect.result);
 		}).pipe(Effect.provide(DatabaseServiceLive)),
 	);
-	return verified._tag === "Right"
+	return verified._tag === "Success"
 		? { status: "historical", action: input.action }
 		: { status: "review_required" };
 }

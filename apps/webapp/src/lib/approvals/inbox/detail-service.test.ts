@@ -1,11 +1,11 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
 import {
 	getApprovalInboxDetail,
 	getApprovalInboxDetailFromRequest,
 } from "@/lib/approvals/inbox/read-service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 // No submitted revision exists (capture inactive): the live detail stays as is.
 vi.mock("@/lib/approvals/presentation/time-review", async (importOriginal) => ({
@@ -164,9 +164,9 @@ describe("getApprovalInboxDetailFromRequest", () => {
 			displayName: "Absence Request",
 			supportsBulkApprove: true,
 			getDetail: vi.fn(() =>
-				Effect.gen(function* (_) {
-					const dbService = yield* _(DatabaseService);
-					return yield* _(dbService.query("getDetail", async () => detail));
+				Effect.gen(function* () {
+					const dbService = yield* DatabaseService;
+					return yield* dbService.query("getDetail", async () => detail);
 				}),
 			),
 		} as never;

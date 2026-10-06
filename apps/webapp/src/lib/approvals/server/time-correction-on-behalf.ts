@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import type { db } from "@/db";
 import { approvalRequest, approvalStageAssignment, approvalWorkflow, employee } from "@/db/schema";

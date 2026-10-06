@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect, Exit } from "effect-v3";
+import { Effect, Exit } from "effect";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest } from "@/db/schema";
@@ -9,7 +9,7 @@ import type {
 	ApprovalTypeHandler,
 	UnifiedApprovalItem,
 } from "@/lib/approvals/domain/types";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	buildAbsenceReviewSections,
 	prepareAbsenceReviewEvidence,

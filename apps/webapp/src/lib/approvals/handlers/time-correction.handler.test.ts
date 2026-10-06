@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ApprovalDbService } from "../server/types";
 
 const decisionMocks = vi.hoisted(() => ({

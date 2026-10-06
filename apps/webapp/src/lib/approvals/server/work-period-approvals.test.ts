@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { getTableName } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { approvalWriteGateResult } from "../authority";
@@ -1544,6 +1544,79 @@ describe("stable ordinary work-period decisions", () => {
 		expect(replayed.postCommit).toBeNull();
 		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
 	});
+
+	it("rejects with the terminal break's unresolved-review conflict from the legacy decision", async () => {
+		decisionRouting.kind = "policy_clock_out";
+		const dbService = createDecisionDbService({ kind: "policy_clock_out" });
+		const database = dbService.db as unknown as {
+			query: Record<string, Record<string, ReturnType<typeof vi.fn>>>;
+		};
+		database.query.employee.findMany = vi
+			.fn()
+			.mockResolvedValue([currentApprover]);
+		database.query.workPeriod.findFirst.mockResolvedValue(period);
+		legacyCaptureMocks.load.mockImplementation(async (input) => ({
+			organizationId: "org-1",
+			source: {
+				organizationId: "org-1",
+				workflowType: "policy_clock_out",
+				sourceType: "time_entry",
+				sourceId: "period-1",
+			},
+			approvalRequest: {
+				id: "approval-1",
+				organizationId: "org-1",
+				entityType: "time_entry",
+				entityId: "period-1",
+				requestedBy: "employee-1",
+				approverId: "manager-1",
+				status: input.expectedRequestStatus ?? "pending",
+			},
+			chain: null,
+			chainRows: [],
+			sourceSnapshot: {
+				timeRequest: { kind: "policy_clock_out" },
+				breakPolicySnapshot,
+				surchargeSnapshot,
+			},
+			capturedAt: parseInstant("2026-07-15T09:59:00Z"),
+		}));
+		const { ConflictError } = await import("@/lib/effect/errors");
+		const unresolvedReview = new ConflictError({
+			message: "Resolve the pending time correction first",
+			conflictType: "pending_time_correction_approval",
+		});
+		terminalBreakMocks.enforce.mockRejectedValueOnce(unresolvedReview);
+		const context = {
+			dbService: { db: dbService.db },
+			writeGate: { acquire: vi.fn().mockResolvedValue(approvalWriteGateResult("legacy")) },
+			compatibilityWriter: { withWriteGate: vi.fn().mockReturnThis() },
+			repository: { loadSnapshot: vi.fn() },
+		};
+		const runtime = {
+			repository: {
+				withTransaction: async (run: (value: typeof context) => unknown) => run(context),
+			},
+			transitionEngine: { executeInTransactionWithDisposition: vi.fn() },
+		} as never;
+
+		// The legacy decision runs under Effect.runPromise inside the transaction.
+		const rejection = await executeOrdinaryWorkPeriodDecisionInTransaction({
+			dbService,
+			createRuntime: () => runtime,
+			organizationId: "org-1",
+			approvalRequestId: "approval-1",
+			workPeriodId: "period-1",
+			actor: currentApprover,
+			decision: { kind: "approve" as const, reason: null },
+		}).then(
+			() => null,
+			(error: unknown) => error,
+		);
+
+		expect(terminalBreakMocks.enforce).toHaveBeenCalledOnce();
+		expect(rejection).toBe(unresolvedReview);
+	});
 });
 
 describe("ordinary stable-target production composition", () => {
@@ -1719,25 +1792,25 @@ const currentApprover: CurrentApprover = {
 	},
 };
 
-describe("ordinary work-period decision for Effect v4 callers", () => {
-	it("rejects with the typed conflict itself, the way Effect v4 runPromise does", async () => {
-		const decide = (workPeriodApprovals as Record<string, unknown>)
-			.decideOrdinaryWorkPeriodWithStableTarget as (
-			database: unknown,
-			currentEmployee: CurrentApprover,
-			input: unknown,
-			options?: unknown,
-		) => Promise<void>;
+describe("ordinary work-period decision under Effect v4", () => {
+	it("rejects runPromise with the typed conflict itself", async () => {
+		const dbService = {
+			db: {},
+			query: <T>(_name: string, operation: () => Promise<T>) =>
+				Effect.promise(operation),
+		} as unknown as ApprovalDbService;
 
 		// An empty organization is refused before any read.
-		const rejection = await decide(
-			{},
-			{ ...currentApprover, organizationId: "" },
-			{
-				approvalRequestId: "approval-1",
-				workPeriodId: "period-1",
-				decision: { kind: "approve", reason: null },
-			},
+		const rejection = await Effect.runPromise(
+			workPeriodApprovals.decideOrdinaryWorkPeriodWithStableTargetEffect(
+				dbService,
+				{ ...currentApprover, organizationId: "" },
+				{
+					approvalRequestId: "approval-1",
+					workPeriodId: "period-1",
+					decision: { kind: "approve", reason: null },
+				},
+			),
 		).then(
 			() => null,
 			(error: unknown) => error,
