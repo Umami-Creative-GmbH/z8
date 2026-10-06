@@ -18,7 +18,7 @@ import type {
 
 const SHA = "a".repeat(64);
 
-/** Project (v4), conversion (v3) and mileage (v5) columns, empty for a v1 receipt. */
+/** Project (v4), conversion (v3, v6) and mileage (v5) columns, empty for a v1 receipt. */
 const EMPTY_LATER_FACTS = Object.fromEntries(
 	TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.filter((column) =>
 		/^(project|conversion|mileage)_/.test(column),
@@ -282,6 +282,49 @@ function mileageRevision(): TravelExpenseExportManifestRevision {
 			},
 		],
 		{ reimbursable: "37.02", companyPaid: "0.00" },
+	);
+}
+
+/**
+ * v6: an ECB reference rate (`1 EUR = 1.1269 USD`) for an Easter Sunday
+ * expense, taken from the Maundy Thursday publication as the fallback.
+ */
+function referenceRateRevision(): TravelExpenseExportManifestRevision {
+	return soloRevision(
+		"report-ecb",
+		6,
+		[
+			{
+				itemId: "item-ecb",
+				position: 1,
+				type: "receipt",
+				expenseDate: "2026-04-05",
+				category: "meals",
+				description: "Dinner",
+				original: { amount: "100.00", currency: "USD" },
+				paidBy: "employee",
+				accountingReference: null,
+				receipts: [receipt("rcpt-ecb", "item-ecb")],
+				conversion: {
+					basis: "reference_rate",
+					rate: { base: "EUR", quote: "USD", value: "1.1269" },
+					rateDate: "2026-04-02",
+					expenseDate: "2026-04-05",
+					source: {
+						provider: "ecb",
+						publicationId: "publication-1",
+						publicationVersion: 2,
+						contentSha256: SHA,
+						retrievedAt: "2026-04-02T15:05:00Z",
+						policyApprovedAt: "2026-03-01T09:00:00Z",
+					},
+					rounding: { mode: "half_up", minorUnitDigits: 2 },
+					reimbursement: { amount: "88.74", currency: "EUR" },
+				},
+			},
+		],
+		{ reimbursable: "88.74", companyPaid: "0.00" },
+		{ "rcpt-ecb": "dinner.pdf" },
 	);
 }
 
@@ -566,6 +609,73 @@ describe("travel expense export files", () => {
 		);
 	});
 
+	it("exports a v6 reference rate with its publication and reconciles converted totals", () => {
+		const revision = referenceRateRevision();
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			facts_schema_version: "6",
+			expense_date: "2026-04-05",
+			original_amount: "100.00",
+			original_currency: "USD",
+			reimbursement_amount: "88.74",
+			company_paid_amount: "0.00",
+			reimbursement_currency: "EUR",
+			calculation_basis: "converted_amount",
+			conversion_basis: "reference_rate",
+			conversion_result_amount: "88.74",
+			conversion_result_currency: "EUR",
+			// As published (1 EUR = 1.1269 USD); the item's USD is divided by it.
+			conversion_rate_base: "EUR",
+			conversion_rate_quote: "USD",
+			conversion_rate: "1.1269",
+			// The fallback publication's own date, not the expense date.
+			conversion_rate_date: "2026-04-02",
+			conversion_rounding: "half_up",
+			conversion_reference_provider: "ecb",
+			conversion_reference_publication_date: "2026-04-02",
+			conversion_reference_publication_id: "publication-1",
+			conversion_reference_publication_version: "2",
+			conversion_reference_content_sha256: SHA,
+			conversion_reference_retrieved_at: "2026-04-02T15:05:00Z",
+			conversion_reference_policy_approved_at: "2026-03-01T09:00:00Z",
+			conversion_authorized_by_employee_id: "",
+			conversion_authorized_by_name: "",
+			conversion_authorized_at: "",
+			conversion_reason: "",
+			conversion_evidence_receipt_id: "",
+		});
+		expect(records(file("reports.csv", manifest([revision])))).toEqual([
+			expect.objectContaining({ reimbursable_total: "88.74", facts_schema_version: "6" }),
+		]);
+	});
+
+	it("refuses a reference rate whose frozen facts do not support its result", () => {
+		const tampered = referenceRateRevision();
+		const tamperedConversion = tampered.facts.items[0]?.conversion;
+		if (tamperedConversion?.basis !== "reference_rate") throw new Error("no reference rate");
+		tamperedConversion.reimbursement = { amount: "88.73", currency: "EUR" };
+		tampered.facts.totals = { ...tampered.facts.totals, reimbursable: "88.73" };
+		expect(() => buildTravelExpenseExportFiles(manifest([tampered]))).toThrow(
+			expect.objectContaining({ code: "totals_mismatch" }),
+		);
+
+		// A publication later than the expense date can never have been chosen.
+		const later = referenceRateRevision();
+		const laterConversion = later.facts.items[0]?.conversion;
+		if (laterConversion?.basis !== "reference_rate") throw new Error("no reference rate");
+		laterConversion.rateDate = "2026-04-07";
+		expect(() => buildTravelExpenseExportFiles(manifest([later]))).toThrow(
+			expect.objectContaining({ code: "totals_mismatch" }),
+		);
+
+		// Below v6 a reference rate cannot have been frozen at all.
+		const early = referenceRateRevision();
+		early.facts.schemaVersion = 5;
+		expect(() => buildTravelExpenseExportFiles(manifest([early]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+	});
+
 	it("exports a v4 project attribution as approved", () => {
 		const revision = standaloneRevision();
 		revision.facts.schemaVersion = 4;
@@ -653,6 +763,8 @@ describe("travel expense export files", () => {
 	});
 
 	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
+		// A new version must be mapped by the export contract before it is exported.
+		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(6);
 		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
@@ -660,7 +772,7 @@ describe("travel expense export files", () => {
 				expect.objectContaining({ facts_schema_version: String(version) }),
 			]);
 		}
-		for (const version of [0, TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION + 1]) {
+		for (const version of [0, 7]) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
 			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(

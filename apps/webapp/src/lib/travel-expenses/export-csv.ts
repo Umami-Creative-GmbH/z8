@@ -1,3 +1,4 @@
+import { REFERENCE_RATE_FACTS_SCHEMA_VERSION } from "@/lib/approvals/evidence/travel-expense-report-conversion";
 import {
 	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportSubmittedFacts,
@@ -23,8 +24,9 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  *
  * Revisions of every frozen facts version 1..current are exported; facts a
  * version did not have (receipt exception v2, conversion v3, project v4,
- * mileage v5) leave their columns empty. Items are priced from their frozen
- * pricing inputs and must add up to the frozen totals.
+ * mileage v5, reference-rate conversion v6) leave their columns empty. Items
+ * are priced from their frozen pricing inputs and must add up to the frozen
+ * totals.
  *
  * Files: `expenses.csv` (one row per expense item), `reports.csv` (one row per
  * revision with its frozen totals), `receipts.csv` (one row per bundled
@@ -104,8 +106,9 @@ function csvFile(header: readonly string[], rows: readonly (readonly string[])[]
 /**
  * The frozen conversion (#607, v3+) as the item conversion it applied, so the
  * export prices the item through `item-amount.ts` exactly like the frozen
- * totals: a card charge counts at its evidenced charge, a manual rate is
- * recomputed from its frozen rate and must give the frozen result.
+ * totals: a card charge counts at its evidenced charge, a manual rate (and a
+ * reference rate, #608 v6+) is recomputed from its frozen rate and must give
+ * the frozen result.
  */
 function frozenItemConversion(
 	item: TravelExpenseReportSubmittedItem,
@@ -122,8 +125,29 @@ function frozenItemConversion(
 			evidenceReceiptId: conversion.evidenceReceiptId,
 		};
 	}
+	if (conversion.basis === "reference_rate") {
+		const { rounding: _rounding, reimbursement: _reimbursement, ...reference } = conversion;
+		return { ...pair, ...reference };
+	}
 	const { rounding: _rounding, reimbursement: _reimbursement, ...manual } = conversion;
 	return { ...pair, ...manual };
+}
+
+const PLAIN_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * A reference rate (#608) was chosen for the item's own expense date and is
+ * the publication of that date or an earlier fallback, never a later one.
+ */
+function referenceRateMatchesItem(item: TravelExpenseReportSubmittedItem): boolean {
+	const { conversion } = item;
+	if (conversion?.basis !== "reference_rate") return true;
+	return (
+		conversion.expenseDate === item.expenseDate &&
+		PLAIN_DATE.test(conversion.rateDate) &&
+		PLAIN_DATE.test(conversion.expenseDate) &&
+		conversion.rateDate <= conversion.expenseDate
+	);
 }
 
 function reimbursementInput(
@@ -191,7 +215,8 @@ function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 		if (
 			(frozen !== null && frozen !== amount.amount) ||
 			(item.mileage && item.original.amount !== amount.amount) ||
-			(item.conversion && item.conversion.reimbursement.currency !== currency)
+			(item.conversion && item.conversion.reimbursement.currency !== currency) ||
+			!referenceRateMatchesItem(item)
 		) {
 			throw new TravelExpenseExportContentError(
 				"totals_mismatch",
@@ -264,6 +289,15 @@ const CONVERSION_COLUMNS = [
 	"conversion_authorized_by_name",
 	"conversion_authorized_at",
 	"conversion_reason",
+	// A reference rate (#608, v6+): the publication applied, which can be an
+	// earlier fallback than `expense_date`, and the approval it relied on.
+	"conversion_reference_provider",
+	"conversion_reference_publication_date",
+	"conversion_reference_publication_id",
+	"conversion_reference_publication_version",
+	"conversion_reference_content_sha256",
+	"conversion_reference_retrieved_at",
+	"conversion_reference_policy_approved_at",
 ] as const;
 
 /** The frozen calculation of a mileage expense (#606, v5+). */
@@ -308,7 +342,10 @@ function projectCells(item: TravelExpenseReportSubmittedItem): string[] {
 	});
 }
 
-/** The frozen conversion (#607, v3+); empty for an expense in the reimbursement currency. */
+/**
+ * The frozen conversion (#607 v3+, reference rate #608 v6+); empty for an
+ * expense in the reimbursement currency.
+ */
 function conversionCells(
 	revision: TravelExpenseExportManifestRevision,
 	item: TravelExpenseReportSubmittedItem,
@@ -330,14 +367,30 @@ function conversionCells(
 			conversion_evidence_file: csvText(evidence ? receiptPath(revision, item, evidence) : null),
 		});
 	}
-	return cellsOf(CONVERSION_COLUMNS, {
+	const rate = {
 		...result,
 		conversion_rate_base: csvText(conversion.rate.base),
 		conversion_rate_quote: csvText(conversion.rate.quote),
 		conversion_rate: csvPlainDecimal(conversion.rate.value),
-		// A calendar date as documented; never shifted through a zone.
+		// A calendar date as documented or published; never shifted through a zone.
 		conversion_rate_date: csvText(conversion.rateDate),
 		conversion_rounding: csvText(conversion.rounding.mode),
+	};
+	if (conversion.basis === "reference_rate") {
+		const { source } = conversion;
+		return cellsOf(CONVERSION_COLUMNS, {
+			...rate,
+			conversion_reference_provider: csvText(source.provider),
+			conversion_reference_publication_date: csvText(conversion.rateDate),
+			conversion_reference_publication_id: csvText(source.publicationId),
+			conversion_reference_publication_version: csvInteger(source.publicationVersion),
+			conversion_reference_content_sha256: csvText(source.contentSha256),
+			conversion_reference_retrieved_at: csvText(source.retrievedAt),
+			conversion_reference_policy_approved_at: csvText(source.policyApprovedAt),
+		});
+	}
+	return cellsOf(CONVERSION_COLUMNS, {
+		...rate,
 		conversion_authorized_by_employee_id: csvText(conversion.authorizedBy.employeeId),
 		conversion_authorized_by_name: csvText(conversion.authorizedBy.name),
 		conversion_authorized_at: csvText(conversion.authorizedAt),
@@ -489,6 +542,16 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 			throw new TravelExpenseExportContentError(
 				"manifest_invalid",
 				"Manifest revision out of scope",
+			);
+		}
+		// A reference-rate conversion cannot be frozen below the version that admits it.
+		if (
+			facts.schemaVersion < REFERENCE_RATE_FACTS_SCHEMA_VERSION &&
+			facts.items.some((item) => item.conversion?.basis === "reference_rate")
+		) {
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				`Reference rate conversion in facts schema version ${facts.schemaVersion}`,
 			);
 		}
 	}
