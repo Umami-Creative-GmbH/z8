@@ -11,8 +11,25 @@ import { loadAuthorizedTravelExpenseReport } from "@/lib/travel-expenses/report-
 import { Link } from "@/navigation";
 import { getTranslate } from "@/tolgee/server";
 
-async function ReportContent({ params }: { params: Promise<{ reportId: string }> }) {
-	const [t, actor, { reportId }] = await Promise.all([getTranslate(), getAuthContext(), params]);
+type ReportPageProps = {
+	params: Promise<{ reportId: string }>;
+	searchParams: Promise<{ cycle?: string | string[] }>;
+};
+
+/** An earlier submission cycle named by `?cycle=` (#603); undefined for the current report. */
+function requestedCycle(value: string | string[] | undefined): number | undefined {
+	const cycle = typeof value === "string" ? Number(value) : Number.NaN;
+	return Number.isInteger(cycle) && cycle > 0 ? cycle : undefined;
+}
+
+async function ReportContent({ params, searchParams }: ReportPageProps) {
+	const [t, actor, { reportId }, search] = await Promise.all([
+		getTranslate(),
+		getAuthContext(),
+		params,
+		searchParams,
+	]);
+	const cycle = requestedCycle(search.cycle);
 	if (!actor?.employee)
 		return <NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />;
 	const authorized = await loadAuthorizedTravelExpenseReport(reportId);
@@ -40,7 +57,7 @@ async function ReportContent({ params }: { params: Promise<{ reportId: string }>
 				<h1 className="text-2xl font-semibold tracking-tight">
 					{t("travelExpenses.report.submittedTitle", "Submitted expense report")}
 				</h1>
-				<SubmittedTravelExpenseReport reportId={reportId} />
+				<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
 			</div>
 		);
 	}
@@ -55,15 +72,27 @@ async function ReportContent({ params }: { params: Promise<{ reportId: string }>
 			<h1 className="text-2xl font-semibold tracking-tight">
 				{t("travelExpenses.report.title", "Expense")}
 			</h1>
-			<TravelExpenseReportEditor
-				reportId={reportId}
-				maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
-			/>
+			{cycle === undefined ? (
+				<TravelExpenseReportEditor
+					reportId={reportId}
+					maxReceiptBytes={Number(env.TRAVEL_EXPENSE_MAX_UPLOAD_SIZE_BYTES)}
+				/>
+			) : (
+				<>
+					<Link
+						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+						href={`/travel-expenses/reports/${reportId}`}
+					>
+						{t("travelExpenses.report.backToCurrent", "Back to the current report")}
+					</Link>
+					<SubmittedTravelExpenseReport reportId={reportId} cycle={cycle} />
+				</>
+			)}
 		</div>
 	);
 }
 
-export default function TravelExpenseReportPage(props: { params: Promise<{ reportId: string }> }) {
+export default function TravelExpenseReportPage(props: ReportPageProps) {
 	return (
 		<Suspense
 			fallback={

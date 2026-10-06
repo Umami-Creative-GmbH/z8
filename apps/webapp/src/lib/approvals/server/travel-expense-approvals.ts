@@ -894,7 +894,9 @@ export type BoundTravelExpenseInvocationResult =
 	| { status: "conflict" }
 	| { status: "not_found" };
 
-function classifyBoundTravelExpenseError(error: unknown): BoundTravelExpenseInvocationResult {
+export function classifyBoundTravelExpenseError(
+	error: unknown,
+): BoundTravelExpenseInvocationResult {
 	if (error instanceof ApprovalAssignmentReassignedError) {
 		// Escalation moved the card's request to another approver (#326).
 		return { status: "review_required", reason: "reassigned" };

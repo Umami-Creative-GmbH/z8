@@ -60,10 +60,19 @@ export async function GET(
 		}
 		if (authorized.status !== "found") return notFound();
 		const { report } = authorized;
+		// `cycle` names a frozen submission (#603): its exact receipt, also after
+		// the owner corrected or removed it in a returned or withdrawn report.
+		const cycleParam = new URL(request.url).searchParams.get("cycle");
+		const cycle = cycleParam === null ? undefined : Number(cycleParam);
+		if (cycle !== undefined && (!Number.isInteger(cycle) || cycle < 1)) return notFound();
 		let stored: StoredReceipt | null = null;
-		if (authorized.access !== "owner") {
-			// Reviewers and finance (#612) only ever receive the frozen evidence.
-			const frozen = await loadSubmittedReportReceipt(report, receiptId);
+		// Finance (#612) is authorized for the approved current submission only.
+		if (authorized.access === "finance" && cycle !== undefined && cycle !== report.submissionCount) {
+			return notFound();
+		}
+		if (authorized.access !== "owner" || cycle !== undefined) {
+			// Reviewers and finance only ever receive the frozen evidence.
+			const frozen = await loadSubmittedReportReceipt(report, receiptId, cycle);
 			stored = frozen && {
 				...frozen.object,
 				fileName: frozen.fileName,

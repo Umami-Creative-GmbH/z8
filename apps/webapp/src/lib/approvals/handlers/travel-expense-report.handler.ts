@@ -33,7 +33,7 @@ export interface TravelExpenseReportApprovalEntity {
 	id: string;
 	organizationId: string;
 	employeeId: string;
-	status: "draft" | "submitted" | "approved" | "rejected";
+	status: "draft" | "submitted" | "approved" | "rejected" | "returned";
 	employee: {
 		id: string;
 		userId: string;
