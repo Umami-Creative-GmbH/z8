@@ -341,7 +341,7 @@ export function useScheduleXDomLifecycle({
 
 				const content = buildRequirementHeaderContent(summary, date.toFormat("cccc, LLLL d"), t);
 				const wrapper = document.createElement("div");
-				wrapper.className = `z8-requirement-header-summary z8-requirement-header-summary--${content.status}`;
+				wrapper.className = `z8-requirement-header-summary z8-requirement-header-summary--${content.status ?? "none"}`;
 				wrapper.setAttribute("aria-label", content.accessibleLabel);
 
 				const screenReaderLabel = document.createElement("span");
@@ -349,10 +349,12 @@ export function useScheduleXDomLifecycle({
 				screenReaderLabel.textContent = content.accessibleLabel;
 				wrapper.append(screenReaderLabel);
 
-				const required = document.createElement("span");
-				required.className = "z8-requirement-header-summary__required";
-				required.textContent = content.requiredHours;
-				wrapper.append(required);
+				if (content.requiredHours !== null) {
+					const required = document.createElement("span");
+					required.className = "z8-requirement-header-summary__required";
+					required.textContent = content.requiredHours;
+					wrapper.append(required);
+				}
 
 				if (content.deltaHours !== null) {
 					const delta = document.createElement("span");
@@ -362,9 +364,17 @@ export function useScheduleXDomLifecycle({
 				}
 
 				const total = document.createElement("div");
-				total.className = "z8-requirement-header-total";
+				total.className = content.liveLabel
+					? "z8-requirement-header-total z8-requirement-header-total--live"
+					: "z8-requirement-header-total";
 				// The summary's accessible label already includes the recorded total.
 				total.setAttribute("aria-hidden", "true");
+				if (content.liveLabel) {
+					total.title = content.liveLabel;
+					const liveDot = document.createElement("span");
+					liveDot.className = "z8-requirement-header-total__live-dot";
+					total.append(liveDot);
+				}
 				const sumIcon = container.querySelector("[data-requirement-sum-icon] svg");
 				if (sumIcon) total.append(sumIcon.cloneNode(true));
 				total.append(content.actualHours);

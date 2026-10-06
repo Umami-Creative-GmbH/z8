@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import { allDayDateKeyForDate, calendarDateKeyForDate } from "@/lib/calendar/date-keys";
 import type {
 	CalendarEvent,
 	DailyWorkActualMinutes,
 	DailyWorkRequirements,
+	LiveWork,
 } from "@/lib/calendar/types";
 import { queryKeys } from "@/lib/query/keys";
 import { parseSuperJsonResponse } from "@/lib/superjson";
@@ -14,6 +16,7 @@ import {
 	calendarEventSchema,
 	dailyWorkActualMinutesSchema,
 	dailyWorkRequirementsSchema,
+	liveWorkSchema,
 } from "@/lib/validations/calendar";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
@@ -52,6 +55,8 @@ export interface UseCalendarDataResult {
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
 	dailyActualMinutes: DailyWorkActualMinutes;
+	/** The viewed employee's live work; its minutes are not in dailyActualMinutes. */
+	liveWork: LiveWork[];
 	workBalance: EmployeeWorkBalancePayload | null;
 	calendarTimezone: string | null;
 	eventsByDate: Map<string, CalendarEvent[]>;
@@ -75,6 +80,7 @@ async function fetchCalendarEvents(
 	events: CalendarEvent[];
 	dailyRequirements: DailyWorkRequirements;
 	dailyActualMinutes: DailyWorkActualMinutes;
+	liveWork: LiveWork[];
 	workBalance: EmployeeWorkBalancePayload | null;
 	calendarTimezone: string | null;
 }> {
@@ -112,6 +118,7 @@ async function fetchCalendarEvents(
 		total: number;
 		dailyRequirements?: unknown;
 		dailyActualMinutes?: unknown;
+		liveWork?: unknown;
 		workBalance?: unknown;
 		calendarTimezone?: unknown;
 	}>(response);
@@ -122,6 +129,7 @@ async function fetchCalendarEvents(
 		events: eventsSchema.parse(data.events),
 		dailyRequirements: dailyWorkRequirementsSchema.parse(data.dailyRequirements ?? {}),
 		dailyActualMinutes: dailyWorkActualMinutesSchema.parse(data.dailyActualMinutes ?? {}),
+		liveWork: liveWorkSchema.parse(data.liveWork ?? []),
 		workBalance: employeeWorkBalanceSchema.nullable().parse(data.workBalance ?? null),
 		calendarTimezone: z
 			.string()
@@ -149,6 +157,7 @@ export function useCalendarData({
 	dateRange,
 }: UseCalendarDataOptions): UseCalendarDataResult {
 	const queryClient = useQueryClient();
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const queryParams = {
 		year,
@@ -163,6 +172,7 @@ export function useCalendarData({
 			events: [],
 			dailyRequirements: {},
 			dailyActualMinutes: {},
+			liveWork: [],
 			workBalance: null,
 			calendarTimezone: null,
 		},
@@ -181,6 +191,10 @@ export function useCalendarData({
 				dateRange,
 			),
 		staleTime: 30 * 1000, // 30 seconds - calendar data can change frequently
+		refetchOnWindowFocus: true,
+		// Live work can end elsewhere (another device, a bot, a manager), so while
+		// it runs the calendar checks for that every minute.
+		refetchInterval: (query) => ((query.state.data?.liveWork.length ?? 0) > 0 ? 60_000 : false),
 		enabled: !!organizationId,
 	});
 
@@ -201,20 +215,27 @@ export function useCalendarData({
 
 	// Refetch function that invalidates the query cache
 	const refetch = () => {
-		queryClient.invalidateQueries({
-			queryKey: queryKeys.calendar.events(organizationId, queryParams),
-		});
+		setIsRefreshing(true);
+		void queryClient
+			.invalidateQueries({
+				queryKey: queryKeys.calendar.events(organizationId, queryParams),
+			})
+			.finally(() => setIsRefreshing(false));
 	};
+	// While live work runs the calendar polls every minute; those polls refresh
+	// quietly, so only loads and deliberate refreshes show as fetching.
+	const isPollingLiveWork = calendarData.liveWork.length > 0;
 
 	return {
 		events: calendarData.events,
 		dailyRequirements: calendarData.dailyRequirements,
 		dailyActualMinutes: calendarData.dailyActualMinutes,
+		liveWork: calendarData.liveWork,
 		workBalance: calendarData.workBalance,
 		calendarTimezone: calendarData.calendarTimezone,
 		eventsByDate,
 		isLoading,
-		isFetching,
+		isFetching: isPollingLiveWork ? isFetching && isRefreshing : isFetching,
 		error: error instanceof Error ? error : null,
 		refetch,
 	};

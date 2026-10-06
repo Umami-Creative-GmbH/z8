@@ -346,6 +346,8 @@ export const queryKeys = {
 	// Calendar events
 	calendar: {
 		all: ["calendar"] as const,
+		/** Every calendar events query, whatever its range, filters or employee */
+		allEvents: ["calendar", "events"] as const,
 		events: (
 			orgId: string,
 			params: {
