@@ -25,6 +25,7 @@ import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedCycleOutcome, SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { ReopenedNotice } from "./report-reopen";
 import { formatRecordedInstant } from "./report-status";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -36,6 +37,7 @@ function outcomeText(t: Translate, outcome: SubmittedCycleOutcome): string {
 		rejected: t("travelExpenses.report.cycles.rejected", "rejected"),
 		returned: t("travelExpenses.report.cycles.returned", "returned for changes"),
 		withdrawn: t("travelExpenses.report.cycles.withdrawn", "withdrawn"),
+		reopened: t("travelExpenses.report.cycles.reopened", "approved, then reopened for correction"),
 	};
 	return texts[outcome];
 }
@@ -273,7 +275,8 @@ export function ReportReviewFeedback({
 					)}
 				</p>
 			) : null}
-			{data.returned && (
+			{data.reopened && <ReopenedNotice reopened={data.reopened} />}
+			{(data.returned || data.reopened) && (
 				<p className="text-sm text-muted-foreground">
 					{t(
 						"travelExpenses.report.correctAndResubmit",

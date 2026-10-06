@@ -13,6 +13,7 @@ import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { SettlementPanel } from "../finance/settlement-panel";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { ReopenedNotice, ReopenReportPanel } from "./report-reopen";
 import { ReturnedNotice, SubmissionCycleLinks, WithdrawReportButton } from "./report-review-cycle";
 import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
 import { ReportTotals } from "./report-summary";
@@ -34,6 +35,9 @@ function historyText(
 			name,
 		}),
 		withdrawn: t("travelExpenses.report.history.withdrawn", "Withdrawn by {name}", { name }),
+		reopened: t("travelExpenses.report.history.reopened", "Reopened for correction by {name}", {
+			name,
+		}),
 		approval_recorded: t(
 			"travelExpenses.report.history.approvalRecorded",
 			"Approval recorded by {name}; awaiting further approval",
@@ -125,6 +129,7 @@ export function SubmittedTravelExpenseReport({
 				</p>
 			)}
 			{data.returned && <ReturnedNotice returned={data.returned} />}
+			{data.reopened && <ReopenedNotice reopened={data.reopened} />}
 			{data.cycleOutcome === "withdrawn" && (
 				<p className="text-sm text-muted-foreground">
 					{t(
@@ -215,6 +220,9 @@ export function SubmittedTravelExpenseReport({
 			/>
 			{latest && data.status === "approved" && data.access !== "reviewer" && (
 				<SettlementPanel source={{ type: "report", id: reportId }} />
+			)}
+			{latest && data.status === "approved" && data.access !== "owner" && (
+				<ReopenReportPanel reportId={reportId} />
 			)}
 			<section aria-labelledby={`${reportId}-history`} className="space-y-2">
 				<h2 id={`${reportId}-history`} className="text-lg font-semibold">

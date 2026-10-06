@@ -9,6 +9,7 @@ import {
 	travelExpenseReportCycleClosure,
 	travelExpenseReportReviewNote,
 } from "@/db/schema";
+import type { TravelExpenseReportCycleClosureKind } from "@/db/schema/travel-expense-review";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type AnyAppError,
@@ -332,7 +333,7 @@ export async function recordTravelExpenseReportCycleClosure(
 		organizationId: string;
 		reportId: string;
 		submissionCycle: number;
-		kind: "returned" | "withdrawn";
+		kind: TravelExpenseReportCycleClosureKind;
 		submittedRevisionId: string;
 		approvalRequestId: string;
 		decisionEvidenceId: string | null;

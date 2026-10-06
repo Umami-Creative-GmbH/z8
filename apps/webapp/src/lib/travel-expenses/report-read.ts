@@ -1,6 +1,6 @@
 import "server-only";
 import "@/lib/approvals/init";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -103,8 +103,17 @@ export interface SubmittedReportItemView
 	receipts: Array<Pick<TravelExpenseReportReceiptManifestItem, "receiptId"> & { fileName: string }>;
 }
 
-/** How one submission cycle ended, or `pending` while it is under review (#603). */
-export type SubmittedCycleOutcome = "pending" | "approved" | "rejected" | "returned" | "withdrawn";
+/**
+ * How one submission cycle ended, or `pending` while it is under review (#603).
+ * `reopened` (#614): approved, then reopened for correction before export or payment.
+ */
+export type SubmittedCycleOutcome =
+	| "pending"
+	| "approved"
+	| "rejected"
+	| "returned"
+	| "withdrawn"
+	| "reopened";
 
 export type SubmittedReportHistoryLabel =
 	| "submitted"
@@ -112,7 +121,8 @@ export type SubmittedReportHistoryLabel =
 	| "approved"
 	| "rejected"
 	| "returned"
-	| "withdrawn";
+	| "withdrawn"
+	| "reopened";
 
 export interface SubmittedReportView {
 	reportId: string;
@@ -139,6 +149,8 @@ export interface SubmittedReportView {
 		reviewerName: string | null;
 		itemComments: Array<{ itemId: string; number: number; description: string; body: string }>;
 	} | null;
+	/** Why and by whom this approved cycle was reopened for correction (#614). */
+	reopened?: { reason: string; reopenedAt: string; actorName: string | null } | null;
 	cycles: Array<{ cycle: number; submittedAt: string; outcome: SubmittedCycleOutcome }>;
 	/** Every cycle's events, oldest first. */
 	history: Array<{
@@ -295,6 +307,8 @@ export async function loadSubmittedReportView(
 					)
 			: [];
 
+	const closureActorNames = await loadReopenActorNames(report.organizationId, closures);
+
 	const history: SubmittedReportView["history"] = revisions.flatMap((candidate) => {
 		const submissionCycle = candidate.submissionCycle;
 		const cycleClosure = closureOf(submissionCycle);
@@ -325,6 +339,15 @@ export async function loadSubmittedReportView(
 				label: "withdrawn",
 				at: cycleClosure.createdAt.toISOString(),
 				actorName: candidate.labels.submitterName,
+			});
+		}
+		if (cycleClosure?.kind === "reopened") {
+			events.push({
+				id: cycleClosure.id,
+				cycle: submissionCycle,
+				label: "reopened",
+				at: cycleClosure.createdAt.toISOString(),
+				actorName: closureActorNames.get(cycleClosure.actorEmployeeId) ?? null,
 			});
 		}
 		return events;
@@ -373,6 +396,14 @@ export async function loadSubmittedReportView(
 						}),
 					}
 				: null,
+		reopened:
+			closure?.kind === "reopened" && closure.note
+				? {
+						reason: closure.note,
+						reopenedAt: closure.createdAt.toISOString(),
+						actorName: closureActorNames.get(closure.actorEmployeeId) ?? null,
+					}
+				: null,
 		cycles: revisions.map((candidate) => ({
 			cycle: candidate.submissionCycle,
 			submittedAt: instantToCanonicalString(candidate.submittedAt),
@@ -387,6 +418,27 @@ export async function loadSubmittedReportView(
 			items: revision.facts.items.map((item) => itemView(item, revision)),
 		},
 	};
+}
+
+/** Names of the approvers who reopened approved cycles (#614), by employee id. */
+async function loadReopenActorNames(
+	organizationId: string,
+	closures: Array<typeof travelExpenseReportCycleClosure.$inferSelect>,
+): Promise<Map<string, string | null>> {
+	const actorIds = [
+		...new Set(
+			closures
+				.filter((closure) => closure.kind === "reopened")
+				.map((closure) => closure.actorEmployeeId),
+		),
+	];
+	if (actorIds.length === 0) return new Map();
+	const rows = await db
+		.select({ id: employee.id, name: user.name })
+		.from(employee)
+		.leftJoin(user, eq(user.id, employee.userId))
+		.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, actorIds)));
+	return new Map(rows.map((row) => [row.id, row.name]));
 }
 
 /**
