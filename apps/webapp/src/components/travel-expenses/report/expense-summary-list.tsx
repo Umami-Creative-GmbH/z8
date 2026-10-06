@@ -4,6 +4,7 @@ import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
+import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
 import { categoryLabel } from "./receipt-item-editor";
 
 export interface ExpenseSummary {
@@ -15,6 +16,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** Frozen project attribution (#605). */
+	project?: ExpenseProjectSummary;
 }
 
 export interface TripSummary {
@@ -98,6 +101,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							.filter(Boolean)
 							.join(" · ")}
 					</p>
+					{item.project && <ExpenseProjectLine project={item.project} />}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (

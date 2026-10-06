@@ -66,6 +66,9 @@ export interface ReportItemView extends ReceiptItemDraft {
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
+	/** Project attribution (#605): `project-attribution.ts` `itemProjectChoice` reads these. */
+	projectId?: string | null;
+	projectInherits?: boolean;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -83,6 +86,8 @@ export interface ReportView {
 	/** Null for standalone reports, which have no trip. */
 	trip: TripDetailsView | null;
 	items: ReportItemView[];
+	/** The trip's project its expenses inherit (#605). */
+	projectId?: string | null;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -263,6 +268,8 @@ function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView
 		paidBy: row.paidBy,
 		accountingReference: row.accountingReference,
 		receipts,
+		projectId: row.projectId,
+		projectInherits: row.projectInherits,
 	};
 }
 
@@ -307,6 +314,7 @@ export async function loadOwnReport(
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
 		trip: toTripDetailsView(report),
+		projectId: report.projectId,
 		items: items.map((item) =>
 			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
 		),

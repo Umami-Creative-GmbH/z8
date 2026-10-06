@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
+import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import {
 	MAX_ACCOUNTING_REFERENCE_LENGTH,
 	MAX_DESCRIPTION_LENGTH,
@@ -51,6 +52,7 @@ import {
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { DraftSaveStatus } from "./draft-save-status";
+import { ItemProjectField } from "./project-picker";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { useDraftSaver } from "./use-draft-saver";
 
@@ -157,6 +159,7 @@ export function ReceiptItemEditor({
 	onDraftChange,
 	removal,
 	maxReceiptBytes,
+	project,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -171,6 +174,8 @@ export function ReceiptItemEditor({
 	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
 	/** The server's receipt size limit, so the uploader refuses larger files up front. */
 	maxReceiptBytes: number;
+	/** Project attribution (#605); the trip's project is what "inherit" means. */
+	project?: { isTrip: boolean; tripProjectId: string | null; onSaved?: () => void };
 }) {
 	const { t } = useTranslate();
 	const [uploading, setUploading] = useState(false);
@@ -472,13 +477,30 @@ export function ReceiptItemEditor({
 							<TFormDescription>
 								{t(
 									"travelExpenses.report.fields.accountingReferenceDescription",
-									"A reference finance asked you to use, such as an order number. Project assignment follows later.",
+									"A reference finance asked you to use, such as an order number.",
 								)}
 							</TFormDescription>
 							<TFormMessage>{fieldError("accountingReference")}</TFormMessage>
 						</TFormItem>
 					)}
 				</form.Field>
+
+				{project && (
+					<form.Subscribe selector={(formState) => formState.values.expenseDate}>
+						{(expenseDate) => (
+							<ItemProjectField
+								reportId={reportId}
+								itemId={item.id}
+								isTrip={project.isTrip}
+								expenseDate={/^\d{4}-\d{2}-\d{2}$/.test(expenseDate) ? expenseDate : null}
+								initialChoice={itemProjectChoice(item)}
+								tripProjectId={project.tripProjectId}
+								saver={saver}
+								onSaved={project.onSaved}
+							/>
+						)}
+					</form.Subscribe>
+				)}
 			</form>
 
 			<ReceiptAttachments

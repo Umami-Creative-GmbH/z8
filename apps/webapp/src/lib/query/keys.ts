@@ -88,6 +88,9 @@ export const queryKeys = {
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
 		reportSubmission: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "submission"] as const,
+		projectChoices: (reportId: string, from: string, to: string, selected: string | null) =>
+			["travel-expenses", "reports", reportId, "projects", from, to, selected] as const,
+		projectExceptions: () => ["travel-expenses", "settings", "project-exceptions"] as const,
 	},
 
 	// Employees

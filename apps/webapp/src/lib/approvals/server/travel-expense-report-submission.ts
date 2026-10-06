@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
 import {
@@ -62,6 +63,8 @@ export type SubmitTravelExpenseReportResult =
 	| { kind: "not_draft" }
 	| { kind: "changed_since_review" }
 	| { kind: "incomplete"; missing: TripReportMissingRequirements }
+	/** These expenses' projects are not proven on their expense dates (#605). */
+	| { kind: "project_ineligible"; itemIds: string[] }
 	/** Nobody but the requester could review it; setup guidance applies. */
 	| { kind: "no_reviewer"; reason: "requester_inactive" | "no_eligible_reviewer" }
 	/** A matched approval policy would let the requester approve their own report. */
@@ -289,6 +292,8 @@ export async function submitTravelExpenseReport(
 						: { kind: "changed_since_review" },
 				);
 			}
+			const projects = await resolveReportProjectAttribution(tx, owner, live);
+			if (!projects.ok) refuse({ kind: "project_ineligible", itemIds: projects.itemIds });
 
 			const directory = await loadRoutingDirectory(tx, {
 				organizationId: owner.organizationId,
@@ -391,7 +396,10 @@ export async function submitTravelExpenseReport(
 				reportId: input.reportId,
 			});
 			if (!frozen) refuse({ kind: "not_found" });
-			const facts = buildTravelExpenseReportSubmittedFacts(frozen);
+			const facts = buildTravelExpenseReportSubmittedFacts({
+				...frozen,
+				projectAttribution: projects.attribution,
+			});
 			const [subject, submitter] = await Promise.all([
 				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),
 				loadEmployeeLabel(tx, owner.organizationId, { userId: owner.userId }),

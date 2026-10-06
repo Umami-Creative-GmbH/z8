@@ -36,6 +36,13 @@ export interface DraftSaverState<Item> {
 	conflict?: { version: number; item: Item };
 }
 
+/** Outcome of another versioned write of the same draft (`runExclusive`). */
+export type ExclusiveWriteOutcome =
+	| { status: "saved"; version: number }
+	/** The draft changed elsewhere; nothing was written. */
+	| { status: "conflict"; version: number }
+	| { status: "failed"; error: string };
+
 export interface DraftSaver<Values, Item> {
 	getState(): DraftSaverState<Item>;
 	subscribe(listener: () => void): () => void;
@@ -52,6 +59,13 @@ export interface DraftSaver<Values, Item> {
 	 * more is saved and the state reads as saved, so nothing is reported lost.
 	 */
 	discard(): void;
+	/**
+	 * Runs another write that advances the same version (e.g. a separately
+	 * validated fact such as an expense's project): pending edits are saved
+	 * first, no save runs meanwhile, and the next save builds on the version
+	 * the write produced. Refused while a conflict awaits the user.
+	 */
+	runExclusive(write: (version: number) => Promise<ExclusiveWriteOutcome>): Promise<ExclusiveWriteOutcome>;
 	dispose(): void;
 }
 
@@ -175,6 +189,36 @@ export function createDraftSaver<Values, Item>(options: {
 			latest = undefined;
 			setState({ status: "saved", version: state.version });
 			dispose();
+		},
+		async runExclusive(write) {
+			if (disposed) return { status: "failed", error: "disposed" };
+			if (timer) clearTimeout(timer);
+			timer = null;
+			while (inFlight) await inFlight;
+			await run();
+			if (disposed) return { status: "failed", error: "disposed" };
+			if (state.status === "conflict") return { status: "failed", error: "conflict" };
+			const before = state;
+			let outcome = { status: "failed", error: "Save failed" } as ExclusiveWriteOutcome;
+			setState({ ...before, status: "saving" });
+			const running = (async () => {
+				try {
+					outcome = await write(before.version);
+				} catch (error) {
+					outcome = {
+						status: "failed",
+						error: error instanceof Error ? error.message : "Save failed",
+					};
+				}
+			})();
+			inFlight = running;
+			await running;
+			inFlight = null;
+			if (disposed) return outcome;
+			const version = outcome.status === "saved" ? outcome.version : before.version;
+			setState({ ...before, status: dirty ? "pending" : before.status, version });
+			if (dirty) schedule(0);
+			return outcome;
 		},
 		dispose,
 	};

@@ -209,6 +209,7 @@ function StandaloneReportBody({
 					onReceiptsChanged={refreshReport}
 					onSaved={() => void refreshDrafts()}
 					onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
+					project={{ isTrip: false, tripProjectId: null }}
 				/>
 				<ReportTotals
 					id={report.id}
@@ -242,6 +243,7 @@ function TripReportBody({
 	const [adding, setAdding] = useState(false);
 	const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
 	const [focusTarget, setFocusTarget] = useState<{ itemId: string } | "add" | null>(null);
+	const [tripProjectId, setTripProjectId] = useState(report.projectId ?? null);
 	const addButton = useRef<HTMLButtonElement>(null);
 	const { items } = report;
 
@@ -363,6 +365,7 @@ function TripReportBody({
 						details={trip}
 						onDetailsChange={setDetails}
 						onSaved={() => void refreshDrafts()}
+						project={{ initialProjectId: report.projectId ?? null, onSaved: setTripProjectId }}
 					/>
 				</CardContent>
 			</Card>
@@ -420,6 +423,7 @@ function TripReportBody({
 											),
 											remove: (expectedVersion) => removeItem(item.id, expectedVersion),
 										}}
+										project={{ isTrip: true, tripProjectId }}
 									/>
 								</CardContent>
 							</Card>

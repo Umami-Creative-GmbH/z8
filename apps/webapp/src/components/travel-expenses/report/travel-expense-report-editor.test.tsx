@@ -10,6 +10,12 @@ const reportActions = vi.hoisted(() => ({
 	removeReportReceiptAction: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => ({
+	getReportProjectChoicesAction: async () => ({
+		success: true,
+		data: { timeZone: "Europe/Berlin", choices: [], selected: null },
+	}),
+}));
 
 const upload = vi.hoisted(() => ({
 	options: null as null | {

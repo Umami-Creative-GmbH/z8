@@ -405,6 +405,8 @@ export async function submitTravelExpenseReportAction(input: {
 				return { success: true, data: { status: "routing_failed" } };
 			case "incomplete":
 				return { success: true, data: { status: result.kind, missing: result.missing } };
+			case "project_ineligible":
+				return { success: true, data: { status: result.kind, itemIds: result.itemIds } };
 			case "no_reviewer":
 				return { success: true, data: { status: result.kind, reason: result.reason } };
 			case "threshold_currency_unsupported":
