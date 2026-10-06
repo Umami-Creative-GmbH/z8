@@ -26,9 +26,10 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import { queryKeys } from "@/lib/query/keys";
 
 const NONE = "none";
-const queryKey = ["settings", "travel-expenses", "approver"] as const;
+const queryKey = queryKeys.travelExpenses.approverSettings();
 
 function ApproverForm({ settings }: { settings: TravelExpenseApproverSettings }) {
 	const { t } = useTranslate();

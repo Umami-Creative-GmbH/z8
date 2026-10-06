@@ -3,6 +3,8 @@ import { Cause, Effect, Exit, Option } from "effect";
 import type { db as appDb } from "@/db";
 import {
 	approvalChainStageInstance,
+	approvalPolicy,
+	approvalPolicyCondition,
 	employee,
 	employeeManagers,
 	team,
@@ -64,8 +66,10 @@ export type SubmitTravelExpenseReportResult =
 	| { kind: "no_reviewer"; reason: "requester_inactive" | "no_eligible_reviewer" }
 	/** A matched approval policy would let the requester approve their own report. */
 	| { kind: "self_approval_route" }
-	/** A matched approval policy could not resolve a stage approver. */
+	/** A matched approval policy could not resolve a stage approver; `message` is for logs. */
 	| { kind: "routing_failed"; message: string }
+	/** Amount-threshold policies exist, but the report is not in their currency. */
+	| { kind: "threshold_currency_unsupported"; currency: string }
 	/** The organization moved `travel_expense` to canonical authority, which has no report adapter. */
 	| { kind: "authority_unsupported" };
 
@@ -136,6 +140,32 @@ async function loadRoutingDirectory(
 	};
 }
 
+/** Whether an active approval policy of the organization routes by amount. */
+async function hasAmountThresholdPolicy(
+	tx: ApprovalDbService["db"],
+	organizationId: string,
+): Promise<boolean> {
+	const rows = await tx
+		.select({ id: approvalPolicyCondition.id })
+		.from(approvalPolicyCondition)
+		.innerJoin(
+			approvalPolicy,
+			and(
+				eq(approvalPolicy.id, approvalPolicyCondition.policyId),
+				eq(approvalPolicy.organizationId, approvalPolicyCondition.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(approvalPolicyCondition.organizationId, organizationId),
+				eq(approvalPolicyCondition.conditionType, "travel_expense_amount"),
+				eq(approvalPolicy.isActive, true),
+			),
+		)
+		.limit(1);
+	return rows.length > 0;
+}
+
 function policyContext(input: {
 	organizationId: string;
 	reportId: string;
@@ -143,14 +173,6 @@ function policyContext(input: {
 	teamId: string | null;
 	totals: ReportSubmissionTotals;
 }): ApprovalPolicyEvaluationContext {
-	// Amount thresholds are denominated in one known currency; never compare
-	// an amount of another currency as an unlabeled number.
-	if (input.totals.currency !== APPROVAL_AMOUNT_THRESHOLD_CURRENCY) {
-		refuse({
-			kind: "routing_failed",
-			message: `Approval amount thresholds are in ${APPROVAL_AMOUNT_THRESHOLD_CURRENCY}; this report is reimbursed in ${input.totals.currency}.`,
-		});
-	}
 	return {
 		organizationId: input.organizationId,
 		approvalType: "travel_expense_report",
@@ -158,8 +180,13 @@ function policyContext(input: {
 		teamId: input.teamId,
 		locationId: null,
 		absenceCategoryId: null,
-		// Employee-paid entitlement; company-paid costs are never owed.
-		travelExpenseAmount: Number(input.totals.reimbursable),
+		// Thresholds measure everything the reviewer approves, company-paid
+		// costs included, so a zero reimbursable total never skips a stage.
+		// Only an amount in the threshold currency is ever compared.
+		travelExpenseAmount:
+			input.totals.currency === APPROVAL_AMOUNT_THRESHOLD_CURRENCY
+				? Number(input.totals.total)
+				: null,
 		overtimeRisk: null,
 		employeeGroupIds: [],
 		entityType: "travel_expense_report",
@@ -275,6 +302,14 @@ export async function submitTravelExpenseReport(
 			if (!reviewer.ok && reviewer.reason === "requester_inactive") {
 				refuse({ kind: "no_reviewer", reason: reviewer.reason });
 			}
+			// Thresholds are denominated in one known currency: an amount in another
+			// currency is never compared as an unlabeled number where one could route.
+			if (
+				check.totals.currency !== APPROVAL_AMOUNT_THRESHOLD_CURRENCY &&
+				(await hasAmountThresholdPolicy(tx, owner.organizationId))
+			) {
+				refuse({ kind: "threshold_currency_unsupported", currency: check.totals.currency });
+			}
 
 			const submissionCycle = locked.submissionCount + 1;
 			const [submitted] = await tx
@@ -315,10 +350,11 @@ export async function submitTravelExpenseReport(
 			if (Exit.isFailure(routingExit)) {
 				const failure = failureOf(routingExit.cause);
 				if (failure instanceof ValidationError) {
+					// Only the unmatched-policy path needs the default reviewer ("managerId").
 					refuse(
-						reviewer.ok
-							? { kind: "routing_failed", message: failure.message }
-							: { kind: "no_reviewer", reason: reviewer.reason },
+						!reviewer.ok && failure.field === "managerId"
+							? { kind: "no_reviewer", reason: reviewer.reason }
+							: { kind: "routing_failed", message: failure.message },
 					);
 				}
 				throw failure;

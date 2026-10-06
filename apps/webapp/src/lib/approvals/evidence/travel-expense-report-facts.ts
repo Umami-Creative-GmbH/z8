@@ -165,6 +165,26 @@ function itemDraft(row: TravelExpenseReportFactsInput["items"][number]): Receipt
 	};
 }
 
+/**
+ * `submit` freezes only complete facts; `compare` snapshots live rows as they
+ * are, so a later change of the completeness rules never re-validates (and
+ * holds) a frozen revision whose facts did not change.
+ */
+type SnapshotMode = "submit" | "compare";
+
+function liveTripFacts(
+	report: TravelExpenseReportFactsInput["report"],
+): TravelExpenseReportSubmittedFacts["trip"] {
+	if (report.kind === "standalone") return null;
+	return {
+		purpose: report.tripPurpose,
+		startDate: report.tripStartDate,
+		endDate: report.tripEndDate,
+		timeZone: report.tripTimeZone,
+		destinations: report.tripDestinations.map((destination) => ({ ...destination })),
+	} as TravelExpenseReportSubmittedFacts["trip"];
+}
+
 function tripFacts(
 	report: TravelExpenseReportFactsInput["report"],
 	itemCount: number,
@@ -205,6 +225,14 @@ function tripFacts(
 export function buildTravelExpenseReportSubmittedFacts(
 	input: TravelExpenseReportFactsInput,
 ): TravelExpenseReportSubmittedFacts {
+	return snapshotReport(input, "submit");
+}
+
+function snapshotReport(
+	input: TravelExpenseReportFactsInput,
+	mode: SnapshotMode,
+): TravelExpenseReportSubmittedFacts {
+	const enforce = mode === "submit";
 	const { report } = input;
 	for (const row of input.items) {
 		if (row.organizationId !== report.organizationId || row.reportId !== report.id) {
@@ -221,7 +249,7 @@ export function buildTravelExpenseReportSubmittedFacts(
 			invariant("receipt_scope");
 		}
 	}
-	if (!CURRENCY.test(report.reimbursementCurrency)) incomplete("currency");
+	if (enforce && !CURRENCY.test(report.reimbursementCurrency)) incomplete("currency");
 
 	const items = input.items
 		.toSorted((left, right) => left.position - right.position)
@@ -236,6 +264,20 @@ export function buildTravelExpenseReportSubmittedFacts(
 				reimbursementCurrency: report.reimbursementCurrency,
 			});
 			const { expenseDate, category, description, amount, currency, paidBy } = draft;
+			if (!enforce) {
+				return {
+					itemId: row.id,
+					position: row.position,
+					type: row.type,
+					expenseDate,
+					category,
+					description,
+					original: { amount, currency },
+					paidBy,
+					accountingReference: row.accountingReference,
+					receipts,
+				} as TravelExpenseReportSubmittedItem;
+			}
 			if (
 				missing.length > 0 ||
 				!expenseDate ||
@@ -261,7 +303,7 @@ export function buildTravelExpenseReportSubmittedFacts(
 				receipts,
 			};
 		});
-	const trip = tripFacts(report, items.length);
+	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);
 	const totals = receiptReportTotals(
 		items.map((item) => ({
 			amount: item.original.amount,
@@ -270,7 +312,7 @@ export function buildTravelExpenseReportSubmittedFacts(
 		})),
 		report.reimbursementCurrency,
 	);
-	if (totals.excludedItemCount > 0) incomplete("totals");
+	if (enforce && totals.excludedItemCount > 0) incomplete("totals");
 
 	return {
 		schemaVersion: TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
@@ -326,8 +368,9 @@ export type TravelExpenseReportRevisionComparison =
 	| { kind: "material_change"; changedFields: string[] };
 
 /**
- * Compares the live report rows with the frozen revision. Any difference, or
- * live rows that can no longer be frozen, holds the decision.
+ * Compares the live report rows with the frozen revision. Any difference of
+ * facts, or live rows that break scope or receipt identity, holds the
+ * decision; today's completeness rules are not re-applied to frozen facts.
  */
 export function compareLiveTravelExpenseReportWithRevision(
 	submitted: TravelExpenseReportSubmittedFacts,
@@ -335,7 +378,7 @@ export function compareLiveTravelExpenseReportWithRevision(
 ): TravelExpenseReportRevisionComparison {
 	let liveFacts: TravelExpenseReportSubmittedFacts;
 	try {
-		liveFacts = buildTravelExpenseReportSubmittedFacts(live);
+		liveFacts = snapshotReport(live, "compare");
 	} catch (error) {
 		if (!(error instanceof ApprovalEvidenceError)) throw error;
 		return {

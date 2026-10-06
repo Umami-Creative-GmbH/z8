@@ -63,7 +63,13 @@ export async function GET(
 		let stored: StoredReceipt | null = null;
 		if (authorized.access === "reviewer") {
 			const frozen = await loadSubmittedReportReceipt(report, receiptId);
-			stored = frozen && { ...frozen.object, ...frozen };
+			stored = frozen && {
+				...frozen.object,
+				fileName: frozen.fileName,
+				mimeType: frozen.mimeType,
+				sizeBytes: frozen.sizeBytes,
+				checksumSha256: frozen.checksumSha256,
+			};
 		} else {
 			const [receipt] = await db
 				.select()

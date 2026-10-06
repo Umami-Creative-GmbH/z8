@@ -52,6 +52,18 @@ export interface ReportSubmissionTotals {
 	reimbursable: string;
 	/** Company-paid costs: reviewed, never owed to the employee. */
 	companyPaid: string;
+	/** Everything the reviewer approves; what approval amount thresholds measure. */
+	total: string;
+}
+
+/** Adds two normalized two-decimal amounts in minor units. */
+function addAmounts(left: string, right: string): string {
+	const minor = (value: string) => {
+		const [units = "0", cents = "00"] = value.split(".");
+		return Number(units) * 100 + Number(cents.padEnd(2, "0"));
+	};
+	const sum = minor(left) + minor(right);
+	return `${Math.trunc(sum / 100)}.${String(sum % 100).padStart(2, "0")}`;
 }
 
 export type ReportSubmissionCheck =
@@ -122,6 +134,7 @@ export function checkReportSubmission(
 			currency: totals.currency,
 			reimbursable: totals.reimbursable,
 			companyPaid: totals.companyPaid,
+			total: addAmounts(totals.reimbursable, totals.companyPaid),
 		},
 	};
 }

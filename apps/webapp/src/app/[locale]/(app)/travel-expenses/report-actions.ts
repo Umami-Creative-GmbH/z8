@@ -44,9 +44,11 @@ import {
 	type TripDetailsDraft,
 	type TripDetailsDraftInput,
 	type TripDetailsFieldError,
-	type TripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
-import { submitTravelExpenseReport } from "@/lib/approvals/server/travel-expense-report-submission";
+import {
+	type SubmitTravelExpenseReportResult,
+	submitTravelExpenseReport,
+} from "@/lib/approvals/server/travel-expense-report-submission";
 
 async function currentOwner(): Promise<ReportOwner | null> {
 	const authContext = await getAuthContext();
@@ -335,16 +337,24 @@ export async function removeTripReportItemAction(input: {
 	}
 }
 
+type SubmitRefusal = Exclude<
+	SubmitTravelExpenseReportResult,
+	{ kind: "submitted" | "not_found" | "not_draft" }
+>;
+
+/**
+ * What the employee is told: submitted, or the submission owner's refusal
+ * (e.g. changed since review, incomplete, no reviewer) with its guidance data.
+ * Server-side routing messages stay in the logs.
+ */
 export type SubmitTravelExpenseReportOutcome =
 	| { status: "submitted" }
-	/** Something was saved after the review step; review the report again. */
-	| { status: "changed_since_review" }
-	| { status: "incomplete"; missing: TripReportMissingRequirements }
-	/** Nobody but the employee could review it: an administrator must set up routing. */
-	| { status: "no_reviewer"; reason: "requester_inactive" | "no_eligible_reviewer" }
-	| { status: "self_approval_route" }
-	| { status: "routing_failed"; message: string }
-	| { status: "authority_unsupported" };
+	| {
+			[K in SubmitRefusal["kind"]]: { status: K } & Omit<
+				Extract<SubmitRefusal, { kind: K }>,
+				"kind" | "message"
+			>;
+	  }[SubmitRefusal["kind"]];
 
 const submitSchema = z.object({
 	reportId: z.uuid(),
@@ -387,10 +397,22 @@ export async function submitTravelExpenseReportAction(input: {
 				return { success: false, error: "This expense report was already submitted" };
 			case "submitted":
 				break;
-			default: {
-				const { kind, ...details } = result;
-				return { success: true, data: { status: kind, ...details } as SubmitTravelExpenseReportOutcome };
-			}
+			case "routing_failed":
+				logger.warn(
+					{ reportId: parsed.data.reportId, message: result.message },
+					"Expense report routing failed",
+				);
+				return { success: true, data: { status: "routing_failed" } };
+			case "incomplete":
+				return { success: true, data: { status: result.kind, missing: result.missing } };
+			case "no_reviewer":
+				return { success: true, data: { status: result.kind, reason: result.reason } };
+			case "threshold_currency_unsupported":
+				return { success: true, data: { status: result.kind, currency: result.currency } };
+			case "changed_since_review":
+			case "self_approval_route":
+			case "authority_unsupported":
+				return { success: true, data: { status: result.kind } };
 		}
 		logAudit({
 			action: AuditAction.TRAVEL_EXPENSE_SUBMITTED,

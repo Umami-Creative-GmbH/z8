@@ -261,10 +261,27 @@ describe("compareLiveTravelExpenseReportWithRevision", () => {
 		]);
 	});
 
-	it("holds a report whose live rows can no longer be frozen", () => {
+	it("compares facts only, not today's completeness rules", () => {
+		// Live rows that no longer satisfy the submission rules are a change of
+		// facts, never a re-validation of the frozen revision.
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, input({ receipts: [] }))).toEqual({
 			kind: "material_change",
-			changedFields: ["unverifiable:items"],
+			changedFields: ["items"],
 		});
+	});
+
+	it("holds a report whose live rows break organization scope", () => {
+		expect(
+			compareLiveTravelExpenseReportWithRevision(
+				submitted,
+				input({
+					receipts: [
+						receipt("r-3", "hotel", { checksumSha256: checksumB, organizationId: "org-2" }),
+						receipt("r-1", "train"),
+						receipt("r-2", "hotel"),
+					],
+				}),
+			),
+		).toEqual({ kind: "material_change", changedFields: ["unverifiable:receipt_scope"] });
 	});
 });

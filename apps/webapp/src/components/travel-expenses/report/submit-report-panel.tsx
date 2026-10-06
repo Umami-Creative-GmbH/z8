@@ -82,8 +82,16 @@ function outcomeMessage(
 				title: t("travelExpenses.report.submit.routingTitle", "The report could not be routed"),
 				body: t(
 					"travelExpenses.report.submit.routing",
-					"Your organization's approval rules could not find a reviewer ({message}). Ask an administrator to check them. Your report stays saved as a draft.",
-					{ message: outcome.message },
+					"Your organization's approval rules could not find a reviewer. Ask an administrator to check them. Your report stays saved as a draft.",
+				),
+			};
+		case "threshold_currency_unsupported":
+			return {
+				title: t("travelExpenses.report.submit.routingTitle", "The report could not be routed"),
+				body: t(
+					"travelExpenses.report.submit.thresholdCurrency",
+					"Your organization's approval rules compare amounts in EUR, but this report is in {currency}. Ask an administrator to check them. Your report stays saved as a draft.",
+					{ currency: outcome.currency },
 				),
 			};
 		case "authority_unsupported":

@@ -38,6 +38,7 @@ import {
 	TRAVEL_EXPENSE_REPORT_SOURCE_TYPE,
 	type TravelExpenseReportSubmittedRevisionRecord,
 } from "../evidence/travel-expense-report-store";
+import type { TravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
@@ -106,8 +107,10 @@ export type TravelExpenseReportDecisionOutcome =
 			kind: "decided";
 			evidence: LegacyDecisionEvidenceRecord;
 			approvalRequestId: string;
-			/** The report's outcome; an intermediate chain stage leaves it pending. */
+			/** The report's outcome; an intermediate chain stage leaves it submitted. */
 			reportStatus: "submitted" | "approved" | "rejected";
+			/** Totals of the decided frozen revision. */
+			totals: TravelExpenseReportSubmittedFacts["totals"];
 	  };
 
 async function findPendingReportRequestForApprover(
@@ -381,7 +384,10 @@ async function recordReportDecisionEvidence(
 		approvalRequestId: string;
 		actor: { employeeId: string; userId: string };
 	},
-): Promise<{ evidence: LegacyDecisionEvidenceRecord; reportStatus: string }> {
+): Promise<{
+	evidence: LegacyDecisionEvidenceRecord;
+	reportStatus: "submitted" | "approved" | "rejected";
+}> {
 	if (
 		!(await isLegacyRequestInRevisionLifecycle(database, {
 			organizationId: input.organizationId,
@@ -392,6 +398,8 @@ async function recordReportDecisionEvidence(
 		throw new ApprovalEvidenceError("evidence_incomplete", { field: "legacy_lifecycle" });
 	}
 	// Outcome, stage and time come from the persisted rows, never the request.
+	// The shared legacy expense derivation names its subject a claim; here the
+	// subject row is the report.
 	const outcome = deriveLegacyTravelExpenseDecisionOutcome(
 		{ action: input.action, actorEmployeeId: input.actor.employeeId },
 		await readDecisionRows(database, input),
@@ -429,7 +437,17 @@ async function recordReportDecisionEvidence(
 		},
 		labels: { actorName: actor.name },
 	});
-	return { evidence, reportStatus: outcome.claimStatus };
+	// The derivation only yields these three for a report; an intermediate
+	// chain approval leaves it submitted.
+	switch (outcome.requestOutcome) {
+		case "pending":
+			return { evidence, reportStatus: "submitted" };
+		case "approved":
+		case "rejected":
+			return { evidence, reportStatus: outcome.requestOutcome };
+		default:
+			throw new ApprovalEvidenceError("evidence_incomplete", { field: "request_outcome" });
+	}
 }
 
 function failureOf(cause: Cause.Cause<unknown>): unknown {
@@ -555,7 +573,8 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		kind: "decided",
 		evidence: recorded.evidence,
 		approvalRequestId,
-		reportStatus: recorded.reportStatus as "submitted" | "approved" | "rejected",
+		reportStatus: recorded.reportStatus,
+		totals: revision.facts.totals,
 	};
 }
 
@@ -586,7 +605,7 @@ export function translateTravelExpenseReportDecisionError(error: unknown): unkno
 async function notifyRequester(
 	database: ApprovalDatabase,
 	input: TravelExpenseReportDecisionInput,
-	revision: { reimbursable: string; currency: string },
+	revision: Pick<TravelExpenseReportSubmittedFacts["totals"], "reimbursable" | "currency">,
 ) {
 	const [requester] = await database
 		.select({ userId: employee.userId })
@@ -638,14 +657,8 @@ export function decideTravelExpenseReportEffect(
 				executeTravelExpenseReportDecisionInTransaction(transaction, dbService.query, decision),
 			);
 			if (outcome.kind === "decided" && outcome.reportStatus !== "submitted") {
-				const revision = await loadTravelExpenseReportSubmittedRevision(dbService.db, {
-					organizationId: decision.organizationId,
-					reportId: decision.reportId,
-				});
-				await notifyRequester(dbService.db, decision, {
-					reimbursable: revision?.facts.totals.reimbursable ?? "0.00",
-					currency: revision?.facts.totals.currency ?? "EUR",
-				}).catch((error) =>
+				// The decided revision's own totals; never a guessed amount.
+				await notifyRequester(dbService.db, decision, outcome.totals).catch((error) =>
 					logger.error({ error, reportId: input.reportId }, "Report decision notification failed"),
 				);
 			}

@@ -6,43 +6,35 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { getTravelExpenseReportSubmission } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
 import { ReportTotals } from "./report-summary";
 
-function formatInstant(locale: string, iso: string) {
-	try {
-		return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
-			new Date(iso),
-		);
-	} catch {
-		return iso;
-	}
-}
+const formatInstant = formatRecordedInstant;
 
-function StatusBadge({ status }: { status: SubmittedReportView["status"] }) {
-	const { t } = useTranslate();
-	switch (status) {
-		case "approved":
-			return <Badge>{t("travelExpenses.report.status.approved", "Approved")}</Badge>;
-		case "rejected":
-			return (
-				<Badge variant="destructive">
-					{t("travelExpenses.report.status.rejected", "Rejected")}
-				</Badge>
-			);
-		default:
-			return (
-				<Badge variant="secondary">
-					{t("travelExpenses.report.status.submitted", "Awaiting review")}
-				</Badge>
-			);
-	}
+type HistoryLabel = SubmittedReportView["history"][number]["label"];
+
+function historyText(
+	t: ReturnType<typeof useTranslate>["t"],
+	label: HistoryLabel,
+	name: string,
+): string {
+	const texts: Record<HistoryLabel, string> = {
+		submitted: t("travelExpenses.report.history.submitted", "Submitted by {name}", { name }),
+		approved: t("travelExpenses.report.history.approved", "Approved by {name}", { name }),
+		rejected: t("travelExpenses.report.history.rejected", "Rejected by {name}", { name }),
+		approval_recorded: t(
+			"travelExpenses.report.history.approvalRecorded",
+			"Approval recorded by {name}; awaiting further approval",
+			{ name },
+		),
+	};
+	return texts[label];
 }
 
 /**
@@ -89,7 +81,7 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<StatusBadge status={data.status} />
+				<ReportStatusBadge status={data.status} />
 				<p className="text-sm text-muted-foreground">
 					{t("travelExpenses.report.submittedAt", "Submitted {date}", {
 						date: formatInstant(locale, data.submittedAt),
@@ -177,23 +169,7 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 					{data.history.map((event) => (
 						<li key={event.id}>
 							<span className="text-muted-foreground">{formatInstant(locale, event.at)}</span>{" "}
-							{event.label === "submitted"
-								? t("travelExpenses.report.history.submitted", "Submitted by {name}", {
-										name: event.actorName ?? "—",
-									})
-								: event.label === "approved"
-									? t("travelExpenses.report.history.approved", "Approved by {name}", {
-											name: event.actorName ?? "—",
-										})
-									: event.label === "rejected"
-										? t("travelExpenses.report.history.rejected", "Rejected by {name}", {
-												name: event.actorName ?? "—",
-											})
-										: t(
-												"travelExpenses.report.history.approvalRecorded",
-												"Approval recorded by {name}; awaiting further approval",
-												{ name: event.actorName ?? "—" },
-											)}
+							{historyText(t, event.label, event.actorName ?? "—")}
 						</li>
 					))}
 				</ol>

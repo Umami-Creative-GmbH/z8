@@ -1,9 +1,9 @@
 import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import { user } from "@/db/auth-schema";
 import { approvalRequest, employee, travelExpenseReport } from "@/db/schema";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
@@ -335,7 +335,9 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 		}),
 
 	calculatePriority: (_entity, createdAt) => {
-		const ageHours = DateTime.now().diff(DateTime.fromJSDate(createdAt), "hours").hours;
+		const ageHours =
+			(systemClock.nowInstant().epochMilliseconds - instantFromDate(createdAt).epochMilliseconds) /
+			3_600_000;
 		if (ageHours > 72) return "urgent";
 		if (ageHours > 24) return "high";
 		if (ageHours > 8) return "normal";

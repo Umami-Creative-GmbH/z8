@@ -589,42 +589,80 @@ describe("report submission through approval authority (#602)", () => {
 		expect(await reportState(selfRouted)).toMatchObject({ status: "draft", requests: [] });
 	});
 
-	it("serializes receipt finalization and submission on the report row in both orders", async () => {
-		const reportId = await completeTrip();
-		const report = await load(reportId);
-		const [first] = report.items;
-		if (!first) throw new Error("item missing");
-
-		// Upload queued behind a held lock, then submission: the upload attaches first and
-		// the report changed after review, so nothing is frozen without it.
+	/**
+	 * Holds the report row lock, queues `first` and then `second` behind it
+	 * (PostgreSQL grants the row lock in arrival order) and releases it.
+	 */
+	async function raceOnReportLock<A, B>(
+		reportId: string,
+		first: () => Promise<A>,
+		second: () => Promise<B>,
+	): Promise<[A, B]> {
 		const holder = await holdReportLock(reportId);
-		const versions = await reviewed(reportId);
-		const lateUpload = upload(reportId, first.id, Buffer.from("%PDF-1.4\n% second\n%%EOF"));
+		const firstDone = first();
 		await waitForLockWaiters(1);
-		const submission = submit(reportId, versions);
+		const secondDone = second();
 		await waitForLockWaiters(2);
 		await holder.query("commit");
 		holder.release();
-		const [uploaded, submitted] = await Promise.all([lateUpload, submission]);
+		return Promise.all([firstDone, secondDone]);
+	}
 
-		const state = await reportState(reportId);
-		const { rows: receipts } = await admin.query(
-			"select id from travel_expense_report_receipt where report_id = $1",
+	async function receiptIdsOf(reportId: string) {
+		const { rows } = await admin.query<{ id: string }>(
+			"select id from travel_expense_report_receipt where report_id = $1 order by id",
 			[reportId],
 		);
-		if (state.status === "submitted") {
-			// Submission won the lock: the late upload was refused and is cleaned up.
-			expect(uploaded.status).not.toBe(200);
-			const frozen = (await revisionOf(reportId)).facts.items.flatMap(
-				(item: { receipts: Array<{ receiptId: string }> }) => item.receipts,
-			);
-			expect(frozen).toHaveLength(receipts.length);
-		} else {
-			// The upload won: the receipt is attached and the submission saw a changed report.
-			expect(uploaded.status).toBe(200);
-			expect(submitted).toEqual({ success: true, data: { status: "changed_since_review" } });
-			expect(state.revisions).toBe(0);
-		}
+		return rows.map((row) => row.id);
+	}
+
+	it("refuses a submission whose receipts changed after review when the upload locks first", async () => {
+		const reportId = await completeTrip();
+		const [first] = (await load(reportId)).items;
+		if (!first) throw new Error("item missing");
+		const versions = await reviewed(reportId);
+
+		const [uploaded, submitted] = await raceOnReportLock(
+			reportId,
+			() => upload(reportId, first.id, Buffer.from("%PDF-1.4\n% second\n%%EOF")),
+			() => submit(reportId, versions),
+		);
+
+		// The receipt attached first, so the reviewed report no longer exists as reviewed.
+		expect(uploaded.status).toBe(200);
+		expect(submitted).toEqual({ success: true, data: { status: "changed_since_review" } });
+		expect(await reportState(reportId)).toMatchObject({ status: "draft", revisions: 0 });
+	});
+
+	it("freezes exactly the reviewed receipts and refuses an upload that locks after submission", async () => {
+		const reportId = await completeTrip();
+		const [first] = (await load(reportId)).items;
+		if (!first) throw new Error("item missing");
+		const versions = await reviewed(reportId);
+		const before = await receiptIdsOf(reportId);
+
+		const [submitted, uploaded] = await raceOnReportLock(
+			reportId,
+			() => submit(reportId, versions),
+			() => upload(reportId, first.id, Buffer.from("%PDF-1.4\n% late\n%%EOF")),
+		);
+
+		expect(submitted).toEqual({ success: true, data: { status: "submitted" } });
+		expect(uploaded.status).not.toBe(200);
+		expect(await receiptIdsOf(reportId)).toEqual(before);
+		const frozen = (await revisionOf(reportId)).facts.items.flatMap(
+			(item: { receipts: Array<{ receiptId: string }> }) => item.receipts,
+		);
+		expect(frozen.map((receipt: { receiptId: string }) => receipt.receiptId).sort()).toEqual(
+			before,
+		);
+		// The rejected object was deleted; nothing stays staged as if it could attach.
+		const { rows: pending } = await admin.query(
+			"select id from travel_expense_receipt_upload where report_id = $1 and status = 'pending'",
+			[reportId],
+		);
+		expect(pending).toEqual([]);
+		expect(harness.objects.size).toBe(before.length);
 	});
 
 	it("submits a report once under concurrent double submission", async () => {
@@ -751,6 +789,31 @@ describe("report submission through approval authority (#602)", () => {
 		expect(detail.actions).toMatchObject({ canApprove: false, canReject: false });
 		expect((await decide("approve", requestId)).status).toBe(409);
 		expect(await reportState(reportId)).toMatchObject({ status: "submitted", decisions: 0 });
+	});
+
+	it("applies EUR amount thresholds to the total report amount, company-paid costs included", async () => {
+		await admin.query(
+			`insert into approval_policy (id, organization_id, name, is_active, priority, created_by, updated_at)
+			 values ($1, 't602-org', 'T602 large spend', true, 1, 't602-manager', now())`,
+			[ids.policy],
+		);
+		await admin.query(
+			`insert into approval_policy_condition (organization_id, policy_id, condition_type, operator, amount_min, updated_at)
+			 values ('t602-org', $1, 'travel_expense_amount', 'gte', 300, now())`,
+			[ids.policy],
+		);
+		await admin.query(
+			`insert into approval_policy_stage (id, organization_id, policy_id, step_order, label, approver_type,
+			   approver_employee_id, fallback_behavior, updated_at)
+			 values ($1, 't602-org', $2, 1, 'Finance', 'specific_employee', $3, 'fail', now())`,
+			[ids.firstStage, ids.policy, ids.finance],
+		);
+		// EUR 0.00 reimbursable, EUR 329.90 in total: the threshold still applies.
+		const companyPaid = await completeTrip({ companyPaidOnly: true });
+		expect((await submit(companyPaid)).success).toBe(true);
+		expect((await reportState(companyPaid)).requests).toEqual([
+			expect.objectContaining({ status: "pending", approver_id: ids.finance }),
+		]);
 	});
 
 	it("advances a policy chain stage by stage and decides the report only at the end", async () => {

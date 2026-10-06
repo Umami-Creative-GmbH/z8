@@ -13,33 +13,12 @@ import {
 	getMyDraftTravelExpenseReports,
 	getMySubmittedTravelExpenseReports,
 } from "@/app/[locale]/(app)/travel-expenses/report-actions";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query/keys";
-import type { DraftReportSummary } from "@/lib/travel-expenses/report-store";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
-
-function StatusBadge({ status }: { status: DraftReportSummary["status"] }) {
-	const { t } = useTranslate();
-	switch (status) {
-		case "draft":
-			return <Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>;
-		case "submitted":
-			return (
-				<Badge variant="outline">
-					{t("travelExpenses.report.status.submitted", "Awaiting review")}
-				</Badge>
-			);
-		case "approved":
-			return <Badge>{t("travelExpenses.report.status.approved", "Approved")}</Badge>;
-		case "rejected":
-			return (
-				<Badge variant="destructive">{t("travelExpenses.report.status.rejected", "Rejected")}</Badge>
-			);
-	}
-}
+import { ReportStatusBadge } from "./report-status";
 
 /**
  * The employee's unfinished trips and receipts, so a saved draft can be
@@ -179,7 +158,7 @@ export function TravelExpenseReportDrafts({
 											)}
 										</>
 									)}
-									<StatusBadge status={draft.status} />
+									<ReportStatusBadge status={draft.status} />
 									<IconChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
 								</Link>
 							</li>

@@ -54,7 +54,7 @@ describe("checkReportSubmission", () => {
 	it("accepts a complete trip and totals employee-paid and company-paid costs separately", () => {
 		expect(checkReportSubmission(trip, reviewedTrip)).toEqual({
 			ok: true,
-			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00" },
+			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00", total: "329.90" },
 		});
 	});
 
@@ -75,7 +75,7 @@ describe("checkReportSubmission", () => {
 			}),
 		).toEqual({
 			ok: true,
-			totals: { currency: "EUR", reimbursable: "0.00", companyPaid: "89.90" },
+			totals: { currency: "EUR", reimbursable: "0.00", companyPaid: "89.90", total: "89.90" },
 		});
 	});
 
