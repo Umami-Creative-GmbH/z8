@@ -31,11 +31,13 @@ export function isCanonicalEscalationWorkflowType(
  * A time entry's request is a manual submission, a policy clock-out or a time
  * correction; its kind comes from the verified legacy capture, never from the
  * entity type (#439). Travel expenses have no canonical adapter, so their
- * requests are discovered under every rollout mode.
+ * requests (claims, and reports since #623) are discovered under every
+ * rollout mode.
  */
 export const LEGACY_ESCALATION_ENTITY_TYPES = {
 	absence_entry: ["absence"],
 	travel_expense_claim: ["travel_expense"],
+	travel_expense_report: ["travel_expense"],
 	time_entry: TIME_APPROVAL_WORKFLOW_TYPES,
 } as const satisfies Record<string, readonly ApprovalWorkflowType[]>;
 

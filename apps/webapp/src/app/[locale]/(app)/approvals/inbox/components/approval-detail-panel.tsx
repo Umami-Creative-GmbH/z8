@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TimeCorrectionComparison } from "@/components/approvals/time-correction-comparison";
+import { TravelExpenseReportReturnButton } from "@/components/approvals/travel-expense-report-return";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -408,6 +409,17 @@ export function ApprovalDetailPanel({
 						</div>
 					) : (
 						<div className="flex w-full gap-2">
+							{panelItem.type === "travel_expense_report" && (
+								<TravelExpenseReportReturnButton
+									approvalId={approval.id}
+									reportId={panelItem.entityId}
+									disabled={!panelActions.canReject || isPending}
+									onReturned={() => {
+										onOpenChange(false);
+										onActioned();
+									}}
+								/>
+							)}
 							<Button
 								variant="outline"
 								className="flex-1"

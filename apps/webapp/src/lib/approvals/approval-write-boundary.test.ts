@@ -4389,6 +4389,11 @@ db.delete(approvalOutbox);`,
 			"src/lib/approvals/server/shared.ts": {
 				approval_request: ["update"],
 			},
+			"src/lib/approvals/server/travel-expense-report-withdrawal.ts": {
+				approval_chain_instance: ["update"],
+				approval_chain_stage_instance: ["update"],
+				approval_request: ["update"],
+			},
 			"src/lib/demo/demo-data.service.ts": {
 				approval_request: ["insert"],
 			},

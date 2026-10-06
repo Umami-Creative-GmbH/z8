@@ -29,8 +29,11 @@ describe("admitted escalation kinds (#326)", () => {
 		expect(LEGACY_ESCALATION_ENTITY_TYPES).toEqual({
 			absence_entry: ["absence"],
 			travel_expense_claim: ["travel_expense"],
+			// Expense reports share the kind (#623).
+			travel_expense_report: ["travel_expense"],
 			time_entry: ["manual_time_submission", "policy_clock_out", "time_correction"],
 		});
+		expect(isLegacyEscalationEntityType("travel_expense_report")).toBe(true);
 		expect(legacyEntityTypeAdmits("time_entry", "policy_clock_out")).toBe(true);
 		expect(legacyEntityTypeAdmits("time_entry", "absence")).toBe(false);
 		expect(legacyEntityTypeAdmits("absence_entry", "time_correction")).toBe(false);

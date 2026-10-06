@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import {
@@ -21,6 +21,7 @@ import {
 	parseCardChargeAmount,
 	parseManualRateInput,
 } from "./currency-conversion";
+import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import { lockOwnDraftReport, type ReportOwner, touchReport } from "./report-store";
 
 /**
@@ -336,7 +337,8 @@ async function lockOrganizationDraftReport(
 		)
 		.for("update");
 	if (!report) return "not_found";
-	return report.status === "draft" ? "draft" : "not_draft";
+	// A returned report (#603) is edited like a draft.
+	return isEditableReportStatus(report.status) ? "draft" : "not_draft";
 }
 
 async function touchReportAsAdministrator(
@@ -464,7 +466,7 @@ export interface ForeignDraftItem {
 }
 
 /**
- * Foreign-currency items of the organization's draft reports, for expense
+ * Foreign-currency items of the organization's draft and returned reports, for expense
  * administrators to authorize documented rates. Most recently edited first.
  */
 export async function listForeignDraftItems(
@@ -498,7 +500,7 @@ export async function listForeignDraftItems(
 		.where(
 			and(
 				eq(travelExpenseReport.organizationId, organizationId),
-				eq(travelExpenseReport.status, "draft"),
+				inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 				isNotNull(travelExpenseReportItem.originalCurrency),
 				ne(travelExpenseReportItem.originalCurrency, travelExpenseReport.reimbursementCurrency),
 			),

@@ -13,6 +13,7 @@ import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/tempo
 import { loadOrganizationReimbursementCurrency, loadReportConversions } from "./conversion-read";
 import type { ItemConversion } from "./currency-conversion";
 import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
+import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import type { TripDetailsDraft } from "./trip-report";
 
 /**
@@ -77,6 +78,8 @@ export interface ReportView {
 	id: string;
 	kind: TravelExpenseReportKind;
 	status: TravelExpenseReportStatus;
+	/** Submission cycles so far; a withdrawn or returned report has history (#603). */
+	submissionCount: number;
 	reimbursementCurrency: string;
 	createdAt: string;
 	updatedAt: string;
@@ -206,7 +209,8 @@ export async function lockOwnDraftReport(
 		.where(ownedReport(owner, reportId))
 		.for("update");
 	if (!report) return { status: "not_found" };
-	return report.status === "draft"
+	// A returned report (#603) is edited like a draft; the result keeps its tag.
+	return isEditableReportStatus(report.status)
 		? { status: "draft", kind: report.kind }
 		: { status: "not_draft" };
 }
@@ -241,7 +245,7 @@ export async function isOwnDraftReportItem(
 		.where(
 			and(
 				ownedReport(owner, input.reportId),
-				eq(travelExpenseReport.status, "draft"),
+				inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 				eq(travelExpenseReportItem.id, input.itemId),
 			),
 		)
@@ -306,6 +310,7 @@ export async function loadOwnReport(
 		id: report.id,
 		kind: report.kind,
 		status: report.status,
+		submissionCount: report.submissionCount,
 		reimbursementCurrency: report.reimbursementCurrency,
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
@@ -355,7 +360,7 @@ export function listOwnSubmittedReports(
 	database: Database,
 	owner: ReportOwner,
 ): Promise<DraftReportSummary[]> {
-	return listOwnReports(database, owner, ["submitted", "approved", "rejected"]);
+	return listOwnReports(database, owner, ["submitted", "approved", "rejected", "returned"]);
 }
 
 async function listOwnReports(

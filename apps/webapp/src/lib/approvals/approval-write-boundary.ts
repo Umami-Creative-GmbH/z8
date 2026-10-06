@@ -162,6 +162,13 @@ export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	"src/lib/approvals/server/shared.ts": {
 		approval_request: ["update"],
 	},
+	// Employee withdrawal of a pending legacy travel expense report (#603):
+	// retires the cycle's request and cancels its chain without a decision.
+	"src/lib/approvals/server/travel-expense-report-withdrawal.ts": {
+		approval_chain_instance: ["update"],
+		approval_chain_stage_instance: ["update"],
+		approval_request: ["update"],
+	},
 	"src/lib/demo/demo-data.service.ts": {
 		approval_request: ["insert"],
 	},

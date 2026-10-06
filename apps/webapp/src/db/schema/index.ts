@@ -93,6 +93,8 @@ export * from "./time-record";
 export * from "./time-tracking";
 export * from "./travel-expense";
 export * from "./travel-expense-conversion";
+export * from "./travel-expense-review";
+export * from "./travel-expense-settlement";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";

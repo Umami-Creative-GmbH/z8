@@ -4,6 +4,7 @@ import { db } from "@/db";
 import {
 	type ApprovalEscalationAttentionReason,
 	approvalChainInstance,
+	approvalChainStageInstance,
 	approvalEscalationAttention,
 	approvalRequest,
 	approvalWorkflow,
@@ -11,6 +12,7 @@ import {
 	auditLog,
 	teamsEscalation,
 	travelExpenseClaim,
+	travelExpenseReport,
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
@@ -517,17 +519,20 @@ async function loadLegacySubject(
 					observed: true,
 				}),
 			});
-		case "travel_expense":
+		case "travel_expense": {
+			// Claims and reports (#623) share the kind; the request names its subject.
+			const sourceType =
+				request.entityType === "travel_expense_report"
+					? "travel_expense_report"
+					: "travel_expense_claim";
 			return loadLegacyExpenseSubject(context, gate, {
 				...input,
 				request,
+				sourceType,
 				// Travel expenses have no canonical observation.
-				write: await observe({
-					workflowType: "travel_expense",
-					sourceType: "travel_expense_claim",
-					observed: false,
-				}),
+				write: await observe({ workflowType: "travel_expense", sourceType, observed: false }),
 			});
+		}
 		default:
 			return loadLegacyTimeSubject(context, {
 				...input,
@@ -674,10 +679,11 @@ function jsonObjectOrNull(value: unknown): JsonObject | null | "invalid" {
 }
 
 /**
- * A travel expense request is transferable when it is the claim's only
- * pending request, the claim is still submitted by the requester, and no
- * approval chain binds the approver on a stage row. Expenses have no
- * canonical observation, so any mirroring rollout mode is held.
+ * A travel expense request is transferable when it is the claim's (or
+ * report's, #623) only pending request, the subject is still submitted by the
+ * requester, and no approval chain binds the approver on a stage row.
+ * Expenses have no canonical observation, so any mirroring rollout mode is
+ * held.
  */
 async function loadLegacyExpenseSubject(
 	context: ApprovalWorkflowTransactionContext,
@@ -685,11 +691,12 @@ async function loadLegacyExpenseSubject(
 	input: {
 		organizationId: string;
 		request: LockedLegacyRequest;
+		sourceType: "travel_expense_claim" | "travel_expense_report";
 		write: LegacySubject["write"];
 	},
 ): Promise<LegacySubjectLoad> {
 	const tx = context.dbService.db as unknown as DatabaseTransaction;
-	const { request, organizationId } = input;
+	const { request, organizationId, sourceType } = input;
 	const unverifiable = (evidence: JsonObject): LegacySubjectLoad => ({
 		kind: "unverifiable",
 		approverEmployeeId: request.approverId,
@@ -705,17 +712,32 @@ async function loadLegacyExpenseSubject(
 	if (metadata === "invalid") {
 		return unverifiable({ cause: "legacy_state_unverifiable", code: "request_metadata" });
 	}
-	const [claim] = await tx
-		.select({ status: travelExpenseClaim.status, employeeId: travelExpenseClaim.employeeId })
-		.from(travelExpenseClaim)
-		.where(
-			and(
-				eq(travelExpenseClaim.organizationId, organizationId),
-				eq(travelExpenseClaim.id, request.entityId),
-			),
-		)
-		.limit(1);
-	if (claim?.status !== "submitted" || claim.employeeId !== request.requestedBy) {
+	const [subject] =
+		sourceType === "travel_expense_report"
+			? await tx
+					.select({
+						status: travelExpenseReport.status,
+						employeeId: travelExpenseReport.employeeId,
+					})
+					.from(travelExpenseReport)
+					.where(
+						and(
+							eq(travelExpenseReport.organizationId, organizationId),
+							eq(travelExpenseReport.id, request.entityId),
+						),
+					)
+					.limit(1)
+			: await tx
+					.select({ status: travelExpenseClaim.status, employeeId: travelExpenseClaim.employeeId })
+					.from(travelExpenseClaim)
+					.where(
+						and(
+							eq(travelExpenseClaim.organizationId, organizationId),
+							eq(travelExpenseClaim.id, request.entityId),
+						),
+					)
+					.limit(1);
+	if (subject?.status !== "submitted" || subject.employeeId !== request.requestedBy) {
 		return unverifiable({ cause: "legacy_state_mismatch", approvalRequestId: request.id });
 	}
 	const [pending] = await tx
@@ -724,7 +746,7 @@ async function loadLegacyExpenseSubject(
 		.where(
 			and(
 				eq(approvalRequest.organizationId, organizationId),
-				eq(approvalRequest.entityType, "travel_expense_claim"),
+				eq(approvalRequest.entityType, sourceType),
 				eq(approvalRequest.entityId, request.entityId),
 				eq(approvalRequest.status, "pending"),
 			),
@@ -732,17 +754,31 @@ async function loadLegacyExpenseSubject(
 	if (pending?.total !== 1) {
 		return unverifiable({ cause: "legacy_state_mismatch", approvalRequestId: request.id });
 	}
-	const [chain] = await tx
-		.select({ id: approvalChainInstance.id })
-		.from(approvalChainInstance)
-		.where(
-			and(
-				eq(approvalChainInstance.organizationId, organizationId),
-				eq(approvalChainInstance.entityType, "travel_expense_claim"),
-				eq(approvalChainInstance.entityId, request.entityId),
-			),
-		)
-		.limit(1);
+	// A report is resubmitted (#603): only a chain of this request's own cycle
+	// binds its approver; earlier cycles' chains are history.
+	const [chain] =
+		sourceType === "travel_expense_report"
+			? await tx
+					.select({ id: approvalChainStageInstance.id })
+					.from(approvalChainStageInstance)
+					.where(
+						and(
+							eq(approvalChainStageInstance.organizationId, organizationId),
+							eq(approvalChainStageInstance.approvalRequestId, request.id),
+						),
+					)
+					.limit(1)
+			: await tx
+					.select({ id: approvalChainInstance.id })
+					.from(approvalChainInstance)
+					.where(
+						and(
+							eq(approvalChainInstance.organizationId, organizationId),
+							eq(approvalChainInstance.entityType, "travel_expense_claim"),
+							eq(approvalChainInstance.entityId, request.entityId),
+						),
+					)
+					.limit(1);
 	if (chain) return unsupported("legacy_chain_stage");
 	const { transfers, evidence } = await legacyEvidenceFor(tx, organizationId, {
 		id: request.id,
@@ -756,7 +792,7 @@ async function loadLegacyExpenseSubject(
 			workflowType: "travel_expense",
 			request: {
 				id: request.id,
-				sourceType: "travel_expense_claim",
+				sourceType,
 				sourceId: request.entityId,
 				requesterEmployeeId: request.requestedBy,
 				approverEmployeeId: request.approverId,
