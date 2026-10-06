@@ -3,6 +3,8 @@
 import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
+import { ConversionSummary } from "./conversion-summary";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { categoryLabel } from "./receipt-item-editor";
 
@@ -15,6 +17,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** How a foreign-currency expense converts (#607); absent otherwise. */
+	conversion?: ConversionResult | null;
 }
 
 export interface TripSummary {
@@ -98,6 +102,15 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							.filter(Boolean)
 							.join(" · ")}
 					</p>
+					{item.conversion && item.amount && item.currency && (
+						<div className="mt-2">
+							<ConversionSummary
+								original={{ amount: item.amount, currency: item.currency }}
+								conversion={item.conversion}
+								receipts={item.receipts}
+							/>
+						</div>
+					)}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (

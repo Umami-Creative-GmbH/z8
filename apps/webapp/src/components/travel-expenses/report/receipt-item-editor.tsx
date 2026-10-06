@@ -50,6 +50,7 @@ import {
 	receiptItemMissingRequirements,
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
+import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { useDraftSaver } from "./use-draft-saver";
@@ -87,6 +88,14 @@ function withSavedValues(
 	const merged = { ...values };
 	for (const field of Object.keys(errors) as FieldName[]) merged[field] = saved[field];
 	return merged;
+}
+
+/** The entered amount and currency when both are well-formed. */
+function parsedOriginal(values: FormValues) {
+	const parsed = parseReceiptItemDraft(toDraftInput(values));
+	return parsed.ok
+		? { amount: parsed.draft.amount, currency: parsed.draft.currency }
+		: { amount: null, currency: null };
 }
 
 export function categoryLabel(t: Translate, category: string) {
@@ -137,12 +146,10 @@ function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, cur
 			return t("travelExpenses.report.requirements.paidBy", "Say whether you or the company paid.");
 		case "receipt":
 			return t("travelExpenses.report.requirements.receipt", "Attach the receipt.");
-		case "same_currency":
-			return t(
-				"travelExpenses.report.requirements.sameCurrency",
-				"Only receipts in {currency} are supported so far. Other currencies need a conversion that is not available yet.",
-				{ currency },
-			);
+		case "conversion_missing":
+		case "conversion_unsupported":
+		case "conversion_evidence":
+			return conversionRequirementLabel(t, requirement, currency);
 	}
 }
 
@@ -491,6 +498,25 @@ export function ReceiptItemEditor({
 			/>
 
 			<form.Subscribe selector={(formState) => formState.values}>
+				{(values) => (
+					<CurrencyConversionField
+						reportId={reportId}
+						itemId={item.id}
+						original={parsedOriginal(values)}
+						reimbursementCurrency={reimbursementCurrency}
+						conversion={item.conversion ?? null}
+						receipts={receipts}
+						version={{
+							flush: () => saver.flush(),
+							current: () => saver.getState().version,
+							adopt: (version) => saver.adoptVersion(version),
+						}}
+						onChanged={onReceiptsChanged}
+					/>
+				)}
+			</form.Subscribe>
+
+			<form.Subscribe selector={(formState) => formState.values}>
 				{(values) => {
 					const parsed = parseReceiptItemDraft(toDraftInput(values));
 					const draft = parsed.ok ? parsed.draft : null;
@@ -498,6 +524,7 @@ export function ReceiptItemEditor({
 						? receiptItemMissingRequirements(draft, {
 								receiptCount: receipts.length,
 								reimbursementCurrency,
+								conversion: item.conversion,
 							})
 						: null;
 					return (

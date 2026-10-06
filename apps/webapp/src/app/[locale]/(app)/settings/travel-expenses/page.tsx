@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expense/foreign-expense-conversions";
+import { ReimbursementCurrencySettingsCard } from "@/components/settings/travel-expense/reimbursement-currency-settings";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
 import { LoadingRegion } from "@/components/ui/loading-region";
@@ -12,6 +14,10 @@ async function TravelExpenseSettingsPageContent() {
 		<div className="flex flex-1 flex-col">
 			<div className="px-4 pt-4">
 				<TravelExpenseApproverSettingsCard />
+			</div>
+			<div className="grid gap-4 px-4 pt-4">
+				<ReimbursementCurrencySettingsCard />
+				<ForeignExpenseConversionsCard />
 			</div>
 			<TravelExpensePolicyManagement organizationId={organizationId} />
 		</div>

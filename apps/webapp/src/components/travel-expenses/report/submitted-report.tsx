@@ -149,6 +149,7 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 						amount: item.original.amount,
 						currency: item.original.currency,
 						paidBy: item.paidBy,
+						conversion: item.conversion,
 						receipts: item.receipts.map((receipt) => ({
 							id: receipt.receiptId,
 							fileName: receipt.fileName,

@@ -92,7 +92,10 @@ function useSavedReportLoader(reportId: string) {
 /** Totals of the entered values; malformed expenses are not counted. */
 function liveTotals(items: ReportItemView[], drafts: LiveDrafts, reimbursementCurrency: string) {
 	return receiptReportTotals(
-		items.map((item) => liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+		items.map((item) => ({
+			...(liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+			conversion: item.conversion,
+		})),
 		reimbursementCurrency,
 	);
 }
@@ -186,6 +189,7 @@ function StandaloneReportBody({
 		: receiptItemMissingRequirements(live, {
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
+					conversion: item.conversion,
 				}).length > 0
 			? "incomplete"
 			: null;
@@ -332,7 +336,16 @@ function TripReportBody({
 				details,
 				items: items.flatMap((item) => {
 					const draft = liveDraft(item, drafts);
-					return draft ? [{ id: item.id, draft, receiptCount: item.receipts.length }] : [];
+					return draft
+						? [
+								{
+									id: item.id,
+									draft,
+									receiptCount: item.receipts.length,
+									conversion: item.conversion,
+								},
+							]
+						: [];
 				}),
 				reimbursementCurrency: report.reimbursementCurrency,
 			})
@@ -343,6 +356,7 @@ function TripReportBody({
 			? receiptItemMissingRequirements(draft, {
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
+					conversion: item.conversion,
 				}).length > 0
 			: true;
 		return incomplete
