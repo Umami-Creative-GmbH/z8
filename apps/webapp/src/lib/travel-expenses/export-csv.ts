@@ -4,6 +4,7 @@ import {
 	type TravelExpenseReportSubmittedFacts,
 	type TravelExpenseReportSubmittedItem,
 } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import { PER_DIEM_FACTS_SCHEMA_VERSION } from "@/lib/approvals/evidence/travel-expense-report-per-diem";
 import type { ItemConversion } from "./currency-conversion";
 import {
 	bundleReceiptPath,
@@ -24,7 +25,7 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  *
  * Revisions of every frozen facts version 1..current are exported; facts a
  * version did not have (receipt exception v2, conversion v3, project v4,
- * mileage v5, reference-rate conversion v6) leave their columns empty. Items
+ * mileage v5, reference-rate conversion v6, per diem v7) leave their columns empty. Items
  * are priced from their frozen pricing inputs and must add up to the frozen
  * totals.
  *
@@ -166,12 +167,20 @@ function reimbursementInput(
 					mileage: { amount: item.mileage.amount, currency: item.mileage.currency },
 				}
 			: {}),
+		// A per diem (#609, v7+) counts its calculated allowance, zero included.
+		...(item.perDiem
+			? {
+					type: "per_diem",
+					perDiem: { amount: item.perDiem.amount, currency: item.perDiem.currency },
+				}
+			: {}),
 	};
 }
 
 /** What the item's frozen pricing facts say it counts with, if it has any. */
 function frozenPricedAmount(item: TravelExpenseReportSubmittedItem): string | null {
 	if (item.mileage) return item.mileage.amount;
+	if (item.perDiem) return item.perDiem.amount;
 	if (item.conversion) return item.conversion.reimbursement.amount;
 	return null;
 }
@@ -182,6 +191,7 @@ function frozenPricedAmount(item: TravelExpenseReportSubmittedItem): string | nu
  */
 function itemCalculationBasis(item: TravelExpenseReportSubmittedItem): string {
 	if (item.mileage) return "mileage_rate";
+	if (item.perDiem) return "per_diem_calculation";
 	if (item.conversion) return "converted_amount";
 	return item.type === "receipt" ? "receipt_amount" : item.type;
 }
@@ -215,6 +225,8 @@ function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 		if (
 			(frozen !== null && frozen !== amount.amount) ||
 			(item.mileage && item.original.amount !== amount.amount) ||
+			(item.perDiem &&
+				(item.original.amount !== amount.amount || !perDiemDaysReconcile(item.perDiem))) ||
 			(item.conversion && item.conversion.reimbursement.currency !== currency) ||
 			!referenceRateMatchesItem(item)
 		) {
@@ -244,6 +256,26 @@ function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
 		);
 	}
 	return priced;
+}
+
+/**
+ * A frozen per diem (#609) adds up: each day is its rate less its applied
+ * deductions (never more than the rate), and the days sum to the frozen amount.
+ */
+function perDiemDaysReconcile(
+	perDiem: NonNullable<TravelExpenseReportSubmittedItem["perDiem"]>,
+): boolean {
+	const parse = (value: string) => parseUnits(value, STORED_AMOUNT_SCALE);
+	const amounts: bigint[] = [];
+	for (const day of perDiem.days) {
+		const rate = parse(day.rate);
+		const deductions = parse(day.deductions);
+		const amount = parse(day.amount);
+		if (rate === null || deductions === null || amount === null) return false;
+		if (deductions < BigInt(0) || deductions > rate || amount !== rate - deductions) return false;
+		amounts.push(amount);
+	}
+	return sumUnits(amounts) === parse(perDiem.amount);
 }
 
 function units(value: bigint): string {
@@ -315,6 +347,36 @@ const MILEAGE_COLUMNS = [
 	"mileage_policy_source",
 	"mileage_policy_source_reference",
 	"mileage_policy_source_version",
+] as const;
+
+/**
+ * The frozen per diem calculation (#609, v7+): local travel times as entered
+ * (calendar dates never shifted through a zone) with their UTC instants, the
+ * rule edition and policy versions applied, and the daily breakdown.
+ */
+const PER_DIEM_COLUMNS = [
+	"per_diem_start_date",
+	"per_diem_start_time",
+	"per_diem_start_time_zone",
+	"per_diem_start_at",
+	"per_diem_end_date",
+	"per_diem_end_time",
+	"per_diem_end_time_zone",
+	"per_diem_end_at",
+	"per_diem_overnight",
+	"per_diem_absence_minutes",
+	"per_diem_full_days",
+	"per_diem_partial_days",
+	"per_diem_allowance_before_meals",
+	"per_diem_meal_deductions",
+	"per_diem_amount",
+	"per_diem_currency",
+	"per_diem_rules_key",
+	"per_diem_rules_reference",
+	"per_diem_rules_version",
+	"per_diem_policy_version_ids",
+	"per_diem_policy_sources",
+	"per_diem_days",
 ] as const;
 
 /** The cells of `columns` in order; a fact that does not apply is an empty cell. */
@@ -419,6 +481,53 @@ function mileageCells(item: TravelExpenseReportSubmittedItem): string[] {
 	});
 }
 
+/** The frozen per diem (#609, v7+); empty for any other expense. */
+function perDiemCells(item: TravelExpenseReportSubmittedItem): string[] {
+	const { perDiem } = item;
+	if (!perDiem) return cellsOf(PER_DIEM_COLUMNS, {});
+	const total = (pick: (day: (typeof perDiem.days)[number]) => string) =>
+		units(sumUnits(perDiem.days.map((day) => parseUnits(pick(day), STORED_AMOUNT_SCALE) ?? ZERO)));
+	const count = (allowance: string) =>
+		csvInteger(perDiem.days.filter((day) => day.allowance === allowance).length);
+	return cellsOf(PER_DIEM_COLUMNS, {
+		per_diem_start_date: csvText(perDiem.start.date),
+		per_diem_start_time: csvText(perDiem.start.time),
+		per_diem_start_time_zone: csvText(perDiem.start.timeZone),
+		per_diem_start_at: csvText(perDiem.start.at),
+		per_diem_end_date: csvText(perDiem.end.date),
+		per_diem_end_time: csvText(perDiem.end.time),
+		per_diem_end_time_zone: csvText(perDiem.end.timeZone),
+		per_diem_end_at: csvText(perDiem.end.at),
+		per_diem_overnight: csvText(perDiem.overnight),
+		per_diem_absence_minutes: csvInteger(perDiem.absenceMinutes),
+		per_diem_full_days: count("full_day"),
+		per_diem_partial_days: count("partial_day"),
+		per_diem_allowance_before_meals: total((day) => day.rate),
+		per_diem_meal_deductions: total((day) => day.deductions),
+		per_diem_amount: csvDecimal(perDiem.amount),
+		per_diem_currency: csvText(perDiem.currency),
+		per_diem_rules_key: csvText(perDiem.rules.key),
+		per_diem_rules_reference: csvText(perDiem.rules.reference),
+		per_diem_rules_version: csvText(perDiem.rules.version),
+		per_diem_policy_version_ids: csvText(
+			perDiem.policies.map((policy) => policy.versionId).join("; "),
+		),
+		per_diem_policy_sources: csvText(
+			perDiem.policies
+				.map((policy) => [policy.source.kind, policy.source.reference].filter(Boolean).join(": "))
+				.join("; "),
+		),
+		// One entry per calendar day: date, allowance, rate - deductions = amount.
+		per_diem_days: csvText(
+			perDiem.days
+				.map((day) => `${day.date} ${day.allowance} ${day.rate}-${day.deductions}=${day.amount}`)
+				.join("; "),
+		),
+	});
+}
+
+const ZERO = BigInt(0);
+
 export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	"batch_id",
 	"report_id",
@@ -455,6 +564,7 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	...PROJECT_COLUMNS,
 	...CONVERSION_COLUMNS,
 	...MILEAGE_COLUMNS,
+	...PER_DIEM_COLUMNS,
 	"receipt_count",
 	"receipt_files",
 ] as const;
@@ -544,6 +654,16 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 				"Manifest revision out of scope",
 			);
 		}
+		// A per diem (#609) cannot be frozen below the version that admits it.
+		if (
+			facts.schemaVersion < PER_DIEM_FACTS_SCHEMA_VERSION &&
+			facts.items.some((item) => item.perDiem || item.type === "per_diem")
+		) {
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				`Per diem in facts schema version ${facts.schemaVersion}`,
+			);
+		}
 		// A reference-rate conversion cannot be frozen below the version that admits it.
 		if (
 			facts.schemaVersion < REFERENCE_RATE_FACTS_SCHEMA_VERSION &&
@@ -599,6 +719,7 @@ export function buildTravelExpenseExportFiles(
 				...projectCells(item),
 				...conversionCells(revision, item),
 				...mileageCells(item),
+				...perDiemCells(item),
 				csvInteger(item.receipts.length),
 				csvText(paths.join("; ")),
 			]);

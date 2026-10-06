@@ -15,13 +15,15 @@ import type {
 	TravelExpenseExportManifest,
 	TravelExpenseExportManifestRevision,
 } from "../export-manifest";
+import { calculatePerDiem, perDiemPolicyResolver } from "../per-diem";
+import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT } from "../statutory-per-diem-defaults";
 
 const SHA = "a".repeat(64);
 
-/** Project (v4), conversion (v3, v6) and mileage (v5) columns, empty for a v1 receipt. */
+/** Project (v4), conversion (v3, v6), mileage (v5) and per diem (v7) columns, empty for a v1 receipt. */
 const EMPTY_LATER_FACTS = Object.fromEntries(
 	TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.filter((column) =>
-		/^(project|conversion|mileage)_/.test(column),
+		/^(project|conversion|mileage|per_diem)_/.test(column),
 	).map((column) => [column, ""]),
 );
 
@@ -282,6 +284,93 @@ function mileageRevision(): TravelExpenseExportManifestRevision {
 			},
 		],
 		{ reimbursable: "37.02", companyPaid: "0.00" },
+	);
+}
+
+/**
+ * v7: a two-day domestic per diem with an overnight stay (14 € + 14 €) and
+ * the hotel breakfast provided on the second day (- 5.60 €), as frozen.
+ */
+function perDiemRevision(): TravelExpenseExportManifestRevision {
+	const calculation = calculatePerDiem(
+		{
+			startDate: "2026-09-14",
+			startTime: "07:15",
+			startTimeZone: "Europe/Berlin",
+			endDate: "2026-09-15",
+			endTime: "19:40",
+			endTimeZone: "Europe/Berlin",
+			overnight: "away",
+			prolongedWorkplace: false,
+			meals: ["2026-09-14", "2026-09-15"].map((date) => ({
+				date,
+				breakfast: { provided: date === "2026-09-15", employeePayment: null },
+				lunch: { provided: false, employeePayment: null },
+				dinner: { provided: false, employeePayment: null },
+			})),
+		},
+		{
+			trip: { destinations: [{ place: "Hamburg", countryCode: "DE" }] },
+			reimbursementCurrency: "EUR",
+			resolvePolicy: perDiemPolicyResolver([
+				{
+					id: "pd-version-1",
+					policyId: "pd-policy",
+					effectiveFrom: "2026-01-01",
+					currency: "EUR",
+					source: {
+						kind: "statutory_default",
+						reference: "§ 9 Abs. 4a EStG",
+						version: "LStH 2026",
+						defaultKey: "de-per-diem",
+					},
+					withdrawnAt: null,
+					rates: { DE: { ...GERMAN_DOMESTIC_PER_DIEM_DEFAULT.rates } },
+				},
+			]),
+		},
+	);
+	if (calculation.status !== "calculated") throw new Error("per diem not calculated");
+	return soloRevision(
+		"report-pd",
+		7,
+		[
+			{
+				itemId: "item-pd",
+				position: 1,
+				type: "per_diem",
+				expenseDate: "2026-09-14",
+				category: "meals",
+				description: "Per diem",
+				original: { amount: calculation.amount, currency: "EUR" },
+				paidBy: "employee",
+				accountingReference: null,
+				receipts: [],
+				perDiem: {
+					start: {
+						date: "2026-09-14",
+						time: "07:15",
+						timeZone: "Europe/Berlin",
+						at: calculation.absence.startAt,
+					},
+					end: {
+						date: "2026-09-15",
+						time: "19:40",
+						timeZone: "Europe/Berlin",
+						at: calculation.absence.endAt,
+					},
+					overnight: "away",
+					absenceMinutes: calculation.absence.minutes,
+					meals: [],
+					days: calculation.days,
+					currency: calculation.currency,
+					amount: calculation.amount,
+					rules: calculation.rules,
+					policies: calculation.policies,
+				},
+			},
+		],
+		{ reimbursable: "22.40", companyPaid: "0.00" },
 	);
 }
 
@@ -762,9 +851,75 @@ describe("travel expense export files", () => {
 		);
 	});
 
+	it("exports a v7 per diem breakdown with logical dates and reconciles it", () => {
+		const revision = perDiemRevision();
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			facts_schema_version: "7",
+			item_type: "per_diem",
+			expense_date: "2026-09-14",
+			category: "meals",
+			original_amount: "22.40",
+			reimbursement_amount: "22.40",
+			calculation_basis: "per_diem_calculation",
+			per_diem_start_date: "2026-09-14",
+			per_diem_start_time: "07:15",
+			per_diem_start_time_zone: "Europe/Berlin",
+			per_diem_start_at: "2026-09-14T05:15:00Z",
+			per_diem_end_date: "2026-09-15",
+			per_diem_end_at: "2026-09-15T17:40:00Z",
+			per_diem_overnight: "away",
+			per_diem_absence_minutes: "2185",
+			per_diem_full_days: "0",
+			per_diem_partial_days: "2",
+			per_diem_allowance_before_meals: "28.00",
+			per_diem_meal_deductions: "5.60",
+			per_diem_amount: "22.40",
+			per_diem_currency: "EUR",
+			per_diem_rules_key: "de-domestic-per-diem-estg-9-4a-2026",
+			per_diem_policy_version_ids: "pd-version-1",
+			per_diem_days:
+				"2026-09-14 partial_day 14.00-0.00=14.00; 2026-09-15 partial_day 14.00-5.60=8.40",
+			mileage_route: "",
+		});
+		expect(records(file("reports.csv", manifest([revision])))).toEqual([
+			expect.objectContaining({ reimbursable_total: "22.40", facts_schema_version: "7" }),
+		]);
+	});
+
+	it("exports a legitimate zero per diem and refuses a breakdown that does not add up", () => {
+		const zero = perDiemRevision();
+		const [item] = zero.facts.items;
+		if (!item?.perDiem) throw new Error("no per diem");
+		item.perDiem.days = item.perDiem.days.map((day) => ({ ...day, deductions: day.rate, amount: "0.00" }));
+		item.perDiem.amount = "0.00";
+		item.original.amount = "0.00";
+		zero.facts.totals.reimbursable = "0.00";
+		expect(records(file("expenses.csv", manifest([zero])))[0]).toMatchObject({
+			reimbursement_amount: "0.00",
+			per_diem_amount: "0.00",
+		});
+
+		const broken = perDiemRevision();
+		const [brokenItem] = broken.facts.items;
+		if (!brokenItem?.perDiem?.days[0]) throw new Error("no per diem");
+		brokenItem.perDiem.days[0].amount = "13.00";
+		expect(() => buildTravelExpenseExportFiles(manifest([broken]))).toThrow(
+			expect.objectContaining({ code: "totals_mismatch" }),
+		);
+	});
+
+	it("refuses per diem facts in a revision older than version 7", () => {
+		const revision = perDiemRevision();
+		revision.facts.schemaVersion = 6;
+		expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+	});
+
 	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
 		// A new version must be mapped by the export contract before it is exported.
-		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(6);
+		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(7);
 		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
@@ -772,7 +927,7 @@ describe("travel expense export files", () => {
 				expect.objectContaining({ facts_schema_version: String(version) }),
 			]);
 		}
-		for (const version of [0, 7]) {
+		for (const version of [0, 8]) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
 			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
