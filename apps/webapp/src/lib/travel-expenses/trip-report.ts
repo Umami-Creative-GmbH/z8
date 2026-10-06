@@ -170,6 +170,7 @@ export function tripReportMissingRequirements(input: {
 			id: item.id,
 			missing: reportItemMissingRequirements(item, {
 				reimbursementCurrency: input.reimbursementCurrency,
+				trip: { startDate: details.startDate, endDate: details.endDate },
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

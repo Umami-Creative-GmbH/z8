@@ -37,6 +37,14 @@ import {
 } from "./travel-expense-report-adjustment";
 import type { TravelExpenseMoney } from "./travel-expense-facts";
 import {
+	assertPerDiemScope,
+	PER_DIEM_FACTS_DESCRIPTION,
+	PER_DIEM_FACTS_SCHEMA_VERSION,
+	submittedPerDiemFacts,
+	type TravelExpenseReportPerDiemRow,
+	type TravelExpenseReportSubmittedPerDiem,
+} from "./travel-expense-report-per-diem";
+import {
 	assertConversionScope,
 	submittedConversionFacts,
 	type TravelExpenseReportConversionRow,
@@ -58,7 +66,7 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 7;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 8;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
@@ -69,7 +77,8 @@ const PROJECT_ATTRIBUTION_SCHEMA_VERSION = 4;
 /** Version 5 (#606) adds `mileage` to mileage items. */
 const MILEAGE_FACTS_SCHEMA_VERSION = 5;
 /* Version 6 (#608) admits the `reference_rate` conversion basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
-/* Version 7 (#615) adds the root `adjustment` of an adjustment report (`ADJUSTMENT_FACTS_SCHEMA_VERSION`). */
+/* Version 7 (#609) adds `perDiem` to per diem items (`PER_DIEM_FACTS_SCHEMA_VERSION`). */
+/* Version 8 (#615) adds the root `adjustment` of an adjustment report (`ADJUSTMENT_FACTS_SCHEMA_VERSION`). */
 
 /**
  * The accounting attribution of one expense as it was submitted (#605): the
@@ -136,6 +145,13 @@ export interface TravelExpenseReportSubmittedItem {
 	 * reader of item amounts keeps working.
 	 */
 	mileage?: TravelExpenseReportSubmittedMileage;
+	/**
+	 * Per diem items only (v7+, #609): itinerary, meals, the stamped rule edition
+	 * and policy versions, and the daily breakdown. The item also freezes
+	 * `category: "meals"`, a fixed description and the calculated amount (possibly
+	 * "0.00") as `original`.
+	 */
+	perDiem?: TravelExpenseReportSubmittedPerDiem;
 }
 
 export interface TravelExpenseReportSubmittedMileage {
@@ -179,7 +195,7 @@ export interface TravelExpenseReportSubmittedFacts {
 	} | null;
 	items: TravelExpenseReportSubmittedItem[];
 	totals: { currency: string; reimbursable: string; companyPaid: string };
-	/** Since v7 (#615): present only on an adjustment report. */
+	/** Since v8 (#615): present only on an adjustment report. */
 	adjustment?: TravelExpenseReportSubmittedAdjustment;
 }
 
@@ -245,6 +261,8 @@ export interface TravelExpenseReportFactsInput {
 	}>;
 	/** Saved conversions of foreign-currency items (#607). */
 	conversions?: ReadonlyArray<TravelExpenseReportConversionRow>;
+	/** Per diem itineraries of per diem items (#609). */
+	perDiems?: ReadonlyArray<TravelExpenseReportPerDiemRow>;
 	/** The report it corrects when this is an adjustment report (#615). */
 	adjustment?: TravelExpenseReportAdjustmentLink | null;
 	/** Submitting an adjustment: the baseline resolved under the original's lock. */
@@ -457,6 +475,50 @@ function mileageItemFacts(
 }
 
 /**
+ * A per diem item (#609) is calculated from its entered itinerary and the
+ * rule edition and policy versions stamped at submission, never from today's
+ * policy or overlap check. Submitting also requires the itinerary to match
+ * the trip's travel dates.
+ */
+function perDiemItemFacts(
+	input: TravelExpenseReportFactsInput,
+	row: TravelExpenseReportFactsInput["items"][number],
+	receipts: TravelExpenseReportReceiptManifestItem[],
+	mode: SnapshotMode,
+	schemaVersion: number,
+): TravelExpenseReportSubmittedItem {
+	const { report } = input;
+	const perDiemRow = input.perDiems?.find((candidate) => candidate.itemId === row.id);
+	const perDiem = submittedPerDiemFacts(perDiemRow, report);
+	if (
+		mode === "submit" &&
+		(!perDiem ||
+			row.paidBy !== "employee" ||
+			report.kind !== "trip" ||
+			perDiem.start.date !== report.tripStartDate ||
+			perDiem.end.date !== report.tripEndDate)
+	) {
+		incomplete("per_diem");
+	}
+	return {
+		itemId: row.id,
+		position: row.position,
+		type: row.type,
+		expenseDate: perDiem?.start.date ?? row.expenseDate,
+		category: "meals",
+		description: PER_DIEM_FACTS_DESCRIPTION,
+		original: { amount: perDiem?.amount ?? null, currency: perDiem?.currency ?? null },
+		paidBy: row.paidBy,
+		accountingReference: row.accountingReference,
+		receipts,
+		...(schemaVersion >= PER_DIEM_FACTS_SCHEMA_VERSION
+			? // Compare mode only: live rows that cannot be priced as stamped differ from the revision.
+				{ perDiem: perDiem ?? { unpriced: perDiemRow ?? null } }
+			: {}),
+	} as TravelExpenseReportSubmittedItem;
+}
+
+/**
  * Builds the immutable submitted facts of one report from its persisted rows.
  * A row of another organization or report is an invariant breach; anything
  * incomplete throws instead of being frozen as a guess.
@@ -497,6 +559,7 @@ function snapshotReport(
 	}
 	const conversions = input.conversions ?? [];
 	assertConversionScope(conversions, report, itemIds);
+	assertPerDiemScope(input.perDiems ?? [], report, input.items);
 	const conversionOf = (itemId: string) =>
 		conversions.find((row) => row.itemId === itemId)?.conversion ?? null;
 	if (enforce && !CURRENCY.test(report.reimbursementCurrency)) incomplete("currency");
@@ -508,6 +571,12 @@ function snapshotReport(
 				.filter((receipt) => receipt.itemId === row.id)
 				.toSorted(byId)
 				.map(manifestItem);
+			if (row.type === "per_diem") {
+				return {
+					...perDiemItemFacts(input, row, receipts, mode, schemaVersion),
+					...projectFacts(input, row, mode, schemaVersion, frozen),
+				};
+			}
 			if (row.type === "mileage") {
 				return {
 					...mileageItemFacts(row, receipts, report.reimbursementCurrency, mode, schemaVersion),
@@ -593,6 +662,8 @@ function snapshotReport(
 			currency: item.original.currency,
 			paidBy: item.paidBy,
 			conversion: conversionOf(item.itemId),
+			// A per diem counts its calculated allowance, zero included (#609).
+			...(item.type === "per_diem" ? { type: item.type, perDiem: { ...item.original } } : {}),
 		})),
 		report.reimbursementCurrency,
 	);
@@ -647,7 +718,7 @@ export function fingerprintTravelExpenseReportFacts(
 		["schemaVersion", facts.schemaVersion],
 		["kind", facts.kind],
 		...MATERIAL_FIELDS.map((field) => [field, facts[field]]),
-		// Only adjustment reports have one (v7, #615); other fingerprints stay unchanged.
+		// Only adjustment reports have one (v8, #615); other fingerprints stay unchanged.
 		...(facts.adjustment ? [["adjustment", facts.adjustment]] : []),
 	]);
 	// The prefix is the version the facts were frozen with, never the current one.

@@ -14,6 +14,8 @@ import { loadOrganizationReimbursementCurrency } from "./conversion-read";
 import type { ItemConversion } from "./currency-conversion";
 import { type MileageCalculation, type MileageItemView, mileageItemView } from "./mileage";
 import { loadMileagePricer } from "./mileage-pricing";
+import type { PerDiemItemView } from "./per-diem";
+import { loadPerDiemViews } from "./per-diem-pricing";
 import {
 	loadReceiptExceptionsAllowed,
 	type ReceiptExceptionView,
@@ -83,6 +85,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 	conversion?: ItemConversion | null;
 	/** Why an approved reference rate does or does not convert it (#608); `loadOwnReport` only. */
 	referenceRate?: ReferenceRateItemStatus | null;
+	/** Per diem items only (#609): itinerary, meals and the server's calculation. */
+	perDiem?: PerDiemItemView | null;
 	/** Project attribution (#605): `project-attribution.ts` `itemProjectChoice` reads these. */
 	projectId?: string | null;
 	projectInherits?: boolean;
@@ -350,6 +354,7 @@ export async function loadOwnReport(
 		// Editable reports are priced afresh; submitted ones keep their stamp.
 		useStamp: !isEditableReportStatus(report.status),
 	};
+	const perDiems = await loadPerDiemViews(database, report, items, pricing);
 	return {
 		id: report.id,
 		kind: report.kind,
@@ -368,6 +373,7 @@ export async function loadOwnReport(
 			),
 			conversion: conversions.get(item.id) ?? null,
 			referenceRate: referenceRates.get(item.id) ?? null,
+			...(item.type === "per_diem" ? { perDiem: perDiems.get(item.id) ?? null } : {}),
 		})),
 		receiptExceptionsAllowed,
 		referenceRateProvider: policy?.provider ?? null,
@@ -466,9 +472,19 @@ async function listOwnReports(
 		})),
 	});
 	const price = await loadMileagePricer(database, owner.organizationId, items);
+	// Per diem (#609): only trips have one; each is calculated with its own report.
+	const perDiems = new Map<string, PerDiemItemView>();
+	for (const report of reports) {
+		const reportItems = items.filter((item) => item.reportId === report.id);
+		const useStamp = !isEditableReportStatus(report.status);
+		for (const entry of await loadPerDiemViews(database, report, reportItems, { useStamp })) {
+			perDiems.set(...entry);
+		}
+	}
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
 		const priced = reportItems.map((row) => ({
+			perDiem: perDiems.get(row.id) ?? null,
 			row,
 			mileage:
 				row.type === "mileage"
@@ -500,11 +516,12 @@ async function listOwnReports(
 
 function tripDraftSummary(
 	report: ReportRow,
-	items: { row: ItemRow; mileage: MileageItemView | null }[],
+	items: { row: ItemRow; mileage: MileageItemView | null; perDiem?: PerDiemItemView | null }[],
 	conversions: ReadonlyMap<string, ItemConversion>,
 ): DraftTripSummary {
 	const totals = receiptReportTotals(
-		items.map(({ row, mileage }) => ({
+		items.map(({ row, mileage, perDiem }) => ({
+			perDiem,
 			amount: row.originalAmount,
 			currency: row.originalCurrency,
 			paidBy: row.paidBy,

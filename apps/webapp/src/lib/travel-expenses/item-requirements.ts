@@ -5,6 +5,12 @@ import {
 	type MileageItemView,
 	mileageItemMissingRequirements,
 } from "./mileage";
+import {
+	emptyPerDiemItinerary,
+	type PerDiemItemView,
+	type PerDiemRequirement,
+	perDiemMissingRequirements,
+} from "./per-diem";
 import type { ReceiptExceptionContext } from "./receipt-exception";
 import {
 	type ReceiptItemDraft,
@@ -19,7 +25,10 @@ import {
  * assuming every item is a receipt.
  */
 
-export type ReportItemRequirement = ReceiptItemRequirement | MileageItemRequirement;
+export type ReportItemRequirement =
+	| ReceiptItemRequirement
+	| MileageItemRequirement
+	| PerDiemRequirement;
 
 export interface RequirementItem {
 	/** Receipts when absent. */
@@ -29,6 +38,8 @@ export interface RequirementItem {
 	receiptCount: number;
 	/** Mileage facts and the server calculation of a mileage item. */
 	mileage?: MileageItemView | null;
+	/** Per diem itinerary and the server calculation of a per diem item (#609). */
+	perDiem?: PerDiemItemView | null;
 	/** Missing-receipt exception of a receipt item (#604); absent means none. */
 	receiptException?: ReceiptExceptionContext;
 	/** Currency conversion of a foreign receipt item (#607); absent means none. */
@@ -37,8 +48,19 @@ export interface RequirementItem {
 
 export function reportItemMissingRequirements(
 	item: RequirementItem,
-	context: { reimbursementCurrency: string },
+	context: {
+		reimbursementCurrency: string;
+		/** The trip's travel dates, which a per diem's itinerary must match (#609). */
+		trip?: { startDate: string | null; endDate: string | null };
+	},
 ): ReportItemRequirement[] {
+	if (item.type === "per_diem") {
+		return perDiemMissingRequirements(
+			item.perDiem?.itinerary ?? emptyPerDiemItinerary(null),
+			item.perDiem?.calculation ?? { status: "incomplete" },
+			context.trip ?? { startDate: null, endDate: null },
+		);
+	}
 	if (item.type === "mileage") {
 		const mileage = item.mileage;
 		return mileageItemMissingRequirements(

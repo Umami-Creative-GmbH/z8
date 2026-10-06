@@ -195,7 +195,9 @@ export function SubmittedTravelExpenseReport({
 				<ExpenseSummaryList
 					items={facts.items.map((item) => ({
 						id: item.itemId,
-						description: item.description,
+						description: item.perDiem
+							? t("travelExpenses.report.perDiem.title", "Per diem")
+							: item.description,
 						expenseDate: item.expenseDate,
 						category: item.category,
 						amount: item.original.amount,
@@ -209,6 +211,7 @@ export function SubmittedTravelExpenseReport({
 							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
 						})),
 						mileage: item.mileage ?? null,
+						perDiem: item.perDiem ?? null,
 						receiptException: item.receiptException ?? null,
 					}))}
 				/>

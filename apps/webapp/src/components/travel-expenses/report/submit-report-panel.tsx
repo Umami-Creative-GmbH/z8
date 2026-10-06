@@ -279,11 +279,14 @@ export function SubmitReportPanel({
 						<ExpenseSummaryList
 							items={(report?.items ?? []).map((item) => ({
 								id: item.id,
-								description: item.description ?? item.mileage?.route ?? null,
+								description:
+									item.description ??
+									item.mileage?.route ??
+									(item.perDiem ? t("travelExpenses.report.perDiem.title", "Per diem") : null),
 								expenseDate: item.expenseDate,
 								category: item.category,
-								amount: item.amount ?? item.mileage?.amount ?? null,
-								currency: item.currency ?? item.mileage?.currency ?? null,
+								amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,
+								currency: item.currency ?? item.mileage?.currency ?? item.perDiem?.currency ?? null,
 								paidBy: item.paidBy,
 								conversion: appliedConversion(
 									item,
@@ -297,6 +300,10 @@ export function SubmitReportPanel({
 								mileage:
 									item.mileage?.calculation?.status === "calculated"
 										? item.mileage.calculation
+										: null,
+								perDiem:
+									item.perDiem?.calculation?.status === "calculated"
+										? item.perDiem.calculation
 										: null,
 								receiptException: pendingReceiptException(item),
 							}))}

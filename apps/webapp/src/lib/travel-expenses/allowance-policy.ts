@@ -18,7 +18,7 @@ import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core"
  * withdrawal stay shared (`allowance-policy-store.ts`).
  */
 
-export const ALLOWANCE_POLICY_KINDS = ["mileage"] as const;
+export const ALLOWANCE_POLICY_KINDS = ["mileage", "per_diem"] as const;
 export type AllowancePolicyKind = (typeof ALLOWANCE_POLICY_KINDS)[number];
 
 /** Who set a version's rates: the organization, or an adopted verified statutory default. */

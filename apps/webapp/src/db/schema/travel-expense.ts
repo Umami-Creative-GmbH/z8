@@ -229,7 +229,7 @@ export const travelExpenseReport = pgTable(
 	],
 );
 
-export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt", "mileage"] as const;
+export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt", "mileage", "per_diem"] as const;
 export type TravelExpenseReportItemType = (typeof TRAVEL_EXPENSE_REPORT_ITEM_TYPES)[number];
 
 // One expense of a report. Draft facts may be missing but are never malformed.
@@ -286,7 +286,16 @@ export const travelExpenseReportItem = pgTable(
 		),
 		uniqueIndex("travelExpenseReportItem_id_org_idx").on(table.id, table.organizationId),
 		uniqueIndex("travelExpenseReportItem_report_position_idx").on(table.reportId, table.position),
-		check("travel_expense_report_item_type_check", sql`${table.type} IN ('receipt', 'mileage')`),
+		check(
+			"travel_expense_report_item_type_check",
+			sql`${table.type} IN ('receipt', 'mileage', 'per_diem')`,
+		),
+		// Per diem (#609) is priced from its itinerary (`travel_expense_report_per_diem`), never entered.
+		check(
+			"travel_expense_report_item_per_diem_check",
+			sql`${table.type} <> 'per_diem' OR (${table.originalAmount} IS NULL
+				AND ${table.originalCurrency} IS NULL AND ${table.category} IS NULL)`,
+		),
 		check(
 			"travel_expense_report_item_mileage_check",
 			sql`(${table.type} = 'mileage' OR (${table.mileageRoute} IS NULL

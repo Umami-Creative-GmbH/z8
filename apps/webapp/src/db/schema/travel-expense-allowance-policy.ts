@@ -42,7 +42,10 @@ export const travelExpenseAllowancePolicy = pgTable(
 	(table) => [
 		uniqueIndex("travelExpenseAllowancePolicy_id_org_idx").on(table.id, table.organizationId),
 		uniqueIndex("travelExpenseAllowancePolicy_org_kind_idx").on(table.organizationId, table.kind),
-		check("travel_expense_allowance_policy_kind_check", sql`${table.kind} IN ('mileage')`),
+		check(
+			"travel_expense_allowance_policy_kind_check",
+			sql`${table.kind} IN ('mileage', 'per_diem')`,
+		),
 	],
 );
 

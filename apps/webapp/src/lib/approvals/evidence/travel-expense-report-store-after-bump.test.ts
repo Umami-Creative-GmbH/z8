@@ -14,10 +14,10 @@ import {
 } from "./travel-expense-report-store";
 
 // Simulates the build after a later ticket bumps the schema version: the
-// builder still freezes today's (v7, #615) facts, but the reader knows v1..v8.
+// builder still freezes today's (v8, #615) facts, but the reader knows v1..v9.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./travel-expense-report-facts")>()),
-	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 8,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 9,
 }));
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
@@ -227,18 +227,25 @@ describe("after a schema version bump", () => {
 
 	it("reads a revision of the new version under its own fingerprint prefix", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 8 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 9 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
 
-		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v8:/);
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v9:/);
 	});
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 9 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 10 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
+	});
+
+	it("still compares an unchanged v6 revision without per diem as current (#609)", () => {
+		const submitted = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 6 };
+		expect(compareLiveTravelExpenseReportWithRevision(submitted, factsInput)).toEqual({
+			kind: "current",
+		});
 	});
 
 	it("does not hold an unchanged v1 report as a material change", () => {

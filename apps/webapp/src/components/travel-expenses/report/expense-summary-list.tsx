@@ -8,6 +8,7 @@ import { ConversionSummary } from "./conversion-summary";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
 import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
+import { PerDiemBreakdown, type PerDiemBreakdownFacts } from "./per-diem-breakdown";
 import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 import { categoryLabel } from "./receipt-item-editor";
 
@@ -22,6 +23,8 @@ export interface ExpenseSummary {
 	receipts: { id: string; fileName: string; href?: string }[];
 	/** A mileage expense's calculation (#606). */
 	mileage?: MileageBreakdownFacts | null;
+	/** A per diem's daily breakdown (#609). */
+	perDiem?: PerDiemBreakdownFacts | null;
 	/** Missing-receipt exception submitted instead of a receipt (#604). */
 	receiptException?: { reason: string } | null;
 	/** How a foreign-currency expense converts (#607); absent otherwise. */
@@ -122,6 +125,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 					)}
 					{item.project && <ExpenseProjectLine project={item.project} />}
 					{item.mileage && <MileageBreakdown facts={item.mileage} />}
+					{item.perDiem && <PerDiemBreakdown facts={item.perDiem} />}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (

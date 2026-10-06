@@ -2,15 +2,15 @@ import { type AdjustmentBaseline, adjustmentDelta } from "@/lib/travel-expenses/
 import { ApprovalEvidenceError } from "./errors";
 
 /**
- * Frozen facts of an adjustment report (#615, facts schema v7). An adjustment
+ * Frozen facts of an adjustment report (#615, facts schema v8). An adjustment
  * report freezes, beside its corrected items and totals, the report it
  * corrects, the employee's reason, the approved baseline it was calculated
  * against and the signed delta. Reviewers approve exactly this delta; the
  * settlement of the original report adds it once the adjustment is approved.
  */
 
-/** Version 7 (#615) adds the root `adjustment` of an adjustment report. */
-export const ADJUSTMENT_FACTS_SCHEMA_VERSION = 7;
+/** Version 8 (#615) adds the root `adjustment` of an adjustment report. */
+export const ADJUSTMENT_FACTS_SCHEMA_VERSION = 8;
 
 export interface TravelExpenseReportSubmittedAdjustment {
 	originalReportId: string;

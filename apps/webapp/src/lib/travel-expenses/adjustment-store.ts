@@ -7,6 +7,7 @@ import {
 	travelExpenseReportAdjustment,
 	travelExpenseReportItem,
 	travelExpenseReportItemConversion,
+	travelExpenseReportPerDiem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import type { TravelExpenseReportSubmittedAdjustment } from "@/lib/approvals/evidence/travel-expense-report-adjustment";
@@ -181,6 +182,23 @@ async function copyApprovedReport(
 			uploadedBy: receipt.uploadedBy,
 			createdAt: receipt.createdAt,
 		});
+	}
+	// Per diem itineraries (#609); the policy is stamped again at submission.
+	const perDiems = await tx
+		.select()
+		.from(travelExpenseReportPerDiem)
+		.where(
+			and(
+				eq(travelExpenseReportPerDiem.reportId, source.id),
+				eq(travelExpenseReportPerDiem.organizationId, owner.organizationId),
+			),
+		);
+	for (const perDiem of perDiems) {
+		const itemId = itemIds.get(perDiem.itemId);
+		if (!itemId) continue;
+		await tx
+			.insert(travelExpenseReportPerDiem)
+			.values({ ...perDiem, itemId, reportId: report.id, policy: null });
 	}
 	for (const conversion of conversions) {
 		const itemId = itemIds.get(conversion.itemId);
