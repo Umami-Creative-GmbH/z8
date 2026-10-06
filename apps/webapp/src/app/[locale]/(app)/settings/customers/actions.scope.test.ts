@@ -95,18 +95,18 @@ vi.mock("@opentelemetry/api", () => ({
 	},
 }));
 
-vi.mock("@/lib/effect-v3/services/auth.service", async () => {
-	const { Context, Effect, Layer } = await import("effect-v3");
-	const AuthService = Context.GenericTag<any>("AuthService");
+vi.mock("@/lib/effect/services/auth.service", async () => {
+	const { Context, Effect, Layer } = await import("effect");
+	const AuthService = Context.Service<any>("AuthService");
 	const AuthServiceLive = Layer.succeed(AuthService, {
 		getSession: () => Effect.succeed(mockState.actorSession),
 	});
 	return { AuthService, AuthServiceLive };
 });
 
-vi.mock("@/lib/effect-v3/services/database.service", async () => {
-	const { Context, Effect, Layer } = await import("effect-v3");
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const { Context, Effect, Layer } = await import("effect");
+	const DatabaseService = Context.Service<any>("DatabaseService");
 	const DatabaseServiceLive = Layer.succeed(DatabaseService, {
 		query: (_name: string, fn: () => Promise<unknown>) => Effect.promise(fn),
 	});

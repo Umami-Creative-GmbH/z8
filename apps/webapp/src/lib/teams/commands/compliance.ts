@@ -5,7 +5,7 @@
  * Manager/admin only command.
  */
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
@@ -13,7 +13,7 @@ import {
 	type ComplianceSummary,
 	TeamsComplianceService,
 	TeamsComplianceServiceFullLive,
-} from "@/lib/effect-v3/services/teams-compliance.service";
+} from "@/lib/effect/services/teams-compliance.service";
 import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
 import { compose, withPermission } from "./middleware/permissions.middleware";
@@ -58,16 +58,14 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		);
 
 		// Fetch compliance summary using Effect-TS service
-		const program = Effect.gen(function* (_) {
-			const complianceService = yield* _(TeamsComplianceService);
-			return yield* _(
-				complianceService.getComplianceSummary({
-					managerId: ctx.employeeId,
-					organizationId: ctx.organizationId,
-					daysBack,
-					timezone: ctx.config.digestTimezone,
-				}),
-			);
+		const program = Effect.gen(function* () {
+			const complianceService = yield* TeamsComplianceService;
+			return yield* complianceService.getComplianceSummary({
+				managerId: ctx.employeeId,
+				organizationId: ctx.organizationId,
+				daysBack,
+				timezone: ctx.config.digestTimezone,
+			});
 		});
 
 		const summary = await Effect.runPromise(

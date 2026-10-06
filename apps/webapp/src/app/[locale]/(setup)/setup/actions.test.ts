@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -13,18 +13,18 @@ vi.mock("next/headers", () => ({
 vi.mock("@/lib/setup/bootstrap.server", () => ({
 	setupBootstrap: { authorize: mocks.authorize },
 }));
-vi.mock("@/lib/effect-v3/services/setup.service", () => ({
-	SetupService: Context.GenericTag("TestSetup"),
+vi.mock("@/lib/effect/services/setup.service", () => ({
+	SetupService: Context.Service("TestSetup"),
 }));
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { SetupService } = await import("@/lib/effect-v3/services/setup.service");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { SetupService } = await import("@/lib/effect/services/setup.service");
 	return {
 		AppLayer: Layer.succeed(SetupService, {
 			createPlatformAdmin: mocks.create,
 		}),
 	};
 });
-vi.mock("@/lib/effect-v3/result", () => ({
+vi.mock("@/lib/effect/result", () => ({
 	runServerActionSafe: async (effect: Effect.Effect<unknown>) => ({
 		success: true,
 		data: await Effect.runPromise(effect),

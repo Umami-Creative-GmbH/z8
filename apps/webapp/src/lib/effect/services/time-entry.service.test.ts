@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Layer, Option } from "effect-v3";
+import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import {
@@ -181,9 +181,9 @@ function createCorrectionHarness(casWins: boolean) {
 	);
 
 	const correctionEffect = (input: CreateCorrectionInput) =>
-		Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(service.createCorrectionEntry(input));
+		Effect.gen(function* () {
+			const service = yield* TimeEntryService;
+			return yield* service.createCorrectionEntry(input);
 		}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(dbLayer));
 	const runCorrection = (input: CreateCorrectionInput = correctionInput) =>
 		Effect.runPromise(correctionEffect(input));
@@ -563,9 +563,9 @@ function createDirectCorrectionHarness(
 				}
 			: {}),
 	};
-	const effect = Effect.gen(function* (_) {
-		const service = yield* _(TimeEntryService);
-		return yield* _(service.createCorrectionEntry(input));
+	const effect = Effect.gen(function* () {
+		const service = yield* TimeEntryService;
+		return yield* service.createCorrectionEntry(input);
 	}).pipe(Effect.provide(TimeEntryServiceLive), Effect.provide(dbLayer));
 	let releaseApproval = () => {};
 	const approvalMayCommit = new Promise<void>((resolve) => {
@@ -640,7 +640,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+		const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 		expect(error).toBeInstanceOf(ConflictError);
 		expect(error).toMatchObject({
 			message: "Time entry was already corrected by another process",
@@ -825,7 +825,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		expect(Option.getOrThrow(Cause.failureOption(exit.cause))).toBeInstanceOf(
+		expect(Option.getOrThrow(Cause.findErrorOption(exit.cause))).toBeInstanceOf(
 			ValidationError,
 		);
 		expect(harness.getState()).toEqual(harness.initialState);
@@ -857,7 +857,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		expect(Option.getOrThrow(Cause.failureOption(exit.cause))).toMatchObject({
+		expect(Option.getOrThrow(Cause.findErrorOption(exit.cause))).toMatchObject({
 			message: "errors.holiday.blocksTimeEntry",
 			value: "Founders Day",
 		});
@@ -873,7 +873,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		expect(Option.getOrThrow(Cause.failureOption(exit.cause))).toMatchObject({
+		expect(Option.getOrThrow(Cause.findErrorOption(exit.cause))).toMatchObject({
 			conflictType: "time_correction_work_metadata_diverged",
 		});
 		expect(harness.getState()).toEqual(harness.initialState);
@@ -887,7 +887,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+		const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 		expect(error).toBeInstanceOf(AuthorizationError);
 		expect(harness.lockTargetEmployee.mock.invocationCallOrder[0]).toBeLessThan(
 			harness.lockMembership.mock.invocationCallOrder[0] ?? 0,
@@ -928,7 +928,7 @@ describe("TimeEntryService correction safety", () => {
 
 			expect(Exit.isFailure(exit)).toBe(true);
 			if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-			const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+			const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 			expect(error).toBeInstanceOf(NotFoundError);
 			expect(harness.transactionInsert).not.toHaveBeenCalled();
 			expect(harness.getState()).toEqual(harness.initialState);
@@ -985,7 +985,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+		const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 		expect(error).toBeInstanceOf(AuthorizationError);
 		expect(harness.lockMembership).not.toHaveBeenCalled();
 		expect(harness.lockPeriod).not.toHaveBeenCalled();
@@ -1003,7 +1003,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+		const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 		expect(error).toBeInstanceOf(AuthorizationError);
 		expect(harness.lockTargetEmployee.mock.invocationCallOrder[0]).toBeLessThan(
 			harness.lockManagerAssignment.mock.invocationCallOrder[0] ?? 0,
@@ -1021,7 +1021,7 @@ describe("TimeEntryService correction safety", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-		const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+		const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 		expect(error).toBeInstanceOf(NotFoundError);
 		expect(error).toMatchObject({
 			message: "Work period not found",
@@ -1041,7 +1041,7 @@ describe("TimeEntryService correction safety", () => {
 
 			expect(Exit.isFailure(exit)).toBe(true);
 			if (Exit.isSuccess(exit)) throw new Error("Expected correction to fail");
-			const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+			const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).toMatchObject({
 				conflictType: "pending_time_correction_approval",
@@ -1065,7 +1065,7 @@ describe("TimeEntryService correction safety", () => {
 			expect(Exit.isFailure(exit)).toBe(true);
 			if (Exit.isSuccess(exit))
 				throw new Error("Expected correction to lose the race");
-			const error = Option.getOrThrow(Cause.failureOption(exit.cause));
+			const error = Option.getOrThrow(Cause.findErrorOption(exit.cause));
 			expect(error).toMatchObject({
 				conflictType: "pending_time_correction_approval",
 			});

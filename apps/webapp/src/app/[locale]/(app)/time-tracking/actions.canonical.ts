@@ -1,14 +1,14 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { DatabaseError } from "@/lib/effect/errors";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect-v3/services/database.service";
+} from "@/lib/effect/services/database.service";
 import {
 	TimeEntryService,
 	TimeEntryServiceLive,
-} from "@/lib/effect-v3/services/time-entry.service";
+} from "@/lib/effect/services/time-entry.service";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 
 type Transaction = Pick<
@@ -58,9 +58,9 @@ export const canonicalTimeEntryClient = {
 		},
 		transaction?: Transaction,
 	) => {
-		const effect = Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(service.createTimeEntry(input));
+		const effect = Effect.gen(function* () {
+			const service = yield* TimeEntryService;
+			return yield* service.createTimeEntry(input);
 		}).pipe(
 			Effect.provide(TimeEntryServiceLive),
 			Effect.provide(timeEntryDatabaseLayer(transaction)),
@@ -85,12 +85,10 @@ export const canonicalTimeEntryClient = {
 		},
 		transaction?: Transaction,
 	) => {
-		const effect = Effect.gen(function* (_) {
-			const service = yield* _(TimeEntryService);
-			return yield* _(
-				service.createCorrectionEntry(
-					transaction ? { ...input, transaction } : input,
-				),
+		const effect = Effect.gen(function* () {
+			const service = yield* TimeEntryService;
+			return yield* service.createCorrectionEntry(
+				transaction ? { ...input, transaction } : input,
 			);
 		}).pipe(
 			Effect.provide(TimeEntryServiceLive),

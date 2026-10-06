@@ -1,23 +1,21 @@
 import { eq, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { hydrationStats, type userSettings, waterIntakeLog } from "@/db/schema";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { createDefaultHydrationStats, toDateOnlyString } from "./shared";
 
 export function resetHydrationStreak(userId: string) {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		yield* _(
-			dbService.query("resetStreak", async () => {
-				await dbService.db
-					.update(hydrationStats)
-					.set({ currentStreak: 0 })
-					.where(eq(hydrationStats.userId, userId));
-			}),
-		);
+		yield* dbService.query("resetStreak", async () => {
+			await dbService.db
+				.update(hydrationStats)
+				.set({ currentStreak: 0 })
+				.where(eq(hydrationStats.userId, userId));
+		});
 	});
 }
 
@@ -28,19 +26,17 @@ export function createWaterIntakeLog(params: {
 }) {
 	const { userId, amount, source } = params;
 
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		yield* _(
-			dbService.query("logWaterIntake", async () => {
-				await dbService.db.insert(waterIntakeLog).values({
-					userId,
-					amount,
-					source,
-					loggedAt: new Date(),
-				});
-			}),
-		);
+		yield* dbService.query("logWaterIntake", async () => {
+			await dbService.db.insert(waterIntakeLog).values({
+				userId,
+				amount,
+				source,
+				loggedAt: new Date(),
+			});
+		});
 	});
 }
 
@@ -53,44 +49,40 @@ export function updateHydrationStatsAfterIntake(params: {
 }) {
 	const { userId, amount, currentStreak, longestStreak, lastGoalMetDate } = params;
 
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		yield* _(
-			dbService.query("updateHydrationStats", async () => {
-				await dbService.db
-					.update(hydrationStats)
-					.set({
-						currentStreak,
-						longestStreak,
-						lastGoalMetDate: toDateOnlyString(lastGoalMetDate),
-						totalIntakeAllTime: sql`${hydrationStats.totalIntakeAllTime} + ${amount}`,
-					})
-					.where(eq(hydrationStats.userId, userId));
-			}),
-		);
+		yield* dbService.query("updateHydrationStats", async () => {
+			await dbService.db
+				.update(hydrationStats)
+				.set({
+					currentStreak,
+					longestStreak,
+					lastGoalMetDate: toDateOnlyString(lastGoalMetDate),
+					totalIntakeAllTime: sql`${hydrationStats.totalIntakeAllTime} + ${amount}`,
+				})
+				.where(eq(hydrationStats.userId, userId));
+		});
 	});
 }
 
 export function snoozeWaterReminderForToday(userId: string) {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 		const snoozedUntil = DateTime.now().endOf("day").toJSDate();
 
-		yield* _(
-			dbService.query("snoozeReminder", async () => {
-				await dbService.db
-					.insert(hydrationStats)
-					.values({
-						...createDefaultHydrationStats(userId),
-						snoozedUntil,
-					})
-					.onConflictDoUpdate({
-						target: hydrationStats.userId,
-						set: { snoozedUntil },
-					});
-			}),
-		);
+		yield* dbService.query("snoozeReminder", async () => {
+			await dbService.db
+				.insert(hydrationStats)
+				.values({
+					...createDefaultHydrationStats(userId),
+					snoozedUntil,
+				})
+				.onConflictDoUpdate({
+					target: hydrationStats.userId,
+					set: { snoozedUntil },
+				});
+		});
 
 		return snoozedUntil;
 	});
@@ -105,18 +97,16 @@ export function upsertWaterReminderSettings(params: {
 }) {
 	const { userId, enabled, preset, intervalMinutes, dailyGoal } = params;
 
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		yield* _(
-			dbService.query("updateWaterReminderSettings", () =>
-				writeUserSettings(dbService.db, userId, {
-					waterReminderEnabled: enabled,
-					waterReminderPreset: preset,
-					waterReminderIntervalMinutes: intervalMinutes,
-					waterReminderDailyGoal: dailyGoal,
-				}),
-			),
+		yield* dbService.query("updateWaterReminderSettings", () =>
+			writeUserSettings(dbService.db, userId, {
+				waterReminderEnabled: enabled,
+				waterReminderPreset: preset,
+				waterReminderIntervalMinutes: intervalMinutes,
+				waterReminderDailyGoal: dailyGoal,
+			}),
 		);
 	});
 }

@@ -6,7 +6,7 @@
  */
 
 import { and, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { employee, location, locationSubarea, shift, shiftRequest } from "@/db/schema";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -48,7 +48,7 @@ export interface ShiftPickupRequestResult {
 // SERVICE INTERFACE
 // ============================================
 
-export class OpenShiftsService extends Context.Tag("OpenShiftsService")<
+export class OpenShiftsService extends Context.Service<
 	OpenShiftsService,
 	{
 		/**
@@ -88,7 +88,7 @@ export class OpenShiftsService extends Context.Tag("OpenShiftsService")<
 			organizationId: string;
 		}) => Effect.Effect<boolean, DatabaseError>;
 	}
->() {}
+>()("OpenShiftsService") {}
 
 // ============================================
 // SERVICE IMPLEMENTATION
@@ -96,8 +96,8 @@ export class OpenShiftsService extends Context.Tag("OpenShiftsService")<
 
 export const OpenShiftsServiceLive = Layer.effect(
 	OpenShiftsService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		return OpenShiftsService.of({
 			getOpenShifts: (params) =>
@@ -230,99 +230,82 @@ export const OpenShiftsServiceLive = Layer.effect(
 				}),
 
 			requestShiftPickup: (params) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const { shiftId, requesterId, organizationId, reason } = params;
 
 					// Verify shift exists, is open, and belongs to organization
-					const targetShift = yield* _(
-						dbService.query("verifyShiftForPickup", async () => {
-							return await dbService.db.query.shift.findFirst({
-								where: and(
-									eq(shift.id, shiftId),
-									eq(shift.organizationId, organizationId),
-									eq(shift.status, "published"),
-									isNull(shift.employeeId),
-								),
-							});
-						}),
-					);
+					const targetShift = yield* dbService.query("verifyShiftForPickup", async () => {
+						return await dbService.db.query.shift.findFirst({
+							where: and(
+								eq(shift.id, shiftId),
+								eq(shift.organizationId, organizationId),
+								eq(shift.status, "published"),
+								isNull(shift.employeeId),
+							),
+						});
+					});
 
 					if (!targetShift) {
-						return yield* _(
-							Effect.fail(
-								new NotFoundError({
-									message: "Shift not found or no longer available",
-									entityType: "shift",
-									entityId: shiftId,
-								}),
-							),
+						return yield* Effect.fail(
+							new NotFoundError({
+								message: "Shift not found or no longer available",
+								entityType: "shift",
+								entityId: shiftId,
+							}),
 						);
 					}
 
 					// Verify requester belongs to the same organization (multi-tenant security)
-					const requesterEmployee = yield* _(
-						dbService.query("verifyRequester", async () => {
-							return await dbService.db.query.employee.findFirst({
-								where: and(
-									eq(employee.id, requesterId),
-									eq(employee.organizationId, organizationId),
-								),
-							});
-						}),
-					);
+					const requesterEmployee = yield* dbService.query("verifyRequester", async () => {
+						return await dbService.db.query.employee.findFirst({
+							where: and(eq(employee.id, requesterId), eq(employee.organizationId, organizationId)),
+						});
+					});
 
 					if (!requesterEmployee) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "You are not authorized to request shifts in this organization",
-									field: "requesterId",
-									value: requesterId,
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "You are not authorized to request shifts in this organization",
+								field: "requesterId",
+								value: requesterId,
+							}),
 						);
 					}
 
 					// Check for existing pending request from this employee
-					const existingRequest = yield* _(
-						dbService.query("checkExistingPickupRequest", async () => {
-							return await dbService.db.query.shiftRequest.findFirst({
-								where: and(
-									eq(shiftRequest.shiftId, shiftId),
-									eq(shiftRequest.requesterId, requesterId),
-									eq(shiftRequest.status, "pending"),
-								),
-							});
-						}),
-					);
+					const existingRequest = yield* dbService.query("checkExistingPickupRequest", async () => {
+						return await dbService.db.query.shiftRequest.findFirst({
+							where: and(
+								eq(shiftRequest.shiftId, shiftId),
+								eq(shiftRequest.requesterId, requesterId),
+								eq(shiftRequest.status, "pending"),
+							),
+						});
+					});
 
 					if (existingRequest) {
-						return yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "You already have a pending request for this shift",
-									field: "shiftId",
-									value: shiftId,
-								}),
-							),
+						return yield* Effect.fail(
+							new ValidationError({
+								message: "You already have a pending request for this shift",
+								field: "shiftId",
+								value: shiftId,
+							}),
 						);
 					}
 
 					// Create pickup request
-					const [newRequest] = yield* _(
-						dbService.query("createPickupRequest", async () => {
-							return await dbService.db
-								.insert(shiftRequest)
-								.values({
-									shiftId,
-									requesterId,
-									type: "pickup",
-									status: "pending",
-									reason,
-								})
-								.returning({ id: shiftRequest.id });
-						}),
-					);
+					const [newRequest] = yield* dbService.query("createPickupRequest", async () => {
+						return await dbService.db
+							.insert(shiftRequest)
+							.values({
+								shiftId,
+								requesterId,
+								type: "pickup",
+								status: "pending",
+								reason,
+							})
+							.returning({ id: shiftRequest.id });
+					});
 
 					return {
 						requestId: newRequest.id,

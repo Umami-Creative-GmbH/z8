@@ -1,11 +1,25 @@
 import { type Effect, Exit, Layer, ManagedRuntime } from "effect";
 import { createLogger } from "../logger";
+import { AnalyticsService } from "./services/analytics.service";
 import { AuthServiceLive } from "./services/auth.service";
+import { CustomRoleServiceLive } from "./services/custom-role.service";
 import { DatabaseServiceLive } from "./services/database.service";
 import { EmailServiceLive } from "./services/email.service";
+import { PlatformAdminServiceLive } from "./services/platform-admin.service";
+import { SetupServiceLive } from "./services/setup.service";
+import { TimeEntryServiceLive } from "./services/time-entry.service";
 
 // Services move here from lib/effect-v3/runtime.ts as their slices port them to v4 (#625).
-export const AppLayer = Layer.mergeAll(DatabaseServiceLive, AuthServiceLive, EmailServiceLive);
+export const AppLayer = Layer.mergeAll(
+	DatabaseServiceLive,
+	AuthServiceLive,
+	EmailServiceLive,
+	AnalyticsService.Live.pipe(Layer.provide(DatabaseServiceLive)),
+	TimeEntryServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	PlatformAdminServiceLive,
+	SetupServiceLive,
+	CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+);
 
 // Runtime for executing effects
 export const runtime = ManagedRuntime.make(AppLayer);

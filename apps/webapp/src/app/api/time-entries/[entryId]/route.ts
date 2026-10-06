@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -7,8 +7,8 @@ import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { runtime } from "@/lib/effect-v3/runtime";
-import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
+import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import type { AppendAssuranceLimitationCode } from "@/lib/time-tracking/append-assurance";
 import {
 	ClockingAccessError,
@@ -115,9 +115,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Verify the entry hash
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(timeEntryService.verifyEntry(entryId, activeOrgId));
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.verifyEntry(entryId, activeOrgId);
 		});
 
 		const verification = await runtime.runPromise(effect);

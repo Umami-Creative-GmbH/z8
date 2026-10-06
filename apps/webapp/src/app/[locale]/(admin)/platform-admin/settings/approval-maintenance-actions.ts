@@ -9,7 +9,7 @@ import {
 	deleteApprovalInTransaction,
 } from "@/lib/approvals/maintenance";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { requirePlatformAdmin } from "@/lib/effect-v3/services/platform-admin.service";
+import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("PlatformAdminApprovalMaintenance");

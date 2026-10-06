@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -16,8 +16,8 @@ import {
 	UnsupportedAuthorizationConditionError,
 } from "@/lib/authorization";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
-import { runtime } from "@/lib/effect-v3/runtime";
-import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
+import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { preserveLateClockEvidence } from "@/lib/employee-lifecycle/late-clock-evidence";
 import { createLogger } from "@/lib/logger";
 import type { AttributionIntent } from "@/lib/time-tracking/close-active-work";
@@ -163,18 +163,16 @@ export async function GET(request: NextRequest) {
 			}
 		}
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.getTimeEntries({
-					employeeId: targetEmployeeId,
-					organizationId: activeOrgId,
-					from: from ? new Date(from) : undefined,
-					to: to ? new Date(to) : undefined,
-					includeSuperseded,
-					authorizationPredicate: timeEntryAccess ?? undefined,
-				}),
-			);
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.getTimeEntries({
+				employeeId: targetEmployeeId,
+				organizationId: activeOrgId,
+				from: from ? new Date(from) : undefined,
+				to: to ? new Date(to) : undefined,
+				includeSuperseded,
+				authorizationPredicate: timeEntryAccess ?? undefined,
+			});
 		});
 
 		const entries = await runtime.runPromise(effect);

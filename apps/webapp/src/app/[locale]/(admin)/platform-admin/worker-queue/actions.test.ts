@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "@/lib/effect/errors";
 import { buildAvailableJobNames, isVisibleCronJobName, mapCronExecution } from "./actions-helpers";
@@ -35,9 +35,9 @@ vi.mock("@/lib/cron/reconciliation", () => ({
 	reconcileCronJobSchedule: mocks.reconcileCronJobSchedule,
 }));
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Layer } = await import("effect-v3");
-	const { PlatformAdminService } = await import("@/lib/effect-v3/services/platform-admin.service");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Layer } = await import("effect");
+	const { PlatformAdminService } = await import("@/lib/effect/services/platform-admin.service");
 
 	return {
 		AppLayer: Layer.succeed(PlatformAdminService, {
@@ -47,8 +47,8 @@ vi.mock("@/lib/effect-v3/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect-v3");
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	return {
 		runServerActionSafe: async <T, E, R>(effect: Effect.Effect<T, E, R>) => {
@@ -56,8 +56,8 @@ vi.mock("@/lib/effect-v3/result", async () => {
 
 			return Exit.match(exit, {
 				onFailure: (cause) => {
-					const defect = [...Cause.defects(cause)][0] ?? null;
-					const failure = Option.getOrNull(Cause.failureOption(cause));
+					const defect = Result.getOrNull(Cause.findDefect(cause));
+					const failure = Option.getOrNull(Cause.findErrorOption(cause));
 					const error = defect ?? failure ?? cause;
 
 					if (error && typeof error === "object" && "_tag" in error) {

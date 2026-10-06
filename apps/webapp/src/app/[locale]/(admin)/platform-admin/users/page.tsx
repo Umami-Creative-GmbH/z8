@@ -7,7 +7,7 @@ import { Suspense, useEffect, useReducer, useRef, useTransition } from "react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { PlatformUser, UserSession } from "@/lib/effect-v3/services/platform-admin.service";
+import type { PlatformUser, UserSession } from "@/lib/effect/services/platform-admin.service";
 import {
 	PlatformAdminBanUserDialog,
 	PlatformAdminUserFilters,
