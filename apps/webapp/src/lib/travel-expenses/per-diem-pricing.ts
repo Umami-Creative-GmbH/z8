@@ -18,7 +18,7 @@ import {
 	type StampedPerDiemPolicy,
 	tripDays,
 } from "./per-diem";
-import { loadAdjustmentFamilyIds } from "./adjustment-read";
+import { loadAdjustmentFamilyIds } from "./adjustment-link";
 import { loadPerDiemPolicyVersions } from "./per-diem-policy-store";
 import type { TripDestination } from "./trip-destination";
 

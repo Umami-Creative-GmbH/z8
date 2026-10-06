@@ -1,74 +1,28 @@
 import { and, eq, inArray, max } from "drizzle-orm";
-import type { db as appDb } from "@/db";
 import {
 	approvalDecisionEvidence,
 	travelExpenseReport,
 	travelExpenseReportAdjustment,
 } from "@/db/schema";
-import type { TravelExpenseReportAdjustmentLink } from "@/lib/approvals/evidence/travel-expense-report-adjustment";
 import {
 	loadTravelExpenseReportSubmittedRevision,
 	loadTravelExpenseReportSubmittedRevisions,
 } from "@/lib/approvals/evidence/travel-expense-report-store";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { type AdjustmentBaseline, composeAdjustmentBaseline } from "./adjustment";
+import type { AdjustmentExecutor } from "./adjustment-link";
 
 /**
- * Reads of report adjustments (#615) that the settlement, the frozen facts
- * loader and the adjustment store share. Nothing here imports the settlement
- * store, so it can depend on these reads.
+ * Reads of report adjustments (#615) that the settlement, the adjustment store
+ * and the decision guard share. Nothing here imports the settlement store, so it
+ * can depend on these reads. Link reads live in adjustment-link.ts.
  */
 
-type Database = typeof appDb;
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-export type AdjustmentExecutor = Database | Transaction;
-
-/** The original report and reason of an adjustment report; null for any other report. */
-export async function loadAdjustmentLink(
-	database: AdjustmentExecutor,
-	scope: { organizationId: string; reportId: string },
-): Promise<TravelExpenseReportAdjustmentLink | null> {
-	const [row] = await database
-		.select({
-			originalReportId: travelExpenseReportAdjustment.originalReportId,
-			reason: travelExpenseReportAdjustment.reason,
-		})
-		.from(travelExpenseReportAdjustment)
-		.where(
-			and(
-				eq(travelExpenseReportAdjustment.organizationId, scope.organizationId),
-				eq(travelExpenseReportAdjustment.reportId, scope.reportId),
-			),
-		)
-		.limit(1);
-	return row ?? null;
-}
-
-/**
- * The other reports of a report's adjustment family (#615): its original and
- * every adjustment of that original. They describe the same expenses, so
- * checks for expenses claimed twice (e.g. per diem days) must not count them
- * against each other; only the approved deltas are ever settled.
- */
-export async function loadAdjustmentFamilyIds(
-	database: AdjustmentExecutor,
-	scope: { organizationId: string; reportId: string },
-): Promise<string[]> {
-	const link = await loadAdjustmentLink(database, scope);
-	const originalReportId = link?.originalReportId ?? scope.reportId;
-	const rows = await database
-		.select({ reportId: travelExpenseReportAdjustment.reportId })
-		.from(travelExpenseReportAdjustment)
-		.where(
-			and(
-				eq(travelExpenseReportAdjustment.organizationId, scope.organizationId),
-				eq(travelExpenseReportAdjustment.originalReportId, originalReportId),
-			),
-		);
-	return [originalReportId, ...rows.map((row) => row.reportId)].filter(
-		(id) => id !== scope.reportId,
-	);
-}
+export {
+	type AdjustmentExecutor,
+	loadAdjustmentFamilyIds,
+	loadAdjustmentLink,
+} from "./adjustment-link";
 
 /** Which of these reports are adjustment reports, mapped to the report each corrects. */
 export async function loadAdjustmentOriginals(

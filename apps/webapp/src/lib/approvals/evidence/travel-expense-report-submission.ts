@@ -7,7 +7,7 @@ import {
 	travelExpenseReportItem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
-import { loadAdjustmentLink } from "@/lib/travel-expenses/adjustment-read";
+import { loadAdjustmentLink } from "@/lib/travel-expenses/adjustment-link";
 import { loadReportConversionRows } from "@/lib/travel-expenses/conversion-read";
 import { loadReportPerDiemRows } from "@/lib/travel-expenses/per-diem-pricing";
 import type { ResolvePolicyAndCreateApprovalResult } from "../policies/chain-service";
