@@ -15,6 +15,7 @@ import {
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
+import { effectiveItemProject } from "@/lib/travel-expenses/project-attribution";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { tripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { canonicalJson } from "./absence-facts";
@@ -42,11 +43,41 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 3;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 4;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
 /* Version 3 (#607) adds the optional `conversion` of an item (`CONVERSION_FACTS_SCHEMA_VERSION`). */
+
+/** Version 4 (#605) adds an expense's project attribution (`project`). */
+const PROJECT_ATTRIBUTION_SCHEMA_VERSION = 4;
+
+/**
+ * The accounting attribution of one expense as it was submitted (#605): the
+ * project's identity and names at submission, whether the expense inherited
+ * the trip's project, and how the employee's use of the project on the
+ * expense date was proven. Later renames, closures or assignment changes
+ * never rewrite it.
+ */
+export interface TravelExpenseReportProjectAttribution {
+	projectId: string;
+	name: string;
+	customerId: string | null;
+	customerName: string | null;
+	inheritedFromTrip: boolean;
+	basis: "employee_assignment" | "team_assignment" | "exception";
+	/** The authorized exception, only when `basis` is `exception`. */
+	exception?: {
+		exceptionId: string;
+		validFrom: string;
+		validTo: string;
+		reason: string;
+		evidence: string;
+		authorizedByEmployeeId: string;
+		/** Canonical UTC instant. */
+		authorizedAt: string;
+	};
+}
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;
@@ -77,6 +108,8 @@ export interface TravelExpenseReportSubmittedItem {
 	receiptException?: { reason: string };
 	/** Since v3 (#607): how a foreign-currency expense was converted; absent otherwise. */
 	conversion?: TravelExpenseReportSubmittedConversion;
+	/** Since v4 (#605): present only when the expense is attributed to a project. */
+	project?: TravelExpenseReportProjectAttribution;
 }
 
 export interface TravelExpenseReportSubmittedFacts {
@@ -116,7 +149,14 @@ export interface TravelExpenseReportFactsInput {
 		tripEndDate: string | null;
 		tripTimeZone: string | null;
 		tripDestinations: TripDestination[];
+		/** The trip's project, which inheriting expenses use (#605). */
+		projectId?: string | null;
 	};
+	/**
+	 * Resolved attribution by item ID for every attributed expense, required
+	 * when submitting; comparing reads project IDs from the live rows only.
+	 */
+	projectAttribution?: Readonly<Record<string, TravelExpenseReportProjectAttribution>>;
 	items: ReadonlyArray<{
 		id: string;
 		organizationId: string;
@@ -132,6 +172,8 @@ export interface TravelExpenseReportFactsInput {
 		accountingReference: string | null;
 		/** Missing-receipt explanation (#604); null or absent when none was requested. */
 		receiptExceptionReason?: string | null;
+		projectId?: string | null;
+		projectInherits?: boolean;
 	}>;
 	/** Whether the organization allowed missing-receipt exceptions when submitting (#604). */
 	receiptExceptionsAllowed?: boolean;
@@ -209,6 +251,35 @@ function itemDraft(row: TravelExpenseReportFactsInput["items"][number]): Receipt
  */
 type SnapshotMode = "submit" | "compare";
 
+/**
+ * The `project` key of one expense, emitted from v2 on and only when the
+ * expense is attributed. Submitting requires the attribution resolved for
+ * exactly the live project; comparing checks the live project identity and
+ * keeps the frozen names, so a later rename is not a change of the report.
+ */
+function projectFacts(
+	input: TravelExpenseReportFactsInput,
+	row: TravelExpenseReportFactsInput["items"][number],
+	mode: SnapshotMode,
+	schemaVersion: number,
+	frozen: TravelExpenseReportSubmittedFacts | undefined,
+): { project?: TravelExpenseReportProjectAttribution } {
+	if (schemaVersion < PROJECT_ATTRIBUTION_SCHEMA_VERSION) return {};
+	const effective = effectiveItemProject(input.report, row);
+	if (!effective) return {};
+	const matches = (attribution: TravelExpenseReportProjectAttribution | undefined) =>
+		attribution?.projectId === effective.projectId &&
+		attribution.inheritedFromTrip === effective.inheritedFromTrip;
+	if (mode === "submit") {
+		const resolved = input.projectAttribution?.[row.id];
+		if (!resolved || !matches(resolved)) incomplete("project_attribution");
+		return { project: structuredClone(resolved) };
+	}
+	const submitted = frozen?.items.find((item) => item.itemId === row.id)?.project;
+	if (submitted && matches(submitted)) return { project: submitted };
+	return { project: effective as unknown as TravelExpenseReportProjectAttribution };
+}
+
 function liveTripFacts(
 	report: TravelExpenseReportFactsInput["report"],
 ): TravelExpenseReportSubmittedFacts["trip"] {
@@ -274,6 +345,7 @@ function snapshotReport(
 	input: TravelExpenseReportFactsInput,
 	mode: SnapshotMode,
 	schemaVersion: number,
+	frozen?: TravelExpenseReportSubmittedFacts,
 ): TravelExpenseReportSubmittedFacts {
 	const enforce = mode === "submit";
 	const { report } = input;
@@ -330,6 +402,7 @@ function snapshotReport(
 					conversion: conversionOf(row.id),
 					receiptIds: receipts.map((receipt) => receipt.receiptId),
 				});
+			const project = projectFacts(input, row, mode, schemaVersion, frozen);
 			if (!enforce) {
 				return {
 					itemId: row.id,
@@ -344,6 +417,7 @@ function snapshotReport(
 					receipts,
 					...exceptionFact,
 					...conversionFacts(),
+					...project,
 				} as TravelExpenseReportSubmittedItem;
 			}
 			if (
@@ -371,6 +445,7 @@ function snapshotReport(
 				receipts,
 				...exceptionFact,
 				...conversionFacts(),
+				...project,
 			};
 		});
 	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);
@@ -457,7 +532,7 @@ export function compareLiveTravelExpenseReportWithRevision(
 	let liveFacts: TravelExpenseReportSubmittedFacts;
 	try {
 		// Snapshot the live rows as the revision's version saw them.
-		liveFacts = snapshotReport(live, "compare", schemaVersion);
+		liveFacts = snapshotReport(live, "compare", schemaVersion, submitted);
 	} catch (error) {
 		if (!(error instanceof ApprovalEvidenceError)) throw error;
 		return {

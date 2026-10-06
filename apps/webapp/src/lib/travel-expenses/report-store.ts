@@ -74,6 +74,9 @@ export interface ReportItemView extends ReceiptItemDraft {
 	receiptException: ReceiptExceptionView;
 	/** Its currency conversion (#607); loaded by `loadOwnReport` only. */
 	conversion?: ItemConversion | null;
+	/** Project attribution (#605): `project-attribution.ts` `itemProjectChoice` reads these. */
+	projectId?: string | null;
+	projectInherits?: boolean;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -95,6 +98,8 @@ export interface ReportView {
 	items: ReportItemView[];
 	/** Whether the organization allows missing-receipt exceptions (#604). */
 	receiptExceptionsAllowed: boolean;
+	/** The trip's project its expenses inherit (#605). */
+	projectId?: string | null;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -279,6 +284,8 @@ function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView
 		accountingReference: row.accountingReference,
 		receipts,
 		...receiptExceptionItemView(row),
+		projectId: row.projectId,
+		projectInherits: row.projectInherits,
 	};
 }
 
@@ -326,6 +333,7 @@ export async function loadOwnReport(
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
 		trip: toTripDetailsView(report),
+		projectId: report.projectId,
 		items: items.map((item) => ({
 			...toItemView(
 				item,

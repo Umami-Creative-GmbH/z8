@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
 import { ConversionSummary } from "./conversion-summary";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
+import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
 import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 import { categoryLabel } from "./receipt-item-editor";
 
@@ -22,6 +23,8 @@ export interface ExpenseSummary {
 	receiptException?: { reason: string } | null;
 	/** How a foreign-currency expense converts (#607); absent otherwise. */
 	conversion?: ConversionResult | null;
+	/** Frozen project attribution (#605). */
+	project?: ExpenseProjectSummary;
 }
 
 export interface TripSummary {
@@ -114,6 +117,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							/>
 						</div>
 					)}
+					{item.project && <ExpenseProjectLine project={item.project} />}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (

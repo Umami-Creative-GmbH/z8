@@ -1,10 +1,13 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { ItemConversion } from "@/lib/travel-expenses/currency-conversion";
+import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import { CONVERSION_FACTS_SCHEMA_VERSION } from "./travel-expense-report-conversion";
 import {
 	buildTravelExpenseReportSubmittedFacts,
 	compareLiveTravelExpenseReportWithRevision,
+	fingerprintTravelExpenseReportFacts,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
 
@@ -232,6 +235,18 @@ describe("frozen conversion facts", () => {
 			items: current.items.map(({ conversion: _added, ...rest }) => rest),
 		};
 		expect(compareLiveTravelExpenseReportWithRevision(v2, input())).toEqual({ kind: "current" });
+	});
+
+	it("still freezes a v3 report with conversions byte for byte", () => {
+		// Golden values computed at schema version 3 (#607), before v4 (#605) added
+		// project facts; this report has no project, so nothing changes.
+		const V3_FACTS_SHA256 = "226061ea7f9a97b16c1f0c9cdcb06266cab6b53abeeb383735e38905ff519de0";
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 3 };
+		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V3_FACTS_SHA256);
+		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(
+			`travel_expense_report:v3:${V3_FACTS_SHA256}`,
+		);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toEqual({ kind: "current" });
 	});
 
 	it("compares a schema version 1 revision without conversion facts as current", () => {

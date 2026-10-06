@@ -51,6 +51,15 @@ function outcomeMessage(
 					"Some saved details are still missing. Complete everything listed under “Still needed” and try again.",
 				),
 			};
+		case "project_ineligible":
+			return {
+				title: t("travelExpenses.report.submit.projectTitle", "A project cannot be used"),
+				body: t(
+					"travelExpenses.report.submit.project",
+					"{count, plural, one {One expense is} other {# expenses are}} attributed to a project you were not assigned to on the expense date. Choose another project, or ask an expense administrator for an attribution exception. Your report stays saved as a draft.",
+					{ count: outcome.itemIds.length },
+				),
+			};
 		case "no_reviewer":
 			return {
 				title: t(

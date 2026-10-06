@@ -72,6 +72,7 @@ export async function loadTravelExpenseReportFactsInput(
 			tripEndDate: report.tripEndDate,
 			tripTimeZone: report.tripTimeZone,
 			tripDestinations: report.tripDestinations,
+			projectId: report.projectId,
 		},
 		items,
 		receipts,

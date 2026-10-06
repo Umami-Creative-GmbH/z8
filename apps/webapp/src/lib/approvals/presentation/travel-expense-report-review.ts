@@ -12,6 +12,7 @@ import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/tra
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
 import { conversionReviewRows } from "./travel-expense-report-conversion-review";
+import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
 import {
 	receiptExceptionAcceptanceSections,
 	receiptExceptionRows,
@@ -180,6 +181,7 @@ export function buildTravelExpenseReportReviewSections(
 					value: item.accountingReference,
 				});
 			}
+			itemRows.push(...travelExpenseReportProjectRows(item));
 			itemRows.push(
 				...(item.receiptException
 					? receiptExceptionRows(item.receiptException)

@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
 import {
@@ -70,6 +71,8 @@ export type SubmitTravelExpenseReportResult =
 	| { kind: "not_draft" }
 	| { kind: "changed_since_review" }
 	| { kind: "incomplete"; missing: TripReportMissingRequirements }
+	/** These expenses' projects are not proven on their expense dates (#605). */
+	| { kind: "project_ineligible"; itemIds: string[] }
 	/** Nobody but the requester could review it; setup guidance applies. */
 	| { kind: "no_reviewer"; reason: "requester_inactive" | "no_eligible_reviewer" }
 	/** A matched approval policy would let the requester approve their own report. */
@@ -309,6 +312,8 @@ export async function submitTravelExpenseReport(
 						: { kind: "changed_since_review" },
 				);
 			}
+			const projects = await resolveReportProjectAttribution(tx, owner, live);
+			if (!projects.ok) refuse({ kind: "project_ineligible", itemIds: projects.itemIds });
 
 			const directory = await loadRoutingDirectory(tx, {
 				organizationId: owner.organizationId,
@@ -411,7 +416,11 @@ export async function submitTravelExpenseReport(
 				reportId: input.reportId,
 			});
 			if (!frozen) refuse({ kind: "not_found" });
-			const facts = buildTravelExpenseReportSubmittedFacts({ ...frozen, receiptExceptionsAllowed });
+			const facts = buildTravelExpenseReportSubmittedFacts({
+				...frozen,
+				receiptExceptionsAllowed,
+				projectAttribution: projects.attribution,
+			});
 			const [subject, submitter] = await Promise.all([
 				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),
 				loadEmployeeLabel(tx, owner.organizationId, { userId: owner.userId }),

@@ -69,6 +69,7 @@ export * from "./payroll-export";
 // Platform admin (audit log, org suspension)
 export * from "./platform-admin";
 export * from "./project";
+export * from "./project-assignment-history";
 // All relations (centralized)
 export * from "./relations";
 // Scheduled exports
@@ -93,6 +94,7 @@ export * from "./time-record";
 export * from "./time-tracking";
 export * from "./travel-expense";
 export * from "./travel-expense-conversion";
+export * from "./travel-expense-project";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
 // TypeScript types

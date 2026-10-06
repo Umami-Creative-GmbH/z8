@@ -3,6 +3,7 @@ import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expe
 import { ReimbursementCurrencySettingsCard } from "@/components/settings/travel-expense/reimbursement-currency-settings";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
+import { TravelExpenseProjectExceptionsCard } from "@/components/settings/travel-expense/travel-expense-project-exceptions";
 import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings/travel-expense/travel-expense-receipt-exception-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,9 @@ async function TravelExpenseSettingsPageContent() {
 			<div className="grid gap-4 px-4 pt-4">
 				<ReimbursementCurrencySettingsCard />
 				<ForeignExpenseConversionsCard />
+			</div>
+			<div className="px-4 pt-4">
+				<TravelExpenseProjectExceptionsCard />
 			</div>
 			<TravelExpensePolicyManagement organizationId={organizationId} />
 		</div>
