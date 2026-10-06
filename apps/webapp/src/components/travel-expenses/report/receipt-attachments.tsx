@@ -95,20 +95,17 @@ export function ReceiptAttachments({
 	async function remove(receipt: ReportReceiptView) {
 		setError(null);
 		setRemovingId(receipt.id);
+		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
 			const result = await removeReportReceiptAction({ reportId, itemId, receiptId: receipt.id });
-			if (!result.success) {
-				setError(result.error);
-				return;
-			}
-			await onChanged();
+			if (result.success) await onChanged();
+			else setError(result.error);
 		} catch {
 			setError(
 				t("travelExpenses.report.receipts.removeFailed", "The receipt could not be removed."),
 			);
-		} finally {
-			setRemovingId(null);
 		}
+		setRemovingId(null);
 	}
 
 	const busy = upload.isUploading;

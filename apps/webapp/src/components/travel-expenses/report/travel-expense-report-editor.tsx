@@ -263,30 +263,32 @@ function TripReportBody({
 
 	async function addItem() {
 		setAdding(true);
+		// No `finally`: the React Compiler cannot compile try statements with one.
 		try {
 			const result = await addTripReportItemAction({ reportId: report.id });
-			if (!result.success) {
+			if (result.success) {
+				setFocusTarget({ itemId: result.data.item.id });
+				await Promise.all([refreshReport(), refreshDrafts()]);
+			} else {
 				toast.error(
 					t(
 						"travelExpenses.report.items.addFailed",
 						"The expense could not be added. Please retry.",
 					),
 				);
-				return;
 			}
-			setFocusTarget({ itemId: result.data.item.id });
-			await Promise.all([refreshReport(), refreshDrafts()]);
 		} catch {
 			toast.error(
 				t("travelExpenses.report.items.addFailed", "The expense could not be added. Please retry."),
 			);
-		} finally {
-			setAdding(false);
 		}
+		setAdding(false);
 	}
 
 	async function removeItem(itemId: string, expectedVersion: number): Promise<boolean> {
-		setRemoveErrors(({ [itemId]: _cleared, ...rest }) => rest);
+		setRemoveErrors((errors) =>
+			Object.fromEntries(Object.entries(errors).filter(([id]) => id !== itemId)),
+		);
 		const failed = (message: string) => {
 			setRemoveErrors((errors) => ({ ...errors, [itemId]: message }));
 			return false;

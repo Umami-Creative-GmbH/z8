@@ -239,13 +239,16 @@ export function ReceiptItemEditor({
 	async function remove() {
 		if (!removal) return;
 		setRemoving(true);
-		try {
-			// Removes on top of the latest saved version, including pending edits.
-			await saver.flush();
-			if (await removal.remove(saver.getState().version)) saver.discard();
-		} finally {
-			setRemoving(false);
-		}
+		// Removes on top of the latest saved version, including pending edits.
+		// Promise#finally rather than try/finally: the React Compiler cannot
+		// compile try statements without a catch clause.
+		await saver
+			.flush()
+			.then(() => removal.remove(saver.getState().version))
+			.then((removed) => {
+				if (removed) saver.discard();
+			})
+			.finally(() => setRemoving(false));
 	}
 
 	const fieldError = (field: FieldName) =>
