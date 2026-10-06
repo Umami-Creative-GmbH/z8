@@ -1,4 +1,5 @@
 import type { TravelExpenseReportKind } from "@/db/schema";
+import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
@@ -56,14 +57,14 @@ export interface ReportSubmissionTotals {
 	total: string;
 }
 
-/** Adds two normalized two-decimal amounts in minor units. */
+/** Adds two normalized stored-scale amounts exactly. */
 function addAmounts(left: string, right: string): string {
-	const minor = (value: string) => {
-		const [units = "0", cents = "00"] = value.split(".");
-		return Number(units) * 100 + Number(cents.padEnd(2, "0"));
+	const units = (value: string) => {
+		const parsed = parseUnits(value, STORED_AMOUNT_SCALE);
+		if (parsed === null) throw new Error(`Malformed report total: ${value}`);
+		return parsed;
 	};
-	const sum = minor(left) + minor(right);
-	return `${Math.trunc(sum / 100)}.${String(sum % 100).padStart(2, "0")}`;
+	return formatUnits(sumUnits([units(left), units(right)]), STORED_AMOUNT_SCALE);
 }
 
 export type ReportSubmissionCheck =
