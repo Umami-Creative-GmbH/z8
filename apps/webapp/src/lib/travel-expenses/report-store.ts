@@ -10,10 +10,11 @@ import {
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { type AllowanceOverride, overriddenMileageView } from "./allowance-override";
 import { loadOrganizationReimbursementCurrency } from "./conversion-read";
 import type { ItemConversion } from "./currency-conversion";
 import { type MileageCalculation, type MileageItemView, mileageItemView } from "./mileage";
-import { loadMileagePricer } from "./mileage-pricing";
+import { loadMileageOverrides, loadMileagePricer } from "./mileage-pricing";
 import type { PerDiemItemView } from "./per-diem";
 import { loadPerDiemViews } from "./per-diem-pricing";
 import {
@@ -288,9 +289,16 @@ export function toItemView(
 	row: ItemRow,
 	receipts: ReportReceiptView[],
 	mileageCalculation: MileageCalculation | null = null,
+	/** A mileage item's administrator override (#610) and the report currency it must match. */
+	allowance?: { override: AllowanceOverride | undefined; reimbursementCurrency: string },
 ): ReportItemView {
 	return {
-		mileage: mileageItemView(row, mileageCalculation),
+		mileage: overriddenMileageView(
+			mileageItemView(row, mileageCalculation),
+			row.expenseDate,
+			allowance?.override,
+			allowance?.reimbursementCurrency ?? "",
+		),
 		id: row.id,
 		type: row.type,
 		version: row.version,
@@ -355,6 +363,7 @@ export async function loadOwnReport(
 		useStamp: !isEditableReportStatus(report.status),
 	};
 	const perDiems = await loadPerDiemViews(database, report, items, pricing);
+	const overrides = await loadMileageOverrides(database, owner.organizationId, items);
 	return {
 		id: report.id,
 		kind: report.kind,
@@ -370,6 +379,7 @@ export async function loadOwnReport(
 				item,
 				receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView),
 				item.type === "mileage" ? price(item, pricing) : null,
+				{ override: overrides.get(item.id), reimbursementCurrency: report.reimbursementCurrency },
 			),
 			conversion: conversions.get(item.id) ?? null,
 			referenceRate: referenceRates.get(item.id) ?? null,
@@ -472,6 +482,7 @@ async function listOwnReports(
 		})),
 	});
 	const price = await loadMileagePricer(database, owner.organizationId, items);
+	const mileageOverrides = await loadMileageOverrides(database, owner.organizationId, items);
 	// Per diem (#609): only trips have one; each is calculated with its own report.
 	const perDiems = new Map<string, PerDiemItemView>();
 	for (const report of reports) {
@@ -488,12 +499,17 @@ async function listOwnReports(
 			row,
 			mileage:
 				row.type === "mileage"
-					? mileageItemView(
-							row,
-							price(row, {
-								reimbursementCurrency: report.reimbursementCurrency,
-								useStamp: !isEditableReportStatus(report.status),
-							}),
+					? overriddenMileageView(
+							mileageItemView(
+								row,
+								price(row, {
+									reimbursementCurrency: report.reimbursementCurrency,
+									useStamp: !isEditableReportStatus(report.status),
+								}),
+							),
+							row.expenseDate,
+							mileageOverrides.get(row.id),
+							report.reimbursementCurrency,
 						)
 					: null,
 		}));

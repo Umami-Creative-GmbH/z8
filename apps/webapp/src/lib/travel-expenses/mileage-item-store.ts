@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { travelExpenseReport, travelExpenseReportItem } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { overriddenMileageView } from "./allowance-override";
 import { loadOrganizationReimbursementCurrency } from "./conversion-read";
 import {
 	type MileageItemDraft,
@@ -9,7 +10,7 @@ import {
 	mileageItemView,
 	type StampedMileagePolicy,
 } from "./mileage";
-import { loadMileagePricer } from "./mileage-pricing";
+import { loadMileageOverrides, loadMileagePricer } from "./mileage-pricing";
 import { DEFAULT_REIMBURSEMENT_CURRENCY } from "./receipt-report";
 import {
 	lockOwnDraftReport,
@@ -173,13 +174,13 @@ export async function saveMileageItemDraft(
 				),
 			);
 		const price = await loadMileagePricer(tx, owner.organizationId, [current]);
+		const reimbursementCurrency = reportRow?.currency ?? DEFAULT_REIMBURSEMENT_CURRENCY;
+		const overrides = await loadMileageOverrides(tx, owner.organizationId, [current]);
 		const view = toItemView(
 			current,
 			[],
-			price(current, {
-				reimbursementCurrency: reportRow?.currency ?? DEFAULT_REIMBURSEMENT_CURRENCY,
-				useStamp: false,
-			}),
+			price(current, { reimbursementCurrency, useStamp: false }),
+			{ override: overrides.get(current.id), reimbursementCurrency },
 		);
 		if (!saved) return { kind: "conflict", item: view };
 		await touchReport(tx, owner, input.reportId, at);
@@ -202,6 +203,7 @@ export async function stampMileagePolicies(
 	const mileageItems = input.items.filter((item) => item.type === "mileage");
 	if (mileageItems.length === 0) return views;
 	const price = await loadMileagePricer(tx, input.organizationId, mileageItems);
+	const overrides = await loadMileageOverrides(tx, input.organizationId, mileageItems);
 	for (const item of mileageItems) {
 		const calculation = price(item, {
 			reimbursementCurrency: input.reimbursementCurrency,
@@ -221,7 +223,16 @@ export async function stampMileagePolicies(
 					eq(travelExpenseReportItem.type, "mileage"),
 				),
 			);
-		views.set(item.id, mileageItemView(item, calculation));
+		// An applying administrator override (#610) is what the item counts.
+		views.set(
+			item.id,
+			overriddenMileageView(
+				mileageItemView(item, calculation),
+				item.expenseDate,
+				overrides.get(item.id),
+				input.reimbursementCurrency,
+			),
+		);
 	}
 	return views;
 }

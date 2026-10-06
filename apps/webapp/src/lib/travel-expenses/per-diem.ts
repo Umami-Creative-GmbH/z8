@@ -8,6 +8,7 @@ import {
 	type ZonedDateTime,
 } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import type { AllowanceOverrideView } from "./allowance-override";
 import {
 	type AllowancePolicySource,
 	type AllowancePolicyVersionRecord,
@@ -773,10 +774,10 @@ export function perDiemMissingRequirements(
 	) {
 		missing.push("per_diem_trip_dates");
 	}
+	// Exceptional itineraries need their meals too: the manual calculation (#610) uses them.
 	if (
 		itinerary.startDate &&
 		itinerary.endDate &&
-		calculation.status !== "exceptional" &&
 		comparePlainDates(parsePlainDate(itinerary.endDate), parsePlainDate(itinerary.startDate)) >=
 			0 &&
 		!mealsCover(itinerary.meals, tripDays(itinerary.startDate, itinerary.endDate))
@@ -797,6 +798,8 @@ export interface PerDiemItemView {
 	/** The calculated amount and its currency ("0.00" counts); null until calculated. */
 	amount: string | null;
 	currency: string | null;
+	/** An administrator's override (#610); when it applies, `amount` is its amount. */
+	override?: AllowanceOverrideView | null;
 }
 
 export function perDiemItemView(

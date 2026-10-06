@@ -1,4 +1,5 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { AllowanceOverrideView } from "./allowance-override";
 import {
 	type AllowancePolicySource,
 	type AllowancePolicyVersionRecord,
@@ -263,6 +264,8 @@ export interface MileageItemView {
 	/** The calculated amount and its currency; null until the item can be priced. */
 	amount: string | null;
 	currency: string | null;
+	/** An administrator's override (#610); when it applies, `amount` is its amount. */
+	override?: AllowanceOverrideView | null;
 }
 
 /** The mileage view of an item row; null for other item types. */

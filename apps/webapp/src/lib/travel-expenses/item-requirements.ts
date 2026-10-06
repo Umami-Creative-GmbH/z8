@@ -1,4 +1,5 @@
 import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
+import { withoutOverriddenRequirements } from "./allowance-override";
 import type { ItemConversion } from "./currency-conversion";
 import {
 	type MileageItemRequirement,
@@ -55,24 +56,19 @@ export function reportItemMissingRequirements(
 	},
 ): ReportItemRequirement[] {
 	if (item.type === "per_diem") {
-		return perDiemMissingRequirements(
-			item.perDiem?.itinerary ?? emptyPerDiemItinerary(null),
-			item.perDiem?.calculation ?? { status: "incomplete" },
-			context.trip ?? { startDate: null, endDate: null },
+		// An applying override (#610) resolves the calculation, never missing facts.
+		return withoutOverriddenRequirements(
+			perDiemMissingRequirements(
+				item.perDiem?.itinerary ?? emptyPerDiemItinerary(null),
+				item.perDiem?.calculation ?? { status: "incomplete" },
+				context.trip ?? { startDate: null, endDate: null },
+			),
+			item.perDiem?.override,
 		);
 	}
 	if (item.type === "mileage") {
 		const mileage = item.mileage;
-		return mileageItemMissingRequirements(
-			{
-				expenseDate: item.draft.expenseDate,
-				route: mileage?.route ?? null,
-				distanceKm: mileage?.distanceKm ?? null,
-				vehicle: mileage?.vehicle ?? null,
-				accountingReference: item.draft.accountingReference,
-			},
-			mileage?.calculation ?? { status: "incomplete" },
-		);
+		return withoutOverriddenRequirements(mileageItemRequirements(item, mileage), mileage?.override);
 	}
 	return receiptItemMissingRequirements(item.draft, {
 		receiptCount: item.receiptCount,
@@ -80,4 +76,20 @@ export function reportItemMissingRequirements(
 		receiptException: item.receiptException,
 		conversion: item.conversion,
 	});
+}
+
+function mileageItemRequirements(
+	item: RequirementItem,
+	mileage: MileageItemView | null | undefined,
+): MileageItemRequirement[] {
+	return mileageItemMissingRequirements(
+		{
+			expenseDate: item.draft.expenseDate,
+			route: mileage?.route ?? null,
+			distanceKm: mileage?.distanceKm ?? null,
+			vehicle: mileage?.vehicle ?? null,
+			accountingReference: item.draft.accountingReference,
+		},
+		mileage?.calculation ?? { status: "incomplete" },
+	);
 }

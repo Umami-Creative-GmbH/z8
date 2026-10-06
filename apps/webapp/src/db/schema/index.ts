@@ -93,6 +93,7 @@ export * from "./time-entry-append";
 export * from "./time-record";
 export * from "./time-tracking";
 export * from "./travel-expense";
+export * from "./travel-expense-allowance-override";
 export * from "./travel-expense-allowance-policy";
 export * from "./travel-expense-conversion";
 export * from "./travel-expense-per-diem";

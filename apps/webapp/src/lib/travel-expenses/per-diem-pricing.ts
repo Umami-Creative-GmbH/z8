@@ -7,6 +7,8 @@ import {
 	travelExpenseReportPerDiem,
 } from "@/db/schema";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { overriddenPerDiemView } from "./allowance-override";
+import { loadActiveAllowanceOverrides } from "./allowance-override-read";
 import {
 	calculatePerDiem,
 	type PerDiemCalculation,
@@ -190,6 +192,11 @@ export async function loadPerDiemViews(
 	const resolvePolicy = options.useStamp
 		? null
 		: perDiemPolicyResolver(await loadPerDiemPolicyVersions(database, report.organizationId));
+	// Administrator overrides (#610) apply while the itinerary is the one they were authorized for.
+	const overrides = await loadActiveAllowanceOverrides(database, {
+		organizationId: report.organizationId,
+		itemIds: ids,
+	});
 	for (const row of rows) {
 		const itinerary = itineraryOf(row);
 		const calculation = resolvePolicy
@@ -200,7 +207,15 @@ export async function loadPerDiemViews(
 					overlappingDays: await overlapsOf(database, report, itinerary),
 				})
 			: calculateStampedPerDiem(report, itinerary, row.policy);
-		views.set(row.itemId, perDiemItemView(itinerary, calculation));
+		views.set(
+			row.itemId,
+			overriddenPerDiemView(
+				perDiemItemView(itinerary, calculation),
+				report.tripDestinations,
+				overrides.get(row.itemId),
+				report.reimbursementCurrency,
+			),
+		);
 	}
 	return views;
 }

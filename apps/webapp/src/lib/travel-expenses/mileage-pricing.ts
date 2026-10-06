@@ -1,5 +1,7 @@
 import type { db as appDb } from "@/db";
 import type { travelExpenseReportItem } from "@/db/schema";
+import type { AllowanceOverride } from "./allowance-override";
+import { loadActiveAllowanceOverrides } from "./allowance-override-read";
 import { loadMileagePolicyVersions } from "./allowance-policy-store";
 import {
 	calculateMileageItem,
@@ -48,6 +50,18 @@ export function mileagePricer(versions: readonly MileagePolicyVersion[]): Mileag
 			context.reimbursementCurrency,
 		);
 	};
+}
+
+/** The active administrator overrides (#610) of the mileage items among `rows`, by item ID. */
+export function loadMileageOverrides(
+	database: Reader,
+	organizationId: string,
+	rows: readonly Pick<typeof travelExpenseReportItem.$inferSelect, "id" | "type">[],
+): Promise<Map<string, AllowanceOverride>> {
+	return loadActiveAllowanceOverrides(database, {
+		organizationId,
+		itemIds: rows.filter((row) => row.type === "mileage").map((row) => row.id),
+	});
 }
 
 /** A pricer with the organization's active policy versions, read only when needed. */
