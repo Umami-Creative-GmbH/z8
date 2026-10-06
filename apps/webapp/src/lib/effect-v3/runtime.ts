@@ -14,7 +14,6 @@ import { ManagerServiceLive } from "./services/manager.service";
 import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PermissionsServiceLive } from "./services/permissions.service";
 import { PlatformAdminServiceLive } from "./services/platform-admin.service";
-import { ReportingService } from "./services/reporting.service";
 import { SetupServiceLive } from "./services/setup.service";
 import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
@@ -76,7 +75,6 @@ export const AppLayer = Layer.mergeAll(
 	AuthLayer,
 	EmailServiceLive,
 	AnalyticsService.Live.pipe(Layer.provide(DatabaseServiceLive)),
-	ReportingService.Live.pipe(Layer.provide(DatabaseServiceLive)),
 	OnboardingLayer,
 	PermissionsLayer,
 	ManagerLayer,

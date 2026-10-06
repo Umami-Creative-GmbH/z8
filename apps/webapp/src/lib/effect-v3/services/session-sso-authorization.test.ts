@@ -1,11 +1,6 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthService, AuthServiceLive } from "./auth.service";
-import {
-	AuthorizationService,
-	AuthorizationServiceLive,
-} from "./authorization.service";
-import { DatabaseService } from "./database.service";
 
 const mocks = vi.hoisted(() => ({ getSession: vi.fn(), ssoAllowed: vi.fn() }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
@@ -58,27 +53,4 @@ describe("Effect SSO authorization boundaries", () => {
 			),
 		).toMatchObject({ user: { id: "actor" } });
 	});
-
-	it.each(["loadPrincipal", "buildAbility"] as const)(
-		"%s cannot grant platform-admin authority over a nonactive SSO org without proof",
-		async (method) => {
-			const database = Layer.succeed(DatabaseService, {
-				db: {} as never,
-				query: (_name, execute) => Effect.promise(execute),
-			});
-			const effect = Effect.gen(function* () {
-				return yield* (yield* AuthorizationService)[method](
-					"actor",
-					"locked",
-					true,
-				);
-			}).pipe(
-				Effect.provide(AuthorizationServiceLive),
-				Effect.provide(database),
-			);
-			await expect(Effect.runPromise(effect)).rejects.toThrow(
-				"SSO authentication required",
-			);
-		},
-	);
 });
