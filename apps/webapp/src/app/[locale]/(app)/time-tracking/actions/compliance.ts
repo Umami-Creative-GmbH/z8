@@ -5,16 +5,16 @@ import "server-only";
 // The clock-out follow-up effects live in `@/lib/time-tracking/clock-out-effects`.
 
 import { and, eq, gte, lte } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import { dateToDB } from "@/lib/datetime/drizzle-adapter";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	calculateSurchargeForWorkPeriod,
 	SurchargeService,
 	SurchargeServiceLive,
-} from "@/lib/effect-v3/services/surcharge.service";
+} from "@/lib/effect/services/surcharge.service";
 import type { PolicyClockOutSurchargeSnapshot } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
 import { logger } from "./shared";
@@ -65,15 +65,13 @@ export async function calculateAndPersistSurcharges(
 	},
 ): Promise<void> {
 	try {
-		const surchargeEffect = Effect.gen(function* (_) {
-			const surchargeService = yield* _(SurchargeService);
-			yield* _(
-				calculateSurchargeForWorkPeriod(surchargeService, {
-					workPeriodId,
-					organizationId,
-					immutableEvidence,
-				}),
-			);
+		const surchargeEffect = Effect.gen(function* () {
+			const surchargeService = yield* SurchargeService;
+			yield* calculateSurchargeForWorkPeriod(surchargeService, {
+				workPeriodId,
+				organizationId,
+				immutableEvidence,
+			});
 		}).pipe(
 			Effect.provide(SurchargeServiceLive),
 			Effect.provide(DatabaseServiceLive),

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq, gte, lte, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime, IANAZone } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -29,11 +29,11 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
-} from "@/lib/effect-v3/services/work-policy.service";
+} from "@/lib/effect/services/work-policy.service";
 import type { WorkCategoryReader } from "@/lib/query/work-category.queries";
 import { canonicalWorkRecordClient } from "@/lib/time-tracking/canonical-work-record";
 import { attributionIntent, type ClockChannel } from "@/lib/time-tracking/close-active-work";
@@ -824,11 +824,9 @@ export async function getBreakReminderStatus(): Promise<
 			calculateBreaksTakenToday(currentEmployee.id, timezone),
 		]);
 
-		const breakStatusEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
-			const policy = yield* _(
-				workPolicyService.getEffectivePolicy(currentEmployee.id),
-			);
+		const breakStatusEffect = Effect.gen(function* () {
+			const workPolicyService = yield* WorkPolicyService;
+			const policy = yield* workPolicyService.getEffectivePolicy(currentEmployee.id);
 
 			if (!policy?.regulation) {
 				return {

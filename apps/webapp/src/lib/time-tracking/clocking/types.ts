@@ -1,6 +1,6 @@
 import type { employee, timeEntry } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import type { ComplianceWarning } from "@/lib/effect-v3/services/work-policy.service";
+import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import type { AttributionIntent, ClockChannel, CloseActiveWorkResult } from "../close-active-work";
 import type { TimeEntryRequestMetadata } from "../time-entry-writer";
 import type { WorkLocationType } from "../work-location";

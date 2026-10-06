@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import type {
 	ComplianceAlert,
@@ -16,15 +16,15 @@ import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { requireAbility, requireAuth } from "@/lib/auth-helpers";
 import { asAppSubject } from "@/lib/authorization";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import {
 	ComplianceGuardrailService,
 	ComplianceGuardrailServiceLive,
 	type ExceptionWithDetails,
-} from "@/lib/effect-v3/services/compliance-guardrail.service";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
-import { WorkPolicyServiceLive } from "@/lib/effect-v3/services/work-policy.service";
+} from "@/lib/effect/services/compliance-guardrail.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { WorkPolicyServiceLive } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import {
 	onComplianceExceptionApproved,
@@ -57,7 +57,7 @@ const ComplianceLayer = ComplianceGuardrailServiceLive.pipe(
 );
 
 // Import Layer from effect
-import { Layer } from "effect-v3";
+import { Layer } from "effect";
 
 // =============================================================================
 // Helper: Get current employee
@@ -195,36 +195,32 @@ export async function checkRestPeriod(): Promise<ServerActionResult<RestPeriodCh
 	const tracer = trace.getTracer("compliance");
 
 	const effect = tracer.startActiveSpan("checkRestPeriod", (span) => {
-		return Effect.gen(function* (_) {
-			const { employee: emp, timezone } = yield* _(
-				Effect.tryPromise({
-					try: () => getCurrentEmployeeWithTimezone(),
-					catch: (e) => e as AnyAppError,
-				}),
-			);
+		return Effect.gen(function* () {
+			const { employee: emp, timezone } = yield* Effect.tryPromise({
+				try: () => getCurrentEmployeeWithTimezone(),
+				catch: (e) => e as AnyAppError,
+			});
 
 			span.setAttribute("employee.id", emp.id);
 
-			const complianceService = yield* _(ComplianceGuardrailService);
-			const result = yield* _(
-				complianceService.checkRestPeriod({
-					employeeId: emp.id,
-					timezone,
-				}),
-			);
+			const complianceService = yield* ComplianceGuardrailService;
+			const result = yield* complianceService.checkRestPeriod({
+				employeeId: emp.id,
+				timezone,
+			});
 
 			span.setStatus({ code: SpanStatusCode.OK });
 			return result;
 		}).pipe(
-			Effect.catchAll((error) =>
-				Effect.gen(function* (_) {
+			Effect.catch((error) =>
+				Effect.gen(function* () {
 					span.recordException(error as Error);
 					span.setStatus({
 						code: SpanStatusCode.ERROR,
 						message: String(error),
 					});
 					logger.error({ error }, "Failed to check rest period");
-					return yield* _(Effect.fail(error as AnyAppError));
+					return yield* Effect.fail(error as AnyAppError);
 				}),
 			),
 			Effect.onExit(() => Effect.sync(() => span.end())),
@@ -246,22 +242,18 @@ export async function checkRestPeriod(): Promise<ServerActionResult<RestPeriodCh
 export async function getProactiveAlerts(
 	currentSessionMinutes: number,
 ): Promise<ServerActionResult<ComplianceAlert[]>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp, timezone } = yield* _(
-			Effect.tryPromise({
-				try: () => getCurrentEmployeeWithTimezone(),
-				catch: (e) => e as AnyAppError,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp, timezone } = yield* Effect.tryPromise({
+			try: () => getCurrentEmployeeWithTimezone(),
+			catch: (e) => e as AnyAppError,
+		});
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(
-			complianceService.getProactiveAlerts({
-				employeeId: emp.id,
-				currentSessionMinutes,
-				timezone,
-			}),
-		);
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.getProactiveAlerts({
+			employeeId: emp.id,
+			currentSessionMinutes,
+			timezone,
+		});
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -277,22 +269,18 @@ export async function getProactiveAlerts(
 export async function getComplianceStatus(
 	currentSessionMinutes: number,
 ): Promise<ServerActionResult<ComplianceStatus>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp, timezone } = yield* _(
-			Effect.tryPromise({
-				try: () => getCurrentEmployeeWithTimezone(),
-				catch: (e) => e as AnyAppError,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp, timezone } = yield* Effect.tryPromise({
+			try: () => getCurrentEmployeeWithTimezone(),
+			catch: (e) => e as AnyAppError,
+		});
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(
-			complianceService.getComplianceStatus({
-				employeeId: emp.id,
-				currentSessionMinutes,
-				timezone,
-			}),
-		);
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.getComplianceStatus({
+			employeeId: emp.id,
+			currentSessionMinutes,
+			timezone,
+		});
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -306,21 +294,17 @@ export async function getComplianceStatus(
  * Get overtime statistics for the current employee
  */
 export async function getOvertimeStats(): Promise<ServerActionResult<OvertimeStats>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp, timezone } = yield* _(
-			Effect.tryPromise({
-				try: () => getCurrentEmployeeWithTimezone(),
-				catch: (e) => e as AnyAppError,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp, timezone } = yield* Effect.tryPromise({
+			try: () => getCurrentEmployeeWithTimezone(),
+			catch: (e) => e as AnyAppError,
+		});
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(
-			complianceService.getOvertimeStats({
-				employeeId: emp.id,
-				timezone,
-			}),
-		);
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.getOvertimeStats({
+			employeeId: emp.id,
+			timezone,
+		});
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -348,37 +332,34 @@ export async function requestComplianceException(input: {
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const { employee: emp, userId } = yield* _(
-					Effect.tryPromise({
-						try: () => getCurrentEmployeeWithTimezone(),
-						catch: (e) => e as AnyAppError,
-					}),
-				);
+			return Effect.gen(function* () {
+				const { employee: emp, userId } = yield* Effect.tryPromise({
+					try: () => getCurrentEmployeeWithTimezone(),
+					catch: (e) => e as AnyAppError,
+				});
 
 				span.setAttribute("employee.id", emp.id);
 				span.setAttribute("organization.id", emp.organizationId);
 
-				const dbService = yield* _(DatabaseService);
-				const complianceService = yield* _(ComplianceGuardrailService);
-				const exceptionId = yield* _(
-					complianceService.requestException({
-						employeeId: emp.id,
-						organizationId: emp.organizationId,
-						exceptionType: input.exceptionType,
-						reason: input.reason,
-						plannedDurationMinutes: input.plannedDurationMinutes,
-						createdBy: userId,
-					}),
-				);
-				const managerId = yield* _(
-					dbService.query("getComplianceExceptionPrimaryManager", async () => {
+				const dbService = yield* DatabaseService;
+				const complianceService = yield* ComplianceGuardrailService;
+				const exceptionId = yield* complianceService.requestException({
+					employeeId: emp.id,
+					organizationId: emp.organizationId,
+					exceptionType: input.exceptionType,
+					reason: input.reason,
+					plannedDurationMinutes: input.plannedDurationMinutes,
+					createdBy: userId,
+				});
+				const managerId = yield* dbService.query(
+					"getComplianceExceptionPrimaryManager",
+					async () => {
 						return await getPrimaryEligibleManagerIdForRequester({
 							db: dbService.db,
 							requesterEmployeeId: emp.id,
 							organizationId: emp.organizationId,
 						});
-					}),
+					},
 				);
 
 				// Trigger notification to manager (fire-and-forget)
@@ -404,15 +385,15 @@ export async function requestComplianceException(input: {
 				span.setStatus({ code: SpanStatusCode.OK });
 				return { exceptionId };
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, input }, "Failed to request compliance exception");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -431,21 +412,17 @@ export async function requestComplianceException(input: {
 export async function hasValidException(
 	exceptionType: string,
 ): Promise<ServerActionResult<{ hasException: boolean; exceptionId?: string }>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp } = yield* _(
-			Effect.tryPromise({
-				try: () => getCurrentEmployeeWithTimezone(),
-				catch: (e) => e as AnyAppError,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp } = yield* Effect.tryPromise({
+			try: () => getCurrentEmployeeWithTimezone(),
+			catch: (e) => e as AnyAppError,
+		});
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(
-			complianceService.hasValidException({
-				employeeId: emp.id,
-				exceptionType,
-			}),
-		);
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.hasValidException({
+			employeeId: emp.id,
+			exceptionType,
+		});
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -457,21 +434,17 @@ export async function hasValidException(
 export async function getMyExceptions(
 	includeExpired = false,
 ): Promise<ServerActionResult<ExceptionWithDetails[]>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp } = yield* _(
-			Effect.tryPromise({
-				try: () => getCurrentEmployeeWithTimezone(),
-				catch: (e) => e as AnyAppError,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp } = yield* Effect.tryPromise({
+			try: () => getCurrentEmployeeWithTimezone(),
+			catch: (e) => e as AnyAppError,
+		});
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(
-			complianceService.getMyExceptions({
-				employeeId: emp.id,
-				includeExpired,
-			}),
-		);
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.getMyExceptions({
+			employeeId: emp.id,
+			includeExpired,
+		});
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -485,44 +458,36 @@ export async function getMyExceptions(
  * Get pending exception requests for the current manager's team
  */
 export async function getPendingExceptions(): Promise<ServerActionResult<ExceptionWithDetails[]>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp } = yield* _(
-			Effect.tryPromise({
-				try: async () => await getCurrentEmployeeWithTimezone(),
-				catch: (error) => error as AnyAppError,
-			}),
-		);
-		const ability = yield* _(
-			Effect.tryPromise({
-				try: async () => await requireAbility(),
-				catch: () =>
-					new AuthorizationError({
-						message: "Unable to verify compliance exception permission",
-						action: "read",
-						resource: "ComplianceException",
-					}),
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp } = yield* Effect.tryPromise({
+			try: async () => await getCurrentEmployeeWithTimezone(),
+			catch: (error) => error as AnyAppError,
+		});
+		const ability = yield* Effect.tryPromise({
+			try: async () => await requireAbility(),
+			catch: () =>
+				new AuthorizationError({
+					message: "Unable to verify compliance exception permission",
+					action: "read",
+					resource: "ComplianceException",
+				}),
+		});
 		const canManageAll = ability.can("manage", "Compliance");
 		if (!canManageAll && emp.role !== "manager") {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Not authorized to view pending compliance exceptions",
-						action: "read",
-						resource: "ComplianceException",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Not authorized to view pending compliance exceptions",
+					action: "read",
+					resource: "ComplianceException",
+				}),
 			);
 		}
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(
-			complianceService.getPendingExceptions({
-				organizationId: emp.organizationId,
-				managerId: canManageAll ? undefined : emp.id,
-			}),
-		);
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.getPendingExceptions({
+			organizationId: emp.organizationId,
+			managerId: canManageAll ? undefined : emp.id,
+		});
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -544,28 +509,24 @@ export async function approveComplianceException(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const { approver, exception, organizationId } = yield* _(
-					Effect.tryPromise({
-						try: async () =>
-							await authorizeComplianceExceptionDecision({
-								exceptionId,
-								action: "approve",
-							}),
-						catch: (error) => error as AnyAppError,
-					}),
-				);
+			return Effect.gen(function* () {
+				const { approver, exception, organizationId } = yield* Effect.tryPromise({
+					try: async () =>
+						await authorizeComplianceExceptionDecision({
+							exceptionId,
+							action: "approve",
+						}),
+					catch: (error) => error as AnyAppError,
+				});
 
 				span.setAttribute("approver.id", approver.id);
 
-				const complianceService = yield* _(ComplianceGuardrailService);
-				yield* _(
-					complianceService.approveException({
-						exceptionId,
-						approverId: approver.id,
-						organizationId,
-					}),
-				);
+				const complianceService = yield* ComplianceGuardrailService;
+				yield* complianceService.approveException({
+					exceptionId,
+					approverId: approver.id,
+					organizationId,
+				});
 
 				// Trigger notification (fire-and-forget)
 				void onComplianceExceptionApproved({
@@ -588,15 +549,15 @@ export async function approveComplianceException(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, exceptionId }, "Failed to approve compliance exception");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -626,29 +587,25 @@ export async function rejectComplianceException(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const { approver, exception, organizationId } = yield* _(
-					Effect.tryPromise({
-						try: async () =>
-							await authorizeComplianceExceptionDecision({
-								exceptionId,
-								action: "reject",
-							}),
-						catch: (error) => error as AnyAppError,
-					}),
-				);
+			return Effect.gen(function* () {
+				const { approver, exception, organizationId } = yield* Effect.tryPromise({
+					try: async () =>
+						await authorizeComplianceExceptionDecision({
+							exceptionId,
+							action: "reject",
+						}),
+					catch: (error) => error as AnyAppError,
+				});
 
 				span.setAttribute("approver.id", approver.id);
 
-				const complianceService = yield* _(ComplianceGuardrailService);
-				yield* _(
-					complianceService.rejectException({
-						exceptionId,
-						approverId: approver.id,
-						organizationId,
-						reason,
-					}),
-				);
+				const complianceService = yield* ComplianceGuardrailService;
+				yield* complianceService.rejectException({
+					exceptionId,
+					approverId: approver.id,
+					organizationId,
+					reason,
+				});
 
 				// Trigger notification (fire-and-forget)
 				void onComplianceExceptionRejected({
@@ -672,15 +629,15 @@ export async function rejectComplianceException(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error, exceptionId, reason }, "Failed to reject compliance exception");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -701,39 +658,33 @@ export async function rejectComplianceException(
  * Expire old pre-approval exceptions (for cron jobs or admin use)
  */
 export async function expireOldExceptions(): Promise<ServerActionResult<{ expiredCount: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const { employee: emp } = yield* _(
-			Effect.tryPromise({
-				try: async () => await getCurrentEmployeeWithTimezone(),
-				catch: (error) => error as AnyAppError,
-			}),
-		);
+	const effect = Effect.gen(function* () {
+		const { employee: emp } = yield* Effect.tryPromise({
+			try: async () => await getCurrentEmployeeWithTimezone(),
+			catch: (error) => error as AnyAppError,
+		});
 		const organizationId = emp.organizationId;
-		const ability = yield* _(
-			Effect.tryPromise({
-				try: async () => await requireAbility(),
-				catch: () =>
-					new AuthorizationError({
-						message: "Unable to verify compliance administration permission",
-						action: "manage",
-						resource: "Compliance",
-					}),
-			}),
-		);
+		const ability = yield* Effect.tryPromise({
+			try: async () => await requireAbility(),
+			catch: () =>
+				new AuthorizationError({
+					message: "Unable to verify compliance administration permission",
+					action: "manage",
+					resource: "Compliance",
+				}),
+		});
 		if (!ability.can("manage", "Compliance")) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Not authorized to expire compliance exceptions",
-						action: "manage",
-						resource: "Compliance",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Not authorized to expire compliance exceptions",
+					action: "manage",
+					resource: "Compliance",
+				}),
 			);
 		}
 
-		const complianceService = yield* _(ComplianceGuardrailService);
-		return yield* _(complianceService.expireOldExceptions(organizationId));
+		const complianceService = yield* ComplianceGuardrailService;
+		return yield* complianceService.expireOldExceptions(organizationId);
 	}).pipe(Effect.provide(ComplianceLayer), Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);

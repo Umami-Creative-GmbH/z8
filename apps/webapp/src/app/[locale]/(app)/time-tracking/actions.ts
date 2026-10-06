@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import * as z from "zod";
 import { db } from "@/db";
@@ -32,23 +32,23 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
+} from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
-} from "@/lib/effect-v3/services/change-policy.service";
+} from "@/lib/effect/services/change-policy.service";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect-v3/services/database.service";
-import type { ComplianceWarning } from "@/lib/effect-v3/services/work-policy.service";
+} from "@/lib/effect/services/database.service";
+import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
-} from "@/lib/effect-v3/services/work-policy.service";
+} from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { getTodayRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
@@ -482,10 +482,10 @@ export async function getBreakReminderStatus(): Promise<
 		const breaksTaken = await calculateBreaksTakenToday(emp.id, timezone);
 
 		// Use Effect to get regulation and check break requirements
-		const breakStatusEffect = Effect.gen(function* (_) {
-			const workPolicyService = yield* _(WorkPolicyService);
+		const breakStatusEffect = Effect.gen(function* () {
+			const workPolicyService = yield* WorkPolicyService;
 
-			const policy = yield* _(workPolicyService.getEffectivePolicy(emp.id));
+			const policy = yield* workPolicyService.getEffectivePolicy(emp.id);
 
 			if (!policy?.regulation) {
 				return {
@@ -1036,20 +1036,18 @@ export async function getWorkPeriodEditCapability(
 
 	try {
 		const result = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const policyService = yield* _(ChangePolicyService);
+			Effect.gen(function* () {
+				const policyService = yield* ChangePolicyService;
 
 				// Get the resolved policy for context
-				const policy = yield* _(policyService.resolvePolicy(emp.id));
+				const policy = yield* policyService.resolvePolicy(emp.id);
 
 				// Get edit capability
-				const capability = yield* _(
-					policyService.getEditCapability({
-						employeeId: emp.id,
-						workPeriodEndTime: period.endTime!,
-						timezone,
-					}),
-				);
+				const capability = yield* policyService.getEditCapability({
+					employeeId: emp.id,
+					workPeriodEndTime: period.endTime!,
+					timezone,
+				});
 
 				return {
 					capability,
@@ -1201,89 +1199,77 @@ export async function getPresenceStatus(
 		message,
 	});
 
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		// Require an active organization
 		if (!session.session.activeOrganizationId) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "No active organization",
-						userId: session.user.id,
-						resource: "employee",
-						action: "getPresenceStatus",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "No active organization",
+					userId: session.user.id,
+					resource: "employee",
+					action: "getPresenceStatus",
+				}),
 			);
 		}
 
 		// Verify the employee belongs to the caller's active organization
-		const targetEmployee = yield* _(
-			dbService.query("getEmployeeForAuth", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, validatedEmployeeId),
-						eq(employee.organizationId, session.session.activeOrganizationId!),
-					),
-					columns: { id: true },
-				});
-			}),
-		);
+		const targetEmployee = yield* dbService.query("getEmployeeForAuth", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, validatedEmployeeId),
+					eq(employee.organizationId, session.session.activeOrganizationId!),
+				),
+				columns: { id: true },
+			});
+		});
 
 		if (!targetEmployee) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Employee not found in your organization",
-						userId: session.user.id,
-						resource: "employee",
-						action: "getPresenceStatus",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Employee not found in your organization",
+					userId: session.user.id,
+					resource: "employee",
+					action: "getPresenceStatus",
+				}),
 			);
 		}
 
 		// Get employee's effective work policy
-		const workPolicyService = yield* _(WorkPolicyService);
-		const effectivePolicy = yield* _(
-			workPolicyService.getEffectivePolicy(validatedEmployeeId),
-		);
+		const workPolicyService = yield* WorkPolicyService;
+		const effectivePolicy = yield* workPolicyService.getEffectivePolicy(validatedEmployeeId);
 
 		if (!effectivePolicy) {
 			return disabledPresenceStatus("No effective work policy found.");
 		}
 
 		// Check if presence is enabled on the policy
-		const policyRow = yield* _(
-			dbService.query("getWorkPolicy", async () => {
-				return await dbService.db.query.workPolicy.findFirst({
-					where: and(
-						eq(workPolicy.id, effectivePolicy.policyId),
-						eq(
-							workPolicy.organizationId,
-							session.session.activeOrganizationId!,
-						),
+		const policyRow = yield* dbService.query("getWorkPolicy", async () => {
+			return await dbService.db.query.workPolicy.findFirst({
+				where: and(
+					eq(workPolicy.id, effectivePolicy.policyId),
+					eq(
+						workPolicy.organizationId,
+						session.session.activeOrganizationId!,
 					),
-					columns: { presenceEnabled: true },
-				});
-			}),
-		);
+				),
+				columns: { presenceEnabled: true },
+			});
+		});
 
 		if (!policyRow?.presenceEnabled) {
 			return disabledPresenceStatus("Presence policy is not enabled.");
 		}
 
 		// Load presence config
-		const presenceConfig = yield* _(
-			dbService.query("getPresenceConfig", async () => {
-				return await dbService.db.query.workPolicyPresence.findFirst({
-					where: eq(workPolicyPresence.policyId, effectivePolicy.policyId),
-				});
-			}),
-		);
+		const presenceConfig = yield* dbService.query("getPresenceConfig", async () => {
+			return await dbService.db.query.workPolicyPresence.findFirst({
+				where: eq(workPolicyPresence.policyId, effectivePolicy.policyId),
+			});
+		});
 
 		if (!presenceConfig) {
 			return disabledPresenceStatus(
@@ -1292,17 +1278,13 @@ export async function getPresenceStatus(
 		}
 
 		const now = DateTime.now();
-		const weekStartDay = yield* _(
-			Effect.promise(() => getUserWeekStartDay(session.user.id)),
-		);
-		const settingsData = yield* _(
-			dbService.query("getUserTimezone", async () => {
-				return await dbService.db.query.userSettings.findFirst({
-					where: eq(userSettings.userId, session.user.id),
-					columns: { timezone: true },
-				});
-			}),
-		);
+		const weekStartDay = yield* Effect.promise(() => getUserWeekStartDay(session.user.id));
+		const settingsData = yield* dbService.query("getUserTimezone", async () => {
+			return await dbService.db.query.userSettings.findFirst({
+				where: eq(userSettings.userId, session.user.id),
+				columns: { timezone: true },
+			});
+		});
 		const timezone = settingsData?.timezone || "UTC";
 		const { start: periodStart, end: periodEnd } = getPresencePeriodBounds({
 			period: presenceConfig.evaluationPeriod,
@@ -1357,57 +1339,53 @@ export async function getPresenceStatus(
 			};
 		}
 
-		const periods = yield* _(
-			dbService.query("getPresenceWorkPeriods", async () => {
-				return await dbService.db.query.workPeriod.findMany({
-					where: and(
-						eq(workPeriod.employeeId, validatedEmployeeId),
-						eq(
-							workPeriod.organizationId,
-							session.session.activeOrganizationId!,
-						),
-						isNull(workPeriod.deletedAt),
-						gte(workPeriod.startTime, periodStart.toJSDate()),
-						lte(workPeriod.startTime, periodEnd.toJSDate()),
+		const periods = yield* dbService.query("getPresenceWorkPeriods", async () => {
+			return await dbService.db.query.workPeriod.findMany({
+				where: and(
+					eq(workPeriod.employeeId, validatedEmployeeId),
+					eq(
+						workPeriod.organizationId,
+						session.session.activeOrganizationId!,
 					),
-					columns: { startTime: true, workLocationType: true },
-				});
-			}),
-		);
+					isNull(workPeriod.deletedAt),
+					gte(workPeriod.startTime, periodStart.toJSDate()),
+					lte(workPeriod.startTime, periodEnd.toJSDate()),
+				),
+				columns: { startTime: true, workLocationType: true },
+			});
+		});
 		const periodStartDate = periodStart.toISODate() ?? "";
 		const periodEndDate = periodEnd.toISODate() ?? "";
 
-		const approvedHomeOfficeEntries = yield* _(
-			dbService.query("getApprovedHomeOfficeEntries", async () => {
-				return await dbService.db
-					.select({
-						startDate: absenceEntry.startDate,
-						endDate: absenceEntry.endDate,
-					})
-					.from(absenceEntry)
-					.innerJoin(
-						absenceCategory,
-						eq(absenceEntry.categoryId, absenceCategory.id),
-					)
-					.where(
-						and(
-							eq(absenceEntry.employeeId, validatedEmployeeId),
-							eq(
-								absenceEntry.organizationId,
-								session.session.activeOrganizationId!,
-							),
-							eq(absenceEntry.status, "approved"),
-							eq(
-								absenceCategory.organizationId,
-								session.session.activeOrganizationId!,
-							),
-							eq(absenceCategory.type, "home_office"),
-							lte(absenceEntry.startDate, periodEndDate),
-							gte(absenceEntry.endDate, periodStartDate),
+		const approvedHomeOfficeEntries = yield* dbService.query("getApprovedHomeOfficeEntries", async () => {
+			return await dbService.db
+				.select({
+					startDate: absenceEntry.startDate,
+					endDate: absenceEntry.endDate,
+				})
+				.from(absenceEntry)
+				.innerJoin(
+					absenceCategory,
+					eq(absenceEntry.categoryId, absenceCategory.id),
+				)
+				.where(
+					and(
+						eq(absenceEntry.employeeId, validatedEmployeeId),
+						eq(
+							absenceEntry.organizationId,
+							session.session.activeOrganizationId!,
 						),
-					);
-			}),
-		);
+						eq(absenceEntry.status, "approved"),
+						eq(
+							absenceCategory.organizationId,
+							session.session.activeOrganizationId!,
+						),
+						eq(absenceCategory.type, "home_office"),
+						lte(absenceEntry.startDate, periodEndDate),
+						gte(absenceEntry.endDate, periodStartDate),
+					),
+				);
+		});
 
 		const approvedHomeOfficeDates = expandApprovedHomeOfficeDates({
 			entries: approvedHomeOfficeEntries,

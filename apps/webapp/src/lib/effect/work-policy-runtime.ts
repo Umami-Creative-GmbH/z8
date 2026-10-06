@@ -1,4 +1,4 @@
-import { Effect, Layer, ManagedRuntime } from "effect-v3";
+import { Effect, Layer, ManagedRuntime } from "effect";
 import { DatabaseServiceLive } from "./services/database.service";
 import {
 	WorkPolicyService,

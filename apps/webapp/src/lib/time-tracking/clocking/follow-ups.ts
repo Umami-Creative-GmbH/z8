@@ -1,5 +1,5 @@
-import type { BreakEnforcementResult } from "@/lib/effect-v3/services/break-enforcement.service";
-import type { ComplianceWarning } from "@/lib/effect-v3/services/work-policy.service";
+import type { BreakEnforcementResult } from "@/lib/effect/services/break-enforcement.service";
+import type { ComplianceWarning } from "@/lib/effect/services/work-policy.service";
 import { createLogger } from "@/lib/logger";
 import type { ClosedWork } from "../clock-out-effects";
 import type { CompletingActor } from "../close-active-work";

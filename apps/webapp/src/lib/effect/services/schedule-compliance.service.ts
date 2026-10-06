@@ -1,8 +1,6 @@
-// Frozen Effect v3 copy (#625). The v4 version is lib/effect/services/schedule-compliance.service.ts.
-// Make any change in both copies until #631 moves scheduling/actions/shift-actions.ts, its last v3 user.
 import { createHash } from "node:crypto";
 import { and, eq, gte, inArray, isNotNull, lte } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import { schedulePublishComplianceAck, shift, workPeriod } from "@/db/schema";
 import { evaluateScheduleCompliance } from "@/lib/scheduling/compliance/schedule-compliance-evaluator";
@@ -146,7 +144,7 @@ function toSortedJson(value: Record<string, number>): string {
 	return JSON.stringify(stable);
 }
 
-export class ScheduleComplianceService extends Context.Tag("ScheduleComplianceService")<
+export class ScheduleComplianceService extends Context.Service<
 	ScheduleComplianceService,
 	{
 		readonly evaluateScheduleWindow: (
@@ -156,19 +154,20 @@ export class ScheduleComplianceService extends Context.Tag("ScheduleComplianceSe
 			input: RecordPublishAcknowledgmentInput,
 		) => Effect.Effect<void, DatabaseError>;
 	}
->() {}
+>()("ScheduleComplianceService") {}
 
 export const ScheduleComplianceServiceLive = Layer.effect(
 	ScheduleComplianceService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const workPolicyService = yield* _(WorkPolicyService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const workPolicyService = yield* WorkPolicyService;
 
 		return ScheduleComplianceService.of({
 			evaluateScheduleWindow: (input) =>
-				Effect.gen(function* (_) {
-					const assignedShifts = yield* _(
-						dbService.query("getAssignedShiftsForScheduleCompliance", async () => {
+				Effect.gen(function* () {
+					const assignedShifts = yield* dbService.query(
+						"getAssignedShiftsForScheduleCompliance",
+						async () => {
 							return await dbService.db.query.shift.findMany({
 								where: and(
 									eq(shift.organizationId, input.organizationId),
@@ -183,7 +182,7 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 									endTime: true,
 								},
 							});
-						}),
+						},
 					);
 
 					const employeeIds = Array.from(
@@ -207,36 +206,32 @@ export const ScheduleComplianceServiceLive = Layer.effect(
 					const periods =
 						employeeIds.length === 0
 							? []
-							: yield* _(
-									dbService.query("getWorkPeriodsForScheduleCompliance", async () => {
-										return await dbService.db.query.workPeriod.findMany({
-											where: and(
-												eq(workPeriod.organizationId, input.organizationId),
-												inArray(workPeriod.employeeId, employeeIds),
-												gte(workPeriod.startTime, lookbackStart),
-												lte(workPeriod.startTime, rangeEnd),
-												isNotNull(workPeriod.endTime),
-											),
-											columns: {
-												employeeId: true,
-												startTime: true,
-												endTime: true,
-												durationMinutes: true,
-											},
-										});
-									}),
-								);
+							: yield* dbService.query("getWorkPeriodsForScheduleCompliance", async () => {
+									return await dbService.db.query.workPeriod.findMany({
+										where: and(
+											eq(workPeriod.organizationId, input.organizationId),
+											inArray(workPeriod.employeeId, employeeIds),
+											gte(workPeriod.startTime, lookbackStart),
+											lte(workPeriod.startTime, rangeEnd),
+											isNotNull(workPeriod.endTime),
+										),
+										columns: {
+											employeeId: true,
+											startTime: true,
+											endTime: true,
+											durationMinutes: true,
+										},
+									});
+								});
 
 					const effectiveRegulation =
 						employeeIds.length === 0
 							? {}
 							: normalizeRegulation(
-									(yield* _(
-										Effect.forEach(employeeIds, (employeeId) =>
-											workPolicyService
-												.getEffectivePolicy(employeeId)
-												.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null))),
-										),
+									(yield* Effect.forEach(employeeIds, (employeeId) =>
+										workPolicyService
+											.getEffectivePolicy(employeeId)
+											.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null))),
 									)).find((policy) => policy?.regulation)?.regulation ?? null,
 								);
 

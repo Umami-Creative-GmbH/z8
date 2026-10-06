@@ -5,7 +5,7 @@
  * and batch processing for cron jobs.
  */
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import type { WorkPeriodAutoAdjustmentReason } from "@/db/schema";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
@@ -136,6 +136,14 @@ vi.mock("@/lib/datetime/drizzle-adapter", () => ({
 		return DateTime.fromJSDate(date);
 	}),
 	dateToDB: vi.fn((dt: { toJSDate: () => Date }) => dt?.toJSDate?.() || null),
+}));
+
+// The adjustment owner runs the legacy plan for a legacy organization.
+vi.mock("@/lib/time-tracking/automatic-break-adjustment", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/time-tracking/automatic-break-adjustment")>()),
+	runAutomaticBreakAdjustment: vi.fn((input: { planLegacy: () => Promise<unknown> }) =>
+		input.planLegacy(),
+	),
 }));
 
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
@@ -648,6 +656,51 @@ describe("Break Enforcement Service", () => {
 			expect(adjustmentReason.regulationId).toBeDefined();
 			expect(adjustmentReason.breakInsertedMinutes).toBe(45);
 			expect(adjustmentReason.ruleApplied.workingMinutesThreshold).toBe(540);
+		});
+	});
+});
+
+describe("legacy break enforcement failures", () => {
+	// Effect v4 rejects with the typed failure itself, so the owner's catch now keeps a
+	// NotFoundError the legacy plan failed with; Effect v3 wrapped it as a DatabaseError.
+	test("fails with the legacy plan's NotFoundError when the work period is gone", async () => {
+		const { Layer } = await import("effect");
+		const { NotFoundError } = await import("@/lib/effect/errors");
+		const { DatabaseServiceLive } = await import("../database.service");
+		const { WorkPolicyService } = await import("../work-policy.service");
+		const { BreakEnforcementService, BreakEnforcementServiceLive } = await import(
+			"../break-enforcement.service"
+		);
+		mockQueryResults = {};
+
+		const failure = await Effect.runPromise(
+			Effect.gen(function* () {
+				const service = yield* BreakEnforcementService;
+				return yield* service.enforceBreaksAfterClockOut({
+					employeeId: "emp-123",
+					organizationId: "org-123",
+					workPeriodId: "period-missing",
+					sessionDurationMinutes: 420,
+					timezone: "Europe/Berlin",
+					createdBy: "user-123",
+				});
+			}).pipe(
+				Effect.flip,
+				Effect.provide(
+					BreakEnforcementServiceLive.pipe(
+						Layer.provide(
+							Layer.succeed(WorkPolicyService, mockWorkPolicyService as never),
+						),
+						Layer.provide(DatabaseServiceLive),
+					),
+				),
+			),
+		);
+
+		expect(failure).toBeInstanceOf(NotFoundError);
+		expect(failure).toMatchObject({
+			message: "Work period not found",
+			entityId: "period-missing",
 		});
 	});
 });

@@ -2,6 +2,7 @@ import { type Effect, Exit, Layer, ManagedRuntime } from "effect";
 import { createLogger } from "../logger";
 import { AnalyticsService } from "./services/analytics.service";
 import { AuthServiceLive } from "./services/auth.service";
+import { ChangePolicyServiceLive } from "./services/change-policy.service";
 import { CustomRoleServiceLive } from "./services/custom-role.service";
 import { DatabaseServiceLive } from "./services/database.service";
 import { EmailServiceLive } from "./services/email.service";
@@ -9,6 +10,7 @@ import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PlatformAdminServiceLive } from "./services/platform-admin.service";
 import { SetupServiceLive } from "./services/setup.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
+import { WorkPolicyServiceLive } from "./services/work-policy.service";
 
 // Services move here from lib/effect-v3/runtime.ts as their slices port them to v4 (#625).
 export const AppLayer = Layer.mergeAll(
@@ -21,6 +23,8 @@ export const AppLayer = Layer.mergeAll(
 	SetupServiceLive,
 	CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
 	OnboardingServiceLive.pipe(Layer.provide(AuthServiceLive), Layer.provide(DatabaseServiceLive)),
+	ChangePolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	WorkPolicyServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
 );
 
 // Runtime for executing effects
