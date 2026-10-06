@@ -1,7 +1,9 @@
-import type {
-	TravelExpenseReportSubmittedFacts,
-	TravelExpenseReportSubmittedItem,
+import {
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
+	type TravelExpenseReportSubmittedFacts,
+	type TravelExpenseReportSubmittedItem,
 } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import type { ItemConversion } from "./currency-conversion";
 import {
 	bundleReceiptPath,
 	type TravelExpenseExportManifest,
@@ -18,6 +20,11 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  * neutralized so a spreadsheet cannot run it as a formula. Money cells are
  * validated signed decimals and written unquoted, so a negative amount (#615
  * adjustments) stays a number instead of being escaped as a formula.
+ *
+ * Revisions of every frozen facts version 1..current are exported; facts a
+ * version did not have (receipt exception v2, conversion v3, project v4,
+ * mileage v5) leave their columns empty. Items are priced from their frozen
+ * pricing inputs and must add up to the frozen totals.
  *
  * Files: `expenses.csv` (one row per expense item), `reports.csv` (one row per
  * revision with its frozen totals), `receipts.csv` (one row per bundled
@@ -66,6 +73,21 @@ export function csvDecimal(value: string): string {
 	return value;
 }
 
+/**
+ * An unquoted non-negative plain decimal that is not a stored amount (a
+ * distance, a rate per kilometre, an exchange rate, an exact product); empty
+ * when the fact does not apply.
+ */
+const PLAIN_DECIMAL = /^\d{1,12}(?:\.\d{1,10})?$/;
+
+function csvPlainDecimal(value: string | null | undefined): string {
+	if (value == null) return "";
+	if (!PLAIN_DECIMAL.test(value)) {
+		throw new TravelExpenseExportContentError("invalid_amount", `Not a plain decimal: ${value}`);
+	}
+	return value;
+}
+
 /** An unquoted non-negative integer cell (counts, positions, sizes, cycles). */
 function csvInteger(value: number): string {
 	if (!Number.isSafeInteger(value) || value < 0) {
@@ -79,42 +101,70 @@ function csvFile(header: readonly string[], rows: readonly (readonly string[])[]
 	return `${BOM}${lines.join("\r\n")}\r\n`;
 }
 
-function reimbursementInput(item: TravelExpenseReportSubmittedItem): ReimbursementItemInput {
-	// #606/#607 add their frozen pricing facts (mileage, conversion) here, as
-	// they do in `item-amount.ts`, so exports price items exactly as approved.
-	return { amount: item.original.amount, currency: item.original.currency, paidBy: item.paidBy };
-}
-
-function recordOf(value: unknown): Record<string, unknown> | null {
-	return typeof value === "object" && value !== null && !Array.isArray(value)
-		? (value as Record<string, unknown>)
-		: null;
-}
-
-function stringOf(value: unknown): string {
-	return typeof value === "string" ? value : "";
-}
-
 /**
- * Optional item facts of later schema versions. A receipt exception (#604,
- * v2) was accepted by the approving reviewer. Project attribution (#605) is
- * read defensively until its facts type is merged; replace it then.
+ * The frozen conversion (#607, v3+) as the item conversion it applied, so the
+ * export prices the item through `item-amount.ts` exactly like the frozen
+ * totals: a card charge counts at its evidenced charge, a manual rate is
+ * recomputed from its frozen rate and must give the frozen result.
  */
-function optionalItemFacts(item: TravelExpenseReportSubmittedItem) {
-	const project = recordOf((item as unknown as Record<string, unknown>).project);
+function frozenItemConversion(
+	item: TravelExpenseReportSubmittedItem,
+	reimbursementCurrency: string,
+): ItemConversion | null {
+	const { conversion } = item;
+	if (!conversion || !item.original.currency) return null;
+	const pair = { sourceCurrency: item.original.currency, targetCurrency: reimbursementCurrency };
+	if (conversion.basis === "card_charge") {
+		return {
+			...pair,
+			basis: "card_charge",
+			chargedAmount: conversion.reimbursement.amount,
+			evidenceReceiptId: conversion.evidenceReceiptId,
+		};
+	}
+	const { rounding: _rounding, reimbursement: _reimbursement, ...manual } = conversion;
+	return { ...pair, ...manual };
+}
+
+function reimbursementInput(
+	item: TravelExpenseReportSubmittedItem,
+	reimbursementCurrency: string,
+): ReimbursementItemInput {
 	return {
-		projectId: stringOf(project?.projectId),
-		projectName: stringOf(project?.name),
-		exceptionBasis: item.receiptException
-			? `missing_receipt_exception: ${item.receiptException.reason}`
-			: "",
+		amount: item.original.amount,
+		currency: item.original.currency,
+		paidBy: item.paidBy,
+		conversion: frozenItemConversion(item, reimbursementCurrency),
+		// A mileage item (#606, v5+) counts its policy-priced amount, never an entered one.
+		...(item.mileage
+			? {
+					type: "mileage",
+					mileage: { amount: item.mileage.amount, currency: item.mileage.currency },
+				}
+			: {}),
 	};
 }
 
+/** What the item's frozen pricing facts say it counts with, if it has any. */
+function frozenPricedAmount(item: TravelExpenseReportSubmittedItem): string | null {
+	if (item.mileage) return item.mileage.amount;
+	if (item.conversion) return item.conversion.reimbursement.amount;
+	return null;
+}
+
+/**
+ * How an item's reimbursement amount was derived: the frozen receipt amount,
+ * a frozen conversion (#607) or a frozen mileage calculation (#606).
+ */
 function itemCalculationBasis(item: TravelExpenseReportSubmittedItem): string {
-	// Receipts count at their frozen original amount; #606 (mileage) and #607
-	// (conversion) name their own basis here.
+	if (item.mileage) return "mileage_rate";
+	if (item.conversion) return "converted_amount";
 	return item.type === "receipt" ? "receipt_amount" : item.type;
+}
+
+function exceptionBasis(item: TravelExpenseReportSubmittedItem): string {
+	// A receipt exception (#604, v2+) was accepted by the approving reviewer.
+	return item.receiptException ? `missing_receipt_exception: ${item.receiptException.reason}` : "";
 }
 
 interface PricedItem {
@@ -125,12 +175,27 @@ interface PricedItem {
 
 /** Prices every item like the frozen totals did and proves they agree. */
 function priceRevision(facts: TravelExpenseReportSubmittedFacts): PricedItem[] {
+	const currency = facts.totals.currency;
 	const priced = facts.items.map((item): PricedItem => {
-		const amount = itemReimbursementAmount(reimbursementInput(item), facts.totals.currency);
+		const amount = itemReimbursementAmount(reimbursementInput(item, currency), currency);
 		if (!amount.counted) {
 			throw new TravelExpenseExportContentError(
 				"totals_mismatch",
 				`Item ${item.itemId} cannot be priced (${amount.reason})`,
+			);
+		}
+		// The frozen result (conversion or mileage) must be exactly the price
+		// derived from its frozen inputs; a mileage item's totals counted its
+		// `original`, which freezes the same calculated amount.
+		const frozen = frozenPricedAmount(item);
+		if (
+			(frozen !== null && frozen !== amount.amount) ||
+			(item.mileage && item.original.amount !== amount.amount) ||
+			(item.conversion && item.conversion.reimbursement.currency !== currency)
+		) {
+			throw new TravelExpenseExportContentError(
+				"totals_mismatch",
+				`Item ${item.itemId} does not match its frozen pricing facts`,
 			);
 		}
 		const zero = BigInt(0);
@@ -174,12 +239,140 @@ function receiptPath(
 	});
 }
 
+/** Project attribution as approved (#605, v4+); `project_id`/`project_name` precede it. */
+const PROJECT_COLUMNS = [
+	"project_customer_id",
+	"project_customer_name",
+	"project_inherited_from_trip",
+	"project_attribution_basis",
+	"project_exception_id",
+] as const;
+
+/** The frozen conversion of a foreign-currency expense (#607, v3+). */
+const CONVERSION_COLUMNS = [
+	"conversion_basis",
+	"conversion_result_amount",
+	"conversion_result_currency",
+	"conversion_rate_base",
+	"conversion_rate_quote",
+	"conversion_rate",
+	"conversion_rate_date",
+	"conversion_rounding",
+	"conversion_evidence_receipt_id",
+	"conversion_evidence_file",
+	"conversion_authorized_by_employee_id",
+	"conversion_authorized_by_name",
+	"conversion_authorized_at",
+	"conversion_reason",
+] as const;
+
+/** The frozen calculation of a mileage expense (#606, v5+). */
+const MILEAGE_COLUMNS = [
+	"mileage_route",
+	"mileage_distance_km",
+	"mileage_vehicle",
+	"mileage_rate_per_km",
+	"mileage_rate_currency",
+	"mileage_exact_amount",
+	"mileage_rounding",
+	"mileage_policy_id",
+	"mileage_policy_version_id",
+	"mileage_policy_effective_from",
+	"mileage_policy_source",
+	"mileage_policy_source_reference",
+	"mileage_policy_source_version",
+] as const;
+
+/** The cells of `columns` in order; a fact that does not apply is an empty cell. */
+function cellsOf<const Column extends string>(
+	columns: readonly Column[],
+	values: Partial<Record<Column, string>>,
+): string[] {
+	return columns.map((column) => values[column] ?? "");
+}
+
+const ITEM_PROJECT_COLUMNS = ["project_id", "project_name", ...PROJECT_COLUMNS] as const;
+
+/** The approved project attribution (#605, v4+); empty when not attributed. */
+function projectCells(item: TravelExpenseReportSubmittedItem): string[] {
+	const { project } = item;
+	if (!project) return cellsOf(ITEM_PROJECT_COLUMNS, {});
+	return cellsOf(ITEM_PROJECT_COLUMNS, {
+		project_id: csvText(project.projectId),
+		project_name: csvText(project.name),
+		project_customer_id: csvText(project.customerId),
+		project_customer_name: csvText(project.customerName),
+		project_inherited_from_trip: csvText(String(project.inheritedFromTrip)),
+		project_attribution_basis: csvText(project.basis),
+		project_exception_id: csvText(project.exception?.exceptionId),
+	});
+}
+
+/** The frozen conversion (#607, v3+); empty for an expense in the reimbursement currency. */
+function conversionCells(
+	revision: TravelExpenseExportManifestRevision,
+	item: TravelExpenseReportSubmittedItem,
+): string[] {
+	const { conversion } = item;
+	if (!conversion) return cellsOf(CONVERSION_COLUMNS, {});
+	const result = {
+		conversion_basis: csvText(conversion.basis),
+		conversion_result_amount: csvDecimal(conversion.reimbursement.amount),
+		conversion_result_currency: csvText(conversion.reimbursement.currency),
+	};
+	if (conversion.basis === "card_charge") {
+		const evidence = item.receipts.find(
+			(receipt) => receipt.receiptId === conversion.evidenceReceiptId,
+		);
+		return cellsOf(CONVERSION_COLUMNS, {
+			...result,
+			conversion_evidence_receipt_id: csvText(conversion.evidenceReceiptId),
+			conversion_evidence_file: csvText(evidence ? receiptPath(revision, item, evidence) : null),
+		});
+	}
+	return cellsOf(CONVERSION_COLUMNS, {
+		...result,
+		conversion_rate_base: csvText(conversion.rate.base),
+		conversion_rate_quote: csvText(conversion.rate.quote),
+		conversion_rate: csvPlainDecimal(conversion.rate.value),
+		// A calendar date as documented; never shifted through a zone.
+		conversion_rate_date: csvText(conversion.rateDate),
+		conversion_rounding: csvText(conversion.rounding.mode),
+		conversion_authorized_by_employee_id: csvText(conversion.authorizedBy.employeeId),
+		conversion_authorized_by_name: csvText(conversion.authorizedBy.name),
+		conversion_authorized_at: csvText(conversion.authorizedAt),
+		conversion_reason: csvText(conversion.reason),
+	});
+}
+
+/** The frozen mileage calculation (#606, v5+); empty for any other expense. */
+function mileageCells(item: TravelExpenseReportSubmittedItem): string[] {
+	const { mileage } = item;
+	if (!mileage) return cellsOf(MILEAGE_COLUMNS, {});
+	return cellsOf(MILEAGE_COLUMNS, {
+		mileage_route: csvText(mileage.route),
+		mileage_distance_km: csvPlainDecimal(mileage.distanceKm),
+		mileage_vehicle: csvText(mileage.vehicle),
+		mileage_rate_per_km: csvPlainDecimal(mileage.ratePerKm),
+		mileage_rate_currency: csvText(mileage.currency),
+		mileage_exact_amount: csvPlainDecimal(mileage.exactAmount),
+		mileage_rounding: csvText(mileage.rounding),
+		mileage_policy_id: csvText(mileage.policy.policyId),
+		mileage_policy_version_id: csvText(mileage.policy.versionId),
+		mileage_policy_effective_from: csvText(mileage.policy.effectiveFrom),
+		mileage_policy_source: csvText(mileage.policy.source.kind),
+		mileage_policy_source_reference: csvText(mileage.policy.source.reference),
+		mileage_policy_source_version: csvText(mileage.policy.source.version),
+	});
+}
+
 export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	"batch_id",
 	"report_id",
 	"revision_id",
 	"submission_cycle",
 	"revision_fingerprint",
+	"facts_schema_version",
 	"approved_at",
 	"employee_id",
 	"employee_name",
@@ -206,6 +399,9 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	"accounting_reference",
 	"project_id",
 	"project_name",
+	...PROJECT_COLUMNS,
+	...CONVERSION_COLUMNS,
+	...MILEAGE_COLUMNS,
 	"receipt_count",
 	"receipt_files",
 ] as const;
@@ -216,6 +412,7 @@ const REPORT_COLUMNS = [
 	"revision_id",
 	"submission_cycle",
 	"revision_fingerprint",
+	"facts_schema_version",
 	"approved_at",
 	"employee_id",
 	"employee_name",
@@ -256,6 +453,7 @@ function revisionColumns(
 		csvText(revision.revisionId),
 		csvInteger(revision.submissionCycle),
 		csvText(revision.materialFingerprint),
+		csvInteger(facts.schemaVersion),
 		csvText(revision.approvedAt),
 		csvText(revision.employeeId),
 		csvText(revision.employeeName),
@@ -270,6 +468,18 @@ function revisionColumns(
 function assertManifest(manifest: TravelExpenseExportManifest): void {
 	for (const revision of manifest.revisions) {
 		const { facts } = revision;
+		// Every frozen version this contract knows: a later version may add
+		// facts the CSV would silently drop, so it must be mapped here first.
+		if (
+			!Number.isInteger(facts.schemaVersion) ||
+			facts.schemaVersion < 1 ||
+			facts.schemaVersion > TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION
+		) {
+			throw new TravelExpenseExportContentError(
+				"manifest_invalid",
+				`Unsupported facts schema version ${facts.schemaVersion}`,
+			);
+		}
 		if (
 			facts.organizationId !== manifest.organizationId ||
 			facts.reportId !== revision.reportId ||
@@ -303,7 +513,6 @@ export function buildTravelExpenseExportFiles(
 		const shared = revisionColumns(manifest, revision);
 		let receiptCount = 0;
 		for (const { item, reimbursement, companyPaid } of priced) {
-			const optional = optionalItemFacts(item);
 			const paths = item.receipts.map((receipt) => receiptPath(revision, item, receipt));
 			receiptCount += item.receipts.length;
 			expenseRows.push([
@@ -322,10 +531,11 @@ export function buildTravelExpenseExportFiles(
 				units(companyPaid),
 				csvText(facts.totals.currency),
 				csvText(itemCalculationBasis(item)),
-				csvText(optional.exceptionBasis),
+				csvText(exceptionBasis(item)),
 				csvText(item.accountingReference),
-				csvText(optional.projectId),
-				csvText(optional.projectName),
+				...projectCells(item),
+				...conversionCells(revision, item),
+				...mileageCells(item),
 				csvInteger(item.receipts.length),
 				csvText(paths.join("; ")),
 			]);

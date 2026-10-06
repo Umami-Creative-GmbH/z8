@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { TravelExpenseReportSubmittedFacts } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import {
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
+	type TravelExpenseReportSubmittedFacts,
+	type TravelExpenseReportSubmittedItem,
+} from "@/lib/approvals/evidence/travel-expense-report-facts";
 import {
 	buildTravelExpenseExportFiles,
 	csvDecimal,
 	csvText,
+	TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS,
 	TravelExpenseExportContentError,
 } from "../export-csv";
 import type {
@@ -12,6 +17,13 @@ import type {
 } from "../export-manifest";
 
 const SHA = "a".repeat(64);
+
+/** Project (v4), conversion (v3) and mileage (v5) columns, empty for a v1 receipt. */
+const EMPTY_LATER_FACTS = Object.fromEntries(
+	TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS.filter((column) =>
+		/^(project|conversion|mileage)_/.test(column),
+	).map((column) => [column, ""]),
+);
 
 function receipt(receiptId: string, itemId: string) {
 	return {
@@ -131,6 +143,148 @@ function standaloneRevision(): TravelExpenseExportManifestRevision {
 	};
 }
 
+function soloRevision(
+	reportId: string,
+	schemaVersion: number,
+	items: TravelExpenseReportSubmittedItem[],
+	totals: { reimbursable: string; companyPaid: string },
+	receiptFileNames: Record<string, string> = {},
+): TravelExpenseExportManifestRevision {
+	return {
+		reportId,
+		revisionId: `rev-${reportId}`,
+		submissionCycle: 1,
+		materialFingerprint: `travel_expense_report:v${schemaVersion}:${reportId}`,
+		approvedAt: "2026-09-21T09:30:00Z",
+		employeeId: "emp-2",
+		employeeName: "Bob",
+		receiptFileNames,
+		facts: {
+			schemaVersion,
+			kind: "travel_expense_report",
+			organizationId: "org",
+			reportId,
+			submissionCycle: 1,
+			subjectEmployeeId: "emp-2",
+			requesterEmployeeId: "emp-2",
+			reportKind: "trip",
+			reimbursementCurrency: "EUR",
+			trip: {
+				purpose: "Conference",
+				startDate: "2026-09-14",
+				endDate: "2026-09-15",
+				timeZone: "America/New_York",
+				destinations: [{ place: "New York", countryCode: "US" }],
+			},
+			items,
+			totals: { currency: "EUR", ...totals },
+		},
+	};
+}
+
+/** v3: a card charge (employee) and an authorized manual rate (company) into EUR. */
+function foreignRevision(): TravelExpenseExportManifestRevision {
+	return soloRevision(
+		"report-fx",
+		3,
+		[
+			{
+				itemId: "item-card",
+				position: 1,
+				type: "receipt",
+				expenseDate: "2026-09-14",
+				category: "meals",
+				description: "Dinner",
+				original: { amount: "100.00", currency: "USD" },
+				paidBy: "employee",
+				accountingReference: null,
+				receipts: [receipt("rcpt-card", "item-card")],
+				conversion: {
+					basis: "card_charge",
+					evidenceReceiptId: "rcpt-card",
+					reimbursement: { amount: "92.17", currency: "EUR" },
+				},
+			},
+			{
+				itemId: "item-rate",
+				position: 2,
+				type: "receipt",
+				expenseDate: "2026-09-14",
+				category: "transport",
+				description: "Subway",
+				original: { amount: "50.00", currency: "USD" },
+				paidBy: "company",
+				accountingReference: null,
+				receipts: [receipt("rcpt-rate", "item-rate")],
+				conversion: {
+					basis: "manual_rate",
+					rate: { base: "USD", quote: "EUR", value: "0.92" },
+					rateDate: "2026-09-14",
+					reason: "=ECB reference rate",
+					authorizedBy: { employeeId: "emp-admin", name: "+Finance Admin" },
+					authorizedAt: "2026-09-15T07:30:00Z",
+					rounding: { mode: "half_up", minorUnitDigits: 2 },
+					reimbursement: { amount: "46.00", currency: "EUR" },
+				},
+			},
+		],
+		{ reimbursable: "92.17", companyPaid: "46.00" },
+		{ "rcpt-card": "statement.pdf", "rcpt-rate": "subway.pdf" },
+	);
+}
+
+/** v5: a policy-priced mileage expense, attributed to the trip's project. */
+function mileageRevision(): TravelExpenseExportManifestRevision {
+	return soloRevision(
+		"report-km",
+		5,
+		[
+			{
+				itemId: "item-km",
+				position: 1,
+				type: "mileage",
+				expenseDate: "2026-09-14",
+				category: "transport",
+				description: "-Berlin to Potsdam",
+				original: { amount: "37.02", currency: "EUR" },
+				paidBy: "employee",
+				accountingReference: null,
+				receipts: [],
+				mileage: {
+					route: "-Berlin to Potsdam",
+					distanceKm: "123.40",
+					vehicle: "car",
+					ratePerKm: "0.3000",
+					currency: "EUR",
+					exactAmount: "37.020000",
+					amount: "37.02",
+					rounding: "half_up",
+					policy: {
+						policyId: "policy-1",
+						versionId: "version-1",
+						effectiveFrom: "2026-01-01",
+						source: {
+							kind: "statutory_default",
+							reference: "§ 9 EStG",
+							version: "LStH 2026",
+							defaultKey: "de-mileage-2026",
+						},
+					},
+				},
+				project: {
+					projectId: "project-1",
+					name: "Relaunch",
+					customerId: null,
+					customerName: null,
+					inheritedFromTrip: true,
+					basis: "employee_assignment",
+				},
+			},
+		],
+		{ reimbursable: "37.02", companyPaid: "0.00" },
+	);
+}
+
 function manifest(
 	revisions: TravelExpenseExportManifestRevision[] = [tripRevision(), standaloneRevision()],
 ): TravelExpenseExportManifest {
@@ -237,6 +391,7 @@ describe("travel expense export files", () => {
 			revision_id: "rev-trip",
 			submission_cycle: "2",
 			revision_fingerprint: "travel_expense_report:v1:abc",
+			facts_schema_version: "1",
 			approved_at: "2026-09-20T08:00:00Z",
 			employee_id: "emp-1",
 			employee_name: "Ada",
@@ -261,8 +416,7 @@ describe("travel expense export files", () => {
 			calculation_basis: "receipt_amount",
 			exception_basis: "",
 			accounting_reference: "'@CC-100",
-			project_id: "",
-			project_name: "",
+			...EMPTY_LATER_FACTS,
 			receipt_count: "1",
 			receipt_files: "receipts/report-trip/001-rcpt-train-train ticket.pdf",
 		});
@@ -348,6 +502,171 @@ describe("travel expense export files", () => {
 			receipt_files: "",
 			reimbursement_amount: "35.50",
 		});
+	});
+
+	it("exports a v3 conversion's basis, inputs and result and reconciles converted totals", () => {
+		const revision = foreignRevision();
+		const rows = records(file("expenses.csv", manifest([revision])));
+		expect(rows[0]).toMatchObject({
+			facts_schema_version: "3",
+			original_amount: "100.00",
+			original_currency: "USD",
+			reimbursement_amount: "92.17",
+			company_paid_amount: "0.00",
+			reimbursement_currency: "EUR",
+			calculation_basis: "converted_amount",
+			conversion_basis: "card_charge",
+			conversion_result_amount: "92.17",
+			conversion_result_currency: "EUR",
+			conversion_rate: "",
+			conversion_rate_date: "",
+			conversion_evidence_receipt_id: "rcpt-card",
+			conversion_evidence_file: "receipts/report-fx/001-rcpt-card-statement.pdf",
+			conversion_reason: "",
+		});
+		expect(rows[1]).toMatchObject({
+			original_amount: "50.00",
+			original_currency: "USD",
+			reimbursement_amount: "0.00",
+			company_paid_amount: "46.00",
+			calculation_basis: "converted_amount",
+			conversion_basis: "manual_rate",
+			conversion_result_amount: "46.00",
+			conversion_result_currency: "EUR",
+			conversion_rate_base: "USD",
+			conversion_rate_quote: "EUR",
+			conversion_rate: "0.92",
+			// The documented calendar date, never shifted through a zone.
+			conversion_rate_date: "2026-09-14",
+			conversion_rounding: "half_up",
+			conversion_evidence_receipt_id: "",
+			conversion_authorized_by_employee_id: "emp-admin",
+			conversion_authorized_by_name: "'+Finance Admin",
+			conversion_authorized_at: "2026-09-15T07:30:00Z",
+			conversion_reason: "'=ECB reference rate",
+			mileage_route: "",
+		});
+		// The money cells are unquoted numbers; the formula-like reason is quoted text.
+		const raw = file("expenses.csv", manifest([revision]));
+		expect(raw).toContain(',0.92,"2026-09-14","half_up"');
+		expect(raw).toContain('"\'=ECB reference rate"');
+		expect(records(file("reports.csv", manifest([revision])))).toEqual([
+			expect.objectContaining({ reimbursable_total: "92.17", company_paid_total: "46.00" }),
+		]);
+	});
+
+	it("refuses a conversion whose frozen result does not follow from its frozen rate", () => {
+		const revision = foreignRevision();
+		const manual = revision.facts.items[1]?.conversion;
+		if (manual?.basis !== "manual_rate") throw new Error("no manual rate");
+		manual.reimbursement = { amount: "47.00", currency: "EUR" };
+		revision.facts.totals = { ...revision.facts.totals, companyPaid: "47.00" };
+		expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
+			expect.objectContaining({ code: "totals_mismatch" }),
+		);
+	});
+
+	it("exports a v4 project attribution as approved", () => {
+		const revision = standaloneRevision();
+		revision.facts.schemaVersion = 4;
+		const [item] = revision.facts.items;
+		if (!item) throw new Error("no item");
+		item.project = {
+			projectId: "project-1",
+			name: "=Website relaunch",
+			customerId: "customer-1",
+			customerName: "ACME",
+			inheritedFromTrip: false,
+			basis: "exception",
+			exception: {
+				exceptionId: "exception-1",
+				validFrom: "2026-09-01",
+				validTo: "2026-09-30",
+				reason: "Ad-hoc support",
+				evidence: "Ticket 42",
+				authorizedByEmployeeId: "emp-admin",
+				authorizedAt: "2026-08-31T10:00:00Z",
+			},
+		};
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			facts_schema_version: "4",
+			project_id: "project-1",
+			project_name: "'=Website relaunch",
+			project_customer_id: "customer-1",
+			project_customer_name: "ACME",
+			project_inherited_from_trip: "false",
+			project_attribution_basis: "exception",
+			project_exception_id: "exception-1",
+			calculation_basis: "receipt_amount",
+			reimbursement_amount: "35.50",
+			conversion_basis: "",
+			mileage_route: "",
+		});
+	});
+
+	it("exports a v5 mileage calculation and reconciles it with the frozen totals", () => {
+		const revision = mileageRevision();
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			facts_schema_version: "5",
+			item_type: "mileage",
+			expense_date: "2026-09-14",
+			original_amount: "37.02",
+			original_currency: "EUR",
+			reimbursement_amount: "37.02",
+			reimbursement_currency: "EUR",
+			calculation_basis: "mileage_rate",
+			mileage_route: "'-Berlin to Potsdam",
+			mileage_distance_km: "123.40",
+			mileage_vehicle: "car",
+			mileage_rate_per_km: "0.3000",
+			mileage_rate_currency: "EUR",
+			mileage_exact_amount: "37.020000",
+			mileage_rounding: "half_up",
+			mileage_policy_id: "policy-1",
+			mileage_policy_version_id: "version-1",
+			mileage_policy_effective_from: "2026-01-01",
+			mileage_policy_source: "statutory_default",
+			mileage_policy_source_reference: "§ 9 EStG",
+			mileage_policy_source_version: "LStH 2026",
+			// Mileage expenses are attributed like any other (#605).
+			project_id: "project-1",
+			project_inherited_from_trip: "true",
+			project_attribution_basis: "employee_assignment",
+			conversion_basis: "",
+			receipt_count: "0",
+		});
+		expect(records(file("reports.csv", manifest([revision])))).toEqual([
+			expect.objectContaining({ reimbursable_total: "37.02", facts_schema_version: "5" }),
+		]);
+	});
+
+	it("refuses a mileage item whose frozen amount differs from its calculation", () => {
+		const revision = mileageRevision();
+		const [item] = revision.facts.items;
+		if (!item?.mileage) throw new Error("no mileage");
+		item.mileage.amount = "38.00";
+		expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
+			expect.objectContaining({ code: "totals_mismatch" }),
+		);
+	});
+
+	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
+		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
+			const revision = standaloneRevision();
+			revision.facts.schemaVersion = version;
+			expect(records(file("reports.csv", manifest([revision])))).toEqual([
+				expect.objectContaining({ facts_schema_version: String(version) }),
+			]);
+		}
+		for (const version of [0, TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION + 1]) {
+			const revision = standaloneRevision();
+			revision.facts.schemaVersion = version;
+			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
+				expect.objectContaining({ code: "manifest_invalid" }),
+			);
+		}
 	});
 
 	it("is byte-identical for the same manifest", () => {
