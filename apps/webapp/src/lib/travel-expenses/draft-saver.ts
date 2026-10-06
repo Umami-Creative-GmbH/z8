@@ -71,7 +71,9 @@ export interface DraftSaver<Values, Item> {
 	 * first, no save runs meanwhile, and the next save builds on the version
 	 * the write produced. Refused while a conflict awaits the user.
 	 */
-	runExclusive(write: (version: number) => Promise<ExclusiveWriteOutcome>): Promise<ExclusiveWriteOutcome>;
+	runExclusive(
+		write: (version: number) => Promise<ExclusiveWriteOutcome>,
+	): Promise<ExclusiveWriteOutcome>;
 	dispose(): void;
 }
 

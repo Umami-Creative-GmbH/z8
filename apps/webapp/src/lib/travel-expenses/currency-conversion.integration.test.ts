@@ -309,7 +309,9 @@ describe("foreign-currency conversion (#607)", () => {
 		});
 
 		const revision = await frozenFacts(target.reportId);
-		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v([3-9]|\d{2,}):[0-9a-f]{64}$/);
+		expect(revision.material_fingerprint).toMatch(
+			/^travel_expense_report:v([3-9]|\d{2,}):[0-9a-f]{64}$/,
+		);
 		const [frozen] = revision.facts.items;
 		expect(frozen.original).toEqual({ amount: "100.00", currency: "USD" });
 		expect(frozen.conversion).toEqual({
