@@ -391,7 +391,7 @@ describe("coordinated organization creation on PostgreSQL", () => {
 
 			expect(result._tag).toBe("Success");
 			const created = await expectCreatedTogether();
-			expect(result).toMatchObject({ right: { organizationId: created.organizationId } });
+			expect(result).toMatchObject({ success: { organizationId: created.organizationId } });
 		});
 
 		it("leaves nothing behind when the rollout-row write fails", async () => {
