@@ -807,6 +807,47 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		expect(await reportState(reportId)).toMatchObject({ status: "submitted", decisions: 0 });
 	});
 
+	it("retires the sent cards of a returned or withdrawn cycle through a cycle-keyed intent", async () => {
+		await admin.query(
+			`insert into approval_delivery_control (organization_id, workflow_type, provider, activated_at)
+			 values ('t603-org', 'travel_expense', 'telegram', now())`,
+		);
+		const intents = async (reportId: string) =>
+			(
+				await admin.query<{ event: string; legacy_cycle_id: string }>(
+					`select event, legacy_cycle_id from approval_delivery_intent
+					 where source_id = $1 order by created_at, id`,
+					[reportId],
+				)
+			).rows;
+
+		const returned = await completeTrip();
+		expect((await submit(returned)).success).toBe(true);
+		const returnedRequest = await pendingRequestId(returned);
+		signIn("manager");
+		expect((await returnReport(returnedRequest, "Fix it")).success).toBe(true);
+		expect(await intents(returned)).toEqual([
+			{ event: "submitted", legacy_cycle_id: returnedRequest },
+			{ event: "withdrawn", legacy_cycle_id: returnedRequest },
+		]);
+		// The resubmission is its own cycle with its own key.
+		expect((await submit(returned)).success).toBe(true);
+		const resubmittedRequest = await pendingRequestId(returned);
+		expect((await intents(returned)).at(-1)).toEqual({
+			event: "submitted",
+			legacy_cycle_id: resubmittedRequest,
+		});
+
+		const withdrawn = await completeTrip();
+		expect((await submit(withdrawn)).success).toBe(true);
+		const withdrawnRequest = await pendingRequestId(withdrawn);
+		expect((await withdraw(withdrawn, 1)).success).toBe(true);
+		expect(await intents(withdrawn)).toEqual([
+			{ event: "submitted", legacy_cycle_id: withdrawnRequest },
+			{ event: "withdrawn", legacy_cycle_id: withdrawnRequest },
+		]);
+	});
+
 	it("still cleans up the receipts of a deleted report", async () => {
 		const reportId = await completeTrip();
 		expect((await submit(reportId)).success).toBe(true);

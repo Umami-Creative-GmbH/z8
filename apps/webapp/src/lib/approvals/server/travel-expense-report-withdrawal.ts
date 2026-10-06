@@ -12,7 +12,6 @@ import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/tempo
 import { createLogger } from "@/lib/logger";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import { acquireApprovalWriteGate } from "../authority";
-import { legacyDeliveryCycleId, recordLegacyDeliveryIntent } from "../delivery/intents";
 import { kickApprovalDelivery } from "../delivery/kick";
 import { ApprovalEvidenceError } from "../evidence/errors";
 import { isLegacyRequestInRevisionLifecycle } from "../evidence/store";
@@ -20,6 +19,7 @@ import {
 	loadTravelExpenseReportSubmittedRevision,
 	TRAVEL_EXPENSE_REPORT_SOURCE_TYPE,
 } from "../evidence/travel-expense-report-store";
+import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import { recordTravelExpenseReportCycleClosure } from "./travel-expense-report-return";
 import type { ApprovalDbService } from "./types";
 
@@ -245,14 +245,12 @@ export async function withdrawTravelExpenseReport(
 				at,
 			});
 			// Written only while a delivery control exists: lets the delivery owner
-			// retire the cycle's sent cards (#623).
-			deliveryIntent = await recordLegacyDeliveryIntent(tx, {
+			// retire the cycle's sent cards (#623), keyed by the cycle's revision.
+			deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
 				organizationId: owner.organizationId,
-				workflowType: "travel_expense",
-				sourceType: ENTITY_TYPE,
-				sourceId: input.reportId,
+				reportId: input.reportId,
 				approvalRequestId: request.id,
-				cycleId: legacyDeliveryCycleId({ chainInstanceId, approvalRequestId: request.id }),
+				revision: revision.legacy,
 				event: "withdrawn",
 			});
 			return {

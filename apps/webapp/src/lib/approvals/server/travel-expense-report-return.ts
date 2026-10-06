@@ -25,6 +25,7 @@ import {
 	type ReturnReportInput,
 } from "@/lib/travel-expenses/report-return";
 import { acquireApprovalWriteGate } from "../authority";
+import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
 import { ApprovalAssignmentReassignedError } from "../escalation/decision-authority";
 import { wasLegacyRequestTransferred } from "../escalation/legacy-transfer-store";
@@ -45,6 +46,7 @@ import {
 	prepareReportDecisionEvidence,
 	translateTravelExpenseReportDecisionError,
 } from "./travel-expense-report-approvals";
+import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";
 
 /**
@@ -115,6 +117,8 @@ export type TravelExpenseReportReturnOutcome = {
 	approvalRequestId: string;
 	closureId: string;
 	submissionCycle: number;
+	/** A withdrawn delivery intent of the cycle committed; kick the delivery owner. */
+	deliveryIntent: boolean;
 };
 
 function failureOf(cause: Cause.Cause<unknown>): unknown {
@@ -434,6 +438,7 @@ export async function executeTravelExpenseReportReturnInTransaction(
 			approvalRequestId,
 			closureId: closure.id,
 			submissionCycle: closure.submissionCycle,
+			deliveryIntent: false,
 		};
 	}
 
@@ -571,12 +576,22 @@ export async function executeTravelExpenseReportReturnInTransaction(
 		returned: parsed.value,
 		at: new Date(outcome.decidedAt.epochMilliseconds),
 	});
+	// The returned cycle can no longer be decided: its sent cards (#623) are
+	// retired like a withdrawn cycle's, keyed by the cycle's revision.
+	const deliveryIntent = await recordTravelExpenseReportDeliveryIntent(database, {
+		organizationId,
+		reportId,
+		approvalRequestId,
+		revision: revision.legacy,
+		event: "withdrawn",
+	});
 	return {
 		kind: "returned",
 		evidence,
 		approvalRequestId,
 		closureId,
 		submissionCycle: revision.submissionCycle,
+		deliveryIntent,
 	};
 }
 
@@ -618,6 +633,10 @@ export async function returnTravelExpenseReport(
 		const outcome = await dbService.db.transaction((transaction) =>
 			executeTravelExpenseReportReturnInTransaction(transaction, dbService.query, input),
 		);
+		if (outcome.deliveryIntent) {
+			// The intent committed; this only runs the delivery owner sooner.
+			kickApprovalDelivery({ organizationId: input.organizationId });
+		}
 		if (outcome.kind === "returned") {
 			await notifyRequester(dbService.db, input, input.note.trim()).catch((error) =>
 				logger.error({ error, reportId: input.reportId }, "Report return notification failed"),
