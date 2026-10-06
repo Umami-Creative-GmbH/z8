@@ -18,7 +18,7 @@ import { betterAuth } from "better-auth/minimal";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
 import { eq } from "drizzle-orm";
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import type { PoolClient } from "pg";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { APPROVAL_WORKFLOW_TYPES } from "@/lib/approvals/workflow/types";
@@ -81,10 +81,10 @@ const { createCoordinatedOrganizationHooks, handleCoordinatedAuthRequest } = awa
 	"@/lib/auth/auth-mutation-coordination"
 );
 const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
-const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
-const { DatabaseServiceLive } = await import("@/lib/effect-v3/services/database.service");
+const { AuthService } = await import("@/lib/effect/services/auth.service");
+const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
 const { OnboardingService, OnboardingServiceLive } = await import(
-	"@/lib/effect-v3/services/onboarding.service"
+	"@/lib/effect/services/onboarding.service"
 );
 
 const origin = "http://localhost:3000";
@@ -177,7 +177,7 @@ describe("coordinated organization creation on PostgreSQL", () => {
 			Layer.provide(DatabaseServiceLive),
 		);
 		return Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 					return yield* service.createOrganization({ name: "T359 created", slug });
@@ -389,9 +389,9 @@ describe("coordinated organization creation on PostgreSQL", () => {
 		it("creates the same row set through the server-side call", async () => {
 			const result = await createThroughOnboarding();
 
-			expect(result._tag).toBe("Right");
+			expect(result._tag).toBe("Success");
 			const created = await expectCreatedTogether();
-			expect(result).toMatchObject({ right: { organizationId: created.organizationId } });
+			expect(result).toMatchObject({ success: { organizationId: created.organizationId } });
 		});
 
 		it("leaves nothing behind when the rollout-row write fails", async () => {
@@ -400,7 +400,7 @@ describe("coordinated organization creation on PostgreSQL", () => {
 
 			const result = await createThroughOnboarding();
 
-			expect(result).toMatchObject({ _tag: "Left", left: { field: "slug" } });
+			expect(result).toMatchObject({ _tag: "Failure", failure: { field: "slug" } });
 			await expectNothingCreated(rolloutRowsBefore);
 		});
 	});

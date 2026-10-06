@@ -107,7 +107,8 @@ function skipString(source, start) {
 	return source.length;
 }
 
-// Splits on top-level commas.
+// Splits on top-level commas, skipping strings and comments (an apostrophe in a comment is not
+// a quote).
 function splitArgs(inner) {
 	const parts = [];
 	let depth = 0;
@@ -116,6 +117,16 @@ function splitArgs(inner) {
 		const ch = inner[i];
 		if (ch === '"' || ch === "'" || ch === "`") {
 			i = skipString(inner, i);
+			continue;
+		}
+		if (ch === "/" && inner[i + 1] === "/") {
+			const end = inner.indexOf("\n", i);
+			i = end === -1 ? inner.length : end;
+			continue;
+		}
+		if (ch === "/" && inner[i + 1] === "*") {
+			const end = inner.indexOf("*/", i + 2);
+			i = end === -1 ? inner.length : end + 1;
 			continue;
 		}
 		if ("([{".includes(ch)) depth++;

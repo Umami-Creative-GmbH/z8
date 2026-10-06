@@ -1,6 +1,6 @@
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { OnboardingService } from "@/lib/effect-v3/services/onboarding.service";
+import { OnboardingService } from "@/lib/effect/services/onboarding.service";
 import type { OnboardingProfileFormValues } from "@/lib/validations/onboarding";
 
 const { updateProfileMock } = vi.hoisted(() => ({
@@ -15,7 +15,7 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: vi.fn() } },
 }));
 
-vi.mock("@/lib/effect-v3/result", () => ({
+vi.mock("@/lib/effect/result", () => ({
 	runServerActionSafe: async (effect: Effect.Effect<unknown, unknown, OnboardingService>) => {
 		const exit = await Effect.runPromiseExit(
 			effect.pipe(
@@ -31,7 +31,9 @@ vi.mock("@/lib/effect-v3/result", () => ({
 
 		return Exit.match(exit, {
 			onFailure: (cause) => {
-				const defect = [...Cause.defects(cause)][0] ?? Option.getOrNull(Cause.failureOption(cause));
+				const defect =
+					Result.getOrNull(Cause.findDefect(cause)) ??
+					Option.getOrNull(Cause.findErrorOption(cause));
 				return {
 					success: false,
 					error: defect instanceof Error ? defect.message : "An unexpected error occurred",

@@ -1,6 +1,6 @@
 import type { SQL } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { auditLog, employee, memberApproval } from "@/db/schema";
@@ -312,7 +312,7 @@ describe("PendingMemberService approval transactions", () => {
 		const fake = approvalLayer({ transitionWins: false });
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* PendingMemberService;
 					return yield* service.approve({
@@ -325,8 +325,8 @@ describe("PendingMemberService approval transactions", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(ValidationError),
+			_tag: "Failure",
+			failure: expect.any(ValidationError),
 		});
 		expect(fake.approvals).toEqual([]);
 		expect(fake.employees).toEqual([]);
@@ -747,7 +747,7 @@ describe("PendingMemberService rejection isolation", () => {
 		const fake = rejectionLayer({ transitionWins: false });
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* PendingMemberService;
 					return yield* service.reject({
@@ -760,8 +760,8 @@ describe("PendingMemberService rejection isolation", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(DatabaseError),
+			_tag: "Failure",
+			failure: expect.any(DatabaseError),
 		});
 		expect(fake.events).toContain("transaction-rollback");
 		expect(fake.approvals).toEqual([]);
@@ -871,7 +871,7 @@ describe("PendingMemberService rejection isolation", () => {
 		);
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* PendingMemberService;
 					return yield* service.reject({
@@ -884,8 +884,8 @@ describe("PendingMemberService rejection isolation", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(DatabaseError),
+			_tag: "Failure",
+			failure: expect.any(DatabaseError),
 		});
 		expect(fake.events).toContain("transaction-commit");
 		expect(fake.events).not.toContain("transaction-rollback");

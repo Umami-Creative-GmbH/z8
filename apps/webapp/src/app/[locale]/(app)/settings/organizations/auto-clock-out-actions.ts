@@ -1,6 +1,6 @@
 "use server";
 
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option } from "effect";
 import { z } from "zod";
 import { db } from "@/db";
 import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
@@ -13,7 +13,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { saveAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 
@@ -75,7 +75,7 @@ export async function updateAutoClockOutSettings(input: {
 	}).pipe(Effect.provide(DatabaseServiceLive));
 	const exit = await Effect.runPromiseExit(effect);
 	if (Exit.isSuccess(exit)) return { success: true, data: exit.value };
-	const failure = Option.getOrNull(Cause.failureOption(exit.cause));
+	const failure = Option.getOrNull(Cause.findErrorOption(exit.cause));
 	return {
 		success: false,
 		error: failure?.message ?? "Failed to update automatic clock-out settings",

@@ -7,7 +7,7 @@ const organizationsActionsSource = readFileSync(
 	"utf8",
 );
 const inviteCodeServiceSource = readFileSync(
-	join(process.cwd(), "src/lib/effect-v3/services/invite-code.service.ts"),
+	join(process.cwd(), "src/lib/effect/services/invite-code.service.ts"),
 	"utf8",
 );
 const enforcementSource = readFileSync(

@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, gt } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "@/db";
@@ -31,10 +31,10 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+} from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { assertEnterpriseIdentityInvitationAllowed } from "@/lib/enterprise-identity/enforcement";
 import { createLogger } from "@/lib/logger";
 import { changeOrganizationTimezone } from "@/lib/timezone/organization-timezone-change";
@@ -99,24 +99,22 @@ export async function sendInvitation(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
+			return Effect.gen(function* () {
 				const normalizedEmail = normalizeInvitationEmail(data.email);
 				const now = systemClock.nowInstant();
 				const databaseNow = dateFromInstant(now);
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
 
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId: data.organizationId,
-						requiredRole: "admin",
-						message: "Only admins and owners can send invitations",
-						resource: "invitation",
-						action: "create",
-					}),
-				);
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId: data.organizationId,
+					requiredRole: "admin",
+					message: "Only admins and owners can send invitations",
+					resource: "invitation",
+					action: "create",
+				});
 
 				// Validate input
 				const validationResult = invitationSchema.safeParse({
@@ -124,68 +122,64 @@ export async function sendInvitation(
 					email: normalizedEmail,
 				});
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "data",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message:
+								validationResult.error.issues[0]?.message || "Invalid input",
+							field:
+								validationResult.error.issues[0]?.path?.join(".") || "data",
+						}),
 					);
 				}
 
 				const validatedData = validationResult.data;
 				if (validatedData.targetTeamId) {
 					const targetTeamId = validatedData.targetTeamId;
-					const targetTeam = yield* _(
-						dbService.query("getInvitationTargetTeam", async () => {
+					const targetTeam = yield* dbService.query(
+						"getInvitationTargetTeam",
+						async () => {
 							return await db.query.team.findFirst({
 								where: and(
 									eq(team.id, targetTeamId),
 									eq(team.organizationId, data.organizationId),
 								),
 							});
-						}),
+						},
 					);
 
 					if (!targetTeam) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Target team not found in this organization",
-									field: "targetTeamId",
-									value: validatedData.targetTeamId,
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Target team not found in this organization",
+								field: "targetTeamId",
+								value: validatedData.targetTeamId,
+							}),
 						);
 					}
 				}
 
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await assertEnterpriseIdentityInvitationAllowed({
-								organizationId: data.organizationId,
-								email: validatedData.email,
-							});
-						},
-						catch: (error) =>
-							new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Invitation is not allowed",
-								field: "email",
-								value: validatedData.email,
-							}),
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await assertEnterpriseIdentityInvitationAllowed({
+							organizationId: data.organizationId,
+							email: validatedData.email,
+						});
+					},
+					catch: (error) =>
+						new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Invitation is not allowed",
+							field: "email",
+							value: validatedData.email,
+						}),
+				});
 
 				// Check for existing pending invitation
-				const existingInvitation = yield* _(
-					dbService.query("checkExistingInvitation", async () => {
+				const existingInvitation = yield* dbService.query(
+					"checkExistingInvitation",
+					async () => {
 						return await db.query.invitation.findFirst({
 							where: and(
 								eq(authSchema.invitation.organizationId, data.organizationId),
@@ -194,7 +188,7 @@ export async function sendInvitation(
 								gt(authSchema.invitation.expiresAt, databaseNow),
 							),
 						});
-					}),
+					},
 				);
 
 				if (
@@ -203,100 +197,12 @@ export async function sendInvitation(
 				) {
 					authoritativeInvitationId = existingInvitation.id;
 					failurePhase = "persistInvitationState";
-					const persistence = yield* _(
-						Effect.tryPromise({
-							try: () =>
-								persistEmployeeInvitationDraft(db, {
-									organizationId: data.organizationId,
-									normalizedEmail,
-									invitationId: existingInvitation.id,
-									canCreateOrganizations:
-										validatedData.canCreateOrganizations ?? false,
-									targetTeamId: validatedData.targetTeamId ?? null,
-									initialRole:
-										validatedData.role === "admin" ||
-										validatedData.role === "owner"
-											? "admin"
-											: "employee",
-									updatedBy: session.user.id,
-								}),
-							catch: () =>
-								new ValidationError({
-									message: "Failed to send invitation",
-									field: "invitation",
-								}),
-						}),
-					);
-					if (persistence.outcome === "consumed") {
-						span.setStatus({ code: SpanStatusCode.OK });
-						return;
-					}
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "An invitation for this email is already pending",
-								field: "email",
-								value: validatedData.email,
-							}),
-						),
-					);
-				}
-
-				// Check if user is already a member
-				const existingUser = yield* _(
-					dbService.query("checkExistingUser", async () => {
-						return await db.query.user.findFirst({
-							where: eq(authSchema.user.email, validatedData.email),
-						});
-					}),
-				);
-
-				if (existingUser) {
-					const existingMember = yield* _(
-						dbService.query("checkExistingMember", async () => {
-							return await db.query.member.findFirst({
-								where: and(
-									eq(authSchema.member.userId, existingUser.id),
-									eq(authSchema.member.organizationId, data.organizationId),
-								),
-							});
-						}),
-					);
-
-					if (existingMember) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "This user is already a member of the organization",
-									field: "email",
-									value: validatedData.email,
-								}),
-							),
-						);
-					}
-				}
-
-				// Better Auth may deliver email before app persistence. The actionable-invite
-				// branch above is the idempotent repair boundary for a failed persistence step.
-				failurePhase = "createInvitation";
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							const newInvitation = await auth.api.createInvitation({
-								body: {
-									organizationId: data.organizationId,
-									email: validatedData.email,
-									role: validatedData.role,
-									resend: false,
-								},
-								headers: await headers(),
-							});
-							authoritativeInvitationId = newInvitation.id;
-							failurePhase = "persistInvitationState";
-							await persistEmployeeInvitationDraft(db, {
+					const persistence = yield* Effect.tryPromise({
+						try: () =>
+							persistEmployeeInvitationDraft(db, {
 								organizationId: data.organizationId,
 								normalizedEmail,
-								invitationId: newInvitation.id,
+								invitationId: existingInvitation.id,
 								canCreateOrganizations:
 									validatedData.canCreateOrganizations ?? false,
 								targetTeamId: validatedData.targetTeamId ?? null,
@@ -306,16 +212,97 @@ export async function sendInvitation(
 										? "admin"
 										: "employee",
 								updatedBy: session.user.id,
-							});
-						},
-						catch: () => {
-							return new ValidationError({
+							}),
+						catch: () =>
+							new ValidationError({
 								message: "Failed to send invitation",
 								field: "invitation",
+							}),
+					});
+					if (persistence.outcome === "consumed") {
+						span.setStatus({ code: SpanStatusCode.OK });
+						return;
+					}
+					yield* Effect.fail(
+						new ValidationError({
+							message: "An invitation for this email is already pending",
+							field: "email",
+							value: validatedData.email,
+						}),
+					);
+				}
+
+				// Check if user is already a member
+				const existingUser = yield* dbService.query(
+					"checkExistingUser",
+					async () => {
+						return await db.query.user.findFirst({
+							where: eq(authSchema.user.email, validatedData.email),
+						});
+					},
+				);
+
+				if (existingUser) {
+					const existingMember = yield* dbService.query(
+						"checkExistingMember",
+						async () => {
+							return await db.query.member.findFirst({
+								where: and(
+									eq(authSchema.member.userId, existingUser.id),
+									eq(authSchema.member.organizationId, data.organizationId),
+								),
 							});
 						},
-					}),
-				);
+					);
+
+					if (existingMember) {
+						yield* Effect.fail(
+							new ValidationError({
+								message: "This user is already a member of the organization",
+								field: "email",
+								value: validatedData.email,
+							}),
+						);
+					}
+				}
+
+				// Better Auth may deliver email before app persistence. The actionable-invite
+				// branch above is the idempotent repair boundary for a failed persistence step.
+				failurePhase = "createInvitation";
+				yield* Effect.tryPromise({
+					try: async () => {
+						const newInvitation = await auth.api.createInvitation({
+							body: {
+								organizationId: data.organizationId,
+								email: validatedData.email,
+								role: validatedData.role,
+								resend: false,
+							},
+							headers: await headers(),
+						});
+						authoritativeInvitationId = newInvitation.id;
+						failurePhase = "persistInvitationState";
+						await persistEmployeeInvitationDraft(db, {
+							organizationId: data.organizationId,
+							normalizedEmail,
+							invitationId: newInvitation.id,
+							canCreateOrganizations:
+								validatedData.canCreateOrganizations ?? false,
+							targetTeamId: validatedData.targetTeamId ?? null,
+							initialRole:
+								validatedData.role === "admin" || validatedData.role === "owner"
+									? "admin"
+									: "employee",
+							updatedBy: session.user.id,
+						});
+					},
+					catch: () => {
+						return new ValidationError({
+							message: "Failed to send invitation",
+							field: "invitation",
+						});
+					},
+				});
 				logger.info(
 					{
 						organizationId: data.organizationId,
@@ -326,8 +313,8 @@ export async function sendInvitation(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(new Error("Invitation send failed"));
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -344,7 +331,7 @@ export async function sendInvitation(
 							},
 							"Failed to send invitation",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -373,66 +360,64 @@ export async function resendInvitation(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "admin",
-						message: "Only admins and owners can resend invitations",
-						resource: "invitation",
-						action: "create",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "admin",
+					message: "Only admins and owners can resend invitations",
+					resource: "invitation",
+					action: "create",
+				});
 
-				const invitation = yield* _(
-					dbService.query("getInvitationForResend", async () => {
+				const invitation = yield* dbService
+					.query("getInvitationForResend", async () => {
 						return await db.query.invitation.findFirst({
 							where: and(
 								eq(authSchema.invitation.id, invitationId),
 								eq(authSchema.invitation.organizationId, organizationId),
 							),
 						});
-					}),
-					Effect.flatMap((record) =>
-						record
-							? Effect.succeed(record)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Invitation not found",
-										entityType: "invitation",
-										entityId: invitationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((record) =>
+							record
+								? Effect.succeed(record)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Invitation not found",
+											entityType: "invitation",
+											entityId: invitationId,
+										}),
+									),
+						),
+					);
 
 				const normalizedEmail = normalizeInvitationEmail(invitation.email);
-				const stableDraft = yield* _(
-					dbService.query("getCurrentEmployeeInvitationDraft", async () => {
+				const stableDraft = yield* dbService.query(
+					"getCurrentEmployeeInvitationDraft",
+					async () => {
 						return await db.query.employeeInvitationDraft.findFirst({
 							where: and(
 								eq(employeeInvitationDraft.organizationId, organizationId),
 								eq(employeeInvitationDraft.normalizedEmail, normalizedEmail),
 							),
 						});
-					}),
+					},
 				);
 
 				if (
 					invitation.status !== "pending" ||
 					stableDraft?.invitationId !== invitationId
 				) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Invitation cannot be resent",
-								field: "invitation",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Invitation cannot be resent",
+							field: "invitation",
+						}),
 					);
 				}
 
@@ -441,71 +426,65 @@ export async function resendInvitation(
 					invitation.role !== "admin" &&
 					invitation.role !== "owner"
 				) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Invitation cannot be resent",
-								field: "invitation",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Invitation cannot be resent",
+							field: "invitation",
+						}),
 					);
 				}
 
 				const invitationRole = invitation.role;
 				failurePhase = "createInvitation";
-				const resentInvitation = yield* _(
-					Effect.tryPromise({
-						try: async () =>
-							await auth.api.createInvitation({
-								body: {
-									organizationId,
-									email: normalizedEmail,
-									role: invitationRole,
-									resend: true,
-								},
-								headers: await headers(),
-							}),
-						catch: () =>
-							new ValidationError({
-								message: "Failed to resend invitation",
-								field: "invitation",
-							}),
-					}),
-				);
+				const resentInvitation = yield* Effect.tryPromise({
+					try: async () =>
+						await auth.api.createInvitation({
+							body: {
+								organizationId,
+								email: normalizedEmail,
+								role: invitationRole,
+								resend: true,
+							},
+							headers: await headers(),
+						}),
+					catch: () =>
+						new ValidationError({
+							message: "Failed to resend invitation",
+							field: "invitation",
+						}),
+				});
 
 				authoritativeInvitationId = resentInvitation.id;
 				failurePhase = "persistInvitationState";
-				yield* _(
-					Effect.promise(async () => {
-						try {
-							await persistEmployeeInvitationDraft(db, {
+				yield* Effect.promise(async () => {
+					try {
+						await persistEmployeeInvitationDraft(db, {
+							organizationId,
+							normalizedEmail,
+							invitationId: resentInvitation.id,
+							canCreateOrganizations:
+								invitation.canCreateOrganizations ?? false,
+							targetTeamId: invitation.targetTeamId,
+							initialRole:
+								invitationRole === "admin" || invitationRole === "owner"
+									? "admin"
+									: "employee",
+							updatedBy: session.user.id,
+						});
+					} catch {
+						// Better Auth has already delivered the email. Reporting failure here
+						// would invite a retry and duplicate delivery; acceptance can recover
+						// prepared fields from the stable identity-scoped draft.
+						logger.warn(
+							{
+								operation: "repairResentInvitationPersistence",
 								organizationId,
-								normalizedEmail,
 								invitationId: resentInvitation.id,
-								canCreateOrganizations:
-									invitation.canCreateOrganizations ?? false,
-								targetTeamId: invitation.targetTeamId,
-								initialRole:
-									invitationRole === "admin" || invitationRole === "owner"
-										? "admin"
-										: "employee",
-								updatedBy: session.user.id,
-							});
-						} catch {
-							// Better Auth has already delivered the email. Reporting failure here
-							// would invite a retry and duplicate delivery; acceptance can recover
-							// prepared fields from the stable identity-scoped draft.
-							logger.warn(
-								{
-									operation: "repairResentInvitationPersistence",
-									organizationId,
-									invitationId: resentInvitation.id,
-								},
-								"Resent invitation requires app-state repair",
-							);
-						}
-					}),
-				);
+							},
+							"Resent invitation requires app-state repair",
+						);
+					}
+				});
 
 				logger.info(
 					{ organizationId, invitationId },
@@ -513,8 +492,8 @@ export async function resendInvitation(
 				);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(new Error("Invitation resend failed"));
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -529,7 +508,7 @@ export async function resendInvitation(
 							},
 							"Failed to resend invitation",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -566,23 +545,21 @@ export async function updateInvitationTargetTeam(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId: validatedData.organizationId,
-						requiredRole: "admin",
-						message: "Only admins and owners can update invitations",
-						resource: "invitation",
-						action: "update",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId: validatedData.organizationId,
+					requiredRole: "admin",
+					message: "Only admins and owners can update invitations",
+					resource: "invitation",
+					action: "update",
+				});
 
-				const invitation = yield* _(
-					dbService.query("getPendingInvitation", async () => {
+				const invitation = yield* dbService
+					.query("getPendingInvitation", async () => {
 						return await db.query.invitation.findFirst({
 							where: and(
 								eq(authSchema.invitation.id, validatedData.invitationId),
@@ -593,74 +570,72 @@ export async function updateInvitationTargetTeam(
 								eq(authSchema.invitation.status, "pending"),
 							),
 						});
-					}),
-					Effect.flatMap((invitationRecord) =>
-						invitationRecord
-							? Effect.succeed(invitationRecord)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Invitation not found",
-										entityType: "invitation",
-										entityId: validatedData.invitationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((invitationRecord) =>
+							invitationRecord
+								? Effect.succeed(invitationRecord)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Invitation not found",
+											entityType: "invitation",
+											entityId: validatedData.invitationId,
+										}),
+									),
+						),
+					);
 
 				if (validatedData.targetTeamId) {
 					const targetTeamId = validatedData.targetTeamId;
-					const targetTeam = yield* _(
-						dbService.query("getInvitationTargetTeam", async () => {
+					const targetTeam = yield* dbService.query(
+						"getInvitationTargetTeam",
+						async () => {
 							return await db.query.team.findFirst({
 								where: and(
 									eq(team.id, targetTeamId),
 									eq(team.organizationId, invitation.organizationId),
 								),
 							});
-						}),
+						},
 					);
 
 					if (!targetTeam) {
-						yield* _(
-							Effect.fail(
-								new ValidationError({
-									message: "Target team not found in this organization",
-									field: "targetTeamId",
-									value: validatedData.targetTeamId,
-								}),
-							),
+						yield* Effect.fail(
+							new ValidationError({
+								message: "Target team not found in this organization",
+								field: "targetTeamId",
+								value: validatedData.targetTeamId,
+							}),
 						);
 					}
 				}
 
-				yield* _(
-					Effect.tryPromise({
-						try: () =>
-							syncInvitationTargetTeam(db, {
-								organizationId: invitation.organizationId,
-								invitationId: invitation.id,
-								email: invitation.email,
-								targetTeamId: validatedData.targetTeamId ?? null,
-							}),
-						catch: () =>
-							new ValidationError({
-								message: "Failed to update invitation",
-								field: "invitation",
-							}),
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: () =>
+						syncInvitationTargetTeam(db, {
+							organizationId: invitation.organizationId,
+							invitationId: invitation.id,
+							email: invitation.email,
+							targetTeamId: validatedData.targetTeamId ?? null,
+						}),
+					catch: () =>
+						new ValidationError({
+							message: "Failed to update invitation",
+							field: "invitation",
+						}),
+				});
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
 							message: String(error),
 						});
 						logger.error({ error }, "Failed to update invitation target team");
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -690,61 +665,58 @@ export async function cancelInvitation(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
 
 				// Get invitation to check organization
-				const invitation = yield* _(
-					dbService.query("getInvitation", async () => {
+				const invitation = yield* dbService
+					.query("getInvitation", async () => {
 						return await db.query.invitation.findFirst({
 							where: eq(authSchema.invitation.id, invitationId),
 						});
-					}),
-					Effect.flatMap((inv) =>
-						inv
-							? Effect.succeed(inv)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Invitation not found",
-										entityType: "invitation",
-										entityId: invitationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((inv) =>
+							inv
+								? Effect.succeed(inv)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Invitation not found",
+											entityType: "invitation",
+											entityId: invitationId,
+										}),
+									),
+						),
+					);
 				authoritativeOrganizationId = invitation.organizationId;
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId: invitation.organizationId,
-						requiredRole: "admin",
-						message: "Only admins and owners can cancel invitations",
-						resource: "invitation",
-						action: "delete",
-					}),
-				);
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId: invitation.organizationId,
+					requiredRole: "admin",
+					message: "Only admins and owners can cancel invitations",
+					resource: "invitation",
+					action: "delete",
+				});
 
 				// Use Better Auth organization.cancelInvitation API
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await auth.api.cancelInvitation({
-								body: {
-									invitationId,
-								},
-								headers: await headers(),
-							});
-						},
-						catch: () => {
-							return new ValidationError({
-								message: "Failed to cancel invitation",
-								field: "invitation",
-							});
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await auth.api.cancelInvitation({
+							body: {
+								invitationId,
+							},
+							headers: await headers(),
+						});
+					},
+					catch: () => {
+						return new ValidationError({
+							message: "Failed to cancel invitation",
+							field: "invitation",
+						});
+					},
+				});
 				logger.info(
 					{
 						invitationId,
@@ -755,8 +727,8 @@ export async function cancelInvitation(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(new Error("Invitation cancellation failed"));
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -772,7 +744,7 @@ export async function cancelInvitation(
 							},
 							"Failed to cancel invitation",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -809,40 +781,37 @@ export async function updateMemberRole(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
 
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "owner",
-						message: "Only owners can change member roles",
-						resource: "member",
-						action: "update",
-					}),
-				);
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only owners can change member roles",
+					resource: "member",
+					action: "update",
+				});
 
 				// Validate input
 				const validationResult = updateMemberRoleSchema.safeParse(data);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "data",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message:
+								validationResult.error.issues[0]?.message || "Invalid input",
+							field:
+								validationResult.error.issues[0]?.path?.join(".") || "data",
+						}),
 					);
 				}
 
 				const validatedData = validationResult.data;
-				const targetMember = yield* _(
-					dbService.query("getTargetMemberForRoleUpdate", async () => {
+				const targetMember = yield* dbService.query(
+					"getTargetMemberForRoleUpdate",
+					async () => {
 						return await db.query.member.findFirst({
 							where: and(
 								eq(authSchema.member.id, memberId),
@@ -851,58 +820,52 @@ export async function updateMemberRole(
 							),
 							columns: { id: true, userId: true, status: true },
 						});
-					}),
+					},
 				);
 
 				if (targetMember?.status !== "approved") {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Member not found",
-								entityType: "member",
-								entityId: memberId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Member not found",
+							entityType: "member",
+							entityId: memberId,
+						}),
 					);
 				}
 
 				if (targetMember.userId === session.user.id) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "You cannot change your own organization role",
-								field: "memberId",
-								value: memberId,
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "You cannot change your own organization role",
+							field: "memberId",
+							value: memberId,
+						}),
 					);
 				}
 
 				// Use Better Auth organization.updateMemberRole API
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							const requestHeaders = await headers();
-							// The role update commits with its access guard (#314).
-							await runAuthMutation(() =>
-								auth.api.updateMemberRole({
-									body: {
-										organizationId,
-										memberId,
-										role: validatedData.role,
-									},
-									headers: requestHeaders,
-								}),
-							);
-						},
-						catch: () => {
-							return new ValidationError({
-								message: "Failed to update member role",
-								field: "role",
-							});
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						const requestHeaders = await headers();
+						// The role update commits with its access guard (#314).
+						await runAuthMutation(() =>
+							auth.api.updateMemberRole({
+								body: {
+									organizationId,
+									memberId,
+									role: validatedData.role,
+								},
+								headers: requestHeaders,
+							}),
+						);
+					},
+					catch: () => {
+						return new ValidationError({
+							message: "Failed to update member role",
+							field: "role",
+						});
+					},
+				});
 
 				logger.info(
 					{
@@ -915,8 +878,8 @@ export async function updateMemberRole(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -926,7 +889,7 @@ export async function updateMemberRole(
 							{ error, organizationId, memberId },
 							"Failed to update member role",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -960,32 +923,28 @@ export async function updateOrganizationDetails(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "owner",
-						message: "Only owners can update organization details",
-						resource: "organization",
-						action: "update",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only owners can update organization details",
+					resource: "organization",
+					action: "update",
+				});
 
 				// Validate input
 				const validationResult = updateOrganizationSchema.safeParse(data);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									validationResult.error.issues[0]?.message || "Invalid input",
-								field:
-									validationResult.error.issues[0]?.path?.join(".") || "data",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message:
+								validationResult.error.issues[0]?.message || "Invalid input",
+							field:
+								validationResult.error.issues[0]?.path?.join(".") || "data",
+						}),
 					);
 				}
 
@@ -1013,28 +972,26 @@ export async function updateOrganizationDetails(
 				}
 
 				// Use Better Auth organization.updateOrganization API
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await auth.api.updateOrganization({
-								body: {
-									organizationId,
-									data: updateData,
-								},
-								headers: await headers(),
-							});
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to update organization",
-								field: "organization",
-							});
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await auth.api.updateOrganization({
+							body: {
+								organizationId,
+								data: updateData,
+							},
+							headers: await headers(),
+						});
+					},
+					catch: (error) => {
+						return new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Failed to update organization",
+							field: "organization",
+						});
+					},
+				});
 
 				logger.info(
 					{
@@ -1046,8 +1003,8 @@ export async function updateOrganizationDetails(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1057,7 +1014,7 @@ export async function updateOrganizationDetails(
 							{ error, organizationId },
 							"Failed to update organization",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1086,29 +1043,25 @@ export async function removeOrganizationLogo(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "owner",
-						message: "Only owners can update organization details",
-						resource: "organization",
-						action: "update",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only owners can update organization details",
+					resource: "organization",
+					action: "update",
+				});
 
-				yield* _(
-					dbService.query("removeOrganizationLogo", async () => {
-						await db
-							.update(authSchema.organization)
-							.set({ logo: null })
-							.where(eq(authSchema.organization.id, organizationId));
-					}),
-				);
+				yield* dbService.query("removeOrganizationLogo", async () => {
+					await db
+						.update(authSchema.organization)
+						.set({ logo: null })
+						.where(eq(authSchema.organization.id, organizationId));
+				});
 
 				logger.info(
 					{ organizationId },
@@ -1116,8 +1069,8 @@ export async function removeOrganizationLogo(
 				);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1127,7 +1080,7 @@ export async function removeOrganizationLogo(
 							{ error, organizationId },
 							"Failed to remove organization logo",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1164,52 +1117,46 @@ export async function toggleOrganizationFeature(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
+			return Effect.gen(function* () {
 				if (!isOrganizationFeature(feature)) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Invalid organization feature",
-								field: "feature",
-								value: feature,
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "Invalid organization feature",
+							field: "feature",
+							value: feature,
+						}),
 					);
 				}
 
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "owner",
-						message: "Only owners can change organization features",
-						resource: "organization",
-						action: "update",
-					}),
-				);
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only owners can change organization features",
+					resource: "organization",
+					action: "update",
+				});
 
 				// Update the organization feature directly
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db
-								.update(authSchema.organization)
-								.set({ [feature]: enabled })
-								.where(eq(authSchema.organization.id, organizationId));
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to update organization feature",
-								field: feature,
-							});
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.update(authSchema.organization)
+							.set({ [feature]: enabled })
+							.where(eq(authSchema.organization.id, organizationId));
+					},
+					catch: (error) => {
+						return new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Failed to update organization feature",
+							field: feature,
+						});
+					},
+				});
 
 				logger.info(
 					{
@@ -1222,8 +1169,8 @@ export async function toggleOrganizationFeature(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1233,7 +1180,7 @@ export async function toggleOrganizationFeature(
 							{ error, organizationId, feature },
 							"Failed to toggle organization feature",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1264,95 +1211,83 @@ export async function updateOrganizationTimezone(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "owner",
-						message: "Only owners can change organization timezone",
-						resource: "organization",
-						action: "update",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "owner",
+					message: "Only owners can change organization timezone",
+					resource: "organization",
+					action: "update",
+				});
 
 				if (!isValidIanaTimeZone(timezone)) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Timezone must be a valid timezone",
-								field: "timezone",
-								value: timezone,
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "Timezone must be a valid timezone",
+							field: "timezone",
+							value: timezone,
+						}),
 					);
 				}
 
 				// Protected change (#311): the zone and, once adopted, its durable
 				// balance-rebuild intent commit together.
-				const change = yield* _(
-					Effect.tryPromise({
-						try: () =>
-							changeOrganizationTimezone({
-								organizationId,
-								actorUserId: session.user.id,
-								timezone,
-							}),
-						// Nothing was committed; keep statement text out of the response.
-						catch: (error) => {
-							logger.error(
-								{ error, organizationId, timezone },
-								"Organization timezone change rolled back",
-							);
-							return new ValidationError({
-								message: "Failed to update organization timezone",
-								field: "timezone",
-							});
-						},
-					}),
-				);
+				const change = yield* Effect.tryPromise({
+					try: () =>
+						changeOrganizationTimezone({
+							organizationId,
+							actorUserId: session.user.id,
+							timezone,
+						}),
+					// Nothing was committed; keep statement text out of the response.
+					catch: (error) => {
+						logger.error(
+							{ error, organizationId, timezone },
+							"Organization timezone change rolled back",
+						);
+						return new ValidationError({
+							message: "Failed to update organization timezone",
+							field: "timezone",
+						});
+					},
+				});
 				if (change.status === "not_found") {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Organization not found",
-								entityType: "organization",
-								entityId: organizationId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Organization not found",
+							entityType: "organization",
+							entityId: organizationId,
+						}),
 					);
 				}
 				if (change.status === "not_authorized") {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only owners can change organization timezone",
-								userId: session.user.id,
-								resource: "organization",
-								action: "update",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only owners can change organization timezone",
+							userId: session.user.id,
+							resource: "organization",
+							action: "update",
+						}),
 					);
 				}
 
 				// The save is committed. Rebuilding runs separately; a failure stays on
 				// the intent for the balance worker and does not fail the save.
 				if (change.status === "changed" && change.rebuild === "intent") {
-					const rebuild = yield* _(
-						Effect.promise(() =>
-							processWorkBalanceRebuildIntents({ organizationId }).catch(
-								(error: unknown) => ({
-									organizationsRebuilt: 0,
-									failures: [
-										{
-											organizationId,
-											error: failureMessage(error),
-										},
-									],
-								}),
-							),
+					const rebuild = yield* Effect.promise(() =>
+						processWorkBalanceRebuildIntents({ organizationId }).catch(
+							(error: unknown) => ({
+								organizationsRebuilt: 0,
+								failures: [
+									{
+										organizationId,
+										error: failureMessage(error),
+									},
+								],
+							}),
 						),
 					);
 					if (rebuild.failures.length > 0) {
@@ -1373,8 +1308,8 @@ export async function updateOrganizationTimezone(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1384,7 +1319,7 @@ export async function updateOrganizationTimezone(
 							{ error, organizationId, timezone },
 							"Failed to update organization timezone",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1415,56 +1350,50 @@ export async function updateOrganizationDefaultNotificationLanguage(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
+			return Effect.gen(function* () {
 				if (!ALL_LANGUAGES.includes(defaultLanguage)) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Unsupported language",
-								field: "defaultLanguage",
-								value: defaultLanguage,
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "Unsupported language",
+							field: "defaultLanguage",
+							value: defaultLanguage,
+						}),
 					);
 				}
 
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
 
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "admin",
-						message:
-							"Only admins and owners can change organization notification language",
-						resource: "organization",
-						action: "update",
-					}),
-				);
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "admin",
+					message:
+						"Only admins and owners can change organization notification language",
+					resource: "organization",
+					action: "update",
+				});
 
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db
-								.insert(organizationNotificationSettings)
-								.values({ organizationId, defaultLanguage })
-								.onConflictDoUpdate({
-									target: organizationNotificationSettings.organizationId,
-									set: { defaultLanguage },
-								});
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to update organization notification language",
-								field: "defaultLanguage",
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.insert(organizationNotificationSettings)
+							.values({ organizationId, defaultLanguage })
+							.onConflictDoUpdate({
+								target: organizationNotificationSettings.organizationId,
+								set: { defaultLanguage },
 							});
-						},
-					}),
-				);
+					},
+					catch: (error) => {
+						return new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Failed to update organization notification language",
+							field: "defaultLanguage",
+						});
+					},
+				});
 
 				logger.info(
 					{
@@ -1476,8 +1405,8 @@ export async function updateOrganizationDefaultNotificationLanguage(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1487,7 +1416,7 @@ export async function updateOrganizationDefaultNotificationLanguage(
 							{ error, organizationId, defaultLanguage },
 							"Failed to update organization notification language",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1522,113 +1451,104 @@ export async function deleteOrganization(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "admin",
-						message: "Only owners and admins can delete an organization",
-						resource: "organization",
-						action: "delete",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "admin",
+					message: "Only owners and admins can delete an organization",
+					resource: "organization",
+					action: "delete",
+				});
 
 				// Get organization details
-				const organization = yield* _(
-					dbService.query("getOrganization", async () => {
+				const organization = yield* dbService
+					.query("getOrganization", async () => {
 						return await db.query.organization.findFirst({
 							where: eq(authSchema.organization.id, organizationId),
 						});
-					}),
-					Effect.flatMap((org) =>
-						org
-							? Effect.succeed(org)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Organization not found",
-										entityType: "organization",
-										entityId: organizationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((org) =>
+							org
+								? Effect.succeed(org)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Organization not found",
+											entityType: "organization",
+											entityId: organizationId,
+										}),
+									),
+						),
+					);
 
 				// Check if already deleted
 				if (organization.deletedAt) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Organization is already scheduled for deletion",
-								field: "organization",
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "Organization is already scheduled for deletion",
+							field: "organization",
+						}),
 					);
 				}
 
 				// Verify confirmation name matches
 				if (confirmationName !== organization.name) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message:
-									"Organization name does not match. Please type the exact organization name to confirm deletion.",
-								field: "confirmationName",
-								value: confirmationName,
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message:
+								"Organization name does not match. Please type the exact organization name to confirm deletion.",
+							field: "confirmationName",
+							value: confirmationName,
+						}),
 					);
 				}
 
 				const deletionDate = new Date();
 
 				// Soft delete: Set deletedAt and deletedBy
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db
-								.update(authSchema.organization)
-								.set({
-									deletedAt: deletionDate,
-									deletedBy: session.user.id,
-								})
-								.where(eq(authSchema.organization.id, organizationId));
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to schedule organization for deletion",
-								field: "organization",
-							});
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.update(authSchema.organization)
+							.set({
+								deletedAt: deletionDate,
+								deletedBy: session.user.id,
+							})
+							.where(eq(authSchema.organization.id, organizationId));
+					},
+					catch: (error) => {
+						return new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Failed to schedule organization for deletion",
+							field: "organization",
+						});
+					},
+				});
 
 				// Send notification emails to all admins and owners
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await sendOrganizationDeletionNotifications(
-								organizationId,
-								organization.name,
-								session.user.name || session.user.email,
-								deletionDate,
-							);
-						},
-						catch: (error) => {
-							// Log but don't fail the action if email sending fails
-							logger.warn(
-								{ error, organizationId },
-								"Failed to send deletion notification emails",
-							);
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await sendOrganizationDeletionNotifications(
+							organizationId,
+							organization.name,
+							session.user.name || session.user.email,
+							deletionDate,
+						);
+					},
+					catch: (error) => {
+						// Log but don't fail the action if email sending fails
+						logger.warn(
+							{ error, organizationId },
+							"Failed to send deletion notification emails",
+						);
+					},
+				});
 
 				logger.info(
 					{
@@ -1642,8 +1562,8 @@ export async function deleteOrganization(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as unknown as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1653,7 +1573,7 @@ export async function deleteOrganization(
 							{ error, organizationId },
 							"Failed to delete organization",
 						);
-						return yield* _(Effect.fail(error as unknown as AnyAppError));
+						return yield* Effect.fail(error as unknown as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1682,76 +1602,71 @@ export async function recoverOrganization(
 			},
 		},
 		(span) => {
-			return Effect.gen(function* (_) {
-				const authService = yield* _(AuthService);
-				const session = yield* _(authService.getSession());
-				const dbService = yield* _(DatabaseService);
-				yield* _(
-					requireActiveOrganizationActionActor({
-						userId: session.user.id,
-						organizationId,
-						requiredRole: "admin",
-						message: "Only owners and admins can recover an organization",
-						resource: "organization",
-						action: "update",
-					}),
-				);
+			return Effect.gen(function* () {
+				const authService = yield* AuthService;
+				const session = yield* authService.getSession();
+				const dbService = yield* DatabaseService;
+				yield* requireActiveOrganizationActionActor({
+					userId: session.user.id,
+					organizationId,
+					requiredRole: "admin",
+					message: "Only owners and admins can recover an organization",
+					resource: "organization",
+					action: "update",
+				});
 
 				// Get organization details
-				const organization = yield* _(
-					dbService.query("getOrganization", async () => {
+				const organization = yield* dbService
+					.query("getOrganization", async () => {
 						return await db.query.organization.findFirst({
 							where: eq(authSchema.organization.id, organizationId),
 						});
-					}),
-					Effect.flatMap((org) =>
-						org
-							? Effect.succeed(org)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Organization not found",
-										entityType: "organization",
-										entityId: organizationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((org) =>
+							org
+								? Effect.succeed(org)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Organization not found",
+											entityType: "organization",
+											entityId: organizationId,
+										}),
+									),
+						),
+					);
 
 				// Check if organization is actually scheduled for deletion
 				if (!organization.deletedAt) {
-					yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "Organization is not scheduled for deletion",
-								field: "organization",
-							}),
-						),
+					yield* Effect.fail(
+						new ValidationError({
+							message: "Organization is not scheduled for deletion",
+							field: "organization",
+						}),
 					);
 				}
 
 				// Clear deletion fields to recover
-				yield* _(
-					Effect.tryPromise({
-						try: async () => {
-							await db
-								.update(authSchema.organization)
-								.set({
-									deletedAt: null,
-									deletedBy: null,
-								})
-								.where(eq(authSchema.organization.id, organizationId));
-						},
-						catch: (error) => {
-							return new ValidationError({
-								message:
-									error instanceof Error
-										? error.message
-										: "Failed to recover organization",
-								field: "organization",
-							});
-						},
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: async () => {
+						await db
+							.update(authSchema.organization)
+							.set({
+								deletedAt: null,
+								deletedBy: null,
+							})
+							.where(eq(authSchema.organization.id, organizationId));
+					},
+					catch: (error) => {
+						return new ValidationError({
+							message:
+								error instanceof Error
+									? error.message
+									: "Failed to recover organization",
+							field: "organization",
+						});
+					},
+				});
 
 				logger.info(
 					{
@@ -1764,8 +1679,8 @@ export async function recoverOrganization(
 
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({
 							code: SpanStatusCode.ERROR,
@@ -1775,7 +1690,7 @@ export async function recoverOrganization(
 							{ error, organizationId },
 							"Failed to recover organization",
 						);
-						return yield* _(Effect.fail(error as AnyAppError));
+						return yield* Effect.fail(error as AnyAppError);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

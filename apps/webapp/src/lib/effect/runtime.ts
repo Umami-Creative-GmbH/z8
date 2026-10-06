@@ -5,6 +5,7 @@ import { AuthServiceLive } from "./services/auth.service";
 import { CustomRoleServiceLive } from "./services/custom-role.service";
 import { DatabaseServiceLive } from "./services/database.service";
 import { EmailServiceLive } from "./services/email.service";
+import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PlatformAdminServiceLive } from "./services/platform-admin.service";
 import { SetupServiceLive } from "./services/setup.service";
 import { TimeEntryServiceLive } from "./services/time-entry.service";
@@ -19,6 +20,7 @@ export const AppLayer = Layer.mergeAll(
 	PlatformAdminServiceLive,
 	SetupServiceLive,
 	CustomRoleServiceLive.pipe(Layer.provide(DatabaseServiceLive)),
+	OnboardingServiceLive.pipe(Layer.provide(AuthServiceLive), Layer.provide(DatabaseServiceLive)),
 );
 
 // Runtime for executing effects

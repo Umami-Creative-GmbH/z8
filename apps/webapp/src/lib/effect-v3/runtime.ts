@@ -9,7 +9,6 @@ import { CoverageServiceLive } from "./services/coverage.service";
 import { DatabaseServiceLive } from "./services/database.service";
 import { EmailServiceLive } from "./services/email.service";
 import { ManagerServiceLive } from "./services/manager.service";
-import { OnboardingServiceLive } from "./services/onboarding.service";
 import { PermissionsServiceLive } from "./services/permissions.service";
 import { ShiftServiceLive } from "./services/shift.service";
 import { ShiftRequestServiceLive } from "./services/shift-request.service";
@@ -21,12 +20,6 @@ const BaseLayer = DatabaseServiceLive;
 
 // Layer for AuthService (depends on nothing external)
 const AuthLayer = AuthServiceLive;
-
-// Layer for services that depend on DatabaseService and AuthService
-const OnboardingLayer = OnboardingServiceLive.pipe(
-	Layer.provide(AuthServiceLive),
-	Layer.provide(DatabaseServiceLive),
-);
 
 // Layer for PermissionsService (depends on DatabaseService)
 const PermissionsLayer = PermissionsServiceLive.pipe(Layer.provide(DatabaseServiceLive));
@@ -57,7 +50,6 @@ export const AppLayer = Layer.mergeAll(
 	BaseLayer,
 	AuthLayer,
 	EmailServiceLive,
-	OnboardingLayer,
 	PermissionsLayer,
 	ManagerLayer,
 	ShiftLayer,
