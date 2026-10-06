@@ -213,6 +213,7 @@ export function SubmittedTravelExpenseReport({
 						mileage: item.mileage ?? null,
 						perDiem: item.perDiem ?? null,
 						receiptException: item.receiptException ?? null,
+						allowanceOverride: item.allowanceOverride ?? null,
 					}))}
 				/>
 			</section>

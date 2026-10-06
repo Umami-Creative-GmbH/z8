@@ -95,6 +95,8 @@ export function buildTravelExpenseReportCardFacts(
 		// A report without a receipt for every expense (e.g. an accepted
 		// exception, #604) needs authenticated review.
 		items.some((item) => !Array.isArray(item.receipts) || item.receipts.length === 0) ||
+		// A manually set allowance (#610) needs its reason and evidence reviewed in the web.
+		items.some((item) => item.allowanceOverride) ||
 		// An adjustment's signed delta and baseline are reviewed on the web (#615).
 		facts.adjustment ||
 		!reimbursable ||

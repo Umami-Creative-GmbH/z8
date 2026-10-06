@@ -22,6 +22,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import { withoutOverriddenRequirements } from "@/lib/travel-expenses/allowance-override";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
 import {
 	emptyPerDiemItinerary,
@@ -39,6 +40,7 @@ import {
 	tripDays,
 } from "@/lib/travel-expenses/per-diem";
 import type { ReportItemView } from "@/lib/travel-expenses/report-store";
+import { AllowanceOverrideNotice } from "./allowance-override-notice";
 import { DraftSaveStatus } from "./draft-save-status";
 import { formatPlainDate } from "./format";
 import { mealLabel, PerDiemBreakdown, perDiemExceptionLabel } from "./per-diem-breakdown";
@@ -649,11 +651,22 @@ export function PerDiemItemEditor({
 					const draft = parsed.ok ? parsed.itinerary : null;
 					const matches = draft !== null && perDiemDraftMatches(draft, saved);
 					const calculation = matches ? (saved.perDiem?.calculation ?? null) : null;
+					// An administrator's override (#610) applies to the saved facts only.
+					const override = matches ? (saved.perDiem?.override ?? null) : null;
 					const missing = draft
-						? perDiemMissingRequirements(draft, calculation ?? { status: "incomplete" }, trip)
+						? withoutOverriddenRequirements(
+								perDiemMissingRequirements(draft, calculation ?? { status: "incomplete" }, trip),
+								override,
+							)
 						: null;
 					return (
 						<div className="space-y-4">
+							{override && (
+								<AllowanceOverrideNotice
+									override={override}
+									ordinary={calculation?.status === "calculated" ? calculation : null}
+								/>
+							)}
 							<PerDiemCalculationPanel
 								id={item.id}
 								calculation={calculation}

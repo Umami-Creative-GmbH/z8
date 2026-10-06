@@ -29,6 +29,7 @@ import { loadMileagePricer } from "./mileage-pricing";
 import { type PerDiemCalculation, type PerDiemItinerary, tripDays } from "./per-diem";
 import { loadPerDiemViews } from "./per-diem-pricing";
 import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
+import type { TripDestination } from "./trip-destination";
 
 /**
  * Records and revokes audited allowance overrides (#610). The caller has
@@ -363,7 +364,7 @@ export interface AllowanceExceptionItem {
 	vehicle: MileageVehicle | null;
 	/** Per diem facts. */
 	itinerary: PerDiemItinerary | null;
-	destinations: { place: string; countryCode: string }[];
+	destinations: TripDestination[];
 	/** The ordinary calculation now: why it needs an override (or `calculated`). */
 	situation: AllowanceSituation;
 	/** The ordinary amount, when the policy can price it. */

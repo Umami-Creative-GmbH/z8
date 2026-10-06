@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AllowanceOverridesSettingsCard } from "@/components/settings/travel-expense/allowance-overrides-settings";
 import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expense/foreign-expense-conversions";
 import { MileagePolicySettingsCard } from "@/components/settings/travel-expense/mileage-policy-settings";
 import { PerDiemPolicySettingsCard } from "@/components/settings/travel-expense/per-diem-policy-settings";
@@ -25,6 +26,7 @@ async function TravelExpenseSettingsPageContent() {
 			<TravelExpenseProjectExceptionsCard />
 			<MileagePolicySettingsCard />
 			<PerDiemPolicySettingsCard />
+			<AllowanceOverridesSettingsCard />
 			<TravelExpensePolicyManagement />
 		</div>
 	);

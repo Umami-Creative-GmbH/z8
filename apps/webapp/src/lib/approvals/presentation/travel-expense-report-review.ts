@@ -12,6 +12,10 @@ import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/tra
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
 import { adjustmentReviewSections } from "./travel-expense-report-adjustment-review";
+import {
+	allowanceOverrideReviewRows,
+	allowanceOverrideReviewSections,
+} from "./travel-expense-report-allowance-override";
 import { conversionReviewRows } from "./travel-expense-report-conversion-review";
 import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
 import { mileageReviewRows } from "./travel-expense-report-mileage";
@@ -159,6 +163,7 @@ export function buildTravelExpenseReportReviewSections(
 		...adjustmentReviewSections(facts),
 		{ type: "key_value", title: text("submittedReportTitle", "Submitted report"), rows },
 		...receiptExceptionAcceptanceSections(facts),
+		...allowanceOverrideReviewSections(facts),
 		...facts.items.map((item, index): ApprovalInboxDetailSection => {
 			const names = item.receipts.map(
 				(receipt) => labels.receiptFileNames[receipt.receiptId] ?? receipt.receiptId,
@@ -188,6 +193,7 @@ export function buildTravelExpenseReportReviewSections(
 			itemRows.push(...travelExpenseReportProjectRows(item));
 			itemRows.push(...mileageReviewRows(item));
 			itemRows.push(...perDiemReviewRows(item));
+			itemRows.push(...allowanceOverrideReviewRows(item));
 			itemRows.push(
 				...(item.receiptException
 					? receiptExceptionRows(item.receiptException)

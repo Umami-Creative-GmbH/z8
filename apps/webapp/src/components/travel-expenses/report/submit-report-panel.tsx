@@ -306,6 +306,10 @@ export function SubmitReportPanel({
 										? item.perDiem.calculation
 										: null,
 								receiptException: pendingReceiptException(item),
+								// An applying administrator override (#610) is what the expense counts.
+								allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
+									(override) => override?.applies,
+								),
 							}))}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}

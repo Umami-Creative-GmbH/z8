@@ -90,6 +90,7 @@ export const queryKeys = {
 		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
 		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
 		perDiemPolicy: () => ["travel-expenses", "settings", "per-diem-policy"] as const,
+		allowanceExceptions: () => ["travel-expenses", "settings", "allowance-exceptions"] as const,
 		legacyPolicies: () => ["travel-expenses", "settings", "legacy-policies"] as const,
 		reportSubmission: (reportId: string, cycle?: number) =>
 			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,

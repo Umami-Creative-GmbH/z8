@@ -4,6 +4,7 @@ import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion";
+import { type AllowanceOverrideSummary, AllowanceOverrideNotice } from "./allowance-override-notice";
 import { ConversionSummary } from "./conversion-summary";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
@@ -31,6 +32,8 @@ export interface ExpenseSummary {
 	conversion?: ConversionResult | null;
 	/** Frozen project attribution (#605). */
 	project?: ExpenseProjectSummary;
+	/** An allowance an expense administrator set manually (#610); `amount` is its amount. */
+	allowanceOverride?: AllowanceOverrideSummary | null;
 }
 
 export interface TripSummary {
@@ -124,6 +127,12 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 						</div>
 					)}
 					{item.project && <ExpenseProjectLine project={item.project} />}
+					{item.allowanceOverride && (
+						<AllowanceOverrideNotice
+							override={item.allowanceOverride}
+							ordinary={item.mileage ?? item.perDiem ?? null}
+						/>
+					)}
 					{item.mileage && <MileageBreakdown facts={item.mileage} />}
 					{item.perDiem && <PerDiemBreakdown facts={item.perDiem} />}
 					{item.receipts.length > 0 && (

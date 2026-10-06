@@ -19,6 +19,7 @@ import {
 	TFormLabel,
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
+import { withoutOverriddenRequirements } from "@/lib/travel-expenses/allowance-override";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
 import {
 	MAX_ROUTE_LENGTH,
@@ -32,6 +33,7 @@ import {
 } from "@/lib/travel-expenses/mileage";
 import { MAX_ACCOUNTING_REFERENCE_LENGTH } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView } from "@/lib/travel-expenses/report-store";
+import { AllowanceOverrideNotice } from "./allowance-override-notice";
 import { DraftSaveStatus } from "./draft-save-status";
 import { formatPlainDate } from "./format";
 import { MileageBreakdown, vehicleLabel } from "./mileage-breakdown";
@@ -415,11 +417,23 @@ export function MileageItemEditor({
 						draft && mileageDraftMatches(draft, saved)
 							? (saved.mileage?.calculation ?? null)
 							: null;
+					// An administrator's override (#610) applies to the saved facts only.
+					const override =
+						draft && mileageDraftMatches(draft, saved) ? (saved.mileage?.override ?? null) : null;
 					const missing = draft
-						? mileageItemMissingRequirements(draft, calculation ?? { status: "incomplete" })
+						? withoutOverriddenRequirements(
+								mileageItemMissingRequirements(draft, calculation ?? { status: "incomplete" }),
+								override,
+							)
 						: null;
 					return (
 						<div className="space-y-4">
+							{override && (
+								<AllowanceOverrideNotice
+									override={override}
+									ordinary={calculation?.status === "calculated" ? calculation : null}
+								/>
+							)}
 							<MileageCalculationPanel
 								id={item.id}
 								draftComplete={missing !== null && missing.length === 0}
