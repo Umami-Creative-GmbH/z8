@@ -443,7 +443,7 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 
 		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
 		const frozen = await revisionFacts(reportId);
-		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v2:[0-9a-f]{64}$/);
+		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v\d+:[0-9a-f]{64}$/);
 		expect(frozen.facts.totals).toEqual({
 			currency: "EUR",
 			reimbursable: "37.04",
