@@ -5,6 +5,10 @@ import type {
 } from "@/db/schema/travel-expense";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "@/lib/travel-expenses/attachment-validation";
 import {
+	frozenReceiptException,
+	receiptExceptionContext,
+} from "@/lib/travel-expenses/receipt-exception";
+import {
 	type ExpensePayer,
 	type ReceiptExpenseCategory,
 	type ReceiptItemDraft,
@@ -32,7 +36,10 @@ import type { TravelExpenseMoney } from "./travel-expense-facts";
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 1;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 2;
+
+/** Version 2 (#604) adds the optional `receiptException` of an item. */
+const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;
@@ -55,6 +62,12 @@ export interface TravelExpenseReportSubmittedItem {
 	paidBy: ExpensePayer;
 	accountingReference: string | null;
 	receipts: TravelExpenseReportReceiptManifestItem[];
+	/**
+	 * Since v2 (#604): the employee's explanation of a missing receipt. Present
+	 * only for an expense frozen without receipts while the organization allowed
+	 * exceptions; approval must accept it explicitly.
+	 */
+	receiptException?: { reason: string };
 }
 
 export interface TravelExpenseReportSubmittedFacts {
@@ -108,7 +121,11 @@ export interface TravelExpenseReportFactsInput {
 		originalCurrency: string | null;
 		paidBy: ExpensePayer | null;
 		accountingReference: string | null;
+		/** Missing-receipt explanation (#604); null or absent when none was requested. */
+		receiptExceptionReason?: string | null;
 	}>;
+	/** Whether the organization allowed missing-receipt exceptions when submitting (#604). */
+	receiptExceptionsAllowed?: boolean;
 	receipts: ReadonlyArray<{
 		id: string;
 		organizationId: string;
@@ -277,7 +294,16 @@ function snapshotReport(
 			const missing = receiptItemMissingRequirements(draft, {
 				receiptCount: receipts.length,
 				reimbursementCurrency: report.reimbursementCurrency,
+				receiptException: receiptExceptionContext(
+					row.receiptExceptionReason ?? null,
+					input.receiptExceptionsAllowed === true,
+				),
 			});
+			const exception = frozenReceiptException(row.receiptExceptionReason, receipts.length);
+			const exceptionFact =
+				schemaVersion >= RECEIPT_EXCEPTION_SCHEMA_VERSION && exception
+					? { receiptException: exception }
+					: {};
 			const { expenseDate, category, description, amount, currency, paidBy } = draft;
 			if (!enforce) {
 				return {
@@ -291,6 +317,7 @@ function snapshotReport(
 					paidBy,
 					accountingReference: row.accountingReference,
 					receipts,
+					...exceptionFact,
 				} as TravelExpenseReportSubmittedItem;
 			}
 			if (
@@ -316,6 +343,7 @@ function snapshotReport(
 				paidBy,
 				accountingReference: row.accountingReference,
 				receipts,
+				...exceptionFact,
 			};
 		});
 	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);

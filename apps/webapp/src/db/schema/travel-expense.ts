@@ -229,6 +229,10 @@ export const travelExpenseReportItem = pgTable(
 		originalCurrency: text("original_currency"),
 		paidBy: text("paid_by").$type<ExpensePayer>(),
 		accountingReference: text("accounting_reference"),
+		// Missing-receipt exception (#604): the employee's explanation; null when none is requested.
+		// It is never a receipt row, and has its own version so it saves independently.
+		receiptExceptionReason: text("receipt_exception_reason"),
+		receiptExceptionVersion: integer("receipt_exception_version").default(0).notNull(),
 		version: integer("version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -254,6 +258,11 @@ export const travelExpenseReportItem = pgTable(
 		check(
 			"travel_expense_report_item_amount_check",
 			sql`${table.originalAmount} IS NULL OR ${table.originalAmount} > 0`,
+		),
+		check(
+			"travel_expense_report_item_receipt_exception_check",
+			sql`${table.receiptExceptionVersion} >= 0 AND (${table.receiptExceptionReason} IS NULL
+				OR char_length(btrim(${table.receiptExceptionReason})) BETWEEN 1 AND 1000)`,
 		),
 	],
 );
@@ -411,6 +420,10 @@ export const travelExpenseSettings = pgTable("travel_expense_settings", {
 	expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
 		onDelete: "set null",
 	}),
+	// Whether employees may submit an explained missing-receipt exception (#604).
+	missingReceiptExceptionsAllowed: boolean("missing_receipt_exceptions_allowed")
+		.default(false)
+		.notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 });

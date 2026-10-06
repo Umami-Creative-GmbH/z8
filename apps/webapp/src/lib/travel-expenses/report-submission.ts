@@ -1,5 +1,6 @@
 import type { TravelExpenseReportKind } from "@/db/schema";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
+import type { ReceiptExceptionContext } from "./receipt-exception";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
@@ -31,6 +32,10 @@ export interface SubmissionReportFacts {
 		draft: ReceiptItemDraft;
 		/** The receipts attached to the expense right now. */
 		receiptIds: readonly string[];
+		/** Missing-receipt exception of the expense (#604); absent means none. */
+		receiptException?: ReceiptExceptionContext;
+		/** Version of the expense's exception; 0 when it never had one. */
+		receiptExceptionVersion?: number;
 	}[];
 }
 
@@ -38,7 +43,13 @@ export interface SubmissionReportFacts {
 export interface ReviewedReportVersions {
 	/** Null for standalone reports, which have no trip details. */
 	detailsVersion: number | null;
-	items: readonly { id: string; version: number; receiptIds: readonly string[] }[];
+	items: readonly {
+		id: string;
+		version: number;
+		receiptIds: readonly string[];
+		/** The missing-receipt exception version reviewed (#604); absent means 0. */
+		receiptExceptionVersion?: number;
+	}[];
 }
 
 function sameIds(left: readonly string[], right: readonly string[]): boolean {
@@ -82,7 +93,8 @@ function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVe
 		return (
 			seen?.id === item.id &&
 			seen.version === item.version &&
-			sameIds(seen.receiptIds, item.receiptIds)
+			sameIds(seen.receiptIds, item.receiptIds) &&
+			(seen.receiptExceptionVersion ?? 0) === (item.receiptExceptionVersion ?? 0)
 		);
 	});
 }
@@ -95,6 +107,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 				id: item.id,
 				draft: item.draft,
 				receiptCount: item.receiptIds.length,
+				receiptException: item.receiptException,
 			})),
 			reimbursementCurrency: report.reimbursementCurrency,
 		});
@@ -106,6 +119,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 			missing: receiptItemMissingRequirements(item.draft, {
 				receiptCount: item.receiptIds.length,
 				reimbursementCurrency: report.reimbursementCurrency,
+				receiptException: item.receiptException,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

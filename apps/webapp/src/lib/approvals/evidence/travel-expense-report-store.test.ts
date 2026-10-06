@@ -105,7 +105,8 @@ async function expectInvariant(promise: Promise<unknown>) {
 describe("travel expense report revisions", () => {
 	it("reads a captured schema version 1 revision back unchanged", async () => {
 		const { database, rows } = fakeRevisionTable();
-		const facts = buildTravelExpenseReportSubmittedFacts(factsInput);
+		// Later versions only add optional facts this report does not have.
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -129,7 +130,7 @@ describe("travel expense report revisions", () => {
 	it("refuses facts whose version disagrees with their row", async () => {
 		const { database, rows } = fakeRevisionTable();
 		await capture(database, buildTravelExpenseReportSubmittedFacts(factsInput));
-		(rows[0] as Row).schemaVersion = 2;
+		(rows[0] as Row).schemaVersion = 1;
 		await expectInvariant(loadTravelExpenseReportSubmittedRevision(database, scope));
 	});
 });
