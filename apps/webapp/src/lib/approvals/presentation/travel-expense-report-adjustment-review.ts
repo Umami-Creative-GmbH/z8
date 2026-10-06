@@ -30,7 +30,10 @@ export function adjustmentReviewSections(
 			type: "key_value",
 			title: text("adjustmentTitle", "Adjustment"),
 			rows: [
-				{ label: text("adjustmentOriginalReport", "Corrects report"), value: adjustment.originalReportId },
+				{
+					label: text("adjustmentOriginalReport", "Corrects report"),
+					value: adjustment.originalReportId,
+				},
 				{ label: text("adjustmentReason", "Reason"), value: adjustment.reason },
 				{
 					label: text("adjustmentBaseline", "Approved amount before this adjustment"),
@@ -50,7 +53,10 @@ export function adjustmentReviewSections(
 					label: text("adjustmentCorrected", "Corrected amount"),
 					value: `${facts.totals.reimbursable} ${facts.totals.currency}`,
 				},
-				{ label: text("adjustmentDelta", "Signed difference"), value: `${signed} ${delta.currency}` },
+				{
+					label: text("adjustmentDelta", "Signed difference"),
+					value: `${signed} ${delta.currency}`,
+				},
 			],
 		},
 	];

@@ -56,10 +56,7 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 	onTravelExpenseReportReturned: async () => {},
 }));
 vi.mock("@/lib/queue", () => ({
-	async addJob(
-		_name: string,
-		data: { organizationId: string; batchId: string; attempt: number },
-	) {
+	async addJob(_name: string, data: { organizationId: string; batchId: string; attempt: number }) {
 		harness.jobs.push({
 			organizationId: data.organizationId,
 			batchId: data.batchId,
@@ -192,7 +189,8 @@ async function upload(reportId: string, itemId: string) {
 			body: JSON.stringify({ tusFileKey, reportId, itemId, fileName: "invoice.pdf" }),
 		}) as unknown as NextRequest,
 	);
-	expect(response.status).toBe(200);
+	if (response.status !== 200)
+		throw new Error(`upload ${response.status}: ${await response.text()}`);
 }
 
 async function loadOwn(reportId: string) {
@@ -245,9 +243,9 @@ async function submittedHotel(amount: string) {
 	signIn("requester");
 	const created = await actions.createStandaloneReceiptReportAction();
 	if (!created.success) throw new Error(created.error);
-	const { reportId, itemId } = created.data;
+	const { reportId } = created.data;
 	await setAmount(reportId, amount);
-	signIn("requester");
+	const itemId = (await loadOwn(reportId)).items[0]?.id ?? "";
 	await upload(reportId, itemId);
 	expect(await submit(reportId)).toEqual({ status: "submitted" });
 	return reportId;
@@ -463,11 +461,15 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		});
 		const key = randomUUID();
 		const recovered = await recover(original, "50.00", "-50.00", key);
-		expect(recovered.success && recovered.data.status === "recorded" && recovered.data.account.summary.state).toBe(
-			"settled",
-		);
+		expect(
+			recovered.success &&
+				recovered.data.status === "recorded" &&
+				recovered.data.account.summary.state,
+		).toBe("settled");
 		const retried = await recover(original, "50.00", "-50.00", key);
-		expect(retried.success && retried.data.status === "recorded" && retried.data.replayed).toBe(true);
+		expect(retried.success && retried.data.status === "recorded" && retried.data.replayed).toBe(
+			true,
+		);
 		expect(await entries(original)).toEqual([
 			{ kind: "reimbursement", amount: "500.00", reference: "SEPA-500", occurred_on: "2026-10-01" },
 			{ kind: "recovery", amount: "50.00", reference: "RECOVERY-77", occurred_on: "2026-10-05" },
@@ -616,7 +618,10 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		expect((await approve(second)).status).toBe(200);
 
 		const account = await settlement(original);
-		expect(account.summary.currencies[0]).toMatchObject({ entitlement: "480.00", balance: "-20.00" });
+		expect(account.summary.currencies[0]).toMatchObject({
+			entitlement: "480.00",
+			balance: "-20.00",
+		});
 		expect(account.adjustments.map((entry) => entry.delta)).toEqual(["-50.00", "30.00"]);
 	});
 
@@ -648,9 +653,11 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		expect((await receipt(created.reportId, copied.id)).status).toBe(200);
 		signIn("requester");
 		const draftView = await adjustments.getTravelExpenseReportAdjustments(created.reportId);
-		expect(draftView.success && draftView.data.role === "adjustment" && draftView.data.baseline?.entitlement).toBe(
-			"450.00",
-		);
+		expect(
+			draftView.success &&
+				draftView.data.role === "adjustment" &&
+				draftView.data.baseline?.entitlement,
+		).toBe("450.00");
 
 		// Removing the copied receipt never deletes the evidence the original still names.
 		const originalReport = await loadOwn(original);
@@ -685,7 +692,10 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		expect((await approve(created.reportId)).status).toBe(200);
 		const account = await settlement(original);
 		expect(account.adjustments.map((entry) => entry.delta)).toEqual(["-50.00", "-20.00"]);
-		expect(account.summary.currencies[0]).toMatchObject({ entitlement: "430.00", balance: "-70.00" });
+		expect(account.summary.currencies[0]).toMatchObject({
+			entitlement: "430.00",
+			balance: "-70.00",
+		});
 	});
 
 	it("exports an approved adjustment once, separately identifiable with its signed delta", async () => {
@@ -712,7 +722,9 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 			"select storage_key from travel_expense_export_batch where id = $1",
 			[batch.data.batchId],
 		);
-		const zip = await JSZip.loadAsync(harness.objects.get(rows[0]?.storage_key ?? "") ?? Buffer.alloc(0));
+		const zip = await JSZip.loadAsync(
+			harness.objects.get(rows[0]?.storage_key ?? "") ?? Buffer.alloc(0),
+		);
 		const reports = (await zip.file("reports.csv")?.async("string")) ?? "";
 		expect(reports).toContain(`"adjustment","${original}","The hotel refunded one night"`);
 		expect(reports).toMatch(/,500\.00,-50\.00\r\n/);
@@ -722,7 +734,8 @@ describe("signed adjustments and overpayment recovery (#615)", () => {
 		signIn("finance");
 		const after = await exportActions.getTravelExpenseExports();
 		expect(
-			after.success && after.data.exportable.some((row) => [original, adjustment].includes(row.reportId)),
+			after.success &&
+				after.data.exportable.some((row) => [original, adjustment].includes(row.reportId)),
 		).toBe(false);
 		expect(await entries(original)).toHaveLength(1);
 	});

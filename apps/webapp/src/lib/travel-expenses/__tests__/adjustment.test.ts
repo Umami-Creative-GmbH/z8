@@ -97,7 +97,10 @@ describe("sameAdjustmentBaseline (#615)", () => {
 		// Even a zero delta is another applied adjustment: the baseline is stale.
 		expect(sameAdjustmentBaseline(before, after)).toBe(false);
 		expect(
-			sameAdjustmentBaseline(before, composeAdjustmentBaseline({ ...original, revisionId: "r2" }, [])),
+			sameAdjustmentBaseline(
+				before,
+				composeAdjustmentBaseline({ ...original, revisionId: "r2" }, []),
+			),
 		).toBe(false);
 	});
 });
@@ -108,7 +111,10 @@ describe("adjustmentEligibility (#615)", () => {
 		expect(adjustmentEligibility({ ...base, exported: true })).toEqual({ ok: true });
 		expect(adjustmentEligibility({ ...base, reimbursed: true })).toEqual({ ok: true });
 		// Before export or reimbursement the report is reopened instead (#614).
-		expect(adjustmentEligibility(base)).toEqual({ ok: false, reason: "not_exported_or_reimbursed" });
+		expect(adjustmentEligibility(base)).toEqual({
+			ok: false,
+			reason: "not_exported_or_reimbursed",
+		});
 		expect(adjustmentEligibility({ ...base, approved: false, exported: true })).toEqual({
 			ok: false,
 			reason: "not_approved",

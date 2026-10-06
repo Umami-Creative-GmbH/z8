@@ -30,6 +30,14 @@ import { TravelExpenseLoadError } from "../travel-expense-load-error";
 type Translate = ReturnType<typeof useTranslate>["t"];
 
 function rowTitle(t: Translate, locale: string, row: ExportableRevisionRow) {
+	const base = baseRowTitle(t, locale, row);
+	// An adjustment (#615) stays identifiable beside the report it corrects.
+	return row.adjustmentOf
+		? { ...base, name: t("travelExpenses.finance.exports.adjustment", "Adjustment: {name}", { name: base.name }) }
+		: base;
+}
+
+function baseRowTitle(t: Translate, locale: string, row: ExportableRevisionRow) {
 	const { title } = row;
 	if (title.kind === "trip") {
 		return {

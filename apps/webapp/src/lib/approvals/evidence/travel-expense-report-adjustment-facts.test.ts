@@ -91,10 +91,7 @@ describe("adjustment report facts (v7, #615)", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(adjustmentInput);
 		const otherBaseline = buildTravelExpenseReportSubmittedFacts({
 			...adjustmentInput,
-			adjustmentBaseline: composeAdjustmentBaseline(
-				{ ...baseline, approvedAmount: "480.00" },
-				[],
-			),
+			adjustmentBaseline: composeAdjustmentBaseline({ ...baseline, approvedAmount: "480.00" }, []),
 		});
 		expect(fingerprintTravelExpenseReportFacts(otherBaseline)).not.toBe(
 			fingerprintTravelExpenseReportFacts(facts),

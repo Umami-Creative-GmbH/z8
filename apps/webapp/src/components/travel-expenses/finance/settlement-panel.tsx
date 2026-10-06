@@ -15,6 +15,7 @@ import { formatMoney, formatPlainDate } from "../report/format";
 import { formatRecordedInstant } from "../report/report-status";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { RecordReimbursementForm } from "./record-reimbursement-form";
+import { OverpaidOwnerNotice, SettlementAdjustmentLines } from "./settlement-adjustments";
 import { BalanceText, SettlementStateBadge } from "./settlement-status";
 
 const NOT_VISIBLE = "Not found";
@@ -67,6 +68,8 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 	}
 	const { account, viewer, canSettle } = data;
 	if (!account.approved && account.entries.length === 0) return null;
+	// An adjustment report (#615) is settled through the report it corrects.
+	if (account.adjustmentOf) return null;
 
 	const settled = (next: SettlementAccount | null) => {
 		if (next) queryClient.setQueryData(queryKey, { ...data, account: next });
@@ -97,6 +100,7 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 								<dd className="text-right tabular-nums">
 									{formatMoney(locale, line.entitlement, line.currency)}
 								</dd>
+								<SettlementAdjustmentLines account={account} currency={line.currency} />
 								<dt className="text-muted-foreground">
 									{t("travelExpenses.settlement.reimbursed", "Reimbursed")}
 								</dt>
@@ -127,6 +131,7 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 								)}
 							</p>
 						)}
+					{viewer === "owner" && <OverpaidOwnerNotice account={account} />}
 					{viewer === "owner" && account.summary.state === "outstanding" && (
 						<p className="text-sm text-muted-foreground">
 							{t(
@@ -182,13 +187,15 @@ export function SettlementPanel({ source }: { source: SettlementSource }) {
 					canSettle &&
 					account.approved &&
 					account.summary.currencies
-						.filter((line) => line.state === "outstanding" && line.currency === account.currency)
+						.filter((line) => line.state !== "settled" && line.currency === account.currency)
 						.map((line) => (
 							<RecordReimbursementForm
 								key={`${line.currency}:${line.balance}`}
 								source={source}
 								line={line}
 								onSettled={settled}
+								// An overpayment (#615) is settled by recording money recovered.
+								kind={line.state === "overpaid" ? "recovery" : "reimbursement"}
 							/>
 						))}
 			</CardContent>

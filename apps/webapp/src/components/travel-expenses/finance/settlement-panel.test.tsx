@@ -8,6 +8,7 @@ import type { SettlementAccount } from "@/lib/travel-expenses/settlement-store";
 const mocks = vi.hoisted(() => ({
 	getSettlement: vi.fn(),
 	record: vi.fn(),
+	recover: vi.fn(),
 	toastSuccess: vi.fn(),
 }));
 
@@ -22,6 +23,14 @@ vi.mock("sonner", () => ({ toast: { success: mocks.toastSuccess } }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/finance-actions", () => ({
 	getTravelExpenseSettlement: mocks.getSettlement,
 	recordTravelExpenseReimbursementAction: mocks.record,
+}));
+vi.mock("@/app/[locale]/(app)/travel-expenses/finance-recovery-actions", () => ({
+	recordTravelExpenseRecoveryAction: mocks.recover,
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
+		<a href={href}>{children}</a>
+	),
 }));
 vi.mock("@/components/ui/date-picker", () => ({
 	DatePicker: ({
@@ -79,6 +88,9 @@ function account(overrides: Partial<SettlementAccount> = {}): SettlementAccount 
 			],
 		},
 		title: { kind: "trip", purpose: "Workshop", startDate: null, endDate: null },
+		adjustments: [],
+		adjustmentOf: null,
+		adjustmentDelta: null,
 		...overrides,
 	};
 }
@@ -123,6 +135,7 @@ describe("settlement panel (#612)", () => {
 	beforeEach(() => {
 		mocks.getSettlement.mockReset();
 		mocks.record.mockReset();
+		mocks.recover.mockReset();
 		mocks.toastSuccess.mockReset();
 	});
 	afterEach(cleanup);
@@ -286,5 +299,69 @@ describe("settlement panel (#612)", () => {
 				"The balance changed while you were entering this payment. Check the updated balance and record it again.",
 			),
 		).toBeTruthy();
+	});
+
+	it("shows an approved adjustment and lets finance record the recovery of the overpayment (#615)", async () => {
+		const overpaid = account({
+			entitlement: [
+				{ kind: "approved_submission", id: "revision", currency: "EUR", amount: "500.00" },
+				{ kind: "approved_adjustment", id: "adj-revision", currency: "EUR", amount: "-50.00" },
+			],
+			adjustments: [
+				{
+					reportId: "adjustment-report",
+					revisionId: "adj-revision",
+					delta: "-50.00",
+					currency: "EUR",
+					reason: "Hotel refunded one night",
+					approvedAt: "2026-10-03T08:00:00Z",
+				},
+			],
+			entries: [{ ...paid("500.00"), balanceBefore: "500.00" }],
+			summary: {
+				state: "overpaid",
+				currencies: [
+					{
+						currency: "EUR",
+						entitlement: "450.00",
+						reimbursed: "500.00",
+						recovered: "0.00",
+						balance: "-50.00",
+						state: "overpaid",
+					},
+				],
+			},
+		});
+		mocks.getSettlement.mockResolvedValue({
+			success: true,
+			data: { viewer: "finance", canSettle: true, account: overpaid },
+		});
+		mocks.recover.mockResolvedValue({
+			success: true,
+			data: { status: "recorded", replayed: false, account: account() },
+		});
+		mount();
+
+		expect(await screen.findByText("€50.00 overpaid")).toBeTruthy();
+		expect(screen.getByText("-€50.00")).toBeTruthy();
+		expect(screen.getByText("Hotel refunded one night")).toBeTruthy();
+		// The overpayment is entered as a positive amount recovered.
+		const amount = screen.getByLabelText("Amount recovered (EUR)") as HTMLInputElement;
+		expect(amount.value).toBe("50.00");
+		fireEvent.change(screen.getByLabelText("Payment date"), { target: { value: "2026-10-05" } });
+		fireEvent.change(screen.getByLabelText("Payment reference"), {
+			target: { value: "RECOVERY-77" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Record recovery" }));
+
+		await waitFor(() => expect(mocks.recover).toHaveBeenCalledTimes(1));
+		expect(mocks.record).not.toHaveBeenCalled();
+		expect(mocks.recover.mock.calls[0]?.[0]).toMatchObject({
+			amount: "50.00",
+			occurredOn: "2026-10-05",
+			reference: "RECOVERY-77",
+			expectedBalance: { currency: "EUR", amount: "-50.00" },
+		});
+		await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith("Recovery recorded."));
 	});
 });

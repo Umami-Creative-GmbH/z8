@@ -37,7 +37,11 @@ export function adjustmentExpenseCells(facts: TravelExpenseReportSubmittedFacts,
 
 export function adjustmentReportCells(facts: TravelExpenseReportSubmittedFacts, cells: Cells) {
 	const { adjustment } = facts;
-	if (!adjustment) return [cells.text("original"), ...ADJUSTMENT_REPORT_COLUMNS.slice(1).map(() => cells.text(null))];
+	if (!adjustment)
+		return [
+			cells.text("original"),
+			...ADJUSTMENT_REPORT_COLUMNS.slice(1).map(() => cells.text(null)),
+		];
 	return [
 		cells.text("adjustment"),
 		cells.text(adjustment.originalReportId),

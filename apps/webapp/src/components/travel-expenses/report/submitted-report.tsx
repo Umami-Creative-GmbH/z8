@@ -13,6 +13,7 @@ import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { SettlementPanel } from "../finance/settlement-panel";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { AdjustmentNotice, ReportAdjustmentsPanel } from "./report-adjustments";
 import { ReopenedNotice, ReopenReportPanel } from "./report-reopen";
 import { ReturnedNotice, SubmissionCycleLinks, WithdrawReportButton } from "./report-review-cycle";
 import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
@@ -120,6 +121,7 @@ export function SubmittedTravelExpenseReport({
 					</div>
 				)}
 			</div>
+			{data.access === "owner" && <AdjustmentNotice reportId={reportId} />}
 			{!latest && (
 				<p className="text-sm">
 					{t(
@@ -220,6 +222,9 @@ export function SubmittedTravelExpenseReport({
 			)}
 			{latest && data.status === "approved" && data.access !== "owner" && (
 				<ReopenReportPanel reportId={reportId} />
+			)}
+			{latest && data.status === "approved" && data.access === "owner" && (
+				<ReportAdjustmentsPanel reportId={reportId} />
 			)}
 			<section aria-labelledby={`${reportId}-history`} className="space-y-2">
 				<h2 id={`${reportId}-history`} className="text-lg font-semibold">

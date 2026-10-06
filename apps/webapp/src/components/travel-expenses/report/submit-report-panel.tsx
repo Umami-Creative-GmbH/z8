@@ -25,6 +25,7 @@ import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { pendingReceiptException } from "./receipt-exception-notice";
+import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -301,6 +302,12 @@ export function SubmitReportPanel({
 							}))}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}
+					{totals && (
+						<AdjustmentDeltaPreview
+							reportId={reportId}
+							corrected={{ amount: totals.reimbursable, currency: totals.currency }}
+						/>
+					)}
 						{problem && (
 							<Alert variant="destructive" role="alert">
 								<IconAlertTriangle aria-hidden="true" className="size-4" />

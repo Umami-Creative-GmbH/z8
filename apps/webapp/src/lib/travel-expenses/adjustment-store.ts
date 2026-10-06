@@ -392,9 +392,10 @@ export async function loadOwnReportAdjustments(
 						submissionCycle: report.submissionCount,
 					})
 				: null;
-		const frozen = report.status === "draft" || report.status === "returned"
-			? null
-			: (revision?.facts.adjustment ?? null);
+		const frozen =
+			report.status === "draft" || report.status === "returned"
+				? null
+				: (revision?.facts.adjustment ?? null);
 		const current = frozen
 			? null
 			: await loadAdjustmentBaseline(database, {

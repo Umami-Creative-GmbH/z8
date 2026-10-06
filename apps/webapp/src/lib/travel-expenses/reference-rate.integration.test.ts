@@ -447,7 +447,8 @@ describe("approved reference rates (#608)", () => {
 		expect(await submit(target.reportId)).toEqual({ success: true, data: { status: "submitted" } });
 
 		const revision = await frozenFacts(target.reportId);
-		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v6:[0-9a-f]{64}$/);
+		// Frozen at the current facts version (v7 since #615 adjustments).
+		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v7:[0-9a-f]{64}$/);
 		const [frozen] = revision.facts.items;
 		expect(frozen.original).toEqual({ amount: "100.00", currency: "USD" });
 		// 100.00 / 1.1525 = 86.7678… → 86.77, rounded once, half up.

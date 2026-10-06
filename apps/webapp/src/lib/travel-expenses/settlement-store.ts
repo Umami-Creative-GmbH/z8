@@ -104,6 +104,8 @@ export interface SettlementAccount {
 	 * recorded against it.
 	 */
 	adjustmentOf: string | null;
+	/** An approved adjustment report's frozen signed delta (#615); null otherwise. */
+	adjustmentDelta: string | null;
 }
 
 export type SettlementTitle =
@@ -361,6 +363,8 @@ async function buildAccounts(
 			title: reportTitle(row, revision),
 			adjustments: accountAdjustments,
 			adjustmentOf,
+			adjustmentDelta:
+				adjustmentOf && approved ? (revision?.facts.adjustment?.delta.amount ?? null) : null,
 		});
 	}
 	for (const { row, employeeName } of claims) {
@@ -408,6 +412,7 @@ async function buildAccounts(
 			},
 			adjustments: [],
 			adjustmentOf: null,
+			adjustmentDelta: null,
 		});
 	}
 	return accounts;

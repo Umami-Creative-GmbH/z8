@@ -1,7 +1,4 @@
-import {
-	type AdjustmentBaseline,
-	adjustmentDelta,
-} from "@/lib/travel-expenses/adjustment";
+import { type AdjustmentBaseline, adjustmentDelta } from "@/lib/travel-expenses/adjustment";
 import { ApprovalEvidenceError } from "./errors";
 
 /**
@@ -53,7 +50,11 @@ export function adjustmentSnapshot(input: {
 			throw new ApprovalEvidenceError("evidence_incomplete", { field: "adjustment_baseline" });
 		}
 		return {
-			adjustment: { ...link, baseline: null, delta: null } as unknown as TravelExpenseReportSubmittedAdjustment,
+			adjustment: {
+				...link,
+				baseline: null,
+				delta: null,
+			} as unknown as TravelExpenseReportSubmittedAdjustment,
 		};
 	}
 	let delta: { amount: string; currency: string } | null;
