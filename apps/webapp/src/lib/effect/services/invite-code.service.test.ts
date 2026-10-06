@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { member, user } from "@/db/auth-schema";
 import {
@@ -145,12 +145,12 @@ describe("InviteCodeService organization scoping", () => {
 			});
 
 			const result = await Effect.runPromise(
-				Effect.either(operation).pipe(Effect.provide(layer)),
+				Effect.result(operation).pipe(Effect.provide(layer)),
 			);
 
 			expect(result).toMatchObject({
-				_tag: "Left",
-				left: expect.any(NotFoundError),
+				_tag: "Failure",
+				failure: expect.any(NotFoundError),
 			});
 			expect(mutations).toEqual([]);
 			expect(update).not.toHaveBeenCalled();
@@ -165,7 +165,7 @@ describe("InviteCodeService.useCode", () => {
 		const fake = duplicatePendingCodeLayer();
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.useCode({
@@ -177,8 +177,8 @@ describe("InviteCodeService.useCode", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "NotFoundError",
 				message: "Invalid invite code",
 			}),
@@ -200,7 +200,7 @@ describe("InviteCodeService.useCode", () => {
 		const fake = durableRejectedReuseLayer({ pending: false });
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.useCode({
@@ -212,8 +212,8 @@ describe("InviteCodeService.useCode", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Membership for this invite code was rejected",
 				field: "code",
@@ -426,7 +426,7 @@ describe("InviteCodeService transactional usability", () => {
 		});
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.useCode({
@@ -438,8 +438,8 @@ describe("InviteCodeService transactional usability", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Code is paused",
 				field: "code",
@@ -468,7 +468,7 @@ describe("InviteCodeService transactional usability", () => {
 		const fake = transactionalUsabilityLayer({ maxUses: 1 });
 		const redeem = (userId: string) =>
 			Effect.runPromise(
-				Effect.either(
+				Effect.result(
 					Effect.gen(function* () {
 						const service = yield* InviteCodeService;
 						return yield* service.useCode({ code: "JOIN-TEAM", userId });
@@ -479,10 +479,10 @@ describe("InviteCodeService transactional usability", () => {
 		const first = await redeem("user-1");
 		const second = await redeem("user-2");
 
-		expect(first).toMatchObject({ _tag: "Right" });
+		expect(first).toMatchObject({ _tag: "Success" });
 		expect(second).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Code has reached maximum uses",
 				field: "code",
@@ -511,7 +511,7 @@ describe("InviteCodeService transactional usability", () => {
 describe("InviteCodeService billing seat sync", () => {
 	it("syncs billing seats after approved invite code member creation paths", () => {
 		const source = readFileSync(
-			join(process.cwd(), "src/lib/effect-v3/services/invite-code.service.ts"),
+			join(process.cwd(), "src/lib/effect/services/invite-code.service.ts"),
 			"utf8",
 		);
 
@@ -1227,7 +1227,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		const fake = durableRejectedReuseLayer({ pending: true });
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.processPendingInviteCode("user-1");
@@ -1236,8 +1236,8 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Membership for this invite code was rejected",
 				field: "code",
@@ -1275,7 +1275,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		const fake = rejectedPendingCodeLayer();
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.processPendingInviteCode("user-1");
@@ -1284,8 +1284,8 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Membership for this invite code was rejected",
 				field: "code",
@@ -1303,7 +1303,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		const fake = clearFailurePendingCodeLayer();
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.processPendingInviteCode("user-1");
@@ -1312,8 +1312,8 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(DatabaseError),
+			_tag: "Failure",
+			failure: expect.any(DatabaseError),
 		});
 		expect(fake.users).toEqual([
 			expect.objectContaining({ pendingInviteCode: "JOIN-TEAM" }),
@@ -1401,7 +1401,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		const fake = stalePendingCodeLayer();
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.processPendingInviteCode("user-1");
@@ -1409,7 +1409,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 			),
 		);
 
-		expect(result).toMatchObject({ _tag: "Right", right: null });
+		expect(result).toMatchObject({ _tag: "Success", success: null });
 		expect(fake.getPendingInviteCode()).toBe("NEW-CODE");
 		expect(fake.db.transaction).toHaveBeenCalledOnce();
 		expect(fake.members).toEqual([]);
@@ -1586,7 +1586,7 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		);
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 
@@ -1596,8 +1596,8 @@ describe("InviteCodeService.processPendingInviteCode", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(ValidationError),
+			_tag: "Failure",
+			failure: expect.any(ValidationError),
 		});
 		expect(enterpriseIdentityMock.assertRedemptionAllowed).toHaveBeenCalledWith(
 			{
@@ -1702,7 +1702,7 @@ describe("InviteCodeService rejection audit parsing", () => {
 		});
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.useCode({
@@ -1714,8 +1714,8 @@ describe("InviteCodeService rejection audit parsing", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Membership for this invite code was rejected",
 			}),
@@ -1734,7 +1734,7 @@ describe("InviteCodeService rejection audit parsing", () => {
 		});
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.processPendingInviteCode("user-1");
@@ -1743,8 +1743,8 @@ describe("InviteCodeService rejection audit parsing", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Membership for this invite code was rejected",
 			}),
@@ -1891,7 +1891,7 @@ describe("InviteCodeService preserved employee reactivation", () => {
 		});
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* InviteCodeService;
 					return yield* service.useCode({
@@ -1903,8 +1903,8 @@ describe("InviteCodeService preserved employee reactivation", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.objectContaining({
+			_tag: "Failure",
+			failure: expect.objectContaining({
 				_tag: "ValidationError",
 				message: "Membership for this invite code was rejected",
 				field: "code",

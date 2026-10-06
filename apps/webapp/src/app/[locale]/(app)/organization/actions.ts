@@ -2,14 +2,14 @@
 
 import { and, asc, count, eq, ilike, inArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team, teamMembership } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { AuthenticationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { buildScopedOrgChartGraph, capTeamMembershipsPerTeam } from "./org-chart-graph";
 import {
 	EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
@@ -61,20 +61,18 @@ type OrgChartContext = {
 };
 
 export async function getOrgChartInitialGraph(): Promise<ServerActionResult<OrgChartGraph>> {
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const { organizationId, currentEmployee } = yield* _(resolveOrgChartContext(dbService));
-		const employeeCount = yield* _(countActiveEmployees(dbService, organizationId));
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const { organizationId, currentEmployee } = yield* resolveOrgChartContext(dbService);
+		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
 
 		if (employeeCount < SMALL_ORG_EMPLOYEE_LIMIT) {
-			return yield* _(loadFullGraph(dbService, organizationId, employeeCount, currentEmployee.id));
+			return yield* loadFullGraph(dbService, organizationId, employeeCount, currentEmployee.id);
 		}
 
-		return yield* _(
-			loadEmployeeNeighborhood(dbService, organizationId, employeeCount, currentEmployee.id, {
-				partial: true,
-			}),
-		);
+		return yield* loadEmployeeNeighborhood(dbService, organizationId, employeeCount, currentEmployee.id, {
+			partial: true,
+		});
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -88,44 +86,42 @@ export async function searchOrgEmployees(
 		return { success: true, data: [] };
 	}
 
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const { organizationId } = yield* _(resolveOrgChartContext(dbService));
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const { organizationId } = yield* resolveOrgChartContext(dbService);
 		const pattern = `%${trimmedQuery}%`;
 
-		return yield* _(
-			dbService.query("searchOrgEmployees", async () => {
-				const rows = await dbService.db
-					.select({
-						employeeId: employee.id,
-						name: user.name,
-						pronouns: employee.pronouns,
-						email: user.email,
-						position: employee.position,
-						image: user.image,
-						role: employee.role,
-					})
-					.from(employee)
-					.innerJoin(user, eq(employee.userId, user.id))
-					.where(
-						and(
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-							or(
-								ilike(user.name, pattern),
-								ilike(user.email, pattern),
-								ilike(user.firstName, pattern),
-								ilike(user.lastName, pattern),
-								ilike(employee.position, pattern),
-							),
+		return yield* dbService.query("searchOrgEmployees", async () => {
+			const rows = await dbService.db
+				.select({
+					employeeId: employee.id,
+					name: user.name,
+					pronouns: employee.pronouns,
+					email: user.email,
+					position: employee.position,
+					image: user.image,
+					role: employee.role,
+				})
+				.from(employee)
+				.innerJoin(user, eq(employee.userId, user.id))
+				.where(
+					and(
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
+						or(
+							ilike(user.name, pattern),
+							ilike(user.email, pattern),
+							ilike(user.firstName, pattern),
+							ilike(user.lastName, pattern),
+							ilike(employee.position, pattern),
 						),
-					)
-					.orderBy(asc(user.name), asc(user.email))
-					.limit(10);
+					),
+				)
+				.orderBy(asc(user.name), asc(user.email))
+				.limit(10);
 
-				return rows satisfies OrgChartSearchResult[];
-			}),
-		);
+			return rows satisfies OrgChartSearchResult[];
+		});
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -134,16 +130,14 @@ export async function searchOrgEmployees(
 export async function getEmployeeNeighborhood(
 	employeeId: string,
 ): Promise<ServerActionResult<OrgChartGraph>> {
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const { organizationId } = yield* _(resolveOrgChartContext(dbService));
-		const employeeCount = yield* _(countActiveEmployees(dbService, organizationId));
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const { organizationId } = yield* resolveOrgChartContext(dbService);
+		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
 
-		return yield* _(
-			loadEmployeeNeighborhood(dbService, organizationId, employeeCount, employeeId, {
-				partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
-			}),
-		);
+		return yield* loadEmployeeNeighborhood(dbService, organizationId, employeeCount, employeeId, {
+			partial: employeeCount >= SMALL_ORG_EMPLOYEE_LIMIT,
+		});
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -152,65 +146,55 @@ export async function getEmployeeNeighborhood(
 export async function getTeamNeighborhood(
 	teamId: string,
 ): Promise<ServerActionResult<OrgChartGraph>> {
-	const effect = Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
-		const { organizationId } = yield* _(resolveOrgChartContext(dbService));
-		const employeeCount = yield* _(countActiveEmployees(dbService, organizationId));
+	const effect = Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const { organizationId } = yield* resolveOrgChartContext(dbService);
+		const employeeCount = yield* countActiveEmployees(dbService, organizationId);
 
-		return yield* _(loadTeamNeighborhood(dbService, organizationId, employeeCount, teamId));
+		return yield* loadTeamNeighborhood(dbService, organizationId, employeeCount, teamId);
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
 }
 
 function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
-	return Effect.gen(function* (_) {
-		const session = yield* _(
-			Effect.promise(() => getRequestSession()),
-		);
+	return Effect.gen(function* () {
+		const session = yield* Effect.promise(() => getRequestSession());
 
 		if (!session?.user) {
-			return yield* _(
-				Effect.fail(
-					new AuthenticationError({
-						message: "Authentication required",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthenticationError({
+					message: "Authentication required",
+				}),
 			);
 		}
 
 		const organizationId = session.session.activeOrganizationId;
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthenticationError({
-						message: "Active organization required",
-						userId: session.user.id,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthenticationError({
+					message: "Active organization required",
+					userId: session.user.id,
+				}),
 			);
 		}
 
-		const currentEmployee = yield* _(
-			dbService.query("getOrgChartCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-					),
-				});
-			}),
-		);
+		const currentEmployee = yield* dbService.query("getOrgChartCurrentEmployee", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.userId, session.user.id),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+				),
+			});
+		});
 
 		if (!currentEmployee) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee profile not found",
+					entityType: "employee",
+				}),
 			);
 		}
 
@@ -219,15 +203,13 @@ function resolveOrgChartContext(dbService: DatabaseServiceInstance) {
 }
 
 function countActiveEmployees(dbService: DatabaseServiceInstance, organizationId: string) {
-	return Effect.gen(function* (_) {
-		const [row] = yield* _(
-			dbService.query("countActiveOrgChartEmployees", async () => {
-				return await dbService.db
-					.select({ value: count() })
-					.from(employee)
-					.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)));
-			}),
-		);
+	return Effect.gen(function* () {
+		const [row] = yield* dbService.query("countActiveOrgChartEmployees", async () => {
+			return await dbService.db
+				.select({ value: count() })
+				.from(employee)
+				.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)));
+		});
 
 		return row?.value ?? 0;
 	});
@@ -239,12 +221,12 @@ function loadFullGraph(
 	employeeCount: number,
 	focusedEmployeeId: string,
 ) {
-	return Effect.gen(function* (_) {
-		const employees = yield* _(loadActiveEmployees(dbService, organizationId));
+	return Effect.gen(function* () {
+		const employees = yield* loadActiveEmployees(dbService, organizationId);
 		const activeEmployeeIds = employees.map((row) => row.id);
-		const teams = yield* _(loadTeams(dbService, organizationId));
-		const managerLinks = yield* _(loadManagerLinks(dbService, activeEmployeeIds));
-		const teamMemberships = yield* _(loadTeamMemberships(dbService, organizationId));
+		const teams = yield* loadTeams(dbService, organizationId);
+		const managerLinks = yield* loadManagerLinks(dbService, activeEmployeeIds);
+		const teamMemberships = yield* loadTeamMemberships(dbService, organizationId);
 
 		return buildScopedOrgChartGraph(
 			{
@@ -269,29 +251,21 @@ function loadEmployeeNeighborhood(
 	employeeId: string,
 	options: { partial: boolean },
 ) {
-	return Effect.gen(function* (_) {
-		const targetEmployee = yield* _(ensureActiveEmployee(dbService, organizationId, employeeId));
-		const directManagerLinks = yield* _(
-			loadDirectManagerLinks(dbService, organizationId, employeeId),
-		);
-		const directReportLinks = yield* _(
-			loadDirectReportLinks(dbService, organizationId, employeeId),
-		);
-		const targetTeamMemberships = yield* _(
-			loadEmployeeTeamMemberships(dbService, organizationId, employeeId),
-		);
+	return Effect.gen(function* () {
+		const targetEmployee = yield* ensureActiveEmployee(dbService, organizationId, employeeId);
+		const directManagerLinks = yield* loadDirectManagerLinks(dbService, organizationId, employeeId);
+		const directReportLinks = yield* loadDirectReportLinks(dbService, organizationId, employeeId);
+		const targetTeamMemberships = yield* loadEmployeeTeamMemberships(dbService, organizationId, employeeId);
 		const connectedTeamIds = targetTeamMemberships.map((membership) => membership.teamId);
-		const teams = yield* _(loadTeamsByIds(dbService, organizationId, connectedTeamIds));
+		const teams = yield* loadTeamsByIds(dbService, organizationId, connectedTeamIds);
 		const primaryManagerIds = teams
 			.map((teamRow) => teamRow.primaryManagerId)
 			.filter((id): id is string => Boolean(id));
-		const teamMemberMemberships = yield* _(
-			loadLimitedActiveTeamMemberships(
-				dbService,
-				organizationId,
-				connectedTeamIds,
-				EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
-			),
+		const teamMemberMemberships = yield* loadLimitedActiveTeamMemberships(
+			dbService,
+			organizationId,
+			connectedTeamIds,
+			EMPLOYEE_NEIGHBORHOOD_TEAM_MEMBER_LIMIT,
 		);
 		const employeeIds = new Set<string>([
 			targetEmployee.id,
@@ -300,9 +274,7 @@ function loadEmployeeNeighborhood(
 			...teamMemberMemberships.map((membership) => membership.employeeId),
 			...primaryManagerIds,
 		]);
-		const employees = yield* _(
-			loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]),
-		);
+		const employees = yield* loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]);
 
 		return buildScopedOrgChartGraph(
 			{
@@ -326,43 +298,35 @@ function loadTeamNeighborhood(
 	employeeCount: number,
 	teamId: string,
 ) {
-	return Effect.gen(function* (_) {
-		const [targetTeam] = yield* _(loadTeamsByIds(dbService, organizationId, [teamId]));
+	return Effect.gen(function* () {
+		const [targetTeam] = yield* loadTeamsByIds(dbService, organizationId, [teamId]);
 		if (!targetTeam) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Team not found",
-						entityType: "team",
-						entityId: teamId,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Team not found",
+					entityType: "team",
+					entityId: teamId,
+				}),
 			);
 		}
 
-		const memberships = yield* _(
-			loadLimitedActiveTeamMemberships(
-				dbService,
-				organizationId,
-				[teamId],
-				TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
-			),
+		const memberships = yield* loadLimitedActiveTeamMemberships(
+			dbService,
+			organizationId,
+			[teamId],
+			TEAM_NEIGHBORHOOD_MEMBER_LIMIT,
 		);
 		const employeeIds = new Set<string>(memberships.map((membership) => membership.employeeId));
 		if (targetTeam.primaryManagerId) {
 			employeeIds.add(targetTeam.primaryManagerId);
 		}
-		const directManagerLinks = yield* _(
-			loadDirectManagerLinksForEmployees(dbService, organizationId, [...employeeIds]),
-		);
+		const directManagerLinks = yield* loadDirectManagerLinksForEmployees(dbService, organizationId, [...employeeIds]);
 		for (const managerId of directManagerLinks.map((link) => link.managerId)) {
 			employeeIds.add(managerId);
 		}
-		const employees = yield* _(
-			loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]),
-		);
+		const employees = yield* loadActiveEmployeesByIds(dbService, organizationId, [...employeeIds]);
 		const activeEmployeeIds = employees.map((row) => row.id);
-		const managerLinks = yield* _(loadManagerLinks(dbService, activeEmployeeIds));
+		const managerLinks = yield* loadManagerLinks(dbService, activeEmployeeIds);
 
 		return buildScopedOrgChartGraph(
 			{
@@ -385,28 +349,24 @@ function ensureActiveEmployee(
 	organizationId: string,
 	employeeId: string,
 ) {
-	return Effect.gen(function* (_) {
-		const targetEmployee = yield* _(
-			dbService.query("getOrgChartTargetEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.id, employeeId),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
-					),
-				});
-			}),
-		);
+	return Effect.gen(function* () {
+		const targetEmployee = yield* dbService.query("getOrgChartTargetEmployee", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(
+					eq(employee.id, employeeId),
+					eq(employee.organizationId, organizationId),
+					eq(employee.isActive, true),
+				),
+			});
+		});
 
 		if (!targetEmployee) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Employee not found",
-						entityType: "employee",
-						entityId: employeeId,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee not found",
+					entityType: "employee",
+					entityId: employeeId,
+				}),
 			);
 		}
 

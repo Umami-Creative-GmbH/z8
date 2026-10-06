@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { member, user } from "@/db/auth-schema";
 import {
@@ -63,7 +63,7 @@ export interface OnboardingSummary {
 	notificationsConfigured: boolean;
 }
 
-export class OnboardingService extends Context.Tag("OnboardingService")<
+export class OnboardingService extends Context.Service<
 	OnboardingService,
 	{
 		// Step tracking
@@ -148,7 +148,7 @@ export class OnboardingService extends Context.Tag("OnboardingService")<
 		// Check if user is admin of their organization
 		readonly isUserAdmin: () => Effect.Effect<boolean, AuthenticationError | DatabaseError>;
 	}
->() {}
+>()("OnboardingService") {}
 
 export const OnboardingServiceLive = Layer.effect(
 	OnboardingService,

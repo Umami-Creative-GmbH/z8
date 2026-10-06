@@ -39,7 +39,7 @@ const actionCases = [
 		"invite code QR",
 		"[locale]/(app)/settings/organizations/invite-code-actions.ts",
 		"generateInviteQRCode",
-		"qrCodeService.generateInviteQR(",
+		".generateInviteQR(",
 	],
 	[
 		"invite base URL",

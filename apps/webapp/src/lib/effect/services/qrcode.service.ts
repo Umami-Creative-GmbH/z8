@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import QRCode from "qrcode";
 
 export type QRCodeFormat = "png" | "svg";
@@ -25,7 +25,7 @@ export interface QRCodeResult {
 	mimeType: string;
 }
 
-export class QRCodeService extends Context.Tag("QRCodeService")<
+export class QRCodeService extends Context.Service<
 	QRCodeService,
 	{
 		// Generate QR code in specified format
@@ -52,7 +52,7 @@ export class QRCodeService extends Context.Tag("QRCodeService")<
 			options?: QRCodeOptions,
 		) => Effect.Effect<Buffer, Error>;
 	}
->() {}
+>()("QRCodeService") {}
 
 export const QRCodeServiceLive = Layer.succeed(
 	QRCodeService,

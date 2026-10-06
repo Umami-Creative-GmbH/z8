@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { headers } from "next/headers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/lib/auth";
@@ -116,7 +116,7 @@ describe("OnboardingService.createOrganization", () => {
 		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 
@@ -129,11 +129,11 @@ describe("OnboardingService.createOrganization", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(ValidationError),
+			_tag: "Failure",
+			failure: expect.any(ValidationError),
 		});
 		expect(result).toMatchObject({
-			left: {
+			failure: {
 				message: "Organization creation is disabled for this deployment.",
 				field: "organization",
 			},
@@ -175,7 +175,7 @@ describe("OnboardingService.createOrganization", () => {
 		vi.mocked(auth.api.createOrganization).mockRejectedValue(new Error("rolled back"));
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 					return yield* service.createOrganization({ name: "Acme Inc.", slug: "acme" });
@@ -184,8 +184,8 @@ describe("OnboardingService.createOrganization", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: { message: "rolled back", field: "slug" },
+			_tag: "Failure",
+			failure: { message: "rolled back", field: "slug" },
 		});
 		expect(authMutation.calls).toBe(1);
 		expect(mockDb.set.mock.calls).toEqual([
@@ -457,7 +457,7 @@ describe("OnboardingService.updateProfile", () => {
 		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 
@@ -471,11 +471,11 @@ describe("OnboardingService.updateProfile", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(ValidationError),
+			_tag: "Failure",
+			failure: expect.any(ValidationError),
 		});
 		expect(result).toMatchObject({
-			left: {
+			failure: {
 				message: "Week start day must be Sunday or Monday",
 				field: "weekStartDay",
 			},
@@ -513,7 +513,7 @@ describe("OnboardingService.updateProfile", () => {
 		const layer = OnboardingServiceLive.pipe(Layer.provide(authLayer), Layer.provide(dbLayer));
 
 		const result = await Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 
@@ -528,11 +528,11 @@ describe("OnboardingService.updateProfile", () => {
 		);
 
 		expect(result).toMatchObject({
-			_tag: "Left",
-			left: expect.any(ValidationError),
+			_tag: "Failure",
+			failure: expect.any(ValidationError),
 		});
 		expect(result).toMatchObject({
-			left: {
+			failure: {
 				message: "Time format must be 12h or 24h",
 				field: "timeFormat",
 			},
@@ -650,7 +650,7 @@ describe("OnboardingService work-template authorization", () => {
 		mutation: "create" | "skip",
 	) {
 		return Effect.runPromise(
-			Effect.either(
+			Effect.result(
 				Effect.gen(function* () {
 					const service = yield* OnboardingService;
 					if (mutation === "skip") {
@@ -676,8 +676,8 @@ describe("OnboardingService work-template authorization", () => {
 			const result = await runMutation(layer, mutation);
 
 			expect(result).toMatchObject({
-				_tag: "Left",
-				left: expect.any(AuthorizationError),
+				_tag: "Failure",
+				failure: expect.any(AuthorizationError),
 			});
 			expect(insert).not.toHaveBeenCalled();
 			expect(writeUserSettings).not.toHaveBeenCalled();
@@ -695,8 +695,8 @@ describe("OnboardingService work-template authorization", () => {
 			const result = await runMutation(layer, mutation);
 
 			expect(result).toMatchObject({
-				_tag: "Left",
-				left: expect.any(AuthorizationError),
+				_tag: "Failure",
+				failure: expect.any(AuthorizationError),
 			});
 			expect(findMembership).not.toHaveBeenCalled();
 			expect(insert).not.toHaveBeenCalled();
@@ -711,7 +711,7 @@ describe("OnboardingService work-template authorization", () => {
 
 			const result = await runMutation(layer, "skip");
 
-			expect(result).toMatchObject({ _tag: "Right" });
+			expect(result).toMatchObject({ _tag: "Success" });
 			expect(writeUserSettings).toHaveBeenCalledOnce();
 			expect(insert).not.toHaveBeenCalled();
 		},
