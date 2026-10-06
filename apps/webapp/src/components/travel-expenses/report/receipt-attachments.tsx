@@ -29,14 +29,15 @@ async function processReportReceipt(input: {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(input),
 	});
-	const body = await response.json().catch(() => ({}));
 	if (!response.ok) {
-		throw new Error(typeof body.error === "string" ? body.error : "Upload failed");
+		const failure = await response.json().catch(() => ({}));
+		throw new Error(typeof failure.error === "string" ? failure.error : "Upload failed");
 	}
+	const body = await response.json();
 	return body.receipt as ReportReceiptView;
 }
 
-export function receiptHref(reportId: string, receiptId: string, download = false) {
+function receiptHref(reportId: string, receiptId: string, download = false) {
 	return `/api/travel-expenses/reports/${encodeURIComponent(reportId)}/receipts/${encodeURIComponent(receiptId)}${download ? "?download=1" : ""}`;
 }
 
