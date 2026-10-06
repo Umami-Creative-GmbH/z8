@@ -42,11 +42,12 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 3;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 4;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
 /* Version 3 (#607) adds the optional `conversion` of an item (`CONVERSION_FACTS_SCHEMA_VERSION`). */
+/* Version 4 (#608) admits its `reference_rate` basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;

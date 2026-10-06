@@ -44,5 +44,27 @@ export function conversionFromRow(row: ItemConversionRow): ItemConversion | null
 			authorizedAt: instantToCanonicalString(instantFromDate(row.authorizedAt)),
 		};
 	}
+	if (row.basis === "reference_rate") {
+		// #608: only a submission stores one, with the publication it froze.
+		const value = row.rate ? normalizeRate(row.rate) : null;
+		if (
+			!value ||
+			!row.rateBaseCurrency ||
+			!row.rateQuoteCurrency ||
+			!row.rateDate ||
+			!row.referenceExpenseDate ||
+			!row.referenceSource
+		) {
+			return null;
+		}
+		return {
+			basis: "reference_rate",
+			...pair,
+			rate: { base: row.rateBaseCurrency, quote: row.rateQuoteCurrency, value },
+			rateDate: row.rateDate,
+			expenseDate: row.referenceExpenseDate,
+			source: { ...row.referenceSource },
+		};
+	}
 	return null;
 }

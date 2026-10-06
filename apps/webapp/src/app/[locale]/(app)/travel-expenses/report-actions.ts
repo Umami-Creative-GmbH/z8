@@ -367,6 +367,7 @@ const submitSchema = z.object({
 					version: z.number().int().positive(),
 					receiptIds: z.array(z.uuid()).max(100),
 					receiptExceptionVersion: z.number().int().nonnegative().optional(),
+					referenceRate: z.string().max(200).nullable().optional(),
 				}),
 			)
 			.max(200),

@@ -10,7 +10,7 @@ import {
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import { loadOrganizationReimbursementCurrency, loadReportConversions } from "./conversion-read";
+import { loadOrganizationReimbursementCurrency } from "./conversion-read";
 import type { ItemConversion } from "./currency-conversion";
 import {
 	loadReceiptExceptionsAllowed,
@@ -18,6 +18,9 @@ import {
 	receiptExceptionItemView,
 } from "./receipt-exception-read";
 import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
+import type { ReferenceRateProvider } from "./reference-rate";
+import type { ReferenceRateItemStatus } from "./reference-rate-conversion";
+import { loadReferenceRatePolicy, resolveReportConversions } from "./reference-rate-read";
 import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import type { TripDetailsDraft } from "./trip-report";
 
@@ -74,6 +77,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 	receiptException: ReceiptExceptionView;
 	/** Its currency conversion (#607); loaded by `loadOwnReport` only. */
 	conversion?: ItemConversion | null;
+	/** Why an approved reference rate does or does not convert it (#608); `loadOwnReport` only. */
+	referenceRate?: ReferenceRateItemStatus | null;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -95,6 +100,8 @@ export interface ReportView {
 	items: ReportItemView[];
 	/** Whether the organization allows missing-receipt exceptions (#604). */
 	receiptExceptionsAllowed: boolean;
+	/** The reference-rate source the organization approved (#608), if any. */
+	referenceRateProvider?: ReferenceRateProvider | null;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -293,7 +300,7 @@ export async function loadOwnReport(
 		.where(ownedReport(owner, reportId))
 		.limit(1);
 	if (!report) return null;
-	const [items, receipts, receiptExceptionsAllowed, conversions] = await Promise.all([
+	const [items, receipts, receiptExceptionsAllowed, policy] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -315,8 +322,12 @@ export async function loadOwnReport(
 			)
 			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
 		loadReceiptExceptionsAllowed(database, owner.organizationId),
-		loadReportConversions(database, { ...owner, reportIds: [report.id] }),
+		loadReferenceRatePolicy(database, owner.organizationId),
 	]);
+	const { conversions, referenceRates } = await resolveReportConversions(database, {
+		organizationId: owner.organizationId,
+		reports: [{ ...report, items }],
+	});
 	return {
 		id: report.id,
 		kind: report.kind,
@@ -332,8 +343,10 @@ export async function loadOwnReport(
 				receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView),
 			),
 			conversion: conversions.get(item.id) ?? null,
+			referenceRate: referenceRates.get(item.id) ?? null,
 		})),
 		receiptExceptionsAllowed,
+		referenceRateProvider: policy?.provider ?? null,
 	};
 }
 
@@ -396,7 +409,7 @@ async function listOwnReports(
 		.orderBy(desc(travelExpenseReport.updatedAt), desc(travelExpenseReport.id));
 	if (reports.length === 0) return [];
 	const reportIds = reports.map((report) => report.id);
-	const [items, receiptCounts, conversions] = await Promise.all([
+	const [items, receiptCounts] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -420,8 +433,14 @@ async function listOwnReports(
 				),
 			)
 			.groupBy(travelExpenseReportReceipt.reportId),
-		loadReportConversions(database, { ...owner, reportIds }),
 	]);
+	const { conversions } = await resolveReportConversions(database, {
+		organizationId: owner.organizationId,
+		reports: reports.map((report) => ({
+			...report,
+			items: items.filter((item) => item.reportId === report.id),
+		})),
+	});
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
 		const item = reportItems[0];

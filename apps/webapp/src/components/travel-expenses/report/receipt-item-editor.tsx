@@ -530,8 +530,10 @@ export function ReceiptItemEditor({
 						reportId={reportId}
 						itemId={item.id}
 						original={parsedOriginal(values)}
+						expenseDate={values.expenseDate.trim() || null}
 						reimbursementCurrency={reimbursementCurrency}
 						conversion={item.conversion ?? null}
+						referenceRate={item.referenceRate}
 						receipts={receipts}
 						version={{
 							flush: () => saver.flush(),

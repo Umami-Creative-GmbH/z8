@@ -841,6 +841,13 @@
       "when": 1794585600000,
       "tag": "0119_travel_expense_currency_conversion",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1794672000000,
+      "tag": "0120_travel_expense_reference_rates",
+      "breakpoints": true
     }
   ]
 }

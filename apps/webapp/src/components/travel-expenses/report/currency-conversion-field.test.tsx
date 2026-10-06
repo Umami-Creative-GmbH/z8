@@ -142,3 +142,79 @@ describe("CurrencyConversionField (#607)", () => {
 		expect(screen.queryByRole("button", { name: "Remove card charge" })).toBeNull();
 	});
 });
+
+const easterReference: ItemConversion = {
+	basis: "reference_rate",
+	sourceCurrency: "USD",
+	targetCurrency: "EUR",
+	rate: { base: "EUR", quote: "USD", value: "1.1525" },
+	rateDate: "2026-04-02",
+	expenseDate: "2026-04-05",
+	source: {
+		provider: "ecb",
+		publicationId: "pub-1",
+		publicationVersion: 1,
+		contentSha256: "f".repeat(64),
+		retrievedAt: "2026-04-02T15:05:00Z",
+		policyApprovedAt: "2026-03-01T09:00:00Z",
+	},
+};
+
+describe("CurrencyConversionField reference rates (#608)", () => {
+	afterEach(() => {
+		cleanup();
+		vi.clearAllMocks();
+	});
+
+	function renderReference(props: Partial<Parameters<typeof CurrencyConversionField>[0]> = {}) {
+		render(
+			<CurrencyConversionField
+				reportId="6a000000-0000-4000-8000-000000000001"
+				itemId="6a000000-0000-4000-8000-000000000002"
+				original={{ amount: "100.00", currency: "USD" }}
+				expenseDate="2026-04-05"
+				reimbursementCurrency="EUR"
+				conversion={easterReference}
+				referenceRate={{ status: "applied", rateDate: "2026-04-02", fallback: true }}
+				receipts={receipts}
+				version={{ flush: vi.fn(async () => {}), current: () => 3, adopt: vi.fn() }}
+				onChanged={vi.fn()}
+				{...props}
+			/>,
+		);
+	}
+
+	it("shows the source, the pair as published and the real publication date of a fallback", () => {
+		renderReference();
+		expect(screen.getByText("ECB reference rate")).toBeTruthy();
+		expect(screen.getByText(/European Central Bank euro reference rate/)).toBeTruthy();
+		expect(screen.getByText("1 EUR = 1.1525 USD")).toBeTruthy();
+		expect(screen.getByText(/counts as €86.77/)).toBeTruthy();
+		expect(
+			screen.getByText(
+				/No rate was published on .*2026.*, so the latest earlier publication applies/,
+			),
+		).toBeTruthy();
+		// An evidenced card charge still takes precedence.
+		expect(screen.getByRole("button", { name: "Use my card charge instead" })).toBeTruthy();
+	});
+
+	it("does not show a rate looked up for another expense date until the change is saved", () => {
+		renderReference({ expenseDate: "2026-04-07" });
+		expect(screen.queryByText("1 EUR = 1.1525 USD")).toBeNull();
+		expect(screen.getByText(/looked up again for the new date/)).toBeTruthy();
+	});
+
+	it.each([
+		["currency_unavailable", /does not publish a rate for USD on this date/],
+		["not_yet_published", /not been published yet/],
+		["provider_unavailable", /could not be retrieved/],
+		["history_unavailable", /no reference rate for this date/],
+	] as const)("guides the employee to a card charge or documented rate when %s", (reason, text) => {
+		renderReference({ conversion: null, referenceRate: { status: "unavailable", reason } });
+		expect(screen.getByText(text)).toBeTruthy();
+		expect(
+			screen.getByText(/card charge|documented rate/, { selector: "p[role=status]" }),
+		).toBeTruthy();
+	});
+});

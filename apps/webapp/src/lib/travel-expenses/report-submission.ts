@@ -7,6 +7,7 @@ import {
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "./receipt-report";
+import { referenceRateReviewKey } from "./reference-rate-conversion";
 import {
 	type TripDetailsDraft,
 	type TripReportMissingRequirements,
@@ -52,6 +53,8 @@ export interface ReviewedReportVersions {
 		receiptIds: readonly string[];
 		/** The missing-receipt exception version reviewed (#604); absent means 0. */
 		receiptExceptionVersion?: number;
+		/** The reference-rate publication reviewed (#608, `referenceRateReviewKey`); absent means none. */
+		referenceRate?: string | null;
 	}[];
 }
 
@@ -97,7 +100,8 @@ function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVe
 			seen?.id === item.id &&
 			seen.version === item.version &&
 			sameIds(seen.receiptIds, item.receiptIds) &&
-			(seen.receiptExceptionVersion ?? 0) === (item.receiptExceptionVersion ?? 0)
+			(seen.receiptExceptionVersion ?? 0) === (item.receiptExceptionVersion ?? 0) &&
+			(seen.referenceRate ?? null) === referenceRateReviewKey(item.conversion)
 		);
 	});
 }

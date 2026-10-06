@@ -15,6 +15,13 @@ import { ApprovalEvidenceError } from "./errors";
 /** Schema version that introduced `conversion` on submitted items. */
 export const CONVERSION_FACTS_SCHEMA_VERSION = 3;
 
+/**
+ * Schema version that admits the `reference_rate` basis (#608): the applied
+ * ECB publication (id, version, content hash, fetch time), the approval it
+ * relied on, the expense date it was chosen for and the rounded result.
+ */
+export const REFERENCE_RATE_FACTS_SCHEMA_VERSION = 4;
+
 /** `reimbursement` is the amount the expense counts with, in the reimbursement currency. */
 export type TravelExpenseReportSubmittedConversion = ConversionResult;
 
@@ -60,6 +67,12 @@ export function submittedConversionFacts(input: {
 	if (input.schemaVersion < CONVERSION_FACTS_SCHEMA_VERSION) return {};
 	const applied = appliedConversion(input.original, input.reimbursementCurrency, input.conversion);
 	if (!applied) return {};
+	if (
+		applied.basis === "reference_rate" &&
+		input.schemaVersion < REFERENCE_RATE_FACTS_SCHEMA_VERSION
+	) {
+		return {};
+	}
 	if (
 		input.enforce &&
 		applied.basis === "card_charge" &&

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expense/foreign-expense-conversions";
+import { ReferenceRateSettingsCard } from "@/components/settings/travel-expense/reference-rate-settings";
 import { ReimbursementCurrencySettingsCard } from "@/components/settings/travel-expense/reimbursement-currency-settings";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
@@ -21,6 +22,7 @@ async function TravelExpenseSettingsPageContent() {
 			</div>
 			<div className="grid gap-4 px-4 pt-4">
 				<ReimbursementCurrencySettingsCard />
+				<ReferenceRateSettingsCard />
 				<ForeignExpenseConversionsCard />
 			</div>
 			<TravelExpensePolicyManagement organizationId={organizationId} />

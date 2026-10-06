@@ -5,13 +5,17 @@ import {
 	decimal,
 	foreignKey,
 	index,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import type { ConversionBasis } from "@/lib/travel-expenses/currency-conversion";
+import type {
+	ConversionBasis,
+	ReferenceRateConversion,
+} from "@/lib/travel-expenses/currency-conversion";
 import { user } from "../auth-schema";
 import {
 	travelExpenseReport,
@@ -27,8 +31,9 @@ import {
 // expense administrator authorized: `1 rate_base = rate rate_quote` for the
 // item's currency pair in either direction, with its date and reason; the
 // authorizer is kept by value. The pair is recorded so a conversion never
-// applies after the item's currency changed. An approved reference-rate feed
-// (#608) extends the basis CHECK with `reference_rate`.
+// applies after the item's currency changed. `reference_rate` (#608) is stored
+// only by a submission: the approved feed's publication it froze, with the
+// expense date it was chosen for; drafts derive it on every read.
 export const travelExpenseReportItemConversion = pgTable(
 	"travel_expense_report_item_conversion",
 	{
@@ -49,6 +54,9 @@ export const travelExpenseReportItemConversion = pgTable(
 		authorizedByEmployeeId: uuid("authorized_by_employee_id"),
 		authorizedByName: text("authorized_by_name"),
 		authorizedAt: timestamp("authorized_at", { withTimezone: true }),
+		// #608: the publication a `reference_rate` conversion froze at submission.
+		referenceSource: jsonb("reference_source").$type<ReferenceRateConversion["source"]>(),
+		referenceExpenseDate: date("reference_expense_date"),
 		recordedBy: text("recorded_by").references(() => user.id, { onDelete: "set null" }),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -93,7 +101,23 @@ export const travelExpenseReportItemConversion = pgTable(
 				AND ${table.rateDate} IS NOT NULL AND ${table.reason} IS NOT NULL
 				AND length(btrim(${table.reason})) > 0 AND ${table.evidenceReceiptId} IS NULL
 				AND ${table.authorizedByEmployeeId} IS NOT NULL AND ${table.authorizedByName} IS NOT NULL
-				AND ${table.authorizedAt} IS NOT NULL)`,
+				AND ${table.authorizedAt} IS NOT NULL)
+			OR (${table.basis} = 'reference_rate' AND ${table.chargedAmount} IS NULL
+				AND ${table.rate} IS NOT NULL AND ${table.rate} > 0
+				AND ((${table.rateBaseCurrency} = ${table.sourceCurrency}
+						AND ${table.rateQuoteCurrency} = ${table.targetCurrency})
+					OR (${table.rateBaseCurrency} = ${table.targetCurrency}
+						AND ${table.rateQuoteCurrency} = ${table.sourceCurrency}))
+				AND ${table.rateDate} IS NOT NULL AND ${table.referenceExpenseDate} IS NOT NULL
+				AND ${table.rateDate} <= ${table.referenceExpenseDate}
+				AND ${table.referenceSource} IS NOT NULL AND ${table.reason} IS NULL
+				AND ${table.evidenceReceiptId} IS NULL AND ${table.authorizedByEmployeeId} IS NULL
+				AND ${table.authorizedByName} IS NULL AND ${table.authorizedAt} IS NULL)`,
+		),
+		check(
+			"travel_expense_report_item_conversion_reference_check",
+			sql`(${table.basis} = 'reference_rate') = (${table.referenceSource} IS NOT NULL)
+				AND (${table.basis} = 'reference_rate') = (${table.referenceExpenseDate} IS NOT NULL)`,
 		),
 	],
 );

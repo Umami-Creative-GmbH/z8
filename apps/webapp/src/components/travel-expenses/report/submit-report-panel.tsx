@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { appliedConversion } from "@/lib/travel-expenses/currency-conversion";
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
+import { referenceRateReviewKey } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { pendingReceiptException } from "./receipt-exception-notice";
@@ -174,6 +175,7 @@ export function SubmitReportPanel({
 						version: item.version,
 						receiptIds: item.receipts.map((receipt) => receipt.id),
 						receiptExceptionVersion: item.receiptException.version,
+						referenceRate: referenceRateReviewKey(item.conversion),
 					})),
 				},
 			});
