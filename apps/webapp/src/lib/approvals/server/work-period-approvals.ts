@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect-v3";
+import { Cause, Effect, Exit, Runtime } from "effect-v3";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -121,6 +121,7 @@ import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engine";
 import { processApprovalWithCurrentEmployee } from "./shared";
+import { approvalDbServiceForTransaction } from "./v3-boundary";
 import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import {
 	type WorkPeriodDecisionScope,
@@ -2386,6 +2387,28 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 			"Ordinary work-period maintenance failed",
 		);
 	}
+}
+
+/**
+ * The stable-target decision for callers outside an Effect v3 runtime. It rejects with
+ * the typed failure itself, the way Effect v4 `runPromise` does, so Effect v4 callers read
+ * it with `instanceof`. #632 removes it when the approvals module moves to v4.
+ */
+export async function decideOrdinaryWorkPeriodWithStableTarget(
+	database: ApprovalDbService["db"],
+	currentEmployee: CurrentApprover,
+	input: Parameters<typeof decideOrdinaryWorkPeriodWithStableTargetEffect>[2],
+	options?: ApprovalActionOptions,
+): Promise<void> {
+	const exit = await Effect.runPromiseExit(
+		decideOrdinaryWorkPeriodWithStableTargetEffect(
+			approvalDbServiceForTransaction({ db: database }),
+			currentEmployee,
+			input,
+			options,
+		),
+	);
+	if (Exit.isFailure(exit)) throw Cause.squash(exit.cause);
 }
 
 export function decideOrdinaryWorkPeriodWithStableTargetEffect(

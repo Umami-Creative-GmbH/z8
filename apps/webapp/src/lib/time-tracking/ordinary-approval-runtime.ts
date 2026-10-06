@@ -1,8 +1,6 @@
 import "server-only";
 
-import { Effect } from "effect-v3";
 import { db } from "@/db";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { finalizeOrdinaryWorkPeriodTerminalFromWorkflowTransaction } from "@/lib/approvals/server/work-period-approvals";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
@@ -41,9 +39,5 @@ export function createOrdinaryApprovalRuntime(database: ApprovalWorkflowDatabase
 	});
 }
 
-export function approvalDbServiceForTransaction(dbService: { db: unknown }): ApprovalDbService {
-	return {
-		db: dbService.db as ApprovalDbService["db"],
-		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
-	};
-}
+// ApprovalDbService is an Effect v3 contract until #632, so the approvals module builds it.
+export { approvalDbServiceForTransaction } from "@/lib/approvals/server/v3-boundary";

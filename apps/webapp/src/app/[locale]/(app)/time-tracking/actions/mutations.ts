@@ -1,12 +1,10 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Option, Runtime } from "effect-v3";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
+import { decideOrdinaryWorkPeriodWithStableTarget } from "@/lib/approvals/server/work-period-approvals";
 import { ConflictError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
@@ -62,51 +60,37 @@ export async function approveWorkPeriod(input: {
 			};
 		}
 
-		const dbService: ApprovalDbService = {
+		await decideOrdinaryWorkPeriodWithStableTarget(
 			db,
-			query: <T>(_name: string, operation: () => Promise<T>) =>
-				Effect.promise(operation),
-		};
-		await Effect.runPromise(
-			decideOrdinaryWorkPeriodWithStableTargetEffect(
-				dbService,
-				{
-					...currentEmployee,
-					user: {
-						id: session.user.id,
-						name: session.user.name,
-						email: session.user.email,
-						image: session.user.image ?? null,
-					},
+			{
+				...currentEmployee,
+				user: {
+					id: session.user.id,
+					name: session.user.name,
+					email: session.user.email,
+					image: session.user.image ?? null,
 				},
-				{
-					approvalRequestId,
-					workPeriodId: selectedWorkPeriod.id,
-					decision: { kind: "approve", reason: null },
-				},
-				{
-					approvalRequestId,
-					allowOrganizationWideApprover: true,
-				},
-			),
+			},
+			{
+				approvalRequestId,
+				workPeriodId: selectedWorkPeriod.id,
+				decision: { kind: "approve", reason: null },
+			},
+			{
+				approvalRequestId,
+				allowOrganizationWideApprover: true,
+			},
 		);
 
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
 		logger.error({ error, workPeriodId }, "Approve work period error");
-		const conflict =
-			error instanceof ConflictError
-				? error
-				: Runtime.isFiberFailure(error)
-					? Option.getOrNull(
-							Cause.failureOption(error[Runtime.FiberFailureCauseId]),
-						)
-					: null;
-		if (conflict instanceof ConflictError) {
+		// The decision rejects with its typed failure itself (no v3 FiberFailure to unwrap).
+		if (error instanceof ConflictError) {
 			return {
 				success: false,
-				error: conflict.message,
-				code: conflict._tag,
+				error: error.message,
+				code: error._tag,
 			};
 		}
 		return {
