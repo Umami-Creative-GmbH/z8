@@ -1,14 +1,14 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { notificationPreference } from "@/db/schema";
 import { isDiscordEnabledForOrganization } from "@/lib/discord";
 import { ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	NOTIFICATION_CHANNELS,
 	NOTIFICATION_TYPES,
@@ -27,34 +27,30 @@ import { isTelegramEnabledForOrganization } from "@/lib/telegram";
 export async function getNotificationPreferences(): Promise<
 	ServerActionResult<UserPreferencesResponse>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 		const organizationId = session.session.activeOrganizationId;
 
 		// Preferences are user-level; channel availability remains org-scoped below.
-		const preferences = yield* _(
-			dbService.query("getNotificationPreferences", async () => {
-				return dbService.db
-					.select()
-					.from(notificationPreference)
-					.where(eq(notificationPreference.userId, session.user.id));
-			}),
-		);
+		const preferences = yield* dbService.query("getNotificationPreferences", async () => {
+			return dbService.db
+				.select()
+				.from(notificationPreference)
+				.where(eq(notificationPreference.userId, session.user.id));
+		});
 
 		const [isTeamsAvailable, isTelegramAvailable, isDiscordAvailable, isSlackAvailable] =
 			organizationId
-				? yield* _(
-						dbService.query("getNotificationPreferencesChannelAvailability", async () => {
-							return Promise.all([
-								isTeamsEnabledForOrganization(organizationId),
-								isTelegramEnabledForOrganization(organizationId),
-								isDiscordEnabledForOrganization(organizationId),
-								isSlackEnabledForOrganization(organizationId),
-							]);
-						}),
-					)
+				? yield* dbService.query("getNotificationPreferencesChannelAvailability", async () => {
+						return Promise.all([
+							isTeamsEnabledForOrganization(organizationId),
+							isTelegramEnabledForOrganization(organizationId),
+							isDiscordEnabledForOrganization(organizationId),
+							isSlackEnabledForOrganization(organizationId),
+						]);
+					})
 				: [false, false, false, false];
 
 		const availableChannels: Record<NotificationChannel, boolean> = {
@@ -107,72 +103,64 @@ export async function updateNotificationPreference(data: {
 	channel: NotificationChannel;
 	enabled: boolean;
 }): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		// Validate notification type
 		if (!NOTIFICATION_TYPES.includes(data.notificationType)) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Invalid notification type",
-						field: "notificationType",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Invalid notification type",
+					field: "notificationType",
+				}),
 			);
 		}
 
 		// Validate channel
 		if (!NOTIFICATION_CHANNELS.includes(data.channel)) {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Invalid channel",
-						field: "channel",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Invalid channel",
+					field: "channel",
+				}),
 			);
 		}
 		if (typeof data.enabled !== "boolean") {
-			return yield* _(
-				Effect.fail(
-					new ValidationError({
-						message: "Invalid enabled value",
-						field: "enabled",
-					}),
-				),
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Invalid enabled value",
+					field: "enabled",
+				}),
 			);
 		}
 
 		// Upsert the preference (user-level, not org-specific)
-		yield* _(
-			dbService.query("updateNotificationPreference", async () => {
-				const existing = await dbService.db.query.notificationPreference.findFirst({
-					where: (pref, { and, eq }) =>
-						and(
-							eq(pref.userId, session.user.id),
-							eq(pref.notificationType, data.notificationType),
-							eq(pref.channel, data.channel),
-						),
-				});
+		yield* dbService.query("updateNotificationPreference", async () => {
+			const existing = await dbService.db.query.notificationPreference.findFirst({
+				where: (pref, { and, eq }) =>
+					and(
+						eq(pref.userId, session.user.id),
+						eq(pref.notificationType, data.notificationType),
+						eq(pref.channel, data.channel),
+					),
+			});
 
-				if (existing) {
-					await dbService.db
-						.update(notificationPreference)
-						.set({ enabled: data.enabled })
-						.where(eq(notificationPreference.id, existing.id));
-				} else {
-					await dbService.db.insert(notificationPreference).values({
-						userId: session.user.id,
-						notificationType: data.notificationType,
-						channel: data.channel,
-						enabled: data.enabled,
-					});
-				}
-			}),
-		);
+			if (existing) {
+				await dbService.db
+					.update(notificationPreference)
+					.set({ enabled: data.enabled })
+					.where(eq(notificationPreference.id, existing.id));
+			} else {
+				await dbService.db.insert(notificationPreference).values({
+					userId: session.user.id,
+					notificationType: data.notificationType,
+					channel: data.channel,
+					enabled: data.enabled,
+				});
+			}
+		});
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -189,76 +177,68 @@ export async function bulkUpdateNotificationPreferences(
 		enabled: boolean;
 	}>,
 ): Promise<ServerActionResult<{ updated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
-		const dbService = yield* _(DatabaseService);
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
 		// Validate all preferences first
 		for (const pref of preferences) {
 			if (!NOTIFICATION_TYPES.includes(pref.notificationType)) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: `Invalid notification type: ${pref.notificationType}`,
-							field: "notificationType",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: `Invalid notification type: ${pref.notificationType}`,
+						field: "notificationType",
+					}),
 				);
 			}
 			if (!NOTIFICATION_CHANNELS.includes(pref.channel)) {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: `Invalid channel: ${pref.channel}`,
-							field: "channel",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: `Invalid channel: ${pref.channel}`,
+						field: "channel",
+					}),
 				);
 			}
 			if (typeof pref.enabled !== "boolean") {
-				return yield* _(
-					Effect.fail(
-						new ValidationError({
-							message: "Invalid enabled value",
-							field: "enabled",
-						}),
-					),
+				return yield* Effect.fail(
+					new ValidationError({
+						message: "Invalid enabled value",
+						field: "enabled",
+					}),
 				);
 			}
 		}
 
 		// Process each update (user-level, not org-specific)
-		yield* _(
-			dbService.query("bulkUpdateNotificationPreferences", async () => {
-				await Promise.all(
-					preferences.map(async (update) => {
-					const existing = await dbService.db.query.notificationPreference.findFirst({
-						where: (pref, { and, eq }) =>
-							and(
-								eq(pref.userId, session.user.id),
-								eq(pref.notificationType, update.notificationType),
-								eq(pref.channel, update.channel),
-							),
-					});
+		yield* dbService.query("bulkUpdateNotificationPreferences", async () => {
+			await Promise.all(
+				preferences.map(async (update) => {
+				const existing = await dbService.db.query.notificationPreference.findFirst({
+					where: (pref, { and, eq }) =>
+						and(
+							eq(pref.userId, session.user.id),
+							eq(pref.notificationType, update.notificationType),
+							eq(pref.channel, update.channel),
+						),
+				});
 
-					if (existing) {
-						await dbService.db
-							.update(notificationPreference)
-							.set({ enabled: update.enabled })
-							.where(eq(notificationPreference.id, existing.id));
-					} else {
-						await dbService.db.insert(notificationPreference).values({
-							userId: session.user.id,
-							notificationType: update.notificationType,
-							channel: update.channel,
-							enabled: update.enabled,
-						});
-					}
-				}),
-				);
+				if (existing) {
+					await dbService.db
+						.update(notificationPreference)
+						.set({ enabled: update.enabled })
+						.where(eq(notificationPreference.id, existing.id));
+				} else {
+					await dbService.db.insert(notificationPreference).values({
+						userId: session.user.id,
+						notificationType: update.notificationType,
+						channel: update.channel,
+						enabled: update.enabled,
+					});
+				}
 			}),
-		);
+			);
+		});
 
 		return { updated: preferences.length };
 	}).pipe(Effect.provide(AppLayer));

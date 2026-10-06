@@ -65,10 +65,10 @@ vi.mock("@/lib/slack", () => ({
 	isSlackEnabledForOrganization: vi.fn(async () => false),
 }));
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Effect, Layer } = await import("effect-v3");
-	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect, Layer } = await import("effect");
+	const { AuthService } = await import("@/lib/effect/services/auth.service");
+	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 
 	return {
 		AppLayer: Layer.mergeAll(
@@ -100,15 +100,14 @@ vi.mock("@/lib/effect-v3/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect-v3");
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	const toServerActionResult = (exit: unknown) =>
 		Exit.match(exit as never, {
 			onFailure: (cause) => {
-				const defects = Cause.defects(cause);
-				const defect = [...defects][0] ?? null;
-				const failure = Option.getOrNull(Cause.failureOption(cause));
+				const defect = Result.getOrNull(Cause.findDefect(cause));
+				const failure = Option.getOrNull(Cause.findErrorOption(cause));
 				const error = defect ?? failure ?? cause;
 
 				if (error && typeof error === "object" && "_tag" in error) {

@@ -1,7 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { organization as authOrganization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
@@ -32,10 +32,10 @@ import {
 } from "@/lib/demo/demo-data.service";
 import { type GenerateEmployeesResult, generateDemoEmployees } from "@/lib/demo/employee-generator";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 
 export async function canUseDemoData(organizationId: string): Promise<boolean> {
 	const hasOrgAdminAccess = await isOrgAdminCasl(organizationId);
@@ -76,15 +76,15 @@ export interface GenerateDemoDataInput {
 export async function generateDemoDataAction(
 	input: GenerateDemoDataInput,
 ): Promise<ServerActionResult<DemoDataResult>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Step 2: Get current employee
-		const dbService = yield* _(DatabaseService);
-		const _currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
+		const dbService = yield* DatabaseService;
+		const _currentEmployee = yield* dbService
+			.query("getCurrentEmployee", async () => {
 				const emp = await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
 				});
@@ -94,29 +94,28 @@ export async function generateDemoDataAction(
 				}
 
 				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Employee profile not found",
+							entityType: "employee",
+						}),
+				),
+			);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -147,24 +146,22 @@ export async function generateDemoDataAction(
 		}
 
 		// Step 5: Generate demo data
-		const result = yield* _(
-			Effect.promise(() =>
-				generateDemoData({
-					organizationId: input.organizationId,
-					dateRange: {
-						start: startDate,
-						end: endDate,
-					},
-					includeTimeEntries: input.includeTimeEntries,
-					includeAbsences: input.includeAbsences,
-					includeTeams: input.includeTeams,
-					teamCount: input.teamCount,
-					includeProjects: input.includeProjects,
-					projectCount: input.projectCount,
-					employeeIds: input.employeeIds,
-					createdBy: session.user.id,
-				}),
-			),
+		const result = yield* Effect.promise(() =>
+			generateDemoData({
+				organizationId: input.organizationId,
+				dateRange: {
+					start: startDate,
+					end: endDate,
+				},
+				includeTimeEntries: input.includeTimeEntries,
+				includeAbsences: input.includeAbsences,
+				includeTeams: input.includeTeams,
+				teamCount: input.teamCount,
+				includeProjects: input.includeProjects,
+				projectCount: input.projectCount,
+				employeeIds: input.employeeIds,
+				createdBy: session.user.id,
+			}),
 		);
 
 		return result;
@@ -236,22 +233,20 @@ function calculateDateRange(dateRangeType: StepGenerationInput["dateRangeType"])
 export async function generateTeamsStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ teamsCreated: number; employeesAssignedToTeams: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -268,7 +263,7 @@ export async function generateTeamsStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoTeams(options)));
+		const result = yield* Effect.promise(() => generateDemoTeams(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -281,22 +276,20 @@ export async function generateTeamsStepAction(
 export async function generateProjectsStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ projectsCreated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -313,7 +306,7 @@ export async function generateProjectsStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoProjects(options)));
+		const result = yield* Effect.promise(() => generateDemoProjects(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -326,22 +319,20 @@ export async function generateProjectsStepAction(
 export async function generateManagersStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ managerAssignmentsCreated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -357,7 +348,7 @@ export async function generateManagersStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoManagerAssignments(options)));
+		const result = yield* Effect.promise(() => generateDemoManagerAssignments(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -374,22 +365,20 @@ export async function generateTimeEntriesStepAction(input: StepGenerationInput):
 		employeesHeldForReview: number;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -405,7 +394,7 @@ export async function generateTimeEntriesStepAction(input: StepGenerationInput):
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoTimeEntries(options)));
+		const result = yield* Effect.promise(() => generateDemoTimeEntries(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -418,22 +407,20 @@ export async function generateTimeEntriesStepAction(input: StepGenerationInput):
 export async function generateAbsencesStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ absencesCreated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -449,7 +436,7 @@ export async function generateAbsencesStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoAbsences(options)));
+		const result = yield* Effect.promise(() => generateDemoAbsences(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -459,22 +446,20 @@ export async function generateAbsencesStepAction(
 export async function generatePendingAbsenceApprovalsStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ pendingAbsenceApprovalsCreated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -491,7 +476,7 @@ export async function generatePendingAbsenceApprovalsStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoPendingAbsenceApprovals(options)));
+		const result = yield* Effect.promise(() => generateDemoPendingAbsenceApprovals(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -501,22 +486,20 @@ export async function generatePendingAbsenceApprovalsStepAction(
 export async function generatePendingTimeCorrectionApprovalsStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ pendingTimeCorrectionApprovalsCreated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -533,9 +516,7 @@ export async function generatePendingTimeCorrectionApprovalsStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(
-			Effect.promise(() => generateDemoPendingTimeCorrectionApprovals(options)),
-		);
+		const result = yield* Effect.promise(() => generateDemoPendingTimeCorrectionApprovals(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -552,22 +533,20 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 		supervisorAssignmentsCreated: number;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -586,7 +565,7 @@ export async function generateLocationsStepAction(input: StepGenerationInput): P
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoLocations(options)));
+		const result = yield* Effect.promise(() => generateDemoLocations(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -603,22 +582,20 @@ export async function generateWorkCategoriesStepAction(input: StepGenerationInpu
 		assignmentsCreated: number;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -637,7 +614,7 @@ export async function generateWorkCategoriesStepAction(input: StepGenerationInpu
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoWorkCategories(options)));
+		const result = yield* Effect.promise(() => generateDemoWorkCategories(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -653,22 +630,20 @@ export async function generateChangePoliciesStepAction(input: StepGenerationInpu
 		assignmentsCreated: number;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -686,7 +661,7 @@ export async function generateChangePoliciesStepAction(input: StepGenerationInpu
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoChangePolicies(options)));
+		const result = yield* Effect.promise(() => generateDemoChangePolicies(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -699,22 +674,20 @@ export async function generateChangePoliciesStepAction(input: StepGenerationInpu
 export async function generateShiftTemplatesStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ templatesCreated: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -732,7 +705,7 @@ export async function generateShiftTemplatesStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoShiftTemplates(options)));
+		const result = yield* Effect.promise(() => generateDemoShiftTemplates(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -749,22 +722,20 @@ export async function generateShiftsStepAction(input: StepGenerationInput): Prom
 		requestsCreated: number;
 	}>
 > {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -782,7 +753,7 @@ export async function generateShiftsStepAction(input: StepGenerationInput): Prom
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => generateDemoShifts(options)));
+		const result = yield* Effect.promise(() => generateDemoShifts(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -795,22 +766,20 @@ export async function generateShiftsStepAction(input: StepGenerationInput): Prom
 export async function assignWorkCategoriesToPeriodsStepAction(
 	input: StepGenerationInput,
 ): Promise<ServerActionResult<{ workCategoriesAssigned: number }>> {
-	const effect = Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "generate",
+				}),
 			);
 		}
 
@@ -827,7 +796,7 @@ export async function assignWorkCategoriesToPeriodsStepAction(
 			createdBy: session.user.id,
 		};
 
-		const result = yield* _(Effect.promise(() => assignWorkCategoriesToPeriods(options)));
+		const result = yield* Effect.promise(() => assignWorkCategoriesToPeriods(options));
 		return result;
 	}).pipe(Effect.provide(AppLayer));
 
@@ -840,15 +809,15 @@ export async function assignWorkCategoriesToPeriodsStepAction(
 export async function clearTimeDataAction(
 	organizationId: string,
 ): Promise<ServerActionResult<ClearDataResult>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Step 2: Get current employee
-		const dbService = yield* _(DatabaseService);
-		const _currentEmployee = yield* _(
-			dbService.query("getCurrentEmployee", async () => {
+		const dbService = yield* DatabaseService;
+		const _currentEmployee = yield* dbService
+			.query("getCurrentEmployee", async () => {
 				const emp = await dbService.db.query.employee.findFirst({
 					where: eq(employee.userId, session.user.id),
 				});
@@ -858,35 +827,34 @@ export async function clearTimeDataAction(
 				}
 
 				return emp;
-			}),
-			Effect.mapError(
-				() =>
-					new NotFoundError({
-						message: "Employee profile not found",
-						entityType: "employee",
-					}),
-			),
-		);
+			})
+			.pipe(
+				Effect.mapError(
+					() =>
+						new NotFoundError({
+							message: "Employee profile not found",
+							entityType: "employee",
+						}),
+				),
+			);
 
 		// Step 3: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_data",
-						action: "clear",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_data",
+					action: "clear",
+				}),
 			);
 		}
 
 		// Step 4: Clear all time data
-		const result = yield* _(
-			Effect.promise(() => clearOrganizationTimeData(organizationId, session.user.id)),
+		const result = yield* Effect.promise(() =>
+			clearOrganizationTimeData(organizationId, session.user.id),
 		);
 
 		return result;
@@ -901,39 +869,35 @@ export async function clearTimeDataAction(
 export async function getOrganizationEmployees(
 	organizationId: string,
 ): Promise<ServerActionResult<Array<{ id: string; name: string }>>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions",
-						userId: session.user.id,
-						resource: "employees",
-						action: "read",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions",
+					userId: session.user.id,
+					resource: "employees",
+					action: "read",
+				}),
 			);
 		}
 
 		// Step 3: Get employees
-		const dbService = yield* _(DatabaseService);
-		const employees = yield* _(
-			dbService.query("getEmployees", async () => {
-				return await dbService.db.query.employee.findMany({
-					where: eq(employee.organizationId, organizationId),
-					with: {
-						user: true,
-					},
-				});
-			}),
-		);
+		const dbService = yield* DatabaseService;
+		const employees = yield* dbService.query("getEmployees", async () => {
+			return await dbService.db.query.employee.findMany({
+				where: eq(employee.organizationId, organizationId),
+				with: {
+					user: true,
+				},
+			});
+		});
 
 		return employees.map((emp) => ({
 			id: emp.id,
@@ -956,36 +920,32 @@ export interface GenerateDemoEmployeesInput {
 export async function generateDemoEmployeesAction(
 	input: GenerateDemoEmployeesInput,
 ): Promise<ServerActionResult<GenerateEmployeesResult>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(input.organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(input.organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "demo_employees",
-						action: "generate",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "demo_employees",
+					action: "generate",
+				}),
 			);
 		}
 
 		// Step 3: Generate demo employees
-		const result = yield* _(
-			Effect.promise(() =>
-				generateDemoEmployees({
-					organizationId: input.organizationId,
-					count: input.count,
-					includeManagers: input.includeManagers,
-				}),
-			),
+		const result = yield* Effect.promise(() =>
+			generateDemoEmployees({
+				organizationId: input.organizationId,
+				count: input.count,
+				includeManagers: input.includeManagers,
+			}),
 		);
 
 		return result;
@@ -1000,30 +960,28 @@ export async function generateDemoEmployeesAction(
 export async function deleteNonAdminDataAction(
 	organizationId: string,
 ): Promise<ServerActionResult<DeleteNonAdminResult>> {
-	const effect = Effect.gen(function* (_) {
+	const effect = Effect.gen(function* () {
 		// Step 1: Get session via AuthService
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
 		// Step 2: Verify user is org admin
-		const hasPermission = yield* _(Effect.promise(() => canUseDemoData(organizationId)));
+		const hasPermission = yield* Effect.promise(() => canUseDemoData(organizationId));
 
 		if (!hasPermission) {
-			yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Insufficient permissions - admin role required",
-						userId: session.user.id,
-						resource: "non_admin_data",
-						action: "delete",
-					}),
-				),
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions - admin role required",
+					userId: session.user.id,
+					resource: "non_admin_data",
+					action: "delete",
+				}),
 			);
 		}
 
 		// Step 3: Delete non-admin data
-		const result = yield* _(
-			Effect.promise(() => deleteNonAdminEmployeesData(organizationId, session.user.id)),
+		const result = yield* Effect.promise(() =>
+			deleteNonAdminEmployeesData(organizationId, session.user.id),
 		);
 
 		return result;

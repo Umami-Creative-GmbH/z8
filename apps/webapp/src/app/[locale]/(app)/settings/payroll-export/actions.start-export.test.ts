@@ -93,9 +93,9 @@ vi.mock("@/lib/payroll-export", () => ({
 	getProjectsForFilter: mockState.getProjectsForFilter,
 }));
 
-vi.mock("@/lib/effect-v3/services/auth.service", async () => {
-	const { Context } = await import("effect-v3");
-	const AuthService = Context.GenericTag<{
+vi.mock("@/lib/effect/services/auth.service", async () => {
+	const { Context } = await import("effect");
+	const AuthService = Context.Service<{
 		readonly getSession: () => unknown;
 	}>("AuthService");
 
@@ -104,9 +104,9 @@ vi.mock("@/lib/effect-v3/services/auth.service", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/services/database.service", async () => {
-	const { Context } = await import("effect-v3");
-	const DatabaseService = Context.GenericTag<{
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const { Context } = await import("effect");
+	const DatabaseService = Context.Service<{
 		readonly db: {
 			query: {
 				employee: {
@@ -122,10 +122,10 @@ vi.mock("@/lib/effect-v3/services/database.service", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Effect, Layer } = await import("effect-v3");
-	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect, Layer } = await import("effect");
+	const { AuthService } = await import("@/lib/effect/services/auth.service");
+	const { DatabaseService } = await import("@/lib/effect/services/database.service");
 
 	const authLayer = Layer.succeed(AuthService, {
 		getSession: () => Effect.succeed(mockState.session),
@@ -147,15 +147,14 @@ vi.mock("@/lib/effect-v3/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect-v3/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect-v3");
+vi.mock("@/lib/effect/result", async () => {
+	const { Cause, Effect, Exit, Option, Result } = await import("effect");
 
 	const toServerActionResult = <_T>(exit: unknown) =>
 		Exit.match(exit as never, {
 			onFailure: (cause) => {
-				const defects = Cause.defects(cause);
-				const defect = [...defects][0] ?? null;
-				const failure = Option.getOrNull(Cause.failureOption(cause));
+				const defect = Result.getOrNull(Cause.findDefect(cause));
+				const failure = Option.getOrNull(Cause.findErrorOption(cause));
 				const error = defect ?? failure ?? cause;
 
 				if (error && typeof error === "object" && "_tag" in error) {
