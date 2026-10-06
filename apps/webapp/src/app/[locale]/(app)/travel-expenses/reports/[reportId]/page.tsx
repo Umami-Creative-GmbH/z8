@@ -17,16 +17,26 @@ async function ReportContent({ params }: { params: Promise<{ reportId: string }>
 		return <NoEmployeeError feature={t("travelExpenses.feature", "manage travel expenses")} />;
 	const authorized = await loadAuthorizedTravelExpenseReport(reportId);
 	if (authorized.status !== "found") notFound();
-	if (authorized.access === "reviewer") {
-		// Reviewers see only the frozen submission the Approvals inbox lets them decide.
+	if (authorized.access !== "owner") {
+		// Reviewers see only the frozen submission the Approvals inbox lets them
+		// decide; finance (#612) sees the approved frozen submission and its settlement.
 		return (
 			<div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-6 lg:px-6">
-				<Link
-					className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
-					href="/approvals/inbox"
-				>
-					{t("travelExpenses.report.backToApprovals", "Back to approvals")}
-				</Link>
+				{authorized.access === "finance" ? (
+					<Link
+						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+						href="/travel-expenses/finance"
+					>
+						{t("travelExpenses.finance.back", "Back to expense finance")}
+					</Link>
+				) : (
+					<Link
+						className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
+						href="/approvals/inbox"
+					>
+						{t("travelExpenses.report.backToApprovals", "Back to approvals")}
+					</Link>
+				)}
 				<h1 className="text-2xl font-semibold tracking-tight">
 					{t("travelExpenses.report.submittedTitle", "Submitted expense report")}
 				</h1>

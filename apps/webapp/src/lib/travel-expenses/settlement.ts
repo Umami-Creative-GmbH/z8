@@ -138,8 +138,7 @@ export function computeSettlement(input: {
 	const open = [
 		...new Set(currencies.map((currency) => currency.state).filter((s) => s !== "settled")),
 	];
-	const state: SettlementSummary["state"] =
-		open.length > 1 ? "mixed" : (open[0] ?? "settled");
+	const state: SettlementSummary["state"] = open.length > 1 ? "mixed" : (open[0] ?? "settled");
 	return { currencies, state };
 }
 
@@ -212,10 +211,7 @@ export function parseSettlementCommand(
 		errors.push({ field: "amount", code: "precision" });
 	} else if (units === null || units <= ZERO || units > MAX_AMOUNT_UNITS) {
 		errors.push({ field: "amount", code: "invalid" });
-	} else if (
-		currencyValid &&
-		parseUnits(amountText, currencyMinorUnitDigits(currency)) === null
-	) {
+	} else if (currencyValid && parseUnits(amountText, currencyMinorUnitDigits(currency)) === null) {
 		errors.push({ field: "amount", code: "precision" });
 	}
 	if (!currencyValid) errors.push({ field: "currency", code: "invalid" });
@@ -280,7 +276,11 @@ export function planSettlementEntry(
 	const line = summary.currencies.find((entry) => entry.currency === expectedBalance.currency);
 	const balance = line ? storedUnits(line.balance) : ZERO;
 	const balanceText = formatUnits(balance, STORED_AMOUNT_SCALE);
-	const refuse = (reason: SettlementPlanRefusal) => ({ ok: false as const, reason, balance: balanceText });
+	const refuse = (reason: SettlementPlanRefusal) => ({
+		ok: false as const,
+		reason,
+		balance: balanceText,
+	});
 	const expected = parseUnits(expectedBalance.amount, STORED_AMOUNT_SCALE);
 	if (expected === null || expected !== balance) return refuse("stale_balance");
 	if (!line || command.currency !== line.currency) return refuse("currency_mismatch");

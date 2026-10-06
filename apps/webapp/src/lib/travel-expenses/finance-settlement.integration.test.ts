@@ -182,7 +182,12 @@ async function seed() {
 			   submitted_at, decided_at, created_by, updated_at)
 			 values ($1, $2, $3, 'mileage', 'approved', '2026-08-03', '2026-08-03',
 			   'EUR', '42.00', 'EUR', '42.00', '2026-08-04', '2026-08-05', $4, now())`,
-			[claimId, organizationId, employeeId, organizationId === "t612-org" ? "t612-requester" : "t612-foreigner"],
+			[
+				claimId,
+				organizationId,
+				employeeId,
+				organizationId === "t612-org" ? "t612-requester" : "t612-foreigner",
+			],
 		);
 	}
 }
@@ -293,7 +298,9 @@ async function approvedTrip() {
 
 function receipt(reportId: string, receiptId: string) {
 	return getReceipt(
-		new Request(`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}`) as unknown as NextRequest,
+		new Request(
+			`http://localhost/api/travel-expenses/reports/${reportId}/receipts/${receiptId}`,
+		) as unknown as NextRequest,
 		{ params: Promise.resolve({ reportId, receiptId }) },
 	);
 }
@@ -531,7 +538,11 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 			reimburse(source, "89.90", "89.90", { reference: "B" }),
 		]);
 		const statuses = results.map((result) =>
-			result.success ? result.data.status === "refused" ? result.data.reason : result.data.status : "error",
+			result.success
+				? result.data.status === "refused"
+					? result.data.reason
+					: result.data.status
+				: "error",
 		);
 		expect(statuses.sort()).toEqual(["recorded", "stale_balance"]);
 		expect(await entryCount()).toBe(1);
@@ -565,16 +576,18 @@ describe("finance queue and recorded reimbursements (#612)", () => {
 			error: "Unauthorized",
 		});
 		signIn("finance");
-		expect(await reimburse({ type: "legacy_claim", id: ids.foreignClaim }, "42.00", "42.00")).toEqual({
+		expect(
+			await reimburse({ type: "legacy_claim", id: ids.foreignClaim }, "42.00", "42.00"),
+		).toEqual({
 			success: false,
 			error: "Not found",
 		});
 
 		// A legacy claim settles in its preserved calculated currency.
 		const claim = await reimburse({ type: "legacy_claim", id: ids.claim }, "42.00", "42.00");
-		expect(claim.success && claim.data.status === "recorded" && claim.data.account.summary.state).toBe(
-			"settled",
-		);
+		expect(
+			claim.success && claim.data.status === "recorded" && claim.data.account.summary.state,
+		).toBe("settled");
 		expect(await entryCount()).toBe(1);
 	});
 

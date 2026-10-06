@@ -48,7 +48,9 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Executor = Database | Transaction;
 
-export type SettlementSource = { type: "report"; id: string } | { type: "legacy_claim"; id: string };
+export type SettlementSource =
+	| { type: "report"; id: string }
+	| { type: "legacy_claim"; id: string };
 
 export interface SettlementEntryView {
 	id: string;
@@ -376,24 +378,33 @@ export async function loadSettlementAccount(
 		const [found] = options.lock ? await query.for("update") : await query;
 		if (!found) return null;
 		const employeeName = await loadEmployeeName(database, organizationId, found.row.employeeId);
-		const [account] = await buildAccounts(database, organizationId, [
-			{ row: found.row, employeeName },
-		], []);
+		const [account] = await buildAccounts(
+			database,
+			organizationId,
+			[{ row: found.row, employeeName }],
+			[],
+		);
 		return account ?? null;
 	}
 	const query = database
 		.select({ row: travelExpenseClaim })
 		.from(travelExpenseClaim)
 		.where(
-			and(eq(travelExpenseClaim.id, source.id), eq(travelExpenseClaim.organizationId, organizationId)),
+			and(
+				eq(travelExpenseClaim.id, source.id),
+				eq(travelExpenseClaim.organizationId, organizationId),
+			),
 		)
 		.limit(1);
 	const [found] = options.lock ? await query.for("update") : await query;
 	if (!found) return null;
 	const employeeName = await loadEmployeeName(database, organizationId, found.row.employeeId);
-	const [account] = await buildAccounts(database, organizationId, [], [
-		{ row: found.row, employeeName },
-	]);
+	const [account] = await buildAccounts(
+		database,
+		organizationId,
+		[],
+		[{ row: found.row, employeeName }],
+	);
 	return account ?? null;
 }
 
@@ -574,7 +585,12 @@ export type RecordSettlementResult =
 	| { status: "not_approved" }
 	/** Finance cannot record money for their own expenses. */
 	| { status: "own_expense" }
-	| { status: "refused"; reason: SettlementPlanRefusal; balance: string; account: SettlementAccount };
+	| {
+			status: "refused";
+			reason: SettlementPlanRefusal;
+			balance: string;
+			account: SettlementAccount;
+	  };
 
 /**
  * Records money that moved outside Z8 for one approved source. The source row
@@ -635,7 +651,10 @@ export async function recordSettlementEntry(
 				recordedAt: dateFromInstant(now),
 			})
 			.onConflictDoNothing({
-				target: [travelExpenseSettlementEntry.organizationId, travelExpenseSettlementEntry.idempotencyKey],
+				target: [
+					travelExpenseSettlementEntry.organizationId,
+					travelExpenseSettlementEntry.idempotencyKey,
+				],
 			})
 			.returning({ id: travelExpenseSettlementEntry.id });
 		if (inserted.length === 0) {
@@ -644,7 +663,10 @@ export async function recordSettlementEntry(
 			if (!raced) throw new Error("Settlement idempotency key vanished");
 			return replayResult(raced, fingerprint, account);
 		}
-		const updated = await loadSettlementAccount(tx, { organizationId: actor.organizationId, source });
+		const updated = await loadSettlementAccount(tx, {
+			organizationId: actor.organizationId,
+			source,
+		});
 		const entry = updated?.entries.find((candidate) => candidate.id === inserted[0]?.id);
 		if (!updated || !entry) throw new Error("Recorded settlement entry not readable");
 		return { status: "recorded", replayed: false, entry, account: updated } as const;

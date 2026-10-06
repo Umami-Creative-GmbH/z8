@@ -86,12 +86,12 @@ describe("computeSettlement", () => {
 			entitlement: [approved("10.00", "EUR"), approved("1500.00", "JPY")],
 			entries: [reimbursed("10.00", "EUR")],
 		});
-		expect(summary.currencies.map(({ currency, balance, state }) => [currency, balance, state])).toEqual(
-			[
-				["EUR", "0.00", "settled"],
-				["JPY", "1500.00", "outstanding"],
-			],
-		);
+		expect(
+			summary.currencies.map(({ currency, balance, state }) => [currency, balance, state]),
+		).toEqual([
+			["EUR", "0.00", "settled"],
+			["JPY", "1500.00", "outstanding"],
+		]);
 		expect(summary.state).toBe("outstanding");
 	});
 
@@ -244,9 +244,9 @@ describe("planSettlementEntry", () => {
 
 	it("refuses another currency, more than outstanding, and anything when nothing is outstanding", () => {
 		const expected = { currency: "EUR", amount: "300.00" };
-		expect(planSettlementEntry(outstanding, command("reimbursement", "1.00", "USD"), expected)).toEqual(
-			{ ok: false, reason: "currency_mismatch", balance: "300.00" },
-		);
+		expect(
+			planSettlementEntry(outstanding, command("reimbursement", "1.00", "USD"), expected),
+		).toEqual({ ok: false, reason: "currency_mismatch", balance: "300.00" });
 		expect(planSettlementEntry(outstanding, command("reimbursement", "300.01"), expected)).toEqual({
 			ok: false,
 			reason: "exceeds_outstanding",

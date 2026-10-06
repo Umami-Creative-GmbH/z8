@@ -87,10 +87,7 @@ export const travelExpenseSettlementEntry = pgTable(
 			sql`${table.kind} IN ('reimbursement', 'recovery')`,
 		),
 		check("travel_expense_settlement_entry_amount_check", sql`${table.amount} > 0`),
-		check(
-			"travel_expense_settlement_entry_currency_check",
-			sql`${table.currency} ~ '^[A-Z]{3}$'`,
-		),
+		check("travel_expense_settlement_entry_currency_check", sql`${table.currency} ~ '^[A-Z]{3}$'`),
 		check(
 			"travel_expense_settlement_entry_reference_check",
 			sql`length(btrim(${table.reference})) BETWEEN 1 AND 200

@@ -7,7 +7,10 @@ import type { AppAbility } from "@/lib/authorization/ability";
  * the active organization of the session.
  */
 
-function inActiveOrganization(organizationId: string, activeOrganizationId: string | null): boolean {
+function inActiveOrganization(
+	organizationId: string,
+	activeOrganizationId: string | null,
+): boolean {
 	return organizationId.length > 0 && organizationId === activeOrganizationId;
 }
 

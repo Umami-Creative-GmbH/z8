@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
+import { SettlementPanel } from "../finance/settlement-panel";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
@@ -161,6 +162,9 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 				id={`${reportId}-submitted`}
 				totals={{ ...facts.totals, excludedItemCount: 0 }}
 			/>
+			{data.status === "approved" && data.access !== "reviewer" && (
+				<SettlementPanel source={{ type: "report", id: reportId }} />
+			)}
 			<section aria-labelledby={`${reportId}-history`} className="space-y-2">
 				<h2 id={`${reportId}-history`} className="text-lg font-semibold">
 					{t("travelExpenses.report.history.title", "History")}
