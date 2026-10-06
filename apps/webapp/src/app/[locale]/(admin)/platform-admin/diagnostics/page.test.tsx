@@ -16,7 +16,7 @@ vi.mock("next/server", () => ({
 	connection: mocks.connection,
 }));
 
-vi.mock("@/lib/effect-v3/services/platform-admin.service", () => ({
+vi.mock("@/lib/effect/services/platform-admin.service", () => ({
 	requirePlatformAdmin: mocks.requirePlatformAdmin,
 }));
 

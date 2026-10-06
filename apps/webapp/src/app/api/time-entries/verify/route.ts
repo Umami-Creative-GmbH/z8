@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -7,8 +7,8 @@ import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { runtime } from "@/lib/effect-v3/runtime";
-import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
+import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import { summarizeAppendAssurance } from "@/lib/time-tracking/append-assurance";
 import { ClockingAccessError, clockingService } from "@/lib/time-tracking/clocking-service";
 import { canManageEntriesOf } from "@/lib/time-tracking/diagnostic-access";
@@ -94,10 +94,11 @@ export async function POST(request: NextRequest) {
 			}
 		}
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.getAppendAssurance(targetEmployeeId, currentEmployee.organizationId),
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.getAppendAssurance(
+				targetEmployeeId,
+				currentEmployee.organizationId,
 			);
 		});
 
@@ -174,11 +175,9 @@ export async function GET(request: NextRequest) {
 			}
 		}
 
-		const effect = Effect.gen(function* (_) {
-			const timeEntryService = yield* _(TimeEntryService);
-			return yield* _(
-				timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId),
-			);
+		const effect = Effect.gen(function* () {
+			const timeEntryService = yield* TimeEntryService;
+			return yield* timeEntryService.getChainHash(targetEmployeeId, currentEmployee.organizationId);
 		});
 
 		const chainHash = await runtime.runPromise(effect);

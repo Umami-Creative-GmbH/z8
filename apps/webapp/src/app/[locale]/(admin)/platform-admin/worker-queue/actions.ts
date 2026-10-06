@@ -1,6 +1,6 @@
 "use server";
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { reconcileCronJobSchedule } from "@/lib/cron/reconciliation";
 import { CRON_JOBS, type CronJobName, isCronJobName } from "@/lib/cron/registry";
 import {
@@ -21,9 +21,9 @@ import {
 	getRecentExecutions,
 } from "@/lib/cron/tracking";
 import { DatabaseError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { PlatformAdminService } from "@/lib/effect-v3/services/platform-admin.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { getJobQueue, isQueueHealthy } from "@/lib/queue";
 import {
 	buildAvailableJobNames,

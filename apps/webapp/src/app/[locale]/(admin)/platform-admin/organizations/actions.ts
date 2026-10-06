@@ -1,29 +1,29 @@
 "use server";
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import {
 	type PaginatedResult,
 	PlatformAdminService,
 	type PlatformOrganization,
 	type PlatformOrgFilters,
-} from "@/lib/effect-v3/services/platform-admin.service";
+} from "@/lib/effect/services/platform-admin.service";
 
 export async function listOrganizationsAction(
 	filters: PlatformOrgFilters,
 	page: number,
 	pageSize: number,
 ): Promise<ServerActionResult<PaginatedResult<PlatformOrganization>>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		yield* _(adminService.requirePlatformAdmin());
+		yield* adminService.requirePlatformAdmin();
 
 		// List organizations
-		return yield* _(adminService.listOrganizations(filters, { page, pageSize }));
+		return yield* adminService.listOrganizations(filters, { page, pageSize });
 	}).pipe(Effect.provide(AppLayer));
 
 	return runServerActionSafe(effect);
@@ -33,14 +33,14 @@ export async function suspendOrganizationAction(
 	organizationId: string,
 	reason: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Suspend organization
-		yield* _(adminService.suspendOrganization(organizationId, reason, admin.userId));
+		yield* adminService.suspendOrganization(organizationId, reason, admin.userId);
 
 		revalidatePath("/platform-admin/organizations");
 	}).pipe(Effect.provide(AppLayer));
@@ -51,14 +51,14 @@ export async function suspendOrganizationAction(
 export async function unsuspendOrganizationAction(
 	organizationId: string,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Unsuspend organization
-		yield* _(adminService.unsuspendOrganization(organizationId, admin.userId));
+		yield* adminService.unsuspendOrganization(organizationId, admin.userId);
 
 		revalidatePath("/platform-admin/organizations");
 	}).pipe(Effect.provide(AppLayer));
@@ -71,15 +71,18 @@ export async function deleteOrganizationAction(
 	immediate: boolean,
 	skipNotification: boolean,
 ): Promise<ServerActionResult<void>> {
-	const effect = Effect.gen(function* (_) {
-		const adminService = yield* _(PlatformAdminService);
+	const effect = Effect.gen(function* () {
+		const adminService = yield* PlatformAdminService;
 
 		// Verify platform admin access
-		const admin = yield* _(adminService.requirePlatformAdmin());
+		const admin = yield* adminService.requirePlatformAdmin();
 
 		// Delete organization
-		yield* _(
-			adminService.deleteOrganization(organizationId, immediate, skipNotification, admin.userId),
+		yield* adminService.deleteOrganization(
+			organizationId,
+			immediate,
+			skipNotification,
+			admin.userId,
 		);
 
 		revalidatePath("/platform-admin/organizations");

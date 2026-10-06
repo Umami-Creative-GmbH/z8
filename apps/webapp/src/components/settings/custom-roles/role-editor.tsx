@@ -29,7 +29,7 @@ import {
 	getPermissionsByCategory,
 } from "@/lib/authorization/permission-registry";
 import type { PrincipalContext } from "@/lib/authorization/types";
-import type { CustomRoleWithPermissions } from "@/lib/effect-v3/services/custom-role.service";
+import type { CustomRoleWithPermissions } from "@/lib/effect/services/custom-role.service";
 
 // ============================================
 // INHERITED PERMISSIONS HELPER

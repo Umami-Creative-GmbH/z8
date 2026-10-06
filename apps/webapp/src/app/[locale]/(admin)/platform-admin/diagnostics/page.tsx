@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
-import { requirePlatformAdmin } from "@/lib/effect-v3/services/platform-admin.service";
+import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { collectPlatformDiagnostics } from "@/lib/platform-diagnostics";
 import { getTranslate } from "@/tolgee/server";
 import { DiagnosticsClient } from "./diagnostics-client";

@@ -7,7 +7,7 @@
  */
 
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
 	absenceEntry,
@@ -318,7 +318,7 @@ export function buildOvertimeBurnDownDataForTesting(
 	};
 }
 
-export class AnalyticsService extends Context.Tag("AnalyticsService")<
+export class AnalyticsService extends Context.Service<
 	AnalyticsService,
 	{
 		readonly getTeamPerformance: (
@@ -340,15 +340,15 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 			params: OvertimeBurnDownParams,
 		) => Effect.Effect<OvertimeBurnDownData, NotFoundError | ValidationError | DatabaseError>;
 	}
->() {
+>()("AnalyticsService") {
 	static readonly Live = Layer.effect(
 		AnalyticsService,
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 
 			return {
 				getTeamPerformance: (params: TeamPerformanceParams) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const { organizationId, dateRange, teamId } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 						const reportRange = resolveReportDateRange(
@@ -358,39 +358,36 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						);
 
 						// Get all employees in the organization (or specific team)
-						const employees = yield* _(
-							dbService.query("getEmployeesForAnalytics", async () => {
-								const query = dbService.db.query.employee.findMany({
-									where: teamId
-										? and(
-												eq(employee.organizationId, organizationId),
-												eq(employee.teamId, teamId),
-												eq(employee.isActive, true),
-											)
-										: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-									with: {
-										user: true,
-										team: true,
-									},
-								});
-								return await query;
-							}),
-						);
+						const employees = yield* dbService.query("getEmployeesForAnalytics", async () => {
+							const query = dbService.db.query.employee.findMany({
+								where: teamId
+									? and(
+											eq(employee.organizationId, organizationId),
+											eq(employee.teamId, teamId),
+											eq(employee.isActive, true),
+										)
+									: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+								with: {
+									user: true,
+									team: true,
+								},
+							});
+							return await query;
+						});
 
-						const expected = yield* _(
-							Effect.promise(() =>
-								calculateExpectedWorkHours(
-									organizationId,
-									dateRange.start,
-									dateRange.end,
-									8,
-									calendarRange.timezone,
-								),
+						const expected = yield* Effect.promise(() =>
+							calculateExpectedWorkHours(
+								organizationId,
+								dateRange.start,
+								dateRange.end,
+								8,
+								calendarRange.timezone,
 							),
 						);
 
-						const workPeriods = yield* _(
-							dbService.query("getTeamPerformanceWorkPeriods", async () => {
+						const workPeriods = yield* dbService.query(
+							"getTeamPerformanceWorkPeriods",
+							async () => {
 								const employeeIds = employees.map((item) => item.id);
 								if (employeeIds.length === 0) return [];
 								return await dbService.db.query.workPeriod.findMany({
@@ -401,26 +398,24 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										gt(workPeriod.endTime, dateRange.start),
 									),
 								});
-							}),
+							},
 						);
 						const allocation = allocateAnalyticsWorkPeriodMinutes(workPeriods, reportRange);
 						const expectedByEmployee = new Map(
-							yield* _(
-								Effect.promise(() =>
-									Promise.all(
-										employees.map(
-											async (employee) =>
-												[
+							yield* Effect.promise(() =>
+								Promise.all(
+									employees.map(
+										async (employee) =>
+											[
+												employee.id,
+												await calculateExpectedWorkHoursForEmployee(
 													employee.id,
-													await calculateExpectedWorkHoursForEmployee(
-														employee.id,
-														organizationId,
-														dateRange.start,
-														dateRange.end,
-														calendarRange.timezone,
-													),
-												] as const,
-										),
+													organizationId,
+													dateRange.start,
+													dateRange.end,
+													calendarRange.timezone,
+												),
+											] as const,
 									),
 								),
 							),
@@ -501,50 +496,46 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 					}),
 
 				getVacationTrends: (params: VacationTrendsParams) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const { organizationId, dateRange } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 
 						// Get all employees with vacation allowances
-						const employees = yield* _(
-							dbService.query("getEmployeesWithVacation", async () => {
-								return await dbService.db.query.employee.findMany({
-									where: and(
-										eq(employee.organizationId, organizationId),
-										eq(employee.isActive, true),
-									),
-									with: {
-										user: true,
-										vacationAllowances: true,
-									},
-								});
-							}),
-						);
+						const employees = yield* dbService.query("getEmployeesWithVacation", async () => {
+							return await dbService.db.query.employee.findMany({
+								where: and(
+									eq(employee.organizationId, organizationId),
+									eq(employee.isActive, true),
+								),
+								with: {
+									user: true,
+									vacationAllowances: true,
+								},
+							});
+						});
 
 						// Get all approved absences in date range
-						const absences = yield* _(
-							dbService.query("getApprovedAbsences", async () => {
-								const employeeIds = employees.map((employee) => employee.id);
-								if (employeeIds.length === 0) return [];
-								const rows = await dbService.db.query.absenceEntry.findMany({
-									where: and(
-										eq(absenceEntry.status, "approved"),
-										inArray(absenceEntry.employeeId, employeeIds),
-										lte(absenceEntry.startDate, calendarRange.endDate),
-										gte(absenceEntry.endDate, calendarRange.startDate),
-									),
-									with: {
-										employee: true, // Filter by organization in memory
-										category: true,
-									},
-								});
-								return rows.flatMap((row) =>
-									row.employee.organizationId === organizationId
-										? [clipAbsenceToCalendarRange(row, calendarRange)]
-										: [],
-								);
-							}),
-						);
+						const absences = yield* dbService.query("getApprovedAbsences", async () => {
+							const employeeIds = employees.map((employee) => employee.id);
+							if (employeeIds.length === 0) return [];
+							const rows = await dbService.db.query.absenceEntry.findMany({
+								where: and(
+									eq(absenceEntry.status, "approved"),
+									inArray(absenceEntry.employeeId, employeeIds),
+									lte(absenceEntry.startDate, calendarRange.endDate),
+									gte(absenceEntry.endDate, calendarRange.startDate),
+								),
+								with: {
+									employee: true, // Filter by organization in memory
+									category: true,
+								},
+							});
+							return rows.flatMap((row) =>
+								row.employee.organizationId === organizationId
+									? [clipAbsenceToCalendarRange(row, calendarRange)]
+									: [],
+							);
+						});
 
 						// Calculate overall stats
 						const totalDaysAllocated = employees.reduce((sum, emp) => {
@@ -663,7 +654,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 					}),
 
 				getWorkHoursAnalytics: (params: WorkHoursParams) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const { organizationId, dateRange, employeeId } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 						const reportRange = resolveReportDateRange(
@@ -674,34 +665,31 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const rangeEndExclusive = new Date(dateRange.end.getTime() + 1);
 
 						// Get employees (all or specific one)
-						const employees = yield* _(
-							dbService.query("getEmployeesForWorkAnalytics", async () => {
-								return await dbService.db.query.employee.findMany({
-									where: employeeId
-										? and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId))
-										: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-									with: {
-										user: true,
-									},
-								});
-							}),
-						);
+						const employees = yield* dbService.query("getEmployeesForWorkAnalytics", async () => {
+							return await dbService.db.query.employee.findMany({
+								where: employeeId
+									? and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId))
+									: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+								with: {
+									user: true,
+								},
+							});
+						});
 
-						const expected = yield* _(
-							Effect.promise(() =>
-								calculateExpectedWorkHours(
-									organizationId,
-									dateRange.start,
-									dateRange.end,
-									8,
-									calendarRange.timezone,
-								),
+						const expected = yield* Effect.promise(() =>
+							calculateExpectedWorkHours(
+								organizationId,
+								dateRange.start,
+								dateRange.end,
+								8,
+								calendarRange.timezone,
 							),
 						);
 
 						// Get daily distribution by aggregating work periods per day
-						const workPeriods = yield* _(
-							dbService.query("getWorkPeriodsForDistribution", async () => {
+						const workPeriods = yield* dbService.query(
+							"getWorkPeriodsForDistribution",
+							async () => {
 								const employeeIds = employees.map((e) => e.id);
 								if (employeeIds.length === 0) return [];
 								return await dbService.db.query.workPeriod.findMany({
@@ -713,7 +701,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										gt(workPeriod.endTime, dateRange.start),
 									),
 								});
-							}),
+							},
 						);
 
 						const minutesByEmployee = new Map<string, number>();
@@ -804,30 +792,28 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 					}),
 
 				getAbsencePatterns: (params: AbsencePatternsParams) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const { organizationId, dateRange } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 
 						// Get all absences in date range
-						const absences = yield* _(
-							dbService.query("getAbsencesForPatterns", async () => {
-								return await dbService.db.query.absenceEntry.findMany({
-									where: and(
-										lte(absenceEntry.startDate, calendarRange.endDate),
-										gte(absenceEntry.endDate, calendarRange.startDate),
-									),
-									with: {
-										employee: {
-											with: {
-												team: true,
-												user: true,
-											},
+						const absences = yield* dbService.query("getAbsencesForPatterns", async () => {
+							return await dbService.db.query.absenceEntry.findMany({
+								where: and(
+									lte(absenceEntry.startDate, calendarRange.endDate),
+									gte(absenceEntry.endDate, calendarRange.startDate),
+								),
+								with: {
+									employee: {
+										with: {
+											team: true,
+											user: true,
 										},
-										category: true,
 									},
-								});
-							}),
-						);
+									category: true,
+								},
+							});
+						});
 
 						// Filter absences to only those belonging to employees in this organization
 						const orgAbsences = absences.flatMap((absence) =>
@@ -1081,37 +1067,36 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 					}),
 
 				getManagerEffectiveness: (params: ManagerEffectivenessParams) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const { organizationId, dateRange, managerId } = params;
 
-						const approvals = yield* _(
-							dbService.query("getApprovalsForEffectiveness", async () => {
-								return await dbService.db.query.approvalRequest.findMany({
-									where: and(
-										eq(approvalRequest.organizationId, organizationId),
-										gte(approvalRequest.createdAt, dateRange.start),
-										lte(approvalRequest.createdAt, dateRange.end),
-										managerId ? eq(approvalRequest.approverId, managerId) : undefined,
-									),
-									with: {
-										approver: {
-											with: {
-												user: true,
-											},
-										},
-										requester: {
-											with: {
-												user: true,
-												team: true,
-											},
+						const approvals = yield* dbService.query("getApprovalsForEffectiveness", async () => {
+							return await dbService.db.query.approvalRequest.findMany({
+								where: and(
+									eq(approvalRequest.organizationId, organizationId),
+									gte(approvalRequest.createdAt, dateRange.start),
+									lte(approvalRequest.createdAt, dateRange.end),
+									managerId ? eq(approvalRequest.approverId, managerId) : undefined,
+								),
+								with: {
+									approver: {
+										with: {
+											user: true,
 										},
 									},
-								});
-							}),
-						);
+									requester: {
+										with: {
+											user: true,
+											team: true,
+										},
+									},
+								},
+							});
+						});
 
-						const travelClaims = yield* _(
-							dbService.query("getTravelExpenseClaimsForEffectiveness", async () => {
+						const travelClaims = yield* dbService.query(
+							"getTravelExpenseClaimsForEffectiveness",
+							async () => {
 								return await dbService.db.query.travelExpenseClaim.findMany({
 									where: and(
 										eq(travelExpenseClaim.organizationId, organizationId),
@@ -1135,7 +1120,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										},
 									},
 								});
-							}),
+							},
 						);
 
 						const approvalRows: ApprovalAnalyticsRow[] = approvals.map((approval) => ({
@@ -1190,25 +1175,23 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 						const managerIds = managerEffectiveness.byManager.flatMap((manager) =>
 							manager.managerId !== "unassigned" ? [manager.managerId] : [],
 						);
-						const teamSizes = yield* _(
-							dbService.query("getTeamSizes", async () => {
-								if (managerIds.length === 0) return [];
-								return await dbService.db
-									.select({
-										managerId: employeeManagers.managerId,
-										count: sql<number>`count(*)::int`,
-									})
-									.from(employeeManagers)
-									.innerJoin(employee, eq(employeeManagers.employeeId, employee.id))
-									.where(
-										and(
-											inArray(employeeManagers.managerId, managerIds),
-											eq(employee.organizationId, organizationId),
-										),
-									)
-									.groupBy(employeeManagers.managerId);
-							}),
-						);
+						const teamSizes = yield* dbService.query("getTeamSizes", async () => {
+							if (managerIds.length === 0) return [];
+							return await dbService.db
+								.select({
+									managerId: employeeManagers.managerId,
+									count: sql<number>`count(*)::int`,
+								})
+								.from(employeeManagers)
+								.innerJoin(employee, eq(employeeManagers.employeeId, employee.id))
+								.where(
+									and(
+										inArray(employeeManagers.managerId, managerIds),
+										eq(employee.organizationId, organizationId),
+									),
+								)
+								.groupBy(employeeManagers.managerId);
+						});
 
 						const teamSizeMap = new Map<string, number>();
 						for (const ts of teamSizes) {
@@ -1225,7 +1208,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 					}),
 
 				getOvertimeBurnDown: (params: OvertimeBurnDownParams) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const { organizationId, dateRange, filters, scope } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 						const rangeStart = DateTime.fromJSDate(dateRange.start, {
@@ -1255,8 +1238,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							currentWeek = currentWeek.plus({ weeks: 1 });
 						}
 
-						const employees = yield* _(
-							dbService.query("getEmployeesForOvertimeBurnDown", async () => {
+						const employees = yield* dbService.query(
+							"getEmployeesForOvertimeBurnDown",
+							async () => {
 								return await dbService.db.query.employee.findMany({
 									where: and(
 										eq(employee.organizationId, organizationId),
@@ -1276,7 +1260,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										},
 									},
 								});
-							}),
+							},
 						);
 
 						const scopedEmployees = employees.filter((emp) => {
@@ -1306,8 +1290,9 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							);
 						}
 
-						const assignments = yield* _(
-							dbService.query("getEmployeeCostCenterAssignmentsForOvertimeBurnDown", async () => {
+						const assignments = yield* dbService.query(
+							"getEmployeeCostCenterAssignmentsForOvertimeBurnDown",
+							async () => {
 								return await dbService.db.query.employeeCostCenterAssignment.findMany({
 									where: and(
 										eq(employeeCostCenterAssignment.organizationId, organizationId),
@@ -1322,7 +1307,7 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 										costCenter: true,
 									},
 								});
-							}),
+							},
 						);
 
 						const assignmentByEmployee = new Map<string, typeof assignments>();
@@ -1338,76 +1323,74 @@ export class AnalyticsService extends Context.Tag("AnalyticsService")<
 							);
 						}
 
-						const nestedRecords = yield* _(
-							Effect.promise(async () => {
-								return await Promise.all(
-									scopedEmployees.map(async (emp) => {
-										const primaryManager =
-											emp.managers.find((managerRow) => managerRow.isPrimary) || emp.managers[0];
-										const managerId = primaryManager?.managerId || UNASSIGNED_GROUP.id;
-										const managerLabel =
-											primaryManager?.manager?.user?.name || UNASSIGNED_GROUP.label;
+						const nestedRecords = yield* Effect.promise(async () => {
+							return await Promise.all(
+								scopedEmployees.map(async (emp) => {
+									const primaryManager =
+										emp.managers.find((managerRow) => managerRow.isPrimary) || emp.managers[0];
+									const managerId = primaryManager?.managerId || UNASSIGNED_GROUP.id;
+									const managerLabel =
+										primaryManager?.manager?.user?.name || UNASSIGNED_GROUP.label;
 
-										const employeeAssignments = assignmentByEmployee.get(emp.id) || [];
+									const employeeAssignments = assignmentByEmployee.get(emp.id) || [];
 
-										const weeklyRecords = await Promise.all(
-											weekBuckets.map(async ({ weekStart, weekStartIso, weekEnd }) => {
-												const [actual, expected] = await Promise.all([
-													calculateWorkHours(
-														emp.id,
-														organizationId,
-														weekStart.toJSDate(),
-														weekEnd.toJSDate(),
-													),
-													calculateExpectedWorkHoursForEmployee(
-														emp.id,
-														organizationId,
-														weekStart.toJSDate(),
-														weekEnd.toJSDate(),
-														calendarRange.timezone,
-													),
-												]);
+									const weeklyRecords = await Promise.all(
+										weekBuckets.map(async ({ weekStart, weekStartIso, weekEnd }) => {
+											const [actual, expected] = await Promise.all([
+												calculateWorkHours(
+													emp.id,
+													organizationId,
+													weekStart.toJSDate(),
+													weekEnd.toJSDate(),
+												),
+												calculateExpectedWorkHoursForEmployee(
+													emp.id,
+													organizationId,
+													weekStart.toJSDate(),
+													weekEnd.toJSDate(),
+													calendarRange.timezone,
+												),
+											]);
 
-												const weekStartDate = weekStart.toJSDate();
-												const activeAssignment = employeeAssignments.find((assignment) => {
-													const effectiveFrom = new Date(assignment.effectiveFrom);
-													const effectiveTo = assignment.effectiveTo
-														? new Date(assignment.effectiveTo)
-														: null;
-													return (
-														effectiveFrom.getTime() <= weekStartDate.getTime() &&
-														(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())
-													);
-												});
+											const weekStartDate = weekStart.toJSDate();
+											const activeAssignment = employeeAssignments.find((assignment) => {
+												const effectiveFrom = new Date(assignment.effectiveFrom);
+												const effectiveTo = assignment.effectiveTo
+													? new Date(assignment.effectiveTo)
+													: null;
+												return (
+													effectiveFrom.getTime() <= weekStartDate.getTime() &&
+													(!effectiveTo || effectiveTo.getTime() >= weekStartDate.getTime())
+												);
+											});
 
-												const costCenterId = activeAssignment?.costCenterId || UNASSIGNED_GROUP.id;
-												const costCenterLabel =
-													activeAssignment?.costCenter?.name || UNASSIGNED_GROUP.label;
+											const costCenterId = activeAssignment?.costCenterId || UNASSIGNED_GROUP.id;
+											const costCenterLabel =
+												activeAssignment?.costCenter?.name || UNASSIGNED_GROUP.label;
 
-												if (filters?.costCenterId && costCenterId !== filters.costCenterId) {
-													return null;
-												}
+											if (filters?.costCenterId && costCenterId !== filters.costCenterId) {
+												return null;
+											}
 
-												return {
-													weekStart: weekStartIso,
-													overtimeHours: clampOvertime(actual.totalHours - expected.totalHours),
-													teamId: emp.teamId || UNASSIGNED_GROUP.id,
-													teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
-													costCenterId,
-													costCenterLabel,
-													managerId,
-													managerLabel,
-												} satisfies OvertimeBurnDownWeeklyRecord;
-											}),
-										);
+											return {
+												weekStart: weekStartIso,
+												overtimeHours: clampOvertime(actual.totalHours - expected.totalHours),
+												teamId: emp.teamId || UNASSIGNED_GROUP.id,
+												teamLabel: emp.team?.name || UNASSIGNED_GROUP.label,
+												costCenterId,
+												costCenterLabel,
+												managerId,
+												managerLabel,
+											} satisfies OvertimeBurnDownWeeklyRecord;
+										}),
+									);
 
-										return weeklyRecords.filter((record): record is OvertimeBurnDownWeeklyRecord =>
-											Boolean(record),
-										);
-									}),
-								);
-							}),
-						);
+									return weeklyRecords.filter((record): record is OvertimeBurnDownWeeklyRecord =>
+										Boolean(record),
+									);
+								}),
+							);
+						});
 
 						return buildOvertimeBurnDownDataForTesting(
 							nestedRecords.flat(),

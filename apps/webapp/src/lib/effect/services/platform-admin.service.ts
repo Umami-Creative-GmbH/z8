@@ -1,7 +1,5 @@
-// Frozen Effect v3 copy (#625). The v4 version is lib/effect/services/platform-admin.service.ts.
-// Make any change in both copies until #629 moves platform-admin/billing/actions.ts, its last v3 user.
 import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { member, organization, session, user } from "@/db/auth-schema";
 import { organizationSuspension, platformAdminAuditLog } from "@/db/schema";
@@ -91,7 +89,7 @@ export interface AuditLogEntry {
 }
 
 // Service interface
-export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
+export class PlatformAdminService extends Context.Service<
 	PlatformAdminService,
 	{
 		// Authorization
@@ -168,7 +166,7 @@ export class PlatformAdminService extends Context.Tag("PlatformAdminService")<
 
 		readonly getRecentAuditLogs: (limit?: number) => Effect.Effect<AuditLogEntry[], DatabaseError>;
 	}
->() {}
+>()("PlatformAdminService") {}
 
 export async function requirePlatformAdmin(): Promise<{
 	userId: string;

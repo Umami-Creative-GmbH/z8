@@ -42,7 +42,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import type { PlatformUser, UserSession } from "@/lib/effect-v3/services/platform-admin.service";
+import type { PlatformUser, UserSession } from "@/lib/effect/services/platform-admin.service";
 
 const USER_LOADING_ROW_KEYS = ["loading-1", "loading-2", "loading-3", "loading-4", "loading-5"];
 const SESSION_LOADING_KEYS = ["session-loading-1", "session-loading-2", "session-loading-3"];

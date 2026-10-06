@@ -17,8 +17,9 @@
 // It only reports the changes that need judgment (see REVIEW below). Read
 // docs/refs/effect.md before porting a slice.
 //
-// Unwrapping `yield* _(...)` leaves the old indentation. If a file was Biome-clean before the
-// codemod, format it afterwards:
+// Unwrapping a multi-line `yield* _(\n...\n)` removes the nesting level it added, but the
+// joined lines can still exceed the line width. If a file was Biome-clean before the codemod,
+// format it afterwards at the width it was clean at (most files use 100, some 80):
 //   ./node_modules/.bin/biome format --write --line-width 100 --indent-style tab --line-ending crlf <file>
 // Check first with `git show HEAD:<path> | biome format --stdin-file-path=x.ts ...`; never
 // reformat files that were not Biome-clean.
@@ -128,6 +129,33 @@ function splitArgs(inner) {
 	return parts.map((part) => part.trim()).filter(Boolean);
 }
 
+// Removes one leading tab from every line after the first, leaving string contents alone.
+// Comments are dedented too, and quotes inside them are not strings.
+function dedentOutsideStrings(code) {
+	let out = "";
+	let comment = null;
+	for (let i = 0; i < code.length; i++) {
+		const ch = code[i];
+		if (comment === "line" && ch === "\n") comment = null;
+		if (comment === "block" && ch === "*" && code[i + 1] === "/") comment = null;
+		if (!comment && ch === "/" && (code[i + 1] === "/" || code[i + 1] === "*")) {
+			comment = code[i + 1] === "/" ? "line" : "block";
+			out += ch + code[i + 1];
+			i++;
+			continue;
+		}
+		if (!comment && (ch === '"' || ch === "'" || ch === "`")) {
+			const end = skipString(code, i);
+			out += code.slice(i, end + 1);
+			i = end;
+			continue;
+		}
+		out += ch;
+		if (ch === "\n" && code[i + 1] === "\t") i++;
+	}
+	return out;
+}
+
 function unwrapAdapter(source) {
 	let out = source;
 	let from = 0;
@@ -137,7 +165,12 @@ function unwrapAdapter(source) {
 		const open = at + "yield* _".length;
 		const close = findClose(out, open, "(", ")");
 		if (close === -1) break;
-		const parts = splitArgs(out.slice(open + 1, close));
+		const inner = out.slice(open + 1, close);
+		const parts = splitArgs(inner);
+		// `yield* _(\n\t<expr>\n)` nested <expr> one level deeper: undo that level.
+		if (parts.length === 1 && /^[ \t]*\r?\n/.test(inner)) {
+			parts[0] = dedentOutsideStrings(parts[0]);
+		}
 		const replacement =
 			parts.length <= 1
 				? `yield* ${parts[0] ?? ""}`

@@ -7,7 +7,7 @@
 
 import { DateTime } from "luxon";
 import { fmtWeekdayShortDate } from "@/lib/bot-platform/i18n";
-import type { OpenShiftWithDetails } from "@/lib/effect-v3/services/open-shifts.service";
+import type { OpenShiftWithDetails } from "@/lib/effect/services/open-shifts.service";
 
 // ============================================
 // TYPES

@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import type { z } from "zod";
 import { ValidationError } from "@/lib/effect/errors";
 import {

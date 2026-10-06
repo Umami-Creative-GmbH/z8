@@ -1,10 +1,10 @@
 "use server";
 
-import { Effect } from "effect-v3";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import type { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { Effect } from "effect";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
 	HydrationStats,
 	LogWaterIntakeFormValues,
@@ -29,16 +29,14 @@ import { validateWaterReminderSettings } from "./actions/validation";
 function buildWellnessActionEffect<T, E>(
 	operation: (context: WellnessActionContext) => Effect.Effect<T, E, DatabaseService>,
 ) {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession());
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
 
-		return yield* _(
-			operation({
-				userId: session.user.id,
-				activeOrganizationId: session.session?.activeOrganizationId ?? null,
-			}),
-		);
+		return yield* operation({
+			userId: session.user.id,
+			activeOrganizationId: session.session?.activeOrganizationId ?? null,
+		});
 	}).pipe(Effect.provide(AppLayer));
 }
 
@@ -55,14 +53,12 @@ export async function getWaterReminderStatus(): Promise<
 	}>
 > {
 	const effect = buildWellnessActionEffect(({ userId }) =>
-		Effect.gen(function* (_) {
-			const [settings, stats, lastIntake] = yield* _(
-				Effect.all([
-					getUserWaterReminderSettings(userId),
-					getHydrationStatsRecord(userId),
-					getLastWaterIntakeToday(userId),
-				]),
-			);
+		Effect.gen(function* () {
+			const [settings, stats, lastIntake] = yield* Effect.all([
+				getUserWaterReminderSettings(userId),
+				getHydrationStatsRecord(userId),
+				getLastWaterIntakeToday(userId),
+			]);
 
 			const reminderSettings = toWaterReminderSettings(settings);
 
@@ -114,8 +110,8 @@ export async function snoozeWaterReminder(): Promise<
 	}>
 > {
 	const effect = buildWellnessActionEffect(({ userId }) =>
-		Effect.gen(function* (_) {
-			const snoozedUntil = yield* _(snoozeWaterReminderForToday(userId));
+		Effect.gen(function* () {
+			const snoozedUntil = yield* snoozeWaterReminderForToday(userId);
 			return { snoozedUntil };
 		}),
 	);
@@ -130,23 +126,18 @@ export async function updateWaterReminderSettings(
 	data: WaterReminderSettingsFormValues,
 ): Promise<ServerActionResult<void>> {
 	const effect = buildWellnessActionEffect(({ userId }) =>
-		Effect.gen(function* (_) {
-			const { enabled, preset, intervalMinutes, dailyGoal } = yield* _(
-				validateWaterReminderSettings(data),
-			);
+		Effect.gen(function* () {
+			const { enabled, preset, intervalMinutes, dailyGoal } =
+				yield* validateWaterReminderSettings(data);
 
-			yield* _(
-				upsertWaterReminderSettings({
-					userId,
-					enabled,
-					preset,
-					intervalMinutes:
-						preset === "custom"
-							? intervalMinutes
-							: getPresetInterval(preset as WaterReminderPreset),
-					dailyGoal,
-				}),
-			);
+			yield* upsertWaterReminderSettings({
+				userId,
+				enabled,
+				preset,
+				intervalMinutes:
+					preset === "custom" ? intervalMinutes : getPresetInterval(preset as WaterReminderPreset),
+				dailyGoal,
+			});
 		}),
 	);
 
@@ -160,8 +151,8 @@ export async function getWaterReminderSettings(): Promise<
 	ServerActionResult<WaterReminderSettings>
 > {
 	const effect = buildWellnessActionEffect(({ userId }) =>
-		Effect.gen(function* (_) {
-			const settings = yield* _(getUserWaterReminderSettings(userId));
+		Effect.gen(function* () {
+			const settings = yield* getUserWaterReminderSettings(userId);
 			return toWaterReminderSettings(settings);
 		}),
 	);

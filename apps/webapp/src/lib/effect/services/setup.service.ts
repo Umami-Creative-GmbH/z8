@@ -1,5 +1,5 @@
 import { eq, sql } from "drizzle-orm";
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { account, user } from "@/db/auth-schema";
 import { platformAdminAuditLog } from "@/db/schema";
@@ -63,7 +63,7 @@ function validateName(name: string): string | null {
 }
 
 // Service interface
-export class SetupService extends Context.Tag("SetupService")<
+export class SetupService extends Context.Service<
 	SetupService,
 	{
 		/**
@@ -84,7 +84,7 @@ export class SetupService extends Context.Tag("SetupService")<
 			AuthorizationError | ValidationError | ConflictError | DatabaseError
 		>;
 	}
->() {}
+>()("SetupService") {}
 
 // Service implementation
 export const SetupServiceLive = Layer.effect(

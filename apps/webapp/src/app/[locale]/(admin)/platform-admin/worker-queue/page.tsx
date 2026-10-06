@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/table";
 import { CRON_JOBS } from "@/lib/cron/registry";
 import { CRON_SCHEDULE_PRESETS } from "@/lib/cron/schedules";
-import { requirePlatformAdmin } from "@/lib/effect-v3/services/platform-admin.service";
+import { requirePlatformAdmin } from "@/lib/effect/services/platform-admin.service";
 import { getTranslate } from "@/tolgee/server";
 import { getWorkerQueueStats, type WorkerQueueStats } from "./actions";
 import { RecentExecutions } from "./recent-executions";

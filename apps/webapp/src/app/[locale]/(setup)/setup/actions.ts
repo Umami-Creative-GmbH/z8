@@ -1,16 +1,16 @@
 "use server";
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { cookies } from "next/headers";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
+} from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
 import {
 	type PlatformAdminResult,
 	SetupService,
-} from "@/lib/effect-v3/services/setup.service";
+} from "@/lib/effect/services/setup.service";
 import { setupBootstrap } from "@/lib/setup/bootstrap.server";
 import { SETUP_COOKIE_NAME, setupCookieOptions } from "@/lib/setup/http";
 
@@ -42,18 +42,16 @@ export async function createPlatformAdminAction(
 			code: "AuthorizationError",
 		};
 	}
-	const effect = Effect.gen(function* (_) {
-		const setupService = yield* _(SetupService);
+	const effect = Effect.gen(function* () {
+		const setupService = yield* SetupService;
 
-		return yield* _(
-			setupService.createPlatformAdmin(
-				{
-					name: data.name,
-					email: data.email,
-					password: data.password,
-				},
-				setupToken,
-			),
+		return yield* setupService.createPlatformAdmin(
+			{
+				name: data.name,
+				email: data.email,
+				password: data.password,
+			},
+			setupToken,
 		);
 	}).pipe(Effect.provide(AppLayer));
 

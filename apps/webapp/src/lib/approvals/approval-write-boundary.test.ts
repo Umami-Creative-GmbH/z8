@@ -4692,7 +4692,7 @@ db.delete(approvalOutbox);`,
 					table: "work_period",
 				},
 			],
-			"src/lib/effect-v3/services/time-entry.service.ts": [
+			"src/lib/effect/services/time-entry.service.ts": [
 				{
 					columns: ["is_superseded", "replaces_entry_id", "type"],
 					functionName: "applyCorrectionWritesInTransaction",
@@ -5698,8 +5698,8 @@ export function wrongSplitOwner() {
 
 	it("allows only exact injected creation and correction owners", () => {
 		const canonicalPath = "src/lib/time-tracking/canonical-work-record.ts";
-		const correctionPath = "src/lib/effect-v3/services/time-entry.service.ts";
-		const recordPath = "src/lib/effect-v3/services/time-record.service.ts";
+		const correctionPath = "src/lib/effect/services/time-entry.service.ts";
+		const recordPath = "src/lib/effect/services/time-record.service.ts";
 		withApprovalWriteTree(
 			{
 				[canonicalPath]: `import { db, timeRecord } from "@/db";
@@ -5966,13 +5966,13 @@ export async function hiddenImport(values: object) {
 				operation: "insert",
 			},
 			{
-				path: "src/lib/effect-v3/services/time-entry.service.ts",
+				path: "src/lib/effect/services/time-entry.service.ts",
 				functionName: "applyCorrectionWritesInTransaction",
 				table: "work_period",
 				operation: "update",
 			},
 			{
-				path: "src/lib/effect-v3/services/time-entry.service.ts",
+				path: "src/lib/effect/services/time-entry.service.ts",
 				functionName: "applyCorrectionWritesInTransaction",
 				table: "time_record",
 				operation: "update",

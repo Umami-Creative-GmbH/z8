@@ -1,12 +1,12 @@
 "use server";
 
 import { faker } from "@faker-js/faker";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { z } from "zod";
 import { EmailError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { PlatformAdminService } from "@/lib/effect-v3/services/platform-admin.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { PlatformAdminService } from "@/lib/effect/services/platform-admin.service";
 import { sendEmail } from "@/lib/email/email-service";
 import { SmtpTransport } from "@/lib/email/transports";
 import {

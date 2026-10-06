@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, desc, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { revalidatePath, revalidateTag } from "next/cache";
 import {
 	employee,
@@ -19,9 +19,9 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
-import { AppLayer } from "@/lib/effect-v3/runtime";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AppLayer } from "@/lib/effect/runtime";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { logger } from "@/lib/logger";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import {
@@ -159,24 +159,23 @@ export async function getLocations(
 		"getLocations",
 		{ attributes: { "organization.id": organizationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(
-					getLocationSettingsActorContext({ organizationId, queryName: "getLocationsActor" }),
-				);
+			return Effect.gen(function* () {
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId,
+					queryName: "getLocationsActor",
+				});
 
 				// Fetch all locations with relations
-				const locations = yield* _(
-					actor.dbService.query("getLocations", async () => {
-						return await actor.dbService.db.query.location.findMany({
-							where: eq(location.organizationId, organizationId),
-							orderBy: [desc(location.createdAt)],
-							with: {
-								subareas: true,
-								employees: true,
-							},
-						});
-					}),
-				);
+				const locations = yield* actor.dbService.query("getLocations", async () => {
+					return await actor.dbService.db.query.location.findMany({
+						where: eq(location.organizationId, organizationId),
+						orderBy: [desc(location.createdAt)],
+						with: {
+							subareas: true,
+							employees: true,
+						},
+					});
+				});
 
 				// Map to list items
 				const typedLocations = locations as unknown as LocationListRow[];
@@ -211,12 +210,12 @@ export async function getLocations(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to get locations");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -240,11 +239,11 @@ export async function getLocation(
 		"getLocation",
 		{ attributes: { "location.id": locationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 				// Fetch location with relations
-				const loc = yield* _(
-					dbService.query("getLocation", async () => {
+				const loc = yield* dbService
+					.query("getLocation", async () => {
 						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, locationId),
 							with: {
@@ -268,28 +267,27 @@ export async function getLocation(
 								},
 							},
 						});
-					}),
-					Effect.flatMap((loc) =>
-						loc
-							? Effect.succeed(loc)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Location not found",
-										entityType: "location",
-										entityId: locationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((loc) =>
+							loc
+								? Effect.succeed(loc)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Location not found",
+											entityType: "location",
+											entityId: locationId,
+										}),
+									),
+						),
+					);
 
 				const typedLocation = loc as unknown as LocationDetailRow;
 
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: typedLocation.organizationId,
-						queryName: "getLocationActor",
-					}),
-				);
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: typedLocation.organizationId,
+					queryName: "getLocationActor",
+				});
 				const scopedSubareas = getScopedLocationSubareas(
 					typedLocation.id,
 					actor.accessTier,
@@ -303,15 +301,13 @@ export async function getLocation(
 					!actor.manageableLocationIds?.has(typedLocation.id) &&
 					scopedSubareas.length === 0
 				) {
-					return yield* _(
-						Effect.fail(
-							new AuthorizationError({
-								message: "Only org admins can manage locations",
-								userId: actor.session.user.id,
-								resource: "location",
-								action: "read",
-							}),
-						),
+					return yield* Effect.fail(
+						new AuthorizationError({
+							message: "Only org admins can manage locations",
+							userId: actor.session.user.id,
+							resource: "location",
+							action: "read",
+						}),
 					);
 				}
 
@@ -372,12 +368,12 @@ export async function getLocation(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return result;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to get location");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -401,76 +397,64 @@ export async function createLocation(
 		"createLocation",
 		{ attributes: { "organization.id": input.organizationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: input.organizationId,
-						queryName: "createLocationActor",
-					}),
-				);
+			return Effect.gen(function* () {
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: input.organizationId,
+					queryName: "createLocationActor",
+				});
 
 				// Validate input
 				const validationResult = createLocationSchema.safeParse(input);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "input",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: validationResult.error.issues[0]?.message || "Invalid input",
+							field: validationResult.error.issues[0]?.path?.join(".") || "input",
+						}),
 					);
 				}
 
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can create locations",
-						action: "create",
-					}),
-				);
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can create locations",
+					action: "create",
+				});
 
 				// Check for duplicate name
-				const existing = yield* _(
-					actor.dbService.query("checkDuplicate", async () => {
-						return await actor.dbService.db.query.location.findFirst({
-							where: and(
-								eq(location.organizationId, input.organizationId),
-								eq(location.name, input.name),
-							),
-						});
-					}),
-				);
+				const existing = yield* actor.dbService.query("checkDuplicate", async () => {
+					return await actor.dbService.db.query.location.findFirst({
+						where: and(
+							eq(location.organizationId, input.organizationId),
+							eq(location.name, input.name),
+						),
+					});
+				});
 
 				if (existing) {
-					return yield* _(
-						Effect.fail(
-							new ConflictError({
-								message: "A location with this name already exists",
-								conflictType: "duplicate_name",
-								details: { field: "name" },
-							}),
-						),
+					return yield* Effect.fail(
+						new ConflictError({
+							message: "A location with this name already exists",
+							conflictType: "duplicate_name",
+							details: { field: "name" },
+						}),
 					);
 				}
 
 				// Create location
-				const [created] = yield* _(
-					actor.dbService.query("createLocation", async () => {
-						return await actor.dbService.db
-							.insert(location)
-							.values({
-								organizationId: input.organizationId,
-								name: input.name,
-								street: input.street,
-								city: input.city,
-								postalCode: input.postalCode,
-								country: input.country,
-								createdBy: actor.session.user.id,
-								updatedAt: new Date(),
-							})
-							.returning({ id: location.id });
-					}),
-				);
+				const [created] = yield* actor.dbService.query("createLocation", async () => {
+					return await actor.dbService.db
+						.insert(location)
+						.values({
+							organizationId: input.organizationId,
+							name: input.name,
+							street: input.street,
+							city: input.city,
+							postalCode: input.postalCode,
+							country: input.country,
+							createdBy: actor.session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning({ id: location.id });
+				});
 
 				// Log audit
 				logAudit({
@@ -491,12 +475,12 @@ export async function createLocation(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return { id: created.id };
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to create location");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -521,93 +505,82 @@ export async function updateLocation(
 		"updateLocation",
 		{ attributes: { "location.id": locationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Validate input
 				const validationResult = updateLocationSchema.safeParse(input);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "input",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: validationResult.error.issues[0]?.message || "Invalid input",
+							field: validationResult.error.issues[0]?.path?.join(".") || "input",
+						}),
 					);
 				}
 
 				// Fetch existing location
-				const existing = yield* _(
-					dbService.query("getLocation", async () => {
+				const existing = yield* dbService
+					.query("getLocation", async () => {
 						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, locationId),
 						});
-					}),
-					Effect.flatMap((loc) =>
-						loc
-							? Effect.succeed(loc)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Location not found",
-										entityType: "location",
-										entityId: locationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((loc) =>
+							loc
+								? Effect.succeed(loc)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Location not found",
+											entityType: "location",
+											entityId: locationId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: existing.organizationId,
-						queryName: "updateLocationActor",
-					}),
-				);
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can update locations",
-						action: "update",
-					}),
-				);
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: existing.organizationId,
+					queryName: "updateLocationActor",
+				});
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can update locations",
+					action: "update",
+				});
 
 				// Check for duplicate name if name is being changed
 				if (input.name && input.name !== existing.name) {
-					const duplicate = yield* _(
-						actor.dbService.query("checkDuplicate", async () => {
-							return await actor.dbService.db.query.location.findFirst({
-								where: and(
-									eq(location.organizationId, existing.organizationId),
-									eq(location.name, input.name!),
-								),
-							});
-						}),
-					);
+					const duplicate = yield* actor.dbService.query("checkDuplicate", async () => {
+						return await actor.dbService.db.query.location.findFirst({
+							where: and(
+								eq(location.organizationId, existing.organizationId),
+								eq(location.name, input.name!),
+							),
+						});
+					});
 
 					if (duplicate) {
-						return yield* _(
-							Effect.fail(
-								new ConflictError({
-									message: "A location with this name already exists",
-									conflictType: "duplicate_name",
-									details: { field: "name" },
-								}),
-							),
+						return yield* Effect.fail(
+							new ConflictError({
+								message: "A location with this name already exists",
+								conflictType: "duplicate_name",
+								details: { field: "name" },
+							}),
 						);
 					}
 				}
 
 				// Update location
-				yield* _(
-					actor.dbService.query("updateLocation", async () => {
-						return await actor.dbService.db
-							.update(location)
-							.set({
-								...input,
-								updatedBy: actor.session.user.id,
-							})
-							.where(eq(location.id, locationId));
-					}),
-				);
+				yield* actor.dbService.query("updateLocation", async () => {
+					return await actor.dbService.db
+						.update(location)
+						.set({
+							...input,
+							updatedBy: actor.session.user.id,
+						})
+						.where(eq(location.id, locationId));
+				});
 
 				// Log audit
 				logAudit({
@@ -628,12 +601,12 @@ export async function updateLocation(
 				revalidatePath(`/settings/locations/${locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to update location");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -655,48 +628,43 @@ export async function deleteLocation(locationId: string): Promise<ServerActionRe
 		"deleteLocation",
 		{ attributes: { "location.id": locationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Fetch existing location
-				const existing = yield* _(
-					dbService.query("getLocation", async () => {
+				const existing = yield* dbService
+					.query("getLocation", async () => {
 						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, locationId),
 						});
-					}),
-					Effect.flatMap((loc) =>
-						loc
-							? Effect.succeed(loc)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Location not found",
-										entityType: "location",
-										entityId: locationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((loc) =>
+							loc
+								? Effect.succeed(loc)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Location not found",
+											entityType: "location",
+											entityId: locationId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: existing.organizationId,
-						queryName: "deleteLocationActor",
-					}),
-				);
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can delete locations",
-						action: "delete",
-					}),
-				);
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: existing.organizationId,
+					queryName: "deleteLocationActor",
+				});
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can delete locations",
+					action: "delete",
+				});
 
 				// Delete location (cascade handles subareas and assignments)
-				yield* _(
-					actor.dbService.query("deleteLocation", async () => {
-						return await actor.dbService.db.delete(location).where(eq(location.id, locationId));
-					}),
-				);
+				yield* actor.dbService.query("deleteLocation", async () => {
+					return await actor.dbService.db.delete(location).where(eq(location.id, locationId));
+				});
 
 				// Log audit
 				logAudit({
@@ -716,12 +684,12 @@ export async function deleteLocation(locationId: string): Promise<ServerActionRe
 				revalidatePath("/settings/locations");
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to delete location");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -749,104 +717,93 @@ export async function createSubarea(
 		"createSubarea",
 		{ attributes: { "location.id": input.locationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Validate input
 				const validationResult = createSubareaSchema.safeParse(input);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "input",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: validationResult.error.issues[0]?.message || "Invalid input",
+							field: validationResult.error.issues[0]?.path?.join(".") || "input",
+						}),
 					);
 				}
 
 				// Fetch location to verify ownership
-				const loc = yield* _(
-					dbService.query("getLocation", async () => {
+				const loc = yield* dbService
+					.query("getLocation", async () => {
 						return await dbService.db.query.location.findFirst({
 							where: eq(location.id, input.locationId),
 						});
-					}),
-					Effect.flatMap((loc) =>
-						loc
-							? Effect.succeed(loc)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Location not found",
-										entityType: "location",
-										entityId: input.locationId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((loc) =>
+							loc
+								? Effect.succeed(loc)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Location not found",
+											entityType: "location",
+											entityId: input.locationId,
+										}),
+									),
+						),
+					);
 
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: loc.organizationId,
-						queryName: "createSubareaActor",
-					}),
-				);
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can create subareas",
-						action: "create",
-					}),
-				);
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: loc.organizationId,
+					queryName: "createSubareaActor",
+				});
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can create subareas",
+					action: "create",
+				});
 
 				// Check for duplicate name within location
-				const existing = yield* _(
-					actor.dbService.query("checkDuplicate", async () => {
-						return await actor.dbService.db.query.locationSubarea.findFirst({
-							where: and(
-								eq(locationSubarea.locationId, input.locationId),
-								eq(locationSubarea.name, input.name),
-							),
-						});
-					}),
-				);
+				const existing = yield* actor.dbService.query("checkDuplicate", async () => {
+					return await actor.dbService.db.query.locationSubarea.findFirst({
+						where: and(
+							eq(locationSubarea.locationId, input.locationId),
+							eq(locationSubarea.name, input.name),
+						),
+					});
+				});
 
 				if (existing) {
-					return yield* _(
-						Effect.fail(
-							new ConflictError({
-								message: "A subarea with this name already exists in this location",
-								conflictType: "duplicate_name",
-								details: { field: "name" },
-							}),
-						),
+					return yield* Effect.fail(
+						new ConflictError({
+							message: "A subarea with this name already exists in this location",
+							conflictType: "duplicate_name",
+							details: { field: "name" },
+						}),
 					);
 				}
 
 				// Create subarea
-				const [created] = yield* _(
-					actor.dbService.query("createSubarea", async () => {
-						return await actor.dbService.db
-							.insert(locationSubarea)
-							.values({
-								locationId: input.locationId,
-								name: input.name,
-								createdBy: actor.session.user.id,
-								updatedAt: new Date(),
-							})
-							.returning({ id: locationSubarea.id });
-					}),
-				);
+				const [created] = yield* actor.dbService.query("createSubarea", async () => {
+					return await actor.dbService.db
+						.insert(locationSubarea)
+						.values({
+							locationId: input.locationId,
+							name: input.name,
+							createdBy: actor.session.user.id,
+							updatedAt: new Date(),
+						})
+						.returning({ id: locationSubarea.id });
+				});
 
 				revalidatePath(`/settings/locations/${input.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 				return { id: created.id };
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to create subarea");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -871,106 +828,95 @@ export async function updateSubarea(
 		"updateSubarea",
 		{ attributes: { "subarea.id": subareaId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Validate input
 				const validationResult = updateSubareaSchema.safeParse(input);
 				if (!validationResult.success) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: validationResult.error.issues[0]?.message || "Invalid input",
-								field: validationResult.error.issues[0]?.path?.join(".") || "input",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: validationResult.error.issues[0]?.message || "Invalid input",
+							field: validationResult.error.issues[0]?.path?.join(".") || "input",
+						}),
 					);
 				}
 
 				// Fetch existing subarea with location
-				const existing = yield* _(
-					dbService.query("getSubarea", async () => {
+				const existing = yield* dbService
+					.query("getSubarea", async () => {
 						return await dbService.db.query.locationSubarea.findFirst({
 							where: eq(locationSubarea.id, subareaId),
 							with: { location: true },
 						});
-					}),
-					Effect.flatMap((sub) =>
-						sub
-							? Effect.succeed(sub)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Subarea not found",
-										entityType: "subarea",
-										entityId: subareaId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((sub) =>
+							sub
+								? Effect.succeed(sub)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Subarea not found",
+											entityType: "subarea",
+											entityId: subareaId,
+										}),
+									),
+						),
+					);
 
 				const typedExisting = existing as unknown as SubareaWithLocation;
 
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: typedExisting.location.organizationId,
-						queryName: "updateSubareaActor",
-					}),
-				);
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can update subareas",
-						action: "update",
-					}),
-				);
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: typedExisting.location.organizationId,
+					queryName: "updateSubareaActor",
+				});
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can update subareas",
+					action: "update",
+				});
 
 				// Check for duplicate name if name is being changed
 				if (input.name && input.name !== typedExisting.name) {
-					const duplicate = yield* _(
-						actor.dbService.query("checkDuplicate", async () => {
-							return await actor.dbService.db.query.locationSubarea.findFirst({
-								where: and(
-									eq(locationSubarea.locationId, typedExisting.locationId),
-									eq(locationSubarea.name, input.name!),
-								),
-							});
-						}),
-					);
+					const duplicate = yield* actor.dbService.query("checkDuplicate", async () => {
+						return await actor.dbService.db.query.locationSubarea.findFirst({
+							where: and(
+								eq(locationSubarea.locationId, typedExisting.locationId),
+								eq(locationSubarea.name, input.name!),
+							),
+						});
+					});
 
 					if (duplicate) {
-						return yield* _(
-							Effect.fail(
-								new ConflictError({
-									message: "A subarea with this name already exists in this location",
-									conflictType: "duplicate_name",
-									details: { field: "name" },
-								}),
-							),
+						return yield* Effect.fail(
+							new ConflictError({
+								message: "A subarea with this name already exists in this location",
+								conflictType: "duplicate_name",
+								details: { field: "name" },
+							}),
 						);
 					}
 				}
 
 				// Update subarea
-				yield* _(
-					actor.dbService.query("updateSubarea", async () => {
-						return await actor.dbService.db
-							.update(locationSubarea)
-							.set({
-								...input,
-								updatedBy: actor.session.user.id,
-							})
-							.where(eq(locationSubarea.id, subareaId));
-					}),
-				);
+				yield* actor.dbService.query("updateSubarea", async () => {
+					return await actor.dbService.db
+						.update(locationSubarea)
+						.set({
+							...input,
+							updatedBy: actor.session.user.id,
+						})
+						.where(eq(locationSubarea.id, subareaId));
+				});
 
 				revalidatePath(`/settings/locations/${existing.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to update subarea");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -992,63 +938,58 @@ export async function deleteSubarea(subareaId: string): Promise<ServerActionResu
 		"deleteSubarea",
 		{ attributes: { "subarea.id": subareaId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			return Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Fetch existing subarea with location
-				const existing = yield* _(
-					dbService.query("getSubarea", async () => {
+				const existing = yield* dbService
+					.query("getSubarea", async () => {
 						return await dbService.db.query.locationSubarea.findFirst({
 							where: eq(locationSubarea.id, subareaId),
 							with: { location: true },
 						});
-					}),
-					Effect.flatMap((sub) =>
-						sub
-							? Effect.succeed(sub)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Subarea not found",
-										entityType: "subarea",
-										entityId: subareaId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((sub) =>
+							sub
+								? Effect.succeed(sub)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Subarea not found",
+											entityType: "subarea",
+											entityId: subareaId,
+										}),
+									),
+						),
+					);
 
 				const typedExisting = existing as unknown as SubareaWithLocation;
 
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId: typedExisting.location.organizationId,
-						queryName: "deleteSubareaActor",
-					}),
-				);
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can delete subareas",
-						action: "delete",
-					}),
-				);
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId: typedExisting.location.organizationId,
+					queryName: "deleteSubareaActor",
+				});
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can delete subareas",
+					action: "delete",
+				});
 
 				// Delete subarea (cascade handles employee assignments)
-				yield* _(
-					actor.dbService.query("deleteSubarea", async () => {
-						return await actor.dbService.db
-							.delete(locationSubarea)
-							.where(eq(locationSubarea.id, subareaId));
-					}),
-				);
+				yield* actor.dbService.query("deleteSubarea", async () => {
+					return await actor.dbService.db
+						.delete(locationSubarea)
+						.where(eq(locationSubarea.id, subareaId));
+				});
 
 				revalidatePath(`/settings/locations/${existing.locationId}`);
 				span.setStatus({ code: SpanStatusCode.OK });
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to delete subarea");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),
@@ -1083,52 +1024,42 @@ export async function getAvailableEmployees(
 		"getAvailableEmployees",
 		{ attributes: { "organization.id": organizationId } },
 		(span) => {
-			return Effect.gen(function* (_) {
-				const actor = yield* _(
-					getLocationSettingsActorContext({
-						organizationId,
-						queryName: "getAvailableEmployeesActor",
-					}),
-				);
-				yield* _(
-					requireLocationOrgAdminAccess(actor, {
-						message: "Only org admins can view employees",
-						action: "create",
-					}),
-				);
+			return Effect.gen(function* () {
+				const actor = yield* getLocationSettingsActorContext({
+					organizationId,
+					queryName: "getAvailableEmployeesActor",
+				});
+				yield* requireLocationOrgAdminAccess(actor, {
+					message: "Only org admins can view employees",
+					action: "create",
+				});
 
 				// Get all active employees
-				const employees = yield* _(
-					actor.dbService.query("getEmployees", async () => {
-						return await actor.dbService.db.query.employee.findMany({
-							where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-							with: { user: true },
-						});
-					}),
-				);
+				const employees = yield* actor.dbService.query("getEmployees", async () => {
+					return await actor.dbService.db.query.employee.findMany({
+						where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+						with: { user: true },
+					});
+				});
 
 				// Get already assigned employee IDs
 				let assignedIds: string[] = [];
 
 				if (excludeLocationId) {
-					const assignments = yield* _(
-						actor.dbService.query("getLocationAssignments", async () => {
-							return await actor.dbService.db.query.locationEmployee.findMany({
-								where: eq(locationEmployee.locationId, excludeLocationId),
-							});
-						}),
-					);
+					const assignments = yield* actor.dbService.query("getLocationAssignments", async () => {
+						return await actor.dbService.db.query.locationEmployee.findMany({
+							where: eq(locationEmployee.locationId, excludeLocationId),
+						});
+					});
 					assignedIds = assignments.map((a) => a.employeeId);
 				}
 
 				if (excludeSubareaId) {
-					const assignments = yield* _(
-						actor.dbService.query("getSubareaAssignments", async () => {
-							return await actor.dbService.db.query.subareaEmployee.findMany({
-								where: eq(subareaEmployee.subareaId, excludeSubareaId),
-							});
-						}),
-					);
+					const assignments = yield* actor.dbService.query("getSubareaAssignments", async () => {
+						return await actor.dbService.db.query.subareaEmployee.findMany({
+							where: eq(subareaEmployee.subareaId, excludeSubareaId),
+						});
+					});
 					assignedIds = assignments.map((a) => a.employeeId);
 				}
 
@@ -1155,12 +1086,12 @@ export async function getAvailableEmployees(
 				span.setStatus({ code: SpanStatusCode.OK });
 				return available;
 			}).pipe(
-				Effect.catchAll((error) =>
-					Effect.gen(function* (_) {
+				Effect.catch((error) =>
+					Effect.gen(function* () {
 						span.recordException(error as Error);
 						span.setStatus({ code: SpanStatusCode.ERROR });
 						logger.error({ error }, "Failed to get available employees");
-						return yield* _(Effect.fail(error));
+						return yield* Effect.fail(error);
 					}),
 				),
 				Effect.onExit(() => Effect.sync(() => span.end())),

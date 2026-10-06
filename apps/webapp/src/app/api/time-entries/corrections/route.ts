@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { Cause, Effect, Option, Runtime } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getUserTimezone } from "@/app/[locale]/(app)/time-tracking/actions/auth";
@@ -8,11 +8,11 @@ import { logger } from "@/app/[locale]/(app)/time-tracking/actions/shared";
 import { db } from "@/db";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import {
+	createTransactionalApprovalDbService,
 	dispatchCommittedTimeCorrectionSubmission,
 	getForbiddenCorrectionEditMessage,
 	submitCorrection,
 } from "@/lib/approvals/server/time-correction-submission";
-import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import { auth } from "@/lib/auth";
 import { canApproveFor, getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
@@ -24,12 +24,11 @@ import {
 import {
 	AuthorizationError,
 	ConflictError,
-	DatabaseError,
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runtime } from "@/lib/effect-v3/runtime";
-import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
+import { runtime } from "@/lib/effect/runtime";
+import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,
@@ -77,37 +76,21 @@ function getCorrectionDomainError(
 	) {
 		return error;
 	}
-	if (!Runtime.isFiberFailure(error)) {
-		return null;
-	}
-
-	const failure = Option.getOrNull(
-		Cause.failureOption(error[Runtime.FiberFailureCauseId]),
-	);
-	return failure instanceof AuthorizationError ||
-		failure instanceof ConflictError ||
-		failure instanceof NotFoundError ||
-		failure instanceof ValidationError
-		? failure
-		: null;
+	return null;
 }
 
-function createTransactionalApprovalDbService(
-	client: ApprovalDbService["db"],
-): ApprovalDbService {
-	return {
-		db: client,
-		query: (name, query) =>
-			Effect.tryPromise({
-				try: query,
-				catch: (cause) =>
-					new DatabaseError({
-						message: `Database query failed: ${name}`,
-						operation: name,
-						cause,
-					}),
-			}),
-	};
+// Rethrows the typed failure (or the defect) so the surrounding transaction rolls back
+// and the catch block can map it to an HTTP status.
+function getOrThrowExit<A, E>(exit: Exit.Exit<A, E>): A {
+	if (Exit.isSuccess(exit)) {
+		return exit.value;
+	}
+	const failure = Cause.findErrorOption(exit.cause);
+	if (Option.isSome(failure)) {
+		throw failure.value;
+	}
+	const defect = Cause.findDefect(exit.cause);
+	throw Result.isSuccess(defect) ? defect.success : Cause.squash(exit.cause);
 }
 
 async function markWorkBalanceDirtyAfterDirectCorrectionBestEffort(input: {
@@ -615,36 +598,34 @@ export async function POST(request: NextRequest) {
 						entry: receipt.correctionEntries[0] ?? null,
 					};
 				}
-				const entry = await runtime.runPromise(
-					Effect.gen(function* (_) {
-						const timeEntryService = yield* _(TimeEntryService);
-						return yield* _(
-							timeEntryService.createCorrectionEntry({
-								employeeId: entryToCorrect.employeeId,
-								organizationId: currentEmployee.organizationId,
-								replacesEntryId,
-								workPeriodId: selectedWorkPeriod.id,
-								timestamp: trustedCorrectionTimestamp,
-								createdBy: session.user.id,
-								notes,
-								ipAddress,
-								deviceInfo,
-								...timezoneCapture,
-								workLocationType,
-								workCategoryId: workCategoryId?.toLowerCase() ?? null,
-								expectedClockInId: selectedWorkPeriod.clockInId,
-								expectedClockOutId: selectedWorkPeriod.clockOutId,
-								expectedStartTime: selectedWorkPeriod.startTime,
-								expectedEndTime: selectedWorkPeriod.endTime,
-								expectedWorkLocationType: selectedWorkPeriod.workLocationType,
-								expectedWorkCategoryId: selectedWorkPeriod.workCategoryId,
-								validateTimeRange,
-								transaction: scope.db,
-							}),
-						);
+				const exit = await runtime.runPromiseExit(
+					Effect.gen(function* () {
+						const timeEntryService = yield* TimeEntryService;
+						return yield* timeEntryService.createCorrectionEntry({
+							employeeId: entryToCorrect.employeeId,
+							organizationId: currentEmployee.organizationId,
+							replacesEntryId,
+							workPeriodId: selectedWorkPeriod.id,
+							timestamp: trustedCorrectionTimestamp,
+							createdBy: session.user.id,
+							notes,
+							ipAddress,
+							deviceInfo,
+							...timezoneCapture,
+							workLocationType,
+							workCategoryId: workCategoryId?.toLowerCase() ?? null,
+							expectedClockInId: selectedWorkPeriod.clockInId,
+							expectedClockOutId: selectedWorkPeriod.clockOutId,
+							expectedStartTime: selectedWorkPeriod.startTime,
+							expectedEndTime: selectedWorkPeriod.endTime,
+							expectedWorkLocationType: selectedWorkPeriod.workLocationType,
+							expectedWorkCategoryId: selectedWorkPeriod.workCategoryId,
+							validateTimeRange,
+							transaction: scope.db,
+						});
 					}),
 				);
-				return { adopted: false as const, entry };
+				return { adopted: false as const, entry: getOrThrowExit(exit) };
 			},
 		);
 		const correctionEntry = direct.entry;

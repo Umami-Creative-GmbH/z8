@@ -1115,6 +1115,29 @@ function validateSubmissionId(value: unknown): string {
 	return value.toLowerCase();
 }
 
+/**
+ * The approval db service for a correction submitted outside an Effect runtime. It lives
+ * here rather than in the route because ApprovalDbService is still an Effect v3 contract
+ * until #632 ports the approvals module.
+ */
+export function createTransactionalApprovalDbService(
+	client: ApprovalDbService["db"],
+): ApprovalDbService {
+	return {
+		db: client,
+		query: (name, query) =>
+			Effect.tryPromise({
+				try: query,
+				catch: (cause) =>
+					new DatabaseError({
+						message: `Database query failed: ${name}`,
+						operation: name,
+						cause,
+					}),
+			}),
+	};
+}
+
 function transactionDbService(
 	dbService: ApprovalDbService,
 	transactionDb: ApprovalDbService["db"],

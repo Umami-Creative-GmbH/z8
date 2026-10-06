@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "../database.service";
@@ -93,17 +93,15 @@ describe("TimeRecordService", () => {
 		);
 
 		await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(TimeRecordService);
-				return yield* _(
-					service.listByOrganization("org-1", {
-						employeeId: "emp-1",
-						recordKind: "work",
-						startAtFrom: new Date("2026-01-01T00:00:00.000Z"),
-						startAtTo: new Date("2026-01-31T23:59:59.999Z"),
-						limit: 10,
-					}),
-				);
+			Effect.gen(function* () {
+				const service = yield* TimeRecordService;
+				return yield* service.listByOrganization("org-1", {
+					employeeId: "emp-1",
+					recordKind: "work",
+					startAtFrom: new Date("2026-01-01T00:00:00.000Z"),
+					startAtTo: new Date("2026-01-31T23:59:59.999Z"),
+					limit: 10,
+				});
 			}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(dbLayer)),
 		);
 
@@ -149,9 +147,9 @@ describe("TimeRecordService", () => {
 		);
 
 		const error = await Effect.runPromise(
-			Effect.gen(function* (_) {
-				const service = yield* _(TimeRecordService);
-				return yield* _(service.listByOrganization("org-1", { limit }).pipe(Effect.flip));
+			Effect.gen(function* () {
+				const service = yield* TimeRecordService;
+				return yield* service.listByOrganization("org-1", { limit }).pipe(Effect.flip);
 			}).pipe(Effect.provide(TimeRecordServiceLive), Effect.provide(dbLayer)),
 		);
 

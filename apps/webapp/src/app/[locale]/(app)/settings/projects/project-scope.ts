@@ -1,11 +1,11 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { type customer, employee, project, projectManager } from "@/db/schema";
 import { AuthorizationError, type DatabaseError, NotFoundError } from "@/lib/effect/errors";
-import { AuthService } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { AuthService } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
@@ -45,51 +45,44 @@ export function getProjectSettingsActorContext(options?: {
 	organizationId?: string;
 	queryName?: string;
 }) {
-	return Effect.gen(function* (_) {
-		const authService = yield* _(AuthService);
-		const session = yield* _(authService.getSession(options?.organizationId));
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession(options?.organizationId);
+		const dbService = yield* DatabaseService;
 		const organizationId = options?.organizationId ?? session.session.activeOrganizationId;
 
 		if (!organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "No active organization selected",
-						userId: session.user.id,
-						resource: "project_settings",
-						action: "access",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "No active organization selected",
+					userId: session.user.id,
+					resource: "project_settings",
+					action: "access",
+				}),
 			);
 		}
 
-		const [membershipRecord, employeeRecord] = yield* _(
-			Effect.all([
-				dbService.query(
-					`${options?.queryName ?? "getProjectSettingsActor"}:membership`,
-					async () => {
-						return await db.query.member.findFirst({
-							where: and(
-								eq(member.userId, session.user.id),
-								eq(member.organizationId, organizationId),
-								eq(member.status, "approved"),
-							),
-							columns: { role: true },
-						});
-					},
-				),
-				dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:employee`, async () => {
-					return await db.query.employee.findFirst({
-						where: and(
-							eq(employee.userId, session.user.id),
-							eq(employee.organizationId, organizationId),
-							eq(employee.isActive, true),
-						),
-					});
-				}),
-			]),
-		);
+		const [membershipRecord, employeeRecord] = yield* Effect.all([
+			dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:membership`, async () => {
+				return await db.query.member.findFirst({
+					where: and(
+						eq(member.userId, session.user.id),
+						eq(member.organizationId, organizationId),
+						eq(member.status, "approved"),
+					),
+					columns: { role: true },
+				});
+			}),
+			dbService.query(`${options?.queryName ?? "getProjectSettingsActor"}:employee`, async () => {
+				return await db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+						eq(employee.isActive, true),
+					),
+				});
+			}),
+		]);
 		const authorizedEmployeeRecord = membershipRecord ? employeeRecord : null;
 
 		const accessTier = resolveSettingsAccessTier({
@@ -101,15 +94,13 @@ export function getProjectSettingsActorContext(options?: {
 		});
 
 		if (accessTier === "member") {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "You do not have access to project settings",
-						userId: session.user.id,
-						resource: "project_settings",
-						action: "access",
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "You do not have access to project settings",
+					userId: session.user.id,
+					resource: "project_settings",
+					action: "access",
+				}),
 			);
 		}
 
@@ -124,7 +115,7 @@ export function getProjectSettingsActorContext(options?: {
 }
 
 export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (actor.accessTier === "orgAdmin") {
 			return null as Set<string> | null;
 		}
@@ -133,13 +124,14 @@ export function getManagedProjectIdsForSettingsActor(actor: ProjectSettingsActor
 			return new Set<string>();
 		}
 
-		const managedProjects = yield* _(
-			actor.dbService.query("getManagedProjectIdsForSettingsActor", async () => {
+		const managedProjects = yield* actor.dbService.query(
+			"getManagedProjectIdsForSettingsActor",
+			async () => {
 				return await db.query.projectManager.findMany({
 					where: eq(projectManager.employeeId, actor.currentEmployee!.id),
 					columns: { projectId: true },
 				});
-			}),
+			},
 		);
 
 		return new Set(managedProjects.map((managedProject) => managedProject.projectId));
@@ -162,17 +154,15 @@ export function ensureSettingsActorCanAccessProjectTarget(
 	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
 	options: AuthorizationFailureDetails,
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (targetProject.organizationId !== actor.organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Cannot access project from different organization",
-						userId: actor.session.user.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Cannot access project from different organization",
+					userId: actor.session.user.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 
@@ -180,13 +170,13 @@ export function ensureSettingsActorCanAccessProjectTarget(
 			return;
 		}
 
-		const managedProjectIds = yield* _(getManagedProjectIdsForSettingsActor(actor));
+		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
 
 		if (managedProjectIds?.has(targetProject.id)) {
 			return;
 		}
 
-		return yield* _(Effect.fail(actorAuthorizationError(actor, options)));
+		return yield* Effect.fail(actorAuthorizationError(actor, options));
 	});
 }
 
@@ -199,34 +189,35 @@ export function ensureSettingsActorCanManageProjectManagers(
 	targetProject: Pick<typeof project.$inferSelect, "id" | "organizationId">,
 	options: AuthorizationFailureDetails,
 ) {
-	return Effect.gen(function* (_) {
-		yield* _(ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options));
+	return Effect.gen(function* () {
+		yield* ensureSettingsActorCanAccessProjectTarget(actor, targetProject, options);
 
 		if (actor.accessTier !== "orgAdmin") {
-			return yield* _(Effect.fail(actorAuthorizationError(actor, options)));
+			return yield* Effect.fail(actorAuthorizationError(actor, options));
 		}
 	});
 }
 
 export function getManagedCustomerIdsForSettingsActor(actor: ProjectSettingsActor) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (actor.accessTier === "orgAdmin") {
 			return null as Set<string> | null;
 		}
 
-		const managedProjectIds = yield* _(getManagedProjectIdsForSettingsActor(actor));
+		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
 
 		if (!managedProjectIds || managedProjectIds.size === 0) {
 			return new Set<string>();
 		}
 
-		const customerProjects = yield* _(
-			actor.dbService.query("getManagedCustomerIdsForSettingsActor", async () => {
+		const customerProjects = yield* actor.dbService.query(
+			"getManagedCustomerIdsForSettingsActor",
+			async () => {
 				return await db.query.project.findMany({
 					where: and(eq(project.organizationId, actor.organizationId), eq(project.isActive, true)),
 					columns: { id: true, customerId: true },
 				});
-			}),
+			},
 		);
 
 		const customerProjectIds = new Map<string, Set<string>>();
@@ -269,17 +260,15 @@ export function ensureSettingsActorCanAccessCustomerTarget(
 	targetCustomer: Pick<typeof customer.$inferSelect, "id" | "organizationId">,
 	options: AuthorizationFailureDetails,
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		if (targetCustomer.organizationId !== actor.organizationId) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Cannot access customer from different organization",
-						userId: actor.session.user.id,
-						resource: options.resource,
-						action: options.action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Cannot access customer from different organization",
+					userId: actor.session.user.id,
+					resource: options.resource,
+					action: options.action,
+				}),
 			);
 		}
 
@@ -287,9 +276,11 @@ export function ensureSettingsActorCanAccessCustomerTarget(
 			return;
 		}
 
-		const managedProjectIds = yield* _(getManagedProjectIdsForSettingsActor(actor));
-		const customerProjects = yield* _(
-			getCustomerProjects(actor, targetCustomer.id, "getCustomerProjectsForSettingsActor"),
+		const managedProjectIds = yield* getManagedProjectIdsForSettingsActor(actor);
+		const customerProjects = yield* getCustomerProjects(
+			actor,
+			targetCustomer.id,
+			"getCustomerProjectsForSettingsActor",
 		);
 
 		if (
@@ -300,31 +291,32 @@ export function ensureSettingsActorCanAccessCustomerTarget(
 			return;
 		}
 
-		return yield* _(Effect.fail(actorAuthorizationError(actor, options)));
+		return yield* Effect.fail(actorAuthorizationError(actor, options));
 	});
 }
 
 export function getProjectTarget(projectId: string, queryName = "getProjectTarget") {
-	return Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
-		return yield* _(
-			dbService.query(queryName, async () => {
+		return yield* dbService
+			.query(queryName, async () => {
 				return await db.query.project.findFirst({
 					where: eq(project.id, projectId),
 				});
-			}),
-			Effect.flatMap((value) =>
-				value
-					? Effect.succeed(value)
-					: Effect.fail(
-							new NotFoundError({
-								message: "Project not found",
-								entityType: "project",
-								entityId: projectId,
-							}),
-						),
-			),
-		);
+			})
+			.pipe(
+				Effect.flatMap((value) =>
+					value
+						? Effect.succeed(value)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Project not found",
+									entityType: "project",
+									entityId: projectId,
+								}),
+							),
+				),
+			);
 	});
 }

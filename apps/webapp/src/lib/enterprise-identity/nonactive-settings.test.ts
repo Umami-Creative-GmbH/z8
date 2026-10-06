@@ -1,12 +1,15 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
+import { Effect as EffectV3, Layer as LayerV3 } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import {
 	getEmployeeContext,
 	getEmployeeSettingsActorContext,
 } from "@/app/[locale]/(app)/settings/employees/employee-action-utils";
 import { getProjectSettingsActorContext } from "@/app/[locale]/(app)/settings/projects/project-scope";
-import { AuthServiceLive } from "@/lib/effect-v3/services/auth.service";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { AuthServiceLive } from "@/lib/effect/services/auth.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
+import { AuthServiceLive as AuthServiceLiveV3 } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService as DatabaseServiceV3 } from "@/lib/effect-v3/services/database.service";
 
 const mocks = vi.hoisted(() => ({
 	query: vi.fn(),
@@ -53,26 +56,23 @@ vi.mock("@/db", () => ({
 import { db } from "@/db";
 
 describe("nonactive organization settings authorization", () => {
-	it.each([
-		getEmployeeContext,
-		getEmployeeSettingsActorContext,
-		getProjectSettingsActorContext,
-	])(
+	// The employee helpers stay on Effect v3 until #631 ports them.
+	it.each([getEmployeeContext, getEmployeeSettingsActorContext])(
 		"blocks the real actor helper before DB reads, but permits an open organization",
 		async (getActor) => {
 			mocks.query.mockClear();
-			const database = Layer.succeed(DatabaseService, {
+			const database = LayerV3.succeed(DatabaseServiceV3, {
 				db,
 				query: (name, execute) => {
 					mocks.query(name);
-					return Effect.promise(execute);
+					return EffectV3.promise(execute);
 				},
 			});
 			const run = (organizationId: string) =>
-				Effect.runPromise(
+				EffectV3.runPromise(
 					getActor({ organizationId }).pipe(
-						Effect.provide(AuthServiceLive),
-						Effect.provide(database),
+						EffectV3.provide(AuthServiceLiveV3),
+						EffectV3.provide(database),
 					),
 				);
 			await expect(run("locked")).rejects.toThrow("Not authenticated");
@@ -80,4 +80,25 @@ describe("nonactive organization settings authorization", () => {
 			await expect(run("open")).resolves.toBeDefined();
 		},
 	);
+
+	it("blocks the real project actor helper before DB reads, but permits an open organization", async () => {
+		mocks.query.mockClear();
+		const database = Layer.succeed(DatabaseService, {
+			db,
+			query: (name, execute) => {
+				mocks.query(name);
+				return Effect.promise(execute);
+			},
+		});
+		const run = (organizationId: string) =>
+			Effect.runPromise(
+				getProjectSettingsActorContext({ organizationId }).pipe(
+					Effect.provide(AuthServiceLive),
+					Effect.provide(database),
+				),
+			);
+		await expect(run("locked")).rejects.toThrow("Not authenticated");
+		expect(mocks.query).not.toHaveBeenCalled();
+		await expect(run("open")).resolves.toBeDefined();
+	});
 });

@@ -7,13 +7,13 @@
 
 import type { TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { db } from "@/db";
 import { employee, employeeManagers, shift } from "@/db/schema";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
-} from "@/lib/effect-v3/services/open-shifts.service";
+} from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { ResolvedTenant } from "./types";
@@ -127,16 +127,14 @@ export async function handleShiftPickupAction(
 		// Request pickup using Effect-TS service
 		// Note: requestShiftPickup atomically checks availability and creates the request
 		// to avoid race conditions (TOCTOU vulnerability)
-		const program = Effect.gen(function* (_) {
-			const openShiftsService = yield* _(OpenShiftsService);
+		const program = Effect.gen(function* () {
+			const openShiftsService = yield* OpenShiftsService;
 
-			const result = yield* _(
-				openShiftsService.requestShiftPickup({
-					shiftId,
-					requesterId,
-					organizationId: tenant.organizationId,
-				}),
-			);
+			const result = yield* openShiftsService.requestShiftPickup({
+				shiftId,
+				requesterId,
+				organizationId: tenant.organizationId,
+			});
 
 			return { success: true, requestId: result.requestId };
 		});

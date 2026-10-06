@@ -5,7 +5,7 @@
  * Allows employees to request shift pickups directly from Teams.
  */
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
@@ -13,7 +13,7 @@ import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
-} from "@/lib/effect-v3/services/open-shifts.service";
+} from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
 import { getCommandTemporalContext } from "./command-temporal";
@@ -107,16 +107,14 @@ async function openShiftsHandler(ctx: BotCommandContext): Promise<BotCommandResp
 		);
 
 		// Fetch open shifts using Effect-TS service
-		const program = Effect.gen(function* (_) {
-			const openShiftsService = yield* _(OpenShiftsService);
-			return yield* _(
-				openShiftsService.getOpenShifts({
-					organizationId: ctx.organizationId,
-					startDate: dateFromInstant(startInstant),
-					endDate: dateFromInstant(endInstant),
-					limit: 10,
-				}),
-			);
+		const program = Effect.gen(function* () {
+			const openShiftsService = yield* OpenShiftsService;
+			return yield* openShiftsService.getOpenShifts({
+				organizationId: ctx.organizationId,
+				startDate: dateFromInstant(startInstant),
+				endDate: dateFromInstant(endInstant),
+				limit: 10,
+			});
 		});
 
 		const shifts = await Effect.runPromise(program.pipe(Effect.provide(OpenShiftsServiceFullLive)));
