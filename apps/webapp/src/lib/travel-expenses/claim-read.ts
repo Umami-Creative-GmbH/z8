@@ -18,6 +18,7 @@ import {
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { loadFinanceActor } from "./finance-access";
 
 /** Reads share the inbox's existing review scope; reading never creates a binding or changes authority. */
 export async function loadAuthorizedTravelExpenseClaim(claimId: string) {
@@ -57,6 +58,10 @@ export async function loadAuthorizedTravelExpenseClaim(claimId: string) {
 				authorized = true;
 				break;
 			}
+		}
+		// Finance (#612) reads approved claims; reviewing never grants this.
+		if (!authorized && claim.status === "approved") {
+			authorized = (await loadFinanceActor())?.canRead === true;
 		}
 		if (!authorized) return { status: "not_found" } as const;
 	}

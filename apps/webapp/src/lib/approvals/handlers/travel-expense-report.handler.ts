@@ -33,7 +33,7 @@ export interface TravelExpenseReportApprovalEntity {
 	id: string;
 	organizationId: string;
 	employeeId: string;
-	status: "draft" | "submitted" | "approved" | "rejected";
+	status: "draft" | "submitted" | "approved" | "rejected" | "returned";
 	employee: {
 		id: string;
 		userId: string;
@@ -302,6 +302,9 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 			yield* decideTravelExpenseReportEffect(dbService, actor, {
 				reportId: entityId,
 				action: "approve",
+				...(options?.acceptedReceiptExceptionItemIds
+					? { acceptedReceiptExceptionItemIds: options.acceptedReceiptExceptionItemIds }
+					: {}),
 				...(options ? { options: decisionOptions(options) } : {}),
 			});
 		}),

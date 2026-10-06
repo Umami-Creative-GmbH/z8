@@ -1441,6 +1441,13 @@ export async function loadLegacyDeliveryState(input: {
 		};
 	}
 	if (
+		cycleId &&
+		input.lifecycle.workflowType === "travel_expense" &&
+		input.lifecycle.sourceType === "travel_expense_report"
+	) {
+		return loadTravelExpenseReportCycleState({ ...input, cycleId });
+	}
+	if (
 		input.lifecycle.workflowType !== "travel_expense" ||
 		input.lifecycle.sourceType !== "travel_expense_claim"
 	) {
@@ -1472,6 +1479,69 @@ export async function loadLegacyDeliveryState(input: {
 		version: Number(state.version),
 		requestStatus: text(state.request_status, "request status"),
 		approverEmployeeId: text(state.approver_id, "approver"),
+	};
+}
+
+/**
+ * One submission cycle of an expense report (#623): the status of its chain
+ * or single request, like an absence cycle. A cycle the requester withdrew or
+ * a reviewer returned (#603) records a `withdrawn` intent, which marks it
+ * cancelled whatever its rows still say; a deleted report cancels it too.
+ */
+async function loadTravelExpenseReportCycleState(input: {
+	organizationId: string;
+	lifecycle: LegacyDeliveryLifecycle;
+	approvalRequestId: string;
+	cycleId: string;
+}): Promise<{
+	lifecycleStatus: "pending" | "approved" | "rejected" | "cancelled" | "unknown";
+	version: number;
+	requestStatus: string;
+	approverEmployeeId: string | null;
+} | null> {
+	const { cycleId } = input;
+	const [cycle] = rows(
+		await db.execute(sql`
+			select report.id as source_id, c.status::text as chain_status,
+				root.status::text as root_status, r.status as request_status, r.approver_id,
+				exists (
+					select 1 from approval_delivery_intent w
+					where w.organization_id = ${input.organizationId}
+						and w.legacy_cycle_id = ${cycleId}::uuid
+						and w.event = 'withdrawn'
+				) as withdrawn,
+				${legacyLifecycleVersionSql(input.organizationId, input.lifecycle)} as version
+			from (select 1) as lifecycle
+			left join travel_expense_report report
+				on report.organization_id = ${input.organizationId}
+				and report.id = ${input.lifecycle.sourceId}::uuid
+			left join approval_chain_instance c
+				on c.organization_id = ${input.organizationId} and c.id = ${cycleId}::uuid
+			left join approval_request root
+				on root.organization_id = ${input.organizationId} and root.id = ${cycleId}::uuid
+			left join approval_request r
+				on r.organization_id = ${input.organizationId}
+				and r.id = ${input.approvalRequestId}::uuid
+				and r.entity_type = 'travel_expense_report'
+				and r.entity_id = ${input.lifecycle.sourceId}::uuid
+		`),
+	);
+	if (!cycle) return null;
+	const cancelled = cycle.withdrawn === true || !cycle.source_id;
+	const cycleStatus = cancelled
+		? "cancelled"
+		: (nullableText(cycle.chain_status) ?? nullableText(cycle.root_status) ?? "cancelled");
+	return {
+		lifecycleStatus:
+			cycleStatus === "pending" ||
+			cycleStatus === "approved" ||
+			cycleStatus === "rejected" ||
+			cycleStatus === "cancelled"
+				? cycleStatus
+				: "unknown",
+		version: Number(cycle.version),
+		requestStatus: cancelled ? "cancelled" : (nullableText(cycle.request_status) ?? "cancelled"),
+		approverEmployeeId: cancelled ? null : nullableText(cycle.approver_id),
 	};
 }
 

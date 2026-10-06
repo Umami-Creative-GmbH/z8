@@ -5,6 +5,7 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
+import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 import { categoryLabel } from "./receipt-item-editor";
 
 export interface ExpenseSummary {
@@ -16,6 +17,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** Missing-receipt exception submitted instead of a receipt (#604). */
+	receiptException?: { reason: string } | null;
 	/** Frozen project attribution (#605). */
 	project?: ExpenseProjectSummary;
 }
@@ -123,6 +126,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							))}
 						</ul>
 					)}
+					{item.receiptException && <ReceiptExceptionNotice exception={item.receiptException} />}
 				</li>
 			))}
 		</ol>

@@ -62,6 +62,9 @@ export enum AuditAction {
 	APPROVAL_REJECTED = "approval.rejected",
 	TRAVEL_EXPENSE_DRAFT_CREATED = "travel_expense.draft_created",
 	TRAVEL_EXPENSE_SUBMITTED = "travel_expense.submitted",
+	TRAVEL_EXPENSE_RETURNED = "travel_expense.returned",
+	TRAVEL_EXPENSE_WITHDRAWN = "travel_expense.withdrawn",
+	TRAVEL_EXPENSE_REIMBURSEMENT_RECORDED = "travel_expense.reimbursement_recorded",
 	TRAVEL_EXPENSE_PROJECT_EXCEPTION_AUTHORIZED = "travel_expense.project_exception_authorized",
 
 	// Approval Escalation Management

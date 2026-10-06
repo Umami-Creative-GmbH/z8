@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { approvalSubmittedRevision } from "@/db/schema";
 import { type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { ApprovalDatabase } from "../server/types";
@@ -167,6 +167,41 @@ export async function loadTravelExpenseReportSubmittedRevision(
 		.limit(1);
 	const row = rows[0];
 	return row ? parseRevision(row, input) : null;
+}
+
+/**
+ * The frozen revisions of many reports' named cycles in one read (#612 finance
+ * queue), keyed by report id. Reports without that cycle are absent.
+ */
+export async function loadTravelExpenseReportSubmittedRevisions(
+	database: ApprovalDatabase,
+	input: { organizationId: string; cycles: ReadonlyArray<{ reportId: string; submissionCycle: number }> },
+): Promise<Map<string, TravelExpenseReportSubmittedRevisionRecord>> {
+	const revisions = new Map<string, TravelExpenseReportSubmittedRevisionRecord>();
+	if (input.cycles.length === 0) return revisions;
+	const rows = await database
+		.select()
+		.from(approvalSubmittedRevision)
+		.where(
+			and(
+				eq(approvalSubmittedRevision.organizationId, input.organizationId),
+				eq(approvalSubmittedRevision.authority, "legacy"),
+				eq(approvalSubmittedRevision.sourceType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				inArray(
+					approvalSubmittedRevision.requestCycleKey,
+					input.cycles.map(({ reportId, submissionCycle }) =>
+						travelExpenseReportRequestCycleKey(reportId, submissionCycle),
+					),
+				),
+			),
+		);
+	for (const row of rows) {
+		revisions.set(
+			row.sourceId,
+			parseRevision(row, { organizationId: input.organizationId, reportId: row.sourceId }),
+		);
+	}
+	return revisions;
 }
 
 /**

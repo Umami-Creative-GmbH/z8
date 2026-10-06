@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
 import { TravelExpenseProjectExceptionsCard } from "@/components/settings/travel-expense/travel-expense-project-exceptions";
+import { TravelExpenseReceiptExceptionSettingsCard } from "@/components/settings/travel-expense/travel-expense-receipt-exception-settings";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
@@ -11,8 +12,13 @@ async function TravelExpenseSettingsPageContent() {
 
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="space-y-4 px-4 pt-4">
+			<div className="px-4 pt-4">
 				<TravelExpenseApproverSettingsCard />
+			</div>
+			<div className="px-4 pt-4">
+				<TravelExpenseReceiptExceptionSettingsCard />
+			</div>
+			<div className="px-4 pt-4">
 				<TravelExpenseProjectExceptionsCard />
 			</div>
 			<TravelExpensePolicyManagement organizationId={organizationId} />

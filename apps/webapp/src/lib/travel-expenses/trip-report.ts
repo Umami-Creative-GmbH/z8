@@ -6,6 +6,7 @@ import {
 	type ReceiptItemRequirement,
 	receiptItemMissingRequirements,
 } from "./receipt-report";
+import type { ReceiptExceptionContext } from "./receipt-exception";
 import type { TripDestination } from "./trip-destination";
 
 /**
@@ -151,7 +152,12 @@ export interface TripReportMissingRequirements {
 /** What still keeps a trip report from being submittable. */
 export function tripReportMissingRequirements(input: {
 	details: TripDetailsDraft;
-	items: readonly { id: string; draft: ReceiptItemDraft; receiptCount: number }[];
+	items: readonly {
+		id: string;
+		draft: ReceiptItemDraft;
+		receiptCount: number;
+		receiptException?: ReceiptExceptionContext;
+	}[];
 	reimbursementCurrency: string;
 }): TripReportMissingRequirements {
 	const { details } = input;
@@ -171,6 +177,7 @@ export function tripReportMissingRequirements(input: {
 			missing: receiptItemMissingRequirements(item.draft, {
 				receiptCount: item.receiptCount,
 				reimbursementCurrency: input.reimbursementCurrency,
+				receiptException: item.receiptException,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

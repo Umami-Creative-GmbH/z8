@@ -17,7 +17,7 @@ export const PROJECT_ASSIGNMENT_HISTORY_TYPES = ["employee", "team"] as const;
 export type ProjectAssignmentHistoryType = (typeof PROJECT_ASSIGNMENT_HISTORY_TYPES)[number];
 
 // Effective intervals of project assignments (#605). Database triggers
-// (migration 0116) record every insert, change and removal of a
+// (migration 0119) record every insert, change and removal of a
 // `project_assignment` row, cascades included, so no writer can skip them.
 // The migration opened one interval per assignment that existed then, at the
 // migration time: history starts there, and nothing before it is ever

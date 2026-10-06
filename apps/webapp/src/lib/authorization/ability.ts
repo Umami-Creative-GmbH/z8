@@ -94,6 +94,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "PayrollOfficerSettings");
 			can("manage", "ScheduledExport");
 			can(["read", "export", "configure"], "WorksCouncil");
+			can(["read", "export", "settle"], "TravelExpenseFinance");
 			can("manage", "DemoData");
 		}
 
@@ -117,6 +118,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 			can("manage", "PayrollOfficerSettings");
 			can("manage", "ScheduledExport");
 			can(["read", "export", "configure"], "WorksCouncil");
+			can(["read", "export", "settle"], "TravelExpenseFinance");
 			can("manage", "DemoData");
 		}
 

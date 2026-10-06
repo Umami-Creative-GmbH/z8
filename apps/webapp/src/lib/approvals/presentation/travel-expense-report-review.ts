@@ -12,6 +12,10 @@ import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/tra
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
 import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
+import {
+	receiptExceptionAcceptanceSections,
+	receiptExceptionRows,
+} from "./travel-expense-report-receipt-exceptions";
 
 export type TravelExpenseReportReviewEvidence =
 	| { status: "not_captured" }
@@ -149,6 +153,7 @@ export function buildTravelExpenseReportReviewSections(
 
 	const sections: ApprovalInboxDetailSection[] = [
 		{ type: "key_value", title: text("submittedReportTitle", "Submitted report"), rows },
+		...receiptExceptionAcceptanceSections(facts),
 		...facts.items.map((item, index): ApprovalInboxDetailSection => {
 			const names = item.receipts.map(
 				(receipt) => labels.receiptFileNames[receipt.receiptId] ?? receipt.receiptId,
@@ -175,10 +180,11 @@ export function buildTravelExpenseReportReviewSections(
 				});
 			}
 			itemRows.push(...travelExpenseReportProjectRows(item));
-			itemRows.push({
-				label: text("receipts", "Receipts"),
-				value: `${names.length}: ${names.join(", ")}`,
-			});
+			itemRows.push(
+				...(item.receiptException
+					? receiptExceptionRows(item.receiptException)
+					: [{ label: text("receipts", "Receipts"), value: `${names.length}: ${names.join(", ")}` }]),
+			);
 			return { type: "key_value", title: `${index + 1}. ${item.description}`, rows: itemRows };
 		}),
 	];

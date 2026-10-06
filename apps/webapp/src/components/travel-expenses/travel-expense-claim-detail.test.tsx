@@ -14,6 +14,8 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "de-DE" }));
+// The settlement of an approved claim (#612) has its own tests.
+vi.mock("./finance/settlement-panel", () => ({ SettlementPanel: () => null }));
 
 import { TravelExpenseClaimDetail } from "./travel-expense-claim-detail";
 

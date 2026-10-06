@@ -21,6 +21,7 @@ import {
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
+import { pendingReceiptException } from "./receipt-exception-notice";
 import { ReportTotals } from "./report-summary";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -180,6 +181,7 @@ export function SubmitReportPanel({
 						id: item.id,
 						version: item.version,
 						receiptIds: item.receipts.map((receipt) => receipt.id),
+						receiptExceptionVersion: item.receiptException.version,
 					})),
 				},
 			});
@@ -273,6 +275,7 @@ export function SubmitReportPanel({
 									id: receipt.id,
 									fileName: receipt.fileName,
 								})),
+								receiptException: pendingReceiptException(item),
 							}))}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}

@@ -10,7 +10,7 @@ import { type Instant, parsePlainDate } from "@/lib/datetime/temporal-core";
  * - an authorized, evidenced attribution exception covers that date.
  *
  * Current assignments never prove a past date: history exists only from its
- * capture (migration 0116) onwards. Project status is irrelevant, so a proven
+ * capture (migration 0119) onwards. Project status is irrelevant, so a proven
  * assignment to a project closed later stays eligible. The picker and every
  * server validation use this one rule.
  *

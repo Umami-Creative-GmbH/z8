@@ -431,7 +431,7 @@ describe("expense project attribution (#605)", () => {
 		await admin.query("update project set name = 'Renamed audit' where id = $1", [ids.closed]);
 		await admin.query("delete from project_assignment where project_id = $1", [ids.closed]);
 		const { revision, projects } = await frozenProjects(reportId);
-		expect(revision.facts.schemaVersion).toBe(2);
+		expect(revision.facts.schemaVersion).toBe(3);
 		expect(projects).toEqual([
 			{
 				projectId: ids.closed,

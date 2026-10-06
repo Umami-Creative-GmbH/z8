@@ -11,7 +11,6 @@ import {
 	removeTripReportItemAction,
 } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +20,7 @@ import {
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
+import { isEditableReportStatus } from "@/lib/travel-expenses/report-return";
 import type {
 	ReportItemView,
 	ReportView,
@@ -30,8 +30,11 @@ import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
+import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ReceiptItemEditor } from "./receipt-item-editor";
+import { ReportReviewFeedback } from "./report-review-cycle";
+import { ReportStatusBadge } from "./report-status";
 import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
 import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
@@ -64,7 +67,7 @@ function liveMatchesSaved(
 		const live = liveDraft(item, drafts);
 		return live !== null && ITEM_FIELDS.every((field) => live[field] === item[field]);
 	});
-	if (!itemsMatch || saved.status !== "draft") return false;
+	if (!itemsMatch || !isEditableReportStatus(saved.status)) return false;
 	if (saved.kind !== "trip") return true;
 	const trip = saved.trip;
 	return (
@@ -142,7 +145,10 @@ export function TravelExpenseReportEditor({
 					<Skeleton aria-hidden="true" className="h-96 w-full" />
 				</div>
 			)}
-			{data && data.status !== "draft" ? (
+			{data && isEditableReportStatus(data.status) && (
+				<ReportReviewFeedback reportId={data.id} submissionCount={data.submissionCount} />
+			)}
+			{data && !isEditableReportStatus(data.status) ? (
 				// Submitted reports are frozen; only their submission is shown.
 				<SubmittedTravelExpenseReport reportId={reportId} />
 			) : data?.kind === "trip" && data.trip ? (
@@ -186,6 +192,7 @@ function StandaloneReportBody({
 		: receiptItemMissingRequirements(live, {
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
+					receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
 				}).length > 0
 			? "incomplete"
 			: null;
@@ -197,7 +204,7 @@ function StandaloneReportBody({
 					<h2 className="text-lg font-semibold">
 						{t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
 					</h2>
-					<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+					<ReportStatusBadge status={report.status} />
 				</div>
 				<ReceiptItemEditor
 					key={item.id}
@@ -206,6 +213,7 @@ function StandaloneReportBody({
 					receipts={item.receipts}
 					reimbursementCurrency={report.reimbursementCurrency}
 					maxReceiptBytes={maxReceiptBytes}
+					receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 					onReceiptsChanged={refreshReport}
 					onSaved={() => void refreshDrafts()}
 					onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
@@ -334,7 +342,16 @@ function TripReportBody({
 				details,
 				items: items.flatMap((item) => {
 					const draft = liveDraft(item, drafts);
-					return draft ? [{ id: item.id, draft, receiptCount: item.receipts.length }] : [];
+					return draft
+						? [
+								{
+									id: item.id,
+									draft,
+									receiptCount: item.receipts.length,
+									receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+								},
+							]
+						: [];
 				}),
 				reimbursementCurrency: report.reimbursementCurrency,
 			})
@@ -345,6 +362,7 @@ function TripReportBody({
 			? receiptItemMissingRequirements(draft, {
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
+					receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
 				}).length > 0
 			: true;
 		return incomplete
@@ -355,7 +373,7 @@ function TripReportBody({
 	return (
 		<div className="space-y-4">
 			<div className="flex flex-wrap items-center gap-2">
-				<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
+				<ReportStatusBadge status={report.status} />
 			</div>
 
 			<Card>
@@ -408,6 +426,7 @@ function TripReportBody({
 										receipts={item.receipts}
 										reimbursementCurrency={report.reimbursementCurrency}
 										maxReceiptBytes={maxReceiptBytes}
+										receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 										onReceiptsChanged={refreshReport}
 										onSaved={() => void refreshDrafts()}
 										onDraftChange={(draft) =>

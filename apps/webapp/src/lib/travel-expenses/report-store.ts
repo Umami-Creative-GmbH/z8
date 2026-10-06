@@ -15,6 +15,12 @@ import {
 	type ReceiptItemDraft,
 	receiptReportTotals,
 } from "./receipt-report";
+import {
+	loadReceiptExceptionsAllowed,
+	type ReceiptExceptionView,
+	receiptExceptionItemView,
+} from "./receipt-exception-read";
+import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import type { TripDetailsDraft } from "./trip-report";
 
 /**
@@ -66,6 +72,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
+	/** Missing-receipt exception (#604), saved separately from the other fields. */
+	receiptException: ReceiptExceptionView;
 	/** Project attribution (#605): `project-attribution.ts` `itemProjectChoice` reads these. */
 	projectId?: string | null;
 	projectInherits?: boolean;
@@ -80,12 +88,16 @@ export interface ReportView {
 	id: string;
 	kind: TravelExpenseReportKind;
 	status: TravelExpenseReportStatus;
+	/** Submission cycles so far; a withdrawn or returned report has history (#603). */
+	submissionCount: number;
 	reimbursementCurrency: string;
 	createdAt: string;
 	updatedAt: string;
 	/** Null for standalone reports, which have no trip. */
 	trip: TripDetailsView | null;
 	items: ReportItemView[];
+	/** Whether the organization allows missing-receipt exceptions (#604). */
+	receiptExceptionsAllowed: boolean;
 	/** The trip's project its expenses inherit (#605). */
 	projectId?: string | null;
 }
@@ -209,7 +221,8 @@ export async function lockOwnDraftReport(
 		.where(ownedReport(owner, reportId))
 		.for("update");
 	if (!report) return { status: "not_found" };
-	return report.status === "draft"
+	// A returned report (#603) is edited like a draft; the result keeps its tag.
+	return isEditableReportStatus(report.status)
 		? { status: "draft", kind: report.kind }
 		: { status: "not_draft" };
 }
@@ -244,7 +257,7 @@ export async function isOwnDraftReportItem(
 		.where(
 			and(
 				ownedReport(owner, input.reportId),
-				eq(travelExpenseReport.status, "draft"),
+				inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 				eq(travelExpenseReportItem.id, input.itemId),
 			),
 		)
@@ -268,6 +281,7 @@ function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView
 		paidBy: row.paidBy,
 		accountingReference: row.accountingReference,
 		receipts,
+		...receiptExceptionItemView(row),
 		projectId: row.projectId,
 		projectInherits: row.projectInherits,
 	};
@@ -284,7 +298,7 @@ export async function loadOwnReport(
 		.where(ownedReport(owner, reportId))
 		.limit(1);
 	if (!report) return null;
-	const [items, receipts] = await Promise.all([
+	const [items, receipts, receiptExceptionsAllowed] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -305,11 +319,13 @@ export async function loadOwnReport(
 				),
 			)
 			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
+		loadReceiptExceptionsAllowed(database, owner.organizationId),
 	]);
 	return {
 		id: report.id,
 		kind: report.kind,
 		status: report.status,
+		submissionCount: report.submissionCount,
 		reimbursementCurrency: report.reimbursementCurrency,
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
@@ -318,6 +334,7 @@ export async function loadOwnReport(
 		items: items.map((item) =>
 			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
 		),
+		receiptExceptionsAllowed,
 	};
 }
 
@@ -359,7 +376,7 @@ export function listOwnSubmittedReports(
 	database: Database,
 	owner: ReportOwner,
 ): Promise<DraftReportSummary[]> {
-	return listOwnReports(database, owner, ["submitted", "approved", "rejected"]);
+	return listOwnReports(database, owner, ["submitted", "approved", "rejected", "returned"]);
 }
 
 async function listOwnReports(

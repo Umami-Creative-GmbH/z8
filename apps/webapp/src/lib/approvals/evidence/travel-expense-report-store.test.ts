@@ -105,7 +105,7 @@ async function expectInvariant(promise: Promise<unknown>) {
 describe("travel expense report revisions", () => {
 	it("reads a captured schema version 1 revision back unchanged", async () => {
 		const { database, rows } = fakeRevisionTable();
-		// Without later optional facts, a current build has exactly the v1 shape.
+		// Later versions only add optional facts this report does not have.
 		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
 		await capture(database, facts);
 

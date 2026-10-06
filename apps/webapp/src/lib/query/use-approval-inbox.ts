@@ -127,7 +127,12 @@ export type ApprovalDecisionResult =
 	| { success: false; error?: string; [key: string]: unknown };
 
 export type ApprovalDecisionInput =
-	| { approvalId: string; action: "approve" }
+	| {
+			approvalId: string;
+			action: "approve";
+			/** Expense reports (#604): missing-receipt exceptions the approver accepts. */
+			acceptedReceiptExceptionItemIds?: readonly string[];
+	  }
 	| { approvalId: string; action: "reject"; reason: string };
 
 function isApprovalDecisionResult(
@@ -227,7 +232,14 @@ export async function dispatchApprovalDecision(
 							headers: { "Content-Type": "application/json" },
 							body: JSON.stringify({ reason: input.reason }),
 						}
-					: {}),
+					: input.acceptedReceiptExceptionItemIds
+						? {
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({
+									acceptedReceiptExceptionItemIds: input.acceptedReceiptExceptionItemIds,
+								}),
+							}
+						: {}),
 			}),
 		fallback,
 		expectedStatus,
@@ -393,8 +405,16 @@ export function useApproveApproval() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (approvalId: string) =>
-			dispatchApprovalDecision({ approvalId, action: "approve" }),
+		mutationFn: (
+			input:
+				| string
+				| { approvalId: string; acceptedReceiptExceptionItemIds?: readonly string[] },
+		) =>
+			dispatchApprovalDecision(
+				typeof input === "string"
+					? { approvalId: input, action: "approve" }
+					: { ...input, action: "approve" },
+			),
 		onSuccess: (result) => {
 			if (result.success) {
 				queryClient.invalidateQueries({ queryKey: queryKeys.approvals.all });

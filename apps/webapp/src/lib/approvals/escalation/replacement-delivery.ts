@@ -111,7 +111,7 @@ export async function expandEscalationTransferEvents(input: {
 							and (
 								(t.workflow_type = 'absence' and e.payload->>'sourceType' = 'absence_entry')
 								or (t.workflow_type = 'travel_expense'
-									and e.payload->>'sourceType' = 'travel_expense_claim')
+									and e.payload->>'sourceType' in ('travel_expense_claim', 'travel_expense_report'))
 								or (t.workflow_type = any(
 									${sql.param([...TIME_APPROVAL_WORKFLOW_TYPES])}::approval_workflow_type[]
 								)
@@ -188,7 +188,7 @@ type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 /**
  * One legacy transfer (#408) into its legacy lifecycle: absences (#384) and
  * time approvals (#432, #470) deliver per submission cycle, expense claims per
- * claim (#296). A time transfer only moves a direct request (#439), so its
+ * claim (#296), expense reports per submission cycle (#623). A time transfer only moves a direct request (#439), so its
  * cycle is the one its delivery recorded, or else the request itself. The former
  * holder's cards that the old notification path sent are adopted from every
  * provider that has a delivery control for the kind now (only those can be
@@ -211,14 +211,18 @@ async function planLegacyTransfer(
 	// nothing could be claimed: the event expands to nothing.
 	if (owned.length === 0) return 0;
 	const workflowType = text(event.workflow_type, "workflow type") as ApprovalWorkflowType;
+	const sourceType = text(event.source_type, "source type");
 	const approvalRequestId = text(event.legacy_approval_request_id, "legacy request");
 	const formerUserId = text(event.former_user_id, "former approver user");
 	const lifecycle: LegacyDeliveryLifecycle = {
 		workflowType,
-		sourceType: text(event.source_type, "source type"),
+		sourceType,
 		sourceId: text(event.source_id, "source"),
 		cycleId:
-			workflowType === "absence" || isTimeApprovalWorkflowType(workflowType)
+			workflowType === "absence" ||
+			isTimeApprovalWorkflowType(workflowType) ||
+			// Expense reports deliver per submission cycle too (#623).
+			sourceType === "travel_expense_report"
 				? await resolveRecordedLegacyDeliveryCycle(transaction, {
 						organizationId: input.organizationId,
 						approvalRequestId,
