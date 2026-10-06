@@ -17,9 +17,14 @@ import { travelExpenseReport } from "./travel-expense";
 /**
  * How one submission cycle of a travel expense report closed without a final
  * decision (#603): a reviewer returned it for changes, or its employee
- * withdrew it. Reopening an approved cycle (#614) adds its own kind.
+ * withdrew it. An approved cycle that an approver reopened for correction
+ * before export or reimbursement (#614) is `reopened`: its approval stays.
  */
-export const TRAVEL_EXPENSE_REPORT_CYCLE_CLOSURE_KINDS = ["returned", "withdrawn"] as const;
+export const TRAVEL_EXPENSE_REPORT_CYCLE_CLOSURE_KINDS = [
+	"returned",
+	"withdrawn",
+	"reopened",
+] as const;
 export type TravelExpenseReportCycleClosureKind =
 	(typeof TRAVEL_EXPENSE_REPORT_CYCLE_CLOSURE_KINDS)[number];
 
@@ -67,12 +72,14 @@ export const travelExpenseReportCycleClosure = pgTable(
 		),
 		check(
 			"travel_expense_report_cycle_closure_kind_check",
-			sql`${table.kind} IN ('returned', 'withdrawn')`,
+			sql`${table.kind} IN ('returned', 'withdrawn', 'reopened')`,
 		),
+		// A reopened cycle (#614) keeps the reopen reason and names, by value, the
+		// approval decision evidence it reopened.
 		check(
 			"travel_expense_report_cycle_closure_note_check",
 			sql`${table.submissionCycle} >= 1
-			AND (${table.kind} = 'returned' AND ${table.note} IS NOT NULL
+			AND (${table.kind} IN ('returned', 'reopened') AND ${table.note} IS NOT NULL
 					AND length(btrim(${table.note})) > 0 AND ${table.decisionEvidenceId} IS NOT NULL
 				OR ${table.kind} = 'withdrawn' AND ${table.note} IS NULL
 					AND ${table.decisionEvidenceId} IS NULL)`,

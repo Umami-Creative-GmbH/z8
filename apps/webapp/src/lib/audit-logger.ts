@@ -71,6 +71,7 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_REFERENCE_RATE_REVOKED = "travel_expense.reference_rate_revoked",
 	TRAVEL_EXPENSE_RETURNED = "travel_expense.returned",
 	TRAVEL_EXPENSE_WITHDRAWN = "travel_expense.withdrawn",
+	TRAVEL_EXPENSE_REOPENED = "travel_expense.reopened",
 	TRAVEL_EXPENSE_REIMBURSEMENT_RECORDED = "travel_expense.reimbursement_recorded",
 	TRAVEL_EXPENSE_PROJECT_EXCEPTION_AUTHORIZED = "travel_expense.project_exception_authorized",
 	TRAVEL_EXPENSE_EXPORT_CREATED = "travel_expense.export_created",
