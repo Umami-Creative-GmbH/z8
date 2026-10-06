@@ -148,7 +148,10 @@ async function trip(startDate: string, endDate: string, countries: string[]) {
 			startDate,
 			endDate,
 			timeZone: "Europe/Berlin",
-			destinations: countries.map((countryCode) => ({ place: `Office ${countryCode}`, countryCode })),
+			destinations: countries.map((countryCode) => ({
+				place: `Office ${countryCode}`,
+				countryCode,
+			})),
 		},
 	});
 	if (!details.success) throw new Error(details.error);
@@ -293,7 +296,11 @@ describe("international per diem from the daily itinerary (#611)", () => {
 		});
 		const adopted = await adopt(FOREIGN_DEFAULT);
 		if (!adopted.success || adopted.data.status !== "activated") throw new Error("not adopted");
-		const { rows } = await admin.query<{ area: string; full_day_amount: string; breakfast: string }>(
+		const { rows } = await admin.query<{
+			area: string;
+			full_day_amount: string;
+			breakfast: string;
+		}>(
 			`select area, full_day_amount, breakfast_deduction as breakfast from travel_expense_per_diem_rate
 			 where organization_id = 't611-org' and version_id = $1 order by area`,
 			[adopted.data.versionId],
@@ -426,7 +433,10 @@ describe("international per diem from the daily itinerary (#611)", () => {
 				end: "2026-05-05T18:00",
 				answers: [{ night: place("US", "gotham") }, { activityAbroad: place("US") }],
 			}),
-		).toEqual({ success: true, data: { status: "invalid", errors: { meals: "invalid_location" } } });
+		).toEqual({
+			success: true,
+			data: { status: "invalid", errors: { meals: "invalid_location" } },
+		});
 
 		const flagged = await saved(reportId, item, {
 			start: "2026-05-04T08:00",
