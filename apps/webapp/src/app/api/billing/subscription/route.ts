@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
 import { env } from "@/env";
@@ -8,7 +8,7 @@ import {
 	BillingEnforcementServiceLive,
 	SubscriptionService,
 	SubscriptionServiceLive,
-} from "@/lib/effect-v3/services/billing";
+} from "@/lib/effect/services/billing";
 
 /**
  * Get current subscription status for the organization

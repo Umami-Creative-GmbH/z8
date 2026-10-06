@@ -7,6 +7,35 @@ vi.mock("@/env", () => ({ env: { BILLING_ENABLED: "true" } }));
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: loggerError }),
 }));
+vi.mock("@/lib/effect/services/billing", async () => {
+	const { Context, Effect, Layer } = await import("effect");
+	const { StripeError } = await import("@/lib/effect/errors");
+
+	class SeatSyncService extends Context.Service<
+		SeatSyncService,
+		{
+			readonly syncSeatsForOrganization: (organizationId: string) => Effect.Effect<number, unknown>;
+		}
+	>()("SeatSyncService") {}
+
+	return {
+		SeatSyncService,
+		SeatSyncServiceLive: Layer.succeed(
+			SeatSyncService,
+			SeatSyncService.of({
+				syncSeatsForOrganization: () =>
+					Effect.fail(
+						new StripeError({
+							message: "Stripe seat delivery is uncertain and will be reconciled",
+							operation: "syncSeatsForOrganization",
+						}),
+					),
+			}),
+		),
+		StripeServiceLive: Layer.empty,
+		SubscriptionServiceLive: Layer.empty,
+	};
+});
 
 describe("reconcileBillingSeatsForOrganization", () => {
 	beforeEach(() => {
@@ -25,6 +54,23 @@ describe("reconcileBillingSeatsForOrganization", () => {
 				run: () => Promise.reject(failure),
 			}),
 		).rejects.toBe(failure);
+		expect(loggerError).toHaveBeenCalledOnce();
+	});
+
+	it("rejects with the seat sync's StripeError itself in strict mode", async () => {
+		const { StripeError } = await import("@/lib/effect/errors");
+		const { reconcileBillingSeatsForOrganization } = await import(
+			"./seat-sync-trigger"
+		);
+
+		const rejection = reconcileBillingSeatsForOrganization("org-1", {
+			strict: true,
+		});
+
+		await expect(rejection).rejects.toBeInstanceOf(StripeError);
+		await expect(rejection).rejects.toMatchObject({
+			message: "Stripe seat delivery is uncertain and will be reconciled",
+		});
 		expect(loggerError).toHaveBeenCalledOnce();
 	});
 
@@ -55,7 +101,7 @@ describe("reconcileBillingSeatsForOrganization", () => {
 		);
 
 		expect(runtimeLoader).toContain("await Promise.all([");
-		expect(runtimeLoader).toContain('import("effect-v3")');
-		expect(runtimeLoader).toContain('import("@/lib/effect-v3/services/billing")');
+		expect(runtimeLoader).toContain('import("effect")');
+		expect(runtimeLoader).toContain('import("@/lib/effect/services/billing")');
 	});
 });

@@ -1,4 +1,4 @@
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { db } from "@/db";
 import { env } from "@/env";
 import {
@@ -6,7 +6,7 @@ import {
 	SeatSyncServiceLive,
 	StripeServiceLive,
 	SubscriptionServiceLive,
-} from "@/lib/effect-v3/services/billing";
+} from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("BillingSeatReconciliation");

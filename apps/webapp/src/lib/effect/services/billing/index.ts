@@ -8,7 +8,7 @@ export * from "./stripe.service";
 export * from "./subscription.service";
 
 // Re-export combined layer for convenience
-import { Layer } from "effect-v3";
+import { Layer } from "effect";
 import { BillingEnforcementServiceLive } from "./billing-enforcement.service";
 import { BillingEventsServiceLive } from "./billing-events.service";
 import { SeatSyncServiceLive } from "./seat-sync.service";

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "@/env";
@@ -151,11 +151,11 @@ describe("StripeService", () => {
 					successUrl: "https://app.test/settings/billing?success=true",
 					cancelUrl: "https://app.test/settings/billing?canceled=true",
 				});
-			}).pipe(Effect.provide(StripeServiceLive), Effect.either),
+			}).pipe(Effect.provide(StripeServiceLive), Effect.result),
 		);
 
-		expect(result._tag).toBe("Left");
-		expect(result._tag === "Left" ? result.left : null).toMatchObject({
+		expect(result._tag).toBe("Failure");
+		expect(result._tag === "Failure" ? result.failure : null).toMatchObject({
 			message: "Stripe checkout price must be a Price ID starting with price_",
 			operation: "createCheckoutSession",
 		});

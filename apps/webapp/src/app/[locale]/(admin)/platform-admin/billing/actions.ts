@@ -1,17 +1,17 @@
 "use server";
 
-import { Effect, Layer } from "effect-v3";
+import { Effect, Layer } from "effect";
 import { env } from "@/env";
 import {
 	SeatSyncService,
 	SeatSyncServiceLive,
 	StripeServiceLive,
 	SubscriptionServiceLive,
-} from "@/lib/effect-v3/services/billing";
+} from "@/lib/effect/services/billing";
 import {
 	PlatformAdminService,
 	PlatformAdminServiceLive,
-} from "@/lib/effect-v3/services/platform-admin.service";
+} from "@/lib/effect/services/platform-admin.service";
 
 type SyncOrganizationSeatsResult =
 	| { success: true; seats: number }
@@ -44,7 +44,7 @@ export async function syncOrganizationSeatsAction(
 				Effect.catchTag("AuthorizationError", (error) =>
 					Effect.succeed({ success: false as const, error: error.message }),
 				),
-				Effect.catchAll(() =>
+				Effect.catch(() =>
 					Effect.succeed({ success: false as const, error: "Failed to sync seats" }),
 				),
 				Effect.provide(layers),

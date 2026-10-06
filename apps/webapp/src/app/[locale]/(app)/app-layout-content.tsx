@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -24,7 +24,7 @@ import {
 	type BillingAccessResult,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
-} from "@/lib/effect-v3/services/billing/billing-enforcement.service";
+} from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { getOrganizationSettings } from "@/lib/organization-settings";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";

@@ -40,15 +40,15 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-vi.mock("@/lib/effect-v3/services/billing", async () => {
-	const { Context, Effect, Layer } = await import("effect-v3");
+vi.mock("@/lib/effect/services/billing", async () => {
+	const { Context, Effect, Layer } = await import("effect");
 
-	class SeatSyncService extends Context.Tag("SeatSyncService")<
+	class SeatSyncService extends Context.Service<
 		SeatSyncService,
 		{
 			readonly syncSeatsForOrganization: (organizationId: string) => Effect.Effect<number, unknown>;
 		}
-	>() {}
+	>()("SeatSyncService") {}
 
 	const SeatSyncServiceLive = Layer.succeed(
 		SeatSyncService,

@@ -24,10 +24,10 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-vi.mock("@/lib/effect-v3/services/platform-admin.service", async () => {
-	const { Context, Effect, Layer } = await import("effect-v3");
+vi.mock("@/lib/effect/services/platform-admin.service", async () => {
+	const { Context, Effect, Layer } = await import("effect");
 
-	class PlatformAdminService extends Context.Tag("PlatformAdminService")<
+	class PlatformAdminService extends Context.Service<
 		PlatformAdminService,
 		{
 			readonly requirePlatformAdmin: () => Effect.Effect<
@@ -35,7 +35,7 @@ vi.mock("@/lib/effect-v3/services/platform-admin.service", async () => {
 				unknown
 			>;
 		}
-	>() {}
+	>()("PlatformAdminService") {}
 
 	const PlatformAdminServiceLive = Layer.succeed(
 		PlatformAdminService,
@@ -51,15 +51,15 @@ vi.mock("@/lib/effect-v3/services/platform-admin.service", async () => {
 	return { PlatformAdminService, PlatformAdminServiceLive };
 });
 
-vi.mock("@/lib/effect-v3/services/billing", async () => {
-	const { Context, Effect, Layer } = await import("effect-v3");
+vi.mock("@/lib/effect/services/billing", async () => {
+	const { Context, Effect, Layer } = await import("effect");
 
-	class SeatSyncService extends Context.Tag("SeatSyncService")<
+	class SeatSyncService extends Context.Service<
 		SeatSyncService,
 		{
 			readonly syncSeatsForOrganization: (organizationId: string) => Effect.Effect<number, unknown>;
 		}
-	>() {}
+	>()("SeatSyncService") {}
 
 	const SeatSyncServiceLive = Layer.succeed(
 		SeatSyncService,

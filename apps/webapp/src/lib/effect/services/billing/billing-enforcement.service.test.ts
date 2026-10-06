@@ -1,4 +1,4 @@
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";

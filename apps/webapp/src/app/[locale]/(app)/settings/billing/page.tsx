@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BillingPageClient } from "@/components/billing/billing-page-client";
@@ -15,7 +15,7 @@ import {
 	type SubscriptionInfo,
 	SubscriptionService,
 	SubscriptionServiceLive,
-} from "@/lib/effect-v3/services/billing";
+} from "@/lib/effect/services/billing";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("billing-settings-page");

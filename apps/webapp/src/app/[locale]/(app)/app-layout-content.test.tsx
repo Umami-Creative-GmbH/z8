@@ -39,7 +39,7 @@ vi.mock("drizzle-orm", () => ({
 	eq: vi.fn((left: unknown, right: unknown) => ({ left, right })),
 }));
 
-vi.mock("effect-v3", () => ({
+vi.mock("effect", () => ({
 	Effect: {
 		flatMap: vi.fn(() => ({ pipe: vi.fn(() => undefined) })),
 		provide: vi.fn(),
@@ -165,7 +165,7 @@ vi.mock("@/lib/auth", () => ({
 	auth: { api: { getSession: mockState.getSession } },
 }));
 
-vi.mock("@/lib/effect-v3/services/billing/billing-enforcement.service", () => ({
+vi.mock("@/lib/effect/services/billing/billing-enforcement.service", () => ({
 	BillingEnforcementService: {},
 	BillingEnforcementServiceLive: {},
 }));
