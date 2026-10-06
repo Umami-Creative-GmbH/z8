@@ -98,6 +98,7 @@ export * from "./travel-expense-conversion";
 export * from "./travel-expense-project";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
+export * from "./travel-expense-export";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";

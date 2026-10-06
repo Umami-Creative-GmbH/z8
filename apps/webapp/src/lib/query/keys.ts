@@ -100,6 +100,7 @@ export const queryKeys = {
 		projectChoices: (reportId: string, from: string, to: string, selected: string | null) =>
 			["travel-expenses", "reports", reportId, "projects", from, to, selected] as const,
 		projectExceptions: () => ["travel-expenses", "settings", "project-exceptions"] as const,
+		financeExports: () => ["travel-expenses", "finance", "exports"] as const,
 	},
 
 	// Employees

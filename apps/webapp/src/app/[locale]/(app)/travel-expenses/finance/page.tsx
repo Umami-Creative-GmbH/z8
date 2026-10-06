@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { FinanceExports } from "@/components/travel-expenses/finance/finance-exports";
 import { FinanceQueue } from "@/components/travel-expenses/finance/finance-queue";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +32,7 @@ async function TravelExpenseFinancePageContent() {
 				</p>
 			</div>
 			<FinanceQueue />
+			{actor.canExport && <FinanceExports />}
 		</div>
 	);
 }
