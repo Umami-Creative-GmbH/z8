@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -86,14 +86,14 @@ vi.mock("./employee-action-utils", () => ({
 		mocks.getManagedEmployeeIdsForSettingsActor,
 }));
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Layer } = await import("effect-v3");
 
 	return { AppLayer: Layer.empty };
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 
 	return {
 		runServerActionSafe: async <T>(

@@ -13,7 +13,7 @@ import "server-only";
  * interpretation. The interval is exact: nothing is trimmed, split or shifted.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import {
 	completedWorkOperation,
 	timeRecord,

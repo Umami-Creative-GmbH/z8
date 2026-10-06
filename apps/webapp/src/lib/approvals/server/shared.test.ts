@@ -1,4 +1,4 @@
-import { Cause, Context, Effect, Exit, Option } from "effect";
+import { Cause, Context, Effect, Exit, Option } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalActionOptions } from "@/lib/approvals/domain/types";
 import {
@@ -66,7 +66,7 @@ import {
 	getApprovalStatusUpdate,
 	processApprovalWithCurrentEmployee,
 } from "@/lib/approvals/server/shared";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 
 beforeEach(() => {
 	loggerError.mockClear();

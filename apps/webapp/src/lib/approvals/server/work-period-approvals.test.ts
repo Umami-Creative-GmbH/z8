@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { getTableName } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { approvalWriteGateResult } from "../authority";

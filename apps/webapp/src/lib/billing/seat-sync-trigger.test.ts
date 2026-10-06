@@ -55,7 +55,7 @@ describe("reconcileBillingSeatsForOrganization", () => {
 		);
 
 		expect(runtimeLoader).toContain("await Promise.all([");
-		expect(runtimeLoader).toContain('import("effect")');
-		expect(runtimeLoader).toContain('import("@/lib/effect/services/billing")');
+		expect(runtimeLoader).toContain('import("effect-v3")');
+		expect(runtimeLoader).toContain('import("@/lib/effect-v3/services/billing")');
 	});
 });

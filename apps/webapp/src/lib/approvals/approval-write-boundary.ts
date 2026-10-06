@@ -459,7 +459,7 @@ export const CANONICAL_SOURCE_WRITE_OWNERS = {
 			table: "work_period",
 		},
 	],
-	"src/lib/effect/services/time-entry.service.ts": [
+	"src/lib/effect-v3/services/time-entry.service.ts": [
 		{
 			columns: ["is_superseded", "replaces_entry_id", "type"],
 			functionName: "applyCorrectionWritesInTransaction",

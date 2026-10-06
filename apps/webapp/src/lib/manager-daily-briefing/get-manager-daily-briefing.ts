@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import type { AnyAppError } from "@/lib/effect/errors";
 import {

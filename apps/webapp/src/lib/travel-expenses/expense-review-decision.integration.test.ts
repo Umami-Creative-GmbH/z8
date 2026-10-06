@@ -15,7 +15,7 @@
  * Telegram HTTP transport (fetch) are replaced.
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { NextRequest } from "next/server";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -173,7 +173,7 @@ const { TravelExpenseClaimHandler } = await import(
 	"@/lib/approvals/handlers/travel-expense-claim.handler"
 );
 const { DatabaseServiceLive } = await import(
-	"@/lib/effect/services/database.service"
+	"@/lib/effect-v3/services/database.service"
 );
 const { processApprovalDeliveries } = await import(
 	"@/lib/approvals/delivery/owner"

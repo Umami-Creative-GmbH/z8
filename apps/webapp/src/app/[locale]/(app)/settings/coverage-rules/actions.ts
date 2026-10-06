@@ -1,17 +1,17 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
-import { safeAction } from "@/lib/effect/runtime";
+import { safeAction } from "@/lib/effect-v3/runtime";
 import {
 	type CoverageRuleWithRelations,
 	CoverageService,
 	type CoverageSettingsData,
 	type TargetCoverageGap,
-} from "@/lib/effect/services/coverage.service";
+} from "@/lib/effect-v3/services/coverage.service";
 import { resolveScheduleDateRange } from "@/lib/scheduling/schedule-local-input";
 import {
 	canManageScopedSchedulingSubarea,

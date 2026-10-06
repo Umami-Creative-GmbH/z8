@@ -6,11 +6,11 @@
  */
 
 import { and, count, desc, eq, inArray, lte, or } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { approvalRequest } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { calculateSLAStatus } from "../domain/sla-calculator";
 import type {
 	ApprovalQueryParams,

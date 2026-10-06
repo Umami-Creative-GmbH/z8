@@ -2,14 +2,14 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { employee, project, projectManager, workPeriod } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-helpers";
 import { type AnyAppError, AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { createLogger } from "@/lib/logger";
 import { buildProjectHealthFields, buildProjectHealthTotals } from "@/lib/reports/project-health";
 import type {

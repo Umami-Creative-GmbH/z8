@@ -1,5 +1,5 @@
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const ownerMocks = vi.hoisted(() => ({

@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { employee, employeeRateHistory } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { ValidationError } from "@/lib/effect/errors";

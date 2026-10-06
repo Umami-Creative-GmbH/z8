@@ -7,7 +7,7 @@
 
 import { IconClockEdit } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import {
 	approvalChainStageInstance,
@@ -20,7 +20,7 @@ import {
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,

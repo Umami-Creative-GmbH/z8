@@ -139,20 +139,20 @@ const { deleteNonAdminEmployeesData } = await import("@/lib/demo/delete-non-admi
 const { generateDemoEmployees } = await import("@/lib/demo/employee-generator");
 const { runOrganizationCleanup } = await import("@/lib/jobs/organization-cleanup");
 const { db } = await import("@/db");
-const { Effect, Layer } = await import("effect");
+const { Effect, Layer } = await import("effect-v3");
 const { ensureEmployeeForOrganizationMember } = await import(
 	"@/lib/auth/organization-member-provisioning"
 );
-const { DatabaseServiceLive } = await import("@/lib/effect/services/database.service");
-const { AuthServiceLive } = await import("@/lib/effect/services/auth.service");
+const { DatabaseServiceLive } = await import("@/lib/effect-v3/services/database.service");
+const { AuthServiceLive } = await import("@/lib/effect-v3/services/auth.service");
 const { InviteCodeService, InviteCodeServiceLive } = await import(
-	"@/lib/effect/services/invite-code.service"
+	"@/lib/effect-v3/services/invite-code.service"
 );
 const { PendingMemberService, PendingMemberServiceLive } = await import(
-	"@/lib/effect/services/pending-member.service"
+	"@/lib/effect-v3/services/pending-member.service"
 );
 const { OnboardingService, OnboardingServiceLive } = await import(
-	"@/lib/effect/services/onboarding.service"
+	"@/lib/effect-v3/services/onboarding.service"
 );
 const services = Layer.mergeAll(
 	InviteCodeServiceLive,

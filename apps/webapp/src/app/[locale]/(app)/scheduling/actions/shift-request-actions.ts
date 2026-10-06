@@ -1,10 +1,10 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import {
 	ShiftRequestService,
 	type ShiftRequestWithRelations,
-} from "@/lib/effect/services/shift-request.service";
+} from "@/lib/effect-v3/services/shift-request.service";
 import type { ShiftRequest, SwapRequestInput } from "../types";
 import {
 	requireCurrentEmployee,

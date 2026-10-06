@@ -5,7 +5,7 @@
  * Use this to register new approval types and look them up at runtime.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect-v3";
 import { NotFoundError } from "@/lib/effect/errors";
 import type { ApprovalType, ApprovalTypeHandler } from "./types";
 

@@ -1,5 +1,5 @@
 import { and, eq, gt, gte, isNotNull, isNull, lt, lte, min, or } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import {
 	absenceCategory,
@@ -10,14 +10,14 @@ import {
 	workPeriod,
 	workPolicy,
 } from "@/db/schema";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
 	WorkPolicyServiceLive,
-} from "@/lib/effect/services/work-policy.service";
+} from "@/lib/effect-v3/services/work-policy.service";
 import {
 	type ApprovedAbsenceRange,
 	applyAbsenceAdjustmentsToRequirements,

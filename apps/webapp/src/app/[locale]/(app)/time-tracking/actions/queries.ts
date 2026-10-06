@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
@@ -9,8 +9,8 @@ import {
 	ChangePolicyService,
 	ChangePolicyServiceLive,
 	type EditCapability,
-} from "@/lib/effect/services/change-policy.service";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/change-policy.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import type { TimeSummary } from "@/lib/time-tracking/types";
 import type { WeekStartDay } from "@/lib/user-preferences/week-start";
 import {

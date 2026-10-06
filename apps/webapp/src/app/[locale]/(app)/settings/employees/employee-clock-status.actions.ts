@@ -1,15 +1,15 @@
 "use server";
 
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import { employee, timeEntry, workPeriod } from "@/db/schema";
 import { type AnyAppError, DatabaseError } from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import {
 	getEmployeeSettingsActorContext,
 	getManagedEmployeeIdsForSettingsActor,

@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { Pool, PoolClient } from "pg";
 import {
 	afterAll,
@@ -22,7 +22,7 @@ import { configurePostgresUtcTypes } from "@/db/postgres-utc";
 import * as schema from "@/db/schema";
 import { TimeCorrectionHandler } from "@/lib/approvals/handlers/time-correction.handler";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { calculateHash } from "@/lib/time-tracking/blockchain";
 import { resolvePolicyClockOutSurchargeSnapshotInTransaction } from "@/lib/time-tracking/policy-clock-out-surcharge-snapshot";
 import { openIntegrationPool } from "@/test/integration-database";

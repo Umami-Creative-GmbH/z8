@@ -5,7 +5,7 @@
  * Allows employees to request shift pickups directly from Teams.
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
@@ -13,7 +13,7 @@ import { dateFromInstant, type PlainDate, parsePlainDate } from "@/lib/datetime/
 import {
 	OpenShiftsService,
 	OpenShiftsServiceFullLive,
-} from "@/lib/effect/services/open-shifts.service";
+} from "@/lib/effect-v3/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
 import { buildOpenShiftsCard } from "../cards/open-shifts-card";
 import { getCommandTemporalContext } from "./command-temporal";

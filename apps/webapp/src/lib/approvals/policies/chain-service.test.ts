@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import type { ApprovalDbService } from "../server/types";
 import {

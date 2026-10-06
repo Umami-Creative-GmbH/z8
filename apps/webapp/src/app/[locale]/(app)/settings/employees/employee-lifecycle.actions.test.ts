@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { type SQL, sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { AuthorizationError, DatabaseError } from "@/lib/effect/errors";
-import { toServerActionResult } from "@/lib/effect/result";
+import { toServerActionResult } from "@/lib/effect-v3/result";
 
 const mocks = vi.hoisted(() => ({
 	authRemoveMember: vi.fn(),

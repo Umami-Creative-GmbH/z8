@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { member } from "@/db/auth-schema";
 import { employee, employeeInvitationDraft } from "@/db/schema";
@@ -16,9 +16,9 @@ vi.mock("@/lib/auth/organization-member-provisioning", () => ({
 	ensureEmployeeProfilesForOrganizationMembers: mocks.ensureEmployeeProfiles,
 }));
 
-vi.mock("@/lib/effect/runtime", async (importOriginal) => {
-	const actual = await importOriginal<typeof import("@/lib/effect/runtime")>();
-	const { Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/runtime", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/effect-v3/runtime")>();
+	const { Layer } = await import("effect-v3");
 	return { ...actual, AppLayer: Layer.empty };
 });
 

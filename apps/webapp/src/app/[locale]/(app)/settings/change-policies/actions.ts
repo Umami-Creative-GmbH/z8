@@ -1,11 +1,11 @@
 "use server";
 
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { changePolicy, changePolicyAssignment, employee, team, teamPermissions } from "@/db/schema";
 import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,

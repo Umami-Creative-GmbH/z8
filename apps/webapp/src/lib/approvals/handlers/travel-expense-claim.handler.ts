@@ -1,11 +1,11 @@
 import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { approvalRequest, travelExpenseClaim } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalActionOptions,

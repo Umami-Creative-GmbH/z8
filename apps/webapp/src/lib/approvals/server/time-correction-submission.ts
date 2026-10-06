@@ -1,7 +1,7 @@
 import "server-only";
 
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import {
 	getCurrentEmployee,
 	getCurrentSession,
@@ -94,14 +94,14 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
-import { EmailService } from "@/lib/effect/services/email.service";
+} from "@/lib/effect-v3/services/database.service";
+import { EmailService } from "@/lib/effect-v3/services/email.service";
 import { renderTimeCorrectionPendingApproval } from "@/lib/email/render";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,

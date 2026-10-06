@@ -129,15 +129,15 @@ vi.mock("@/db", () => {
 	};
 });
 
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/auth.service", async () => {
+	const { Context } = await import("effect-v3");
 	const AuthService = Context.GenericTag<any>("AuthService");
 	return { AuthService };
 });
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Effect, Layer } = await import("effect-v3");
+	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
 
 	const authService = {
 		getSession: vi.fn(() => Effect.succeed(mockState.session)),

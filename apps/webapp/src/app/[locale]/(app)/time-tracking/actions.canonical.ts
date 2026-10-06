@@ -1,14 +1,14 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { db } from "@/db";
 import { DatabaseError } from "@/lib/effect/errors";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/database.service";
 import {
 	TimeEntryService,
 	TimeEntryServiceLive,
-} from "@/lib/effect/services/time-entry.service";
+} from "@/lib/effect-v3/services/time-entry.service";
 import type { TimeEntryTimezoneSource } from "@/lib/time-tracking/timezone-capture";
 
 type Transaction = Pick<

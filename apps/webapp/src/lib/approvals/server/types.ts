@@ -1,4 +1,4 @@
-import type { Effect } from "effect";
+import type { Effect } from "effect-v3";
 import type { db } from "@/db";
 import type { SickDetail } from "@/lib/absences/types";
 import type { DisplayContext } from "@/lib/datetime/temporal-format";

@@ -1,5 +1,5 @@
 import { and, asc, eq, gt } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import {
 	approvalChainInstance,
 	approvalChainStageInstance,

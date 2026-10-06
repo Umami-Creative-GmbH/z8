@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -30,8 +30,8 @@ vi.mock("../inbox/decision-service", () => ({
 		workflowKind === "policy_clock_out",
 }));
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context, Layer } = await import("effect-v3");
 	const DatabaseService = Context.GenericTag<any>("DatabaseService");
 	return {
 		DatabaseService,
@@ -53,7 +53,7 @@ vi.mock("@/lib/effect/services/database.service", async () => {
 });
 
 vi.mock("../infrastructure/audit-logger", async () => {
-	const { Context, Layer } = await import("effect");
+	const { Context, Layer } = await import("effect-v3");
 	const ApprovalAuditLogger = Context.GenericTag<any>("ApprovalAuditLogger");
 	return {
 		ApprovalAuditLogger,

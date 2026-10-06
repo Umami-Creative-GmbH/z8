@@ -1,7 +1,7 @@
 "use server";
 
 import { and, desc, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidateTag } from "next/cache";
 import type { db } from "@/db";
 import {
@@ -25,9 +25,9 @@ import {
 	DatabaseError,
 	NotFoundError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	getEmployeeSettingsActorContext,

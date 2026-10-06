@@ -1,6 +1,6 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { approvalRequest, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -12,10 +12,10 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { createLogger } from "@/lib/logger";
 import type { ApprovalActionOptions } from "../domain/types";
 import {

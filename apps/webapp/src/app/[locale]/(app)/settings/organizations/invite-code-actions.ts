@@ -2,7 +2,7 @@
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { z } from "zod";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
@@ -18,46 +18,46 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/database.service";
 import type {
 	InviteCodeWithRelations as InviteCodeWithRelationsType,
 	ValidateInviteCodeResult,
-} from "@/lib/effect/services/invite-code.service";
+} from "@/lib/effect-v3/services/invite-code.service";
 import {
 	InviteCodeService,
 	InviteCodeServiceLive,
-} from "@/lib/effect/services/invite-code.service";
+} from "@/lib/effect-v3/services/invite-code.service";
 import type {
 	ApprovalResult,
 	PendingMember,
-} from "@/lib/effect/services/pending-member.service";
+} from "@/lib/effect-v3/services/pending-member.service";
 import {
 	PendingMemberService,
 	PendingMemberServiceLive,
-} from "@/lib/effect/services/pending-member.service";
+} from "@/lib/effect-v3/services/pending-member.service";
 import type {
 	QRCodeFormat,
 	QRCodeResult,
-} from "@/lib/effect/services/qrcode.service";
+} from "@/lib/effect-v3/services/qrcode.service";
 import {
 	QRCodeService,
 	QRCodeServiceLive,
-} from "@/lib/effect/services/qrcode.service";
+} from "@/lib/effect-v3/services/qrcode.service";
 
 // Note: Types are NOT re-exported from server action files due to Turbopack bundling issues.
 // Import types directly from the service files:
-// - PendingMember, ApprovalResult from "@/lib/effect/services/pending-member.service"
-// - InviteCodeWithRelations from "@/lib/effect/services/invite-code.service"
+// - PendingMember, ApprovalResult from "@/lib/effect-v3/services/pending-member.service"
+// - InviteCodeWithRelations from "@/lib/effect-v3/services/invite-code.service"
 //
 // LEGACY: Re-exporting for backward compatibility with existing components
 // TODO: Migrate components to import directly from service files
-export type { InviteCodeWithRelations } from "@/lib/effect/services/invite-code.service";
+export type { InviteCodeWithRelations } from "@/lib/effect-v3/services/invite-code.service";
 
 import { createLogger } from "@/lib/logger";
 

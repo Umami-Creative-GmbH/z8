@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -7,8 +7,8 @@ import { employee, timeEntry } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
-import { runtime } from "@/lib/effect/runtime";
-import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { runtime } from "@/lib/effect-v3/runtime";
+import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
 import type { AppendAssuranceLimitationCode } from "@/lib/time-tracking/append-assurance";
 import {
 	ClockingAccessError,

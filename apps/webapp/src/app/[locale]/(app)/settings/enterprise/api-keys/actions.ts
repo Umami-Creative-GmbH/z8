@@ -1,7 +1,7 @@
 "use server";
 
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -13,9 +13,9 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import { createLogger } from "@/lib/logger";
 import {
 	type ApiKeyResponse,

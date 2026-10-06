@@ -1,10 +1,10 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import type { OrdinaryCanonicalApproval } from "@/lib/approvals/inbox/ordinary-canonical-read";
 import { getApprovalInboxListFromSources } from "@/lib/approvals/inbox/read-service";
 import type { ApprovalInboxSource } from "@/lib/approvals/inbox/source-adapters";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 
 function item(overrides: Partial<UnifiedApprovalItem>): UnifiedApprovalItem {
 	return {

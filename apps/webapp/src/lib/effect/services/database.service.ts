@@ -3,13 +3,13 @@ import { Context, Effect, Layer } from "effect";
 import { db } from "@/db";
 import { DatabaseError } from "../errors";
 
-export class DatabaseService extends Context.Tag("DatabaseService")<
+export class DatabaseService extends Context.Service<
 	DatabaseService,
 	{
 		readonly db: typeof db;
 		readonly query: <T>(name: string, fn: () => Promise<T>) => Effect.Effect<T, DatabaseError>;
 	}
->() {}
+>()("DatabaseService") {}
 
 export const DatabaseServiceLive = Layer.succeed(
 	DatabaseService,

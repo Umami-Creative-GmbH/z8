@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { SkillWithRelations } from "@/lib/effect/services/skill.service";
+import type { SkillWithRelations } from "@/lib/effect-v3/services/skill.service";
 import { queryKeys } from "@/lib/query/keys";
 
 type SkillCategory = "safety" | "equipment" | "certification" | "training" | "language" | "custom";

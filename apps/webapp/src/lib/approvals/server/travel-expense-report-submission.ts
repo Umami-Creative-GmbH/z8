@@ -1,5 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import type { db as appDb } from "@/db";
 import {
 	approvalChainStageInstance,

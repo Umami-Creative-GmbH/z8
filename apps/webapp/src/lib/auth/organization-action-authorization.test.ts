@@ -1,7 +1,7 @@
 import { PgDialect } from "drizzle-orm/pg-core";
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { requireActiveOrganizationActionActor } from "./organization-action-authorization";
 
 const sso = vi.hoisted(() => ({ allowed: vi.fn(async () => true) }));

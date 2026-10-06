@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq, isNull, or } from "drizzle-orm";
-import { Cause, Effect, Option, Runtime } from "effect";
+import { Cause, Effect, Option, Runtime } from "effect-v3";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { getUserTimezone } from "@/app/[locale]/(app)/time-tracking/actions/auth";
@@ -28,8 +28,8 @@ import {
 	NotFoundError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runtime } from "@/lib/effect/runtime";
-import { TimeEntryService } from "@/lib/effect/services/time-entry.service";
+import { runtime } from "@/lib/effect-v3/runtime";
+import { TimeEntryService } from "@/lib/effect-v3/services/time-entry.service";
 import {
 	AMEND_COMPLETED_WORK_COMMAND_VERSION,
 	type AmendCompletedWorkCommand,

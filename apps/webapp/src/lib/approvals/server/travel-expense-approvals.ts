@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,

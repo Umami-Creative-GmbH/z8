@@ -1,4 +1,4 @@
-import type { PlatformOrganization } from "@/lib/effect/services/platform-admin.service";
+import type { PlatformOrganization } from "@/lib/effect-v3/services/platform-admin.service";
 
 export type OrganizationStatusFilter = "all" | "active" | "suspended" | "deleted";
 

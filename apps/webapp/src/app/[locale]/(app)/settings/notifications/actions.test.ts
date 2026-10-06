@@ -65,10 +65,10 @@ vi.mock("@/lib/slack", () => ({
 	isSlackEnabledForOrganization: vi.fn(async () => false),
 }));
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
-	const { DatabaseService } = await import("@/lib/effect/services/database.service");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Effect, Layer } = await import("effect-v3");
+	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
+	const { DatabaseService } = await import("@/lib/effect-v3/services/database.service");
 
 	return {
 		AppLayer: Layer.mergeAll(
@@ -100,8 +100,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 
 	const toServerActionResult = (exit: unknown) =>
 		Exit.match(exit as never, {

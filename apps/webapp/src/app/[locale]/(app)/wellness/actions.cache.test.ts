@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import {
@@ -32,7 +32,7 @@ vi.mock("@/lib/wellness/streak-calculator", () => ({
 }));
 
 vi.mock("./actions/queries", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 
 	return {
 		getUserWaterReminderSettings: (...args: unknown[]) =>
@@ -51,7 +51,7 @@ vi.mock("./actions/queries", async () => {
 });
 
 vi.mock("./actions/mutations", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 
 	return {
 		createWaterIntakeLog: (...args: unknown[]) =>

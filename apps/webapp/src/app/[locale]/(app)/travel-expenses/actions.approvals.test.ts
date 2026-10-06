@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockState = vi.hoisted(() => ({
@@ -36,13 +36,13 @@ vi.mock("@/lib/approvals/server/travel-expense-approvals", () => ({
 	loadTravelExpenseApprover: mockState.loadApprover,
 }));
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context } = await import("effect-v3");
 	return { DatabaseService: Context.GenericTag<unknown>("DatabaseService") };
 });
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Context, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Context, Layer } = await import("effect-v3");
 	return {
 		AppLayer: Layer.succeed(
 			Context.GenericTag<unknown>("DatabaseService"),
@@ -51,8 +51,8 @@ vi.mock("@/lib/effect/runtime", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/result", async () => {
-	const { Cause, Effect, Exit, Option } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Cause, Effect, Exit, Option } = await import("effect-v3");
 	return {
 		runServerActionSafe: async (effect: Effect.Effect<unknown, unknown, never>) => {
 			const exit = await Effect.runPromiseExit(effect);

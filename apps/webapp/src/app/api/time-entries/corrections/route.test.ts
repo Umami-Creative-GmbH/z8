@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	AuthorizationError,
@@ -140,14 +140,14 @@ vi.mock("@/lib/authorization", () => ({
 	toHttpError: vi.fn(() => ({ body: { error: "Forbidden" }, status: 403 })),
 }));
 
-vi.mock("@/lib/effect/runtime", () => ({
+vi.mock("@/lib/effect-v3/runtime", () => ({
 	runtime: {
 		runPromise: mockState.runPromise,
 	},
 }));
 
-vi.mock("@/lib/effect/services/time-entry.service", async () => {
-	const { Context } = await vi.importActual<typeof import("effect")>("effect");
+vi.mock("@/lib/effect-v3/services/time-entry.service", async () => {
+	const { Context } = await vi.importActual<typeof import("effect-v3")>("effect-v3");
 	return {
 		TimeEntryService: Context.GenericTag("TestTimeEntryService"),
 	};
@@ -194,7 +194,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 const { TimeEntryService } = await import(
-	"@/lib/effect/services/time-entry.service"
+	"@/lib/effect-v3/services/time-entry.service"
 );
 const { GET, POST } = await import("./route");
 

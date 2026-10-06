@@ -56,7 +56,7 @@ vi.mock("@/lib/authorization", () => ({
 	ForbiddenError: class ForbiddenError extends Error {},
 	toHttpError: () => ({ body: { error: "Forbidden" }, status: 403 }),
 }));
-vi.mock("@/lib/effect/runtime", () => ({ runtime: { runPromise: state.runPromise } }));
+vi.mock("@/lib/effect-v3/runtime", () => ({ runtime: { runPromise: state.runPromise } }));
 vi.mock("@/lib/time-tracking/clocking", () => ({ clocking: { run: state.run } }));
 vi.mock("@/lib/time-tracking/clocking-service", () => ({
 	ClockingAccessError: state.ClockingAccessError,

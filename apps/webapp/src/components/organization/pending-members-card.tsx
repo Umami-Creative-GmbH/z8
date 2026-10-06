@@ -60,7 +60,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatDateOnly } from "@/lib/datetime/format";
-import type { PendingMember } from "@/lib/effect/services/pending-member.service";
+import type { PendingMember } from "@/lib/effect-v3/services/pending-member.service";
 import { queryKeys } from "@/lib/query";
 import { useOrganizationTimezone } from "@/stores/organization-settings-store";
 import {

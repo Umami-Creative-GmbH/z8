@@ -271,7 +271,7 @@ vi.mock("@/lib/teams/conversation-manager", () => ({
 	}),
 }));
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import {

@@ -1,7 +1,7 @@
 "use server";
 
 import { desc, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { auditExportPackage, db } from "@/db";
 import type { AuditPackAppendAssurance } from "@/db/schema/audit-pack";
@@ -16,9 +16,9 @@ import { addAuditPackJob } from "@/lib/audit-pack/application/audit-pack-service
 import { auditPackRequestRepository } from "@/lib/audit-pack/application/request-repository";
 import { isOrgAdminCasl } from "@/lib/auth-helpers";
 import { AuthorizationError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import { getPresignedUrl } from "@/lib/storage/export-s3-client";
 
 // Using isOrgAdminCasl from auth-helpers for CASL-based authorization

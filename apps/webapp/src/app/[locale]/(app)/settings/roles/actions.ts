@@ -1,20 +1,20 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { employee } from "@/db/schema";
 import { getSettingsAccessTierForUser } from "@/lib/auth-helpers";
 import { type AnyAppError, AuthorizationError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
 import {
 	type CreateCustomRoleInput,
 	CustomRoleService,
 	type CustomRoleWithPermissions,
 	type UpdateCustomRoleInput,
-} from "@/lib/effect/services/custom-role.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/custom-role.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 
 // =============================================================================
 // Helpers

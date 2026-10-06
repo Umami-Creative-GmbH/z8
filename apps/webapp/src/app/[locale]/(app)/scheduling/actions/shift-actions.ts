@@ -1,21 +1,21 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { dateFromInstant } from "@/lib/datetime/temporal-core";
 import { AuthorizationError } from "@/lib/effect/errors";
-import { CoverageService } from "@/lib/effect/services/coverage.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { CoverageService } from "@/lib/effect-v3/services/coverage.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import {
 	ScheduleComplianceService,
 	ScheduleComplianceServiceLive,
-} from "@/lib/effect/services/schedule-compliance.service";
+} from "@/lib/effect-v3/services/schedule-compliance.service";
 import {
 	type IncompleteDayInfo,
 	type ShiftMetadata,
 	ShiftService,
 	type ShiftWithRelations,
-} from "@/lib/effect/services/shift.service";
+} from "@/lib/effect-v3/services/shift.service";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 import {
 	resolveScheduleDateRange,

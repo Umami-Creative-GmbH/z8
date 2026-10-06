@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { employeeRateHistory } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";

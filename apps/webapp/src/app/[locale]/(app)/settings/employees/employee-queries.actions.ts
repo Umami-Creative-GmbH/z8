@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, count, desc, eq, ilike, inArray, notInArray, or, sql } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { invitation, member, user } from "@/db/auth-schema";
 import {
 	employee,
@@ -13,8 +13,8 @@ import {
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import type {
 	EmployeeDetailRecord,
 	EmployeeDirectoryRow,

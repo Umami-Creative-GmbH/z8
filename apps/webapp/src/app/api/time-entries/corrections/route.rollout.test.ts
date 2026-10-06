@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 
@@ -374,7 +374,7 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions/auth", () => ({
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/shared", () => ({
 	logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
-vi.mock("@/lib/effect/runtime", () => ({
+vi.mock("@/lib/effect-v3/runtime", () => ({
 	runtime: { runPromise: Effect.runPromise },
 }));
 

@@ -8,7 +8,7 @@
  * work-period submission. Only used against the label-owned disposable database.
  */
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { db } from "@/db";
 import { timeRecord, workPeriod } from "@/db/schema";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";

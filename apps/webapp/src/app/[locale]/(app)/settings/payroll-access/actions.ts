@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -19,7 +19,7 @@ import {
 	DatabaseError,
 	ValidationError,
 } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
 import {
 	assertPayrollOfficerSettingsContext,
 	buildValidatedPayrollAccessInput,

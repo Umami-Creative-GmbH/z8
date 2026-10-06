@@ -5,7 +5,7 @@
  * Manager/admin only command.
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
@@ -13,7 +13,7 @@ import {
 	type ComplianceSummary,
 	TeamsComplianceService,
 	TeamsComplianceServiceFullLive,
-} from "@/lib/effect/services/teams-compliance.service";
+} from "@/lib/effect-v3/services/teams-compliance.service";
 import { createLogger } from "@/lib/logger";
 import { buildComplianceCard } from "../cards/compliance-card";
 import { compose, withPermission } from "./middleware/permissions.middleware";

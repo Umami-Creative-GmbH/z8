@@ -1,6 +1,6 @@
 "use server";
 
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { z } from "zod";
 import { db } from "@/db";
 import { requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
@@ -13,7 +13,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import { saveAutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/settings";
 import type { AutoClockOutSettings } from "@/lib/time-tracking/automatic-clock-out/types";
 

@@ -1,0 +1,271 @@
+import { Effect, Layer } from "effect-v3";
+import { describe, expect, it, vi } from "vitest";
+import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
+import { DatabaseService } from "../database.service";
+import { ShiftService, ShiftServiceLive } from "../shift.service";
+
+type DeleteShiftActorScope = {
+	employeeId: string;
+	organizationId: string;
+	userId: string;
+};
+
+function createDeleteShiftTestContext({
+	shiftRecord,
+	actorEmployee,
+	deletedRows,
+}: {
+	shiftRecord: {
+		id: string;
+		organizationId: string;
+		status: "draft" | "published";
+	} | null;
+	actorEmployee: {
+		id: string;
+		isActive: boolean;
+		userId: string;
+		organizationId: string;
+		role: "admin" | "manager" | "employee";
+	} | null;
+	deletedRows?: Array<{ id: string }>;
+}) {
+	const returning = vi.fn(
+		async () => deletedRows ?? (shiftRecord ? [{ id: shiftRecord.id }] : []),
+	);
+	const deleteWhere = vi.fn(() => ({ returning }));
+	const mockDb = {
+		query: {
+			shift: {
+				findFirst: vi.fn(async () => shiftRecord),
+			},
+			employee: {
+				findFirst: vi.fn(async () => actorEmployee),
+			},
+		},
+		delete: vi.fn(() => ({
+			where: deleteWhere,
+		})),
+	};
+
+	const dbLayer = Layer.succeed(
+		DatabaseService,
+		DatabaseService.of({
+			db: mockDb as never,
+			query: (_name, query) => Effect.promise(query) as never,
+		}),
+	);
+
+	const layer = ShiftServiceLive.pipe(Layer.provide(dbLayer));
+
+	return {
+		deleteWhere,
+		mockDb,
+		returning,
+		runDeleteShift: (shiftId: string, actorScope: DeleteShiftActorScope) =>
+			Effect.runPromise(
+				Effect.either(
+					Effect.gen(function* (_) {
+						const service = yield* _(ShiftService);
+						return yield* _(service.deleteShift(shiftId, actorScope));
+					}).pipe(Effect.provide(layer)),
+				),
+			),
+	};
+}
+
+describe("ShiftService.deleteShift", () => {
+	it("rejects draft shift deletion for non-manager employees", async () => {
+		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
+			shiftRecord: { id: "shift-1", organizationId: "org-1", status: "draft" },
+			actorEmployee: {
+				id: "emp-1",
+				isActive: true,
+				userId: "user-1",
+				organizationId: "org-1",
+				role: "employee",
+			},
+		});
+
+		expect(
+			await runDeleteShift("shift-1", {
+				employeeId: "emp-1",
+				organizationId: "org-1",
+				userId: "user-1",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+			left: expect.any(AuthorizationError),
+		});
+		expect(deleteWhere).not.toHaveBeenCalled();
+	});
+
+	it("treats cross-organization shifts as not found", async () => {
+		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
+			shiftRecord: null,
+			actorEmployee: {
+				id: "emp-2",
+				isActive: true,
+				userId: "user-2",
+				organizationId: "org-2",
+				role: "manager",
+			},
+		});
+
+		expect(
+			await runDeleteShift("shift-1", {
+				employeeId: "emp-2",
+				organizationId: "org-2",
+				userId: "user-2",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteWhere).not.toHaveBeenCalled();
+	});
+
+	it("allows draft shift deletion for in-org managers", async () => {
+		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
+			shiftRecord: { id: "shift-1", organizationId: "org-1", status: "draft" },
+			actorEmployee: {
+				id: "emp-3",
+				isActive: true,
+				userId: "user-3",
+				organizationId: "org-1",
+				role: "manager",
+			},
+		});
+
+		expect(
+			await runDeleteShift("shift-1", {
+				employeeId: "emp-3",
+				organizationId: "org-1",
+				userId: "user-3",
+			}),
+		).toMatchObject({
+			_tag: "Right",
+			right: undefined,
+		});
+		expect(deleteWhere).toHaveBeenCalledTimes(1);
+	});
+
+	it("rejects published shift deletion for managers", async () => {
+		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
+			shiftRecord: {
+				id: "shift-1",
+				organizationId: "org-1",
+				status: "published",
+			},
+			actorEmployee: {
+				id: "emp-4",
+				isActive: true,
+				userId: "user-4",
+				organizationId: "org-1",
+				role: "manager",
+			},
+		});
+
+		expect(
+			await runDeleteShift("shift-1", {
+				employeeId: "emp-4",
+				organizationId: "org-1",
+				userId: "user-4",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+			left: expect.any(AuthorizationError),
+		});
+		expect(deleteWhere).not.toHaveBeenCalled();
+	});
+
+	it("resolves the acting employee from the active employee scope", async () => {
+		const { deleteWhere, mockDb, runDeleteShift } =
+			createDeleteShiftTestContext({
+				shiftRecord: {
+					id: "shift-1",
+					organizationId: "org-1",
+					status: "draft",
+				},
+				actorEmployee: {
+					id: "emp-5",
+					isActive: true,
+					userId: "user-5",
+					organizationId: "org-1",
+					role: "employee",
+				},
+			});
+
+		expect(
+			await runDeleteShift("shift-1", {
+				employeeId: "emp-5",
+				organizationId: "org-1",
+				userId: "user-5",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+			left: expect.any(AuthorizationError),
+		});
+		expect(mockDb.query.employee.findFirst).toHaveBeenCalledTimes(1);
+		expect(deleteWhere).not.toHaveBeenCalled();
+	});
+
+	it("does not delete an org-A shift while org-B is active", async () => {
+		const { deleteWhere, runDeleteShift } = createDeleteShiftTestContext({
+			shiftRecord: {
+				id: "shift-org-a",
+				organizationId: "org-a",
+				status: "draft",
+			},
+			actorEmployee: {
+				id: "employee-org-a",
+				isActive: true,
+				userId: "user-multi-org",
+				organizationId: "org-a",
+				role: "manager",
+			},
+		});
+
+		expect(
+			await runDeleteShift("shift-org-a", {
+				employeeId: "employee-org-b",
+				organizationId: "org-b",
+				userId: "user-multi-org",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+		});
+		expect(deleteWhere).not.toHaveBeenCalled();
+	});
+
+	it("does not report success when a draft shift becomes published before delete", async () => {
+		const { deleteWhere, returning, runDeleteShift } =
+			createDeleteShiftTestContext({
+				shiftRecord: {
+					id: "shift-raced",
+					organizationId: "org-1",
+					status: "draft",
+				},
+				actorEmployee: {
+					id: "manager-1",
+					isActive: true,
+					userId: "user-1",
+					organizationId: "org-1",
+					role: "manager",
+				},
+				deletedRows: [],
+			});
+
+		expect(
+			await runDeleteShift("shift-raced", {
+				employeeId: "manager-1",
+				organizationId: "org-1",
+				userId: "user-1",
+			}),
+		).toMatchObject({
+			_tag: "Left",
+			left: expect.any(NotFoundError),
+		});
+		expect(deleteWhere).toHaveBeenCalledOnce();
+		expect(returning).toHaveBeenCalledOnce();
+	});
+});

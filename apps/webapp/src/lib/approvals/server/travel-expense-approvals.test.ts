@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Option } from "effect";
+import { Cause, Effect, Exit, Option } from "effect-v3";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { ConflictError, DatabaseError } from "@/lib/effect/errors";
 

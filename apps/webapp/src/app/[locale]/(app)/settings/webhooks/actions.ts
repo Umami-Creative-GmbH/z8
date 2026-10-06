@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { trace } from "@opentelemetry/api";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { env } from "@/env";
@@ -17,9 +17,9 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/result";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { createLogger } from "@/lib/logger";
 import {
 	NOTIFICATION_TYPES,

@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { describe, expect, it, vi } from "vitest";
 import type {
 	ApprovalPriority,
@@ -18,8 +18,8 @@ vi.mock("@/lib/approvals/domain/registry", () => ({
 	getAllApprovalHandlers: () => approvalQueryTestState.handlers,
 }));
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context, Layer } = await import("effect-v3");
 	const DatabaseService = Context.GenericTag<any>("DatabaseService");
 
 	return {

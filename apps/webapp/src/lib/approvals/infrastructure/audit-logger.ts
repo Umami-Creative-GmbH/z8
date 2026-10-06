@@ -4,10 +4,10 @@
  * Logs all approval state transitions to the audit log table.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect-v3";
 import { auditLog } from "@/db/schema";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseService, DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { DatabaseService, DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import type { ApprovalStatus, ApprovalType } from "../domain/types";
 import type { ApprovalDbService } from "../server/types";
 

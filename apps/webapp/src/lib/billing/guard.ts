@@ -1,10 +1,10 @@
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { NextResponse } from "next/server";
 import {
 	type BillingAccessResult,
 	BillingEnforcementService,
 	BillingEnforcementServiceLive,
-} from "@/lib/effect/services/billing/billing-enforcement.service";
+} from "@/lib/effect-v3/services/billing/billing-enforcement.service";
 
 type BillingAccessForGuard = Pick<BillingAccessResult, "canAccess" | "reason">;
 

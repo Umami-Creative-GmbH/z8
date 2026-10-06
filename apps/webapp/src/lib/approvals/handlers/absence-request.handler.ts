@@ -7,7 +7,7 @@
 
 import { IconCalendarOff } from "@tabler/icons-react";
 import { and, count, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/lib/absences/date-utils";
 import type { SickDetail } from "@/lib/absences/types";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,

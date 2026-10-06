@@ -1,16 +1,16 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { revalidatePath } from "next/cache";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
 import {
 	type PaginatedResult,
 	PlatformAdminService,
 	type PlatformUser,
 	type PlatformUserFilters,
 	type UserSession,
-} from "@/lib/effect/services/platform-admin.service";
+} from "@/lib/effect-v3/services/platform-admin.service";
 
 export async function listUsersAction(
 	filters: PlatformUserFilters,

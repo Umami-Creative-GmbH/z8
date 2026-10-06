@@ -21,7 +21,7 @@
  */
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Cause, Runtime } from "effect";
+import { Cause, Runtime } from "effect-v3";
 import { completedWorkOperation, workPeriod } from "@/db/schema";
 import type { CompletedWorkWriter } from "@/db/schema/completed-work";
 import type { Instant } from "@/lib/datetime/temporal-core";

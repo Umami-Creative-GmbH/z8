@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect";
+import { Cause, Effect, Runtime } from "effect-v3";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -22,11 +22,11 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { ConflictError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
 import {
 	SurchargeService,
 	SurchargeServiceLive,
-} from "@/lib/effect/services/surcharge.service";
+} from "@/lib/effect-v3/services/surcharge.service";
 import { createLogger } from "@/lib/logger";
 import {
 	onClockOutApproved,

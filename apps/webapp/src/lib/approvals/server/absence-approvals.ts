@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect";
+import { Cause, Effect, Runtime } from "effect-v3";
 import { DateTime } from "luxon";
 import { enqueueVacationOverrideCalendarSyncJobs } from "@/app/[locale]/(app)/absences/request-absence-effect-helpers";
 import { member } from "@/db/auth-schema";
@@ -32,11 +32,11 @@ import {
 import {
 	runServerActionSafe,
 	type ServerActionResult,
-} from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
-import { EmailService } from "@/lib/effect/services/email.service";
+} from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { EmailService } from "@/lib/effect-v3/services/email.service";
 import {
 	renderAbsenceRequestApproved,
 	renderAbsenceRequestRejected,

@@ -10,7 +10,7 @@
  * employee record, never from client input. This ensures multi-tenant isolation.
  */
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type {
 	AbsencePatternsData,
 	DateRange,
@@ -22,11 +22,11 @@ import type {
 	WorkHoursAnalyticsData,
 } from "@/lib/analytics/types";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AnalyticsService } from "@/lib/effect/services/analytics.service";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AnalyticsService } from "@/lib/effect-v3/services/analytics.service";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 import { findAnalyticsEmployeeByUserId } from "./current-employee-scope";
 
 /**

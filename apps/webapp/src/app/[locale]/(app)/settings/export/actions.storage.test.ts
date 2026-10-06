@@ -35,25 +35,25 @@ vi.mock("@/lib/vault", () => ({
 vi.mock("@/lib/export/data-fetchers", () => ({ EXPORT_CATEGORIES: [] }));
 vi.mock("@/lib/export/export-service", () => ({}));
 vi.mock("@/lib/storage/export-s3-client", () => ({}));
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context } = await import("effect-v3");
 	return { DatabaseService: Context.GenericTag("DatabaseService") };
 });
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/auth.service", async () => {
+	const { Context } = await import("effect-v3");
 	return { AuthService: Context.GenericTag("AuthService") };
 });
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
-	const { AuthService } = await import("@/lib/effect/services/auth.service");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Effect, Layer } = await import("effect-v3");
+	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
 	return {
 		AppLayer: Layer.succeed(AuthService, {
 			getSession: () => Effect.succeed({ user: { id: "user-1" } }),
 		}),
 	};
 });
-vi.mock("@/lib/effect/result", async () => {
-	const { Effect, Exit } = await import("effect");
+vi.mock("@/lib/effect-v3/result", async () => {
+	const { Effect, Exit } = await import("effect-v3");
 	return {
 		runServerActionSafe: async (
 			effect: Parameters<typeof Effect.runPromiseExit>[0],

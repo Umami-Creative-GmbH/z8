@@ -1,6 +1,6 @@
 "use server";
 
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import type { ZodType } from "zod";
 import {
 	type AnyAppError,

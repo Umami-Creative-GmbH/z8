@@ -65,7 +65,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("../employees/employee-action-utils", async () => {
-	const { Effect } = await import("effect");
+	const { Effect } = await import("effect-v3");
 	return {
 		getEmployeeSettingsActorContext: vi.fn(() =>
 			Effect.succeed(mockState.actor),
@@ -78,30 +78,30 @@ vi.mock("../employees/employee-action-utils", async () => {
 	};
 });
 
-vi.mock("@/lib/effect/services/auth.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/auth.service", async () => {
+	const { Context } = await import("effect-v3");
 	return { AuthService: Context.GenericTag<unknown>("AuthService") };
 });
 
-vi.mock("@/lib/effect/services/database.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/database.service", async () => {
+	const { Context } = await import("effect-v3");
 	return { DatabaseService: Context.GenericTag<unknown>("DatabaseService") };
 });
 
-vi.mock("@/lib/effect/services/permissions.service", async () => {
-	const { Context } = await import("effect");
+vi.mock("@/lib/effect-v3/services/permissions.service", async () => {
+	const { Context } = await import("effect-v3");
 	return {
 		PermissionsService: Context.GenericTag<unknown>("PermissionsService"),
 	};
 });
 
-vi.mock("@/lib/effect/runtime", async () => {
-	const { Effect, Layer } = await import("effect");
+vi.mock("@/lib/effect-v3/runtime", async () => {
+	const { Effect, Layer } = await import("effect-v3");
 	const { DatabaseService } = await import(
-		"@/lib/effect/services/database.service"
+		"@/lib/effect-v3/services/database.service"
 	);
 	const { PermissionsService } = await import(
-		"@/lib/effect/services/permissions.service"
+		"@/lib/effect-v3/services/permissions.service"
 	);
 
 	const databaseLayer = Layer.succeed(DatabaseService, {

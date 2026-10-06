@@ -1,7 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { organization as authOrganization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
@@ -32,10 +32,10 @@ import {
 } from "@/lib/demo/demo-data.service";
 import { type GenerateEmployeesResult, generateDemoEmployees } from "@/lib/demo/employee-generator";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AppLayer } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect-v3/result";
+import { AppLayer } from "@/lib/effect-v3/runtime";
+import { AuthService } from "@/lib/effect-v3/services/auth.service";
+import { DatabaseService } from "@/lib/effect-v3/services/database.service";
 
 export async function canUseDemoData(organizationId: string): Promise<boolean> {
 	const hasOrgAdminAccess = await isOrgAdminCasl(organizationId);

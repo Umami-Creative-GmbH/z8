@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { approvalRequest, employee } from "@/db/schema";
@@ -28,7 +28,7 @@ import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect/services/database.service";
+} from "@/lib/effect-v3/services/database.service";
 import type { BotPlatform } from "./types";
 
 const platformNames: Record<BotPlatform, string> = {

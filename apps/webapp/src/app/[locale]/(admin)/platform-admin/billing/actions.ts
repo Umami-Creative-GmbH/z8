@@ -1,17 +1,17 @@
 "use server";
 
-import { Effect, Layer } from "effect";
+import { Effect, Layer } from "effect-v3";
 import { env } from "@/env";
 import {
 	SeatSyncService,
 	SeatSyncServiceLive,
 	StripeServiceLive,
 	SubscriptionServiceLive,
-} from "@/lib/effect/services/billing";
+} from "@/lib/effect-v3/services/billing";
 import {
 	PlatformAdminService,
 	PlatformAdminServiceLive,
-} from "@/lib/effect/services/platform-admin.service";
+} from "@/lib/effect-v3/services/platform-admin.service";
 
 type SyncOrganizationSeatsResult =
 	| { success: true; seats: number }

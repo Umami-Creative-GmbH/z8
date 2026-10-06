@@ -1,7 +1,7 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect } from "effect-v3";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { member, organization } from "@/db/auth-schema";
