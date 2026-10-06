@@ -1,6 +1,7 @@
 import { countries } from "country-flag-icons";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import type { ItemConversion } from "./currency-conversion";
 import {
 	type ReceiptItemDraft,
 	type ReceiptItemRequirement,
@@ -151,7 +152,12 @@ export interface TripReportMissingRequirements {
 /** What still keeps a trip report from being submittable. */
 export function tripReportMissingRequirements(input: {
 	details: TripDetailsDraft;
-	items: readonly { id: string; draft: ReceiptItemDraft; receiptCount: number }[];
+	items: readonly {
+		id: string;
+		draft: ReceiptItemDraft;
+		receiptCount: number;
+		conversion?: ItemConversion | null;
+	}[];
 	reimbursementCurrency: string;
 }): TripReportMissingRequirements {
 	const { details } = input;
@@ -171,6 +177,7 @@ export function tripReportMissingRequirements(input: {
 			missing: receiptItemMissingRequirements(item.draft, {
 				receiptCount: item.receiptCount,
 				reimbursementCurrency: input.reimbursementCurrency,
+				conversion: item.conversion,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

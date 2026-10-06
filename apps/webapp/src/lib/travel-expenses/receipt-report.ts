@@ -1,4 +1,9 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	type ConversionRequirement,
+	conversionRequirements,
+	type ItemConversion,
+} from "./currency-conversion";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 
@@ -164,20 +169,27 @@ export type ReceiptItemRequirement =
 	| "amount"
 	| "payment_ownership"
 	| "receipt"
-	/** Conversion of foreign receipts is not supported yet; nothing is guessed. */
-	| "same_currency";
+	/** A foreign receipt's conversion (#607); nothing is guessed. */
+	| ConversionRequirement;
 
 /** What still keeps a receipt item from being submittable, in form order. */
 export function receiptItemMissingRequirements(
 	draft: ReceiptItemDraft,
-	context: { receiptCount: number; reimbursementCurrency: string },
+	context: {
+		receiptCount: number;
+		reimbursementCurrency: string;
+		conversion?: ItemConversion | null;
+	},
 ): ReceiptItemRequirement[] {
 	const missing: ReceiptItemRequirement[] = [];
 	if (!draft.expenseDate) missing.push("expense_date");
 	if (!draft.category) missing.push("category");
 	if (!draft.description) missing.push("description");
 	if (!draft.amount || !draft.currency) missing.push("amount");
-	else if (draft.currency !== context.reimbursementCurrency) missing.push("same_currency");
+	else
+		missing.push(
+			...conversionRequirements(draft, context.reimbursementCurrency, context.conversion),
+		);
 	if (!draft.paidBy) missing.push("payment_ownership");
 	if (context.receiptCount < 1) missing.push("receipt");
 	return missing;

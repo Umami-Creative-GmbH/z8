@@ -269,6 +269,7 @@ export async function submitTravelExpenseReport(
 							receiptIds: live.receipts
 								.filter((receipt) => receipt.itemId === item.id)
 								.map((receipt) => receipt.id),
+							conversion: live.conversions?.find((row) => row.itemId === item.id)?.conversion,
 							draft: {
 								expenseDate: item.expenseDate,
 								category: item.category,

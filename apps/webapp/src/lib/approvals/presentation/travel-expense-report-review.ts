@@ -11,6 +11,7 @@ import {
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
+import { conversionReviewRows } from "./travel-expense-report-conversion-review";
 
 export type TravelExpenseReportReviewEvidence =
 	| { status: "not_captured" }
@@ -159,6 +160,7 @@ export function buildTravelExpenseReportReviewSections(
 					label: text("amount", "Amount"),
 					value: `${item.original.amount} ${item.original.currency}`,
 				},
+				...conversionReviewRows(item, labels.receiptFileNames),
 				{
 					label: text("paidBy", "Paid by"),
 					value:

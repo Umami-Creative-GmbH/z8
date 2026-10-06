@@ -411,6 +411,8 @@ export const travelExpenseSettings = pgTable("travel_expense_settings", {
 	expenseApproverEmployeeId: uuid("expense_approver_employee_id").references(() => employee.id, {
 		onDelete: "set null",
 	}),
+	// #607: currency of new reports; existing reports keep theirs.
+	reimbursementCurrency: text("reimbursement_currency").default("EUR").notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 });

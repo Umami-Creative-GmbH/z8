@@ -6,6 +6,7 @@ import {
 	buildTravelExpenseReportSubmittedFacts,
 	compareLiveTravelExpenseReportWithRevision,
 	fingerprintTravelExpenseReportFacts,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
 
@@ -102,7 +103,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(input());
 
 		expect(facts).toEqual({
-			schemaVersion: 1,
+			schemaVersion: TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 			kind: "travel_expense_report",
 			organizationId: "org-1",
 			reportId: "report-1",
@@ -159,7 +160,9 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00" },
 		});
 		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(
-			/^travel_expense_report:v1:[0-9a-f]{64}$/,
+			new RegExp(
+				`^travel_expense_report:v${TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION}:[0-9a-f]{64}$`,
+			),
 		);
 	});
 
@@ -245,7 +248,8 @@ describe("schema version 1 revisions", () => {
 		"travel_expense_report:v1:92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
 
 	it("still freezes a v1 report byte for byte", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		// Later versions add facts only where they apply (none for this report).
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 1 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);
 	});

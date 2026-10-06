@@ -1,4 +1,5 @@
 import type { TravelExpenseReportKind } from "@/db/schema";
+import type { ItemConversion } from "./currency-conversion";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import {
 	type ReceiptItemDraft,
@@ -31,6 +32,8 @@ export interface SubmissionReportFacts {
 		draft: ReceiptItemDraft;
 		/** The receipts attached to the expense right now. */
 		receiptIds: readonly string[];
+		/** Its saved currency conversion (#607), if any. */
+		conversion?: ItemConversion | null;
 	}[];
 }
 
@@ -95,6 +98,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 				id: item.id,
 				draft: item.draft,
 				receiptCount: item.receiptIds.length,
+				conversion: item.conversion,
 			})),
 			reimbursementCurrency: report.reimbursementCurrency,
 		});
@@ -106,6 +110,7 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 			missing: receiptItemMissingRequirements(item.draft, {
 				receiptCount: item.receiptIds.length,
 				reimbursementCurrency: report.reimbursementCurrency,
+				conversion: item.conversion,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);
@@ -122,7 +127,7 @@ export function checkReportSubmission(
 		return { ok: false, reason: "incomplete", missing };
 	}
 	const totals = receiptReportTotals(
-		report.items.map((item) => item.draft),
+		report.items.map((item) => ({ ...item.draft, conversion: item.conversion })),
 		report.reimbursementCurrency,
 	);
 	if (totals.excludedItemCount > 0) {

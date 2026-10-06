@@ -58,6 +58,35 @@ describe("checkReportSubmission", () => {
 		});
 	});
 
+	it("totals a foreign hotel by its authorized conversion (#607)", () => {
+		const [train, hotel] = trip.items;
+		if (!train || !hotel) throw new Error("fixture");
+		const report = {
+			...trip,
+			items: [
+				train,
+				{
+					...hotel,
+					draft: { ...hotel.draft, amount: "300.00", currency: "USD" },
+					conversion: {
+						basis: "manual_rate" as const,
+						sourceCurrency: "USD",
+						targetCurrency: "EUR",
+						rate: { base: "EUR", quote: "USD", value: "1.25" },
+						rateDate: "2026-09-14",
+						reason: "Hotel invoice rate",
+						authorizedBy: { employeeId: "admin", name: "Admin" },
+						authorizedAt: "2026-09-20T08:00:00Z",
+					},
+				},
+			],
+		};
+		expect(checkReportSubmission(report, reviewedTrip)).toEqual({
+			ok: true,
+			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00", total: "329.90" },
+		});
+	});
+
 	it("accepts a company-paid-only report with a zero reimbursable total", () => {
 		const report = {
 			kind: "standalone" as const,
@@ -103,7 +132,7 @@ describe("checkReportSubmission", () => {
 				trip: ["purpose"],
 				items: [
 					{ id: "train", missing: ["receipt"] },
-					{ id: "hotel", missing: ["same_currency"] },
+					{ id: "hotel", missing: ["conversion_missing"] },
 				],
 			},
 		});

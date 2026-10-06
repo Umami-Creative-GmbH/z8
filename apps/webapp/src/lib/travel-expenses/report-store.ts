@@ -10,11 +10,9 @@ import {
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import {
-	DEFAULT_REIMBURSEMENT_CURRENCY,
-	type ReceiptItemDraft,
-	receiptReportTotals,
-} from "./receipt-report";
+import { loadOrganizationReimbursementCurrency, loadReportConversions } from "./conversion-read";
+import type { ItemConversion } from "./currency-conversion";
+import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
 import type { TripDetailsDraft } from "./trip-report";
 
 /**
@@ -66,6 +64,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
+	/** Its currency conversion (#607); loaded by `loadOwnReport` only. */
+	conversion?: ItemConversion | null;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -106,6 +106,7 @@ export async function createStandaloneReceiptReport(
 ): Promise<{ reportId: string; itemId: string }> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
 		const [report] = await tx
 			.insert(travelExpenseReport)
 			.values({
@@ -113,7 +114,7 @@ export async function createStandaloneReceiptReport(
 				employeeId: owner.employeeId,
 				kind: "standalone",
 				status: "draft",
-				reimbursementCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				reimbursementCurrency: currency,
 				createdAt: at,
 				createdBy: owner.userId,
 				updatedAt: at,
@@ -128,8 +129,8 @@ export async function createStandaloneReceiptReport(
 				reportId: report.id,
 				type: "receipt",
 				position: 0,
-				// Same-currency receipts are the supported case; the employee can change it.
-				originalCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				// Receipts start in the reimbursement currency; the employee can change it.
+				originalCurrency: currency,
 				createdAt: at,
 				updatedAt: at,
 				updatedBy: owner.userId,
@@ -151,6 +152,7 @@ export async function createTripReport(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<{ reportId: string }> {
 	const at = dateFromInstant(now);
+	const currency = await loadOrganizationReimbursementCurrency(database, owner.organizationId);
 	const [report] = await database
 		.insert(travelExpenseReport)
 		.values({
@@ -158,7 +160,7 @@ export async function createTripReport(
 			employeeId: owner.employeeId,
 			kind: "trip",
 			status: "draft",
-			reimbursementCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+			reimbursementCurrency: currency,
 			tripTimeZone: input.timeZone,
 			createdAt: at,
 			createdBy: owner.userId,
@@ -277,7 +279,7 @@ export async function loadOwnReport(
 		.where(ownedReport(owner, reportId))
 		.limit(1);
 	if (!report) return null;
-	const [items, receipts] = await Promise.all([
+	const [items, receipts, conversions] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -298,6 +300,7 @@ export async function loadOwnReport(
 				),
 			)
 			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
+		loadReportConversions(database, { ...owner, reportIds: [report.id] }),
 	]);
 	return {
 		id: report.id,
@@ -307,9 +310,10 @@ export async function loadOwnReport(
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
 		trip: toTripDetailsView(report),
-		items: items.map((item) =>
-			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
-		),
+		items: items.map((item) => ({
+			...toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
+			conversion: conversions.get(item.id) ?? null,
+		})),
 	};
 }
 
@@ -372,7 +376,7 @@ async function listOwnReports(
 		.orderBy(desc(travelExpenseReport.updatedAt), desc(travelExpenseReport.id));
 	if (reports.length === 0) return [];
 	const reportIds = reports.map((report) => report.id);
-	const [items, receiptCounts] = await Promise.all([
+	const [items, receiptCounts, conversions] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReportItem)
@@ -396,6 +400,7 @@ async function listOwnReports(
 				),
 			)
 			.groupBy(travelExpenseReportReceipt.reportId),
+		loadReportConversions(database, { ...owner, reportIds }),
 	]);
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
@@ -410,17 +415,22 @@ async function listOwnReports(
 			amount: item?.originalAmount ?? null,
 			currency: item?.originalCurrency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
-			trip: report.kind === "trip" ? tripDraftSummary(report, reportItems) : null,
+			trip: report.kind === "trip" ? tripDraftSummary(report, reportItems, conversions) : null,
 		};
 	});
 }
 
-function tripDraftSummary(report: ReportRow, items: ItemRow[]): DraftTripSummary {
+function tripDraftSummary(
+	report: ReportRow,
+	items: ItemRow[],
+	conversions: ReadonlyMap<string, ItemConversion>,
+): DraftTripSummary {
 	const totals = receiptReportTotals(
 		items.map((row) => ({
 			amount: row.originalAmount,
 			currency: row.originalCurrency,
 			paidBy: row.paidBy,
+			conversion: conversions.get(row.id),
 		})),
 		report.reimbursementCurrency,
 	);
@@ -579,7 +589,8 @@ export async function addTripReportItem(
 				reportId: input.reportId,
 				type: "receipt",
 				position: (last?.position ?? -1) + 1,
-				originalCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				// The report's reimbursement currency (#607), like a standalone receipt.
+				originalCurrency: sql`(select ${travelExpenseReport.reimbursementCurrency} from ${travelExpenseReport} where ${ownedReport(owner, input.reportId)})`,
 				createdAt: at,
 				updatedAt: at,
 				updatedBy: owner.userId,

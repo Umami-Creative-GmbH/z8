@@ -92,6 +92,7 @@ export * from "./time-entry-append";
 export * from "./time-record";
 export * from "./time-tracking";
 export * from "./travel-expense";
+export * from "./travel-expense-conversion";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";
