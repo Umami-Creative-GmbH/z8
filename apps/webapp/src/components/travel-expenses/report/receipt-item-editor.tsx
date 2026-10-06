@@ -51,6 +51,7 @@ import {
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { DraftSaveStatus } from "./draft-save-status";
+import { categoryLabel } from "./format";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { useDraftSaver } from "./use-draft-saver";
 
@@ -87,17 +88,6 @@ function withSavedValues(
 	const merged = { ...values };
 	for (const field of Object.keys(errors) as FieldName[]) merged[field] = saved[field];
 	return merged;
-}
-
-export function categoryLabel(t: Translate, category: string) {
-	const labels: Record<string, string> = {
-		transport: t("travelExpenses.report.categories.transport", "Transport"),
-		accommodation: t("travelExpenses.report.categories.accommodation", "Accommodation"),
-		meals: t("travelExpenses.report.categories.meals", "Meals"),
-		parking: t("travelExpenses.report.categories.parking", "Parking"),
-		other: t("travelExpenses.report.categories.other", "Other"),
-	};
-	return labels[category] ?? category;
 }
 
 function fieldErrorMessage(t: Translate, field: FieldName, code: string | undefined) {
@@ -177,7 +167,8 @@ export function ReceiptItemEditor({
 	const [removing, setRemoving] = useState(false);
 
 	// The last values the server confirmed; malformed fields fall back to them.
-	const lastSaved = useRef<ReceiptItemDraftInput>(toDraftInput(toFormValues(item)));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(item)));
+	const lastSaved = useRef<ReceiptItemDraftInput>(initialSaved);
 
 	const { saver, state } = useDraftSaver<ReceiptItemDraftInput, ReportItemView>({
 		version: item.version,

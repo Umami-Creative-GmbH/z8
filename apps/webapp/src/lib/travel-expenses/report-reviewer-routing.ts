@@ -27,11 +27,12 @@ function primaryFirst(
 	managerIds: readonly string[],
 	input: ResolveReportReviewerInput,
 ): string | undefined {
+	const eligible = new Set(managerIds);
 	const primary = input.managerLinks.find(
 		(link) =>
 			link.employeeId === input.requesterEmployeeId &&
 			link.isPrimary &&
-			managerIds.includes(link.managerId),
+			eligible.has(link.managerId),
 	);
 	return primary?.managerId ?? managerIds[0];
 }

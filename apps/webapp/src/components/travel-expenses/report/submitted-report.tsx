@@ -12,7 +12,8 @@ import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
-import { formatRecordedInstant, ReportStatusBadge } from "./report-status";
+import { formatRecordedInstant } from "./format";
+import { ReportStatusBadge } from "./report-status";
 import { ReportTotals } from "./report-summary";
 
 const formatInstant = formatRecordedInstant;

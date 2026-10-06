@@ -3,8 +3,13 @@
 import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
-import { categoryLabel } from "./receipt-item-editor";
+import {
+	categoryLabel,
+	formatCountry,
+	formatMoney,
+	formatPlainDate,
+	formatPlainDateRange,
+} from "./format";
 
 export interface ExpenseSummary {
 	id: string;
