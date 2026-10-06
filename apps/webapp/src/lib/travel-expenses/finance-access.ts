@@ -1,6 +1,10 @@
 import "server-only";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
-import { canReadTravelExpenseFinance, canSettleTravelExpenses } from "./finance-permissions";
+import {
+	canExportTravelExpenses,
+	canReadTravelExpenseFinance,
+	canSettleTravelExpenses,
+} from "./finance-permissions";
 
 export interface FinanceActor {
 	organizationId: string;
@@ -8,6 +12,8 @@ export interface FinanceActor {
 	userId: string;
 	canRead: boolean;
 	canSettle: boolean;
+	/** Export batches (#613). */
+	canExport: boolean;
 }
 
 /**
@@ -26,5 +32,6 @@ export async function loadFinanceActor(): Promise<FinanceActor | null> {
 		userId: actor.user.id,
 		canRead: canReadTravelExpenseFinance(ability, organizationId, activeOrganizationId),
 		canSettle: canSettleTravelExpenses(ability, organizationId, activeOrganizationId),
+		canExport: canExportTravelExpenses(ability, organizationId, activeOrganizationId),
 	};
 }
