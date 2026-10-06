@@ -58,10 +58,14 @@ export interface EligibilityException {
 type Interval = { start: bigint; end: bigint | null };
 
 /** The window's half-open instant range `[start of from, start of to + 1)`. */
-export function eligibilityWindowRange(window: EligibilityWindow): { start: Instant; end: Instant } {
+export function eligibilityWindowRange(window: EligibilityWindow): {
+	start: Instant;
+	end: Instant;
+} {
 	const from = parsePlainDate(window.from);
 	const to = parsePlainDate(window.to);
-	if (Temporal.PlainDate.compare(to, from) < 0) throw new RangeError("Window ends before it starts");
+	if (Temporal.PlainDate.compare(to, from) < 0)
+		throw new RangeError("Window ends before it starts");
 	return {
 		start: from.toZonedDateTime({ timeZone: window.timeZone }).toInstant(),
 		end: to.add({ days: 1 }).toZonedDateTime({ timeZone: window.timeZone }).toInstant(),
@@ -75,7 +79,13 @@ function interval(start: Instant, end: Instant | null): Interval {
 function intersect(left: Interval, right: Interval): Interval | null {
 	const start = left.start > right.start ? left.start : right.start;
 	const end =
-		left.end === null ? right.end : right.end === null ? left.end : left.end < right.end ? left.end : right.end;
+		left.end === null
+			? right.end
+			: right.end === null
+				? left.end
+				: left.end < right.end
+					? left.end
+					: right.end;
 	// Half-open: an empty (or zero-length) interval proves nothing.
 	return end === null || start < end ? { start, end } : null;
 }
@@ -119,7 +129,8 @@ export function resolveProjectEligibility(input: {
 		const covers =
 			Temporal.PlainDate.compare(parsePlainDate(exception.validFrom), to) <= 0 &&
 			Temporal.PlainDate.compare(parsePlainDate(exception.validTo), from) >= 0;
-		if (covers) eligible.set(exception.projectId, { basis: "exception", exceptionId: exception.id });
+		if (covers)
+			eligible.set(exception.projectId, { basis: "exception", exceptionId: exception.id });
 	}
 	return eligible;
 }

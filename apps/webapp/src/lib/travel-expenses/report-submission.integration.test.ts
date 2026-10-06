@@ -389,7 +389,8 @@ describe("report submission through approval authority (#602)", () => {
 			subject_employee_id: ids.requester,
 			submitter_employee_id: ids.requester,
 		});
-		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v1:[0-9a-f]{64}$/);
+		// Version 2 (#605) adds project attribution; this report has none.
+		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v2:[0-9a-f]{64}$/);
 		expect(revision.facts.trip).toEqual({
 			purpose: "Customer workshop",
 			startDate: "2026-09-14",

@@ -62,7 +62,9 @@ export async function authorizeProjectAttributionException(
 	const [subject] = await database
 		.select({ id: employee.id })
 		.from(employee)
-		.where(and(eq(employee.id, input.employeeId), eq(employee.organizationId, actor.organizationId)))
+		.where(
+			and(eq(employee.id, input.employeeId), eq(employee.organizationId, actor.organizationId)),
+		)
 		.limit(1);
 	if (!subject) return { kind: "employee_not_found" };
 	const [target] = await database
@@ -145,7 +147,10 @@ export async function listProjectAttributionExceptions(
 			),
 		)
 		.leftJoin(subjectUser, eq(subjectUser.id, subject.userId))
-		.leftJoin(authorizer, eq(authorizer.id, travelExpenseProjectAttributionException.authorizedByUserId))
+		.leftJoin(
+			authorizer,
+			eq(authorizer.id, travelExpenseProjectAttributionException.authorizedByUserId),
+		)
 		.where(eq(travelExpenseProjectAttributionException.organizationId, organizationId))
 		.orderBy(
 			desc(travelExpenseProjectAttributionException.authorizedAt),
@@ -155,8 +160,7 @@ export async function listProjectAttributionExceptions(
 	return rows.map((row) => ({
 		id: row.id,
 		employeeId: row.employeeId,
-		employeeName:
-			[row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || null,
+		employeeName: [row.firstName, row.lastName].filter(Boolean).join(" ") || row.userName || null,
 		projectId: row.projectId,
 		projectName: row.projectName,
 		validFrom: row.validFrom,

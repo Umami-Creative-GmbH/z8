@@ -61,10 +61,16 @@ function errorMessages(
 	for (const error of errors) {
 		switch (error) {
 			case "valid_from":
-				messages.validFrom = t("settings.travelExpenses.projectExceptions.errors.date", "Enter a valid date.");
+				messages.validFrom = t(
+					"settings.travelExpenses.projectExceptions.errors.date",
+					"Enter a valid date.",
+				);
 				break;
 			case "valid_to":
-				messages.validTo = t("settings.travelExpenses.projectExceptions.errors.date", "Enter a valid date.");
+				messages.validTo = t(
+					"settings.travelExpenses.projectExceptions.errors.date",
+					"Enter a valid date.",
+				);
 				break;
 			case "date_order":
 				messages.validTo = t(
@@ -217,7 +223,10 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 					{(field) => (
 						<TFormItem>
 							<TFormLabel hasError={!!error("validFrom")}>
-								{t("settings.travelExpenses.projectExceptions.validFrom", "First expense date covered")}
+								{t(
+									"settings.travelExpenses.projectExceptions.validFrom",
+									"First expense date covered",
+								)}
 							</TFormLabel>
 							<TFormControl hasError={!!error("validFrom")}>
 								<DatePicker
@@ -235,7 +244,10 @@ function ExceptionForm({ settings }: { settings: ProjectExceptionSettings }) {
 					{(field) => (
 						<TFormItem>
 							<TFormLabel hasError={!!error("validTo")}>
-								{t("settings.travelExpenses.projectExceptions.validTo", "Last expense date covered")}
+								{t(
+									"settings.travelExpenses.projectExceptions.validTo",
+									"Last expense date covered",
+								)}
 							</TFormLabel>
 							<TFormControl hasError={!!error("validTo")}>
 								<DatePicker
@@ -318,7 +330,10 @@ function ExceptionList({ settings }: { settings: ProjectExceptionSettings }) {
 	if (settings.exceptions.length === 0) {
 		return (
 			<p className="text-sm text-muted-foreground">
-				{t("settings.travelExpenses.projectExceptions.empty", "No exceptions have been authorized.")}
+				{t(
+					"settings.travelExpenses.projectExceptions.empty",
+					"No exceptions have been authorized.",
+				)}
 			</p>
 		);
 	}

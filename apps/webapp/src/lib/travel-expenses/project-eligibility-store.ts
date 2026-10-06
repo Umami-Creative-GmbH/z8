@@ -180,7 +180,10 @@ export async function listExpenseEligibleProjects(
 			and(eq(customer.id, project.customerId), eq(customer.organizationId, project.organizationId)),
 		)
 		.where(
-			and(eq(project.organizationId, target.organizationId), inArray(project.id, [...eligible.keys()])),
+			and(
+				eq(project.organizationId, target.organizationId),
+				inArray(project.id, [...eligible.keys()]),
+			),
 		)
 		.orderBy(asc(project.name), asc(project.id));
 	return projects.flatMap((row): ExpenseEligibleProject[] => {

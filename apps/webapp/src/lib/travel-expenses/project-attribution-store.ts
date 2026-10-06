@@ -5,8 +5,8 @@ import type { TravelExpenseReportProjectAttribution } from "@/lib/approvals/evid
 import {
 	dateFromInstant,
 	type Instant,
-	instantToCanonicalString,
 	instantFromDate,
+	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import {

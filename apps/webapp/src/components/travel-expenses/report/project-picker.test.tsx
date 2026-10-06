@@ -70,8 +70,20 @@ function choices(selected: { id: string; name: string; eligible: boolean } | nul
 		data: {
 			timeZone: "Europe/Berlin",
 			choices: [
-				{ id: projectA, name: "Hamburg rollout", customerName: "Hanse AG", status: "completed", basis: "employee_assignment" },
-				{ id: projectB, name: "Legacy migration", customerName: null, status: "active", basis: "exception" },
+				{
+					id: projectA,
+					name: "Hamburg rollout",
+					customerName: "Hanse AG",
+					status: "completed",
+					basis: "employee_assignment",
+				},
+				{
+					id: projectB,
+					name: "Legacy migration",
+					customerName: null,
+					status: "active",
+					basis: "exception",
+				},
 			],
 			selected,
 		},
@@ -110,7 +122,9 @@ describe("ItemProjectField", () => {
 		actions.getReportProjectChoicesAction.mockResolvedValue(choices());
 		renderField();
 		await screen.findByRole("option", { name: "Hamburg rollout · Hanse AG" });
-		expect(screen.getByRole("option", { name: "Legacy migration · authorized exception" })).toBeTruthy();
+		expect(
+			screen.getByRole("option", { name: "Legacy migration · authorized exception" }),
+		).toBeTruthy();
 		expect(actions.getReportProjectChoicesAction).toHaveBeenCalledWith({
 			reportId,
 			from: "2026-09-14",
@@ -133,7 +147,9 @@ describe("ItemProjectField", () => {
 		});
 		const { saver } = renderField();
 		await screen.findByRole("option", { name: "Hamburg rollout · Hanse AG" });
-		fireEvent.change(screen.getByLabelText("Project"), { target: { value: `project:${projectA}` } });
+		fireEvent.change(screen.getByLabelText("Project"), {
+			target: { value: `project:${projectA}` },
+		});
 		await waitFor(() => expect(actions.saveItemProjectAction).toHaveBeenCalled());
 		expect(saver.runExclusive).toHaveBeenCalledTimes(1);
 		expect(actions.saveItemProjectAction).toHaveBeenCalledWith({
@@ -152,7 +168,9 @@ describe("ItemProjectField", () => {
 		});
 		renderField();
 		await screen.findByRole("option", { name: "Hamburg rollout · Hanse AG" });
-		fireEvent.change(screen.getByLabelText("Project"), { target: { value: `project:${projectA}` } });
+		fireEvent.change(screen.getByLabelText("Project"), {
+			target: { value: `project:${projectA}` },
+		});
 		expect(await screen.findByText(/not assigned to this project on that date/)).toBeTruthy();
 		expect((screen.getByLabelText("Project") as HTMLSelectElement).value).toBe("inherit");
 	});

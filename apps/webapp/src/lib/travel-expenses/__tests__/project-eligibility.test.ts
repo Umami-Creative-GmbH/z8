@@ -130,9 +130,7 @@ describe("resolveProjectEligibility", () => {
 			resolve({
 				from: "2026-10-05",
 				assignments: [teamAssignment("p1", "team-a", "2026-10-05T12:00:00Z")],
-				teamMemberships: [
-					membership("team-a", "2026-10-05T06:00:00Z", "2026-10-05T08:00:00Z"),
-				],
+				teamMemberships: [membership("team-a", "2026-10-05T06:00:00Z", "2026-10-05T08:00:00Z")],
 			}),
 		).toEqual({});
 	});

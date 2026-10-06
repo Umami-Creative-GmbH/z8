@@ -45,14 +45,19 @@ SELECT pa."organization_id", pa."project_id", pa."id", pa."assignment_type"::tex
 	pa."team_id", now(), pa."created_by"
 FROM "project_assignment" pa
 INNER JOIN "project" p ON p."id" = pa."project_id" AND p."organization_id" = pa."organization_id"
-WHERE (pa."assignment_type"::text = 'employee' AND pa."employee_id" IS NOT NULL AND pa."team_id" IS NULL)
+WHERE (pa."assignment_type"::text = 'employee' AND pa."team_id" IS NULL AND EXISTS (
+		SELECT 1 FROM "employee" e
+		WHERE e."id" = pa."employee_id" AND e."organization_id" = pa."organization_id"
+	))
 	OR (pa."assignment_type"::text = 'team' AND pa."team_id" IS NOT NULL AND pa."employee_id" IS NULL);--> statement-breakpoint
 INSERT INTO "employee_team_history" ("organization_id", "employee_id", "team_id", "effective_from")
 SELECT e."organization_id", e."id", e."team_id", now()
 FROM "employee" e
 WHERE e."team_id" IS NOT NULL;--> statement-breakpoint
 -- Every write of a project assignment, cascades included, closes and opens
--- its intervals in the writing transaction.
+-- its intervals in the writing transaction. The capture never blocks the
+-- write: a row whose project or employee is not of its organization, or that
+-- names no single target, can never prove eligibility and is not recorded.
 CREATE OR REPLACE FUNCTION "project_assignment_record_history"() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
 	IF TG_OP IN ('UPDATE', 'DELETE') THEN
@@ -63,10 +68,21 @@ BEGIN
 		INSERT INTO "project_assignment_history" (
 			"organization_id", "project_id", "source_assignment_id", "assignment_type", "employee_id",
 			"team_id", "effective_from", "created_by"
-		) VALUES (
-			NEW."organization_id", NEW."project_id", NEW."id", NEW."assignment_type"::text,
+		)
+		SELECT NEW."organization_id", NEW."project_id", NEW."id", NEW."assignment_type"::text,
 			NEW."employee_id", NEW."team_id", now(), NEW."created_by"
-		);
+		WHERE EXISTS (
+				SELECT 1 FROM "project" p
+				WHERE p."id" = NEW."project_id" AND p."organization_id" = NEW."organization_id"
+			)
+			AND (
+				(NEW."assignment_type"::text = 'employee' AND NEW."team_id" IS NULL AND EXISTS (
+					SELECT 1 FROM "employee" e
+					WHERE e."id" = NEW."employee_id" AND e."organization_id" = NEW."organization_id"
+				))
+				OR (NEW."assignment_type"::text = 'team' AND NEW."team_id" IS NOT NULL
+					AND NEW."employee_id" IS NULL)
+			);
 	END IF;
 	RETURN NULL;
 END;

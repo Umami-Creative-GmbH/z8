@@ -43,7 +43,12 @@ function useProjectChoices(input: {
 }) {
 	const { reportId, from, to, selectedProjectId } = input;
 	return useQuery({
-		queryKey: queryKeys.travelExpenses.projectChoices(reportId, from ?? "", to ?? "", selectedProjectId),
+		queryKey: queryKeys.travelExpenses.projectChoices(
+			reportId,
+			from ?? "",
+			to ?? "",
+			selectedProjectId,
+		),
 		queryFn: async (): Promise<ProjectChoicesView> => {
 			const result = await getReportProjectChoicesAction({
 				reportId,
@@ -190,7 +195,11 @@ export function ItemProjectField({
 	const [saving, setSaving] = useState(false);
 	const [problem, setProblem] = useState<string | null>(null);
 	const effectiveProjectId =
-		choice.mode === "project" ? choice.projectId : choice.mode === "inherit" && isTrip ? tripProjectId : null;
+		choice.mode === "project"
+			? choice.projectId
+			: choice.mode === "inherit" && isTrip
+				? tripProjectId
+				: null;
 	const query = useProjectChoices({
 		reportId,
 		from: expenseDate,
@@ -213,7 +222,9 @@ export function ItemProjectField({
 				),
 			);
 			if (outcome.status === "saved") {
-				await queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) });
+				await queryClient.invalidateQueries({
+					queryKey: queryKeys.travelExpenses.report(reportId),
+				});
 				onSaved?.();
 				return;
 			}
@@ -233,7 +244,11 @@ export function ItemProjectField({
 	return (
 		<div className="space-y-2">
 			<Label htmlFor={id}>{t("travelExpenses.report.project.label", "Project (optional)")}</Label>
-			<Select value={encode(choice)} onValueChange={(value) => void change(value)} disabled={saving}>
+			<Select
+				value={encode(choice)}
+				onValueChange={(value) => void change(value)}
+				disabled={saving}
+			>
 				<SelectTrigger id={id} className="w-full">
 					<SelectValue />
 				</SelectTrigger>
@@ -247,7 +262,9 @@ export function ItemProjectField({
 								: t("travelExpenses.report.project.inheritNone", "Same as the trip (no project)")}
 						</SelectItem>
 					)}
-					<SelectItem value="none">{t("travelExpenses.report.project.none", "No project")}</SelectItem>
+					<SelectItem value="none">
+						{t("travelExpenses.report.project.none", "No project")}
+					</SelectItem>
 					{options.map((option) => (
 						<SelectItem key={option.id} value={`project:${option.id}`}>
 							{option.name}
@@ -257,9 +274,13 @@ export function ItemProjectField({
 					))}
 					{ownSelectionMissing && choice.mode === "project" && (
 						<SelectItem value={`project:${choice.projectId}`} disabled>
-							{t("travelExpenses.report.project.unavailableOption", "{name} (not available on this date)", {
-								name: selected?.name ?? "…",
-							})}
+							{t(
+								"travelExpenses.report.project.unavailableOption",
+								"{name} (not available on this date)",
+								{
+									name: selected?.name ?? "…",
+								},
+							)}
 						</SelectItem>
 					)}
 				</SelectContent>
@@ -313,12 +334,18 @@ export function TripProjectField({
 	const [projectId, setProjectId] = useState(initialProjectId);
 	const [saving, setSaving] = useState(false);
 	const [problem, setProblem] = useState<string | null>(null);
-	const query = useProjectChoices({ reportId, from: startDate, to: endDate, selectedProjectId: projectId });
+	const query = useProjectChoices({
+		reportId,
+		from: startDate,
+		to: endDate,
+		selectedProjectId: projectId,
+	});
 	const options = query.data?.choices ?? [];
 	const selected = query.data?.selected ?? null;
 
 	async function change(value: string | null) {
-		const next = value === "none" ? null : value?.startsWith("project:") ? value.slice(8) : undefined;
+		const next =
+			value === "none" ? null : value?.startsWith("project:") ? value.slice(8) : undefined;
 		if (next === undefined || next === projectId) return;
 		const previous = projectId;
 		setProjectId(next);
@@ -331,7 +358,9 @@ export function TripProjectField({
 				),
 			);
 			if (outcome.status === "saved") {
-				await queryClient.invalidateQueries({ queryKey: queryKeys.travelExpenses.report(reportId) });
+				await queryClient.invalidateQueries({
+					queryKey: queryKeys.travelExpenses.report(reportId),
+				});
 				onSaved?.(next);
 				return;
 			}
@@ -344,7 +373,9 @@ export function TripProjectField({
 
 	return (
 		<div className="space-y-2">
-			<Label htmlFor={id}>{t("travelExpenses.report.project.tripLabel", "Trip project (optional)")}</Label>
+			<Label htmlFor={id}>
+				{t("travelExpenses.report.project.tripLabel", "Trip project (optional)")}
+			</Label>
 			<Select
 				value={projectId ? `project:${projectId}` : "none"}
 				onValueChange={(value) => void change(value)}
@@ -354,7 +385,9 @@ export function TripProjectField({
 					<SelectValue />
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="none">{t("travelExpenses.report.project.none", "No project")}</SelectItem>
+					<SelectItem value="none">
+						{t("travelExpenses.report.project.none", "No project")}
+					</SelectItem>
 					{options.map((option) => (
 						<SelectItem key={option.id} value={`project:${option.id}`}>
 							{option.name}
@@ -364,9 +397,13 @@ export function TripProjectField({
 					))}
 					{projectId && !options.some((option) => option.id === projectId) && (
 						<SelectItem value={`project:${projectId}`} disabled>
-							{t("travelExpenses.report.project.unavailableTripOption", "{name} (not available on these dates)", {
-								name: selected?.name ?? "…",
-							})}
+							{t(
+								"travelExpenses.report.project.unavailableTripOption",
+								"{name} (not available on these dates)",
+								{
+									name: selected?.name ?? "…",
+								},
+							)}
 						</SelectItem>
 					)}
 				</SelectContent>
