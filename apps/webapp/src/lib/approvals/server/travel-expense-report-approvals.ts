@@ -43,6 +43,11 @@ import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/tra
 import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
+import {
+	acceptedReceiptExceptionsForCommand,
+	receiptExceptionAcceptanceResult,
+	requireReceiptExceptionAcceptance,
+} from "./travel-expense-report-receipt-exceptions";
 import type { ApprovalAction, ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";
 
 /**
@@ -67,9 +72,17 @@ export function fingerprintTravelExpenseReportDecisionCommand(input: {
 	action: ApprovalAction;
 	approvalRequestId: string;
 	reason: string | undefined;
+	/** Accepted missing-receipt exceptions (#604); only a non-empty list changes the fingerprint. */
+	acceptedReceiptExceptionItemIds?: readonly string[];
 }): string {
+	const accepted = acceptedReceiptExceptionsForCommand(input);
 	return `${COMMAND_VERSION}:${sha256(
-		JSON.stringify([input.action, input.approvalRequestId, sha256(input.reason ?? "")]),
+		JSON.stringify([
+			input.action,
+			input.approvalRequestId,
+			sha256(input.reason ?? ""),
+			...(accepted.length > 0 ? [accepted] : []),
+		]),
 	)}`;
 }
 
@@ -93,6 +106,8 @@ export interface TravelExpenseReportDecisionInput {
 	action: ApprovalAction;
 	/** Required to reject; it enters evidence only as a fingerprint. */
 	reason?: string;
+	/** Approve only: every missing-receipt exception of the decided revision, accepted (#604). */
+	acceptedReceiptExceptionItemIds?: readonly string[];
 	options?: Pick<
 		ApprovalActionOptions,
 		"approvalRequestId" | "allowAnyApprover" | "allowOrganizationWideApprover"
@@ -142,6 +157,7 @@ async function findReportDecisionReplay(
 		approvalRequestId: string;
 		action: ApprovalAction;
 		reason: string | undefined;
+		acceptedReceiptExceptionItemIds?: readonly string[];
 		actor: { employeeId: string; userId: string };
 	},
 ): Promise<LegacyDecisionEvidenceRecord | null> {
@@ -371,6 +387,7 @@ async function recordReportDecisionEvidence(
 		reportId: string;
 		action: ApprovalAction;
 		reason: string | undefined;
+		acceptedReceiptExceptionItemIds?: readonly string[];
 		approvalRequestId: string;
 		actor: { employeeId: string; userId: string };
 	},
@@ -424,6 +441,7 @@ async function recordReportDecisionEvidence(
 			legacyRequestStatus: outcome.legacyRequestStatus,
 			decidedAtSource: outcome.decidedAtSource,
 			actorAuthority: outcome.actorAuthority,
+			...receiptExceptionAcceptanceResult(input),
 		},
 		labels: { actorName: actor.name },
 	});
@@ -494,6 +512,7 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		approvalRequestId,
 		action,
 		reason: input.reason,
+		acceptedReceiptExceptionItemIds: input.acceptedReceiptExceptionItemIds,
 		actor: actorIdentity,
 	});
 	if (replayed) return { kind: "replayed", evidence: replayed, approvalRequestId };
@@ -530,6 +549,7 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 
 	const revision = await prepareReportDecisionEvidence(database, { organizationId, reportId });
 	const reason = action === "reject" ? input.reason?.trim() : undefined;
+	const accepted = input.acceptedReceiptExceptionItemIds;
 	const exit = await Effect.runPromiseExit(
 		processApprovalWithCurrentEmployee(
 			dbService,
@@ -541,7 +561,11 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 			(decisionDbService, decisionEntityId, approver) =>
 				persistReportDecision(decisionDbService, decisionEntityId, approver, action),
 			(decisionDbService, decisionEntityId, approver) =>
-				preflightReportDecision(decisionDbService, decisionEntityId, approver, action, reason),
+				preflightReportDecision(decisionDbService, decisionEntityId, approver, action, reason).pipe(
+					Effect.tap(() =>
+						requireReceiptExceptionAcceptance(revision.facts, action, accepted),
+					),
+				),
 			{ ...input.options, approvalRequestId, transactional: true },
 			undefined,
 			"existing",
@@ -556,6 +580,7 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		reportId,
 		action,
 		reason,
+		acceptedReceiptExceptionItemIds: accepted,
 		approvalRequestId,
 		actor: actorIdentity,
 	});

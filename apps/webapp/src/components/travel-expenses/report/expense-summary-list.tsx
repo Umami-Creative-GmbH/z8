@@ -4,6 +4,7 @@ import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
+import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 import { categoryLabel } from "./receipt-item-editor";
 
 export interface ExpenseSummary {
@@ -15,6 +16,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** Missing-receipt exception submitted instead of a receipt (#604). */
+	receiptException?: { reason: string } | null;
 }
 
 export interface TripSummary {
@@ -119,6 +122,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							))}
 						</ul>
 					)}
+					{item.receiptException && <ReceiptExceptionNotice exception={item.receiptException} />}
 				</li>
 			))}
 		</ol>

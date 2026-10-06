@@ -54,6 +54,7 @@ function item(id: string, overrides: Record<string, unknown> = {}) {
 		currency: "EUR",
 		paidBy: null,
 		accountingReference: null,
+		receiptException: { reason: null, version: 0 },
 		receipts: [] as unknown[],
 		...overrides,
 	};

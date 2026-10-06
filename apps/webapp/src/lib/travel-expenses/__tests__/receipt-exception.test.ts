@@ -128,9 +128,9 @@ describe("checkReceiptExceptionAcceptance", () => {
 	];
 
 	it("approves only with every exception accepted, recording them in a stable order", () => {
-		expect(checkReceiptExceptionAcceptance(items, "approve", ["item-c", "item-a", "item-c"])).toEqual(
-			{ ok: true, accepted: ["item-a", "item-c"] },
-		);
+		expect(
+			checkReceiptExceptionAcceptance(items, "approve", ["item-c", "item-a", "item-c"]),
+		).toEqual({ ok: true, accepted: ["item-a", "item-c"] });
 	});
 
 	it("refuses an approval that leaves an exception unaccepted", () => {

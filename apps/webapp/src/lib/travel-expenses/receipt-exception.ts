@@ -28,6 +28,14 @@ export function receiptExceptionContext(
 	return { allowed, requested: reason !== null, reason };
 }
 
+/** The requirement context of a saved expense (`ReportItemView`). */
+export function savedReceiptException(
+	item: { receiptException: { reason: string | null } },
+	allowed: boolean,
+): ReceiptExceptionContext {
+	return receiptExceptionContext(item.receiptException.reason, allowed);
+}
+
 export type ParseReceiptExceptionDraftResult =
 	| { ok: true; reason: string | null }
 	| { ok: false; error: "reason_required" | "too_long" };
@@ -80,9 +88,7 @@ export function checkReceiptExceptionAcceptance(
 	acceptedItemIds: readonly string[] | undefined,
 ): ReceiptExceptionAcceptanceCheck {
 	if (action !== "approve") return { ok: true, accepted: [] };
-	const exceptions = new Set(
-		items.flatMap((item) => (item.receiptException ? [item.itemId] : [])),
-	);
+	const exceptions = new Set(items.flatMap((item) => (item.receiptException ? [item.itemId] : [])));
 	const accepted = [...new Set(acceptedItemIds ?? [])].toSorted();
 	const unknown = accepted.filter((itemId) => !exceptions.has(itemId));
 	if (unknown.length > 0) return { ok: false, reason: "unknown_item", itemIds: unknown };

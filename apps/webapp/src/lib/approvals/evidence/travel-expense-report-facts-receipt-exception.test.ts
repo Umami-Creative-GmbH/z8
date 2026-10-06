@@ -105,7 +105,11 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 	});
 
 	it("refuses to freeze an exception the organization does not allow", () => {
-		expect(evidenceErrorOf(() => buildTravelExpenseReportSubmittedFacts(input({ receiptExceptionsAllowed: false })))).toEqual({ code: "evidence_incomplete", field: "items" });
+		expect(
+			evidenceErrorOf(() =>
+				buildTravelExpenseReportSubmittedFacts(input({ receiptExceptionsAllowed: false })),
+			),
+		).toEqual({ code: "evidence_incomplete", field: "items" });
 		const { receiptExceptionsAllowed: _omitted, ...withoutPolicy } = input();
 		expect(evidenceErrorOf(() => buildTravelExpenseReportSubmittedFacts(withoutPolicy))).toEqual({
 			code: "evidence_incomplete",

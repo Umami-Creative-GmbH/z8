@@ -14,6 +14,8 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
+import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
 import {
@@ -246,6 +248,10 @@ export async function submitTravelExpenseReport(
 			});
 			if (!live) refuse({ kind: "not_found" });
 			const report = live.report;
+			// Read under a shared lock: a concurrent change of the setting waits (#604).
+			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(tx, owner.organizationId, {
+				lock: "share",
+			});
 			const check = checkReportSubmission(
 				{
 					kind: report.kind,
@@ -278,6 +284,11 @@ export async function submitTravelExpenseReport(
 								paidBy: item.paidBy,
 								accountingReference: item.accountingReference,
 							},
+							receiptException: receiptExceptionContext(
+								item.receiptExceptionReason,
+								receiptExceptionsAllowed,
+							),
+							receiptExceptionVersion: item.receiptExceptionVersion,
 						})),
 				},
 				input.reviewed,
@@ -391,7 +402,7 @@ export async function submitTravelExpenseReport(
 				reportId: input.reportId,
 			});
 			if (!frozen) refuse({ kind: "not_found" });
-			const facts = buildTravelExpenseReportSubmittedFacts(frozen);
+			const facts = buildTravelExpenseReportSubmittedFacts({ ...frozen, receiptExceptionsAllowed });
 			const [subject, submitter] = await Promise.all([
 				loadEmployeeLabel(tx, owner.organizationId, { employeeId: owner.employeeId }),
 				loadEmployeeLabel(tx, owner.organizationId, { userId: owner.userId }),
