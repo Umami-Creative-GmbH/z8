@@ -57,4 +57,41 @@ describe("itemReimbursementAmount", () => {
 			counted: true,
 		});
 	});
+
+	describe("mileage items (#606)", () => {
+		const mileage = {
+			type: "mileage" as const,
+			amount: null,
+			currency: null,
+			paidBy: "employee" as const,
+		};
+
+		it("count at the server-calculated amount, ignoring any entered amount", () => {
+			expect(
+				itemReimbursementAmount(
+					{ ...mileage, amount: "999.00", currency: "EUR", mileage: { amount: "18.45", currency: "EUR" } },
+					"EUR",
+				),
+			).toEqual({
+				counted: true,
+				paidBy: "employee",
+				currency: "EUR",
+				units: BigInt(1845),
+				amount: "18.45",
+			});
+		});
+
+		it("are not counted until a policy prices them in the reimbursement currency", () => {
+			expect(itemReimbursementAmount({ ...mileage, mileage: null }, "EUR")).toEqual({
+				counted: false,
+				reason: "amount",
+			});
+			expect(
+				itemReimbursementAmount({ ...mileage, mileage: { amount: null, currency: null } }, "EUR"),
+			).toEqual({ counted: false, reason: "amount" });
+			expect(
+				itemReimbursementAmount({ ...mileage, mileage: { amount: "18.45", currency: "CHF" } }, "EUR"),
+			).toEqual({ counted: false, reason: "currency" });
+		});
+	});
 });

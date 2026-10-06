@@ -15,6 +15,12 @@ const reportActions = vi.hoisted(() => ({
 	removeTripReportItemAction: vi.fn(),
 }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-actions", () => reportActions);
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-project-actions", () => ({
+	getReportProjectChoicesAction: async () => ({
+		success: true,
+		data: { timeZone: "Europe/Berlin", choices: [], selected: null },
+	}),
+}));
 vi.mock("@/hooks/use-travel-expense-file-upload", () => ({
 	useTravelExpenseFileUpload: () => ({
 		addFile: vi.fn(),
@@ -166,8 +172,22 @@ describe("report submission", () => {
 				reviewed: {
 					detailsVersion: 5,
 					items: [
-						{ id: trainId, version: 2, receiptIds: ["6a020000-0000-4000-8000-000000000009"], receiptExceptionVersion: 0, referenceRate: null },
-						{ id: hotelId, version: 4, receiptIds: ["6a020000-0000-4000-8000-00000000000a"], receiptExceptionVersion: 0, referenceRate: null },
+						{
+							id: trainId,
+							version: 2,
+							receiptIds: ["6a020000-0000-4000-8000-000000000009"],
+							receiptExceptionVersion: 0,
+							amount: "89.90",
+							referenceRate: null,
+						},
+						{
+							id: hotelId,
+							version: 4,
+							receiptIds: ["6a020000-0000-4000-8000-00000000000a"],
+							receiptExceptionVersion: 0,
+							amount: "240.00",
+							referenceRate: null,
+						},
 					],
 				},
 			}),

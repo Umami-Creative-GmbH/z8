@@ -14,6 +14,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { MileageVehicle, StampedMileagePolicy } from "@/lib/travel-expenses/mileage";
 import type { ExpensePayer, ReceiptExpenseCategory } from "@/lib/travel-expenses/receipt-report";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { organization, user } from "../auth-schema";
@@ -172,6 +173,8 @@ export const travelExpenseReport = pgTable(
 			.default(sql`'[]'::jsonb`)
 			.notNull(),
 		detailsVersion: integer("details_version").default(1).notNull(),
+		// Trip-level project its items inherit (#605); always null for standalone reports.
+		projectId: uuid("project_id"),
 		submissionCount: integer("submission_count").default(0).notNull(),
 		submittedAt: timestamp("submitted_at", { withTimezone: true }),
 		decidedAt: timestamp("decided_at", { withTimezone: true }),
@@ -213,10 +216,20 @@ export const travelExpenseReport = pgTable(
 				AND (${table.tripStartDate} IS NULL OR ${table.tripEndDate} IS NULL
 					OR ${table.tripEndDate} >= ${table.tripStartDate}))`,
 		),
+		// migration 0120 deletes with SET NULL ("project_id") only, keeping the organization.
+		foreignKey({
+			name: "travel_expense_report_project_fk",
+			columns: [table.projectId, table.organizationId],
+			foreignColumns: [project.id, project.organizationId],
+		}).onDelete("set null"),
+		check(
+			"travel_expense_report_project_check",
+			sql`${table.kind} = 'trip' OR ${table.projectId} IS NULL`,
+		),
 	],
 );
 
-export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt"] as const;
+export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt", "mileage"] as const;
 export type TravelExpenseReportItemType = (typeof TRAVEL_EXPENSE_REPORT_ITEM_TYPES)[number];
 
 // One expense of a report. Draft facts may be missing but are never malformed.
@@ -237,10 +250,19 @@ export const travelExpenseReportItem = pgTable(
 		originalCurrency: text("original_currency"),
 		paidBy: text("paid_by").$type<ExpensePayer>(),
 		accountingReference: text("accounting_reference"),
+		// Mileage items (#606): entered facts, priced by the effective policy;
+		// the applied policy is stamped at submission (`mileage-item-store.ts`).
+		mileageRoute: text("mileage_route"),
+		mileageDistanceKm: decimal("mileage_distance_km", { precision: 8, scale: 2 }),
+		mileageVehicle: text("mileage_vehicle").$type<MileageVehicle>(),
+		mileagePolicy: jsonb("mileage_policy").$type<StampedMileagePolicy>(),
 		// Missing-receipt exception (#604): the employee's explanation; null when none is requested.
 		// It is never a receipt row, and has its own version so it saves independently.
 		receiptExceptionReason: text("receipt_exception_reason"),
 		receiptExceptionVersion: integer("receipt_exception_version").default(0).notNull(),
+		// Project attribution (#605): inherit the trip's project, or own `project_id` (null = none).
+		projectId: uuid("project_id"),
+		projectInherits: boolean("project_inherits").default(true).notNull(),
 		version: integer("version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -252,9 +274,29 @@ export const travelExpenseReportItem = pgTable(
 			columns: [table.reportId, table.organizationId],
 			foreignColumns: [travelExpenseReport.id, travelExpenseReport.organizationId],
 		}).onDelete("cascade"),
+		// migration 0120 deletes with SET NULL ("project_id") only, keeping the organization.
+		foreignKey({
+			name: "travel_expense_report_item_project_fk",
+			columns: [table.projectId, table.organizationId],
+			foreignColumns: [project.id, project.organizationId],
+		}).onDelete("set null"),
+		check(
+			"travel_expense_report_item_project_check",
+			sql`NOT (${table.projectInherits} AND ${table.projectId} IS NOT NULL)`,
+		),
 		uniqueIndex("travelExpenseReportItem_id_org_idx").on(table.id, table.organizationId),
 		uniqueIndex("travelExpenseReportItem_report_position_idx").on(table.reportId, table.position),
-		check("travel_expense_report_item_type_check", sql`${table.type} IN ('receipt')`),
+		check("travel_expense_report_item_type_check", sql`${table.type} IN ('receipt', 'mileage')`),
+		check(
+			"travel_expense_report_item_mileage_check",
+			sql`(${table.type} = 'mileage' OR (${table.mileageRoute} IS NULL
+				AND ${table.mileageDistanceKm} IS NULL AND ${table.mileageVehicle} IS NULL
+				AND ${table.mileagePolicy} IS NULL))
+			AND (${table.type} <> 'mileage' OR (${table.originalAmount} IS NULL
+				AND ${table.originalCurrency} IS NULL AND ${table.category} IS NULL
+				AND (${table.mileageDistanceKm} IS NULL OR ${table.mileageDistanceKm} > 0)
+				AND (${table.mileageVehicle} IS NULL OR ${table.mileageVehicle} IN ('car', 'other_motor_vehicle'))))`,
+		),
 		check(
 			"travel_expense_report_item_category_check",
 			sql`${table.category} IS NULL OR ${table.category} IN ('transport', 'accommodation', 'meals', 'parking', 'other')`,

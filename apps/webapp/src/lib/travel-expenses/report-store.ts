@@ -12,6 +12,8 @@ import {
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { loadOrganizationReimbursementCurrency } from "./conversion-read";
 import type { ItemConversion } from "./currency-conversion";
+import { type MileageCalculation, type MileageItemView, mileageItemView } from "./mileage";
+import { loadMileagePricer } from "./mileage-pricing";
 import {
 	loadReceiptExceptionsAllowed,
 	type ReceiptExceptionView,
@@ -73,12 +75,17 @@ export interface ReportItemView extends ReceiptItemDraft {
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
+	/** Mileage items only (#606): entered facts and the server's calculation. */
+	mileage: MileageItemView | null;
 	/** Missing-receipt exception (#604), saved separately from the other fields. */
 	receiptException: ReceiptExceptionView;
 	/** Its currency conversion (#607); loaded by `loadOwnReport` only. */
 	conversion?: ItemConversion | null;
 	/** Why an approved reference rate does or does not convert it (#608); `loadOwnReport` only. */
 	referenceRate?: ReferenceRateItemStatus | null;
+	/** Project attribution (#605): `project-attribution.ts` `itemProjectChoice` reads these. */
+	projectId?: string | null;
+	projectInherits?: boolean;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -102,6 +109,8 @@ export interface ReportView {
 	receiptExceptionsAllowed: boolean;
 	/** The reference-rate source the organization approved (#608), if any. */
 	referenceRateProvider?: ReferenceRateProvider | null;
+	/** The trip's project its expenses inherit (#605). */
+	projectId?: string | null;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -271,8 +280,13 @@ export async function isOwnDraftReportItem(
 
 type ItemRow = typeof travelExpenseReportItem.$inferSelect;
 
-function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView {
+export function toItemView(
+	row: ItemRow,
+	receipts: ReportReceiptView[],
+	mileageCalculation: MileageCalculation | null = null,
+): ReportItemView {
 	return {
+		mileage: mileageItemView(row, mileageCalculation),
 		id: row.id,
 		type: row.type,
 		version: row.version,
@@ -286,6 +300,8 @@ function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView
 		accountingReference: row.accountingReference,
 		receipts,
 		...receiptExceptionItemView(row),
+		projectId: row.projectId,
+		projectInherits: row.projectInherits,
 	};
 }
 
@@ -328,6 +344,12 @@ export async function loadOwnReport(
 		organizationId: owner.organizationId,
 		reports: [{ ...report, items }],
 	});
+	const price = await loadMileagePricer(database, owner.organizationId, items);
+	const pricing = {
+		reimbursementCurrency: report.reimbursementCurrency,
+		// Editable reports are priced afresh; submitted ones keep their stamp.
+		useStamp: !isEditableReportStatus(report.status),
+	};
 	return {
 		id: report.id,
 		kind: report.kind,
@@ -337,10 +359,12 @@ export async function loadOwnReport(
 		createdAt: report.createdAt.toISOString(),
 		updatedAt: report.updatedAt.toISOString(),
 		trip: toTripDetailsView(report),
+		projectId: report.projectId,
 		items: items.map((item) => ({
 			...toItemView(
 				item,
 				receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView),
+				item.type === "mileage" ? price(item, pricing) : null,
 			),
 			conversion: conversions.get(item.id) ?? null,
 			referenceRate: referenceRates.get(item.id) ?? null,
@@ -441,35 +465,52 @@ async function listOwnReports(
 			items: items.filter((item) => item.reportId === report.id),
 		})),
 	});
+	const price = await loadMileagePricer(database, owner.organizationId, items);
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
-		const item = reportItems[0];
+		const priced = reportItems.map((row) => ({
+			row,
+			mileage:
+				row.type === "mileage"
+					? mileageItemView(
+							row,
+							price(row, {
+								reimbursementCurrency: report.reimbursementCurrency,
+								useStamp: !isEditableReportStatus(report.status),
+							}),
+						)
+					: null,
+		}));
+		const first = priced[0];
+		const item = first?.row;
 		return {
 			id: report.id,
 			kind: report.kind,
 			status: report.status,
 			updatedAt: report.updatedAt.toISOString(),
 			expenseDate: item?.expenseDate ?? null,
-			description: item?.description ?? null,
-			amount: item?.originalAmount ?? null,
-			currency: item?.originalCurrency ?? null,
+			description: item?.description ?? item?.mileageRoute ?? null,
+			amount: item?.originalAmount ?? first?.mileage?.amount ?? null,
+			currency: item?.originalCurrency ?? first?.mileage?.currency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
-			trip: report.kind === "trip" ? tripDraftSummary(report, reportItems, conversions) : null,
+			trip: report.kind === "trip" ? tripDraftSummary(report, priced, conversions) : null,
 		};
 	});
 }
 
 function tripDraftSummary(
 	report: ReportRow,
-	items: ItemRow[],
+	items: { row: ItemRow; mileage: MileageItemView | null }[],
 	conversions: ReadonlyMap<string, ItemConversion>,
 ): DraftTripSummary {
 	const totals = receiptReportTotals(
-		items.map((row) => ({
+		items.map(({ row, mileage }) => ({
 			amount: row.originalAmount,
 			currency: row.originalCurrency,
 			paidBy: row.paidBy,
 			conversion: conversions.get(row.id),
+			type: row.type,
+			mileage,
 		})),
 		report.reimbursementCurrency,
 	);
@@ -514,6 +555,7 @@ export async function saveReceiptItemDraft(
 			eq(travelExpenseReportItem.id, input.itemId),
 			eq(travelExpenseReportItem.reportId, input.reportId),
 			eq(travelExpenseReportItem.organizationId, owner.organizationId),
+			eq(travelExpenseReportItem.type, "receipt"),
 		);
 		const [saved] = await tx
 			.update(travelExpenseReportItem)

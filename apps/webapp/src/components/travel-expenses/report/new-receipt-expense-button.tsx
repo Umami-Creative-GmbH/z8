@@ -1,6 +1,6 @@
 "use client";
 
-import { IconLoader2, IconPlaneDeparture, IconReceipt } from "@tabler/icons-react";
+import { IconCar, IconLoader2, IconPlaneDeparture, IconReceipt } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import {
 	createStandaloneReceiptReportAction,
 	createTripReportAction,
 } from "@/app/[locale]/(app)/travel-expenses/report-actions";
+import { createStandaloneMileageReportAction } from "@/app/[locale]/(app)/travel-expenses/mileage-actions";
 import { Button } from "@/components/ui/button";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { useRouter } from "@/navigation";
@@ -61,6 +62,19 @@ export function NewReceiptExpenseButton() {
 			create={createStandaloneReceiptReportAction}
 			icon={<IconReceipt className="mr-2 size-4" aria-hidden="true" />}
 			label={t("travelExpenses.report.actions.newReceipt", "New receipt")}
+			variant="outline"
+		/>
+	);
+}
+
+/** Creates a standalone mileage report (#606) and opens its editor. */
+export function NewMileageExpenseButton() {
+	const { t } = useTranslate();
+	return (
+		<NewReportButton
+			create={createStandaloneMileageReportAction}
+			icon={<IconCar className="mr-2 size-4" aria-hidden="true" />}
+			label={t("travelExpenses.report.actions.newMileage", "New mileage")}
 			variant="outline"
 		/>
 	);

@@ -195,11 +195,13 @@ export function SubmittedTravelExpenseReport({
 						currency: item.original.currency,
 						paidBy: item.paidBy,
 						conversion: item.conversion,
+						project: item.project,
 						receipts: item.receipts.map((receipt) => ({
 							id: receipt.receiptId,
 							fileName: receipt.fileName,
 							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
 						})),
+						mileage: item.mileage ?? null,
 						receiptException: item.receiptException ?? null,
 					}))}
 				/>

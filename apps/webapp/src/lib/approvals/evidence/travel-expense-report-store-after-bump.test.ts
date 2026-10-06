@@ -4,6 +4,7 @@ import type { ApprovalDatabase } from "../server/types";
 import {
 	buildTravelExpenseReportSubmittedFacts,
 	compareLiveTravelExpenseReportWithRevision,
+	fingerprintTravelExpenseReportFacts,
 	type TravelExpenseReportFactsInput,
 	type TravelExpenseReportSubmittedFacts,
 } from "./travel-expense-report-facts";
@@ -13,10 +14,10 @@ import {
 } from "./travel-expense-report-store";
 
 // Simulates the build after a later ticket bumps the schema version: the
-// builder still freezes today's (v4, #608) facts, but the reader knows v1..v5.
+// builder still freezes today's (v6, #608) facts, but the reader knows v1..v7.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./travel-expense-report-facts")>()),
-	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 5,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 7,
 }));
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
@@ -157,19 +158,86 @@ describe("after a schema version bump", () => {
 		});
 	});
 
-	it("reads a revision of the new version under its own fingerprint prefix", async () => {
+	it("still reads a v3 revision with its currency conversion (#607)", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 5 };
+		const foreign: TravelExpenseReportFactsInput = {
+			...factsInput,
+			items: [{ ...factsInput.items[0], originalAmount: "100.00", originalCurrency: "USD" }],
+			conversions: [
+				{
+					organizationId: "org-1",
+					reportId: "report-1",
+					itemId: "train",
+					conversion: {
+						basis: "card_charge",
+						sourceCurrency: "USD",
+						targetCurrency: "EUR",
+						chargedAmount: "92.17",
+						evidenceReceiptId: "r-1",
+					},
+				},
+			],
+		};
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(foreign), schemaVersion: 3 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
 
-		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v5:/);
+		expect(loaded?.facts).toEqual(facts);
+		expect(loaded?.facts.items[0]?.conversion).toMatchObject({
+			basis: "card_charge",
+			reimbursement: { amount: "92.17", currency: "EUR" },
+		});
+		expect(loaded?.materialFingerprint).toBe(fingerprintTravelExpenseReportFacts(facts));
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v3:/);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, foreign)).toEqual({
+			kind: "current",
+		});
+	});
+
+	it("still reads a v4 revision with its project attribution (#605)", async () => {
+		const { database } = fakeRevisionTable();
+		const project = {
+			projectId: "p1",
+			name: "Hamburg rollout",
+			customerId: null,
+			customerName: null,
+			inheritedFromTrip: true,
+			basis: "employee_assignment",
+		} as const;
+		const attributed: TravelExpenseReportFactsInput = {
+			...factsInput,
+			report: { ...factsInput.report, kind: "trip", ...tripFields, projectId: "p1" },
+			items: [{ ...factsInput.items[0], projectId: null, projectInherits: true }],
+			projectAttribution: { train: project },
+		};
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(attributed), schemaVersion: 4 };
+		await capture(database, facts);
+
+		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
+
+		expect(loaded?.facts).toEqual(facts);
+		expect(loaded?.facts.items[0]?.project).toEqual(project);
+		expect(loaded?.materialFingerprint).toBe(fingerprintTravelExpenseReportFacts(facts));
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v4:/);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, attributed)).toEqual({
+			kind: "current",
+		});
+	});
+
+	it("reads a revision of the new version under its own fingerprint prefix", async () => {
+		const { database } = fakeRevisionTable();
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 7 };
+		await capture(database, facts);
+
+		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
+
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v7:/);
 	});
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 6 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 8 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
 	});
 

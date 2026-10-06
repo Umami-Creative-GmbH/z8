@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
+import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import {
 	MAX_ACCOUNTING_REFERENCE_LENGTH,
@@ -53,6 +54,7 @@ import {
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
+import { ItemProjectField } from "./project-picker";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { ReceiptExceptionField } from "./receipt-exception-field";
 import { useDraftSaver } from "./use-draft-saver";
@@ -177,6 +179,7 @@ export function ReceiptItemEditor({
 	removal,
 	maxReceiptBytes,
 	receiptExceptionsAllowed = false,
+	project,
 }: {
 	reportId: string;
 	/** The item as last loaded; later loads never reset entered values. */
@@ -193,6 +196,8 @@ export function ReceiptItemEditor({
 	maxReceiptBytes: number;
 	/** Whether the organization allows missing-receipt exceptions (#604). */
 	receiptExceptionsAllowed?: boolean;
+	/** Project attribution (#605); the trip's project is what "inherit" means. */
+	project?: { isTrip: boolean; tripProjectId: string | null; onSaved?: () => void };
 }) {
 	const { t } = useTranslate();
 	const [uploading, setUploading] = useState(false);
@@ -497,13 +502,30 @@ export function ReceiptItemEditor({
 							<TFormDescription>
 								{t(
 									"travelExpenses.report.fields.accountingReferenceDescription",
-									"A reference finance asked you to use, such as an order number. Project assignment follows later.",
+									"A reference finance asked you to use, such as an order number.",
 								)}
 							</TFormDescription>
 							<TFormMessage>{fieldError("accountingReference")}</TFormMessage>
 						</TFormItem>
 					)}
 				</form.Field>
+
+				{project && (
+					<form.Subscribe selector={(formState) => formState.values.expenseDate}>
+						{(expenseDate) => (
+							<ItemProjectField
+								reportId={reportId}
+								itemId={item.id}
+								isTrip={project.isTrip}
+								expenseDate={/^\d{4}-\d{2}-\d{2}$/.test(expenseDate) ? expenseDate : null}
+								initialChoice={itemProjectChoice(item)}
+								tripProjectId={project.tripProjectId}
+								saver={saver}
+								onSaved={project.onSaved}
+							/>
+						)}
+					</form.Subscribe>
+				)}
 			</form>
 
 			<ReceiptAttachments
@@ -597,7 +619,7 @@ export function ReceiptItemEditor({
 }
 
 /** Removes an expense, and its receipts, after an explicit confirmation. */
-function RemoveExpenseButton({
+export function RemoveExpenseButton({
 	label,
 	busy,
 	onConfirm,

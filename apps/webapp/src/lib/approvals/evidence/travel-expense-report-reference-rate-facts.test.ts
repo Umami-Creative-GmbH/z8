@@ -109,10 +109,10 @@ describe("frozen reference-rate conversion facts", () => {
 	});
 
 	it("never emits a reference conversion into a revision of an older schema version", () => {
-		expect(REFERENCE_RATE_FACTS_SCHEMA_VERSION).toBe(4);
-		const v3 = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 3 };
-		// The v3 snapshot of the same rows has no conversion for the expense: it changed.
-		expect(compareLiveTravelExpenseReportWithRevision(v3, input())).not.toEqual({
+		expect(REFERENCE_RATE_FACTS_SCHEMA_VERSION).toBe(6);
+		const v5 = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 5 };
+		// The v5 snapshot of the same rows has no conversion for the expense: it changed.
+		expect(compareLiveTravelExpenseReportWithRevision(v5, input())).not.toEqual({
 			kind: "current",
 		});
 	});

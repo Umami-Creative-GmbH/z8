@@ -4,7 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { getMyTravelExpenseClaims } from "@/app/[locale]/(app)/travel-expenses/actions";
 import { queryKeys } from "@/lib/query";
-import { NewReceiptExpenseButton, NewTripReportButton } from "./report/new-receipt-expense-button";
+import {
+	NewMileageExpenseButton,
+	NewReceiptExpenseButton,
+	NewTripReportButton,
+} from "./report/new-receipt-expense-button";
 import { TravelExpenseReportDrafts } from "./report/travel-expense-report-drafts";
 import { TravelExpenseList } from "./travel-expense-list";
 import { TravelExpenseLoadError } from "./travel-expense-load-error";
@@ -54,6 +58,7 @@ export function TravelExpenseManagement({
 				</div>
 				<div className="flex flex-wrap justify-end gap-2">
 					<NewReceiptExpenseButton />
+					<NewMileageExpenseButton />
 					<NewTripReportButton />
 				</div>
 			</div>

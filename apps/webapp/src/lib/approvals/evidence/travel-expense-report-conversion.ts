@@ -20,7 +20,7 @@ export const CONVERSION_FACTS_SCHEMA_VERSION = 3;
  * ECB publication (id, version, content hash, fetch time), the approval it
  * relied on, the expense date it was chosen for and the rounded result.
  */
-export const REFERENCE_RATE_FACTS_SCHEMA_VERSION = 4;
+export const REFERENCE_RATE_FACTS_SCHEMA_VERSION = 6;
 
 /** `reimbursement` is the amount the expense counts with, in the reimbursement currency. */
 export type TravelExpenseReportSubmittedConversion = ConversionResult;

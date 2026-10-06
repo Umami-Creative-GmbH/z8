@@ -253,6 +253,19 @@ export async function processOneOffJob(job: Job<JobData>): Promise<JobResult> {
 				return { success: true, message: "Payroll export processed" };
 			}
 
+			case "travel-expense-export": {
+				const [{ db }, { processTravelExpenseExportBatch }] = await Promise.all([
+					import("@/db"),
+					import("@/lib/travel-expenses/export-processor"),
+				]);
+				const { type: _type, ...attempt } = job.data;
+				const outcome = await processTravelExpenseExportBatch(db, attempt);
+				return {
+					success: outcome.status !== "failed",
+					message: `Travel expense export ${outcome.status}`,
+				};
+			}
+
 			default:
 				throw new Error(`Unknown job type: ${(job.data as JobData).type}`);
 		}

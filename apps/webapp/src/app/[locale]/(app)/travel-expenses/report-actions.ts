@@ -368,6 +368,7 @@ const submitSchema = z.object({
 					receiptIds: z.array(z.uuid()).max(100),
 					receiptExceptionVersion: z.number().int().nonnegative().optional(),
 					referenceRate: z.string().max(200).nullable().optional(),
+					amount: z.string().max(20).nullable().optional(),
 				}),
 			)
 			.max(200),
@@ -407,6 +408,8 @@ export async function submitTravelExpenseReportAction(input: {
 				return { success: true, data: { status: "routing_failed" } };
 			case "incomplete":
 				return { success: true, data: { status: result.kind, missing: result.missing } };
+			case "project_ineligible":
+				return { success: true, data: { status: result.kind, itemIds: result.itemIds } };
 			case "no_reviewer":
 				return { success: true, data: { status: result.kind, reason: result.reason } };
 			case "threshold_currency_unsupported":

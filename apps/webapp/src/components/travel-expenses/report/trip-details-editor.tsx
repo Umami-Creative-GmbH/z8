@@ -39,6 +39,7 @@ import {
 } from "@/lib/travel-expenses/trip-report";
 import { DraftSaveStatus } from "./draft-save-status";
 import { formatCountry, formatPlainDateRange } from "./format";
+import { TripProjectField } from "./project-picker";
 import { useDraftSaver } from "./use-draft-saver";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -128,6 +129,7 @@ export function TripDetailsEditor({
 	details,
 	onDetailsChange,
 	onSaved,
+	project,
 }: {
 	reportId: string;
 	/** The details as last loaded; later loads never reset entered values. */
@@ -135,6 +137,8 @@ export function TripDetailsEditor({
 	/** The entered details as they change; null while any of them is malformed. */
 	onDetailsChange: (details: TripDetailsDraft | null) => void;
 	onSaved?: () => void;
+	/** The trip's project (#605), which its expenses inherit. */
+	project?: { initialProjectId: string | null; onSaved: (projectId: string | null) => void };
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -340,6 +344,26 @@ export function TripDetailsEditor({
 						</TFormItem>
 					)}
 				</form.Field>
+
+				{project && (
+					<form.Subscribe
+						selector={(formState) => `${formState.values.startDate}|${formState.values.endDate}`}
+					>
+						{(dates) => {
+							const [startDate, endDate] = dates.split("|").map((date) => (date ? date : null));
+							return (
+								<TripProjectField
+									reportId={reportId}
+									startDate={startDate ?? null}
+									endDate={endDate ?? null}
+									initialProjectId={project.initialProjectId}
+									saver={saver}
+									onSaved={project.onSaved}
+								/>
+							);
+						}}
+					</form.Subscribe>
+				)}
 
 				<form.Field name="destinations" mode="array">
 					{(destinationsField) => (

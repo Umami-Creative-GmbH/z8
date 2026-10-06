@@ -29,6 +29,7 @@ import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-d
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { loadFinanceActor } from "./finance-access";
+import { sortHistoryByInstant } from "./report-history";
 
 /**
  * Reads of a submitted travel expense report (#602): its owner, or a reviewer
@@ -377,7 +378,7 @@ export async function loadSubmittedReportView(
 			submittedAt: instantToCanonicalString(candidate.submittedAt),
 			outcome: outcomeOf(candidate.submissionCycle),
 		})),
-		history: history.toSorted((left, right) => left.at.localeCompare(right.at)),
+		history: sortHistoryByInstant(history),
 		facts: {
 			reportKind: revision.facts.reportKind,
 			reimbursementCurrency: revision.facts.reimbursementCurrency,

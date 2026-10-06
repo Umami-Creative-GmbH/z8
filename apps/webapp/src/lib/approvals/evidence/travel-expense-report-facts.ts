@@ -3,7 +3,16 @@ import type {
 	TravelExpenseReportItemType,
 	TravelExpenseReportKind,
 } from "@/db/schema/travel-expense";
+import type { AllowancePolicySource } from "@/lib/travel-expenses/allowance-policy";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "@/lib/travel-expenses/attachment-validation";
+import {
+	calculateMileageItem,
+	type MileageVehicle,
+	parseMileageDistance,
+	parseMileageRate,
+	type StampedMileagePolicy,
+} from "@/lib/travel-expenses/mileage";
+import type { RoundingMode } from "@/lib/travel-expenses/money";
 import {
 	frozenReceiptException,
 	receiptExceptionContext,
@@ -15,6 +24,7 @@ import {
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
+import { effectiveItemProject } from "@/lib/travel-expenses/project-attribution";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { tripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { canonicalJson } from "./absence-facts";
@@ -42,12 +52,44 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 4;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 6;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
 /* Version 3 (#607) adds the optional `conversion` of an item (`CONVERSION_FACTS_SCHEMA_VERSION`). */
-/* Version 4 (#608) admits its `reference_rate` basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
+
+/** Version 4 (#605) adds an expense's project attribution (`project`). */
+const PROJECT_ATTRIBUTION_SCHEMA_VERSION = 4;
+/** Version 5 (#606) adds `mileage` to mileage items. */
+const MILEAGE_FACTS_SCHEMA_VERSION = 5;
+/* Version 6 (#608) admits the `reference_rate` conversion basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
+
+/**
+ * The accounting attribution of one expense as it was submitted (#605): the
+ * project's identity and names at submission, whether the expense inherited
+ * the trip's project, and how the employee's use of the project on the
+ * expense date was proven. Later renames, closures or assignment changes
+ * never rewrite it.
+ */
+export interface TravelExpenseReportProjectAttribution {
+	projectId: string;
+	name: string;
+	customerId: string | null;
+	customerName: string | null;
+	inheritedFromTrip: boolean;
+	basis: "employee_assignment" | "team_assignment" | "exception";
+	/** The authorized exception, only when `basis` is `exception`. */
+	exception?: {
+		exceptionId: string;
+		validFrom: string;
+		validTo: string;
+		reason: string;
+		evidence: string;
+		authorizedByEmployeeId: string;
+		/** Canonical UTC instant. */
+		authorizedAt: string;
+	};
+}
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;
@@ -78,6 +120,34 @@ export interface TravelExpenseReportSubmittedItem {
 	receiptException?: { reason: string };
 	/** Since v3 (#607): how a foreign-currency expense was converted; absent otherwise. */
 	conversion?: TravelExpenseReportSubmittedConversion;
+	/** Since v4 (#605): present only when the expense is attributed to a project. */
+	project?: TravelExpenseReportProjectAttribution;
+	/**
+	 * Mileage items only (v5+, #606): the entered trip and the policy version
+	 * that priced it. Such an item also freezes `category: "transport"`, its
+	 * route as `description` and the calculated amount as `original`, so every
+	 * reader of item amounts keeps working.
+	 */
+	mileage?: TravelExpenseReportSubmittedMileage;
+}
+
+export interface TravelExpenseReportSubmittedMileage {
+	route: string;
+	distanceKm: string;
+	vehicle: MileageVehicle;
+	ratePerKm: string;
+	currency: string;
+	/** distance × rate, exact. */
+	exactAmount: string;
+	/** `exactAmount` rounded once with `rounding`; the item's reimbursement. */
+	amount: string;
+	rounding: RoundingMode;
+	policy: {
+		policyId: string;
+		versionId: string;
+		effectiveFrom: string;
+		source: AllowancePolicySource;
+	};
 }
 
 export interface TravelExpenseReportSubmittedFacts {
@@ -117,7 +187,14 @@ export interface TravelExpenseReportFactsInput {
 		tripEndDate: string | null;
 		tripTimeZone: string | null;
 		tripDestinations: TripDestination[];
+		/** The trip's project, which inheriting expenses use (#605). */
+		projectId?: string | null;
 	};
+	/**
+	 * Resolved attribution by item ID for every attributed expense, required
+	 * when submitting; comparing reads project IDs from the live rows only.
+	 */
+	projectAttribution?: Readonly<Record<string, TravelExpenseReportProjectAttribution>>;
 	items: ReadonlyArray<{
 		id: string;
 		organizationId: string;
@@ -131,8 +208,16 @@ export interface TravelExpenseReportFactsInput {
 		originalCurrency: string | null;
 		paidBy: ExpensePayer | null;
 		accountingReference: string | null;
+		/** Mileage items (#606); absent or null otherwise. */
+		mileageRoute?: string | null;
+		mileageDistanceKm?: string | null;
+		mileageVehicle?: MileageVehicle | null;
+		/** The policy stamped under the report lock at submission. */
+		mileagePolicy?: StampedMileagePolicy | null;
 		/** Missing-receipt explanation (#604); null or absent when none was requested. */
 		receiptExceptionReason?: string | null;
+		projectId?: string | null;
+		projectInherits?: boolean;
 	}>;
 	/** Whether the organization allowed missing-receipt exceptions when submitting (#604). */
 	receiptExceptionsAllowed?: boolean;
@@ -210,6 +295,35 @@ function itemDraft(row: TravelExpenseReportFactsInput["items"][number]): Receipt
  */
 type SnapshotMode = "submit" | "compare";
 
+/**
+ * The `project` key of one expense, emitted from v4 on and only when the
+ * expense is attributed. Submitting requires the attribution resolved for
+ * exactly the live project; comparing checks the live project identity and
+ * keeps the frozen names, so a later rename is not a change of the report.
+ */
+function projectFacts(
+	input: TravelExpenseReportFactsInput,
+	row: TravelExpenseReportFactsInput["items"][number],
+	mode: SnapshotMode,
+	schemaVersion: number,
+	frozen: TravelExpenseReportSubmittedFacts | undefined,
+): { project?: TravelExpenseReportProjectAttribution } {
+	if (schemaVersion < PROJECT_ATTRIBUTION_SCHEMA_VERSION) return {};
+	const effective = effectiveItemProject(input.report, row);
+	if (!effective) return {};
+	const matches = (attribution: TravelExpenseReportProjectAttribution | undefined) =>
+		attribution?.projectId === effective.projectId &&
+		attribution.inheritedFromTrip === effective.inheritedFromTrip;
+	if (mode === "submit") {
+		const resolved = input.projectAttribution?.[row.id];
+		if (!resolved || !matches(resolved)) incomplete("project_attribution");
+		return { project: structuredClone(resolved) };
+	}
+	const submitted = frozen?.items.find((item) => item.itemId === row.id)?.project;
+	if (submitted && matches(submitted)) return { project: submitted };
+	return { project: effective as unknown as TravelExpenseReportProjectAttribution };
+}
+
 function liveTripFacts(
 	report: TravelExpenseReportFactsInput["report"],
 ): TravelExpenseReportSubmittedFacts["trip"] {
@@ -256,6 +370,80 @@ function tripFacts(
 }
 
 /**
+ * A mileage item (#606) is priced from its entered distance and the policy
+ * stamped on it at submission, never from today's policy: the compare
+ * snapshot of an unchanged item therefore equals the frozen one even after
+ * the organization changes its rates.
+ */
+function mileageItemFacts(
+	row: TravelExpenseReportFactsInput["items"][number],
+	receipts: TravelExpenseReportReceiptManifestItem[],
+	reimbursementCurrency: string,
+	mode: SnapshotMode,
+	schemaVersion: number,
+): TravelExpenseReportSubmittedItem {
+	const route = row.mileageRoute ?? null;
+	const distanceKm = row.mileageDistanceKm ?? null;
+	const vehicle = row.mileageVehicle ?? null;
+	const stamp = row.mileagePolicy ?? null;
+	const { expenseDate } = row;
+	// The stamp must have been resolved for exactly this date and vehicle.
+	const calculation =
+		stamp &&
+		stamp.expenseDate === expenseDate &&
+		stamp.vehicle === vehicle &&
+		parseMileageRate(stamp.ratePerKm) === stamp.ratePerKm &&
+		(distanceKm === null || parseMileageDistance(distanceKm) === distanceKm)
+			? calculateMileageItem(
+					{ expenseDate, distanceKm, vehicle },
+					{ status: "found", policy: stamp },
+					reimbursementCurrency,
+				)
+			: null;
+	const calculated = calculation?.status === "calculated" ? calculation : null;
+	if (
+		mode === "submit" &&
+		(!calculated || !expenseDate || !route || row.paidBy !== "employee")
+	) {
+		incomplete("mileage");
+	}
+	const mileage = calculated
+		? {
+				route,
+				distanceKm: calculated.distanceKm,
+				vehicle,
+				ratePerKm: calculated.ratePerKm,
+				currency: calculated.currency,
+				exactAmount: calculated.exactAmount,
+				amount: calculated.amount,
+				rounding: calculated.rounding,
+				policy: {
+					policyId: calculated.policy.policyId,
+					versionId: calculated.policy.versionId,
+					effectiveFrom: calculated.policy.effectiveFrom,
+					source: { ...calculated.policy.source },
+				},
+			}
+		: // Compare mode only: live rows that cannot be priced as frozen differ from the revision.
+			{ route, distanceKm, vehicle, stamp };
+	return {
+		itemId: row.id,
+		position: row.position,
+		type: row.type,
+		expenseDate,
+		category: "transport",
+		description: route,
+		original: { amount: calculated?.amount ?? null, currency: calculated?.currency ?? null },
+		paidBy: row.paidBy,
+		accountingReference: row.accountingReference,
+		receipts,
+		...(schemaVersion >= MILEAGE_FACTS_SCHEMA_VERSION
+			? { mileage: mileage as TravelExpenseReportSubmittedMileage }
+			: {}),
+	} as TravelExpenseReportSubmittedItem;
+}
+
+/**
  * Builds the immutable submitted facts of one report from its persisted rows.
  * A row of another organization or report is an invariant breach; anything
  * incomplete throws instead of being frozen as a guess.
@@ -275,6 +463,7 @@ function snapshotReport(
 	input: TravelExpenseReportFactsInput,
 	mode: SnapshotMode,
 	schemaVersion: number,
+	frozen?: TravelExpenseReportSubmittedFacts,
 ): TravelExpenseReportSubmittedFacts {
 	const enforce = mode === "submit";
 	const { report } = input;
@@ -306,6 +495,13 @@ function snapshotReport(
 				.filter((receipt) => receipt.itemId === row.id)
 				.toSorted(byId)
 				.map(manifestItem);
+			if (row.type === "mileage") {
+				return {
+					...mileageItemFacts(row, receipts, report.reimbursementCurrency, mode, schemaVersion),
+					// A mileage expense is attributed like any other (#605).
+					...projectFacts(input, row, mode, schemaVersion, frozen),
+				};
+			}
 			const draft = itemDraft(row);
 			const missing = receiptItemMissingRequirements(draft, {
 				receiptCount: receipts.length,
@@ -331,6 +527,7 @@ function snapshotReport(
 					conversion: conversionOf(row.id),
 					receiptIds: receipts.map((receipt) => receipt.receiptId),
 				});
+			const project = projectFacts(input, row, mode, schemaVersion, frozen);
 			if (!enforce) {
 				return {
 					itemId: row.id,
@@ -345,6 +542,7 @@ function snapshotReport(
 					receipts,
 					...exceptionFact,
 					...conversionFacts(),
+					...project,
 				} as TravelExpenseReportSubmittedItem;
 			}
 			if (
@@ -372,6 +570,7 @@ function snapshotReport(
 				receipts,
 				...exceptionFact,
 				...conversionFacts(),
+				...project,
 			};
 		});
 	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);
@@ -458,7 +657,7 @@ export function compareLiveTravelExpenseReportWithRevision(
 	let liveFacts: TravelExpenseReportSubmittedFacts;
 	try {
 		// Snapshot the live rows as the revision's version saw them.
-		liveFacts = snapshotReport(live, "compare", schemaVersion);
+		liveFacts = snapshotReport(live, "compare", schemaVersion, submitted);
 	} catch (error) {
 		if (!(error instanceof ApprovalEvidenceError)) throw error;
 		return {
