@@ -7,6 +7,7 @@ import {
 	travelExpenseReportItem,
 	travelExpenseReportReceipt,
 } from "@/db/schema";
+import { loadAdjustmentLink } from "@/lib/travel-expenses/adjustment-read";
 import { loadReportConversionRows } from "@/lib/travel-expenses/conversion-read";
 import type { ResolvePolicyAndCreateApprovalResult } from "../policies/chain-service";
 import type { ApprovalDatabase } from "../server/types";
@@ -36,7 +37,7 @@ export async function loadTravelExpenseReportFactsInput(
 	  })
 	| null
 > {
-	const [reports, items, receipts, conversions] = await Promise.all([
+	const [reports, items, receipts, conversions, adjustment] = await Promise.all([
 		database
 			.select()
 			.from(travelExpenseReport)
@@ -56,6 +57,8 @@ export async function loadTravelExpenseReportFactsInput(
 			.from(travelExpenseReportReceipt)
 			.where(eq(travelExpenseReportReceipt.reportId, scope.reportId)),
 		loadReportConversionRows(database, scope.reportId),
+		// The report it corrects when it is an adjustment report (#615).
+		loadAdjustmentLink(database, scope),
 	]);
 	const report = reports[0];
 	if (reports.length !== 1 || !report) return null;
@@ -77,6 +80,7 @@ export async function loadTravelExpenseReportFactsInput(
 		items,
 		receipts,
 		conversions,
+		adjustment,
 		fileNames: Object.fromEntries(receipts.map((receipt) => [receipt.id, receipt.fileName])),
 	};
 }

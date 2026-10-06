@@ -20,6 +20,7 @@ import {
 	instantToCanonicalString,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { loadAdjustmentOriginals, loadApprovedAdjustments } from "./adjustment-read";
 import {
 	computeSettlement,
 	type EntitlementComponent,
@@ -36,10 +37,12 @@ import {
  * decided claim) and its money from immutable `travel_expense_settlement_entry`
  * rows; the balance is always derived (`settlement.ts`).
  *
+ * #615: a report account's entitlement includes the frozen signed delta of
+ * every approved adjustment of the report (`adjustment-read.ts`), once each;
+ * an adjustment report itself has no account (`adjustmentOf`). Recoveries are
+ * recorded with `kind: "recovery"` against an overpayment.
+ *
  * Extension points for later slices (NOTES/progress-612.md):
- * - #615 adjustments: return approved signed deltas from
- *   `loadApprovedAdjustmentComponents`; every account read picks them up.
- * - #615 recoveries: `recordSettlementEntry` already accepts `kind: "recovery"`.
  * - #614 reopen: lock the report row (the same lock recording takes) and refuse
  *   when `hasRecordedSettlement` (or a #613 export) is true.
  */
@@ -93,6 +96,14 @@ export interface SettlementAccount {
 	summary: SettlementSummary;
 	/** Report kind/title facts for lists. */
 	title: SettlementTitle;
+	/** Approved adjustments included in `entitlement` (#615), oldest approval first. */
+	adjustments: SettlementAdjustmentView[];
+	/**
+	 * Set on an adjustment report (#615): the report whose account it corrects.
+	 * Such a report has no account of its own (empty entitlement); nothing is
+	 * recorded against it.
+	 */
+	adjustmentOf: string | null;
 }
 
 export type SettlementTitle =
@@ -108,15 +119,56 @@ export type SettlementTitle =
 type ReportRow = typeof travelExpenseReport.$inferSelect;
 type ClaimRow = typeof travelExpenseClaim.$inferSelect;
 
+/** An approved adjustment (#615) as its original report's account shows it. */
+export interface SettlementAdjustmentView {
+	reportId: string;
+	revisionId: string;
+	delta: string;
+	currency: string;
+	reason: string;
+	approvedAt: string;
+}
+
 /**
- * #615: approved signed adjustments of an account, each counted exactly once.
- * No adjustment model exists yet, so every account has none.
+ * #615: approved signed adjustments of report accounts, each counted exactly
+ * once (`adjustment-read.ts`). Legacy claims have no adjustments.
  */
 async function loadApprovedAdjustmentComponents(
-	_database: Executor,
-	_input: { organizationId: string; sources: readonly SettlementSource[] },
-): Promise<Map<string, EntitlementComponent[]>> {
-	return new Map();
+	database: Executor,
+	input: { organizationId: string; sources: readonly SettlementSource[] },
+): Promise<Map<string, SettlementAdjustmentView[]>> {
+	const approved = await loadApprovedAdjustments(database, {
+		organizationId: input.organizationId,
+		originalReportIds: input.sources.filter((s) => s.type === "report").map((s) => s.id),
+	});
+	return new Map(
+		[...approved.entries()].map(([originalReportId, adjustments]) => [
+			sourceKey({ type: "report", id: originalReportId }),
+			adjustments
+				.toSorted(
+					(left, right) =>
+						left.approvedAt.epochMilliseconds - right.approvedAt.epochMilliseconds ||
+						(left.reportId < right.reportId ? -1 : 1),
+				)
+				.map((adjustment) => ({
+					reportId: adjustment.reportId,
+					revisionId: adjustment.revisionId,
+					delta: adjustment.delta,
+					currency: adjustment.currency,
+					reason: adjustment.reason,
+					approvedAt: instantToCanonicalString(adjustment.approvedAt),
+				})),
+		]),
+	);
+}
+
+function adjustmentComponents(views: readonly SettlementAdjustmentView[]): EntitlementComponent[] {
+	return views.map((view) => ({
+		kind: "approved_adjustment",
+		id: view.revisionId,
+		currency: view.currency,
+		amount: view.delta,
+	}));
 }
 
 function sourceKey(source: SettlementSource): string {
@@ -248,7 +300,7 @@ async function buildAccounts(
 		...reports.map(({ row }) => ({ type: "report" as const, id: row.id })),
 		...claims.map(({ row }) => ({ type: "legacy_claim" as const, id: row.id })),
 	];
-	const [decisions, entries, adjustments] = await Promise.all([
+	const [decisions, entries, adjustments, adjustmentOriginals] = await Promise.all([
 		loadApprovedRevisionDecisions(
 			database,
 			organizationId,
@@ -256,6 +308,10 @@ async function buildAccounts(
 		),
 		loadEntries(database, organizationId, sources),
 		loadApprovedAdjustmentComponents(database, { organizationId, sources }),
+		loadAdjustmentOriginals(database, {
+			organizationId,
+			reportIds: reports.map(({ row }) => row.id),
+		}),
 	]);
 
 	const accounts: SettlementAccount[] = [];
@@ -266,8 +322,11 @@ async function buildAccounts(
 		// Approved means: the report is approved now, its current cycle is frozen
 		// and the decision evidence of that revision records the approval.
 		const approved = Boolean(revision && approvedAt);
+		const adjustmentOf = adjustmentOriginals.get(row.id) ?? null;
+		const accountAdjustments = approved ? (adjustments.get(sourceKey(source)) ?? []) : [];
+		// An adjustment report's delta belongs to its original's account (#615).
 		const entitlement: EntitlementComponent[] =
-			revision && approved
+			revision && approved && !adjustmentOf
 				? [
 						{
 							kind: "approved_submission",
@@ -275,7 +334,7 @@ async function buildAccounts(
 							currency: revision.facts.totals.currency,
 							amount: revision.facts.totals.reimbursable,
 						},
-						...(adjustments.get(sourceKey(source)) ?? []),
+						...adjustmentComponents(accountAdjustments),
 					]
 				: [];
 		const accountEntries = entries.get(sourceKey(source)) ?? [];
@@ -300,6 +359,8 @@ async function buildAccounts(
 			entries: accountEntries,
 			summary: computeSettlement({ entitlement, entries: accountEntries }),
 			title: reportTitle(row, revision),
+			adjustments: accountAdjustments,
+			adjustmentOf,
 		});
 	}
 	for (const { row, employeeName } of claims) {
@@ -315,7 +376,6 @@ async function buildAccounts(
 						currency: row.calculatedCurrency,
 						amount: row.calculatedAmount,
 					},
-					...(adjustments.get(sourceKey(source)) ?? []),
 				]
 			: [];
 		const accountEntries = entries.get(sourceKey(source)) ?? [];
@@ -346,6 +406,8 @@ async function buildAccounts(
 				startDate: plainDateText(row.tripStartDate),
 				endDate: plainDateText(row.tripEndDate),
 			},
+			adjustments: [],
+			adjustmentOf: null,
 		});
 	}
 	return accounts;
@@ -455,7 +517,12 @@ export type FinanceQueueFilter = "open" | "settled" | "all";
  */
 export async function listFinanceQueue(
 	database: Executor,
-	input: { organizationId: string; filter: FinanceQueueFilter },
+	input: {
+		organizationId: string;
+		filter: FinanceQueueFilter;
+		/** Also list approved adjustment reports (#615), which have no account of their own; exports need them. */
+		includeAdjustments?: boolean;
+	},
 ): Promise<SettlementAccount[]> {
 	const [reports, claims] = await Promise.all([
 		database
@@ -500,6 +567,7 @@ export async function listFinanceQueue(
 	const accounts = await buildAccounts(database, input.organizationId, reports, claims);
 	return accounts
 		.filter((account) => account.approved)
+		.filter((account) => input.includeAdjustments || account.adjustmentOf === null)
 		.filter((account) =>
 			input.filter === "all"
 				? true
@@ -539,12 +607,14 @@ export async function listOwnSettlementAccounts(
 				),
 			),
 	]);
-	return buildAccounts(
+	const accounts = await buildAccounts(
 		database,
 		owner.organizationId,
 		reports.map(({ row }) => ({ row, employeeName: null })),
 		claims.map(({ row }) => ({ row, employeeName: null })),
 	);
+	// An adjustment's balance is its original report's (#615).
+	return accounts.filter((account) => account.adjustmentOf === null);
 }
 
 export function settlementCommandFingerprint(
@@ -583,6 +653,8 @@ export type RecordSettlementResult =
 	/** The key was used for a different command. */
 	| { status: "idempotency_conflict" }
 	| { status: "not_approved" }
+	/** An adjustment report (#615): money is recorded on the report it corrects. */
+	| { status: "adjustment_report" }
 	/** Finance cannot record money for their own expenses. */
 	| { status: "own_expense" }
 	| {
@@ -621,6 +693,7 @@ export async function recordSettlementEntry(
 		if (!account) return { status: "not_found" } as const;
 		const replay = await findByIdempotencyKey(tx, actor.organizationId, input.idempotencyKey);
 		if (replay) return replayResult(replay, fingerprint, account);
+		if (account.adjustmentOf) return { status: "adjustment_report" } as const;
 		if (!account.approved) return { status: "not_approved" } as const;
 		if (account.employeeId === actor.employeeId) return { status: "own_expense" } as const;
 		const plan = planSettlementEntry(account.summary, command, input.expectedBalance);

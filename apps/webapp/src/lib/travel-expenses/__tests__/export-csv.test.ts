@@ -462,6 +462,8 @@ describe("travel expense export files", () => {
 			...EMPTY_LATER_FACTS,
 			receipt_count: "1",
 			receipt_files: "receipts/report-trip/001-rcpt-train-train ticket.pdf",
+			record_type: "original",
+			adjusts_report_id: "",
 		});
 		// Company-paid costs stay visible but never count toward reimbursement.
 		expect(rows[1]).toMatchObject({
@@ -764,7 +766,7 @@ describe("travel expense export files", () => {
 
 	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
 		// A new version must be mapped by the export contract before it is exported.
-		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(6);
+		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(7);
 		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
@@ -772,13 +774,70 @@ describe("travel expense export files", () => {
 				expect.objectContaining({ facts_schema_version: String(version) }),
 			]);
 		}
-		for (const version of [0, 7]) {
+		for (const version of [0, 8]) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
 			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
 				expect.objectContaining({ code: "manifest_invalid" }),
 			);
 		}
+	});
+
+	it("identifies an adjustment, the report it corrects and its signed delta (#615)", () => {
+		const revision = standaloneRevision();
+		revision.reportId = "report-adjustment";
+		revision.facts.reportId = "report-adjustment";
+		revision.facts.schemaVersion = 7;
+		revision.facts.adjustment = {
+			originalReportId: "report-solo-original",
+			reason: "=Taxi refunded part of the fare",
+			baseline: {
+				originalReportId: "report-solo-original",
+				revisionId: "rev-original",
+				submissionCycle: 1,
+				currency: "CHF",
+				approvedAmount: "50.00",
+				adjustments: [],
+				entitlement: "50.00",
+			},
+			delta: { amount: "-14.50", currency: "CHF" },
+		};
+		const input = manifest([standaloneRevision(), revision]);
+		expect(records(file("reports.csv", input))).toEqual([
+			expect.objectContaining({
+				report_id: "report-solo",
+				record_type: "original",
+				adjusts_report_id: "",
+				adjustment_delta: "",
+			}),
+			expect.objectContaining({
+				report_id: "report-adjustment",
+				reimbursable_total: "35.50",
+				record_type: "adjustment",
+				adjusts_report_id: "report-solo-original",
+				adjustment_reason: "'=Taxi refunded part of the fare",
+				adjustment_baseline_revision_id: "rev-original",
+				adjustment_baseline_entitlement: "50.00",
+				// A negative delta stays a number, not an escaped formula.
+				adjustment_delta: "-14.50",
+			}),
+		]);
+		expect(records(file("expenses.csv", input)).map((row) => row.record_type)).toEqual([
+			"original",
+			"adjustment",
+		]);
+
+		// A delta that does not follow from its baseline is never exported.
+		const inconsistent = structuredClone(revision);
+		if (inconsistent.facts.adjustment) inconsistent.facts.adjustment.delta.amount = "-10.00";
+		expect(() => buildTravelExpenseExportFiles(manifest([inconsistent]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+		const early = structuredClone(revision);
+		early.facts.schemaVersion = 6;
+		expect(() => buildTravelExpenseExportFiles(manifest([early]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
 	});
 
 	it("is byte-identical for the same manifest", () => {

@@ -102,6 +102,8 @@ export const queryKeys = {
 		projectExceptions: () => ["travel-expenses", "settings", "project-exceptions"] as const,
 		financeExports: () => ["travel-expenses", "finance", "exports"] as const,
 		referenceRateSettings: () => ["travel-expenses", "settings", "reference-rates"] as const,
+		reportAdjustments: (reportId: string) =>
+			["travel-expenses", "reports", reportId, "adjustments"] as const,
 	},
 
 	// Employees

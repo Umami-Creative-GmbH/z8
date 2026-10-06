@@ -457,6 +457,8 @@ export async function listExportableTravelExpenseRevisions(
 	const accounts = await listFinanceQueue(database, {
 		organizationId: input.organizationId,
 		filter: "all",
+		// Approved adjustments (#615) are exported as their own revisions.
+		includeAdjustments: true,
 	});
 	const candidates = accounts.filter(
 		(account) =>

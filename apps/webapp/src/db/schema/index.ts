@@ -100,6 +100,7 @@ export * from "./travel-expense-reference-rate";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
 export * from "./travel-expense-export";
+export * from "./travel-expense-adjustment";
 // TypeScript types
 export * from "./types";
 export * from "./user-settings";

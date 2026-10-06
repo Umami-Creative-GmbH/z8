@@ -11,6 +11,7 @@ import {
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
+import { adjustmentReviewSections } from "./travel-expense-report-adjustment-review";
 import { conversionReviewRows } from "./travel-expense-report-conversion-review";
 import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
 import { mileageReviewRows } from "./travel-expense-report-mileage";
@@ -154,6 +155,7 @@ export function buildTravelExpenseReportReviewSections(
 	);
 
 	const sections: ApprovalInboxDetailSection[] = [
+		...adjustmentReviewSections(facts),
 		{ type: "key_value", title: text("submittedReportTitle", "Submitted report"), rows },
 		...receiptExceptionAcceptanceSections(facts),
 		...facts.items.map((item, index): ApprovalInboxDetailSection => {

@@ -27,8 +27,14 @@ import {
 import { effectiveItemProject } from "@/lib/travel-expenses/project-attribution";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { tripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
+import type { AdjustmentBaseline } from "@/lib/travel-expenses/adjustment";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
+import {
+	adjustmentSnapshot,
+	type TravelExpenseReportAdjustmentLink,
+	type TravelExpenseReportSubmittedAdjustment,
+} from "./travel-expense-report-adjustment";
 import type { TravelExpenseMoney } from "./travel-expense-facts";
 import {
 	assertConversionScope,
@@ -52,7 +58,7 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 6;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 7;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
@@ -63,6 +69,7 @@ const PROJECT_ATTRIBUTION_SCHEMA_VERSION = 4;
 /** Version 5 (#606) adds `mileage` to mileage items. */
 const MILEAGE_FACTS_SCHEMA_VERSION = 5;
 /* Version 6 (#608) admits the `reference_rate` conversion basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
+/* Version 7 (#615) adds the root `adjustment` of an adjustment report (`ADJUSTMENT_FACTS_SCHEMA_VERSION`). */
 
 /**
  * The accounting attribution of one expense as it was submitted (#605): the
@@ -172,6 +179,8 @@ export interface TravelExpenseReportSubmittedFacts {
 	} | null;
 	items: TravelExpenseReportSubmittedItem[];
 	totals: { currency: string; reimbursable: string; companyPaid: string };
+	/** Since v7 (#615): present only on an adjustment report. */
+	adjustment?: TravelExpenseReportSubmittedAdjustment;
 }
 
 export interface TravelExpenseReportFactsInput {
@@ -236,6 +245,10 @@ export interface TravelExpenseReportFactsInput {
 	}>;
 	/** Saved conversions of foreign-currency items (#607). */
 	conversions?: ReadonlyArray<TravelExpenseReportConversionRow>;
+	/** The report it corrects when this is an adjustment report (#615). */
+	adjustment?: TravelExpenseReportAdjustmentLink | null;
+	/** Submitting an adjustment: the baseline resolved under the original's lock. */
+	adjustmentBaseline?: AdjustmentBaseline;
 }
 
 const MONEY_AMOUNT = /^\d{1,10}\.\d{2}$/;
@@ -602,6 +615,14 @@ function snapshotReport(
 			reimbursable: totals.reimbursable,
 			companyPaid: totals.companyPaid,
 		},
+		...adjustmentSnapshot({
+			link: input.adjustment,
+			baseline: input.adjustmentBaseline,
+			frozen: frozen?.adjustment,
+			corrected: { amount: totals.reimbursable, currency: totals.currency },
+			mode,
+			schemaVersion,
+		}),
 	};
 }
 
@@ -626,6 +647,8 @@ export function fingerprintTravelExpenseReportFacts(
 		["schemaVersion", facts.schemaVersion],
 		["kind", facts.kind],
 		...MATERIAL_FIELDS.map((field) => [field, facts[field]]),
+		// Only adjustment reports have one (v7, #615); other fingerprints stay unchanged.
+		...(facts.adjustment ? [["adjustment", facts.adjustment]] : []),
 	]);
 	// The prefix is the version the facts were frozen with, never the current one.
 	return `travel_expense_report:v${facts.schemaVersion}:${createHash("sha256")
@@ -665,9 +688,15 @@ export function compareLiveTravelExpenseReportWithRevision(
 			changedFields: [`unverifiable:${error.details.field ?? error.code}`],
 		};
 	}
-	const changedFields = MATERIAL_FIELDS.filter(
+	const changedFields: string[] = MATERIAL_FIELDS.filter(
 		(field) => canonicalJson(submitted[field]) !== canonicalJson(liveFacts[field]),
 	);
+	if (
+		(submitted.adjustment || liveFacts.adjustment) &&
+		canonicalJson(submitted.adjustment ?? null) !== canonicalJson(liveFacts.adjustment ?? null)
+	) {
+		changedFields.push("adjustment");
+	}
 	return changedFields.length > 0
 		? { kind: "material_change", changedFields: [...changedFields] }
 		: { kind: "current" };

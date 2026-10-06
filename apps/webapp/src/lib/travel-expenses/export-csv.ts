@@ -6,6 +6,13 @@ import {
 } from "@/lib/approvals/evidence/travel-expense-report-facts";
 import type { ItemConversion } from "./currency-conversion";
 import {
+	ADJUSTMENT_EXPENSE_COLUMNS,
+	ADJUSTMENT_REPORT_COLUMNS,
+	adjustmentExpenseCells,
+	adjustmentManifestProblem,
+	adjustmentReportCells,
+} from "./export-adjustment";
+import {
 	bundleReceiptPath,
 	type TravelExpenseExportManifest,
 	type TravelExpenseExportManifestRevision,
@@ -24,7 +31,8 @@ import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money"
  *
  * Revisions of every frozen facts version 1..current are exported; facts a
  * version did not have (receipt exception v2, conversion v3, project v4,
- * mileage v5, reference-rate conversion v6) leave their columns empty. Items
+ * mileage v5, reference-rate conversion v6, adjustment v7) leave their columns
+ * empty (`record_type` reads `original`; `export-adjustment.ts`). Items
  * are priced from their frozen pricing inputs and must add up to the frozen
  * totals.
  *
@@ -457,6 +465,7 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	...MILEAGE_COLUMNS,
 	"receipt_count",
 	"receipt_files",
+	...ADJUSTMENT_EXPENSE_COLUMNS,
 ] as const;
 
 const REPORT_COLUMNS = [
@@ -479,6 +488,7 @@ const REPORT_COLUMNS = [
 	"company_paid_total",
 	"item_count",
 	"receipt_count",
+	...ADJUSTMENT_REPORT_COLUMNS,
 ] as const;
 
 const RECEIPT_COLUMNS = [
@@ -554,6 +564,10 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 				`Reference rate conversion in facts schema version ${facts.schemaVersion}`,
 			);
 		}
+		const adjustmentProblem = adjustmentManifestProblem(facts);
+		if (adjustmentProblem) {
+			throw new TravelExpenseExportContentError("manifest_invalid", adjustmentProblem);
+		}
 	}
 }
 
@@ -601,6 +615,7 @@ export function buildTravelExpenseExportFiles(
 				...mileageCells(item),
 				csvInteger(item.receipts.length),
 				csvText(paths.join("; ")),
+				...adjustmentExpenseCells(facts, { text: csvText, decimal: csvDecimal }),
 			]);
 			item.receipts.forEach((receipt, index) => {
 				receiptRows.push([
@@ -625,6 +640,7 @@ export function buildTravelExpenseExportFiles(
 			csvDecimal(facts.totals.companyPaid),
 			csvInteger(facts.items.length),
 			csvInteger(receiptCount),
+			...adjustmentReportCells(facts, { text: csvText, decimal: csvDecimal }),
 		]);
 	}
 	return [

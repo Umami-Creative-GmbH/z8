@@ -151,7 +151,7 @@ export type RecordReimbursementResult =
 	| { status: "recorded"; replayed: boolean; account: SettlementAccount }
 	| { status: "invalid"; errors: SettlementCommandFieldError[] }
 	| { status: "refused"; reason: SettlementPlanRefusal; account: SettlementAccount }
-	| { status: "idempotency_conflict" | "not_approved" | "own_expense" };
+	| { status: "idempotency_conflict" | "not_approved" | "own_expense" | "adjustment_report" };
 
 /**
  * Records a reimbursement finance paid outside Z8. Retrying with the same

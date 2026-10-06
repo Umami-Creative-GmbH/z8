@@ -115,6 +115,14 @@ function outcomeMessage(
 					"Your organization is changing how expense approvals work, so reports cannot be submitted right now. Your report stays saved as a draft.",
 				),
 			};
+		case "adjustment_unavailable":
+			return {
+				title: t("travelExpenses.report.submit.adjustmentTitle", "This adjustment cannot be submitted"),
+				body: t(
+					"travelExpenses.report.submit.adjustment",
+					"The report this adjustment corrects is no longer approved in this currency, so no signed difference can be calculated. Your adjustment stays saved as a draft.",
+				),
+			};
 	}
 }
 
