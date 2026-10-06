@@ -24,6 +24,14 @@ import type { TravelExpenseMoney } from "./travel-expense-facts";
  * later policy, currency or viewer zone: reviewers decide exactly these facts.
  */
 
+/**
+ * Version of newly frozen facts. Revisions of every version 1..current stay
+ * readable (`travel-expense-report-store.ts`) and keep the version they were
+ * frozen with. A version adds only optional facts, omitted (never `null` or
+ * `undefined`) when they do not apply and emitted only when building at that
+ * version or later, so an older revision stays byte-identical and compares
+ * as `current` against unchanged live rows.
+ */
 export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 1;
 
 export interface TravelExpenseReportReceiptManifestItem {
@@ -50,7 +58,8 @@ export interface TravelExpenseReportSubmittedItem {
 }
 
 export interface TravelExpenseReportSubmittedFacts {
-	schemaVersion: typeof TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION;
+	/** The version these facts were frozen with: 1..`TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION`. */
+	schemaVersion: number;
 	kind: "travel_expense_report";
 	organizationId: string;
 	reportId: string;
@@ -225,12 +234,18 @@ function tripFacts(
 export function buildTravelExpenseReportSubmittedFacts(
 	input: TravelExpenseReportFactsInput,
 ): TravelExpenseReportSubmittedFacts {
-	return snapshotReport(input, "submit");
+	return snapshotReport(input, "submit", TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION);
 }
 
+/**
+ * `schemaVersion` is the version the snapshot is built at: the current one
+ * when submitting, the frozen revision's when comparing. Facts introduced by
+ * a later version are emitted only when `schemaVersion` reaches it.
+ */
 function snapshotReport(
 	input: TravelExpenseReportFactsInput,
 	mode: SnapshotMode,
+	schemaVersion: number,
 ): TravelExpenseReportSubmittedFacts {
 	const enforce = mode === "submit";
 	const { report } = input;
@@ -315,7 +330,7 @@ function snapshotReport(
 	if (enforce && totals.excludedItemCount > 0) incomplete("totals");
 
 	return {
-		schemaVersion: TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
+		schemaVersion,
 		kind: "travel_expense_report",
 		organizationId: report.organizationId,
 		reportId: report.id,
@@ -356,9 +371,8 @@ export function fingerprintTravelExpenseReportFacts(
 		["kind", facts.kind],
 		...MATERIAL_FIELDS.map((field) => [field, facts[field]]),
 	]);
-	return `travel_expense_report:v${TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION}:${createHash(
-		"sha256",
-	)
+	// The prefix is the version the facts were frozen with, never the current one.
+	return `travel_expense_report:v${facts.schemaVersion}:${createHash("sha256")
 		.update(canonicalJson(material))
 		.digest("hex")}`;
 }
@@ -376,9 +390,18 @@ export function compareLiveTravelExpenseReportWithRevision(
 	submitted: TravelExpenseReportSubmittedFacts,
 	live: TravelExpenseReportFactsInput,
 ): TravelExpenseReportRevisionComparison {
+	const { schemaVersion } = submitted;
+	if (
+		!Number.isInteger(schemaVersion) ||
+		schemaVersion < 1 ||
+		schemaVersion > TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION
+	) {
+		return { kind: "material_change", changedFields: ["unverifiable:schema_version"] };
+	}
 	let liveFacts: TravelExpenseReportSubmittedFacts;
 	try {
-		liveFacts = snapshotReport(live, "compare");
+		// Snapshot the live rows as the revision's version saw them.
+		liveFacts = snapshotReport(live, "compare", schemaVersion);
 	} catch (error) {
 		if (!(error instanceof ApprovalEvidenceError)) throw error;
 		return {

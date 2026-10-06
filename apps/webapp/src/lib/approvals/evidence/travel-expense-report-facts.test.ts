@@ -1,4 +1,6 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import {
 	buildTravelExpenseReportSubmittedFacts,
@@ -235,6 +237,27 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 	});
 });
 
+describe("schema version 1 revisions", () => {
+	// Golden values captured from the #602 builder before the reader became
+	// version tolerant: a v1 revision must stay byte-identical forever.
+	const V1_FACTS_SHA256 = "92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
+	const V1_FINGERPRINT =
+		"travel_expense_report:v1:92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
+
+	it("still freezes a v1 report byte for byte", () => {
+		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
+		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);
+	});
+
+	it("fingerprints facts under the version they were frozen with", () => {
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 7 };
+		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(
+			/^travel_expense_report:v7:[0-9a-f]{64}$/,
+		);
+	});
+});
+
 describe("compareLiveTravelExpenseReportWithRevision", () => {
 	const submitted = buildTravelExpenseReportSubmittedFacts(input());
 
@@ -268,6 +291,12 @@ describe("compareLiveTravelExpenseReportWithRevision", () => {
 			kind: "material_change",
 			changedFields: ["items"],
 		});
+	});
+
+	it("cannot verify a revision frozen with a version this build does not know", () => {
+		expect(
+			compareLiveTravelExpenseReportWithRevision({ ...submitted, schemaVersion: 99 }, input()),
+		).toEqual({ kind: "material_change", changedFields: ["unverifiable:schema_version"] });
 	});
 
 	it("holds a report whose live rows break organization scope", () => {

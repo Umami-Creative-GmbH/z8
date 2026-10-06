@@ -56,6 +56,20 @@ function nullableString(value: unknown): boolean {
 	return value === null || typeof value === "string";
 }
 
+/**
+ * Every version up to the current one stays readable: a revision keeps the
+ * version (and fingerprint prefix) it was frozen with, and later versions
+ * only add optional facts, so older revisions parse unchanged.
+ */
+function isReadableSchemaVersion(version: unknown): version is number {
+	return (
+		typeof version === "number" &&
+		Number.isInteger(version) &&
+		version >= 1 &&
+		version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION
+	);
+}
+
 function parseRevision(
 	row: SubmittedRevisionRow,
 	scope: { organizationId: string; reportId: string },
@@ -69,12 +83,12 @@ function parseRevision(
 		row.workflowType !== "travel_expense" ||
 		row.sourceType !== TRAVEL_EXPENSE_REPORT_SOURCE_TYPE ||
 		row.sourceId !== scope.reportId ||
-		row.schemaVersion !== TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION ||
+		!isReadableSchemaVersion(row.schemaVersion) ||
 		row.provenance !== "captured_at_submission" ||
 		row.submitterActorKind !== "employee" ||
 		!isRecord(facts) ||
 		facts.kind !== "travel_expense_report" ||
-		facts.schemaVersion !== TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION ||
+		facts.schemaVersion !== row.schemaVersion ||
 		facts.organizationId !== row.organizationId ||
 		facts.reportId !== row.sourceId ||
 		typeof facts.submissionCycle !== "number" ||
