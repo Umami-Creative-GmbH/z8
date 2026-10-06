@@ -10,7 +10,7 @@
 
 import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { calendarConnection, employee } from "@/db/schema";

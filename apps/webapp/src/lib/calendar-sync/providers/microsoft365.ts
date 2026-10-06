@@ -7,7 +7,7 @@
  * @see https://learn.microsoft.com/en-us/graph/api/resources/calendar
  */
 
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { env } from "@/env";
 import {
 	type CalendarEventToCreate,

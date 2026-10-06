@@ -6,7 +6,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { Effect } from "effect-v3";
+import type { Effect } from "effect";
 import type {
 	CalendarEventToCreate,
 	CalendarEventUpdate,

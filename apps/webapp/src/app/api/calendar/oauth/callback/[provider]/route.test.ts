@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	context: vi.fn(async () => null),
