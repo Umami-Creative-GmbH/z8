@@ -45,7 +45,12 @@ lifecycles are the pending canonical workflows, the only ones a time card
 represents, checked with the time card's own revision and fact gates
 (`classifyCanonicalTimeCard` in `presentation/time-card.ts`, which the card
 path itself uses). Legacy time requests are
-classified by the [time pilot report](time-pilot.md) (#329):
+classified by the [time pilot report](time-pilot.md) (#329). Under
+`travel_expense` the pending lifecycles are submitted claims and, since #623,
+submitted expense reports, classified against the frozen revision of their
+current submission cycle. A report's in-flight count is per submission cycle
+(like legacy absences), and old-path card counts include report requests.
+Report cards are admitted on Telegram only, like claim cards:
 
 | Class | Meaning |
 | --- | --- |

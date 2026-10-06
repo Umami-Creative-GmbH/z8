@@ -1,4 +1,6 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
+import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 
 /**
  * Receipt expense items of a travel expense report (#600). A draft item may be
@@ -66,10 +68,7 @@ export function isSupportedCurrency(code: string): boolean {
 
 /** Minor-unit digits of a currency, e.g. 2 for EUR and 0 for JPY. */
 export function currencyFractionDigits(code: string): number {
-	return (
-		new Intl.NumberFormat("en", { style: "currency", currency: code }).resolvedOptions()
-			.maximumFractionDigits ?? 2
-	);
+	return currencyMinorUnitDigits(code);
 }
 
 /** Parses a positive decimal amount ("12.5" or "12,5") into minor units of two decimals. */
@@ -194,30 +193,25 @@ export interface ReceiptReportTotals {
 	excludedItemCount: number;
 }
 
+/** Each item counts as `itemReimbursementAmount` prices it; amounts are summed exactly. */
 export function receiptReportTotals(
-	items: readonly Pick<ReceiptItemDraft, "amount" | "currency" | "paidBy">[],
+	items: readonly ReimbursementItemInput[],
 	reimbursementCurrency: string,
 ): ReceiptReportTotals {
-	let reimbursable = 0;
-	let companyPaid = 0;
-	let excludedItemCount = 0;
-	for (const item of items) {
-		const minor =
-			item.amount && item.currency === reimbursementCurrency
-				? parseAmountMinor(item.amount, 2)
-				: null;
-		if (minor === null || !item.paidBy) {
-			excludedItemCount += 1;
-		} else if (item.paidBy === "employee") {
-			reimbursable += minor;
-		} else {
-			companyPaid += minor;
-		}
-	}
+	const amounts = items.map((item) => itemReimbursementAmount(item, reimbursementCurrency));
+	const sumPaidBy = (payer: ExpensePayer) =>
+		formatUnits(
+			sumUnits(
+				amounts.flatMap((amount) =>
+					amount.counted && amount.paidBy === payer ? [amount.units] : [],
+				),
+			),
+			STORED_AMOUNT_SCALE,
+		);
 	return {
 		currency: reimbursementCurrency,
-		reimbursable: formatMinor(reimbursable),
-		companyPaid: formatMinor(companyPaid),
-		excludedItemCount,
+		reimbursable: sumPaidBy("employee"),
+		companyPaid: sumPaidBy("company"),
+		excludedItemCount: amounts.filter((amount) => !amount.counted).length,
 	};
 }

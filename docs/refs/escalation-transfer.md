@@ -494,6 +494,17 @@ organization management check passes. Bound expense cards never carry
 management; their result is `review_required` with reason `reassigned`. This
 applies to the inbox, the expense page actions and cards alike.
 
+Expense reports (#623, `entity_type = 'travel_expense_report'`) share the
+`travel_expense` kind and are discovered, transferred and held the same way.
+The subject is the report: it must be `submitted` by the requester and have
+exactly one pending request, and only a chain stage of the request itself is
+held as `legacy_chain_stage` (chains of a report's earlier submission cycles
+are history). The journal and its event name the report as source; the
+replacement delivery plans it into the report's cycle-keyed lifecycle. The
+report decision owner applies the same transfer guard to the inbox and to
+report cards. Held report attention links to the inbox filtered to claims and
+reports (`travel_expense` names both).
+
 ### Activation blockers (#326)
 
 - Everything under [Activation blockers](#activation-blockers) and

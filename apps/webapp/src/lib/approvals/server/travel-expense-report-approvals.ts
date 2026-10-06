@@ -18,6 +18,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import { onTravelExpenseReportDecided } from "@/lib/notifications/triggers";
 import { acquireApprovalWriteGate } from "../authority";
+import { kickApprovalDelivery } from "../delivery/kick";
 import type { ApprovalActionOptions } from "../domain/types";
 import {
 	ApprovalAssignmentReassignedError,
@@ -43,6 +44,13 @@ import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/tra
 import { ApprovalAuditLogger, createApprovalAuditLogger } from "../infrastructure/audit-logger";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { processApprovalWithCurrentEmployee } from "./shared";
+import {
+	beginBoundReportInvocation,
+	loadBoundReportBinding,
+	recordBoundReportInvocation,
+	type TravelExpenseReportBoundInvocation,
+} from "./travel-expense-report-bound-invocation";
+import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalAction, ApprovalDatabase, ApprovalDbService, CurrentApprover } from "./types";
 
 /**
@@ -99,6 +107,11 @@ export interface TravelExpenseReportDecisionInput {
 	>;
 	/** Explicit organization approval management, checked by the trusted caller. */
 	canManageOrganizationApproval?(): Promise<boolean>;
+	/**
+	 * Present only for a bound card action (#623); its authority is the binding
+	 * alone, so it never carries management or eligible-manager options.
+	 */
+	bound?: TravelExpenseReportBoundInvocation;
 }
 
 export type TravelExpenseReportDecisionOutcome =
@@ -111,6 +124,8 @@ export type TravelExpenseReportDecisionOutcome =
 			reportStatus: "submitted" | "approved" | "rejected";
 			/** Totals of the decided frozen revision. */
 			totals: TravelExpenseReportSubmittedFacts["totals"];
+			/** A cycle-keyed `decided` intent was written; kick delivery after commit (#623). */
+			deliveryIntent: boolean;
 	  };
 
 export async function findPendingReportRequestForApprover(
@@ -373,6 +388,8 @@ async function recordReportDecisionEvidence(
 		reason: string | undefined;
 		approvalRequestId: string;
 		actor: { employeeId: string; userId: string };
+		/** A bound card decision (#623): the invocation's receipt key and the reviewed binding. */
+		bound?: { idempotencyKey: string; reviewedBindingId: string };
 	},
 ): Promise<{
 	evidence: LegacyDecisionEvidenceRecord;
@@ -403,8 +420,10 @@ async function recordReportDecisionEvidence(
 		organizationId: input.organizationId,
 		submittedRevisionId: revision.id,
 		operationKind: "command",
+		...(input.bound ? { reviewedBindingId: input.bound.reviewedBindingId } : {}),
 		receipt: {
-			idempotencyKey: travelExpenseReportDecisionIdempotencyKey(input),
+			idempotencyKey:
+				input.bound?.idempotencyKey ?? travelExpenseReportDecisionIdempotencyKey(input),
 			actorFingerprint: employeeActorFingerprint(input.actor),
 			commandFingerprint: fingerprintTravelExpenseReportDecisionCommand(input),
 		},
@@ -450,9 +469,14 @@ function failureOf(cause: Cause.Cause<unknown>): unknown {
 
 /**
  * Runs one report decision in the caller's transaction. Order: rollout gate,
- * exact target request, exact-retry replay, escalation transfer guard, frozen
- * revision check, the shared legacy mutation, then decision evidence. Any
- * failure throws and rolls everything back.
+ * invocation lock, replay and admission (bound cards, #623), authority, exact
+ * target request (the bound one for a card), semantic exact-retry replay
+ * (web only), escalation transfer guard, frozen revision check (a card's
+ * binding must name the current cycle's revision), the shared legacy
+ * mutation, then decision evidence, the card's invocation and the cycle's
+ * `decided` delivery intent. Any failure throws and rolls everything back.
+ * The decision is approve or reject; #603 adds a return decision as a
+ * separate report-only path that reuses this ordering.
  */
 export async function executeTravelExpenseReportDecisionInTransaction(
 	database: ApprovalDatabase,
@@ -468,12 +492,38 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		organizationId,
 		workflowType: "travel_expense",
 	});
+	// A bound card action (#623): an exact committed invocation replays before
+	// any fresh check, then current admission is required.
+	const invocation = input.bound
+		? await beginBoundReportInvocation(database, {
+				organizationId,
+				actor,
+				action,
+				reason: input.reason,
+				bound: input.bound,
+			})
+		: null;
+	if (invocation?.kind === "replayed") {
+		return {
+			kind: "replayed",
+			evidence: invocation.evidence,
+			approvalRequestId: invocation.evidence.legacy.approvalRequestId,
+		};
+	}
 	// Reports have no canonical adapter: nothing decides them under another authority.
 	if (gate.authority !== "legacy") {
 		throw new ApprovalEvidenceError("binding_mismatch", { field: "authority" });
 	}
+	const binding = input.bound
+		? await loadBoundReportBinding(database, {
+				organizationId,
+				bindingId: input.bound.bindingId,
+				actorEmployeeId: actor.id,
+			})
+		: null;
 	const actorIdentity = { employeeId: actor.id, userId: actor.userId };
 	const approvalRequestId =
+		binding?.legacyApprovalRequestId ??
 		input.options?.approvalRequestId ??
 		(await findPendingReportRequestForApprover(database, {
 			organizationId,
@@ -488,14 +538,18 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 			action,
 		});
 	}
-	const replayed = await findReportDecisionReplay(database, {
-		organizationId,
-		reportId,
-		approvalRequestId,
-		action,
-		reason: input.reason,
-		actor: actorIdentity,
-	});
+	// A fresh invocation never matches a semantic receipt; its own committed
+	// receipt was matched above.
+	const replayed = binding
+		? null
+		: await findReportDecisionReplay(database, {
+				organizationId,
+				reportId,
+				approvalRequestId,
+				action,
+				reason: input.reason,
+				actor: actorIdentity,
+			});
 	if (replayed) return { kind: "replayed", evidence: replayed, approvalRequestId };
 
 	// The request row is locked like a transfer locks it, so competing decisions
@@ -523,12 +577,17 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 	if (
 		request.approverId !== actor.id &&
 		(await wasLegacyRequestTransferred(database, { organizationId, approvalRequestId })) &&
-		!(await input.canManageOrganizationApproval?.())
+		// A card carries no management authority.
+		(binding !== null || !(await input.canManageOrganizationApproval?.()))
 	) {
 		throw new ApprovalAssignmentReassignedError();
 	}
 
 	const revision = await prepareReportDecisionEvidence(database, { organizationId, reportId });
+	if (binding && binding.submittedRevisionId !== revision.id) {
+		// The card showed another cycle's (or a superseded) frozen revision.
+		throw new ApprovalEvidenceError("binding_mismatch", { field: "revision" });
+	}
 	const reason = action === "reject" ? input.reason?.trim() : undefined;
 	const exit = await Effect.runPromiseExit(
 		processApprovalWithCurrentEmployee(
@@ -542,7 +601,8 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 				persistReportDecision(decisionDbService, decisionEntityId, approver, action),
 			(decisionDbService, decisionEntityId, approver) =>
 				preflightReportDecision(decisionDbService, decisionEntityId, approver, action, reason),
-			{ ...input.options, approvalRequestId, transactional: true },
+			// A card decides only as the exact bound request's approver.
+			{ ...(binding ? {} : input.options), approvalRequestId, transactional: true },
 			undefined,
 			"existing",
 		).pipe(
@@ -558,6 +618,25 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		reason,
 		approvalRequestId,
 		actor: actorIdentity,
+		...(invocation && binding
+			? { bound: { idempotencyKey: invocation.key, reviewedBindingId: binding.id } }
+			: {}),
+	});
+	if (invocation && input.bound) {
+		// Same transaction as the legacy mutation and its evidence.
+		await recordBoundReportInvocation(database, {
+			bound: input.bound,
+			invocation,
+			approvalRequestId,
+			decisionEvidenceId: recorded.evidence.id,
+		});
+	}
+	const deliveryIntent = await recordTravelExpenseReportDeliveryIntent(database, {
+		organizationId,
+		reportId,
+		approvalRequestId,
+		revision: revision.legacy,
+		event: "decided",
 	});
 	return {
 		kind: "decided",
@@ -565,6 +644,7 @@ export async function executeTravelExpenseReportDecisionInTransaction(
 		approvalRequestId,
 		reportStatus: recorded.reportStatus,
 		totals: revision.facts.totals,
+		deliveryIntent,
 	};
 }
 
@@ -622,6 +702,27 @@ async function notifyRequester(
 }
 
 /**
+ * After commit: a final decision notifies the requester, and a written
+ * lifecycle intent kicks the delivery owner. A replay repeats nothing.
+ */
+export async function afterTravelExpenseReportDecision(
+	database: ApprovalDatabase,
+	decision: TravelExpenseReportDecisionInput,
+	outcome: TravelExpenseReportDecisionOutcome,
+): Promise<void> {
+	if (outcome.kind !== "decided") return;
+	if (outcome.reportStatus !== "submitted") {
+		// The decided revision's own totals; never a guessed amount.
+		await notifyRequester(database, decision, outcome.totals).catch((error) =>
+			logger.error({ error, reportId: decision.reportId }, "Report decision notification failed"),
+		);
+	}
+	if (outcome.deliveryIntent) {
+		kickApprovalDelivery({ organizationId: decision.organizationId });
+	}
+}
+
+/**
  * Authenticated report decision (inbox). Opens its own transaction; after
  * commit a final decision notifies the requester. A replay repeats nothing.
  */
@@ -646,12 +747,7 @@ export function decideTravelExpenseReportEffect(
 			const outcome = await dbService.db.transaction((transaction) =>
 				executeTravelExpenseReportDecisionInTransaction(transaction, dbService.query, decision),
 			);
-			if (outcome.kind === "decided" && outcome.reportStatus !== "submitted") {
-				// The decided revision's own totals; never a guessed amount.
-				await notifyRequester(dbService.db, decision, outcome.totals).catch((error) =>
-					logger.error({ error, reportId: input.reportId }, "Report decision notification failed"),
-				);
-			}
+			await afterTravelExpenseReportDecision(dbService.db, decision, outcome);
 			return outcome;
 		},
 		catch: (error) => translateTravelExpenseReportDecisionError(error) as AnyAppError,

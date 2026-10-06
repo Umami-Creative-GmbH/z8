@@ -27,6 +27,7 @@ import {
 } from "@/lib/travel-expenses/report-submission";
 import type { TripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { acquireApprovalWriteGate } from "../authority";
+import { kickApprovalDelivery } from "../delivery/kick";
 import { loadEmployeeLabel } from "../evidence/absence-submission";
 import { buildTravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import { captureTravelExpenseReportSubmittedRevision } from "../evidence/travel-expense-report-store";
@@ -39,6 +40,7 @@ import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
 	type ApprovalPolicyEvaluationContext,
 } from "../policies/types";
+import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalDbService } from "./types";
 
 /**
@@ -213,8 +215,9 @@ export async function submitTravelExpenseReport(
 ): Promise<SubmitTravelExpenseReportResult> {
 	const { owner } = input;
 	const submittedAt = dateFromInstant(now);
+	let deliveryIntent = false;
 	try {
-		return await database.transaction(async (tx) => {
+		const result = await database.transaction(async (tx) => {
 			const dbService: ApprovalDbService = {
 				db: tx,
 				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
@@ -420,6 +423,14 @@ export async function submitTravelExpenseReport(
 					observedWorkflowId: null,
 				},
 			});
+			// The cycle's first lifecycle intent, only while a delivery control exists (#623).
+			deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+				approvalRequestId: routing.approvalRequestId,
+				revision: revision.legacy,
+				event: "submitted",
+			});
 			return {
 				kind: "submitted",
 				approvalRequestId: routing.approvalRequestId,
@@ -429,6 +440,8 @@ export async function submitTravelExpenseReport(
 				totals: check.totals,
 			} as const;
 		});
+		if (deliveryIntent) kickApprovalDelivery({ organizationId: owner.organizationId });
+		return result;
 	} catch (error) {
 		if (error instanceof SubmissionRefused) return error.result;
 		throw error;
