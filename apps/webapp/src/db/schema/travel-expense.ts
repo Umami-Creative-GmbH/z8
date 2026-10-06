@@ -130,7 +130,14 @@ export const travelExpenseAttachment = pgTable(
 
 export const TRAVEL_EXPENSE_REPORT_KINDS = ["standalone", "trip"] as const;
 export type TravelExpenseReportKind = (typeof TRAVEL_EXPENSE_REPORT_KINDS)[number];
-export const TRAVEL_EXPENSE_REPORT_STATUSES = ["draft", "submitted", "approved", "rejected"] as const;
+// `returned` (#603): a reviewer sent the submission back; it is editable again.
+export const TRAVEL_EXPENSE_REPORT_STATUSES = [
+	"draft",
+	"submitted",
+	"approved",
+	"rejected",
+	"returned",
+] as const;
 export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[number];
 
 // Travel expense report (#600): groups expense items beside the legacy claim
@@ -141,7 +148,7 @@ export type TravelExpenseReportStatus = (typeof TRAVEL_EXPENSE_REPORT_STATUSES)[
 // advances on every saved edit of those details, like an item's `version`.
 // Submission (#602) freezes the whole report as an approval submitted
 // revision; `submission_count` numbers its submission cycles, and only a
-// draft is ever edited.
+// draft (or a returned report, #603) is ever edited.
 export const travelExpenseReport = pgTable(
 	"travel_expense_report",
 	{
@@ -184,7 +191,7 @@ export const travelExpenseReport = pgTable(
 		check("travel_expense_report_kind_check", sql`${table.kind} IN ('standalone', 'trip')`),
 		check(
 			"travel_expense_report_status_check",
-			sql`${table.status} IN ('draft', 'submitted', 'approved', 'rejected')`,
+			sql`${table.status} IN ('draft', 'submitted', 'approved', 'rejected', 'returned')`,
 		),
 		check(
 			"travel_expense_report_submission_check",
@@ -192,7 +199,7 @@ export const travelExpenseReport = pgTable(
 			AND (${table.status} = 'draft' AND ${table.decidedAt} IS NULL
 				OR ${table.status} = 'submitted' AND ${table.submissionCount} >= 1
 					AND ${table.submittedAt} IS NOT NULL AND ${table.decidedAt} IS NULL
-				OR ${table.status} IN ('approved', 'rejected') AND ${table.submissionCount} >= 1
+				OR ${table.status} IN ('approved', 'rejected', 'returned') AND ${table.submissionCount} >= 1
 					AND ${table.submittedAt} IS NOT NULL AND ${table.decidedAt} IS NOT NULL)`,
 		),
 		check(

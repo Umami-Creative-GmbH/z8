@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Cause, Effect, Exit, Option, Result } from "effect";
 import type { db as appDb } from "@/db";
 import {
@@ -14,6 +14,10 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import {
+	EDITABLE_REPORT_STATUSES,
+	isEditableReportStatus,
+} from "@/lib/travel-expenses/report-return";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
 import {
@@ -238,7 +242,8 @@ export async function submitTravelExpenseReport(
 				)
 				.for("update");
 			if (!locked) refuse({ kind: "not_found" });
-			if (locked.status !== "draft") refuse({ kind: "not_draft" });
+			// A returned report (#603) is resubmitted as the next cycle.
+			if (!isEditableReportStatus(locked.status)) refuse({ kind: "not_draft" });
 
 			const live = await loadTravelExpenseReportFactsInput(tx, {
 				organizationId: owner.organizationId,
@@ -326,7 +331,7 @@ export async function submitTravelExpenseReport(
 					and(
 						eq(travelExpenseReport.id, input.reportId),
 						eq(travelExpenseReport.organizationId, owner.organizationId),
-						eq(travelExpenseReport.status, "draft"),
+						inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 					),
 				)
 				.returning({ submissionCount: travelExpenseReport.submissionCount });

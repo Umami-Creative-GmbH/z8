@@ -113,7 +113,7 @@ export type TravelExpenseReportDecisionOutcome =
 			totals: TravelExpenseReportSubmittedFacts["totals"];
 	  };
 
-async function findPendingReportRequestForApprover(
+export async function findPendingReportRequestForApprover(
 	database: ApprovalDatabase,
 	input: { organizationId: string; reportId: string; approverId: string },
 ): Promise<string | undefined> {
@@ -158,7 +158,7 @@ async function findReportDecisionReplay(
 }
 
 /** The frozen revision of the report's current submission cycle, still matching its live rows. */
-async function prepareReportDecisionEvidence(
+export async function prepareReportDecisionEvidence(
 	database: ApprovalDatabase,
 	input: { organizationId: string; reportId: string },
 ): Promise<TravelExpenseReportSubmittedRevisionRecord> {

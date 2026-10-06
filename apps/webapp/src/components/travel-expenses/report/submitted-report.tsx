@@ -28,6 +28,10 @@ function historyText(
 		submitted: t("travelExpenses.report.history.submitted", "Submitted by {name}", { name }),
 		approved: t("travelExpenses.report.history.approved", "Approved by {name}", { name }),
 		rejected: t("travelExpenses.report.history.rejected", "Rejected by {name}", { name }),
+		returned: t("travelExpenses.report.history.returned", "Returned for changes by {name}", {
+			name,
+		}),
+		withdrawn: t("travelExpenses.report.history.withdrawn", "Withdrawn by {name}", { name }),
 		approval_recorded: t(
 			"travelExpenses.report.history.approvalRecorded",
 			"Approval recorded by {name}; awaiting further approval",
