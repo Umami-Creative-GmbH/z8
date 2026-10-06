@@ -237,6 +237,8 @@ function TripReportBody({
 	const { t } = useTranslate();
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
 	const loadSavedReport = useSavedReportLoader(report.id);
+	// The live draft only starts from the saved trip; later loads must not reset entered values.
+	// react-doctor-disable-next-line react-doctor/no-derived-useState
 	const [details, setDetails] = useState<TripDetailsDraft | null>(trip);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const [adding, setAdding] = useState(false);
@@ -251,6 +253,8 @@ function TripReportBody({
 	useEffect(() => {
 		if (focusTarget === "add") {
 			if (addButton.current) addButton.current.focus();
+			// Focus can only move once the change is in the DOM, i.e. after render.
+			// react-doctor-disable-next-line react-hooks-js/set-state-in-effect
 			setFocusTarget(null);
 		} else if (focusTarget) {
 			const heading = document.getElementById(`expense-${focusTarget.itemId}`);
