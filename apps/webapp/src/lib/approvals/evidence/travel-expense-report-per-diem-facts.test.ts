@@ -50,7 +50,12 @@ function stampFor(trip: PerDiemItinerary, fullDay = "28.00"): StampedPerDiemPoli
 				policyId: "pd-policy",
 				effectiveFrom: "2026-01-01",
 				currency: "EUR",
-				source: { kind: "organization", reference: "Travel policy", version: null, defaultKey: null },
+				source: {
+					kind: "organization",
+					reference: "Travel policy",
+					version: null,
+					defaultKey: null,
+				},
 				withdrawnAt: null,
 				rates: { DE: { ...GERMAN_DOMESTIC_PER_DIEM_DEFAULT.rates, fullDay } },
 			},
@@ -60,7 +65,10 @@ function stampFor(trip: PerDiemItinerary, fullDay = "28.00"): StampedPerDiemPoli
 	return perDiemStampOf(calculation);
 }
 
-function row(trip: PerDiemItinerary, stamp: StampedPerDiemPolicy | null): TravelExpenseReportPerDiemRow {
+function row(
+	trip: PerDiemItinerary,
+	stamp: StampedPerDiemPolicy | null,
+): TravelExpenseReportPerDiemRow {
 	return {
 		itemId: "pd",
 		organizationId: "org-1",
@@ -160,9 +168,9 @@ describe("per diem facts", () => {
 			ApprovalEvidenceError,
 		);
 		const moved = itinerary({ endDate: "2026-09-15", meals: itinerary().meals.slice(0, 2) });
-		expect(() => buildTravelExpenseReportSubmittedFacts(input(row(moved, stampFor(moved))))).toThrow(
-			ApprovalEvidenceError,
-		);
+		expect(() =>
+			buildTravelExpenseReportSubmittedFacts(input(row(moved, stampFor(moved)))),
+		).toThrow(ApprovalEvidenceError);
 	});
 
 	it("compares as current from the stamp, whatever today's policy says", () => {
@@ -182,9 +190,11 @@ describe("per diem facts", () => {
 		expect(
 			compareLiveTravelExpenseReportWithRevision(facts, input(row(trip, stampFor(trip, "30.00")))),
 		).toEqual({ kind: "material_change", changedFields: ["items", "totals"] });
-		expect(compareLiveTravelExpenseReportWithRevision(facts, input(row(trip, null)))).toMatchObject({
-			kind: "material_change",
-		});
+		expect(compareLiveTravelExpenseReportWithRevision(facts, input(row(trip, null)))).toMatchObject(
+			{
+				kind: "material_change",
+			},
+		);
 	});
 
 	it("refuses a per diem row of another report as a scope breach", () => {

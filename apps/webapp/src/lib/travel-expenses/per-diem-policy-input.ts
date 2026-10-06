@@ -111,7 +111,11 @@ function parseRates(
 	if (full !== null) {
 		for (const field of PER_DIEM_RATE_FIELDS) {
 			const value = rates[field];
-			if (field !== "fullDay" && value && (parseUnits(value, STORED_AMOUNT_SCALE) ?? BigInt(0)) > full) {
+			if (
+				field !== "fullDay" &&
+				value &&
+				(parseUnits(value, STORED_AMOUNT_SCALE) ?? BigInt(0)) > full
+			) {
 				errors[field] = "exceeds_full_day";
 			}
 		}

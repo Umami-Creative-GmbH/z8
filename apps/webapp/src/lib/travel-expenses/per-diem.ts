@@ -443,9 +443,7 @@ export interface PerDiemContext {
 const MINUTE_NS = BigInt(60_000_000_000);
 
 function minutesBetween(from: ZonedDateTime, to: ZonedDateTime): number {
-	return Number(
-		(to.toInstant().epochNanoseconds - from.toInstant().epochNanoseconds) / MINUTE_NS,
-	);
+	return Number((to.toInstant().epochNanoseconds - from.toInstant().epochNanoseconds) / MINUTE_NS);
 }
 
 function startOfDay(date: PlainDate, timeZone: string): ZonedDateTime {
@@ -812,6 +810,37 @@ export function perDiemItemView(
 		amount: calculated?.amount ?? null,
 		currency: calculated?.currency ?? null,
 	};
+}
+
+const ITINERARY_FIELDS = [
+	"startDate",
+	"startTime",
+	"startTimeZone",
+	"endDate",
+	"endTime",
+	"endTimeZone",
+	"overnight",
+	"prolongedWorkplace",
+] as const satisfies readonly (keyof PerDiemItinerary)[];
+
+/** Whether two itineraries hold the same facts (meal order and JSON key order aside). */
+export function samePerDiemItinerary(left: PerDiemItinerary, right: PerDiemItinerary): boolean {
+	if (!ITINERARY_FIELDS.every((field) => left[field] === right[field])) return false;
+	const byDate = new Map(right.meals.map((day) => [day.date, day]));
+	return (
+		left.meals.length === right.meals.length &&
+		left.meals.every((day) => {
+			const other = byDate.get(day.date);
+			return (
+				other !== undefined &&
+				PER_DIEM_MEALS.every(
+					(meal) =>
+						day[meal].provided === other[meal].provided &&
+						day[meal].employeePayment === other[meal].employeePayment,
+				)
+			);
+		})
+	);
 }
 
 /** An empty itinerary in the trip's zone. */

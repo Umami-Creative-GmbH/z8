@@ -470,14 +470,28 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 		const frozen = await revisionFacts(reportId);
 		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v7:[0-9a-f]{64}$/);
 		// 14 + (14 - (5.60 - 2.00))
-		expect(frozen.facts.totals).toEqual({ currency: "EUR", reimbursable: "24.40", companyPaid: "0.00" });
+		expect(frozen.facts.totals).toEqual({
+			currency: "EUR",
+			reimbursable: "24.40",
+			companyPaid: "0.00",
+		});
 		expect((frozen.facts.items as Array<Record<string, unknown>>)[0]).toMatchObject({
 			type: "per_diem",
 			category: "meals",
 			original: { amount: "24.40", currency: "EUR" },
 			perDiem: {
-				start: { date: "2026-09-14", time: "07:15", timeZone: "Europe/Berlin", at: "2026-09-14T05:15:00Z" },
-				end: { date: "2026-09-15", time: "19:40", timeZone: "Europe/Berlin", at: "2026-09-15T17:40:00Z" },
+				start: {
+					date: "2026-09-14",
+					time: "07:15",
+					timeZone: "Europe/Berlin",
+					at: "2026-09-14T05:15:00Z",
+				},
+				end: {
+					date: "2026-09-15",
+					time: "19:40",
+					timeZone: "Europe/Berlin",
+					at: "2026-09-15T17:40:00Z",
+				},
 				overnight: "away",
 				amount: "24.40",
 				rules: { key: "de-domestic-per-diem-estg-9-4a-2026", version: "LStH 2026" },
@@ -527,7 +541,10 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 	it("flags days another report or an approved legacy claim already covers", async () => {
 		await adoptGermanDefault();
 		const first = await trip("2026-06-01", "2026-06-03");
-		await savePerDiem(first.reportId, first.item, { startDate: "2026-06-01", endDate: "2026-06-03" });
+		await savePerDiem(first.reportId, first.item, {
+			startDate: "2026-06-01",
+			endDate: "2026-06-03",
+		});
 		const second = await trip("2026-06-03", "2026-06-04");
 		const overlapping = await savePerDiem(second.reportId, second.item, {
 			startDate: "2026-06-03",
@@ -555,9 +572,7 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 			itemId: firstItem.id,
 			expectedVersion: firstItem.version,
 		});
-		expect((await load(second.reportId)).items[0]?.perDiem?.calculation?.status).toBe(
-			"calculated",
-		);
+		expect((await load(second.reportId)).items[0]?.perDiem?.calculation?.status).toBe("calculated");
 
 		// An approved legacy per diem claim with logical dates counts too.
 		await admin.query(

@@ -3,7 +3,7 @@ import type { db as appDb } from "@/db";
 import {
 	travelExpenseClaim,
 	travelExpenseReport,
-	travelExpenseReportItem,
+	type travelExpenseReportItem,
 	travelExpenseReportPerDiem,
 } from "@/db/schema";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";

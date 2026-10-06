@@ -6,11 +6,12 @@ import {
 	type PerDiemItinerary,
 	type PerDiemMealDay,
 	type PerDiemPolicyVersion,
+	parsePerDiemDraft,
 	perDiemMissingRequirements,
 	perDiemPolicyResolver,
 	perDiemStampOf,
 	perDiemStampResolver,
-	parsePerDiemDraft,
+	samePerDiemItinerary,
 	tripDays,
 } from "../per-diem";
 import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT } from "../statutory-per-diem-defaults";
@@ -216,7 +217,11 @@ describe("over-night activity without an overnight stay (Rz. 47, Beispiele 32 an
 			itinerary("2026-05-04T19:00", "2026-05-05T05:00", { overnight: "none" }),
 			context(),
 		);
-		expect(result).toEqual({ status: "exceptional", reasons: ["majority_tie"], overlappingDays: [] });
+		expect(result).toEqual({
+			status: "exceptional",
+			reasons: ["majority_tie"],
+			overlappingDays: [],
+		});
 	});
 });
 
@@ -439,7 +444,10 @@ describe("missing facts and policy", () => {
 			version({ id: "late", effectiveFrom: "2026-06-03" }),
 		]);
 		expect(
-			calculatePerDiem(itinerary("2026-06-01T08:00", "2026-06-03T18:00"), context({ resolvePolicy })),
+			calculatePerDiem(
+				itinerary("2026-06-01T08:00", "2026-06-03T18:00"),
+				context({ resolvePolicy }),
+			),
 		).toEqual({ status: "policy_missing", dates: ["2026-06-01", "2026-06-02"] });
 	});
 
@@ -456,7 +464,10 @@ describe("missing facts and policy", () => {
 			version({ id: "chf", effectiveFrom: "2026-01-01", currency: "CHF" }),
 		]);
 		expect(
-			calculatePerDiem(itinerary("2026-06-01T08:00", "2026-06-01T18:00"), context({ resolvePolicy })),
+			calculatePerDiem(
+				itinerary("2026-06-01T08:00", "2026-06-01T18:00"),
+				context({ resolvePolicy }),
+			),
 		).toEqual({ status: "currency_mismatch", policyCurrency: "CHF" });
 	});
 
@@ -511,6 +522,21 @@ describe("stamp", () => {
 			context({ resolvePolicy: perDiemStampResolver(stamp), rulesKey: stamp.rulesKey }),
 		);
 		expect(moved.status).toBe("policy_missing");
+	});
+});
+
+describe("samePerDiemItinerary", () => {
+	it("ignores meal order and stored key order but not a changed fact", () => {
+		const trip = itinerary("2026-06-01T08:00", "2026-06-02T18:00");
+		const stored = JSON.parse(
+			JSON.stringify({ ...trip, meals: [...trip.meals].reverse() }),
+		) as PerDiemItinerary;
+		expect(samePerDiemItinerary(trip, stored)).toBe(true);
+		expect(samePerDiemItinerary(trip, { ...trip, endTime: "18:01" })).toBe(false);
+		const changedMeal = structuredClone(trip);
+		if (changedMeal.meals[1])
+			changedMeal.meals[1].lunch = { provided: true, employeePayment: null };
+		expect(samePerDiemItinerary(trip, changedMeal)).toBe(false);
 	});
 });
 

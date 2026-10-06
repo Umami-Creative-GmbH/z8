@@ -102,7 +102,12 @@ export function submittedPerDiemFacts(
 		return null;
 	}
 	return {
-		start: { date: startDate, time: startTime, timeZone: startTimeZone, at: calculation.absence.startAt },
+		start: {
+			date: startDate,
+			time: startTime,
+			timeZone: startTimeZone,
+			at: calculation.absence.startAt,
+		},
 		end: { date: endDate, time: endTime, timeZone: endTimeZone, at: calculation.absence.endAt },
 		overnight: startDate === endDate ? null : itinerary.overnight,
 		absenceMinutes: calculation.absence.minutes,

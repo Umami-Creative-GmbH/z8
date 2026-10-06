@@ -55,7 +55,9 @@ export async function loadPerDiemPolicyVersions(
 			and(
 				eq(travelExpenseAllowancePolicyVersion.organizationId, organizationId),
 				eq(travelExpenseAllowancePolicy.kind, "per_diem"),
-				options.includeWithdrawn ? undefined : isNull(travelExpenseAllowancePolicyVersion.withdrawnAt),
+				options.includeWithdrawn
+					? undefined
+					: isNull(travelExpenseAllowancePolicyVersion.withdrawnAt),
 			),
 		)
 		.orderBy(

@@ -14,6 +14,7 @@ import type { ApprovalDatabase } from "../server/types";
 import { conversionReviewRows } from "./travel-expense-report-conversion-review";
 import { travelExpenseReportProjectRows } from "./travel-expense-report-project";
 import { mileageReviewRows } from "./travel-expense-report-mileage";
+import { perDiemReviewRows } from "./travel-expense-report-per-diem";
 import {
 	receiptExceptionAcceptanceSections,
 	receiptExceptionRows,
@@ -184,6 +185,7 @@ export function buildTravelExpenseReportReviewSections(
 			}
 			itemRows.push(...travelExpenseReportProjectRows(item));
 			itemRows.push(...mileageReviewRows(item));
+			itemRows.push(...perDiemReviewRows(item));
 			itemRows.push(
 				...(item.receiptException
 					? receiptExceptionRows(item.receiptException)

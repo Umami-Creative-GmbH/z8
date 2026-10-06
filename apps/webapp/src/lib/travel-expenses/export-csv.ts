@@ -485,10 +485,11 @@ function mileageCells(item: TravelExpenseReportSubmittedItem): string[] {
 function perDiemCells(item: TravelExpenseReportSubmittedItem): string[] {
 	const { perDiem } = item;
 	if (!perDiem) return cellsOf(PER_DIEM_COLUMNS, {});
-	const total = (pick: (day: (typeof perDiem.days)[number]) => string) =>
-		units(sumUnits(perDiem.days.map((day) => parseUnits(pick(day), STORED_AMOUNT_SCALE) ?? ZERO)));
+	const { days } = perDiem;
+	const total = (pick: (day: (typeof days)[number]) => string) =>
+		units(sumUnits(days.map((day) => parseUnits(pick(day), STORED_AMOUNT_SCALE) ?? ZERO)));
 	const count = (allowance: string) =>
-		csvInteger(perDiem.days.filter((day) => day.allowance === allowance).length);
+		csvInteger(days.filter((day) => day.allowance === allowance).length);
 	return cellsOf(PER_DIEM_COLUMNS, {
 		per_diem_start_date: csvText(perDiem.start.date),
 		per_diem_start_time: csvText(perDiem.start.time),

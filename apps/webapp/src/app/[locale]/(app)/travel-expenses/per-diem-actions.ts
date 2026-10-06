@@ -65,7 +65,10 @@ export type SavePerDiemOutcome =
 	| { status: "invalid"; errors: Partial<Record<PerDiemDraftField, PerDiemFieldError>> };
 
 const text = z.string().max(100).nullable();
-const meal = z.strictObject({ provided: z.boolean(), employeePayment: z.string().max(20).nullable() });
+const meal = z.strictObject({
+	provided: z.boolean(),
+	employeePayment: z.string().max(20).nullable(),
+});
 // Strict: a client-supplied amount, rate or total is refused, never ignored silently.
 const saveSchema = z.object({
 	reportId: z.uuid(),
