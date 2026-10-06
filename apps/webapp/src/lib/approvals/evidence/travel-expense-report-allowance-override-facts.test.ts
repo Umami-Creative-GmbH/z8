@@ -172,7 +172,7 @@ describe("allowance override facts", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(
 			perDiemInput([overrideRow("pd", perDiemOverride())]),
 		);
-		expect(facts.schemaVersion).toBe(9);
+		expect(facts.schemaVersion).toBe(10);
 		const [item] = facts.items;
 		expect(item).toMatchObject({
 			type: "per_diem",

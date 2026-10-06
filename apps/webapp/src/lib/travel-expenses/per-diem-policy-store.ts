@@ -122,16 +122,23 @@ export function activatePerDiemPolicyVersion(
 		"per_diem",
 		input,
 		async (tx, versionId) => {
-			await tx.insert(travelExpensePerDiemRate).values({
-				versionId,
-				organizationId: actor.organizationId,
-				area: DOMESTIC_PER_DIEM_AREA,
-				fullDayAmount: input.rates.fullDay,
-				partialDayAmount: input.rates.partialDay,
-				breakfastDeduction: input.rates.breakfastDeduction,
-				lunchDeduction: input.rates.lunchDeduction,
-				dinnerDeduction: input.rates.dinnerDeduction,
-			});
+			// Domestic amounts, plus the foreign amounts of an adopted verified table (#611).
+			const areas: [PerDiemArea, PerDiemRates][] = [
+				[DOMESTIC_PER_DIEM_AREA, input.rates],
+				...Object.entries(input.foreignRates ?? {}),
+			];
+			await tx.insert(travelExpensePerDiemRate).values(
+				areas.map(([area, rates]) => ({
+					versionId,
+					organizationId: actor.organizationId,
+					area,
+					fullDayAmount: rates.fullDay,
+					partialDayAmount: rates.partialDay,
+					breakfastDeduction: rates.breakfastDeduction,
+					lunchDeduction: rates.lunchDeduction,
+					dinnerDeduction: rates.dinnerDeduction,
+				})),
+			);
 		},
 		now,
 	);

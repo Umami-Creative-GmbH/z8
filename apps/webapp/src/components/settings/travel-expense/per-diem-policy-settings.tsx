@@ -56,6 +56,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { queryKeys } from "@/lib/query/keys";
+import { ForeignTableSummary, foreignAreaCount } from "./per-diem-foreign-table-summary";
 import {
 	PER_DIEM_RATE_FIELDS,
 	type PerDiemPolicyInputErrors,
@@ -103,6 +104,11 @@ function errorText(t: Translate, code: string | undefined) {
 			return t(
 				"settings.travelExpenses.perDiem.errors.beforeDefault",
 				"The statutory amounts were verified only from this edition's start; choose a later date or enter your organization's own amounts for earlier days.",
+			);
+		case "after_default_validity":
+			return t(
+				"settings.travelExpenses.perDiem.errors.afterDefault",
+				"These statutory amounts were verified for one year only; choose a date within that year.",
 			);
 		case "invalid_currency":
 			return t(
@@ -214,7 +220,7 @@ function PerDiemPolicyContent({
 			<p className="text-sm text-muted-foreground">
 				{t(
 					"settings.travelExpenses.perDiem.rules",
-					"Eligibility follows {reference} ({version}), verified for travel days from {from} to {through}. Other days, trips abroad and special itineraries are flagged for a manual calculation.",
+					"Eligibility follows {reference} ({version}), verified for travel days from {from} to {through}. Trips abroad are priced per day only with adopted foreign rates; other days and special itineraries are flagged for a manual calculation.",
 					{
 						reference: data.rules.reference,
 						version: data.rules.version,
@@ -271,6 +277,15 @@ function PerDiemPolicyContent({
 															{formatMoney(locale, rates[field], version.currency)}
 														</li>
 													))}
+													{foreignAreaCount(version.rates) > 0 && (
+														<li>
+															{t(
+																"settings.travelExpenses.perDiem.foreignAreas",
+																"Foreign rates: {count} countries and places",
+																{ count: foreignAreaCount(version.rates) },
+															)}
+														</li>
+													)}
 												</ul>
 											) : (
 												t("settings.travelExpenses.perDiem.notCovered", "no domestic rates")
@@ -315,10 +330,15 @@ function PerDiemPolicyContent({
 					className="space-y-2 rounded-lg border p-4"
 				>
 					<h3 id={`${entry.key}-title`} className="text-base font-semibold">
-						{t(
-							"settings.travelExpenses.perDiem.germanDefaultTitle",
-							"German statutory domestic per diem",
-						)}
+						{entry.foreignTableKey
+							? t(
+									"settings.travelExpenses.perDiem.germanForeignDefaultTitle",
+									"German statutory per diem with the official foreign rates",
+								)
+							: t(
+									"settings.travelExpenses.perDiem.germanDefaultTitle",
+									"German statutory domestic per diem",
+								)}
 					</h3>
 					<ul className="text-sm tabular-nums">
 						{PER_DIEM_RATE_FIELDS.map((field) => (
@@ -327,6 +347,7 @@ function PerDiemPolicyContent({
 							</li>
 						))}
 					</ul>
+					<ForeignTableSummary entry={entry} />
 					<p className="text-sm text-muted-foreground">
 						{t(
 							"settings.travelExpenses.perDiem.defaultSource",

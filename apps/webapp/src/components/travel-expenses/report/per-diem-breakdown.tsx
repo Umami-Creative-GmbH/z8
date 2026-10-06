@@ -10,6 +10,7 @@ import type {
 } from "@/lib/travel-expenses/per-diem";
 import { formatMoney, formatPlainDate } from "./format";
 import { policySourceLabel } from "./mileage-breakdown";
+import { PerDiemDayLocationLabel } from "./per-diem-day-location";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -18,7 +19,11 @@ export interface PerDiemBreakdownFacts {
 	days: PerDiemDayBreakdown[];
 	currency: string;
 	amount: string;
-	rules: { reference: string; version: string };
+	rules: {
+		reference: string;
+		version: string;
+		foreignTable?: { reference: string; version: string };
+	};
 	policies: { versionId: string; effectiveFrom: string; source: AllowancePolicySource }[];
 }
 
@@ -65,6 +70,21 @@ export function perDiemExceptionLabel(t: Translate, reason: PerDiemExceptionReas
 			return t(
 				"travelExpenses.report.perDiem.exceptions.international",
 				"A destination is outside Germany. International per diem is not calculated yet.",
+			);
+		case "destination_not_listed":
+			return t(
+				"travelExpenses.report.perDiem.exceptions.destinationNotListed",
+				"A daily location is not covered by the official foreign table or its fallback rules.",
+			);
+		case "special_location":
+			return t(
+				"travelExpenses.report.perDiem.exceptions.specialLocation",
+				"A day was marked as a special situation (other, or a whole day in flight or at sea on the first or last travel day).",
+			);
+		case "foreign_without_overnight":
+			return t(
+				"travelExpenses.report.perDiem.exceptions.foreignWithoutOvernight",
+				"An over-night activity abroad without an overnight stay is not calculated automatically.",
 			);
 		case "mixed_time_zones":
 			return t(
@@ -159,6 +179,7 @@ export function PerDiemBreakdown({ facts }: { facts: PerDiemBreakdownFacts }) {
 										{formatPlainDate(locale, day.date)}
 									</th>
 									<td className="py-1 pr-3">
+										{day.location && <PerDiemDayLocationLabel location={day.location} />}
 										{perDiemBasisLabel(t, day.basis)}
 										<span className="block text-muted-foreground tabular-nums">
 											{t("travelExpenses.report.perDiem.absence", "{hours} away", {
@@ -230,14 +251,36 @@ export function PerDiemBreakdown({ facts }: { facts: PerDiemBreakdownFacts }) {
 					version: facts.rules.version,
 				})}
 			</p>
-			{facts.policies.map((policy) => (
-				<p key={policy.versionId} className="text-muted-foreground">
-					{t("travelExpenses.report.perDiem.appliedPolicy", "Rates valid from {date} · {source}", {
-						date: formatPlainDate(locale, policy.effectiveFrom),
-						source: policySourceLabel(t, policy.source),
-					})}
+			{facts.rules.foreignTable && (
+				<p className="text-muted-foreground">
+					{t(
+						"travelExpenses.report.perDiem.foreignRates",
+						"Foreign rates: {reference} ({version})",
+						{
+							reference: facts.rules.foreignTable.reference,
+							version: facts.rules.foreignTable.version,
+						},
+					)}
 				</p>
-			))}
+			)}
+			{/* One line per version: a version applies with several rate areas abroad (#611). */}
+			{facts.policies
+				.filter(
+					(policy, index, all) =>
+						all.findIndex((other) => other.versionId === policy.versionId) === index,
+				)
+				.map((policy) => (
+					<p key={policy.versionId} className="text-muted-foreground">
+						{t(
+							"travelExpenses.report.perDiem.appliedPolicy",
+							"Rates valid from {date} · {source}",
+							{
+								date: formatPlainDate(locale, policy.effectiveFrom),
+								source: policySourceLabel(t, policy.source),
+							},
+						)}
+					</p>
+				))}
 		</div>
 	);
 }

@@ -167,6 +167,7 @@ export function calculateStampedPerDiem(
 		reimbursementCurrency: report.reimbursementCurrency,
 		resolvePolicy: perDiemStampResolver(stamp),
 		rulesKey: stamp.rulesKey,
+		...(stamp.foreignTableKey ? { foreignTableKey: stamp.foreignTableKey } : {}),
 	});
 }
 

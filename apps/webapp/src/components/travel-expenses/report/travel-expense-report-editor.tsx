@@ -599,6 +599,7 @@ function TripReportBody({
 												startDate: details?.startDate ?? trip.startDate,
 												endDate: details?.endDate ?? trip.endDate,
 												timeZone: details?.timeZone ?? trip.timeZone,
+												destinations: details?.destinations ?? trip.destinations,
 											}}
 											onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
 											onDraftChange={(draft) =>

@@ -11,7 +11,14 @@ import {
 	perDiemPolicyResolver,
 	tripDays,
 } from "@/lib/travel-expenses/per-diem";
-import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT } from "@/lib/travel-expenses/statutory-per-diem-defaults";
+import {
+	BMF_FOREIGN_PER_DIEM_2026,
+	foreignTableRates,
+} from "@/lib/travel-expenses/statutory-foreign-per-diem";
+import {
+	GERMAN_DOMESTIC_PER_DIEM_DEFAULT,
+	GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT,
+} from "@/lib/travel-expenses/statutory-per-diem-defaults";
 
 const reportActions = vi.hoisted(() => ({
 	getMyTravelExpenseReport: vi.fn(),
@@ -229,6 +236,81 @@ describe("per diem (#609)", () => {
 			"startTimeZone",
 		]);
 		expect((call.values.meals as { lunch: { provided: boolean } }[])[0]?.lunch.provided).toBe(true);
+	});
+
+	it("asks for daily locations on a trip abroad and shows each day's applied location (#611)", async () => {
+		const abroad = (item: unknown) => {
+			const report = trip(item);
+			return {
+				...report,
+				data: {
+					...report.data,
+					trip: { ...report.data.trip, destinations: [{ place: "Paris", countryCode: "FR" }] },
+				},
+			};
+		};
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			abroad(
+				perDiemItem({
+					status: "incomplete",
+					missingLocations: ["2026-09-14", "2026-09-15"],
+				}),
+			),
+		);
+		mount();
+		expect(await screen.findByText(/Where were you at midnight\?/)).toBeTruthy();
+		expect(
+			screen.getByText("Where was your last business activity abroad on this trip?"),
+		).toBeTruthy();
+		expect(
+			screen.getByText(/Tell us for every travel day where you were at midnight/),
+		).toBeTruthy();
+		cleanup();
+
+		const located: PerDiemItinerary = {
+			...itinerary,
+			meals: itinerary.meals.map((day, index) =>
+				index === 0
+					? { ...day, night: { country: "FR", place: "paris" } }
+					: { ...day, activityAbroad: { country: "FR", place: "paris" } },
+			),
+		};
+		const priced = calculatePerDiem(located, {
+			trip: { destinations: [{ place: "Paris", countryCode: "FR" }] },
+			reimbursementCurrency: "EUR",
+			resolvePolicy: perDiemPolicyResolver([
+				{
+					id: "6a090000-0000-4000-8000-0000000000a3",
+					policyId: "6a090000-0000-4000-8000-0000000000a2",
+					effectiveFrom: "2026-01-01",
+					currency: "EUR",
+					source: {
+						kind: "statutory_default",
+						reference: GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT.reference,
+						version: GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT.version,
+						defaultKey: GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT.key,
+					},
+					withdrawnAt: null,
+					rates: {
+						DE: { ...GERMAN_DOMESTIC_PER_DIEM_DEFAULT.rates },
+						...foreignTableRates(BMF_FOREIGN_PER_DIEM_2026),
+					},
+				},
+			]),
+		});
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			abroad(perDiemItem(priced, { perDiem: perDiemItemView(located, priced) })),
+		);
+		mount();
+		const panel = await screen.findByRole("region", { name: "Calculated per diem" });
+		const rows = within(panel).getAllByRole("row");
+		expect(rows[1]?.textContent).toContain(
+			"Frankreich – Paris sowie die Departments 77, 78, 91 bis 95",
+		);
+		// Paris: 39 € arrival; departure 39 € − breakfast 11.60 € (20 % of 58 €).
+		expect(rows[2]?.textContent).toContain("Breakfast: −€11.60");
+		expect(rows[3]?.textContent).toContain("€66.40");
+		expect(within(panel).getByText(/Foreign rates: .*BStBl I S\. 2078/)).toBeTruthy();
 	});
 
 	it("offers one per diem on a trip without one", async () => {

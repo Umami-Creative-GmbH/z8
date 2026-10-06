@@ -26,7 +26,8 @@ import { travelExpenseAllowancePolicyVersion } from "./travel-expense-allowance-
  * Per diem amounts of one area in a per diem policy version (#609). The
  * version identity, dating, source and activation are the shared allowance
  * policy (`travel_expense_allowance_policy*`, kind `per_diem`); domestic rates
- * use area `DE`. International tables (#611) add areas (country or place).
+ * use area `DE`. An adopted verified foreign table (#611) adds one row per
+ * listed country ("FR") and place ("FR:paris").
  */
 export const travelExpensePerDiemRate = pgTable(
 	"travel_expense_per_diem_rate",
@@ -50,7 +51,11 @@ export const travelExpensePerDiemRate = pgTable(
 				travelExpenseAllowancePolicyVersion.organizationId,
 			],
 		}).onDelete("cascade"),
-		check("travel_expense_per_diem_rate_area_check", sql`${table.area} IN ('DE')`),
+		// "DE", or a country / listed place of a verified foreign table (#611, `PER_DIEM_AREA_PATTERN`).
+		check(
+			"travel_expense_per_diem_rate_area_check",
+			sql`${table.area} ~ '^[A-Z]{2}(:[a-z0-9-]{1,40})?$'`,
+		),
 		check(
 			"travel_expense_per_diem_rate_amount_check",
 			sql`${table.fullDayAmount} > 0 AND ${table.fullDayAmount} <= 1000

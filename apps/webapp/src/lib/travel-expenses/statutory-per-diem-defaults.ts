@@ -116,6 +116,13 @@ export interface StatutoryPerDiemDefault {
 	rates: PerDiemRates;
 	/** Earliest day the default may be adopted from: the start of the verified edition. */
 	validFrom: string;
+	/** Last day it may be adopted from, for an annual edition (#611 foreign tables). */
+	validThrough?: string;
+	/**
+	 * The verified foreign table (`statutory-foreign-per-diem.ts`) adopted with
+	 * the domestic amounts (#611); its amounts price foreign days of its edition only.
+	 */
+	foreignTableKey?: string;
 	reference: string;
 	version: string;
 	sources: readonly OfficialSource[];
@@ -154,18 +161,58 @@ export const GERMAN_DOMESTIC_PER_DIEM_DEFAULT: StatutoryPerDiemDefault = {
 	verifiedOn: "2026-10-06",
 };
 
+/**
+ * The German domestic amounts together with the BMF table of foreign amounts
+ * for 2026 (#611, `BMF_FOREIGN_PER_DIEM_2026`, LStH 2026 Anhang 25 I, BMF
+ * letter of 05.12.2025, BStBl I S. 2078), verified on 2026-10-07. The foreign
+ * amounts apply to travel days in 2026 only; the table for a later year is a
+ * new default adopted as a new version.
+ */
+export const GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT: StatutoryPerDiemDefault = {
+	key: "de-per-diem-estg-9-4a-bmf-foreign-2026",
+	kind: "per_diem",
+	country: "DE",
+	area: "DE",
+	currency: "EUR",
+	rates: { ...GERMAN_DOMESTIC_PER_DIEM_DEFAULT.rates },
+	validFrom: "2026-01-01",
+	validThrough: "2026-12-31",
+	foreignTableKey: "de-bmf-foreign-per-diem-2026",
+	reference:
+		"§ 9 Abs. 4a Satz 3, 5, 8 and 10 EStG; BMF letters of 25.11.2020 (BStBl I S. 1228), Rz. 51-52, 73, and 05.12.2025 (BStBl I S. 2078); R 9.6 Abs. 3 LStR",
+	version: "LStH 2026, Anhang 25 I and III",
+	sources: [
+		ESTG_9,
+		BMF_REISEKOSTEN,
+		{
+			label: "LStH 2026, Anhang 25 I (BMF 05.12.2025, BStBl I S. 2078)",
+			url: "https://lsth.bundesfinanzministerium.de/lsth/2026/B-Anhaenge/Anhang-25/I/inhalt.html",
+		},
+		LSTR_R_9_6,
+	],
+	verifiedOn: "2026-10-07",
+};
+
 export const STATUTORY_PER_DIEM_DEFAULTS: readonly StatutoryPerDiemDefault[] = [
 	GERMAN_DOMESTIC_PER_DIEM_DEFAULT,
+	GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT,
 ];
 
 export function findStatutoryPerDiemDefault(key: string): StatutoryPerDiemDefault | null {
 	return STATUTORY_PER_DIEM_DEFAULTS.find((entry) => entry.key === key) ?? null;
 }
 
-/** Whether the default may be adopted from `effectiveFrom` (never before its verified edition). */
+/**
+ * Whether the default may be adopted from `effectiveFrom`: never before its
+ * verified edition, and for an annual edition not after it.
+ */
 export function canAdoptPerDiemDefaultFrom(
 	entry: StatutoryPerDiemDefault,
 	effectiveFrom: string,
 ): boolean {
-	return comparePlainDates(parsePlainDate(effectiveFrom), parsePlainDate(entry.validFrom)) >= 0;
+	const day = parsePlainDate(effectiveFrom);
+	return (
+		comparePlainDates(day, parsePlainDate(entry.validFrom)) >= 0 &&
+		(!entry.validThrough || comparePlainDates(day, parsePlainDate(entry.validThrough)) <= 0)
+	);
 }

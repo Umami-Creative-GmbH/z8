@@ -96,6 +96,7 @@ async function ordinaryAllowance(
 		const days = startDate && endDate ? tripDays(startDate, endDate) : [];
 		const mealsComplete =
 			meals.length === days.length && meals.every((day, index) => day.date === days[index]);
+		// So are the daily locations of a trip abroad (#611; `perDiemSituation` reports them).
 		return {
 			kind: "per_diem",
 			situation: mealsComplete

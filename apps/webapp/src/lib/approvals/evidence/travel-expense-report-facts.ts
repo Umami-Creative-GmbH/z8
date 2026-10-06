@@ -74,7 +74,7 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 9;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 10;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
@@ -88,6 +88,7 @@ const MILEAGE_FACTS_SCHEMA_VERSION = 5;
 /* Version 7 (#609) adds `perDiem` to per diem items (`PER_DIEM_FACTS_SCHEMA_VERSION`). */
 /* Version 8 (#615) adds the root `adjustment` of an adjustment report (`ADJUSTMENT_FACTS_SCHEMA_VERSION`). */
 /* Version 9 (#610) adds an item's `allowanceOverride` (`ALLOWANCE_OVERRIDE_FACTS_SCHEMA_VERSION`). */
+/* Version 10 (#611) adds per diem daily locations (`PER_DIEM_LOCATION_FACTS_SCHEMA_VERSION`). */
 
 /**
  * The accounting attribution of one expense as it was submitted (#605): the
@@ -551,7 +552,7 @@ function perDiemItemFacts(
 ): TravelExpenseReportSubmittedItem {
 	const { report } = input;
 	const perDiemRow = input.perDiems?.find((candidate) => candidate.itemId === row.id);
-	const perDiem = submittedPerDiemFacts(perDiemRow, report);
+	const perDiem = submittedPerDiemFacts(perDiemRow, report, schemaVersion);
 	// An administrator's override (#610) prices the per diem; the itinerary must still match the trip.
 	const override = applyingPerDiemOverride(
 		input.allowanceOverrides,

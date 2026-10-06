@@ -39,9 +39,21 @@ import {
 	samePerDiemItinerary,
 	tripDays,
 } from "@/lib/travel-expenses/per-diem";
+import {
+	perDiemLocationFields,
+	perDiemLocationsNeeded,
+} from "@/lib/travel-expenses/per-diem-location";
 import type { ReportItemView } from "@/lib/travel-expenses/report-store";
+import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { AllowanceOverrideNotice } from "./allowance-override-notice";
 import { DraftSaveStatus } from "./draft-save-status";
+import {
+	dayLocationDraft,
+	dayLocationForm,
+	type DayLocationForm,
+	NO_LOCATION,
+	PerDiemDayLocationFields,
+} from "./per-diem-day-location";
 import { formatPlainDate } from "./format";
 import { mealLabel, PerDiemBreakdown, perDiemExceptionLabel } from "./per-diem-breakdown";
 import { RemoveExpenseButton } from "./receipt-item-editor";
@@ -61,6 +73,8 @@ interface FormValues {
 	prolongedWorkplace: boolean;
 	/** Meal facts by date; kept when the travel dates move. */
 	meals: Record<string, DayMealsForm>;
+	/** Daily location answers by date (#611); kept when the travel dates move. */
+	locations: Record<string, DayLocationForm>;
 }
 
 const NO_MEALS: DayMealsForm = {
@@ -112,6 +126,7 @@ function toFormValues(itinerary: PerDiemItinerary): FormValues {
 				) as DayMealsForm,
 			]),
 		),
+		locations: Object.fromEntries(itinerary.meals.map((day) => [day.date, dayLocationForm(day)])),
 	};
 }
 
@@ -131,17 +146,24 @@ function toDraftInput(values: FormValues): PerDiemDraftInput {
 		// Only a trip over more than one calendar day has nights to answer for.
 		overnight: days.length > 1 ? blank(values.overnight) : null,
 		prolongedWorkplace: values.prolongedWorkplace,
-		meals: days.map((date) => {
+		meals: days.map((date, index) => {
 			const day = values.meals[date] ?? NO_MEALS;
 			const entry = (meal: PerDiemMeal) => ({
 				provided: day[meal].provided,
 				employeePayment: day[meal].provided ? blank(day[meal].payment) : null,
 			});
+			// Only the location questions this day asks (#611); stale answers are dropped.
+			const location = dayLocationDraft(values.locations?.[date]);
+			const asked = perDiemLocationFields(index, days.length, location);
 			return {
 				date,
 				breakfast: entry("breakfast"),
 				lunch: entry("lunch"),
 				dinner: entry("dinner"),
+				...(asked.includes("night") && location.night ? { night: location.night } : {}),
+				...(asked.includes("activityAbroad") && location.activityAbroad
+					? { activityAbroad: location.activityAbroad }
+					: {}),
 			};
 		}),
 	};
@@ -166,6 +188,11 @@ function fieldErrorMessage(t: Translate, code: string | undefined) {
 			return t(
 				"travelExpenses.report.perDiem.errors.endBeforeStart",
 				"Your return must be after your departure.",
+			);
+		case "invalid_location":
+			return t(
+				"travelExpenses.report.perDiem.errors.location",
+				"Choose a listed location for each day.",
 			);
 		case "invalid_payment":
 			return t(
@@ -207,6 +234,11 @@ export function perDiemRequirementLabel(
 			return t(
 				"travelExpenses.report.perDiem.requirements.meals",
 				"Confirm the provided meals for every travel day.",
+			);
+		case "per_diem_locations":
+			return t(
+				"travelExpenses.report.perDiem.requirements.locations",
+				"Tell us for every travel day where you were at midnight and where your last business activity abroad was.",
 			);
 		case "per_diem_exceptional":
 			return t(
@@ -259,7 +291,13 @@ export function PerDiemItemEditor({
 	item: ReportItemView;
 	reimbursementCurrency: string;
 	/** The trip's travel dates as entered; the itinerary must match them. */
-	trip: { startDate: string | null; endDate: string | null; timeZone: string };
+	trip: {
+		startDate: string | null;
+		endDate: string | null;
+		timeZone: string;
+		/** The trip's destinations; one abroad asks for daily locations (#611). */
+		destinations?: readonly TripDestination[];
+	};
 	onSaved?: (item: ReportItemView) => void;
 	onDraftChange?: (draft: PerDiemItinerary | null) => void;
 	removal?: { label: string; remove: (expectedVersion: number) => Promise<boolean> };
@@ -594,6 +632,30 @@ export function PerDiemItemEditor({
 															<p className="mb-2 text-sm font-medium">
 																{formatPlainDate(locale, date)}
 															</p>
+															{/* Daily locations of a trip abroad (#611). */}
+															<form.Field name="locations">
+																{(locationsField) => {
+																	const all = locationsField.state.value ?? {};
+																	const needed = perDiemLocationsNeeded(
+																		days.map((other) => dayLocationDraft(all[other])),
+																		trip.destinations ?? [],
+																	);
+																	if (!needed) return null;
+																	const index = days.indexOf(date);
+																	return (
+																		<PerDiemDayLocationFields
+																			id={`${item.id}-${date}`}
+																			index={index}
+																			count={days.length}
+																			value={all[date] ?? NO_LOCATION}
+																			previousNight={all[days[index - 1] ?? ""]?.night ?? ""}
+																			onChange={(next) =>
+																				locationsField.handleChange({ ...all, [date]: next })
+																			}
+																		/>
+																	);
+																}}
+															</form.Field>
 															<div className="grid gap-3 sm:grid-cols-3">
 																{PER_DIEM_MEALS.map((meal) => (
 																	<div key={meal} className="space-y-1">

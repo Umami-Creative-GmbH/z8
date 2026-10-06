@@ -182,7 +182,10 @@ function days(startDate: string, endDate: string): string[] {
 	}
 }
 
-/** A three-day trip to Paris: international, so the domestic rules flag it as exceptional. */
+/**
+ * A three-day trip to Paris whose middle day is a situation the daily location
+ * answers do not describe (#611 "other"), so the rules flag it as exceptional.
+ */
 async function parisTrip() {
 	signIn("requester");
 	const created = await reportActions.createTripReportAction();
@@ -223,6 +226,11 @@ async function parisTrip() {
 				breakfast: { provided: date !== "2026-09-14", employeePayment: null },
 				lunch: { provided: false, employeePayment: null },
 				dinner: { provided: false, employeePayment: null },
+				...(date === "2026-09-14"
+					? { night: { country: "FR", place: "paris" } }
+					: date === "2026-09-15"
+						? { night: { special: "other" } }
+						: { activityAbroad: { country: "FR", place: "paris" } }),
 			})),
 		},
 	});
@@ -399,7 +407,7 @@ describe("audited allowance overrides (#610)", () => {
 
 		expect(await submit(reportId)).toEqual(SUBMITTED);
 		const [revision] = await revisions(reportId);
-		expect(revision?.schema_version).toBe(9);
+		expect(revision?.schema_version).toBe(10);
 		const facts = revision?.facts as {
 			items: Array<Record<string, unknown>>;
 			totals: Record<string, string>;
@@ -552,7 +560,7 @@ describe("audited allowance overrides (#610)", () => {
 		const draft = await load(reportId);
 		expect(draft.items[0]?.perDiem?.calculation).toMatchObject({
 			status: "exceptional",
-			reasons: ["international"],
+			reasons: ["special_location"],
 		});
 		expect(await submit(reportId)).toMatchObject(INCOMPLETE);
 
@@ -567,7 +575,7 @@ describe("audited allowance overrides (#610)", () => {
 				kind: "authorized",
 				override: {
 					kind: "per_diem",
-					situation: { kind: "unsupported_case", reasons: ["international"] },
+					situation: { kind: "unsupported_case", reasons: ["special_location"] },
 				},
 			},
 		});
@@ -584,7 +592,7 @@ describe("audited allowance overrides (#610)", () => {
 			type: "per_diem",
 			original: { amount: "112.80", currency: "EUR" },
 			allowanceOverride: {
-				situation: { kind: "unsupported_case", reasons: ["international"] },
+				situation: { kind: "unsupported_case", reasons: ["special_location"] },
 				scope: { kind: "per_diem", destinations: [{ place: "Paris", countryCode: "FR" }] },
 			},
 		});

@@ -110,6 +110,61 @@ describe("perDiemReviewRows", () => {
 		expect(rows[5]?.value).toBe("24.40 EUR");
 	});
 
+	it("names each day's location, marks official fallbacks and the foreign table (#611)", () => {
+		const [arrival, departure] = item.perDiem.days;
+		const international = {
+			...item,
+			perDiem: {
+				...item.perDiem,
+				days: [
+					{
+						...arrival,
+						rate: "42.00",
+						amount: "42.00",
+						location: {
+							entered: { country: "IQ", place: null },
+							basis: "night" as const,
+							rule: "luxembourg" as const,
+							area: "LU",
+							country: "LU",
+							place: null,
+							label: "Luxemburg",
+						},
+					},
+					{
+						...departure,
+						location: {
+							entered: { country: "DE", place: null },
+							basis: "domestic" as const,
+							rule: "domestic" as const,
+							area: "DE",
+							country: "DE",
+							place: null,
+							label: "Deutschland",
+						},
+					},
+				],
+				rules: {
+					...item.perDiem.rules,
+					foreignTable: {
+						key: "de-bmf-foreign-per-diem-2026",
+						reference: "BMF letter of 05.12.2025 (BStBl I S. 2078)",
+						version: "LStH 2026, Anhang 25 I",
+					},
+				},
+			},
+		} satisfies TravelExpenseReportSubmittedItem;
+		const rows = perDiemReviewRows(international);
+		expect(rows[3]?.value).toMatch(
+			/^Luxemburg \(IQ: official fallback, unlisted state\) — travel day with overnight stay/,
+		);
+		expect(rows[4]?.value).toMatch(/^Deutschland — travel day/);
+		expect(rows.at(-2)).toEqual({
+			label: expect.objectContaining({ fallback: "Foreign rates" }),
+			value: "BMF letter of 05.12.2025 (BStBl I S. 2078) (LStH 2026, Anhang 25 I)",
+		});
+	});
+
 	it("adds nothing to other items", () => {
 		const { perDiem: _perDiem, ...receipt } = item;
 		expect(perDiemReviewRows({ ...receipt, type: "receipt" })).toEqual([]);

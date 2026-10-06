@@ -14,10 +14,10 @@ import {
 } from "./travel-expense-report-store";
 
 // Simulates the build after a later ticket bumps the schema version: the
-// builder still freezes today's (v8, #615) facts, but the reader knows v1..v9.
+// builder still freezes today's (v10, #611) facts, but the reader knows v1..v11.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./travel-expense-report-facts")>()),
-	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 9,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 11,
 }));
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
@@ -227,17 +227,17 @@ describe("after a schema version bump", () => {
 
 	it("reads a revision of the new version under its own fingerprint prefix", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 9 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 11 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
 
-		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v9:/);
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v11:/);
 	});
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 10 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 12 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
 	});
 

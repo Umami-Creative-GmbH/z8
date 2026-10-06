@@ -4,6 +4,7 @@ import {
 	type PerDiemCalculation,
 	type PerDiemItemView,
 	type PerDiemItinerary,
+	perDiemFallbackRules,
 	samePerDiemItinerary,
 } from "./per-diem";
 import type { TripDestination } from "./trip-destination";
@@ -70,8 +71,13 @@ export function mileageSituation(calculation: MileageCalculation): AllowanceSitu
 
 export function perDiemSituation(calculation: PerDiemCalculation): AllowanceSituation {
 	switch (calculation.status) {
-		case "calculated":
-			return { kind: "calculated", reasons: [] };
+		case "calculated": {
+			// #611: days priced by an official destination fallback stay visible as such.
+			const fallbacks = perDiemFallbackRules(calculation);
+			return fallbacks.length > 0
+				? { kind: "official_fallback", reasons: fallbacks }
+				: { kind: "calculated", reasons: [] };
+		}
 		case "incomplete":
 			return { kind: "missing_facts", reasons: [] };
 		case "policy_missing":
@@ -79,7 +85,10 @@ export function perDiemSituation(calculation: PerDiemCalculation): AllowanceSitu
 		case "currency_mismatch":
 			return { kind: "missing_coverage", reasons: ["policy_currency"] };
 		case "exceptional":
-			return { kind: "unsupported_case", reasons: [...calculation.reasons] };
+			// Daily locations are travel facts a manual calculation needs too (#611).
+			return (calculation.missingLocations?.length ?? 0) > 0
+				? { kind: "missing_facts", reasons: ["per_diem_locations"] }
+				: { kind: "unsupported_case", reasons: [...calculation.reasons] };
 	}
 }
 

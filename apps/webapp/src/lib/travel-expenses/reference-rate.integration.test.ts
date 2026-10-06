@@ -448,7 +448,7 @@ describe("approved reference rates (#608)", () => {
 
 		const revision = await frozenFacts(target.reportId);
 		// Frozen at the current facts version (v9 since #610 allowance overrides).
-		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v9:[0-9a-f]{64}$/);
+		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v10:[0-9a-f]{64}$/);
 		const [frozen] = revision.facts.items;
 		expect(frozen.original).toEqual({ amount: "100.00", currency: "USD" });
 		// 100.00 / 1.1525 = 86.7678… → 86.77, rounded once, half up.

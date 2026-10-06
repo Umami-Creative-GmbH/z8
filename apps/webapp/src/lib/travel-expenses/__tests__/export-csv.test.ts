@@ -16,7 +16,11 @@ import type {
 	TravelExpenseExportManifestRevision,
 } from "../export-manifest";
 import { calculatePerDiem, perDiemPolicyResolver } from "../per-diem";
-import { GERMAN_DOMESTIC_PER_DIEM_DEFAULT } from "../statutory-per-diem-defaults";
+import { BMF_FOREIGN_PER_DIEM_2026, foreignTableRates } from "../statutory-foreign-per-diem";
+import {
+	GERMAN_DOMESTIC_PER_DIEM_DEFAULT,
+	GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT,
+} from "../statutory-per-diem-defaults";
 
 const SHA = "a".repeat(64);
 
@@ -371,6 +375,113 @@ function perDiemRevision(): TravelExpenseExportManifestRevision {
 			},
 		],
 		{ reimbursable: "22.40", companyPaid: "0.00" },
+	);
+}
+
+/**
+ * v10 (#611): Monday still in Germany at midnight, Tuesday in Brussels, and
+ * Wednesday home from Baghdad (an unlisted state: Luxembourg amounts), as frozen.
+ */
+function internationalPerDiemRevision(): TravelExpenseExportManifestRevision {
+	const noMeal = { provided: false, employeePayment: null };
+	const itinerary = {
+		startDate: "2026-03-02",
+		startTime: "20:00",
+		startTimeZone: "Europe/Berlin",
+		endDate: "2026-03-04",
+		endTime: "22:30",
+		endTimeZone: "Europe/Berlin",
+		overnight: "away" as const,
+		prolongedWorkplace: false,
+		meals: [
+			{
+				date: "2026-03-02",
+				breakfast: noMeal,
+				lunch: noMeal,
+				dinner: noMeal,
+				night: { country: "DE", place: null },
+				activityAbroad: { country: "DE", place: null },
+			},
+			{
+				date: "2026-03-03",
+				breakfast: noMeal,
+				lunch: noMeal,
+				dinner: noMeal,
+				night: { country: "BE", place: null },
+			},
+			{
+				date: "2026-03-04",
+				breakfast: noMeal,
+				lunch: noMeal,
+				dinner: noMeal,
+				activityAbroad: { country: "IQ", place: null },
+			},
+		],
+	};
+	const calculation = calculatePerDiem(itinerary, {
+		trip: { destinations: [{ place: "Brüssel", countryCode: "BE" }] },
+		reimbursementCurrency: "EUR",
+		resolvePolicy: perDiemPolicyResolver([
+			{
+				id: "pd-version-intl",
+				policyId: "pd-policy",
+				effectiveFrom: "2026-01-01",
+				currency: "EUR",
+				source: {
+					kind: "statutory_default",
+					reference: GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT.reference,
+					version: GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT.version,
+					defaultKey: GERMAN_PER_DIEM_WITH_FOREIGN_2026_DEFAULT.key,
+				},
+				withdrawnAt: null,
+				rates: {
+					DE: { ...GERMAN_DOMESTIC_PER_DIEM_DEFAULT.rates },
+					...foreignTableRates(BMF_FOREIGN_PER_DIEM_2026),
+				},
+			},
+		]),
+	});
+	if (calculation.status !== "calculated") throw new Error("per diem not calculated");
+	return soloRevision(
+		"report-pd-intl",
+		10,
+		[
+			{
+				itemId: "item-pd",
+				position: 1,
+				type: "per_diem",
+				expenseDate: "2026-03-02",
+				category: "meals",
+				description: "Per diem",
+				original: { amount: calculation.amount, currency: "EUR" },
+				paidBy: "employee",
+				accountingReference: null,
+				receipts: [],
+				perDiem: {
+					start: {
+						date: "2026-03-02",
+						time: "20:00",
+						timeZone: "Europe/Berlin",
+						at: calculation.absence.startAt,
+					},
+					end: {
+						date: "2026-03-04",
+						time: "22:30",
+						timeZone: "Europe/Berlin",
+						at: calculation.absence.endAt,
+					},
+					overnight: "away",
+					absenceMinutes: calculation.absence.minutes,
+					meals: itinerary.meals,
+					days: calculation.days,
+					currency: calculation.currency,
+					amount: calculation.amount,
+					rules: calculation.rules,
+					policies: calculation.policies,
+				},
+			},
+		],
+		{ reimbursable: calculation.amount, companyPaid: "0.00" },
 	);
 }
 
@@ -944,7 +1055,11 @@ describe("travel expense export files", () => {
 		const zero = perDiemRevision();
 		const [item] = zero.facts.items;
 		if (!item?.perDiem) throw new Error("no per diem");
-		item.perDiem.days = item.perDiem.days.map((day) => ({ ...day, deductions: day.rate, amount: "0.00" }));
+		item.perDiem.days = item.perDiem.days.map((day) => ({
+			...day,
+			deductions: day.rate,
+			amount: "0.00",
+		}));
 		item.perDiem.amount = "0.00";
 		item.original.amount = "0.00";
 		zero.facts.totals.reimbursable = "0.00";
@@ -965,6 +1080,32 @@ describe("travel expense export files", () => {
 	it("refuses per diem facts in a revision older than version 7", () => {
 		const revision = perDiemRevision();
 		revision.facts.schemaVersion = 6;
+		expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
+			expect.objectContaining({ code: "manifest_invalid" }),
+		);
+	});
+
+	it("exports v10 daily per diem locations with the foreign table edition (#611)", () => {
+		const revision = internationalPerDiemRevision();
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			facts_schema_version: "10",
+			reimbursement_amount: "115.00",
+			per_diem_amount: "115.00",
+			per_diem_foreign_table_key: "de-bmf-foreign-per-diem-2026",
+			per_diem_foreign_table_version: "LStH 2026, Anhang 25 I",
+			per_diem_day_locations:
+				"2026-03-02 DE [Deutschland] domestic domestic; 2026-03-03 BE [Belgien] listed night; 2026-03-04 IQ>LU [Luxemburg] luxembourg last_activity_abroad",
+			per_diem_fallback_days: "1",
+			per_diem_days:
+				"2026-03-02 partial_day 14.00-0.00=14.00; 2026-03-03 full_day 59.00-0.00=59.00; 2026-03-04 partial_day 42.00-0.00=42.00",
+		});
+		expect(row?.per_diem_foreign_table_reference).toContain("BStBl I S. 2078");
+	});
+
+	it("refuses daily per diem locations in a revision older than version 10", () => {
+		const revision = internationalPerDiemRevision();
+		revision.facts.schemaVersion = 9;
 		expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(
 			expect.objectContaining({ code: "manifest_invalid" }),
 		);
@@ -1055,7 +1196,7 @@ describe("travel expense export files", () => {
 
 	it("exports revisions of every frozen facts version and refuses unknown ones", () => {
 		// A new version must be mapped by the export contract before it is exported.
-		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(9);
+		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBe(10);
 		for (let version = 1; version <= TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION; version++) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
@@ -1063,7 +1204,7 @@ describe("travel expense export files", () => {
 				expect.objectContaining({ facts_schema_version: String(version) }),
 			]);
 		}
-		for (const version of [0, 10]) {
+		for (const version of [0, 11]) {
 			const revision = standaloneRevision();
 			revision.facts.schemaVersion = version;
 			expect(() => buildTravelExpenseExportFiles(manifest([revision]))).toThrow(

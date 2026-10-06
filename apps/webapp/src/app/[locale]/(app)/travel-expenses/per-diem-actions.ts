@@ -69,6 +69,14 @@ const meal = z.strictObject({
 	provided: z.boolean(),
 	employeePayment: z.string().max(20).nullable(),
 });
+// A daily location (#611); `parsePerDiemDraft` checks the country and place.
+const location = z
+	.union([
+		z.strictObject({ country: z.string().max(2), place: z.string().max(41).nullable() }),
+		z.strictObject({ special: z.string().max(20) }),
+	])
+	.nullable()
+	.optional();
 // Strict: a client-supplied amount, rate or total is refused, never ignored silently.
 const saveSchema = z.object({
 	reportId: z.uuid(),
@@ -85,7 +93,14 @@ const saveSchema = z.object({
 		prolongedWorkplace: z.boolean(),
 		meals: z
 			.array(
-				z.strictObject({ date: z.string().max(10), breakfast: meal, lunch: meal, dinner: meal }),
+				z.strictObject({
+					date: z.string().max(10),
+					breakfast: meal,
+					lunch: meal,
+					dinner: meal,
+					night: location,
+					activityAbroad: location,
+				}),
 			)
 			.max(MAX_PER_DIEM_DAYS + 1),
 	}),

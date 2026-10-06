@@ -24,6 +24,11 @@ import {
 	type TravelExpenseExportManifest,
 	type TravelExpenseExportManifestRevision,
 } from "./export-manifest";
+import {
+	PER_DIEM_LOCATION_COLUMNS,
+	perDiemLocationCells,
+	perDiemLocationManifestProblem,
+} from "./export-per-diem-locations";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 
@@ -600,6 +605,7 @@ export const TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS = [
 	"receipt_files",
 	...ADJUSTMENT_EXPENSE_COLUMNS,
 	...ALLOWANCE_OVERRIDE_COLUMNS,
+	...PER_DIEM_LOCATION_COLUMNS,
 ] as const;
 
 const REPORT_COLUMNS = [
@@ -712,6 +718,10 @@ function assertManifest(manifest: TravelExpenseExportManifest): void {
 		if (adjustmentProblem) {
 			throw new TravelExpenseExportContentError("manifest_invalid", adjustmentProblem);
 		}
+		const locationProblem = perDiemLocationManifestProblem(facts);
+		if (locationProblem) {
+			throw new TravelExpenseExportContentError("manifest_invalid", locationProblem);
+		}
 		const overrideProblem = allowanceOverrideManifestProblem(facts);
 		if (overrideProblem) {
 			throw new TravelExpenseExportContentError("manifest_invalid", overrideProblem);
@@ -770,6 +780,7 @@ export function buildTravelExpenseExportFiles(
 					decimal: csvDecimal,
 					plainDecimal: csvPlainDecimal,
 				}),
+				...perDiemLocationCells(item, { text: csvText, integer: csvInteger }),
 			]);
 			item.receipts.forEach((receipt, index) => {
 				receiptRows.push([

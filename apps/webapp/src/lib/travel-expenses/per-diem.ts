@@ -16,7 +16,28 @@ import {
 } from "./allowance-policy";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import {
+	isDomesticLocation,
+	isOfficialFallbackRule,
+	missingLocationDates,
+	type PerDiemDestinationRule,
+	type PerDiemLocation,
+	type PerDiemLocationBasis,
+	type PerDiemLocationFacts,
+	parsePerDiemLocation,
+	perDiemLocationsNeeded,
+	rateLocationOfDay,
+	resolvePerDiemDestination,
+	samePerDiemLocation,
+} from "./per-diem-location";
+import {
+	type ForeignPerDiemTable,
+	findForeignPerDiemTable,
+	foreignPerDiemTableCovering,
+	foreignPerDiemTableCovers,
+} from "./statutory-foreign-per-diem";
+import {
 	findPerDiemRuleSet,
+	findStatutoryPerDiemDefault,
 	type PerDiemRates,
 	type PerDiemRuleSet,
 	perDiemRulesOn,
@@ -38,8 +59,14 @@ import type { TripDestination } from "./trip-destination";
  * home, longer activity at the same workplace, days outside a verified rule
  * edition, days another report already claims) is reported as `exceptional`
  * with its reasons, for an audited manual calculation (#610), and is never
- * approximated. International rates (#611) extend `PER_DIEM_AREAS` and the
- * daily itinerary (a location per day) rather than replacing this model.
+ * approximated.
+ *
+ * International trips (#611) answer per travel day where the employee was
+ * (`per-diem-location.ts`); each day is priced with the amounts of the
+ * location the statutory rules select, from the verified BMF table the
+ * organization adopted (`statutory-foreign-per-diem.ts`). Official fallbacks
+ * (Luxembourg for unlisted states, the mother country for territories,
+ * Austria for whole days in flight) are calculated and marked on the day.
  */
 
 export const PER_DIEM_MEALS = ["breakfast", "lunch", "dinner"] as const;
@@ -49,10 +76,13 @@ export type PerDiemMeal = (typeof PER_DIEM_MEALS)[number];
 export const PER_DIEM_OVERNIGHT_ANSWERS = ["away", "none", "mixed"] as const;
 export type PerDiemOvernight = (typeof PER_DIEM_OVERNIGHT_ANSWERS)[number];
 
-/** Rate areas of a per diem policy version; domestic only until #611. */
-export const PER_DIEM_AREAS = ["DE"] as const;
-export type PerDiemArea = (typeof PER_DIEM_AREAS)[number];
+/**
+ * Rate area of a per diem policy version: "DE" (domestic), a country of a
+ * foreign table ("FR") or a place it lists ("FR:paris", #611).
+ */
+export type PerDiemArea = string;
 export const DOMESTIC_PER_DIEM_AREA: PerDiemArea = "DE";
+export const PER_DIEM_AREA_PATTERN = /^[A-Z]{2}(?::[a-z0-9-]{1,40})?$/;
 
 /** IANA zones of German local time (Büsingen am Hochrhein has its own identifier). */
 export const DOMESTIC_TIME_ZONES: readonly string[] = ["Europe/Berlin", "Europe/Busingen"];
@@ -69,7 +99,12 @@ export interface PerDiemMealEntry {
 	employeePayment: string | null;
 }
 
-export type PerDiemMealDay = { date: string } & Record<PerDiemMeal, PerDiemMealEntry>;
+/**
+ * One travel day of the itinerary: its meals and, on trips abroad (#611), its
+ * location answers. The location keys are present only when answered.
+ */
+export type PerDiemMealDay = { date: string } & Record<PerDiemMeal, PerDiemMealEntry> &
+	PerDiemLocationFacts;
 
 export interface PerDiemItinerary {
 	/** Leaving home or the first workplace: local date, time ("HH:mm") and zone. */
@@ -103,7 +138,11 @@ export interface PerDiemDraftInput {
 	meals: readonly ({ date: string } & Record<
 		PerDiemMeal,
 		{ provided: boolean; employeePayment: string | null }
-	>)[];
+	> & {
+			/** Daily locations (#611), validated by `parsePerDiemLocation`. */
+			night?: unknown;
+			activityAbroad?: unknown;
+		})[];
 }
 
 export type PerDiemDraftField = Exclude<keyof PerDiemItinerary, "prolongedWorkplace">;
@@ -116,7 +155,8 @@ export type PerDiemFieldError =
 	| "end_before_start"
 	| "invalid_overnight"
 	| "invalid_meals"
-	| "invalid_payment";
+	| "invalid_payment"
+	| "invalid_location";
 
 export type ParsePerDiemDraftResult =
 	| { ok: true; itinerary: PerDiemItinerary }
@@ -281,6 +321,12 @@ function parseMeals(
 			if (payment !== null && parsedPayment === null) return { error: "invalid_payment" };
 			entry[meal] = { provided: value.provided, employeePayment: parsedPayment };
 		}
+		// Daily locations (#611): stored only when answered, so domestic rows keep their shape.
+		for (const field of ["night", "activityAbroad"] as const) {
+			const location = parsePerDiemLocation(row[field]);
+			if (location === "invalid") return { error: "invalid_location" };
+			if (location) entry[field] = location;
+		}
 		meals.push(entry);
 	}
 	return {
@@ -309,16 +355,34 @@ export interface AppliedPerDiemPolicy {
 
 export type PerDiemPolicyResolution =
 	| { status: "found"; policy: AppliedPerDiemPolicy }
-	/** No active version covers the date (or it has no domestic rates). */
+	/** No active version covers the date (or it has no rates for the area). */
 	| { status: "no_version" };
+
+/** Resolves the policy amounts of an allowance day in a rate area ("DE" unless given). */
+export type PerDiemPolicyResolver = (date: string, area?: PerDiemArea) => PerDiemPolicyResolution;
+
+/**
+ * The verified foreign table a version's foreign rates come from: only an
+ * adopted statutory default carries one, and its rates apply only to days
+ * inside that table's edition (a later year needs a new version).
+ */
+function versionForeignTable(version: PerDiemPolicyVersion): ForeignPerDiemTable | null {
+	if (version.source.kind !== "statutory_default" || !version.source.defaultKey) return null;
+	const entry = findStatutoryPerDiemDefault(version.source.defaultKey);
+	return entry?.foreignTableKey ? findForeignPerDiemTable(entry.foreignTableKey) : null;
+}
 
 export function perDiemPolicyResolver(
 	versions: readonly PerDiemPolicyVersion[],
-): (date: string) => PerDiemPolicyResolution {
-	return (date) => {
+): PerDiemPolicyResolver {
+	return (date, area = DOMESTIC_PER_DIEM_AREA) => {
 		const version = effectiveVersionOn(versions, date);
-		const rates = version?.rates[DOMESTIC_PER_DIEM_AREA];
+		const rates = version?.rates[area];
 		if (!version || !rates) return { status: "no_version" };
+		if (area !== DOMESTIC_PER_DIEM_AREA) {
+			const table = versionForeignTable(version);
+			if (!table || !foreignPerDiemTableCovers(table, date)) return { status: "no_version" };
+		}
 		return {
 			status: "found",
 			policy: {
@@ -327,7 +391,7 @@ export function perDiemPolicyResolver(
 				effectiveFrom: version.effectiveFrom,
 				currency: version.currency,
 				source: { ...version.source },
-				area: DOMESTIC_PER_DIEM_AREA,
+				area,
 				rates: { ...rates },
 			},
 		};
@@ -341,16 +405,19 @@ export function perDiemPolicyResolver(
  */
 export interface StampedPerDiemPolicy {
 	rulesKey: string;
+	/** The foreign table edition that resolved the daily locations (#611); absent when domestic. */
+	foreignTableKey?: string;
 	/** Policy version ID by allowance day. */
 	days: Record<string, string>;
+	/** One entry per applied version and rate area. */
 	policies: AppliedPerDiemPolicy[];
 }
 
-export function perDiemStampResolver(
-	stamp: StampedPerDiemPolicy,
-): (date: string) => PerDiemPolicyResolution {
-	return (date) => {
-		const policy = stamp.policies.find((candidate) => candidate.versionId === stamp.days[date]);
+export function perDiemStampResolver(stamp: StampedPerDiemPolicy): PerDiemPolicyResolver {
+	return (date, area = DOMESTIC_PER_DIEM_AREA) => {
+		const policy = stamp.policies.find(
+			(candidate) => candidate.versionId === stamp.days[date] && candidate.area === area,
+		);
 		return policy ? { status: "found", policy } : { status: "no_version" };
 	};
 }
@@ -398,10 +465,35 @@ export interface PerDiemDayBreakdown {
 	/** Deductions applied to this day's allowance, at most its rate. */
 	deductions: string;
 	amount: string;
+	/** Where the day's amounts come from (#611); absent on a domestic trip without daily locations. */
+	location?: PerDiemDayLocation;
+}
+
+/** The location decision of one travel day (#611), frozen with the breakdown. */
+export interface PerDiemDayLocation {
+	/** The answer that decided the day, as entered. */
+	entered: PerDiemLocation;
+	basis: PerDiemLocationBasis;
+	/** How the official rules map it to amounts; fallback rules are marked as such. */
+	rule: PerDiemDestinationRule;
+	/** The policy rate area: "DE", a country or "country:place". */
+	area: PerDiemArea;
+	/** The country whose amounts apply (e.g. "LU" for an unlisted state). */
+	country: string;
+	place: string | null;
+	/** The applied entry as the official table names it. */
+	label: string;
 }
 
 export type PerDiemExceptionReason =
+	/** Legacy (#609): a destination abroad, before international per diem existed. */
 	| "international"
+	/** A daily location the official rules do not resolve (#611). */
+	| "destination_not_listed"
+	/** "Other", or a whole day in flight or at sea that cannot be one (first or last day). */
+	| "special_location"
+	/** An over-night activity without an overnight stay that involves a place abroad. */
+	| "foreign_without_overnight"
 	| "mixed_time_zones"
 	| "foreign_time_zone"
 	| "nights_at_home"
@@ -419,13 +511,27 @@ export type PerDiemCalculation =
 			amount: string;
 			days: PerDiemDayBreakdown[];
 			absence: { startAt: string; endAt: string; minutes: number };
-			rules: { key: string; reference: string; version: string };
+			rules: {
+				key: string;
+				reference: string;
+				version: string;
+				/** The foreign table edition of the daily locations (#611); absent when all days are domestic. */
+				foreignTable?: { key: string; reference: string; version: string };
+			};
 			policies: AppliedPerDiemPolicy[];
 	  }
-	/** Required facts are missing; see `perDiemMissingRequirements`. */
-	| { status: "incomplete" }
+	/**
+	 * Required facts are missing; see `perDiemMissingRequirements`.
+	 * `missingLocations`: travel days whose location answers are incomplete (#611).
+	 */
+	| { status: "incomplete"; missingLocations?: string[] }
 	/** Not covered by the supported rules: an audited manual calculation is needed (#610). */
-	| { status: "exceptional"; reasons: PerDiemExceptionReason[]; overlappingDays: string[] }
+	| {
+			status: "exceptional";
+			reasons: PerDiemExceptionReason[];
+			overlappingDays: string[];
+			missingLocations?: string[];
+	  }
 	/** These allowance days have no policy version: setup is needed. */
 	| { status: "policy_missing"; dates: string[] }
 	/** A covering version is in another currency; per diem is never converted. */
@@ -434,11 +540,13 @@ export type PerDiemCalculation =
 export interface PerDiemContext {
 	trip: { destinations: readonly TripDestination[] };
 	reimbursementCurrency: string;
-	resolvePolicy: (date: string) => PerDiemPolicyResolution;
+	resolvePolicy: PerDiemPolicyResolver;
 	/** Days other reports of the employee already claim (store-provided; empty when comparing). */
 	overlappingDays?: readonly string[];
 	/** The stamped rule edition; the edition covering each day otherwise. */
 	rulesKey?: string;
+	/** The stamped foreign table edition (#611); the edition covering the trip otherwise. */
+	foreignTableKey?: string;
 }
 
 const MINUTE_NS = BigInt(60_000_000_000);
@@ -477,9 +585,7 @@ function planDays(
 	const firstDay = start.toPlainDate();
 	const lastDay = end.toPlainDate();
 	const span = firstDay.until(lastDay, { largestUnit: "days" }).days;
-	if (context.trip.destinations.some((destination) => destination.countryCode !== "DE")) {
-		reasons.push("international");
-	}
+	// Destinations abroad are priced per day from the daily locations (#611), not flagged here.
 	if (end.timeZoneId !== zone) reasons.push("mixed_time_zones");
 	if (!DOMESTIC_TIME_ZONES.includes(zone) || !DOMESTIC_TIME_ZONES.includes(end.timeZoneId)) {
 		reasons.push("foreign_time_zone");
@@ -623,30 +729,49 @@ export function calculatePerDiem(
 	const multiDay = comparePlainDates(start.toPlainDate(), end.toPlainDate()) !== 0;
 	if (multiDay && !itinerary.overnight) return { status: "incomplete" };
 
+	// Trips abroad answer per travel day where the employee was (#611).
+	const dates = tripDays(start.toPlainDate().toString(), end.toPlainDate().toString());
+	const locationsNeeded = perDiemLocationsNeeded(itinerary.meals, context.trip.destinations);
+	const missingLocations = locationsNeeded ? missingLocationDates(dates, itinerary.meals) : [];
+
 	const planned = planDays(itinerary, start, end, context);
 	const overlappingDays = [...(context.overlappingDays ?? [])].toSorted();
 	if ("reasons" in planned || overlappingDays.length > 0) {
 		const reasons = "reasons" in planned ? [...planned.reasons] : [];
 		if (overlappingDays.length > 0) reasons.push("overlapping_days");
-		return { status: "exceptional", reasons, overlappingDays };
+		return {
+			status: "exceptional",
+			reasons,
+			overlappingDays,
+			...(missingLocations.length > 0 ? { missingLocations } : {}),
+		};
 	}
+	if (missingLocations.length > 0) return { status: "incomplete", missingLocations };
 	const { days: plans, rules } = planned;
 	if (!mealsCover(itinerary.meals, tripDays(plans[0]?.date ?? "", plans.at(-1)?.date ?? ""))) {
 		return { status: "incomplete" };
 	}
+	const located = locationsNeeded
+		? locateDays(itinerary, dates, context)
+		: { locations: null, table: null };
+	if ("reasons" in located) {
+		return { status: "exceptional", reasons: located.reasons, overlappingDays: [] };
+	}
+	const { locations, table } = located;
 
 	const policies = new Map<string, AppliedPerDiemPolicy>();
 	const policyOf = new Map<string, AppliedPerDiemPolicy>();
 	const missing: string[] = [];
 	for (const plan of plans) {
 		if (plan.allowance === "none") continue;
-		const resolution = context.resolvePolicy(plan.date);
+		const area = locations?.get(plan.date)?.area ?? DOMESTIC_PER_DIEM_AREA;
+		const resolution = context.resolvePolicy(plan.date, area);
 		if (resolution.status !== "found") {
 			missing.push(plan.date);
 			continue;
 		}
 		policyOf.set(plan.date, resolution.policy);
-		policies.set(resolution.policy.versionId, resolution.policy);
+		policies.set(`${resolution.policy.versionId}|${resolution.policy.area}`, resolution.policy);
 	}
 	if (missing.length > 0) return { status: "policy_missing", dates: missing };
 	const foreign = [...policies.values()].find(
@@ -685,6 +810,7 @@ export function calculatePerDiem(
 			: units(plan.allowance === "full_day" ? policy.rates.fullDay : policy.rates.partialDay);
 		const owed = policy ? (deductionTotals.get(plan.date) ?? ZERO) : ZERO;
 		const applied = owed > rate ? rate : owed;
+		const location = locations?.get(plan.date);
 		return {
 			date: plan.date,
 			dayType: plan.dayType,
@@ -697,6 +823,7 @@ export function calculatePerDiem(
 			mealsCountToward: plan.mealsCountToward,
 			deductions: money(applied),
 			amount: money(rate - applied),
+			...(location ? { location } : {}),
 		};
 	});
 
@@ -710,9 +837,88 @@ export function calculatePerDiem(
 			endAt: instantToCanonicalString(end.toInstant()),
 			minutes: minutesBetween(start, end),
 		},
-		rules: { key: rules.key, reference: rules.reference, version: rules.version },
+		rules: {
+			key: rules.key,
+			reference: rules.reference,
+			version: rules.version,
+			...(table
+				? { foreignTable: { key: table.key, reference: table.reference, version: table.version } }
+				: {}),
+		},
 		policies: [...policies.values()],
 	};
+}
+
+const DOMESTIC_DESTINATION = {
+	area: DOMESTIC_PER_DIEM_AREA,
+	country: "DE",
+	place: null,
+	label: "Deutschland",
+	rule: "domestic",
+} as const;
+
+/**
+ * The location decision of every travel day (#611), or why the rules do not
+ * resolve them. `table` is the foreign table edition used, null when every
+ * day is domestic.
+ */
+function locateDays(
+	itinerary: PerDiemItinerary,
+	dates: readonly string[],
+	context: PerDiemContext,
+):
+	| { locations: Map<string, PerDiemDayLocation>; table: ForeignPerDiemTable | null }
+	| { reasons: PerDiemExceptionReason[] } {
+	const days = dates.map((date) => itinerary.meals.find((row) => row.date === date) ?? {});
+	const entered = dates.map((_, index) => rateLocationOfDay(index, days));
+	const abroad = entered.some((entry) => entry && !isDomesticLocation(entry.location));
+	if (abroad && itinerary.overnight === "none") return { reasons: ["foreign_without_overnight"] };
+	const table = !abroad
+		? null
+		: context.foreignTableKey
+			? findForeignPerDiemTable(context.foreignTableKey)
+			: foreignPerDiemTableCovering(dates);
+	if (abroad && (!table || !dates.every((date) => foreignPerDiemTableCovers(table, date)))) {
+		return { reasons: ["rules_not_verified"] };
+	}
+	const reasons = new Set<PerDiemExceptionReason>();
+	const locations = new Map<string, PerDiemDayLocation>();
+	dates.forEach((date, index) => {
+		const entry = entered[index];
+		if (!entry) {
+			reasons.add("special_location");
+			return;
+		}
+		const { location, basis } = entry;
+		// A whole day in flight or at sea lies between the first and the last travel day.
+		const interior = basis === "night" && index > 0 && index < dates.length - 1;
+		if ("special" in location && location.special !== "other" && !interior) {
+			reasons.add("special_location");
+			return;
+		}
+		const resolution =
+			table && !isDomesticLocation(location)
+				? resolvePerDiemDestination(table, location)
+				: ({ status: "resolved", ...DOMESTIC_DESTINATION } as const);
+		if (resolution.status === "unsupported") {
+			reasons.add(resolution.reason);
+			return;
+		}
+		const { area, country, place, label, rule } = resolution;
+		locations.set(date, { entered: location, basis, rule, area, country, place, label });
+	});
+	if (reasons.size > 0) return { reasons: [...reasons] };
+	return { locations, table };
+}
+
+/** Official fallback rules (#610 `official_fallback`) that priced days of a calculation. */
+export function perDiemFallbackRules(
+	calculation: Extract<PerDiemCalculation, { status: "calculated" }>,
+): PerDiemDestinationRule[] {
+	const rules = calculation.days.flatMap((day) =>
+		day.location && isOfficialFallbackRule(day.location.rule) ? [day.location.rule] : [],
+	);
+	return [...new Set(rules)];
 }
 
 /** The stamp of a calculation: its rule edition and each allowance day's version. */
@@ -721,6 +927,9 @@ export function perDiemStampOf(
 ): StampedPerDiemPolicy {
 	return {
 		rulesKey: calculation.rules.key,
+		...(calculation.rules.foreignTable
+			? { foreignTableKey: calculation.rules.foreignTable.key }
+			: {}),
 		days: Object.fromEntries(
 			calculation.days.flatMap((day) => (day.versionId ? [[day.date, day.versionId]] : [])),
 		),
@@ -737,6 +946,8 @@ export type PerDiemRequirement =
 	| "per_diem_overnight"
 	| "per_diem_trip_dates"
 	| "per_diem_meals"
+	/** Daily locations of a trip abroad are not answered for every travel day (#611). */
+	| "per_diem_locations"
 	/** Not covered by the supported rules; an authorized manual calculation is needed (#610). */
 	| "per_diem_exceptional"
 	/** No organization per diem policy covers an allowance day. */
@@ -783,6 +994,12 @@ export function perDiemMissingRequirements(
 		!mealsCover(itinerary.meals, tripDays(itinerary.startDate, itinerary.endDate))
 	) {
 		missing.push("per_diem_meals");
+	}
+	if (
+		(calculation.status === "incomplete" || calculation.status === "exceptional") &&
+		(calculation.missingLocations?.length ?? 0) > 0
+	) {
+		missing.push("per_diem_locations");
 	}
 	if (calculation.status === "exceptional") missing.push("per_diem_exceptional");
 	if (calculation.status === "policy_missing") missing.push("per_diem_policy_missing");
@@ -840,7 +1057,10 @@ export function samePerDiemItinerary(left: PerDiemItinerary, right: PerDiemItine
 					(meal) =>
 						day[meal].provided === other[meal].provided &&
 						day[meal].employeePayment === other[meal].employeePayment,
-				)
+				) &&
+				// Daily locations (#611); an absent key equals an unanswered one.
+				samePerDiemLocation(day.night, other.night) &&
+				samePerDiemLocation(day.activityAbroad, other.activityAbroad)
 			);
 		})
 	);

@@ -2,6 +2,7 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { MAX_POLICY_NOTE_LENGTH, MAX_POLICY_SOURCE_LENGTH } from "./mileage-policy-input";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
 import { isSupportedCurrency } from "./receipt-report";
+import { findForeignPerDiemTable, foreignTableRates } from "./statutory-foreign-per-diem";
 import {
 	canAdoptPerDiemDefaultFrom,
 	findStatutoryPerDiemDefault,
@@ -42,6 +43,8 @@ export interface PerDiemPolicyVersionInput {
 	currency: string;
 	/** Domestic amounts (area "DE"). */
 	rates: PerDiemRates;
+	/** Foreign amounts by area of an adopted verified table (#611); statutory defaults only. */
+	foreignRates?: Record<string, PerDiemRates>;
 	source:
 		| { kind: "organization"; reference: string | null; version: string | null; defaultKey: null }
 		| { kind: "statutory_default"; reference: string; version: string; defaultKey: string };
@@ -52,6 +55,7 @@ export interface PerDiemPolicyVersionInput {
 export type PerDiemPolicyInputError =
 	| "invalid_date"
 	| "before_default_validity"
+	| "after_default_validity"
 	| "invalid_currency"
 	| "invalid_amount"
 	| "exceeds_full_day"
@@ -147,8 +151,14 @@ export function parsePerDiemPolicyVersionInput(
 		const entry = findStatutoryPerDiemDefault(blankToNull(input.defaultKey) ?? "");
 		if (!entry) errors.defaultKey = "unknown_default";
 		else if (effectiveFrom && !canAdoptPerDiemDefaultFrom(entry, effectiveFrom)) {
-			errors.effectiveFrom = "before_default_validity";
+			errors.effectiveFrom =
+				effectiveFrom < entry.validFrom ? "before_default_validity" : "after_default_validity";
 		}
+		// #611: a default with a verified foreign table adopts its amounts too, from the catalog only.
+		const foreignTable = entry?.foreignTableKey
+			? findForeignPerDiemTable(entry.foreignTableKey)
+			: null;
+		if (entry?.foreignTableKey && !foreignTable) errors.defaultKey = "unknown_default";
 		if (Object.keys(errors).length > 0 || !entry || !effectiveFrom || "error" in note) {
 			return { ok: false, errors };
 		}
@@ -158,6 +168,7 @@ export function parsePerDiemPolicyVersionInput(
 				effectiveFrom,
 				currency: entry.currency,
 				rates: { ...entry.rates },
+				...(foreignTable ? { foreignRates: foreignTableRates(foreignTable) } : {}),
 				source: {
 					kind: "statutory_default",
 					reference: entry.reference,

@@ -343,13 +343,8 @@ describe("multi-day trips with overnight stays (Nr. 1 and 2, Rz. 48-49)", () => 
 });
 
 describe("exceptional itineraries are flagged, never guessed", () => {
+	// A destination abroad is priced per day since #611 (`per-diem-international.test.ts`).
 	it.each([
-		[
-			"a destination abroad",
-			itinerary("2026-06-01T08:00", "2026-06-02T18:00"),
-			{ trip: { destinations: [{ place: "Paris", countryCode: "FR" }] } },
-			"international",
-		],
 		[
 			"departure and return in different zones",
 			itinerary("2026-06-01T08:00", "2026-06-02T18:00", { endTimeZone: "Europe/London" }),

@@ -12,7 +12,7 @@ import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { ApprovalEvidenceError } from "./errors";
 
 /**
- * Frozen per diem facts (#609, schema version 7). A per diem item freezes its
+ * Frozen per diem facts (#609, schema version 7; daily locations #611, v10). A per diem item freezes its
  * entered itinerary and meals, the rule edition and policy versions stamped
  * at submission, and the complete daily breakdown. Facts are recalculated
  * from the stamp only, never from today's policy or overlap check, so the
@@ -22,6 +22,13 @@ import { ApprovalEvidenceError } from "./errors";
  */
 
 export const PER_DIEM_FACTS_SCHEMA_VERSION = 7;
+/**
+ * Version 10 (#611) adds the daily location decisions of a trip abroad
+ * (`days[].location`), its location answers (`meals[].night|activityAbroad`)
+ * and the foreign table edition (`rules.foreignTable`); all are omitted for a
+ * domestic per diem without daily locations.
+ */
+export const PER_DIEM_LOCATION_FACTS_SCHEMA_VERSION = 10;
 export const PER_DIEM_FACTS_DESCRIPTION = "Per diem";
 
 /** A per diem row as the facts loader reads it (`travel_expense_report_per_diem`). */
@@ -53,7 +60,13 @@ export interface TravelExpenseReportSubmittedPerDiem {
 	currency: string;
 	/** Sum of the day amounts; "0.00" is a legitimate submitted result. */
 	amount: string;
-	rules: { key: string; reference: string; version: string };
+	rules: {
+		key: string;
+		reference: string;
+		version: string;
+		/** v10+ (#611): the foreign table edition that priced days abroad. */
+		foreignTable?: { key: string; reference: string; version: string };
+	};
 	policies: {
 		policyId: string;
 		versionId: string;
@@ -92,11 +105,21 @@ export function assertPerDiemScope(
 export function submittedPerDiemFacts(
 	row: TravelExpenseReportPerDiemRow | undefined,
 	report: { reimbursementCurrency: string; tripDestinations: TripDestination[] },
+	schemaVersion: number = PER_DIEM_LOCATION_FACTS_SCHEMA_VERSION,
 ): TravelExpenseReportSubmittedPerDiem | null {
 	if (!row) return null;
 	const itinerary = itineraryOf(row);
 	const calculation = calculateStampedPerDiem(report, itinerary, row.policy);
 	if (calculation?.status !== "calculated") return null;
+	// Below v10 a revision cannot hold daily locations (#611): such live rows differ from it.
+	if (
+		schemaVersion < PER_DIEM_LOCATION_FACTS_SCHEMA_VERSION &&
+		(calculation.rules.foreignTable ||
+			calculation.days.some((day) => day.location) ||
+			itinerary.meals.some((day) => day.night || day.activityAbroad))
+	) {
+		return null;
+	}
 	const { startDate, startTime, startTimeZone, endDate, endTime, endTimeZone } = itinerary;
 	if (!startDate || !startTime || !startTimeZone || !endDate || !endTime || !endTimeZone) {
 		return null;
