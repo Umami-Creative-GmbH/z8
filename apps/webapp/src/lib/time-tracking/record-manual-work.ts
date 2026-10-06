@@ -13,6 +13,7 @@ import "server-only";
  * interpretation. The interval is exact: nothing is trimmed, split or shifted.
  */
 import { and, eq } from "drizzle-orm";
+import { Effect } from "effect";
 import {
 	completedWorkOperation,
 	timeRecord,
@@ -21,7 +22,6 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
-import { approvalDbServiceForTransaction } from "@/lib/approvals/server/v3-boundary";
 import { executeOrdinaryWorkPeriodSubmissionInTransaction } from "@/lib/approvals/server/work-period-submission";
 import {
 	comparePlainDates,
@@ -234,7 +234,10 @@ export async function replayManualWork(
 }
 
 function approvalDbService(context: ManualWorkTransactionContext): ApprovalDbService {
-	return approvalDbServiceForTransaction(context.approval.dbService);
+	return {
+		db: context.approval.dbService.db as ApprovalDbService["db"],
+		query: <T>(_name: string, operation: () => Promise<T>) => Effect.promise(operation),
+	};
 }
 
 /**

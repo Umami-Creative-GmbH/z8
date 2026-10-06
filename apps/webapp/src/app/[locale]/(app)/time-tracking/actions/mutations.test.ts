@@ -71,11 +71,17 @@ vi.mock("@/lib/time-tracking/validation", () => ({
 	validateTimeEntryRange: vi.fn(),
 }));
 
-// The decision is an Effect v3 program until #632; it reaches this action as a Promise.
-vi.mock("@/lib/approvals/server/work-period-approvals", () => ({
-	decideOrdinaryWorkPeriodWithStableTarget: (...args: unknown[]) =>
-		mockState.decideStableTarget(...args),
-}));
+// A rejected stub becomes the Effect's typed failure, as the owner's decision fails.
+vi.mock("@/lib/approvals/server/work-period-approvals", async () => {
+	const { Effect } = await import("effect");
+	return {
+		decideOrdinaryWorkPeriodWithStableTargetEffect: (...args: unknown[]) =>
+			Effect.tryPromise({
+				try: () => mockState.decideStableTarget(...args),
+				catch: (error) => error,
+			}),
+	};
+});
 
 vi.mock("./auth", () => ({
 	getCurrentSession: mockState.getCurrentSession,

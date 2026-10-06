@@ -1,10 +1,12 @@
 "use server";
 
 import { and, eq, isNull } from "drizzle-orm";
+import { Effect } from "effect";
 import { db } from "@/db";
 import * as authSchema from "@/db/auth-schema";
 import { timeEntry, workPeriod } from "@/db/schema";
-import { decideOrdinaryWorkPeriodWithStableTarget } from "@/lib/approvals/server/work-period-approvals";
+import type { ApprovalDbService } from "@/lib/approvals/server/types";
+import { decideOrdinaryWorkPeriodWithStableTargetEffect } from "@/lib/approvals/server/work-period-approvals";
 import { ConflictError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { getCurrentEmployee, getCurrentSession } from "./auth";
@@ -60,32 +62,39 @@ export async function approveWorkPeriod(input: {
 			};
 		}
 
-		await decideOrdinaryWorkPeriodWithStableTarget(
+		const dbService: ApprovalDbService = {
 			db,
-			{
-				...currentEmployee,
-				user: {
-					id: session.user.id,
-					name: session.user.name,
-					email: session.user.email,
-					image: session.user.image ?? null,
+			query: <T>(_name: string, operation: () => Promise<T>) =>
+				Effect.promise(operation),
+		};
+		await Effect.runPromise(
+			decideOrdinaryWorkPeriodWithStableTargetEffect(
+				dbService,
+				{
+					...currentEmployee,
+					user: {
+						id: session.user.id,
+						name: session.user.name,
+						email: session.user.email,
+						image: session.user.image ?? null,
+					},
 				},
-			},
-			{
-				approvalRequestId,
-				workPeriodId: selectedWorkPeriod.id,
-				decision: { kind: "approve", reason: null },
-			},
-			{
-				approvalRequestId,
-				allowOrganizationWideApprover: true,
-			},
+				{
+					approvalRequestId,
+					workPeriodId: selectedWorkPeriod.id,
+					decision: { kind: "approve", reason: null },
+				},
+				{
+					approvalRequestId,
+					allowOrganizationWideApprover: true,
+				},
+			),
 		);
 
 		return { success: true, data: { workPeriodId: selectedWorkPeriod.id } };
 	} catch (error) {
 		logger.error({ error, workPeriodId }, "Approve work period error");
-		// The decision rejects with its typed failure itself (no v3 FiberFailure to unwrap).
+		// Effect v4 runPromise rejects with the typed failure itself.
 		if (error instanceof ConflictError) {
 			return {
 				success: false,
