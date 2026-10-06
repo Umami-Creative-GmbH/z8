@@ -10,7 +10,6 @@ import {
 	travelExpenseSettings,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
-import { loadReportConversions } from "./conversion-read";
 import { conversionFromRow } from "./conversion-row";
 import {
 	convertToReimbursement,
@@ -21,6 +20,7 @@ import {
 	parseCardChargeAmount,
 	parseManualRateInput,
 } from "./currency-conversion";
+import { resolveReportConversions } from "./reference-rate-read";
 import { EDITABLE_REPORT_STATUSES, isEditableReportStatus } from "./report-return";
 import { lockOwnDraftReport, type ReportOwner, touchReport } from "./report-store";
 
@@ -126,6 +126,9 @@ async function bumpItemVersion(
 	return bumped.version;
 }
 
+/** A recorded conversion replaces a reference row an earlier submission cycle stored (#608). */
+const NO_REFERENCE = { referenceSource: null, referenceExpenseDate: null } as const;
+
 const NO_RATE = {
 	rate: null,
 	rateBaseCurrency: null,
@@ -135,6 +138,7 @@ const NO_RATE = {
 	authorizedByEmployeeId: null,
 	authorizedByName: null,
 	authorizedAt: null,
+	...NO_REFERENCE,
 } as const;
 
 async function upsertConversion(
@@ -284,7 +288,8 @@ export async function removeCardChargeConversion(
 		const found = await draftItem(tx, { organizationId: owner.organizationId, ...input });
 		if (found.kind !== "ok") return found;
 		const existing = await currentConversion(tx, found.item);
-		if (!existing) return { kind: "not_found" };
+		// A reference row of an earlier submission cycle is derived, not the employee's (#608).
+		if (!existing || existing.basis === "reference_rate") return { kind: "not_found" };
 		if (existing.basis !== "card_charge") return { kind: "not_allowed" };
 		await deleteConversion(tx, found.item);
 		const itemVersion = await bumpItemVersion(tx, found.item, owner.userId, at);
@@ -421,6 +426,7 @@ export async function authorizeManualConversionRate(
 			authorizedByEmployeeId: actor.employeeId,
 			authorizedByName: name,
 			authorizedAt: at,
+			...NO_REFERENCE,
 			recordedBy: actor.userId,
 			updatedAt: at,
 		});
@@ -507,9 +513,15 @@ export async function listForeignDraftItems(
 		)
 		.orderBy(desc(travelExpenseReportItem.updatedAt), asc(travelExpenseReportItem.id))
 		.limit(limit);
-	const conversions = await loadReportConversions(database, {
+	// Includes the approved reference rate an item converts with (#608).
+	const { conversions } = await resolveReportConversions(database, {
 		organizationId,
-		reportIds: [...new Set(rows.map((row) => row.reportId))],
+		reports: rows.map((row) => ({
+			id: row.reportId,
+			status: "draft" as const,
+			reimbursementCurrency: row.reimbursementCurrency,
+			items: [row.item],
+		})),
 	});
 	return rows.map((row) => {
 		const conversion = conversions.get(row.item.id) ?? null;

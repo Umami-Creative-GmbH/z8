@@ -178,6 +178,7 @@ describe("report submission", () => {
 							receiptIds: ["6a020000-0000-4000-8000-000000000009"],
 							receiptExceptionVersion: 0,
 							amount: "89.90",
+							referenceRate: null,
 						},
 						{
 							id: hotelId,
@@ -185,6 +186,7 @@ describe("report submission", () => {
 							receiptIds: ["6a020000-0000-4000-8000-00000000000a"],
 							receiptExceptionVersion: 0,
 							amount: "240.00",
+							referenceRate: null,
 						},
 					],
 				},

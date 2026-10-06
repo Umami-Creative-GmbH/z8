@@ -96,6 +96,7 @@ export * from "./travel-expense";
 export * from "./travel-expense-allowance-policy";
 export * from "./travel-expense-conversion";
 export * from "./travel-expense-project";
+export * from "./travel-expense-reference-rate";
 export * from "./travel-expense-review";
 export * from "./travel-expense-settlement";
 export * from "./travel-expense-export";

@@ -27,6 +27,7 @@ import {
 	receiptItemMissingRequirements,
 	receiptReportTotals,
 } from "@/lib/travel-expenses/receipt-report";
+import { referenceRateReloadNeeded } from "@/lib/travel-expenses/reference-rate-conversion";
 import { isEditableReportStatus } from "@/lib/travel-expenses/report-return";
 import type {
 	ReportItemView,
@@ -296,7 +297,12 @@ function StandaloneReportBody({
 						maxReceiptBytes={maxReceiptBytes}
 						receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 						onReceiptsChanged={refreshReport}
-						onSaved={() => void refreshDrafts()}
+						onSaved={(saved) => {
+							void refreshDrafts();
+							if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
+								void refreshReport();
+							}
+						}}
 						onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
 						project={{ isTrip: false, tripProjectId: null }}
 					/>
@@ -541,7 +547,12 @@ function TripReportBody({
 											maxReceiptBytes={maxReceiptBytes}
 											receiptExceptionsAllowed={report.receiptExceptionsAllowed}
 											onReceiptsChanged={refreshReport}
-											onSaved={() => void refreshDrafts()}
+											onSaved={(saved) => {
+												void refreshDrafts();
+												if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
+													void refreshReport();
+												}
+											}}
 											onDraftChange={(draft) =>
 												setDrafts((current) => ({ ...current, [item.id]: draft }))
 											}

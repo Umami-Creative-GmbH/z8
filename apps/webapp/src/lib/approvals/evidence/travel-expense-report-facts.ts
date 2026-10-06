@@ -52,7 +52,7 @@ import {
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 5;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 6;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
@@ -62,6 +62,7 @@ const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
 const PROJECT_ATTRIBUTION_SCHEMA_VERSION = 4;
 /** Version 5 (#606) adds `mileage` to mileage items. */
 const MILEAGE_FACTS_SCHEMA_VERSION = 5;
+/* Version 6 (#608) admits the `reference_rate` conversion basis (`REFERENCE_RATE_FACTS_SCHEMA_VERSION`). */
 
 /**
  * The accounting attribution of one expense as it was submitted (#605): the

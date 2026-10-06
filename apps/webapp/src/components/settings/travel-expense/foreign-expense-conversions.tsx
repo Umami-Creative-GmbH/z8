@@ -425,7 +425,8 @@ function ForeignExpenseRow({
 						? t("settings.travelExpenses.rates.replace", "Replace rate")
 						: t("settings.travelExpenses.rates.record", "Document rate")}
 				</Button>
-				{applied && (
+				{/* A reference rate (#608) is derived from the approved source, not recorded. */}
+				{applied && applied.basis !== "reference_rate" && (
 					<Button
 						type="button"
 						size="sm"

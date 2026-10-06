@@ -18,6 +18,7 @@ import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
+import { storeSubmittedReferenceConversions } from "@/lib/travel-expenses/reference-rate-freeze";
 import {
 	EDITABLE_REPORT_STATUSES,
 	isEditableReportStatus,
@@ -240,6 +241,7 @@ export async function submitTravelExpenseReport(
 					status: travelExpenseReport.status,
 					submissionCount: travelExpenseReport.submissionCount,
 					detailsVersion: travelExpenseReport.detailsVersion,
+					reimbursementCurrency: travelExpenseReport.reimbursementCurrency,
 				})
 				.from(travelExpenseReport)
 				.where(
@@ -253,6 +255,12 @@ export async function submitTravelExpenseReport(
 			if (!locked) refuse({ kind: "not_found" });
 			// A returned report (#603) is resubmitted as the next cycle.
 			if (!isEditableReportStatus(locked.status)) refuse({ kind: "not_draft" });
+			// #608: store the reference conversions this cycle freezes, so they are read below.
+			await storeSubmittedReferenceConversions(
+				tx,
+				{ ...owner, reportId: input.reportId, ...locked },
+				now,
+			);
 
 			const live = await loadTravelExpenseReportFactsInput(tx, {
 				organizationId: owner.organizationId,

@@ -42,25 +42,62 @@ export function conversionReviewRows(
 		return rows;
 	}
 	const { rate } = conversion;
+	const rateRow: Row = {
+		label: text("conversionRate", "Rate"),
+		value: `1 ${rate.base} = ${rate.value} ${rate.quote}`,
+	};
+	const roundingRow: Row = {
+		label: text("conversionRounding", "Rounding"),
+		// Only half-up rounding is applied today (CONVERSION_ROUNDING_MODE).
+		value:
+			conversion.rounding.mode === "half_up"
+				? text("conversionRoundingHalfUp", "Half up, once, to the currency's minor units")
+				: text("conversionRoundingHalfEven", "Half even, once, to the currency's minor units"),
+	};
+	if (conversion.basis === "reference_rate") {
+		// #608: the frozen publication; dates are calendar dates without a zone.
+		rows.push(
+			{
+				label: text("conversionBasis", "Conversion basis"),
+				value: text("conversionBasisReferenceRate", "Approved reference rate"),
+			},
+			{
+				label: text("conversionReferenceSource", "Rate source"),
+				value: text(
+					"conversionReferenceSourceEcb",
+					"ECB euro reference rate (approved by the organization)",
+				),
+			},
+			rateRow,
+			{ label: text("conversionPublicationDate", "Publication date"), value: conversion.rateDate },
+			...(conversion.rateDate < conversion.expenseDate
+				? [
+						{
+							label: text("conversionPublicationUsed", "Publication used"),
+							value: text(
+								"conversionPublicationFallback",
+								"Latest earlier publication; none on the expense date",
+							),
+						},
+					]
+				: []),
+			{
+				label: text("conversionPublicationVersion", "Publication version"),
+				value: String(conversion.source.publicationVersion),
+			},
+			roundingRow,
+		);
+		return rows;
+	}
 	rows.push(
 		{
 			label: text("conversionBasis", "Conversion basis"),
 			value: text("conversionBasisManualRate", "Authorized manual rate"),
 		},
-		{
-			label: text("conversionRate", "Rate"),
-			value: `1 ${rate.base} = ${rate.value} ${rate.quote}`,
-		},
+		rateRow,
 		// A calendar date as documented; it never shifts with the viewer's zone.
 		{ label: text("conversionRateDate", "Rate date"), value: conversion.rateDate },
-		{
-			label: text("conversionRounding", "Rounding"),
-			// Only half-up rounding is applied today (CONVERSION_ROUNDING_MODE).
-			value:
-				conversion.rounding.mode === "half_up"
-					? text("conversionRoundingHalfUp", "Half up, once, to the currency's minor units")
-					: text("conversionRoundingHalfEven", "Half even, once, to the currency's minor units"),
-		},
+		roundingRow,
 		{ label: text("conversionAuthorizedBy", "Authorized by"), value: conversion.authorizedBy.name },
 		{ label: text("conversionReason", "Documentation"), value: conversion.reason },
 	);

@@ -862,6 +862,13 @@
       "when": 1794844800000,
       "tag": "0122_travel_expense_export",
       "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "7",
+      "when": 1794931200000,
+      "tag": "0123_travel_expense_reference_rates",
+      "breakpoints": true
     }
   ]
 }

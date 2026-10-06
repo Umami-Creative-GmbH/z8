@@ -26,6 +26,7 @@ import {
 	type ItemConversion,
 } from "@/lib/travel-expenses/currency-conversion";
 import { currencyMinorUnitDigits } from "@/lib/travel-expenses/money";
+import type { ReferenceRateItemStatus } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportReceiptView } from "@/lib/travel-expenses/report-store";
 import { ConversionSummary } from "./conversion-summary";
 
@@ -76,8 +77,10 @@ export function CurrencyConversionField({
 	reportId,
 	itemId,
 	original,
+	expenseDate,
 	reimbursementCurrency,
-	conversion,
+	conversion: loaded,
+	referenceRate,
 	receipts,
 	version,
 	onChanged,
@@ -86,9 +89,13 @@ export function CurrencyConversionField({
 	itemId: string;
 	/** The entered original amount and currency, as they are on screen. */
 	original: { amount: string | null; currency: string | null };
+	/** The entered expense date, as it is on screen (#608). */
+	expenseDate?: string | null;
 	reimbursementCurrency: string;
 	/** The saved conversion, as last loaded. */
 	conversion: ItemConversion | null;
+	/** Why the approved reference rate does or does not convert the item (#608). */
+	referenceRate?: ReferenceRateItemStatus | null;
 	receipts: ReportReceiptView[];
 	version: ItemVersionHandle;
 	onChanged: () => void | Promise<void>;
@@ -96,6 +103,12 @@ export function CurrencyConversionField({
 	const { t } = useTranslate();
 	const [removing, setRemoving] = useState(false);
 	if (!original.currency || original.currency === reimbursementCurrency) return null;
+	// A reference rate belongs to the date it was looked up for; a new date is looked up on save.
+	const staleReference =
+		loaded?.basis === "reference_rate" &&
+		expenseDate !== undefined &&
+		expenseDate !== loaded.expenseDate;
+	const conversion = staleReference ? null : loaded;
 	const applied = appliedConversion(original, reimbursementCurrency, conversion);
 	const headingId = `${itemId}-conversion`;
 
@@ -155,6 +168,19 @@ export function CurrencyConversionField({
 						</Button>
 					)}
 				</div>
+			) : staleReference ? (
+				<p role="status" className="text-sm text-muted-foreground">
+					{t(
+						"travelExpenses.report.conversion.referencePending",
+						"The reference rate is looked up again for the new date once your change is saved.",
+					)}
+				</p>
+			) : referenceRate?.status === "unavailable" ? (
+				<ReferenceRateGuidance
+					reason={referenceRate.reason}
+					currency={original.currency}
+					reimbursementCurrency={reimbursementCurrency}
+				/>
 			) : (
 				<p className="text-sm text-muted-foreground">
 					{t(
@@ -175,6 +201,64 @@ export function CurrencyConversionField({
 				onChanged={onChanged}
 			/>
 		</section>
+	);
+}
+
+/**
+ * Why the organization's approved reference rate cannot convert this expense
+ * (#608), and what still can: an evidenced card charge or a documented rate.
+ */
+function ReferenceRateGuidance({
+	reason,
+	currency,
+	reimbursementCurrency,
+}: {
+	reason: Extract<ReferenceRateItemStatus, { status: "unavailable" }>["reason"];
+	currency: string;
+	reimbursementCurrency: string;
+}) {
+	const { t } = useTranslate();
+	const why = {
+		pair_unsupported: t(
+			"travelExpenses.report.conversion.reference.pairUnsupported",
+			"The European Central Bank publishes rates against the euro only, so none applies between {currency} and {reimbursementCurrency}.",
+			{ currency, reimbursementCurrency },
+		),
+		currency_unavailable: t(
+			"travelExpenses.report.conversion.reference.currencyUnavailable",
+			"The European Central Bank does not publish a rate for {currency} on this date.",
+			{ currency },
+		),
+		not_yet_published: t(
+			"travelExpenses.report.conversion.reference.notYetPublished",
+			"The reference rate for this date has not been published yet. It usually appears after 16:00 Frankfurt time on working days.",
+		),
+		provider_unavailable: t(
+			"travelExpenses.report.conversion.reference.providerUnavailable",
+			"The reference rate for this date could not be retrieved yet. Try again later.",
+		),
+		history_unavailable: t(
+			"travelExpenses.report.conversion.reference.historyUnavailable",
+			"There is no reference rate for this date.",
+		),
+		rate_stale: t(
+			"travelExpenses.report.conversion.reference.rateStale",
+			"No current reference rate is available for this date.",
+		),
+		expense_date_missing: t(
+			"travelExpenses.report.conversion.reference.expenseDateMissing",
+			"Enter the expense date to look up the reference rate.",
+		),
+	}[reason];
+	return (
+		<p role="status" className="text-sm text-muted-foreground">
+			{why}{" "}
+			{t(
+				"travelExpenses.report.conversion.reference.alternatives",
+				"Your report stays a draft until you enter your card charge in {reimbursementCurrency} with the attachment that shows it, or an expense administrator records a documented rate.",
+				{ reimbursementCurrency },
+			)}
+		</p>
 	);
 }
 
@@ -360,7 +444,7 @@ function CardChargeForm({
 							{isSubmitting && (
 								<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
 							)}
-							{conversion?.basis === "manual_rate"
+							{conversion?.basis === "manual_rate" || conversion?.basis === "reference_rate"
 								? t(
 										"travelExpenses.report.conversion.replaceWithCardCharge",
 										"Use my card charge instead",

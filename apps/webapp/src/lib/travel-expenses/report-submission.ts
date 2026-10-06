@@ -6,6 +6,7 @@ import type { MileageItemView } from "./mileage";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import type { ReceiptExceptionContext } from "./receipt-exception";
 import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
+import { referenceRateReviewKey } from "./reference-rate-conversion";
 import {
 	type TripDetailsDraft,
 	type TripReportMissingRequirements,
@@ -61,6 +62,8 @@ export interface ReviewedReportVersions {
 		 * policy changes; when present it must still match.
 		 */
 		amount?: string | null;
+		/** The reference-rate publication reviewed (#608, `referenceRateReviewKey`); absent means none. */
+		referenceRate?: string | null;
 	}[];
 }
 
@@ -121,7 +124,8 @@ function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVe
 			sameIds(seen.receiptIds, item.receiptIds) &&
 			(seen.receiptExceptionVersion ?? 0) === (item.receiptExceptionVersion ?? 0) &&
 			(seen.amount === undefined ||
-				seen.amount === reviewedItemAmount(totalsInput(item), report.reimbursementCurrency))
+				seen.amount === reviewedItemAmount(totalsInput(item), report.reimbursementCurrency)) &&
+			(seen.referenceRate ?? null) === referenceRateReviewKey(item.conversion)
 		);
 	});
 }

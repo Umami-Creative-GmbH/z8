@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expense/foreign-expense-conversions";
 import { MileagePolicySettingsCard } from "@/components/settings/travel-expense/mileage-policy-settings";
+import { ReferenceRateSettingsCard } from "@/components/settings/travel-expense/reference-rate-settings";
 import { ReimbursementCurrencySettingsCard } from "@/components/settings/travel-expense/reimbursement-currency-settings";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
@@ -18,6 +19,7 @@ async function TravelExpenseSettingsPageContent() {
 			<TravelExpenseApproverSettingsCard />
 			<TravelExpenseReceiptExceptionSettingsCard />
 			<ReimbursementCurrencySettingsCard />
+			<ReferenceRateSettingsCard />
 			<ForeignExpenseConversionsCard />
 			<TravelExpenseProjectExceptionsCard />
 			<MileagePolicySettingsCard />

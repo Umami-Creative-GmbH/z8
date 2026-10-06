@@ -21,11 +21,13 @@ import {
  *   the reimbursement currency's minor units.
  * Nothing is guessed: without a basis for the item's exact currency pair the
  * item is "missing" a conversion, and a result that cannot be represented is
- * "unsupported". An approved reference-rate feed (#608) adds a third basis,
- * `reference_rate`, priced like `manual_rate` from a published rate.
+ * "unsupported".
+ * - `reference_rate` (#608): a rate from the reference feed the organization
+ *   approved (`reference-rate.ts`), priced like `manual_rate`, with the
+ *   publication it came from.
  */
 
-export const CONVERSION_BASES = ["card_charge", "manual_rate"] as const;
+export const CONVERSION_BASES = ["card_charge", "manual_rate", "reference_rate"] as const;
 export type ConversionBasis = (typeof CONVERSION_BASES)[number];
 
 /** Commercial rounding, applied once to a rate-based result. */
@@ -72,15 +74,42 @@ export interface ManualRateConversion extends ConversionPair {
 	authorizedAt: string;
 }
 
+/** Where an applied reference rate came from, kept with it (#608). */
+export interface ReferenceRateSource {
+	provider: "ecb";
+	/** The stored publication version that was applied. */
+	publicationId: string;
+	/** 1 for the first publication of its date; a correction is a later version. */
+	publicationVersion: number;
+	/** SHA-256 of the publication's canonical rates. */
+	contentSha256: string;
+	/** Canonical UTC instant this publication version was fetched. */
+	retrievedAt: string;
+	/** Canonical UTC instant the organization approved the reference source. */
+	policyApprovedAt: string;
+}
+
+export interface ReferenceRateConversion extends ConversionPair {
+	basis: "reference_rate";
+	/** As published: `1 EUR = value X`, in either direction of the item's pair. */
+	rate: ExchangeRate;
+	/** The publication's own date; before `expenseDate` when it is a fallback. */
+	rateDate: string;
+	/** The expense date the publication was chosen for. */
+	expenseDate: string;
+	source: ReferenceRateSource;
+}
+
 /** The conversion recorded for one item. */
-export type ItemConversion = CardChargeConversion | ManualRateConversion;
+export type ItemConversion = CardChargeConversion | ManualRateConversion | ReferenceRateConversion;
+
+type ConversionRounding = { rounding: { mode: RoundingMode; minorUnitDigits: number } };
 
 /** What a conversion applied, as frozen with a submission. */
 export type AppliedConversion =
 	| { basis: "card_charge"; evidenceReceiptId: string | null }
-	| (Omit<ManualRateConversion, "sourceCurrency" | "targetCurrency"> & {
-			rounding: { mode: RoundingMode; minorUnitDigits: number };
-	  });
+	| (Omit<ManualRateConversion, "sourceCurrency" | "targetCurrency"> & ConversionRounding)
+	| (Omit<ReferenceRateConversion, "sourceCurrency" | "targetCurrency"> & ConversionRounding);
 
 export type ConversionOutcome =
 	/** The item already is in the reimbursement currency. */
@@ -167,12 +196,23 @@ export function convertToReimbursement(
 	} else {
 		return { kind: "missing" };
 	}
+	const units = roundToScale({ units: minor, scale: digits }, STORED_AMOUNT_SCALE, mode);
+	const rounding = { mode, minorUnitDigits: digits };
+	if (conversion.basis === "reference_rate") {
+		const { sourceCurrency: _source, targetCurrency: _target, ...reference } = conversion;
+		return converted(units, {
+			...reference,
+			rate: { ...rate },
+			source: { ...conversion.source },
+			rounding,
+		});
+	}
 	const { sourceCurrency: _source, targetCurrency: _target, ...manual } = conversion;
-	return converted(roundToScale({ units: minor, scale: digits }, STORED_AMOUNT_SCALE, mode), {
+	return converted(units, {
 		...manual,
 		rate: { ...rate },
 		authorizedBy: { ...conversion.authorizedBy },
-		rounding: { mode, minorUnitDigits: digits },
+		rounding,
 	});
 }
 
