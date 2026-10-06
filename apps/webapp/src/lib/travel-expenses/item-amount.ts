@@ -1,0 +1,78 @@
+import { formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
+import type { ExpensePayer } from "./receipt-report";
+
+/**
+ * The single place that derives how much an expense item counts toward a
+ * report in its reimbursement currency (#598). Report totals
+ * (`receiptReportTotals`), and through them the frozen submission facts, the
+ * submission check and the editor's live totals, all count items here, so a
+ * new way of pricing an item is added once:
+ * - mileage (#606) derives the amount from distance × the policy rate,
+ * - currency conversion (#607) derives it from a card charge or a rate.
+ * Each adds optional input fields and a branch in `reimbursementSource`;
+ * receipts in the reimbursement currency keep counting at their original
+ * amount. Nothing is guessed: an item that cannot be priced is not counted.
+ */
+
+export interface ReimbursementItemInput {
+	/** Original amount as a decimal string at the stored scale ("89.90"). */
+	amount: string | null;
+	/** Original currency (ISO 4217). */
+	currency: string | null;
+	paidBy: ExpensePayer | null;
+}
+
+/** Why an item is not counted (yet). */
+export type ItemNotCountedReason =
+	/** No valid positive amount (or no currency) to count. */
+	| "amount"
+	/** Nobody is recorded as having paid it. */
+	| "payer"
+	/** It is in another currency and no conversion exists. */
+	| "currency";
+
+export type ItemReimbursementAmount =
+	| {
+			counted: true;
+			/** Employee-paid counts toward the entitlement; company-paid never does. */
+			paidBy: ExpensePayer;
+			/** Always the report's reimbursement currency. */
+			currency: string;
+			/** Units at `STORED_AMOUNT_SCALE`; always positive. */
+			units: bigint;
+			/** The same amount as a stored-scale decimal string. */
+			amount: string;
+	  }
+	| { counted: false; reason: ItemNotCountedReason };
+
+/** Largest amount of the stored `decimal(12, 2)` columns, in units. */
+const MAX_AMOUNT_UNITS = BigInt(99_999_999_999);
+
+function reimbursementSource(
+	item: ReimbursementItemInput,
+	reimbursementCurrency: string,
+): { amount: string } | { reason: ItemNotCountedReason } {
+	if (!item.amount || !item.currency) return { reason: "amount" };
+	if (item.currency !== reimbursementCurrency) return { reason: "currency" };
+	return { amount: item.amount };
+}
+
+export function itemReimbursementAmount(
+	item: ReimbursementItemInput,
+	reimbursementCurrency: string,
+): ItemReimbursementAmount {
+	const source = reimbursementSource(item, reimbursementCurrency);
+	if ("reason" in source) return { counted: false, reason: source.reason };
+	const units = parseUnits(source.amount, STORED_AMOUNT_SCALE);
+	if (units === null || units <= BigInt(0) || units > MAX_AMOUNT_UNITS) {
+		return { counted: false, reason: "amount" };
+	}
+	if (!item.paidBy) return { counted: false, reason: "payer" };
+	return {
+		counted: true,
+		paidBy: item.paidBy,
+		currency: reimbursementCurrency,
+		units,
+		amount: formatUnits(units, STORED_AMOUNT_SCALE),
+	};
+}
