@@ -36,7 +36,7 @@ export interface MileagePolicyVersionView extends MileagePolicyVersion {
 
 /**
  * Every version of the organization's mileage policy (withdrawn ones only
- * when asked), with its rates. Calculations use `activeOnly`.
+ * when asked), with its rates. Calculations read active versions only.
  */
 export async function loadMileagePolicyVersions(
 	database: Reader,
