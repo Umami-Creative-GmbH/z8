@@ -1,4 +1,5 @@
 import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
+import type { ItemConversion } from "./currency-conversion";
 import {
 	type MileageItemRequirement,
 	type MileageItemView,
@@ -30,6 +31,8 @@ export interface RequirementItem {
 	mileage?: MileageItemView | null;
 	/** Missing-receipt exception of a receipt item (#604); absent means none. */
 	receiptException?: ReceiptExceptionContext;
+	/** Currency conversion of a foreign receipt item (#607); absent means none. */
+	conversion?: ItemConversion | null;
 }
 
 export function reportItemMissingRequirements(
@@ -53,5 +56,6 @@ export function reportItemMissingRequirements(
 		receiptCount: item.receiptCount,
 		reimbursementCurrency: context.reimbursementCurrency,
 		receiptException: item.receiptException,
+		conversion: item.conversion,
 	});
 }

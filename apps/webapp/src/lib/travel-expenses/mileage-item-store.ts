@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { travelExpenseReport, travelExpenseReportItem } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { loadOrganizationReimbursementCurrency } from "./conversion-read";
 import {
 	type MileageItemDraft,
 	type MileageItemView,
@@ -52,6 +53,8 @@ export async function createStandaloneMileageReport(
 ): Promise<{ reportId: string; itemId: string }> {
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		// The organization's reimbursement currency (#607), read at creation only.
+		const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
 		const [report] = await tx
 			.insert(travelExpenseReport)
 			.values({
@@ -59,7 +62,7 @@ export async function createStandaloneMileageReport(
 				employeeId: owner.employeeId,
 				kind: "standalone",
 				status: "draft",
-				reimbursementCurrency: DEFAULT_REIMBURSEMENT_CURRENCY,
+				reimbursementCurrency: currency,
 				createdAt: at,
 				createdBy: owner.userId,
 				updatedAt: at,
