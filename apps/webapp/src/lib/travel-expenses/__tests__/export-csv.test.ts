@@ -334,6 +334,22 @@ describe("travel expense export files", () => {
 		);
 	});
 
+	it("names an accepted missing-receipt exception as the item's evidence basis", () => {
+		const revision = standaloneRevision();
+		revision.facts.schemaVersion = 2;
+		const [item] = revision.facts.items;
+		if (!item) throw new Error("no item");
+		item.receipts = [];
+		item.receiptException = { reason: "=Lost in taxi" };
+		const [row] = records(file("expenses.csv", manifest([revision])));
+		expect(row).toMatchObject({
+			exception_basis: "missing_receipt_exception: =Lost in taxi",
+			receipt_count: "0",
+			receipt_files: "",
+			reimbursement_amount: "35.50",
+		});
+	});
+
 	it("is byte-identical for the same manifest", () => {
 		expect(buildTravelExpenseExportFiles(manifest())).toEqual(
 			buildTravelExpenseExportFiles(manifest()),

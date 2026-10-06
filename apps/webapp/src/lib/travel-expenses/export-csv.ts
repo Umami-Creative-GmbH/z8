@@ -96,18 +96,18 @@ function stringOf(value: unknown): string {
 }
 
 /**
- * Optional item facts of later schema versions, read defensively so a
- * manifest of any revision version exports: project attribution (#605),
- * receipt exceptions (#604).
+ * Optional item facts of later schema versions. A receipt exception (#604,
+ * v2) was accepted by the approving reviewer. Project attribution (#605) is
+ * read defensively until its facts type is merged; replace it then.
  */
 function optionalItemFacts(item: TravelExpenseReportSubmittedItem) {
-	const extended = item as unknown as Record<string, unknown>;
-	const project = recordOf(extended.project);
-	const exception = recordOf(extended.receiptException);
+	const project = recordOf((item as unknown as Record<string, unknown>).project);
 	return {
 		projectId: stringOf(project?.projectId),
 		projectName: stringOf(project?.name),
-		exceptionBasis: exception ? `receipt_exception: ${stringOf(exception.reason)}` : "",
+		exceptionBasis: item.receiptException
+			? `missing_receipt_exception: ${item.receiptException.reason}`
+			: "",
 	};
 }
 

@@ -302,6 +302,9 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 			yield* decideTravelExpenseReportEffect(dbService, actor, {
 				reportId: entityId,
 				action: "approve",
+				...(options?.acceptedReceiptExceptionItemIds
+					? { acceptedReceiptExceptionItemIds: options.acceptedReceiptExceptionItemIds }
+					: {}),
 				...(options ? { options: decisionOptions(options) } : {}),
 			});
 		}),
