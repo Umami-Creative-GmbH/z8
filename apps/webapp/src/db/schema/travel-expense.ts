@@ -14,6 +14,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { MileageVehicle, StampedMileagePolicy } from "@/lib/travel-expenses/mileage";
 import type { ExpensePayer, ReceiptExpenseCategory } from "@/lib/travel-expenses/receipt-report";
 import type { TripDestination } from "@/lib/travel-expenses/trip-destination";
 import { organization, user } from "../auth-schema";
@@ -208,7 +209,7 @@ export const travelExpenseReport = pgTable(
 	],
 );
 
-export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt"] as const;
+export const TRAVEL_EXPENSE_REPORT_ITEM_TYPES = ["receipt", "mileage"] as const;
 export type TravelExpenseReportItemType = (typeof TRAVEL_EXPENSE_REPORT_ITEM_TYPES)[number];
 
 // One expense of a report. Draft facts may be missing but are never malformed.
@@ -229,6 +230,12 @@ export const travelExpenseReportItem = pgTable(
 		originalCurrency: text("original_currency"),
 		paidBy: text("paid_by").$type<ExpensePayer>(),
 		accountingReference: text("accounting_reference"),
+		// Mileage items (#606): entered facts, priced by the effective policy;
+		// the applied policy is stamped at submission (`mileage-item-store.ts`).
+		mileageRoute: text("mileage_route"),
+		mileageDistanceKm: decimal("mileage_distance_km", { precision: 8, scale: 2 }),
+		mileageVehicle: text("mileage_vehicle").$type<MileageVehicle>(),
+		mileagePolicy: jsonb("mileage_policy").$type<StampedMileagePolicy>(),
 		version: integer("version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -242,7 +249,17 @@ export const travelExpenseReportItem = pgTable(
 		}).onDelete("cascade"),
 		uniqueIndex("travelExpenseReportItem_id_org_idx").on(table.id, table.organizationId),
 		uniqueIndex("travelExpenseReportItem_report_position_idx").on(table.reportId, table.position),
-		check("travel_expense_report_item_type_check", sql`${table.type} IN ('receipt')`),
+		check("travel_expense_report_item_type_check", sql`${table.type} IN ('receipt', 'mileage')`),
+		check(
+			"travel_expense_report_item_mileage_check",
+			sql`(${table.type} = 'mileage' OR (${table.mileageRoute} IS NULL
+				AND ${table.mileageDistanceKm} IS NULL AND ${table.mileageVehicle} IS NULL
+				AND ${table.mileagePolicy} IS NULL))
+			AND (${table.type} <> 'mileage' OR (${table.originalAmount} IS NULL
+				AND ${table.originalCurrency} IS NULL AND ${table.category} IS NULL
+				AND (${table.mileageDistanceKm} IS NULL OR ${table.mileageDistanceKm} > 0)
+				AND (${table.mileageVehicle} IS NULL OR ${table.mileageVehicle} IN ('car', 'other_motor_vehicle'))))`,
+		),
 		check(
 			"travel_expense_report_item_category_check",
 			sql`${table.category} IS NULL OR ${table.category} IN ('transport', 'accommodation', 'meals', 'parking', 'other')`,

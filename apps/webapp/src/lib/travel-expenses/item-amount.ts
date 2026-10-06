@@ -20,6 +20,10 @@ export interface ReimbursementItemInput {
 	/** Original currency (ISO 4217). */
 	currency: string | null;
 	paidBy: ExpensePayer | null;
+	/** Item type; receipts when absent. */
+	type?: string;
+	/** Mileage (#606): the server-calculated amount; entered amounts never count. */
+	mileage?: { amount: string | null; currency: string | null } | null;
 }
 
 /** Why an item is not counted (yet). */
@@ -52,6 +56,13 @@ function reimbursementSource(
 	item: ReimbursementItemInput,
 	reimbursementCurrency: string,
 ): { amount: string } | { reason: ItemNotCountedReason } {
+	if (item.type === "mileage") {
+		// Priced by the organization's dated mileage policy (`mileage.ts`), never converted.
+		const { amount = null, currency = null } = item.mileage ?? {};
+		if (!amount || !currency) return { reason: "amount" };
+		if (currency !== reimbursementCurrency) return { reason: "currency" };
+		return { amount };
+	}
 	if (!item.amount || !item.currency) return { reason: "amount" };
 	if (item.currency !== reimbursementCurrency) return { reason: "currency" };
 	return { amount: item.amount };

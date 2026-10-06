@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { calculateMileageItem, type MileageCalculation, mileageItemView } from "../mileage";
 import type { ReceiptItemDraft } from "../receipt-report";
 import { checkReportSubmission } from "../report-submission";
 
@@ -150,6 +151,94 @@ describe("checkReportSubmission", () => {
 			ok: false,
 			reason: "incomplete",
 			missing: { trip: ["expense_item"], items: [] },
+		});
+	});
+});
+
+describe("checkReportSubmission with mileage (#606)", () => {
+	const policy = {
+		policyId: "policy",
+		versionId: "v2026",
+		effectiveFrom: "2026-01-01",
+		vehicle: "car" as const,
+		ratePerKm: "0.3000",
+		currency: "EUR",
+		source: { kind: "organization" as const, reference: null, version: null, defaultKey: null },
+	};
+	const mileageDraft = {
+		expenseDate: "2026-09-15",
+		route: "Hamburg hotel – customer site – back",
+		distanceKm: "61.50",
+		vehicle: "car" as const,
+		accountingReference: null,
+	};
+
+	function mileageItem(calculation: MileageCalculation) {
+		return {
+			id: "drive",
+			version: 2,
+			type: "mileage" as const,
+			draft: receipt({ category: null, description: null, amount: null, currency: null }),
+			receiptIds: [],
+			mileage: mileageItemView(
+				{
+					type: "mileage",
+					mileageRoute: mileageDraft.route,
+					mileageDistanceKm: mileageDraft.distanceKm,
+					mileageVehicle: "car",
+				},
+				calculation,
+			),
+		};
+	}
+
+	const calculated = calculateMileageItem(mileageDraft, { status: "found", policy }, "EUR");
+
+	it("counts a priced mileage item, without receipts, toward the employee's entitlement", () => {
+		const report = { ...trip, items: [...trip.items, mileageItem(calculated)] };
+		expect(
+			checkReportSubmission(report, {
+				detailsVersion: 4,
+				items: [
+					...reviewedTrip.items,
+					{ id: "drive", version: 2, receiptIds: [], amount: "18.45" },
+				],
+			}),
+		).toEqual({
+			ok: true,
+			totals: { currency: "EUR", reimbursable: "108.35", companyPaid: "240.00", total: "348.35" },
+		});
+	});
+
+	it("refuses a calculated amount that differs from the one the employee reviewed", () => {
+		const report = { ...trip, items: [...trip.items, mileageItem(calculated)] };
+		expect(
+			checkReportSubmission(report, {
+				detailsVersion: 4,
+				items: [
+					...reviewedTrip.items,
+					{ id: "drive", version: 2, receiptIds: [], amount: "15.00" },
+				],
+			}),
+		).toEqual({ ok: false, reason: "changed_since_review" });
+	});
+
+	it("keeps a mileage item without policy coverage in draft with actionable guidance", () => {
+		const report = {
+			...trip,
+			items: [
+				mileageItem({ status: "policy_missing", expenseDate: "2026-09-15", vehicle: "car" }),
+			],
+		};
+		expect(
+			checkReportSubmission(report, {
+				detailsVersion: 4,
+				items: [{ id: "drive", version: 2, receiptIds: [] }],
+			}),
+		).toEqual({
+			ok: false,
+			reason: "incomplete",
+			missing: { trip: [], items: [{ id: "drive", missing: ["mileage_policy_missing"] }] },
 		});
 	});
 });

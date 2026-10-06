@@ -1,10 +1,9 @@
-import type { TravelExpenseReportKind } from "@/db/schema";
+import type { TravelExpenseReportItemType, TravelExpenseReportKind } from "@/db/schema";
+import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
+import { reportItemMissingRequirements } from "./item-requirements";
+import type { MileageItemView } from "./mileage";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
-import {
-	type ReceiptItemDraft,
-	receiptItemMissingRequirements,
-	receiptReportTotals,
-} from "./receipt-report";
+import { type ReceiptItemDraft, receiptReportTotals } from "./receipt-report";
 import {
 	type TripDetailsDraft,
 	type TripReportMissingRequirements,
@@ -31,6 +30,10 @@ export interface SubmissionReportFacts {
 		draft: ReceiptItemDraft;
 		/** The receipts attached to the expense right now. */
 		receiptIds: readonly string[];
+		/** Receipts when absent. */
+		type?: TravelExpenseReportItemType;
+		/** A mileage item's facts, calculated by the server under the report lock (#606). */
+		mileage?: MileageItemView | null;
 	}[];
 }
 
@@ -38,7 +41,30 @@ export interface SubmissionReportFacts {
 export interface ReviewedReportVersions {
 	/** Null for standalone reports, which have no trip details. */
 	detailsVersion: number | null;
-	items: readonly { id: string; version: number; receiptIds: readonly string[] }[];
+	items: readonly {
+		id: string;
+		version: number;
+		receiptIds: readonly string[];
+		/**
+		 * The item's counted amount as reviewed (`reviewedItemAmount`). A
+		 * calculated amount (mileage) can change without an edit, when the
+		 * policy changes; when present it must still match.
+		 */
+		amount?: string | null;
+	}[];
+}
+
+/** What an item counts in the review step; null when it is not counted. */
+export function reviewedItemAmount(
+	item: ReimbursementItemInput,
+	reimbursementCurrency: string,
+): string | null {
+	const amount = itemReimbursementAmount(item, reimbursementCurrency);
+	return amount.counted ? amount.amount : null;
+}
+
+function totalsInput(item: SubmissionReportFacts["items"][number]): ReimbursementItemInput {
+	return { ...item.draft, type: item.type, mileage: item.mileage };
 }
 
 function sameIds(left: readonly string[], right: readonly string[]): boolean {
@@ -82,7 +108,9 @@ function matchesReview(report: SubmissionReportFacts, reviewed: ReviewedReportVe
 		return (
 			seen?.id === item.id &&
 			seen.version === item.version &&
-			sameIds(seen.receiptIds, item.receiptIds)
+			sameIds(seen.receiptIds, item.receiptIds) &&
+			(seen.amount === undefined ||
+				seen.amount === reviewedItemAmount(totalsInput(item), report.reimbursementCurrency))
 		);
 	});
 }
@@ -93,8 +121,10 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 			details: report.details,
 			items: report.items.map((item) => ({
 				id: item.id,
+				type: item.type,
 				draft: item.draft,
 				receiptCount: item.receiptIds.length,
+				mileage: item.mileage,
 			})),
 			reimbursementCurrency: report.reimbursementCurrency,
 		});
@@ -103,10 +133,15 @@ function missingRequirements(report: SubmissionReportFacts): TripReportMissingRe
 	const items = report.items
 		.map((item) => ({
 			id: item.id,
-			missing: receiptItemMissingRequirements(item.draft, {
-				receiptCount: item.receiptIds.length,
-				reimbursementCurrency: report.reimbursementCurrency,
-			}),
+			missing: reportItemMissingRequirements(
+				{
+					type: item.type,
+					draft: item.draft,
+					receiptCount: item.receiptIds.length,
+					mileage: item.mileage,
+				},
+				{ reimbursementCurrency: report.reimbursementCurrency },
+			),
 		}))
 		.filter((item) => item.missing.length > 0);
 	return { trip, items };
@@ -121,10 +156,7 @@ export function checkReportSubmission(
 	if (missing.trip.length > 0 || missing.items.length > 0) {
 		return { ok: false, reason: "incomplete", missing };
 	}
-	const totals = receiptReportTotals(
-		report.items.map((item) => item.draft),
-		report.reimbursementCurrency,
-	);
+	const totals = receiptReportTotals(report.items.map(totalsInput), report.reimbursementCurrency);
 	if (totals.excludedItemCount > 0) {
 		// Unreachable for complete items; never submit an uncounted expense.
 		throw new Error("A complete expense was excluded from the report totals");

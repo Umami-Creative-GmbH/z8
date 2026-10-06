@@ -13,10 +13,10 @@ import {
 } from "./travel-expense-report-store";
 
 // Simulates the build after a later ticket bumps the schema version: the
-// builder still freezes today's (v1) facts, but the reader knows v1..v2.
+// builder still freezes today's (v2) facts, but the reader knows v1..v3.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./travel-expense-report-facts")>()),
-	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 2,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 3,
 }));
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
@@ -105,8 +105,8 @@ async function capture(database: ApprovalDatabase, facts: TravelExpenseReportSub
 describe("after a schema version bump", () => {
 	it("still reads a v1 revision with its v1 fingerprint", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = buildTravelExpenseReportSubmittedFacts(factsInput);
-		expect(facts.schemaVersion).toBe(1);
+		// A receipt-only v1 revision differs from today's facts in its version alone.
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -117,22 +117,22 @@ describe("after a schema version bump", () => {
 
 	it("reads a revision of the new version under its own fingerprint prefix", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 2 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 3 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
 
-		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v2:/);
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v3:/);
 	});
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 3 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 4 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
 	});
 
 	it("does not hold an unchanged v1 report as a material change", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(factsInput);
+		const submitted = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, factsInput)).toEqual({
 			kind: "current",
 		});

@@ -6,6 +6,7 @@ import {
 	buildTravelExpenseReportSubmittedFacts,
 	compareLiveTravelExpenseReportWithRevision,
 	fingerprintTravelExpenseReportFacts,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
 
@@ -102,7 +103,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 		const facts = buildTravelExpenseReportSubmittedFacts(input());
 
 		expect(facts).toEqual({
-			schemaVersion: 1,
+			schemaVersion: TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 			kind: "travel_expense_report",
 			organizationId: "org-1",
 			reportId: "report-1",
@@ -159,7 +160,7 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00" },
 		});
 		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(
-			/^travel_expense_report:v1:[0-9a-f]{64}$/,
+			new RegExp(`^travel_expense_report:v${TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION}:[0-9a-f]{64}$`),
 		);
 	});
 
@@ -245,7 +246,9 @@ describe("schema version 1 revisions", () => {
 		"travel_expense_report:v1:92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
 
 	it("still freezes a v1 report byte for byte", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		// Later versions add facts only to items that need them (mileage, #606):
+		// a receipt-only report differs from v1 in its version number alone.
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 1 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);
 	});
@@ -312,5 +315,106 @@ describe("compareLiveTravelExpenseReportWithRevision", () => {
 				}),
 			),
 		).toEqual({ kind: "material_change", changedFields: ["unverifiable:receipt_scope"] });
+	});
+});
+
+describe("mileage items (#606)", () => {
+	const stamp = {
+		policyId: "policy-1",
+		versionId: "version-2026",
+		effectiveFrom: "2026-01-01",
+		vehicle: "car" as const,
+		ratePerKm: "0.3000",
+		currency: "EUR",
+		source: {
+			kind: "statutory_default" as const,
+			reference: "§ 9 Abs. 1 Satz 3 Nr. 4a Satz 2 EStG",
+			version: "LStH 2026, Anhang 25 III",
+			defaultKey: "de-mileage-estg-9-1-4a",
+		},
+		expenseDate: "2026-09-15",
+	};
+	const drive = item("drive", 2, {
+		type: "mileage",
+		expenseDate: "2026-09-15",
+		category: null,
+		description: null,
+		originalAmount: null,
+		originalCurrency: null,
+		paidBy: "employee",
+		mileageRoute: "Hamburg hotel – customer site – back",
+		mileageDistanceKm: "123.45",
+		mileageVehicle: "car",
+		mileagePolicy: stamp,
+	});
+	const withDrive = (row: ItemRow = drive) => input({ items: [...input().items, row] });
+
+	it("freezes the route, distance, applied policy version and breakdown, and counts the amount", () => {
+		const facts = buildTravelExpenseReportSubmittedFacts(withDrive());
+
+		expect(facts.items[2]).toEqual({
+			itemId: "drive",
+			position: 2,
+			type: "mileage",
+			expenseDate: "2026-09-15",
+			category: "transport",
+			description: "Hamburg hotel – customer site – back",
+			original: { amount: "37.04", currency: "EUR" },
+			paidBy: "employee",
+			accountingReference: null,
+			receipts: [],
+			mileage: {
+				route: "Hamburg hotel – customer site – back",
+				distanceKm: "123.45",
+				vehicle: "car",
+				ratePerKm: "0.3000",
+				currency: "EUR",
+				exactAmount: "37.035000",
+				amount: "37.04",
+				rounding: "half_up",
+				policy: {
+					policyId: "policy-1",
+					versionId: "version-2026",
+					effectiveFrom: "2026-01-01",
+					source: stamp.source,
+				},
+			},
+		});
+		expect(facts.totals).toEqual({ currency: "EUR", reimbursable: "126.94", companyPaid: "240.00" });
+	});
+
+	it("refuses a mileage item that was not priced under the submission lock", () => {
+		for (const row of [
+			{ ...drive, mileagePolicy: null },
+			{ ...drive, mileagePolicy: { ...stamp, expenseDate: "2026-09-14" } },
+			{ ...drive, mileagePolicy: { ...stamp, currency: "CHF" } },
+			{ ...drive, mileageRoute: null },
+		]) {
+			expectEvidenceError(
+				() => buildTravelExpenseReportSubmittedFacts(withDrive(row)),
+				"evidence_incomplete",
+				"mileage",
+			);
+		}
+	});
+
+	it("compares against the stamped policy, so later policy changes never hold the decision", () => {
+		const submitted = buildTravelExpenseReportSubmittedFacts(withDrive());
+		// The live rows keep their stamp; today's policy is never consulted.
+		expect(compareLiveTravelExpenseReportWithRevision(submitted, withDrive())).toEqual({
+			kind: "current",
+		});
+		expect(
+			compareLiveTravelExpenseReportWithRevision(
+				submitted,
+				withDrive({ ...drive, mileageDistanceKm: "130.00" }),
+			),
+		).toEqual({ kind: "material_change", changedFields: ["items", "totals"] });
+		expect(
+			compareLiveTravelExpenseReportWithRevision(
+				submitted,
+				withDrive({ ...drive, mileagePolicy: null }),
+			),
+		).toEqual({ kind: "material_change", changedFields: ["items", "totals"] });
 	});
 });

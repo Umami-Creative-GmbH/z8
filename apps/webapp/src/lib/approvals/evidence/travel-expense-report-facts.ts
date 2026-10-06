@@ -3,7 +3,16 @@ import type {
 	TravelExpenseReportItemType,
 	TravelExpenseReportKind,
 } from "@/db/schema/travel-expense";
+import type { AllowancePolicySource } from "@/lib/travel-expenses/allowance-policy";
 import { TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER } from "@/lib/travel-expenses/attachment-validation";
+import {
+	calculateMileageItem,
+	type MileageVehicle,
+	parseMileageDistance,
+	parseMileageRate,
+	type StampedMileagePolicy,
+} from "@/lib/travel-expenses/mileage";
+import type { RoundingMode } from "@/lib/travel-expenses/money";
 import {
 	type ExpensePayer,
 	type ReceiptExpenseCategory,
@@ -32,7 +41,10 @@ import type { TravelExpenseMoney } from "./travel-expense-facts";
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 1;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 2;
+
+/** Version 2 (#606) adds `mileage` to mileage items. */
+const MILEAGE_FACTS_SCHEMA_VERSION = 2;
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;
@@ -55,6 +67,32 @@ export interface TravelExpenseReportSubmittedItem {
 	paidBy: ExpensePayer;
 	accountingReference: string | null;
 	receipts: TravelExpenseReportReceiptManifestItem[];
+	/**
+	 * Mileage items only (v2+, #606): the entered trip and the policy version
+	 * that priced it. Such an item also freezes `category: "transport"`, its
+	 * route as `description` and the calculated amount as `original`, so every
+	 * reader of item amounts keeps working.
+	 */
+	mileage?: TravelExpenseReportSubmittedMileage;
+}
+
+export interface TravelExpenseReportSubmittedMileage {
+	route: string;
+	distanceKm: string;
+	vehicle: MileageVehicle;
+	ratePerKm: string;
+	currency: string;
+	/** distance × rate, exact. */
+	exactAmount: string;
+	/** `exactAmount` rounded once with `rounding`; the item's reimbursement. */
+	amount: string;
+	rounding: RoundingMode;
+	policy: {
+		policyId: string;
+		versionId: string;
+		effectiveFrom: string;
+		source: AllowancePolicySource;
+	};
 }
 
 export interface TravelExpenseReportSubmittedFacts {
@@ -108,6 +146,12 @@ export interface TravelExpenseReportFactsInput {
 		originalCurrency: string | null;
 		paidBy: ExpensePayer | null;
 		accountingReference: string | null;
+		/** Mileage items (#606); absent or null otherwise. */
+		mileageRoute?: string | null;
+		mileageDistanceKm?: string | null;
+		mileageVehicle?: MileageVehicle | null;
+		/** The policy stamped under the report lock at submission. */
+		mileagePolicy?: StampedMileagePolicy | null;
 	}>;
 	receipts: ReadonlyArray<{
 		id: string;
@@ -227,6 +271,80 @@ function tripFacts(
 }
 
 /**
+ * A mileage item (#606) is priced from its entered distance and the policy
+ * stamped on it at submission, never from today's policy: the compare
+ * snapshot of an unchanged item therefore equals the frozen one even after
+ * the organization changes its rates.
+ */
+function mileageItemFacts(
+	row: TravelExpenseReportFactsInput["items"][number],
+	receipts: TravelExpenseReportReceiptManifestItem[],
+	reimbursementCurrency: string,
+	mode: SnapshotMode,
+	schemaVersion: number,
+): TravelExpenseReportSubmittedItem {
+	const route = row.mileageRoute ?? null;
+	const distanceKm = row.mileageDistanceKm ?? null;
+	const vehicle = row.mileageVehicle ?? null;
+	const stamp = row.mileagePolicy ?? null;
+	const { expenseDate } = row;
+	// The stamp must have been resolved for exactly this date and vehicle.
+	const calculation =
+		stamp &&
+		stamp.expenseDate === expenseDate &&
+		stamp.vehicle === vehicle &&
+		parseMileageRate(stamp.ratePerKm) === stamp.ratePerKm &&
+		(distanceKm === null || parseMileageDistance(distanceKm) === distanceKm)
+			? calculateMileageItem(
+					{ expenseDate, distanceKm, vehicle },
+					{ status: "found", policy: stamp },
+					reimbursementCurrency,
+				)
+			: null;
+	const calculated = calculation?.status === "calculated" ? calculation : null;
+	if (
+		mode === "submit" &&
+		(!calculated || !expenseDate || !route || row.paidBy !== "employee")
+	) {
+		incomplete("mileage");
+	}
+	const mileage = calculated
+		? {
+				route,
+				distanceKm: calculated.distanceKm,
+				vehicle,
+				ratePerKm: calculated.ratePerKm,
+				currency: calculated.currency,
+				exactAmount: calculated.exactAmount,
+				amount: calculated.amount,
+				rounding: calculated.rounding,
+				policy: {
+					policyId: calculated.policy.policyId,
+					versionId: calculated.policy.versionId,
+					effectiveFrom: calculated.policy.effectiveFrom,
+					source: { ...calculated.policy.source },
+				},
+			}
+		: // Compare mode only: live rows that cannot be priced as frozen differ from the revision.
+			{ route, distanceKm, vehicle, stamp };
+	return {
+		itemId: row.id,
+		position: row.position,
+		type: row.type,
+		expenseDate,
+		category: "transport",
+		description: route,
+		original: { amount: calculated?.amount ?? null, currency: calculated?.currency ?? null },
+		paidBy: row.paidBy,
+		accountingReference: row.accountingReference,
+		receipts,
+		...(schemaVersion >= MILEAGE_FACTS_SCHEMA_VERSION
+			? { mileage: mileage as TravelExpenseReportSubmittedMileage }
+			: {}),
+	} as TravelExpenseReportSubmittedItem;
+}
+
+/**
  * Builds the immutable submitted facts of one report from its persisted rows.
  * A row of another organization or report is an invariant breach; anything
  * incomplete throws instead of being frozen as a guess.
@@ -273,6 +391,9 @@ function snapshotReport(
 				.filter((receipt) => receipt.itemId === row.id)
 				.toSorted(byId)
 				.map(manifestItem);
+			if (row.type === "mileage") {
+				return mileageItemFacts(row, receipts, report.reimbursementCurrency, mode, schemaVersion);
+			}
 			const draft = itemDraft(row);
 			const missing = receiptItemMissingRequirements(draft, {
 				receiptCount: receipts.length,

@@ -10,6 +10,8 @@ import {
 	travelExpenseReportReceipt,
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import { type MileageCalculation, type MileageItemView, mileageItemView } from "./mileage";
+import { loadMileagePricer } from "./mileage-pricing";
 import {
 	DEFAULT_REIMBURSEMENT_CURRENCY,
 	type ReceiptItemDraft,
@@ -66,6 +68,8 @@ export interface ReportItemView extends ReceiptItemDraft {
 	version: number;
 	updatedAt: string;
 	receipts: ReportReceiptView[];
+	/** Mileage items only (#606): entered facts and the server's calculation. */
+	mileage: MileageItemView | null;
 }
 
 /** Shared travel details of a trip report and the version they were saved at. */
@@ -249,8 +253,13 @@ export async function isOwnDraftReportItem(
 
 type ItemRow = typeof travelExpenseReportItem.$inferSelect;
 
-function toItemView(row: ItemRow, receipts: ReportReceiptView[]): ReportItemView {
+export function toItemView(
+	row: ItemRow,
+	receipts: ReportReceiptView[],
+	mileageCalculation: MileageCalculation | null = null,
+): ReportItemView {
 	return {
+		mileage: mileageItemView(row, mileageCalculation),
 		id: row.id,
 		type: row.type,
 		version: row.version,
@@ -299,6 +308,11 @@ export async function loadOwnReport(
 			)
 			.orderBy(asc(travelExpenseReportReceipt.createdAt), asc(travelExpenseReportReceipt.id)),
 	]);
+	const price = await loadMileagePricer(database, owner.organizationId, items);
+	const pricing = {
+		reimbursementCurrency: report.reimbursementCurrency,
+		useStamp: report.status !== "draft",
+	};
 	return {
 		id: report.id,
 		kind: report.kind,
@@ -308,7 +322,11 @@ export async function loadOwnReport(
 		updatedAt: report.updatedAt.toISOString(),
 		trip: toTripDetailsView(report),
 		items: items.map((item) =>
-			toItemView(item, receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView)),
+			toItemView(
+				item,
+				receipts.filter((receipt) => receipt.itemId === item.id).map(toReceiptView),
+				item.type === "mileage" ? price(item, pricing) : null,
+			),
 		),
 	};
 }
@@ -397,30 +415,50 @@ async function listOwnReports(
 			)
 			.groupBy(travelExpenseReportReceipt.reportId),
 	]);
+	const price = await loadMileagePricer(database, owner.organizationId, items);
 	return reports.map((report) => {
 		const reportItems = items.filter((candidate) => candidate.reportId === report.id);
-		const item = reportItems[0];
+		const priced = reportItems.map((row) => ({
+			row,
+			mileage:
+				row.type === "mileage"
+					? mileageItemView(
+							row,
+							price(row, {
+								reimbursementCurrency: report.reimbursementCurrency,
+								useStamp: report.status !== "draft",
+							}),
+						)
+					: null,
+		}));
+		const first = priced[0];
+		const item = first?.row;
 		return {
 			id: report.id,
 			kind: report.kind,
 			status: report.status,
 			updatedAt: report.updatedAt.toISOString(),
 			expenseDate: item?.expenseDate ?? null,
-			description: item?.description ?? null,
-			amount: item?.originalAmount ?? null,
-			currency: item?.originalCurrency ?? null,
+			description: item?.description ?? item?.mileageRoute ?? null,
+			amount: item?.originalAmount ?? first?.mileage?.amount ?? null,
+			currency: item?.originalCurrency ?? first?.mileage?.currency ?? null,
 			receiptCount: receiptCounts.find((row) => row.reportId === report.id)?.count ?? 0,
-			trip: report.kind === "trip" ? tripDraftSummary(report, reportItems) : null,
+			trip: report.kind === "trip" ? tripDraftSummary(report, priced) : null,
 		};
 	});
 }
 
-function tripDraftSummary(report: ReportRow, items: ItemRow[]): DraftTripSummary {
+function tripDraftSummary(
+	report: ReportRow,
+	items: { row: ItemRow; mileage: MileageItemView | null }[],
+): DraftTripSummary {
 	const totals = receiptReportTotals(
-		items.map((row) => ({
+		items.map(({ row, mileage }) => ({
 			amount: row.originalAmount,
 			currency: row.originalCurrency,
 			paidBy: row.paidBy,
+			type: row.type,
+			mileage,
 		})),
 		report.reimbursementCurrency,
 	);
@@ -465,6 +503,7 @@ export async function saveReceiptItemDraft(
 			eq(travelExpenseReportItem.id, input.itemId),
 			eq(travelExpenseReportItem.reportId, input.reportId),
 			eq(travelExpenseReportItem.organizationId, owner.organizationId),
+			eq(travelExpenseReportItem.type, "receipt"),
 		);
 		const [saved] = await tx
 			.update(travelExpenseReportItem)
