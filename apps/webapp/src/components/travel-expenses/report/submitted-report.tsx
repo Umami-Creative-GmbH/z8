@@ -201,6 +201,7 @@ export function SubmittedTravelExpenseReport({
 							fileName: receipt.fileName,
 							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}?cycle=${data.submissionCycle}`,
 						})),
+						mileage: item.mileage ?? null,
 						receiptException: item.receiptException ?? null,
 					}))}
 				/>

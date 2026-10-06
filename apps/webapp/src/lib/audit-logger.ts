@@ -65,6 +65,8 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_CONVERSION_RECORDED = "travel_expense.conversion_recorded",
 	TRAVEL_EXPENSE_CONVERSION_REMOVED = "travel_expense.conversion_removed",
 	TRAVEL_EXPENSE_REIMBURSEMENT_CURRENCY_UPDATED = "travel_expense.reimbursement_currency_updated",
+	TRAVEL_EXPENSE_POLICY_VERSION_ACTIVATED = "travel_expense.policy_version_activated",
+	TRAVEL_EXPENSE_POLICY_VERSION_WITHDRAWN = "travel_expense.policy_version_withdrawn",
 	TRAVEL_EXPENSE_RETURNED = "travel_expense.returned",
 	TRAVEL_EXPENSE_WITHDRAWN = "travel_expense.withdrawn",
 	TRAVEL_EXPENSE_REIMBURSEMENT_RECORDED = "travel_expense.reimbursement_recorded",
@@ -197,7 +199,8 @@ export interface AuditLogEntry {
 		| "user"
 		| "audit_pack_request"
 		| "works_council_settings"
-		| "works_council_export";
+		| "works_council_export"
+		| "travel_expense_policy_version";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

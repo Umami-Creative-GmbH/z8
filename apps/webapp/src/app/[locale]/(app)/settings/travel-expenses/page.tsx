@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { ForeignExpenseConversionsCard } from "@/components/settings/travel-expense/foreign-expense-conversions";
+import { MileagePolicySettingsCard } from "@/components/settings/travel-expense/mileage-policy-settings";
 import { ReimbursementCurrencySettingsCard } from "@/components/settings/travel-expense/reimbursement-currency-settings";
 import { TravelExpenseApproverSettingsCard } from "@/components/settings/travel-expense/travel-expense-approver-settings";
 import { TravelExpensePolicyManagement } from "@/components/settings/travel-expense/travel-expense-policy-management";
@@ -10,24 +11,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 
 async function TravelExpenseSettingsPageContent() {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	await requireOrgAdminSettingsAccess();
 
 	return (
-		<div className="flex flex-1 flex-col">
-			<div className="px-4 pt-4">
-				<TravelExpenseApproverSettingsCard />
-			</div>
-			<div className="px-4 pt-4">
-				<TravelExpenseReceiptExceptionSettingsCard />
-			</div>
-			<div className="grid gap-4 px-4 pt-4">
-				<ReimbursementCurrencySettingsCard />
-				<ForeignExpenseConversionsCard />
-			</div>
-			<div className="px-4 pt-4">
-				<TravelExpenseProjectExceptionsCard />
-			</div>
-			<TravelExpensePolicyManagement organizationId={organizationId} />
+		<div className="flex flex-1 flex-col gap-4 p-4">
+			<TravelExpenseApproverSettingsCard />
+			<TravelExpenseReceiptExceptionSettingsCard />
+			<ReimbursementCurrencySettingsCard />
+			<ForeignExpenseConversionsCard />
+			<TravelExpenseProjectExceptionsCard />
+			<MileagePolicySettingsCard />
+			<TravelExpensePolicyManagement />
 		</div>
 	);
 }

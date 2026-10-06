@@ -248,8 +248,9 @@ describe("schema version 1 revisions", () => {
 		"travel_expense_report:v1:92387a68b285d22199d798bca29b32f7b99c997748bcbb59ba6135dcb1cdceec";
 
 	it("still freezes a v1 report byte for byte", () => {
-		// Later versions only add optional facts this report does not have, so
-		// its facts as of version 1 are today's facts at version 1.
+		// Later versions only add optional facts this report does not have
+		// (receipt exceptions, #604; mileage, #606), so its facts as of version 1
+		// are today's facts at version 1.
 		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 1 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V1_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(V1_FINGERPRINT);
@@ -441,6 +442,162 @@ describe("project attribution (schema version 4)", () => {
 			items: current.items.map(({ project: _added, ...rest }) => rest),
 		};
 		expect(compareLiveTravelExpenseReportWithRevision(v3, attributed())).toEqual({
+			kind: "current",
+		});
+	});
+
+	it("still freezes a v4 report with project attribution byte for byte", () => {
+		// Golden values computed at schema version 4 (#605), before v5 (#606) added
+		// mileage facts; this report has no mileage item, so nothing changes.
+		const V4_FACTS_SHA256 = "db69c7a1b8a974179c05deac39f8a05ec05bab5a9748ffa2087c06bc5f4ef162";
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(attributed()), schemaVersion: 4 };
+		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V4_FACTS_SHA256);
+		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(
+			`travel_expense_report:v4:${V4_FACTS_SHA256}`,
+		);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, attributed())).toEqual({
+			kind: "current",
+		});
+	});
+});
+
+describe("mileage items (#606)", () => {
+	const stamp = {
+		policyId: "policy-1",
+		versionId: "version-2026",
+		effectiveFrom: "2026-01-01",
+		vehicle: "car" as const,
+		ratePerKm: "0.3000",
+		currency: "EUR",
+		source: {
+			kind: "statutory_default" as const,
+			reference: "§ 9 Abs. 1 Satz 3 Nr. 4a Satz 2 EStG",
+			version: "LStH 2026, Anhang 25 III",
+			defaultKey: "de-mileage-estg-9-1-4a",
+		},
+		expenseDate: "2026-09-15",
+	};
+	const drive = item("drive", 2, {
+		type: "mileage",
+		expenseDate: "2026-09-15",
+		category: null,
+		description: null,
+		originalAmount: null,
+		originalCurrency: null,
+		paidBy: "employee",
+		mileageRoute: "Hamburg hotel – customer site – back",
+		mileageDistanceKm: "123.45",
+		mileageVehicle: "car",
+		mileagePolicy: stamp,
+	});
+	const withDrive = (row: ItemRow = drive) => input({ items: [...input().items, row] });
+
+	it("freezes the route, distance, applied policy version and breakdown, and counts the amount", () => {
+		const facts = buildTravelExpenseReportSubmittedFacts(withDrive());
+
+		expect(facts.items[2]).toEqual({
+			itemId: "drive",
+			position: 2,
+			type: "mileage",
+			expenseDate: "2026-09-15",
+			category: "transport",
+			description: "Hamburg hotel – customer site – back",
+			original: { amount: "37.04", currency: "EUR" },
+			paidBy: "employee",
+			accountingReference: null,
+			receipts: [],
+			mileage: {
+				route: "Hamburg hotel – customer site – back",
+				distanceKm: "123.45",
+				vehicle: "car",
+				ratePerKm: "0.3000",
+				currency: "EUR",
+				exactAmount: "37.035000",
+				amount: "37.04",
+				rounding: "half_up",
+				policy: {
+					policyId: "policy-1",
+					versionId: "version-2026",
+					effectiveFrom: "2026-01-01",
+					source: stamp.source,
+				},
+			},
+		});
+		expect(facts.totals).toEqual({
+			currency: "EUR",
+			reimbursable: "126.94",
+			companyPaid: "240.00",
+		});
+	});
+
+	it("refuses a mileage item that was not priced under the submission lock", () => {
+		for (const row of [
+			{ ...drive, mileagePolicy: null },
+			{ ...drive, mileagePolicy: { ...stamp, expenseDate: "2026-09-14" } },
+			{ ...drive, mileagePolicy: { ...stamp, currency: "CHF" } },
+			{ ...drive, mileageRoute: null },
+		]) {
+			expectEvidenceError(
+				() => buildTravelExpenseReportSubmittedFacts(withDrive(row)),
+				"evidence_incomplete",
+				"mileage",
+			);
+		}
+	});
+
+	it("compares against the stamped policy, so later policy changes never hold the decision", () => {
+		const submitted = buildTravelExpenseReportSubmittedFacts(withDrive());
+		// The live rows keep their stamp; today's policy is never consulted.
+		expect(compareLiveTravelExpenseReportWithRevision(submitted, withDrive())).toEqual({
+			kind: "current",
+		});
+		expect(
+			compareLiveTravelExpenseReportWithRevision(
+				submitted,
+				withDrive({ ...drive, mileageDistanceKm: "130.00" }),
+			),
+		).toEqual({ kind: "material_change", changedFields: ["items", "totals"] });
+		expect(
+			compareLiveTravelExpenseReportWithRevision(
+				submitted,
+				withDrive({ ...drive, mileagePolicy: null }),
+			),
+		).toEqual({ kind: "material_change", changedFields: ["items", "totals"] });
+	});
+
+	it("adds mileage facts only from schema version 5, after #605's version 4", () => {
+		const current = buildTravelExpenseReportSubmittedFacts(withDrive());
+		expect(current.schemaVersion).toBeGreaterThanOrEqual(5);
+		expect(current.items[2]?.mileage).toBeDefined();
+		// A version 4 snapshot of the same live rows never carries the key.
+		const v4 = {
+			...current,
+			schemaVersion: 4,
+			items: current.items.map(({ mileage: _added, ...rest }) => rest),
+		};
+		expect(compareLiveTravelExpenseReportWithRevision(v4, withDrive())).toEqual({
+			kind: "current",
+		});
+	});
+
+	it("attributes a mileage expense to the trip's project like any other expense (#605)", () => {
+		const project = {
+			projectId: "p1",
+			name: "Hamburg rollout",
+			customerId: null,
+			customerName: null,
+			inheritedFromTrip: true,
+			basis: "employee_assignment",
+		} as const;
+		const attributed = input({
+			report: { ...input().report, projectId: "p1" },
+			items: [{ ...drive, position: 0, projectId: null, projectInherits: true }],
+			receipts: [],
+			projectAttribution: { drive: project },
+		});
+		const facts = buildTravelExpenseReportSubmittedFacts(attributed);
+		expect(facts.items[0]?.project).toEqual(project);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, attributed)).toEqual({
 			kind: "current",
 		});
 	});

@@ -21,6 +21,7 @@ import {
 import { appliedConversion } from "@/lib/travel-expenses/currency-conversion";
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
+import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { pendingReceiptException } from "./receipt-exception-notice";
 import { ReportTotals } from "./report-summary";
@@ -183,6 +184,7 @@ export function SubmitReportPanel({
 						version: item.version,
 						receiptIds: item.receipts.map((receipt) => receipt.id),
 						receiptExceptionVersion: item.receiptException.version,
+						amount: reviewedItemAmount(item, report.reimbursementCurrency),
 					})),
 				},
 			});
@@ -266,11 +268,11 @@ export function SubmitReportPanel({
 						<ExpenseSummaryList
 							items={(report?.items ?? []).map((item) => ({
 								id: item.id,
-								description: item.description,
+								description: item.description ?? item.mileage?.route ?? null,
 								expenseDate: item.expenseDate,
 								category: item.category,
-								amount: item.amount,
-								currency: item.currency,
+								amount: item.amount ?? item.mileage?.amount ?? null,
+								currency: item.currency ?? item.mileage?.currency ?? null,
 								paidBy: item.paidBy,
 								conversion: appliedConversion(
 									item,
@@ -281,6 +283,10 @@ export function SubmitReportPanel({
 									id: receipt.id,
 									fileName: receipt.fileName,
 								})),
+								mileage:
+									item.mileage?.calculation?.status === "calculated"
+										? item.mileage.calculation
+										: null,
 								receiptException: pendingReceiptException(item),
 							}))}
 						/>

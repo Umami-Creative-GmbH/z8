@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { stampMileagePolicies } from "@/lib/travel-expenses/mileage-item-store";
 import { resolveReportProjectAttribution } from "@/lib/travel-expenses/project-attribution-store";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
@@ -259,6 +260,12 @@ export async function submitTravelExpenseReport(
 			});
 			if (!live) refuse({ kind: "not_found" });
 			const report = live.report;
+			// Prices mileage with the policy effective today and stamps it for the frozen facts (#606).
+			const mileage = await stampMileagePolicies(tx, {
+				organizationId: owner.organizationId,
+				reimbursementCurrency: report.reimbursementCurrency,
+				items: live.items,
+			});
 			// Read under a shared lock: a concurrent change of the setting waits (#604).
 			const receiptExceptionsAllowed = await loadReceiptExceptionsAllowed(tx, owner.organizationId, {
 				lock: "share",
@@ -283,6 +290,8 @@ export async function submitTravelExpenseReport(
 						.map((item) => ({
 							id: item.id,
 							version: item.version,
+							type: item.type,
+							mileage: mileage.get(item.id) ?? null,
 							receiptIds: live.receipts
 								.filter((receipt) => receipt.itemId === item.id)
 								.map((receipt) => receipt.id),

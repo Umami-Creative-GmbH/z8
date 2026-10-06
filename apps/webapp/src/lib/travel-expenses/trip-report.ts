@@ -1,13 +1,11 @@
 import { countries } from "country-flag-icons";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
-import type { ItemConversion } from "./currency-conversion";
-import type { ReceiptExceptionContext } from "./receipt-exception";
 import {
-	type ReceiptItemDraft,
-	type ReceiptItemRequirement,
-	receiptItemMissingRequirements,
-} from "./receipt-report";
+	type ReportItemRequirement,
+	type RequirementItem,
+	reportItemMissingRequirements,
+} from "./item-requirements";
 import type { TripDestination } from "./trip-destination";
 
 /**
@@ -147,19 +145,13 @@ export interface TripReportMissingRequirements {
 	/** Missing shared trip facts, in form order. */
 	trip: TripRequirement[];
 	/** Expenses that are not complete yet, in report order. */
-	items: { id: string; missing: ReceiptItemRequirement[] }[];
+	items: { id: string; missing: ReportItemRequirement[] }[];
 }
 
 /** What still keeps a trip report from being submittable. */
 export function tripReportMissingRequirements(input: {
 	details: TripDetailsDraft;
-	items: readonly {
-		id: string;
-		draft: ReceiptItemDraft;
-		receiptCount: number;
-		receiptException?: ReceiptExceptionContext;
-		conversion?: ItemConversion | null;
-	}[];
+	items: readonly ({ id: string } & RequirementItem)[];
 	reimbursementCurrency: string;
 }): TripReportMissingRequirements {
 	const { details } = input;
@@ -176,11 +168,8 @@ export function tripReportMissingRequirements(input: {
 	const items = input.items
 		.map((item) => ({
 			id: item.id,
-			missing: receiptItemMissingRequirements(item.draft, {
-				receiptCount: item.receiptCount,
+			missing: reportItemMissingRequirements(item, {
 				reimbursementCurrency: input.reimbursementCurrency,
-				receiptException: item.receiptException,
-				conversion: item.conversion,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

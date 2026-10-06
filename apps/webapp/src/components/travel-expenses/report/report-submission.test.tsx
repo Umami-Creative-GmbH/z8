@@ -172,8 +172,20 @@ describe("report submission", () => {
 				reviewed: {
 					detailsVersion: 5,
 					items: [
-						{ id: trainId, version: 2, receiptIds: ["6a020000-0000-4000-8000-000000000009"], receiptExceptionVersion: 0 },
-						{ id: hotelId, version: 4, receiptIds: ["6a020000-0000-4000-8000-00000000000a"], receiptExceptionVersion: 0 },
+						{
+							id: trainId,
+							version: 2,
+							receiptIds: ["6a020000-0000-4000-8000-000000000009"],
+							receiptExceptionVersion: 0,
+							amount: "89.90",
+						},
+						{
+							id: hotelId,
+							version: 4,
+							receiptIds: ["6a020000-0000-4000-8000-00000000000a"],
+							receiptExceptionVersion: 0,
+							amount: "240.00",
+						},
 					],
 				},
 			}),

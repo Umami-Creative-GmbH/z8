@@ -88,6 +88,8 @@ export const queryKeys = {
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
 		reimbursementCurrency: () => ["travel-expenses", "settings", "reimbursement-currency"] as const,
 		foreignDraftExpenses: () => ["travel-expenses", "settings", "foreign-draft-expenses"] as const,
+		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
+		legacyPolicies: () => ["travel-expenses", "settings", "legacy-policies"] as const,
 		reportSubmission: (reportId: string, cycle?: number) =>
 			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
 		financeQueue: (filter: string) => ["travel-expenses", "finance", "queue", filter] as const,

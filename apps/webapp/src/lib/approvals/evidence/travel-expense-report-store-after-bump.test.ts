@@ -14,10 +14,10 @@ import {
 } from "./travel-expense-report-store";
 
 // Simulates the build after a later ticket bumps the schema version: the
-// builder still freezes today's (v4, #605) facts, but the reader knows v1..v5.
+// builder still freezes today's (v5, #606) facts, but the reader knows v1..v6.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./travel-expense-report-facts")>()),
-	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 5,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 6,
 }));
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
@@ -195,19 +195,49 @@ describe("after a schema version bump", () => {
 		});
 	});
 
-	it("reads a revision of the new version under its own fingerprint prefix", async () => {
+	it("still reads a v4 revision with its project attribution (#605)", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 5 };
+		const project = {
+			projectId: "p1",
+			name: "Hamburg rollout",
+			customerId: null,
+			customerName: null,
+			inheritedFromTrip: true,
+			basis: "employee_assignment",
+		} as const;
+		const attributed: TravelExpenseReportFactsInput = {
+			...factsInput,
+			report: { ...factsInput.report, kind: "trip", ...tripFields, projectId: "p1" },
+			items: [{ ...factsInput.items[0], projectId: null, projectInherits: true }],
+			projectAttribution: { train: project },
+		};
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(attributed), schemaVersion: 4 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
 
-		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v5:/);
+		expect(loaded?.facts).toEqual(facts);
+		expect(loaded?.facts.items[0]?.project).toEqual(project);
+		expect(loaded?.materialFingerprint).toBe(fingerprintTravelExpenseReportFacts(facts));
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v4:/);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, attributed)).toEqual({
+			kind: "current",
+		});
+	});
+
+	it("reads a revision of the new version under its own fingerprint prefix", async () => {
+		const { database } = fakeRevisionTable();
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 6 };
+		await capture(database, facts);
+
+		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
+
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v6:/);
 	});
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 6 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 7 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
 	});
 

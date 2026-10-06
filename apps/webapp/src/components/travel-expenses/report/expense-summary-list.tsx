@@ -7,6 +7,7 @@ import type { ConversionResult } from "@/lib/travel-expenses/currency-conversion
 import { ConversionSummary } from "./conversion-summary";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
 import { type ExpenseProjectSummary, ExpenseProjectLine } from "./expense-project-line";
+import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
 import { ReceiptExceptionNotice } from "./receipt-exception-notice";
 import { categoryLabel } from "./receipt-item-editor";
 
@@ -19,6 +20,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** A mileage expense's calculation (#606). */
+	mileage?: MileageBreakdownFacts | null;
 	/** Missing-receipt exception submitted instead of a receipt (#604). */
 	receiptException?: { reason: string } | null;
 	/** How a foreign-currency expense converts (#607); absent otherwise. */
@@ -118,6 +121,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 						</div>
 					)}
 					{item.project && <ExpenseProjectLine project={item.project} />}
+					{item.mileage && <MileageBreakdown facts={item.mileage} />}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (
