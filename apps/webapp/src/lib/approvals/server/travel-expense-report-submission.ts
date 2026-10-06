@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Cause, Effect, Exit, Option, Result } from "effect";
 import type { db as appDb } from "@/db";
 import {
@@ -16,6 +16,10 @@ import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/tempo
 import { ValidationError } from "@/lib/effect/errors";
 import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import { loadReceiptExceptionsAllowed } from "@/lib/travel-expenses/receipt-exception-read";
+import {
+	EDITABLE_REPORT_STATUSES,
+	isEditableReportStatus,
+} from "@/lib/travel-expenses/report-return";
 import type { ReportOwner } from "@/lib/travel-expenses/report-store";
 import { resolveReportReviewer } from "@/lib/travel-expenses/report-reviewer-routing";
 import {
@@ -25,6 +29,7 @@ import {
 } from "@/lib/travel-expenses/report-submission";
 import type { TripReportMissingRequirements } from "@/lib/travel-expenses/trip-report";
 import { acquireApprovalWriteGate } from "../authority";
+import { kickApprovalDelivery } from "../delivery/kick";
 import { loadEmployeeLabel } from "../evidence/absence-submission";
 import { buildTravelExpenseReportSubmittedFacts } from "../evidence/travel-expense-report-facts";
 import { captureTravelExpenseReportSubmittedRevision } from "../evidence/travel-expense-report-store";
@@ -37,6 +42,7 @@ import {
 	APPROVAL_AMOUNT_THRESHOLD_CURRENCY,
 	type ApprovalPolicyEvaluationContext,
 } from "../policies/types";
+import { recordTravelExpenseReportDeliveryIntent } from "./travel-expense-report-delivery";
 import type { ApprovalDbService } from "./types";
 
 /**
@@ -211,8 +217,9 @@ export async function submitTravelExpenseReport(
 ): Promise<SubmitTravelExpenseReportResult> {
 	const { owner } = input;
 	const submittedAt = dateFromInstant(now);
+	let deliveryIntent = false;
 	try {
-		return await database.transaction(async (tx) => {
+		const result = await database.transaction(async (tx) => {
 			const dbService: ApprovalDbService = {
 				db: tx,
 				query: <T>(_name: string, fn: () => Promise<T>) => Effect.promise(fn),
@@ -240,7 +247,8 @@ export async function submitTravelExpenseReport(
 				)
 				.for("update");
 			if (!locked) refuse({ kind: "not_found" });
-			if (locked.status !== "draft") refuse({ kind: "not_draft" });
+			// A returned report (#603) is resubmitted as the next cycle.
+			if (!isEditableReportStatus(locked.status)) refuse({ kind: "not_draft" });
 
 			const live = await loadTravelExpenseReportFactsInput(tx, {
 				organizationId: owner.organizationId,
@@ -337,7 +345,7 @@ export async function submitTravelExpenseReport(
 					and(
 						eq(travelExpenseReport.id, input.reportId),
 						eq(travelExpenseReport.organizationId, owner.organizationId),
-						eq(travelExpenseReport.status, "draft"),
+						inArray(travelExpenseReport.status, [...EDITABLE_REPORT_STATUSES]),
 					),
 				)
 				.returning({ submissionCount: travelExpenseReport.submissionCount });
@@ -426,6 +434,14 @@ export async function submitTravelExpenseReport(
 					observedWorkflowId: null,
 				},
 			});
+			// The cycle's first lifecycle intent, only while a delivery control exists (#623).
+			deliveryIntent = await recordTravelExpenseReportDeliveryIntent(tx, {
+				organizationId: owner.organizationId,
+				reportId: input.reportId,
+				approvalRequestId: routing.approvalRequestId,
+				revision: revision.legacy,
+				event: "submitted",
+			});
 			return {
 				kind: "submitted",
 				approvalRequestId: routing.approvalRequestId,
@@ -435,6 +451,8 @@ export async function submitTravelExpenseReport(
 				totals: check.totals,
 			} as const;
 		});
+		if (deliveryIntent) kickApprovalDelivery({ organizationId: owner.organizationId });
+		return result;
 	} catch (error) {
 		if (error instanceof SubmissionRefused) return error.result;
 		throw error;

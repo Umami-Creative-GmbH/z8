@@ -774,6 +774,33 @@ export async function onTravelExpenseReportDecided(params: {
 	}
 }
 
+/**
+ * Notify the employee that a reviewer returned their expense report for
+ * changes (#603); the report is editable again and can be resubmitted.
+ */
+export async function onTravelExpenseReportReturned(params: {
+	reportId: string;
+	requesterUserId: string;
+	organizationId: string;
+	reviewerName: string;
+	note: string;
+}): Promise<void> {
+	try {
+		await createNotification({
+			userId: params.requesterUserId,
+			organizationId: params.organizationId,
+			type: "approval_request_rejected",
+			title: "Expense report returned for changes",
+			message: `${params.reviewerName} returned your expense report for changes: ${params.note}`,
+			entityType: "travel_expense_report",
+			entityId: params.reportId,
+			actionUrl: `/travel-expenses/reports/${params.reportId}`,
+		});
+	} catch (error) {
+		logger.error({ error, params }, "Failed to trigger expense report return notification");
+	}
+}
+
 // =============================================================================
 // Team Notifications
 // =============================================================================

@@ -86,8 +86,8 @@ export const queryKeys = {
 		submittedReports: () => ["travel-expenses", "submitted-reports"] as const,
 		report: (reportId: string) => ["travel-expenses", "reports", reportId] as const,
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
-		reportSubmission: (reportId: string) =>
-			["travel-expenses", "reports", reportId, "submission"] as const,
+		reportSubmission: (reportId: string, cycle?: number) =>
+			["travel-expenses", "reports", reportId, "submission", cycle ?? "latest"] as const,
 		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,
 	},
 

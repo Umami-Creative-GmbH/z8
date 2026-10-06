@@ -4,8 +4,17 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { approvalRequest, employee, travelExpenseReport } from "@/db/schema";
-import { listLegacyDecisionEvidence } from "@/lib/approvals/evidence/store";
+import {
+	approvalRequest,
+	employee,
+	travelExpenseReport,
+	travelExpenseReportCycleClosure,
+	travelExpenseReportReviewNote,
+} from "@/db/schema";
+import {
+	type LegacyDecisionEvidenceRecord,
+	listLegacyDecisionEvidence,
+} from "@/lib/approvals/evidence/store";
 import type {
 	TravelExpenseReportReceiptManifestItem,
 	TravelExpenseReportSubmittedFacts,
@@ -86,10 +95,25 @@ export interface SubmittedReportItemView
 	receipts: Array<Pick<TravelExpenseReportReceiptManifestItem, "receiptId"> & { fileName: string }>;
 }
 
+/** How one submission cycle ended, or `pending` while it is under review (#603). */
+export type SubmittedCycleOutcome = "pending" | "approved" | "rejected" | "returned" | "withdrawn";
+
+export type SubmittedReportHistoryLabel =
+	| "submitted"
+	| "approval_recorded"
+	| "approved"
+	| "rejected"
+	| "returned"
+	| "withdrawn";
+
 export interface SubmittedReportView {
 	reportId: string;
 	status: ReportRow["status"];
 	access: "owner" | "reviewer";
+	/** The submission cycle shown; earlier cycles stay readable (#603). */
+	submissionCycle: number;
+	latestCycle: number;
+	cycleOutcome: SubmittedCycleOutcome;
 	submittedAt: string;
 	/** Who currently holds the pending review; null once decided. */
 	reviewerName: string | null;
@@ -100,9 +124,19 @@ export interface SubmittedReportView {
 		/** Rejection reason as the reviewer recorded it. */
 		reason: string | null;
 	} | null;
+	/** The reviewer's note and item comments when this cycle was returned. */
+	returned: {
+		note: string;
+		returnedAt: string;
+		reviewerName: string | null;
+		itemComments: Array<{ itemId: string; number: number; description: string; body: string }>;
+	} | null;
+	cycles: Array<{ cycle: number; submittedAt: string; outcome: SubmittedCycleOutcome }>;
+	/** Every cycle's events, oldest first. */
 	history: Array<{
 		id: string;
-		label: "submitted" | "approval_recorded" | "approved" | "rejected";
+		cycle: number;
+		label: SubmittedReportHistoryLabel;
 		at: string;
 		actorName: string | null;
 	}>;
@@ -126,18 +160,43 @@ function itemView(
 	};
 }
 
-/** The latest submission of an authorized report; null for one never submitted. */
+/** A non-approving return records legacy evidence that names the returned report. */
+function isReturnEvidence(decision: LegacyDecisionEvidenceRecord): boolean {
+	return decision.result.reportStatus === "returned";
+}
+
+/** Every frozen submission of the report, cycle 1 first; a missing cycle is skipped. */
+async function loadSubmittedRevisions(
+	report: ReportRow,
+): Promise<TravelExpenseReportSubmittedRevisionRecord[]> {
+	const cycles = Array.from({ length: report.submissionCount }, (_, index) => index + 1);
+	const revisions = await Promise.all(
+		cycles.map((submissionCycle) =>
+			loadTravelExpenseReportSubmittedRevision(db, {
+				organizationId: report.organizationId,
+				reportId: report.id,
+				submissionCycle,
+			}),
+		),
+	);
+	return revisions.filter((revision) => revision !== null);
+}
+
+/**
+ * One submission of an authorized report, the latest unless `cycle` names an
+ * earlier one, with the history of all its cycles; null for a report never
+ * submitted or a cycle it does not have.
+ */
 export async function loadSubmittedReportView(
 	report: ReportRow,
 	access: "owner" | "reviewer",
+	cycle: number = report.submissionCount,
 ): Promise<SubmittedReportView | null> {
-	const revision = await loadTravelExpenseReportSubmittedRevision(db, {
-		organizationId: report.organizationId,
-		reportId: report.id,
-		submissionCycle: report.submissionCount,
-	});
+	if (!Number.isInteger(cycle) || cycle < 1 || cycle > report.submissionCount) return null;
+	const revisions = await loadSubmittedRevisions(report);
+	const revision = revisions.find((candidate) => candidate.submissionCycle === cycle);
 	if (!revision) return null;
-	const [requests, decisions] = await Promise.all([
+	const [requests, decisionsByRevision, closures] = await Promise.all([
 		db
 			.select({
 				id: approvalRequest.id,
@@ -162,24 +221,117 @@ export async function loadSubmittedReportView(
 				),
 			)
 			.orderBy(asc(approvalRequest.createdAt)),
-		listLegacyDecisionEvidence(db, {
-			organizationId: report.organizationId,
-			submittedRevisionId: revision.id,
-		}),
+		Promise.all(
+			revisions.map((candidate) =>
+				listLegacyDecisionEvidence(db, {
+					organizationId: report.organizationId,
+					submittedRevisionId: candidate.id,
+				}),
+			),
+		),
+		db
+			.select()
+			.from(travelExpenseReportCycleClosure)
+			.where(
+				and(
+					eq(travelExpenseReportCycleClosure.organizationId, report.organizationId),
+					eq(travelExpenseReportCycleClosure.reportId, report.id),
+				),
+			),
 	]);
-	const final = decisions.find(
-		(decision) => decision.requestOutcome === "approved" || decision.requestOutcome === "rejected",
-	);
+	const closureOf = (submissionCycle: number) =>
+		closures.find((closure) => closure.submissionCycle === submissionCycle);
+	const decisionsOf = (submissionCycle: number) =>
+		decisionsByRevision[revisions.findIndex((rev) => rev.submissionCycle === submissionCycle)] ??
+		[];
+	const finalOf = (submissionCycle: number) =>
+		decisionsOf(submissionCycle).find(
+			(decision) =>
+				!isReturnEvidence(decision) &&
+				(decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"),
+		);
+	const outcomeOf = (submissionCycle: number): SubmittedCycleOutcome => {
+		const closure = closureOf(submissionCycle);
+		if (closure) return closure.kind;
+		const final = finalOf(submissionCycle);
+		return final?.requestOutcome === "approved" || final?.requestOutcome === "rejected"
+			? final.requestOutcome
+			: "pending";
+	};
+
+	const final = finalOf(cycle);
 	const finalRequest = final
 		? requests.find((request) => request.id === final.legacy.approvalRequestId)
 		: undefined;
 	const pending = requests.find((request) => request.status === "pending");
+	const closure = closureOf(cycle);
+	const returnEvidence =
+		closure?.kind === "returned"
+			? decisionsOf(cycle).find((decision) => decision.id === closure.decisionEvidenceId)
+			: undefined;
+	const notes =
+		closure?.kind === "returned"
+			? await db
+					.select({
+						itemId: travelExpenseReportReviewNote.itemId,
+						body: travelExpenseReportReviewNote.body,
+					})
+					.from(travelExpenseReportReviewNote)
+					.where(
+						and(
+							eq(travelExpenseReportReviewNote.organizationId, report.organizationId),
+							eq(travelExpenseReportReviewNote.closureId, closure.id),
+						),
+					)
+			: [];
+
+	const history: SubmittedReportView["history"] = revisions.flatMap((candidate) => {
+		const submissionCycle = candidate.submissionCycle;
+		const cycleClosure = closureOf(submissionCycle);
+		const events: SubmittedReportView["history"] = [
+			{
+				id: `submitted-${candidate.id}`,
+				cycle: submissionCycle,
+				label: "submitted",
+				at: instantToCanonicalString(candidate.submittedAt),
+				actorName: candidate.labels.submitterName,
+			},
+			...decisionsOf(submissionCycle).map((decision) => ({
+				id: decision.id,
+				cycle: submissionCycle,
+				label: isReturnEvidence(decision)
+					? ("returned" as const)
+					: decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"
+						? decision.requestOutcome
+						: ("approval_recorded" as const),
+				at: instantToCanonicalString(decision.decidedAt),
+				actorName: decision.labels.actorName,
+			})),
+		];
+		if (cycleClosure?.kind === "withdrawn") {
+			events.push({
+				id: cycleClosure.id,
+				cycle: submissionCycle,
+				label: "withdrawn",
+				at: cycleClosure.createdAt.toISOString(),
+				actorName: candidate.labels.submitterName,
+			});
+		}
+		return events;
+	});
+
 	return {
 		reportId: report.id,
 		status: report.status,
 		access,
+		submissionCycle: cycle,
+		latestCycle: report.submissionCount,
+		cycleOutcome: outcomeOf(cycle),
 		submittedAt: instantToCanonicalString(revision.submittedAt),
-		reviewerName: report.status === "submitted" ? (pending?.approverName ?? null) : null,
+		reviewerName:
+			report.status === "submitted" && cycle === report.submissionCount
+				? (pending?.approverName ?? null)
+				: null,
 		decision:
 			final && (final.requestOutcome === "approved" || final.requestOutcome === "rejected")
 				? {
@@ -190,23 +342,33 @@ export async function loadSubmittedReportView(
 							final.requestOutcome === "rejected" ? (finalRequest?.rejectionReason ?? null) : null,
 					}
 				: null,
-		history: [
-			{
-				id: `submitted-${revision.id}`,
-				label: "submitted",
-				at: instantToCanonicalString(revision.submittedAt),
-				actorName: revision.labels.submitterName,
-			},
-			...decisions.map((decision) => ({
-				id: decision.id,
-				label:
-					decision.requestOutcome === "approved" || decision.requestOutcome === "rejected"
-						? decision.requestOutcome
-						: ("approval_recorded" as const),
-				at: instantToCanonicalString(decision.decidedAt),
-				actorName: decision.labels.actorName,
-			})),
-		],
+		returned:
+			closure?.kind === "returned" && closure.note
+				? {
+						note: closure.note,
+						returnedAt: closure.createdAt.toISOString(),
+						reviewerName: returnEvidence?.labels.actorName ?? null,
+						itemComments: revision.facts.items.flatMap((item, index) => {
+							const note = notes.find((candidate) => candidate.itemId === item.itemId);
+							return note
+								? [
+										{
+											itemId: item.itemId,
+											number: index + 1,
+											description: item.description,
+											body: note.body,
+										},
+									]
+								: [];
+						}),
+					}
+				: null,
+		cycles: revisions.map((candidate) => ({
+			cycle: candidate.submissionCycle,
+			submittedAt: instantToCanonicalString(candidate.submittedAt),
+			outcome: outcomeOf(candidate.submissionCycle),
+		})),
+		history: history.toSorted((left, right) => left.at.localeCompare(right.at)),
 		facts: {
 			reportKind: revision.facts.reportKind,
 			reimbursementCurrency: revision.facts.reimbursementCurrency,
@@ -218,17 +380,20 @@ export async function loadSubmittedReportView(
 }
 
 /**
- * A reviewer's receipt: only one frozen in the report's current submission,
- * identified by the exact stored object and checksum that were submitted.
+ * A frozen receipt of one submission (the latest unless `cycle` names an
+ * earlier one), identified by the exact stored object and checksum that were
+ * submitted. Earlier cycles keep their receipts after the report was corrected.
  */
 export async function loadSubmittedReportReceipt(
 	report: ReportRow,
 	receiptId: string,
+	cycle: number = report.submissionCount,
 ): Promise<(TravelExpenseReportReceiptManifestItem & { fileName: string }) | null> {
+	if (!Number.isInteger(cycle) || cycle < 1 || cycle > report.submissionCount) return null;
 	const revision = await loadTravelExpenseReportSubmittedRevision(db, {
 		organizationId: report.organizationId,
 		reportId: report.id,
-		submissionCycle: report.submissionCount,
+		submissionCycle: cycle,
 	});
 	const receipt = revision?.facts.items
 		.flatMap((item) => item.receipts)
