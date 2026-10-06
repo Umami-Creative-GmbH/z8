@@ -387,7 +387,7 @@ describe("missing-receipt exceptions (#604)", () => {
 
 		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
 		const revision = await revisionFacts(reportId);
-		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v2:/);
+		expect(revision.material_fingerprint).toMatch(/^travel_expense_report:v3:/);
 		expect(revision.facts.items).toEqual([
 			expect.objectContaining({
 				itemId,

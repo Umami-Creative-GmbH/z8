@@ -432,6 +432,8 @@ export const travelExpenseSettings = pgTable("travel_expense_settings", {
 	missingReceiptExceptionsAllowed: boolean("missing_receipt_exceptions_allowed")
 		.default(false)
 		.notNull(),
+	// #607: currency of new reports; existing reports keep theirs.
+	reimbursementCurrency: text("reimbursement_currency").default("EUR").notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 });

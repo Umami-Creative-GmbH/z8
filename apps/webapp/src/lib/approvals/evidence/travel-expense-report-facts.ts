@@ -20,6 +20,12 @@ import { tripReportMissingRequirements } from "@/lib/travel-expenses/trip-report
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import type { TravelExpenseMoney } from "./travel-expense-facts";
+import {
+	assertConversionScope,
+	submittedConversionFacts,
+	type TravelExpenseReportConversionRow,
+	type TravelExpenseReportSubmittedConversion,
+} from "./travel-expense-report-conversion";
 
 /**
  * Frozen submission of a travel expense report (#602). One submitted revision
@@ -36,10 +42,11 @@ import type { TravelExpenseMoney } from "./travel-expense-facts";
  * version or later, so an older revision stays byte-identical and compares
  * as `current` against unchanged live rows.
  */
-export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 2;
+export const TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION = 3;
 
 /** Version 2 (#604) adds the optional `receiptException` of an item. */
 const RECEIPT_EXCEPTION_SCHEMA_VERSION = 2;
+/* Version 3 (#607) adds the optional `conversion` of an item (`CONVERSION_FACTS_SCHEMA_VERSION`). */
 
 export interface TravelExpenseReportReceiptManifestItem {
 	receiptId: string;
@@ -68,6 +75,8 @@ export interface TravelExpenseReportSubmittedItem {
 	 * exceptions; approval must accept it explicitly.
 	 */
 	receiptException?: { reason: string };
+	/** Since v3 (#607): how a foreign-currency expense was converted; absent otherwise. */
+	conversion?: TravelExpenseReportSubmittedConversion;
 }
 
 export interface TravelExpenseReportSubmittedFacts {
@@ -139,6 +148,8 @@ export interface TravelExpenseReportFactsInput {
 		sizeBytes: number;
 		mimeType: string;
 	}>;
+	/** Saved conversions of foreign-currency items (#607). */
+	conversions?: ReadonlyArray<TravelExpenseReportConversionRow>;
 }
 
 const MONEY_AMOUNT = /^\d{1,10}\.\d{2}$/;
@@ -281,6 +292,10 @@ function snapshotReport(
 			invariant("receipt_scope");
 		}
 	}
+	const conversions = input.conversions ?? [];
+	assertConversionScope(conversions, report, itemIds);
+	const conversionOf = (itemId: string) =>
+		conversions.find((row) => row.itemId === itemId)?.conversion ?? null;
 	if (enforce && !CURRENCY.test(report.reimbursementCurrency)) incomplete("currency");
 
 	const items = input.items
@@ -298,6 +313,7 @@ function snapshotReport(
 					row.receiptExceptionReason ?? null,
 					input.receiptExceptionsAllowed === true,
 				),
+				conversion: conversionOf(row.id),
 			});
 			const exception = frozenReceiptException(row.receiptExceptionReason, receipts.length);
 			const exceptionFact =
@@ -305,6 +321,15 @@ function snapshotReport(
 					? { receiptException: exception }
 					: {};
 			const { expenseDate, category, description, amount, currency, paidBy } = draft;
+			const conversionFacts = () =>
+				submittedConversionFacts({
+					schemaVersion,
+					enforce,
+					original: { amount, currency },
+					reimbursementCurrency: report.reimbursementCurrency,
+					conversion: conversionOf(row.id),
+					receiptIds: receipts.map((receipt) => receipt.receiptId),
+				});
 			if (!enforce) {
 				return {
 					itemId: row.id,
@@ -318,6 +343,7 @@ function snapshotReport(
 					accountingReference: row.accountingReference,
 					receipts,
 					...exceptionFact,
+					...conversionFacts(),
 				} as TravelExpenseReportSubmittedItem;
 			}
 			if (
@@ -344,6 +370,7 @@ function snapshotReport(
 				accountingReference: row.accountingReference,
 				receipts,
 				...exceptionFact,
+				...conversionFacts(),
 			};
 		});
 	const trip = enforce ? tripFacts(report, items.length) : liveTripFacts(report);
@@ -352,6 +379,7 @@ function snapshotReport(
 			amount: item.original.amount,
 			currency: item.original.currency,
 			paidBy: item.paidBy,
+			conversion: conversionOf(item.itemId),
 		})),
 		report.reimbursementCurrency,
 	);

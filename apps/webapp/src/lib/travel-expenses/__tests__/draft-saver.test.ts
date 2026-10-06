@@ -216,4 +216,30 @@ describe("createDraftSaver", () => {
 		expect(calls).toHaveLength(1);
 		expect(saver.getState().status).toBe("saved");
 	});
+
+	it("continues from a newer version another save of the same draft produced (#607)", async () => {
+		const { saver, calls, pending } = setup(3);
+		// e.g. a currency conversion saved separately advanced the item to version 4.
+		saver.adoptVersion(4);
+		expect(saver.getState()).toMatchObject({ status: "saved", version: 4 });
+		saver.adoptVersion(2);
+		expect(saver.getState().version).toBe(4);
+
+		saver.change({ description: "Hotel" });
+		await vi.advanceTimersByTimeAsync(500);
+		expect(calls).toEqual([{ values: { description: "Hotel" }, version: 4 }]);
+		pending[0]!.resolve({ status: "saved", version: 5 });
+		await vi.runAllTimersAsync();
+		expect(saver.getState()).toMatchObject({ status: "saved", version: 5 });
+	});
+
+	it("does not adopt a version while a conflict waits for the user", async () => {
+		const { saver, pending } = setup(1);
+		saver.change({ description: "Hotel" });
+		await vi.advanceTimersByTimeAsync(500);
+		pending[0]!.resolve({ status: "conflict", version: 2, item: { description: "Train" } });
+		await vi.runAllTimersAsync();
+		saver.adoptVersion(3);
+		expect(saver.getState()).toMatchObject({ status: "conflict", version: 1 });
+	});
 });

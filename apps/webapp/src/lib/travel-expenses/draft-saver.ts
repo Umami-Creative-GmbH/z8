@@ -52,6 +52,12 @@ export interface DraftSaver<Values, Item> {
 	 * more is saved and the state reads as saved, so nothing is reported lost.
 	 */
 	discard(): void;
+	/**
+	 * Continues from a newer version that another save of the same draft
+	 * produced (e.g. its currency conversion, #607). Ignored when not newer or
+	 * while a conflict waits for the user.
+	 */
+	adoptVersion(version: number): void;
 	dispose(): void;
 }
 
@@ -175,6 +181,10 @@ export function createDraftSaver<Values, Item>(options: {
 			latest = undefined;
 			setState({ status: "saved", version: state.version });
 			dispose();
+		},
+		adoptVersion(version) {
+			if (disposed || state.status === "conflict" || version <= state.version) return;
+			setState({ ...state, version });
 		},
 		dispose,
 	};

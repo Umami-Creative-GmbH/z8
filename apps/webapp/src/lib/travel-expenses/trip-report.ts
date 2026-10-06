@@ -1,12 +1,13 @@
 import { countries } from "country-flag-icons";
 import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { parseIanaTimeZone } from "@/lib/timezone/validation";
+import type { ItemConversion } from "./currency-conversion";
+import type { ReceiptExceptionContext } from "./receipt-exception";
 import {
 	type ReceiptItemDraft,
 	type ReceiptItemRequirement,
 	receiptItemMissingRequirements,
 } from "./receipt-report";
-import type { ReceiptExceptionContext } from "./receipt-exception";
 import type { TripDestination } from "./trip-destination";
 
 /**
@@ -157,6 +158,7 @@ export function tripReportMissingRequirements(input: {
 		draft: ReceiptItemDraft;
 		receiptCount: number;
 		receiptException?: ReceiptExceptionContext;
+		conversion?: ItemConversion | null;
 	}[];
 	reimbursementCurrency: string;
 }): TripReportMissingRequirements {
@@ -178,6 +180,7 @@ export function tripReportMissingRequirements(input: {
 				receiptCount: item.receiptCount,
 				reimbursementCurrency: input.reimbursementCurrency,
 				receiptException: item.receiptException,
+				conversion: item.conversion,
 			}),
 		}))
 		.filter((item) => item.missing.length > 0);

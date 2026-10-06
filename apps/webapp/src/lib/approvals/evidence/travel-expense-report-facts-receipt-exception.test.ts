@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import {
 	buildTravelExpenseReportSubmittedFacts,
 	compareLiveTravelExpenseReportWithRevision,
+	fingerprintTravelExpenseReportFacts,
 	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
@@ -144,6 +147,18 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 				}),
 			),
 		).toEqual({ kind: "material_change", changedFields: ["items"] });
+	});
+
+	it("still freezes a v2 report with an exception byte for byte", () => {
+		// Golden values computed at schema version 2 (#604), before v3 (#607) added
+		// conversion facts; this report has no foreign expense, so nothing changes.
+		const V2_FACTS_SHA256 = "0f45fb85d93fc65649ca7b5c1ff8020331eebb2ec3f6dd2bd11e6734c1b1f4c8";
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 2 };
+		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V2_FACTS_SHA256);
+		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(
+			`travel_expense_report:v2:${V2_FACTS_SHA256}`,
+		);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, input())).toEqual({ kind: "current" });
 	});
 
 	it("snapshots live rows for a v1 revision without the exception key", () => {

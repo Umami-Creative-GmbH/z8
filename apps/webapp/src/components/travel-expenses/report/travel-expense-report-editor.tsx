@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
+import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
@@ -30,7 +31,6 @@ import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
-import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { ReceiptItemEditor } from "./receipt-item-editor";
 import { ReportReviewFeedback } from "./report-review-cycle";
@@ -95,7 +95,10 @@ function useSavedReportLoader(reportId: string) {
 /** Totals of the entered values; malformed expenses are not counted. */
 function liveTotals(items: ReportItemView[], drafts: LiveDrafts, reimbursementCurrency: string) {
 	return receiptReportTotals(
-		items.map((item) => liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+		items.map((item) => ({
+			...(liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+			conversion: item.conversion,
+		})),
 		reimbursementCurrency,
 	);
 }
@@ -193,6 +196,7 @@ function StandaloneReportBody({
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
 					receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+					conversion: item.conversion,
 				}).length > 0
 			? "incomplete"
 			: null;
@@ -347,6 +351,7 @@ function TripReportBody({
 									draft,
 									receiptCount: item.receipts.length,
 									receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+									conversion: item.conversion,
 								},
 							]
 						: [];
@@ -361,6 +366,7 @@ function TripReportBody({
 					receiptCount: item.receipts.length,
 					reimbursementCurrency: report.reimbursementCurrency,
 					receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
+					conversion: item.conversion,
 				}).length > 0
 			: true;
 		return incomplete

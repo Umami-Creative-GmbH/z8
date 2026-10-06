@@ -1,4 +1,9 @@
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	type ConversionRequirement,
+	conversionRequirements,
+	type ItemConversion,
+} from "./currency-conversion";
 import { itemReimbursementAmount, type ReimbursementItemInput } from "./item-amount";
 import { currencyMinorUnitDigits, formatUnits, STORED_AMOUNT_SCALE, sumUnits } from "./money";
 import { missingReceiptRequirements, type ReceiptExceptionContext } from "./receipt-exception";
@@ -169,8 +174,8 @@ export type ReceiptItemRequirement =
 	| "receipt_exception_reason"
 	/** A missing-receipt exception was requested, but the organization does not allow them (#604). */
 	| "receipt_exception_not_allowed"
-	/** Conversion of foreign receipts is not supported yet; nothing is guessed. */
-	| "same_currency";
+	/** A foreign receipt's conversion (#607); nothing is guessed. */
+	| ConversionRequirement;
 
 /** What still keeps a receipt item from being submittable, in form order. */
 export function receiptItemMissingRequirements(
@@ -179,6 +184,7 @@ export function receiptItemMissingRequirements(
 		receiptCount: number;
 		reimbursementCurrency: string;
 		receiptException?: ReceiptExceptionContext;
+		conversion?: ItemConversion | null;
 	},
 ): ReceiptItemRequirement[] {
 	const missing: ReceiptItemRequirement[] = [];
@@ -186,9 +192,13 @@ export function receiptItemMissingRequirements(
 	if (!draft.category) missing.push("category");
 	if (!draft.description) missing.push("description");
 	if (!draft.amount || !draft.currency) missing.push("amount");
-	else if (draft.currency !== context.reimbursementCurrency) missing.push("same_currency");
+	else
+		missing.push(
+			...conversionRequirements(draft, context.reimbursementCurrency, context.conversion),
+		);
 	if (!draft.paidBy) missing.push("payment_ownership");
-	if (context.receiptCount < 1) missing.push(...missingReceiptRequirements(context.receiptException));
+	if (context.receiptCount < 1)
+		missing.push(...missingReceiptRequirements(context.receiptException));
 	return missing;
 }
 

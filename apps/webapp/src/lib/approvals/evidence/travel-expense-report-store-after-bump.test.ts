@@ -13,10 +13,10 @@ import {
 } from "./travel-expense-report-store";
 
 // Simulates the build after a later ticket bumps the schema version: the
-// builder still freezes today's (v2, #604) facts, but the reader knows v1..v3.
+// builder still freezes today's (v3, #607) facts, but the reader knows v1..v4.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./travel-expense-report-facts")>()),
-	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 3,
+	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION: 4,
 }));
 
 const scope = { organizationId: "org-1", reportId: "report-1" };
@@ -68,6 +68,14 @@ const factsInput: TravelExpenseReportFactsInput = {
 	],
 };
 
+const tripFields = {
+	tripPurpose: "Customer workshop",
+	tripStartDate: "2026-09-14",
+	tripEndDate: "2026-09-16",
+	tripTimeZone: "Europe/Berlin",
+	tripDestinations: [{ place: "Hamburg", countryCode: "DE" }],
+};
+
 type Row = Record<string, unknown>;
 
 function fakeRevisionTable() {
@@ -115,19 +123,53 @@ describe("after a schema version bump", () => {
 		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v1:/);
 	});
 
-	it("reads a revision of the new version under its own fingerprint prefix", async () => {
+	it("still reads a v2 revision with its missing-receipt exception (#604)", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 3 };
+		const withException: TravelExpenseReportFactsInput = {
+			...factsInput,
+			items: [
+				...factsInput.items,
+				{
+					...factsInput.items[0],
+					id: "dinner",
+					position: 1,
+					category: "meals",
+					description: "Customer dinner",
+					originalAmount: "64.20",
+					receiptExceptionReason: "The restaurant printer was broken",
+				},
+			],
+			report: { ...factsInput.report, kind: "trip", ...tripFields },
+			receiptExceptionsAllowed: true,
+		};
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(withException), schemaVersion: 2 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
 
-		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v3:/);
+		expect(loaded?.facts).toEqual(facts);
+		expect(loaded?.facts.items[1]?.receiptException).toEqual({
+			reason: "The restaurant printer was broken",
+		});
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v2:/);
+		expect(compareLiveTravelExpenseReportWithRevision(facts, withException)).toEqual({
+			kind: "current",
+		});
+	});
+
+	it("reads a revision of the new version under its own fingerprint prefix", async () => {
+		const { database } = fakeRevisionTable();
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 4 };
+		await capture(database, facts);
+
+		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
+
+		expect(loaded?.materialFingerprint).toMatch(/^travel_expense_report:v4:/);
 	});
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 4 };
+		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 5 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
 	});
 

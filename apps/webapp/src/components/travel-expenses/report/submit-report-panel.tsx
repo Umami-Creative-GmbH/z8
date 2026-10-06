@@ -18,6 +18,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { appliedConversion } from "@/lib/travel-expenses/currency-conversion";
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
@@ -262,6 +263,11 @@ export function SubmitReportPanel({
 								amount: item.amount,
 								currency: item.currency,
 								paidBy: item.paidBy,
+								conversion: appliedConversion(
+									item,
+									report?.reimbursementCurrency ?? "",
+									item.conversion,
+								),
 								receipts: item.receipts.map((receipt) => ({
 									id: receipt.id,
 									fileName: receipt.fileName,

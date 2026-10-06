@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
+import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
 import {
 	MAX_ACCOUNTING_REFERENCE_LENGTH,
 	MAX_DESCRIPTION_LENGTH,
@@ -50,7 +51,7 @@ import {
 	receiptItemMissingRequirements,
 } from "@/lib/travel-expenses/receipt-report";
 import type { ReportItemView, ReportReceiptView } from "@/lib/travel-expenses/report-store";
-import { receiptExceptionContext } from "@/lib/travel-expenses/receipt-exception";
+import { CurrencyConversionField, conversionRequirementLabel } from "./currency-conversion-field";
 import { DraftSaveStatus } from "./draft-save-status";
 import { ReceiptAttachments } from "./receipt-attachments";
 import { ReceiptExceptionField } from "./receipt-exception-field";
@@ -89,6 +90,14 @@ function withSavedValues(
 	const merged = { ...values };
 	for (const field of Object.keys(errors) as FieldName[]) merged[field] = saved[field];
 	return merged;
+}
+
+/** The entered amount and currency when both are well-formed. */
+function parsedOriginal(values: FormValues) {
+	const parsed = parseReceiptItemDraft(toDraftInput(values));
+	return parsed.ok
+		? { amount: parsed.draft.amount, currency: parsed.draft.currency }
+		: { amount: null, currency: null };
 }
 
 export function categoryLabel(t: Translate, category: string) {
@@ -149,12 +158,10 @@ function requirementLabel(t: Translate, requirement: ReceiptItemRequirement, cur
 				"travelExpenses.report.requirements.receiptExceptionNotAllowed",
 				"Attach the receipt. Your organization does not allow missing-receipt exceptions.",
 			);
-		case "same_currency":
-			return t(
-				"travelExpenses.report.requirements.sameCurrency",
-				"Only receipts in {currency} are supported so far. Other currencies need a conversion that is not available yet.",
-				{ currency },
-			);
+		case "conversion_missing":
+		case "conversion_unsupported":
+		case "conversion_evidence":
+			return conversionRequirementLabel(t, requirement, currency);
 	}
 }
 
@@ -518,6 +525,25 @@ export function ReceiptItemEditor({
 			/>
 
 			<form.Subscribe selector={(formState) => formState.values}>
+				{(values) => (
+					<CurrencyConversionField
+						reportId={reportId}
+						itemId={item.id}
+						original={parsedOriginal(values)}
+						reimbursementCurrency={reimbursementCurrency}
+						conversion={item.conversion ?? null}
+						receipts={receipts}
+						version={{
+							flush: () => saver.flush(),
+							current: () => saver.getState().version,
+							adopt: (version) => saver.adoptVersion(version),
+						}}
+						onChanged={onReceiptsChanged}
+					/>
+				)}
+			</form.Subscribe>
+
+			<form.Subscribe selector={(formState) => formState.values}>
 				{(values) => {
 					const parsed = parseReceiptItemDraft(toDraftInput(values));
 					const draft = parsed.ok ? parsed.draft : null;
@@ -526,6 +552,7 @@ export function ReceiptItemEditor({
 								receiptCount: receipts.length,
 								reimbursementCurrency,
 								receiptException: { ...receiptException, allowed: receiptExceptionsAllowed },
+								conversion: item.conversion,
 							})
 						: null;
 					return (

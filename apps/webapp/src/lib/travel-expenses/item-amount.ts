@@ -1,3 +1,4 @@
+import { convertToReimbursement, type ItemConversion } from "./currency-conversion";
 import { formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
 import type { ExpensePayer } from "./receipt-report";
 
@@ -20,6 +21,8 @@ export interface ReimbursementItemInput {
 	/** Original currency (ISO 4217). */
 	currency: string | null;
 	paidBy: ExpensePayer | null;
+	/** How a foreign-currency item converts into the reimbursement currency (#607). */
+	conversion?: ItemConversion | null;
 }
 
 /** Why an item is not counted (yet). */
@@ -53,8 +56,15 @@ function reimbursementSource(
 	reimbursementCurrency: string,
 ): { amount: string } | { reason: ItemNotCountedReason } {
 	if (!item.amount || !item.currency) return { reason: "amount" };
-	if (item.currency !== reimbursementCurrency) return { reason: "currency" };
-	return { amount: item.amount };
+	if (item.currency === reimbursementCurrency) return { amount: item.amount };
+	const converted = convertToReimbursement(
+		{ amount: item.amount, currency: item.currency },
+		reimbursementCurrency,
+		item.conversion,
+	);
+	return converted.kind === "converted"
+		? { amount: converted.reimbursement.amount }
+		: { reason: "currency" };
 }
 
 export function itemReimbursementAmount(

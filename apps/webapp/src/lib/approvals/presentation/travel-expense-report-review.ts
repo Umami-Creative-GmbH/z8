@@ -11,6 +11,7 @@ import {
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
+import { conversionReviewRows } from "./travel-expense-report-conversion-review";
 import {
 	receiptExceptionAcceptanceSections,
 	receiptExceptionRows,
@@ -164,6 +165,7 @@ export function buildTravelExpenseReportReviewSections(
 					label: text("amount", "Amount"),
 					value: `${item.original.amount} ${item.original.currency}`,
 				},
+				...conversionReviewRows(item, labels.receiptFileNames),
 				{
 					label: text("paidBy", "Paid by"),
 					value:
@@ -181,7 +183,12 @@ export function buildTravelExpenseReportReviewSections(
 			itemRows.push(
 				...(item.receiptException
 					? receiptExceptionRows(item.receiptException)
-					: [{ label: text("receipts", "Receipts"), value: `${names.length}: ${names.join(", ")}` }]),
+					: [
+							{
+								label: text("receipts", "Receipts"),
+								value: `${names.length}: ${names.join(", ")}`,
+							},
+						]),
 			);
 			return { type: "key_value", title: `${index + 1}. ${item.description}`, rows: itemRows };
 		}),

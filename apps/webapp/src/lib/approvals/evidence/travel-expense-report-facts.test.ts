@@ -160,7 +160,9 @@ describe("buildTravelExpenseReportSubmittedFacts", () => {
 			totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "240.00" },
 		});
 		expect(fingerprintTravelExpenseReportFacts(facts)).toMatch(
-			new RegExp(`^travel_expense_report:v${TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION}:[0-9a-f]{64}$`),
+			new RegExp(
+				`^travel_expense_report:v${TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION}:[0-9a-f]{64}$`,
+			),
 		);
 	});
 
