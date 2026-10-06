@@ -72,7 +72,10 @@ export const travelExpenseAllowancePolicyVersion = pgTable(
 		foreignKey({
 			name: "travel_expense_allowance_policy_version_policy_fk",
 			columns: [table.policyId, table.organizationId],
-			foreignColumns: [travelExpenseAllowancePolicy.id, travelExpenseAllowancePolicy.organizationId],
+			foreignColumns: [
+				travelExpenseAllowancePolicy.id,
+				travelExpenseAllowancePolicy.organizationId,
+			],
 		}).onDelete("cascade"),
 		uniqueIndex("travelExpenseAllowancePolicyVersion_id_org_idx").on(
 			table.id,
@@ -110,7 +113,10 @@ export const travelExpenseMileageRate = pgTable(
 		ratePerKm: decimal("rate_per_km", { precision: 8, scale: 4 }).notNull(),
 	},
 	(table) => [
-		primaryKey({ name: "travel_expense_mileage_rate_pk", columns: [table.versionId, table.vehicle] }),
+		primaryKey({
+			name: "travel_expense_mileage_rate_pk",
+			columns: [table.versionId, table.vehicle],
+		}),
 		foreignKey({
 			name: "travel_expense_mileage_rate_version_fk",
 			columns: [table.versionId, table.organizationId],

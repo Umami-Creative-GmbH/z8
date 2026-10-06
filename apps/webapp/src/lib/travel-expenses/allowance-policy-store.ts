@@ -60,7 +60,9 @@ export async function loadMileagePolicyVersions(
 			and(
 				eq(travelExpenseAllowancePolicyVersion.organizationId, organizationId),
 				eq(travelExpenseAllowancePolicy.kind, "mileage"),
-				options.includeWithdrawn ? undefined : isNull(travelExpenseAllowancePolicyVersion.withdrawnAt),
+				options.includeWithdrawn
+					? undefined
+					: isNull(travelExpenseAllowancePolicyVersion.withdrawnAt),
 			),
 		)
 		.orderBy(

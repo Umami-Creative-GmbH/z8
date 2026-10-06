@@ -252,7 +252,12 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 	it("lets only expense administrators manage dated versions and keeps their timeline", async () => {
 		expect(
 			await activate(
-				{ source: "organization", effectiveFrom: "2026-01-01", currency: "EUR", ratesPerKm: { car: "0.30" } },
+				{
+					source: "organization",
+					effectiveFrom: "2026-01-01",
+					currency: "EUR",
+					ratesPerKm: { car: "0.30" },
+				},
 				"manager",
 			),
 		).toEqual({ success: false, error: "Unauthorized: Admin access required" });
@@ -260,7 +265,9 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 		const first = await activateOrganizationRate("2026-01-01", "0.30");
 		const second = await activateOrganizationRate("2026-07-01", "0.35");
 		const data = await settings();
-		expect(data.timeline.map((version) => [version.id, version.effectiveFrom, version.effectiveUntil])).toEqual([
+		expect(
+			data.timeline.map((version) => [version.id, version.effectiveFrom, version.effectiveUntil]),
+		).toEqual([
 			[second, "2026-07-01", null],
 			[first, "2026-01-01", "2026-07-01"],
 		]);
@@ -273,7 +280,12 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 		const original = await activateOrganizationRate("2026-01-01", "0.30");
 
 		expect(
-			await activate({ source: "organization", effectiveFrom: "2026-01-01", currency: "EUR", ratesPerKm: { car: "0.40" } }),
+			await activate({
+				source: "organization",
+				effectiveFrom: "2026-01-01",
+				currency: "EUR",
+				ratesPerKm: { car: "0.40" },
+			}),
 		).toEqual({ success: true, data: { status: "start_taken", existingVersionId: original } });
 
 		// A version of another organization is never a valid replacement target.
@@ -294,7 +306,9 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 				replacesVersionId: foreign.data.versionId,
 			}),
 		).toEqual({ success: true, data: { status: "stale_replacement" } });
-		expect(await policyActions.withdrawMileagePolicyVersionAction({ versionId: foreign.data.versionId })).toEqual({
+		expect(
+			await policyActions.withdrawMileagePolicyVersionAction({ versionId: foreign.data.versionId }),
+		).toEqual({
 			success: false,
 			error: "Mileage policy version not found",
 		});
@@ -430,7 +444,11 @@ describe("mileage with versioned organization allowance policies (#606)", () => 
 		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
 		const frozen = await revisionFacts(reportId);
 		expect(frozen.material_fingerprint).toMatch(/^travel_expense_report:v2:[0-9a-f]{64}$/);
-		expect(frozen.facts.totals).toEqual({ currency: "EUR", reimbursable: "37.04", companyPaid: "0.00" });
+		expect(frozen.facts.totals).toEqual({
+			currency: "EUR",
+			reimbursable: "37.04",
+			companyPaid: "0.00",
+		});
 		expect((frozen.facts.items as Array<Record<string, unknown>>)[0]).toMatchObject({
 			type: "mileage",
 			original: { amount: "37.04", currency: "EUR" },

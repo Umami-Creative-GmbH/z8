@@ -11,6 +11,7 @@ import {
 import { compareTravelExpenseReportWithSubmittedRevision } from "../evidence/travel-expense-report-submission";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
 import type { ApprovalDatabase } from "../server/types";
+import { mileageReviewRows } from "./travel-expense-report-mileage";
 
 export type TravelExpenseReportReviewEvidence =
 	| { status: "not_captured" }
@@ -173,6 +174,7 @@ export function buildTravelExpenseReportReviewSections(
 					value: item.accountingReference,
 				});
 			}
+			itemRows.push(...mileageReviewRows(item));
 			itemRows.push({
 				label: text("receipts", "Receipts"),
 				value: `${names.length}: ${names.join(", ")}`,

@@ -18,7 +18,7 @@ export const MAX_POLICY_NOTE_LENGTH = 500;
 
 export interface MileagePolicyVersionFormInput {
 	source: "organization" | "statutory_default";
-	effectiveFrom: string | null;
+	effectiveFrom?: string | null;
 	/** Organization versions only. */
 	currency?: string | null;
 	ratesPerKm?: Partial<Record<MileageVehicle, string | null>>;
@@ -53,7 +53,14 @@ export type MileagePolicyInputError =
 
 export type MileagePolicyInputErrors = Partial<
 	Record<
-		"effectiveFrom" | "currency" | MileageVehicle | "rates" | "sourceReference" | "sourceVersion" | "defaultKey" | "note",
+		| "effectiveFrom"
+		| "currency"
+		| MileageVehicle
+		| "rates"
+		| "sourceReference"
+		| "sourceVersion"
+		| "defaultKey"
+		| "note",
 		MileagePolicyInputError
 	>
 >;

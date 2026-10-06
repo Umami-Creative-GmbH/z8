@@ -53,10 +53,15 @@ function byStartAscending(left: Dated, right: Dated): number {
 }
 
 /** The active version that applies on `date`: the latest one starting on or before it. */
-export function effectiveVersionOn<T extends Dated>(versions: readonly T[], date: string): T | null {
+export function effectiveVersionOn<T extends Dated>(
+	versions: readonly T[],
+	date: string,
+): T | null {
 	const day = parsePlainDate(date);
 	let applicable: T | null = null;
-	for (const version of versions.filter((candidate) => !candidate.withdrawnAt).toSorted(byStartAscending)) {
+	for (const version of versions
+		.filter((candidate) => !candidate.withdrawnAt)
+		.toSorted(byStartAscending)) {
 		if (comparePlainDates(parsePlainDate(version.effectiveFrom), day) > 0) break;
 		applicable = version;
 	}

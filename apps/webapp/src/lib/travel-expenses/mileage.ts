@@ -208,10 +208,7 @@ export function calculateMileage(input: { distanceKm: string; ratePerKm: string 
 			multiplyToUnits(input.distanceKm, input.ratePerKm, exactScale, MILEAGE_ROUNDING),
 			exactScale,
 		),
-		amount: formatUnits(
-			multiplyToUnits(input.distanceKm, input.ratePerKm, 2, MILEAGE_ROUNDING),
-			2,
-		),
+		amount: formatUnits(multiplyToUnits(input.distanceKm, input.ratePerKm, 2, MILEAGE_ROUNDING), 2),
 	};
 }
 

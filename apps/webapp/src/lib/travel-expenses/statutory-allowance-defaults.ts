@@ -27,8 +27,8 @@ export interface StatutoryMileageDefault {
 	/** Verified edition, stored as the version's source version. */
 	version: string;
 	/** Official pages the rates were checked against. */
-	sourceUrls: readonly string[];
-	/** When the rates were checked against `sourceUrls`. */
+	sources: readonly { label: string; url: string }[];
+	/** When the rates were checked against `sources`. */
 	verifiedOn: string;
 }
 
@@ -57,11 +57,17 @@ export const GERMAN_MILEAGE_DEFAULT: StatutoryMileageDefault = {
 	reference:
 		"§ 9 Abs. 1 Satz 3 Nr. 4a Satz 2 EStG with § 5 Abs. 1 and 2 BRKG; BMF letter of 25.11.2020 (BStBl I S. 1228), Rz. 37",
 	version: "LStH 2026, Anhang 25 III",
-	sourceUrls: [
-		"https://lsth.bundesfinanzministerium.de/lsth/2026/B-Anhaenge/Anhang-25/III/inhalt.html",
-		"https://lsth.bundesfinanzministerium.de/lsth/2026/A-Einkommensteuergesetz/II-Einkommen-2-24b/4-Ueberschuss-d-Einnahmen-ueber-die-Werbungsk-8-9a/Paragraf-9/h-9-5.html",
-		"https://www.gesetze-im-internet.de/estg/__9.html",
-		"https://www.gesetze-im-internet.de/brkg_2005/__5.html",
+	sources: [
+		{
+			label: "LStH 2026, Anhang 25 III (BMF 25.11.2020, Rz. 37)",
+			url: "https://lsth.bundesfinanzministerium.de/lsth/2026/B-Anhaenge/Anhang-25/III/inhalt.html",
+		},
+		{
+			label: "LStH 2026, H 9.5",
+			url: "https://lsth.bundesfinanzministerium.de/lsth/2026/A-Einkommensteuergesetz/II-Einkommen-2-24b/4-Ueberschuss-d-Einnahmen-ueber-die-Werbungsk-8-9a/Paragraf-9/h-9-5.html",
+		},
+		{ label: "§ 9 EStG", url: "https://www.gesetze-im-internet.de/estg/__9.html" },
+		{ label: "§ 5 BRKG", url: "https://www.gesetze-im-internet.de/brkg_2005/__5.html" },
 	],
 	verifiedOn: "2026-10-06",
 };

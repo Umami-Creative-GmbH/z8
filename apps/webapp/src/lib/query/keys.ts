@@ -86,6 +86,8 @@ export const queryKeys = {
 		submittedReports: () => ["travel-expenses", "submitted-reports"] as const,
 		report: (reportId: string) => ["travel-expenses", "reports", reportId] as const,
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
+		mileagePolicy: () => ["travel-expenses", "settings", "mileage-policy"] as const,
+		legacyPolicies: () => ["travel-expenses", "settings", "legacy-policies"] as const,
 		reportSubmission: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "submission"] as const,
 	},

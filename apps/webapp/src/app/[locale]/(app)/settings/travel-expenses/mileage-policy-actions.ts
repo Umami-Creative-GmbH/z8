@@ -71,7 +71,9 @@ export async function getMileagePolicySettings(): Promise<
 				timeline: activeVersionTimeline(versions),
 				withdrawn: versions
 					.filter((version) => version.withdrawnAt)
-					.toSorted((left, right) => (left.withdrawnAt ?? "") < (right.withdrawnAt ?? "") ? 1 : -1),
+					.toSorted((left, right) =>
+						(left.withdrawnAt ?? "") < (right.withdrawnAt ?? "") ? 1 : -1,
+					),
 				defaults: [...STATUTORY_MILEAGE_DEFAULTS],
 			},
 		};

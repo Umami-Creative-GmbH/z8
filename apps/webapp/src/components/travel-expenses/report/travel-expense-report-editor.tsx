@@ -1,6 +1,6 @@
 "use client";
 
-import { IconAlertTriangle, IconLoader2, IconPlus } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCar, IconLoader2, IconPlus } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useRef, useState } from "react";
@@ -10,12 +10,15 @@ import {
 	getMyTravelExpenseReport,
 	removeTripReportItemAction,
 } from "@/app/[locale]/(app)/travel-expenses/report-actions";
+import { addTripMileageItemAction } from "@/app/[locale]/(app)/travel-expenses/mileage-actions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { queryKeys } from "@/lib/query/keys";
+import { reportItemMissingRequirements } from "@/lib/travel-expenses/item-requirements";
+import type { MileageItemDraft } from "@/lib/travel-expenses/mileage";
 import {
 	type ReceiptItemDraft,
 	receiptItemMissingRequirements,
@@ -31,6 +34,7 @@ import {
 	tripReportMissingRequirements,
 } from "@/lib/travel-expenses/trip-report";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
+import { MileageItemEditor, mileageDraftMatches, mileageDraftOf } from "./mileage-item-editor";
 import { ReceiptItemEditor } from "./receipt-item-editor";
 import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report-summary";
 import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
@@ -54,13 +58,53 @@ const ITEM_FIELDS = [
 	"accountingReference",
 ] as const satisfies readonly (keyof ReceiptItemDraft)[];
 
+/** Live entered mileage facts per mileage expense (#606); null while malformed. */
+type MileageDrafts = Record<string, MileageItemDraft | null>;
+
+function liveMileage(item: ReportItemView, drafts: MileageDrafts): MileageItemDraft | null {
+	return item.id in drafts ? (drafts[item.id] ?? null) : mileageDraftOf(item);
+}
+
+/** Whether a mileage expense on screen is saved, so its server calculation applies. */
+function mileageSaved(item: ReportItemView, drafts: MileageDrafts): boolean {
+	const live = liveMileage(item, drafts);
+	return live !== null && mileageDraftMatches(live, item);
+}
+
+/** Whether an expense on screen is not yet submittable (or not saved, for mileage). */
+function itemIncomplete(
+	item: ReportItemView,
+	drafts: LiveDrafts,
+	mileageDrafts: MileageDrafts,
+	reimbursementCurrency: string,
+): boolean {
+	if (item.type === "mileage") {
+		return (
+			!mileageSaved(item, mileageDrafts) ||
+			reportItemMissingRequirements(
+				{ type: item.type, draft: item, receiptCount: item.receipts.length, mileage: item.mileage },
+				{ reimbursementCurrency },
+			).length > 0
+		);
+	}
+	const draft = liveDraft(item, drafts);
+	return draft
+		? receiptItemMissingRequirements(draft, {
+				receiptCount: item.receipts.length,
+				reimbursementCurrency,
+			}).length > 0
+		: true;
+}
+
 /** Whether everything on screen equals the saved report, so reviewing it reviews this. */
 function liveMatchesSaved(
 	saved: ReportView,
 	drafts: LiveDrafts,
 	details: TripDetailsDraft | null,
+	mileageDrafts: MileageDrafts = {},
 ): boolean {
 	const itemsMatch = saved.items.every((item) => {
+		if (item.type === "mileage") return mileageSaved(item, mileageDrafts);
 		const live = liveDraft(item, drafts);
 		return live !== null && ITEM_FIELDS.every((field) => live[field] === item[field]);
 	});
@@ -81,18 +125,36 @@ function liveMatchesSaved(
 /** Reloads the saved report; null while the entries on screen are not all saved. */
 function useSavedReportLoader(reportId: string) {
 	const queryClient = useQueryClient();
-	return async (drafts: LiveDrafts, details: TripDetailsDraft | null) => {
+	return async (
+		drafts: LiveDrafts,
+		details: TripDetailsDraft | null,
+		mileageDrafts: MileageDrafts = {},
+	) => {
 		const queryKey = queryKeys.travelExpenses.report(reportId);
 		await queryClient.refetchQueries({ queryKey, exact: true });
 		const saved = queryClient.getQueryData<ReportView>(queryKey);
-		return saved && liveMatchesSaved(saved, drafts, details) ? saved : null;
+		return saved && liveMatchesSaved(saved, drafts, details, mileageDrafts) ? saved : null;
 	};
 }
 
-/** Totals of the entered values; malformed expenses are not counted. */
-function liveTotals(items: ReportItemView[], drafts: LiveDrafts, reimbursementCurrency: string) {
+/**
+ * Totals of the entered values; malformed expenses are not counted. Mileage
+ * counts with the server's calculation, and only while its entries are saved.
+ */
+function liveTotals(
+	items: ReportItemView[],
+	drafts: LiveDrafts,
+	reimbursementCurrency: string,
+	mileageDrafts: MileageDrafts = {},
+) {
 	return receiptReportTotals(
-		items.map((item) => liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+		items.map((item) =>
+			item.type === "mileage"
+				? mileageSaved(item, mileageDrafts)
+					? item
+					: { ...item, mileage: null }
+				: (liveDraft(item, drafts) ?? { amount: null, currency: null, paidBy: null }),
+		),
 		reimbursementCurrency,
 	);
 }
@@ -178,15 +240,14 @@ function StandaloneReportBody({
 	const { refreshReport, refreshDrafts } = useReportInvalidation(report.id);
 	const loadSavedReport = useSavedReportLoader(report.id);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
+	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
 	const item = report.items[0];
 	if (!item) return null;
-	const live = liveDraft(item, drafts);
-	const blocker: SubmitBlocker = !live
+	const isMileage = item.type === "mileage";
+	const unsaved = isMileage ? !mileageSaved(item, mileageDrafts) : !liveDraft(item, drafts);
+	const blocker: SubmitBlocker = unsaved
 		? "unsaved"
-		: receiptItemMissingRequirements(live, {
-					receiptCount: item.receipts.length,
-					reimbursementCurrency: report.reimbursementCurrency,
-				}).length > 0
+		: itemIncomplete(item, drafts, mileageDrafts, report.reimbursementCurrency)
 			? "incomplete"
 			: null;
 
@@ -195,29 +256,42 @@ function StandaloneReportBody({
 			<CardContent className="space-y-6 pt-6">
 				<div className="flex flex-wrap items-center gap-2">
 					<h2 className="text-lg font-semibold">
-						{t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
+						{isMileage
+							? t("travelExpenses.report.mileage.standaloneTitle", "Mileage")
+							: t("travelExpenses.report.standaloneTitle", "Standalone receipt")}
 					</h2>
 					<Badge variant="secondary">{t("travelExpenses.status.draft", "Draft")}</Badge>
 				</div>
-				<ReceiptItemEditor
-					key={item.id}
-					reportId={report.id}
-					item={item}
-					receipts={item.receipts}
-					reimbursementCurrency={report.reimbursementCurrency}
-					maxReceiptBytes={maxReceiptBytes}
-					onReceiptsChanged={refreshReport}
-					onSaved={() => void refreshDrafts()}
-					onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
-				/>
+				{isMileage ? (
+					<MileageItemEditor
+						key={item.id}
+						reportId={report.id}
+						item={item}
+						reimbursementCurrency={report.reimbursementCurrency}
+						onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+						onDraftChange={(draft) => setMileageDrafts({ [item.id]: draft })}
+					/>
+				) : (
+					<ReceiptItemEditor
+						key={item.id}
+						reportId={report.id}
+						item={item}
+						receipts={item.receipts}
+						reimbursementCurrency={report.reimbursementCurrency}
+						maxReceiptBytes={maxReceiptBytes}
+						onReceiptsChanged={refreshReport}
+						onSaved={() => void refreshDrafts()}
+						onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
+					/>
+				)}
 				<ReportTotals
 					id={report.id}
-					totals={liveTotals(report.items, drafts, report.reimbursementCurrency)}
+					totals={liveTotals(report.items, drafts, report.reimbursementCurrency, mileageDrafts)}
 				/>
 				<SubmitReportPanel
 					reportId={report.id}
 					blocker={blocker}
-					loadSavedReport={() => loadSavedReport(drafts, null)}
+					loadSavedReport={() => loadSavedReport(drafts, null, mileageDrafts)}
 					onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 				/>
 			</CardContent>
@@ -239,6 +313,7 @@ function TripReportBody({
 	const loadSavedReport = useSavedReportLoader(report.id);
 	const [details, setDetails] = useState<TripDetailsDraft | null>(trip);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
+	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
 	const [adding, setAdding] = useState(false);
 	const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
 	const [focusTarget, setFocusTarget] = useState<{ itemId: string } | "add" | null>(null);
@@ -261,10 +336,12 @@ function TripReportBody({
 		}
 	}, [focusTarget, items]);
 
-	async function addItem() {
+	async function addItem(type: "receipt" | "mileage" = "receipt") {
 		setAdding(true);
 		try {
-			const result = await addTripReportItemAction({ reportId: report.id });
+			const result = await (type === "mileage" ? addTripMileageItemAction : addTripReportItemAction)({
+				reportId: report.id,
+			});
 			if (!result.success) {
 				toast.error(
 					t(
@@ -331,6 +408,17 @@ function TripReportBody({
 		? tripReportMissingRequirements({
 				details,
 				items: items.flatMap((item) => {
+					if (item.type === "mileage") {
+						return [
+							{
+								id: item.id,
+								type: item.type,
+								draft: item,
+								receiptCount: item.receipts.length,
+								mileage: item.mileage,
+							},
+						];
+					}
 					const draft = liveDraft(item, drafts);
 					return draft ? [{ id: item.id, draft, receiptCount: item.receipts.length }] : [];
 				}),
@@ -338,16 +426,12 @@ function TripReportBody({
 			})
 		: null;
 	const incompleteExpenses: IncompleteExpense[] = items.flatMap((item, index) => {
-		const draft = liveDraft(item, drafts);
-		const incomplete = draft
-			? receiptItemMissingRequirements(draft, {
-					receiptCount: item.receipts.length,
-					reimbursementCurrency: report.reimbursementCurrency,
-				}).length > 0
-			: true;
-		return incomplete
-			? [{ id: item.id, number: index + 1, description: draft?.description ?? item.description }]
-			: [];
+		if (!itemIncomplete(item, drafts, mileageDrafts, report.reimbursementCurrency)) return [];
+		const description =
+			item.type === "mileage"
+				? (liveMileage(item, mileageDrafts)?.route ?? item.mileage?.route ?? null)
+				: (liveDraft(item, drafts)?.description ?? item.description);
+		return [{ id: item.id, number: index + 1, description }];
 	});
 
 	return (
@@ -399,53 +483,82 @@ function TripReportBody({
 											<AlertDescription>{removeErrors[item.id]}</AlertDescription>
 										</Alert>
 									)}
-									<ReceiptItemEditor
-										reportId={report.id}
-										item={item}
-										receipts={item.receipts}
-										reimbursementCurrency={report.reimbursementCurrency}
-										maxReceiptBytes={maxReceiptBytes}
-										onReceiptsChanged={refreshReport}
-										onSaved={() => void refreshDrafts()}
-										onDraftChange={(draft) =>
-											setDrafts((current) => ({ ...current, [item.id]: draft }))
-										}
-										removal={{
-											label: t(
-												"travelExpenses.report.items.removeLabel",
-												"Remove expense {number}",
-												{
+									{item.type === "mileage" ? (
+										<MileageItemEditor
+											reportId={report.id}
+											item={item}
+											reimbursementCurrency={report.reimbursementCurrency}
+											onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
+											onDraftChange={(draft) =>
+												setMileageDrafts((current) => ({ ...current, [item.id]: draft }))
+											}
+											removal={{
+												label: t("travelExpenses.report.items.removeLabel", "Remove expense {number}", {
 													number,
-												},
-											),
-											remove: (expectedVersion) => removeItem(item.id, expectedVersion),
-										}}
-									/>
+												}),
+												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
+											}}
+										/>
+									) : (
+										<ReceiptItemEditor
+											reportId={report.id}
+											item={item}
+											receipts={item.receipts}
+											reimbursementCurrency={report.reimbursementCurrency}
+											maxReceiptBytes={maxReceiptBytes}
+											onReceiptsChanged={refreshReport}
+											onSaved={() => void refreshDrafts()}
+											onDraftChange={(draft) =>
+												setDrafts((current) => ({ ...current, [item.id]: draft }))
+											}
+											removal={{
+												label: t(
+													"travelExpenses.report.items.removeLabel",
+													"Remove expense {number}",
+													{
+														number,
+													},
+												),
+												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
+											}}
+										/>
+									)}
 								</CardContent>
 							</Card>
 						</section>
 					);
 				})}
-				<Button
-					ref={addButton}
-					type="button"
-					variant="outline"
-					onClick={() => void addItem()}
-					disabled={adding}
-				>
-					{adding ? (
-						<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
-					) : (
-						<IconPlus aria-hidden="true" className="mr-2 size-4" />
-					)}
-					{t("travelExpenses.report.items.add", "Add receipt expense")}
-				</Button>
+				<div className="flex flex-wrap gap-2">
+					<Button
+						ref={addButton}
+						type="button"
+						variant="outline"
+						onClick={() => void addItem()}
+						disabled={adding}
+					>
+						{adding ? (
+							<IconLoader2 aria-hidden="true" className="mr-2 size-4 animate-spin" />
+						) : (
+							<IconPlus aria-hidden="true" className="mr-2 size-4" />
+						)}
+						{t("travelExpenses.report.items.add", "Add receipt expense")}
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => void addItem("mileage")}
+						disabled={adding}
+					>
+						<IconCar aria-hidden="true" className="mr-2 size-4" />
+						{t("travelExpenses.report.mileage.add", "Add mileage")}
+					</Button>
+				</div>
 			</section>
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<ReportTotals
 					id={report.id}
-					totals={liveTotals(items, drafts, report.reimbursementCurrency)}
+					totals={liveTotals(items, drafts, report.reimbursementCurrency, mileageDrafts)}
 				/>
 				<TripRequirements
 					id={report.id}
@@ -456,13 +569,18 @@ function TripReportBody({
 			<SubmitReportPanel
 				reportId={report.id}
 				blocker={
-					!details || items.some((item) => liveDraft(item, drafts) === null)
+					!details ||
+					items.some((item) =>
+						item.type === "mileage"
+							? !mileageSaved(item, mileageDrafts)
+							: liveDraft(item, drafts) === null,
+					)
 						? "unsaved"
 						: (requirements?.trip.length ?? 0) > 0 || incompleteExpenses.length > 0
 							? "incomplete"
 							: null
 				}
-				loadSavedReport={() => loadSavedReport(drafts, details)}
+				loadSavedReport={() => loadSavedReport(drafts, details, mileageDrafts)}
 				onSubmitted={() => Promise.all([refreshReport(), refreshDrafts()])}
 			/>
 		</div>

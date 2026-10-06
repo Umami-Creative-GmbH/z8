@@ -154,6 +154,7 @@ export function SubmittedTravelExpenseReport({ reportId }: { reportId: string })
 							fileName: receipt.fileName,
 							href: `/api/travel-expenses/reports/${reportId}/receipts/${receipt.receiptId}`,
 						})),
+						mileage: item.mileage ?? null,
 					}))}
 				/>
 			</section>

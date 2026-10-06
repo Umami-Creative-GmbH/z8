@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
+import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { ReportTotals } from "./report-summary";
 
@@ -171,6 +172,7 @@ export function SubmitReportPanel({
 						id: item.id,
 						version: item.version,
 						receiptIds: item.receipts.map((receipt) => receipt.id),
+						amount: reviewedItemAmount(item, report.reimbursementCurrency),
 					})),
 				},
 			});
@@ -254,16 +256,20 @@ export function SubmitReportPanel({
 						<ExpenseSummaryList
 							items={(report?.items ?? []).map((item) => ({
 								id: item.id,
-								description: item.description,
+								description: item.description ?? item.mileage?.route ?? null,
 								expenseDate: item.expenseDate,
 								category: item.category,
-								amount: item.amount,
-								currency: item.currency,
+								amount: item.amount ?? item.mileage?.amount ?? null,
+								currency: item.currency ?? item.mileage?.currency ?? null,
 								paidBy: item.paidBy,
 								receipts: item.receipts.map((receipt) => ({
 									id: receipt.id,
 									fileName: receipt.fileName,
 								})),
+								mileage:
+									item.mileage?.calculation?.status === "calculated"
+										? item.mileage.calculation
+										: null,
 							}))}
 						/>
 						{totals && <ReportTotals id={`${reportId}-review`} totals={totals} />}

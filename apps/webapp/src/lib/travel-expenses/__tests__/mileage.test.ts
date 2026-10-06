@@ -17,7 +17,12 @@ const policy: AppliedMileagePolicy = {
 	vehicle: "car",
 	ratePerKm: "0.3000",
 	currency: "EUR",
-	source: { kind: "organization", reference: "Travel policy 2026", version: null, defaultKey: null },
+	source: {
+		kind: "organization",
+		reference: "Travel policy 2026",
+		version: null,
+		defaultKey: null,
+	},
 };
 
 function version(
@@ -172,7 +177,11 @@ describe("calculateMileageItem", () => {
 			vehicle: "car",
 		});
 		expect(
-			calculateMileageItem(draft, { status: "found", policy: { ...policy, currency: "CHF" } }, "EUR"),
+			calculateMileageItem(
+				draft,
+				{ status: "found", policy: { ...policy, currency: "CHF" } },
+				"EUR",
+			),
 		).toEqual({ status: "currency_mismatch", policyCurrency: "CHF" });
 		expect(
 			calculateMileageItem({ ...draft, distanceKm: null }, { status: "found", policy }, "EUR"),
@@ -205,10 +214,16 @@ describe("mileageItemMissingRequirements", () => {
 			}),
 		).toEqual(["mileage_policy_missing"]);
 		expect(
-			mileageItemMissingRequirements(withCar, { status: "currency_mismatch", policyCurrency: "CHF" }),
+			mileageItemMissingRequirements(withCar, {
+				status: "currency_mismatch",
+				policyCurrency: "CHF",
+			}),
 		).toEqual(["mileage_currency"]);
 		expect(
-			mileageItemMissingRequirements(withCar, calculateMileageItem(withCar, { status: "found", policy }, "EUR")),
+			mileageItemMissingRequirements(
+				withCar,
+				calculateMileageItem(withCar, { status: "found", policy }, "EUR"),
+			),
 		).toEqual([]);
 	});
 });

@@ -540,7 +540,7 @@ export function ReceiptItemEditor({
 }
 
 /** Removes an expense, and its receipts, after an explicit confirmation. */
-function RemoveExpenseButton({
+export function RemoveExpenseButton({
 	label,
 	busy,
 	onConfirm,

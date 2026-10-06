@@ -41,7 +41,11 @@ describe("parseMileagePolicyVersionInput", () => {
 			}),
 		).toEqual({
 			ok: false,
-			errors: { effectiveFrom: "invalid_date", currency: "invalid_currency", rates: "rate_required" },
+			errors: {
+				effectiveFrom: "invalid_date",
+				currency: "invalid_currency",
+				rates: "rate_required",
+			},
 		});
 		expect(
 			parseMileagePolicyVersionInput({

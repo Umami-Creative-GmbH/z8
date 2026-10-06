@@ -4,6 +4,7 @@ import { IconFileText } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { formatCountry, formatMoney, formatPlainDate, formatPlainDateRange } from "./format";
+import { MileageBreakdown, type MileageBreakdownFacts } from "./mileage-breakdown";
 import { categoryLabel } from "./receipt-item-editor";
 
 export interface ExpenseSummary {
@@ -15,6 +16,8 @@ export interface ExpenseSummary {
 	currency: string | null;
 	paidBy: "employee" | "company" | null;
 	receipts: { id: string; fileName: string; href?: string }[];
+	/** A mileage expense's calculation (#606). */
+	mileage?: MileageBreakdownFacts | null;
 }
 
 export interface TripSummary {
@@ -98,6 +101,7 @@ export function ExpenseSummaryList({ items }: { items: ExpenseSummary[] }) {
 							.filter(Boolean)
 							.join(" · ")}
 					</p>
+					{item.mileage && <MileageBreakdown facts={item.mileage} />}
 					{item.receipts.length > 0 && (
 						<ul className="mt-2 flex flex-wrap gap-2 text-sm">
 							{item.receipts.map((receipt) => (
