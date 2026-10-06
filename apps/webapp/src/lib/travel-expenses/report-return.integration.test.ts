@@ -6,7 +6,6 @@
  * session, notifications and object storage are replaced.
  */
 
-import { createHash } from "node:crypto";
 import { Effect } from "effect";
 import type { NextRequest } from "next/server";
 import type { PoolClient } from "pg";
@@ -64,7 +63,11 @@ vi.mock("@/lib/notifications/triggers", async (original) => ({
 		});
 	},
 	onTravelExpenseReportReturned: async (params: { reportId: string; note: string }) => {
-		harness.notifications.push({ action: "return", reportId: params.reportId, reason: params.note });
+		harness.notifications.push({
+			action: "return",
+			reportId: params.reportId,
+			reason: params.note,
+		});
 	},
 }));
 vi.mock("@/lib/storage/s3-client", () => ({
@@ -106,7 +109,6 @@ const { POST: processReceipt } = await import(
 const { GET: getReceipt } = await import(
 	"@/app/api/travel-expenses/reports/[reportId]/receipts/[receiptId]/route"
 );
-const { GET: getApprovalDetail } = await import("@/app/api/approvals/inbox/[id]/route");
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
 const { POST: rejectRoute } = await import("@/app/api/approvals/inbox/[id]/reject/route");
 const { TravelExpenseReportHandler } = await import(
@@ -344,13 +346,6 @@ function decide(kind: "approve" | "reject", requestId: string, reason?: string) 
 	);
 }
 
-async function holdReportLock(reportId: string): Promise<PoolClient> {
-	const holder = await admin.connect();
-	await holder.query("begin");
-	await holder.query("select id from travel_expense_report where id = $1 for update", [reportId]);
-	return holder;
-}
-
 async function waitForLockWaiters(count: number) {
 	for (let attempt = 0; attempt < 400; attempt += 1) {
 		const { rows } = await admin.query<{ waiters: number }>(
@@ -555,9 +550,9 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 				receiptId: frozenReceiptId,
 			}),
 		).toEqual({ success: true, data: { receiptId: frozenReceiptId } });
-		expect((await upload(reportId, hotel.id, Buffer.from("%PDF-1.4\n% itemized\n%%EOF"))).status).toBe(
-			200,
-		);
+		expect(
+			(await upload(reportId, hotel.id, Buffer.from("%PDF-1.4\n% itemized\n%%EOF"))).status,
+		).toBe(200);
 		// The removed receipt is still the evidence of the first submission: kept.
 		const { rows: cleanups } = await admin.query(
 			"select id from travel_expense_receipt_upload where id = $1",
@@ -614,9 +609,7 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 				{ cycle: 2, outcome: "approved" },
 			],
 		});
-		expect(
-			finalView.data.history.map((event) => [event.cycle, event.label] as const),
-		).toEqual([
+		expect(finalView.data.history.map((event) => [event.cycle, event.label] as const)).toEqual([
 			[1, "submitted"],
 			[1, "returned"],
 			[2, "submitted"],
@@ -630,9 +623,9 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		const requestId = await pendingRequestId(reportId);
 
 		signIn("manager");
-		expect(await reviewActions.withdrawTravelExpenseReportAction({ reportId, submissionCycle: 1 })).toEqual(
-			{ success: false, error: "Expense report not found" },
-		);
+		expect(
+			await reviewActions.withdrawTravelExpenseReportAction({ reportId, submissionCycle: 1 }),
+		).toEqual({ success: false, error: "Expense report not found" });
 		expect(await withdraw(reportId, 2)).toEqual({ success: true, data: { status: "not_pending" } });
 		expect(await withdraw(reportId, 1)).toEqual({ success: true, data: { status: "withdrawn" } });
 		const state = await reportState(reportId);
@@ -641,7 +634,9 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 			submission_count: 1,
 			revisions: 1,
 			decisions: 0,
-			requests: [expect.objectContaining({ id: requestId, status: "rejected", rejection_reason: null })],
+			requests: [
+				expect.objectContaining({ id: requestId, status: "rejected", rejection_reason: null }),
+			],
 		});
 		expect(await closuresOf(reportId)).toEqual([
 			expect.objectContaining({ submission_cycle: 1, kind: "withdrawn", note: null, notes: [] }),

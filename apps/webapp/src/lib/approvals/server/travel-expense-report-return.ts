@@ -184,7 +184,11 @@ function preflightReportReturn(
 	});
 }
 
-function persistReportReturn(dbService: ApprovalDbService, reportId: string, actor: CurrentApprover) {
+function persistReportReturn(
+	dbService: ApprovalDbService,
+	reportId: string,
+	actor: CurrentApprover,
+) {
 	return dbService
 		.query("returnTravelExpenseReport", async () => {
 			const returnedAt = new Date();
@@ -485,7 +489,10 @@ export async function executeTravelExpenseReportReturnInTransaction(
 				parsed.error === "note_required"
 					? "A note is required to return an expense report"
 					: `The return could not be recorded: ${parsed.error}`,
-			field: parsed.error === "note_required" || parsed.error === "note_too_long" ? "note" : "itemComments",
+			field:
+				parsed.error === "note_required" || parsed.error === "note_too_long"
+					? "note"
+					: "itemComments",
 		});
 	}
 	const note = parsed.value.note;

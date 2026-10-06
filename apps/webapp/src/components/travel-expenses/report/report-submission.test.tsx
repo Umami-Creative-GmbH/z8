@@ -37,7 +37,18 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
+	withdrawTravelExpenseReportAction: vi.fn(),
+}));
+vi.mock("@/navigation", () => ({
+	Link: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 
+import * as reviewActions from "@/app/[locale]/(app)/travel-expenses/report-review-actions";
 import { TravelExpenseReportEditor } from "./travel-expense-report-editor";
 
 const reportId = "6a020000-0000-4000-8000-000000000001";
@@ -207,19 +218,29 @@ describe("report submission", () => {
 		);
 	});
 
-	it("shows a submitted report read-only instead of its draft forms", async () => {
-		reportActions.getMyTravelExpenseReport.mockResolvedValue(tripReport({ status: "submitted" }));
-		reportActions.getTravelExpenseReportSubmission.mockResolvedValue({
+	function submittedView(overrides: Record<string, unknown> = {}) {
+		return {
 			success: true,
 			data: {
 				reportId,
 				status: "submitted",
 				access: "owner",
+				submissionCycle: 1,
+				latestCycle: 1,
+				cycleOutcome: "pending",
 				submittedAt: "2026-10-06T08:00:00.000Z",
 				reviewerName: "Morgan Manager",
 				decision: null,
+				returned: null,
+				cycles: [{ cycle: 1, submittedAt: "2026-10-06T08:00:00.000Z", outcome: "pending" }],
 				history: [
-					{ id: "s", label: "submitted", at: "2026-10-06T08:00:00.000Z", actorName: "Avery" },
+					{
+						id: "s",
+						cycle: 1,
+						label: "submitted",
+						at: "2026-10-06T08:00:00.000Z",
+						actorName: "Avery",
+					},
 				],
 				facts: {
 					reportKind: "trip",
@@ -247,14 +268,92 @@ describe("report submission", () => {
 					],
 					totals: { currency: "EUR", reimbursable: "89.90", companyPaid: "0.00" },
 				},
+				...overrides,
 			},
-		});
+		};
+	}
+
+	it("shows a submitted report read-only instead of its draft forms", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			tripReport({ status: "submitted", submissionCount: 1 }),
+		);
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView());
 		mount();
 
 		expect(await screen.findByText("Awaiting review")).toBeTruthy();
 		expect(screen.getByText("Morgan Manager", { exact: false })).toBeTruthy();
 		expect(screen.queryByRole("textbox", { name: "Purpose of the trip" })).toBeNull();
 		const link = screen.getByRole("link", { name: /ticket\.pdf/ });
-		expect(link.getAttribute("href")).toBe(`/api/travel-expenses/reports/${reportId}/receipts/r-1`);
+		// Each submission's receipts are the exact frozen files of that cycle (#603).
+		expect(link.getAttribute("href")).toBe(
+			`/api/travel-expenses/reports/${reportId}/receipts/r-1?cycle=1`,
+		);
+	});
+
+	it("withdraws a pending submission after the employee confirms it", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			tripReport({ status: "submitted", submissionCount: 1 }),
+		);
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(submittedView());
+		vi.mocked(reviewActions.withdrawTravelExpenseReportAction).mockResolvedValue({
+			success: true,
+			data: { status: "withdrawn" },
+		});
+		mount();
+
+		fireEvent.click(await screen.findByRole("button", { name: "Withdraw report" }));
+		const dialog = await screen.findByRole("alertdialog", { name: "Withdraw this report?" });
+		fireEvent.click(within(dialog).getByRole("button", { name: "Withdraw" }));
+
+		await waitFor(() =>
+			expect(reviewActions.withdrawTravelExpenseReportAction).toHaveBeenCalledWith({
+				reportId,
+				submissionCycle: 1,
+			}),
+		);
+		await waitFor(() => expect(toast.success).toHaveBeenCalled());
+		// The report is reloaded and opens as an editable draft again.
+		await waitFor(() => expect(reportActions.getMyTravelExpenseReport).toHaveBeenCalledTimes(2));
+	});
+
+	it("shows the reviewer's note and comments on a returned report and lets the employee correct and resubmit it", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			tripReport({ status: "returned", submissionCount: 1 }),
+		);
+		reportActions.getTravelExpenseReportSubmission.mockResolvedValue(
+			submittedView({
+				status: "returned",
+				cycleOutcome: "returned",
+				reviewerName: null,
+				returned: {
+					note: "The hotel invoice is not itemized.",
+					returnedAt: "2026-10-06T09:00:00.000Z",
+					reviewerName: "Morgan Manager",
+					itemComments: [
+						{
+							itemId: hotelId,
+							number: 2,
+							description: "Hotel Hamburg",
+							body: "Upload the itemized invoice",
+						},
+					],
+				},
+				cycles: [{ cycle: 1, submittedAt: "2026-10-06T08:00:00.000Z", outcome: "returned" }],
+			}),
+		);
+		mount();
+
+		expect(await screen.findByText("The hotel invoice is not itemized.")).toBeTruthy();
+		expect(screen.getByText("Upload the itemized invoice")).toBeTruthy();
+		expect(screen.getByText("Returned for changes")).toBeTruthy();
+		// The earlier submission stays readable.
+		expect(
+			screen
+				.getByRole("link", { name: /Submission 1 on .*returned for changes/ })
+				.getAttribute("href"),
+		).toBe(`/travel-expenses/reports/${reportId}?cycle=1`);
+		// The returned report is edited and submitted like a draft.
+		expect(screen.getByRole("textbox", { name: "Purpose of the trip" })).toBeTruthy();
+		expect((await reviewButton()).disabled).toBe(false);
 	});
 });

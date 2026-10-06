@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { Effect } from "effect";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import "@/lib/approvals/init";
@@ -38,7 +38,9 @@ const withdrawSchema = z.object({
 	submissionCycle: z.number().int().positive(),
 });
 
-export type WithdrawTravelExpenseReportOutcome = { status: "withdrawn" } | { status: "not_pending" };
+export type WithdrawTravelExpenseReportOutcome =
+	| { status: "withdrawn" }
+	| { status: "not_pending" };
 
 export async function withdrawTravelExpenseReportAction(input: {
 	reportId: string;

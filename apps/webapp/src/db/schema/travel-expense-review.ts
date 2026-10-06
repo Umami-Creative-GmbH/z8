@@ -102,14 +102,8 @@ export const travelExpenseReportReviewNote = pgTable(
 				travelExpenseReportCycleClosure.organizationId,
 			],
 		}).onDelete("cascade"),
-		uniqueIndex("travelExpenseReportReviewNote_closure_item_idx").on(
-			table.closureId,
-			table.itemId,
-		),
+		uniqueIndex("travelExpenseReportReviewNote_closure_item_idx").on(table.closureId, table.itemId),
 		index("travelExpenseReportReviewNote_org_idx").on(table.organizationId),
-		check(
-			"travel_expense_report_review_note_body_check",
-			sql`length(btrim(${table.body})) > 0`,
-		),
+		check("travel_expense_report_review_note_body_check", sql`length(btrim(${table.body})) > 0`),
 	],
 );

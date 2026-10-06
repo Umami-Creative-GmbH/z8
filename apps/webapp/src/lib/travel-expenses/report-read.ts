@@ -242,7 +242,8 @@ export async function loadSubmittedReportView(
 	const closureOf = (submissionCycle: number) =>
 		closures.find((closure) => closure.submissionCycle === submissionCycle);
 	const decisionsOf = (submissionCycle: number) =>
-		decisionsByRevision[revisions.findIndex((rev) => rev.submissionCycle === submissionCycle)] ?? [];
+		decisionsByRevision[revisions.findIndex((rev) => rev.submissionCycle === submissionCycle)] ??
+		[];
 	const finalOf = (submissionCycle: number) =>
 		decisionsOf(submissionCycle).find(
 			(decision) =>

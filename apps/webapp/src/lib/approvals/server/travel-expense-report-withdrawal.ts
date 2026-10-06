@@ -255,7 +255,11 @@ export async function withdrawTravelExpenseReport(
 				cycleId: legacyDeliveryCycleId({ chainInstanceId, approvalRequestId: request.id }),
 				event: "withdrawn",
 			});
-			return { kind: "withdrawn", submissionCycle: input.submissionCycle, replayed: false } as const;
+			return {
+				kind: "withdrawn",
+				submissionCycle: input.submissionCycle,
+				replayed: false,
+			} as const;
 		});
 		if (deliveryIntent) {
 			try {
