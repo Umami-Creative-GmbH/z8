@@ -7,7 +7,7 @@
 
 import { IconCalendarOff } from "@tabler/icons-react";
 import { and, count, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { absenceEntry, approvalRequest } from "@/db/schema";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/lib/absences/date-utils";
 import type { SickDetail } from "@/lib/absences/types";
 import { type AnyAppError, NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,
@@ -85,11 +85,12 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 				entityType: "absence_entry",
 				params,
 				fetchEntitiesByIds: (entityIds) =>
-					Effect.gen(function* (_) {
-						const dbService = yield* _(DatabaseService);
+					Effect.gen(function* () {
+						const dbService = yield* DatabaseService;
 
-						const absences = yield* _(
-							dbService.query("batchGetAbsences", async () => {
+						const absences = yield* dbService.query(
+							"batchGetAbsences",
+							async () => {
 								return await dbService.db.query.absenceEntry.findMany({
 									where: and(
 										inArray(absenceEntry.id, entityIds),
@@ -100,7 +101,7 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 										employee: { with: { user: true } },
 									},
 								});
-							}),
+							},
 						);
 
 						const map = new Map<string, AbsenceWithRelations>();
@@ -172,8 +173,8 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 			}),
 
 		getCount: (approverId, organizationId, visibility) =>
-			Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 				const conditions = buildBaseConditions("absence_entry", {
 					approverId,
 					organizationId,
@@ -182,8 +183,9 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 					...visibility,
 				});
 
-				const result = yield* _(
-					dbService.query("getabsence_entryCount", async () => {
+				const result = yield* dbService.query(
+					"getabsence_entryCount",
+					async () => {
 						return await dbService.db
 							.select({ count: count() })
 							.from(approvalRequest)
@@ -195,30 +197,28 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 								),
 							)
 							.where(and(...conditions, eq(absenceEntry.status, "pending")));
-					}),
+					},
 				);
 
 				return result[0]?.count ?? 0;
 			}),
 
 		getDetail: (entityId, organizationId) =>
-			Effect.gen(function* (_) {
+			Effect.gen(function* () {
 				if (!organizationId) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Absence not found in this organization",
-								entityType: "absence_entry",
-								entityId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Absence not found in this organization",
+							entityType: "absence_entry",
+							entityId,
+						}),
 					);
 				}
-				const dbService = yield* _(DatabaseService);
+				const dbService = yield* DatabaseService;
 
 				// Fetch absence with full details
-				const absence = yield* _(
-					dbService.query("getAbsenceDetail", async () => {
+				const absence = yield* dbService
+					.query("getAbsenceDetail", async () => {
 						return await dbService.db.query.absenceEntry.findFirst({
 							where: and(
 								eq(absenceEntry.id, entityId),
@@ -229,35 +229,34 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 								employee: { with: { user: true } },
 							},
 						});
-					}),
-					Effect.flatMap((a) =>
-						a
-							? Effect.succeed(a as AbsenceWithRelations)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Absence not found",
-										entityType: "absence_entry",
-										entityId,
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((a) =>
+							a
+								? Effect.succeed(a as AbsenceWithRelations)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Absence not found",
+											entityType: "absence_entry",
+											entityId,
+										}),
+									),
+						),
+					);
 
 				if (absence.employee.organizationId !== organizationId) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Absence not found in this organization",
-								entityType: "absence_entry",
-								entityId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Absence not found in this organization",
+							entityType: "absence_entry",
+							entityId,
+						}),
 					);
 				}
 
 				// Fetch approval request
-				const request = yield* _(
-					dbService.query("getApprovalRequest", async () => {
+				const request = yield* dbService
+					.query("getApprovalRequest", async () => {
 						return await dbService.db.query.approvalRequest.findFirst({
 							where: and(
 								eq(approvalRequest.organizationId, organizationId),
@@ -268,18 +267,19 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 								approver: { with: { user: true } },
 							},
 						});
-					}),
-					Effect.flatMap((r) =>
-						r
-							? Effect.succeed(r)
-							: Effect.fail(
-									new NotFoundError({
-										message: "Approval request not found",
-										entityType: "approval_request",
-									}),
-								),
-					),
-				);
+					})
+					.pipe(
+						Effect.flatMap((r) =>
+							r
+								? Effect.succeed(r)
+								: Effect.fail(
+										new NotFoundError({
+											message: "Approval request not found",
+											entityType: "approval_request",
+										}),
+									),
+						),
+					);
 
 				const priority = AbsenceRequestHandler.calculatePriority(
 					absence,
@@ -365,45 +365,37 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 			}),
 
 		approve: (entityId, _approverId, options) =>
-			Effect.gen(function* (_) {
-				const { executeAuthenticatedAbsenceDecision } = yield* _(
-					Effect.promise(
-						async () => import("@/lib/approvals/server/absence-approvals"),
-					),
+			Effect.gen(function* () {
+				const { executeAuthenticatedAbsenceDecision } = yield* Effect.promise(
+					async () => import("@/lib/approvals/server/absence-approvals"),
 				);
-				yield* _(
-					Effect.tryPromise({
-						try: () =>
-							executeAuthenticatedAbsenceDecision(
-								entityId,
-								"approve",
-								undefined,
-								options,
-							),
-						catch: (error) => error as AnyAppError,
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: () =>
+						executeAuthenticatedAbsenceDecision(
+							entityId,
+							"approve",
+							undefined,
+							options,
+						),
+					catch: (error) => error as AnyAppError,
+				});
 			}),
 
 		reject: (entityId, _approverId, reason, options) =>
-			Effect.gen(function* (_) {
-				const { executeAuthenticatedAbsenceDecision } = yield* _(
-					Effect.promise(
-						async () => import("@/lib/approvals/server/absence-approvals"),
-					),
+			Effect.gen(function* () {
+				const { executeAuthenticatedAbsenceDecision } = yield* Effect.promise(
+					async () => import("@/lib/approvals/server/absence-approvals"),
 				);
-				yield* _(
-					Effect.tryPromise({
-						try: () =>
-							executeAuthenticatedAbsenceDecision(
-								entityId,
-								"reject",
-								reason,
-								options,
-							),
-						catch: (error) => error as AnyAppError,
-					}),
-				);
+				yield* Effect.tryPromise({
+					try: () =>
+						executeAuthenticatedAbsenceDecision(
+							entityId,
+							"reject",
+							reason,
+							options,
+						),
+					catch: (error) => error as AnyAppError,
+				});
 			}),
 
 		calculatePriority: (entity, createdAt) => {

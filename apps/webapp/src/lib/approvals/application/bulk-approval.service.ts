@@ -4,7 +4,7 @@
  * Handles bulk approval operations with transaction support.
  */
 
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -15,7 +15,7 @@ import {
 import {
 	DatabaseService,
 	DatabaseServiceLive,
-} from "@/lib/effect-v3/services/database.service";
+} from "@/lib/effect/services/database.service";
 import { getApprovalHandler } from "../domain/registry";
 import type {
 	ApprovalDecisionAction,
@@ -78,7 +78,7 @@ export function mapBulkDecisionError(
 // SERVICE DEFINITION
 // ============================================
 
-export class BulkApprovalService extends Context.Tag("BulkApprovalService")<
+export class BulkApprovalService extends Context.Service<
 	BulkApprovalService,
 	{
 		/**
@@ -94,7 +94,7 @@ export class BulkApprovalService extends Context.Tag("BulkApprovalService")<
 			actorUserId?: string,
 		) => Effect.Effect<BulkDecisionResult, AnyAppError, any>;
 	}
->() {}
+>()("BulkApprovalService") {}
 
 // ============================================
 // LIVE IMPLEMENTATION
@@ -102,8 +102,8 @@ export class BulkApprovalService extends Context.Tag("BulkApprovalService")<
 
 export const BulkApprovalServiceLive = Layer.effect(
 	BulkApprovalService,
-	Effect.gen(function* (_) {
-		const dbService = yield* _(DatabaseService);
+	Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
 
 		return BulkApprovalService.of({
 			bulkDecide: (
@@ -114,21 +114,21 @@ export const BulkApprovalServiceLive = Layer.effect(
 				reason,
 				_actorUserId,
 			) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const result: BulkDecisionResult = {
 						succeeded: [],
 						failed: [],
 					};
 
 					// Resolve compatibility requests and canonical assignments through one boundary.
-					const requests = yield* _(
-						dbService.query("getBulkApprovalDecisionTargets", async () =>
+					const requests = yield* dbService.query(
+						"getBulkApprovalDecisionTargets",
+						async () =>
 							loadApprovalInboxDecisionTargets({
 								approvalIds,
 								organizationId,
 								database: dbService.db,
 							}),
-						),
 					);
 
 					const requestsById = new Map(
@@ -210,15 +210,13 @@ export const BulkApprovalServiceLive = Layer.effect(
 										{ approvalRequestId: request.id },
 									);
 
-						const decisionResult = yield* _(
-							decisionEffect.pipe(
-								Effect.map(() => ({ success: true as const })),
-								Effect.catchAll((error) =>
-									Effect.succeed({
-										success: false as const,
-										failure: mapBulkDecisionError(request.id, error),
-									}),
-								),
+						const decisionResult = yield* decisionEffect.pipe(
+							Effect.map(() => ({ success: true as const })),
+							Effect.catch((error) =>
+								Effect.succeed({
+									success: false as const,
+									failure: mapBulkDecisionError(request.id, error),
+								}),
 							),
 						);
 

@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("drizzle-orm", async (importOriginal) => {
@@ -22,8 +22,8 @@ const mockState = vi.hoisted(() => ({
 	fetchEntitiesByIds: vi.fn(),
 }));
 
-vi.mock("@/lib/effect-v3/services/database.service", async () => {
-	const DatabaseService = Context.GenericTag<any>("DatabaseService");
+vi.mock("@/lib/effect/services/database.service", async () => {
+	const DatabaseService = Context.Service<any>("DatabaseService");
 
 	return {
 		DatabaseService,
@@ -49,7 +49,7 @@ import {
 	fetchApprovals,
 	getApprovalCount,
 } from "@/lib/approvals/handlers/base-handler";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 
 describe("fetchApprovals", () => {
 	beforeEach(() => {

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Runtime } from "effect-v3";
+import { Effect } from "effect";
 import { member } from "@/db/auth-schema";
 import { approvalWorkflow, employee } from "@/db/schema";
 import { systemClock } from "@/lib/datetime/temporal-core";
@@ -500,10 +500,9 @@ function legacyOutcome(result: ClassifiedBoundTimeResult): BoundLegacyTimeInvoca
 }
 
 function classifyBoundLegacyTimeError(error: unknown): ClassifiedBoundTimeResult {
-	// The legacy owners' own refusals arrive as Effect failures.
-	const failure = Runtime.isFiberFailure(error)
-		? Cause.squash(error[Runtime.FiberFailureCauseId])
-		: error;
+	// The legacy owners' own refusals arrive as Effect failures; Effect v4
+	// runPromise rejects with the failure itself.
+	const failure = error;
 	// No longer the approver, already decided or withdrawn, or no longer a
 	// classifiable time request: nothing is decided.
 	if (failure instanceof AuthorizationError || failure instanceof ValidationError) {

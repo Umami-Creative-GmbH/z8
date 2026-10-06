@@ -1,11 +1,11 @@
 import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { approvalRequest, employee, travelExpenseReport } from "@/db/schema";
 import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalActionOptions,
@@ -156,12 +156,10 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 			entityType: "travel_expense_report",
 			params,
 			fetchEntitiesByIds: (entityIds) =>
-				Effect.gen(function* (_) {
-					const dbService = yield* _(DatabaseService);
-					return yield* _(
-						dbService.query("batchGetTravelExpenseReports", () =>
-							loadReportEntities(dbService.db, params.organizationId, entityIds),
-						),
+				Effect.gen(function* () {
+					const dbService = yield* DatabaseService;
+					return yield* dbService.query("batchGetTravelExpenseReports", () =>
+						loadReportEntities(dbService.db, params.organizationId, entityIds),
 					);
 				}),
 			filterEntity: (entity, queryParams) => {
@@ -199,57 +197,47 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 		getApprovalCount("travel_expense_report", approverId, organizationId, visibility),
 
 	getDetail: (entityId, organizationId, context) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 			if (!organizationId) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Expense report not found",
-							entityType: "travel_expense_report",
-							entityId,
-						}),
-					),
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Expense report not found",
+						entityType: "travel_expense_report",
+						entityId,
+					}),
 				);
 			}
-			const entity = yield* _(
-				dbService.query("getTravelExpenseReportDetail", async () =>
-					(await loadReportEntities(dbService.db, organizationId, [entityId])).get(entityId),
-				),
+			const entity = yield* dbService.query("getTravelExpenseReportDetail", async () =>
+				(await loadReportEntities(dbService.db, organizationId, [entityId])).get(entityId),
 			);
 			if (!entity) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Expense report not found in this organization",
-							entityType: "travel_expense_report",
-							entityId,
-						}),
-					),
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Expense report not found in this organization",
+						entityType: "travel_expense_report",
+						entityId,
+					}),
 				);
 			}
-			const request = yield* _(
-				dbService.query("getTravelExpenseReportApprovalRequest", async () =>
-					dbService.db.query.approvalRequest.findFirst({
-						where: and(
-							eq(approvalRequest.entityType, "travel_expense_report"),
-							eq(approvalRequest.entityId, entityId),
-							eq(approvalRequest.organizationId, entity.organizationId),
-							...(context?.approvalId ? [eq(approvalRequest.id, context.approvalId)] : []),
-						),
-						with: { approver: { with: { user: true } } },
-					}),
-				),
+			const request = yield* dbService.query("getTravelExpenseReportApprovalRequest", async () =>
+				dbService.db.query.approvalRequest.findFirst({
+					where: and(
+						eq(approvalRequest.entityType, "travel_expense_report"),
+						eq(approvalRequest.entityId, entityId),
+						eq(approvalRequest.organizationId, entity.organizationId),
+						...(context?.approvalId ? [eq(approvalRequest.id, context.approvalId)] : []),
+					),
+					with: { approver: { with: { user: true } } },
+				}),
 			);
 			if (!request) {
-				return yield* _(
-					Effect.fail(
-						new NotFoundError({
-							message: "Approval request not found",
-							entityType: "approval_request",
-							entityId,
-						}),
-					),
+				return yield* Effect.fail(
+					new NotFoundError({
+						message: "Approval request not found",
+						entityType: "approval_request",
+						entityId,
+					}),
 				);
 			}
 			const approver = request.approver
@@ -308,30 +296,26 @@ export const TravelExpenseReportHandler: ApprovalTypeHandler<TravelExpenseReport
 		}),
 
 	approve: (entityId, approverId, options) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const actor = yield* _(loadTravelExpenseApprover(dbService, approverId));
-			yield* _(
-				decideTravelExpenseReportEffect(dbService, actor, {
-					reportId: entityId,
-					action: "approve",
-					...(options ? { options: decisionOptions(options) } : {}),
-				}),
-			);
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const actor = yield* loadTravelExpenseApprover(dbService, approverId);
+			yield* decideTravelExpenseReportEffect(dbService, actor, {
+				reportId: entityId,
+				action: "approve",
+				...(options ? { options: decisionOptions(options) } : {}),
+			});
 		}),
 
 	reject: (entityId, approverId, reason, options) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const actor = yield* _(loadTravelExpenseApprover(dbService, approverId));
-			yield* _(
-				decideTravelExpenseReportEffect(dbService, actor, {
-					reportId: entityId,
-					action: "reject",
-					reason,
-					...(options ? { options: decisionOptions(options) } : {}),
-				}),
-			);
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const actor = yield* loadTravelExpenseApprover(dbService, approverId);
+			yield* decideTravelExpenseReportEffect(dbService, actor, {
+				reportId: entityId,
+				action: "reject",
+				reason,
+				...(options ? { options: decisionOptions(options) } : {}),
+			});
 		}),
 
 	calculatePriority: (_entity, createdAt) => {

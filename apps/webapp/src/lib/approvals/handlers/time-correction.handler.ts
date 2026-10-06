@@ -7,7 +7,7 @@
 
 import { IconClockEdit } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
 	approvalChainStageInstance,
@@ -20,7 +20,7 @@ import {
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { formatCapturedOffsetInstant } from "@/lib/datetime/temporal-format";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalDetail,
@@ -599,24 +599,22 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 				entityType: "time_entry",
 				params,
 				fetchEntitiesByIds: (entityIds, requests) =>
-					Effect.gen(function* (_) {
-						const dbService = yield* _(DatabaseService);
+					Effect.gen(function* () {
+						const dbService = yield* DatabaseService;
 
-						const periods = yield* _(
-							dbService.query("batchGetWorkPeriods", async () => {
-								return await dbService.db.query.workPeriod.findMany({
-									where: and(
-										inArray(workPeriod.id, entityIds),
-										eq(workPeriod.organizationId, params.organizationId),
-									),
-									with: {
-										employee: { with: { user: true } },
-										clockIn: { with: { replacesEntry: true } },
-										clockOut: { with: { replacesEntry: true } },
-									},
-								});
-							}),
-						);
+						const periods = yield* dbService.query("batchGetWorkPeriods", async () => {
+							return await dbService.db.query.workPeriod.findMany({
+								where: and(
+									inArray(workPeriod.id, entityIds),
+									eq(workPeriod.organizationId, params.organizationId),
+								),
+								with: {
+									employee: { with: { user: true } },
+									clockIn: { with: { replacesEntry: true } },
+									clockOut: { with: { replacesEntry: true } },
+								},
+							});
+						});
 
 						const requestsByEntityId = new Map<string, typeof requests>();
 						for (const request of requests) {
@@ -649,53 +647,51 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 							),
 						];
 						const categoryIds = categoryIdsFromTimeCorrectionMetadata(requests);
-						const [correctionEntries, categories] = yield* _(
-							Effect.all(
-								[
-									originalEntryIds.length > 0
-										? dbService.query(
-												"batchGetTimeCorrectionReviewEntries",
-												async () => {
-													return await dbService.db.query.timeEntry.findMany({
-														where: and(
-															eq(timeEntry.type, "correction"),
-															inArray(timeEntry.employeeId, employeeIds),
-															inArray(
-																timeEntry.organizationId,
-																organizationIds,
-															),
-															inArray(
-																timeEntry.replacesEntryId,
-																originalEntryIds,
-															),
+						const [correctionEntries, categories] = yield* Effect.all(
+							[
+								originalEntryIds.length > 0
+									? dbService.query(
+											"batchGetTimeCorrectionReviewEntries",
+											async () => {
+												return await dbService.db.query.timeEntry.findMany({
+													where: and(
+														eq(timeEntry.type, "correction"),
+														inArray(timeEntry.employeeId, employeeIds),
+														inArray(
+															timeEntry.organizationId,
+															organizationIds,
 														),
-													});
-												},
-											)
-										: Effect.succeed([]),
-									categoryIds.length > 0
-										? dbService.query(
-												"batchGetTimeCorrectionReviewCategories",
-												async () =>
-													await dbService.db.query.workCategory.findMany({
-														where: and(
-															eq(
-																workCategory.organizationId,
-																params.organizationId,
-															),
-															inArray(workCategory.id, categoryIds),
+														inArray(
+															timeEntry.replacesEntryId,
+															originalEntryIds,
 														),
-														columns: {
-															id: true,
-															organizationId: true,
-															name: true,
-														},
-													}),
-											)
-										: Effect.succeed([]),
-								],
-								{ concurrency: "unbounded" },
-							),
+													),
+												});
+											},
+										)
+									: Effect.succeed([]),
+								categoryIds.length > 0
+									? dbService.query(
+											"batchGetTimeCorrectionReviewCategories",
+											async () =>
+												await dbService.db.query.workCategory.findMany({
+													where: and(
+														eq(
+															workCategory.organizationId,
+															params.organizationId,
+														),
+														inArray(workCategory.id, categoryIds),
+													),
+													columns: {
+														id: true,
+														organizationId: true,
+														name: true,
+													},
+												}),
+										)
+									: Effect.succeed([]),
+							],
+							{ concurrency: "unbounded" },
 						);
 						const categoryNamesById = categoryNamesForOrganization(
 							categories,
@@ -729,33 +725,31 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						return map;
 					}),
 				fetchRequestContexts: (requests) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						if (requests.length === 0)
 							return new Map<string, PublicApprovalStage>();
-						const dbService = yield* _(DatabaseService);
-						const stages = yield* _(
-							dbService.query("batchGetTimeApprovalPublicStages", async () => {
-								return await dbService.db.query.approvalChainStageInstance.findMany(
-									{
-										where: and(
-											eq(
-												approvalChainStageInstance.organizationId,
-												params.organizationId,
-											),
-											inArray(
-												approvalChainStageInstance.approvalRequestId,
-												requests.map((request) => request.id),
-											),
+						const dbService = yield* DatabaseService;
+						const stages = yield* dbService.query("batchGetTimeApprovalPublicStages", async () => {
+							return await dbService.db.query.approvalChainStageInstance.findMany(
+								{
+									where: and(
+										eq(
+											approvalChainStageInstance.organizationId,
+											params.organizationId,
 										),
-										columns: {
-											approvalRequestId: true,
-											labelSnapshot: true,
-											stepOrder: true,
-										},
+										inArray(
+											approvalChainStageInstance.approvalRequestId,
+											requests.map((request) => request.id),
+										),
+									),
+									columns: {
+										approvalRequestId: true,
+										labelSnapshot: true,
+										stepOrder: true,
 									},
-								);
-							}),
-						);
+								},
+							);
+						});
 						const stagesByRequest = new Map(
 							stages.flatMap((stage) =>
 								stage.approvalRequestId
@@ -852,12 +846,11 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			}).pipe(Effect.map((approvals) => approvals.length)),
 
 		getDetail: (entityId, organizationId, context) =>
-			Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
+			Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
 
 				// Fetch work period with full details
-				const period = yield* _(
-					dbService.query("getWorkPeriodDetail", async () => {
+				const period = yield* dbService.query("getWorkPeriodDetail", async () => {
 						return await dbService.db.query.workPeriod.findFirst({
 							where: and(
 								eq(workPeriod.id, entityId),
@@ -871,8 +864,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 								clockOut: { with: { replacesEntry: true } },
 							},
 						});
-					}),
-					Effect.flatMap((p) =>
+					}).pipe(Effect.flatMap((p) =>
 						p
 							? Effect.succeed(p as WorkPeriodWithRelations)
 							: Effect.fail(
@@ -882,28 +874,24 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 										entityId,
 									}),
 								),
-					),
-				);
+					));
 
 				// Validate organization access
 				if (
 					organizationId &&
 					period.employee.organizationId !== organizationId
 				) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Work period not found in this organization",
-								entityType: "work_period",
-								entityId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Work period not found in this organization",
+							entityType: "work_period",
+							entityId,
+						}),
 					);
 				}
 
 				// Fetch approval request
-				const request = yield* _(
-					dbService.query("getApprovalRequest", async () => {
+				const request = yield* dbService.query("getApprovalRequest", async () => {
 						return await dbService.db.query.approvalRequest.findFirst({
 							where: and(
 								...(context?.approvalId
@@ -919,8 +907,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 								approver: { with: { user: true } },
 							},
 						});
-					}),
-					Effect.flatMap((r) =>
+					}).pipe(Effect.flatMap((r) =>
 						r
 							? Effect.succeed(r)
 							: Effect.fail(
@@ -929,39 +916,34 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 										entityType: "approval_request",
 									}),
 								),
-					),
-				);
+					));
 				if (
 					request.organizationId !== period.employee.organizationId ||
 					request.requestedBy !== period.employee.id ||
 					!hasValidApprovalEndpoints(period, request.organizationId)
 				) {
-					return yield* _(
-						Effect.fail(
-							new NotFoundError({
-								message: "Work period not found",
-								entityType: "work_period",
-								entityId,
-							}),
-						),
+					return yield* Effect.fail(
+						new NotFoundError({
+							message: "Work period not found",
+							entityType: "work_period",
+							entityId,
+						}),
 					);
 				}
-				const chainStage = yield* _(
-					dbService.query("getTimeApprovalPublicStage", async () => {
-						return await dbService.db.query.approvalChainStageInstance.findFirst(
-							{
-								where: and(
-									eq(
-										approvalChainStageInstance.organizationId,
-										period.employee.organizationId,
-									),
-									eq(approvalChainStageInstance.approvalRequestId, request.id),
+				const chainStage = yield* dbService.query("getTimeApprovalPublicStage", async () => {
+					return await dbService.db.query.approvalChainStageInstance.findFirst(
+						{
+							where: and(
+								eq(
+									approvalChainStageInstance.organizationId,
+									period.employee.organizationId,
 								),
-								columns: { labelSnapshot: true, stepOrder: true },
-							},
-						);
-					}),
-				);
+								eq(approvalChainStageInstance.approvalRequestId, request.id),
+							),
+							columns: { labelSnapshot: true, stepOrder: true },
+						},
+					);
+				});
 
 				const priority = TimeCorrectionHandler.calculatePriority(
 					period,
@@ -1042,11 +1024,9 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 									}),
 							)
 						: Effect.succeed([]);
-				const [correctionEntries, categories] = yield* _(
-					Effect.all([correctionEntriesEffect, categoriesEffect], {
-						concurrency: "unbounded",
-					}),
-				);
+				const [correctionEntries, categories] = yield* Effect.all([correctionEntriesEffect, categoriesEffect], {
+					concurrency: "unbounded",
+				});
 				const categoryNamesById = categoryNamesForOrganization(
 					categories,
 					period.employee.organizationId,
@@ -1155,72 +1135,56 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 			}),
 
 		approve: (_entityId, approverId, options) =>
-			Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
-				const currentEmployee = yield* _(
-					loadCurrentApproverById(dbService, approverId),
-				);
+			Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
+				const currentEmployee = yield* loadCurrentApproverById(dbService, approverId);
 				if (!options?.approvalRequestId) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "A stable approval request target is required",
-								field: "approvalRequestId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "A stable approval request target is required",
+							field: "approvalRequestId",
+						}),
 					);
 				}
-				const { decideTimeCorrectionWithStableTargetEffect } = yield* _(
-					Effect.promise(
-						async () =>
-							import("@/lib/approvals/server/time-correction-approvals"),
-					),
+				const { decideTimeCorrectionWithStableTargetEffect } = yield* Effect.promise(
+					async () =>
+						import("@/lib/approvals/server/time-correction-approvals"),
 				);
 
-				yield* _(
-					decideTimeCorrectionWithStableTargetEffect(
-						dbService,
-						currentEmployee,
-						options.approvalRequestId,
-						"approve",
-						undefined,
-						options,
-					),
+				yield* decideTimeCorrectionWithStableTargetEffect(
+					dbService,
+					currentEmployee,
+					options.approvalRequestId,
+					"approve",
+					undefined,
+					options,
 				);
 			}),
 
 		reject: (_entityId, approverId, reason, options) =>
-			Effect.gen(function* (_) {
-				const dbService = yield* _(DatabaseService);
-				const currentEmployee = yield* _(
-					loadCurrentApproverById(dbService, approverId),
-				);
+			Effect.gen(function* () {
+				const dbService = yield* DatabaseService;
+				const currentEmployee = yield* loadCurrentApproverById(dbService, approverId);
 				if (!options?.approvalRequestId) {
-					return yield* _(
-						Effect.fail(
-							new ValidationError({
-								message: "A stable approval request target is required",
-								field: "approvalRequestId",
-							}),
-						),
+					return yield* Effect.fail(
+						new ValidationError({
+							message: "A stable approval request target is required",
+							field: "approvalRequestId",
+						}),
 					);
 				}
-				const { decideTimeCorrectionWithStableTargetEffect } = yield* _(
-					Effect.promise(
-						async () =>
-							import("@/lib/approvals/server/time-correction-approvals"),
-					),
+				const { decideTimeCorrectionWithStableTargetEffect } = yield* Effect.promise(
+					async () =>
+						import("@/lib/approvals/server/time-correction-approvals"),
 				);
 
-				yield* _(
-					decideTimeCorrectionWithStableTargetEffect(
-						dbService,
-						currentEmployee,
-						options.approvalRequestId,
-						"reject",
-						reason,
-						options,
-					),
+				yield* decideTimeCorrectionWithStableTargetEffect(
+					dbService,
+					currentEmployee,
+					options.approvalRequestId,
+					"reject",
+					reason,
+					options,
 				);
 			}),
 

@@ -6,7 +6,7 @@
  */
 
 import type { SQL } from "drizzle-orm";
-import type { Effect } from "effect-v3";
+import type { Effect } from "effect";
 import type { ComponentType } from "react";
 import type { AnyAppError } from "@/lib/effect/errors";
 

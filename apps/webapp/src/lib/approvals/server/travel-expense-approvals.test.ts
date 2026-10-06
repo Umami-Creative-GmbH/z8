@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { ConflictError, DatabaseError } from "@/lib/effect/errors";
 
@@ -237,7 +237,7 @@ describe("preflightTravelExpenseDecision", () => {
 		});
 		expect(compareSubmittedRevision).toHaveBeenCalledWith(dbService.db, revision);
 		expect(Exit.isFailure(exit)).toBe(true);
-		const failure = Exit.isFailure(exit) ? Cause.failureOption(exit.cause) : Option.none();
+		const failure = Exit.isFailure(exit) ? Cause.findErrorOption(exit.cause) : Option.none();
 		expect(Option.getOrNull(failure)).toMatchObject({
 			_tag: "ConflictError",
 			conflictType: "approval_evidence",
@@ -283,7 +283,7 @@ describe("preflightTravelExpenseDecision", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
-			expect(Option.getOrNull(Cause.failureOption(exit.cause))).toMatchObject({
+			expect(Option.getOrNull(Cause.findErrorOption(exit.cause))).toMatchObject({
 				_tag: "AuthorizationError",
 				message: "Unauthorized",
 			});
@@ -578,8 +578,8 @@ describe("persistTravelExpenseDecision", () => {
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
 			const error =
-				Option.getOrNull(Cause.failureOption(exit.cause)) ??
-				([...(Cause.defects(exit.cause) as Iterable<unknown>)][0] as unknown);
+				Option.getOrNull(Cause.findErrorOption(exit.cause)) ??
+				Result.getOrNull(Cause.findDefect(exit.cause));
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).toMatchObject({
 				message: "Only submitted claims can be decided",
@@ -632,7 +632,7 @@ describe("persistTravelExpenseDecision", () => {
 
 		expect(Exit.isFailure(exit)).toBe(true);
 		if (Exit.isFailure(exit)) {
-			const error = Option.getOrNull(Cause.failureOption(exit.cause));
+			const error = Option.getOrNull(Cause.findErrorOption(exit.cause));
 			expect(error).toBeInstanceOf(ConflictError);
 			expect(error).not.toBeInstanceOf(DatabaseError);
 			expect(error).toMatchObject({

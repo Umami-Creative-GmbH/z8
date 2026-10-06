@@ -1,5 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { Cause, Effect, Exit, Runtime } from "effect-v3";
+import { Effect } from "effect";
 import {
 	approvalRequest,
 	approvalStageAssignment,
@@ -22,11 +22,11 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { ConflictError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import {
 	SurchargeService,
 	SurchargeServiceLive,
-} from "@/lib/effect-v3/services/surcharge.service";
+} from "@/lib/effect/services/surcharge.service";
 import { createLogger } from "@/lib/logger";
 import {
 	onClockOutApproved,
@@ -121,7 +121,6 @@ import { createProductionApprovalWorkflowRuntime } from "../workflow/runtime";
 import { fingerprintApprovalCommandActor } from "../workflow/state-machine";
 import { fingerprintApprovalWorkflowCommand } from "../workflow/transition-engine";
 import { processApprovalWithCurrentEmployee } from "./shared";
-import { approvalDbServiceForTransaction } from "./v3-boundary";
 import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import {
 	type WorkPeriodDecisionScope,
@@ -153,11 +152,6 @@ export function isOrdinaryWorkPeriodDecisionRefusal(error: unknown): boolean {
  * learn which review blocks the approval; every other failure stays generic.
  */
 function unresolvedWorkPeriodReviewFrom(error: unknown): ConflictError | null {
-	if (Runtime.isFiberFailure(error)) {
-		return unresolvedWorkPeriodReviewFrom(
-			Cause.squash(error[Runtime.FiberFailureCauseId]),
-		);
-	}
 	return isUnresolvedWorkPeriodReview(error) ? error : null;
 }
 const logger = createLogger("WorkPeriodApprovals");
@@ -2200,55 +2194,49 @@ function finalizeCurrentWorkPeriodDecision(
 	reason: string | null,
 	requestMode: "manager" | "requester_auto_completed",
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		const requestedBy = (approval as ApprovalWithRequester).requestedBy;
-		const source = yield* _(
-			dbService.query("getOrdinaryApprovalWorkflowLink", async () => {
-				return await dbService.db.query.workPeriod.findFirst({
-					where: and(
-						eq(workPeriod.id, entityId),
-						eq(workPeriod.organizationId, approval.organizationId),
-						eq(workPeriod.employeeId, requestedBy),
-					),
-					columns: { approvalWorkflowId: true },
-				});
-			}),
-		);
+		const source = yield* dbService.query("getOrdinaryApprovalWorkflowLink", async () => {
+			return await dbService.db.query.workPeriod.findFirst({
+				where: and(
+					eq(workPeriod.id, entityId),
+					eq(workPeriod.organizationId, approval.organizationId),
+					eq(workPeriod.employeeId, requestedBy),
+				),
+				columns: { approvalWorkflowId: true },
+			});
+		});
 		if (!source) {
-			return yield* _(
-				Effect.fail(conflict("Ordinary work-period finalization conflict")),
-			);
+			return yield* Effect.fail(conflict("Ordinary work-period finalization conflict"));
 		}
 
-		return yield* _(
-			Effect.tryPromise({
-				try: () =>
-					finalizeOrdinaryWorkPeriodTerminalInTransaction({
-						dbService,
-						organizationId: approval.organizationId,
-						workPeriodId: entityId,
-						expectedApprovalWorkflowId: source.approvalWorkflowId,
-						requesterEmployeeId: requestedBy,
-						actorEmployeeId: currentEmployee.id,
-						actorUserId: currentEmployee.userId,
-						kind,
-						evidence: {
-							mode: "legacy",
-							approvalRequestId: approval.id,
-							requestMode,
-							expectedStatus: action === "approve" ? "approved" : "rejected",
-						},
-						transition:
-							action === "approve"
-								? { kind: "approve", reason }
-								: { kind: "reject", reason: reason ?? "" },
-						finalizedAt: systemClock.nowInstant(),
-					}),
-				catch: (error) =>
-					unresolvedWorkPeriodReviewFrom(error) ??
-					conflict("Ordinary work-period finalization conflict"),
-			}),
-		);
+		return yield* Effect.tryPromise({
+			try: () =>
+				finalizeOrdinaryWorkPeriodTerminalInTransaction({
+					dbService,
+					organizationId: approval.organizationId,
+					workPeriodId: entityId,
+					expectedApprovalWorkflowId: source.approvalWorkflowId,
+					requesterEmployeeId: requestedBy,
+					actorEmployeeId: currentEmployee.id,
+					actorUserId: currentEmployee.userId,
+					kind,
+					evidence: {
+						mode: "legacy",
+						approvalRequestId: approval.id,
+						requestMode,
+						expectedStatus: action === "approve" ? "approved" : "rejected",
+					},
+					transition:
+						action === "approve"
+							? { kind: "approve", reason }
+							: { kind: "reject", reason: reason ?? "" },
+					finalizedAt: systemClock.nowInstant(),
+				}),
+			catch: (error) =>
+				unresolvedWorkPeriodReviewFrom(error) ??
+				conflict("Ordinary work-period finalization conflict"),
+		});
 	});
 }
 
@@ -2348,17 +2336,15 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 	} = {
 		reconcileSurcharges: (facts) =>
 			Effect.runPromise(
-				Effect.gen(function* (_) {
-					const service = yield* _(SurchargeService);
-					yield* _(
-						service.reconcileWorkPeriods({
-							organizationId: facts.organizationId,
-							employeeId: facts.employeeId,
-							surchargePeriodIds: facts.surchargePeriodIds,
-							staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
-							surchargeSnapshot: facts.surchargeSnapshot,
-						}),
-					);
+				Effect.gen(function* () {
+					const service = yield* SurchargeService;
+					yield* service.reconcileWorkPeriods({
+						organizationId: facts.organizationId,
+						employeeId: facts.employeeId,
+						surchargePeriodIds: facts.surchargePeriodIds,
+						staleSurchargePeriodIds: facts.staleSurchargePeriodIds,
+						surchargeSnapshot: facts.surchargeSnapshot,
+					});
 				}).pipe(
 					Effect.provide(SurchargeServiceLive),
 					Effect.provide(DatabaseServiceLive),
@@ -2387,28 +2373,6 @@ export async function reconcileOrdinaryWorkPeriodMaintenanceAfterCommit(
 			"Ordinary work-period maintenance failed",
 		);
 	}
-}
-
-/**
- * The stable-target decision for callers outside an Effect v3 runtime. It rejects with
- * the typed failure itself, the way Effect v4 `runPromise` does, so Effect v4 callers read
- * it with `instanceof`. #632 removes it when the approvals module moves to v4.
- */
-export async function decideOrdinaryWorkPeriodWithStableTarget(
-	database: ApprovalDbService["db"],
-	currentEmployee: CurrentApprover,
-	input: Parameters<typeof decideOrdinaryWorkPeriodWithStableTargetEffect>[2],
-	options?: ApprovalActionOptions,
-): Promise<void> {
-	const exit = await Effect.runPromiseExit(
-		decideOrdinaryWorkPeriodWithStableTargetEffect(
-			approvalDbServiceForTransaction({ db: database }),
-			currentEmployee,
-			input,
-			options,
-		),
-	);
-	if (Exit.isFailure(exit)) throw Cause.squash(exit.cause);
 }
 
 export function decideOrdinaryWorkPeriodWithStableTargetEffect(
@@ -2577,51 +2541,45 @@ export function finalizeAutoCompletedWorkPeriodApprovalEffect(
 		kind: OrdinaryTimeApprovalKind;
 	},
 ) {
-	return Effect.gen(function* (_) {
-		const approvals = yield* _(
-			dbService.query("getAutoCompletedWorkPeriodApproval", async () => {
-				return await dbService.db
-					.select()
-					.from(approvalRequest)
-					.where(
-						and(
-							eq(approvalRequest.id, input.approvalRequestId),
-							eq(approvalRequest.organizationId, input.organizationId),
-							eq(approvalRequest.entityType, "time_entry"),
-							eq(approvalRequest.requestedBy, input.requesterEmployeeId),
-							eq(approvalRequest.status, "approved"),
-						),
-					);
-			}),
-		);
+	return Effect.gen(function* () {
+		const approvals = yield* dbService.query("getAutoCompletedWorkPeriodApproval", async () => {
+			return await dbService.db
+				.select()
+				.from(approvalRequest)
+				.where(
+					and(
+						eq(approvalRequest.id, input.approvalRequestId),
+						eq(approvalRequest.organizationId, input.organizationId),
+						eq(approvalRequest.entityType, "time_entry"),
+						eq(approvalRequest.requestedBy, input.requesterEmployeeId),
+						eq(approvalRequest.status, "approved"),
+					),
+				);
+		});
 		const approval = approvals[0];
 		if (!approval) {
-			return yield* _(
-				Effect.fail(conflict("Ordinary work-period finalization conflict")),
-			);
+			return yield* Effect.fail(conflict("Ordinary work-period finalization conflict"));
 		}
 
-		return yield* _(
-			finalizeCurrentWorkPeriodDecision(
-				dbService,
-				approval.entityId,
-				{
-					id: input.requesterEmployeeId,
-					userId: input.requesterUserId,
-					organizationId: input.organizationId,
-					user: {
-						id: input.requesterUserId,
-						name: input.requesterName,
-						email: "",
-						image: null,
-					},
+		return yield* finalizeCurrentWorkPeriodDecision(
+			dbService,
+			approval.entityId,
+			{
+				id: input.requesterEmployeeId,
+				userId: input.requesterUserId,
+				organizationId: input.organizationId,
+				user: {
+					id: input.requesterUserId,
+					name: input.requesterName,
+					email: "",
+					image: null,
 				},
-				approval as PendingApprovalRequest,
-				input.kind,
-				"approve",
-				"requester_is_approver",
-				"requester_auto_completed",
-			),
+			},
+			approval as PendingApprovalRequest,
+			input.kind,
+			"approve",
+			"requester_is_approver",
+			"requester_auto_completed",
 		);
 	});
 }

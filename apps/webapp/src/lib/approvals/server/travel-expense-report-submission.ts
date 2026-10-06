@@ -1,5 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import type { db as appDb } from "@/db";
 import {
 	approvalChainStageInstance,
@@ -196,8 +196,8 @@ function policyContext(input: {
 
 function failureOf(cause: Cause.Cause<unknown>): unknown {
 	return (
-		Option.getOrNull(Cause.failureOption(cause)) ??
-		[...Cause.defects(cause)][0] ??
+		Option.getOrNull(Cause.findErrorOption(cause)) ??
+		Result.getOrNull(Cause.findDefect(cause)) ??
 		new Error("An error has occurred")
 	);
 }

@@ -52,11 +52,11 @@ vi.mock("@/env", () => ({
 	},
 }));
 
-vi.mock("@/lib/effect-v3/runtime", async () => {
-	const { Effect, Layer } = await import("effect-v3");
-	const { AuthService } = await import("@/lib/effect-v3/services/auth.service");
+vi.mock("@/lib/effect/runtime", async () => {
+	const { Effect, Layer } = await import("effect");
+	const { AuthService } = await import("@/lib/effect/services/auth.service");
 	const { DatabaseService } = await import(
-		"@/lib/effect-v3/services/database.service"
+		"@/lib/effect/services/database.service"
 	);
 	const AppLayer = Layer.merge(
 		Layer.succeed(

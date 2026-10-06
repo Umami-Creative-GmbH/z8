@@ -1,11 +1,11 @@
 import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
-import { Effect } from "effect-v3";
+import { Effect } from "effect";
 import { DateTime } from "luxon";
 import { approvalRequest, travelExpenseClaim } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
-import { DatabaseService } from "@/lib/effect-v3/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
 import type {
 	ApprovalActionOptions,
@@ -172,23 +172,21 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 			entityType: "travel_expense_claim",
 			params,
 			fetchEntitiesByIds: (entityIds) =>
-				Effect.gen(function* (_) {
-					const dbService = yield* _(DatabaseService);
+				Effect.gen(function* () {
+					const dbService = yield* DatabaseService;
 
-					const claims = yield* _(
-						dbService.query("batchGetTravelExpenseClaims", async () => {
-							return await dbService.db.query.travelExpenseClaim.findMany({
-								where: and(
-									inArray(travelExpenseClaim.id, entityIds),
-									eq(travelExpenseClaim.organizationId, params.organizationId),
-								),
-								with: {
-									employee: { with: { user: true } },
-									project: true,
-								},
-							});
-						}),
-					);
+					const claims = yield* dbService.query("batchGetTravelExpenseClaims", async () => {
+						return await dbService.db.query.travelExpenseClaim.findMany({
+							where: and(
+								inArray(travelExpenseClaim.id, entityIds),
+								eq(travelExpenseClaim.organizationId, params.organizationId),
+							),
+							with: {
+								employee: { with: { user: true } },
+								project: true,
+							},
+						});
+					});
 
 					const map = new Map<string, TravelExpenseClaimWithRelations>();
 					for (const claim of claims) {
@@ -254,11 +252,11 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 		getApprovalCount("travel_expense_claim", approverId, organizationId, visibility),
 
 	getDetail: (entityId, organizationId, context) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 
-			const claim = yield* _(
-				dbService.query("getTravelExpenseClaimDetail", async () => {
+			const claim = yield* dbService
+				.query("getTravelExpenseClaimDetail", async () => {
 					return await dbService.db.query.travelExpenseClaim.findFirst({
 						where: and(
 							eq(travelExpenseClaim.id, entityId),
@@ -269,24 +267,25 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 							project: true,
 						},
 					});
-				}),
-				Effect.flatMap((claim) =>
-					claim
-						? Effect.succeed(claim as TravelExpenseClaimWithRelations)
-						: Effect.fail(
-								new NotFoundError({
-									message: organizationId
-										? "Travel expense claim not found in this organization"
-										: "Travel expense claim not found",
-									entityType: "travel_expense_claim",
-									entityId,
-								}),
-							),
-				),
-			);
+				})
+				.pipe(
+					Effect.flatMap((claim) =>
+						claim
+							? Effect.succeed(claim as TravelExpenseClaimWithRelations)
+							: Effect.fail(
+									new NotFoundError({
+										message: organizationId
+											? "Travel expense claim not found in this organization"
+											: "Travel expense claim not found",
+										entityType: "travel_expense_claim",
+										entityId,
+									}),
+								),
+					),
+				);
 
-			const request = yield* _(
-				dbService.query("getTravelExpenseApprovalRequest", async () => {
+			const request = yield* dbService
+				.query("getTravelExpenseApprovalRequest", async () => {
 					// The exact request (a chain has one per stage), in the claim's
 					// organization; never another stage's or tenant's row.
 					return await dbService.db.query.approvalRequest.findFirst({
@@ -300,19 +299,20 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 							approver: { with: { user: true } },
 						},
 					});
-				}),
-				Effect.flatMap((request) =>
-					request
-						? Effect.succeed(request)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Approval request not found",
-									entityType: "approval_request",
-									entityId,
-								}),
-							),
-				),
-			);
+				})
+				.pipe(
+					Effect.flatMap((request) =>
+						request
+							? Effect.succeed(request)
+							: Effect.fail(
+									new NotFoundError({
+										message: "Approval request not found",
+										entityType: "approval_request",
+										entityId,
+									}),
+								),
+					),
+				);
 
 			const priority = TravelExpenseClaimHandler.calculatePriority(claim, request.createdAt);
 			const slaDeadline = TravelExpenseClaimHandler.calculateSLADeadline(claim, request.createdAt);
@@ -391,32 +391,28 @@ export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWi
 		}),
 
 	approve: (entityId, approverId, options) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const currentEmployee = yield* _(loadTravelExpenseApprover(dbService, approverId));
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const currentEmployee = yield* loadTravelExpenseApprover(dbService, approverId);
 			// One owner for every expense decision: replay, frozen-submission holds,
 			// decision evidence and delivery commit with the legacy mutation (#296).
-			yield* _(
-				decideTravelExpenseClaimEffect(dbService, currentEmployee, {
-					claimId: entityId,
-					action: "approve",
-					...(options ? { options: decisionOptions(options) } : {}),
-				}),
-			);
+			yield* decideTravelExpenseClaimEffect(dbService, currentEmployee, {
+				claimId: entityId,
+				action: "approve",
+				...(options ? { options: decisionOptions(options) } : {}),
+			});
 		}),
 
 	reject: (entityId, approverId, reason, options) =>
-		Effect.gen(function* (_) {
-			const dbService = yield* _(DatabaseService);
-			const currentEmployee = yield* _(loadTravelExpenseApprover(dbService, approverId));
-			yield* _(
-				decideTravelExpenseClaimEffect(dbService, currentEmployee, {
-					claimId: entityId,
-					action: "reject",
-					reason,
-					...(options ? { options: decisionOptions(options) } : {}),
-				}),
-			);
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const currentEmployee = yield* loadTravelExpenseApprover(dbService, approverId);
+			yield* decideTravelExpenseClaimEffect(dbService, currentEmployee, {
+				claimId: entityId,
+				action: "reject",
+				reason,
+				...(options ? { options: decisionOptions(options) } : {}),
+			});
 		}),
 
 	calculatePriority: (_entity, createdAt) => {

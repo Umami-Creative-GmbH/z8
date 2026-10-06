@@ -5,9 +5,9 @@
  * sorting, and cursor-based pagination.
  */
 
-import { Context, Effect, Layer } from "effect-v3";
+import { Context, Effect, Layer } from "effect";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect-v3/services/database.service";
+import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {
@@ -108,7 +108,7 @@ function isItemAfterCursor(
 // SERVICE DEFINITION
 // ============================================
 
-export class ApprovalQueryService extends Context.Tag("ApprovalQueryService")<
+export class ApprovalQueryService extends Context.Service<
 	ApprovalQueryService,
 	{
 		/**
@@ -129,7 +129,7 @@ export class ApprovalQueryService extends Context.Tag("ApprovalQueryService")<
 			visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
 		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, any>;
 	}
->() {}
+>()("ApprovalQueryService") {}
 
 // ============================================
 // LIVE IMPLEMENTATION
@@ -137,10 +137,10 @@ export class ApprovalQueryService extends Context.Tag("ApprovalQueryService")<
 
 export const ApprovalQueryServiceLive = Layer.effect(
 	ApprovalQueryService,
-	Effect.gen(function* (_) {
+	Effect.gen(function* () {
 		return ApprovalQueryService.of({
 				getApprovals: (params) =>
-					Effect.gen(function* (_) {
+					Effect.gen(function* () {
 						const handlers = getAllApprovalHandlers();
 						const requestedTypeSet = params.types ? new Set(params.types) : null;
 
@@ -153,9 +153,7 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					const allItems: UnifiedApprovalItem[] = [];
 
 					for (const handler of activeHandlers) {
-						const items = yield* _(
-							handler.getApprovals(params).pipe(Effect.catchAllCause(() => Effect.succeed([]))),
-						);
+						const items = yield* handler.getApprovals(params).pipe(Effect.catchCause(() => Effect.succeed([])));
 						allItems.push(...items);
 					}
 
@@ -194,12 +192,12 @@ export const ApprovalQueryServiceLive = Layer.effect(
 				}),
 
 			getCounts: (approverId, organizationId, visibility) =>
-				Effect.gen(function* (_) {
+				Effect.gen(function* () {
 					const handlers = getAllApprovalHandlers();
 					const counts = { ...ZERO_APPROVAL_COUNTS };
 
 					for (const handler of handlers) {
-						const count = yield* _(handler.getCount(approverId, organizationId, visibility));
+						const count = yield* handler.getCount(approverId, organizationId, visibility);
 						counts[handler.type] = count;
 					}
 

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { Cause, Effect, Exit, Option } from "effect-v3";
+import { Cause, Effect, Exit, Option, Result } from "effect";
 import { member } from "@/db/auth-schema";
 import {
 	approvalRequest,
@@ -219,27 +219,23 @@ export function preflightTravelExpenseDecision(
 	action: "approve" | "reject",
 	options?: Pick<ApprovalActionOptions, "allowAnyApprover">,
 ) {
-	return Effect.gen(function* (_) {
-		const claim = yield* _(
-			dbService.query("getTravelExpenseClaimForDecision", async () => {
-				return await dbService.db.query.travelExpenseClaim.findFirst({
-					where: and(
-						eq(travelExpenseClaim.id, claimId),
-						eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
-					),
-				});
-			}),
-		);
+	return Effect.gen(function* () {
+		const claim = yield* dbService.query("getTravelExpenseClaimForDecision", async () => {
+			return await dbService.db.query.travelExpenseClaim.findFirst({
+				where: and(
+					eq(travelExpenseClaim.id, claimId),
+					eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
+				),
+			});
+		});
 
 		if (!claim) {
-			return yield* _(
-				Effect.fail(
-					new NotFoundError({
-						message: "Travel expense claim not found",
-						entityType: "travel_expense_claim",
-						entityId: claimId,
-					}),
-				),
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Travel expense claim not found",
+					entityType: "travel_expense_claim",
+					entityId: claimId,
+				}),
 			);
 		}
 
@@ -249,55 +245,47 @@ export function preflightTravelExpenseDecision(
 			!!options?.allowAnyApprover;
 		const hasAssignedApproval = hasDirectAuthorization
 			? false
-			: yield* _(hasAssignedPendingTravelExpenseApproval(dbService, claimId, currentEmployee));
+			: yield* hasAssignedPendingTravelExpenseApproval(dbService, claimId, currentEmployee);
 
 		if (!hasDirectAuthorization && !hasAssignedApproval) {
-			return yield* _(
-				Effect.fail(
-					new AuthorizationError({
-						message: "Unauthorized",
-						userId: currentEmployee.id,
-						resource: "travel_expense_claim",
-						action,
-					}),
-				),
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Unauthorized",
+					userId: currentEmployee.id,
+					resource: "travel_expense_claim",
+					action,
+				}),
 			);
 		}
 
 		if (claim.status !== "submitted") {
-			return yield* _(
-				Effect.fail(
-					new ConflictError({
-						message: "Only submitted claims can be decided",
-						conflictType: "travel_expense_claim_status",
-					}),
-				),
+			return yield* Effect.fail(
+				new ConflictError({
+					message: "Only submitted claims can be decided",
+					conflictType: "travel_expense_claim_status",
+				}),
 			);
 		}
 
 		// A frozen submission is always enforced: a changed receipt set, amount
 		// or date needs a new claim, not a decision on different facts.
-		const comparison = yield* _(
-			dbService.query("compareTravelExpenseSubmittedRevision", async () => {
-				const revision = await loadLegacyTravelExpenseSubmittedRevision(dbService.db, {
-					organizationId: currentEmployee.organizationId,
-					claimId,
-				});
-				return revision
-					? await compareTravelExpenseWithSubmittedRevision(dbService.db, revision)
-					: null;
-			}),
-		);
+		const comparison = yield* dbService.query("compareTravelExpenseSubmittedRevision", async () => {
+			const revision = await loadLegacyTravelExpenseSubmittedRevision(dbService.db, {
+				organizationId: currentEmployee.organizationId,
+				claimId,
+			});
+			return revision
+				? await compareTravelExpenseWithSubmittedRevision(dbService.db, revision)
+				: null;
+		});
 		if (comparison?.kind === "material_change") {
-			return yield* _(
-				Effect.fail(
-					new ConflictError({
-						message:
-							"This claim changed after it was submitted. It cannot be decided; the employee must submit a new claim.",
-						conflictType: "approval_evidence",
-						details: { code: "material_change", changedFields: comparison.changedFields },
-					}),
-				),
+			return yield* Effect.fail(
+				new ConflictError({
+					message:
+						"This claim changed after it was submitted. It cannot be decided; the employee must submit a new claim.",
+					conflictType: "approval_evidence",
+					details: { code: "material_change", changedFields: comparison.changedFields },
+				}),
 			);
 		}
 
@@ -391,7 +379,7 @@ export function notifyTravelExpenseRequesterAfterDecision(
 				? Effect.sync(() => notifyTravelExpenseRequester(claim, currentEmployee, action, reason))
 				: Effect.void,
 		),
-		Effect.catchAllCause(() => Effect.void),
+		Effect.catchCause(() => Effect.void),
 	);
 }
 
@@ -412,7 +400,7 @@ export function notifyTravelExpenseRequesterAfterDecisionForApprover(
 				reason,
 			),
 		),
-		Effect.catchAllCause(() => Effect.void),
+		Effect.catchCause(() => Effect.void),
 	);
 }
 
@@ -423,62 +411,58 @@ export function persistTravelExpenseDecision(
 	action: "approve" | "reject",
 	commentOrReason?: string,
 ) {
-	return Effect.gen(function* (_) {
+	return Effect.gen(function* () {
 		const decidedAt = new Date();
-		yield* _(
-			dbService
-				.query("updateTravelExpenseDecision", async () => {
-					const updateQuery = dbService.db
-						.update(travelExpenseClaim)
-						.set({
-							status: action === "approve" ? "approved" : "rejected",
-							decidedAt,
-							updatedBy: currentEmployee.user.id,
-							updatedAt: decidedAt,
-						})
-						.where(
-							and(
-								eq(travelExpenseClaim.id, claimId),
-								eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
-								eq(travelExpenseClaim.status, "submitted"),
-							),
-						);
+		yield* dbService
+			.query("updateTravelExpenseDecision", async () => {
+				const updateQuery = dbService.db
+					.update(travelExpenseClaim)
+					.set({
+						status: action === "approve" ? "approved" : "rejected",
+						decidedAt,
+						updatedBy: currentEmployee.user.id,
+						updatedAt: decidedAt,
+					})
+					.where(
+						and(
+							eq(travelExpenseClaim.id, claimId),
+							eq(travelExpenseClaim.organizationId, currentEmployee.organizationId),
+							eq(travelExpenseClaim.status, "submitted"),
+						),
+					);
 
-					const updatedRows =
-						updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
-							? await updateQuery.returning({ id: travelExpenseClaim.id })
-							: await updateQuery;
+				const updatedRows =
+					updateQuery && typeof updateQuery === "object" && "returning" in updateQuery
+						? await updateQuery.returning({ id: travelExpenseClaim.id })
+						: await updateQuery;
 
-					return updatedRows;
-				})
-				.pipe(
-					Effect.flatMap((updatedRows) =>
-						Array.isArray(updatedRows) && updatedRows.length === 0
-							? Effect.fail(
-									new ConflictError({
-										message: "Only submitted claims can be decided",
-										conflictType: "travel_expense_claim_status",
-									}),
-								)
-							: Effect.succeed(updatedRows),
-					),
+				return updatedRows;
+			})
+			.pipe(
+				Effect.flatMap((updatedRows) =>
+					Array.isArray(updatedRows) && updatedRows.length === 0
+						? Effect.fail(
+								new ConflictError({
+									message: "Only submitted claims can be decided",
+									conflictType: "travel_expense_claim_status",
+								}),
+							)
+						: Effect.succeed(updatedRows),
 				),
-		);
+			);
 
-		yield* _(
-			dbService.query("insertTravelExpenseDecisionLog", async () => {
-				await dbService.db.insert(travelExpenseDecisionLog).values({
-					organizationId: currentEmployee.organizationId,
-					claimId,
-					actorEmployeeId: currentEmployee.id,
-					approverId: currentEmployee.id,
-					action: action === "approve" ? "approved" : "rejected",
-					reason: action === "reject" ? (commentOrReason ?? null) : null,
-					comment: action === "approve" ? (commentOrReason ?? null) : null,
-					createdAt: decidedAt,
-				});
-			}),
-		);
+		yield* dbService.query("insertTravelExpenseDecisionLog", async () => {
+			await dbService.db.insert(travelExpenseDecisionLog).values({
+				organizationId: currentEmployee.organizationId,
+				claimId,
+				actorEmployeeId: currentEmployee.id,
+				approverId: currentEmployee.id,
+				action: action === "approve" ? "approved" : "rejected",
+				reason: action === "reject" ? (commentOrReason ?? null) : null,
+				comment: action === "approve" ? (commentOrReason ?? null) : null,
+				createdAt: decidedAt,
+			});
+		});
 	});
 }
 
@@ -562,8 +546,8 @@ async function findPendingTravelExpenseRequestForApprover(
 
 function failureOf(cause: Cause.Cause<unknown>): unknown {
 	return (
-		Option.getOrNull(Cause.failureOption(cause)) ??
-		[...Cause.defects(cause)][0] ??
+		Option.getOrNull(Cause.findErrorOption(cause)) ??
+		Result.getOrNull(Cause.findDefect(cause)) ??
 		new Error("An error has occurred")
 	);
 }
