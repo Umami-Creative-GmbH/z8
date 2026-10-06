@@ -61,7 +61,8 @@ export async function GET(
 		if (authorized.status !== "found") return notFound();
 		const { report } = authorized;
 		let stored: StoredReceipt | null = null;
-		if (authorized.access === "reviewer") {
+		if (authorized.access !== "owner") {
+			// Reviewers and finance (#612) only ever receive the frozen evidence.
 			const frozen = await loadSubmittedReportReceipt(report, receiptId);
 			stored = frozen && {
 				...frozen.object,

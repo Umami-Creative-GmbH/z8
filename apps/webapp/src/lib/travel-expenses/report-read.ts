@@ -19,6 +19,7 @@ import {
 import { loadAuthorizedApprovalDetail } from "@/lib/approvals/inbox/authorized-detail";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
+import { loadFinanceActor } from "./finance-access";
 
 /**
  * Reads of a submitted travel expense report (#602): its owner, or a reviewer
@@ -29,10 +30,13 @@ import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
 
+/** `finance` (#612): separately permissioned, approved reports only, frozen evidence only. */
+export type ReportAccess = "owner" | "reviewer" | "finance";
+
 export type AuthorizedReportResult =
 	| { status: "unauthorized" }
 	| { status: "not_found" }
-	| { status: "found"; report: ReportRow; access: "owner" | "reviewer" };
+	| { status: "found"; report: ReportRow; access: ReportAccess };
 
 export async function loadAuthorizedTravelExpenseReport(
 	reportId: string,
@@ -78,6 +82,9 @@ export async function loadAuthorizedTravelExpenseReport(
 			return { status: "found", report, access: "reviewer" };
 		}
 	}
+	if (report.status === "approved" && (await loadFinanceActor())?.canRead) {
+		return { status: "found", report, access: "finance" };
+	}
 	return { status: "not_found" };
 }
 
@@ -89,7 +96,7 @@ export interface SubmittedReportItemView
 export interface SubmittedReportView {
 	reportId: string;
 	status: ReportRow["status"];
-	access: "owner" | "reviewer";
+	access: ReportAccess;
 	submittedAt: string;
 	/** Who currently holds the pending review; null once decided. */
 	reviewerName: string | null;
@@ -129,7 +136,7 @@ function itemView(
 /** The latest submission of an authorized report; null for one never submitted. */
 export async function loadSubmittedReportView(
 	report: ReportRow,
-	access: "owner" | "reviewer",
+	access: ReportAccess,
 ): Promise<SubmittedReportView | null> {
 	const revision = await loadTravelExpenseReportSubmittedRevision(db, {
 		organizationId: report.organizationId,

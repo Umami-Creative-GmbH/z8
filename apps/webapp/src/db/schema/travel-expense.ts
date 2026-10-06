@@ -69,6 +69,7 @@ export const travelExpenseClaim = pgTable(
 	},
 	(table) => [
 		index("travelExpenseClaim_organizationId_idx").on(table.organizationId),
+		uniqueIndex("travelExpenseClaim_id_org_idx").on(table.id, table.organizationId),
 		index("travelExpenseClaim_employeeId_idx").on(table.employeeId),
 		index("travelExpenseClaim_approverId_idx").on(table.approverId),
 		index("travelExpenseClaim_projectId_idx").on(table.projectId),

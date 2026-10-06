@@ -88,6 +88,10 @@ export const queryKeys = {
 		approverSettings: () => ["travel-expenses", "settings", "approver"] as const,
 		reportSubmission: (reportId: string) =>
 			["travel-expenses", "reports", reportId, "submission"] as const,
+		financeQueue: (filter: string) => ["travel-expenses", "finance", "queue", filter] as const,
+		settlement: (sourceType: string, sourceId: string) =>
+			["travel-expenses", "settlement", sourceType, sourceId] as const,
+		mySettlements: () => ["travel-expenses", "settlement", "mine"] as const,
 	},
 
 	// Employees
