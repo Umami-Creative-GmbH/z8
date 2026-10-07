@@ -862,6 +862,64 @@ describe("return, withdraw and resubmit reports (#603)", () => {
 		expect(rows.map((row) => row.id).sort()).toEqual(receipts.sort());
 	});
 
+	it("queues receipts only frozen submissions named for cleanup when the report is deleted", async () => {
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		signIn("manager");
+		expect((await returnReport(await pendingRequestId(reportId), "Fix it")).success).toBe(true);
+		const [, hotel] = (await load(reportId)).items;
+		const frozenReceipt = hotel?.receipts[0];
+		if (!hotel || !frozenReceipt) throw new Error("receipt missing");
+		expect(
+			await actions.removeReportReceiptAction({
+				reportId,
+				itemId: hotel.id,
+				receiptId: frozenReceipt.id,
+			}),
+		).toMatchObject({ success: true });
+		// Still named by the frozen first submission: kept while the report exists.
+		const queued = () =>
+			admin.query<{ id: string; storage_key: string }>(
+				"select id, storage_key from travel_expense_receipt_upload where report_id = $1 and status = 'cleanup_required'",
+				[reportId],
+			);
+		expect((await queued()).rows).toEqual([]);
+		const liveReceipts = (await load(reportId)).items.flatMap((item) =>
+			item.receipts.map((receipt) => receipt.id),
+		);
+
+		await admin.query("delete from travel_expense_report where id = $1", [reportId]);
+		expect((await queued()).rows.map((row) => row.id).sort()).toEqual(
+			[...liveReceipts, frozenReceipt.id].sort(),
+		);
+	});
+
+	it("purges a deleted reviewer's closed cycles without blocking the deletion", async () => {
+		const { deleteEmployeeApprovalLifecycles } = await import("@/lib/approvals/maintenance");
+		const { db } = await import("@/db");
+		const reportId = await completeTrip();
+		expect((await submit(reportId)).success).toBe(true);
+		signIn("manager");
+		expect((await returnReport(await pendingRequestId(reportId), "Fix it")).success).toBe(true);
+		expect(await closuresOf(reportId)).toHaveLength(1);
+
+		const purged = await db.transaction((transaction) =>
+			deleteEmployeeApprovalLifecycles(transaction, {
+				organizationId: "t603-org",
+				employeeIds: [ids.manager],
+			}),
+		);
+		expect(purged.lifecycles.flatMap((lifecycle) => lifecycle.travelExpenseReportClosures ?? []))
+			.toHaveLength(1);
+		expect(await closuresOf(reportId)).toEqual([]);
+		await admin.query("delete from employee_managers where manager_id = $1", [ids.manager]);
+		await admin.query("update audit_log set employee_id = null where employee_id = $1", [
+			ids.manager,
+		]);
+		await admin.query("delete from employee where id = $1", [ids.manager]);
+		expect((await reportState(reportId)).status).toBe("returned");
+	});
+
 	it("never shows a returned or withdrawn cycle as a rejection and keeps each cycle's own facts", async () => {
 		const { prepareTravelExpenseReportReviewEvidence } = await import(
 			"@/lib/approvals/presentation/travel-expense-report-review"

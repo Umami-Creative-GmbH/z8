@@ -380,7 +380,7 @@ export async function loadSubmittedReportView(
 				cycle: submissionCycle,
 				label: "reopened",
 				at: cycleClosure.createdAt.toISOString(),
-				actorName: closureActorNames.get(cycleClosure.actorEmployeeId) ?? null,
+				actorName: closureActorNames.get(cycleClosure.actorEmployeeId ?? "") ?? null,
 			});
 		}
 		return events;
@@ -434,7 +434,7 @@ export async function loadSubmittedReportView(
 				? {
 						reason: closure.note,
 						reopenedAt: closure.createdAt.toISOString(),
-						actorName: closureActorNames.get(closure.actorEmployeeId) ?? null,
+						actorName: closureActorNames.get(closure.actorEmployeeId ?? "") ?? null,
 					}
 				: null,
 		cycles: revisions.map((candidate) => ({
@@ -462,7 +462,8 @@ async function loadReopenActorNames(
 		...new Set(
 			closures
 				.filter((closure) => closure.kind === "reopened")
-				.map((closure) => closure.actorEmployeeId),
+				// A deleted reopener leaves no name behind (0130).
+				.flatMap((closure) => (closure.actorEmployeeId ? [closure.actorEmployeeId] : [])),
 		),
 	];
 	if (actorIds.length === 0) return new Map();

@@ -183,7 +183,8 @@ export const travelExpenseReport = pgTable(
 			.notNull()
 			.references(() => user.id),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedBy: text("updated_by").references(() => user.id),
+		// A reviewer who returned, decided or reopened the report may be deleted (0130).
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 	},
 	(table) => [
 		uniqueIndex("travelExpenseReport_id_org_idx").on(table.id, table.organizationId),
@@ -266,7 +267,7 @@ export const travelExpenseReportItem = pgTable(
 		version: integer("version").default(1).notNull(),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-		updatedBy: text("updated_by").references(() => user.id),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
 	},
 	(table) => [
 		foreignKey({

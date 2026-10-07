@@ -47,10 +47,12 @@ export const travelExpenseReportCycleClosure = pgTable(
 		submittedRevisionId: uuid("submitted_revision_id").notNull(),
 		approvalRequestId: uuid("approval_request_id").notNull(),
 		decisionEvidenceId: uuid("decision_evidence_id"),
-		actorEmployeeId: uuid("actor_employee_id").notNull(),
-		actorUserId: text("actor_user_id")
-			.notNull()
-			.references(() => user.id),
+		/**
+		 * Who closed the cycle. Null only after that employee or user was deleted
+		 * (migration 0130): history never blocks deleting a reviewer.
+		 */
+		actorEmployeeId: uuid("actor_employee_id"),
+		actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
@@ -59,11 +61,12 @@ export const travelExpenseReportCycleClosure = pgTable(
 			columns: [table.reportId, table.organizationId],
 			foreignColumns: [travelExpenseReport.id, travelExpenseReport.organizationId],
 		}).onDelete("cascade"),
+		// Migration 0130 deletes with SET NULL ("actor_employee_id") only, keeping the organization.
 		foreignKey({
 			name: "travel_expense_report_cycle_closure_actor_fk",
 			columns: [table.actorEmployeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
-		}),
+		}).onDelete("set null"),
 		uniqueIndex("travelExpenseReportCycleClosure_id_org_idx").on(table.id, table.organizationId),
 		uniqueIndex("travelExpenseReportCycleClosure_report_cycle_idx").on(
 			table.organizationId,
