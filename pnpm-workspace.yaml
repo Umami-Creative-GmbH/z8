@@ -50,8 +50,8 @@ minimumReleaseAgeExclude:
 
 overrides:
   # Keep React types aligned across workspace packages.
-  '@types/react': 19.2.18
-  '@types/react-dom': 19.2.7
+  '@types/react': 19.3.0
+  '@types/react-dom': 19.3.0
   # Patch legacy esbuild-kit and retain desktop Safari-target build compatibility.
   esbuild: 0.25.12
   # React PDF relies on pako's internal lib/zlib paths.
