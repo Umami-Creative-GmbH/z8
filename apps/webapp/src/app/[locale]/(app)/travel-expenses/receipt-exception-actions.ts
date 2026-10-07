@@ -67,6 +67,7 @@ export async function saveReceiptExceptionAction(input: {
 				};
 			case "not_allowed":
 				return { success: true, data: { status: "not_allowed" } };
+			case "not_receipt":
 			case "not_found":
 				return { success: false, error: "Expense not found" };
 			case "not_draft":

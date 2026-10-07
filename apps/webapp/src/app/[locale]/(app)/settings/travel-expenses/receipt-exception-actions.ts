@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import { travelExpenseSettings } from "@/db/schema";
+import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
@@ -78,6 +79,14 @@ export async function saveReceiptExceptionSettings(
 				target: travelExpenseSettings.organizationId,
 				set: { missingReceiptExceptionsAllowed: allowed, updatedAt: now, updatedBy: access.userId },
 			});
+		logAudit({
+			action: AuditAction.TRAVEL_EXPENSE_RECEIPT_EXCEPTIONS_CHANGED,
+			actorId: access.userId,
+			targetType: "organization",
+			organizationId: access.organizationId,
+			metadata: { missingReceiptExceptionsAllowed: allowed },
+			timestamp: now,
+		}).catch((error) => logger.error({ error }, "Failed to log the missing-receipt setting"));
 		revalidatePath("/settings/travel-expenses");
 		return { success: true, data: { missingReceiptExceptionsAllowed: allowed } };
 	} catch (error) {

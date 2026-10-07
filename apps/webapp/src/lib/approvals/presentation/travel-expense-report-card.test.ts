@@ -150,7 +150,33 @@ describe("buildTravelExpenseReportCardFacts", () => {
 		expect(facts["Submitted by"]).toBe("Sam Submitter");
 	});
 
+	it("keeps mileage and per diem expenses, which carry no receipt by design, actionable (#623 review)", () => {
+		const facts = buildTravelExpenseReportCardFacts(
+			revision({
+				facts: {
+					items: [
+						item(0),
+						item(1, { type: "mileage", category: "transport", receipts: [] }),
+						item(2, { type: "per_diem", category: "meals", receipts: [] }),
+					],
+				},
+			}),
+			berlin24,
+			t,
+		);
+		expect(facts).not.toBeNull();
+		expect(asMap(facts).Expenses).toBe("3");
+	});
+
 	it.each([
+		[
+			"a receipt expense with an accepted missing-receipt exception",
+			revision({
+				facts: {
+					items: [item(0, { receipts: [], receiptException: { reason: "Lost on the train" } })],
+				},
+			}),
+		],
 		["no employee name", revision({ subjectName: null })],
 		["no expenses", revision({ facts: { items: [] } })],
 		["an expense without a receipt", revision({ facts: { items: [item(0, { receipts: [] })] } })],

@@ -24,6 +24,8 @@ export type SaveReceiptExceptionResult =
 	| { kind: "conflict"; receiptException: ReceiptExceptionView }
 	/** The organization does not allow exceptions; only withdrawing one is possible. */
 	| { kind: "not_allowed" }
+	/** Mileage and per diem expenses carry no receipt, so they cannot miss one. */
+	| { kind: "not_receipt" }
 	| { kind: "not_found" }
 	| { kind: "not_draft" };
 
@@ -53,6 +55,16 @@ export async function saveReceiptExceptionDraft(
 			eq(travelExpenseReportItem.reportId, input.reportId),
 			eq(travelExpenseReportItem.organizationId, owner.organizationId),
 		);
+		if (input.reason !== null) {
+			// Only a receipt expense has a receipt to miss; mileage and per diem never do.
+			const [target] = await tx
+				.select({ type: travelExpenseReportItem.type })
+				.from(travelExpenseReportItem)
+				.where(item)
+				.limit(1);
+			if (!target) return { kind: "not_found" };
+			if (target.type !== "receipt") return { kind: "not_receipt" };
+		}
 		const [saved] = await tx
 			.update(travelExpenseReportItem)
 			.set({

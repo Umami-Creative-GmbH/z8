@@ -324,6 +324,16 @@ describe("missing-receipt exceptions (#604)", () => {
 		expect(
 			await settingsActions.saveReceiptExceptionSettings({ missingReceiptExceptionsAllowed: true }),
 		).toEqual({ success: true, data: { missingReceiptExceptionsAllowed: true } });
+		// The change is audit-logged like the other expense settings (#604 review).
+		await expect
+			.poll(async () => {
+				const { rows } = await admin.query<{ metadata: unknown }>(
+					`select metadata from audit_log where organization_id = 't604-org'
+					 and action = 'travel_expense.receipt_exceptions_changed'`,
+				);
+				return rows.length;
+			})
+			.toBe(1);
 		// Only this organization: the foreign admin sees its own default.
 		signIn("foreigner");
 		expect(await settingsActions.getReceiptExceptionSettings()).toEqual({
@@ -331,6 +341,25 @@ describe("missing-receipt exceptions (#604)", () => {
 			data: { missingReceiptExceptionsAllowed: false },
 		});
 		expect((await load(reportId)).receiptExceptionsAllowed).toBe(true);
+	});
+
+	it("refuses an exception on an expense that has no receipt to miss", async () => {
+		await setPolicy(true);
+		const mileageActions = await import("@/app/[locale]/(app)/travel-expenses/mileage-actions");
+		signIn("requester");
+		const created = await mileageActions.createStandaloneMileageReportAction();
+		if (!created.success) throw new Error(created.error);
+		const reportId = created.data.reportId;
+		const itemId = (await load(reportId)).items[0]?.id ?? "";
+		expect(await requestException(reportId, itemId, "The printer was broken")).toEqual({
+			success: false,
+			error: "Expense not found",
+		});
+		const { rows } = await admin.query(
+			"select receipt_exception_reason from travel_expense_report_item where id = $1",
+			[itemId],
+		);
+		expect(rows).toEqual([{ receipt_exception_reason: null }]);
 	});
 
 	it("requires an explanation and never stores the exception as a receipt", async () => {

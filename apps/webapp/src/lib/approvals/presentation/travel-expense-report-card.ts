@@ -47,10 +47,11 @@ function money(amount: unknown, currency: unknown): Money | null {
  * digits are kept exactly as frozen: nothing is converted or recalculated.
  */
 function formatMoney(value: Money, locale: string): string {
+	// The decimal string itself is formatted, exactly: no binary float in between.
 	const amount = new Intl.NumberFormat(locale, {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
-	}).format(Number(value.amount));
+	}).format(value.amount as Intl.StringNumericLiteral);
 	return `${amount} ${value.currency}`;
 }
 
@@ -92,9 +93,16 @@ export function buildTravelExpenseReportCardFacts(
 	if (
 		!labels.subjectName ||
 		items.length === 0 ||
-		// A report without a receipt for every expense (e.g. an accepted
-		// exception, #604) needs authenticated review.
-		items.some((item) => !Array.isArray(item.receipts) || item.receipts.length === 0) ||
+		// A receipt expense without its receipt (an accepted exception, #604)
+		// needs authenticated review. Mileage and per diem carry no receipt by
+		// design and stay actionable unless an allowance was set manually.
+		items.some(
+			(item) =>
+				(item.type ?? "receipt") === "receipt" &&
+				(Boolean(item.receiptException) ||
+					!Array.isArray(item.receipts) ||
+					item.receipts.length === 0),
+		) ||
 		// A manually set allowance (#610) needs its reason and evidence reviewed in the web.
 		items.some((item) => item.allowanceOverride) ||
 		// An adjustment's signed delta and baseline are reviewed on the web (#615).
