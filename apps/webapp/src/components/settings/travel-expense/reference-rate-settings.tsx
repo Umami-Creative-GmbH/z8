@@ -137,7 +137,10 @@ function ApproveForm() {
 								id="reference-rate-acknowledged"
 								checked={field.state.value}
 								aria-invalid={!!error}
-								onCheckedChange={(checked) => field.handleChange(checked === true)}
+								onCheckedChange={(checked) => {
+									field.handleChange(checked === true);
+									setError(null);
+								}}
 							/>
 							<Label htmlFor="reference-rate-acknowledged" className="font-normal leading-snug">
 								{t(
