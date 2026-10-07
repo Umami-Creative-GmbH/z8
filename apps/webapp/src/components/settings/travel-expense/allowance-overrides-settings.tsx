@@ -94,7 +94,10 @@ function factsLine(locale: string, item: AllowanceExceptionItem): string {
 		return [
 			item.expenseDate && formatPlainDate(locale, item.expenseDate),
 			item.route,
-			item.distanceKm && `${item.distanceKm} km`,
+			item.distanceKm &&
+				new Intl.NumberFormat(locale, { style: "unit", unit: "kilometer" }).format(
+					item.distanceKm as Intl.StringNumericLiteral,
+				),
 		]
 			.filter(Boolean)
 			.join(" · ");

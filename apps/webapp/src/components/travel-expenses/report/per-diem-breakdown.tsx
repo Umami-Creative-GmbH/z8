@@ -136,10 +136,6 @@ export function perDiemExceptionLabel(t: Translate, reason: PerDiemExceptionReas
 
 const MEALS: readonly PerDiemMeal[] = ["breakfast", "lunch", "dinner"];
 
-function hours(minutes: number) {
-	return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")} h`;
-}
-
 /**
  * The daily per diem breakdown: each calendar day's eligibility, the applied
  * rate, provided meals with their deductions and the day's amount, a zero day
@@ -187,9 +183,14 @@ export function PerDiemBreakdown({ facts }: { facts: PerDiemBreakdownFacts }) {
 										{day.location && <PerDiemDayLocationLabel location={day.location} />}
 										{perDiemBasisLabel(t, day.basis)}
 										<span className="block text-muted-foreground tabular-nums">
-											{t("travelExpenses.report.perDiem.absence", "{hours} away", {
-												hours: hours(day.absenceMinutes),
-											})}
+											{t(
+												"travelExpenses.report.perDiem.absenceDuration",
+												"{hours}:{minutes} h away",
+												{
+													hours: Math.floor(day.absenceMinutes / 60),
+													minutes: String(day.absenceMinutes % 60).padStart(2, "0"),
+												},
+											)}
 										</span>
 									</td>
 									<td className="py-1 pr-3 text-right tabular-nums">{money(day.rate)}</td>
