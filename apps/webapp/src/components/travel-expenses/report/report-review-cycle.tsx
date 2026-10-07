@@ -21,11 +21,13 @@ import {
 	AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import { queryKeys } from "@/lib/query/keys";
 import type { SubmittedCycleOutcome, SubmittedReportView } from "@/lib/travel-expenses/report-read";
 import { Link } from "@/navigation";
 import { TravelExpenseLoadError } from "../travel-expense-load-error";
 import { formatRecordedInstant } from "./format";
+import { itemTitle, removedItemTitle } from "./item-title";
 import { ReopenedNotice } from "./report-reopen";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -42,11 +44,49 @@ function outcomeText(t: Translate, outcome: SubmittedCycleOutcome): string {
 	return texts[outcome];
 }
 
+type ItemComment = NonNullable<SubmittedReportView["returned"]>["itemComments"][number];
+
+/**
+ * What a returned-item note is about. The note is numbered by the frozen
+ * cycle, but the owner's editor numbers its live items (#688): there it names
+ * the live item's current title, or "{type} (removed)" once it is removed.
+ */
+function commentLabel(
+	t: Translate,
+	comment: ItemComment,
+	liveItems: readonly LiveItem[] | undefined,
+): string {
+	const index = liveItems?.findIndex((item) => item.id === comment.itemId) ?? -1;
+	const live = liveItems?.[index];
+	if (liveItems && !live) {
+		return t("travelExpenses.report.returnedRemovedItem", "{item}, {description}:", {
+			item: removedItemTitle(t, comment.type),
+			description: comment.description,
+		});
+	}
+	const item = live
+		? itemTitle(t, live.type, index + 1)
+		: itemTitle(t, comment.type, comment.number);
+	// A per diem freezes a fixed description; its title already names it.
+	return comment.type === "per_diem"
+		? t("travelExpenses.report.summary.itemPrefix", "{item}:", { item })
+		: t("travelExpenses.report.returnedItemNamed", "{item} ({description}):", {
+				item,
+				description: comment.description,
+			});
+}
+
+/** An expense item of the report as the owner currently edits it, in position order. */
+export type LiveItem = { id: string; type: TravelExpenseReportItemType };
+
 /** The reviewer's note and item comments of a returned submission (#603). */
 export function ReturnedNotice({
 	returned,
+	liveItems,
 }: {
 	returned: NonNullable<SubmittedReportView["returned"]>;
+	/** The owner editor's live items; omitted where the frozen cycle numbering applies. */
+	liveItems?: readonly LiveItem[];
 }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
@@ -65,12 +105,7 @@ export function ReturnedNotice({
 					<ul className="list-disc space-y-1 pl-5">
 						{returned.itemComments.map((comment) => (
 							<li key={comment.itemId}>
-								<span className="font-medium">
-									{t("travelExpenses.report.returnedItem", "Expense {number} ({description}):", {
-										number: comment.number,
-										description: comment.description,
-									})}
-								</span>{" "}
+								<span className="font-medium">{commentLabel(t, comment, liveItems)}</span>{" "}
 								<span className="whitespace-pre-line">{comment.body}</span>
 							</li>
 						))}
@@ -231,9 +266,12 @@ export function WithdrawReportButton({
 export function ReportReviewFeedback({
 	reportId,
 	submissionCount,
+	liveItems,
 }: {
 	reportId: string;
 	submissionCount: number;
+	/** The report's items as edited now, so returned-item notes name them as the editor does. */
+	liveItems: readonly LiveItem[];
 }) {
 	const { t } = useTranslate();
 	const { data, isError, isFetching, refetch } = useQuery({
@@ -264,7 +302,7 @@ export function ReportReviewFeedback({
 	return (
 		<div className="space-y-4">
 			{data.returned ? (
-				<ReturnedNotice returned={data.returned} />
+				<ReturnedNotice returned={data.returned} liveItems={liveItems} />
 			) : data.cycleOutcome === "withdrawn" ? (
 				<p className="text-sm text-muted-foreground">
 					{t(

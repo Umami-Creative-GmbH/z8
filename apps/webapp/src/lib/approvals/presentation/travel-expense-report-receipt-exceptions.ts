@@ -3,6 +3,7 @@ import type {
 	TravelExpenseReportSubmittedItem,
 } from "../evidence/travel-expense-report-facts";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
+import { reportItemTitle } from "./travel-expense-report-item-title";
 
 /**
  * Review presentation of missing-receipt exceptions (#604): conspicuous on the
@@ -48,7 +49,7 @@ export function receiptExceptionAcceptanceSections(
 			? [
 					{
 						itemId: item.itemId,
-						label: `${index + 1}. ${item.description}`,
+						label: reportItemTitle(item, index),
 						reason: item.receiptException.reason,
 					},
 				]

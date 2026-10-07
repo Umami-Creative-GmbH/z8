@@ -98,7 +98,7 @@ describe("allowance override review (#610)", () => {
 			key: "approvals:approvals.evidence.allowanceOverrideCalloutBody",
 		});
 		expect(localizedTextFallback(callout.body)).toBe(
-			"An expense administrator set these allowances manually instead of the calculated amount: 1. Berlin – Potsdam (18.45 EUR). Check the reason and evidence before deciding.",
+			"An expense administrator set these allowances manually instead of the calculated amount: Mileage 1: Berlin – Potsdam (18.45 EUR). Check the reason and evidence before deciding.",
 		);
 	});
 });

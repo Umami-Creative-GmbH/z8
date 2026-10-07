@@ -2,10 +2,12 @@
 
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
+import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import type { ReceiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import type { TripRequirement } from "@/lib/travel-expenses/trip-report";
 import { formatMoney } from "./format";
 import { tripNotEndedLabel } from "./future-date-labels";
+import { itemTitle } from "./item-title";
 
 /** Employee-paid (reimbursed) and company-paid totals of a report. */
 export function ReportTotals({ id, totals }: { id: string; totals: ReceiptReportTotals }) {
@@ -71,6 +73,7 @@ function tripRequirementLabel(
 
 export interface IncompleteExpense {
 	id: string;
+	type: TravelExpenseReportItemType;
 	number: number;
 	description: string | null;
 }
@@ -126,13 +129,14 @@ export function TripRequirements({
 							>
 								{expense.description
 									? t(
-											"travelExpenses.report.trip.requirements.expenseNamed",
-											"Expense {number}: {description}",
-											{ number: expense.number, description: expense.description },
+											"travelExpenses.report.trip.requirements.itemNamed",
+											"{item}: {description}",
+											{
+												item: itemTitle(t, expense.type, expense.number),
+												description: expense.description,
+											},
 										)
-									: t("travelExpenses.report.items.heading", "Expense {number}", {
-											number: expense.number,
-										})}
+									: itemTitle(t, expense.type, expense.number)}
 							</a>
 						</li>
 					))}

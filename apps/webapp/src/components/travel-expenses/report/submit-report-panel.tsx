@@ -30,6 +30,7 @@ import { Link } from "@/navigation";
 import type { ExpenseProjectSummary } from "./expense-project-line";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { futureDateLabel, perDiemNotReturnedLabel, tripNotEndedLabel } from "./future-date-labels";
+import { itemTitle } from "./item-title";
 import { pendingReceiptException } from "./pending-receipt-exception";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
 import { ReportTotals } from "./report-summary";
@@ -76,8 +77,8 @@ function futureDateRefusals(
 		if (!label) continue;
 		details.push(
 			report.items.length > 1
-				? t("travelExpenses.report.submit.expenseRequirement", "Expense {number}: {requirement}", {
-						number: index + 1,
+				? t("travelExpenses.report.submit.itemRequirement", "{item}: {requirement}", {
+						item: itemTitle(t, item.type, index + 1),
 						requirement: label,
 					})
 				: label,
@@ -402,10 +403,8 @@ export function SubmitReportPanel({
 						<ExpenseSummaryList
 							items={(report?.items ?? []).map((item) => ({
 								id: item.id,
-								description:
-									item.description ??
-									item.mileage?.route ??
-									(item.perDiem ? t("travelExpenses.report.perDiem.title", "Per diem") : null),
+								type: item.type,
+								description: item.description ?? item.mileage?.route ?? null,
 								expenseDate: item.expenseDate,
 								category: item.category,
 								amount: item.amount ?? item.mileage?.amount ?? item.perDiem?.amount ?? null,

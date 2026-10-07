@@ -281,7 +281,7 @@ describe("report submission", () => {
 			.map((item) => item.textContent);
 		expect(details).toEqual([
 			"The trip ends on Sep 16, 2026. You can submit from that day.",
-			"Expense 2: This date is in the future. Correct it, or submit from Sep 15, 2026.",
+			"Receipt 2: This date is in the future. Correct it, or submit from Sep 15, 2026.",
 		]);
 		expect(toast.success).not.toHaveBeenCalled();
 	});

@@ -13,7 +13,7 @@ async function TravelExpenseFinancePageContent() {
 	const [t, actor] = await Promise.all([getTranslate(), loadFinanceActor()]);
 	if (!actor?.canRead) notFound();
 	return (
-		<div className="mx-auto w-full max-w-5xl space-y-4 px-4 py-6 lg:px-6">
+		<div className="@container/main flex flex-1 flex-col gap-4 px-4 py-4 md:py-6 lg:px-6">
 			<Link
 				className="text-sm text-primary underline underline-offset-4 hover:text-primary/80"
 				href="/travel-expenses"
@@ -45,7 +45,7 @@ function TravelExpenseFinancePageLoading() {
 				labelDefault: "Loading travel expenses",
 			}}
 			role="status"
-			className="mx-auto w-full max-w-5xl space-y-4 px-4 py-6 lg:px-6"
+			className="@container/main flex flex-1 flex-col gap-4 px-4 py-4 md:py-6 lg:px-6"
 		>
 			<Skeleton aria-hidden="true" className="h-8 w-64" />
 			<Skeleton aria-hidden="true" className="h-96 w-full" />

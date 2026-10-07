@@ -1,10 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { TravelExpenseReportSubmittedRevisionRecord } from "../evidence/travel-expense-report-store";
+import { resolveLocalizedText } from "../inbox/localized-text";
+import type { ApprovalInboxDetailSection } from "../inbox/types";
 import {
 	buildTravelExpenseReportReviewSections,
 	travelExpenseReportDecisionLabel,
 } from "./travel-expense-report-review";
+
+/** A section title as an English reader sees it. */
+function titleText(section: ApprovalInboxDetailSection | undefined): string | undefined {
+	if (!section || !("title" in section)) return undefined;
+	return resolveLocalizedText(
+		section.title,
+		(_key, fallback, params) =>
+			fallback.replace(/\{(\w+)\}/g, (match, name: string) => String(params?.[name] ?? match)),
+		"en",
+	);
+}
 
 function revision(): TravelExpenseReportSubmittedRevisionRecord {
 	const receipt = (receiptId: string, itemId: string) => ({
@@ -122,7 +135,6 @@ describe("buildTravelExpenseReportReviewSections", () => {
 		});
 		expect(train).toMatchObject({
 			type: "key_value",
-			title: "1. Shinkansen",
 			// The description as the employee wrote it, never restyled as a heading label.
 			titleAsEntered: true,
 			rows: expect.arrayContaining([
@@ -133,7 +145,6 @@ describe("buildTravelExpenseReportReviewSections", () => {
 			]),
 		});
 		expect(hotel).toMatchObject({
-			title: "2. Hotel",
 			rows: expect.arrayContaining([
 				expect.objectContaining({
 					value: { key: "approvals:approvals.evidence.paidByCompany", fallback: "Company" },
@@ -141,6 +152,9 @@ describe("buildTravelExpenseReportReviewSections", () => {
 				expect.objectContaining({ value: "2: hotel.pdf, folio.pdf" }),
 			]),
 		});
+		// Each item is named by its type and running number (#688).
+		expect(titleText(train)).toBe("Receipt 1: Shinkansen");
+		expect(titleText(hotel)).toBe("Receipt 2: Hotel");
 		expect(sections.at(-1)).toMatchObject({
 			type: "timeline",
 			events: [
@@ -190,6 +204,10 @@ describe("buildTravelExpenseReportReviewSections", () => {
 
 	it("shows an earlier cycle as history with the earlier cycles' return notes", () => {
 		const earlier = revision();
+		const hotelTitle = {
+			key: "approvals:approvals.evidence.reportItemTitle",
+			fallback: "Receipt 2: Hotel",
+		};
 		const { sections, decisionsBlocked } = buildTravelExpenseReportReviewSections({
 			status: "evidenced",
 			revision: { ...earlier, facts: { ...earlier.facts, submissionCycle: 2 } },
@@ -204,7 +222,7 @@ describe("buildTravelExpenseReportReviewSections", () => {
 					actorName: "Riley Reviewer",
 					closedAt: parseInstant("2026-09-16T10:00:00Z"),
 					itemComments: [
-						{ itemId: "item-2", itemLabel: "Hotel", body: "Folio missing" },
+						{ itemId: "item-2", itemLabel: hotelTitle, body: "Folio missing" },
 						{ itemId: "item-gone", itemLabel: null, body: "Duplicate" },
 					],
 				},
@@ -227,7 +245,7 @@ describe("buildTravelExpenseReportReviewSections", () => {
 					expect.objectContaining({ value: "Riley Reviewer" }),
 					expect.objectContaining({ value: "Please attach the hotel folio" }),
 					expect.objectContaining({
-						label: expect.objectContaining({ params: { item: "Hotel" } }),
+						label: expect.objectContaining({ params: { item: hotelTitle } }),
 						value: "Folio missing",
 					}),
 					expect.objectContaining({

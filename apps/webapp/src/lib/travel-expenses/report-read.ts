@@ -12,6 +12,7 @@ import {
 	travelExpenseReportCycleClosure,
 	travelExpenseReportReviewNote,
 } from "@/db/schema";
+import type { TravelExpenseReportItemType } from "@/db/schema/travel-expense";
 import {
 	type LegacyDecisionEvidenceRecord,
 	listLegacyDecisionEvidence,
@@ -240,7 +241,14 @@ export interface SubmittedReportView {
 		note: string;
 		returnedAt: string;
 		reviewerName: string | null;
-		itemComments: Array<{ itemId: string; number: number; description: string; body: string }>;
+		itemComments: Array<{
+			itemId: string;
+			type: TravelExpenseReportItemType;
+			/** The item's running number in this frozen cycle. */
+			number: number;
+			description: string;
+			body: string;
+		}>;
 	} | null;
 	/** Why and by whom this approved cycle was reopened for correction (#614). */
 	reopened?: { reason: string; reopenedAt: string; actorName: string | null } | null;
@@ -483,6 +491,7 @@ export async function loadSubmittedReportView(
 								? [
 										{
 											itemId: item.itemId,
+											type: item.type,
 											number: index + 1,
 											description: item.description,
 											body: note.body,

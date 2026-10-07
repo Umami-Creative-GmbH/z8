@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import type { ReactNode } from "react";
 import { ExpenseHistory } from "./expense-history";
 import {
 	NewMileageExpenseButton,
@@ -11,6 +12,8 @@ import {
 interface TravelExpenseManagementProps {
 	organizationId: string;
 	employeeId: string;
+	/** Approvals and finance entries, rendered under the page header. */
+	banners?: ReactNode;
 }
 
 /**
@@ -20,6 +23,7 @@ interface TravelExpenseManagementProps {
 export function TravelExpenseManagement({
 	organizationId,
 	employeeId,
+	banners,
 }: TravelExpenseManagementProps) {
 	const { t } = useTranslate();
 
@@ -43,6 +47,8 @@ export function TravelExpenseManagement({
 					<NewTripReportButton />
 				</div>
 			</div>
+
+			{banners && <div className="space-y-4 px-4 lg:px-6">{banners}</div>}
 
 			<div className="px-4 lg:px-6">
 				<ExpenseHistory organizationId={organizationId} employeeId={employeeId} />

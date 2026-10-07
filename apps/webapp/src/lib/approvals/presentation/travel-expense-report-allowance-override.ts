@@ -3,6 +3,7 @@ import type {
 	TravelExpenseReportSubmittedItem,
 } from "../evidence/travel-expense-report-facts";
 import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../inbox/types";
+import { reportItemTitle } from "./travel-expense-report-item-title";
 
 /**
  * Review presentation of audited allowance overrides (#610): the reviewer
@@ -125,7 +126,7 @@ export function allowanceOverrideReviewSections(
 		item.allowanceOverride
 			? [
 					text("approvals:approvals.evidence.allowanceOverrideCalloutItem", "{item} ({amount})", {
-						item: `${index + 1}. ${item.description}`,
+						item: reportItemTitle(item, index),
 						amount: {
 							kind: "money",
 							amount: item.allowanceOverride.amount,
