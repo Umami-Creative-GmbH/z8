@@ -43,6 +43,7 @@
 		"resend": "^6.32.0",
 		"sanitize-html": "^2.18.0",
 		"server-only": "0.0.1",
+		"sharp": "^0.35.5",
 		"stripe": "^23.0.0",
 		"temporal-polyfill": "1.0.5",
 		"undici": "8.11.2",
