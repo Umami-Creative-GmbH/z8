@@ -64,18 +64,25 @@ describe("planLegacyDraftConversion", () => {
 	});
 
 	it("keeps a foreign receipt in its original currency and a zero-decimal currency exactly", () => {
-		expect(
-			planLegacyDraftConversion(
-				{ ...receiptClaim, originalAmount: "1500.00", originalCurrency: "jpy" },
-				context,
-			).item,
-		).toMatchObject({ originalAmount: "1500.00", originalCurrency: "JPY" });
+		const yen = planLegacyDraftConversion(
+			{ ...receiptClaim, originalAmount: "1500.00", originalCurrency: "jpy" },
+			context,
+		);
+		expect(yen.item).toMatchObject({ originalAmount: "1500.00", originalCurrency: "JPY" });
+		// The legacy draft recorded no conversion into the reimbursement currency.
+		expect(yen.flags).toContain("conversion_required");
 		const fractionalYen = planLegacyDraftConversion(
 			{ ...receiptClaim, originalAmount: "1500.50", originalCurrency: "JPY" },
 			context,
 		);
 		expect(fractionalYen.item).toMatchObject({ originalAmount: null, originalCurrency: "JPY" });
-		expect(fractionalYen.flags).toEqual(["amount_not_carried"]);
+		expect(fractionalYen.flags).toEqual(["amount_not_carried", "conversion_required"]);
+		expect(
+			planLegacyDraftConversion(
+				{ ...receiptClaim, originalCurrency: "CHF" },
+				{ ...context, reimbursementCurrency: "CHF" },
+			).flags,
+		).not.toContain("conversion_required");
 	});
 
 	it("does not carry an amount the new model would refuse", () => {

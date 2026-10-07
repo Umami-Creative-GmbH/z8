@@ -362,3 +362,51 @@ export async function resolveReportProjectAttribution(
 	}
 	return ineligible.length > 0 ? { ok: false, itemIds: ineligible } : { ok: true, attribution };
 }
+
+/**
+ * The owner's draft expenses whose effective project (own or inherited from
+ * the trip) is not proven on their own date: exactly the expenses submission
+ * would refuse as `project_ineligible`, so the editor can say so up front.
+ * A trip project eligible on some trip day may still fail other days.
+ */
+export async function listReportProjectIssues(
+	reader: Reader,
+	owner: ReportOwner,
+	reportId: string,
+): Promise<{ kind: "issues"; itemIds: string[] } | { kind: "not_found" }> {
+	const [report] = await reader
+		.select({
+			organizationId: travelExpenseReport.organizationId,
+			kind: travelExpenseReport.kind,
+			tripTimeZone: travelExpenseReport.tripTimeZone,
+			projectId: travelExpenseReport.projectId,
+		})
+		.from(travelExpenseReport)
+		.where(
+			and(
+				eq(travelExpenseReport.id, reportId),
+				eq(travelExpenseReport.organizationId, owner.organizationId),
+				eq(travelExpenseReport.employeeId, owner.employeeId),
+			),
+		)
+		.limit(1);
+	if (!report) return { kind: "not_found" };
+	const items = await reader
+		.select({
+			id: travelExpenseReportItem.id,
+			expenseDate: travelExpenseReportItem.expenseDate,
+			projectId: travelExpenseReportItem.projectId,
+			projectInherits: travelExpenseReportItem.projectInherits,
+		})
+		.from(travelExpenseReportItem)
+		.where(
+			and(
+				eq(travelExpenseReportItem.reportId, reportId),
+				eq(travelExpenseReportItem.organizationId, owner.organizationId),
+			),
+		);
+	// Undated expenses are already incomplete; only dated ones are checked here.
+	const dated = items.filter((item) => item.expenseDate !== null);
+	const result = await resolveReportProjectAttribution(reader, owner, { report, items: dated });
+	return { kind: "issues", itemIds: result.ok ? [] : result.itemIds };
+}

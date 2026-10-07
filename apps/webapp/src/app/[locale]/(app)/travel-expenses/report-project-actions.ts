@@ -9,6 +9,7 @@ import { logger } from "@/lib/logger";
 import type { ItemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import {
 	listReportProjectChoices,
+	listReportProjectIssues,
 	type ProjectChoiceOption,
 	type ProjectChoiceRefusal,
 	saveItemProjectDraft,
@@ -66,6 +67,27 @@ export async function getReportProjectChoicesAction(
 	} catch (error) {
 		logger.error({ error }, "Failed to load expense project choices");
 		return { success: false, error: "Failed to load projects" };
+	}
+}
+
+/**
+ * Dated expenses of the employee's draft whose project (own or inherited from
+ * the trip) is not proven on their own date: submission would refuse them.
+ */
+export async function getReportProjectIssuesAction(input: {
+	reportId: string;
+}): Promise<ServerActionResult<{ ineligibleItemIds: string[] }>> {
+	try {
+		const owner = await currentOwner();
+		if (!owner) return { success: false, error: "Unauthorized" };
+		const parsed = z.object({ reportId: z.uuid() }).safeParse(input);
+		if (!parsed.success) return { success: false, error: "Expense report not found" };
+		const result = await listReportProjectIssues(db, owner, parsed.data.reportId);
+		if (result.kind === "not_found") return { success: false, error: "Expense report not found" };
+		return { success: true, data: { ineligibleItemIds: result.itemIds } };
+	} catch (error) {
+		logger.error({ error }, "Failed to check expense projects");
+		return { success: false, error: "Failed to check projects" };
 	}
 }
 

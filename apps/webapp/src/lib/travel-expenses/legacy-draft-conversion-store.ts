@@ -280,11 +280,12 @@ async function attemptConversion(
 						.limit(1)
 				).length === 1
 			: false;
+		const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
 		const plan = planLegacyDraftConversion(legacy, {
 			defaultTimeZone: options.defaultTimeZone,
 			projectInOrganization,
+			reimbursementCurrency: currency,
 		});
-		const currency = await loadOrganizationReimbursementCurrency(tx, owner.organizationId);
 
 		const [report] = await tx
 			.insert(travelExpenseReport)

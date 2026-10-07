@@ -70,6 +70,11 @@ export function legacyConversionFlagText(
 				"travelExpenses.legacyDraft.flags.projectMissing",
 				"The draft's project no longer exists. Choose a project if one applies.",
 			);
+		case "conversion_required":
+			return t(
+				"travelExpenses.legacyDraft.flags.conversion",
+				"The receipt is in a foreign currency. The draft recorded no conversion, so add how it was converted (card charge or rate) before you submit.",
+			);
 	}
 }
 

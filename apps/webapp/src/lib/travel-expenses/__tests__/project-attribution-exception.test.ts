@@ -38,4 +38,18 @@ describe("parseProjectAttributionExceptionDraft", () => {
 			parseProjectAttributionExceptionDraft({ ...draft, validTo: "2026-10-07" }, "2026-10-06"),
 		).toEqual({ ok: false, errors: ["future_dates"] });
 	});
+
+	it("covers only dates before captured assignment history (#605 review)", () => {
+		expect(parseProjectAttributionExceptionDraft(draft, "2026-10-06", "2026-07-01")).toMatchObject({
+			ok: true,
+		});
+		expect(parseProjectAttributionExceptionDraft(draft, "2026-10-06", "2026-06-30")).toEqual({
+			ok: false,
+			errors: ["after_history_capture"],
+		});
+		expect(parseProjectAttributionExceptionDraft(draft, "2026-10-06", "2026-04-01")).toEqual({
+			ok: false,
+			errors: ["after_history_capture"],
+		});
+	});
 });

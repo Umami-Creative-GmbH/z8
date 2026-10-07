@@ -4,7 +4,11 @@ import {
 	TRAVEL_EXPENSE_RECEIPT_STORAGE_PROVIDER,
 } from "./attachment-validation";
 import { currencyMinorUnitDigits, formatUnits, parseUnits, STORED_AMOUNT_SCALE } from "./money";
-import { isSupportedCurrency, MAX_DESCRIPTION_LENGTH } from "./receipt-report";
+import {
+	DEFAULT_REIMBURSEMENT_CURRENCY,
+	isSupportedCurrency,
+	MAX_DESCRIPTION_LENGTH,
+} from "./receipt-report";
 import type { TripDestination } from "./trip-destination";
 import { isTripCountryCode, MAX_DESTINATION_PLACE_LENGTH, TRIP_COUNTRY_CODES } from "./trip-report";
 
@@ -79,6 +83,11 @@ export const LEGACY_CONVERSION_FLAGS = [
 	"project_eligibility_required",
 	/** The legacy project no longer exists in the organization. */
 	"project_not_carried",
+	/**
+	 * A foreign-currency legacy receipt (#616): it needs a conversion into the
+	 * reimbursement currency, which the legacy draft never recorded.
+	 */
+	"conversion_required",
 ] as const;
 export type LegacyConversionFlag = (typeof LEGACY_CONVERSION_FLAGS)[number];
 
@@ -122,6 +131,8 @@ export interface LegacyConversionContext {
 	defaultTimeZone: string;
 	/** Whether the legacy `projectId` names a project of the claim's organization. */
 	projectInOrganization: boolean;
+	/** The converted report's reimbursement currency (default EUR). */
+	reimbursementCurrency?: string;
 }
 
 function trimmed(value: string | null): string | null {
@@ -285,6 +296,12 @@ export function planLegacyDraftConversion(
 
 	const money = carriedAmount(claim.originalAmount, claim.originalCurrency);
 	if (money.amount === null) flags.add("amount_not_carried");
+	if (
+		money.currency !== null &&
+		money.currency !== (context.reimbursementCurrency ?? DEFAULT_REIMBURSEMENT_CURRENCY)
+	) {
+		flags.add("conversion_required");
+	}
 	const description = notes && notes.length <= MAX_DESCRIPTION_LENGTH ? notes : null;
 	if (notes && !description) flags.add("notes_not_carried");
 	return {

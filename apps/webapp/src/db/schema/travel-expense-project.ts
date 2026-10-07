@@ -69,3 +69,17 @@ export const travelExpenseProjectAttributionException = pgTable(
 		),
 	],
 );
+
+// When captured project assignment and team history (#605, migration 0120)
+// begins for an organization that existed then (migration 0132). Exceptions
+// cover only expense dates before it; an organization without a row was
+// created later and has captured history since its creation.
+export const travelExpenseProjectHistoryCapture = pgTable(
+	"travel_expense_project_history_capture",
+	{
+		organizationId: text("organization_id")
+			.primaryKey()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		capturedFrom: timestamp("captured_from", { withTimezone: true }).notNull(),
+	},
+);

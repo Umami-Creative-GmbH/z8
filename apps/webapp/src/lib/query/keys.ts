@@ -103,6 +103,9 @@ export const queryKeys = {
 		receiptExceptionSettings: () => ["travel-expenses", "settings", "receipt-exceptions"] as const,
 		projectChoices: (reportId: string, from: string, to: string, selected: string | null) =>
 			["travel-expenses", "reports", reportId, "projects", from, to, selected] as const,
+		/** Expenses whose project is not proven on their date; `fingerprint` = saved dates and projects. */
+		reportProjectIssues: (reportId: string, fingerprint: string) =>
+			["travel-expenses", "reports", reportId, "project-issues", fingerprint] as const,
 		projectExceptions: () => ["travel-expenses", "settings", "project-exceptions"] as const,
 		financeExports: () => ["travel-expenses", "finance", "exports"] as const,
 		reportReopen: (reportId: string) => ["travel-expenses", "reports", reportId, "reopen"] as const,

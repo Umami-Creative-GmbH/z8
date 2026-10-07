@@ -84,6 +84,12 @@ function errorMessages(
 					"Exceptions cover past expenses only. Assign the employee to the project for current work.",
 				);
 				break;
+			case "after_history_capture":
+				messages.validTo = t(
+					"settings.travelExpenses.projectExceptions.errors.afterHistoryCapture",
+					"Exceptions cover only dates before project assignments were recorded. For later dates, the recorded assignments decide: assign the employee to the project.",
+				);
+				break;
 			case "reason":
 				messages.reason = t(
 					"settings.travelExpenses.projectExceptions.errors.reason",

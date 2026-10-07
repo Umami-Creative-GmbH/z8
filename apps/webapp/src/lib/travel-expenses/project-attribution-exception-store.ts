@@ -2,8 +2,18 @@ import { and, desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
 import { organization, user } from "@/db/auth-schema";
-import { employee, project, travelExpenseProjectAttributionException } from "@/db/schema";
-import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	employee,
+	project,
+	travelExpenseProjectAttributionException,
+	travelExpenseProjectHistoryCapture,
+} from "@/db/schema";
+import {
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import { resolvePersonalTimezone } from "@/lib/timezone/resolve-timezone";
 import {
 	type ProjectAttributionExceptionDraft,
@@ -34,17 +44,34 @@ export type AuthorizeProjectExceptionResult =
 	| { kind: "employee_not_found" }
 	| { kind: "project_not_found" };
 
-/** Today's calendar date in the organization's zone. */
-async function organizationToday(database: Database, organizationId: string, now: Instant) {
+/**
+ * Today's calendar date and the first day of captured assignment history
+ * (#605) in the organization's zone. An organization without a recorded
+ * capture start was created after capture began: its history starts with it.
+ */
+async function organizationCalendar(database: Database, organizationId: string, now: Instant) {
 	const [row] = await database
-		.select({ timezone: organization.timezone })
+		.select({
+			timezone: organization.timezone,
+			createdAt: organization.createdAt,
+			capturedFrom: travelExpenseProjectHistoryCapture.capturedFrom,
+		})
 		.from(organization)
+		.leftJoin(
+			travelExpenseProjectHistoryCapture,
+			eq(travelExpenseProjectHistoryCapture.organizationId, organization.id),
+		)
 		.where(eq(organization.id, organizationId))
 		.limit(1);
 	const timeZone = resolvePersonalTimezone({
 		organizationTimezone: row?.timezone ?? undefined,
 	}).timezone;
-	return now.toZonedDateTimeISO(timeZone).toPlainDate().toString();
+	const day = (instant: Instant) => instant.toZonedDateTimeISO(timeZone).toPlainDate().toString();
+	const capturedFrom = row?.capturedFrom ?? row?.createdAt ?? null;
+	return {
+		today: day(now),
+		historyCapturedFrom: capturedFrom ? day(instantFromDate(capturedFrom)) : null,
+	};
 }
 
 export async function authorizeProjectAttributionException(
@@ -54,9 +81,11 @@ export async function authorizeProjectAttributionException(
 	now: Instant = systemClock.nowInstant(),
 ): Promise<AuthorizeProjectExceptionResult> {
 	if (input.employeeId === actor.employeeId) return { kind: "self_authorization" };
+	const calendar = await organizationCalendar(database, actor.organizationId, now);
 	const parsed = parseProjectAttributionExceptionDraft(
 		input,
-		await organizationToday(database, actor.organizationId, now),
+		calendar.today,
+		calendar.historyCapturedFrom,
 	);
 	if (!parsed.ok) return { kind: "invalid", errors: parsed.errors };
 	const [subject] = await database

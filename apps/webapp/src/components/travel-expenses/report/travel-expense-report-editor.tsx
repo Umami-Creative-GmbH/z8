@@ -58,6 +58,7 @@ import { type IncompleteExpense, ReportTotals, TripRequirements } from "./report
 import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
 import { TripDetailsEditor } from "./trip-details-editor";
+import { useReportProjectIssues } from "./use-report-project-issues";
 
 /** Live entered values per expense; null while an expense has malformed fields. */
 type LiveDrafts = Record<string, ReceiptItemDraft | null>;
@@ -389,6 +390,18 @@ function TripReportBody({
 	const [tripProjectId, setTripProjectId] = useState(report.projectId ?? null);
 	const addButton = useRef<HTMLButtonElement>(null);
 	const { items } = report;
+	const projectIssues = useReportProjectIssues(
+		report.id,
+		JSON.stringify([
+			tripProjectId,
+			items.map((item) => [
+				item.id,
+				liveDraft(item, drafts)?.expenseDate ?? item.expenseDate,
+				item.projectId ?? null,
+				item.projectInherits ?? true,
+			]),
+		]),
+	);
 
 	// Moves focus once the added expense is rendered, or back to the add
 	// action once the removed one is gone, so keyboard users keep their place.
@@ -523,7 +536,13 @@ function TripReportBody({
 	// The per diem must match the travel dates as entered on screen.
 	const liveReport = { ...report, trip: details ? { ...trip, ...details } : report.trip };
 	const incompleteExpenses: IncompleteExpense[] = items.flatMap((item, index) => {
-		if (!itemIncomplete(item, drafts, mileageDrafts, liveReport, perDiemDrafts)) return [];
+		// An expense whose project is not proven on its date is refused at submission.
+		if (
+			!itemIncomplete(item, drafts, mileageDrafts, liveReport, perDiemDrafts) &&
+			!projectIssues.ineligibleItemIds.has(item.id)
+		) {
+			return [];
+		}
 		const description =
 			item.type === "per_diem"
 				? t("travelExpenses.report.perDiem.title", "Per diem")
@@ -646,6 +665,8 @@ function TripReportBody({
 											onReceiptsChanged={refreshReport}
 											onSaved={(saved) => {
 												void refreshDrafts();
+												// A saved date may change which project the expense can use.
+												void projectIssues.recheck();
 												if (referenceRateReloadNeeded(report.referenceRateProvider, item, saved)) {
 													void refreshReport();
 												}

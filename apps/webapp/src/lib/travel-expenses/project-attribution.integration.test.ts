@@ -473,6 +473,16 @@ describe("expense project attribution (#605)", () => {
 		expect(await chooseTripProject(reportId, ids.direct)).toMatchObject({
 			data: { status: "saved" },
 		});
+		// The editor learns per expense, before submitting, what submission refuses.
+		signIn("requester");
+		expect(await projectActions.getReportProjectIssuesAction({ reportId })).toEqual({
+			success: true,
+			data: { ineligibleItemIds: [early] },
+		});
+		signIn("foreigner");
+		expect(await projectActions.getReportProjectIssuesAction({ reportId })).toMatchObject({
+			success: false,
+		});
 		// The early expense inherits a project not proven on its own date.
 		expect(await submit(reportId)).toEqual({
 			success: true,
@@ -480,6 +490,11 @@ describe("expense project attribution (#605)", () => {
 		});
 		expect(await chooseItemProject(reportId, early, { mode: "none" })).toMatchObject({
 			data: { status: "saved" },
+		});
+		signIn("requester");
+		expect(await projectActions.getReportProjectIssuesAction({ reportId })).toEqual({
+			success: true,
+			data: { ineligibleItemIds: [] },
 		});
 		expect(await submit(reportId)).toEqual({ success: true, data: { status: "submitted" } });
 		const { projects } = await frozenProjects(reportId);
@@ -583,6 +598,44 @@ describe("expense project attribution (#605)", () => {
 			"select count(*)::int as count from travel_expense_project_attribution_exception",
 		);
 		expect(rows[0]?.count).toBe(0);
+	});
+
+	it("limits exceptions to dates before the organization's assignment history began", async () => {
+		await admin.query(
+			`insert into travel_expense_project_history_capture (organization_id, captured_from)
+			 values ('t605-org', '2026-01-20T08:00:00Z')`,
+		);
+		signIn("admin");
+		expect(
+			await authorizeException({
+				projectId: ids.unassigned,
+				validFrom: "2026-01-01",
+				validTo: "2026-01-20",
+			}),
+		).toEqual({ success: true, data: { status: "invalid", errors: ["after_history_capture"] } });
+		expect(
+			await authorizeException({
+				projectId: ids.unassigned,
+				validFrom: "2026-01-01",
+				validTo: "2026-01-19",
+			}),
+		).toMatchObject({ success: true, data: { status: "authorized" } });
+	});
+
+	it("records team history only for a team of the employee's organization", async () => {
+		await admin.query(
+			"insert into team (id, organization_id, name, updated_at) values ($1, 't605-foreign', 'Foreign team', now())",
+			["e6051000-0000-4000-8000-000000000002"],
+		);
+		await admin.query("update employee set team_id = $2 where id = $1", [
+			ids.requester,
+			"e6051000-0000-4000-8000-000000000002",
+		]);
+		const { rows } = await admin.query(
+			"select team_id from employee_team_history where employee_id = $1",
+			[ids.requester],
+		);
+		expect(rows).toEqual([]);
 	});
 
 	it("always rejects another organization's project", async () => {
