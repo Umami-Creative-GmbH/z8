@@ -5,9 +5,10 @@
  * sorting, and cursor-based pagination.
  */
 
-import { Context, Effect, Layer } from "effect";
+import { Cause, Context, Effect, Layer } from "effect";
 import type { AnyAppError } from "@/lib/effect/errors";
-import { DatabaseServiceLive } from "@/lib/effect/services/database.service";
+import type { DatabaseService } from "@/lib/effect/services/database.service";
+import { createLogger } from "@/lib/logger";
 import { getAllApprovalHandlers } from "../domain/registry";
 import { comparePriority } from "../domain/sla-calculator";
 import type {
@@ -104,30 +105,34 @@ function isItemAfterCursor(
 	return compareApprovalItems(item, cursorItem) > 0;
 }
 
+const logger = createLogger("ApprovalQueryService");
+
 // ============================================
 // SERVICE DEFINITION
 // ============================================
 
+/**
+ * The handlers read through `DatabaseService`, so every runner of these
+ * effects must provide it (the layer itself does not).
+ */
 export class ApprovalQueryService extends Context.Service<
 	ApprovalQueryService,
 	{
 		/**
 		 * Get unified approvals with pagination and filtering.
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getApprovals: (
 			params: ApprovalQueryParams,
-		) => Effect.Effect<PaginatedApprovalResult, AnyAppError, any>;
+		) => Effect.Effect<PaginatedApprovalResult, AnyAppError, DatabaseService>;
 
 		/**
 		 * Get total counts per approval type.
 		 */
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		readonly getCounts: (
 			approverId: string,
 			organizationId: string,
 			visibility?: Pick<ApprovalQueryParams, "eligibleApprovalScopes" | "includeAllApprovers">,
-		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, any>;
+		) => Effect.Effect<Record<ApprovalType, number>, AnyAppError, DatabaseService>;
 	}
 >()("ApprovalQueryService") {}
 
@@ -153,7 +158,25 @@ export const ApprovalQueryServiceLive = Layer.effect(
 					const allItems: UnifiedApprovalItem[] = [];
 
 					for (const handler of activeHandlers) {
-						const items = yield* handler.getApprovals(params).pipe(Effect.catchCause(() => Effect.succeed([])));
+						const items = yield* handler.getApprovals(params).pipe(
+							// One failing type must not empty the whole list. Typed failures
+							// degrade quietly; defects (e.g. a missing service) are logged.
+							Effect.catchCause((cause) =>
+								Effect.sync(() => {
+									if (Cause.hasDies(cause)) {
+										logger.error(
+											{
+												approvalType: handler.type,
+												organizationId: params.organizationId,
+												cause: Cause.pretty(cause),
+											},
+											"Approval handler died while loading approvals",
+										);
+									}
+									return [];
+								}),
+							),
+						);
 						allItems.push(...items);
 					}
 
@@ -205,4 +228,4 @@ export const ApprovalQueryServiceLive = Layer.effect(
 				}),
 		});
 	}),
-).pipe(Layer.provide(DatabaseServiceLive));
+);
