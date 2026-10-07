@@ -15,13 +15,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { queryKeys } from "@/lib/query/keys";
+import type { FutureDates } from "@/lib/travel-expenses/future-dates";
 import {
 	type RequirementItem,
 	reportItemMissingRequirements,
 } from "@/lib/travel-expenses/item-requirements";
 import type { MileageItemDraft } from "@/lib/travel-expenses/mileage";
-import type { PerDiemItinerary } from "@/lib/travel-expenses/per-diem";
+import { type PerDiemItinerary, perDiemReturnInstant } from "@/lib/travel-expenses/per-diem";
 import { savedReceiptException } from "@/lib/travel-expenses/receipt-exception";
 import {
 	type ReceiptItemDraft,
@@ -57,6 +59,7 @@ import { type SubmitBlocker, SubmitReportPanel } from "./submit-report-panel";
 import { SubmittedTravelExpenseReport } from "./submitted-report";
 import { TripDetailsEditor } from "./trip-details-editor";
 import { useReportProjectIssues } from "./use-report-project-issues";
+import { useSubmissionNow } from "./use-submission-now";
 import { useTripExpenseItems } from "./use-trip-expense-items";
 
 /** Live entered values per expense; null while an expense has malformed fields. */
@@ -104,6 +107,7 @@ function itemIncomplete(
 	drafts: LiveDrafts,
 	mileageDrafts: MileageDrafts,
 	report: Pick<ReportView, "reimbursementCurrency" | "receiptExceptionsAllowed" | "trip">,
+	now: Instant,
 	perDiemDrafts: PerDiemDrafts = {},
 ): boolean {
 	const { reimbursementCurrency } = report;
@@ -118,6 +122,7 @@ function itemIncomplete(
 						startDate: report.trip?.startDate ?? null,
 						endDate: report.trip?.endDate ?? null,
 					},
+					now,
 				},
 			).length > 0
 		);
@@ -127,7 +132,7 @@ function itemIncomplete(
 			!mileageSaved(item, mileageDrafts) ||
 			reportItemMissingRequirements(
 				{ type: item.type, draft: item, receiptCount: item.receipts.length, mileage: item.mileage },
-				{ reimbursementCurrency },
+				{ reimbursementCurrency, now },
 			).length > 0
 		);
 	}
@@ -138,8 +143,38 @@ function itemIncomplete(
 				reimbursementCurrency,
 				receiptException: savedReceiptException(item, report.receiptExceptionsAllowed),
 				conversion: item.conversion,
+				now,
 			}).length > 0
 		: true;
+}
+
+/**
+ * What may still be future-dated on screen (#685): the entered expense dates,
+ * the trip end and the per diem return, for the editor's submission clock.
+ */
+function futureDatesOnScreen(
+	items: readonly ReportItemView[],
+	drafts: LiveDrafts,
+	mileageDrafts: MileageDrafts,
+	perDiemDrafts: PerDiemDrafts,
+	tripEndDate: string | null,
+): FutureDates {
+	const dates = tripEndDate ? [tripEndDate] : [];
+	const instants: Instant[] = [];
+	for (const item of items) {
+		if (item.type === "per_diem") {
+			const itinerary = item.id in perDiemDrafts ? perDiemDrafts[item.id] : perDiemDraftOf(item);
+			const returned = itinerary ? perDiemReturnInstant(itinerary) : null;
+			if (returned) instants.push(returned);
+			continue;
+		}
+		const expenseDate =
+			item.type === "mileage"
+				? liveMileage(item, mileageDrafts)?.expenseDate
+				: liveDraft(item, drafts)?.expenseDate;
+		if (expenseDate) dates.push(expenseDate);
+	}
+	return { dates, instants };
 }
 
 /** Whether everything on screen equals the saved report, so reviewing it reviews this. */
@@ -322,13 +357,14 @@ function StandaloneReportBody({
 	const loadSavedReport = useSavedReportLoader(report.id);
 	const [drafts, setDrafts] = useState<LiveDrafts>({});
 	const [mileageDrafts, setMileageDrafts] = useState<MileageDrafts>({});
+	const now = useSubmissionNow(futureDatesOnScreen(report.items, drafts, mileageDrafts, {}, null));
 	const item = report.items[0];
 	if (!item) return null;
 	const isMileage = item.type === "mileage";
 	const unsaved = isMileage ? !mileageSaved(item, mileageDrafts) : !liveDraft(item, drafts);
 	const blocker: SubmitBlocker = unsaved
 		? "unsaved"
-		: itemIncomplete(item, drafts, mileageDrafts, report)
+		: itemIncomplete(item, drafts, mileageDrafts, report, now)
 			? "incomplete"
 			: null;
 
@@ -352,6 +388,7 @@ function StandaloneReportBody({
 						reimbursementCurrency={report.reimbursementCurrency}
 						onSaved={() => void Promise.all([refreshReport(), refreshDrafts()])}
 						onDraftChange={(draft) => setMileageDrafts({ [item.id]: draft })}
+						now={now}
 					/>
 				) : (
 					<ReceiptItemEditor
@@ -371,6 +408,7 @@ function StandaloneReportBody({
 						}}
 						onDraftChange={(draft) => setDrafts({ [item.id]: draft })}
 						project={{ isTrip: false, tripProjectId: null }}
+						now={now}
 					/>
 				)}
 				<ReportTotals
@@ -408,6 +446,9 @@ function TripReportBody({
 	const [perDiemDrafts, setPerDiemDrafts] = useState<PerDiemDrafts>({});
 	const [tripProjectId, setTripProjectId] = useState(report.projectId ?? null);
 	const { items } = report;
+	const now = useSubmissionNow(
+		futureDatesOnScreen(items, drafts, mileageDrafts, perDiemDrafts, details?.endDate ?? null),
+	);
 	const projectIssues = useReportProjectIssues(
 		report.id,
 		JSON.stringify([
@@ -468,6 +509,7 @@ function TripReportBody({
 						: [];
 				}),
 				reimbursementCurrency: report.reimbursementCurrency,
+				now,
 			})
 		: null;
 	// The per diem must match the travel dates as entered on screen.
@@ -475,7 +517,7 @@ function TripReportBody({
 	const incompleteExpenses: IncompleteExpense[] = items.flatMap((item, index) => {
 		// An expense whose project is not proven on its date is refused at submission.
 		if (
-			!itemIncomplete(item, drafts, mileageDrafts, liveReport, perDiemDrafts) &&
+			!itemIncomplete(item, drafts, mileageDrafts, liveReport, now, perDiemDrafts) &&
 			!projectIssues.ineligibleItemIds.has(item.id)
 		) {
 			return [];
@@ -561,6 +603,7 @@ function TripReportBody({
 											onDraftChange={(draft) =>
 												setPerDiemDrafts((current) => ({ ...current, [item.id]: draft }))
 											}
+											now={now}
 											removal={{
 												label: t(
 													"travelExpenses.report.items.removeLabel",
@@ -581,6 +624,7 @@ function TripReportBody({
 											onDraftChange={(draft) =>
 												setMileageDrafts((current) => ({ ...current, [item.id]: draft }))
 											}
+											now={now}
 											removal={{
 												label: t(
 													"travelExpenses.report.items.removeLabel",
@@ -623,6 +667,7 @@ function TripReportBody({
 												remove: (expectedVersion) => removeItem(item.id, expectedVersion),
 											}}
 											project={{ isTrip: true, tripProjectId }}
+											now={now}
 										/>
 									)}
 								</CardContent>
@@ -652,6 +697,7 @@ function TripReportBody({
 				<TripRequirements
 					id={report.id}
 					trip={requirements?.trip ?? null}
+					endDate={details?.endDate ?? null}
 					incompleteExpenses={incompleteExpenses}
 				/>
 			</div>

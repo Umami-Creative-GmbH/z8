@@ -5,6 +5,7 @@ export {
 	formatMoney,
 	formatPlainDate,
 	formatPlainDateRange,
+	formatPlainTime,
 	formatRecordedInstant,
 	formatSignedMoney,
 } from "@/lib/travel-expenses/format";

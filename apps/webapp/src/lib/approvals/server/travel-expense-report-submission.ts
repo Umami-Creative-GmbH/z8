@@ -334,6 +334,8 @@ export async function submitTravelExpenseReport(
 						})),
 				},
 				input.reviewed,
+				// The instant `submittedAt` records: nothing dated after it is submitted (#685).
+				now,
 			);
 			if (!check.ok) {
 				refuse(
@@ -457,6 +459,7 @@ export async function submitTravelExpenseReport(
 			if (!frozen) refuse({ kind: "not_found" });
 			const facts = buildTravelExpenseReportSubmittedFacts({
 				...frozen,
+				submittedAt: now,
 				receiptExceptionsAllowed,
 				projectAttribution: projects.attribution,
 				...(adjustment.status === "ok" ? { adjustmentBaseline: adjustment.baseline } : {}),

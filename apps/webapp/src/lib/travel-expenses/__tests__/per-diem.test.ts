@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import {
 	calculatePerDiem,
 	type PerDiemCalculation,
@@ -508,14 +509,17 @@ describe("missing facts and policy", () => {
 		).toBe("incomplete");
 	});
 
+	/** After every return of these itineraries (#685). */
+	const afterTrips = parseInstant("2026-10-07T12:00:00Z");
+
 	it("is incomplete until the meal facts cover exactly the travel days", () => {
 		const trip = itinerary("2026-06-01T08:00", "2026-06-03T18:00", {
 			meals: mealsFor("2026-06-01", "2026-06-02"),
 		});
 		expect(calculatePerDiem(trip, context()).status).toBe("incomplete");
-		expect(perDiemMissingRequirements(trip, calculatePerDiem(trip, context()), {})).toContain(
-			"per_diem_meals",
-		);
+		expect(
+			perDiemMissingRequirements(trip, calculatePerDiem(trip, context()), {}, afterTrips),
+		).toContain("per_diem_meals");
 	});
 
 	it("names the days no policy version covers", () => {
@@ -554,10 +558,12 @@ describe("missing facts and policy", () => {
 		const trip = itinerary("2026-06-01T08:00", "2026-06-02", { overnight: null });
 		const calculation = calculatePerDiem(trip, context());
 		expect(
-			perDiemMissingRequirements(trip, calculation, {
-				startDate: "2026-06-01",
-				endDate: "2026-06-03",
-			}),
+			perDiemMissingRequirements(
+				trip,
+				calculation,
+				{ startDate: "2026-06-01", endDate: "2026-06-03" },
+				afterTrips,
+			),
 		).toEqual(["per_diem_end", "per_diem_overnight", "per_diem_trip_dates"]);
 	});
 
@@ -566,7 +572,12 @@ describe("missing facts and policy", () => {
 			prolongedWorkplace: true,
 		});
 		expect(
-			perDiemMissingRequirements(exceptional, calculatePerDiem(exceptional, context()), {}),
+			perDiemMissingRequirements(
+				exceptional,
+				calculatePerDiem(exceptional, context()),
+				{},
+				afterTrips,
+			),
 		).toEqual(["per_diem_exceptional"]);
 		const uncovered = itinerary("2026-06-01T08:00", "2026-06-01T18:00");
 		expect(
@@ -574,6 +585,7 @@ describe("missing facts and policy", () => {
 				uncovered,
 				calculatePerDiem(uncovered, context({ resolvePolicy: perDiemPolicyResolver([]) })),
 				{},
+				afterTrips,
 			),
 		).toEqual(["per_diem_policy_missing"]);
 	});

@@ -59,6 +59,11 @@ const policyActions = await import(
 	"@/app/[locale]/(app)/settings/travel-expenses/per-diem-policy-actions"
 );
 const { POST: approveRoute } = await import("@/app/api/approvals/inbox/[id]/approve/route");
+const { submitTravelExpenseReport } = await import(
+	"@/lib/approvals/server/travel-expense-report-submission"
+);
+const { db } = await import("@/db");
+const { parseInstant } = await import("@/lib/datetime/temporal-core");
 
 const ids = {
 	requester: "e6090000-0000-4000-8000-000000000001",
@@ -509,6 +514,41 @@ describe("domestic per diem from travel timing and daily meals (#609)", () => {
 		]);
 		expect(rows[0]?.status).toBe("approved");
 		expect((await revisionFacts(reportId)).material_fingerprint).toBe(frozen.material_fingerprint);
+	});
+
+	it("refuses a per diem until its return has passed, at the injected submission instant (#685)", async () => {
+		await activateOrganizationRates("2026-01-01", "28.00", "14.00");
+		const { reportId, item } = await trip("2026-09-14", "2026-09-15");
+		// 19:40 in Berlin on 2026-09-15 is 17:40Z.
+		await savePerDiem(reportId, item, {
+			startDate: "2026-09-14",
+			startTime: "07:15",
+			endDate: "2026-09-15",
+			endTime: "19:40",
+		});
+		const owner = {
+			organizationId: "t609-org",
+			employeeId: ids.requester,
+			userId: "t609-requester",
+		};
+		const at = async (now: string) =>
+			submitTravelExpenseReport(
+				db,
+				{ owner, reportId, reviewed: await reviewed(reportId) },
+				parseInstant(now),
+			);
+
+		expect(await at("2026-09-15T17:39:00Z")).toEqual({
+			kind: "incomplete",
+			missing: { trip: [], items: [{ id: item.id, missing: ["per_diem_not_returned"] }] },
+		});
+		const { rows } = await admin.query("select status from travel_expense_report where id = $1", [
+			reportId,
+		]);
+		expect(rows[0]?.status).toBe("draft");
+
+		expect(await at("2026-09-15T17:41:00Z")).toMatchObject({ kind: "submitted" });
+		expect((await revisionFacts(reportId)).facts.totals).toMatchObject({ reimbursable: "28.00" });
 	});
 
 	it("refuses a submission whose calculated allowance changed since the review", async () => {

@@ -148,6 +148,33 @@ describe("TravelExpenseReportEditor", () => {
 		expect(within(totals).getByText("€129.90")).toBeTruthy();
 	});
 
+	it("keeps a future-dated receipt from being submitted and says from when (#685)", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			report({
+				expenseDate: "2099-01-15",
+				receipts: [
+					{
+						id: "6a000000-0000-4000-8000-000000000003",
+						fileName: "invoice.pdf",
+						mimeType: "application/pdf",
+						sizeBytes: 4,
+						createdAt: "2026-10-05T10:05:00.000Z",
+					},
+				],
+			}),
+		);
+		mount();
+		expect(
+			await screen.findByText(
+				"This date is in the future. Correct it, or submit from Jan 15, 2099.",
+			),
+		).toBeTruthy();
+		expect(screen.queryByText("Attach the receipt.")).toBeNull();
+		expect(
+			(screen.getByRole("button", { name: "Review and submit" }) as HTMLButtonElement).disabled,
+		).toBe(true);
+	});
+
 	it("autosaves edits on the loaded version and reports saving, then saved", async () => {
 		let finishSave!: (value: unknown) => void;
 		reportActions.saveReceiptItemDraftAction.mockImplementationOnce(

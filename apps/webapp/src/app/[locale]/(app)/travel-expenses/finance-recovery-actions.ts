@@ -8,7 +8,8 @@ import { systemClock } from "@/lib/datetime/temporal-core";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
-import { latestCalendarDate, parseSettlementCommand } from "@/lib/travel-expenses/settlement";
+import { latestCalendarDate } from "@/lib/travel-expenses/future-dates";
+import { parseSettlementCommand } from "@/lib/travel-expenses/settlement";
 import { recordSettlementEntry } from "@/lib/travel-expenses/settlement-store";
 import type { RecordReimbursementResult } from "./finance-actions";
 

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { canonicalJson } from "./absence-facts";
 import { ApprovalEvidenceError } from "./errors";
 import {
@@ -9,6 +10,13 @@ import {
 	TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION,
 	type TravelExpenseReportFactsInput,
 } from "./travel-expense-report-facts";
+
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: parseInstant("2026-10-07T12:00:00Z"),
+	});
 
 type ItemRow = TravelExpenseReportFactsInput["items"][number];
 
@@ -83,7 +91,7 @@ function evidenceErrorOf(fn: () => unknown) {
 
 describe("frozen missing-receipt exceptions (#604)", () => {
 	it("freezes the explained exception of an expense without receipts and counts it", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(input());
+		const facts = freeze(input());
 
 		expect(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION).toBeGreaterThanOrEqual(2);
 		expect(facts.schemaVersion).toBe(TRAVEL_EXPENSE_REPORT_EVIDENCE_SCHEMA_VERSION);
@@ -96,7 +104,7 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 	});
 
 	it("omits the key for expenses with receipts, even with a leftover explanation", () => {
-		const facts = buildTravelExpenseReportSubmittedFacts(
+		const facts = freeze(
 			input({
 				items: [
 					item("train", 0, { receiptExceptionReason: "Thought it was lost" }),
@@ -108,20 +116,19 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 	});
 
 	it("refuses to freeze an exception the organization does not allow", () => {
-		expect(
-			evidenceErrorOf(() =>
-				buildTravelExpenseReportSubmittedFacts(input({ receiptExceptionsAllowed: false })),
-			),
-		).toEqual({ code: "evidence_incomplete", field: "items" });
+		expect(evidenceErrorOf(() => freeze(input({ receiptExceptionsAllowed: false })))).toEqual({
+			code: "evidence_incomplete",
+			field: "items",
+		});
 		const { receiptExceptionsAllowed: _omitted, ...withoutPolicy } = input();
-		expect(evidenceErrorOf(() => buildTravelExpenseReportSubmittedFacts(withoutPolicy))).toEqual({
+		expect(evidenceErrorOf(() => freeze(withoutPolicy))).toEqual({
 			code: "evidence_incomplete",
 			field: "items",
 		});
 	});
 
 	it("compares an unchanged exception as current, whatever today's policy says", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(input());
+		const submitted = freeze(input());
 		expect(
 			compareLiveTravelExpenseReportWithRevision(
 				submitted,
@@ -131,7 +138,7 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 	});
 
 	it("holds a report whose exception explanation changed or was replaced by a receipt", () => {
-		const submitted = buildTravelExpenseReportSubmittedFacts(input());
+		const submitted = freeze(input());
 		expect(
 			compareLiveTravelExpenseReportWithRevision(
 				submitted,
@@ -153,7 +160,7 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 		// Golden values computed at schema version 2 (#604), before v3 (#607) added
 		// conversion facts; this report has no foreign expense, so nothing changes.
 		const V2_FACTS_SHA256 = "0f45fb85d93fc65649ca7b5c1ff8020331eebb2ec3f6dd2bd11e6734c1b1f4c8";
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(input()), schemaVersion: 2 };
+		const facts = { ...freeze(input()), schemaVersion: 2 };
 		expect(createHash("sha256").update(canonicalJson(facts)).digest("hex")).toBe(V2_FACTS_SHA256);
 		expect(fingerprintTravelExpenseReportFacts(facts)).toBe(
 			`travel_expense_report:v2:${V2_FACTS_SHA256}`,
@@ -162,7 +169,7 @@ describe("frozen missing-receipt exceptions (#604)", () => {
 	});
 
 	it("snapshots live rows for a v1 revision without the exception key", () => {
-		const current = buildTravelExpenseReportSubmittedFacts(input());
+		const current = freeze(input());
 		// The same facts as a version 1 revision would have frozen them.
 		const v1 = {
 			...current,

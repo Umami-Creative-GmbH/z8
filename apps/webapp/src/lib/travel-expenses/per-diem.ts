@@ -1,6 +1,7 @@
 import { Temporal } from "temporal-polyfill";
 import {
 	comparePlainDates,
+	type Instant,
 	instantToCanonicalString,
 	type PlainDate,
 	parsePlainDate,
@@ -996,16 +997,28 @@ export type PerDiemRequirement =
 	/** No organization per diem policy covers an allowance day. */
 	| "per_diem_policy_missing"
 	/** The covering policy is not in the report's reimbursement currency. */
-	| "per_diem_currency";
+	| "per_diem_currency"
+	/**
+	 * The return has not passed yet (#685). An exact instant, never a calendar
+	 * day, and never resolved by an allowance override.
+	 */
+	| "per_diem_not_returned";
+
+/** The exact instant of the return, once the itinerary's travel times are complete and valid. */
+export function perDiemReturnInstant(itinerary: PerDiemItinerary): Instant | null {
+	return perDiemTravelTimes(itinerary)?.end.toInstant() ?? null;
+}
 
 /**
  * What still keeps a per diem from being submittable, in form order. Trip
- * dates are checked only when given (trip reports always give them).
+ * dates are checked only when given (trip reports always give them). `now`:
+ * when submission is (or would be) asked for.
  */
 export function perDiemMissingRequirements(
 	itinerary: PerDiemItinerary,
 	calculation: PerDiemCalculation,
 	trip: { startDate?: string | null; endDate?: string | null },
+	now: Instant,
 ): PerDiemRequirement[] {
 	const missing: PerDiemRequirement[] = [];
 	if (!itinerary.startDate || !itinerary.startTime || !itinerary.startTimeZone) {
@@ -1047,6 +1060,9 @@ export function perDiemMissingRequirements(
 	if (calculation.status === "exceptional") missing.push("per_diem_exceptional");
 	if (calculation.status === "policy_missing") missing.push("per_diem_policy_missing");
 	if (calculation.status === "currency_mismatch") missing.push("per_diem_currency");
+	const returned = perDiemReturnInstant(itinerary);
+	if (returned && Temporal.Instant.compare(returned, now) > 0)
+		missing.push("per_diem_not_returned");
 	return missing;
 }
 

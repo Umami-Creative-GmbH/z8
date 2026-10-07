@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { type ReceiptItemDraft, receiptReportTotals } from "../receipt-report";
 import {
 	isTripCountryCode,
@@ -6,6 +7,8 @@ import {
 	type TripDetailsDraft,
 	tripReportMissingRequirements,
 } from "../trip-report";
+
+const now = parseInstant("2026-10-07T12:00:00Z");
 
 const blank = {
 	purpose: null,
@@ -129,6 +132,7 @@ describe("tripReportMissingRequirements", () => {
 				details: { ...blank, destinations: [{ place: "Hamburg", countryCode: null }] },
 				items: [],
 				reimbursementCurrency: "EUR",
+				now,
 			}),
 		).toEqual({
 			trip: ["purpose", "travel_dates", "destination", "expense_item"],
@@ -145,6 +149,7 @@ describe("tripReportMissingRequirements", () => {
 					{ id: "hotel", draft: item({ paidBy: null }), receiptCount: 0 },
 				],
 				reimbursementCurrency: "EUR",
+				now,
 			}),
 		).toEqual({
 			trip: [],
@@ -158,8 +163,23 @@ describe("tripReportMissingRequirements", () => {
 				details: details(),
 				items: [{ id: "train", draft: item(), receiptCount: 1 }],
 				reimbursementCurrency: "EUR",
+				now,
 			}),
 		).toEqual({ trip: [], items: [] });
+	});
+
+	it("waits for the trip end, on the latest calendar date anywhere (#685)", () => {
+		const missing = (at: string, endDate = "2026-10-08") =>
+			tripReportMissingRequirements({
+				details: details({ endDate }),
+				items: [{ id: "train", draft: item(), receiptCount: 1 }],
+				reimbursementCurrency: "EUR",
+				now: parseInstant(at),
+			}).trip;
+		// 2026-10-08 starts in Pacific/Kiritimati (UTC+14) at 2026-10-07T10:00Z.
+		expect(missing("2026-10-07T09:59:59Z")).toEqual(["trip_not_ended"]);
+		expect(missing("2026-10-07T10:00:00Z")).toEqual([]);
+		expect(missing("2026-10-07T09:59:59Z", "2026-10-07")).toEqual([]);
 	});
 });
 

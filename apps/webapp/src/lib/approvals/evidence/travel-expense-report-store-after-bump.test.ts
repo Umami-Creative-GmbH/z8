@@ -13,6 +13,13 @@ import {
 	loadTravelExpenseReportSubmittedRevision,
 } from "./travel-expense-report-store";
 
+/** Freezes as submitting does, at an instant after every date of the fixtures (#685). */
+const freeze = (input: TravelExpenseReportFactsInput) =>
+	buildTravelExpenseReportSubmittedFacts({
+		...input,
+		submittedAt: Temporal.Instant.from("2026-10-07T12:00:00Z"),
+	});
+
 // Simulates the build after a later ticket bumps the schema version: the
 // builder still freezes today's (v11, manual rate evidence) facts, but the reader knows v1..v12.
 vi.mock("./travel-expense-report-facts", async (importOriginal) => ({
@@ -115,7 +122,7 @@ describe("after a schema version bump", () => {
 	it("still reads a v1 revision with its v1 fingerprint", async () => {
 		const { database } = fakeRevisionTable();
 		// A report without later optional facts froze the same facts as version 1.
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
+		const facts = { ...freeze(factsInput), schemaVersion: 1 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -143,7 +150,7 @@ describe("after a schema version bump", () => {
 			report: { ...factsInput.report, kind: "trip", ...tripFields },
 			receiptExceptionsAllowed: true,
 		};
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(withException), schemaVersion: 2 };
+		const facts = { ...freeze(withException), schemaVersion: 2 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -178,7 +185,7 @@ describe("after a schema version bump", () => {
 				},
 			],
 		};
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(foreign), schemaVersion: 3 };
+		const facts = { ...freeze(foreign), schemaVersion: 3 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -211,7 +218,7 @@ describe("after a schema version bump", () => {
 			items: [{ ...factsInput.items[0], projectId: null, projectInherits: true }],
 			projectAttribution: { train: project },
 		};
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(attributed), schemaVersion: 4 };
+		const facts = { ...freeze(attributed), schemaVersion: 4 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -227,7 +234,7 @@ describe("after a schema version bump", () => {
 
 	it("reads a revision of the new version under its own fingerprint prefix", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 12 };
+		const facts = { ...freeze(factsInput), schemaVersion: 12 };
 		await capture(database, facts);
 
 		const loaded = await loadTravelExpenseReportSubmittedRevision(database, scope);
@@ -237,19 +244,19 @@ describe("after a schema version bump", () => {
 
 	it("refuses a revision newer than the build", async () => {
 		const { database } = fakeRevisionTable();
-		const facts = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 13 };
+		const facts = { ...freeze(factsInput), schemaVersion: 13 };
 		await expect(capture(database, facts)).rejects.toMatchObject({ code: "invariant" });
 	});
 
 	it("still compares an unchanged v6 revision without per diem as current (#609)", () => {
-		const submitted = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 6 };
+		const submitted = { ...freeze(factsInput), schemaVersion: 6 };
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, factsInput)).toEqual({
 			kind: "current",
 		});
 	});
 
 	it("does not hold an unchanged v1 report as a material change", () => {
-		const submitted = { ...buildTravelExpenseReportSubmittedFacts(factsInput), schemaVersion: 1 };
+		const submitted = { ...freeze(factsInput), schemaVersion: 1 };
 		expect(compareLiveTravelExpenseReportWithRevision(submitted, factsInput)).toEqual({
 			kind: "current",
 		});
