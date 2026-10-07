@@ -748,7 +748,14 @@ describe("report submission through approval authority (#602)", () => {
 		expect(text).toContain("Customer workshop");
 		expect(text).toContain("1. Train to Hamburg");
 		expect(text).toContain("2. Hotel, two nights");
-		expect(text).toContain("89.90 EUR");
+		// Amounts are typed values the viewer formats in their locale (#687).
+		expect(detail.sections).toContainEqual(
+			expect.objectContaining({
+				rows: expect.arrayContaining([
+					expect.objectContaining({ value: { kind: "money", amount: "89.90", currency: "EUR" } }),
+				]),
+			}),
+		);
 
 		// The reviewer can open the frozen receipts, and only those.
 		const submittedView = await actions.getTravelExpenseReportSubmission(reportId);
