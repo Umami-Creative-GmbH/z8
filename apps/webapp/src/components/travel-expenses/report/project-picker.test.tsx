@@ -32,6 +32,7 @@ vi.mock("@/components/ui/select", () => ({
 	}) => (
 		<select
 			aria-label="Project"
+			data-value={value}
 			value={value}
 			disabled={disabled}
 			onChange={(event) => onValueChange(event.target.value)}
@@ -131,6 +132,16 @@ describe("ItemProjectField", () => {
 			to: "2026-09-14",
 			selectedProjectId: null,
 		});
+	});
+
+	it("shows a standalone expense without its own project as having none (#617)", async () => {
+		actions.getReportProjectChoicesAction.mockResolvedValue(choices());
+		renderField({ isTrip: false });
+		await screen.findByRole("option", { name: "Hamburg rollout · Hanse AG" });
+		// Without a trip there is nothing to inherit: the shown value must be a listed option.
+		const select = screen.getByRole("combobox", { name: "Project" }) as HTMLSelectElement;
+		expect(select.dataset.value).toBe("none");
+		expect(select.selectedOptions[0]?.textContent).toBe("No project");
 	});
 
 	it("asks for the date before offering projects", () => {

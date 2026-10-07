@@ -245,7 +245,8 @@ export function ItemProjectField({
 		<div className="space-y-2">
 			<Label htmlFor={id}>{t("travelExpenses.report.project.label", "Project (optional)")}</Label>
 			<Select
-				value={encode(choice)}
+				// Without a trip, "inherit" means no project; show the option that says so (#617).
+				value={!isTrip && choice.mode === "inherit" ? "none" : encode(choice)}
 				onValueChange={(value) => void change(value)}
 				disabled={saving}
 			>

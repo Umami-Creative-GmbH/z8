@@ -259,7 +259,7 @@ function ClaimRowContent({ row }: { row: LegacyClaimHistoryRow }) {
 
 function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean }) {
 	return (
-		<Card>
+		<Card className="overflow-hidden py-0">
 			<CardContent className="p-0">
 				<ul className="divide-y" aria-busy={busy}>
 					{rows.map((row) => (
@@ -269,11 +269,13 @@ function HistoryList({ rows, busy }: { rows: ExpenseHistoryRow[]; busy: boolean 
 						>
 							<div className="flex min-w-0 flex-1 gap-3">
 								<RowIcon row={row} />
-								{row.source === "report" ? (
-									<ReportRowContent row={row} />
-								) : (
-									<ClaimRowContent row={row} />
-								)}
+								<div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:gap-3">
+									{row.source === "report" ? (
+										<ReportRowContent row={row} />
+									) : (
+										<ClaimRowContent row={row} />
+									)}
+								</div>
 							</div>
 							<div className="shrink-0 pl-7 sm:pl-0">
 								<ReportStatusBadge status={row.status} />
