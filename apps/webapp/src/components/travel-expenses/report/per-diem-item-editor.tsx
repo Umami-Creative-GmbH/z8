@@ -232,7 +232,10 @@ export function PerDiemItemEditor({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const [removing, setRemoving] = useState(false);
-	const [saved, setSaved] = useState(item);
+	const [lastSaved, setSaved] = useState(item);
+	// The latest server view. A reload (e.g. after the trip's destinations changed)
+	// recalculates the same version, so a loaded item wins a tie with this editor's save.
+	const saved = item.version >= lastSaved.version ? item : lastSaved;
 
 	const { saver, state } = useDraftSaver<PerDiemDraftInput, ReportItemView>({
 		version: item.version,
@@ -289,11 +292,6 @@ export function PerDiemItemEditor({
 		},
 	});
 
-	// A reload (e.g. after the trip's destinations changed) recalculates the same version.
-	useEffect(() => {
-		setSaved((current) => (item.version >= current.version ? item : current));
-	}, [item]);
-
 	// A new per diem is prefilled with the trip's days and zone: save that right away.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: runs once for the first load
 	useEffect(() => {
@@ -301,8 +299,12 @@ export function PerDiemItemEditor({
 		const parsed = parsePerDiemDraft(prefilled);
 		if (parsed.ok && !perDiemDraftMatches(parsed.itinerary, item)) {
 			saver.change(prefilled);
+			// The report editor counts the prefilled draft like a typed one; the form owns the values.
+			// react-doctor-disable-next-line react-doctor/no-pass-data-to-parent, react-doctor/no-pass-live-state-to-parent
 			onDraftChange?.(parsed.itinerary);
 		}
+		// Runs once for the first load: later loads never reset or re-prefill entered values.
+		// react-doctor-disable-next-line react-doctor/exhaustive-deps
 	}, []);
 
 	async function remove() {

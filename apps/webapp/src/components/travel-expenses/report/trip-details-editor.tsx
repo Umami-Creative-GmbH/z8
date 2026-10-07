@@ -4,7 +4,7 @@ import { IconMapPin, IconPlus, IconX } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { saveTripDetailsDraftAction } from "@/app/[locale]/(app)/travel-expenses/report-actions";
 import { TimezonePicker } from "@/components/settings/timezone-picker";
@@ -148,7 +148,8 @@ export function TripDetailsEditor({
 	const locale = useLocale();
 	const [initialSaved] = useState(() => toDraftInput(toFormValues(details)));
 	const lastSaved = useRef<TripDetailsDraftInput>(initialSaved);
-	const [focusDestination, setFocusDestination] = useState<number | null>(null);
+	// The destination row just added: its place input takes focus once it mounts.
+	const focusDestination = useRef<number | null>(null);
 
 	const { saver, state } = useDraftSaver<TripDetailsDraftInput, TripDetailsView>({
 		version: details.version,
@@ -201,12 +202,6 @@ export function TripDetailsEditor({
 		const parsed = parseTripDetailsDraft(values);
 		onDetailsChange(parsed.ok ? parsed.draft : null);
 	}
-
-	useEffect(() => {
-		if (focusDestination === null) return;
-		document.getElementById(`${reportId}-destination-${focusDestination}-place`)?.focus();
-		setFocusDestination(null);
-	}, [focusDestination, reportId]);
 
 	const countries = useMemo(
 		() =>
@@ -392,6 +387,12 @@ export function TripDetailsEditor({
 											<form.Field name={`destinations[${index}].place`}>
 												{(field) => (
 													<Input
+														ref={(input) => {
+															if (input && focusDestination.current === index) {
+																focusDestination.current = null;
+																input.focus();
+															}
+														}}
 														id={`${reportId}-destination-${index}-place`}
 														aria-label={t(
 															"travelExpenses.report.trip.fields.place",
@@ -468,9 +469,8 @@ export function TripDetailsEditor({
 									variant="outline"
 									size="sm"
 									onClick={() => {
-										const index = destinationsField.state.value.length;
+										focusDestination.current = destinationsField.state.value.length;
 										destinationsField.pushValue(newDestinationRow());
-										setFocusDestination(index);
 									}}
 								>
 									{destinationsField.state.value.length === 0 ? (

@@ -224,6 +224,8 @@ function ExportSelection({
 	}
 
 	return (
+		// Client-side TanStack Form submit (docs/refs/forms.md); the finance page needs JS.
+		// react-doctor-disable-next-line react-doctor/no-prevent-default
 		<form
 			noValidate
 			onSubmit={(event) => {
