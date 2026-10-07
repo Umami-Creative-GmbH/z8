@@ -5,58 +5,111 @@ import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../
 
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
 
-const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
+const text = (
+	key: string,
+	fallback: string,
+	params?: ApprovalInboxLocalizedText["params"],
+): ApprovalInboxLocalizedText => ({
 	key: `approvals:approvals.evidence.${key}`,
 	fallback,
+	...(params ? { params } : {}),
 });
 
-const BASIS: Record<PerDiemDayBreakdown["basis"], string> = {
-	absence_24h: "24 hours away",
-	travel_day_with_overnight: "travel day with overnight stay",
-	absence_over_8h: "more than 8 hours away",
-	absence_8h_or_less: "8 hours or less away",
-	overnight_majority: "most of an over-night absence",
-	overnight_minority: "counted on the other day",
-	claimed_in_other_report: "already paid in another report (one allowance per day)",
+const BASIS: Record<PerDiemDayBreakdown["basis"], ApprovalInboxLocalizedText> = {
+	absence_24h: text("perDiemBasis.absence24h", "24 hours away"),
+	travel_day_with_overnight: text(
+		"perDiemBasis.travelDayWithOvernight",
+		"travel day with overnight stay",
+	),
+	absence_over_8h: text("perDiemBasis.absenceOver8h", "more than 8 hours away"),
+	absence_8h_or_less: text("perDiemBasis.absence8hOrLess", "8 hours or less away"),
+	overnight_majority: text("perDiemBasis.overnightMajority", "most of an over-night absence"),
+	overnight_minority: text("perDiemBasis.overnightMinority", "counted on the other day"),
+	claimed_in_other_report: text(
+		"perDiemBasis.claimedInOtherReport",
+		"already paid in another report (one allowance per day)",
+	),
 };
 
-const MEAL_LABELS = { breakfast: "breakfast", lunch: "lunch", dinner: "dinner" } as const;
+const MEALS = {
+	breakfast: text("perDiemMeal.breakfast", "breakfast"),
+	lunch: text("perDiemMeal.lunch", "lunch"),
+	dinner: text("perDiemMeal.dinner", "dinner"),
+} as const;
 
-function minutes(value: number): string {
-	return `${Math.floor(value / 60)} h ${String(value % 60).padStart(2, "0")} min`;
+function duration(value: number): ApprovalInboxLocalizedText {
+	return text("perDiemDuration", "{hours} h {minutes} min", {
+		hours: Math.floor(value / 60),
+		minutes: String(value % 60).padStart(2, "0"),
+	});
 }
 
-const FALLBACK: Partial<Record<PerDiemDestinationRule, string>> = {
-	luxembourg: "official fallback, unlisted state",
-	mother_country: "official fallback, territory of the mother country",
-	flight_austria: "official fallback, whole day in flight",
-	ship_luxembourg: "official fallback, whole day at sea",
-	assigned: "amounts the notice assigns",
+const FALLBACK: Partial<Record<PerDiemDestinationRule, ApprovalInboxLocalizedText>> = {
+	luxembourg: text("perDiemFallback.luxembourg", "official fallback, unlisted state"),
+	mother_country: text(
+		"perDiemFallback.motherCountry",
+		"official fallback, territory of the mother country",
+	),
+	flight_austria: text("perDiemFallback.flightAustria", "official fallback, whole day in flight"),
+	ship_luxembourg: text("perDiemFallback.shipLuxembourg", "official fallback, whole day at sea"),
+	assigned: text("perDiemFallback.assigned", "amounts the notice assigns"),
 };
 
 /** The day's location (#611): the applied official entry, and why when it is not the entered place. */
-function locationText(location: PerDiemDayLocation): string {
+function locationText(location: PerDiemDayLocation): ApprovalInboxLocalizedText {
 	const why = FALLBACK[location.rule];
-	if (!why) return location.label;
+	if (!why) return text("perDiemLocation", "{label}", { label: location.label });
 	const entered =
 		"special" in location.entered ? location.entered.special : location.entered.country;
-	return `${location.label} (${entered}: ${why})`;
+	return text("perDiemLocationFallback", "{label} ({entered}: {why})", {
+		label: location.label,
+		entered,
+		why,
+	});
 }
 
 /** One line per calendar day: location, basis, rate, provided meals with deductions, amount. */
-function dayLine(day: PerDiemDayBreakdown, currency: string): string {
-	const meals = (Object.keys(MEAL_LABELS) as (keyof typeof MEAL_LABELS)[])
+function dayLine(day: PerDiemDayBreakdown, currency: string): ApprovalInboxLocalizedText {
+	const meals = (Object.keys(MEALS) as (keyof typeof MEALS)[])
 		.filter((meal) => day.meals[meal].provided)
 		.map((meal) => {
 			const entry = day.meals[meal];
-			const paid = entry.employeePayment ? `, paid ${entry.employeePayment}` : "";
-			return `${MEAL_LABELS[meal]} provided${paid} (−${entry.deduction})`;
+			return entry.employeePayment
+				? text("perDiemMealProvidedPaid", "{meal} provided, paid {payment} (−{deduction})", {
+						meal: MEALS[meal],
+						payment: entry.employeePayment,
+						deduction: entry.deduction,
+					})
+				: text("perDiemMealProvided", "{meal} provided (−{deduction})", {
+						meal: MEALS[meal],
+						deduction: entry.deduction,
+					});
 		});
-	return [
-		...(day.location ? [locationText(day.location)] : []),
-		`${BASIS[day.basis]} (${minutes(day.absenceMinutes)})`,
-		`${day.rate}${meals.length > 0 ? ` − ${day.deductions} [${meals.join("; ")}]` : ""} = ${day.amount} ${currency}`,
-	].join(" — ");
+	const amount =
+		meals.length > 0
+			? text("perDiemDayAmountWithMeals", "{rate} − {deductions} [{meals}] = {amount} {currency}", {
+					rate: day.rate,
+					deductions: day.deductions,
+					meals,
+					amount: day.amount,
+					currency,
+				})
+			: text("perDiemDayAmount", "{rate} = {amount} {currency}", {
+					rate: day.rate,
+					amount: day.amount,
+					currency,
+				});
+	const basis = text("perDiemDayBasis", "{basis} ({duration})", {
+		basis: BASIS[day.basis],
+		duration: duration(day.absenceMinutes),
+	});
+	return day.location
+		? text("perDiemDayLineWithLocation", "{location} — {basis} — {amount}", {
+				location: locationText(day.location),
+				basis,
+				amount,
+			})
+		: text("perDiemDayLine", "{basis} — {amount}", { basis, amount });
 }
 
 /**
@@ -104,16 +157,36 @@ export function perDiemReviewRows(item: TravelExpenseReportSubmittedItem): Row[]
 			: []),
 		{
 			label: text("perDiemPolicy", "Applied rates"),
-			value: perDiem.policies
-				.map((policy) => {
-					const source =
-						policy.source.kind === "statutory_default"
-							? `statutory default: ${policy.source.reference ?? ""} (${policy.source.version ?? ""})`
-							: `organization policy${policy.source.reference ? `: ${policy.source.reference}` : ""}`;
-					const area = policy.area === "DE" ? "" : ` (${policy.area})`;
-					return `Version ${policy.versionId}${area}, valid from ${policy.effectiveFrom}: full day ${policy.rates.fullDay}, partial day ${policy.rates.partialDay}, breakfast −${policy.rates.breakfastDeduction}, lunch −${policy.rates.lunchDeduction}, dinner −${policy.rates.dinnerDeduction} ${perDiem.currency} (${source})`;
-				})
-				.join("; "),
+			value: text("perDiemPolicies", "{policies}", {
+				policies: perDiem.policies.map((policy) =>
+					text(
+						"perDiemPolicyLine",
+						"Version {version}{area}, valid from {from}: full day {fullDay}, partial day {partialDay}, breakfast −{breakfast}, lunch −{lunch}, dinner −{dinner} {currency} ({source})",
+						{
+							version: policy.versionId,
+							area: policy.area === "DE" ? "" : ` (${policy.area})`,
+							from: policy.effectiveFrom,
+							fullDay: policy.rates.fullDay,
+							partialDay: policy.rates.partialDay,
+							breakfast: policy.rates.breakfastDeduction,
+							lunch: policy.rates.lunchDeduction,
+							dinner: policy.rates.dinnerDeduction,
+							currency: perDiem.currency,
+							source:
+								policy.source.kind === "statutory_default"
+									? text("perDiemPolicyStatutory", "statutory default: {reference} ({edition})", {
+											reference: policy.source.reference ?? "",
+											edition: policy.source.version ?? "",
+										})
+									: policy.source.reference
+										? text("perDiemPolicyOrganizationNamed", "organization policy: {reference}", {
+												reference: policy.source.reference,
+											})
+										: text("perDiemPolicyOrganization", "organization policy"),
+						},
+					),
+				),
+			}),
 		},
 	];
 }

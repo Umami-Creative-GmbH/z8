@@ -10,7 +10,7 @@ import {
 	travelExpenseReportReviewNote,
 } from "@/db/schema";
 import type { TravelExpenseReportCycleClosureKind } from "@/db/schema/travel-expense-review";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import {
 	type AnyAppError,
 	AuthorizationError,
@@ -578,7 +578,7 @@ export async function executeTravelExpenseReportReturnInTransaction(
 		decisionEvidenceId: evidence.id,
 		actor: actorIdentity,
 		returned: parsed.value,
-		at: new Date(outcome.decidedAt.epochMilliseconds),
+		at: dateFromInstant(outcome.decidedAt),
 	});
 	// The returned cycle can no longer be decided: its sent cards (#623) are
 	// retired like a withdrawn cycle's, keyed by the cycle's revision.

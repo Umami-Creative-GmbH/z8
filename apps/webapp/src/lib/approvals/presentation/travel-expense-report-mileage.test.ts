@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
+import { localizedTextFallback } from "../inbox/localized-text";
 import { mileageReviewRows } from "./travel-expense-report-mileage";
 
 const item: TravelExpenseReportSubmittedItem = {
@@ -39,10 +40,17 @@ const item: TravelExpenseReportSubmittedItem = {
 describe("mileageReviewRows", () => {
 	it("shows the reviewer the frozen route, calculation and applied policy version with its source", () => {
 		const rows = mileageReviewRows(item);
-		expect(rows.map((row) => row.value)).toEqual([
+		// Localized texts with English defaults (spec #598 review).
+		expect(
+			rows.map((row) =>
+				typeof row.value === "object" && "kind" in row.value
+					? row.value
+					: localizedTextFallback(row.value),
+			),
+		).toEqual([
 			"Berlin – Potsdam – back",
 			"123.45 km",
-			{ key: "approvals:approvals.evidence.mileageVehicleCar", fallback: "Car" },
+			"Car",
 			"123.45 km × 0.3000 EUR/km = 37.035000 → 37.04 EUR (rounded half up)",
 			"Version version-1, valid from 2026-01-01",
 			"Statutory default: § 9 Abs. 1 Satz 3 Nr. 4a Satz 2 EStG (LStH 2026, Anhang 25 III)",

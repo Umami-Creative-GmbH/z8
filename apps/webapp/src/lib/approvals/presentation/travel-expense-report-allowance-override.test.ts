@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
+import { localizedTextFallback } from "../inbox/localized-text";
 import {
 	allowanceOverrideReviewRows,
 	allowanceOverrideReviewSections,
@@ -87,13 +88,15 @@ describe("allowance override review (#610)", () => {
 	});
 
 	it("calls out every manually set allowance prominently", () => {
-		expect(allowanceOverrideReviewSections({ items: [mileage] })).toEqual([
-			{
-				type: "callout",
-				title: "Allowances set manually",
-				body: "An expense administrator set these allowances manually instead of the calculated amount: 1. Berlin – Potsdam (18.45 EUR). Check the reason and evidence before deciding.",
-				tone: "warning",
-			},
-		]);
+		const [callout] = allowanceOverrideReviewSections({ items: [mileage] });
+		if (callout?.type !== "callout") throw new Error("callout expected");
+		expect(callout.tone).toBe("warning");
+		expect(localizedTextFallback(callout.title)).toBe("Allowances set manually");
+		expect(callout.body).toMatchObject({
+			key: "approvals:approvals.evidence.allowanceOverrideCalloutBody",
+		});
+		expect(localizedTextFallback(callout.body)).toBe(
+			"An expense administrator set these allowances manually instead of the calculated amount: 1. Berlin – Potsdam (18.45 EUR). Check the reason and evidence before deciding.",
+		);
 	});
 });

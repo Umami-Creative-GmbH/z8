@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { TravelExpenseReportSubmittedItem } from "../evidence/travel-expense-report-facts";
+import { localizedTextFallback } from "../inbox/localized-text";
+import type { ApprovalInboxDetailChange, ApprovalInboxLocalizedText } from "../inbox/types";
 import { perDiemReviewRows } from "./travel-expense-report-per-diem";
+
+function text(value: string | ApprovalInboxLocalizedText | ApprovalInboxDetailChange | undefined) {
+	if (value === undefined || (typeof value === "object" && "kind" in value)) return undefined;
+	return localizedTextFallback(value);
+}
 
 const noMeal = { provided: false, employeePayment: null, deduction: "0.00" };
 
@@ -104,10 +111,15 @@ describe("perDiemReviewRows", () => {
 			expect.objectContaining({ fallback: "Applied rates" }),
 		]);
 		expect(rows[0]?.value).toBe("2026-09-14 07:15 (Europe/Berlin)");
-		expect(rows[4]?.value).toBe(
+		// Localized texts (spec #598 review): every word is a translation key with an English default.
+		expect(rows[4]?.value).toMatchObject({ key: "approvals:approvals.evidence.perDiemDayLine" });
+		expect(text(rows[4]?.value)).toBe(
 			"travel day with overnight stay (19 h 40 min) — 14.00 − 3.60 [breakfast provided, paid 2.00 (−3.60)] = 10.40 EUR",
 		);
 		expect(rows[5]?.value).toBe("24.40 EUR");
+		expect(text(rows[7]?.value)).toBe(
+			"Version v1, valid from 2026-01-01: full day 28.00, partial day 14.00, breakfast −5.60, lunch −11.20, dinner −11.20 EUR (organization policy: Travel policy)",
+		);
 	});
 
 	it("names each day's location, marks official fallbacks and the foreign table (#611)", () => {
@@ -155,10 +167,10 @@ describe("perDiemReviewRows", () => {
 			},
 		} satisfies TravelExpenseReportSubmittedItem;
 		const rows = perDiemReviewRows(international);
-		expect(rows[3]?.value).toMatch(
+		expect(text(rows[3]?.value)).toMatch(
 			/^Luxemburg \(IQ: official fallback, unlisted state\) — travel day with overnight stay/,
 		);
-		expect(rows[4]?.value).toMatch(/^Deutschland — travel day/);
+		expect(text(rows[4]?.value)).toMatch(/^Deutschland — travel day/);
 		expect(rows.at(-2)).toEqual({
 			label: expect.objectContaining({ fallback: "Foreign rates" }),
 			value: "BMF letter of 05.12.2025 (BStBl I S. 2078) (LStH 2026, Anhang 25 I)",

@@ -26,6 +26,7 @@ import type {
 	ApprovalInboxItem,
 	ApprovalInboxLocalizedText,
 } from "@/lib/approvals/inbox/types";
+import { resolveLocalizedText } from "@/lib/approvals/inbox/localized-text";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import {
 	useApprovalDetail,
@@ -61,8 +62,10 @@ function localizedText(
 	t: Translate,
 	value: string | ApprovalInboxLocalizedText,
 ) {
-	if (typeof value === "string") return value;
-	return value.params ? t(value.key, value.fallback, value.params) : t(value.key, value.fallback);
+	// Nested texts (e.g. a per diem day's basis inside its line) are translated first.
+	return resolveLocalizedText(value, (key, fallback, params) =>
+		params ? t(key, fallback, params) : t(key, fallback),
+	);
 }
 
 function workLocationText(t: Translate, value: string) {

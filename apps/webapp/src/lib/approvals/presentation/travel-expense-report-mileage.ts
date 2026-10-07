@@ -3,9 +3,14 @@ import type { ApprovalInboxDetailSection, ApprovalInboxLocalizedText } from "../
 
 type Row = Extract<ApprovalInboxDetailSection, { type: "key_value" }>["rows"][number];
 
-const text = (key: string, fallback: string): ApprovalInboxLocalizedText => ({
+const text = (
+	key: string,
+	fallback: string,
+	params?: ApprovalInboxLocalizedText["params"],
+): ApprovalInboxLocalizedText => ({
 	key: `approvals:approvals.evidence.${key}`,
 	fallback,
+	...(params ? { params } : {}),
 });
 
 /**
@@ -23,7 +28,10 @@ export function mileageReviewRows(item: TravelExpenseReportSubmittedItem): Row[]
 			: [policy.source.reference, policy.source.version].filter(Boolean).join(", ") || null;
 	return [
 		{ label: text("mileageRoute", "Route"), value: mileage.route },
-		{ label: text("mileageDistance", "Distance"), value: `${mileage.distanceKm} km` },
+		{
+			label: text("mileageDistance", "Distance"),
+			value: text("mileageDistanceValue", "{distance} km", { distance: mileage.distanceKm }),
+		},
 		{
 			label: text("mileageVehicle", "Vehicle"),
 			value:
@@ -33,19 +41,40 @@ export function mileageReviewRows(item: TravelExpenseReportSubmittedItem): Row[]
 		},
 		{
 			label: text("mileageCalculation", "Calculation"),
-			value: `${mileage.distanceKm} km × ${mileage.ratePerKm} ${mileage.currency}/km = ${mileage.exactAmount} → ${mileage.amount} ${mileage.currency} (${mileage.rounding === "half_up" ? "rounded half up" : "rounded half to even"})`,
+			value: text(
+				"mileageCalculationValue",
+				"{distance} km × {rate} {currency}/km = {exact} → {amount} {currency} ({rounding})",
+				{
+					distance: mileage.distanceKm,
+					rate: mileage.ratePerKm,
+					currency: mileage.currency,
+					exact: mileage.exactAmount,
+					amount: mileage.amount,
+					rounding:
+						mileage.rounding === "half_up"
+							? text("mileageRoundingHalfUp", "rounded half up")
+							: text("mileageRoundingHalfEven", "rounded half to even"),
+				},
+			),
 		},
 		{
 			label: text("mileagePolicy", "Applied rate"),
-			value: `Version ${policy.versionId}, valid from ${policy.effectiveFrom}`,
+			value: text("mileagePolicyValue", "Version {version}, valid from {from}", {
+				version: policy.versionId,
+				from: policy.effectiveFrom,
+			}),
 		},
 		{
 			label: text("mileagePolicySource", "Rate source"),
 			value:
 				policy.source.kind === "statutory_default"
-					? `Statutory default: ${source}`
+					? text("mileagePolicySourceStatutory", "Statutory default: {source}", {
+							source: source ?? "",
+						})
 					: source
-						? `Organization policy: ${source}`
+						? text("mileagePolicySourceOrganizationNamed", "Organization policy: {source}", {
+								source,
+							})
 						: text("mileagePolicySourceOrganization", "Organization policy"),
 		},
 	];

@@ -36,6 +36,7 @@ type Override = NonNullable<TravelExpenseReportSubmittedItem["allowanceOverride"
 function factsLine(override: Override): string {
 	const { scope } = override;
 	if (scope.kind === "mileage") {
+		// Entered values as frozen; `km` is the unit symbol, not a translatable word.
 		return [scope.route, scope.distanceKm ? `${scope.distanceKm} km` : null, scope.vehicle]
 			.filter(Boolean)
 			.join(", ");
@@ -110,8 +111,14 @@ export function allowanceOverrideReviewSections(
 	return [
 		{
 			type: "callout",
-			title: "Allowances set manually",
-			body: `An expense administrator set these allowances manually instead of the calculated amount: ${overridden.join("; ")}. Check the reason and evidence before deciding.`,
+			title: text("allowanceOverrideCalloutTitle", "Allowances set manually"),
+			body: {
+				...text(
+					"allowanceOverrideCalloutBody",
+					"An expense administrator set these allowances manually instead of the calculated amount: {items}. Check the reason and evidence before deciding.",
+				),
+				params: { items: overridden.join("; ") },
+			},
 			tone: "warning",
 		},
 	];

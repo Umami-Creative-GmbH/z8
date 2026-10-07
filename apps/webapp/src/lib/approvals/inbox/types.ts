@@ -77,11 +77,21 @@ export interface ApprovalInboxItem {
 	capabilities: ApprovalInboxCapabilities;
 }
 
+/**
+ * A `{name}` value of a localized text: plain, itself localized, or a list of
+ * localized texts the client joins with "; " after translating each one.
+ */
+export type ApprovalInboxTextParam =
+	| string
+	| number
+	| ApprovalInboxLocalizedText
+	| ApprovalInboxLocalizedText[];
+
 export interface ApprovalInboxLocalizedText {
 	key: string;
 	fallback: string;
 	/** Interpolation values for `{name}` placeholders in the key and fallback. */
-	params?: Record<string, string | number>;
+	params?: Record<string, ApprovalInboxTextParam>;
 }
 
 export type ApprovalInboxDetailChangeValue =

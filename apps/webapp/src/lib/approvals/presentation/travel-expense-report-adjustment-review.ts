@@ -22,8 +22,14 @@ export function adjustmentReviewSections(
 	return [
 		{
 			type: "callout",
-			title: "Adjustment of an approved report",
-			body: `This corrects an already exported or reimbursed report. Approving it changes the employee's approved amount by ${signed} ${delta.currency}; the original report and its payments stay unchanged.`,
+			title: text("adjustmentCalloutTitle", "Adjustment of an approved report"),
+			body: {
+				...text(
+					"adjustmentCalloutBody",
+					"This corrects an already exported or reimbursed report. Approving it changes the employee's approved amount by {delta} {currency}; the original report and its payments stay unchanged.",
+				),
+				params: { delta: signed, currency: delta.currency },
+			},
 			tone: delta.amount.startsWith("-") ? "warning" : "info",
 		},
 		{
