@@ -19,10 +19,12 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { appliedConversion } from "@/lib/travel-expenses/currency-conversion";
+import { effectiveItemProject } from "@/lib/travel-expenses/project-attribution";
 import { receiptReportTotals } from "@/lib/travel-expenses/receipt-report";
 import { referenceRateReviewKey } from "@/lib/travel-expenses/reference-rate-conversion";
 import type { ReportView } from "@/lib/travel-expenses/report-store";
 import { reviewedItemAmount } from "@/lib/travel-expenses/report-submission";
+import type { ExpenseProjectSummary } from "./expense-project-line";
 import { ExpenseSummaryList, TripSummaryList } from "./expense-summary-list";
 import { pendingReceiptException } from "./receipt-exception-notice";
 import { AdjustmentDeltaPreview } from "./report-adjustments";
@@ -125,6 +127,18 @@ function outcomeMessage(
 				),
 			};
 	}
+}
+
+/** The project an expense will be submitted under, with its current name (#605, #617). */
+function reviewedProject(
+	report: ReportView | null,
+	item: ReportView["items"][number],
+): ExpenseProjectSummary | undefined {
+	if (!report) return undefined;
+	const effective = effectiveItemProject(report, item);
+	const named = effective ? report.projectNames?.[effective.projectId] : undefined;
+	if (!effective || !named) return undefined;
+	return { ...named, inheritedFromTrip: effective.inheritedFromTrip };
 }
 
 /**
@@ -306,6 +320,7 @@ export function SubmitReportPanel({
 										? item.perDiem.calculation
 										: null,
 								receiptException: pendingReceiptException(item),
+								project: reviewedProject(report, item),
 								// An applying administrator override (#610) is what the expense counts.
 								allowanceOverride: [item.mileage?.override, item.perDiem?.override].find(
 									(override) => override?.applies,

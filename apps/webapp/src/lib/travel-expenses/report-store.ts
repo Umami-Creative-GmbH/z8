@@ -17,6 +17,7 @@ import { type MileageCalculation, type MileageItemView, mileageItemView } from "
 import { loadMileageOverrides, loadMileagePricer } from "./mileage-pricing";
 import type { PerDiemItemView } from "./per-diem";
 import { loadPerDiemViews } from "./per-diem-pricing";
+import { loadProjectNames } from "./project-names";
 import {
 	loadReceiptExceptionsAllowed,
 	type ReceiptExceptionView,
@@ -116,6 +117,8 @@ export interface ReportView {
 	referenceRateProvider?: ReferenceRateProvider | null;
 	/** The trip's project its expenses inherit (#605). */
 	projectId?: string | null;
+	/** Current names of the projects the report and its items name, by id (#617 review step). */
+	projectNames?: Record<string, { name: string; customerName: string | null }>;
 }
 
 type ReportRow = typeof travelExpenseReport.$inferSelect;
@@ -364,7 +367,12 @@ export async function loadOwnReport(
 	};
 	const perDiems = await loadPerDiemViews(database, report, items, pricing);
 	const overrides = await loadMileageOverrides(database, owner.organizationId, items);
+	const projectNames = await loadProjectNames(database, owner.organizationId, [
+		report.projectId,
+		...items.map((item) => item.projectId),
+	]);
 	return {
+		projectNames,
 		id: report.id,
 		kind: report.kind,
 		status: report.status,

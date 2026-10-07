@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import type { TravelExpenseReportProjectAttribution } from "@/lib/approvals/evidence/travel-expense-report-facts";
 import { formatPlainDateRange } from "./format";
 
+/** `basis` is only known once frozen; a draft's review step shows the chosen project without it. */
 export type ExpenseProjectSummary = Pick<
 	TravelExpenseReportProjectAttribution,
-	"name" | "customerName" | "inheritedFromTrip" | "basis" | "exception"
->;
+	"name" | "customerName" | "inheritedFromTrip"
+> &
+	Partial<Pick<TravelExpenseReportProjectAttribution, "basis" | "exception">>;
 
 /**
  * The project an expense was submitted under (#605), with the names frozen at

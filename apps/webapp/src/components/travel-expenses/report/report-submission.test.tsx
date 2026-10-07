@@ -149,6 +149,32 @@ afterEach(() => {
 });
 
 describe("report submission", () => {
+	it("shows each expense's project, inherited or its own, in the review step (#617)", async () => {
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			tripReport({
+				projectId: "project-trip",
+				projectNames: {
+					"project-trip": { name: "Relaunch", customerName: "ACME" },
+					"project-own": { name: "Audit", customerName: null },
+				},
+				items: [
+					{ ...train, projectId: null, projectInherits: true },
+					{ ...hotel, projectId: "project-own", projectInherits: false },
+				],
+			}),
+		);
+		mount();
+		fireEvent.click(await reviewButton());
+		const dialog = await screen.findByRole("dialog", { name: "Submit expense report" });
+		const [first, second] = within(dialog).getAllByRole("listitem").filter((item) =>
+			item.textContent?.includes("Hamburg"),
+		);
+		expect(first?.textContent).toContain("Relaunch · ACME");
+		expect(first?.textContent).toContain("(trip project)");
+		expect(second?.textContent).toContain("Audit");
+		expect(second?.textContent).not.toContain("(trip project)");
+	});
+
 	it("submits exactly the saved report the employee reviewed", async () => {
 		reportActions.submitTravelExpenseReportAction.mockResolvedValue({
 			success: true,
