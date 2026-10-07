@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DraftSaveOutcome } from "@/lib/travel-expenses/draft-saver";
+import { formatNumberInput } from "@/lib/travel-expenses/number-input-display";
 import { itemProjectChoice } from "@/lib/travel-expenses/project-attribution";
 import {
 	type ReceiptExceptionContext,
@@ -51,12 +52,15 @@ import { useDraftSaver } from "./use-draft-saver";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
-function toFormValues(item: ReceiptItemDraft): FormValues {
+/** The form's text for a saved item; the amount as the viewer's locale writes it (#688). */
+function toFormValues(item: ReceiptItemDraft, locale: string): FormValues {
 	return {
 		expenseDate: item.expenseDate ?? "",
 		category: item.category ?? "",
 		description: item.description ?? "",
-		amount: item.amount ?? "",
+		amount: item.amount
+			? formatNumberInput(locale, item.amount, { kind: "amount", currency: item.currency })
+			: "",
 		currency: item.currency ?? "",
 		paidBy: item.paidBy ?? "",
 		accountingReference: item.accountingReference ?? "",
@@ -187,6 +191,7 @@ export function ReceiptItemEditor({
 	now: Instant;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	const [uploading, setUploading] = useState(false);
 	const [removing, setRemoving] = useState(false);
 	const [receiptException, setReceiptException] = useState(() =>
@@ -194,7 +199,7 @@ export function ReceiptItemEditor({
 	);
 
 	// The last values the server confirmed; malformed fields fall back to them.
-	const [initialSaved] = useState(() => toDraftInput(toFormValues(item)));
+	const [initialSaved] = useState(() => toDraftInput(toFormValues(item, locale)));
 	const lastSaved = useRef<ReceiptItemDraftInput>(initialSaved);
 
 	const { saver, state } = useDraftSaver<ReceiptItemDraftInput, ReportItemView>({
@@ -223,7 +228,7 @@ export function ReceiptItemEditor({
 			if (!result.success) return { status: "failed", error: result.error };
 			switch (result.data.status) {
 				case "saved":
-					lastSaved.current = toDraftInput(toFormValues(result.data.item));
+					lastSaved.current = toDraftInput(toFormValues(result.data.item, locale));
 					onSaved?.(result.data.item);
 					return errors
 						? { status: "invalid", errors, version: result.data.item.version }
@@ -241,7 +246,7 @@ export function ReceiptItemEditor({
 	});
 
 	// Later loads must not replace defaults: that would reset untouched fields.
-	const [defaultValues] = useState(() => toFormValues(item));
+	const [defaultValues] = useState(() => toFormValues(item, locale));
 	const form = useForm({
 		defaultValues,
 		listeners: {
@@ -286,9 +291,9 @@ export function ReceiptItemEditor({
 							const theirs = state.conflict?.item;
 							saver.resolveConflict("use_theirs");
 							if (theirs) {
-								lastSaved.current = toDraftInput(toFormValues(theirs));
+								lastSaved.current = toDraftInput(toFormValues(theirs, locale));
 								// Keeps the mount defaults so the next render does not undo the reset.
-								form.reset(toFormValues(theirs), { keepDefaultValues: true });
+								form.reset(toFormValues(theirs, locale), { keepDefaultValues: true });
 								onDraftChange?.(theirs);
 							}
 							// The newer version may also have different receipts.

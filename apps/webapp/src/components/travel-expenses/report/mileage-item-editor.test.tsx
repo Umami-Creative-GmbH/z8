@@ -37,14 +37,18 @@ vi.mock("@tolgee/react", () => ({
 			fallback.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
-vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+const viewer = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("next-intl", () => ({ useLocale: () => viewer.locale }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 	withdrawTravelExpenseReportAction: vi.fn(),
 }));
 // #615: the adjustment notices find no adjustment for these reports.
 vi.mock("@/app/[locale]/(app)/travel-expenses/adjustment-actions", () => ({
 	createTravelExpenseAdjustmentAction: vi.fn(),
-	getTravelExpenseReportAdjustments: async () => ({ success: false, error: "Expense report not found" }),
+	getTravelExpenseReportAdjustments: async () => ({
+		success: false,
+		error: "Expense report not found",
+	}),
 }));
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
@@ -140,6 +144,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	viewer.locale = "en-US";
 });
 
 describe("mileage expenses (#606)", () => {
@@ -221,5 +226,37 @@ describe("mileage expenses (#606)", () => {
 				accountingReference: null,
 			},
 		});
+	});
+	it("shows the distance in the viewer's locale without saving again for the format (#688)", async () => {
+		viewer.locale = "de";
+		reportActions.getMyTravelExpenseReport.mockResolvedValue(
+			standalone(
+				mileageItem(calculated, {
+					mileage: { ...mileageItem(calculated).mileage, distanceKm: "289.70" },
+				}),
+			),
+		);
+		mileageActions.saveMileageItemDraftAction.mockResolvedValue({
+			success: true,
+			data: { status: "saved", item: mileageItem(calculated, { version: 4 }) },
+		});
+		mount();
+		const distance = (await screen.findByLabelText("Kilometres driven")) as HTMLInputElement;
+		// A reload shows the saved distance as the locale writes it.
+		expect(distance.value).toBe("289,7");
+
+		fireEvent.change(distance, { target: { value: "289.70" } });
+		// What is typed stays as typed until the field loses focus.
+		expect(distance.value).toBe("289.70");
+		await waitFor(
+			() => expect(mileageActions.saveMileageItemDraftAction).toHaveBeenCalledTimes(1),
+			{
+				timeout: 3000,
+			},
+		);
+		fireEvent.blur(distance);
+		expect(distance.value).toBe("289,7");
+		await new Promise((resolve) => setTimeout(resolve, 1200));
+		expect(mileageActions.saveMileageItemDraftAction).toHaveBeenCalledTimes(1);
 	});
 });

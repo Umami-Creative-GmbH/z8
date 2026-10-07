@@ -54,7 +54,8 @@ vi.mock("@tolgee/react", () => ({
 			fallback.replace(/\{(\w+)\}/g, (match, name) => String(params?.[name] ?? match)),
 	}),
 }));
-vi.mock("next-intl", () => ({ useLocale: () => "en-US" }));
+const viewer = vi.hoisted(() => ({ locale: "en-US" }));
+vi.mock("next-intl", () => ({ useLocale: () => viewer.locale }));
 vi.mock("@/app/[locale]/(app)/travel-expenses/report-review-actions", () => ({
 	withdrawTravelExpenseReportAction: vi.fn(),
 }));
@@ -132,6 +133,7 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	upload.options = null;
+	viewer.locale = "en-US";
 });
 
 describe("TravelExpenseReportEditor", () => {
@@ -278,8 +280,40 @@ describe("TravelExpenseReportEditor", () => {
 		);
 	});
 
-	it("separates company-paid costs from the reimbursement total", async () => {
-		reportActions.getMyTravelExpenseReport.mockResolvedValue(report({ paidBy: "company" }));
+	it.each([
+		["de", "129,90", "89,10"],
+		["en-US", "129.90", "89.10"],
+	])(
+		"shows the amount in %s once it loses focus, without saving again for the format (#688)",
+		async (locale, loaded, shown) => {
+			viewer.locale = locale;
+			reportActions.saveReceiptItemDraftAction.mockResolvedValue({
+				success: true,
+				data: { status: "saved", item: item({ version: 4, amount: "89.10" }) },
+			});
+			mount();
+			const amount = (await screen.findByRole("textbox", {
+				name: "Amount on the receipt",
+			})) as HTMLInputElement;
+			expect(amount.value).toBe(loaded);
+
+			fireEvent.change(amount, { target: { value: "89,1" } });
+			expect(amount.value).toBe("89,1");
+			await waitFor(
+				() => expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1),
+				{ timeout: 3000 },
+			);
+			expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledWith(
+				expect.objectContaining({ values: expect.objectContaining({ amount: "89,1" }) }),
+			);
+			fireEvent.blur(amount);
+			expect(amount.value).toBe(shown);
+			await new Promise((resolve) => setTimeout(resolve, 1200));
+			expect(reportActions.saveReceiptItemDraftAction).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("separates company-paid costs from the reimbursement total", async () => {		reportActions.getMyTravelExpenseReport.mockResolvedValue(report({ paidBy: "company" }));
 		mount();
 		await description();
 		const totals = screen.getByRole("region", { name: "Totals" });

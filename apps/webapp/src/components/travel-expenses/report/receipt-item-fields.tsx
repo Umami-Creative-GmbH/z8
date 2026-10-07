@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
+import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
 	RECEIPT_EXPENSE_CATEGORIES,
 } from "@/lib/travel-expenses/receipt-report";
 import { categoryLabel } from "./format";
+import { reformatNumberField } from "./number-field";
 import type { ReceiptItemFieldName, ReceiptItemFormApi } from "./receipt-item-form";
 
 /**
@@ -47,6 +49,7 @@ export function ReceiptItemFields({
 	children?: ReactNode;
 }) {
 	const { t } = useTranslate();
+	const locale = useLocale();
 	return (
 		<form
 			noValidate
@@ -150,7 +153,13 @@ export function ReceiptItemFields({
 									placeholder="0.00"
 									value={field.state.value}
 									onChange={(event) => field.handleChange(event.target.value)}
-									onBlur={field.handleBlur}
+									onBlur={() => {
+										reformatNumberField(field, locale, {
+											kind: "amount",
+											currency: form.getFieldValue("currency").trim().toUpperCase() || null,
+										});
+										field.handleBlur();
+									}}
 								/>
 							</TFormControl>
 							<TFormMessage>{fieldError("amount")}</TFormMessage>
