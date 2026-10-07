@@ -74,21 +74,7 @@ describe("German route catalogs", () => {
 			"calendar.requirements.status.missing",
 			"Fehlende erfasste Zeit",
 		],
-	])("provides German copy for %s: %s", async (route, key, expected) => {
-		const slice = await loadCatalogSlice("de", getNamespacesForRoute(route));
-		const tolgee = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
-			language: "de",
-			staticData: slice.records,
-		});
-		await tolgee.run();
-		try {
-			expect(tolgee.t(key, "English fallback")).toBe(expected);
-		} finally {
-			tolgee.stop();
-		}
-	});
-	it.each([
-		["/travel-expenses", "travelExpenses.history.emptyTitle", "Noch keine Reisekosten"],
+		["/travel-expenses","travelExpenses.history.emptyTitle", "Noch keine Reisekosten"],
 		["/travel-expenses", "travelExpenses.report.actions.newReceipt", "Neuer Beleg"],
 		["/travel-expenses", "travelExpenses.report.actions.newTrip", "Neue Reise"],
 		["/travel-expenses", "common.loadingRegions.travelExpenses", "Reisekosten werden geladen"],
@@ -116,10 +102,10 @@ describe("German route catalogs", () => {
 			"common.loadingRegions.travelExpenseSettings",
 			"Reisekosteneinstellungen werden geladen",
 		],
-	])("provides German travel-expense copy for %s: %s", async (route, key, expected) => {
-		const scope = getRouteCatalogScope(route);
-		expect(scope, route).toBeDefined();
-		const slice = await loadCatalogSlice("de", scope?.namespaces ?? []);
+	])("provides German copy for %s: %s", async (route, key, expected) => {
+		const namespaces = getRouteCatalogScope(route)?.namespaces;
+		if (!namespaces) throw new Error(`No catalog scope for ${route}`);
+		const slice = await loadCatalogSlice("de", namespaces);
 		const tolgee = TolgeeBase({ loadAllLanguageCatalogs: false }).init({
 			language: "de",
 			staticData: slice.records,
