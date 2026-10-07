@@ -42,4 +42,6 @@ jobs:
         with:
           directory: apps/webapp
           blocking: error
-          review-comments: true
+          # Findings are listed in the sticky summary comment. Inline comments
+          # re-post every warning after each push to dev and bury the release PR.
+          review-comments: false
